@@ -131,12 +131,42 @@ author terrain without a code edit. Revisit if that friction bites.
 **Not done here, deliberately:** nothing reads these tables yet, and the burst
 does not stamp anything. That is P1.
 
-### P1 — Paint state and persistence
-Board state gains a per-tile record of `{ terrainId, paintedAt }` (D-T11), a
-per-save seed, and the burst-time stamp on token instances (D-T6). Placement,
-movement and displacement write to it; nothing erases it (D-T10).
-⚠️ Save schema change — the project has historically refused old saves rather
-than migrating them, and this branch already has no 7×7 migration.
+### P1 — Paint state and persistence ✅ done 2026-09-06
+`board.terrain` holds `{ terrainId, paintedAt }` per tile, alongside
+`nextPaintOrder` and `terrainSeed`, all declared in `StateSchema`. Painting
+hangs off `BoardState.setToken`, which is the one choke point every arrival
+passes through — player drag, Manager restock, cascade, Vault withdrawal — so no
+route can skip it. Clearing a tile deliberately does not touch terrain (D-T10).
+`Cartographer.openMap` stamps the Map's terrain onto everything it bursts, and
+the stamp survives the sprite layer, the Vault and Vault consolidation. 18 tests
+in `src/tests/TerrainPainting.test.js`.
+
+**⚠️ No save migration, and none needed.** Terrain is purely additive: an older
+save has no terrain and is otherwise identical, so `GAME_VERSION` is unchanged
+and old saves still load. A save loaded with Tokens already on the board paints
+under them on first read, so it does not appear as bare ground.
+
+**Two things found while building it, both fixed:**
+
+* *The backfill guard never fired.* It watched for `board.terrain` being absent,
+  but the save loader merges the declared schema into whatever it loads, so an
+  old save arrives with `terrain` already created as `{}`. Caught by running the
+  real game against a real pre-terrain save, not by the tests — which had
+  constructed the "old save" by deleting the key, a shape the game never
+  produces. The guard is now `nextPaintOrder === 0`, which is true of both a new
+  game and a pre-terrain save and self-limits after one run.
+* *Vault consolidation dropped the stamp.* `TokenBank.consolidate` pools charges
+  and repacks, so the copies coming out are not the ones going in. The first
+  stamp among the merged copies is now applied to all of them — see the comment
+  there for why there is no better answer.
+
+**Known gap, deliberately left:** a Token that *is* in a Map pool but was
+obtained some other way has no stamp and no override, so it paints the default.
+In practice the only routes are a burst (stamped), a Vault withdrawal (stamped)
+and the dev dashboard, so this does not currently bite — the opening Tray holds
+only `token_guild_hall`, which has an override. If it ever does, the fix is a
+third precedence tier between stamp and default: use the Map's terrain when a
+Token appears in exactly one pool, which would cover 19 of the 25.
 
 ### P2 — The base layer renders (slice one ships here)
 The 29×29 lattice draws: each tile fills its 4×4 with its terrain's substrate,
@@ -187,6 +217,6 @@ mountain ranges; road auto-connecting.
 | Phase | Status | Notes |
 | :--- | :--- | :--- |
 | P0 — registry + terrain data | ✅ Done 2026-09-06 | Code registry, not CMS — see P0 note |
-| P1 — paint state + persistence | Not started | Next |
-| P2 — base layer renders | Not started | Slice one ends here |
+| P1 — paint state + persistence | ✅ Done 2026-09-06 | No migration needed — additive |
+| P2 — base layer renders | Not started | Next. Slice one ends here |
 | P3+ — masks, props, animation | Deferred | Blocked on art (§2.3, §2.4) |

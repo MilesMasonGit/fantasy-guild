@@ -3,6 +3,7 @@
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
 import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../config/boardGeometry.js';
+import { terrainForToken } from '../../config/registries/terrainAssignments.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -80,17 +81,58 @@ function board() {
     if (!Array.isArray(state.board.maps)) state.board.maps = [];
     if (!state.board.heroTiles) state.board.heroTiles = {};
     if (!state.board.vacancies) state.board.vacancies = {};
+    if (!state.board.terrain) state.board.terrain = {};
+    if (typeof state.board.nextPaintOrder !== 'number') state.board.nextPaintOrder = 0;
+    if (state.board.nextPaintOrder === 0) backfillTerrain(state.board);
     return state.board;
 }
 
-/** A fresh Token instance of `typeId`. `uses` of null means unlimited (D-176). */
-export function createTokenInstance(typeId, uses = null) {
-    return {
+/**
+ * Paint terrain under the Tokens a pre-terrain save already had on the board.
+ *
+ * Terrain was added without a save migration, because it is purely additive — an
+ * older save simply has no terrain and is otherwise identical. But loading one
+ * and finding bare ground under a board full of Tokens would look broken, so the
+ * first read paints what is already there, in tile order.
+ *
+ * ## ⚠️ The guard is `nextPaintOrder === 0`, not "is `terrain` missing"
+ *
+ * It was the latter, and it never fired: the save loader merges the declared
+ * schema into whatever it loads, so an old save arrives with `terrain` already
+ * created as `{}` and the absence this was watching for never happens.
+ *
+ * A paint counter still at zero is the honest test — it means nothing has ever
+ * been painted on this board, which is true of a new game (where there are no
+ * Tokens to walk) and of a pre-terrain save (where there are). It also
+ * self-limits: painting anything advances the counter, so this cannot run twice
+ * and renumber a board.
+ */
+function backfillTerrain(b) {
+    const tiles = b.tiles || {};
+    for (const key of Object.keys(tiles).map(Number).sort((a, b2) => a - b2)) {
+        const instance = tiles[key];
+        if (instance?.typeId) paintFootprint(b, key, instance);
+    }
+}
+
+/**
+ * A fresh Token instance of `typeId`. `uses` of null means unlimited (D-176).
+ *
+ * `terrain` is the Map's stamp (D-T6): the terrain of whichever Map burst this
+ * Token into existence. It is set only when there is one, so the field is
+ * absent on the great majority of Tokens rather than being null on all of them.
+ * A Token that never came from a Map falls back to its own authored terrain —
+ * see `terrainForToken`.
+ */
+export function createTokenInstance(typeId, uses = null, terrain = null) {
+    const instance = {
         id: `tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         typeId,
         usesRemaining: uses,
         cycleElapsedMs: 0
     };
+    if (terrain) instance.terrain = terrain;
+    return instance;
 }
 
 // ---------------------------------------------------------------------------
@@ -165,9 +207,75 @@ export function setToken(index, instance) {
         // Anything arriving satisfies the tile's claim on a restock, whether it
         // came from a Manager or from the player's hand.
         delete b.vacancies[index];
+        paintFootprint(b, index, instance);
     } else {
+        // ⚠️ Terrain is NOT cleared here. A Token leaving a tile leaves its
+        // ground behind (D-T10) — that is the point of the whole feature.
         delete b.tiles[index];
     }
+}
+
+/**
+ * Paint a Token's terrain across the tiles it covers.
+ *
+ * Hooked into `setToken` rather than into `Placement` deliberately. Every route
+ * a Token can take onto a tile ends here — the player's drag, a Manager's
+ * restock, a cascade shoving a Token sideways, a Vault withdrawal — and a route
+ * that skipped painting would leave a Token sitting on ground that does not
+ * match it, with no obvious cause. One choke point cannot be missed.
+ *
+ * All four tiles of a 2×2 share one `paintedAt`, because one drop is one act:
+ * they should win and lose contested subtiles together, not in reading order.
+ */
+function paintFootprint(b, anchorIndex, instance) {
+    const terrainId = terrainForToken(instance.typeId, instance.terrain);
+    const size = getTokenType(instance.typeId)?.size || 1;
+    const paintedAt = b.nextPaintOrder++;
+    for (const tile of tileFootprint(anchorIndex, size)) {
+        if (isTileIndex(tile)) b.terrain[tile] = { terrainId, paintedAt };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Terrain (dynamic terrain roadmap P1)
+// ---------------------------------------------------------------------------
+
+/** What a tile has been painted with, as `{ terrainId, paintedAt }`, or null. */
+export function getTileTerrain(index) {
+    if (!isTileIndex(index)) return null;
+    return board()?.terrain?.[index] || null;
+}
+
+/** The whole painted board, keyed by tile index. Sparse. */
+export function terrainMap() {
+    return board()?.terrain || {};
+}
+
+/**
+ * The per-save seed the derived subtile detail is generated from (D-T11).
+ *
+ * Assigned on first read rather than at board creation, so that a test or a
+ * tool can pin it beforehand and get a reproducible board.
+ */
+export function terrainSeed() {
+    const b = board();
+    if (!b) return 0;
+    if (typeof b.terrainSeed !== 'number') {
+        b.terrainSeed = Math.floor(Math.random() * 0x7fffffff);
+    }
+    return b.terrainSeed;
+}
+
+/**
+ * Paint a tile directly, outside of any Token arriving.
+ *
+ * Nothing in the game calls this — Tokens paint through `setToken`. It exists
+ * for tests and for tools that need to set a board up without placing Tokens.
+ */
+export function paintTile(index, terrainId) {
+    const b = board();
+    if (!b || !isTileIndex(index) || !terrainId) return;
+    b.terrain[index] = { terrainId, paintedAt: b.nextPaintOrder++ };
 }
 
 /**
@@ -577,7 +685,14 @@ export function addToTokenBank(instance, slotCap = Infinity) {
         if (Object.keys(bank).length >= slotCap) return false;
         bank[instance.typeId] = [];
     }
-    bank[instance.typeId].push({ usesRemaining: instance.usesRemaining ?? null });
+    // ⚠️ The Vault stores copies, not instances — its key IS the type, and
+    // everything else about a Token is dropped. `terrain` has to be carried
+    // explicitly or a Token that goes board → Vault → board forgets which Map
+    // produced it (D-T6). Absent rather than null when there is no stamp, so
+    // Vault records stay the size they were.
+    const copy = { usesRemaining: instance.usesRemaining ?? null };
+    if (instance.terrain) copy.terrain = instance.terrain;
+    bank[instance.typeId].push(copy);
     return true;
 }
 
@@ -612,7 +727,7 @@ export function takeFromTokenBank(typeId) {
 
     const [copy] = copies.splice(best, 1);
     if (!copies.length) delete bank[typeId];
-    return createTokenInstance(typeId, copy.usesRemaining ?? null);
+    return createTokenInstance(typeId, copy.usesRemaining ?? null, copy.terrain || null);
 }
 
 // ---------------------------------------------------------------------------
