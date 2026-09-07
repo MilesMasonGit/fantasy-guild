@@ -2,7 +2,9 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault
 } from '../config/playmatTuning.js';
-import { resolveLattice, edgeProfile, LATTICE_SIZE } from '../systems/board/TerrainLattice.js';
+import {
+    resolveLattice, edgeProfile, resolveArtPixels, LATTICE_SIZE
+} from '../systems/board/TerrainLattice.js';
 import { propsForBoard } from '../systems/board/TerrainProps.js';
 import { buildPatchMasks } from '../systems/board/TerrainPatches.js';
 import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
@@ -121,6 +123,21 @@ describe('⭐ No dead sliders', () => {
             return `${b.terrainId}:${on}:${sum}`;
         }).join('|');
 
+    // ⚠️ Water beside FOREST, not beside shore. On the band fixture the sea's
+    // neighbour is already sand, so there is nothing for a beach to be written
+    // onto and the slider would look dead when it is not.
+    const fringeBoard = {};
+    for (let i = 0; i < 36; i++) {
+        fringeBoard[i] = { terrainId: i % 6 < 3 ? 'ocean' : 'forest', paintedAt: i };
+    }
+    const fringe = () => {
+        const { at, palette } = resolveArtPixels(resolveLattice(fringeBoard, seed), seed);
+        const shore = palette.indexOf('shore');
+        let n = 0;
+        for (let i = 0; i < at.length; i++) if (at[i] === shore) n++;
+        return String(n);
+    };
+
     const OBSERVES = {
         edgeSwing: edges,
         edgeRoughness: edges,
@@ -131,6 +148,7 @@ describe('⭐ No dead sliders', () => {
         patchCoverage: patches,
         patchScale: patches,
         bandWidth: bands,
+        fringeWidth: fringe,
         // ⚠️ Strength changes the tint, not the mask, so it has to be observed
         // through the appearance rather than through the geometry.
         bandStrength: () => JSON.stringify(

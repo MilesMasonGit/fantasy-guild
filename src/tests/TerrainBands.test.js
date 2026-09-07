@@ -133,12 +133,14 @@ describe('⚠️ A band is caused by a neighbour, not by having an edge', () => 
         expect([...touches(coastGrid(), 5, 'shore')]).toEqual(['ocean']);
     });
 
-    it('shallows appear against any land, which is what the sea does', () => {
-        // Two boards, because `ocean` declares no `against` and the claim is
-        // that it bands against whatever is there. The coast fixture has sand
-        // between the sea and the trees, so the sea never touches forest on it
-        // — checked separately rather than asserted on a board where it cannot
-        // happen.
+    it('⭐ water never meets anything but sand, because of the beach', () => {
+        // The fringe's whole purpose. Ocean declares no `against`, so it bands
+        // against whatever is there — and after fringing, what is there is
+        // always shore, because a beach is written onto every neighbour first.
+        //
+        // ⚠️ This test used to expect ocean beside forest and had to be
+        // rewritten when the beach landed. That is the right way round: the
+        // guarantee got stronger, so the assertion did.
         expect([...touches(coastGrid(), 5, 'ocean')]).toEqual(['shore']);
 
         const seaMeetsWood = new Array(LATTICE_SIZE * LATTICE_SIZE);
@@ -148,7 +150,8 @@ describe('⚠️ A band is caused by a neighbour, not by having an edge', () => 
                     sx < LATTICE_SIZE / 2 ? 'ocean' : 'forest';
             }
         }
-        expect([...touches(seaMeetsWood, 5, 'ocean')]).toEqual(['forest']);
+        // Sea laid directly against forest, with no sand authored anywhere.
+        expect([...touches(seaMeetsWood, 5, 'ocean')]).toEqual(['shore']);
     });
 
     it('does not band against bare table — a map running out is not a shore', () => {
@@ -196,5 +199,91 @@ describe('Width and stability', () => {
         const a = buildBandMasks(coastGrid(), 31).bands.map(b => Array.from(b.mask).join(''));
         const b = buildBandMasks(coastGrid(), 31).bands.map(b2 => Array.from(b2.mask).join(''));
         expect(a).toEqual(b);
+    });
+});
+
+describe('⭐ Beaches — a fringe written onto the neighbour', () => {
+    /** Sea on the left, forest on the right, and no sand authored anywhere. */
+    function seaAndWood() {
+        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE);
+        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+            for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+                grid[sy * LATTICE_SIZE + sx] =
+                    sx < LATTICE_SIZE / 2 ? 'ocean' : 'forest';
+            }
+        }
+        return grid;
+    }
+
+    it('puts sand between water and land that was never authored', () => {
+        const { palette, fringes } = resolveArtPixels(seaAndWood(), 5);
+        expect(palette).toContain('shore');
+        expect(fringes.map(f => f.terrainId)).toEqual(['shore']);
+    });
+
+    it('⭐ leaves water touching nothing but sand', () => {
+        // The guarantee the owner asked for: water never meets grass directly.
+        const { size, palette, at } = resolveArtPixels(seaAndWood(), 5);
+        const ocean = palette.indexOf('ocean');
+        const shore = palette.indexOf('shore');
+        for (let y = 1; y < size - 1; y++) {
+            for (let x = 1; x < size - 1; x++) {
+                const i = y * size + x;
+                if (at[i] !== ocean) continue;
+                for (const j of [i - 1, i + 1, i - size, i + size]) {
+                    if (at[j] === ocean || at[j] < 0) continue;
+                    expect(palette[at[j]], `water touching ${palette[at[j]]}`).toBe(palette[shore]);
+                }
+            }
+        }
+        expect(shore).toBeGreaterThanOrEqual(0);
+    });
+
+    it('never eats into the water itself', () => {
+        const plain = resolveArtPixels(seaAndWood(), 5, false);
+        const fringed = resolveArtPixels(seaAndWood(), 5);
+        const oceanBefore = plain.palette.indexOf('ocean');
+        const oceanAfter = fringed.palette.indexOf('ocean');
+        let before = 0;
+        let after = 0;
+        for (let i = 0; i < plain.at.length; i++) {
+            if (plain.at[i] === oceanBefore) before++;
+            if (fringed.at[i] === oceanAfter) after++;
+        }
+        expect(after).toBe(before);
+    });
+
+    it('does not fringe onto bare table', () => {
+        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE).fill(null);
+        for (let sy = 0; sy < 6; sy++) {
+            for (let sx = 0; sx < 6; sx++) grid[sy * LATTICE_SIZE + sx] = 'ocean';
+        }
+        const { at, palette, fringes } = resolveArtPixels(grid, 5);
+        expect(fringes).toEqual([]);
+        expect(palette).not.toContain('shore');
+        expect(at.some(v => v >= 0)).toBe(true);
+    });
+
+    it('widens with the tuning slider, and zero removes the beach', () => {
+        const sand = (mult) => {
+            setTuning('fringeWidth', mult);
+            const { at, palette } = resolveArtPixels(seaAndWood(), 5);
+            const shore = palette.indexOf('shore');
+            if (shore < 0) return 0;
+            let n = 0;
+            for (let i = 0; i < at.length; i++) if (at[i] === shore) n++;
+            return n;
+        };
+        const normal = sand(1);
+        expect(sand(0)).toBe(0);
+        expect(sand(3)).toBeGreaterThan(normal);
+    });
+
+    it('can be turned off entirely, leaving the map as the strips drew it', () => {
+        const withFringe = resolveArtPixels(seaAndWood(), 5);
+        const without = resolveArtPixels(seaAndWood(), 5, false);
+        expect(without.fringes).toEqual([]);
+        expect(without.palette).not.toContain('shore');
+        expect(withFringe.palette).toContain('shore');
     });
 });

@@ -164,6 +164,21 @@ export function propSprite(propId) {
 }
 
 /**
+ * The terrain a terrain pushes out onto its *neighbours* — the beach around the
+ * sea.
+ *
+ * ⚠️ The opposite direction to a band. A band shades this terrain's own edge; a
+ * fringe writes a different terrain onto the ground beside it. Sand cannot be a
+ * band on the water, because the sand is not in the water.
+ *
+ * `except` spares neighbours that should meet it directly — a cliff dropping
+ * into the sea rather than shelving into a beach.
+ */
+export function fringeOf(terrainId) {
+    return getTerrain(terrainId)?.fringe || null;
+}
+
+/**
  * How a terrain shades its own outer edge, if it does — concept §6B.
  *
  * `width` is how far in from a triggering neighbour, in art pixels. `tint` and
@@ -249,7 +264,11 @@ export const TERRAIN_TYPES = Object.freeze({
     ocean: {
         id: 'ocean', name: 'Ocean', substrate: 'water', props: [],
         // Shallows: the sea going pale where it runs out of depth.
-        band: { width: 4, tint: '#a8e8ff', amount: 0.45 }
+        band: { width: 4, tint: '#a8e8ff', amount: 0.45 },
+        // And a beach wherever it comes ashore, so water never meets grass
+        // directly. Written onto the neighbour as real shore, so it picks up
+        // the wet-sand band and refuses to grow trees like any other beach.
+        fringe: { terrain: 'shore', width: 3, except: [] }
     }
 });
 

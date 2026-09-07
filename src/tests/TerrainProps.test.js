@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { propsForBoard, propSizePx, PROP_ART_PX } from '../systems/board/TerrainProps.js';
-import { LATTICE_SIZE, SUBTILE_PX, subtileArtPx } from '../systems/board/TerrainLattice.js';
+import {
+    LATTICE_SIZE, SUBTILE_PX, subtileArtPx, resolveArtPixels
+} from '../systems/board/TerrainLattice.js';
 import { TERRAIN_TYPES, propSprite, propsOf } from '../config/registries/terrainRegistry.js';
 
 /**
@@ -136,5 +138,42 @@ describe('Stability and scale', () => {
         // on and reads as pasted on — the same error as cutting a coastline
         // finer than the ground it runs through.
         expect(propSizePx()).toBe(PROP_ART_PX * (SUBTILE_PX / subtileArtPx()));
+    });
+});
+
+describe('⭐ A tree will not grow on a beach (concept §8A)', () => {
+    /** Forest everywhere, with a strip of sea down one side. */
+    function woodByTheSea() {
+        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE).fill('forest');
+        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+            for (let sx = 0; sx < 4; sx++) grid[sy * LATTICE_SIZE + sx] = 'ocean';
+        }
+        return grid;
+    }
+
+    it('drops props whose trunk stands on fringed ground', () => {
+        // The beach is written onto the forest's outer pixels, so a subtile can
+        // still be forest while the ground a tree would stand in is sand. The
+        // subtile grid cannot see that; the art-pixel map can.
+        const grid = woodByTheSea();
+        const unchecked = propsForBoard(grid, 11);
+        const checked = propsForBoard(grid, 11, resolveArtPixels(grid, 11));
+        expect(checked.length).toBeLessThan(unchecked.length);
+    });
+
+    it('⭐ leaves every surviving trunk standing on its own terrain', () => {
+        const grid = woodByTheSea();
+        const pixels = resolveArtPixels(grid, 11);
+        const scale = SUBTILE_PX / subtileArtPx();
+        for (const p of propsForBoard(grid, 11, pixels)) {
+            const ax = Math.min(pixels.size - 1, Math.floor(p.anchorX / scale));
+            const ay = Math.min(pixels.size - 1, Math.floor(p.anchorY / scale));
+            expect(pixels.palette[pixels.at[ay * pixels.size + ax]]).toBe('forest');
+        }
+    });
+
+    it('changes nothing when no map is supplied', () => {
+        const grid = woodByTheSea();
+        expect(propsForBoard(grid, 11)).toEqual(propsForBoard(grid, 11, null));
     });
 });

@@ -7,6 +7,7 @@ import {
     getTerrain, SUBSTRATES, substrateSprite, substrateVariants, artSet, propSprite
 } from '../../../config/registries/terrainRegistry.js';
 import { propsForBoard } from '../../../systems/board/TerrainProps.js';
+import { resolveArtPixels } from '../../../systems/board/TerrainLattice.js';
 import { buildPatchMasks } from '../../../systems/board/TerrainPatches.js';
 import { buildBandMasks, bandAppearance } from '../../../systems/board/TerrainBands.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -128,6 +129,48 @@ function propImage(propId) {
     return null;
 }
 
+/**
+ * Paint a substrate through an art-resolution alpha mask.
+ *
+ * Three passes wanted the same twenty lines — beaches, shore bands and ground
+ * patches all mean "cover exactly these pixels with this ground". Written out
+ * three times it was three places to get the compositing subtly wrong, and the
+ * one thing this renderer has already proved is that a drawing mistake is
+ * invisible to everything except a person looking closely.
+ *
+ * The mask goes onto a canvas the size of the board in ART pixels — 232 square,
+ * not 928 — and is scaled up with smoothing off. Then `destination-in` cuts a
+ * tiled fill down to it. A rectangle per pixel would be exact and cost tens of
+ * thousands of clip-and-draw pairs on every repaint.
+ */
+function paintThroughMask(ctx, mask, maskSize, imageFor) {
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = maskSize;
+    maskCanvas.height = maskSize;
+    const maskCtx = maskCanvas.getContext('2d');
+    const image = maskCtx.createImageData(maskSize, maskSize);
+    for (let i = 0; i < mask.length; i++) image.data[i * 4 + 3] = mask[i];
+    maskCtx.putImageData(image, 0, 0);
+
+    const layer = document.createElement('canvas');
+    layer.width = BOARD_PX;
+    layer.height = BOARD_PX;
+    const layerCtx = layer.getContext('2d');
+    layerCtx.imageSmoothingEnabled = false;
+
+    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+            const img = imageFor(sx, sy);
+            if (!img) return;   // art still loading; onload will redraw
+            layerCtx.drawImage(img, sx * SUBTILE_PX, sy * SUBTILE_PX, SUBTILE_PX, SUBTILE_PX);
+        }
+    }
+
+    layerCtx.globalCompositeOperation = 'destination-in';
+    layerCtx.drawImage(maskCanvas, 0, 0, BOARD_PX, BOARD_PX);
+    ctx.drawImage(layer, 0, 0);
+}
+
 export const TerrainCanvas = ({ terrain, seed }) => {
     const canvasRef = useRef(null);
 
@@ -227,7 +270,25 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 }
             }
 
-            // --- Pass 3: shore bands ----------------------------------------
+            // --- Pass 3: beaches ---------------------------------------------
+            //
+            // Wherever water comes ashore, a seam of sand. Already written into
+            // the terrain map by `resolveArtPixels`, so this only owes those
+            // pixels a coat of the right substrate — and everything after it
+            // treats them as real shore, which is why the wet-sand band lands on
+            // the beach and the forest's dirt patches stop at it.
+            const pixels = resolveArtPixels(grid, seed || 0);
+            for (const { terrainId, mask } of pixels.fringes) {
+                const def = getTerrain(terrainId);
+                const substrate = def && SUBSTRATES[def.substrate];
+                if (!substrate) continue;
+                paintThroughMask(ctx, mask, pixels.size, (sx, sy) => substrateImage(
+                    substrate.id,
+                    variantAt(sx, sy, substrateVariants(substrate.id), seed || 0)
+                ));
+            }
+
+            // --- Pass 4: shore bands ----------------------------------------
             //
             // Each banded terrain redraws its own outer edge in a tinted copy
             // of its own substrate. Same mask-and-composite trick as the
@@ -238,43 +299,16 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 const def = getTerrain(terrainId);
                 const substrate = def && SUBSTRATES[def.substrate];
                 if (!band || !substrate) continue;
-
-                const maskCanvas = document.createElement('canvas');
-                maskCanvas.width = banded.size;
-                maskCanvas.height = banded.size;
-                const maskCtx = maskCanvas.getContext('2d');
-                const image = maskCtx.createImageData(banded.size, banded.size);
-                for (let i = 0; i < mask.length; i++) image.data[i * 4 + 3] = mask[i];
-                maskCtx.putImageData(image, 0, 0);
-
-                const layer = document.createElement('canvas');
-                layer.width = BOARD_PX;
-                layer.height = BOARD_PX;
-                const layerCtx = layer.getContext('2d');
-                layerCtx.imageSmoothingEnabled = false;
-
-                let missingArt = false;
-                for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-                    for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-                        const img = substrateImage(
-                            substrate.id,
-                            variantAt(sx, sy, substrateVariants(substrate.id), seed || 0)
-                        );
-                        if (!img) { missingArt = true; continue; }
-                        layerCtx.drawImage(
-                            tintedImage(img, band.tint, band.amount),
-                            sx * SUBTILE_PX, sy * SUBTILE_PX, SUBTILE_PX, SUBTILE_PX
-                        );
-                    }
-                }
-                if (missingArt) continue;
-
-                layerCtx.globalCompositeOperation = 'destination-in';
-                layerCtx.drawImage(maskCanvas, 0, 0, BOARD_PX, BOARD_PX);
-                ctx.drawImage(layer, 0, 0);
+                paintThroughMask(ctx, mask, banded.size, (sx, sy) => tintedImage(
+                    substrateImage(
+                        substrate.id,
+                        variantAt(sx, sy, substrateVariants(substrate.id), seed || 0)
+                    ),
+                    band.tint, band.amount
+                ));
             }
 
-            // --- Pass 4: patches worn through the ground --------------------
+            // --- Pass 5: patches worn through the ground --------------------
             //
             // Built as an alpha mask at art resolution and scaled up, rather
             // than drawn as thousands of little rectangles. That is both far
@@ -283,56 +317,19 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             // of clip-and-draw pairs on every repaint.
             const patches = buildPatchMasks(grid, seed || 0);
             for (const [substrateId, mask] of Object.entries(patches.masks)) {
-                const substrate = SUBSTRATES[substrateId];
-                if (!substrate) continue;
-
-                // The mask, as a tiny canvas the size of the board in ART
-                // pixels — 232 square, not 928.
-                const maskCanvas = document.createElement('canvas');
-                maskCanvas.width = patches.width;
-                maskCanvas.height = patches.height;
-                const maskCtx = maskCanvas.getContext('2d');
-                const image = maskCtx.createImageData(patches.width, patches.height);
-                for (let i = 0; i < mask.length; i++) image.data[i * 4 + 3] = mask[i];
-                maskCtx.putImageData(image, 0, 0);
-
-                // The patch substrate, tiled across the whole board, then cut
-                // down to the mask. `destination-in` keeps only what the mask
-                // covers — the concept doc's §5 stencil, with the stencil
-                // computed rather than drawn.
-                const layer = document.createElement('canvas');
-                layer.width = BOARD_PX;
-                layer.height = BOARD_PX;
-                const layerCtx = layer.getContext('2d');
-                layerCtx.imageSmoothingEnabled = false;
-
-                let missingArt = false;
-                for (let sy = 0; sy < LATTICE_SIZE; sy++) {
-                    for (let sx = 0; sx < LATTICE_SIZE; sx++) {
-                        const img = substrateImage(
-                            substrateId,
-                            variantAt(sx, sy, substrateVariants(substrateId), seed || 0)
-                        );
-                        if (!img) { missingArt = true; continue; }
-                        layerCtx.drawImage(
-                            img, sx * SUBTILE_PX, sy * SUBTILE_PX, SUBTILE_PX, SUBTILE_PX
-                        );
-                    }
-                }
-                if (missingArt) continue;   // still loading; onload will redraw
-
-                layerCtx.globalCompositeOperation = 'destination-in';
-                layerCtx.drawImage(maskCanvas, 0, 0, BOARD_PX, BOARD_PX);
-
-                ctx.drawImage(layer, 0, 0);
+                if (!SUBSTRATES[substrateId]) continue;
+                paintThroughMask(ctx, mask, patches.width, (sx, sy) => substrateImage(
+                    substrateId,
+                    variantAt(sx, sy, substrateVariants(substrateId), seed || 0)
+                ));
             }
 
-            // --- Pass 5: scenery, back to front -----------------------------
+            // --- Pass 6: scenery, back to front -----------------------------
             //
             // Already sorted by where each prop stands, so painting the list in
             // order is the whole depth rule: a tree lower on the board covers
             // one behind it.
-            for (const prop of propsForBoard(grid, seed || 0)) {
+            for (const prop of propsForBoard(grid, seed || 0, pixels)) {
                 const img = propImage(prop.propId);
                 if (!img) continue;
                 ctx.drawImage(img, prop.x, prop.y, prop.size, prop.size);

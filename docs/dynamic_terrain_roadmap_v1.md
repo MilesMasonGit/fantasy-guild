@@ -330,8 +330,8 @@ independent scatter.
 The owner's stated order (2026-09-07): **get the basic layout working, refine
 prop behaviours, then expand biome types and add ambient animation.**
 
-Remaining: prop behaviour (§8A validation, §8B clustering and connected
-mountain ranges); the rest of the biome roster (§10B — stone, sand and water
+Remaining: prop behaviour (§8B clustering and connected mountain ranges — §8A
+validation landed with the beaches); the rest of the biome roster (§10B — stone, sand and water
 have no props at all); ambient animation (§7); road auto-connecting (§12); the
 map-discovery effect on unpainted ground.
 
@@ -457,6 +457,39 @@ patches. Still only on a state change.
 
 ---
 
+## 6d. Beaches — a fringe written onto the neighbour
+
+Added 2026-09-07, at the owner's request that water never meet grass directly.
+
+⚠️ **The opposite direction to a band, and it could not be one.** A band shades
+a terrain's *own* edge. Sand is not in the water — it is on the land side of the
+line — so a beach has to be written onto the **neighbour**. Ocean declares
+`fringe: { terrain: 'shore', width: 3 }`, and `except` spares any neighbour that
+should meet the water directly, for a cliff rather than a shelf.
+
+**⭐ It rewrites the terrain map, rather than painting sand over the top.** Those
+two would look identical and differ in three ways that matter:
+
+* the wet-sand band sees real shore and darkens it, so a generated beach gets a
+  tideline like an authored one;
+* the forest's dirt patches stop at it instead of speckling the sand;
+* **a tree will not grow on it** — which is concept §8A's validation rule,
+  arriving as a side effect rather than as a feature. `propsForBoard` now takes
+  the art-pixel map and drops any prop whose *trunk* does not stand on the
+  terrain that grew it.
+
+The renderer owes those pixels a coat of sand, and gets the mask back to do it.
+
+**Also:** the chamfer distance transform moved into `TerrainLattice` as
+`distanceFromSeeds` and is shared with the shore bands. Both ask how far a pixel
+is from the water; two implementations would be two chances to disagree about
+where the coast is. The three mask-compositing passes — beaches, bands, patches
+— collapsed into one `paintThroughMask` helper for the same reason.
+
+⚠️ **Redraw is now ~31ms.**
+
+---
+
 ## 6b. Tuning the look
 
 `src/config/playmatTuning.js` holds every number that decides how the playmat
@@ -494,5 +527,7 @@ smoothly, prop density and scatter — plus the ground art set.
 | P4 — props | ✅ Trees done 2026-09-06 | Grass only; no clustering |
 | Ground patches | ✅ Done 2026-09-07 | Dirt on grass — see §6a |
 | Shore bands (§6B) | ✅ Done 2026-09-07 | Tinted art — see §6c |
+| Beaches (fringes) | ✅ Done 2026-09-07 | Water never meets grass — see §6d |
+| Prop validation (§8A) | ✅ Done 2026-09-07 | Fell out of the fringe work |
 | P5+ — tiers, animation, clustering | Deferred | |
 | Tuning panel | ✅ Done 2026-09-07 | See §6b |

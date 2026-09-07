@@ -68,6 +68,13 @@ export const TUNABLES = Object.freeze([
         min: 0, max: 1, step: 0.05, def: 0.65
     },
     {
+        key: 'fringeWidth',
+        group: 'Shorelines',
+        label: 'Beach width',
+        hint: 'How far the sand reaches inland wherever water meets something else. 0 removes the beach.',
+        min: 0, max: 4, step: 0.25, def: 1
+    },
+    {
         key: 'bandWidth',
         group: 'Shorelines',
         label: 'Band width',

@@ -1,7 +1,7 @@
 // Fantasy Guild — The terrain subtile lattice (dynamic terrain roadmap P2).
 
 import { BOARD_SIZE, TILE_PX, TILE_GAP_PX } from '../../config/boardGeometry.js';
-import { substrateArtPx } from '../../config/registries/terrainRegistry.js';
+import { substrateArtPx, fringeOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
@@ -495,10 +495,14 @@ export function edgeStrips(sx, sy, axis, here, there, seed = 0) {
  * displacement independently here would be a second implementation of the one
  * thing P3 already got wrong once.
  *
- * @returns {{size: number, palette: string[], at: Int16Array}} `at` holds an
- *   index into `palette` per art pixel, or -1 for unpainted ground.
+ * @param {boolean} [withFringes] Whether to push fringes onto neighbours — the
+ *   beach around the sea. Off only for the test that checks this map against the
+ *   strips the renderer paints, which knows nothing about fringes.
+ * @returns {{size, palette, at, fringes}} `at` holds an index into `palette` per
+ *   art pixel, or -1 for unpainted ground. `fringes` lists what the fringing
+ *   changed, so the renderer knows which pixels it owes a new coat.
  */
-export function resolveArtPixels(grid, seed = 0) {
+export function resolveArtPixels(grid, seed = 0, withFringes = true) {
     const artPx = subtileArtPx();
     const size = LATTICE_SIZE * artPx;
 
@@ -553,5 +557,114 @@ export function resolveArtPixels(grid, seed = 0) {
         }
     }
 
-    return { size, palette, at };
+    const fringes = withFringes
+        ? applyFringes(at, size, palette, indexOf, idFor)
+        : [];
+
+    return { size, palette, at, fringes };
+}
+
+/**
+ * A chamfer distance transform from a set of seed pixels.
+ *
+ * Distances come back **multiplied by 3** — the weights are 3 sideways and 4
+ * diagonally, the standard cheap approximation to Euclidean distance, and
+ * dividing through would only lose precision. Two sweeps, forward and back.
+ *
+ * Shared rather than duplicated: the shore bands measure how far a pixel is
+ * from the water, and the beach fringe measures the same thing for a different
+ * purpose. Two implementations of one distance would be two chances to disagree
+ * about where the coast is.
+ */
+export function distanceFromSeeds(seeds, size) {
+    const INF = 0x3fff;
+    const dist = new Int16Array(size * size).fill(INF);
+    for (let i = 0; i < seeds.length; i++) if (seeds[i]) dist[i] = 0;
+
+    const relax = (i, j, cost) => {
+        const d = dist[j] + cost;
+        if (d < dist[i]) dist[i] = d;
+    };
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const i = y * size + x;
+            if (x > 0) relax(i, i - 1, 3);
+            if (y > 0) relax(i, i - size, 3);
+            if (x > 0 && y > 0) relax(i, i - size - 1, 4);
+            if (x < size - 1 && y > 0) relax(i, i - size + 1, 4);
+        }
+    }
+    for (let y = size - 1; y >= 0; y--) {
+        for (let x = size - 1; x >= 0; x--) {
+            const i = y * size + x;
+            if (x < size - 1) relax(i, i + 1, 3);
+            if (y < size - 1) relax(i, i + size, 3);
+            if (x < size - 1 && y < size - 1) relax(i, i + size + 1, 4);
+            if (x > 0 && y < size - 1) relax(i, i + size - 1, 4);
+        }
+    }
+    return dist;
+}
+
+/**
+ * Push a terrain's *fringe* out onto its neighbours — the beach around the sea.
+ *
+ * ⚠️ The opposite direction to a shore band. A band shades a terrain's own edge;
+ * a fringe writes a **different terrain** onto the ground next to it. Sand
+ * cannot be a band on the water, because the sand is not in the water — it is on
+ * the land side of the line.
+ *
+ * Done by rewriting the terrain map rather than by drawing sand over the top,
+ * which is what makes everything downstream behave: the wet-sand band sees real
+ * shore and darkens it, the forest's dirt patches stop at it instead of
+ * speckling the beach, and a tree will not grow on it. Painting it as an
+ * overlay would have looked identical and been wrong in all three ways.
+ *
+ * Mutates `at` in place and returns the masks of what changed, so the renderer
+ * knows which pixels it owes a coat of sand.
+ */
+function applyFringes(at, size, palette, indexOf, idFor) {
+    const changed = [];
+
+    for (let source = 0; source < palette.length; source++) {
+        const fringe = fringeOf(palette[source]);
+        if (!fringe) continue;
+
+        const width = Math.max(0, fringe.width * tuning('fringeWidth'));
+        if (width <= 0) continue;
+
+        const seeds = new Uint8ClampedArray(size * size);
+        let anySeed = false;
+        for (let i = 0; i < at.length; i++) {
+            if (at[i] === source) { seeds[i] = 1; anySeed = true; }
+        }
+        if (!anySeed) continue;
+
+        const dist = distanceFromSeeds(seeds, size);
+        const spared = new Set((fringe.except || []).map(id => indexOf.get(id)).filter(i => i != null));
+        const existing = indexOf.get(fringe.terrain);
+
+        const mask = new Uint8ClampedArray(size * size);
+        const limit = width * 3;
+        // ⚠️ The target index is claimed on the first actual write, not up
+        // front. Registering it eagerly put the fringe terrain into the palette
+        // of boards that had none of it — an island alone on the table listed
+        // `shore` among its terrains and nothing had drawn any.
+        let target = -1;
+        for (let i = 0; i < at.length; i++) {
+            const here = at[i];
+            // Never onto itself, onto what it is already becoming, onto bare
+            // table, or onto anything that has asked to be left alone — a cliff
+            // dropping into the sea should not sprout a beach.
+            if (here === source || here === existing || here < 0 || spared.has(here)) continue;
+            if (dist[i] >= limit) continue;
+            if (target < 0) target = idFor(fringe.terrain);
+            at[i] = target;
+            mask[i] = 255;
+        }
+        if (target >= 0) changed.push({ terrainId: fringe.terrain, mask });
+    }
+
+    return changed;
 }

@@ -1,6 +1,6 @@
 // Fantasy Guild — Shore bands: a terrain shading differently near its own edge.
 
-import { resolveArtPixels } from './TerrainLattice.js';
+import { resolveArtPixels, distanceFromSeeds } from './TerrainLattice.js';
 import { bandOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -36,56 +36,21 @@ import { tuning } from '../../config/playmatTuning.js';
  */
 
 /**
- * A chamfer distance transform: how far each pixel is from the nearest pixel of
- * a terrain this one bands against.
+ * Which pixels count as "the thing causing this band", as seeds for the shared
+ * distance transform.
  *
- * Distances are approximate — 3 for a step sideways, 4 for a diagonal, all
- * divided by 3 at the end — which is the standard cheap approximation to true
- * Euclidean distance and is well inside a pixel over the few we care about.
- *
- * @param {Set<number>|null} triggers Palette indices that count. Null means any
- *   painted terrain other than this one.
+ * ⚠️ Unpainted ground never triggers: a coast where the map runs out is not a
+ * shore.
  */
-function distanceToTrigger(at, size, self, triggers) {
-    const INF = 0x3fff;
-    const dist = new Int16Array(size * size).fill(INF);
-
-    // Seeds are the *triggering* pixels themselves, so distance is measured to
-    // the thing causing the band rather than to the nearest boundary of any
-    // kind. ⚠️ Unpainted ground (-1) never triggers: a coast against the bare
-    // table is the map running out, not a shore.
+function triggerSeeds(at, self, triggers) {
+    const seeds = new Uint8ClampedArray(at.length);
     for (let i = 0; i < at.length; i++) {
         const t = at[i];
         if (t < 0 || t === self) continue;
         if (triggers && !triggers.has(t)) continue;
-        dist[i] = 0;
+        seeds[i] = 1;
     }
-
-    const relax = (i, j, cost) => {
-        const d = dist[j] + cost;
-        if (d < dist[i]) dist[i] = d;
-    };
-
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-            const i = y * size + x;
-            if (x > 0) relax(i, i - 1, 3);
-            if (y > 0) relax(i, i - size, 3);
-            if (x > 0 && y > 0) relax(i, i - size - 1, 4);
-            if (x < size - 1 && y > 0) relax(i, i - size + 1, 4);
-        }
-    }
-    for (let y = size - 1; y >= 0; y--) {
-        for (let x = size - 1; x >= 0; x--) {
-            const i = y * size + x;
-            if (x < size - 1) relax(i, i + 1, 3);
-            if (y < size - 1) relax(i, i + size, 3);
-            if (x < size - 1 && y < size - 1) relax(i, i + size + 1, 4);
-            if (x > 0 && y < size - 1) relax(i, i + size - 1, 4);
-        }
-    }
-
-    return dist;
+    return seeds;
 }
 
 /**
@@ -119,7 +84,7 @@ export function buildBandMasks(grid, seed = 0) {
             : null;
         if (triggers && triggers.size === 0) continue;   // nothing here to band against
 
-        const dist = distanceToTrigger(at, size, p, triggers);
+        const dist = distanceFromSeeds(triggerSeeds(at, p, triggers), size);
 
         // Distances came back multiplied by 3 by the chamfer weights.
         const limit = width * 3;
