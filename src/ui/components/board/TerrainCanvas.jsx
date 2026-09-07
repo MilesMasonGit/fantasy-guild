@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { BOARD_PX } from '../../../config/boardGeometry.js';
 import {
-    LATTICE_SIZE, SUBTILE_PX, resolveLattice, variantAt
+    LATTICE_SIZE, SUBTILE_PX, SUBTILE_ART_PX, resolveLattice, variantAt, edgeProfile
 } from '../../../systems/board/TerrainLattice.js';
 import { getTerrain, SUBSTRATES, substrateSprite } from '../../../config/registries/terrainRegistry.js';
 
@@ -27,6 +27,15 @@ import { getTerrain, SUBSTRATES, substrateSprite } from '../../../config/registr
  * which is the one thing pixel art cannot survive. The board's fit-to-window
  * scaling happens in CSS on an ancestor, so it scales the finished picture
  * rather than the arithmetic.
+ *
+ * ## Two passes
+ *
+ * The first fills every subtile flat. The second walks the boundaries between
+ * subtiles holding *different* terrain and repaints a ragged strip across each,
+ * so the join reads as a coastline rather than a cut (roadmap P3). Doing it as a
+ * separate pass rather than per-subtile means every boundary is considered once,
+ * from one side, so the two subtiles either side cannot disagree about where
+ * they meet.
  */
 
 /**
@@ -66,6 +75,23 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             ctx.clearRect(0, 0, BOARD_PX, BOARD_PX);
 
             const grid = resolveLattice(terrain || {}, seed || 0);
+            const at = (sx, sy) => (
+                sx < 0 || sy < 0 || sx >= LATTICE_SIZE || sy >= LATTICE_SIZE
+                    ? null
+                    : grid[sy * LATTICE_SIZE + sx]
+            );
+
+            /** One subtile's substrate image, or null while it is still loading. */
+            const imageFor = (terrainId, sx, sy) => {
+                const def = getTerrain(terrainId);
+                const substrate = def && SUBSTRATES[def.substrate];
+                if (!substrate) return null;
+                return substrateImage(
+                    substrate.id, variantAt(sx, sy, substrate.variants, seed || 0)
+                );
+            };
+
+            // --- Pass 1: flat fills -----------------------------------------
             for (let sy = 0; sy < LATTICE_SIZE; sy++) {
                 for (let sx = 0; sx < LATTICE_SIZE; sx++) {
                     const terrainId = grid[sy * LATTICE_SIZE + sx];
@@ -74,15 +100,76 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                     // sits on, which is what "nobody has been here" looks like.
                     if (!terrainId) continue;
 
-                    const def = getTerrain(terrainId);
-                    const substrate = def && SUBSTRATES[def.substrate];
-                    if (!substrate) continue;
-
-                    const variant = variantAt(sx, sy, substrate.variants, seed || 0);
-                    const img = substrateImage(substrate.id, variant);
+                    const img = imageFor(terrainId, sx, sy);
                     if (!img) continue;   // still loading; onload will redraw
 
                     ctx.drawImage(img, sx * SUBTILE_PX, sy * SUBTILE_PX, SUBTILE_PX, SUBTILE_PX);
+                }
+            }
+
+            // --- Pass 2: ragged boundaries ----------------------------------
+            //
+            // Art is 16px shown at 32px, so one art pixel is two on the canvas.
+            // Everything below steps in art pixels and multiplies up, which is
+            // what keeps the frontier on the pixel grid rather than half a pixel
+            // off it — the one thing that would make this look blurry.
+            const scale = SUBTILE_PX / SUBTILE_ART_PX;
+
+            const raggedEdge = (sx, sy, axis) => {
+                const here = at(sx, sy);
+                const there = axis === 'v' ? at(sx + 1, sy) : at(sx, sy + 1);
+                // Only two *different* terrains have anything to blend. An edge
+                // against bare table stays crisp — there is no ground under it
+                // to blend into, and the island's outline is the ownership
+                // model's job, not this one's.
+                if (!here || !there || here === there) return;
+
+                const profile = edgeProfile(sx, sy, axis, seed || 0);
+
+                for (let i = 0; i < SUBTILE_ART_PX; i++) {
+                    const push = profile[i];
+                    if (push === 0) continue;
+
+                    // A positive push moves `here` across into `there`; a
+                    // negative one pulls `there` back over `here`. Either way
+                    // the winner's texture is drawn over the loser's ground.
+                    const winner = push > 0 ? here : there;
+                    const winnerAt = push > 0
+                        ? [sx, sy]
+                        : (axis === 'v' ? [sx + 1, sy] : [sx, sy + 1]);
+                    const img = imageFor(winner, winnerAt[0], winnerAt[1]);
+                    if (!img) continue;
+
+                    const depth = Math.abs(push);
+                    const boundary = axis === 'v'
+                        ? (sx + 1) * SUBTILE_ART_PX
+                        : (sy + 1) * SUBTILE_ART_PX;
+                    const from = push > 0 ? boundary : boundary - depth;
+
+                    const x = axis === 'v' ? from : sx * SUBTILE_ART_PX + i;
+                    const y = axis === 'v' ? sy * SUBTILE_ART_PX + i : from;
+                    const w = axis === 'v' ? depth : 1;
+                    const h = axis === 'v' ? 1 : depth;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(x * scale, y * scale, w * scale, h * scale);
+                    ctx.clip();
+                    // Drawn at the winner's own subtile origin so the texture
+                    // reads as that ground continuing, not as a patch.
+                    ctx.drawImage(
+                        img,
+                        winnerAt[0] * SUBTILE_PX, winnerAt[1] * SUBTILE_PX,
+                        SUBTILE_PX, SUBTILE_PX
+                    );
+                    ctx.restore();
+                }
+            };
+
+            for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+                for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+                    if (sx + 1 < LATTICE_SIZE) raggedEdge(sx, sy, 'v');
+                    if (sy + 1 < LATTICE_SIZE) raggedEdge(sx, sy, 'h');
                 }
             }
         };

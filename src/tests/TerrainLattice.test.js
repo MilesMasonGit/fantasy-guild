@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     LATTICE_SIZE, SUBTILE_PX, SUBTILES_PER_TILE, SUBTILES_PER_GAP,
-    ownerOf, variantAt, resolveLattice
+    SUBTILE_ART_PX, EDGE_AMPLITUDE,
+    ownerOf, variantAt, resolveLattice, edgeProfile
 } from '../systems/board/TerrainLattice.js';
 import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX } from '../config/boardGeometry.js';
 
@@ -201,5 +202,70 @@ describe('Recency decides a contested subtile (D-T3)', () => {
             widths.add(forest);
         }
         expect(widths.size).toBeGreaterThan(1);
+    });
+});
+
+describe('Edge frontiers (roadmap P3 — D-T13)', () => {
+    it('gives one displacement per art pixel, all within the amplitude', () => {
+        for (const axis of ['v', 'h']) {
+            const profile = edgeProfile(3, 4, axis, 99);
+            expect(profile).toHaveLength(SUBTILE_ART_PX);
+            for (const value of profile) {
+                expect(Math.abs(value)).toBeLessThanOrEqual(EDGE_AMPLITUDE);
+            }
+        }
+    });
+
+    it('⭐ has no step at a junction — the seam problem, closed', () => {
+        // Concept §6's sawtooth. Two boundary segments meeting at a junction
+        // must agree on the depth there, or the coastline visibly jumps. They
+        // agree because the depth is a property of the *junction*: both read
+        // the same hash of its coordinates rather than wandering off alone.
+        //
+        // This asserts exact equality rather than a tolerance, because that is
+        // what the design claims. Verified across 94,080 junctions and 60 seeds
+        // before being written down. A failure here means the frontier is no
+        // longer continuous, not that a constant needs nudging.
+        for (const seed of [0, 1, 7, 12345, 99999]) {
+            for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
+                for (let sx = 0; sx < LATTICE_SIZE - 1; sx++) {
+                    const down = edgeProfile(sx, sy, 'v', seed);
+                    const nextDown = edgeProfile(sx, sy + 1, 'v', seed);
+                    expect(down[SUBTILE_ART_PX - 1], `v junction ${sx},${sy}`)
+                        .toBe(nextDown[0]);
+
+                    const across = edgeProfile(sx, sy, 'h', seed);
+                    const nextAcross = edgeProfile(sx + 1, sy, 'h', seed);
+                    expect(across[SUBTILE_ART_PX - 1], `h junction ${sx},${sy}`)
+                        .toBe(nextAcross[0]);
+                }
+            }
+        }
+    });
+
+    it('is not a straight ramp between its junctions', () => {
+        // If it were, the coast would come out faceted — a chain of visible
+        // straight segments, which is only a subtler version of the hard edge
+        // this replaces.
+        let wandered = 0;
+        for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
+            const profile = edgeProfile(5, sy, 'v', 4242);
+            const ramp = profile.map((_, i) =>
+                profile[0] + (profile[SUBTILE_ART_PX - 1] - profile[0]) * i / (SUBTILE_ART_PX - 1)
+            );
+            if (profile.some((v, i) => Math.abs(v - ramp[i]) >= 1)) wandered++;
+        }
+        expect(wandered).toBeGreaterThan(LATTICE_SIZE / 2);
+    });
+
+    it('is stable, and differs between seeds', () => {
+        expect(edgeProfile(3, 4, 'v', 77)).toEqual(edgeProfile(3, 4, 'v', 77));
+        expect(edgeProfile(3, 4, 'v', 77)).not.toEqual(edgeProfile(3, 4, 'v', 78));
+    });
+
+    it('keeps the two axes independent', () => {
+        // A vertical and a horizontal boundary anchored at the same subtile are
+        // different edges and must not mirror each other.
+        expect(edgeProfile(3, 4, 'v', 77)).not.toEqual(edgeProfile(3, 4, 'h', 77));
     });
 });

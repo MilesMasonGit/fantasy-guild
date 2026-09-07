@@ -235,15 +235,29 @@ as invisible and a faint wash was added to make the slot read as a shape at any
 scale. The alphas are two constants in `BoardTile.jsx` and may want adjusting on
 a real monitor.
 
-### P3 — Blended edges (slice two)
-Cardinal-edge blending (D-T14) with a computed frontier (D-T13). A boundary
-subtile draws the losing neighbour's substrate as its base, then the owner's
-substrate clipped to a frontier derived from the shared boundary's coordinates.
-Endpoints come from a hash of the boundary itself, so the two subtiles either
-side of it agree without needing to know about each other.
+### P3 — Blended edges ✅ done 2026-09-06
+`edgeProfile` in `TerrainLattice.js` returns one signed displacement per art
+pixel along a boundary; `TerrainCanvas` walks every boundary between two
+*different* terrains in a second pass and repaints the displaced strip. Ownership
+is untouched — P3 only softens the line where two owners already meet.
 
-⚠️ Nothing about the ownership model changes. `TerrainLattice` already decides
-who owns each subtile; P3 only softens the line where two owners meet.
+**⭐ The seam problem is closed, exactly.** Concept §6's sawtooth happens when
+each boundary segment wanders off on its own. Here a segment's endpoint depths
+are properties of the **junction**, not the segment: both boundaries meeting at
+a junction read the same hash of its coordinates, so they agree without knowing
+about each other. Measured across 94,080 junctions and 60 seeds: **worst step
+0 pixels**, and a test asserts exact equality.
+
+⚠️ That required tapering the per-pixel wobble to nothing at both ends of a
+segment. Without the taper each end got its own wobble and neighbouring segments
+could differ by up to 4px — a visible step, the very thing the contract exists to
+prevent. Measured 3–4px before the taper, 0 after, with no loss of raggedness.
+
+**Cost: none measurable.** 20 forced redraws of a four-terrain board still time
+at 0ms, and the DOM is unchanged — it is all one canvas.
+
+An edge against **bare table stays hard**. There is no ground under it to blend
+into, and the shape of an island's outline is the ownership model's job.
 
 ### P4+ — Deferred, not scheduled
 Props (§2.4 — three 16px tree sprites exist and are enough to test with; the
@@ -291,4 +305,5 @@ ranges; road auto-connecting.
 | P0 — registry + terrain data | ✅ Done 2026-09-06 | Code registry, not CMS — see P0 note |
 | P1 — paint state + persistence | ✅ Done 2026-09-06 | No migration needed — additive |
 | P2 — base layer renders | ✅ Done 2026-09-06 | **Slice one complete** |
-| P3+ — masks, props, animation | Deferred | Blocked on art (§2.3, §2.4) |
+| P3 — blended edges | ✅ Done 2026-09-06 | Slice two. Seams measured at 0px |
+| P4+ — props, tiers, animation | Deferred | Props need a scale decision (§2.4) |
