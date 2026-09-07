@@ -1,6 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { patchNoise, buildPatchMasks } from '../systems/board/TerrainPatches.js';
-import { LATTICE_SIZE, subtileArtPx } from '../systems/board/TerrainLattice.js';
+import {
+    LATTICE_SIZE, subtileArtPx, resolveArtPixels
+} from '../systems/board/TerrainLattice.js';
 import { patchOf, TERRAIN_TYPES } from '../config/registries/terrainRegistry.js';
 import { setTuning, resetTuning } from '../config/playmatTuning.js';
 
@@ -23,7 +25,7 @@ const flat = (terrainId) => new Array(LATTICE_SIZE * LATTICE_SIZE).fill(terrainI
 /** What fraction of the eligible ground a mask actually covers. */
 function coveredFraction(terrainId, seed = 5) {
     const grid = flat(terrainId);
-    const { masks } = buildPatchMasks(grid, seed);
+    const { masks } = buildPatchMasks(resolveArtPixels(grid, seed), seed);
     const substrate = patchOf(terrainId)?.substrate;
     const mask = masks[substrate];
     if (!mask) return 0;
@@ -99,52 +101,80 @@ describe('Patches stay where they belong', () => {
     it('puts nothing on terrain that declares none', () => {
         for (const id of Object.keys(TERRAIN_TYPES)) {
             if (patchOf(id)) continue;
-            expect(buildPatchMasks(flat(id), 5).masks, id).toEqual({});
+            expect(buildPatchMasks(resolveArtPixels(flat(id), 5), 5).masks, id).toEqual({});
         }
     });
 
     it('puts nothing on unpainted ground', () => {
         const empty = new Array(LATTICE_SIZE * LATTICE_SIZE).fill(null);
-        expect(buildPatchMasks(empty, 5).masks).toEqual({});
+        expect(buildPatchMasks(resolveArtPixels(empty, 5), 5).masks).toEqual({});
     });
 
     it('⭐ stops at the edge of the terrain that grew it', () => {
         // Half the board grass, half sand. Dirt worn into the grass must not
         // continue into the sand — the noise itself has no idea a boundary is
         // there, so this is the mask being gated by terrain, not by the noise.
+        //
+        // ⚠️ Asserted against the terrain map rather than against a straight
+        // line at the nominal boundary. The boundary is ragged, so grass really
+        // does extend past where the subtile grid says it stops, and dirt in
+        // that overhang is correct. An earlier version of this test measured
+        // against an x coordinate and started failing the moment patches became
+        // accurate enough to follow the drawn edge.
         const grid = flat('shore');
         for (let sy = 0; sy < LATTICE_SIZE; sy++) {
             for (let sx = 0; sx < Math.floor(LATTICE_SIZE / 2); sx++) {
                 grid[sy * LATTICE_SIZE + sx] = 'meadow';
             }
         }
-        const { masks } = buildPatchMasks(grid, 5);
-        const mask = masks.dirt;
-        const s = size();
-        const boundaryPx = Math.floor(LATTICE_SIZE / 2) * artPx();
+        const pixels = resolveArtPixels(grid, 5);
+        const mask = buildPatchMasks(pixels, 5).masks.dirt;
+        const meadow = pixels.palette.indexOf('meadow');
 
-        let beyond = 0;
-        let within = 0;
-        for (let py = 0; py < s; py++) {
-            for (let px = 0; px < s; px++) {
-                if (!mask[py * s + px]) continue;
-                if (px >= boundaryPx) beyond++; else within++;
-            }
+        let onMeadow = 0;
+        let elsewhere = 0;
+        for (let i = 0; i < mask.length; i++) {
+            if (!mask[i]) continue;
+            if (pixels.at[i] === meadow) onMeadow++; else elsewhere++;
         }
-        expect(within).toBeGreaterThan(0);
-        expect(beyond, 'dirt bled onto the sand').toBe(0);
+        expect(onMeadow).toBeGreaterThan(0);
+        expect(elsewhere, 'dirt worn through ground that never asked for it').toBe(0);
     });
 
     it('reports a mask the size of the board in art pixels', () => {
-        const built = buildPatchMasks(flat('meadow'), 5);
+        const built = buildPatchMasks(resolveArtPixels(flat('meadow'), 5), 5);
         expect(built.width).toBe(size());
         expect(built.height).toBe(size());
         expect(built.masks.dirt.length).toBe(size() * size());
     });
 
     it('is identical every time', () => {
-        const a = buildPatchMasks(flat('meadow'), 77).masks.dirt;
-        const b = buildPatchMasks(flat('meadow'), 77).masks.dirt;
+        const a = buildPatchMasks(resolveArtPixels(flat('meadow'), 77), 77).masks.dirt;
+        const b = buildPatchMasks(resolveArtPixels(flat('meadow'), 77), 77).masks.dirt;
         expect(Array.from(a)).toEqual(Array.from(b));
+    });
+});
+
+describe('⭐ Patches respect the ground the renderer actually drew', () => {
+    it('does not speckle dirt across a beach', () => {
+        // ⚠️ The regression. Patches used to be gated by the SUBTILE lattice,
+        // so a forest subtile whose outer pixels had been fringed into beach
+        // still wore dirt through them — the patch had no idea the ground under
+        // it had become sand. Reported from the running game, not caught here,
+        // because nothing was asking the same question the renderer answers.
+        const grid = new Array(LATTICE_SIZE * LATTICE_SIZE).fill('forest');
+        for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+            for (let sx = 0; sx < 5; sx++) grid[sy * LATTICE_SIZE + sx] = 'ocean';
+        }
+        const pixels = resolveArtPixels(grid, 5);
+        const mask = buildPatchMasks(pixels, 5).masks.dirt;
+        const shore = pixels.palette.indexOf('shore');
+        expect(shore).toBeGreaterThanOrEqual(0);   // a beach really was made
+
+        let onSand = 0;
+        for (let i = 0; i < mask.length; i++) {
+            if (mask[i] && pixels.at[i] === shore) onSand++;
+        }
+        expect(onSand, 'dirt worn through the beach').toBe(0);
     });
 });

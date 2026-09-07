@@ -1,6 +1,6 @@
 // Fantasy Guild — Patches of one substrate showing through another.
 
-import { LATTICE_SIZE, hash01, subtileArtPx } from './TerrainLattice.js';
+import { hash01 } from './TerrainLattice.js';
 import { patchOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -29,6 +29,12 @@ import { tuning } from '../../config/playmatTuning.js';
  *
  * What *does* stop a patch is the terrain underneath changing to something that
  * has no patches declared — dirt worn into grass simply stops at the sand.
+ *
+ * ⚠️ Which is why this reads the **art-pixel** map rather than the subtile
+ * lattice. Gated per subtile, dirt speckled straight across the beaches fringed
+ * onto a forest's edge: the subtile was still forest, so the patch had no idea
+ * the ground beneath it had become sand. Per pixel it stops where the sand
+ * starts, because it is asking the same question the renderer answers.
  */
 
 /**
@@ -50,6 +56,43 @@ const smooth = (t) => t * t * (3 - 2 * t);
 const CALIBRATION_SAMPLES = 4096;
 
 /**
+ * The noise field, kept between repaints.
+ *
+ * ⚠️ It depends on the **seed and the clump size only** — not on the terrain —
+ * so recomputing it whenever a Token moves was fifty thousand evaluations of
+ * four hashes each to arrive at exactly the number it arrived at last time.
+ * About 4ms of a repaint, spent reproducing a constant.
+ *
+ * Held as one field for the whole board rather than only the patched parts:
+ * which parts are patched changes with the terrain, and a cache that had to be
+ * invalidated whenever the board changed would not be a cache.
+ */
+let noiseCache = { key: null, field: null, quantiles: null };
+
+function noiseField(size, seed, cell) {
+    const key = `${size}|${seed}|${cell}`;
+    if (noiseCache.key === key) return noiseCache;
+
+    const field = new Float32Array(size * size);
+    for (let py = 0; py < size; py++) {
+        for (let px = 0; px < size; px++) {
+            field[py * size + px] = patchNoise(px, py, seed, cell);
+        }
+    }
+
+    // Calibration comes off the field itself now, rather than from a second
+    // set of samples taken at made-up coordinates — it is the real
+    // distribution of the real board, and it is already in memory.
+    const step = Math.max(1, Math.floor(field.length / CALIBRATION_SAMPLES));
+    const sample = [];
+    for (let i = 0; i < field.length; i += step) sample.push(field[i]);
+    sample.sort((a, b) => a - b);
+
+    noiseCache = { key, field, quantiles: sample };
+    return noiseCache;
+}
+
+/**
  * ⚠️ **Coverage has to be calibrated, not used as a threshold directly.**
  *
  * Interpolating between four uniform random corners does not give a uniform
@@ -58,32 +101,15 @@ const CALIBRATION_SAMPLES = 4096;
  * board it came out at **1.6%**, an order of magnitude short of what the
  * terrain asked for, and the first version of this shipped that.
  *
- * Rather than fight the distribution, this measures it: sample the noise,
- * sort it, and let coverage pick a **quantile**. Then "0.18" means what it says
- * — 18% of the ground is worn through — for every terrain, whatever the noise
- * happens to look like at that scale.
- *
- * Sampled at fixed positions rather than random ones so the calibration is
- * itself deterministic and the board cannot shimmer between redraws.
+ * Rather than fight the distribution, this measures it: coverage picks a
+ * **quantile** of the sorted noise. Then "0.18" means what it says — 18% of the
+ * ground is worn through — for every terrain, whatever the noise happens to
+ * look like at that scale.
  */
-function calibrate(seed, cell) {
-    const samples = new Float64Array(CALIBRATION_SAMPLES);
-    const side = Math.sqrt(CALIBRATION_SAMPLES) | 0;
-    // Spread over a region much larger than one noise cell, and deliberately
-    // not a multiple of it, so the sample is not taken from the same phase of
-    // every cell.
-    const stride = cell * 3 + 1;
-    for (let i = 0; i < CALIBRATION_SAMPLES; i++) {
-        const x = (i % side) * stride;
-        const y = ((i / side) | 0) * stride;
-        samples[i] = patchNoise(x, y, seed, cell);
-    }
-    samples.sort();
-    return (coverage) => {
-        if (coverage <= 0) return -Infinity;   // nothing is below this
-        if (coverage >= 1) return Infinity;    // everything is
-        return samples[Math.floor(coverage * (CALIBRATION_SAMPLES - 1))];
-    };
+function thresholdFrom(quantiles, coverage) {
+    if (coverage <= 0) return -Infinity;   // nothing is below this
+    if (coverage >= 1) return Infinity;    // everything is
+    return quantiles[Math.floor(coverage * (quantiles.length - 1))];
 }
 
 /**
@@ -117,47 +143,40 @@ export function patchNoise(px, py, seed, cell = NOISE_CELL) {
  * which is both faster than drawing thousands of little rectangles and the only
  * way to keep the patch edges on the pixel grid.
  *
- * @param {Array<string|null>} grid A resolved lattice from `resolveLattice`.
+ * @param {object} artPixels A resolved art-pixel map from `resolveArtPixels`.
  * @param {number} seed The save's terrain seed.
  * @returns {{width: number, height: number, masks: Record<string, Uint8ClampedArray>}}
  *   Each mask is one byte per art pixel: 255 where that substrate shows, 0
  *   where it does not. Empty `masks` when no terrain on the board has patches.
  */
-export function buildPatchMasks(grid, seed = 0) {
-    const artPx = subtileArtPx();
-    const size = LATTICE_SIZE * artPx;
+export function buildPatchMasks(artPixels, seed = 0) {
+    const { size, palette, at } = artPixels;
     const coverageScale = tuning('patchCoverage');
     const cell = Math.max(2, Math.round(NOISE_CELL * tuning('patchScale')));
 
-    // Which subtiles want patches at all, resolved once rather than per pixel.
-    // Most boards have large runs of terrain with none, and the per-pixel noise
-    // is by far the expensive part.
-    const wants = new Array(grid.length);
-    const substrates = new Set();
-    let any = false;
-    for (let i = 0; i < grid.length; i++) {
-        const patch = grid[i] ? patchOf(grid[i]) : null;
-        if (!patch || patch.coverage <= 0) { wants[i] = null; continue; }
-        wants[i] = patch;
-        substrates.add(patch.substrate);
-        any = true;
-    }
-    if (!any) return { width: size, height: size, masks: {} };
+    // Which terrains want patches at all, resolved once per palette entry
+    // rather than once per pixel — the per-pixel noise is the expensive part.
+    const wants = palette.map(id => {
+        const patch = patchOf(id);
+        return patch && patch.coverage > 0 ? patch : null;
+    });
+    const substrates = new Set(wants.filter(Boolean).map(p => p.substrate));
+    if (substrates.size === 0) return { width: size, height: size, masks: {} };
 
     const masks = {};
     for (const substrate of substrates) {
         masks[substrate] = new Uint8ClampedArray(size * size);
     }
 
-    // One calibration for the whole board — the noise has the same statistics
-    // everywhere, so every terrain's coverage can be read off the same curve.
-    const thresholdFor = calibrate(seed, cell);
+    // One noise field and one calibration for the whole board, both cached
+    // across repaints — see `noiseField`.
+    const { field, quantiles } = noiseField(size, seed, cell);
     const thresholds = new Map();
 
     for (let py = 0; py < size; py++) {
-        const sy = (py / artPx) | 0;
         for (let px = 0; px < size; px++) {
-            const patch = wants[sy * LATTICE_SIZE + ((px / artPx) | 0)];
+            const terrain = at[py * size + px];
+            const patch = terrain >= 0 ? wants[terrain] : null;
             if (!patch) continue;
 
             // Below the threshold is worn through, and the threshold is the
@@ -165,8 +184,10 @@ export function buildPatchMasks(grid, seed = 0) {
             // `calibrate`. Cached per coverage value, since a board has only a
             // handful of distinct ones.
             const wanted = patch.coverage * coverageScale;
-            if (!thresholds.has(wanted)) thresholds.set(wanted, thresholdFor(wanted));
-            if (patchNoise(px, py, seed, cell) < thresholds.get(wanted)) {
+            if (!thresholds.has(wanted)) {
+                thresholds.set(wanted, thresholdFrom(quantiles, wanted));
+            }
+            if (field[py * size + px] < thresholds.get(wanted)) {
                 masks[patch.substrate][py * size + px] = 255;
             }
         }

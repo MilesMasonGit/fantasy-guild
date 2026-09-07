@@ -155,15 +155,24 @@ export const TOKEN_TERRAIN = Object.freeze({
     token_copper_rubble: 'hills',
 
     // --- Timber -----------------------------------------------------------
+    //
+    // Broadleaf goes to the oak wood, conifer to the fir wood. The two are the
+    // same ground in different light, so placing a stand of firs beside a stand
+    // of oaks is what the tone fade exists to make look right.
     token_birch_forest: 'forest',
     token_birch_tree: 'forest',
-    token_cedar_tree: 'forest',
     token_ebony_tree: 'forest',
-    token_fir_forest: 'forest',
     token_mahogany_forest: 'forest',
     token_mahogany_tree: 'forest',
     token_maple_forest: 'forest',
     token_maple_tree: 'forest',
+    token_cedar_tree: 'fir_forest',
+    token_fir_forest: 'fir_forest',
+
+    // ⚠️ Pooled, and deliberately overridden. Oak Forest produces Fir Trees, so
+    // without this a fir would lay down oak wood — the one Token whose own name
+    // contradicts the Map it comes out of.
+    token_fir_tree: 'fir_forest',
 
     // --- Orchard and field ------------------------------------------------
     token_cherry_tree: 'farmland',

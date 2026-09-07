@@ -1,6 +1,9 @@
 // Fantasy Guild — Scenery scattered over the terrain (dynamic terrain P4).
 
 import { LATTICE_SIZE, SUBTILE_PX, hash01, subtileArtPx } from './TerrainLattice.js';
+
+/** Board pixels per art pixel — how the anchor maps onto the terrain map. */
+const artPx = () => SUBTILE_PX / subtileArtPx();
 import { propsOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -71,12 +74,17 @@ export function propSizePx() {
  *
  * @param {Array<string|null>} grid A resolved lattice from `resolveLattice`.
  * @param {number} seed The save's terrain seed.
+ * @param {object} [artPixels] A resolved art-pixel map. When given, a prop whose
+ *   trunk does not stand on the terrain that grew it is dropped — concept §8A's
+ *   validation rule. That happens wherever a beach has been fringed onto a
+ *   forest's edge: the subtile is still forest, but those pixels are sand now,
+ *   and a fir standing in it would be growing out of a beach.
  * @returns {Array<{propId, x, y, anchorX, anchorY, sx, sy, size}>}
  *   `x`/`y` are the sprite's top-left in board pixels, already offset so the
  *   sprite's base sits on its anchor; `anchorX`/`anchorY` are that base;
  *   `sx`/`sy` the subtile it grew in. Sorted back-to-front.
  */
-export function propsForBoard(grid, seed = 0) {
+export function propsForBoard(grid, seed = 0, artPixels = null) {
     const size = propSizePx();
     // One art pixel of a prop, in board pixels. Anchors snap to this so a
     // sprite lands on the pixel grid rather than half a pixel off it.
@@ -112,6 +120,16 @@ export function propsForBoard(grid, seed = 0) {
                 (sx + margin + hash01(sx, sy, CHANNEL_X, seed) * span) * SUBTILE_PX;
             const anchorY =
                 (sy + margin + hash01(sx, sy, CHANNEL_Y, seed) * span) * SUBTILE_PX;
+
+            // ⚠️ Does the trunk actually stand on the ground that grew it?
+            // The subtile says forest; a beach fringed across its edge says
+            // sand. Checked at the anchor, which is the one pixel that decides
+            // what a tree is rooted in.
+            if (artPixels) {
+                const ax = Math.min(artPixels.size - 1, Math.floor(anchorX / (SUBTILE_PX / artPx())));
+                const ay = Math.min(artPixels.size - 1, Math.floor(anchorY / (SUBTILE_PX / artPx())));
+                if (artPixels.palette[artPixels.at[ay * artPixels.size + ax]] !== terrainId) continue;
+            }
 
             out.push({
                 propId,

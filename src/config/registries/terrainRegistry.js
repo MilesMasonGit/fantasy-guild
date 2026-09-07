@@ -156,11 +156,65 @@ export function substrateSprite(substrateId, variant = 0, set = activeArtSet) {
  * none. Adding some is two fields here and no code.
  */
 /** The scenery that exists as art, in `public/assets/playmat/props/`. */
-const TREES = Object.freeze(['prop_tree_fir', 'prop_tree_maple', 'prop_tree_oak']);
+const BROADLEAF = Object.freeze(['prop_tree_oak', 'prop_tree_maple']);
+const CONIFER = Object.freeze(['prop_tree_fir']);
 
 /** Where a prop's art lives. Props are 16px whichever ground art set is live. */
 export function propSprite(propId) {
     return `/assets/playmat/props/${propId}.png`;
+}
+
+/**
+ * A terrain's overall colouring, if it has one.
+ *
+ * ⚠️ Not a band. A band shades a terrain's *rim*; a tone colours the whole of
+ * it, and exists so that two terrains on the same substrate can look different
+ * at all. A fir wood and an oak wood are both grass — without a tone they are
+ * the same picture.
+ *
+ * Tones fade into each other across a boundary rather than meeting at one; see
+ * `TerrainTones`. Keep them gentle. This is a wash over the art, not a repaint
+ * of it, and a strong one will flatten the texture underneath into a colour.
+ */
+export function toneOf(terrainId) {
+    return getTerrain(terrainId)?.tone || null;
+}
+
+/**
+ * The terrain a terrain pushes out onto its *neighbours* — the beach around the
+ * sea.
+ *
+ * ⚠️ The opposite direction to a band. A band shades this terrain's own edge; a
+ * fringe writes a different terrain onto the ground beside it. Sand cannot be a
+ * band on the water, because the sand is not in the water.
+ *
+ * `except` spares neighbours that should meet it directly — a cliff dropping
+ * into the sea rather than shelving into a beach.
+ */
+export function fringeOf(terrainId) {
+    return getTerrain(terrainId)?.fringe || null;
+}
+
+/**
+ * How a terrain shades its own outer edge, if it does — concept §6B.
+ *
+ * `width` is how far in from a triggering neighbour, in art pixels. `tint` and
+ * `amount` say how the terrain's own substrate is recoloured there: a light
+ * cyan wash on water reads as shallows, a dark wash on sand reads as wet.
+ *
+ * ⚠️ `against` lists which neighbours cause the band. Omit it and *any* painted
+ * neighbour does. That default is right for shallows — the sea shelves wherever
+ * it meets land — and wrong for wet sand, which is caused by water and not by
+ * having an edge. Without it a beach came out wet where it met the forest.
+ *
+ * Deliberately a property of one terrain rather than of a *pair* of them.
+ * Ocean shading its edge and sand shading its edge produce deep → shallow → wet
+ * → dry between them without either knowing the other is there, and the same
+ * declaration works against any neighbour.
+ */
+export function bandOf(terrainId) {
+    const terrain = getTerrain(terrainId);
+    return terrain?.band || null;
 }
 
 /**
@@ -187,18 +241,36 @@ export const TERRAIN_TYPES = Object.freeze({
         id: 'meadow', name: 'Meadow', substrate: 'grass',
         // Open ground with the odd tree standing in it, and bare earth worn
         // through where it has been walked over.
-        props: TREES, propDensity: 0.05,
+        props: BROADLEAF, propDensity: 0.05,
         patch: { substrate: 'dirt', coverage: 0.18 }
     },
+    // ⚠️ The two forests are the same substrate and differ by **tone alone**.
+    // That is the point of tones: a ragged boundary is invisible between two
+    // terrains drawn on identical ground, so the only thing separating an oak
+    // wood from a fir wood is colour — and it has to fade, or it is a line.
     forest: {
-        id: 'forest', name: 'Forest', substrate: 'grass',
-        props: TREES, propDensity: 0.22,
+        id: 'forest', name: 'Oak Forest', substrate: 'grass',
+        props: BROADLEAF, propDensity: 0.22,
         // Less than the meadow: leaf litter and shade, not footfall.
-        patch: { substrate: 'dirt', coverage: 0.12 }
+        patch: { substrate: 'dirt', coverage: 0.12 },
+        // Warm and open — a shade brighter than plain grass.
+        tone: { tint: '#b9d46a', amount: 0.16 }
+    },
+    fir_forest: {
+        id: 'fir_forest', name: 'Fir Forest', substrate: 'grass',
+        props: CONIFER, propDensity: 0.30,
+        patch: { substrate: 'dirt', coverage: 0.08 },
+        // Colder and darker, and denser with it.
+        tone: { tint: '#1d3a2a', amount: 0.34 }
     },
     hills: { id: 'hills', name: 'Hills', substrate: 'stone', props: [] },
     mountain: { id: 'mountain', name: 'Mountain', substrate: 'stone', props: [] },
-    shore: { id: 'shore', name: 'Shore', substrate: 'sand', props: [] },
+    shore: {
+        id: 'shore', name: 'Shore', substrate: 'sand', props: [],
+        // Wet sand where the water reaches. Narrower than the shallows, because
+        // a tideline is a sharper thing than a shelf of shallow water.
+        band: { width: 2, tint: '#6b4a25', amount: 0.30, against: ['ocean'] }
+    },
     desert: { id: 'desert', name: 'Desert', substrate: 'sand', props: [] },
     // ⚠️ These three used to sit on a dirt substrate. Dirt is now only ever a
     // patch (owner ruling, 2026-09-07): they are grass worn through heavily
@@ -219,7 +291,15 @@ export const TERRAIN_TYPES = Object.freeze({
     },
     // Open water. The only terrain on the water substrate, and the one that
     // makes a shore a shore — sand with nothing wet beside it is just desert.
-    ocean: { id: 'ocean', name: 'Ocean', substrate: 'water', props: [] }
+    ocean: {
+        id: 'ocean', name: 'Ocean', substrate: 'water', props: [],
+        // Shallows: the sea going pale where it runs out of depth.
+        band: { width: 4, tint: '#a8e8ff', amount: 0.45 },
+        // And a beach wherever it comes ashore, so water never meets grass
+        // directly. Written onto the neighbour as real shore, so it picks up
+        // the wet-sand band and refuses to grow trees like any other beach.
+        fringe: { terrain: 'shore', width: 3, except: [] }
+    }
 });
 
 /** Look up a terrain type. Returns null for an unknown id rather than throwing. */

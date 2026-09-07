@@ -1,7 +1,7 @@
 // Fantasy Guild — The terrain subtile lattice (dynamic terrain roadmap P2).
 
 import { BOARD_SIZE, TILE_PX, TILE_GAP_PX } from '../../config/boardGeometry.js';
-import { substrateArtPx } from '../../config/registries/terrainRegistry.js';
+import { substrateArtPx, fringeOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
@@ -479,4 +479,238 @@ export function edgeStrips(sx, sy, axis, here, there, seed = 0) {
         });
     }
     return out;
+}
+
+/**
+ * Which terrain is at every art pixel, **after** the boundaries have been
+ * ragged (P3).
+ *
+ * The subtile lattice says what a 32px cell holds; this says what each 4px
+ * world pixel holds, which is a different question once edges wander across
+ * cell lines. Anything that has to follow the *drawn* coastline rather than the
+ * grid needs this — the shore bands do, and the patches are better for it.
+ *
+ * ⚠️ Built from `edgeStrips`, the same function the renderer paints from, so
+ * the two cannot disagree about where a boundary ended up. Recomputing the
+ * displacement independently here would be a second implementation of the one
+ * thing P3 already got wrong once.
+ *
+ * @param {boolean} [withFringes] Whether to push fringes onto neighbours — the
+ *   beach around the sea. Off only for the test that checks this map against the
+ *   strips the renderer paints, which knows nothing about fringes.
+ * @returns {{size, palette, at, fringes}} `at` holds an index into `palette` per
+ *   art pixel, or -1 for unpainted ground. `fringes` lists what the fringing
+ *   changed, so the renderer knows which pixels it owes a new coat.
+ */
+export function resolveArtPixels(grid, seed = 0, withFringes = true) {
+    const artPx = subtileArtPx();
+    const size = LATTICE_SIZE * artPx;
+
+    const palette = [];
+    const indexOf = new Map();
+    const idFor = (terrainId) => {
+        if (terrainId == null) return -1;
+        let i = indexOf.get(terrainId);
+        if (i === undefined) {
+            i = palette.length;
+            palette.push(terrainId);
+            indexOf.set(terrainId, i);
+        }
+        return i;
+    };
+
+    const at = new Int16Array(size * size).fill(-1);
+
+    // Flat fill first, matching the renderer's first pass.
+    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+            const id = idFor(grid[sy * LATTICE_SIZE + sx]);
+            if (id < 0) continue;
+            for (let y = 0; y < artPx; y++) {
+                const row = (sy * artPx + y) * size + sx * artPx;
+                at.fill(id, row, row + artPx);
+            }
+        }
+    }
+
+    // Then the strips, matching the renderer's second.
+    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+            const here = grid[sy * LATTICE_SIZE + sx];
+            for (const axis of ['v', 'h']) {
+                const nx = axis === 'v' ? sx + 1 : sx;
+                const ny = axis === 'v' ? sy : sy + 1;
+                if (nx >= LATTICE_SIZE || ny >= LATTICE_SIZE) continue;
+                const there = grid[ny * LATTICE_SIZE + nx];
+
+                for (const strip of edgeStrips(sx, sy, axis, here, there, seed)) {
+                    const id = idFor(strip.terrainId);
+                    for (let y = strip.y; y < strip.y + strip.h; y++) {
+                        if (y < 0 || y >= size) continue;
+                        for (let x = strip.x; x < strip.x + strip.w; x++) {
+                            if (x < 0 || x >= size) continue;
+                            at[y * size + x] = id;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const fringes = withFringes
+        ? applyFringes(at, size, palette, indexOf, idFor)
+        : [];
+
+    return { size, palette, at, fringes };
+}
+
+/**
+ * How far each pixel is from the nearest seed.
+ *
+ * Distances come back **multiplied by 3** — the weights are 3 sideways and 4
+ * diagonally, the standard cheap approximation to Euclidean distance, and
+ * dividing through would only lose precision.
+ *
+ * Shared rather than duplicated: the shore bands measure how far a pixel is
+ * from the water, and the beach fringe measures the same thing for a different
+ * purpose. Two implementations of one distance would be two chances to disagree
+ * about where the coast is.
+ *
+ * ## ⚠️ Pass `maxDist` if you have one — every caller does
+ *
+ * Without a bound this sweeps the whole board twice to compute a distance for
+ * every pixel, and both callers then throw away everything past three or four
+ * pixels. Bounded, it walks outward from the seeds and stops, touching only the
+ * band it was asked about — measured at roughly a fifth of the work on a real
+ * board, because a coastline is a small part of it.
+ *
+ * @param {number} [maxDist] In the same ×3 units. Pixels beyond it come back as
+ *   a large number rather than a true distance, which is all either caller
+ *   needs to reject them.
+ */
+export function distanceFromSeeds(seeds, size, maxDist = Infinity) {
+    const INF = 0x3fff;
+    const dist = new Int16Array(size * size).fill(INF);
+
+    if (Number.isFinite(maxDist)) {
+        const limit = Math.min(INF - 1, Math.ceil(maxDist));
+        // A bucket per distance: costs are only ever 3 or 4, so the frontier
+        // can be walked in order without a real priority queue.
+        const buckets = Array.from({ length: limit + 1 }, () => []);
+        for (let i = 0; i < seeds.length; i++) {
+            if (seeds[i]) { dist[i] = 0; buckets[0].push(i); }
+        }
+        for (let d = 0; d <= limit; d++) {
+            const bucket = buckets[d];
+            for (let b = 0; b < bucket.length; b++) {
+                const i = bucket[b];
+                if (dist[i] !== d) continue;          // superseded since queued
+                const x = i % size;
+                const y = (i - x) / size;
+                for (let dy = -1; dy <= 1; dy++) {
+                    const ny = y + dy;
+                    if (ny < 0 || ny >= size) continue;
+                    for (let dx = -1; dx <= 1; dx++) {
+                        if (!dx && !dy) continue;
+                        const nx = x + dx;
+                        if (nx < 0 || nx >= size) continue;
+                        const nd = d + (dx && dy ? 4 : 3);
+                        if (nd > limit) continue;
+                        const j = ny * size + nx;
+                        if (nd < dist[j]) { dist[j] = nd; buckets[nd].push(j); }
+                    }
+                }
+            }
+        }
+        return dist;
+    }
+
+    for (let i = 0; i < seeds.length; i++) if (seeds[i]) dist[i] = 0;
+
+    const relax = (i, j, cost) => {
+        const d = dist[j] + cost;
+        if (d < dist[i]) dist[i] = d;
+    };
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const i = y * size + x;
+            if (x > 0) relax(i, i - 1, 3);
+            if (y > 0) relax(i, i - size, 3);
+            if (x > 0 && y > 0) relax(i, i - size - 1, 4);
+            if (x < size - 1 && y > 0) relax(i, i - size + 1, 4);
+        }
+    }
+    for (let y = size - 1; y >= 0; y--) {
+        for (let x = size - 1; x >= 0; x--) {
+            const i = y * size + x;
+            if (x < size - 1) relax(i, i + 1, 3);
+            if (y < size - 1) relax(i, i + size, 3);
+            if (x < size - 1 && y < size - 1) relax(i, i + size + 1, 4);
+            if (x > 0 && y < size - 1) relax(i, i + size - 1, 4);
+        }
+    }
+    return dist;
+}
+
+/**
+ * Push a terrain's *fringe* out onto its neighbours — the beach around the sea.
+ *
+ * ⚠️ The opposite direction to a shore band. A band shades a terrain's own edge;
+ * a fringe writes a **different terrain** onto the ground next to it. Sand
+ * cannot be a band on the water, because the sand is not in the water — it is on
+ * the land side of the line.
+ *
+ * Done by rewriting the terrain map rather than by drawing sand over the top,
+ * which is what makes everything downstream behave: the wet-sand band sees real
+ * shore and darkens it, the forest's dirt patches stop at it instead of
+ * speckling the beach, and a tree will not grow on it. Painting it as an
+ * overlay would have looked identical and been wrong in all three ways.
+ *
+ * Mutates `at` in place and returns the masks of what changed, so the renderer
+ * knows which pixels it owes a coat of sand.
+ */
+function applyFringes(at, size, palette, indexOf, idFor) {
+    const changed = [];
+
+    for (let source = 0; source < palette.length; source++) {
+        const fringe = fringeOf(palette[source]);
+        if (!fringe) continue;
+
+        const width = Math.max(0, fringe.width * tuning('fringeWidth'));
+        if (width <= 0) continue;
+
+        const seeds = new Uint8ClampedArray(size * size);
+        let anySeed = false;
+        for (let i = 0; i < at.length; i++) {
+            if (at[i] === source) { seeds[i] = 1; anySeed = true; }
+        }
+        if (!anySeed) continue;
+
+        const limit = width * 3;
+        const dist = distanceFromSeeds(seeds, size, limit);
+        const spared = new Set((fringe.except || []).map(id => indexOf.get(id)).filter(i => i != null));
+        const existing = indexOf.get(fringe.terrain);
+
+        const mask = new Uint8ClampedArray(size * size);
+        // ⚠️ The target index is claimed on the first actual write, not up
+        // front. Registering it eagerly put the fringe terrain into the palette
+        // of boards that had none of it — an island alone on the table listed
+        // `shore` among its terrains and nothing had drawn any.
+        let target = -1;
+        for (let i = 0; i < at.length; i++) {
+            const here = at[i];
+            // Never onto itself, onto what it is already becoming, onto bare
+            // table, or onto anything that has asked to be left alone — a cliff
+            // dropping into the sea should not sprout a beach.
+            if (here === source || here === existing || here < 0 || spared.has(here)) continue;
+            if (dist[i] >= limit) continue;
+            if (target < 0) target = idFor(fringe.terrain);
+            at[i] = target;
+            mask[i] = 255;
+        }
+        if (target >= 0) changed.push({ terrainId: fringe.terrain, mask });
+    }
+
+    return changed;
 }

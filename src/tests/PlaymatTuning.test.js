@@ -2,9 +2,13 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault
 } from '../config/playmatTuning.js';
-import { resolveLattice, edgeProfile, LATTICE_SIZE } from '../systems/board/TerrainLattice.js';
+import {
+    resolveLattice, edgeProfile, resolveArtPixels, LATTICE_SIZE
+} from '../systems/board/TerrainLattice.js';
 import { propsForBoard } from '../systems/board/TerrainProps.js';
 import { buildPatchMasks } from '../systems/board/TerrainPatches.js';
+import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
+import { buildToneMap } from '../systems/board/TerrainTones.js';
 
 /**
  * The playmat tuning store — the developer panel's sliders.
@@ -98,7 +102,7 @@ describe('⭐ No dead sliders', () => {
         propsForBoard(resolveLattice(board, seed), seed)
     );
     const patches = () => {
-        const mask = buildPatchMasks(resolveLattice(board, seed), seed).masks.dirt;
+        const mask = buildPatchMasks(resolveArtPixels(resolveLattice(board, seed), seed), seed).masks.dirt;
         // Summarised rather than compared byte for byte: 53,824 bytes through
         // JSON.stringify per tunable per bound is slow enough to notice, and a
         // count plus a checksum separates any two masks that differ at all.
@@ -106,6 +110,46 @@ describe('⭐ No dead sliders', () => {
         let sum = 0;
         for (let i = 0; i < mask.length; i++) if (mask[i]) { on++; sum += i; }
         return `${on}:${sum}`;
+    };
+
+    const bandBoard = {};
+    for (let i = 0; i < 36; i++) {
+        bandBoard[i] = { terrainId: i % 6 < 3 ? 'ocean' : 'shore', paintedAt: i };
+    }
+    const bands = () => buildBandMasks(resolveArtPixels(resolveLattice(bandBoard, seed), seed), seed)
+        .bands.map(b => {
+            let on = 0;
+            let sum = 0;
+            for (let i = 0; i < b.mask.length; i++) if (b.mask[i]) { on++; sum += i; }
+            return `${b.terrainId}:${on}:${sum}`;
+        }).join('|');
+
+    // ⚠️ Water beside FOREST, not beside shore. On the band fixture the sea's
+    // neighbour is already sand, so there is nothing for a beach to be written
+    // onto and the slider would look dead when it is not.
+    const fringeBoard = {};
+    for (let i = 0; i < 36; i++) {
+        fringeBoard[i] = { terrainId: i % 6 < 3 ? 'ocean' : 'forest', paintedAt: i };
+    }
+    const fringe = () => {
+        const { at, palette } = resolveArtPixels(resolveLattice(fringeBoard, seed), seed);
+        const shore = palette.indexOf('shore');
+        let n = 0;
+        for (let i = 0; i < at.length; i++) if (at[i] === shore) n++;
+        return String(n);
+    };
+
+    // Two toned biomes on the same substrate, which is the only situation a
+    // tone is visible in at all.
+    const toneBoard = {};
+    for (let i = 0; i < 36; i++) {
+        toneBoard[i] = { terrainId: i % 6 < 3 ? 'forest' : 'fir_forest', paintedAt: i };
+    }
+    const tones = () => {
+        const map = buildToneMap(resolveArtPixels(resolveLattice(toneBoard, seed), seed));
+        let sum = 0;
+        for (let i = 0; i < map.toneAt.length; i++) sum += map.toneAt[i];
+        return `${map.tones.length}:${sum}`;
     };
 
     const OBSERVES = {
@@ -116,7 +160,16 @@ describe('⭐ No dead sliders', () => {
         propDensity: props,
         propScatter: props,
         patchCoverage: patches,
-        patchScale: patches
+        patchScale: patches,
+        bandWidth: bands,
+        fringeWidth: fringe,
+        toneBlend: tones,
+        toneStrength: tones,
+        // ⚠️ Strength changes the tint, not the mask, so it has to be observed
+        // through the appearance rather than through the geometry.
+        bandStrength: () => JSON.stringify(
+            ['ocean', 'shore'].map(id => bandAppearance(id))
+        )
     };
 
     it('every tunable in the table is claimed to change something', () => {
