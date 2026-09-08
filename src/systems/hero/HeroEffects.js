@@ -192,13 +192,22 @@ export function combatContributions(statements) {
 
         const payload = statement.payload || {};
         const entry = getPaletteEntry(payload.type);
-        if (entry?.group !== 'Combat') continue;
+        // ⚠️ `heroOnly`, not `group === 'Combat'` (P4). `STATUS_IMMUNITY` has
+        // exactly the same property — read off a hero's aggregator, writable
+        // only by an item or an enemy — and is not combat. Keying on a group
+        // label would have left it registered by nobody.
+        if (!entry?.heroOnly) continue;
         if (payload.bucket && payload.bucket !== 'flat') continue;
 
         const value = Number(payload.value);
         if (!Number.isFinite(value) || value === 0) continue;
 
-        out.push({ type: payload.type, value });
+        // The optional narrowing field, in the shape the aggregator matches on.
+        // `STATUS_IMMUNITY` is meaningless without it — an immunity that names
+        // no status would block everything.
+        out.push(payload.category
+            ? { type: payload.type, value, category: payload.category }
+            : { type: payload.type, value });
     }
 
     return out;

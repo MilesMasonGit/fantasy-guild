@@ -5,6 +5,17 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Gear can make a hero immune to a status.** Poison, Burning, Stun and the rest
+  can be blocked outright by an item — the game has asked whether a hero is
+  immune every time a status landed, since the day statuses were built, and
+  nothing could ever say yes. Pick which status; it stops new stacks landing and
+  never strips ones already carried.
+- **A rule can apply to one skill only.** "+10% yield, but only for Mining work"
+  — the machinery has been running on every cycle for months with no way to write
+  it down.
+- **The editor stops offering settings a rule cannot use.** A combat or immunity
+  rule reaches a hero, never a tile, so it no longer shows a reach or a target to
+  set.
 - **A rule can now say how far it reaches — including "just me".** Every rule in
   the game reached the eight surrounding tiles and nothing else, and never the
   Token carrying it, so a Token could not improve its own work or put a status on

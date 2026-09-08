@@ -567,6 +567,9 @@ function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
 function StatementRow({ statement, tokens, items, names, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
   const keyword = getKeyword(statement.keyword);
   const sentence = renderStatement(statement, names);
+  // Declared by the palette, not inferred from a group label — see the note by
+  // the pickers below.
+  const heroOnlyAxis = !!getPaletteEntry(statement.payload?.type)?.heroOnly;
 
   return (
     <RowShell
@@ -579,9 +582,23 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
     >
       <PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />
 
-      {keyword?.reach && <ReachPicker statement={statement} onChange={onChange} />}
+      {/*
+        ⚠️ **A hero-only axis has neither a reach nor a filter** (P4).
 
-      {keyword?.filter && (
+        `Armor`, `Damage`, `Status Immunity` and the rest are read off a HERO's
+        aggregator, so they never touch a tile and there is nothing for either
+        picker to select between. The sentence has said so since P7 — "to the
+        hero carrying this item, or on an enemy, to the hero fighting it" — but
+        the editor went on showing both controls, so an author could set a reach
+        and a target that the runtime would never look at.
+
+        That is the "authorable option nothing reads" failure this whole project
+        exists to remove, and adding the reach picker would have made a second
+        instance of it. Both are hidden by the same declared flag the game reads.
+      */}
+      {keyword?.reach && !heroOnlyAxis && <ReachPicker statement={statement} onChange={onChange} />}
+
+      {keyword?.filter && !heroOnlyAxis && (
         <FilterPicker
           statement={statement}
           tokens={tokens}
@@ -822,10 +839,74 @@ function EffectFields({ statement, onChange }) {
         )}
       </div>
 
+      {/*
+        The optional narrowing field (P4). Which vocabulary it draws from is
+        declared by the palette row, so this renders a skill picker on Yield and
+        a status picker on Immunity without knowing either list itself.
+      */}
+      {entry?.categories && (
+        <CategoryPicker entry={entry} payload={payload} onChange={onChange} />
+      )}
+
       {entry?.hint && <p className="text-[10px] text-gray-600 leading-relaxed">{entry.hint}</p>}
       {direction && (
         <p className="text-[10px]" style={{ color: direction.isBuff ? 'var(--color-accent-hover)' : 'var(--color-warning)' }}>
           {direction.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The narrowing field a palette row asks for — a skill, or a status.
+ *
+ * ⚠️ **Two vocabularies, one aggregator field.** `mod.target.category` is
+ * matched the same way whatever is in it; what differs is who passes what.
+ * `BoardRunner` passes the Token's skill, `StatusEffectSystem` passes a status
+ * id. The row says which, so an author never sees a list that cannot match.
+ *
+ * ⚠️ A `status` row is **required**, not optional: an immunity naming no status
+ * is registered against ALL and blocks every status in the game, which is never
+ * what anyone means by "immunity".
+ */
+function CategoryPicker({ entry, payload, onChange }) {
+  const isStatus = entry.categories === 'status';
+  // `skillsByLayer()` hands back [label, skills] pairs, not objects.
+  const options = isStatus
+    ? AUTHORABLE_STATUSES.map((s) => ({ id: s.id, name: s.name }))
+    : skillsByLayer().flatMap(([, skills]) => skills.map((s) => ({ id: s.id, name: s.name })));
+
+  const value = payload.category || '';
+
+  return (
+    <div className="space-y-1">
+      <Field label={isStatus ? 'Which status' : 'Only for'}>
+        <select
+          value={value}
+          onChange={(e) => {
+            const next = { ...payload };
+            if (e.target.value) next.category = e.target.value;
+            else delete next.category;   // absent means "everything", as it always has
+            onChange({ payload: next });
+          }}
+          className="w-full"
+          style={{ fontSize: 12 }}
+        >
+          <option value="">{isStatus ? '— pick a status —' : 'Any skill'}</option>
+          {options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+      </Field>
+      {isStatus && !value && (
+        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ Pick a status. Without one this blocks <strong>every</strong> status
+          in the game, which is almost certainly not what you meant.
+        </p>
+      )}
+      {!isStatus && value && (
+        <p className="text-[10px] text-gray-600 leading-relaxed">
+          Applies only when the Token is doing this skill’s work. Leave it on
+          “Any skill” for the usual case.
         </p>
       )}
     </div>

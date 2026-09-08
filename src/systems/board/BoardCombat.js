@@ -152,8 +152,11 @@ function applyEnemyCombatModifiers(tile, heroId) {
     hero.aggregator.removeModifiersBySource(source);
 
     const def = getTokenType(BoardState.getToken(tile)?.typeId);
-    for (const { type, value } of HeroEffects.combatContributions(statementsOf(def))) {
-        hero.aggregator.addModifier({ type, value, bucket: 'flat', source });
+    for (const { type, value, category } of HeroEffects.combatContributions(statementsOf(def))) {
+        hero.aggregator.addModifier({
+            type, value, bucket: 'flat', source,
+            ...(category ? { target: { category } } : {})
+        });
     }
 }
 

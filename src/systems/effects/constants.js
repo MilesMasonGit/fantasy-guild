@@ -30,6 +30,26 @@ export const EFFECT_TYPES = {
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff
     HP_REGEN: 'HP_REGEN',     // Health regeneration
     THORNS_REFLECT: 'THORNS_REFLECT', // Reflect damage to attacker
+
+    /**
+     * ## Immunity to ONE named status (Effects Robustness P4)
+     *
+     * ⚠️ Another axis that was **readable and unwritable**, exactly as the five
+     * combat axes were before Unified Effects P7 — `StatusEffectSystem.applyToHero`
+     * has queried it since the status engine was built, spelled as a bare string,
+     * and nothing has ever written it.
+     *
+     * ⚠️ **The Unified Effects roadmap deferred this on a false premise.** It
+     * recorded that immunity "needs category-scoped targeting the grammar has
+     * never had". The grammar does not need anything new: the aggregator's
+     * `mod.target.category` has always existed, `query('STATUS_IMMUNITY', statusId)`
+     * already passes the status id as that category, and the only thing missing
+     * was a field in the editor.
+     *
+     * A positive value blocks NEW applications of that status (§4C); it never
+     * strips stacks already carried.
+     */
+    STATUS_IMMUNITY: 'STATUS_IMMUNITY',
     STAT_BONUS: 'STAT_BONUS', // Generic stat bonus (for skills/combat)
     LOGIC_OVERRIDE: 'LOGIC_OVERRIDE', // Complex logic triggers (e.g., ignore_defense)
 

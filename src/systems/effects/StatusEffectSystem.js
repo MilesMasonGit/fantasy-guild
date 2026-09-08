@@ -24,6 +24,7 @@ import {
     getStatusEffect,
     sumStatusEffect,
 } from '../../config/registries/statusRegistry.js';
+import { EFFECT_TYPES } from './constants.js';
 
 let heroTickTimer = 0;
 
@@ -41,7 +42,10 @@ export function applyToHero(heroId, statusId, stacks = 1) {
     const def = getStatusEffect(statusId);
     if (!hero || !def) return { success: false };
 
-    const immunity = hero.aggregator?.query('STATUS_IMMUNITY', statusId) || 0;
+    // ⚠️ The axis name comes from `EFFECT_TYPES`, not from a string literal here.
+    // It was a bare literal until P4 — the same parallel vocabulary CR2-074 named
+    // and P7 closed for the combat axes, and the reason nothing could write it.
+    const immunity = hero.aggregator?.query(EFFECT_TYPES.STATUS_IMMUNITY, statusId) || 0;
     if (immunity > 0) {
         EventBus.publish('status_blocked', { targetId: heroId, statusId });
         return { success: true, blocked: true };

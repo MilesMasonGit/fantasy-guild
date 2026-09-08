@@ -268,7 +268,11 @@ describe('the audit names a combat rule that reaches nobody', () => {
         const findings = auditContent();
         const mine = findings.filter((f) => f.where.includes('fixture_confused_forge'));
 
-        expect(mine.some((f) => /combat numbers only reach a hero/.test(f.what))).toBe(true);
+        // ⚠️ The wording generalised in Effects Robustness P4. The check keys on
+        // the palette's `heroOnly` flag rather than on `group === 'Combat'`,
+        // because `STATUS_IMMUNITY` has exactly the same property and is not
+        // combat — so the message can no longer say "combat numbers".
+        expect(mine.some((f) => /only reaches a hero/.test(f.what))).toBe(true);
     });
 
     it('says nothing about the same rule on an ENEMY, where it does work', () => {

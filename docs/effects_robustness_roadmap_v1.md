@@ -299,8 +299,23 @@ because **duration is a prerequisite for P6**.
   again).
 
 **Verified when** an authored immunity stops the status landing and an un-immune
-hero still takes it; a Mining-scoped yield buff moves Mining and not Fishing; and
-a timed buff measurably stops applying when it expires.
+hero still takes it, and a Mining-scoped yield buff moves Mining and not Fishing.
+
+⚠️ **Duration was cut from this phase and moved to P6, because it has no honest
+reader yet.** The plan assumed `mod.expiry` could be authored here. It cannot:
+every writer of a modifier today is *continuous* and re-registers on a rebuild —
+`rebuildTile` calls `clearAll()` and re-adds, and `syncEquipmentModifiers` does
+the same on every equipment change. An authored expiry would therefore be
+refreshed before it could ever elapse, which is a silent no-op and exactly the
+failure this project exists to remove. Nothing applies a modifier *at a moment*
+until P6 makes a status do it, so duration ships there, with its reader.
+
+⚠️ **Two extra closes came with this phase, both the same failure.** The palette
+now declares `heroOnly` instead of three separate `group === 'Combat'` checks,
+because `STATUS_IMMUNITY` has the property and is not combat. And the CMS now
+**hides the reach and target pickers on a hero-only axis** — they were shown for
+the combat axes since P7 and read by nothing, and adding the reach picker would
+have made a second instance of it.
 
 ### P5 — Enemies get an aggregator
 
@@ -362,7 +377,7 @@ rather than built (§6 Q3).
 | P1 The filter tells the truth | **DONE** 2026-09-07 | Triggered `Grants` honours its filter; `Converts` gained one (ER-14). One shared outbound resolver, so `StatusApplication` lost its duplicate loop. 15 new tests, 8 of which fail against the old behaviour. Suite back to its 10 baseline failures. |
 | P2 Reach as a vocabulary | **DONE** 2026-09-08 | Four rows in `reachRegistry.js`, read by both the inbound and outbound resolvers. Offered on `Provides`/`Grants`/`Applies` only — see the note below. 20 new tests, 7 of which fail when reach is neutered. Suite back to its 10 baseline failures. |
 | P3 Prove the two bearers | **NOT STARTED** | Owner authoring |
-| P4 The readable-and-unwritable three | **NOT STARTED** | Duration gates P6 |
+| P4 The readable-and-unwritable three | **DONE** 2026-09-08 | `STATUS_IMMUNITY` and the skill scope, both live-and-unwritable, now authorable. **Duration moved to P6** — no honest reader yet, see the note. 15 new tests, 3 of which fail when the wiring is removed. |
 | P5 Enemies get an aggregator | **NOT STARTED** | Gates P6 |
 | P6 The status absorb | **NOT STARTED** | Needs P4 + P5; needs a save migration |
 | P7 The remaining dead axes | **NOT STARTED** | STAT_BONUS retired, not built (ER-15) |

@@ -7,6 +7,7 @@ import { getRestrictionKind } from '../../config/registries/restrictionPalette.j
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
+import { EFFECT_TYPES } from './constants.js';
 
 /**
  * The rules text — **generated, read-only, and the only text a Token has**.
@@ -209,6 +210,21 @@ function occupantPhrase(statement, names) {
     }
 }
 
+/**
+ * ", but only for Mining work" — the skill narrowing, or an empty string.
+ *
+ * A trailing clause rather than part of the filter phrase, because it narrows a
+ * different thing: the filter says *which Tokens*, this says *which work on
+ * them*. "+10% yield to adjacent Coast Tokens, but only for Fishing work" is two
+ * separate narrowings and reads as two.
+ */
+function skillScopePhrase(statement) {
+    const category = statement?.payload?.category;
+    if (!category) return '';
+    const skill = getSkill(category);
+    return `, but only for ${skill?.name || category} work`;
+}
+
 /** "1 Coal every 30 seconds" — an item list with quantities. */
 function itemList(entries, names) {
     if (!entries?.length) return '…';
@@ -271,11 +287,29 @@ function bodyOf(statement, names) {
              * like it works.
              */
             const entry = effectEntryOf(statement);
-            if (entry?.group === 'Combat') {
+
+            /**
+             * ⚠️ **Immunity is a switch, and its sentence says so** (P4).
+             *
+             * Every other `Provides` renders a magnitude, because every other
+             * one has one. `STATUS_IMMUNITY` is read as `> 0`, so "3 more status
+             * immunity" would be three times a thing that has no times — it
+             * would read as a stronger immunity and behave as an identical one.
+             * The words name the status instead, which is the only part an
+             * author actually chose.
+             */
+            if (payload.type === EFFECT_TYPES.STATUS_IMMUNITY) {
+                const status = getStatusEffect(payload.category);
+                const named = status ? status.name : '…';
+                return `Provides immunity to ${named} — to the hero carrying this item, `
+                    + `or on an enemy, to the hero fighting it`;
+            }
+
+            if (entry?.heroOnly) {
                 return `Provides ${effectPhrase(statement)} in combat — to the hero carrying this item, `
                     + `or on an enemy, to the hero fighting it`;
             }
-            return `Provides ${effectPhrase(statement)} ${filterPhrase(statement, names)}`;
+            return `Provides ${effectPhrase(statement)} ${filterPhrase(statement, names)}${skillScopePhrase(statement)}`;
         }
 
         case KEYWORD.GRANTS: {

@@ -307,7 +307,24 @@ export function rebuildTile(index) {
         // position, so reordering a Token's rules cannot make one statement's
         // contribution look like another's.
         const source = `${sourceIdFor(neighbour, instance.typeId)}:${statement.id}`;
-        agg.addModifier({ ...statement.payload, source });
+        /**
+         * ⚠️ `category` is authored flat and registered **nested** (P4).
+         *
+         * The aggregator matches `mod.target.category`, which is an awkward
+         * shape to ask an author for and a needless one to store in content. The
+         * payload carries a plain `category`; the translation happens here, at
+         * the one point a payload becomes a modifier.
+         *
+         * `BoardRunner` passes the Token's own `config.skill` as the category on
+         * every `resolveAxis` call, so this is what makes *"+10% yield to Mining
+         * only"* resolve — machinery that has been live and unwritable since the
+         * aggregator was built.
+         */
+        const { category, ...payload } = statement.payload;
+        agg.addModifier({
+            ...payload, source,
+            ...(category ? { target: { category } } : {})
+        });
     }
 }
 
@@ -423,7 +440,7 @@ export function rebuildAll() {
 export function resolveAxis(index, effectType, base, category = TARGET_CATEGORIES.ALL) {
     const tile = getTileAggregator(index);
     const guild = getGlobalAggregator();
-    const hero = heroContributions(index, effectType);
+    const hero = heroContributions(index, effectType, category);
 
     const flat = [
         tile.getFlat(effectType, category),
@@ -462,7 +479,7 @@ export function resolveAxis(index, effectType, base, category = TARGET_CATEGORIE
  * filter authored on it is ignored rather than obeyed, because there is nothing
  * for it to choose between.
  */
-function heroContributions(index, effectType) {
+function heroContributions(index, effectType, category = TARGET_CATEGORIES.ALL) {
     const empty = { flat: 0, multipliers: [], percentages: [] };
 
     const heroId = BoardState.heroOnTile(index);
@@ -480,6 +497,19 @@ function heroContributions(index, effectType) {
 
         const payload = statement.payload || {};
         if (payload.type !== effectType) continue;
+
+        /**
+         * ⚠️ The narrowing field, honoured here by hand (P4).
+         *
+         * Everything else on this path bypasses `ModifierAggregator` — the
+         * loadout is read live rather than cached — so it also bypasses
+         * `_forEachMatching`, which is where a category is normally matched. An
+         * item scoped to Mining would otherwise apply to Fishing, silently, and
+         * only when carried rather than when placed. Mirrored rather than
+         * trusted, the same way `combatContributions` mirrors the flat-bucket
+         * rule instead of relying on the palette to have refused it.
+         */
+        if (payload.category && payload.category !== category) continue;
 
         const value = Number(payload.value);
         if (!Number.isFinite(value)) continue;

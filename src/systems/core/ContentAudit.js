@@ -220,10 +220,10 @@ function auditCombatAxes(out, where, def) {
     for (const statement of statementsOf(def)) {
         if (statement?.keyword !== KEYWORD.PROVIDES) continue;
         const entry = getPaletteEntry(statement.payload?.type);
-        if (entry?.group !== 'Combat') continue;
+        if (!entry?.heroOnly) continue;
 
         out.push(finding(where,
-            `has a ${entry.label} rule, but combat numbers only reach a hero from an item they ` +
+            `has a ${entry.label} rule, but that only reaches a hero from an item they ` +
             `carry or an enemy they fight — this Token is neither, so the rule does nothing. ` +
             `Put it on an item, or on an enemy Token.`));
     }
