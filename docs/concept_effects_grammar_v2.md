@@ -54,18 +54,19 @@ something to invent; it is something to expose.
 ## 4. What a rule is
 
 ```
-[ When <moment>, ]  VERB  <payload>  [ to <target> ]  [ for <duration> ]
-      the trigger   what it does      to whom          how long it lasts
+[ When <moment>, ]  VERB  <magnitude>  [ to <selector> ]  [ per <counted> ]  [ for <duration> ]
+      the trigger          how much        to whom           what scales it     how long
 ```
 
-Two of those four slots are new.
+Three of those five slots are new, and the selector grows filters.
 
 ### The verb — what it does
 
 The grammar has nine keywords and **not one of them does anything to a person**.
 `Provides` scales a number. `Grants` drops an item. `Applies` attaches a status,
 which is a different system's concept. So the first addition is a set of verbs
-that act: **deal damage, heal, restore charges, remove an effect.**
+that act: **deal damage, heal, restore charges, remove an effect, spawn a Token,
+transform one.**
 
 ### The target — to whom
 
@@ -85,6 +86,16 @@ tile the actor is working*, *everything adjacent to the actor*. An effect with
 no moment (a continuous aura) has only `self` and its neighbours, which is
 exactly what it has today.
 
+On top of the role, a target stacks **filters**: state (charges, HP, working or
+idle), what an entity carries (effects, tags, capabilities), and negation. They
+compose with AND, so *"every adjacent Token that is not already poisoned"* is two
+filters on one source rather than a new concept.
+
+⚠️ **A filter narrows who; a guard decides whether.** The second is refused. A
+filter renders as one honest sentence; a guard wants AND/OR/NOT, and a boolean
+tree has no sentence anyone would trust. That distinction is the whole line
+between a vocabulary and a rules engine, and it is where this design draws it.
+
 ### The duration — how long
 
 A rule that fires at an instant may leave something behind. That is what a
@@ -93,6 +104,31 @@ status is, and it is the only genuinely new runtime concept here:
 > **Any entity may carry live effect instances.** A hero, a monster, a Token.
 > Each is `{ effectId, scale, expiresAt }` — a reference into the same library,
 > with a clock on it.
+
+Applying the same effect twice **refreshes its timer** rather than stacking. One
+effect on an entity means one instance, so nothing can quietly compound into a
+strength nobody authored — which is what made a 99-stack Poison possible.
+
+### The magnitude — how much
+
+A number may be flat, **a percentage of a named stat** (*10% of the target's max
+HP*), or **a count of things a selector matched** (*+1% per adjacent Coast
+Token*). A closed, declared list — not arithmetic, and not a formula box. A
+statement carries a second `counted` selector for the last of these, because
+*"+1% per adjacent Coast, to every adjacent Token"* counts one set and affects
+another.
+
+### ⭐ The sentence is a design surface, not a ceiling
+
+The generated sentence stays **absolute**: everything authorable must render as
+one honest, literal sentence, because that sentence is the only description a
+rule has and the thing that catches a wrong rule.
+
+But when a rule reads badly, the first move is to **improve the sentence
+language**, not to drop the feature. In the owner's words: *"I want the rules
+sentences to be unified and literal, so it communicates everything the player
+needs to know, based off the actual mechanics happening."* Only if a rule cannot
+be made to read literally is that evidence the feature is wrong.
 
 ## 5. Statuses stop existing
 
@@ -137,8 +173,13 @@ ER-1/ER-2/ER-5/ER-6 (the reach vocabulary, shipped and working).
 ## 7. What this deliberately does not solve
 
 * **A condition language.** No "while", no "unless", no booleans. The design
-  says when, what, to whom, how long — and stops. That refusal is what the
-  restriction palette already documents, and it holds here.
+  says when, what, to whom, how much and how long — and stops. That refusal is
+  what the restriction palette already documents, and it holds here.
+* **Terrain filters.** Offered to the owner and **declined**, not deferred —
+  worth recording, because the v1 sweep named terrain as the single largest gap
+  and it should now stop being re-raised.
+* **Moving or displacing entities.** Offered and declined: "where to" and "what
+  if it is occupied" have no answers yet.
 * **Directional adjacency.** Still no meaning for "the Token below it".
 * **Balance.** Nothing authored uses any of this, so no number moves until
   someone authors one on purpose.
