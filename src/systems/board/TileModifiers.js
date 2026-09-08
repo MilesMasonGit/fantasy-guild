@@ -7,6 +7,7 @@ import { neighboursOf, neighboursOfFootprint, neighboursOfToken } from './adjace
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import { isStatementPaid } from './BlockUpkeep.js';
+import { REACH, RELATION, reachOf, reachCovers } from '../../config/registries/reachRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
@@ -145,16 +146,35 @@ export function matchesTokenTarget(spec, def) {
  * @returns {number[]} anchor indices of occupied neighbours the filter names
  */
 export function filterTargetTiles(sourceTile, statement) {
-    const sourceDef = getTokenType(BoardState.getToken(sourceTile)?.typeId);
+    const sourceOcc = BoardState.getOccupyingToken(sourceTile);
+    const sourceDef = getTokenType(sourceOcc?.instance?.typeId);
+    const reach = reachOf(statement);
+
+    // The candidate set is the reach, and only the reach: `self` never walks the
+    // neighbours and `board` never walks them twice.
+    const candidates = [];
+    if (reach === REACH.SELF || reach === REACH.SELF_AND_ADJACENT) {
+        candidates.push(sourceTile);
+    }
+    if (reach === REACH.ADJACENT || reach === REACH.SELF_AND_ADJACENT) {
+        candidates.push(...neighboursOfToken(sourceTile, sourceDef?.size || 1));
+    }
+    if (reach === REACH.BOARD) {
+        for (const [tile] of BoardState.occupiedTiles()) candidates.push(tile);
+    }
+
     const seen = new Set();
     const targets = [];
 
-    for (const tile of neighboursOfToken(sourceTile, sourceDef?.size || 1)) {
+    for (const tile of candidates) {
         const occ = BoardState.getOccupyingToken(tile);
         if (!occ?.instance) continue;
         if (seen.has(occ.anchorIndex)) continue;
         seen.add(occ.anchorIndex);
 
+        // ⚠️ `board` includes the Token carrying the rule, and that is right:
+        // "every Token on the board" is not "every Token except me". A rule that
+        // means to skip itself is `adjacent`, which is the default.
         if (!matchesTokenTarget(statement?.to, getTokenType(occ.instance.typeId))) continue;
         targets.push(occ.anchorIndex);
     }
@@ -179,33 +199,63 @@ export function filterTargetTiles(sourceTile, statement) {
  */
 
 /**
- * Generator yielding every **statement** from neighbouring Tokens that applies
- * to this tile.
+ * Generator yielding every **statement** reaching this tile.
  *
  * Handles:
  *  - many statements per Token — each is considered independently
  *  - CMS-18/23: targeted statements matching tag, id, or `all`
  *  - D-82: duplicate protection (`noStackDuplicates: true`)
  *  - CMS-60/97: paid upkeep check, now keyed by the statement's stable id
+ *  - **ER-1: the statement's declared reach**, which is what decides whether a
+ *    source Token is even a candidate
  *
  * ⚠️ A statement carrying a `When` clause is skipped here, exactly as a
  * triggered block was: it belongs to `TriggerSystem`. The difference is that
  * the grammar no longer *lets* an ambient effect carry one, so the case where
  * both systems skipped the same authored effect can no longer be authored.
+ *
+ * ## ⚠️ This used to say "from neighbouring Tokens", and that was the bug
+ * The source set was `neighboursOf(index)`, which **never contains `index`** —
+ * `areAdjacent` states outright that a tile is not adjacent to itself. So a
+ * Token could not reach itself with any rule, at any strength, however it was
+ * authored. The source set is now every occupied Token, and each statement's
+ * `reach` decides whether it carries from there to here (`reachCovers`).
+ *
+ * ## The cost, and why it is acceptable
+ * This walks every occupied tile rather than eight neighbours — at most 36 on a
+ * 6×6 board. It runs on board changes (`rebuildTile`) and on cycle completion
+ * (`collectItemGrants`, `collectStatusApplications`), neither of which is a hot
+ * loop; the per-frame path reads the *cached* aggregator and does not come
+ * through here at all. Scanning unconditionally is chosen over a "does any Token
+ * have board reach?" cache because a stale cache here is a silently missing
+ * effect, which is the failure mode this project keeps paying for.
  */
 function* applicableStatements(index) {
     const occ = BoardState.getOccupyingToken(index);
     const selfDef = getTokenType(occ?.instance?.typeId);
+    const selfAnchor = occ?.anchorIndex ?? index;
     const seenTypes = new Set();
     const seenAnchors = new Set();
 
     const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
-
+    const adjacentAnchors = new Set();
     for (const neighbour of neighbours) {
         const nOcc = BoardState.getOccupyingToken(neighbour);
+        if (nOcc?.instance) adjacentAnchors.add(nOcc.anchorIndex);
+    }
+
+    for (const [sourceTile] of BoardState.occupiedTiles()) {
+        const nOcc = BoardState.getOccupyingToken(sourceTile);
         if (!nOcc?.instance) continue;
         if (seenAnchors.has(nOcc.anchorIndex)) continue;
         seenAnchors.add(nOcc.anchorIndex);
+
+        // Where this source stands relative to the tile being rebuilt. Computed
+        // once per source rather than per statement, because it is a fact about
+        // the board and every statement on the Token shares it.
+        const relation = nOcc.anchorIndex === selfAnchor ? RELATION.SELF
+            : adjacentAnchors.has(nOcc.anchorIndex) ? RELATION.ADJACENT
+                : RELATION.DISTANT;
 
         const instance = nOcc.instance;
         const def = getTokenType(instance.typeId);
@@ -223,6 +273,10 @@ function* applicableStatements(index) {
         for (const statement of statements) {
             if (statement?.when?.event) continue;
             if (!AMBIENT_KEYWORDS.has(statement?.keyword)) continue;
+            // ER-1: does this rule carry from where its Token sits to here? An
+            // unauthored reach resolves to `adjacent`, which is what every rule
+            // written before P2 meant — so nothing shipped changed.
+            if (!reachCovers(reachOf(statement), relation)) continue;
             // Every ambient keyword must name the thing it does, or it reaches
             // nothing: an effect axis for the two that scale a number, a status
             // for the one that puts something on a person.

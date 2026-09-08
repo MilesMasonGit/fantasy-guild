@@ -6,6 +6,7 @@ import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind } from '../../config/registries/restrictionPalette.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
+import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
 
 /**
  * The rules text — **generated, read-only, and the only text a Token has**.
@@ -73,10 +74,47 @@ function effectPhrase(statement) {
     return `${size} ${direction} ${label}`;
 }
 
-/** "to adjacent Coast tokens" — the filter clause, or an empty string. */
+/**
+ * "to adjacent Coast Tokens" — the filter clause, carrying the reach.
+ *
+ * ## ⚠️ Reach and filter are one phrase in words and two fields in data
+ * The sentence has to fuse them, because English does: *"to every Coast Token on
+ * the board"* is one clause built from `reach: board` and `to: {tag: Coast}`.
+ * Rendering them separately would produce "to adjacent Coast Tokens, on the
+ * board", which is not a sentence and, worse, reads as two different sets.
+ *
+ * So the reach picks the frame and the filter fills the noun. The frame for
+ * `self` deliberately drops "adjacent" and every plural, because it names
+ * exactly one Token — the one carrying the rule.
+ */
 function filterPhrase(statement, names) {
+    const reach = reachOf(statement);
+    const noun = subjectPhrase(statement, names);
     const to = statement?.to;
-    if (!to || !to.mode || to.mode === 'all') return 'to every adjacent Token';
+    const untargeted = !to || !to.mode || to.mode === 'all';
+
+    if (reach === REACH.SELF) {
+        // A filter is meaningless here — there is one Token and the rule is on
+        // it — so the words say the thing that is true and nothing more.
+        return 'to this Token';
+    }
+
+    // ⚠️ "every" takes the SINGULAR — "every Coast Token", never "every Coast
+    // Tokens" — so the board frame reaches for the singular noun even though
+    // the set it names is a plural one.
+    if (reach === REACH.BOARD) {
+        return `to every ${untargeted ? 'Token' : singularSubjectPhrase(statement, names)} on the board`;
+    }
+
+    if (reach === REACH.SELF_AND_ADJACENT) {
+        return untargeted
+            ? 'to this Token and every adjacent Token'
+            : `to this Token and adjacent ${noun}`;
+    }
+
+    // `adjacent` — the default, and the wording every rule authored before P2
+    // has always produced. Left byte-for-byte identical on purpose.
+    if (untargeted) return 'to every adjacent Token';
     switch (to.mode) {
         case 'tag':
             return to.value ? `to adjacent ${to.value} Tokens` : 'to adjacent Tokens tagged …';
@@ -139,6 +177,35 @@ function singularSubjectPhrase(statement, names) {
             return to.value ? `${to.value} Token` : 'Token';
         default:
             return 'Token';
+    }
+}
+
+/**
+ * "heroes on adjacent Coast Tokens" — who a status lands on, carrying the reach.
+ *
+ * The `Applies` counterpart to `filterPhrase`. It needs its own because the
+ * preposition differs — a status lands *on people*, not *to Tokens* — and
+ * because `self` collapses to a single person: the one working this very Token.
+ */
+function occupantPhrase(statement, names) {
+    const reach = reachOf(statement);
+    const noun = subjectPhrase(statement, names);
+    const to = statement?.to;
+    const untargeted = !to || !to.mode || to.mode === 'all';
+
+    switch (reach) {
+        case REACH.SELF:
+            // Singular and specific: one Token holds at most one hero.
+            return 'the hero working this Token';
+        case REACH.BOARD:
+            // Singular after "every", same as `filterPhrase`.
+            return `heroes on every ${untargeted ? 'Token' : singularSubjectPhrase(statement, names)} on the board`;
+        case REACH.SELF_AND_ADJACENT:
+            return untargeted
+                ? 'the hero working this Token and heroes on every adjacent Token'
+                : `the hero working this Token and heroes on adjacent ${noun}`;
+        default:
+            return `heroes on adjacent ${noun}`;
     }
 }
 
@@ -282,7 +349,7 @@ function bodyOf(statement, names) {
             // them*, so the sentence says exactly that rather than leaving the
             // reader to guess which of the two it meant.
             const status = getStatusEffect(payload.statusId);
-            if (!status) return `Applies … to heroes on adjacent ${subjectPhrase(statement, names)}`;
+            if (!status) return `Applies … to ${occupantPhrase(statement, names)}`;
             const stacks = Math.max(1, payload.stacks || 1);
             const amount = stacks > 1 ? `${stacks} stacks of ${status.name}` : status.name;
             const chance = payload.chance ?? 100;
@@ -308,8 +375,7 @@ function bodyOf(statement, names) {
                 return `Applies ${amount} to the hero carrying it${moment}${odds}`;
             }
 
-            const where = subjectPhrase(statement, names);
-            return `Applies ${amount} to heroes on adjacent ${where}${moment}${odds}`;
+            return `Applies ${amount} to ${occupantPhrase(statement, names)}${moment}${odds}`;
         }
 
         default:

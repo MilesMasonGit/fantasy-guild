@@ -2,6 +2,7 @@
 
 import { MODIFIER_PALETTE, getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { blankRestriction } from '../../config/registries/restrictionPalette.js';
+import { DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
 
 /**
  * A Token's rules are **statements**, and a statement is one sentence.
@@ -73,6 +74,25 @@ export const WHEN = Object.freeze({
  *
  * ⚠️ `Converts` gained one in ER-14, and it is the one filter that names a
  * **single** destination rather than a set — see the note on its row.
+ *
+ * ## `reach` — how far the statement carries (Effects Robustness P2)
+ *
+ * A second, independent axis: `filter` says *which* Tokens, `reach` says *how
+ * far*. `reachRegistry.js` holds the vocabulary. Three keywords declare it, and
+ * the omissions are all deliberate (ER-6):
+ *
+ * * **`Requires` and `Works as`** are statements *about this Token*. There is
+ *   nothing for a reach to vary.
+ * * **`Acts as` and `Restocks`** hand things to neighbours with no filter at
+ *   all; giving them a reach without a filter would be half a targeting
+ *   vocabulary, and `Acts as` reaching further is a real balance change that the
+ *   concept declined for items on exactly those grounds.
+ * * **`Converts`** already names a *single destination* through its filter.
+ *   "How far" adds nothing coherent on top of "which one".
+ * * **`Cannot`** is a placement restriction read once by `Placement.js`, not an
+ *   effect that carries. A board-wide restriction — *"no more than three of
+ *   these anywhere"* — is a genuinely useful idea and a genuinely different
+ *   feature, so it waits for its own slice rather than arriving as fallout.
  */
 export const KEYWORDS = Object.freeze([
     {
@@ -80,6 +100,7 @@ export const KEYWORDS = Object.freeze([
         label: 'Provides',
         blurb: 'Changes a number on nearby Tokens — yield, work time, XP and the rest.',
         filter: true,
+        reach: true,
         when: WHEN.NEVER,
         upkeep: true
     },
@@ -88,6 +109,7 @@ export const KEYWORDS = Object.freeze([
         label: 'Grants',
         blurb: 'Hands a nearby Token an extra item when it finishes work.',
         filter: true,
+        reach: true,
         when: WHEN.OPTIONAL,
         upkeep: true
     },
@@ -176,6 +198,7 @@ export const KEYWORDS = Object.freeze([
          */
         id: KEYWORD.APPLIES,
         label: 'Applies',
+        reach: true,
         /**
          * A scale multiplies the **stacks** applied (UE-7). `Applies` is the
          * one scalable keyword whose payload has no palette row behind it —
@@ -323,6 +346,16 @@ export function makeStatement(keywordId, data = {}) {
          */
         chargeDelta: keyword?.when !== WHEN.NEVER ? DEFAULT_STATEMENT_CHARGE_DELTA : 0,
         to: keyword?.filter ? { mode: 'all', value: '' } : null,
+        /**
+         * Written out on the keywords that can carry one, the same way `to` is,
+         * so the editor shows a real value rather than a blank.
+         *
+         * ⚠️ Its **absence** still means `adjacent` (ER-5) — that is what makes
+         * every statement authored before P2 keep its behaviour without a
+         * migration touching a single file. `reachOf` owns that default; this
+         * only decides what a *new* statement starts as.
+         */
+        reach: keyword?.reach ? DEFAULT_REACH : null,
         when: keyword?.when === WHEN.REQUIRED
             ? { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 }
             : null,

@@ -130,6 +130,16 @@ export {
   getTriggerEvent,
 } from '../../../src/config/registries/triggerRegistry.js';
 
+// How far a rule carries (ER-1). Same game-defines / CMS-renders split as the
+// trigger vocabulary above: adding a reach row in the game puts it in the
+// picker with no CMS change.
+export {
+  REACH,
+  REACHES,
+  DEFAULT_REACH,
+  reachOf,
+} from '../../../src/config/registries/reachRegistry.js';
+
 // What a `Cannot` may forbid. One row today — an adjacency limit — shaped like
 // the modifier palette so restriction #2 is a row in the game, not a rewrite of
 // the editor.

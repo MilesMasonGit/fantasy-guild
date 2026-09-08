@@ -240,6 +240,35 @@ shipping the row, and expect the answer to be a cap or a ruling, not nothing.
 itself *and* its neighbours does both, every shipped Token behaves exactly as it
 did, and the sentence reads correctly for all four rows.
 
+⚠️ **Three things changed from the plan, all deliberate.**
+
+**Reach is offered on three keywords, not on every filtered one.** `Provides`,
+`Grants` and `Applies` declare `reach: true`. The four omissions each have a
+reason, recorded on `KEYWORDS` in `statements.js`: `Requires`/`Works as` are
+statements *about this Token* (ER-6 named these); `Acts as`/`Restocks` have no
+filter, and giving them a reach without one would be half a targeting
+vocabulary; `Converts` already names a **single destination** through its ER-14
+filter, so "how far" adds nothing on top of "which one"; and `Cannot` is a
+placement restriction read once by `Placement.js`, where a board-wide rule —
+*"no more than three of these anywhere"* — is a genuinely useful and genuinely
+different feature that should not arrive as fallout.
+
+**`board` reach lands in the tile aggregators, not the global one.** ER-1 said
+"resolved through the existing global aggregator". It resolves through
+`applicableStatements` instead, which reaches the same buckets in `resolveAxis`
+by a shorter road. The global aggregator is owned by the Guild Hall upgrade
+track and is cleared on its own schedule; mixing content-authored modifiers into
+something another system calls `clearAll` on is a stale-state bug waiting to
+happen, and the per-tile path is rebuilt from board state every time by
+construction.
+
+**`applicableStatements` now walks every occupied tile, not eight neighbours.**
+It has to: a board-reach source can sit anywhere. At most 36 tiles on a 6×6
+board, and it runs on board changes and cycle completions — never per frame, as
+the per-frame path reads the cached aggregator. A "does any Token have board
+reach?" cache was considered and refused: a stale cache here is a silently
+missing effect, which is the exact failure mode this project keeps paying for.
+
 ### P3 — Prove the two bearers *(authoring, with the owner)*
 
 Not a code phase. The machinery from P4/P6/P7 meets real content for the first
@@ -331,7 +360,7 @@ rather than built (§6 Q3).
 | Phase | State | Notes |
 |---|---|---|
 | P1 The filter tells the truth | **DONE** 2026-09-07 | Triggered `Grants` honours its filter; `Converts` gained one (ER-14). One shared outbound resolver, so `StatusApplication` lost its duplicate loop. 15 new tests, 8 of which fail against the old behaviour. Suite back to its 10 baseline failures. |
-| P2 Reach as a vocabulary | **NOT STARTED** | |
+| P2 Reach as a vocabulary | **DONE** 2026-09-08 | Four rows in `reachRegistry.js`, read by both the inbound and outbound resolvers. Offered on `Provides`/`Grants`/`Applies` only — see the note below. 20 new tests, 7 of which fail when reach is neutered. Suite back to its 10 baseline failures. |
 | P3 Prove the two bearers | **NOT STARTED** | Owner authoring |
 | P4 The readable-and-unwritable three | **NOT STARTED** | Duration gates P6 |
 | P5 Enemies get an aggregator | **NOT STARTED** | Gates P6 |

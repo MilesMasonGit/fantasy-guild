@@ -15,6 +15,7 @@ import {
   effectRefsOf, expandBearer, rulesLinesOf,
   chargeMomentsFor, chargeMomentOf, getChargeMoment, DEFAULT_CHARGE_DELTA_BY_MOMENT,
   scaleStatement, effectTitle, MAX_SCALE,
+  REACH, REACHES, DEFAULT_REACH,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -578,6 +579,8 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
     >
       <PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />
 
+      {keyword?.reach && <ReachPicker statement={statement} onChange={onChange} />}
+
       {keyword?.filter && (
         <FilterPicker
           statement={statement}
@@ -1030,6 +1033,43 @@ function AppliesFields({ payload, setPayload }) {
         <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
           ⚠️ {status.name} clears the moment a fight ends, so it does nothing at
           all on a hero who is working rather than fighting.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * **How far** the statement carries (ER-1).
+ *
+ * ⚠️ Sits ABOVE the filter picker, and the order is the point: reach decides the
+ * set of Tokens in range, and the filter then picks from it. Reading them the
+ * other way round — "Coast Tokens, on the whole board" — invites the author to
+ * think the filter widens the reach, which it never does.
+ */
+function ReachPicker({ statement, onChange }) {
+  const current = REACHES.some((r) => r.id === statement.reach) ? statement.reach : DEFAULT_REACH;
+  const declared = REACHES.find((r) => r.id === current);
+
+  return (
+    <div className="space-y-1.5">
+      <Field label="How far">
+        <select
+          value={current}
+          onChange={(e) => onChange({ reach: e.target.value })}
+          className="w-full"
+          style={{ fontSize: 12 }}
+        >
+          {REACHES.map((r) => (
+            <option key={r.id} value={r.id}>{r.label}</option>
+          ))}
+        </select>
+      </Field>
+      <p className="text-[10px] text-gray-600 leading-relaxed">{declared?.hint}</p>
+      {current === REACH.BOARD && (
+        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ This touches every Token you own, and a second copy of this Token
+          doubles it. Nothing caps that — keep the number very small.
         </p>
       )}
     </div>

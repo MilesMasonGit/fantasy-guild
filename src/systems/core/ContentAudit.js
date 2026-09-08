@@ -3,6 +3,7 @@
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword } from '../effects/statements.js';
 import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
+import { getReach } from '../../config/registries/reachRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
@@ -354,6 +355,23 @@ function auditStatements(out, where, def) {
             out.push(finding(where,
                 `one of its rules is a "${keyword.label}" carrying a target filter, and that keyword cannot aim — ` +
                 `the filter is stored, shown in the sentence, and read by nothing. Clear it, or use a keyword that targets.`));
+        }
+
+        // The same invariant on the other targeting axis (ER-6). A reach on a
+        // keyword that cannot carry one is read by nothing, exactly as above.
+        if (statement?.reach && keyword && !keyword.reach) {
+            out.push(finding(where,
+                `one of its rules is a "${keyword.label}" carrying a reach, and that keyword has no reach to vary — ` +
+                `it is stored and read by nothing. Clear it.`));
+        }
+
+        // A reach the vocabulary does not have resolves to "adjacent" rather
+        // than to nothing, so a typo does not switch a rule off — but it does
+        // mean the rule is not doing what its author typed.
+        if (statement?.reach && !getReach(statement.reach)) {
+            out.push(finding(where,
+                `one of its rules asks to reach "${statement.reach}", which is not a reach the game has — ` +
+                `it falls back to adjacent Tokens. Pick one from the list in the CMS.`));
         }
     }
 }

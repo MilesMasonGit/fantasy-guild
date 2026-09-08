@@ -5,6 +5,16 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A rule can now say how far it reaches — including "just me".** Every rule in
+  the game reached the eight surrounding tiles and nothing else, and never the
+  Token carrying it, so a Token could not improve its own work or put a status on
+  the hero standing on it. A rule now picks one of four: adjacent Tokens (what
+  every rule already meant), this Token only, this Token and its neighbours, or
+  every Token on the board. The rules text says which, in words.
+- ⚠️ **A board-wide rule is not capped.** It touches everything you own, and a
+  second copy of that Token doubles it. The editor warns you; nothing stops you.
+- **Nothing you have already authored changed.** A rule with no reach set still
+  means "adjacent", so every Token on your playmat behaves exactly as it did.
 - **A rule that fires now lands where its sentence says it lands.** A triggered
   "grants an item" rule was ignoring the target you gave it and dropping the
   item on the Token that fired instead — so a rule reading *"grant 1 Copper to
