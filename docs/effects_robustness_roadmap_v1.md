@@ -1,5 +1,18 @@
 # Effects Robustness — roadmap v1
 
+> ## ⚠️ SUPERSEDED IN PART, 2026-09-08
+>
+> **P1, P2 and P4 are DONE and stand.** So do ER-1, ER-2, ER-5, ER-6 (the reach
+> vocabulary) and ER-14…ER-16. §3's vocabulary sweep remains useful inventory.
+>
+> **P5, P6 and P7 are replaced** by
+> [`effects_grammar_v2_roadmap.md`](effects_grammar_v2_roadmap.md), and
+> **ER-3, ER-4 and ER-7…ER-13 are reopened** by it. The owner redirected the
+> status absorb on 2026-09-08: statuses move into the **statement grammar**, not
+> into the modifier aggregator, and the library becomes the single repository for
+> every rule in the game. Read the v2 concept before acting on anything below the
+> status table.
+
 *The authoritative plan for the follow-up to Unified Effects. Written
 2026-09-07. Unified Effects itself is
 [`unified_effects_roadmap_v1.md`](unified_effects_roadmap_v1.md) (P1–P7, all
