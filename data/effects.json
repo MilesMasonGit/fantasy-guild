@@ -306,5 +306,30 @@
       }
     ],
     "autoSyncId": true
+  },
+  "effect_charcoal_dust": {
+    "name": "Charcoal Dust",
+    "statements": [
+      {
+        "id": "stm_10ijxeo4r",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "item_charcoal",
+          "quantity": 1,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "when": null,
+        "upkeep": null,
+        "chargeWhen": "per_cycle"
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_charcoal_dust"
   }
 }

@@ -169,6 +169,11 @@
         "kind": "token",
         "refId": "token_furnace",
         "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_fighter_s_academy",
+        "weight": 100
       }
     ],
     "autoSyncId": true,
@@ -228,5 +233,40 @@
     ],
     "autoSyncId": true,
     "id": "map_golden_farmland"
+  },
+  "map_volcanic_island": {
+    "name": "Volcanic Island",
+    "price": 10000,
+    "materials": [],
+    "pool": [
+      {
+        "kind": "token",
+        "refId": "token_coconut_tree",
+        "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_banana_tree",
+        "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_pineapple_bush",
+        "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_watermelon_patch",
+        "weight": 100
+      },
+      {
+        "kind": "item",
+        "refId": "item_darkmetal_ore",
+        "weight": 100,
+        "quantity": 9
+      }
+    ],
+    "autoSyncId": true,
+    "id": "map_volcanic_island"
   }
 }
