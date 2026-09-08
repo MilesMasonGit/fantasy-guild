@@ -9,11 +9,16 @@
  * editor renders whatever is declared.
  *
  * ## ⚠️ Only moments that something actually spends on (owner ruling, Q5)
- * Two moments exist today because two readers exist today. The roadmap's later
- * phases each bring one more:
+ * Two moments exist today because two readers exist today.
  *
- * * **P5** adds `CYCLE_START`, and a row here for it.
- * * **P6** adds the enemy engagement, and a row here for it.
+ * ⚠️ **P5 added `CYCLE_START` and deliberately did NOT add a row here**, which
+ * is worth saying because the plan expected one. `CYCLE_START` turned out to be
+ * a *firing* moment rather than a spending one: a rule that reacts to it carries
+ * a `When` clause, so it already spends through `on_fire` when it fires. A row
+ * reading "at the start of the cycle" would sit beside `per_cycle` as a second
+ * way to spend once per cycle — exactly the two-ways-to-say-one-thing this
+ * registry exists to prevent. P6's engagement deserves the same look before it
+ * assumes it needs a row.
  *
  * They are deliberately **not** listed in advance. An authorable option that
  * nothing reads is the "authored but inert" failure the effect system map named

@@ -119,6 +119,34 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
+         * The mirror of `CYCLE_COMPLETE`, and the moment the owner asked for
+         * first (Unified Effects P5).
+         *
+         * `CYCLE_COMPLETE` is for reacting to work that *happened* — a bonus
+         * alongside the output. This is for acting on work about to be done: a
+         * buff that should already be up while the hero swings, rather than
+         * arriving as they finish.
+         */
+        id: 'CYCLE_START',
+        event: BOARD_EVENTS.CYCLE_START,
+        label: 'A neighbour begins a cycle',
+        scopes: [TRIGGER_SCOPES.ADJACENT],
+        hint: 'Fires as an adjacent Token starts work — not when it finishes. A Token waiting for inputs has not started, so it does not fire until it genuinely resumes.'
+    },
+    {
+        /**
+         * The self-scoped half. Same recursion caveat as `SELF_CYCLE_COMPLETE`
+         * — read the note there and the guard in `TriggerSystem` before adding
+         * another self-scoped row.
+         */
+        id: 'SELF_CYCLE_START',
+        event: BOARD_EVENTS.CYCLE_START,
+        label: "This Token's own cycle begins",
+        scopes: [TRIGGER_SCOPES.SELF],
+        hint: 'Fires as this very Token starts its own work. Its rule then reaches out from here as usual.'
+    },
+    {
+        /**
          * The Sigil's case: "Stone exists anywhere" (CMS-35).
          *
          * There is no per-item "X was produced" event, only the coarse

@@ -117,7 +117,25 @@ was reaching for.
 
 ### P5 — Cycle start
 
-* Publish `CYCLE_START`; add it to `TRIGGER_EVENTS`.
+* Publish `CYCLE_START`; add it to `TRIGGER_EVENTS` — one adjacent row and one
+  self-scoped row, mirroring `CYCLE_COMPLETE`.
+* **A carried rule may ask for it too**, which is what the owner wanted from
+  items in the very first design conversation: *"usually these will proc at the
+  start of a cycle"*. An item's rule with a `CYCLE_START` When clause fires as
+  its hero's tile begins work, paying from the stack.
+
+⚠️ **No charge-moment row was added, though the plan expected one.**
+`CYCLE_START` is a *firing* moment, not a spending one: a rule reacting to it
+carries a `When` clause and therefore already spends through `on_fire`. A row
+reading "at the start of the cycle" would be a second way to spend once per
+cycle. Recorded in `chargeMomentRegistry.js`; P6 should ask the same question
+before assuming its moment needs one.
+
+⚠️ **Carried rules do not go through `TriggerSystem`.** It fires statements
+against a Token *instance* — where the cooldown lives and the charge delta is
+spent — and a hero's items have neither. They are read straight off the loadout
+at the one moment they asked for, which fires once per cycle by construction so
+a cooldown would be redundant.
 
 ### P6 — Enemies
 
@@ -140,7 +158,7 @@ was reaching for.
 | P2 Scale and cost | **DONE** 2026-09-07 | Scale applied at expansion, so no consumer changed. Charge moment authored, opt-in. 31 new tests; suite back to its 6 baseline failures. |
 | P3 Announcing | **DONE** 2026-09-07 | Own event and own component — text, rising, fading, nothing to click. Announced only where ONE named effect discretely acted. |
 | P4 Items as bearers | **DONE** 2026-09-07 | UE-21 supersedes UE-11 — the inventory stack is the pool. Legacy gear pipeline deleted. 16 new tests. |
-| P5 Cycle start | Not started | |
+| P5 Cycle start | **DONE** 2026-09-07 | Two trigger rows (adjacent + self), plus carried rules firing at the start. No charge-moment row — see the note in `chargeMomentRegistry.js`. |
 | P6 Enemies | Not started | |
 | P7 Combat numbers | Not started | Blocked on nothing, sequenced last by choice |
 

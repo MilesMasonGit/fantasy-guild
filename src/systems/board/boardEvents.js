@@ -35,6 +35,21 @@ export const BOARD_EVENTS = {
      */
     CYCLE_COMPLETE: 'board:cycle_complete',
 
+    /**
+     * A Token began a new cycle — `{ tile, typeId }`.
+     *
+     * ⚠️ **The moment work actually starts, not the moment a tick runs.** Fired
+     * when `cycleElapsedMs` is still zero and every guard above it has already
+     * passed: a hero is present, the inputs are in the Bank, and the charges are
+     * affordable. A Token stalled for want of ore is not starting a cycle, and
+     * does not say it is — it fires once when it genuinely resumes.
+     *
+     * Its mirror, `CYCLE_COMPLETE`, is what a rule wants when it cares that work
+     * *happened*. This one is for rules that want to act on the work about to be
+     * done — the buff that should already be up while the hero swings.
+     */
+    CYCLE_START: 'board:cycle_start',
+
     /** A Token was placed, moved, removed or displaced. Payload: `{ tile, typeId }` */
     TILE_CHANGED: 'board:tile_changed',
 

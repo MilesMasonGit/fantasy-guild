@@ -17,6 +17,12 @@ project's first tagged baseline — everything before it was untagged developmen
   reach further than the Token you are looking at.
 - ⚠️ **Your CMS workspace migrates itself the first time you open it** after this
   change. Check that your Tokens' rules read right before syncing.
+- **Rules can react to a cycle *starting*, not just finishing.** A Token can act
+  as a neighbour begins work, or as it begins its own — and a carried item can
+  proc at the start of its hero's cycle, so a buff is already up while they
+  work rather than arriving as they finish. A Token waiting on inputs has not
+  started, and does not pretend it has.
+
 - **Items can carry effects now.** Gear and consumables use the same named
   library Tokens use, reaching the hero holding them, the Token that hero is
   working, or the enemy they are fighting. A pickaxe can raise what a mine
