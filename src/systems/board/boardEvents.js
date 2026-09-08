@@ -141,7 +141,22 @@ export const BOARD_EVENTS = {
      * gone. Mixing them would spam the alert channel and change what its icon
      * means.
      */
-    EFFECT_FIRED: 'board:effect_fired'
+    EFFECT_FIRED: 'board:effect_fired',
+
+    /**
+     * A hero engaged an enemy — `{ tile, typeId, heroId }`.
+     *
+     * ⚠️ **Every engagement, including the ones after a kill** (UE-15). An enemy
+     * Token holds charges, each kill spends one, and the enemy returns to full
+     * HP for the next fight — so one engagement is one fight in the same sense
+     * that one cycle is one piece of work. Firing only on arrival would mean a
+     * hero parked on a Bear for twenty kills procs once, which reads as broken.
+     *
+     * Detected as a transition INTO `active`, which catches the first
+     * engagement (idle → active) and each post-intermission respawn with one
+     * rule rather than two.
+     */
+    COMBAT_ENGAGED: 'board:combat_engaged'
 };
 
 /**

@@ -139,10 +139,23 @@ a cooldown would be redundant.
 
 ### P6 — Enemies
 
-* Verify the never-run `applyToEnemy` path end to end.
+* Verify the never-run `applyToEnemy` path end to end. **Done** — a carried
+  Venom Flask poisons the creature and demonstrably not the hero holding it.
 * Author a real enemy Token with its own statements.
-* The engagement moment (UE-15), published where `BoardCombat` creates or
-  refreshes a fight.
+* The engagement moment (UE-15), published from `BoardCombat`.
+
+⚠️ **Detecting "every engagement" takes two signals, not one.** The obvious
+detector — a transition into `active` — catches the first engagement and nothing
+else, because `resolveVictory` sets `fight.status = 'active'` the instant a kill
+resolves, so the status is already active through the rest that follows. Eight
+kills fired one engagement. What actually marks a fresh enemy is the
+**intermission ending**, where `CombatProcessor` restores the enemy to full HP.
+Both signals are now watched; eight kills fire eight engagements.
+
+⚠️ **Authoring a real enemy with statements is left to the owner.** The
+mechanism is proven with fixtures; the shipped content has exactly one enemy
+(`token_thorn_elemental`) and carries no rules. Writing them is authoring, and
+the CMS is the only surface for that.
 
 ### P7 — Combat numbers *(unparks the SCB — its own project)*
 
@@ -159,7 +172,7 @@ a cooldown would be redundant.
 | P3 Announcing | **DONE** 2026-09-07 | Own event and own component — text, rising, fading, nothing to click. Announced only where ONE named effect discretely acted. |
 | P4 Items as bearers | **DONE** 2026-09-07 | UE-21 supersedes UE-11 — the inventory stack is the pool. Legacy gear pipeline deleted. 16 new tests. |
 | P5 Cycle start | **DONE** 2026-09-07 | Two trigger rows (adjacent + self), plus carried rules firing at the start. No charge-moment row — see the note in `chargeMomentRegistry.js`. |
-| P6 Enemies | Not started | |
+| P6 Enemies | **DONE** 2026-09-07 | Engagement moment (two trigger rows), and the never-run `applyToEnemy` path now runs and is tested. No charge-moment row, same reason as P5. |
 | P7 Combat numbers | Not started | Blocked on nothing, sequenced last by choice |
 
 ## 4. Open questions

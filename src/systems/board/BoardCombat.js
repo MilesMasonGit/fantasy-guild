@@ -12,6 +12,7 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
+import * as LoadoutMoments from './LoadoutMoments.js';
 import { logger } from '../../utils/Logger.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 
@@ -181,7 +182,44 @@ export function tickTile(tile, instance, delta, heroId) {
     }
 
     fight.assignedHeroId = heroId;
+
+    /**
+     * An engagement is EVERY engagement, including each one after a kill
+     * (UE-15) — and detecting it takes two signals, not one.
+     *
+     * ⚠️ **The obvious detector does not work.** "A transition into `active`"
+     * catches the first engagement and nothing else, because `resolveVictory`
+     * below sets `fight.status = 'active'` the instant the kill resolves, so the
+     * status is already active all the way through the rest that follows. A run
+     * of eight kills fired exactly one engagement.
+     *
+     * What actually marks a fresh enemy is the **intermission ending**: that is
+     * where `CombatProcessor` restores the enemy to full HP (D-103's short rest
+     * after every kill). So:
+     *
+     * * `idle` → `active` is the first engagement, or a return after a retreat;
+     * * resting → not resting is the next enemy stepping up.
+     *
+     * Read before and compared after, rather than published from inside
+     * `CombatProcessor`, because that engine is a **port** (D-136) and board
+     * events are this adapter's job.
+     */
+    const resting = () => (fight.combat?.state?.intermissionTimer ?? 0) > 0;
+    const wasActive = fight.status === 'active';
+    const wasResting = resting();
+
     processCombat(fight, { enemy }, delta);
+
+    const engaged = (fight.status === 'active' && !wasActive) || (wasResting && !resting());
+
+    if (engaged) {
+        EventBus.publish(BOARD_EVENTS.COMBAT_ENGAGED, {
+            tile,
+            typeId: instance.typeId,
+            heroId
+        });
+        LoadoutMoments.fire(tile, heroId, 'COMBAT_ENGAGED');
+    }
 
     // The ring tracks the CURRENT FIGHT (D-129) — one kill is one cycle for
     // every board system outside the combat engine, so the same ring means the

@@ -15,12 +15,12 @@ import * as BlockUpkeep from './BlockUpkeep.js';
 import * as TriggerSystem from './TriggerSystem.js';
 import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
-import { KEYWORD } from '../effects/statements.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as Managers from './Managers.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as TokenBank from './TokenBank.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
@@ -166,57 +166,6 @@ function setAlert(instance, index, reason) {
     if ((instance.alert || null) === next) return;
     instance.alert = next;
     EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile: index, alert: instance.alert });
-}
-
-/**
- * The carried rules that want the START of a cycle, not the end (P5).
- *
- * ## Why items get their own path here
- * A Token reacts to `CYCLE_START` through `TriggerSystem`, which fires
- * statements against a Token **instance** — that is where its cooldown lives and
- * where its charge delta is spent. A hero's items have no instance: their cost
- * comes out of the inventory stack (UE-21) and there is nowhere to hang a
- * cooldown. Routing them through the trigger machinery would mean inventing
- * per-hero cooldown state for a rule that already fires exactly once per cycle
- * by construction.
- *
- * So carried rules are read straight off the loadout, at the one moment they
- * asked for. A rule fires here only if its author said `When a cycle begins`;
- * an item's untriggered rules stay on the completion path with everything else,
- * because that is where a bonus drop belongs.
- *
- * ## The order is check, act, pay
- * The same order the completion path uses, and for the same reason: a potion
- * spent on a roll that missed would teach the player the opposite of how often
- * it works.
- */
-function runLoadoutCycleStart(index, heroId) {
-    if (!heroId) return;
-
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return;
-
-    for (const statement of HeroEffects.loadoutStatements(hero)) {
-        if (statement?.when?.event !== 'CYCLE_START') continue;
-        if (!HeroEffects.canPayLoadoutCost(statement)) continue;
-
-        const payload = statement.payload || {};
-        let acted = false;
-
-        if (statement.keyword === KEYWORD.APPLIES) {
-            acted = StatusApplication.applyAt(index, payload);
-        } else if (statement.keyword === KEYWORD.GRANTS && payload.itemId) {
-            const chance = payload.chance ?? 100;
-            if (chance >= 100 || Math.random() * 100 < chance) {
-                SpriteLayer.addSprite('item', payload.itemId, Math.max(1, payload.quantity || 1), index);
-                acted = true;
-            }
-        }
-
-        if (!acted) continue;
-        HeroEffects.payLoadoutCost(statement);
-        EffectFeedback.announce(index, statement);
-    }
 }
 
 /**
@@ -641,7 +590,7 @@ export function tick(delta) {
          */
         if (!(instance.cycleElapsedMs > 0)) {
             EventBus.publish(BOARD_EVENTS.CYCLE_START, { tile: index, typeId: instance.typeId });
-            runLoadoutCycleStart(index, heroId);
+            LoadoutMoments.fire(index, heroId, 'CYCLE_START');
         }
 
         // --- the fast path: everything above is a cheap guard, this is the work

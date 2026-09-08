@@ -80,6 +80,33 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
+         * The other moment the owner asked for first, beside the cycle start:
+         * a rule acting as a fight begins rather than as one ends (UE-15).
+         *
+         * `COMBAT_RESOLVED` above is the mirror — that one is a kill, this one
+         * is the swing before it.
+         */
+        id: 'COMBAT_ENGAGED',
+        event: BOARD_EVENTS.COMBAT_ENGAGED,
+        label: 'A neighbouring fight begins',
+        scopes: [TRIGGER_SCOPES.ADJACENT],
+        hint: 'Fires each time a hero engages an adjacent enemy — including every fresh enemy after a kill, not just the first.'
+    },
+    {
+        /**
+         * The enemy's own half: a Token reacting to being fought.
+         *
+         * Same recursion caveat as the other self-scoped rows — read the note
+         * on `TRIGGER_SCOPES.SELF` and the guard in `TriggerSystem` first.
+         */
+        id: 'SELF_COMBAT_ENGAGED',
+        event: BOARD_EVENTS.COMBAT_ENGAGED,
+        label: 'A hero engages THIS enemy',
+        scopes: [TRIGGER_SCOPES.SELF],
+        hint: 'Fires on the enemy Token itself each time a hero engages it. This is how an enemy acts when it is attacked.'
+    },
+    {
+        /**
          * Finer than `CYCLE_COMPLETE`, which only says *that* a neighbour
          * finished. This fires only when the neighbour actually produced the
          * named item, so a Token can react to Copper Ore appearing rather than
