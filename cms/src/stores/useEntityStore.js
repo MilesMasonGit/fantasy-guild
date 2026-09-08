@@ -365,16 +365,29 @@ function performRename(state, oldId, newId, entityType) {
      * also the one where missing it costs the most.
      */
     if (entityType === 'effect') {
-        patch.tokens = Object.fromEntries(
-            Object.entries(state.tokens || {}).map(([id, token]) => {
-                const refs = effectRefsOf(token);
-                if (!refs.some((r) => r.effectId === oldId)) return [id, token];
+        /**
+         * ⚠️ **Both bearer collections, not just Tokens.**
+         *
+         * This walked only `tokens` until items became bearers (P4), which made
+         * renaming a shared effect quietly orphan every item using it: the item
+         * kept a reference to an id that no longer existed and simply lost that
+         * rule. Exactly the dangling reference `ContentAudit` reports — except
+         * caused by an ordinary rename rather than by anything the author did
+         * wrong.
+         */
+        const repoint = (collection) => Object.fromEntries(
+            Object.entries(collection || {}).map(([id, bearer]) => {
+                const refs = effectRefsOf(bearer);
+                if (!refs.some((r) => r.effectId === oldId)) return [id, bearer];
                 return [id, {
-                    ...token,
+                    ...bearer,
                     effects: refs.map((r) => (r.effectId === oldId ? { ...r, effectId: newId } : r)),
                 }];
             })
         );
+
+        patch.tokens = repoint(state.tokens);
+        patch.items = repoint(state.items);
     }
 
     if (entityType === 'map') {

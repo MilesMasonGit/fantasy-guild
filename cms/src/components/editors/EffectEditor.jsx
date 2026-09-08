@@ -38,7 +38,7 @@ export default function EffectEditor() {
   const setEffectStatements = useEntityStore((s) => s.setEffectStatements);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
 
-  if (!effect) return <Empty message="Select an effect from the sidebar" />;
+  if (!effect) return <Empty text="Select an effect from the sidebar" />;
 
   const names = {
     token: (id) => tokens[id]?.name || id,
