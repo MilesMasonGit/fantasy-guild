@@ -130,7 +130,28 @@ sentences to be unified and literal, so it communicates everything the player
 needs to know, based off the actual mechanics happening."* Only if a rule cannot
 be made to read literally is that evidence the feature is wrong.
 
-## 5. Statuses stop existing
+## 5. ⭐ The editor is the sentence
+
+If the sentence *is* the rule, the most honest editor is the sentence itself.
+
+So the CMS's nested dropdowns are replaced by a **line you type**. Typing filters
+what is legal at that position; enter inserts a chip; the line reads as prose:
+
+> *When a neighbour completes a cycle, deal 1 damage to the actor.*
+
+Each phrase is backed by a value rather than by text, which means **there is
+never a parser**. The statement object is what the editor holds, and
+`renderStatement` is what it shows — one renderer, no inverse function, and an
+invalid rule stays unwritable exactly as it is with dropdowns.
+
+A live panel beside the line shows everything legal at the cursor, so the
+vocabulary stays browsable — the one thing dropdowns did better than typing, kept.
+
+This closes a loop with §4's rule about the sentence being a design surface:
+because the editor *is* the sentence, improving the words improves the tool in
+the same edit. There is no second UI to keep in step.
+
+## 6. Statuses stop existing
 
 There is no status. `statusRegistry.js` and its five private effect types are
 deleted, and the seven shipped statuses are re-authored as library effects. They
@@ -151,7 +172,7 @@ does not: recurring damage is a *thing that happens*, and things that happen
 belong to the **statement grammar**. Pushing all seven at the aggregator would
 have forced three of them into a shape that cannot hold them.
 
-## 6. What this reopens
+## 7. What this reopens
 
 Decisions from the previous roadmap that this direction overturns, named so the
 reversal is deliberate rather than quiet:
@@ -170,14 +191,15 @@ reference; edits reach everywhere), UE-8 (the name is a title, never a
 description), UE-9/UE-18 (a 1–5 tier numeral is the magnitude control), and
 ER-1/ER-2/ER-5/ER-6 (the reach vocabulary, shipped and working).
 
-## 7. What this deliberately does not solve
+## 8. What this deliberately does not solve
 
 * **A condition language.** No "while", no "unless", no booleans. The design
   says when, what, to whom, how much and how long — and stops. That refusal is
   what the restriction palette already documents, and it holds here.
-* **Terrain filters.** Offered to the owner and **declined**, not deferred —
-  worth recording, because the v1 sweep named terrain as the single largest gap
-  and it should now stop being re-raised.
+* **Terrain filters.** The owner: *"Terrain will not be needed in our effects
+  system, it's purely visual."* The v1 sweep named terrain as the single largest
+  gap in the effect vocabulary; that finding is **withdrawn** — a gap between two
+  systems that were never meant to meet is not a gap.
 * **Moving or displacing entities.** Offered and declined: "where to" and "what
   if it is occupied" have no answers yet.
 * **Directional adjacency.** Still no meaning for "the Token below it".

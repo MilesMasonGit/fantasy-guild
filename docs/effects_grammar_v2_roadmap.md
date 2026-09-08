@@ -30,10 +30,20 @@ useful inventory. Its P5/P6/P7 are replaced by what follows.
 | # | Decision | Why |
 |---|---|---|
 | **G-11** | **Verbs: `Deals`, `Heals`, `Restores`, `Removes`, `Spawns`, `Transforms`.** Each ships **with its reader** or not at all. ⚠️ **`Moves`/displace is NOT in scope.** | Owner's picks. Nine keywords and not one of them does anything to a person. `Moves` was offered and declined — "where to" and "what if occupied" have no answers, and a verb with undecided targeting is how one slice becomes three. |
-| **G-12** | **Filters: state** (charges, HP, working/idle), **what it carries** (effects, tags, capabilities), and **negation**. ⚠️ **Terrain filters were offered and DECLINED.** | Owner's picks. Terrain is recorded as declined rather than deferred, so it stops being re-raised — I had flagged it as the largest gap in the v1 sweep and the owner does not want it. |
+| **G-12** | **Filters: state** (charges, HP, working/idle), **what it carries** (effects, tags, capabilities), and **negation**. ⚠️ **Terrain filters are OUT, permanently.** | Owner's picks. On terrain, the owner's words: *"Terrain will not be needed in our effects system, it's purely visual."* That is a statement about what terrain **is**, not a deferral — so it is settled rather than parked. I had flagged terrain as the single largest gap in the v1 sweep; that finding is **withdrawn**, because a gap between two systems that were never meant to meet is not a gap. |
 | **G-13** | **Magnitudes may be computed**, from a closed list: a flat number, a **percentage of a named stat on a named role**, or a **count of a selector's matches**. | Owner's pick over flat-only. Closed and declared, so it still renders — *"damage equal to 10% of the target's max HP"* — and still audits. Not arithmetic, not formulas. |
 | **G-14** | **A statement may carry a second, `counted` selector**, used only to produce a number. | Owner's pick. *"+1% yield to every adjacent Token, per adjacent Coast Token"* counts one set and affects another; they are genuinely different sets and conflating them makes the common shape unsayable. |
 | **G-15** | **`Spawns` chooses its destination from a declared vocabulary: the bearer's tile, the nearest free tile, or a random free tile.** | Owner's answer, and better than any option offered — it makes the destination something the **author picks and can see**, rather than a hidden fallback rule. Needs no tile-selector vocabulary, so filters keep meaning "entities" only. |
+
+### Authoring — the sentence editor *(owner ruling, 2026-09-08)*
+
+| # | Decision | Why |
+|---|---|---|
+| **G-18** | ⭐ **The editor is the sentence.** Structured **chips that read as prose** — typing filters what is legal at the cursor, enter inserts a chip. **There is never a parser.** | Owner's pick. The statement object *is* the editor state and `renderStatement` *is* the display, so there is one renderer and no inverse function to maintain. An invalid rule stays unwritable — the dropdowns' guarantee, at typing speed. Free-text parsing was offered and declined: it needs error recovery and can hold ambiguous states, and "what did it understand?" becomes a thing to debug. |
+| **G-19** | **A live "what can go here" panel**, showing everything legal at the cursor's slot with its hint, grouped. | A dropdown is self-documenting and typing is not. This keeps the vocabulary browsable — which matters most for the parts the author has not used yet, and the vocabulary is about to grow a great deal. You can author entirely by clicking it, entirely by typing, or by mixing. |
+| **G-20** | **Inline for simple values, popover for pickers, a small form for genuine tables.** Numbers and durations typed in the line; an item or Token opens a searchable popover on the chip; a `Converts` rule's two item lists stay a form beneath the sentence. | Prose where prose is good, a form where a form is better. A five-item conversion written out inline stops being a sentence. |
+| **G-21** | **Built after V2, and driven by the registries.** | Owner's sequencing. V1–V2 prove the spine and get Thorns authored; the editor then arrives against a settled slot shape, and every later phase's rows appear in it for free because it reads the same registries the game does. The phases that add the most vocabulary are the ones that benefit most. |
+| **G-22** | ⭐ **G-10 and G-18 reinforce each other.** Because the editor *is* the sentence, improving the sentence language improves the tool in the same edit. | The owner's rule that a badly-reading rule means "improve the syntax" now has a direct payoff: there is no separate editor UI to update when the words change. |
 
 ### Runtime
 
@@ -43,6 +53,7 @@ useful inventory. Its P5/P6/P7 are replaced by what follows.
 | **G-16** | **Re-application refreshes the timer. One effect on an entity means one instance.** | Owner's pick. Keeps the readout legible and means an effect can never quietly compound into something nobody authored — which is what made a 99-stack Poison possible. |
 | **G-5** | **The 1–5 tier is the magnitude control; charge cost is per-bearer.** A reference is `{ effectId, scale, chargeCost? }`. | Owner's pick. *Thorns III* is 3 damage, so UE-9's numeral keeps meaning something, while the same Thorns can be free on a bush and cost a charge on a monster. ⚠️ **Reverses UE-20.** |
 | **G-17** | **Chaining is allowed** — an effect may apply another effect — and is bounded by the **existing structural guard**, not by author discipline. | Owner picked chained effects. `TriggerSystem` already carries an in-flight re-entry guard and a cascade depth cap built for exactly this shape, because a cooldown is a rate limit and not a recursion limit. |
+| **G-23** | **`Deals` respects Armor, with an authored `ignoresArmor` flag.** | Owner's ruling, closing Q1. ⚠️ **This inverts today's default and has a consequence for V7**: DoT ticks are currently *true damage* that bypass Armor and Block by the 2026-07-12 ruling, so **Poison, Burning and Bleed must be re-authored carrying `ignoresArmor: true`** or they will quietly get weaker against armoured targets. `ContentAudit` should not have to catch this; G-7 already says these are re-authored by hand, and this is the specific thing to get right while doing it. |
 | **G-7** | **The seven shipped statuses are RE-AUTHORED, never translated.** `ContentAudit` names any that has not been. | Carried from ER-12. `attack_fail` → a negative `ACCURACY` against a 5–95 clamp is not the same arithmetic as "25% per stack capped at 80%". A quiet half-translation is the failure this whole line of work exists to remove. |
 
 ## 2. The shape
@@ -107,10 +118,12 @@ Each is one sitting, verified in the real CMS and the real game, committed at th
 end. **The owner chose Thorns-first sequencing**: build the spine that makes
 their own example work, prove it in play, then widen onto tested ground.
 
-⚠️ **Expressiveness lands at V3–V4, before the risky deletion at V6.** The
+⚠️ **The editor lands at V3 and expressiveness at V4–V5, all before the risky
+deletion at V7.** The
 owner's stated pain is *"I can't express the effects I'm imagining"* — not
 turnaround speed — so the filter and magnitude vocabulary is sequenced ahead of
-the status absorb, which is the biggest and most destructive slice.
+the status absorb, which is the biggest and most destructive slice. The editor
+comes first of all three, because every one of them is authored through it.
 
 ### V1 — Moments declare their roles *(groundwork, no new behaviour)*
 
@@ -136,17 +149,40 @@ The phase the whole project is judged by.
 **Verified when** one library entry, assigned twice, hurts a hero who kills the
 Elemental **and** a hero who harvests the bush — watched in the running game.
 
-### V3 — Composable filters
+### V3 — ⭐ The sentence editor
+
+The tool the rest of the project is authored through, so it comes before the
+phases that add the most vocabulary (G-21).
+
+* A **chip-based sentence editor** in the CMS. The statement object is the
+  editor state; `renderStatement` is the display; **no parser exists** (G-18).
+* Typing at a slot filters what is legal there; enter inserts a chip. Legality
+  comes from the same declarations the game reads — `KEYWORDS`, `TRIGGER_EVENTS`,
+  `REACHES`, `MODIFIER_PALETTE` and the roles from V1 — so a new row appears in
+  the editor with no editor change.
+* A live **"what can go here"** panel beside the line (G-19).
+* Values inline; item and Token pickers as popovers on the chip; `Converts`
+  lists stay a small form beneath (G-20).
+
+⚠️ **The old form editor is retired in the same commit, not left beside it.** Two
+editors for one thing is the duplication this project keeps deleting, and a form
+that drifts from the sentence is exactly the drift UE-8 exists to prevent.
+
+**Verified when** Thorns — already authored through the form in V2 — can be
+rebuilt from scratch by typing, reads identically, and produces a byte-identical
+statement.
+
+### V4 — Composable filters
 
 * A selector becomes source + stacked filters, AND-composed (G-9).
 * **State** filters: charges remaining, HP, working/idle.
 * **Negation** on every filter (G-12).
 * Sentence syntax extended to render stacked filters legibly (G-10).
 
-⚠️ The **"carries effect X"** filter waits for V5, when live instances exist for
+⚠️ The **"carries effect X"** filter waits for V6, when live instances exist for
 it to look at.
 
-### V4 — Computed magnitudes
+### V5 — Computed magnitudes
 
 * A magnitude becomes flat, **percentage of a named stat on a role**, or **a
   count** (G-13).
@@ -155,7 +191,7 @@ it to look at.
 **Verified when** *"+1% yield to every adjacent Token, per adjacent Coast Token"*
 is authorable, reads as one sentence, and moves the right number.
 
-### V5 — Live effect instances, duration, and chaining
+### V6 — Live effect instances, duration, and chaining
 
 * An entity carries `effects: [{ effectId, scale, expiresAt, sourceId }]` (G-6).
 * One clock ticks them; expired instances are dropped. Re-application refreshes
@@ -163,11 +199,11 @@ is authorable, reads as one sentence, and moves the right number.
 * `Applies` retargeted from a status id to a library effect reference — **with a
   duration it is over-time, without one it chains** (G-17), bounded by the
   existing cascade guard.
-* The **"carries effect X"** filter from V3.
+* The **"carries effect X"** filter deferred from V4.
 * ⚠️ **`hero.statuses` is save-resident and deliberately not stripped**
   ([`GameState.js:21`](../src/state/GameState.js)). Needs a save migration.
 
-### V6 — The seven, re-authored; the old engine deleted
+### V7 — The seven, re-authored; the old engine deleted
 
 * Poison, Burning, Bleed as `Deals` on the clock. Armor Shield, Well Fed,
   Cookout, Stun as `Provides` with a duration.
@@ -180,12 +216,12 @@ is authorable, reads as one sentence, and moves the right number.
   *hero's* aggregator by design.)
 * A minimal status readout, so any of this can be watched (ER-17 stands).
 
-### V7 — The rest of the verbs
+### V8 — The rest of the verbs
 
 `Heals`, `Restores`, `Removes` — each with its reader, each its own commit.
 `Removes` finally gives `purge()` a caller.
 
-### V8 — `Spawns` and `Transforms`
+### V9 — `Spawns` and `Transforms`
 
 With the declared placement vocabulary: the bearer's tile, the nearest free tile,
 or a random free tile (G-15).
@@ -206,12 +242,13 @@ or a random free tile (G-15).
 |---|---|---|
 | V1 Moments declare roles | **NOT STARTED** | |
 | V2 `Deals`, the actor, Thorns | **NOT STARTED** | ⭐ The example the plan is judged by |
-| V3 Composable filters | **NOT STARTED** | |
-| V4 Computed magnitudes | **NOT STARTED** | |
-| V5 Live instances, duration, chaining | **NOT STARTED** | Needs a save migration |
-| V6 The seven re-authored | **NOT STARTED** | Absorbs the old ER-10 |
-| V7 The rest of the verbs | **NOT STARTED** | |
-| V8 `Spawns` and `Transforms` | **NOT STARTED** | |
+| V3 ⭐ The sentence editor | **NOT STARTED** | Retires the form editor |
+| V4 Composable filters | **NOT STARTED** | |
+| V5 Computed magnitudes | **NOT STARTED** | |
+| V6 Live instances, duration, chaining | **NOT STARTED** | Needs a save migration |
+| V7 The seven re-authored | **NOT STARTED** | Absorbs the old ER-10 |
+| V8 The rest of the verbs | **NOT STARTED** | |
+| V9 `Spawns` and `Transforms` | **NOT STARTED** | |
 
 *Carried over and already done:* v1 P1 (the filter tells the truth), P2 (reach),
 P4 (`STATUS_IMMUNITY` and the skill scope). v1 P3 — authoring real effects on
@@ -220,10 +257,10 @@ part of it by authoring Thorns.
 
 ## 5. Open questions
 
-**Q1 — Does `Deals` respect Armor?** A thorn that ignores armour and one that
-does not are different game feels. Today's DoT ticks are **true damage** and
-bypass Armor and Block by an owner ruling (2026-07-12) — but that was a ruling
-about poison, not about every future action. **Blocks V2.**
+*Q1 (does `Deals` respect Armor?) was closed by the owner on 2026-09-08 and is
+now **G-23**: yes, with an authored `ignoresArmor` flag. ⚠️ See the warning on
+G-23 — Poison, Burning and Bleed must carry that flag when they are re-authored
+in V7, or they quietly weaken against armoured targets.*
 
 **Q2 — What happens to a live save's statuses at V5?** A save holds
 `[{ id: 'poison', stacks: 7 }]`, and the new shape has no stacks. Drop them on
