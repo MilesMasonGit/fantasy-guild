@@ -20,6 +20,7 @@ import * as Managers from './Managers.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import * as HeroEffects from '../hero/HeroEffects.js';
 import * as TokenBank from './TokenBank.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -325,6 +326,11 @@ function completeCycle(index, instance, def, io, heroId) {
         for (const grant of TileModifiers.collectItemGrants(index, EFFECT_TYPES.BONUS_DROP)) {
             const chance = grant.chance ?? 100;
             if (chance < 100 && Math.random() * 100 > chance) continue;
+            // An item-borne grant spends units of the item that granted it
+            // (UE-21). Paid AFTER the roll, so a miss costs nothing — the same
+            // "charge burns on service, not on luck" rule Tokens follow. A
+            // Token's grant carries no `sourceItemIds` and pays nothing here.
+            if (!HeroEffects.payLoadoutCost(grant)) continue;
             const quantity = Math.max(1, grant.quantity || 1);
             SpriteLayer.addSprite('item', grant.itemId, quantity, index);
             produced.push(grant.itemId);
@@ -351,7 +357,13 @@ function completeCycle(index, instance, def, io, heroId) {
             // `applyAt` already answers whether it rolled AND found somebody to
             // land on, so the announcement follows the status rather than the
             // attempt.
+            // ⚠️ Checked, then applied, then paid. `applyAt` rolls the chance
+            // internally, so paying up front would spend a potion on a roll that
+            // missed; paying without checking first could apply a status the
+            // hero cannot afford. Three steps, in that order.
+            if (!HeroEffects.canPayLoadoutCost(application)) continue;
             if (StatusApplication.applyAt(index, application)) {
+                HeroEffects.payLoadoutCost(application);
                 EffectFeedback.announce(index, application);
             }
         }

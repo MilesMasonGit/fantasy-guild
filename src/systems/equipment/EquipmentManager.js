@@ -134,18 +134,30 @@ export function unequipItem(heroId, slot) {
 }
 
 /**
- * Sync equipment modifiers with inventory state (Vault-Check)
- * Disables bonuses if the item is out of stock in the shared vault.
+ * Whether each equipped item is currently backed by stock in the Bank.
+ *
+ * ## ⚠️ It used to toggle aggregator sources; there are none left to toggle
+ * The old pipeline registered an `equip:<slot>` modifier per item and this
+ * switched it off when the shared stack ran dry. Items are bearers now and their
+ * rules are read live from the loadout (`HeroEffects.loadoutStatements`), which
+ * checks stock itself — so the out-of-stock rule is enforced at the point of
+ * use rather than by pre-registering something and disabling it later.
+ *
+ * Kept because the UI wants the same answer to grey a slot out (UE-22): the item
+ * stays equipped, it simply does nothing until the Bank has one again.
+ *
+ * @returns {Record<number, boolean>} slot index → whether it is backed by stock
  */
 export function syncEquipmentModifiers(heroId) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero?.equipment) return;
+    if (!hero?.equipment) return {};
 
+    const backed = {};
     getGrid(hero).forEach((itemId, slot) => {
         if (!itemId) return;
-        const hasStock = InventoryManager.hasItem(itemId, 1);
-        hero.aggregator.setSourceEnabled(`equip:${slot}`, hasStock);
+        backed[slot] = InventoryManager.hasItem(itemId, 1);
     });
+    return backed;
 }
 
 /**
@@ -164,155 +176,37 @@ export function getAllEquipment(heroId) {
 }
 
 /**
- * Recalculate and apply all active equipment modifiers to the hero aggregator.
- * Collects flat stats, sums matching gear assigned effect levels, caps at level V (5),
- * and converts them to unified math-ready modifiers.
+ * Clear the modifiers a hero's loadout used to register on their aggregator.
+ *
+ * ## ⚠️ This function used to BE the gear effect system, and it is deleted
+ * (UE-16)
+ *
+ * It read four flat stat fields off an item template (`damage`, `defense`,
+ * `hpBonus`, `tickSpeedBonus`), a `skillBonus` object, and an `assignedEffect`
+ * id which it hand-mapped through a `switch` of eight legacy names onto twelve
+ * modifier types. **Nothing authored any of it.** All 54 shipped items carry the
+ * same fourteen fields and none of them is an effect; `ItemEditor` had no field
+ * for one; and nine of the twelve modifier types it wrote had no reader anywhere
+ * in the game (ticket CR2-074). It was a write-only pipeline feeding a mostly
+ * unread vocabulary.
+ *
+ * Items are **bearers** now (Unified Effects P4). An item's rules are named
+ * library effects like everything else, resolved by `HeroEffects` and read
+ * through the hero scope in `TileModifiers.resolveAxis` — one vocabulary, one
+ * editor, one generated sentence. Combat's three genuinely-wired inputs
+ * (`DEFENSE`, `ACCURACY`, `RESIST_FLAT`) become things content can feed the
+ * moment somebody authors a rule that provides them.
+ *
+ * What remains is the wipe. A save written before this ran still holds
+ * `equip:*` modifiers on its heroes' aggregators, and leaving them there would
+ * keep a deleted system's numbers alive in every existing game.
  */
 export function recalculateEquipmentModifiers(hero) {
-    if (!hero || !hero.aggregator) return;
+    if (!hero?.aggregator) return;
 
-    // 1. Wipe all existing equipment modifiers
     for (const sourceId of Array.from(hero.aggregator.modifiers.keys())) {
         if (sourceId.startsWith('equip:')) {
             hero.aggregator.removeModifiersBySource(sourceId);
-        }
-    }
-
-    const activeEffects = {}; // effectId -> sum of scales
-
-    // 2. Scan the loadout grid. Consumables share it with gear now (D-7) and
-    //    simply contribute no stats, so no filtering is needed here.
-    const grid = getGrid(hero);
-    for (let slot = 0; slot < grid.length; slot++) {
-        const itemId = grid[slot];
-        if (!itemId) continue;
-        const template = getItem(itemId);
-        if (!template) continue;
-
-        const source = `equip:${slot}`;
-
-        // Apply primary flat stats (damage, defense, etc.)
-        ['damage', 'defense', 'hpBonus', 'tickSpeedBonus'].forEach(stat => {
-            if (template[stat]) {
-                hero.aggregator.addModifier({
-                    type: stat.toUpperCase(),
-                    value: template[stat],
-                    source,
-                    persistent: true
-                });
-            }
-        });
-
-        // Apply skill bonuses
-        if (template.skillBonus) {
-            hero.aggregator.addModifier({
-                type: 'SKILL_LEVEL',
-                value: template.skillBonus.value,
-                target: { skillId: template.skillBonus.skill },
-                source,
-                persistent: true
-            });
-        }
-
-        // Collect assigned effects (single assignedEffect or assignedEffects array)
-        const effectsToProcess = [];
-        if (template.assignedEffect) {
-            effectsToProcess.push(template.assignedEffect);
-        }
-        if (Array.isArray(template.assignedEffects)) {
-            effectsToProcess.push(...template.assignedEffects);
-        }
-
-        effectsToProcess.forEach(eff => {
-            const id = typeof eff === 'string' ? eff : eff.effectId;
-            const scale = (typeof eff === 'object' ? eff.scale || eff.level : 1) || 1;
-            if (id) {
-                activeEffects[id] = (activeEffects[id] || 0) + scale;
-            }
-        });
-    }
-
-    // 3. Register consolidated modifiers to hero aggregator (capped at Level V/5)
-    const source = 'equip:aggregated_effects';
-    for (const [effectId, rawScale] of Object.entries(activeEffects)) {
-        const scale = Math.min(5, rawScale);
-        if (scale <= 0) continue;
-
-        switch (effectId) {
-            case 'flatDamage':
-            case 'damage':
-                hero.aggregator.addModifier({
-                    type: 'DAMAGE',
-                    value: 3 * scale,
-                    source,
-                    persistent: true
-                });
-                break;
-            case 'accuracyBonus':
-            case 'finesse':
-                hero.aggregator.addModifier({
-                    type: 'ACCURACY',
-                    value: 5 * scale,
-                    source,
-                    persistent: true
-                });
-                break;
-            case 'slowAttack':
-            case 'stun':
-                hero.aggregator.addModifier({
-                    type: 'SLOW_ENEMY',
-                    value: 100 * scale,
-                    source,
-                    persistent: true
-                });
-                break;
-            case 'penetration':
-            case 'sunder':
-                hero.aggregator.addModifier({
-                    type: 'SUNDER',
-                    value: 0.10 * scale,
-                    source,
-                    persistent: true
-                });
-                break;
-            case 'defenseBonus':
-            case 'resistance':
-                hero.aggregator.addModifier({
-                    type: 'RESIST_FLAT',
-                    value: 2 * scale,
-                    source,
-                    persistent: true
-                });
-                break;
-            case 'evasionBonus':
-            case 'deflection':
-                hero.aggregator.addModifier({
-                    type: 'EVASION',
-                    value: 5 * scale,
-                    source,
-                    persistent: true
-                });
-                break;
-            case 'energyEfficiency':
-            case 'light':
-                hero.aggregator.addModifier({
-                    type: 'LIGHT',
-                    value: 0.10 * scale,
-                    source,
-                    persistent: true
-                });
-                break;
-            case 'attackSpeedPenalty':
-            case 'mobile':
-                hero.aggregator.addModifier({
-                    type: 'HASTE',
-                    value: -100 * scale,
-                    source,
-                    persistent: true
-                });
-                break;
-            default:
-                console.warn(`[EquipmentManager] Unrecognized equipment effect: ${effectId}`);
         }
     }
 }

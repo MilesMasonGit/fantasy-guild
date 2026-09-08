@@ -256,7 +256,11 @@ export function blankPayload(keywordId) {
         case KEYWORD.CANNOT:
             return blankRestriction();
         case KEYWORD.APPLIES:
-            return { statusId: '', stacks: 1, chance: 100 };
+            // `target` is read only when an ITEM carries this rule (UE-24): a
+            // Token's `Applies` uses its filter and ignores the field. Defaulted
+            // to the hero because that is the reading a Token already has, so an
+            // effect moved from a Token to an item keeps meaning the same thing.
+            return { statusId: '', stacks: 1, chance: 100, target: 'hero' };
         case KEYWORD.STATION:
             return { skill: '' };
         default:

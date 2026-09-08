@@ -229,6 +229,23 @@ function bodyOf(statement, names) {
             // finishing a cycle is the only ambient instant a status could land
             // on the person who was working it.
             const moment = statement.when ? '' : ' when they finish work';
+
+            /**
+             * ⚠️ An item-borne `Applies` names its target and says so (UE-24).
+             *
+             * An item has one hero, so there is no filter and nothing to select
+             * between — except the one choice that is real: the person carrying
+             * it, or the creature they are fighting. The sentence has to say
+             * which, because "Applies Poison" alone would be true of two
+             * opposite rules.
+             */
+            if (payload.target === 'enemy') {
+                return `Applies ${amount} to the enemy its hero is fighting${odds}`;
+            }
+            if (payload.target === 'hero') {
+                return `Applies ${amount} to the hero carrying it${moment}${odds}`;
+            }
+
             const where = subjectPhrase(statement, names);
             return `Applies ${amount} to heroes on adjacent ${where}${moment}${odds}`;
         }

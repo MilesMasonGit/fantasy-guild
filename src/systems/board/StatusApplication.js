@@ -56,22 +56,38 @@ import * as BoardCombat from './BoardCombat.js';
  *
  * @returns {{apply: () => void}|null}
  */
-function occupantOf(tile) {
+function occupantOf(tile, prefer = 'occupant') {
+    /**
+     * ⚠️ `prefer` exists for **item-borne** rules (UE-24), and only there.
+     *
+     * A Token's `Applies` names Tokens and resolves to whoever is on them —
+     * hero if somebody is standing there, otherwise the live enemy — and the
+     * hero wins, because a hero standing on an enemy tile is the person the
+     * filter meant. An item carried by that same hero needs the opposite
+     * reading available: *"Applies Poison to the enemy I am fighting"* is a rule
+     * about the creature, said by something the hero is holding.
+     *
+     * So an item's rule says which, and everything else keeps the old answer.
+     */
+    const enemyTarget = () => {
+        const instance = BoardState.getToken(tile);
+        if (!instance || !BoardCombat.isEnemyToken(instance)) return null;
+        const fight = BoardCombat.getFight(tile);
+        // Only a fight in progress: an enemy nobody has engaged has no status
+        // list to put anything on, and inventing one here would make a status
+        // that survives being ignored.
+        if (!fight) return null;
+        return { apply: (statusId, stacks) => StatusEffectSystem.applyToEnemy(fight, statusId, stacks) };
+    };
+
+    if (prefer === 'enemy') return enemyTarget();
+
     const heroId = BoardState.heroOnTile(tile);
     if (heroId) {
         return { apply: (statusId, stacks) => StatusEffectSystem.applyToHero(heroId, statusId, stacks) };
     }
 
-    const instance = BoardState.getToken(tile);
-    if (instance && BoardCombat.isEnemyToken(instance)) {
-        const fight = BoardCombat.getFight(tile);
-        // Only a fight in progress: an enemy nobody has engaged has no status
-        // list to put anything on, and inventing one here would make a status
-        // that survives being ignored.
-        if (fight) return { apply: (statusId, stacks) => StatusEffectSystem.applyToEnemy(fight, statusId, stacks) };
-    }
-
-    return null;
+    return enemyTarget();
 }
 
 /** Whether a payload names a status the engine has, with a roll that hit. */
@@ -93,7 +109,9 @@ function rolls(payload, random = Math.random) {
  */
 export function applyAt(tile, payload, random = Math.random) {
     if (!rolls(payload, random)) return false;
-    const target = occupantOf(tile);
+    // `payload.target` is only ever set by an item-borne rule (UE-24); a
+    // Token's `Applies` leaves it unset and keeps the hero-first reading.
+    const target = occupantOf(tile, payload?.target === 'enemy' ? 'enemy' : 'occupant');
     if (!target) return false;
     target.apply(payload.statusId, Math.max(1, payload.stacks || 1));
     return true;

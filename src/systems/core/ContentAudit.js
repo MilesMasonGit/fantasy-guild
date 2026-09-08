@@ -96,6 +96,35 @@ function checkRef(out, where, kind, value, role) {
     }
 }
 
+/**
+ * Items: their effect references (Unified Effects P4).
+ *
+ * An item is a bearer now, so it can dangle exactly the way a Token can — a
+ * reference to an entry that was renamed or deleted, or one entry named twice.
+ * Both fail the same silent way: the item equips, the hero carries it, and one
+ * of its rules simply is not there.
+ */
+function auditItemEffects(out) {
+    for (const [itemId, def] of Object.entries(ITEMS || {})) {
+        const where = `Item "${itemId}"`;
+
+        for (const { effectId } of effectRefsOf(def)) {
+            if (!getEffect(effectId)) {
+                out.push(finding(where,
+                    `one of its rules points at the effect "${effectId}", which does not exist — ` +
+                    `it was probably renamed or deleted in the CMS. The item carries no rule from it.`));
+            }
+        }
+
+        for (const effectId of duplicateRefsOf(def)) {
+            out.push(finding(where,
+                `names the effect "${effectId}" more than once. A hero's loadout merges duplicates ` +
+                `(their scales add, capped at 5), so the second reference adds nothing — remove it ` +
+                `and raise the scale instead.`));
+        }
+    }
+}
+
 /** Tokens: their recipes, their effects, and the things they open onto. */
 function auditTokens(out) {
     for (const [tokenId, def] of Object.entries(TOKENS || {})) {
@@ -198,7 +227,7 @@ function auditEffects(out) {
             continue;
         }
 
-        if (usedBy(effectId, TOKENS || {}).length === 0) {
+        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0) {
             out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
                 'building what it is for — but nothing references it today.'));
         }
@@ -429,7 +458,7 @@ function auditHardcodedLists(out, openingTray) {
  */
 export function auditContent({ openingTray = [] } = {}) {
     const out = [];
-    const steps = [auditTokens, auditEffects, auditItems, auditMaps, auditHardcodedLists];
+    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditMaps, auditHardcodedLists];
     for (const step of steps) {
         try {
             step(out, openingTray);

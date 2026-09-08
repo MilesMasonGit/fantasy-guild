@@ -17,6 +17,22 @@ project's first tagged baseline — everything before it was untagged developmen
   reach further than the Token you are looking at.
 - ⚠️ **Your CMS workspace migrates itself the first time you open it** after this
   change. Check that your Tokens' rules read right before syncing.
+- **Items can carry effects now.** Gear and consumables use the same named
+  library Tokens use, reaching the hero holding them, the Token that hero is
+  working, or the enemy they are fighting. A pickaxe can raise what a mine
+  yields; a potion can put a status on its carrier.
+- **A potion is spent from the Bank when it works.** An item's rule can cost
+  units of that item — one potion per firing — and a rule costing nothing is
+  never consumed, which is how weapons and armour are built. Run out and the
+  slot greys: the item stays where you put it and starts working again when you
+  restock.
+- **Carrying two of the same effect stacks it, up to a limit.** A charm at II and
+  a ring at III make one effect at V rather than two separate bonuses, and five
+  is the ceiling however much you pile on.
+- **The old gear stat system is gone.** It read damage, defense and a hidden
+  effect id off items, mapped them through a hardcoded list, and wrote mostly
+  into nothing — no item ever used it and the editor had no field for it.
+
 - **Effects say their name when they fire.** When a named effect actually does
   something — a rule triggers, a bonus item drops, a status lands — its title
   floats off the tile and fades. Nothing to click and nothing to dismiss; if you

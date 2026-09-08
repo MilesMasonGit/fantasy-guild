@@ -32,6 +32,10 @@ questions still open.
 | **UE-17** | **Enemies get all three: their own statements, being targetable by others, and scaling hero-side combat numbers.** The third unparks the SCB and is sequenced last, alone. | Owner's call, made with the SCB consequence stated. Sequencing keeps everything else off its critical path. |
 | **UE-18** | **A scale is an integer, 1–5.** 1 shows no numeral, 2 is II, up to V. A strength outside that range is its own library entry. | Makes UE-9's numeral rule trivial, and mirrors the cap the deleted gear pipeline used. |
 | **UE-19** | **Scales from separate bearers add, capped at 5.** A II and a III make a V. | The only answer needing no new rule, and the cap stops a build maxing one effect by carrying six of a thing. |
+| **UE-21** | **⚠️ UE-11 is superseded. The shared stack IS the pool.** An item declares no `uses`; a statement's authored charge cost is spent as **units from the inventory stack** on an item bearer, and as charges from the pool on a Token. `0` means never consumed — which is how weapons and armour are built. | An item is a fungible id in a shared stack (`EquipmentManager`'s Shared Reference model), so there is nowhere to record "this copy is 12 uses from breaking" without deciding whose copy it is. Spending from the stack needs no per-copy state at all, and reuses the cost field P2 already built. |
+| **UE-22** | **An empty stack greys the slot; the item stays equipped.** The last unit fires normally, then the effect switches off. | `syncEquipmentModifiers` already disables a hero's bonus when the stack runs dry — this makes that visible rather than silent. The loadout the player arranged is not rearranged under them. |
+| **UE-23** | **An item's rules reach three things: its hero, the Token that hero is working, and the enemy that hero is fighting.** An item does **not** hand out capabilities (`Acts as`). | Owner's picks. `Acts as` was offered and declined: a hero supplying `pickaxe` merely by holding one is a real balance shift, not a free fallout. |
+| **UE-24** | **Item statements need no general filter.** An item has exactly one hero, so each keyword has one honest reading — `Provides` and `Grants` reach the Token being worked. Only `Applies` takes a choice: **my hero** or **the enemy I am fighting**. | The sentence must be literally true (grammar principle 3). Inventing a filter vocabulary to express a choice that only one keyword has would be three ways to say nothing. |
 | **UE-20** | **Charge consumption is authored, not ruled.** Every statement carries *how many* charges it consumes **and** *when* they are consumed. **`0` is the always-on setting** — a continuous effect costs nothing and wears nothing unless its author says otherwise. | Supersedes the question of whether continuous effects wear items down: it is the author's call per effect, not a global rule. |
 
 ## 2. The phases
@@ -135,7 +139,7 @@ was reaching for.
 | P1 The library | **DONE** 2026-09-07 | 21 statements → 16 entries (5 were duplicates, now shared). Game + CMS + migration + audit. Suite back to its 6 baseline failures with 36 new tests. |
 | P2 Scale and cost | **DONE** 2026-09-07 | Scale applied at expansion, so no consumer changed. Charge moment authored, opt-in. 31 new tests; suite back to its 6 baseline failures. |
 | P3 Announcing | **DONE** 2026-09-07 | Own event and own component — text, rising, fading, nothing to click. Announced only where ONE named effect discretely acted. |
-| P4 Items as bearers | Not started | |
+| P4 Items as bearers | **DONE** 2026-09-07 | UE-21 supersedes UE-11 — the inventory stack is the pool. Legacy gear pipeline deleted. 16 new tests. |
 | P5 Cycle start | Not started | |
 | P6 Enemies | Not started | |
 | P7 Combat numbers | Not started | Blocked on nothing, sequenced last by choice |
@@ -149,13 +153,18 @@ owner on 2026-09-07 and are now UE-18, UE-19 and UE-20.*
 that already have a reader. `chargeMomentRegistry.js` holds two — `on_fire` and
 `per_cycle` — and P5 and P6 each add their own when they add the moment.*
 
-**Q7 — Where does UE-19's stacking cap live?** Scales from separate bearers add,
-capped at 5. P2 built the scale and the cap on a single reference, but the
-*adding* has no home yet: two adjacent Tokens carrying one effect are two
-separate modifier sources, and the three-bucket formula already combines them —
-adding their scales on top would double-count. The rule was framed around a hero
-carrying two items with the same effect, so its aggregation point arrives with
-**P4**, and it is built there rather than guessed at now.
+*Q7 (UE-19's stacking cap) was answered by P4: the aggregation point is the
+**loadout**. `HeroEffects.loadoutRefs` groups a hero's references by effect, adds
+their scales, caps at 5 and applies the effect once. Two adjacent **Tokens**
+carrying one effect are still two separate modifier sources and are still
+summed by the three-bucket formula — that was never the case UE-19 described.*
+
+**Q8 — When does an item-borne rule fire, other than on a worked cycle?** P4
+wires the ambient moment: the tile its hero is working completing a cycle, which
+is where `Grants` and `Applies` already land. An item's rule cannot yet react to
+anything else, because the moments it would want are the ones P5 and P6 bring —
+a cycle starting, and a fight beginning. Nothing is broken; the vocabulary is
+simply smaller than it will be.
 
 **Q6 — Does a named effect need a category or tag for library navigation?** Not
 in P1. Revisit when the library passes ~30 entries.

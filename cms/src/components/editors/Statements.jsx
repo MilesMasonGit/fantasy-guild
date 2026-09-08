@@ -170,7 +170,14 @@ export function StatementList({ statements, onChange }) {
  * `Requires` stays a Token field and stays editable here — it is
  * `acceptedTokens`, which gates whether the station produces anything at all.
  */
-export default function Statements({ token }) {
+export default function Statements({ token, item }) {
+  // One component, either bearer (Unified Effects P4). The rules half is
+  // identical for a Token and an item — a named effect referenced by id, shown
+  // with its sentences and its reference count. What differs is `Requires`,
+  // which is a Token field (`acceptedTokens`, owner Q5) and has no meaning on
+  // something a hero carries.
+  const record = token || item;
+  const collectionKey = token ? 'tokens' : 'items';
   const effects = useEntityStore((s) => s.effects);
   const tokens = useEntityStore((s) => s.tokens);
   const items = useEntityStore((s) => s.items);
@@ -185,18 +192,23 @@ export default function Statements({ token }) {
   const [browsing, setBrowsing] = useState(false);
   const [search, setSearch] = useState('');
 
-  const requirements = token.acceptedTokens || [];
-  const refs = effectRefsOf(token);
-  const setRequirements = (next) => updateToken(token.id, { acceptedTokens: next });
+  const requirements = token ? (token.acceptedTokens || []) : [];
+  const refs = effectRefsOf(record);
+  const setRequirements = (next) => updateToken(record.id, { acceptedTokens: next });
 
   const names = useMemo(() => ({
     token: (id) => tokens[id]?.name || id,
     item: (id) => items[id]?.name || id,
   }), [tokens, items]);
 
-  /** How many bearers use an entry — the number that makes an edit legible. */
+  /**
+   * How many bearers use an entry — the number that makes an edit legible.
+   * Counts Tokens AND items: an effect shared between a Bay and a potion is
+   * exactly the case the library exists for, and an edit reaches both.
+   */
   const bearerCount = (effectId) =>
-    Object.values(tokens).filter((t) => effectRefsOf(t).some((r) => r.effectId === effectId)).length;
+    [...Object.values(tokens), ...Object.values(items)]
+      .filter((b) => effectRefsOf(b).some((r) => r.effectId === effectId)).length;
 
   const unused = Object.values(effects)
     .filter((e) => !refs.some((r) => r.effectId === e.id))
@@ -204,17 +216,19 @@ export default function Statements({ token }) {
 
   const isEmpty = refs.length === 0 && requirements.length === 0;
 
+  if (!record) return null;
+
   return (
     <div className="space-y-3">
       {isEmpty && (
         <p className="text-[11px] text-gray-500 leading-relaxed">
-          No rules. A pure producer needs none — rules are for Tokens that change
-          what happens <em>around</em> them, hand a capability to a neighbour, or
-          need one themselves.
+          {token
+            ? 'No rules. A pure producer needs none — rules are for Tokens that change what happens around them, hand a capability to a neighbour, or need one themselves.'
+            : 'No rules. Most items need none — rules are for gear and consumables that change what their hero does: the Token they are working, the enemy they are fighting, or the hero themselves.'}
         </p>
       )}
 
-      {token.effectBlocks?.length > 0 && (
+      {token?.effectBlocks?.length > 0 && (
         <div
           className="rounded-lg p-3 text-[11px] leading-relaxed"
           style={{ background: 'rgba(255,180,0,0.08)', border: '1px solid rgba(255,180,0,0.3)', color: 'var(--color-warning)' }}
@@ -252,7 +266,7 @@ export default function Statements({ token }) {
                 longer exists. It currently has no rule from it.
               </span>
               <button
-                onClick={() => removeEffectRef('tokens', token.id, effectId)}
+                onClick={() => removeEffectRef(collectionKey, record.id, effectId)}
                 className="btn-ghost" style={{ padding: '2px 6px' }}
               >
                 <Trash2 size={12} />
@@ -309,7 +323,7 @@ export default function Statements({ token }) {
                     max={MAX_SCALE}
                     step={1}
                     value={scale}
-                    onChange={(e) => setEffectRefScale('tokens', token.id, effectId, e.target.value)}
+                    onChange={(e) => setEffectRefScale(collectionKey, record.id, effectId, e.target.value)}
                     className="w-11"
                     style={{ fontSize: 10, padding: '1px 4px' }}
                   />
@@ -324,7 +338,7 @@ export default function Statements({ token }) {
                 <Pencil size={11} /> Edit
               </button>
               <button
-                onClick={() => removeEffectRef('tokens', token.id, effectId)}
+                onClick={() => removeEffectRef(collectionKey, record.id, effectId)}
                 className="btn-ghost" style={{ padding: '2px 6px' }}
                 title="Stop this Token using the effect (the effect itself is kept)"
               >
@@ -362,7 +376,7 @@ export default function Statements({ token }) {
             ) : unused.map((e) => (
               <button
                 key={e.id}
-                onClick={() => { setBrowsing(false); setSearch(''); addEffectRef('tokens', token.id, e.id); }}
+                onClick={() => { setBrowsing(false); setSearch(''); addEffectRef(collectionKey, record.id, e.id); }}
                 className="w-full text-left flex items-start gap-2 px-2 py-1.5 rounded hover:bg-white/5"
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
               >
@@ -390,7 +404,7 @@ export default function Statements({ token }) {
 
         {menuOpen ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
-            {KEYWORDS.map((k) => {
+            {KEYWORDS.filter((k) => token || k.id !== KEYWORD.REQUIRES).map((k) => {
               const Icon = KEYWORD_ICON[k.id] || Zap;
               return (
                 <button
@@ -402,7 +416,7 @@ export default function Statements({ token }) {
                       setRequirements([...requirements, { tag: '', minTier: 1 }]);
                       return;
                     }
-                    addEffectForBearer('tokens', token.id, k.id);
+                    addEffectForBearer(collectionKey, record.id, k.id);
                   }}
                   className="w-full text-left flex items-start gap-2 px-2 py-1.5 rounded hover:bg-white/5"
                   style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
@@ -969,6 +983,32 @@ function AppliesFields({ payload, setPayload }) {
           />
         </Field>
       </div>
+
+      {/*
+        ⚠️ The one choice an item-borne rule has (UE-24). An item is carried by
+        exactly one hero, so `Provides` and `Grants` have a single honest reading
+        and need no filter — but a status could land on either side of a fight,
+        and "Applies Poison" alone would be true of two opposite rules.
+
+        Shown on every `Applies`, because an effect entry does not know which
+        bearer will reference it. On a Token the field is ignored and the filter
+        above decides, which the hint says.
+      */}
+      <Field label="When carried by an item, it lands on">
+        <select
+          value={payload.target || 'hero'}
+          onChange={(e) => setPayload({ target: e.target.value })}
+          className="w-full"
+          style={{ fontSize: 12 }}
+        >
+          <option value="hero">The hero carrying it</option>
+          <option value="enemy">The enemy that hero is fighting</option>
+        </select>
+        <p className="text-[10px] text-gray-600 mt-1 leading-relaxed">
+          Ignored when a Token carries this effect — a Token&rsquo;s rule uses the
+          filter above instead.
+        </p>
+      </Field>
 
       {status && (
         <p
