@@ -159,9 +159,35 @@ the CMS is the only surface for that.
 
 ### P7 — Combat numbers *(unparks the SCB — its own project)*
 
-* Enemies scaling hero-side damage / armor / accuracy. `BLOCK`, `ARMOR` and
-  `STATUS_IMMUNITY` are read by combat and written by nobody; that is where this
-  starts.
+* Five axes authorable: **Armor, Resistance, Accuracy, Block, Damage**. Each has
+  a live reader in `CombatFormulas` or `CombatAttackProcessor`, and each is now
+  declared in `EFFECT_TYPES` rather than typed as a bare string in combat code —
+  closing the parallel vocabulary CR2-074 named.
+* Written from two places: a hero's **gear** (registered onto their aggregator
+  by `EquipmentManager`, library-driven where the deleted switch used to be) and
+  the **enemy they are fighting** (registered for the life of the fight and
+  removed with it).
+
+⚠️ **Flat bucket only.** `ModifierAggregator.query` — what combat calls — sums
+flats and skips percentage and multiplier entries, so the palette refuses to
+author them (`buckets: ['flat']`) and `HeroEffects` mirrors the refusal rather
+than trusting it. A percentage of "armour" has no base to be a percentage of.
+
+⚠️ **A combat rule on an ordinary Token reaches nobody**, and both the sentence
+and the audit now say so. Combat reads a **hero's** aggregator, and only an item
+(to its carrier) or an enemy (to its opponent) writes there. A Forge with
+`Provides Armor` would have been authored, saved, loaded and read by nothing.
+
+### Deliberately still out of scope
+
+* **`DEFENSE`** is not offered: `computeEnemyDamage` sums it into `ARMOR`, so
+  offering both would be two ways to say one thing, and only the legacy pipeline
+  ever wrote it.
+* **`STATUS_IMMUNITY`** is not offered: it is queried per status
+  (`query('STATUS_IMMUNITY', statusId)`), which needs category-scoped targeting
+  the grammar has never had a field for. Its own feature, not a palette row.
+* **Balance.** Nothing authored uses any of these yet, so no number in the game
+  moved. What the SCB does with them is the SCB's project.
 
 ## 3. Implementation status
 
@@ -173,7 +199,7 @@ the CMS is the only surface for that.
 | P4 Items as bearers | **DONE** 2026-09-07 | UE-21 supersedes UE-11 — the inventory stack is the pool. Legacy gear pipeline deleted. 16 new tests. |
 | P5 Cycle start | **DONE** 2026-09-07 | Two trigger rows (adjacent + self), plus carried rules firing at the start. No charge-moment row — see the note in `chargeMomentRegistry.js`. |
 | P6 Enemies | **DONE** 2026-09-07 | Engagement moment (two trigger rows), and the never-run `applyToEnemy` path now runs and is tested. No charge-moment row, same reason as P5. |
-| P7 Combat numbers | Not started | Blocked on nothing, sequenced last by choice |
+| P7 Combat numbers | **DONE** 2026-09-07 | Five axes authorable, all with live readers. Written by a hero's gear and by the enemy they fight. |
 
 ## 4. Open questions
 

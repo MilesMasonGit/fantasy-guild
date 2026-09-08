@@ -7,6 +7,8 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import {
     effectRefsOf, statementsFromEntry, normaliseScale, MAX_SCALE
 } from '../effects/effectLibrary.js';
+import { KEYWORD } from '../effects/statements.js';
+import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 
 /**
  * A hero's equipped items are **bearers**, exactly like a Token (UE-1).
@@ -156,4 +158,53 @@ export function payLoadoutCost(statement) {
     // credit either — the same gate `Charges.canFireStatement` applies to a
     // Token that cannot afford its own effect.
     return false;
+}
+
+/**
+ * The combat-axis numbers a set of statements contributes (Unified Effects P7).
+ *
+ * ## Why combat reads an aggregator and the board reads live
+ * The board resolves a hero's loadout live at `resolveAxis`, because a loadout
+ * is not the board and a cached tile contribution goes stale. Combat cannot do
+ * the same: `CombatFormulas` is a pure calculation module that already queries
+ * `hero.aggregator`, and reaching from it into item registries and the Bank
+ * would both invert that dependency and risk an import cycle.
+ *
+ * So combat axes are **registered onto the hero's aggregator** instead, which is
+ * the seam combat already reads and which `EquipmentManager` already refreshes
+ * whenever equipment changes. The old gear pipeline did this too — the
+ * difference is that what gets registered now comes from named library effects
+ * rather than a hardcoded switch over eight legacy ids.
+ *
+ * ⚠️ **Flat bucket only.** `ModifierAggregator.query` sums flats and skips
+ * percentage and multiplier entries, so anything else would be registered and
+ * never read. The palette refuses to author the other buckets on these axes
+ * (`buckets: ['flat']`), and this mirrors that refusal rather than trusting it.
+ *
+ * @param {Array<object>} statements expanded statements from any bearer
+ * @returns {Array<{type: string, value: number}>}
+ */
+export function combatContributions(statements) {
+    const out = [];
+
+    for (const statement of statements || []) {
+        if (statement?.keyword !== KEYWORD.PROVIDES) continue;
+
+        const payload = statement.payload || {};
+        const entry = getPaletteEntry(payload.type);
+        if (entry?.group !== 'Combat') continue;
+        if (payload.bucket && payload.bucket !== 'flat') continue;
+
+        const value = Number(payload.value);
+        if (!Number.isFinite(value) || value === 0) continue;
+
+        out.push({ type: payload.type, value });
+    }
+
+    return out;
+}
+
+/** The combat numbers a hero's own loadout contributes. */
+export function loadoutCombatContributions(hero) {
+    return combatContributions(loadoutStatements(hero));
 }

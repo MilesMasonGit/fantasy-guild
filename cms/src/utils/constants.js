@@ -26,6 +26,7 @@ import {
 export {
   MODIFIER_PALETTE,
   MODIFIER_BUCKETS,
+  bucketsFor,
   MODIFIER_SHAPES,
   TARGET_MODES,
   getPaletteEntry,

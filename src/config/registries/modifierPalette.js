@@ -185,6 +185,69 @@ export const MODIFIER_PALETTE = [
         hint: 'Percent chance the cycle produces nothing. Inputs and charges are still spent.'
     },
 
+    // --- Combat (Unified Effects P7) ----------------------------------------
+    //
+    // ⚠️ Every row here has a live reader in `CombatFormulas` or
+    // `CombatAttackProcessor`, queried off `hero.aggregator`. They were readable
+    // and unwritable for months (CR2-074): combat asked for them, the deleted
+    // gear pipeline was the only thing that ever wrote them, and it wrote mostly
+    // into axes nothing read. Content can feed them now.
+    //
+    // `buckets: ['flat']` on all of them because `ModifierAggregator.query` —
+    // which is what combat calls — sums flats and SKIPS percentage and
+    // multiplier entries. Offering a percentage would be offering something
+    // silently discarded.
+    {
+        type: EFFECT_TYPES.ARMOR,
+        label: 'Armor',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Flat damage subtracted from every hit the hero takes.'
+    },
+    {
+        type: EFFECT_TYPES.RESIST_FLAT,
+        label: 'Resistance',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Further flat damage subtracted, after Armor.'
+    },
+    {
+        type: EFFECT_TYPES.ACCURACY,
+        label: 'Accuracy',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Improves the chance an attack lands.'
+    },
+    {
+        type: EFFECT_TYPES.BLOCK,
+        label: 'Block Chance',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Percentage points of block chance. A blocked hit deals no damage.'
+    },
+    {
+        type: EFFECT_TYPES.DAMAGE,
+        label: 'Damage',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Flat damage added to every hit the hero lands.'
+    },
+
     // --- Grants -------------------------------------------------------------
     {
         type: EFFECT_TYPES.BONUS_DROP,
@@ -227,6 +290,17 @@ export const MODIFIER_PALETTE = [
  *
  * @returns {{min: number|null, max: number|null}}
  */
+/**
+ * The buckets a row may be authored into.
+ *
+ * Most effects accept all three. A row that declares `buckets` accepts only
+ * those — the combat axes do, because their reader sums flats and silently
+ * skips everything else (see the note on that block).
+ */
+export function bucketsFor(entry) {
+    return entry?.buckets || MODIFIER_BUCKETS;
+}
+
 export function modifierValueRange(entry) {
     if (entry?.shape === MODIFIER_SHAPES.PROC) return { min: 0, max: 100 };
     return { min: null, max: null };

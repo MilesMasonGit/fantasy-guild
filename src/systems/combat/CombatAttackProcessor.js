@@ -55,7 +55,16 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
     }
 
     const stats = fight.combat?.stats || {};
-    const damageBonus = stats.damageBonus || 0;
+    /**
+     * The fight's own bonus, plus whatever the hero's gear and the enemy's own
+     * rules say (Unified Effects P7).
+     *
+     * `DAMAGE` had no reader at all before this line: the deleted gear pipeline
+     * wrote it and nothing ever asked for it (CR2-074). It is read here so a
+     * `Provides Damage` rule means something — which is the condition this
+     * project puts on offering an effect at all.
+     */
+    const damageBonus = (stats.damageBonus || 0) + (hero?.aggregator?.query('DAMAGE') || 0);
     const heroSkill = CombatFormulas.getHeroCombatSkill(hero, combatStyle);
 
     // Hit roll (§7 step 2): attacker style skill vs the enemy's Defense (= its level)

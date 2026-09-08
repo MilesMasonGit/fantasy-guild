@@ -17,6 +17,16 @@ project's first tagged baseline — everything before it was untagged developmen
   reach further than the Token you are looking at.
 - ⚠️ **Your CMS workspace migrates itself the first time you open it** after this
   change. Check that your Tokens' rules read right before syncing.
+- **Gear and enemies can change combat numbers.** Armor, Resistance, Accuracy,
+  Block and Damage are authorable at last — carried on an item they go to the
+  hero holding it, and put on an enemy they go to the hero fighting it, so a
+  creature can genuinely make its opponent softer. Nothing authored uses them
+  yet, so no fight changed.
+- **Enemies are a moment you can react to.** A rule can act as a fight begins —
+  every fight, including each fresh enemy after a kill, not just the first. And
+  a carried item can now put a status on the creature itself: a venom flask
+  poisons what you are fighting.
+
 - **Rules can react to a cycle *starting*, not just finishing.** A Token can act
   as a neighbour begins work, or as it begins its own — and a carried item can
   proc at the start of its hero's cycle, so a buff is already up while they

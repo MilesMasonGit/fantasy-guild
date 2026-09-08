@@ -7,6 +7,8 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { processCombat } from '../combat/CombatProcessor.js';
 import { applyDefeatPenalties } from '../combat/DefeatPenalties.js';
 import * as HeroManager from '../hero/HeroManager.js';
+import * as HeroEffects from '../hero/HeroEffects.js';
+import { statementsOf } from '../effects/statements.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from './RecipeResolver.js';
@@ -121,8 +123,50 @@ function createFight(tile, heroId, enemy, drops) {
     };
 }
 
+/**
+ * The source id under which a fight's enemy lends the hero its numbers.
+ *
+ * Per tile, so two heroes fighting two enemies never share an entry, and so
+ * ending one fight cannot strip the other's.
+ */
+const fightSource = (tile) => `fight:${tile}`;
+
+/**
+ * An enemy's own rules, applied to the hero fighting it (Unified Effects P7).
+ *
+ * ## This is what "enemies scale hero-side numbers" means mechanically
+ * An enemy is a Token, and a Token's rules are named library effects. Its
+ * combat-axis `Provides` are registered onto the **hero's** aggregator for as
+ * long as the fight lasts — so an enemy authored with `Provides Armor -2`
+ * genuinely makes its hero softer, using the numbers `CombatFormulas` already
+ * reads. Nothing in the combat engine changed to allow it.
+ *
+ * Registered per fight and removed with it, so the debuff cannot outlive the
+ * creature that imposed it — the failure that would be most invisible here.
+ */
+function applyEnemyCombatModifiers(tile, heroId) {
+    const hero = HeroManager.getHero(heroId);
+    if (!hero?.aggregator) return;
+
+    const source = fightSource(tile);
+    hero.aggregator.removeModifiersBySource(source);
+
+    const def = getTokenType(BoardState.getToken(tile)?.typeId);
+    for (const { type, value } of HeroEffects.combatContributions(statementsOf(def))) {
+        hero.aggregator.addModifier({ type, value, bucket: 'flat', source });
+    }
+}
+
+/** Take back whatever the fight on this tile lent its hero. */
+function clearEnemyCombatModifiers(tile) {
+    const heroId = fights.get(tile)?.assignedHeroId;
+    const hero = heroId ? HeroManager.getHero(heroId) : null;
+    hero?.aggregator?.removeModifiersBySource(fightSource(tile));
+}
+
 /** Drop a tile's fight, so the next engagement starts clean. */
 export function endFight(tile) {
+    clearEnemyCombatModifiers(tile);
     fights.delete(tile);
 }
 
@@ -133,6 +177,10 @@ export function getFight(tile) {
 
 /** Drop every fight (on teardown, and in tests). */
 export function clearAll() {
+    // Hand every fight's borrowed numbers back before dropping them, or a
+    // teardown would leave an enemy's debuff on a hero with no fight to explain
+    // it — and nothing left that knows to remove it.
+    for (const tile of fights.keys()) clearEnemyCombatModifiers(tile);
     fights.clear();
 }
 
@@ -179,6 +227,7 @@ export function tickTile(tile, instance, delta, heroId) {
     if (!fight) {
         fight = createFight(tile, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)));
         fights.set(tile, fight);
+        applyEnemyCombatModifiers(tile, heroId);
     }
 
     fight.assignedHeroId = heroId;

@@ -162,8 +162,28 @@ function upkeepPhrase(statement, names) {
 function bodyOf(statement, names) {
     const payload = statement?.payload || {};
     switch (statement?.keyword) {
-        case KEYWORD.PROVIDES:
+        case KEYWORD.PROVIDES: {
+            /**
+             * ⚠️ A combat axis does not reach adjacent Tokens, so it must not
+             * say it does (Unified Effects P7).
+             *
+             * `CombatFormulas` reads these off a **hero's** aggregator, and only
+             * two things write there: an item, which lends its numbers to the
+             * hero carrying it, and an enemy, which lends them to the hero
+             * fighting it. A filter has nothing to select between in either
+             * case, and "to every adjacent Token" would be false in both.
+             *
+             * A plain Token carrying one of these reaches nobody at all —
+             * `ContentAudit` says so by name at boot rather than letting it look
+             * like it works.
+             */
+            const entry = effectEntryOf(statement);
+            if (entry?.group === 'Combat') {
+                return `Provides ${effectPhrase(statement)} in combat — to the hero carrying this item, `
+                    + `or on an enemy, to the hero fighting it`;
+            }
             return `Provides ${effectPhrase(statement)} ${filterPhrase(statement, names)}`;
+        }
 
         case KEYWORD.GRANTS: {
             const quantity = Math.max(1, payload.quantity || 1);

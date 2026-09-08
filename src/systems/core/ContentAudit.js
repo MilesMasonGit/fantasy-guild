@@ -1,11 +1,13 @@
 // Fantasy Guild — boot-time content-integrity audit (CR2-108)
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { statementsOf, hasRetiredEffectData, stationSkillOf } from '../effects/statements.js';
+import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD } from '../effects/statements.js';
 import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
+import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
@@ -158,6 +160,7 @@ function auditTokens(out) {
 
         auditRetiredEffectShape(out, where, def);
         auditEffectRefs(out, where, def);
+        auditCombatAxes(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
     }
@@ -197,6 +200,31 @@ function auditEffectRefs(out, where, def) {
             `names the effect "${effectId}" more than once. Two copies share one upkeep ` +
             `clock and one cooldown, so the second does not behave as its own rule — ` +
             `remove the duplicate and use the effect's scale instead.`));
+    }
+}
+
+/**
+ * A combat number on a Token that is not an enemy reaches nobody.
+ *
+ * `CombatFormulas` reads Armor, Accuracy, Block, Resistance and Damage off a
+ * **hero's** aggregator, and only two things write there: an item, which lends
+ * its numbers to the hero carrying it, and an enemy, which lends them to the
+ * hero fighting it. A Forge with `Provides Armor` is authored, saved, loaded and
+ * read by nothing — the "authored but inert" failure this project keeps paying
+ * for, so it is named out loud instead.
+ */
+function auditCombatAxes(out, where, def) {
+    if (isEnemyDef(def)) return;
+
+    for (const statement of statementsOf(def)) {
+        if (statement?.keyword !== KEYWORD.PROVIDES) continue;
+        const entry = getPaletteEntry(statement.payload?.type);
+        if (entry?.group !== 'Combat') continue;
+
+        out.push(finding(where,
+            `has a ${entry.label} rule, but combat numbers only reach a hero from an item they ` +
+            `carry or an enemy they fight — this Token is neither, so the rule does nothing. ` +
+            `Put it on an item, or on an enemy Token.`));
     }
 }
 

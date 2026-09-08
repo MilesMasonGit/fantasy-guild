@@ -6,6 +6,25 @@ export const EFFECT_TYPES = {
     SPEED: 'SPEED',           // Task tick speed, combat attack speed
     DAMAGE: 'DAMAGE',         // Melee, Ranged, Magic damage
     DEFENSE: 'DEFENSE',       // Damage reduction
+
+    /**
+     * ## Combat axes the fight ALREADY reads (Unified Effects P7)
+     *
+     * ⚠️ These four are not new behaviour — they are names for strings the
+     * combat code has been querying off `hero.aggregator` all along, typed as
+     * bare literals rather than imported from here (the parallel vocabulary
+     * CR2-074 named). Declaring them closes that gap: the palette can now offer
+     * them, and every reader and writer spells them the same way.
+     *
+     * All four are read as **flat** sums by `ModifierAggregator.query`, which
+     * skips percentage and multiplier buckets — so the palette offers only the
+     * flat bucket for them. A percentage of "armour" has no base to be a
+     * percentage of.
+     */
+    ARMOR: 'ARMOR',           // flat damage subtracted — CombatFormulas.computeEnemyDamage
+    ACCURACY: 'ACCURACY',     // hit chance — CombatFormulas.calculateHitChance
+    BLOCK: 'BLOCK',           // block chance — CombatFormulas.getHeroBlockChance
+    RESIST_FLAT: 'RESIST_FLAT', // flat damage subtracted after armour — computeEnemyDamage
     XP_BONUS: 'XP_BONUS',     // Bonus XP gain
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff

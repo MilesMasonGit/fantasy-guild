@@ -12,6 +12,7 @@ import {
     findFreeSlot, slotsInCategory, getCategoryCap, isEquipCategory
 } from '../../config/registries/equipmentConstants.js';
 import * as EquipmentValidator from './EquipmentValidator.js';
+import * as HeroEffects from '../hero/HeroEffects.js';
 
 /**
  * EquipmentManager - Hub for Hero equipment state and modifier syncing.
@@ -208,6 +209,25 @@ export function recalculateEquipmentModifiers(hero) {
         if (sourceId.startsWith('equip:')) {
             hero.aggregator.removeModifiersBySource(sourceId);
         }
+    }
+
+    /**
+     * Then register what the loadout's **named effects** say (P7).
+     *
+     * Only the combat axes come through here. Everything else a carried rule
+     * does — yield, work time, grants, statuses — is read live off the loadout
+     * at the moment it matters, because a loadout is not the board and a cached
+     * contribution goes stale. Combat is the exception: `CombatFormulas` is a
+     * pure calculation module that already queries this aggregator, and reaching
+     * from it into the item registry and the Bank would invert that dependency.
+     *
+     * One source id, not one per slot: the loadout is a single bearer (UE-19),
+     * so two items granting one effect have already been merged before they get
+     * here.
+     */
+    const source = 'equip:loadout';
+    for (const { type, value } of HeroEffects.loadoutCombatContributions(hero)) {
+        hero.aggregator.addModifier({ type, value, bucket: 'flat', source, persistent: true });
     }
 }
 

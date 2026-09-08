@@ -8,7 +8,7 @@ import { Library, Pencil } from 'lucide-react';
 import {
   KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement,
   renderStatement, statementsOf,
-  MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
+  MODIFIER_BUCKETS, bucketsFor, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
   RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
   skillsByLayer, DEFAULT_STATEMENT_CHARGE_DELTA,
@@ -775,7 +775,10 @@ function EffectFields({ statement, onChange }) {
               className="w-full"
               style={{ fontSize: 12 }}
             >
-              {MODIFIER_BUCKETS.map((b) => (
+              {/* The palette says which buckets a row accepts. Combat axes take
+                  only `flat`, because the reader sums flats and silently skips
+                  the rest — offering a percentage would offer nothing. */}
+              {bucketsFor(entry).map((b) => (
                 <option key={b} value={b}>
                   {b === 'percentage' ? '5%' : b === 'flat' ? '+5' : '×1.5'}
                 </option>
