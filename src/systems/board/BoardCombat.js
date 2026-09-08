@@ -350,7 +350,13 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
         heroId: heroId || null,
         failed: false
     });
-    EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, { tile, outcome: 'victory' });
+    // ⚠️ `heroId` and `typeId` ride along since Effects Grammar v2 V1. This
+    // event carried neither, so a rule reacting to a fight ending could not
+    // name the victor or the creature — while `CYCLE_COMPLETE`, published four
+    // lines above from the same function, carried both.
+    EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
+        tile, outcome: 'victory', heroId: heroId || null, typeId: instance.typeId
+    });
 
     if (instance.usesRemaining != null && instance.usesRemaining <= 0) {
         BoardState.setToken(tile, null);
@@ -415,7 +421,9 @@ function resolveDefeat(tile, instance, heroId) {
     }
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
     if (tile != null) {
-        EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, { tile, outcome: 'defeat' });
+        EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
+            tile, outcome: 'defeat', heroId: heroId || null, typeId: instance?.typeId || null
+        });
     }
     EventBus.publish('heroes_updated', { source: 'board_combat_defeat' });
 

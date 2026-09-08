@@ -589,7 +589,12 @@ export function tick(delta) {
          * `completeCycle` resets it, so the next cycle announces itself too.
          */
         if (!(instance.cycleElapsedMs > 0)) {
-            EventBus.publish(BOARD_EVENTS.CYCLE_START, { tile: index, typeId: instance.typeId });
+            // ⚠️ `heroId` rides along since Effects Grammar v2 V1. It was in
+            // scope here all along and simply not passed, which meant a rule
+            // reacting to a cycle STARTING could never know who started it —
+            // while the same rule on a cycle COMPLETING could. One word of
+            // difference between the two moments, for no reason anyone chose.
+            EventBus.publish(BOARD_EVENTS.CYCLE_START, { tile: index, typeId: instance.typeId, heroId: heroId || null });
             LoadoutMoments.fire(index, heroId, 'CYCLE_START');
         }
 

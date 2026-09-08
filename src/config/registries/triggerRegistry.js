@@ -1,6 +1,7 @@
 // Fantasy Guild — Triggered Token vocabulary (CMS rework Phase 6)
 
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
+import { ROLE, AMBIENT_ROLES } from './roleRegistry.js';
 
 /**
  * What a Triggered Token can react to, and how far it listens.
@@ -47,11 +48,30 @@ export const TRIGGER_SCOPES = {
 };
 
 /**
- * @type {Array<{id: string, event: string, label: string, scopes: string[], hint: string}>}
+ * ## ⭐ `roles` — who a moment puts in the room (Effects Grammar v2, G-2)
+ *
+ * Every row declares the **roles** its event supplies, and a target may only
+ * name a role its moment has. That is the whole defence against the targeting
+ * vocabulary becoming a query language: an author picking *"a neighbour runs out
+ * of charges"* is never offered *"the actor"*, because nobody acted — a Token
+ * ran dry. The offer is **absent** rather than present-and-broken.
+ *
+ * ⚠️ **A self-scoped row has no `source`.** Its source *is* the Token carrying
+ * the rule, which is `self`, and two names for one thing is how a vocabulary
+ * starts lying. `ITEM_THRESHOLD` has neither: the Bank is not an entity, and no
+ * hero put the item there.
+ *
+ * ⚠️ **Declared is not present.** A row listing `actor` promises the payload has
+ * somewhere to put one, not that anybody was there — an unstaffed passive
+ * generator (D-116) completes cycles with a null hero. `resolveRoles` answers the
+ * runtime question; this list answers the authoring one.
+ *
+ * @type {Array<{id: string, event: string, label: string, scopes: string[], roles: string[], hint: string}>}
  */
 export const TRIGGER_EVENTS = [
     {
         id: 'CYCLE_COMPLETE',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
         label: 'A neighbour completes a cycle',
         scopes: [TRIGGER_SCOPES.ADJACENT],
@@ -59,6 +79,7 @@ export const TRIGGER_EVENTS = [
     },
     {
         id: 'TOKEN_DEPLETED',
+        roles: [ROLE.SELF, ROLE.SOURCE],
         event: BOARD_EVENTS.TOKEN_DEPLETED,
         label: 'A neighbour runs out of charges',
         scopes: [TRIGGER_SCOPES.ADJACENT],
@@ -73,6 +94,7 @@ export const TRIGGER_EVENTS = [
          * "combat is in scope now".
          */
         id: 'COMBAT_RESOLVED',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.COMBAT_RESOLVED,
         label: 'A neighbouring fight is won',
         scopes: [TRIGGER_SCOPES.ADJACENT],
@@ -87,6 +109,7 @@ export const TRIGGER_EVENTS = [
          * is the swing before it.
          */
         id: 'COMBAT_ENGAGED',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
         label: 'A neighbouring fight begins',
         scopes: [TRIGGER_SCOPES.ADJACENT],
@@ -100,6 +123,7 @@ export const TRIGGER_EVENTS = [
          * on `TRIGGER_SCOPES.SELF` and the guard in `TriggerSystem` first.
          */
         id: 'SELF_COMBAT_ENGAGED',
+        roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
         label: 'A hero engages THIS enemy',
         scopes: [TRIGGER_SCOPES.SELF],
@@ -118,6 +142,7 @@ export const TRIGGER_EVENTS = [
          * concept.
          */
         id: 'ITEM_PRODUCED',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
         label: 'A neighbour produces a specific item',
         scopes: [TRIGGER_SCOPES.ADJACENT],
@@ -139,6 +164,7 @@ export const TRIGGER_EVENTS = [
          * capped. Read the note there before adding another self-scoped event.
          */
         id: 'SELF_CYCLE_COMPLETE',
+        roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
         label: "This Token's own cycle completes",
         scopes: [TRIGGER_SCOPES.SELF],
@@ -155,6 +181,7 @@ export const TRIGGER_EVENTS = [
          * arriving as they finish.
          */
         id: 'CYCLE_START',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_START,
         label: 'A neighbour begins a cycle',
         scopes: [TRIGGER_SCOPES.ADJACENT],
@@ -167,6 +194,7 @@ export const TRIGGER_EVENTS = [
          * another self-scoped row.
          */
         id: 'SELF_CYCLE_START',
+        roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.CYCLE_START,
         label: "This Token's own cycle begins",
         scopes: [TRIGGER_SCOPES.SELF],
@@ -183,6 +211,7 @@ export const TRIGGER_EVENTS = [
          * needed no new engine event plumbing.
          */
         id: 'ITEM_THRESHOLD',
+        roles: [ROLE.SELF],
         event: 'inventory_updated',
         label: 'The Bank holds enough of an item',
         scopes: [TRIGGER_SCOPES.GLOBAL],
@@ -198,6 +227,23 @@ export function getTriggerEvent(id) {
 /** Whether an id is a known trigger event. */
 export function isTriggerEvent(id) {
     return TRIGGER_EVENTS.some(t => t.id === id);
+}
+
+/**
+ * The roles a statement's moment supplies — the list an author may target from.
+ *
+ * A statement with **no** moment is a continuous rule, and a continuous rule has
+ * no participants: only the thing carrying it. That is `AMBIENT_ROLES`, and it is
+ * why an aura can say "this entity" and nothing else.
+ */
+export function rolesOf(triggerId) {
+    if (!triggerId) return AMBIENT_ROLES;
+    return getTriggerEvent(triggerId)?.roles || AMBIENT_ROLES;
+}
+
+/** Whether a moment can offer a given role at all (G-2). */
+export function momentSupplies(triggerId, role) {
+    return rolesOf(triggerId).includes(role);
 }
 
 /** Every distinct EventBus name a trigger can listen on. */

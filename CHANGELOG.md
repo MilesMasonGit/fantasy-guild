@@ -5,6 +5,11 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Rules can tell who did something to them.** Groundwork, invisible on its own:
+  every firing moment now says which participants it has — the entity itself, the
+  hero who caused it, the neighbour it happened to — so a rule will shortly be
+  able to say "whoever just harvested me". Two moments were quietly missing that
+  information and now carry it: a Token beginning a cycle, and a fight ending.
 - **Gear can make a hero immune to a status.** Poison, Burning, Stun and the rest
   can be blocked outright by an item — the game has asked whether a hero is
   immune every time a status landed, since the day statuses were built, and

@@ -2,7 +2,8 @@
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword } from '../effects/statements.js';
-import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
+import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
+import { getRole } from '../../config/registries/roleRegistry.js';
 import { getReach } from '../../config/registries/reachRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
@@ -363,6 +364,26 @@ function auditStatements(out, where, def) {
             out.push(finding(where,
                 `one of its rules is a "${keyword.label}" carrying a reach, and that keyword has no reach to vary — ` +
                 `it is stored and read by nothing. Clear it.`));
+        }
+
+        /**
+         * ⚠️ **G-2: a target may only name a role its moment supplies.**
+         *
+         * The rule that keeps the targeting vocabulary bounded, enforced here so
+         * that content authored before a moment's roles narrowed — or through a
+         * hand-edited file — cannot sit there aiming at nobody. A rule targeting
+         * "the actor" on *"a neighbour runs out of charges"* reaches nothing
+         * whatever the board looks like, because a Token running dry has no
+         * actor: it is not a bad board state, it is a rule that can never work.
+         */
+        const targetRole = statement?.target?.role;
+        if (targetRole && !momentSupplies(statement?.when?.event, targetRole)) {
+            const moment = getTriggerEvent(statement?.when?.event);
+            const where_ = moment ? `"${moment.label}"` : 'a rule with no firing moment';
+            out.push(finding(where,
+                `one of its rules aims at ${getRole(targetRole)?.label || targetRole}, but ${where_} ` +
+                `never supplies one — so the rule reaches nobody, on any board. Pick a moment that has ` +
+                `one, or aim somewhere else.`));
         }
 
         // A reach the vocabulary does not have resolves to "adjacent" rather

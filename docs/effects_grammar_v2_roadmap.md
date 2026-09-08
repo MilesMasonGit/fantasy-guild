@@ -136,6 +136,24 @@ comes first of all three, because every one of them is authored through it.
 **Verified when** every moment reports its roles, the two widened payloads carry
 an actor, and nothing a player can see has changed.
 
+⚠️ **Three things worth recording from the build.**
+
+**`resolveRoles` and `rolesOf` answer different questions, and both are needed.**
+`rolesOf` is the *authoring* question — what may an author aim at? — and is what
+the editor and `ContentAudit` ask. `resolveRoles` is the *runtime* question — who
+is actually here? — and may legitimately return a null actor on a moment that
+declares one, because a passive generator (D-116) completes cycles unstaffed.
+Conflating them would either offer a role that can never be filled, or make a
+rule inert on ordinary occasions when nobody was around.
+
+**A self-scoped moment declares no `source`.** Its source *is* the bearer, which
+is `self`, and two names for one thing is how a vocabulary starts lying.
+
+**`TOKEN_DEPLETED` and `ITEM_THRESHOLD` declare no actor** — a Token spending its
+last charge was not done *to* it by anyone, and the Bank holding enough of an
+item is not an act at all. This is G-2 doing its job on the very first day: those
+two moments simply will not offer "the actor" in the editor.
+
 ### V2 — ⭐ `Deals`, `the actor`, and Thorns
 
 The phase the whole project is judged by.
@@ -240,7 +258,7 @@ or a random free tile (G-15).
 
 | Phase | State | Notes |
 |---|---|---|
-| V1 Moments declare roles | **NOT STARTED** | |
+| V1 Moments declare roles | **DONE** 2026-09-08 | `roleRegistry.js` + `roles` on all ten triggers. `CYCLE_START` and both `COMBAT_RESOLVED` sites widened. 16 new tests, 8 of which fail when neutered. |
 | V2 `Deals`, the actor, Thorns | **NOT STARTED** | ⭐ The example the plan is judged by |
 | V3 ⭐ The sentence editor | **NOT STARTED** | Retires the form editor |
 | V4 Composable filters | **NOT STARTED** | |
