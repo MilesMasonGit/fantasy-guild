@@ -278,10 +278,25 @@ describe('shipped Tokens and the library agree', () => {
         expect(stragglers).toEqual([]);
     });
 
-    it('still gives the Tokens that had rules their rules', () => {
-        const withRules = shipped.filter(([, def]) => statementsOf(def).length > 0);
-        // 19 Tokens carried the 21 statements the migration moved.
-        expect(withRules.length).toBe(19);
+    it('gives every Token that references an effect its rules', () => {
+        /**
+         * ⚠️ This asserted a **count** (19 Tokens) until 2026-09-07, which was
+         * the wrong shape of test: it pinned the content set, so authoring one
+         * Token in the CMS turned the engine suite red for no engine reason.
+         * `tokenRegistry` is explicit that content should be free to be retuned
+         * without the suite noticing.
+         *
+         * The invariant that actually matters is content-independent: a Token
+         * carrying references resolves to real statements. If expansion broke,
+         * every one of them would come back empty.
+         */
+        const referencing = shipped.filter(([, def]) => effectRefsOf(def).length > 0);
+        expect(referencing.length).toBeGreaterThan(0);
+
+        const empty = referencing
+            .filter(([, def]) => statementsOf(def).length === 0)
+            .map(([id]) => id);
+        expect(empty).toEqual([]);
     });
 });
 

@@ -41,9 +41,9 @@ project's first tagged baseline — everything before it was untagged developmen
 
 - **Effects say their name when they fire.** When a named effect actually does
   something — a rule triggers, a bonus item drops, a status lands — its title
-  floats off the tile and fades. Nothing to click and nothing to dismiss; if you
-  miss one, the rule is still written on the Token. Effects that are simply
-  always on stay quiet, because nothing happened.
+  flashes above the tile, rises out of its top edge and fades. Nothing to click
+  and nothing to dismiss; if you miss one, the rule is still written on the
+  Token. Effects that are simply always on stay quiet, because nothing happened.
 
 - **One effect can now be strong or weak.** A Token points at a named effect and
   says how strong its version is — 1 to 5 — so the same *Shrimp Trawler* can sit

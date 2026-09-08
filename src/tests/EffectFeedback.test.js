@@ -100,7 +100,8 @@ describe('the popup', () => {
         fire(4, 'Shrimp Trawler');
         expect(container.textContent).toContain('Shrimp Trawler');
 
-        act(() => { vi.advanceTimersByTime(2000); });
+        // Past the label's lifetime (2600ms, matching the CSS animation).
+        act(() => { vi.advanceTimersByTime(3000); });
         expect(container.innerHTML).toBe('');
     });
 

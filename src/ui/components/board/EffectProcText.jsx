@@ -25,8 +25,15 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
  * the oldest are the ones already fading.
  */
 
-/** How long one line lives, in milliseconds. Rise and fade fill the whole of it. */
-const LIFETIME_MS = 1600;
+/**
+ * How long one line lives, in milliseconds.
+ *
+ * ⚠️ **Must match `effect-proc-rise`'s duration in `components.css`.** The
+ * animation paints the label and this timer removes it; if the timer is shorter
+ * the label vanishes mid-rise, and if it is longer a fully-faded label sits in
+ * the DOM holding its slot in the stack.
+ */
+const LIFETIME_MS = 2600;
 
 /** Past this many at once the tile is unreadable, so the oldest are dropped. */
 const MAX_VISIBLE = 4;
