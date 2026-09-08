@@ -6,6 +6,8 @@ import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
+import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
+import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { listMaps, getMap } from '../../config/registries/mapRegistry.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
@@ -94,6 +96,35 @@ function checkRef(out, where, kind, value, role) {
     }
 }
 
+/**
+ * Items: their effect references (Unified Effects P4).
+ *
+ * An item is a bearer now, so it can dangle exactly the way a Token can — a
+ * reference to an entry that was renamed or deleted, or one entry named twice.
+ * Both fail the same silent way: the item equips, the hero carries it, and one
+ * of its rules simply is not there.
+ */
+function auditItemEffects(out) {
+    for (const [itemId, def] of Object.entries(ITEMS || {})) {
+        const where = `Item "${itemId}"`;
+
+        for (const { effectId } of effectRefsOf(def)) {
+            if (!getEffect(effectId)) {
+                out.push(finding(where,
+                    `one of its rules points at the effect "${effectId}", which does not exist — ` +
+                    `it was probably renamed or deleted in the CMS. The item carries no rule from it.`));
+            }
+        }
+
+        for (const effectId of duplicateRefsOf(def)) {
+            out.push(finding(where,
+                `names the effect "${effectId}" more than once. A hero's loadout merges duplicates ` +
+                `(their scales add, capped at 5), so the second reference adds nothing — remove it ` +
+                `and raise the scale instead.`));
+        }
+    }
+}
+
 /** Tokens: their recipes, their effects, and the things they open onto. */
 function auditTokens(out) {
     for (const [tokenId, def] of Object.entries(TOKENS || {})) {
@@ -126,11 +157,81 @@ function auditTokens(out) {
         }
 
         auditRetiredEffectShape(out, where, def);
+        auditEffectRefs(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
     }
 
     auditCapabilityTags(out);
+}
+
+/**
+ * A bearer's references into the named effect library (Unified Effects P1).
+ *
+ * Both failures here are the library's own version of the silence this whole
+ * file exists to break. A ref naming an entry that has been renamed or deleted
+ * resolves to nothing and the Token simply has one rule fewer — it still loads,
+ * still plays, and looks exactly like a Token that never had the rule.
+ */
+function auditEffectRefs(out, where, def) {
+    for (const { effectId } of effectRefsOf(def)) {
+        if (!getEffect(effectId)) {
+            out.push(finding(where,
+                `one of its rules points at the effect "${effectId}", which does not exist — ` +
+                `it was probably renamed or deleted in the CMS. The Token loads without that rule.`));
+        }
+    }
+
+    /**
+     * One bearer naming one entry twice.
+     *
+     * Not a style problem: both copies expand to statements carrying the **same
+     * statement id**, and per-statement state (`instance.blockUpkeep[id]`,
+     * `instance.blockCooldowns[id]`) is keyed by that id — so one upkeep clock
+     * and one cooldown would be shared between two rules that are meant to be
+     * separate. "Twice as strong" is the `scale` field, not the same effect
+     * listed twice.
+     */
+    for (const effectId of duplicateRefsOf(def)) {
+        out.push(finding(where,
+            `names the effect "${effectId}" more than once. Two copies share one upkeep ` +
+            `clock and one cooldown, so the second does not behave as its own rule — ` +
+            `remove the duplicate and use the effect's scale instead.`));
+    }
+}
+
+/**
+ * The library itself: UE-10, and entries nothing uses.
+ *
+ * ⭐ **UE-10 is the rule the deleted 56 needed and did not have.** The card-era
+ * `data/effects.json` held 56 named effects with no mechanism behind them — a
+ * name, a description, and nothing that read either — which is why it could be
+ * deleted outright without changing how the game played. A named effect that
+ * wraps no working statement is that failure starting again, so it is reported
+ * by name every boot.
+ *
+ * An unreferenced entry is a much softer finding: content mid-authoring is the
+ * normal state here, and an effect written today for a Token being built
+ * tomorrow is not a fault. It is reported because the library is the one place
+ * where "I forgot I made that" costs the owner navigability.
+ */
+function auditEffects(out) {
+    for (const [effectId, entry] of Object.entries(EFFECTS || {})) {
+        const where = `Effect "${entry?.name || effectId}"`;
+
+        if (!hasWorkingStatements(entry)) {
+            out.push(finding(where,
+                'is a name with no working rule behind it. A named effect must wrap at least ' +
+                'one statement that names a keyword — open it in the CMS and give it a rule, ' +
+                'or delete it.'));
+            continue;
+        }
+
+        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0) {
+            out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
+                'building what it is for — but nothing references it today.'));
+        }
+    }
 }
 
 /**
@@ -357,7 +458,7 @@ function auditHardcodedLists(out, openingTray) {
  */
 export function auditContent({ openingTray = [] } = {}) {
     const out = [];
-    const steps = [auditTokens, auditItems, auditMaps, auditHardcodedLists];
+    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditMaps, auditHardcodedLists];
     for (const step of steps) {
         try {
             step(out, openingTray);

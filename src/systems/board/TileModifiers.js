@@ -8,6 +8,8 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import { isStatementPaid } from './BlockUpkeep.js';
 import * as BoardState from './BoardState.js';
+import * as HeroManager from '../hero/HeroManager.js';
+import * as HeroEffects from '../hero/HeroEffects.js';
 
 /**
  * TileModifiers — one runtime `ModifierAggregator` per tile, and the resolver
@@ -222,9 +224,45 @@ export function rebuildTile(index) {
 export function collectStatusApplications(index) {
     const out = [];
     for (const { statement } of applicableStatements(index)) {
-        if (statement.keyword === KEYWORD.APPLIES) out.push(statement.payload);
+        // The title rides along so the caller can announce which named effect
+        // landed (P3). Copied rather than pushed by reference, because the
+        // payload belongs to the statement and callers should not be able to
+        // reach back into the library through it.
+        if (statement.keyword === KEYWORD.APPLIES) {
+            out.push({ ...statement.payload, effectTitle: statement.effectTitle });
+        }
     }
+    out.push(...loadoutPayloads(index, KEYWORD.APPLIES));
     return out;
+}
+
+/**
+ * What the hero standing here contributes of one keyword, as payloads.
+ *
+ * ## Why the loadout comes in through the same door as the neighbours
+ * A hero's items and a Token's neighbours are different sources of the same
+ * kind of thing: something reaching this tile at the moment it finishes a cycle.
+ * Feeding them into the collectors the board already calls means `BoardRunner`
+ * needs no new loop, the failed-cycle rule and the needs-a-person rule apply
+ * unchanged, and P3's announcement comes along for free.
+ *
+ * `sourceItemIds` rides with the payload because paying an item rule's cost
+ * means consuming one of the items that granted it (UE-21), and by the time the
+ * caller acts, which items those were is no longer derivable.
+ */
+function loadoutPayloads(index, keyword) {
+    const heroId = BoardState.heroOnTile(index);
+    if (!heroId) return [];
+
+    const hero = HeroManager.getHero(heroId);
+    if (!hero) return [];
+
+    return HeroEffects.loadoutStatementsWith(hero, keyword).map(statement => ({
+        ...statement.payload,
+        effectTitle: statement.effectTitle,
+        chargeDelta: statement.chargeDelta,
+        sourceItemIds: statement.sourceItemIds
+    }));
 }
 
 /**
@@ -234,6 +272,13 @@ export function collectItemGrants(index, effectType) {
     const grants = [];
     for (const { statement } of applicableStatements(index)) {
         const payload = statement.payload;
+        // Carries `effectTitle` for the same reason as the statuses above.
+        if (payload?.type === effectType && payload.itemId) {
+            grants.push({ ...payload, effectTitle: statement.effectTitle });
+        }
+    }
+    // The hero's own items grant at this tile too (UE-23).
+    for (const payload of loadoutPayloads(index, KEYWORD.GRANTS)) {
         if (payload?.type === effectType && payload.itemId) grants.push(payload);
     }
     return grants;
@@ -269,6 +314,7 @@ export function rebuildAll() {
  * Scopes, all contributing to the same buckets:
  *  - the tile's own inbound modifiers (its neighbours' buffs)
  *  - the guild-wide aggregator (Guild Hall Global upgrades, D-121)
+ *  - **the loadout of the hero standing here** (Unified Effects P4)
  *
  * @param {number} index      tile
  * @param {string} effectType EFFECT_TYPES key
@@ -278,19 +324,71 @@ export function rebuildAll() {
 export function resolveAxis(index, effectType, base, category = TARGET_CATEGORIES.ALL) {
     const tile = getTileAggregator(index);
     const guild = getGlobalAggregator();
+    const hero = heroContributions(index, effectType);
 
     const flat = [
         tile.getFlat(effectType, category),
-        guild.getFlat(effectType, category)
+        guild.getFlat(effectType, category),
+        hero.flat
     ];
     const multipliers = [
         ...tile.collectMultipliers(effectType, category),
-        ...guild.collectMultipliers(effectType, category)
+        ...guild.collectMultipliers(effectType, category),
+        ...hero.multipliers
     ];
     const percentages = [
         ...tile.collectPercentages(effectType, category),
-        ...guild.collectPercentages(effectType, category)
+        ...guild.collectPercentages(effectType, category),
+        ...hero.percentages
     ];
 
     return applyThreeBucket(base, { flat, multipliers, percentages });
+}
+
+/**
+ * What the hero working this tile contributes, out of the items they carry.
+ *
+ * ## ⚠️ Read live, not cached into the tile's aggregator, and that is deliberate
+ * A tile's aggregator is rebuilt when the **board** changes. A loadout is not
+ * the board: a hero can be re-equipped, walk to another tile, or run their
+ * potions dry without a single Token moving, and every one of those would leave
+ * a cached contribution stale. It is a handful of items read once per axis
+ * resolution, which is the same order of work `applicableStatements` already
+ * does for the eight neighbours.
+ *
+ * ## Why an item's `Provides` needs no filter (UE-24)
+ * A Token's buff has to say which of its eight neighbours it reaches. An item
+ * has exactly one hero and that hero is standing on exactly one tile, so there
+ * is only one thing a number could be about — the work being done here. Any
+ * filter authored on it is ignored rather than obeyed, because there is nothing
+ * for it to choose between.
+ */
+function heroContributions(index, effectType) {
+    const empty = { flat: 0, multipliers: [], percentages: [] };
+
+    const heroId = BoardState.heroOnTile(index);
+    if (!heroId) return empty;
+
+    const hero = HeroManager.getHero(heroId);
+    if (!hero) return empty;
+
+    let flat = 0;
+    const multipliers = [];
+    const percentages = [];
+
+    for (const statement of HeroEffects.loadoutStatements(hero)) {
+        if (statement.keyword !== KEYWORD.PROVIDES) continue;
+
+        const payload = statement.payload || {};
+        if (payload.type !== effectType) continue;
+
+        const value = Number(payload.value);
+        if (!Number.isFinite(value)) continue;
+
+        if (payload.bucket === 'flat') flat += value;
+        else if (payload.bucket === 'multiplier') multipliers.push(value);
+        else percentages.push(value);
+    }
+
+    return { flat, multipliers, percentages };
 }

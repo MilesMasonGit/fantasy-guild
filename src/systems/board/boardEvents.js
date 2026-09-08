@@ -35,6 +35,21 @@ export const BOARD_EVENTS = {
      */
     CYCLE_COMPLETE: 'board:cycle_complete',
 
+    /**
+     * A Token began a new cycle — `{ tile, typeId }`.
+     *
+     * ⚠️ **The moment work actually starts, not the moment a tick runs.** Fired
+     * when `cycleElapsedMs` is still zero and every guard above it has already
+     * passed: a hero is present, the inputs are in the Bank, and the charges are
+     * affordable. A Token stalled for want of ore is not starting a cycle, and
+     * does not say it is — it fires once when it genuinely resumes.
+     *
+     * Its mirror, `CYCLE_COMPLETE`, is what a rule wants when it cares that work
+     * *happened*. This one is for rules that want to act on the work about to be
+     * done — the buff that should already be up while the hero swings.
+     */
+    CYCLE_START: 'board:cycle_start',
+
     /** A Token was placed, moved, removed or displaced. Payload: `{ tile, typeId }` */
     TILE_CHANGED: 'board:tile_changed',
 
@@ -114,7 +129,19 @@ export const BOARD_EVENTS = {
     TILE_EVENT_ALERT: 'board:tile_event_alert',
 
     /** A token's charges changed (consumed cycle, support wear, or restocked). Payload: `{ tile, delta, remaining, typeId }` */
-    TOKEN_CHARGES_CHANGED: 'board:token_charges_changed'
+    TOKEN_CHARGES_CHANGED: 'board:token_charges_changed',
+
+    /**
+     * A named effect just did something on this tile — `{ tile, title }`.
+     *
+     * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
+     * act on (no inputs, no charges, a refused placement): it draws a persistent
+     * icon, waits to be read, and can be dismissed. An effect firing is neither
+     * a problem nor persistent — it is a thing that happened, said once and
+     * gone. Mixing them would spam the alert channel and change what its icon
+     * means.
+     */
+    EFFECT_FIRED: 'board:effect_fired'
 };
 
 /**

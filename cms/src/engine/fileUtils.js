@@ -50,10 +50,12 @@ export async function importWorkspace(file) {
 /**
  * One-way full-file sync to project `data/` directory (CMS-53).
  * Runs the economy recalculation, then writes `data/items.json`,
- * `data/tokens.json`, `data/maps.json` and `data/tokenRecipes.json`.
+ * `data/tokens.json`, `data/maps.json`, `data/tokenRecipes.json` and
+ * `data/effects.json`.
  *
- * All four files are written from the recalculation's output — recipes
- * included, since the bypass that routed them around it is retired.
+ * All five files are written from the recalculation's output — recipes
+ * included, since the bypass that routed them around it is retired, and the
+ * effect library, which `tokens.json` is now only a set of references into.
  *
  * ⚠️ **Sync writes from the STORE, never from `data/`.** Loading a workspace
  * backup is what puts content in the store; a browser that has never loaded one

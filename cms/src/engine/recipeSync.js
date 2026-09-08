@@ -58,5 +58,14 @@ export function syncFiles(balanced = {}) {
         'tokens.json': balanced.tokens,
         'maps.json': balanced.maps,
         'tokenRecipes.json': recipesToFile(balanced.recipePools),
+        // The named effect library (Unified Effects P1). A Token's rules are no
+        // longer inside `tokens.json` — it carries references, and this is what
+        // they point at, so the two files must be written by the same sync or
+        // the game loads Tokens whose rules resolve to nothing.
+        //
+        // ⚠️ This filename held the card-era CMS's 56 placeholder Effects until
+        // P1 deleted them. Nothing merges with what is already on disk: the
+        // write is wholesale, like every other file here.
+        'effects.json': balanced.effects || {},
     };
 }

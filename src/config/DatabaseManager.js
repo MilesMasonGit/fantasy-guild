@@ -44,6 +44,17 @@ export const DatabaseManager = {
     itemFilesSingle: import.meta.glob('/data/items.json', { eager: true }),
     itemFilesGlob: import.meta.glob('/data/items/**/*.json', { eager: true }),
 
+    // The named effect library (Unified Effects P1). Bearers store references;
+    // `effectRegistry.js` holds the entries and `tokenRegistry` resolves the two
+    // at load.
+    //
+    // ⚠️ `data/effects.json` existed before, as the card-era CMS's 56 placeholder
+    // Effects — orphaned, read by nothing, deleted when this replaced it. If a
+    // glob here ever loads that shape again, something has restored the wrong
+    // file: those entries are keyed "0"–"55" and carry `targetEntityTypes`.
+    effectFilesSingle: import.meta.glob('/data/effects.json', { eager: true }),
+    effectFilesGlob: import.meta.glob('/data/effects/**/*.json', { eager: true }),
+
     // ⚠️ **The enemy globs are gone** (2026-09-06). `data/enemies.json` and
     // `enemyRegistry.js` were deleted when enemies folded into Tokens: an enemy
     // is a Token (D-104), so it loads with every other Token out of

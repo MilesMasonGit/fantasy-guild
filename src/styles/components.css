@@ -998,3 +998,127 @@ gi-slot-label {
     opacity: 1;
     transform: translateX(0);
 }
+/* === A named effect firing (Unified Effects P3) ==============================
+   Text, rising, fading, gone. No hover state, no dismissal and nothing to click,
+   because an effect firing is news rather than a task. Problems get
+   `TileEventAlert`; this is the other kind of thing.
+
+   ⚠️ **Do not put a `text-shadow` here — it cannot work.** `tailwind.css` ends
+   with a global retro outline:
+
+       body *:not(input):not(textarea):not(code) {
+           text-shadow: var(--text-outline-dark) !important;
+       }
+
+   An `!important` author declaration beats an animation, so a shadow set here
+   OR inside the keyframes is silently discarded — the label just keeps the
+   game's black outline. That outline is wanted (it is what makes small text
+   legible over terrain), so the glow is done with `filter: drop-shadow()`,
+   which the global rule does not touch and which animates freely. */
+
+.effect-proc-layer {
+    position: absolute;
+    /* Anchored ABOVE the tile so the label climbs out of its top edge rather
+       than over the token art. `Board.jsx` pads the playmat by 32px, which is
+       more than the rise, so a top-row tile's label is not clipped. */
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 2px;
+    /* Wider than the tile on purpose: a name is longer than the square and
+       clipping it would make the feature useless for exactly the effects worth
+       naming. */
+    width: max-content;
+    max-width: 220px;
+    pointer-events: none;
+}
+
+.effect-proc-text {
+    /* A tile is 128px of art, so this is roughly an eighth of its height —
+       readable at full zoom without covering the token, and it shrinks with the
+       board like everything else when the playmat is zoomed out. */
+    font-size: 16px;
+    line-height: 1.1;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    padding: 0 2px;
+    /* The steady colour. The keyframes start brighter and fall back to it. */
+    color: #b9ffd6;
+    animation: effect-proc-rise 2600ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+
+/* ⚠️ Starts at FULL opacity, deliberately.
+   There is no fade-in: the label flashes, rises and fades out. Starting at 0
+   would also make the whole thing depend on the animation actually running —
+   anywhere it does not (a frozen compositor, an environment with animations
+   disabled), `forwards` pins the 0% frame and the text is invisible for its
+   entire life. Beginning visible and bright means the worst case is a label
+   that appears without travelling, which is still the feature working. */
+@keyframes effect-proc-rise {
+    /* The pop: bigger, white-hot, glowing. */
+    0% {
+        opacity: 1;
+        transform: translateY(10px) scale(1.35);
+        color: #ffffff;
+        filter:
+            drop-shadow(0 0 6px rgba(255, 255, 255, 0.95))
+            drop-shadow(0 0 14px rgba(125, 211, 160, 0.9));
+    }
+    /* Settles fast, so the flash reads as a flash rather than a fade. */
+    8% {
+        opacity: 1;
+        transform: translateY(7px) scale(1);
+        color: #b9ffd6;
+        filter: drop-shadow(0 0 5px rgba(125, 211, 160, 0.75));
+    }
+    /* The long hold: most of its life is spent readable and lit. */
+    72% {
+        opacity: 1;
+        transform: translateY(-14px) scale(1);
+        color: #b9ffd6;
+        filter: drop-shadow(0 0 5px rgba(125, 211, 160, 0.75));
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-26px) scale(1);
+        color: #b9ffd6;
+        filter: drop-shadow(0 0 5px rgba(125, 211, 160, 0));
+    }
+}
+
+/* Respect a reader who has asked the OS for less motion: they still get the
+   name and the flash of brightness, it simply does not travel. */
+@media (prefers-reduced-motion: reduce) {
+    .effect-proc-text {
+        animation: effect-proc-flash 2600ms ease-out forwards;
+    }
+
+    @keyframes effect-proc-flash {
+        0% {
+            opacity: 1;
+            color: #ffffff;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95));
+        }
+        8% {
+            opacity: 1;
+            color: #b9ffd6;
+            filter: drop-shadow(0 0 5px rgba(125, 211, 160, 0.75));
+        }
+        72% {
+            opacity: 1;
+            color: #b9ffd6;
+            filter: drop-shadow(0 0 5px rgba(125, 211, 160, 0.75));
+        }
+        100% {
+            opacity: 0;
+            color: #b9ffd6;
+            filter: drop-shadow(0 0 5px rgba(125, 211, 160, 0));
+        }
+    }
+}

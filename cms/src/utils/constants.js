@@ -62,6 +62,49 @@ export {
   rulesTextOf,
 } from '../../../src/systems/effects/statementText.js';
 
+// The named effect library (Unified Effects P1). A statement no longer lives on
+// the Token that uses it: it lives in a named entry, and bearers reference that
+// entry by id. Same one-direction rule as everything else here — the *shape*
+// is declared in the game and the CMS authors against it, so the library the
+// CMS writes and the library the game loads cannot diverge.
+export {
+  EFFECT_ID_PREFIX,
+  MAX_SCALE,
+  normaliseScale,
+  effectTitle,
+  scaleStatement,
+  effectRefsOf,
+  hasWorkingStatements,
+  statementsFromEntry,
+  expandBearer,
+  expandAll,
+  duplicateRefsOf,
+  usedBy,
+} from '../../../src/systems/effects/effectLibrary.js';
+
+// ⚠️ The migration is imported, never reimplemented. It runs twice over two
+// copies of the same content — once by `scripts/migrate-effects-library.mjs`
+// over `data/`, and once by `useEntityStore` over the workspace in the author's
+// browser. A second implementation here would let the two produce different
+// libraries, and the next sync would silently overwrite one with the other.
+export {
+  migrateBearers,
+  provisionalName,
+} from '../../../src/systems/effects/effectMigration.js';
+
+// When a rule spends its Token's charges (UE-20). Same extensibility rule as
+// TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker
+// with no CMS change — and the game deliberately declares only the moments
+// something actually spends at, so nothing offered here is inert.
+export {
+  CHARGE_MOMENT,
+  CHARGE_MOMENTS,
+  DEFAULT_CHARGE_DELTA_BY_MOMENT,
+  getChargeMoment,
+  chargeMomentsFor,
+  chargeMomentOf,
+} from '../../../src/config/registries/chargeMomentRegistry.js';
+
 // An enemy is a Token (D-104), and as of 2026-09-06 that is true of the data
 // too: `data/enemies.json` and `enemyRegistry.js` are gone, and a Token is an
 // enemy because it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the

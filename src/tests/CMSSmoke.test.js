@@ -8,7 +8,7 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 import MapEditor from '../../cms/src/components/editors/MapEditor.jsx';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
-import Statements from '../../cms/src/components/editors/Statements.jsx';
+import Statements, { StatementList } from '../../cms/src/components/editors/Statements.jsx';
 import AuditPanel from '../../cms/src/components/audit/AuditPanel.jsx';
 import SettingsModal from '../../cms/src/components/shared/SettingsModal.jsx';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore.js';
@@ -67,7 +67,12 @@ function seedToken() {
     const itemId = store.addItem({ name: 'Raw Shrimp' });
     const tokenId = store.addToken({ name: 'Shrimp Coast', tags: ['Coast'] });
 
-    useEntityStore.getState().setStatements(tokenId, [
+    // ⚠️ The rules live in a named library entry, not on the Token (Unified
+    // Effects P1). The Token references it; the entry is what carries the
+    // statements and what the rules editor edits.
+    const effectId = useEntityStore.getState().addEffect({
+        name: 'Shrimp Trawler',
+        statements: [
         {
             id: 'stm_a', keyword: 'provides',
             to: { mode: 'tag', value: 'Coast' },
@@ -91,13 +96,21 @@ function seedToken() {
             id: 'stm_e', keyword: 'station',
             payload: { skill: 'cooking' }
         }
-    ]);
+        ],
+    });
+
+    useEntityStore.getState().addEffectRef('tokens', tokenId, effectId);
 
     useEntityStore.getState().updateToken(tokenId, {
         acceptedTokens: [{ tag: 'net', minTier: 1 }]
     });
 
-    return { tokenId, itemId };
+    return { tokenId, itemId, effectId };
+}
+
+/** The statements a seeded library entry holds, as the editor sees them. */
+function statementsOfEffect(effectId) {
+    return useEntityStore.getState().effects[effectId].statements;
 }
 
 describe('CMS smoke — the screens mount without throwing', () => {
@@ -190,19 +203,26 @@ describe('CMS smoke — the screens mount without throwing', () => {
     });
 
     it('renders a row for every keyword, with the effect shapes the palette declares', () => {
-        const { tokenId } = seedToken();
-        const token = useEntityStore.getState().tokens[tokenId];
+        const { tokenId, effectId } = seedToken();
 
-        const { container } = render(React.createElement(Statements, { token }));
+        // The statement rows belong to the library entry now; `Requires` is the
+        // one rule that is still a Token field (`acceptedTokens`, owner Q5), so
+        // it is asserted on the Token's own rules panel below.
+        const { container } = render(React.createElement(StatementList, {
+            statements: statementsOfEffect(effectId),
+            onChange: () => {},
+        }));
         const text = container.textContent;
 
-        // One deterministic, one proc, one item grant, one capability, and the
-        // requirement that is a view of `acceptedTokens`.
+        // One deterministic, one proc, one item grant, one capability.
         expect(text).toContain('Work Time');
         expect(text).toContain('Double Loot Chance');
         expect(text).toContain('Acts as');
-        expect(text).toContain('Requires');
         expect(container.querySelector('select')).toBeTruthy();
+
+        const token = useEntityStore.getState().tokens[tokenId];
+        const tokenRules = render(React.createElement(Statements, { token }));
+        expect(tokenRules.container.textContent).toContain('Requires');
 
         // The seeded Work Time value is −0.05. Work Time is `inverted`, so the
         // editor must read that back as a buff rather than leaving the author
@@ -216,30 +236,43 @@ describe('CMS smoke — the screens mount without throwing', () => {
     });
 
     it('shows each rule as the sentence it will read as in game', () => {
-        const { tokenId } = seedToken();
-        const token = useEntityStore.getState().tokens[tokenId];
+        const { tokenId, effectId } = seedToken();
 
-        const { container } = render(React.createElement(Statements, { token }));
+        const { container } = render(React.createElement(StatementList, {
+            statements: statementsOfEffect(effectId),
+            onChange: () => {},
+        }));
         const text = container.textContent;
 
         expect(text).toContain('Provides 5% less work time to adjacent Coast Tokens.');
         expect(text).toContain('Acts as a Tier 1 net for adjacent stations.');
-        expect(text).toContain('Requires an adjacent Tier 1 net.');
+        cleanup();
+
+        // The Token's panel repeats the entry's sentences read-only, under the
+        // effect's name — that name is the whole point of the library, so the
+        // panel must show it rather than just the rules.
+        const token = useEntityStore.getState().tokens[tokenId];
+        const { container: tokenRules } = render(React.createElement(Statements, { token }));
+        expect(tokenRules.textContent).toContain('Shrimp Trawler');
+        expect(tokenRules.textContent).toContain('Provides 5% less work time to adjacent Coast Tokens.');
+        expect(tokenRules.textContent).toContain('Requires an adjacent Tier 1 net.');
     });
 
     it('warns when a targeted tag matches no Token, and offers the right case', () => {
-        const { tokenId } = seedToken();
+        const { effectId } = seedToken();
         // The engine matches tags exactly, so "coast" reaches no Coast Token.
-        useEntityStore.getState().setStatements(tokenId, [
+        useEntityStore.getState().setEffectStatements(effectId, [
             {
                 id: 'stm_typo', keyword: 'provides',
                 to: { mode: 'tag', value: 'coast' },
                 payload: { type: 'YIELD', bucket: 'percentage', value: 0.1 }
             }
         ]);
-        const token = useEntityStore.getState().tokens[tokenId];
 
-        const { container } = render(React.createElement(Statements, { token }));
+        const { container } = render(React.createElement(StatementList, {
+            statements: statementsOfEffect(effectId),
+            onChange: () => {},
+        }));
         expect(container.textContent).toContain('No Token carries the tag');
         expect(container.textContent).toContain('Did you mean');
     });

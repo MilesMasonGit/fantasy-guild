@@ -13,6 +13,7 @@ import * as StatusApplication from './StatusApplication.js';
 import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
+import * as EffectFeedback from './EffectFeedback.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -190,6 +191,11 @@ function fireStatement(tile, instance, statement) {
         inFlight.delete(key);
         cascadeDepth -= 1;
     }
+
+    // The statement served, so its name is said — the same moment and the same
+    // rule as the charge delta above it (CMS-26): what is announced is that the
+    // Token acted, not that every proc inside it happened to hit.
+    EffectFeedback.announce(tile, statement);
 
     return true;
 }

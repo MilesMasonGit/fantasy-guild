@@ -116,7 +116,11 @@ describe('Recipe sync round trip', () => {
             recipePools: poolsFromFile(shipped),
         });
         expect(Object.keys(files)).toEqual([
-            'items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json',
+            // `effects.json` joined the payload in Unified Effects P1. It is not
+            // optional: `tokens.json` now holds references into it, so a sync
+            // that wrote one without the other would leave every Token's rules
+            // pointing at nothing.
+            'items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json', 'effects.json',
         ]);
         expect(files['tokenRecipes.json'].map(r => r.id)).toEqual(shipped.map(r => r.id));
     });

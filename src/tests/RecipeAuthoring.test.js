@@ -4,7 +4,7 @@ import { render, cleanup, fireEvent, within } from '@testing-library/react';
 
 import { useEntityStore, makeTokenOutputEntry } from '../../cms/src/stores/useEntityStore.js';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
-import Statements from '../../cms/src/components/editors/Statements.jsx';
+import { StatementList } from '../../cms/src/components/editors/Statements.jsx';
 import {
     makeStatement, KEYWORD, DEFAULT_STATEMENT_CHARGE_DELTA
 } from '../systems/effects/statements.js';
@@ -240,55 +240,86 @@ describe('Charge delta authoring — P6b', () => {
         }
     });
 
-    it('stamps nothing on a keyword that can never fire', () => {
+    it('stamps a FREE cost on a keyword that can never fire (UE-20)', () => {
+        // It used to stamp nothing at all, because firing was the only moment
+        // anything spent at. Every statement carries the field now — but a rule
+        // that cannot fire is born costing nothing, so an aura stays free unless
+        // its author says otherwise.
         for (const keyword of [KEYWORD.PROVIDES, KEYWORD.ACTS_AS, KEYWORD.STATION, KEYWORD.CANNOT]) {
-            expect('chargeDelta' in makeStatement(keyword), keyword).toBe(false);
+            expect(makeStatement(keyword).chargeDelta, keyword).toBe(0);
         }
     });
 
-    it('still reads an unauthored delta as −1, as every older statement relies on', () => {
-        expect(statementChargeDelta({ id: 'stm_old', keyword: 'grants' })).toBe(-1);
-        expect(statementChargeDelta({ id: 'stm_free', keyword: 'grants', chargeDelta: 0 })).toBe(0);
+    it('still reads an unauthored delta as −1 for a rule that FIRES', () => {
+        // The rule every older statement relies on, unchanged: a triggered
+        // statement with no authored delta spends one charge per firing
+        // ("charge burns on service", CMS-26).
+        const firing = { id: 'stm_old', keyword: 'grants', when: { event: 'CYCLE_COMPLETE' } };
+        expect(statementChargeDelta(firing)).toBe(-1);
+        expect(statementChargeDelta({ ...firing, chargeDelta: 0 })).toBe(0);
+    });
+
+    it('reads an unauthored delta as 0 for a rule that does not fire (UE-20)', () => {
+        // ⚠️ The default is per MOMENT, not one number. A rule with no `When`
+        // clause has never spent anything — the per-cycle moment did not exist
+        // before P2 — so defaulting it to −1 would silently start wearing down
+        // every Token carrying an aura. Both callers of this function sit inside
+        // `TriggerSystem.fireStatement`, which only ever sees statements matched
+        // by their `when.event`, so nothing in the game reads this arm today.
+        expect(statementChargeDelta({ id: 'stm_aura', keyword: 'provides' })).toBe(0);
+        expect(statementChargeDelta({ id: 'stm_costly', keyword: 'provides', chargeDelta: -2 })).toBe(-2);
     });
 
     it('shows the effective delta and writes a zero the author types', () => {
         const store = useEntityStore.getState();
         const itemId = store.addItem({ name: 'Raw Shrimp' });
-        const tokenId = store.addToken({ name: 'Shrimp Coast' });
-        useEntityStore.getState().setStatements(tokenId, [{
-            // No `chargeDelta` — a statement authored before the field existed.
-            id: 'stm_a', keyword: 'grants',
-            to: { mode: 'all' },
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 5000 },
-            payload: { type: 'BONUS_DROP', itemId, chance: 100, quantity: 1 }
-        }]);
+        // Statements live in a named library entry (Unified Effects P1), and
+        // `StatementList` is the editor for one entry's rules.
+        const effectId = store.addEffect({
+            name: 'Bonus Shrimp',
+            statements: [{
+                // No `chargeDelta` — a statement authored before the field existed.
+                id: 'stm_a', keyword: 'grants',
+                to: { mode: 'all' },
+                when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 5000 },
+                payload: { type: 'BONUS_DROP', itemId, chance: 100, quantity: 1 }
+            }],
+        });
 
-        const { container } = render(React.createElement(Statements, {
-            token: useEntityStore.getState().tokens[tokenId]
+        const { container } = render(React.createElement(StatementList, {
+            statements: useEntityStore.getState().effects[effectId].statements,
+            onChange: (next) => useEntityStore.getState().setEffectStatements(effectId, next),
         }));
 
         const field = [...container.querySelectorAll('label')]
-            .find(l => l.textContent.includes('Charges per firing')).parentElement;
+            .find(l => l.textContent.includes('Charge cost')).parentElement;
         const input = field.querySelector('input[type="number"]');
 
         expect(input.value).toBe('-1');
         expect(container.textContent).toContain('Spends 1 charge each time it fires');
 
         fireEvent.change(input, { target: { value: '0' } });
-        const saved = useEntityStore.getState().tokens[tokenId].statements[0];
+        const saved = useEntityStore.getState().effects[effectId].statements[0];
         expect(saved.chargeDelta).toBe(0);
     });
 
-    it('offers the field only on statements that can carry a trigger', () => {
+    it('offers the moment picker without a firing option when a rule cannot fire', () => {
         const store = useEntityStore.getState();
-        const tokenId = store.addToken({ name: 'Shrimp Coast' });
-        useEntityStore.getState().setStatements(tokenId, [
-            { id: 'stm_s', keyword: 'station', payload: { skill: 'cooking' } }
-        ]);
+        const effectId = store.addEffect({
+            name: 'Cooking Station',
+            statements: [{ id: 'stm_s', keyword: 'station', payload: { skill: 'cooking' } }],
+        });
 
-        const { container } = render(React.createElement(Statements, {
-            token: useEntityStore.getState().tokens[tokenId]
+        const { container } = render(React.createElement(StatementList, {
+            statements: useEntityStore.getState().effects[effectId].statements,
+            onChange: () => {},
         }));
-        expect(container.textContent).not.toContain('Charges per firing');
+
+        // The cost is offered on every rule now (UE-20) — what changes is the
+        // moment list. A `Works as` statement has no When clause, so "each time
+        // it fires" is not a moment it could ever reach and is not offered.
+        expect(container.textContent).toContain('Charge cost');
+        expect(container.textContent).toContain('Every cycle of this Token');
+        expect(container.textContent).not.toContain('Each time it fires');
     });
 });

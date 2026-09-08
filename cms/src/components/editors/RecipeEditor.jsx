@@ -3,7 +3,7 @@ import { BookOpen, Plus, Trash2, X, AlertTriangle, Boxes } from 'lucide-react';
 import {
   useEntityStore, makeInputEntry, makeOutputEntry, makeTokenOutputEntry,
 } from '../../stores/useEntityStore';
-import { SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
+import { SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer } from '../../utils/constants';
 import { NumberCell } from '../shared/IOEntryList';
 import SupplyChainColumn from '../layout/SupplyChainColumn';
 import { Field } from '../shared/EditorLayout';
@@ -29,6 +29,7 @@ import SimAnswer from '../shared/SimAnswer';
 export default function RecipeEditor() {
   const recipePools = useEntityStore((s) => s.recipePools);
   const tokens = useEntityStore((s) => s.tokens);
+  const effects = useEntityStore((s) => s.effects);
   const addRecipe = useEntityStore((s) => s.addRecipe);
   const updateRecipe = useEntityStore((s) => s.updateRecipe);
   const deleteRecipe = useEntityStore((s) => s.deleteRecipe);
@@ -43,12 +44,12 @@ export default function RecipeEditor() {
   const poolConsumers = useMemo(() => {
     const map = {};
     for (const t of Object.values(tokens)) {
-      const skill = stationSkillOf(t);
+      const skill = stationSkillOf(expandBearer(t, effects));
       if (!skill) continue;
       (map[skill] ||= []).push(t);
     }
     return map;
-  }, [tokens]);
+  }, [tokens, effects]);
 
   /**
    * Context tags anything actually provides.
@@ -59,7 +60,7 @@ export default function RecipeEditor() {
   const availableContext = useMemo(() => {
     const tags = new Set();
     for (const t of Object.values(tokens)) {
-      for (const s of statementsOf(t)) {
+      for (const s of statementsOf(expandBearer(t, effects))) {
         if (s?.keyword === KEYWORD.ACTS_AS && s.payload?.tag) tags.add(s.payload.tag);
       }
       // Legacy: a top-level list, from before capabilities were statements.
@@ -67,7 +68,7 @@ export default function RecipeEditor() {
     }
     tags.delete(undefined);
     return [...tags].sort();
-  }, [tokens]);
+  }, [tokens, effects]);
 
   const pool = recipePools[activeSkill] || [];
   // Clamped rather than reset in an effect: switching to a shorter pool would

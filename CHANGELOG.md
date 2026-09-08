@@ -5,6 +5,60 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Every rule in the game now has a name.** A Token's rules used to live on the
+  Token that used them, unnamed and unshareable. They now live in a **named
+  effect library**, and Tokens point at entries in it — so the same rule can sit
+  on two Tokens (and, later, on an item or an enemy) without being authored
+  twice. Nothing about how the game plays has changed: every Token resolves to
+  exactly the rules it had before.
+- **The CMS has an Effects screen.** Name an effect, edit its rules once, and
+  see which Tokens use it before you change it. A Token's Rules section now
+  shows the effects it references, with a "shared x3" badge where an edit will
+  reach further than the Token you are looking at.
+- ⚠️ **Your CMS workspace migrates itself the first time you open it** after this
+  change. Check that your Tokens' rules read right before syncing.
+- **Rules can react to a cycle *starting*, not just finishing.** A Token can act
+  as a neighbour begins work, or as it begins its own — and a carried item can
+  proc at the start of its hero's cycle, so a buff is already up while they
+  work rather than arriving as they finish. A Token waiting on inputs has not
+  started, and does not pretend it has.
+
+- **Items can carry effects now.** Gear and consumables use the same named
+  library Tokens use, reaching the hero holding them, the Token that hero is
+  working, or the enemy they are fighting. A pickaxe can raise what a mine
+  yields; a potion can put a status on its carrier.
+- **A potion is spent from the Bank when it works.** An item's rule can cost
+  units of that item — one potion per firing — and a rule costing nothing is
+  never consumed, which is how weapons and armour are built. Run out and the
+  slot greys: the item stays where you put it and starts working again when you
+  restock.
+- **Carrying two of the same effect stacks it, up to a limit.** A charm at II and
+  a ring at III make one effect at V rather than two separate bonuses, and five
+  is the ceiling however much you pile on.
+- **The old gear stat system is gone.** It read damage, defense and a hidden
+  effect id off items, mapped them through a hardcoded list, and wrote mostly
+  into nothing — no item ever used it and the editor had no field for it.
+
+- **Effects say their name when they fire.** When a named effect actually does
+  something — a rule triggers, a bonus item drops, a status lands — its title
+  flashes above the tile, rises out of its top edge and fades. Nothing to click
+  and nothing to dismiss; if you miss one, the rule is still written on the
+  Token. Effects that are simply always on stay quiet, because nothing happened.
+
+- **One effect can now be strong or weak.** A Token points at a named effect and
+  says how strong its version is — 1 to 5 — so the same *Shrimp Trawler* can sit
+  on a Token at full strength and on a potion at triple, without a second entry
+  in the library. The rules text says the scaled number, and the effect's title
+  carries a numeral: *Shrimp Trawler III*.
+- **Rules can cost their Token charges, and you say when.** A rule that fires
+  spends when it fires, as before; a permanent one can now be made to cost a
+  charge every cycle its Token completes. Setting the cost to **0** is how an
+  always-on effect is authored, and everything you have already written stays at
+  0 — no existing Token started wearing down.
+- **The old `data/effects.json` is gone.** It held 56 placeholder effects from
+  the retired card system, read by nothing since CMS-36 deleted the editor that
+  wrote them. The filename now belongs to the real library.
+
 - **The terrain blending actually draws now.** It was in the last release but
   painted nothing at all — the effect you could see was the coarser
   tile-level raggedness underneath it. Coastlines now break up at the pixel
