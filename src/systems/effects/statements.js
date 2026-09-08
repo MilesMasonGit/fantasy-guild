@@ -67,10 +67,12 @@ export const WHEN = Object.freeze({
  * Every keyword, with what it accepts.
  *
  * `filter` says whether the statement may name *which* neighbours it reaches.
- * `Acts as`, `Requires`, `Restocks` and `Converts` have none: a capability is
- * handed to every neighbour without discrimination, a requirement is about this
- * Token, a restock list *is* its own filter, and a conversion touches the Bank
- * rather than any neighbour at all.
+ * `Acts as`, `Requires` and `Restocks` have none: a capability is handed to
+ * every neighbour without discrimination, a requirement is about this Token, and
+ * a restock list *is* its own filter.
+ *
+ * ⚠️ `Converts` gained one in ER-14, and it is the one filter that names a
+ * **single** destination rather than a set — see the note on its row.
  */
 export const KEYWORDS = Object.freeze([
     {
@@ -123,10 +125,27 @@ export const KEYWORDS = Object.freeze([
         upkeep: true
     },
     {
+        /**
+         * ⚠️ **The filter picks ONE destination, not a set** (ER-14).
+         *
+         * Every other filtered keyword broadcasts: `Provides` reaches each
+         * neighbour it names, `Grants` gives each of them an item, `Applies`
+         * puts a status on each of their heroes. A conversion cannot, because it
+         * is an **exchange** with a fixed input — producing onto four Kilns
+         * would quadruple the output while the Bank paid once.
+         *
+         * So `TriggerSystem` takes the lowest-indexed match and the sentence
+         * says *"onto the nearest"* in as many words. The owner's own example is
+         * singular: a Sigil turning Stone into Bricks and putting them on the
+         * adjacent Kiln.
+         *
+         * An absent filter still means the firing tile (D-40), so nothing
+         * authored before this changed behaviour.
+         */
         id: KEYWORD.CONVERTS,
         label: 'Converts',
         blurb: 'Spends items from the Bank and produces others. Needs a firing moment.',
-        filter: false,
+        filter: true,
         when: WHEN.REQUIRED,
         upkeep: true
     },

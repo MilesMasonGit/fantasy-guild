@@ -3,7 +3,7 @@
 import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
-import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
+import { neighboursOf, neighboursOfFootprint, neighboursOfToken } from './adjacency.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import { isStatementPaid } from './BlockUpkeep.js';
@@ -115,6 +115,51 @@ export function matchesTokenTarget(spec, def) {
         default:
             return false;
     }
+}
+
+/**
+ * The tiles a statement's filter names, seen from the Token carrying it.
+ *
+ * ## Why this exists (Effects Robustness P1)
+ * A filter is matched in two directions, and until now only one of them was
+ * written down twice and the other not at all.
+ *
+ * * **Inbound** — `applicableStatements` asks "does this neighbour's rule reach
+ *   *me*?" That is `matchesTokenTarget(statement.to, myDef)`, and it is how
+ *   every ambient effect resolves.
+ * * **Outbound** — a *triggered* rule fires on the Token that owns it and has to
+ *   ask the opposite question: "which of my neighbours did I just name?"
+ *
+ * `StatusApplication.applyToNeighbours` had the outbound loop written inline and
+ * was the only thing that honoured a filter when firing. `TriggerSystem` had no
+ * such loop, so a triggered `Grants` dropped its item on the tile that fired —
+ * whatever its sentence said. Extracting the loop here gives both paths one
+ * answer, and gives `Converts` (ER-14) the same one for free.
+ *
+ * ⚠️ **Anchors, not tiles.** A multi-tile Token occupies several indices and
+ * must be named once; the returned list is de-duplicated by anchor for exactly
+ * the reason `applicableStatements` de-duplicates its own.
+ *
+ * @param {number} sourceTile  the tile whose Token carries the statement
+ * @param {object} statement
+ * @returns {number[]} anchor indices of occupied neighbours the filter names
+ */
+export function filterTargetTiles(sourceTile, statement) {
+    const sourceDef = getTokenType(BoardState.getToken(sourceTile)?.typeId);
+    const seen = new Set();
+    const targets = [];
+
+    for (const tile of neighboursOfToken(sourceTile, sourceDef?.size || 1)) {
+        const occ = BoardState.getOccupyingToken(tile);
+        if (!occ?.instance) continue;
+        if (seen.has(occ.anchorIndex)) continue;
+        seen.add(occ.anchorIndex);
+
+        if (!matchesTokenTarget(statement?.to, getTokenType(occ.instance.typeId))) continue;
+        targets.push(occ.anchorIndex);
+    }
+
+    return targets;
 }
 
 /**

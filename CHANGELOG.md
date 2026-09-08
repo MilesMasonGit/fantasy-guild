@@ -5,6 +5,21 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A rule that fires now lands where its sentence says it lands.** A triggered
+  "grants an item" rule was ignoring the target you gave it and dropping the
+  item on the Token that fired instead — so a rule reading *"grant 1 Copper to
+  any adjacent Forge"* put the copper on itself. It now reaches the Tokens it
+  names, and a target that matches nothing correctly grants nothing. No shipped
+  Token was affected: every authored grant is the untriggered kind, which has
+  always aimed correctly.
+- **A conversion can send its output to a neighbour.** A Sigil that turns Stone
+  into Bricks can put them on the Kiln beside it. Unlike every other rule this
+  one picks a **single** destination — the nearest match — because a conversion
+  spends a fixed input, and producing onto all eight neighbours would multiply
+  what you get without multiplying what you pay. Leave the target alone and the
+  output lands where it always did.
+- **The content check now catches a rule aimed at something it cannot aim at**,
+  which is the shape of the bug above.
 - **Every rule in the game now has a name.** A Token's rules used to live on the
   Token that used them, unnamed and unshareable. They now live in a **named
   effect library**, and Tokens point at entries in it — so the same rule can sit

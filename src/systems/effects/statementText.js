@@ -116,6 +116,32 @@ function subjectPhrase(statement, names) {
     }
 }
 
+/**
+ * "Coast Token" / "Kiln" — the filter as a **singular** noun.
+ *
+ * `subjectPhrase` above is plural because every other filtered keyword reaches a
+ * set. `Converts` reaches exactly one destination (ER-14), and "onto the nearest
+ * adjacent Kiln Tokens" is not a sentence. Built separately rather than by
+ * de-pluralising the other one, because "Tokens"→"Token" is a string trick that
+ * would break the moment a filter names something whose plural is irregular.
+ */
+function singularSubjectPhrase(statement, names) {
+    const to = statement?.to;
+    if (!to || !to.mode || to.mode === 'all') return 'Token';
+    switch (to.mode) {
+        case 'tag':
+            return to.value ? `${to.value} Token` : '… Token';
+        case 'id':
+            // A Token's own name is already the specific thing — "the nearest
+            // adjacent Kiln", not "the nearest adjacent Kiln Token".
+            return to.value ? names.token(to.value) : '…';
+        case 'tokenType':
+            return to.value ? `${to.value} Token` : 'Token';
+        default:
+            return 'Token';
+    }
+}
+
 /** "1 Coal every 30 seconds" — an item list with quantities. */
 function itemList(entries, names) {
     if (!entries?.length) return '…';
@@ -220,8 +246,24 @@ function bodyOf(statement, names) {
                 ? `Restocks adjacent ${payload.tokenIds.map(names.token).join(' and ')} from the Guild Bank`
                 : 'Restocks adjacent … from the Guild Bank';
 
-        case KEYWORD.CONVERTS:
-            return `Converts ${itemList(payload.consumes, names)} into ${itemList(payload.produces, names)}`;
+        case KEYWORD.CONVERTS: {
+            const exchange = `Converts ${itemList(payload.consumes, names)} into ${itemList(payload.produces, names)}`;
+            /**
+             * ⚠️ **"onto the nearest", singular and deliberate** (ER-14).
+             *
+             * A conversion's filter picks one destination rather than a set, so
+             * the sentence must not borrow `filterPhrase`'s "to every adjacent
+             * Token" — that would promise a broadcast the runtime refuses to
+             * do, which is the exact class of lie P1 exists to remove.
+             *
+             * No filter reads as nothing at all, because the output landing on
+             * the Token that made it (D-40) is the unremarkable default and
+             * every yield in the game already behaves that way.
+             */
+            const to = statement?.to;
+            if (!to || !to.mode || to.mode === 'all') return exchange;
+            return `${exchange}, onto the nearest adjacent ${singularSubjectPhrase(statement, names)}`;
+        }
 
         case KEYWORD.CANNOT: {
             // The wording belongs to the restriction kind, not to this switch,

@@ -1,7 +1,7 @@
 // Fantasy Guild — boot-time content-integrity audit (CR2-108)
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD } from '../effects/statements.js';
+import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword } from '../effects/statements.js';
 import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
@@ -332,6 +332,28 @@ function auditStatements(out, where, def) {
         if (statement?.to?.mode === 'tag' && statement.to.value && !tokenTagsInUse().has(statement.to.value)) {
             out.push(finding(where,
                 `one of its rules aims at Tokens tagged "${statement.to.value}", and no Token carries that tag — so it reaches nothing`));
+        }
+
+        /**
+         * ⚠️ **A filter on a keyword that cannot aim** (Effects Robustness P1).
+         *
+         * This is the shape of the bug P1 fixed, caught structurally so the next
+         * one cannot last as long. A triggered `Grants` carried a filter that
+         * `TriggerSystem` discarded for the whole of Unified Effects — the
+         * sentence promised a neighbour and the item landed on the source. It
+         * survived because nothing compared the two.
+         *
+         * The check is deliberately about *legality*, not about the runtime: a
+         * `to` on a keyword whose grammar declares `filter: false` is data no
+         * reader will ever honour, whoever wrote it and whenever. That is the
+         * invariant, and it holds without this file knowing which system
+         * consumes which keyword.
+         */
+        const keyword = getKeyword(statement?.keyword);
+        if (statement?.to?.mode && keyword && !keyword.filter) {
+            out.push(finding(where,
+                `one of its rules is a "${keyword.label}" carrying a target filter, and that keyword cannot aim — ` +
+                `the filter is stored, shown in the sentence, and read by nothing. Clear it, or use a keyword that targets.`));
         }
     }
 }

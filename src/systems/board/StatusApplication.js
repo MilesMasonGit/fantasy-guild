@@ -1,10 +1,8 @@
 // Fantasy Guild — the `Applies` keyword, board side (effect grammar Phase 2)
 
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
-import { neighboursOfToken } from './adjacency.js';
-import { matchesTokenTarget } from './TileModifiers.js';
+import { filterTargetTiles } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
 
@@ -130,19 +128,14 @@ export function applyToNeighbours(sourceTile, statement, random = Math.random) {
     const payload = statement?.payload;
     if (!rolls(payload, random)) return 0;
 
-    const sourceDef = getTokenType(BoardState.getToken(sourceTile)?.typeId);
-    const seen = new Set();
     let reached = 0;
 
-    for (const tile of neighboursOfToken(sourceTile, sourceDef?.size || 1)) {
-        const occ = BoardState.getOccupyingToken(tile);
-        if (!occ?.instance) continue;
-        if (seen.has(occ.anchorIndex)) continue;
-        seen.add(occ.anchorIndex);
-
-        if (!matchesTokenTarget(statement.to, getTokenType(occ.instance.typeId))) continue;
-
-        const target = occupantOf(occ.anchorIndex);
+    // The outbound filter loop lives in `TileModifiers.filterTargetTiles` since
+    // Effects Robustness P1 — it used to be written out here, and being written
+    // out here once was why `TriggerSystem` never got a copy and a triggered
+    // `Grants` ignored its filter for the whole of Unified Effects.
+    for (const anchor of filterTargetTiles(sourceTile, statement)) {
+        const target = occupantOf(anchor);
         if (!target) continue;
         target.apply(payload.statusId, Math.max(1, payload.stacks || 1));
         reached += 1;

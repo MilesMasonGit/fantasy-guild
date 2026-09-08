@@ -7,7 +7,7 @@ import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/re
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { neighboursOf } from './adjacency.js';
-import { matchesTokenTarget } from './TileModifiers.js';
+import { matchesTokenTarget, filterTargetTiles } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as Charges from './Charges.js';
@@ -218,8 +218,32 @@ function runStatementActions(tile, instance, statement) {
         const hit = chance >= 100 || Math.random() * 100 < chance;
         if (!hit) continue;
 
+        /**
+         * ⚠️ **A firing rule lands where its sentence says it lands**
+         * (Effects Robustness P1).
+         *
+         * Both payloads below used to drop on `tile` — the Token that fired —
+         * no matter what filter the author wrote. `Grants` declares
+         * `filter: true`, so *"grant 1 Copper to any adjacent Forge"* was a
+         * sentence the editor generated, the CMS saved, the game loaded, and
+         * the runtime then ignored. That is the exact failure the statement
+         * grammar exists to make impossible, and the ambient path never had it:
+         * `applicableStatements` has matched the filter since the grammar
+         * shipped. Only the triggered path was missing the loop.
+         */
         if (modifier.type === EFFECT_TYPES.BONUS_DROP && modifier.itemId) {
-            SpriteLayer.addSprite('item', modifier.itemId, Math.max(1, modifier.quantity || 1), tile);
+            const quantity = Math.max(1, modifier.quantity || 1);
+            // An unfiltered grant is about the Token that fired, which is what
+            // an author with no filter means and what this always did.
+            const targets = statement.to ? filterTargetTiles(tile, statement) : [tile];
+            // ⚠️ A filter naming nothing grants nothing. "To any adjacent Forge"
+            // with no Forge beside it must reach nobody — falling back to the
+            // firing tile would make an unmatched filter silently universal,
+            // which is the failure `matchesTokenTarget` refuses for the same
+            // reason.
+            for (const target of targets) {
+                SpriteLayer.addSprite('item', modifier.itemId, quantity, target);
+            }
         }
 
         if (modifier.type === EFFECT_TYPES.CONVERT) {
@@ -234,10 +258,36 @@ function runStatementActions(tile, instance, statement) {
             for (const c of consumes) {
                 InventoryManager.removeItem(c.itemId, c.quantity || 1);
             }
+
+            /**
+             * ⚠️ **A conversion has ONE destination, not a broadcast** (ER-14).
+             *
+             * `Grants` above may name several neighbours because it is a bonus:
+             * granting to four Forges is four bonuses, which is what the
+             * sentence says and what the author priced. A conversion is an
+             * **exchange** — it consumes a fixed input — so producing onto every
+             * matching neighbour would multiply the output side while the input
+             * side stayed fixed. That is precisely the "scaling only the output
+             * turns a scale into free money" trap UE-7 names, arriving through
+             * the filter instead of through the scale.
+             *
+             * So the filter picks a **destination**, and the owner's own example
+             * is singular: *a Sigil that turns Stone into Bricks and puts them
+             * on the adjacent Kiln.* Lowest tile index wins when several match —
+             * deterministic rather than arbitrary, the same tie-break
+             * `Managers.js` already uses when it has to choose one neighbour.
+             */
+            const destination = statement.to
+                ? filterTargetTiles(tile, statement).sort((a, b) => a - b)[0]
+                : tile;
+            // A filter that named nothing produces nothing — the inputs are
+            // still spent, exactly as a failed cycle still costs its inputs.
+            if (destination === undefined) continue;
+
             for (const p of modifier.produces || []) {
                 // Onto the board, not into the Bank (D-40) — the same place
                 // every other yield lands, so it reads as one economy.
-                SpriteLayer.addSprite('item', p.itemId, Math.max(1, p.quantity || 1), tile);
+                SpriteLayer.addSprite('item', p.itemId, Math.max(1, p.quantity || 1), destination);
             }
         }
     }

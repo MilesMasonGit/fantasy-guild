@@ -589,8 +589,13 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
           label={
             statement.keyword === KEYWORD.CANNOT ? 'Too many of what'
               : statement.keyword === KEYWORD.APPLIES ? 'Heroes working'
-                : 'Reaches'
+                : statement.keyword === KEYWORD.CONVERTS ? 'Output goes to'
+                  : 'Reaches'
           }
+          // ⚠️ A conversion picks ONE destination, not a set (ER-14), so the
+          // "every Token nearby" hint below would promise a broadcast the
+          // runtime deliberately refuses to do.
+          singleTarget={statement.keyword === KEYWORD.CONVERTS}
         />
       )}
 
@@ -1032,7 +1037,7 @@ function AppliesFields({ payload, setPayload }) {
 }
 
 /** Which neighbours the statement reaches. */
-function FilterPicker({ statement, tokens, onChange, label = 'Reaches' }) {
+function FilterPicker({ statement, tokens, onChange, label = 'Reaches', singleTarget = false }) {
   const to = statement.to || { mode: 'all', value: '' };
   const knownTags = useMemo(() => {
     const all = new Set();
@@ -1099,10 +1104,25 @@ function FilterPicker({ statement, tokens, onChange, label = 'Reaches' }) {
           {nearMiss && <> Did you mean <strong>{nearMiss}</strong>? Tags match exactly, including case.</>}
         </p>
       )}
-      {to.mode === 'all' && (
+      {to.mode === 'all' && !singleTarget && (
         <p className="text-[10px] text-gray-600 leading-relaxed">
           Every Token on the 8 surrounding tiles. Keep these effects small —
           something that touches everything nearby adds up fast.
+        </p>
+      )}
+      {to.mode === 'all' && singleTarget && (
+        <p className="text-[10px] text-gray-600 leading-relaxed">
+          The output lands on this Token itself, like every other yield in the
+          game. Pick a tag or a Token to send it to a neighbour instead.
+        </p>
+      )}
+      {to.mode !== 'all' && singleTarget && (
+        <p className="text-[10px] text-gray-600 leading-relaxed">
+          Output goes to the <strong>nearest</strong> match — one destination,
+          not all of them. A conversion spends a fixed input, so producing onto
+          every neighbour would multiply the output and not the cost.
+          {' '}If nothing nearby matches, the inputs are still spent and nothing
+          is produced.
         </p>
       )}
     </div>
