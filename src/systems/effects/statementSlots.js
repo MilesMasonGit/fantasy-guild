@@ -9,6 +9,7 @@ import {
 } from '../../config/registries/modifierPalette.js';
 import { getStatusEffect, authorableStatuses } from '../../config/registries/statusRegistry.js';
 import { RESTRICTION_KINDS, getRestrictionKind } from '../../config/registries/restrictionPalette.js';
+import { FILTER_KINDS, filtersOf, getFilterKind } from '../../config/registries/filterRegistry.js';
 
 /**
  * A statement, described as the **ordered slots an author fills in** — the model
@@ -62,7 +63,9 @@ export const SLOT_KIND = Object.freeze({
      * restock list. G-20 keeps these as a small form beneath the sentence,
      * because a five-item conversion written out inline stops being a sentence.
      */
-    FORM: 'form'
+    FORM: 'form',
+    /** A stack of filters, each with its own value and a negate toggle. */
+    FILTERS: 'filters'
 });
 
 /** A vocabulary option, in the shape every picker wants. */
@@ -387,6 +390,21 @@ export function slotsOf(statement, ctx = {}) {
                 patch: v => ({ to: { mode: 'id', value: v } })
             });
         }
+    }
+
+    if (keyword.filter) {
+        /**
+         * The stacked filters (G-9). A list rather than a single value, so it
+         * gets the form treatment (G-20) — but the FILTER VOCABULARY still comes
+         * from the game, so adding a filter kind puts it in the editor with no
+         * editor change.
+         */
+        slots.push({
+            id: 'filters', kind: SLOT_KIND.FILTERS, label: 'only the ones',
+            value: filtersOf(statement?.to),
+            options: FILTER_KINDS.map(f => option(f.id, f.label, f.hint)),
+            patch: v => ({ to: { ...(statement.to || { mode: 'all', value: '' }), filters: v } })
+        });
     }
 
     return slots;

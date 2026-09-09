@@ -101,6 +101,9 @@ export const EngineBootstrap = {
         // D-138's "nothing is ever lost to a full Bank" guarantee, and that
         // guarantee is exactly one subscription deep.
         SpriteLayer.init();
+        // A hero arriving changes which Tokens a `being worked` filter reaches,
+        // so the tile caches follow hero movement as well as board changes (V4).
+        TileModifiers.init();
         BoardRunner.init();
         BoardCombat.init();
         Managers.init();

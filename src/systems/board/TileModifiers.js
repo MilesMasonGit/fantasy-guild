@@ -8,6 +8,9 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import { isStatementPaid } from './BlockUpkeep.js';
 import { REACH, RELATION, reachOf, reachCovers } from '../../config/registries/reachRegistry.js';
+import { FILTER_NEEDS, matchesFilters } from '../../config/registries/filterRegistry.js';
+import { EventBus } from '../core/EventBus.js';
+import { BOARD_EVENTS } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
@@ -74,6 +77,40 @@ export function clearAll() {
     aggregators.clear();
 }
 
+/** Live subscriptions, so `init` is idempotent across reloads and tests. */
+let unsubscribers = [];
+
+/**
+ * ⚠️ **A hero arriving changes what the buffs on this tile are** (V4).
+ *
+ * A tile's aggregator is a cache, rebuilt when the **board** changes. That was
+ * enough while every filter asked about definitions — a tag does not change when
+ * somebody walks onto a tile. The `being worked` filter does: the same Token
+ * matches or not depending on whether anybody is standing there, and hero
+ * movement is the game's most frequent action.
+ *
+ * Without this, a rule reading *"to every adjacent Token being worked"* would be
+ * evaluated once, at placement, and then never again — silently wrong for the
+ * whole session. Hero movement is cheap and rare enough compared to a frame that
+ * rebuilding the neighbourhood on it costs nothing measurable.
+ *
+ * ⚠️ This is the same reasoning `heroContributions` uses to read a loadout live
+ * rather than caching it: **a hero is not the board.** The difference is that a
+ * loadout can be read at the moment it matters, and an aggregator cannot.
+ */
+export function init() {
+    teardown();
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, ({ tile }) => {
+        if (tile != null) rebuildAround(tile);
+    }));
+}
+
+/** Drop the subscriptions. */
+export function teardown() {
+    unsubscribers.forEach(u => u?.());
+    unsubscribers = [];
+}
+
 /** The source id one Token's buff registers under. Per COPY, never per type. */
 const sourceIdFor = (tile, typeId) => `tile:${tile}:${typeId}`;
 
@@ -101,7 +138,31 @@ const sourceIdFor = (tile, typeId) => `tile:${tile}:${typeId}`;
  * buff visibly inert, not silently universal — the failure that would otherwise
  * turn a narrow, large effect into a board-wide one.
  */
-export function matchesTokenTarget(spec, def) {
+export function matchesTokenTarget(spec, def, ctx = null) {
+    if (!modeMatches(spec, def)) return false;
+
+    /**
+     * ⚠️ The stacked filters (G-9), which need more than a definition.
+     *
+     * `ctx` is what the caller could supply — an instance, a tile, both or
+     * neither — and `matchesFilters` refuses any filter it cannot evaluate
+     * rather than guessing. A caller passing nothing gets the pre-V4 behaviour
+     * exactly, which is what keeps every rule authored before this unchanged.
+     */
+    const available = new Set([FILTER_NEEDS.DEF]);
+    if (ctx?.instance) available.add(FILTER_NEEDS.INSTANCE);
+    if (ctx?.tile != null) available.add(FILTER_NEEDS.TILE);
+
+    return matchesFilters(spec, {
+        def,
+        instance: ctx?.instance,
+        tile: ctx?.tile,
+        heroOnTile: ctx?.tile != null ? BoardState.heroOnTile(ctx.tile) : null
+    }, available);
+}
+
+/** The single primary mode — tag, id, or everything. Unchanged since CMS-18. */
+function modeMatches(spec, def) {
     if (!spec || !spec.mode) return true;   // untargeted
     if (spec.mode === 'all') return !!def;  // every adjacent Token (owner Q2)
     if (!def) return false;
@@ -175,7 +236,8 @@ export function filterTargetTiles(sourceTile, statement) {
         // ⚠️ `board` includes the Token carrying the rule, and that is right:
         // "every Token on the board" is not "every Token except me". A rule that
         // means to skip itself is `adjacent`, which is the default.
-        if (!matchesTokenTarget(statement?.to, getTokenType(occ.instance.typeId))) continue;
+        if (!matchesTokenTarget(statement?.to, getTokenType(occ.instance.typeId),
+            { instance: occ.instance, tile: occ.anchorIndex })) continue;
         targets.push(occ.anchorIndex);
     }
 
@@ -287,7 +349,7 @@ function* applicableStatements(index) {
             }
 
             // CMS-18/23: a targeted statement only reaches Tokens it names.
-            if (!matchesTokenTarget(statement.to, selfDef)) continue;
+            if (!matchesTokenTarget(statement.to, selfDef, { instance: occ?.instance, tile: index })) continue;
 
             // CMS-60/97: an unpaid statement is simply off until stock returns.
             if (!isStatementPaid(instance, statement.id)) continue;

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   slotsOf, slotDisplay, slotIsOrphaned, filterOptions, SLOT_KIND,
-  renderStatement,
+  renderStatement, getFilterKind,
 } from '../../utils/constants';
 
 /**
@@ -119,6 +119,75 @@ function Chip({ slot, active, onFocus, onChange }) {
     >
       {unset ? `— ${slot.label} —` : display}
     </button>
+  );
+}
+
+/**
+ * The stacked filters (G-9) — a list, so it gets a small form rather than a chip.
+ *
+ * ⚠️ Every row carries its own **negate** toggle, because negation doubles what
+ * each filter can say for the cost of one checkbox. The wording flips with it:
+ * "with fewer than 3 charges" becomes "with 3 or more charges", never "not with
+ * fewer than", because each filter owns both readings.
+ */
+function FilterStack({ slot, onChange }) {
+  const rows = slot.value || [];
+  const write = (next) => onChange(slot.patch(next));
+
+  return (
+    <div className="space-y-1">
+      {rows.map((row, i) => {
+        const kind = getFilterKind(row.kind);
+        return (
+          <div key={i} className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] text-gray-500">only the ones</span>
+            <label className="flex items-center gap-1 text-[11px]">
+              <input
+                type="checkbox"
+                checked={!!row.not}
+                onChange={(e) => write(rows.map((r, j) => j === i ? { ...r, not: e.target.checked } : r))}
+              />
+              not
+            </label>
+            <select
+              value={row.kind}
+              onChange={(e) => write(rows.map((r, j) => j === i ? { kind: e.target.value } : r))}
+              className="text-[12px]"
+            >
+              {slot.options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+            </select>
+            {kind?.value && (
+              <input
+                type={kind.value === 'number' ? 'number' : 'text'}
+                value={row.value ?? ''}
+                placeholder={kind.placeholder || ''}
+                onChange={(e) => write(rows.map((r, j) => j === i ? { ...r, value: e.target.value } : r))}
+                className="px-1 py-0.5 rounded text-[12px] w-24"
+                style={{ border: '1px solid var(--color-border)' }}
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => write(rows.filter((_, j) => j !== i))}
+              className="text-[11px] opacity-60 hover:opacity-100"
+            >
+              ✕
+            </button>
+            {kind?.hint && (
+              <span className="text-[10px] text-gray-500 basis-full">{kind.hint}</span>
+            )}
+          </div>
+        );
+      })}
+      <button
+        type="button"
+        onClick={() => write([...rows, { kind: slot.options[0]?.id }])}
+        className="text-[11px] px-1.5 py-0.5 rounded"
+        style={{ border: '1px dashed var(--color-border)' }}
+      >
+        + narrow it further
+      </button>
+    </div>
   );
 }
 
@@ -259,7 +328,7 @@ export default function SentenceEditor({ statement, onChange, names, form, ctx }
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-1.5">
             {slots
-              .filter((s) => s.kind !== SLOT_KIND.FORM)
+              .filter((s) => s.kind !== SLOT_KIND.FORM && s.kind !== SLOT_KIND.FILTERS)
               .map((s) => (
                 <Chip
                   key={s.id}
@@ -302,6 +371,10 @@ export default function SentenceEditor({ statement, onChange, names, form, ctx }
               reach — the moment you picked never supplies it. Pick again.
             </p>
           )}
+
+          {slots.filter((s) => s.kind === SLOT_KIND.FILTERS).map((s) => (
+            <FilterStack key={s.id} slot={s} onChange={onChange} />
+          ))}
 
           {needsForm && form}
         </div>

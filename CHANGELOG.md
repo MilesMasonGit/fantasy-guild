@@ -5,6 +5,12 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Rules can be narrowed, and stacked.** A rule can now say *which* of the
+  things in range it actually hits: tagged something, working as a station,
+  running low on charges, or currently being worked — as many as you like, and
+  any of them can be flipped to mean the opposite.
+- **Rules can now react to a Token's live state**, not just to what it is. A
+  buff that only helps Tokens somebody is actually working is authorable.
 - ⭐ **Rules are written as sentences now, not clicked through dropdowns.** A rule
   is a row of words you type into: click any part, start typing, and only what
   fits there is offered. Beneath it sits the sentence the rule will actually

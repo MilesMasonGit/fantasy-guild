@@ -8,6 +8,7 @@ import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
+import { filtersPhrase } from '../../config/registries/filterRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
 
 /**
@@ -90,6 +91,13 @@ function effectPhrase(statement) {
  * exactly one Token — the one carrying the rule.
  */
 function filterPhrase(statement, names) {
+    // ⚠️ Appended to whatever frame the reach chose, so "to every Coast Token on
+    // the board" becomes "to every Coast Token on the board that is being
+    // worked" — one clause, not two sentences stitched together.
+    return `${reachFramePhrase(statement, names)}${filtersPhrase(statement?.to, names)}`;
+}
+
+function reachFramePhrase(statement, names) {
     const reach = reachOf(statement);
     const noun = subjectPhrase(statement, names);
     const to = statement?.to;
@@ -190,6 +198,10 @@ function singularSubjectPhrase(statement, names) {
  * because `self` collapses to a single person: the one working this very Token.
  */
 function occupantPhrase(statement, names) {
+    return `${occupantFramePhrase(statement, names)}${filtersPhrase(statement?.to, names)}`;
+}
+
+function occupantFramePhrase(statement, names) {
     const reach = reachOf(statement);
     const noun = subjectPhrase(statement, names);
     const to = statement?.to;
@@ -416,7 +428,7 @@ function bodyOf(statement, names) {
             // branch per rule.
             const kind = getRestrictionKind(payload.kind);
             if (!kind) return 'Cannot …';
-            return `Cannot ${kind.sentence(payload, subjectPhrase(statement, names))}`;
+            return `Cannot ${kind.sentence(payload, subjectPhrase(statement, names) + filtersPhrase(statement?.to, names))}`;
         }
 
         case KEYWORD.APPLIES: {

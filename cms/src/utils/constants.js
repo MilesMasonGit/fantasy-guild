@@ -161,6 +161,17 @@ export {
 } from '../../../src/config/registries/roleRegistry.js';
 export { rolesOf } from '../../../src/config/registries/triggerRegistry.js';
 
+// The filters a selector may stack (G-9). AND-composed, negatable, and each row
+// declares what it needs to look at — so a filter the caller cannot evaluate
+// refuses rather than guessing.
+export {
+  FILTER_KINDS,
+  FILTER_NEEDS,
+  getFilterKind,
+  filtersOf,
+  filterPhrase,
+} from '../../../src/config/registries/filterRegistry.js';
+
 // What a `Cannot` may forbid. One row today — an adjacency limit — shaped like
 // the modifier palette so restriction #2 is a row in the game, not a rewrite of
 // the editor.

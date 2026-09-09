@@ -5,6 +5,7 @@ import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword
 import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { getReach } from '../../config/registries/reachRegistry.js';
+import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/filterRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
@@ -384,6 +385,28 @@ function auditStatements(out, where, def) {
                 `one of its rules aims at ${getRole(targetRole)?.label || targetRole}, but ${where_} ` +
                 `never supplies one — so the rule reaches nobody, on any board. Pick a moment that has ` +
                 `one, or aim somewhere else.`));
+        }
+
+        /**
+         * ⚠️ **A state filter on a rule read at placement time can never pass.**
+         *
+         * `Cannot` is evaluated by `Placement.js` at the instant a Token is put
+         * down, against the DEFINITIONS around it — there is no live instance to
+         * ask how worn a neighbour is, and no cycle in progress to ask who is
+         * working it. `matchesFilters` refuses a filter it cannot evaluate, so
+         * such a rule refuses every placement check silently. The author is told
+         * here rather than left to wonder why the restriction never triggers.
+         */
+        if (statement?.keyword === KEYWORD.CANNOT) {
+            for (const entry of filtersOf(statement.to)) {
+                const kind = getFilterKind(entry.kind);
+                if (kind && kind.needs !== FILTER_NEEDS.DEF) {
+                    out.push(finding(where,
+                        `one of its "Cannot" rules filters on "${kind.label}", which is about a Token's ` +
+                        `live state — and a placement rule is checked before any of that exists, so the ` +
+                        `rule can never match. Filter on a tag or a kind of Token instead.`));
+                }
+            }
         }
 
         // A reach the vocabulary does not have resolves to "adjacent" rather

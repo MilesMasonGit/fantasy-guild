@@ -257,6 +257,30 @@ sentence it also lands directly under the chip just clicked.
 ⚠️ The **"carries effect X"** filter waits for V6, when live instances exist for
 it to look at.
 
+⚠️ **Three things worth recording from the build.**
+
+**A filter the caller cannot evaluate FAILS.** `Restrictions` checks placement
+against definitions and has no live instance, so "with fewer than 3 charges" has
+no answer there. Failing is the safe direction: a rule reaching nothing is
+visible and reportable, where a rule reaching EVERYTHING because a filter could
+not be checked is a narrow effect turned board-wide. `ContentAudit` names a
+`Cannot` carrying a state filter so the author is told rather than left guessing.
+
+⚠️ **A hero arriving now rebuilds the tile caches.** `being worked` is the first
+filter whose answer changes without the board changing, and a tile aggregator is
+only rebuilt on board changes — so the rule would have been evaluated once, at
+placement, and been silently wrong for the rest of the session. `TileModifiers`
+subscribes to `HERO_MOVED`. Same reasoning `heroContributions` uses to read a
+loadout live: **a hero is not the board.**
+
+**Filters are modifiers, not a relative clause.** The first version wrote "that
+is …", which forced a number agreement the renderer cannot win — the frame in
+front may be singular or plural, so it produced *"Tokens that is being worked"*.
+Phrases attaching directly read correctly after either. Each filter also owns its
+**negative** wording, because negating mechanically produces *"not with fewer
+than 3 charges"*, which nobody would write; the opposite of "fewer than 3" is
+"3 or more", and only the filter knows that.
+
 ### V5 — Computed magnitudes
 
 * A magnitude becomes flat, **percentage of a named stat on a role**, or **a
@@ -318,7 +342,7 @@ or a random free tile (G-15).
 | V1 Moments declare roles | **DONE** 2026-09-08 | `roleRegistry.js` + `roles` on all ten triggers. `CYCLE_START` and both `COMBAT_RESOLVED` sites widened. 16 new tests, 8 of which fail when neutered. |
 | V2 `Deals`, the actor, Thorns | **DONE** 2026-09-08 | ⭐ One entry hurts a hero who harvests a bush AND one who kills a monster, proven in a real fight. 16 new tests, 6 of which fail when the verb is neutered. |
 | V3 ⭐ The sentence editor | **DONE** 2026-09-08 | Chips in sentence order, typing narrows, panel beneath. Four pickers deleted. Thorns rebuilt by typing, byte-identical. 23 new tests. |
-| V4 Composable filters | **NOT STARTED** | |
+| V4 Composable filters | **DONE** 2026-09-08 | `filterRegistry.js`: tagged / is_station / charges_below / worked, all negatable and AND-composed. 18 new tests. |
 | V5 Computed magnitudes | **NOT STARTED** | |
 | V6 Live instances, duration, chaining | **NOT STARTED** | Needs a save migration |
 | V7 The seven re-authored | **NOT STARTED** | Absorbs the old ER-10 |
