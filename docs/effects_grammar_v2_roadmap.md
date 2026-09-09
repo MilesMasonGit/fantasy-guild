@@ -398,7 +398,9 @@ or a random free tile (G-15).
 | V5 Computed magnitudes | **DONE** 2026-09-08 | `magnitudeRegistry.js`: flat / % of a named stat / per-match count, with the second `counted` selector. 16 new tests. |
 | V6 Live instances, duration, chaining | **DONE** 2026-09-08 | `LiveEffects.js` + the `EFFECT_TICK` moment. `Applies` takes a library effect; duration 0 chains. 16 new tests. ⚠️ No save migration needed — `hero.statuses` is untouched and dies at V7. |
 | V7a The seven become **expressible** | **DONE** 2026-09-09 | A carried effect now contributes modifiers, which is what four of the seven needed. `DAMAGE` gained a percentage reader. 12 tests prove all seven are sayable. |
-| V7b Author them, then delete the old engine | ⏳ **Owner authoring next** | The machinery is ready. Authoring is the CMS's job; deletion follows it. |
+| V7b.1 Enemies become effect bearers | **DONE** 2026-09-09 | A fight holds the list and the aggregator, so it has the fight's lifetime. `Deals` at an enemy now respects armour; `self` on a monster means the monster; both halves of `Applies` resolve targets the same way. 17 tests, 6 of which fail when neutered. |
+| V7b.2 `SELF_TOKEN_DEPLETED` | **DONE** 2026-09-09 | ⭐ "Leave a Stump behind when this depletes" is authorable — §4b's open item is closed. The moment is `settled`: no charge paid, no charge gate. 13 tests, 5 of which fail when neutered. |
+| V7b.3 Author the seven, then delete the old engine | ⏸ **Owner deferred** | Ruled 2026-09-09: *"I don't really want to author these effects now. I want the system to be more complete first. These effects are just theoretical test effects, there may not be those effects in the final game."* Nothing waits on it — both engines run side by side. |
 | V8 The rest of the verbs | **DONE** 2026-09-08 | `Heals`, `Restores`, `Removes` in `EffectActions.js`. ⭐ `Restores` is the reader `CHARGE_EXTEND` was named for; `Removes` is the first caller a cleanse has ever had. 14 new tests. |
 | V9 `Spawns` and `Transforms` | **DONE** 2026-09-08 | `placementRegistry.js` — the destination is an authored choice, never a hidden fallback. 15 new tests. |
 
@@ -430,13 +432,18 @@ The four worst were:
   `makeStatement` stamps `to: { mode: 'all' }`, which the runtime read as "pick a
   neighbour" and the renderer read as "no destination".
 
-⛔ **Still open, and a genuine design question:** a `uses: 1` Token **cannot
-transform on completion at all**. `commitPlan` destroys a depleted Token (D-118)
-*before* `CYCLE_COMPLETE` is published, so the tile is already empty when the
-rule fires. That makes *"leave a Stump behind when this depletes"* — the
-motivating case for `Spawns`/`Transforms` — unauthorable in its most natural
-form. Fixing it means either publishing a moment *before* depletion, or letting
-`TOKEN_DEPLETED` carry a transform; both are real design calls, not cleanups.
+✅ **Closed 2026-09-09 by `SELF_TOKEN_DEPLETED`.** The answer turned out to be
+neither of the two options offered above: the tile emptying *before* the event is
+**correct**, because that is what frees the square for a `Spawns here`. Two
+things were actually missing — a self scope on the depletion moment, and any way
+for the departing instance to be found once the board no longer holds it. It now
+rides on the event.
+
+⚠️ One consequence worth knowing when authoring: at this moment the natural verb
+is **`Spawns … here`, not `Transforms`**. `Transforms` requires a Token standing
+on the tile, and by then there is none. The sentence also still renders the
+destination as *"on this Token's own tile"*, which is true of the square but
+reads oddly for a Token that has just left it — a G-10 wording call, not a bug.
 
 ## 4c. V7a — what the seven actually needed
 
@@ -462,12 +469,14 @@ different arithmetic. The shape is expressible and the numbers are the owner's.
 
 ### What V7b still needs
 
-1. **The owner authors the seven in the CMS.** Nothing can be deleted before
-   replacements exist, and authoring cannot be done from a session whose CMS
-   workspace is empty — a sync would write that emptiness over `data/`.
-2. **Enemies get a `ModifierAggregator`** (the old ER-10), so an enemy can carry
-   Armor Shield the way a hero can. Four of the eight `sumStatusEffect` readers
-   are enemy-side.
+1. ~~**The owner authors the seven in the CMS.**~~ ⏸ **Deferred by the owner
+   2026-09-09** — the seven are theoretical test effects and may not exist in the
+   finished game, so completeness comes first. Steps 3 and 5 wait on it; nothing
+   else does.
+2. ~~**Enemies get a `ModifierAggregator`**~~ ✅ **DONE 2026-09-09.** V6's header
+   claimed live enemies were supported; only heroes were. `LiveEffects` no longer
+   knows what a hero is — it works on a bearer descriptor, and `BoardCombat`
+   registers its live fights as a source.
 3. **The save migration.** `hero.statuses` is save-resident; the standing rule —
    never silently half-translate — points at dropping live statuses on load and
    letting the player re-earn a few seconds of a transient buff. Still §5 Q2.
