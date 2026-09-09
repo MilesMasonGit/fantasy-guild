@@ -290,6 +290,30 @@ than 3 charges"*, which nobody would write; the opposite of "fewer than 3" is
 **Verified when** *"+1% yield to every adjacent Token, per adjacent Coast Token"*
 is authorable, reads as one sentence, and moves the right number.
 
+⚠️ **Three things worth recording from the build.**
+
+**An unreadable stat is ZERO, never the base number.** *"10% of the target's max
+HP"* against nobody must do nothing, not fall back to doing 10 damage. Silently
+swapping a percentage for a flat amount is how a rule comes to mean something
+nobody authored. Unlimited charges (`null`, R-4) read as nothing for the same
+reason — treating them as huge would make an unlimited Token the strongest
+possible version of the effect.
+
+**A count is not "equal to".** The first rendering wrote *"damage equal to per
+adjacent Coast Token"* and dropped the number entirely. A count is a per-match
+amount, so the number keeps its place: *"deals 1 damage per adjacent Coast
+Token"*. Three magnitude shapes, three sentence shapes.
+
+**G-2 reaches the magnitude vocabulary too.** A stat about the actor is not
+offered on a moment that has no actor — `statsForRoles` filters by the same roles
+the target picker uses. The rule that bounds targeting bounds this as well,
+without it being a second mechanism.
+
+⚠️ **The counted selector is measured from the BEARER, not the target.** *"1
+damage per adjacent Coast Token"* on a monster means the Tokens beside the
+monster. Counting around whoever it hit would be a different rule, and a much
+stranger one.
+
 ### V6 — Live effect instances, duration, and chaining
 
 * An entity carries `effects: [{ effectId, scale, expiresAt, sourceId }]` (G-6).
@@ -343,7 +367,7 @@ or a random free tile (G-15).
 | V2 `Deals`, the actor, Thorns | **DONE** 2026-09-08 | ⭐ One entry hurts a hero who harvests a bush AND one who kills a monster, proven in a real fight. 16 new tests, 6 of which fail when the verb is neutered. |
 | V3 ⭐ The sentence editor | **DONE** 2026-09-08 | Chips in sentence order, typing narrows, panel beneath. Four pickers deleted. Thorns rebuilt by typing, byte-identical. 23 new tests. |
 | V4 Composable filters | **DONE** 2026-09-08 | `filterRegistry.js`: tagged / is_station / charges_below / worked, all negatable and AND-composed. 18 new tests. |
-| V5 Computed magnitudes | **NOT STARTED** | |
+| V5 Computed magnitudes | **DONE** 2026-09-08 | `magnitudeRegistry.js`: flat / % of a named stat / per-match count, with the second `counted` selector. 16 new tests. |
 | V6 Live instances, duration, chaining | **NOT STARTED** | Needs a save migration |
 | V7 The seven re-authored | **NOT STARTED** | Absorbs the old ER-10 |
 | V8 The rest of the verbs | **NOT STARTED** | |

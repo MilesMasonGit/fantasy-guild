@@ -172,6 +172,16 @@ export {
   filterPhrase,
 } from '../../../src/config/registries/filterRegistry.js';
 
+// Where a number comes from (G-13): typed, a percentage of a named stat, or a
+// count of a second selector's matches. A closed list, never arithmetic.
+export {
+  MAGNITUDE_KIND,
+  MAGNITUDE_STATS,
+  getMagnitudeStat,
+  statsForRoles,
+  magnitudePhrase,
+} from '../../../src/config/registries/magnitudeRegistry.js';
+
 // What a `Cannot` may forbid. One row today — an adjacency limit — shaped like
 // the modifier palette so restriction #2 is a row in the game, not a rewrite of
 // the editor.

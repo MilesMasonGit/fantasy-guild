@@ -5,6 +5,10 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **A rule's number can be worked out rather than typed.** Damage equal to 10%
+  of the target's maximum health, or one point per adjacent Coast Token — so an
+  effect can stay meaningful as heroes grow, or reward how you have arranged the
+  board.
 - ⭐ **Rules can be narrowed, and stacked.** A rule can now say *which* of the
   things in range it actually hits: tagged something, working as a station,
   running low on charges, or currently being worked — as many as you like, and

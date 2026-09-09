@@ -9,6 +9,7 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { filtersPhrase } from '../../config/registries/filterRegistry.js';
+import { magnitudePhrase, MAGNITUDE_KIND } from '../../config/registries/magnitudeRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
 
 /**
@@ -253,6 +254,26 @@ function rolePhrase(statement) {
     return role ? role.label : '…';
 }
 
+/**
+ * "adjacent Coast Token" — the second, counted selector as a noun (G-14).
+ *
+ * ⚠️ Singular, because it follows "per": *"1 damage per adjacent Coast Token"*.
+ * The set it counts is plural; the thing each unit of damage is *per* is one of
+ * them.
+ */
+function countedNounPhrase(statement, names) {
+    const counted = statement?.counted;
+    if (!counted) return '';
+    const reach = counted.reach === REACH.BOARD ? 'Token on the board'
+        : counted.reach === REACH.SELF ? 'this Token'
+            : 'adjacent Token';
+    if (!counted.mode || counted.mode === 'all') return reach;
+    if (counted.mode === 'tag') {
+        return counted.value ? `adjacent ${counted.value} Token` : 'adjacent … Token';
+    }
+    return counted.value ? `adjacent ${names.token(counted.value)}` : 'adjacent …';
+}
+
 /** "1 Coal every 30 seconds" — an item list with quantities. */
 function itemList(entries, names) {
     if (!entries?.length) return '…';
@@ -416,9 +437,30 @@ function bodyOf(statement, names) {
              * every rule would be noise on the common case; saying "ignoring
              * armour" on the uncommon one is the information the reader needs.
              */
-            const amount = Math.max(0, Number(payload.amount) || 0);
             const pierce = payload.ignoresArmor ? ', ignoring armour' : '';
-            return `Deals ${amount} damage to ${rolePhrase(statement)}${pierce}`;
+            /**
+             * ⭐ A computed magnitude says where its number came from (G-13),
+             * and the three shapes read as three different sentences:
+             *
+             *   flat   "deals 1 damage to the actor"
+             *   stat   "deals damage equal to 10% of the target's max HP to …"
+             *   count  "deals 1 damage per adjacent Coast Token to the actor"
+             *
+             * ⚠️ A count is NOT "equal to". The first version rendered it that
+             * way and dropped the number entirely — *"damage equal to per
+             * adjacent Coast Token"*. The amount is per-match, so it keeps its
+             * place in front of "damage".
+             */
+            const flat = Math.max(0, Number(payload.amount) || 0);
+            let amount;
+            if (payload.magnitude === MAGNITUDE_KIND.STAT) {
+                amount = `damage equal to ${magnitudePhrase(payload)}`;
+            } else if (payload.magnitude === MAGNITUDE_KIND.COUNT) {
+                amount = `${flat} damage per ${countedNounPhrase(statement, names) || '…'}`;
+            } else {
+                amount = `${flat} damage`;
+            }
+            return `Deals ${amount} to ${rolePhrase(statement)}${pierce}`;
         }
 
         case KEYWORD.CANNOT: {

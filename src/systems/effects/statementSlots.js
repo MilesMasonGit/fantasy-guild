@@ -10,6 +10,7 @@ import {
 import { getStatusEffect, authorableStatuses } from '../../config/registries/statusRegistry.js';
 import { RESTRICTION_KINDS, getRestrictionKind } from '../../config/registries/restrictionPalette.js';
 import { FILTER_KINDS, filtersOf, getFilterKind } from '../../config/registries/filterRegistry.js';
+import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
 
 /**
  * A statement, described as the **ordered slots an author fills in** — the model
@@ -98,7 +99,8 @@ function payloadSlots(statement, ctx) {
     const payload = statement?.payload || {};
 
     switch (statement?.keyword) {
-        case KEYWORD.DEALS:
+        case KEYWORD.DEALS: {
+            const available = rolesOf(statement?.when?.event);
             return [
                 {
                     id: 'amount', kind: SLOT_KIND.NUMBER, label: 'damage',
@@ -106,12 +108,39 @@ function payloadSlots(statement, ctx) {
                     patch: v => ({ payload: { ...payload, amount: Math.max(0, Number(v) || 0) } })
                 },
                 {
+                    id: 'magnitude', kind: SLOT_KIND.VOCABULARY, label: 'measured as',
+                    value: payload.magnitude || MAGNITUDE_KIND.FLAT,
+                    options: [
+                        option(MAGNITUDE_KIND.FLAT, 'a flat amount', 'The number, as typed.'),
+                        option(MAGNITUDE_KIND.STAT, 'a percentage of a stat', 'Scales with the target, so it stays relevant as heroes grow.'),
+                        option(MAGNITUDE_KIND.COUNT, 'per matching Token', 'The number, once for each thing the second filter matches.')
+                    ],
+                    patch: v => ({ payload: { ...payload, magnitude: v } })
+                },
+                /**
+                 * ⚠️ G-2 reaches the magnitude vocabulary too: a stat about the
+                 * actor is not offered on a moment that has no actor.
+                 */
+                ...(payload.magnitude === MAGNITUDE_KIND.STAT ? [{
+                    id: 'stat', kind: SLOT_KIND.VOCABULARY, label: 'of what',
+                    value: payload.stat || '',
+                    options: statsForRoles(available).map(st => option(st.id, st.label, st.hint)),
+                    patch: v => ({ payload: { ...payload, stat: v } })
+                }] : []),
+                ...(payload.magnitude === MAGNITUDE_KIND.COUNT ? [{
+                    id: 'counted', kind: SLOT_KIND.FILTERS, label: 'counting',
+                    value: filtersOf(statement?.counted),
+                    options: FILTER_KINDS.map(f => option(f.id, f.label, f.hint)),
+                    patch: v => ({ counted: { ...(statement.counted || { mode: 'all', value: '' }), filters: v } })
+                }] : []),
+                {
                     id: 'ignoresArmor', kind: SLOT_KIND.FLAG, label: 'ignores armour',
                     value: !!payload.ignoresArmor,
                     hint: 'Armour normally reduces this, and heavy armour can stop it entirely.',
                     patch: v => ({ payload: { ...payload, ignoresArmor: !!v } })
                 }
             ];
+        }
 
         case KEYWORD.PROVIDES: {
             const entry = getPaletteEntry(payload.type);

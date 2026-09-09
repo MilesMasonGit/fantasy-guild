@@ -3,6 +3,8 @@
 import { EventBus } from '../core/EventBus.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 import { mitigateFlatDamage } from '../../utils/CombatFormulas.js';
+import { resolveMagnitude, usesCountedSelector } from '../../config/registries/magnitudeRegistry.js';
+import * as TileModifiers from './TileModifiers.js';
 import { logger } from '../../utils/Logger.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as BoardState from './BoardState.js';
@@ -41,6 +43,26 @@ import * as BoardCombat from './BoardCombat.js';
  * **There must never be a second subscriber that also kills** (CR2-070: that
  * branch was a no-op for months and a poisoned hero worked on at 0 HP).
  */
+
+/**
+ * How many things the statement's second, `counted` selector matched (G-14).
+ *
+ * ⚠️ Counted from the **bearer's** tile, not the target's. *"1 damage per
+ * adjacent Coast Token"* on a monster means the Tokens beside the monster; it
+ * would be a different rule, and a much stranger one, if it counted what
+ * happened to be beside whoever it hit.
+ *
+ * Zero when the rule does not use a count, so the multiply is harmless.
+ */
+function countMatches(statement, roles) {
+    if (!usesCountedSelector(statement?.payload)) return 0;
+    if (roles?.self == null) return 0;
+    // The counted selector carries its own reach, so "per Coast Token on the
+    // board" is as sayable as "per adjacent Coast Token".
+    return TileModifiers.filterTargetTiles(roles.self, {
+        to: statement.counted, reach: statement.counted?.reach
+    }).length;
+}
 
 /** The entity a role points at, as something damage can be applied to. */
 function targetOf(role, roles) {
@@ -115,7 +137,20 @@ function enemyTarget(fight) {
  */
 export function deal(statement, roles) {
     const payload = statement?.payload || {};
-    const amount = Number(payload.amount);
+
+    /**
+     * ⭐ The magnitude may be **computed** (G-13): a flat number, a percentage
+     * of a named stat, or a count of whatever the second selector matched.
+     *
+     * Resolved here rather than in the registry's caller so that every entity a
+     * stat could name is already in hand — the actor's hero, and the instance
+     * this rule is riding on.
+     */
+    const amount = resolveMagnitude(payload, {
+        actorHero: roles?.actor ? HeroManager.getHero(roles.actor) : null,
+        selfInstance: roles?.self != null ? BoardState.getToken(roles.self) : null
+    }, countMatches(statement, roles));
+
     if (!Number.isFinite(amount) || amount <= 0) return 0;
 
     // ⚠️ A role the moment did not supply reaches nobody — an unstaffed passive
