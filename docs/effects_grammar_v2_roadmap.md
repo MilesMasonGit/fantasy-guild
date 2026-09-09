@@ -398,7 +398,7 @@ or a random free tile (G-15).
 | V5 Computed magnitudes | **DONE** 2026-09-08 | `magnitudeRegistry.js`: flat / % of a named stat / per-match count, with the second `counted` selector. 16 new tests. |
 | V6 Live instances, duration, chaining | **DONE** 2026-09-08 | `LiveEffects.js` + the `EFFECT_TICK` moment. `Applies` takes a library effect; duration 0 chains. 16 new tests. ⚠️ No save migration needed — `hero.statuses` is untouched and dies at V7. |
 | V7 The seven re-authored | **NOT STARTED** | Absorbs the old ER-10 |
-| V8 The rest of the verbs | **NOT STARTED** | |
+| V8 The rest of the verbs | **DONE** 2026-09-08 | `Heals`, `Restores`, `Removes` in `EffectActions.js`. ⭐ `Restores` is the reader `CHARGE_EXTEND` was named for; `Removes` is the first caller a cleanse has ever had. 14 new tests. |
 | V9 `Spawns` and `Transforms` | **NOT STARTED** | |
 
 *Carried over and already done:* v1 P1 (the filter tells the truth), P2 (reach),

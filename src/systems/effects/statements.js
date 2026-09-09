@@ -56,6 +56,9 @@ export const KEYWORD = Object.freeze({
     CANNOT: 'cannot',
     APPLIES: 'applies',
     DEALS: 'deals',
+    HEALS: 'heals',
+    RESTORES: 'restores',
+    REMOVES: 'removes',
     STATION: 'station'
 });
 
@@ -244,6 +247,57 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
+         * The mirror of `Deals`, and it shares its whole shape — a magnitude, a
+         * role, a moment. ⚠️ It never overheals: `modifyHeroHp` clamps to max,
+         * which is what every other heal in the game does.
+         */
+        id: KEYWORD.HEALS,
+        label: 'Heals',
+        scales: 'amount',
+        blurb: 'Restores health to somebody involved in the moment.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
+         * ⭐ Gives a Token charges back — and gives `CHARGE_EXTEND` the reader it
+         * has been named for and waited on since CMS-27.
+         *
+         * ⚠️ Targets a **tile**, not a person: charges belong to a Token. An
+         * unlimited Token ignores it (R-4), and `Charges.applyDelta` ceilings it
+         * at what the Token was authored to hold, so this is not a way to push
+         * one past its own maximum.
+         */
+        id: KEYWORD.RESTORES,
+        label: 'Restores',
+        scales: 'amount',
+        blurb: 'Gives a Token some of its charges back.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
+         * ⭐ The cleanse. `StatusEffectSystem.purge` has existed, complete and
+         * correct, since the status engine was built and has been called by
+         * **nothing** — one of the four written-but-unreachable features the v1
+         * sweep named. This is what calls it.
+         *
+         * Naming no effect removes everything, which is the "cure all ills" case.
+         */
+        id: KEYWORD.REMOVES,
+        label: 'Removes',
+        blurb: 'Takes a lingering effect off somebody. Name one, or leave it blank to clear them all.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
          * ⚠️ **This statement is the only thing that makes a Token a Station**
          * (rework P2.5, R-15), and its skill is the Token's whole recipe pool
          * (R-14). `deriveTokenType` reads the keyword; `recipesForToken` reads
@@ -329,6 +383,13 @@ export function blankPayload(keywordId) {
             return { type: 'CONVERT', consumes: [], produces: [], chance: 100 };
         case KEYWORD.CANNOT:
             return blankRestriction();
+        case KEYWORD.HEALS:
+            return { amount: 1 };
+        case KEYWORD.RESTORES:
+            return { amount: 1 };
+        case KEYWORD.REMOVES:
+            // Blank means "everything", which is the cure-all case.
+            return { effectId: '' };
         case KEYWORD.DEALS:
             // `ignoresArmor` is written out rather than left absent so the
             // editor shows a real state and G-23's default — damage RESPECTS
@@ -371,7 +432,8 @@ export function blankPayload(keywordId) {
  * place.
  */
 function defaultMoment(keywordId) {
-    if (keywordId === KEYWORD.DEALS) {
+    if (keywordId === KEYWORD.DEALS || keywordId === KEYWORD.HEALS
+        || keywordId === KEYWORD.RESTORES || keywordId === KEYWORD.REMOVES) {
         // ⭐ The Thorns case: "a cycle completed targeting this entity", which
         // is a hero harvesting a bush and a hero killing a monster alike
         // (D-129). The moment this verb exists for, so it is the moment it

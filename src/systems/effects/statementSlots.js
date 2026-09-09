@@ -190,6 +190,24 @@ function payloadSlots(statement, ctx) {
             ];
         }
 
+        case KEYWORD.HEALS:
+        case KEYWORD.RESTORES:
+            return [{
+                id: 'amount', kind: SLOT_KIND.NUMBER,
+                label: statement.keyword === KEYWORD.HEALS ? 'health' : 'charges',
+                value: payload.amount ?? 1, min: 0,
+                patch: v => ({ payload: { ...payload, amount: Math.max(0, Number(v) || 0) } })
+            }];
+
+        case KEYWORD.REMOVES:
+            return [{
+                id: 'effectId', kind: SLOT_KIND.VOCABULARY, label: 'which effect', optional: true,
+                value: payload.effectId || '',
+                options: Object.values(ctx?.effects || {}).map(e => option(e.id, e.name || e.id)),
+                note: !payload.effectId ? 'Leave it blank to clear every lingering effect.' : null,
+                patch: v => ({ payload: { ...payload, effectId: v } })
+            }];
+
         case KEYWORD.APPLIES:
             /**
              * ⚠️ **Two shapes during V6.** A `statusId` is the old status path

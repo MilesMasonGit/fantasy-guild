@@ -11,6 +11,7 @@ import { matchesTokenTarget, filterTargetTiles } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as DealDamage from './DealDamage.js';
+import * as EffectActions from './EffectActions.js';
 import { resolveRoles } from '../../config/registries/roleRegistry.js';
 import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
@@ -113,6 +114,9 @@ export function fireLiveStatement(statement, roles) {
     cascadeDepth += 1;
     try {
         if (statement.keyword === KEYWORD.DEALS) DealDamage.deal(statement, roles);
+        if (statement.keyword === KEYWORD.HEALS) EffectActions.heal(statement, roles);
+        if (statement.keyword === KEYWORD.RESTORES) EffectActions.restore(statement, roles);
+        if (statement.keyword === KEYWORD.REMOVES) EffectActions.remove(statement, roles);
     } finally {
         cascadeDepth -= 1;
     }
@@ -243,6 +247,18 @@ function runStatementActions(tile, instance, statement, payload = null) {
      */
     if (statement.keyword === KEYWORD.DEALS) {
         DealDamage.deal(statement, resolveRoles(payload, tile));
+    }
+
+    // The rest of the action set (V8). Same shape, same role resolution — each
+    // one is a verb that does something to a participant rather than to a tile.
+    if (statement.keyword === KEYWORD.HEALS) {
+        EffectActions.heal(statement, resolveRoles(payload, tile));
+    }
+    if (statement.keyword === KEYWORD.RESTORES) {
+        EffectActions.restore(statement, resolveRoles(payload, tile));
+    }
+    if (statement.keyword === KEYWORD.REMOVES) {
+        EffectActions.remove(statement, resolveRoles(payload, tile));
     }
 
 

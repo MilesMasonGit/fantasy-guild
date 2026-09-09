@@ -466,6 +466,30 @@ function bodyOf(statement, names) {
             return `Deals ${amount} to ${rolePhrase(statement)}${pierce}`;
         }
 
+        case KEYWORD.HEALS: {
+            const computed = magnitudePhrase(payload);
+            const amount = computed
+                ? `health equal to ${computed}`
+                : `${Math.max(0, Number(payload.amount) || 0)} health`;
+            return `Heals ${amount} on ${rolePhrase(statement)}`;
+        }
+
+        case KEYWORD.RESTORES: {
+            const n = Math.max(0, Number(payload.amount) || 0);
+            return `Restores ${n} ${n === 1 ? 'charge' : 'charges'} to ${rolePhrase(statement)}`;
+        }
+
+        case KEYWORD.REMOVES: {
+            // ⚠️ A blank effect is the cure-all, and the sentence says which of
+            // the two it is rather than leaving a bare "Removes …".
+            const named = payload.effectId
+                ? (names.effect ? names.effect(payload.effectId) : payload.effectId)
+                : null;
+            return named
+                ? `Removes ${named} from ${rolePhrase(statement)}`
+                : `Removes every lingering effect from ${rolePhrase(statement)}`;
+        }
+
         case KEYWORD.CANNOT: {
             // The wording belongs to the restriction kind, not to this switch,
             // so a second kind can read completely differently — "cannot be

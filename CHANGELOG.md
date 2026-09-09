@@ -5,6 +5,10 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Rules can heal, repair and cleanse.** A spring that mends whoever works it, a
+  Token that gives itself charges back, a shrine that lifts a curse — all
+  authorable, all with the same targeting as everything else. A heal never
+  overheals and a repair never pushes a Token past what it was built to hold.
 - ⭐ **Effects can stay on a hero and keep acting.** A poison, a regeneration, a
   buff that lasts half a minute — all authored as ordinary named effects with a
   clock on them, rather than as a separate kind of thing. Applying the same one
