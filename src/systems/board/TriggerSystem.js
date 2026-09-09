@@ -187,7 +187,7 @@ function isReady(instance, statementId) {
  * see CMS-26 above. A statement that was on cooldown, or whose condition was not
  * met, has not served and costs nothing.
  */
-function fireStatement(tile, instance, statement, payload = null) {
+function fireStatement(tile, instance, statement, payload = null, { settled = false } = {}) {
     if (!isReady(instance, statement.id)) return false;
 
     /**
@@ -199,7 +199,14 @@ function fireStatement(tile, instance, statement, payload = null) {
      *
      * An unlimited Token passes this unconditionally (R-4).
      */
-    if (!Charges.canFireStatement(instance, statement)) return false;
+    /**
+     * ⚠️ **A settled moment neither pays nor is gated** — see
+     * `SELF_TOKEN_DEPLETED`. The Token has already spent its last charge and
+     * left the board, so asking it to afford one more would refuse every rule
+     * on the moment, and taking one would run a delta against a discarded
+     * object sitting where its replacement now is.
+     */
+    if (!settled && !Charges.canFireStatement(instance, statement)) return false;
 
     // --- The loop guard (see the note at the top of this file) --------------
     const key = `${tile}:${statement.id}`;
@@ -226,7 +233,7 @@ function fireStatement(tile, instance, statement, payload = null) {
     try {
         // The charge delta lives inside, because only the actions know whether
         // the bearer replaced itself and therefore has nothing left to pay with.
-        runStatementActions(tile, instance, statement, payload);
+        runStatementActions(tile, instance, statement, payload, { settled });
     } finally {
         inFlight.delete(key);
         cascadeDepth -= 1;
@@ -248,7 +255,7 @@ function fireStatement(tile, instance, statement, payload = null) {
  * above it targets tiles and needs only `tile`; a verb that acts on a
  * *participant* needs to know who was involved, and only the event knows that.
  */
-function runStatementActions(tile, instance, statement, payload = null) {
+function runStatementActions(tile, instance, statement, payload = null, { settled = false } = {}) {
     // Whether this statement swapped the Token standing on `tile` for a new
     // one. See the note beside the charge delta at the end.
     let bearerReplaced = false;
@@ -414,7 +421,7 @@ function runStatementActions(tile, instance, statement, payload = null) {
      * The intended use is the broken one: "leave a Stump behind when this
      * depletes" is exactly a one-charge Token that transforms.
      */
-    if (bearerReplaced) return true;
+    if (bearerReplaced || settled) return true;
 
     Charges.applyDelta(tile, instance, Charges.statementChargeDelta(statement));
     return false;
@@ -477,17 +484,26 @@ function handleAdjacent(triggerId, payload) {
  * `to` filter still works normally: the rule reaches outward from here exactly
  * as any other statement does.
  */
-function handleSelf(triggerId, payload) {
+function handleSelf(triggerId, payload, { settled = false } = {}) {
     const tile = payload?.tile;
     if (tile == null) return;
 
-    const instance = BoardState.getToken(tile);
+    /**
+     * ⚠️ The bearer may have **already left the tile**, and for one moment that
+     * is the normal case rather than an error: `SELF_TOKEN_DEPLETED` fires from
+     * `destroyToken`, after the square has been emptied. So the departing
+     * instance rides on the payload, and this is the only place that reads it.
+     *
+     * Falling back rather than preferring it: while a Token is still on its
+     * tile, the board is the authority on what is standing there.
+     */
+    const instance = BoardState.getToken(tile) || payload?.instance;
     if (!instance) return;
 
     const def = getTokenType(instance.typeId);
     for (const statement of triggeredStatements(def, triggerId)) {
         if (statement.when.scope !== TRIGGER_SCOPES.SELF) continue;
-        fireStatement(tile, instance, statement, payload);
+        fireStatement(tile, instance, statement, payload, { settled });
     }
 }
 
@@ -523,7 +539,7 @@ export function init() {
     resetCascadeGuard();
 
     for (const definition of TRIGGER_EVENTS) {
-        const { id, event, scopes } = definition;
+        const { id, event, scopes, settled } = definition;
 
         if (scopes.includes(TRIGGER_SCOPES.GLOBAL)) {
             unsubscribers.push(EventBus.subscribe(event, () => handleGlobalItemThreshold()));
@@ -538,7 +554,7 @@ export function init() {
             // COMBAT_RESOLVED fires on defeat too; only a win is an event worth
             // cascading from — a lost fight is the same "nothing happened".
             if (id === 'COMBAT_RESOLVED' && payload?.outcome !== 'victory') return;
-            if (isSelf) handleSelf(id, payload);
+            if (isSelf) handleSelf(id, payload, { settled: !!settled });
             else handleAdjacent(id, payload);
         }));
     }

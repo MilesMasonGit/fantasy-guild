@@ -87,6 +87,31 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
+         * ⭐ **"Leave a Stump behind when this depletes."**
+         *
+         * The motivating case for `Spawns`/`Transforms`, and it was unauthorable
+         * in its natural form: `TOKEN_DEPLETED` existed with an ADJACENT scope
+         * only, so a Token could hear a *neighbour* run out and never itself.
+         *
+         * ⚠️ **The charge ledger is already closed when this fires.**
+         * `destroyToken` empties the tile before publishing, so the bearer is a
+         * discarded instance with zero charges left. `settled` says so, and
+         * `fireStatement` reads it: a statement on this moment neither pays a
+         * charge nor is gated on having one. Without that, every rule here would
+         * be refused for being unable to afford itself — and any that got
+         * through would run a delta against an object no longer on the board,
+         * which is how a Sapling wipes the Oak that replaced it.
+         */
+        id: 'SELF_TOKEN_DEPLETED',
+        roles: [ROLE.SELF, ROLE.ACTOR],
+        event: BOARD_EVENTS.TOKEN_DEPLETED,
+        label: 'This Token spends its last charge',
+        scopes: [TRIGGER_SCOPES.SELF],
+        settled: true,
+        hint: 'Fires as this Token leaves the board. Its square is already free, so a Spawns here can take its place. The actor is whoever spent the last charge, when a hero did.'
+    },
+    {
+        /**
          * ⚠️ Narrow exception to CMS-2's combat deferral, and deliberately so.
          *
          * This is for an economy Token reacting to a kill nearby — it does not

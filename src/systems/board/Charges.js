@@ -179,7 +179,18 @@ export function destroyToken(tile, instance, { heroId = null } = {}) {
         name,
         message: `Token Exhausted: ${name}`
     });
-    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId });
+    /**
+     * ⚠️ The **instance** rides along, and it has to.
+     *
+     * The tile was emptied three lines up, so a self-scoped reaction to this
+     * moment (`SELF_TOKEN_DEPLETED`) has no way to find the Token that is
+     * reacting — `getToken(tile)` is already null. Emptying first is right and
+     * is what makes the square free for a `Spawns here`; carrying the departing
+     * instance is what makes the rule findable at all.
+     *
+     * `heroId` is whoever spent the last charge, when a hero did.
+     */
+    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId, instance, heroId });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
     if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile, heroId });
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });
