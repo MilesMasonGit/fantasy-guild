@@ -9,6 +9,7 @@ import EffectEditor from './components/editors/EffectEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
 import ProgressionPanel from './components/progression/ProgressionPanel';
+import RulesLineP0 from './components/prototype/RulesLineP0';
 import { useEntityStore } from './stores/useEntityStore';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
 
@@ -24,7 +25,16 @@ const EDITOR_MAP = {
   effect: EffectEditor,
 };
 
+/**
+ * ⚠️ P0 throwaway route: `?p0=1` renders the Rules Line prototype instead of the
+ * app. Deliberately a query flag and not a nav entry — it is a thing to look at
+ * once, not a feature, and it leaves the shell untouched so removing it is one
+ * import and one line.
+ */
 function App() {
+  if (new URLSearchParams(window.location.search).has('p0')) {
+    return <RulesLineP0 />;
+  }
   return (
     <AppShell>
       {({ currentView, openGenerate }) => {
