@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
-import { mitigateFlatDamage } from '../../utils/CombatFormulas.js';
+import { mitigateFlatDamage, enemyFlatArmor } from '../../utils/CombatFormulas.js';
 import { resolveMagnitude, usesCountedSelector } from '../../config/registries/magnitudeRegistry.js';
 import * as TileModifiers from './TileModifiers.js';
 import { logger } from '../../utils/Logger.js';
@@ -85,6 +85,18 @@ function targetOf(role, roles) {
      */
     if (role === ROLE.SELF && roles?.selfHeroId) return heroTarget(roles.selfHeroId);
 
+    /**
+     * ⚠️ ...and `self` may be a live ENEMY, for the same reason. A Poison on a
+     * monster says "deal 2 damage to this entity" and must mean the monster, not
+     * the hero standing on its tile — which is what the occupant rule below
+     * would otherwise resolve it to, silently turning every debuff on a monster
+     * into a debuff on its attacker.
+     */
+    if (role === ROLE.SELF && roles?.selfFightTile != null) {
+        const fight = BoardCombat.getFight(roles.selfFightTile);
+        return fight?.combat?.enemyHp ? enemyTarget(fight) : null;
+    }
+
     // Otherwise both are tiles. Whoever is standing there takes it — the hero if
     // one is present, otherwise the live enemy, which is the same occupant rule
     // `StatusApplication` resolves by.
@@ -101,6 +113,17 @@ function targetOf(role, roles) {
     // take damage off, and inventing one would make a hit that lands on nothing.
     if (!fight?.combat?.enemyHp) return null;
     return enemyTarget(fight);
+}
+
+/**
+ * A non-combat hit on an enemy, mitigated.
+ *
+ * Deliberately mirrors `mitigateFlatDamage` — floor at zero, not at one, for the
+ * reason given in `CombatFormulas`: a thorn is not a fight.
+ */
+function mitigateEnemyDamage(fight, rawDamage) {
+    const armor = enemyFlatArmor(fight?.enemy, fight?.combat?.enemyStatuses);
+    return Math.max(0, Math.round(rawDamage - armor));
 }
 
 function heroTarget(heroId) {
@@ -128,12 +151,20 @@ function heroTarget(heroId) {
 function enemyTarget(fight) {
     return {
         kind: 'enemy',
-        apply(amount) {
-            // ⚠️ No armour on this side, and not by oversight: an enemy has no
-            // aggregator to read one from, and `enemy.armor` is never set by
-            // anything (`enemyProfile.js` says so outright). Enemies get an
-            // aggregator at V7, and this is the line that changes when they do.
-            const dealt = Math.max(0, Math.round(amount));
+        apply(amount, ignoresArmor) {
+            /**
+             * ⭐ Armour on this side at last, and it means the same thing it
+             * means on the other: `mitigateFlatDamage` floors at zero, so heavy
+             * armour can stop a thorn outright, and `ignoresArmor` is the
+             * author's way past it (G-23).
+             *
+             * The old note here said an enemy had no aggregator to read. It has
+             * one now, so a monster carrying Armor Shield is as tough against a
+             * thorn as it is against a sword.
+             */
+            const dealt = ignoresArmor
+                ? Math.max(0, Math.round(amount))
+                : mitigateEnemyDamage(fight, amount);
             if (dealt <= 0) return 0;
             const hp = fight.combat.enemyHp;
             hp.current = Math.max(0, hp.current - dealt);

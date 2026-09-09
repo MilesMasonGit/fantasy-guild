@@ -42,11 +42,23 @@ import * as HeroManager from '../hero/HeroManager.js';
  * `BoardCombat.resolveDefeat`, and importing it here would be a static cycle.
  * **There must never be a second subscriber that also kills** (CR2-070).
  *
+ * ## ⭐ A bearer is anything with `effects` and an `aggregator`
+ * V6 shipped heroes only, and its own header claimed live enemies too — they
+ * were not there. A monster could be hurt by a rule but could not *carry* one,
+ * so half the effect surface in the game was unreachable from the new system
+ * and "poison the monster" was sayable only in the engine this replaces.
+ *
+ * Nothing here knows what a hero or a monster is. It works on a **bearer
+ * descriptor** — a target object holding the list and the aggregator, the roles
+ * that name it in a sentence, and how to announce a change. `HeroManager`
+ * supplies heroes; anything else registers a source of its own
+ * (`registerBearerSource`), which is how `BoardCombat` hands over its live
+ * fights without this module importing the board.
+ *
  * ## What is deliberately NOT here yet
  * **Tokens carrying instances.** G-6 says any entity may, and nothing yet wants
  * a temporarily-cursed Forest. Building the general case before something needs
- * it is the trap this project keeps naming, so heroes and live enemies are what
- * V6 ships (roadmap Q3).
+ * it is the trap this project keeps naming (roadmap Q3).
  */
 
 /** The moment a live effect's own statements fire on. */
@@ -54,23 +66,73 @@ export const EFFECT_TICK = 'EFFECT_TICK';
 
 let clock = 0;
 
-/** Every live instance a hero is carrying. Created on first use. */
-function listOf(hero) {
-    if (!hero.effects) hero.effects = [];
-    return hero.effects;
+/** Every live instance a bearer is carrying. Created on first use. */
+function listOf(target) {
+    if (!target.effects) target.effects = [];
+    return target.effects;
 }
 
 /**
- * Put a library effect on a hero, for a while.
+ * Extra places live bearers come from, beyond the roster.
  *
- * @param {string} heroId
+ * ⚠️ Registered rather than imported, and for the same reason `fire` is injected
+ * into `tick`: a fight lives on the board, and importing the board here would
+ * make this module unusable from a test and put `BoardCombat` in an import
+ * cycle with the verb modules that already read it.
+ */
+const bearerSources = new Set();
+
+/** Announce a source of live bearers. Idempotent — registering twice is once. */
+export function registerBearerSource(fn) {
+    if (typeof fn === 'function') bearerSources.add(fn);
+}
+
+/** Forget every registered source. For teardown, and for tests. */
+export function clearBearerSources() {
+    bearerSources.clear();
+}
+
+/**
+ * The descriptor for a hero.
+ *
+ * `roles` is what a carried statement fires with: `self` is the PERSON, not a
+ * square, which is why `selfHeroId` exists at all (V6).
+ */
+export function heroBearer(hero) {
+    return {
+        target: hero,
+        name: hero?.name || hero?.id || 'hero',
+        roles: { self: null, selfHeroId: hero?.id ?? null, actor: null, source: null },
+        suspended: () => hero?.status === 'wounded',
+        notify: (source) => EventBus.publish('heroes_updated', { source, heroId: hero?.id })
+    };
+}
+
+/** Every bearer the game currently has: the roster, plus whoever registered. */
+function allBearers() {
+    const out = [];
+    for (const hero of HeroManager.getAllHeroes()) out.push(heroBearer(hero));
+    for (const source of bearerSources) {
+        try {
+            for (const bearer of source() || []) if (bearer?.target) out.push(bearer);
+        } catch (err) {
+            logger.warn('LiveEffects', `a bearer source threw: ${err?.message || err}`);
+        }
+    }
+    return out;
+}
+
+/**
+ * Put a library effect on a bearer, for a while.
+ *
+ * @param {object} bearer  a descriptor from `heroBearer` or a registered source
  * @param {{effectId: string, scale?: number, durationMs?: number}} spec
  * @param {string|null} sourceId  what applied it, for the readout
  * @returns {boolean} whether anything is now carried
  */
-export function applyToHero(heroId, spec, sourceId = null, fire = null) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero || !spec?.effectId || !EFFECTS[spec.effectId]) return false;
+export function applyTo(bearer, spec, sourceId = null, fire = null) {
+    const target = bearer?.target;
+    if (!target || !spec?.effectId || !EFFECTS[spec.effectId]) return false;
 
     const scale = normaliseScale(spec.scale);
 
@@ -87,11 +149,12 @@ export function applyToHero(heroId, spec, sourceId = null, fire = null) {
     if (!Number(spec.durationMs)) {
         if (!fire) return false;
         for (const statement of statementsFromEntry(EFFECTS[spec.effectId], { effectId: spec.effectId, scale })) {
-            fire(statement, { self: null, selfHeroId: heroId, actor: null, source: null });
+            fire(statement, { ...bearer.roles });
         }
         return true;
     }
-    const list = listOf(hero);
+
+    const list = listOf(target);
     const existing = list.find(e => e.effectId === spec.effectId);
     const expiresAt = Date.now() + Math.max(0, Number(spec.durationMs) || 0);
 
@@ -104,29 +167,72 @@ export function applyToHero(heroId, spec, sourceId = null, fire = null) {
         list.push({ effectId: spec.effectId, scale, expiresAt, sourceId });
     }
 
-    syncAggregator(hero);
-    EventBus.publish('heroes_updated', { source: 'live_effect_applied', heroId });
+    syncAggregator(target);
+    bearer.notify?.('live_effect_applied');
     return true;
 }
 
-/** Whether a hero is carrying a given library effect right now. */
-export function heroCarries(hero, effectId) {
-    return (hero?.effects || []).some(e => e.effectId === effectId);
-}
+/** Take one library effect off a bearer. `null` removes every one. */
+export function removeFrom(bearer, effectId = null) {
+    const target = bearer?.target;
+    if (!target?.effects?.length) return 0;
 
-/** Take one library effect off a hero. `null` removes every one. */
-export function removeFromHero(heroId, effectId = null) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero?.effects?.length) return 0;
-
-    const before = hero.effects.length;
-    hero.effects = effectId ? hero.effects.filter(e => e.effectId !== effectId) : [];
-    const removed = before - hero.effects.length;
+    const before = target.effects.length;
+    target.effects = effectId ? target.effects.filter(e => e.effectId !== effectId) : [];
+    const removed = before - target.effects.length;
     if (removed) {
-        syncAggregator(hero);
-        EventBus.publish('heroes_updated', { source: 'live_effect_removed', heroId });
+        syncAggregator(target);
+        bearer.notify?.('live_effect_removed');
     }
     return removed;
+}
+
+/**
+ * Run one bearer's clock: fire what recurs, then drop what has expired.
+ *
+ * @returns {number} how many instances expired
+ */
+export function tickBearer(bearer, fire, now = Date.now()) {
+    const target = bearer?.target;
+    if (!target?.effects?.length) return 0;
+    // A wounded hero is off the board and already cleansed; the guard is here
+    // for the same reason the status clock had one.
+    if (bearer.suspended?.()) return 0;
+
+    for (const statement of liveStatements(target)) {
+        if (statement?.when?.event !== EFFECT_TICK) continue;
+        fire(statement, { ...bearer.roles });
+    }
+
+    const before = target.effects.length;
+    target.effects = target.effects.filter(e => e.expiresAt > now);
+    const expired = before - target.effects.length;
+    if (expired) {
+        logger.debug('LiveEffects', `${bearer.name} lost ${expired} effect(s)`);
+        syncAggregator(target);
+        bearer.notify?.('live_effect_expired');
+    }
+    return expired;
+}
+
+/** Put a library effect on a hero, by id. The roster's shorthand for `applyTo`. */
+export function applyToHero(heroId, spec, sourceId = null, fire = null) {
+    const hero = HeroManager.getHero(heroId);
+    return hero ? applyTo(heroBearer(hero), spec, sourceId, fire) : false;
+}
+
+/** Whether an entity is carrying a given library effect right now. */
+export function carries(target, effectId) {
+    return (target?.effects || []).some(e => e.effectId === effectId);
+}
+
+/** The same question about a hero, under the name its callers already use. */
+export const heroCarries = carries;
+
+/** Take one library effect off a hero, by id. `null` removes every one. */
+export function removeFromHero(heroId, effectId = null) {
+    const hero = HeroManager.getHero(heroId);
+    return hero ? removeFrom(heroBearer(hero), effectId) : 0;
 }
 
 /** Drop everything a hero is carrying — the defeat cleanse. */
@@ -230,26 +336,7 @@ export function tick(delta, fire) {
     clock -= STATUS_TICK_INTERVAL_MS;
 
     const now = Date.now();
-
-    for (const hero of HeroManager.getAllHeroes()) {
-        if (!hero.effects?.length) continue;
-        // A wounded hero is off the board and already cleansed; the guard is
-        // here for the same reason the status clock had one.
-        if (hero.status === 'wounded') continue;
-
-        for (const statement of liveStatements(hero)) {
-            if (statement?.when?.event !== EFFECT_TICK) continue;
-            fire(statement, { self: null, selfHeroId: hero.id, actor: null, source: null });
-        }
-
-        const before = hero.effects.length;
-        hero.effects = hero.effects.filter(e => e.expiresAt > now);
-        if (hero.effects.length !== before) {
-            logger.debug('LiveEffects', `${hero.name} lost ${before - hero.effects.length} effect(s)`);
-            syncAggregator(hero);
-            EventBus.publish('heroes_updated', { source: 'live_effect_expired', heroId: hero.id });
-        }
-    }
+    for (const bearer of allBearers()) tickBearer(bearer, fire, now);
 }
 
 /** Reset the clock. For tests, and for a fresh board. */

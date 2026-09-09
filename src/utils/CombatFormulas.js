@@ -229,8 +229,9 @@ export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selected
     // Crit hook (spec §7 step 4): innate 5%/2× lands with the crit pass.
 
     // Armor (spec §7 step 5): flat subtraction after crit — enemy budget
-    // deviations (later) plus any Armor Shield status on the enemy.
-    const armor = (enemy?.armor || 0) + sumStatusEffect(enemyStatuses, 'flat_armor');
+    // deviations (later), whatever the enemy is carrying, and any Armor Shield
+    // status on it while the old engine still runs.
+    const armor = enemyFlatArmor(enemy, enemyStatuses);
 
     return Math.max(1, Math.round(damage - armor));
 }
@@ -256,6 +257,25 @@ export function heroFlatArmor(hero) {
     return (hero?.aggregator?.query('ARMOR') || 0)
         + (hero?.aggregator?.query('DEFENSE') || 0)
         + sumStatusEffect(hero?.statuses, 'flat_armor');
+}
+
+/**
+ * The flat damage reduction an **enemy** carries.
+ *
+ * ⚠️ This was written out inline at two call sites and read `enemy.armor` plus a
+ * status, with no aggregator — because until enemies became effect bearers there
+ * was no aggregator to read. Making it a function is the same discipline
+ * `heroFlatArmor` exists for: armour must mean one thing on both sides of a
+ * fight, and a third copy arriving by paste is how it stops meaning one thing.
+ *
+ * `enemyStatuses` is the old engine's list and is summed in during the absorb,
+ * exactly as `heroFlatArmor` still sums the hero's.
+ */
+export function enemyFlatArmor(enemy, enemyStatuses = null) {
+    return (enemy?.armor || 0)
+        + (enemy?.aggregator?.query('ARMOR') || 0)
+        + (enemy?.aggregator?.query('DEFENSE') || 0)
+        + sumStatusEffect(enemyStatuses, 'flat_armor');
 }
 
 /** The flat damage reduction applied after armour. */
@@ -310,7 +330,7 @@ export function getHeroDamageRange(hero, enemy, weapon, damageBonus = 0, selecte
     const buffMult = damageMultiplierOf(hero);
     const enemyStyle = enemy?.combatType || 'melee';
     const rpsMult = 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
-    const armor = (enemy?.armor || 0) + sumStatusEffect(enemyStatuses, 'flat_armor');
+    const armor = enemyFlatArmor(enemy, enemyStatuses);
     return {
         min: Math.max(1, Math.round(base * DAMAGE_SPREAD_MIN * buffMult * rpsMult - armor)),
         max: Math.max(1, Math.round(base * DAMAGE_SPREAD_MAX * buffMult * rpsMult - armor))

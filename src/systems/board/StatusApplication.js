@@ -24,6 +24,7 @@ export function setStatementRunner(fn) {
 import { filterTargetTiles } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
+import * as HeroManager from '../hero/HeroManager.js';
 
 /**
  * `Applies` — content putting a status on somebody.
@@ -60,12 +61,13 @@ import * as BoardCombat from './BoardCombat.js';
  * so there is deliberately **no** continuously-reapplied form. One would put a
  * fresh stack on the hero every tick and pin every DoT at maximum forever.
  *
- * ## ⚠️ The enemy path is built but unverified
- * `applyToEnemy` wants the ephemeral fight card, which `BoardCombat` holds per
- * tile, so routing to it is three lines and natural. But **no authored Token is
- * typed `enemy`** and combat is parked (CMS-2), so nothing in the game can
- * exercise it. It is written the way the hero path is written, and it has never
- * run in a real session.
+ * ## ⚠️ A library effect reaches an enemy by the SAME occupant rule
+ * `occupantOf` has always resolved hero-first-else-enemy, but the two
+ * library-effect branches below asked `heroOnTile` directly and stopped there —
+ * so a `Applies Poison` naming an effect could never land on a monster, while
+ * the identical rule naming a status could. `liveBearerOf` is the same rule
+ * again, returning a `LiveEffects` bearer instead of a status target, so the two
+ * halves of `Applies` cannot resolve targets differently.
  */
 
 /**
@@ -107,6 +109,26 @@ function occupantOf(tile, prefer = 'occupant') {
     return enemyTarget();
 }
 
+/**
+ * Who is on a tile, as something a **library effect** can be carried by.
+ *
+ * The mirror of `occupantOf`, deliberately written beside it and with the same
+ * `prefer` reading, so an item saying *"the enemy I am fighting"* means the same
+ * creature whichever half of `Applies` it uses.
+ */
+function liveBearerOf(tile, prefer = 'occupant') {
+    const enemyBearer = () => BoardCombat.enemyBearerAt(tile);
+
+    if (prefer === 'enemy') return enemyBearer();
+
+    const heroId = BoardState.heroOnTile(tile);
+    if (heroId) {
+        const hero = HeroManager.getHero(heroId);
+        return hero ? LiveEffects.heroBearer(hero) : null;
+    }
+    return enemyBearer();
+}
+
 /** Whether a payload names a status the engine has, with a roll that hit. */
 function rolls(payload, random = Math.random) {
     if (!payload?.statusId || !getStatusEffect(payload.statusId)) return false;
@@ -137,9 +159,9 @@ export function applyAt(tile, payload, random = Math.random) {
      */
     if (payload?.effectId) {
         if (!rollsChance(payload, random)) return false;
-        const heroId = BoardState.heroOnTile(tile);
-        if (!heroId) return false;
-        return LiveEffects.applyToHero(heroId, payload, payload.sourceEffectId || null, fireLive);
+        const bearer = liveBearerOf(tile, payload?.target === 'enemy' ? 'enemy' : 'occupant');
+        if (!bearer) return false;
+        return LiveEffects.applyTo(bearer, payload, payload.sourceEffectId || null, fireLive);
     }
 
     if (!rolls(payload, random)) return false;
@@ -173,8 +195,8 @@ export function applyToNeighbours(sourceTile, statement, random = Math.random) {
         if (!rollsChance(payload, random)) return 0;
         let landed = 0;
         for (const anchor of filterTargetTiles(sourceTile, statement)) {
-            const heroId = BoardState.heroOnTile(anchor);
-            if (heroId && LiveEffects.applyToHero(heroId, payload, statement.sourceEffectId || null, fireLive)) {
+            const bearer = liveBearerOf(anchor, payload?.target === 'enemy' ? 'enemy' : 'occupant');
+            if (bearer && LiveEffects.applyTo(bearer, payload, statement.sourceEffectId || null, fireLive)) {
                 landed += 1;
             }
         }
