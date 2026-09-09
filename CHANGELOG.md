@@ -5,6 +5,10 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Tokens can leave things behind, and become other things.** A felled tree
+  can leave a Stump, a watered Sapling can become an Oak. Where a spawned Token
+  lands is something you pick — this tile, the nearest free one, or a random one
+  — and the rules text says which, so it is never a hidden rule.
 - **Rules can heal, repair and cleanse.** A spring that mends whoever works it, a
   Token that gives itself charges back, a shrine that lifts a curse — all
   authorable, all with the same targeting as everything else. A heal never

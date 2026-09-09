@@ -59,6 +59,8 @@ export const KEYWORD = Object.freeze({
     HEALS: 'heals',
     RESTORES: 'restores',
     REMOVES: 'removes',
+    SPAWNS: 'spawns',
+    TRANSFORMS: 'transforms',
     STATION: 'station'
 });
 
@@ -298,6 +300,34 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
+         * Puts a Token on the board. ⚠️ Where it lands is an authored **choice**
+         * from a short list (G-15), never a hidden fallback — see
+         * `placementRegistry.js` for why that distinction mattered.
+         */
+        id: KEYWORD.SPAWNS,
+        label: 'Spawns',
+        blurb: 'Puts a Token on the board — where this one stands, or on a free tile.',
+        filter: false,
+        targetsRole: false,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
+         * This Token becomes another. ⚠️ A **fresh** instance: charges and
+         * cooldowns belong to what it was, and carrying them across would give
+         * the new Token a history it never had.
+         */
+        id: KEYWORD.TRANSFORMS,
+        label: 'Transforms into',
+        blurb: 'This Token becomes a different Token, where it stands.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
          * ⚠️ **This statement is the only thing that makes a Token a Station**
          * (rework P2.5, R-15), and its skill is the Token's whole recipe pool
          * (R-14). `deriveTokenType` reads the keyword; `recipesForToken` reads
@@ -383,6 +413,10 @@ export function blankPayload(keywordId) {
             return { type: 'CONVERT', consumes: [], produces: [], chance: 100 };
         case KEYWORD.CANNOT:
             return blankRestriction();
+        case KEYWORD.SPAWNS:
+            return { typeId: '', placement: 'here' };
+        case KEYWORD.TRANSFORMS:
+            return { typeId: '' };
         case KEYWORD.HEALS:
             return { amount: 1 };
         case KEYWORD.RESTORES:
@@ -432,8 +466,8 @@ export function blankPayload(keywordId) {
  * place.
  */
 function defaultMoment(keywordId) {
-    if (keywordId === KEYWORD.DEALS || keywordId === KEYWORD.HEALS
-        || keywordId === KEYWORD.RESTORES || keywordId === KEYWORD.REMOVES) {
+    if ([KEYWORD.DEALS, KEYWORD.HEALS, KEYWORD.RESTORES, KEYWORD.REMOVES,
+        KEYWORD.SPAWNS, KEYWORD.TRANSFORMS].includes(keywordId)) {
         // ⭐ The Thorns case: "a cycle completed targeting this entity", which
         // is a hero harvesting a bush and a hero killing a monster alike
         // (D-129). The moment this verb exists for, so it is the moment it

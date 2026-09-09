@@ -182,6 +182,15 @@ export {
   magnitudePhrase,
 } from '../../../src/config/registries/magnitudeRegistry.js';
 
+// Where a spawned Token lands (G-15) — an authored choice from a short list,
+// never a hidden fallback.
+export {
+  PLACEMENT,
+  PLACEMENTS,
+  getPlacement,
+  placementOf,
+} from '../../../src/config/registries/placementRegistry.js';
+
 // What a `Cannot` may forbid. One row today — an adjacency limit — shaped like
 // the modifier palette so restriction #2 is a row in the game, not a rewrite of
 // the editor.

@@ -10,6 +10,7 @@ import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { filtersPhrase } from '../../config/registries/filterRegistry.js';
 import { magnitudePhrase, MAGNITUDE_KIND } from '../../config/registries/magnitudeRegistry.js';
+import { getPlacement, placementOf } from '../../config/registries/placementRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
 
 /**
@@ -488,6 +489,17 @@ function bodyOf(statement, names) {
             return named
                 ? `Removes ${named} from ${rolePhrase(statement)}`
                 : `Removes every lingering effect from ${rolePhrase(statement)}`;
+        }
+
+        case KEYWORD.SPAWNS: {
+            const what = payload.typeId ? names.token(payload.typeId) : '…';
+            const where = getPlacement(placementOf(payload));
+            return `Spawns ${what} ${where ? where.label : '…'}`;
+        }
+
+        case KEYWORD.TRANSFORMS: {
+            const what = payload.typeId ? names.token(payload.typeId) : '…';
+            return `Transforms into ${what}`;
         }
 
         case KEYWORD.CANNOT: {

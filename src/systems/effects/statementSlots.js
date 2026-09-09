@@ -11,6 +11,7 @@ import { getStatusEffect, authorableStatuses } from '../../config/registries/sta
 import { RESTRICTION_KINDS, getRestrictionKind } from '../../config/registries/restrictionPalette.js';
 import { FILTER_KINDS, filtersOf } from '../../config/registries/filterRegistry.js';
 import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
+import { PLACEMENTS, placementOf } from '../../config/registries/placementRegistry.js';
 
 /**
  * A statement, described as the **ordered slots an author fills in** — the model
@@ -189,6 +190,30 @@ function payloadSlots(statement, ctx) {
                 }] : [])
             ];
         }
+
+        case KEYWORD.SPAWNS:
+            return [
+                {
+                    id: 'typeId', kind: SLOT_KIND.VOCABULARY, label: 'which Token',
+                    value: payload.typeId || '',
+                    options: Object.values(ctx?.tokens || {}).map(t => option(t.id, t.name || t.id)),
+                    patch: v => ({ payload: { ...payload, typeId: v } })
+                },
+                {
+                    id: 'placement', kind: SLOT_KIND.VOCABULARY, label: 'where',
+                    value: placementOf(payload),
+                    options: PLACEMENTS.map(pl => option(pl.id, pl.label, pl.hint)),
+                    patch: v => ({ payload: { ...payload, placement: v } })
+                }
+            ];
+
+        case KEYWORD.TRANSFORMS:
+            return [{
+                id: 'typeId', kind: SLOT_KIND.VOCABULARY, label: 'into which Token',
+                value: payload.typeId || '',
+                options: Object.values(ctx?.tokens || {}).map(t => option(t.id, t.name || t.id)),
+                patch: v => ({ payload: { ...payload, typeId: v } })
+            }];
 
         case KEYWORD.HEALS:
         case KEYWORD.RESTORES:

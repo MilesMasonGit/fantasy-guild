@@ -8,6 +8,11 @@ import * as LiveEffects from '../effects/LiveEffects.js';
 import * as BoardState from './BoardState.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as Charges from './Charges.js';
+import { EventBus } from '../core/EventBus.js';
+import { BOARD_EVENTS } from './boardEvents.js';
+import { TILE_COUNT, BOARD_SIZE } from '../../config/boardGeometry.js';
+import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { resolvePlacement, placementOf } from '../../config/registries/placementRegistry.js';
 
 /**
  * `Heals`, `Restores` and `Removes` — the rest of the action set (G-11).
@@ -117,6 +122,81 @@ export function restore(statement, roles) {
 
     Charges.applyDelta(tile, instance, amount);
     return amount;
+}
+
+/**
+ * The board, as the placement vocabulary needs to see it.
+ *
+ * Built here rather than imported into the registry, so the registry stays a
+ * pure declaration with no board dependency — the same split every other
+ * vocabulary in this project uses.
+ */
+function boardView() {
+    return {
+        allTiles: Array.from({ length: TILE_COUNT }, (_, i) => i),
+        isFree: (tile) => !BoardState.getToken(tile),
+        distance: (a, b) => {
+            const ax = a % BOARD_SIZE, ay = Math.floor(a / BOARD_SIZE);
+            const bx = b % BOARD_SIZE, by = Math.floor(b / BOARD_SIZE);
+            // Chebyshev, because adjacency here is the 8 surrounding tiles —
+            // a diagonal neighbour is as near as an orthogonal one.
+            return Math.max(Math.abs(ax - bx), Math.abs(ay - by));
+        }
+    };
+}
+
+/**
+ * `Spawns` — put a Token on the board.
+ *
+ * ⚠️ **Never onto an occupied tile.** `here` replaces the bearer, which is what
+ * "leave a Stump behind" means and is the only case where destroying something
+ * is the intent. Every other placement looks for a free tile and does nothing
+ * when there is none — a full board is an ordinary state, and shoving a Token
+ * onto an occupied one would silently destroy whatever was there.
+ */
+export function spawn(statement, roles, random = Math.random) {
+    const typeId = statement?.payload?.typeId;
+    if (!typeId || !getTokenType(typeId)) return null;
+
+    const bearer = roles?.self;
+    if (bearer == null) return null;
+
+    const where = resolvePlacement(placementOf(statement.payload), bearer, boardView(), random);
+    if (where == null) return null;
+    if (where !== bearer && BoardState.getToken(where)) return null;
+
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    BoardState.setToken(where, instance);
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: where, typeId });
+    TileModifiers.rebuildAround(where);
+    logger.debug('EffectActions', `Spawned ${typeId} on tile ${where}`);
+    return where;
+}
+
+/**
+ * `Transforms` — this Token becomes another.
+ *
+ * ⚠️ **A fresh instance, not a renamed one.** Charges, cooldowns and upkeep
+ * state all belong to what the Token WAS; carrying them across would give the
+ * new Token a worn-down history it never had, and the two may not even have the
+ * same number of charges. A Sapling becoming an Oak is a new thing standing
+ * where the old one stood.
+ *
+ * ⚠️ **The hero stays put.** Somebody working a Sapling is still standing there
+ * when it becomes an Oak; moving them would be a displacement nobody authored.
+ */
+export function transform(statement, roles) {
+    const typeId = statement?.payload?.typeId;
+    if (!typeId || !getTokenType(typeId)) return false;
+
+    const tile = tileFor(statement?.target?.role || ROLE.SELF, roles);
+    if (tile == null || !BoardState.getToken(tile)) return false;
+
+    BoardState.setToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId });
+    TileModifiers.rebuildAround(tile);
+    logger.debug('EffectActions', `Transformed tile ${tile} into ${typeId}`);
+    return true;
 }
 
 /**

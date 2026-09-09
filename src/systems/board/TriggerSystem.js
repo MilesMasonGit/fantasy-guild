@@ -260,6 +260,12 @@ function runStatementActions(tile, instance, statement, payload = null) {
     if (statement.keyword === KEYWORD.REMOVES) {
         EffectActions.remove(statement, resolveRoles(payload, tile));
     }
+    if (statement.keyword === KEYWORD.SPAWNS) {
+        EffectActions.spawn(statement, resolveRoles(payload, tile));
+    }
+    if (statement.keyword === KEYWORD.TRANSFORMS) {
+        EffectActions.transform(statement, resolveRoles(payload, tile));
+    }
 
 
     /**
