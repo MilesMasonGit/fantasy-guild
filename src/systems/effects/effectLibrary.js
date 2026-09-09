@@ -153,7 +153,24 @@ export function effectRefsOf(def) {
     for (const entry of raw) {
         const effectId = typeof entry === 'string' ? entry : entry?.effectId;
         if (!effectId) continue;
-        refs.push({ effectId, scale: normaliseScale(typeof entry === 'string' ? 1 : entry.scale) });
+        /**
+         * ⚠️ `chargeCost` is read but NOT defaulted (G-5).
+         *
+         * Absent means "whatever the statement says", which is every reference
+         * authored before this — so nothing shipped changes cost. A number here
+         * overrides it, which is what lets one Thorns be free on a berry bush
+         * and cost a charge on a monster.
+         *
+         * ⚠️ Reverses UE-20, which put the cost on the statement alone. The
+         * statement's value survives as the default; the reference is now
+         * allowed to disagree with it.
+         */
+        const chargeCost = typeof entry === 'string' ? undefined : entry.chargeCost;
+        refs.push({
+            effectId,
+            scale: normaliseScale(typeof entry === 'string' ? 1 : entry.scale),
+            ...(typeof chargeCost === 'number' ? { chargeCost } : {})
+        });
     }
     return refs;
 }
@@ -201,8 +218,26 @@ export function hasWorkingStatements(entry) {
  */
 export function statementsFromEntry(entry, ref) {
     const scale = normaliseScale(ref?.scale);
+    /**
+     * A per-bearer cost is applied HERE, during expansion, for exactly the
+     * reason `scaleStatement` is: every consumer keeps reading a plain
+     * statement, and none of them has to learn that references exist. The
+     * alternative — teaching `Charges`, `TriggerSystem` and `HeroEffects` each
+     * to check a ref — is three places to forget.
+     */
+    let override = null;
+    if (typeof ref?.chargeCost === 'number') {
+        // ⚠️ `-Math.abs(0)` is **-0**, which `Object.is` and therefore
+        // `toBe`/`===`-style comparisons treat as a different value from 0. A
+        // free effect must produce a plain zero: an author's 0 is the whole
+        // "this costs nothing" case, and it should not arrive as a negative
+        // zero that reads oddly in a saved file and compares oddly in a test.
+        const cost = Math.abs(ref.chargeCost);
+        override = { chargeDelta: cost === 0 ? 0 : -cost };
+    }
     return statementsOf(entry).map(statement => ({
         ...scaleStatement(statement, scale),
+        ...(override || {}),
         sourceEffectId: entry?.id || ref?.effectId || null,
         effectName: entry?.name || null,
         effectTitle: effectTitle(entry?.name || ref?.effectId || '', scale),

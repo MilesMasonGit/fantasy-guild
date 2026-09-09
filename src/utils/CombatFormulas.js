@@ -215,6 +215,49 @@ export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selected
     return Math.max(1, Math.round(damage - armor));
 }
 
+
+/**
+ * The flat damage reduction a hero carries — Armor, legacy DEFENSE, and any
+ * armour a status is lending them.
+ *
+ * ## Why this is a function and not three lines at each call site
+ * It was three lines at each call site, twice, and Effects Grammar v2's `Deals`
+ * verb needs it a third time. Armour must mean **one** thing regardless of what
+ * hit you: a thorn and a goblin subtracting different numbers would be the kind
+ * of parallel definition CR2-074 named, arriving by copy-paste instead of by
+ * design.
+ *
+ * ⚠️ `DEFENSE` is summed in alongside `ARMOR` deliberately — existing armour
+ * items register their `defense` stat on that axis, and it is treated as flat
+ * Armor until the gear pass prices them properly. That is also why the palette
+ * offers `ARMOR` and not `DEFENSE`: two ways to say one thing.
+ */
+export function heroFlatArmor(hero) {
+    return (hero?.aggregator?.query('ARMOR') || 0)
+        + (hero?.aggregator?.query('DEFENSE') || 0)
+        + sumStatusEffect(hero?.statuses, 'flat_armor');
+}
+
+/** The flat damage reduction applied after armour. */
+export function heroFlatResist(hero) {
+    return hero?.aggregator?.query('RESIST_FLAT') || 0;
+}
+
+/**
+ * Damage from a non-combat source, mitigated (Effects Grammar v2, G-23).
+ *
+ * ⚠️ **Floors at zero, where a combat hit floors at one**, and the difference is
+ * deliberate. Combat's minimum of 1 exists so a fight always progresses — two
+ * heavily armoured entities must not stand swinging forever. A thorn is not a
+ * fight: if armour exceeds it, "respects Armor" can only honestly mean it does
+ * nothing. A floor of 1 here would make heavy armour worth exactly as much as
+ * none against every thorn in the game.
+ */
+export function mitigateFlatDamage(hero, rawDamage) {
+    const reduced = rawDamage - heroFlatArmor(hero) - heroFlatResist(hero);
+    return Math.max(0, Math.round(reduced));
+}
+
 /**
  * Compute damage dealt from enemy to hero (spec §7 steps 3-5).
  * Enemy min/max damage already carry the 0.85-1.15 spread (derived in the
@@ -231,10 +274,8 @@ export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
     // `defense` stat as DEFENSE modifiers — treated as flat Armor until the
     // gear pass introduces properly budgeted ARMOR values. Armor Shield
     // status stacks add on top (they decay via notifyHitTaken after impact).
-    const armor = (hero?.aggregator?.query('ARMOR') || 0)
-        + (hero?.aggregator?.query('DEFENSE') || 0)
-        + sumStatusEffect(hero?.statuses, 'flat_armor');
-    const flatResist = hero?.aggregator?.query('RESIST_FLAT') || 0;
+    const armor = heroFlatArmor(hero);
+    const flatResist = heroFlatResist(hero);
 
     return Math.max(1, Math.round(damage - armor - flatResist));
 }
@@ -263,10 +304,8 @@ export function getHeroDamageRange(hero, enemy, weapon, damageBonus = 0, selecte
 export function getEnemyDamageRange(enemy, hero = null, heroStyle = 'melee') {
     const enemyStyle = enemy?.combatType || 'melee';
     const rpsMult = 1 + rpsOutcome(enemyStyle, heroStyle) * RPS_DAMAGE_SHIFT;
-    const armor = (hero?.aggregator?.query('ARMOR') || 0)
-        + (hero?.aggregator?.query('DEFENSE') || 0)
-        + sumStatusEffect(hero?.statuses, 'flat_armor');
-    const flatResist = hero?.aggregator?.query('RESIST_FLAT') || 0;
+    const armor = heroFlatArmor(hero);
+    const flatResist = heroFlatResist(hero);
     return {
         min: Math.max(1, Math.round((enemy?.minDamage ?? 1) * rpsMult - armor - flatResist)),
         max: Math.max(1, Math.round((enemy?.maxDamage ?? 1) * rpsMult - armor - flatResist))

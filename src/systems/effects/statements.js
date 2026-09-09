@@ -3,6 +3,7 @@
 import { MODIFIER_PALETTE, getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { blankRestriction } from '../../config/registries/restrictionPalette.js';
 import { DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
+import { ROLE } from '../../config/registries/roleRegistry.js';
 
 /**
  * A Token's rules are **statements**, and a statement is one sentence.
@@ -54,6 +55,7 @@ export const KEYWORD = Object.freeze({
     CONVERTS: 'converts',
     CANNOT: 'cannot',
     APPLIES: 'applies',
+    DEALS: 'deals',
     STATION: 'station'
 });
 
@@ -212,6 +214,36 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
+         * ⭐ **The first keyword that DOES something to a person**
+         * (Effects Grammar v2, V2).
+         *
+         * Nine keywords and not one of them acted: `Provides` scales a number,
+         * `Grants` drops an item, `Applies` attaches a status. Nothing dealt
+         * damage, which is why Thorns was unauthorable.
+         *
+         * ⚠️ **A moment is REQUIRED.** Damage happens at an instant; a
+         * continuously-dealt 1 damage has no meaning and no reader. The default
+         * moment is `SELF_CYCLE_COMPLETE` because that is the Thorns case and
+         * the one this verb was built for — *"a cycle completed targeting this
+         * entity"* — which covers a hero harvesting a bush and a hero killing a
+         * monster alike, since one kill is one cycle (D-129).
+         *
+         * ⚠️ **It targets a ROLE, not a tile.** `to` filters Tokens by tag or
+         * id; damage is dealt to a *participant* — the actor, or the bearer.
+         * The two are different questions and this keyword asks the second, so
+         * it declares no `filter` and no `reach`.
+         */
+        id: KEYWORD.DEALS,
+        label: 'Deals',
+        scales: 'amount',
+        blurb: 'Deals damage to somebody involved in the moment — the hero who just harvested or fought this.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
          * ⚠️ **This statement is the only thing that makes a Token a Station**
          * (rework P2.5, R-15), and its skill is the Token's whole recipe pool
          * (R-14). `deriveTokenType` reads the keyword; `recipesForToken` reads
@@ -297,6 +329,11 @@ export function blankPayload(keywordId) {
             return { type: 'CONVERT', consumes: [], produces: [], chance: 100 };
         case KEYWORD.CANNOT:
             return blankRestriction();
+        case KEYWORD.DEALS:
+            // `ignoresArmor` is written out rather than left absent so the
+            // editor shows a real state and G-23's default — damage RESPECTS
+            // armour — is visible rather than implied.
+            return { amount: 1, ignoresArmor: false };
         case KEYWORD.APPLIES:
             // `target` is read only when an ITEM carries this rule (UE-24): a
             // Token's `Applies` uses its filter and ignores the field. Defaulted
@@ -308,6 +345,29 @@ export function blankPayload(keywordId) {
         default:
             return {};
     }
+}
+
+/**
+ * The moment a keyword that REQUIRES one is born with.
+ *
+ * ⚠️ This used to be a single hardcoded `ITEM_THRESHOLD`, which was the right
+ * default for the only keyword that then required a moment (`Converts` watches
+ * the Bank). `Deals` requires one too and wants a completely different answer,
+ * so the default became a per-keyword question rather than a constant.
+ *
+ * A born-with-a-moment statement is never an unfireable rule the editor can sit
+ * in, even for an instant — the reason `Converts` got a default in the first
+ * place.
+ */
+function defaultMoment(keywordId) {
+    if (keywordId === KEYWORD.DEALS) {
+        // ⭐ The Thorns case: "a cycle completed targeting this entity", which
+        // is a hero harvesting a bush and a hero killing a monster alike
+        // (D-129). The moment this verb exists for, so it is the moment it
+        // starts on.
+        return { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 };
+    }
+    return { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 };
 }
 
 /**
@@ -356,9 +416,18 @@ export function makeStatement(keywordId, data = {}) {
          * only decides what a *new* statement starts as.
          */
         reach: keyword?.reach ? DEFAULT_REACH : null,
-        when: keyword?.when === WHEN.REQUIRED
-            ? { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 }
-            : null,
+        /**
+         * Who the statement acts on, as a **role** rather than a tile filter
+         * (Effects Grammar v2). Only the keywords that act on a participant
+         * carry one; everything else aims with `to` and `reach`.
+         *
+         * ⚠️ V4 folds `to`, `reach` and this into one selector shape. It is
+         * introduced separately here so the new verb is not blocked on
+         * migrating four old ones, and so the migration happens once, later,
+         * with filters arriving at the same time.
+         */
+        target: keyword?.targetsRole ? { role: ROLE.ACTOR } : null,
+        when: keyword?.when === WHEN.REQUIRED ? defaultMoment(keywordId) : null,
         upkeep: null,
         ...data
     };

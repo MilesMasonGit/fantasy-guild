@@ -7,6 +7,7 @@ import { getRestrictionKind } from '../../config/registries/restrictionPalette.j
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
+import { getRole } from '../../config/registries/roleRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
 
 /**
@@ -225,6 +226,21 @@ function skillScopePhrase(statement) {
     return `, but only for ${skill?.name || category} work`;
 }
 
+/**
+ * "the actor" — who a role-targeting statement acts on, in words.
+ *
+ * ⚠️ Deliberately the role's own label rather than a paraphrase. *"the actor"*
+ * is the same phrase the editor offers and the same one `roleRegistry` defines,
+ * so the sentence, the picker and the vocabulary all say one thing. A prettier
+ * synonym here — "the attacker", "whoever did this" — would read better in one
+ * sentence and be wrong in the next, because the same role covers a hero
+ * harvesting a bush and a hero killing a monster.
+ */
+function rolePhrase(statement) {
+    const role = getRole(statement?.target?.role);
+    return role ? role.label : '…';
+}
+
 /** "1 Coal every 30 seconds" — an item list with quantities. */
 function itemList(entries, names) {
     if (!entries?.length) return '…';
@@ -249,7 +265,19 @@ function whenPhrase(statement, names) {
         const item = when.watchItemId ? names.item(when.watchItemId) : '…';
         return `When a neighbour produces ${item}`;
     }
-    return `When ${(definition?.label || when.event).toLowerCase()}`;
+    /**
+     * ⚠️ **Only the FIRST letter is lowered, never the whole label** (G-10).
+     *
+     * `.toLowerCase()` on the whole string destroyed every proper noun the
+     * vocabulary owns: *"This Token's own cycle completes"* came out as *"this
+     * token's"*, and *"The Bank holds enough of an item"* as *"the bank"*. Token
+     * and Bank are things in this game with capital letters, and a sentence that
+     * strips them is not literal — which is the one thing the rules text has to
+     * be. Lowering a single character joins the clause on without touching the
+     * words.
+     */
+    const label = definition?.label || when.event;
+    return `When ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
 }
 
 /** ", at most once every 5 seconds" — the cooldown, when there is one. */
@@ -364,6 +392,21 @@ function bodyOf(statement, names) {
             const to = statement?.to;
             if (!to || !to.mode || to.mode === 'all') return exchange;
             return `${exchange}, onto the nearest adjacent ${singularSubjectPhrase(statement, names)}`;
+        }
+
+        case KEYWORD.DEALS: {
+            /**
+             * ⭐ *"deals 1 damage to the actor"* — the first sentence in the
+             * game where a rule does something to a person.
+             *
+             * ⚠️ The armour clause appears only when it is TRUE (G-23). Damage
+             * respects armour by default, so saying "respecting armour" on
+             * every rule would be noise on the common case; saying "ignoring
+             * armour" on the uncommon one is the information the reader needs.
+             */
+            const amount = Math.max(0, Number(payload.amount) || 0);
+            const pierce = payload.ignoresArmor ? ', ignoring armour' : '';
+            return `Deals ${amount} damage to ${rolePhrase(statement)}${pierce}`;
         }
 
         case KEYWORD.CANNOT: {

@@ -16,6 +16,7 @@ import {
   chargeMomentsFor, chargeMomentOf, getChargeMoment, DEFAULT_CHARGE_DELTA_BY_MOMENT,
   scaleStatement, effectTitle, MAX_SCALE,
   REACH, REACHES, DEFAULT_REACH,
+  ROLES, rolesOf,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -596,6 +597,8 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
         exists to remove, and adding the reach picker would have made a second
         instance of it. Both are hidden by the same declared flag the game reads.
       */}
+      {keyword?.targetsRole && <RolePicker statement={statement} onChange={onChange} />}
+
       {keyword?.reach && !heroOnlyAxis && <ReachPicker statement={statement} onChange={onChange} />}
 
       {keyword?.filter && !heroOnlyAxis && (
@@ -686,6 +689,9 @@ function PayloadFields({ statement, tokens, items, onChange }) {
 
     case KEYWORD.APPLIES:
       return <AppliesFields payload={payload} setPayload={setPayload} />;
+
+    case KEYWORD.DEALS:
+      return <DealsFields payload={payload} setPayload={setPayload} />;
 
     case KEYWORD.CONVERTS:
       return (
@@ -1114,6 +1120,87 @@ function AppliesFields({ payload, setPayload }) {
         <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
           ⚠️ {status.name} clears the moment a fight ends, so it does nothing at
           all on a hero who is working rather than fighting.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * ⭐ `Deals` — how much damage, and whether armour stops it.
+ *
+ * ⚠️ **No target picker here.** Who it hits is a *role*, and roles are legal
+ * only where the moment supplies them (G-2), so the picker lives beside the
+ * trigger where that question can actually be answered.
+ */
+function DealsFields({ payload, setPayload }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-3 items-end">
+        <Field label="Damage" className="w-24">
+          <input
+            type="number"
+            min={0}
+            value={payload.amount ?? 1}
+            onChange={(e) => setPayload({ amount: Math.max(0, Number(e.target.value) || 0) })}
+            className="w-full"
+            style={{ fontSize: 12 }}
+          />
+        </Field>
+        <label className="flex items-center gap-1.5 text-[11px] pb-1.5">
+          <input
+            type="checkbox"
+            checked={!!payload.ignoresArmor}
+            onChange={(e) => setPayload({ ignoresArmor: e.target.checked })}
+          />
+          Ignores armour
+        </label>
+      </div>
+      <p className="text-[10px] text-gray-600 leading-relaxed">
+        Damage is reduced by the target’s armour, and heavy armour can stop it
+        entirely. Tick the box for a rule that should pierce regardless.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * ⭐ **Who the rule acts on — a role, offered only where the moment has one.**
+ *
+ * This is G-2 made visible. Pick *"a neighbour runs out of charges"* and "the
+ * actor" simply is not in the list, because a Token running dry was not done to
+ * it by anybody. The offer is absent rather than present-and-broken, which is
+ * the same discipline that keeps an illegal trigger/keyword pairing unbuildable.
+ */
+function RolePicker({ statement, onChange }) {
+  const available = rolesOf(statement.when?.event);
+  const options = ROLES.filter((r) => available.includes(r.id));
+  const current = statement.target?.role;
+  const orphaned = current && !available.includes(current);
+  const declared = ROLES.find((r) => r.id === current);
+
+  return (
+    <div className="space-y-1.5">
+      <Field label="Acts on">
+        <select
+          value={orphaned ? '' : (current || '')}
+          onChange={(e) => onChange({ target: { ...statement.target, role: e.target.value } })}
+          className="w-full"
+          style={{ fontSize: 12 }}
+        >
+          {orphaned && <option value="">— pick again —</option>}
+          {options.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+        </select>
+      </Field>
+      {orphaned ? (
+        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ This rule acts on “{declared?.label || current}”, and the moment you
+          picked never has one — so it would reach nobody, on any board. Pick
+          again, or change the moment.
+        </p>
+      ) : (
+        <p className="text-[10px] text-gray-600 leading-relaxed">
+          {ROLES.find((r) => r.id === current)?.hint}
         </p>
       )}
     </div>

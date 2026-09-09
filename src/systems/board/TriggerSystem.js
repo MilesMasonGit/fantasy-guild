@@ -10,6 +10,8 @@ import { neighboursOf } from './adjacency.js';
 import { matchesTokenTarget, filterTargetTiles } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
+import * as DealDamage from './DealDamage.js';
+import { resolveRoles } from '../../config/registries/roleRegistry.js';
 import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -149,7 +151,7 @@ function isReady(instance, statementId) {
  * see CMS-26 above. A statement that was on cooldown, or whose condition was not
  * met, has not served and costs nothing.
  */
-function fireStatement(tile, instance, statement) {
+function fireStatement(tile, instance, statement, payload = null) {
     if (!isReady(instance, statement.id)) return false;
 
     /**
@@ -186,7 +188,7 @@ function fireStatement(tile, instance, statement) {
     inFlight.add(key);
     cascadeDepth += 1;
     try {
-        runStatementActions(tile, instance, statement);
+        runStatementActions(tile, instance, statement, payload);
     } finally {
         inFlight.delete(key);
         cascadeDepth -= 1;
@@ -200,8 +202,27 @@ function fireStatement(tile, instance, statement) {
     return true;
 }
 
-/** What a fired statement actually does. Split out so the guard can wrap it. */
-function runStatementActions(tile, instance, statement) {
+/**
+ * What a fired statement actually does. Split out so the guard can wrap it.
+ *
+ * ⚠️ `payload` is the **board event's** payload, threaded through from the
+ * handler so `Deals` can resolve its roles (Effects Grammar v2 V2). Everything
+ * above it targets tiles and needs only `tile`; a verb that acts on a
+ * *participant* needs to know who was involved, and only the event knows that.
+ */
+function runStatementActions(tile, instance, statement, payload = null) {
+
+    /**
+     * ⭐ `Deals` — damage to somebody the moment named.
+     *
+     * Handled first because it is the one keyword whose target is a **role**
+     * rather than a tile filter, so none of the tile-shaped machinery below
+     * applies to it.
+     */
+    if (statement.keyword === KEYWORD.DEALS) {
+        DealDamage.deal(statement, resolveRoles(payload, tile));
+    }
+
 
     /**
      * `Applies` — a status on the people working the neighbours the filter
@@ -350,7 +371,7 @@ function handleAdjacent(triggerId, payload) {
             if ((statement.when.scope || TRIGGER_SCOPES.ADJACENT) !== TRIGGER_SCOPES.ADJACENT) continue;
             if (!sourceMatches(statement.when, payload.typeId)) continue;
             if (!producedMatches(definition, statement.when, payload)) continue;
-            fireStatement(neighbour, instance, statement);
+            fireStatement(neighbour, instance, statement, payload);
         }
     }
 }
@@ -376,7 +397,7 @@ function handleSelf(triggerId, payload) {
     const def = getTokenType(instance.typeId);
     for (const statement of triggeredStatements(def, triggerId)) {
         if (statement.when.scope !== TRIGGER_SCOPES.SELF) continue;
-        fireStatement(tile, instance, statement);
+        fireStatement(tile, instance, statement, payload);
     }
 }
 

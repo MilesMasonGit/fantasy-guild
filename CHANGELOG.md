@@ -5,6 +5,21 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Rules can now hurt somebody — and Thorns exists.** A rule can deal damage
+  to whoever just harvested or fought the thing carrying it. Author it once, name
+  it Thorns, and put it on a monster *and* on a berry bush: the same entry works
+  on both, because winning a fight and finishing a harvest have always been the
+  same event underneath.
+- **Thorns damage respects armour, and heavy armour can stop it outright.** Tick
+  "ignores armour" for a rule that should pierce regardless.
+- **A rule's price is set where you assign it.** The same effect can be free on
+  one Token and cost a charge on another.
+- **The editor stops offering targets a rule cannot reach.** Pick "when a
+  neighbour runs out of charges" and "the actor" is simply not in the list —
+  nobody acted, a Token ran dry. If a rule is already aiming somewhere
+  impossible, it says so.
+- **The rules text stopped shouting your proper nouns down.** It read "this
+  token's own cycle" and "the bank"; Token and Bank keep their capitals now.
 - **Rules can tell who did something to them.** Groundwork, invisible on its own:
   every firing moment now says which participants it has — the entity itself, the
   hero who caused it, the neighbour it happened to — so a rule will shortly be

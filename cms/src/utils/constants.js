@@ -140,6 +140,15 @@ export {
   reachOf,
 } from '../../../src/config/registries/reachRegistry.js';
 
+// Who a moment puts in the room (G-2). The CMS offers a role only where the
+// chosen moment supplies it, which is why `rolesOf` crosses the boundary too.
+export {
+  ROLE,
+  ROLES,
+  getRole,
+} from '../../../src/config/registries/roleRegistry.js';
+export { rolesOf } from '../../../src/config/registries/triggerRegistry.js';
+
 // What a `Cannot` may forbid. One row today — an adjacency limit — shaped like
 // the modifier palette so restriction #2 is a row in the game, not a rewrite of
 // the editor.

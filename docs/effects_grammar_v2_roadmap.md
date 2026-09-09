@@ -165,7 +165,34 @@ The phase the whole project is judged by.
   bush.
 
 **Verified when** one library entry, assigned twice, hurts a hero who kills the
-Elemental **and** a hero who harvests the bush — watched in the running game.
+Elemental **and** a hero who harvests the bush.
+
+⚠️ **Four things worth recording from the build.**
+
+**Armour is now defined once.** `computeEnemyDamage` inlined the armour sum, and
+`Deals` needed it a third time, so it became `CombatFormulas.heroFlatArmor`. A
+thorn and a goblin subtracting different numbers would have been CR2-074's
+parallel vocabulary arriving by copy-paste rather than by design.
+
+**A thorn floors at zero; a combat hit floors at one.** Combat's minimum exists
+so a fight always progresses. A thorn is not a fight, and a floor of 1 would make
+heavy armour worth exactly as much as none against every thorn in the game — so
+"respects armour" can only honestly mean armour may stop it entirely.
+
+**The sentence lost its capital letters, and G-10 said fix the syntax.**
+`whenPhrase` lowercased the *whole* trigger label, so *"This Token's own cycle
+completes"* rendered as *"this token's"* and *"The Bank"* as *"the bank"*. Token
+and Bank are things in this game with capitals. Only the first character is
+lowered now.
+
+⚠️ **The acceptance test nearly proved nothing.** Its first version used a second
+*producer* rather than a real enemy, which would only have shown that two Tokens
+can share a library entry — not that harvesting and killing are the same case.
+Rewritten to fight a real `fixture_enemy` to death and assert `hero_downed` with
+`cause: 'effect'`, a signal nothing else in the game publishes. It also silently
+passed at first because the test hero was an unpromoted Recruit who **starts no
+fight at all**: `canHeroFight` tests *possession* of a combat skill, never its
+level.
 
 ### V3 — ⭐ The sentence editor
 
@@ -259,7 +286,7 @@ or a random free tile (G-15).
 | Phase | State | Notes |
 |---|---|---|
 | V1 Moments declare roles | **DONE** 2026-09-08 | `roleRegistry.js` + `roles` on all ten triggers. `CYCLE_START` and both `COMBAT_RESOLVED` sites widened. 16 new tests, 8 of which fail when neutered. |
-| V2 `Deals`, the actor, Thorns | **NOT STARTED** | ⭐ The example the plan is judged by |
+| V2 `Deals`, the actor, Thorns | **DONE** 2026-09-08 | ⭐ One entry hurts a hero who harvests a bush AND one who kills a monster, proven in a real fight. 16 new tests, 6 of which fail when the verb is neutered. |
 | V3 ⭐ The sentence editor | **NOT STARTED** | Retires the form editor |
 | V4 Composable filters | **NOT STARTED** | |
 | V5 Computed magnitudes | **NOT STARTED** | |
