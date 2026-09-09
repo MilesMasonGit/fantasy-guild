@@ -397,7 +397,7 @@ or a random free tile (G-15).
 | V4 Composable filters | **DONE** 2026-09-08 | `filterRegistry.js`: tagged / is_station / charges_below / worked, all negatable and AND-composed. 18 new tests. |
 | V5 Computed magnitudes | **DONE** 2026-09-08 | `magnitudeRegistry.js`: flat / % of a named stat / per-match count, with the second `counted` selector. 16 new tests. |
 | V6 Live instances, duration, chaining | **DONE** 2026-09-08 | `LiveEffects.js` + the `EFFECT_TICK` moment. `Applies` takes a library effect; duration 0 chains. 16 new tests. ⚠️ No save migration needed — `hero.statuses` is untouched and dies at V7. |
-| V7 The seven re-authored | **NOT STARTED** | Absorbs the old ER-10 |
+| V7 The seven re-authored | ⛔ **BLOCKED — needs the owner** | The destructive phase. Three questions in §5 must be answered first; nothing else waits on it. |
 | V8 The rest of the verbs | **DONE** 2026-09-08 | `Heals`, `Restores`, `Removes` in `EffectActions.js`. ⭐ `Restores` is the reader `CHARGE_EXTEND` was named for; `Removes` is the first caller a cleanse has ever had. 14 new tests. |
 | V9 `Spawns` and `Transforms` | **DONE** 2026-09-08 | `placementRegistry.js` — the destination is an authored choice, never a hidden fallback. 15 new tests. |
 
@@ -406,7 +406,39 @@ P4 (`STATUS_IMMUNITY` and the skill scope). v1 P3 — authoring real effects on
 items and the one enemy — is **still outstanding and still the owner's**; V2 does
 part of it by authoring Thorns.
 
-## 5. Open questions
+## 5. ⛔ Why V7 is blocked
+
+Everything additive is done. V7 is the only phase left, it is the **destructive**
+one — it deletes a shipped engine and reshapes save-resident data — and three
+things have to be settled before it can start.
+
+**1. Where do the seven re-authored statuses live?** G-7 says they are
+re-authored by hand and never translated. ER-13 says statuses do **not** become
+CMS-authorable in this project. Those two together leave nowhere to put them:
+`statusRegistry.js` is code, and the effect library is CMS-authored data. Either
+ER-13 relaxes (statuses become library entries authored in the CMS like every
+other effect — which is what "one clear repository" implies), or the seven ship
+as code-level default library entries, which reintroduces two sources of effects
+and is the thing G-1 exists to prevent. **This is the real blocker.**
+
+**2. What happens to a live save's statuses?** A save holds
+`[{ id: 'poison', stacks: 7 }]` and the new shape has no stacks. The project's own
+standing rule — never silently half-translate — points at dropping them on load
+and letting the player re-earn them, which costs a few seconds of a transient
+buff. Mapping stacks onto a tier would invent a number. My reading is that
+dropping is the consistent answer, but it is the owner's call to make.
+
+**3. Who authors it?** V7's content work cannot be done from here. The CMS
+workspace in this environment is **empty** (0 tokens, 0 items, 0 effects), so
+"Sync to Game" would write that emptiness over `data/` and destroy the shipped
+content. Every phase so far has been proven against fixtures for exactly this
+reason.
+
+⚠️ **Nothing else waits on V7.** V6 deliberately left `hero.statuses` untouched
+and put live instances on a new field, so the old engine and the new one run side
+by side. The game is in a working state with both.
+
+## 6. Open questions
 
 *Q1 (does `Deals` respect Armor?) was closed by the owner on 2026-09-08 and is
 now **G-23**: yes, with an authored `ignoresArmor` flag. ⚠️ See the warning on
