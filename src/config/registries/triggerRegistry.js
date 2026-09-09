@@ -220,7 +220,13 @@ export const TRIGGER_EVENTS = [
         id: 'EFFECT_TICK',
         roles: [ROLE.SELF],
         event: 'effect_tick',
-        label: 'Every few seconds, while carried',
+        /**
+         * ⚠️ Phrased to follow the word **"When"**, because every moment's label
+         * does. "Every few seconds, while carried" read as *"When every few
+         * seconds, while carried, deals 2 damage…"* — the label was written as a
+         * standalone heading and the sentence is not a heading (G-10).
+         */
+        label: 'A few seconds pass while this is carried',
         scopes: [TRIGGER_SCOPES.SELF],
         hint: 'Fires every 5 seconds on whoever is carrying this effect, until it wears off. This is how a poison or a regeneration works.'
     },

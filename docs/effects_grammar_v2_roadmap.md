@@ -397,7 +397,8 @@ or a random free tile (G-15).
 | V4 Composable filters | **DONE** 2026-09-08 | `filterRegistry.js`: tagged / is_station / charges_below / worked, all negatable and AND-composed. 18 new tests. |
 | V5 Computed magnitudes | **DONE** 2026-09-08 | `magnitudeRegistry.js`: flat / % of a named stat / per-match count, with the second `counted` selector. 16 new tests. |
 | V6 Live instances, duration, chaining | **DONE** 2026-09-08 | `LiveEffects.js` + the `EFFECT_TICK` moment. `Applies` takes a library effect; duration 0 chains. 16 new tests. ⚠️ No save migration needed — `hero.statuses` is untouched and dies at V7. |
-| V7 The seven re-authored | ⛔ **BLOCKED — needs the owner** | The destructive phase. Three questions in §5 must be answered first; nothing else waits on it. |
+| V7a The seven become **expressible** | **DONE** 2026-09-09 | A carried effect now contributes modifiers, which is what four of the seven needed. `DAMAGE` gained a percentage reader. 12 tests prove all seven are sayable. |
+| V7b Author them, then delete the old engine | ⏳ **Owner authoring next** | The machinery is ready. Authoring is the CMS's job; deletion follows it. |
 | V8 The rest of the verbs | **DONE** 2026-09-08 | `Heals`, `Restores`, `Removes` in `EffectActions.js`. ⭐ `Restores` is the reader `CHARGE_EXTEND` was named for; `Removes` is the first caller a cleanse has ever had. 14 new tests. |
 | V9 `Spawns` and `Transforms` | **DONE** 2026-09-08 | `placementRegistry.js` — the destination is an authored choice, never a hidden fallback. 15 new tests. |
 
@@ -437,20 +438,51 @@ motivating case for `Spawns`/`Transforms` — unauthorable in its most natural
 form. Fixing it means either publishing a moment *before* depletion, or letting
 `TOKEN_DEPLETED` carry a transform; both are real design calls, not cleanups.
 
-## 5. ⛔ Why V7 is blocked
+## 4c. V7a — what the seven actually needed
 
-Everything additive is done. V7 is the only phase left, it is the **destructive**
-one — it deletes a shipped engine and reshapes save-resident data — and three
-things have to be settled before it can start.
+⭐ **The blocker was never the seven; it was one missing capability.** Three of
+them (Poison, Burning, Bleed) already worked from V6 — they are `Deals` on a
+clock. The other four are **modifiers with a clock**, and `LiveEffects` fired
+`EFFECT_TICK` statements and contributed no modifiers at all. A carried effect
+could hurt you but could not make you tougher, so Armor Shield, Well Fed,
+Cookout and Stun were literally unsayable.
 
-**1. Where do the seven re-authored statuses live?** G-7 says they are
-re-authored by hand and never translated. ER-13 says statuses do **not** become
-CMS-authorable in this project. Those two together leave nowhere to put them:
-`statusRegistry.js` is code, and the effect library is CMS-authored data. Either
-ER-13 relaxes (statuses become library entries authored in the CMS like every
-other effect — which is what "one clear repository" implies), or the seven ship
-as code-level default library entries, which reintroduces two sources of effects
-and is the thing G-1 exists to prevent. **This is the real blocker.**
+V7a builds that: a carried effect's `Provides` statements now reach the same two
+roads their axis already travels — the **hero's aggregator** for combat axes, and
+**live at `resolveAxis`** for board axes. Neither reader had to learn about live
+effects.
+
+`DAMAGE` also gained a **percentage bucket**, because it is the one combat axis
+whose reader genuinely multiplies by one (`computeHeroDamage`). That is what
+makes a Well Fed style buff expressible rather than hardcoded.
+
+⚠️ **Stun stays a re-authoring, not a translation** (G-7). The old `attack_fail`
+was "25% per stack, capped at 80%"; a negative `ACCURACY` against a 5–95 clamp is
+different arithmetic. The shape is expressible and the numbers are the owner's.
+
+### What V7b still needs
+
+1. **The owner authors the seven in the CMS.** Nothing can be deleted before
+   replacements exist, and authoring cannot be done from a session whose CMS
+   workspace is empty — a sync would write that emptiness over `data/`.
+2. **Enemies get a `ModifierAggregator`** (the old ER-10), so an enemy can carry
+   Armor Shield the way a hero can. Four of the eight `sumStatusEffect` readers
+   are enemy-side.
+3. **The save migration.** `hero.statuses` is save-resident; the standing rule —
+   never silently half-translate — points at dropping live statuses on load and
+   letting the player re-earn a few seconds of a transient buff. Still §5 Q2.
+4. **The minimal status readout** (ER-17), so any of it can be watched in play.
+5. **Delete `statusRegistry.js`**, its five effect types and five decay triggers,
+   and move the eight readers onto the aggregator.
+
+## 5. What V7b is waiting on
+
+The **destructive** half — deleting a shipped engine and reshaping save-resident
+data. One of its three blockers is now answered.
+
+~~**1. Where do the seven re-authored statuses live?**~~ ✅ **Answered
+2026-09-09: in the library, authored in the CMS like every other effect.** ER-13
+is retired; G-7 stands.
 
 **2. What happens to a live save's statuses?** A save holds
 `[{ id: 'poison', stacks: 7 }]` and the new shape has no stacks. The project's own

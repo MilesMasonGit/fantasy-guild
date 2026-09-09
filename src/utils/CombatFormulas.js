@@ -25,6 +25,7 @@ import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
 import { sumStatusEffect } from '../config/registries/statusRegistry.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 export { BASE_ATTACK_SPEED_MS, MIN_ATTACK_SPEED_MS, HERO_ATTACK_INTERVAL_MS, ENEMY_ATTACK_INTERVAL_MS };
 
@@ -189,6 +190,23 @@ export function rollDamage(minDamage, maxDamage) {
 }
 
 /**
+ * The outgoing-damage multiplier a hero carries.
+ *
+ * ⚠️ Reads BOTH sources while the absorb is in progress: `damage_pct` from the
+ * old status engine, and the `DAMAGE` percentage bucket that a carried library
+ * effect registers (V7). Written as one function so the two cannot drift, and so
+ * removing the first half later is a one-line edit in one place rather than the
+ * two call sites it used to be.
+ */
+export function damageMultiplierOf(hero) {
+    const fromStatuses = sumStatusEffect(hero?.statuses, 'damage_pct');
+    const fromEffects = hero?.aggregator?.getPercentageBucket
+        ? hero.aggregator.getPercentageBucket(EFFECT_TYPES.DAMAGE) - 1
+        : 0;
+    return 1 + fromStatuses + fromEffects;
+}
+
+/**
  * Compute damage dealt from hero to enemy (spec §7 steps 3-5).
  * Base = 4·G(style skill) + weapon damage (flat placeholder until the gear
  * pass prices weapons properly) + flat modifiers; ×0.85-1.15 spread; RPS ±10%;
@@ -200,8 +218,10 @@ export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selected
 
     let damage = rollDamageSpread(base);
 
-    // Damage buffs (Well Fed) sum additively per layer
-    damage *= 1 + sumStatusEffect(hero?.statuses, 'damage_pct');
+    // Damage buffs sum additively. ⚠️ Both sources during the absorb: the old
+    // status engine, and the aggregator that a carried library effect writes to
+    // (V7). The first half goes when the seven are re-authored.
+    damage *= damageMultiplierOf(hero);
 
     const enemyStyle = enemy?.combatType || 'melee';
     damage *= 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
@@ -287,7 +307,7 @@ export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
 export function getHeroDamageRange(hero, enemy, weapon, damageBonus = 0, selectedStyle = 'melee', enemyStatuses = null) {
     const skill = getHeroCombatSkill(hero, selectedStyle);
     const base = heroBaseDamage(skill) + (weapon?.damage || 0) + damageBonus;
-    const buffMult = 1 + sumStatusEffect(hero?.statuses, 'damage_pct');
+    const buffMult = damageMultiplierOf(hero);
     const enemyStyle = enemy?.combatType || 'melee';
     const rpsMult = 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
     const armor = (enemy?.armor || 0) + sumStatusEffect(enemyStatuses, 'flat_armor');

@@ -607,7 +607,20 @@ function heroContributions(index, effectType, category = TARGET_CATEGORIES.ALL) 
     const multipliers = [];
     const percentages = [];
 
-    for (const statement of HeroEffects.loadoutStatements(hero)) {
+    /**
+     * ⚠️ Carried effects join the loadout here (V7), and for the same reason it
+     * is read live: a live effect expires on its own clock, with no board change
+     * and no player action, so a cached contribution would outlive it.
+     *
+     * This is what makes Cookout — *"+10% gathering yield for a while"* —
+     * expressible as an ordinary library effect.
+     */
+    const contributing = [
+        ...HeroEffects.loadoutStatements(hero),
+        ...LiveEffects.modifierStatements(hero)
+    ];
+
+    for (const statement of contributing) {
         if (statement.keyword !== KEYWORD.PROVIDES) continue;
 
         const payload = statement.payload || {};

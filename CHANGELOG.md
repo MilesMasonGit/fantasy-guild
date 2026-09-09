@@ -5,6 +5,13 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Every status is now authorable as an ordinary effect.** Poison, Burning,
+  Bleed, Armor Shield, Well Fed, Cookout and Stun can all be written in the
+  effects editor like anything else — three as damage on a clock, four as a
+  bonus that lasts a while. The four that last needed something new: an effect
+  you are carrying can now change your numbers, not just hurt you.
+- **A damage bonus can be a percentage**, so "+10% damage for a while" is
+  something you can write down rather than something only code could do.
 - ⭐ **Tokens can leave things behind, and become other things.** A felled tree
   can leave a Stump, a watered Sapling can become an Oak. Where a spawned Token
   lands is something you pick — this tile, the nearest free one, or a random one

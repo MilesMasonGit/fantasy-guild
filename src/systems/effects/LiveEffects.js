@@ -3,6 +3,9 @@
 import { EventBus } from '../core/EventBus.js';
 import { EFFECTS } from '../../config/registries/effectRegistry.js';
 import { statementsFromEntry, normaliseScale } from './effectLibrary.js';
+import { KEYWORD } from './statements.js';
+import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import * as HeroEffects from '../hero/HeroEffects.js';
 import { STATUS_TICK_INTERVAL_MS } from '../../config/FormulaRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -101,6 +104,7 @@ export function applyToHero(heroId, spec, sourceId = null, fire = null) {
         list.push({ effectId: spec.effectId, scale, expiresAt, sourceId });
     }
 
+    syncAggregator(hero);
     EventBus.publish('heroes_updated', { source: 'live_effect_applied', heroId });
     return true;
 }
@@ -118,7 +122,10 @@ export function removeFromHero(heroId, effectId = null) {
     const before = hero.effects.length;
     hero.effects = effectId ? hero.effects.filter(e => e.effectId !== effectId) : [];
     const removed = before - hero.effects.length;
-    if (removed) EventBus.publish('heroes_updated', { source: 'live_effect_removed', heroId });
+    if (removed) {
+        syncAggregator(hero);
+        EventBus.publish('heroes_updated', { source: 'live_effect_removed', heroId });
+    }
     return removed;
 }
 
@@ -141,6 +148,66 @@ export function liveStatements(hero) {
         out.push(...statementsFromEntry(entry, instance));
     }
     return out;
+}
+
+/**
+ * ⭐ **What a carried effect contributes continuously** (V7).
+ *
+ * Three of the seven statuses being re-authored are not actions at all — Armor
+ * Shield, Well Fed, Cookout and Stun are *modifiers with a clock*. Without this
+ * they were unsayable: `LiveEffects` fired `EFFECT_TICK` statements and nothing
+ * else, so a carried effect could hurt you but could not make you tougher.
+ *
+ * ⚠️ **The combat axes go on the aggregator; the board axes are read live.**
+ * That split is not new and is not a choice made here — `CombatFormulas` is a
+ * pure calculation module that queries `hero.aggregator`, while `resolveAxis`
+ * reads a hero's contributions at the moment they matter. Live effects follow
+ * whichever road their axis already travels, so no reader had to learn about
+ * them.
+ */
+export function modifierStatements(hero) {
+    return liveStatements(hero).filter(s => s?.keyword === KEYWORD.PROVIDES);
+}
+
+/**
+ * Push a hero's carried combat modifiers onto their aggregator.
+ *
+ * ⚠️ **Called on every change, because an expiry is a change nobody asks about.**
+ * Gear is re-synced when equipment changes and that is enough for gear; a live
+ * effect also ends *on its own*, with no player action, so the clock re-syncs
+ * too. Registered under one source id so a re-sync is a clean replace rather
+ * than an accumulation.
+ */
+export function syncAggregator(hero) {
+    if (!hero?.aggregator) return;
+
+    const source = 'live:effects';
+    hero.aggregator.removeModifiersBySource(source);
+
+    for (const { type, value, category } of HeroEffects.combatContributions(modifierStatements(hero))) {
+        hero.aggregator.addModifier({
+            type, value, bucket: 'flat', source,
+            ...(category ? { target: { category } } : {})
+        });
+    }
+
+    /**
+     * ⚠️ Percentage-bucketed combat axes ride along separately.
+     *
+     * `combatContributions` refuses anything but `flat`, because
+     * `ModifierAggregator.query` — what most combat readers call — sums flats
+     * and silently skips the rest. `DAMAGE` is the exception: it has a real
+     * percentage reader (`getPercentageBucket`), which is what makes Well Fed
+     * expressible at all.
+     */
+    for (const statement of modifierStatements(hero)) {
+        const payload = statement.payload || {};
+        if (payload.bucket !== 'percentage') continue;
+        if (!getPaletteEntry(payload.type)?.heroOnly) continue;
+        const value = Number(payload.value);
+        if (!Number.isFinite(value) || value === 0) continue;
+        hero.aggregator.addModifier({ type: payload.type, value, bucket: 'percentage', source });
+    }
 }
 
 /**
@@ -179,6 +246,7 @@ export function tick(delta, fire) {
         hero.effects = hero.effects.filter(e => e.expiresAt > now);
         if (hero.effects.length !== before) {
             logger.debug('LiveEffects', `${hero.name} lost ${before - hero.effects.length} effect(s)`);
+            syncAggregator(hero);
             EventBus.publish('heroes_updated', { source: 'live_effect_expired', heroId: hero.id });
         }
     }

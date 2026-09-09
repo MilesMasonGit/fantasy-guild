@@ -279,7 +279,16 @@ export const MODIFIER_PALETTE = [
         label: 'Damage',
         when: 'never',
         scales: 'value',
-        buckets: ['flat'],
+        /**
+         * ⚠️ **The one combat axis with a percentage reader** (V7).
+         *
+         * Every other combat row is `flat` only, because `query` sums flats and
+         * silently skips the rest — offering a percentage there would offer
+         * something discarded. `computeHeroDamage` genuinely multiplies by a
+         * percentage bucket, which is what makes a Well Fed style buff
+         * (*"+10% damage for a while"*) expressible as an ordinary effect.
+         */
+        buckets: ['flat', 'percentage'],
         heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
