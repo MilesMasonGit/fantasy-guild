@@ -96,6 +96,28 @@ export const MAX_CASCADE_DEPTH = 8;
 let cascadeDepth = 0;
 let warnedAboutDepth = false;
 
+/**
+ * Run one statement carried by a **live effect instance** (V6).
+ *
+ * ⚠️ Deliberately NOT routed through `fireStatement`. That path is about a Token
+ * *instance* — it is where the cooldown lives and the charge delta is spent, and
+ * a live effect on a person has neither. It ticks on its own clock, which is
+ * already once every five seconds, so a cooldown would be redundant. The same
+ * reasoning P5 of Unified Effects recorded for carried item rules.
+ *
+ * The cascade guard still applies, because a live effect firing another effect
+ * is exactly the shape G-17 allows and therefore exactly the shape that can spin.
+ */
+export function fireLiveStatement(statement, roles) {
+    if (cascadeDepth >= MAX_CASCADE_DEPTH) return;
+    cascadeDepth += 1;
+    try {
+        if (statement.keyword === KEYWORD.DEALS) DealDamage.deal(statement, roles);
+    } finally {
+        cascadeDepth -= 1;
+    }
+}
+
 /** Reset the guard. For tests, and for a board teardown mid-cascade. */
 export function resetCascadeGuard() {
     inFlight.clear();

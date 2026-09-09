@@ -202,6 +202,30 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
+         * ⭐ **The moment a live effect recurs on** (Effects Grammar v2, V6).
+         *
+         * The mechanism behind every damage-over-time effect: an effect sitting
+         * on somebody fires this every five seconds until it expires. It is what
+         * lets Poison be an ordinary library entry rather than a special kind of
+         * thing.
+         *
+         * ⚠️ **Supplies only `self`, and `self` is the PERSON carrying it** —
+         * not a tile, and not whoever applied it. A rule that ticks knows who it
+         * is on; it does not know who put it there, because that hero may be
+         * dead, elsewhere, or never have existed.
+         *
+         * ⚠️ Not offered on the adjacency scopes: an effect carried by a person
+         * has no neighbours.
+         */
+        id: 'EFFECT_TICK',
+        roles: [ROLE.SELF],
+        event: 'effect_tick',
+        label: 'Every few seconds, while carried',
+        scopes: [TRIGGER_SCOPES.SELF],
+        hint: 'Fires every 5 seconds on whoever is carrying this effect, until it wears off. This is how a poison or a regeneration works.'
+    },
+    {
+        /**
          * The Sigil's case: "Stone exists anywhere" (CMS-35).
          *
          * There is no per-item "X was produced" event, only the coarse

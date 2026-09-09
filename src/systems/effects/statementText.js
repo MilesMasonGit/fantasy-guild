@@ -37,7 +37,10 @@ import { EFFECT_TYPES } from './constants.js';
 /** Names, supplied by whoever is rendering — the registries, or the CMS store. */
 const DEFAULT_NAMES = {
     token: id => id || 'a Token',
-    item: id => id || 'an item'
+    item: id => id || 'an item',
+    // A library effect's own title. Resolved by the caller for the same reason
+    // Token and item names are: this module never reaches into a registry.
+    effect: id => id || 'an effect'
 };
 
 /** `0.05` → `5%`, `-0.05` → `5%` (the direction word carries the sign). */
@@ -474,6 +477,18 @@ function bodyOf(statement, names) {
         }
 
         case KEYWORD.APPLIES: {
+            /**
+             * ⭐ A **library effect** rather than a status (V6). With a duration
+             * it lingers; without one it fires immediately, which is chaining.
+             */
+            if (payload.effectId) {
+                const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
+                const chance = payload.chance ?? 100;
+                const odds = chance >= 100 ? '' : `, ${chance}% of the time`;
+                const secs = Math.round((payload.durationMs || 0) / 100) / 10;
+                const lasting = secs > 0 ? ` for ${secs} seconds` : '';
+                return `Applies ${title || '…'} to ${occupantPhrase(statement, names)}${lasting}${odds}`;
+            }
             // ⚠️ **This sentence must be literally true.** A filter selects
             // Tokens; a status lands on a person. The only honest reading of
             // "adjacent Coast Tokens" for a status is *the heroes working

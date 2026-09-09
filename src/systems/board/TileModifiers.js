@@ -14,6 +14,7 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
+import * as LiveEffects from '../effects/LiveEffects.js';
 
 /**
  * TileModifiers — one runtime `ModifierAggregator` per tile, and the resolver
@@ -153,11 +154,16 @@ export function matchesTokenTarget(spec, def, ctx = null) {
     if (ctx?.instance) available.add(FILTER_NEEDS.INSTANCE);
     if (ctx?.tile != null) available.add(FILTER_NEEDS.TILE);
 
+    const heroOnTile = ctx?.tile != null ? BoardState.heroOnTile(ctx.tile) : null;
     return matchesFilters(spec, {
         def,
         instance: ctx?.instance,
         tile: ctx?.tile,
-        heroOnTile: ctx?.tile != null ? BoardState.heroOnTile(ctx.tile) : null
+        heroOnTile,
+        // Supplied as a closure so the filter never has to reach into the hero
+        // registry itself — the same reason `renderStatement` takes a `names`
+        // resolver rather than importing one.
+        heroCarries: (effectId) => LiveEffects.heroCarries(HeroManager.getHero(heroOnTile), effectId)
     }, available);
 }
 

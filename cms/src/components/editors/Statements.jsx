@@ -584,6 +584,7 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
   const keyword = getKeyword(statement.keyword);
   const sentence = renderStatement(statement, names);
   const capabilities = useCapabilityVocabulary(tokens);
+  const effects = useEntityStore((s) => s.effects);
 
   return (
     <RowShell
@@ -598,7 +599,7 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
         statement={statement}
         onChange={onChange}
         names={names}
-        ctx={{ tokens, items, capabilities }}
+        ctx={{ tokens, items, capabilities, effects }}
         form={<PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />}
       />
 

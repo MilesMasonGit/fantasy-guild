@@ -339,7 +339,18 @@ export function blankPayload(keywordId) {
             // Token's `Applies` uses its filter and ignores the field. Defaulted
             // to the hero because that is the reading a Token already has, so an
             // effect moved from a Token to an item keeps meaning the same thing.
-            return { statusId: '', stacks: 1, chance: 100, target: 'hero' };
+            /**
+             * ⚠️ **Two shapes during V6, one after V7.**
+             *
+             * `effectId` attaches a **library effect** for a while — the shape
+             * that deletes the status registry. `statusId` is the old shape and
+             * still works, so nothing authored breaks on the day this lands.
+             * V7 re-authors the seven statuses and removes the second half.
+             *
+             * A `durationMs` of 0 means **fire it once, now** — which is how
+             * chaining works (G-17). One verb, both shapes.
+             */
+            return { effectId: '', scale: 1, durationMs: 0, chance: 100, target: 'hero' };
         case KEYWORD.STATION:
             return { skill: '' };
         default:

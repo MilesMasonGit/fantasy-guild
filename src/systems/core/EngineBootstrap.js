@@ -27,6 +27,8 @@ import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as BoardRunner from '../board/BoardRunner.js';
 import * as InputAllocator from '../board/InputAllocator.js';
 import * as TileModifiers from '../board/TileModifiers.js';
+import * as LiveEffects from '../effects/LiveEffects.js';
+import * as TriggerSystem from '../board/TriggerSystem.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 import * as BoardCombat from '../board/BoardCombat.js';
 import * as Managers from '../board/Managers.js';
@@ -136,6 +138,15 @@ export const EngineBootstrap = {
                 });
                 // Lifetime playtime for the save-slot screen (CR-006).
                 GameState.state.meta.totalPlaytime = (GameState.state.meta.totalPlaytime || 0) + delta;
+            }
+        });
+
+        // Live effect instances — poisons, regenerations, anything with a clock
+        // on it. Fires on the same 5s interval the status engine used, so a
+        // re-authored Poison ticks at exactly the rate it always did.
+        GameLoop.onTick('live_effects', (delta) => {
+            if (GameState.getIsInitialized()) {
+                LiveEffects.tick(delta, TriggerSystem.fireLiveStatement);
             }
         });
 

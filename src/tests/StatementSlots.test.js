@@ -136,8 +136,12 @@ describe('what the chip says', () => {
     });
 
     it('shows a blank rather than a guess when nothing is picked', () => {
-        const s = { ...makeStatement(KEYWORD.APPLIES), payload: { statusId: '', stacks: 1 } };
-        expect(slotDisplay(slot(s, 'statusId'))).toBe('…');
+        // ⚠️ An `Applies` with no `statusId` takes the LIBRARY EFFECT shape as of
+        // V6 — that is the new default and the one that makes the status
+        // registry deletable, so the unset slot to check is `effectId`.
+        const s = makeStatement(KEYWORD.APPLIES);
+        expect(s.payload.effectId).toBe('');
+        expect(slotDisplay(slot(s, 'effectId'))).toBe('…');
     });
 
     it('shows a flag only when it is on', () => {

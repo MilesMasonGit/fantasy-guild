@@ -115,6 +115,15 @@ export function resolveRoles(payload, bearerTile) {
     const eventTile = payload?.tile;
     return {
         self: bearerTile,
+        /**
+         * ⚠️ `self` is a TILE for a rule on a Token, and a HERO for a rule the
+         * hero is carrying (V6). A live effect instance sits on a person, not on
+         * a square, so "this entity" has to be able to mean either.
+         *
+         * Null here: only `LiveEffects` fills it, because only it knows the
+         * bearer is a person.
+         */
+        selfHeroId: null,
         actor: payload?.heroId ?? null,
         // A self-scoped moment's source is the bearer, which is `self` — so it
         // reports null rather than duplicating it under a second name.

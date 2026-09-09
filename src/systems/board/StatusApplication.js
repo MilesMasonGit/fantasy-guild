@@ -2,6 +2,7 @@
 
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
+import * as LiveEffects from '../effects/LiveEffects.js';
 import { filterTargetTiles } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -91,6 +92,11 @@ function occupantOf(tile, prefer = 'occupant') {
 /** Whether a payload names a status the engine has, with a roll that hit. */
 function rolls(payload, random = Math.random) {
     if (!payload?.statusId || !getStatusEffect(payload.statusId)) return false;
+    return rollsChance(payload, random);
+}
+
+/** The chance roll alone, for payloads that name something other than a status. */
+function rollsChance(payload, random = Math.random) {
     const chance = payload.chance ?? 100;
     return chance >= 100 || random() * 100 < chance;
 }
@@ -106,6 +112,18 @@ function rolls(payload, random = Math.random) {
  * @returns {boolean} whether anybody actually received it
  */
 export function applyAt(tile, payload, random = Math.random) {
+    /**
+     * ⭐ A library effect rather than a status (V6). This is the branch that
+     * makes `statusRegistry` deletable: an `Applies` naming an `effectId`
+     * attaches a live instance of an ordinary library entry, with a clock on it.
+     */
+    if (payload?.effectId) {
+        if (!rollsChance(payload, random)) return false;
+        const heroId = BoardState.heroOnTile(tile);
+        if (!heroId) return false;
+        return LiveEffects.applyToHero(heroId, payload, payload.sourceEffectId || null);
+    }
+
     if (!rolls(payload, random)) return false;
     // `payload.target` is only ever set by an item-borne rule (UE-24); a
     // Token's `Applies` leaves it unset and keeps the hero-first reading.

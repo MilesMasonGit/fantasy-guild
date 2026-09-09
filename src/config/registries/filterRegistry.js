@@ -93,6 +93,27 @@ export const FILTER_KINDS = Object.freeze([
         negative: (value) => `with ${Number(value) || 0} or more charges`
     },
     {
+        /**
+         * ⭐ **Effects can see each other** (V6). Deferred from V4 until live
+         * instances existed for it to look at.
+         *
+         * ⚠️ Reads the **hero standing there**, not the Token. Live instances
+         * sit on people; a Token cannot yet carry one (roadmap Q3). So *"every
+         * adjacent Token not already poisoned"* is really "…whose hero is not
+         * poisoned", and the sentence says the honest version.
+         */
+        id: 'carrying',
+        label: 'whose hero carries …',
+        hint: 'The hero standing on it is already under this effect. Nothing matches when nobody is there.',
+        needs: FILTER_NEEDS.TILE,
+        value: 'text',
+        placeholder: 'an effect id',
+        match: ({ heroOnTile, heroCarries }, value) =>
+            !!value && !!heroOnTile && !!heroCarries?.(value),
+        phrase: (value, names) => `whose hero carries ${names?.effect?.(value) || value || '…'}`,
+        negative: (value, names) => `whose hero does not carry ${names?.effect?.(value) || value || '…'}`
+    },
+    {
         id: 'worked',
         label: 'being worked',
         hint: 'A hero is standing on it right now.',

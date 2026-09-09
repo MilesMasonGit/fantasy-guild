@@ -191,7 +191,11 @@ describe('every moment declares who it supplies', () => {
 describe('resolving who is actually here', () => {
     it('reads the actor straight off the payload', () => {
         const roles = resolveRoles({ tile: 9, heroId: 'hero_1' }, 9);
-        expect(roles).toEqual({ self: 9, actor: 'hero_1', source: null });
+        // ⚠️ `selfHeroId` joined the shape in V6: `self` is a TILE for a rule on
+        // a Token and a HERO for one a person is carrying, because a live effect
+        // instance sits on somebody rather than on a square. Only `LiveEffects`
+        // fills it, so it is null on every board-event path.
+        expect(roles).toEqual({ self: 9, selfHeroId: null, actor: 'hero_1', source: null });
     });
 
     it('⚠️ reports a null actor rather than failing, when nobody was there', () => {

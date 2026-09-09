@@ -5,6 +5,15 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Effects can stay on a hero and keep acting.** A poison, a regeneration, a
+  buff that lasts half a minute — all authored as ordinary named effects with a
+  clock on them, rather than as a separate kind of thing. Applying the same one
+  twice refreshes it rather than stacking, and a stronger version replaces a
+  weaker one.
+- ⭐ **One effect can set off another.** Give it no duration and it fires
+  immediately, which is how a combo is built.
+- **A rule can check what a hero is already under** — "every adjacent Token whose
+  hero is not already poisoned".
 - ⭐ **A rule's number can be worked out rather than typed.** Damage equal to 10%
   of the target's maximum health, or one point per adjacent Coast Token — so an
   effect can stay meaningful as heroes grow, or reward how you have arranged the

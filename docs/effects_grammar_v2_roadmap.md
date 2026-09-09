@@ -323,8 +323,36 @@ stranger one.
   duration it is over-time, without one it chains** (G-17), bounded by the
   existing cascade guard.
 * The **"carries effect X"** filter deferred from V4.
-* ⚠️ **`hero.statuses` is save-resident and deliberately not stripped**
-  ([`GameState.js:21`](../src/state/GameState.js)). Needs a save migration.
+⚠️ **No save migration was needed after all, and that is deliberate.** The plan
+expected one because `hero.statuses` is save-resident. V6 does not touch it: live
+instances land on a **new** `hero.effects` field and the status engine keeps
+running beside them untouched. `Applies` accepts both payload shapes — a
+`statusId` takes the old path, an `effectId` the new one — so there is no flag
+day, and the migration question (Q2) moves to V7 where the statuses actually die.
+
+⚠️ **`self` can now mean a HERO, not only a tile.** A live effect sits on a
+person, so "deal 2 damage to this entity" on a Poison means the person carrying
+it — there is no square involved. `resolveRoles` grew a `selfHeroId`, filled only
+by `LiveEffects`, because only it knows the bearer is a person.
+
+⚠️ **A live statement does NOT go through `fireStatement`.** That path is about a
+Token *instance* — where the cooldown lives and the charge delta is spent — and a
+carried effect has neither. It ticks once every five seconds by construction, so
+a cooldown would be redundant. The cascade guard still applies, because chaining
+is exactly the shape that can spin.
+
+⚠️ **The clock runs at exactly `STATUS_TICK_INTERVAL_MS`.** Poison has always
+ticked at that rate, and V7 has to reproduce what the seven statuses did — a
+different interval would silently re-balance every damage-over-time effect.
+
+⚠️ **A stronger application replaces a weaker one.** G-16 says refresh rather
+than stack, but a scale-3 Poison landing on a scale-1 one would otherwise be
+silently discarded and the player would watch better gear do nothing.
+
+⚠️ **Tokens cannot carry live instances yet** (roadmap Q3). Nothing wants a
+temporarily-cursed Forest, and building the general case first is the trap this
+project keeps naming. The `carrying` filter therefore reads *the hero standing
+there*, and its sentence says so.
 
 ### V7 — The seven, re-authored; the old engine deleted
 
@@ -368,7 +396,7 @@ or a random free tile (G-15).
 | V3 ⭐ The sentence editor | **DONE** 2026-09-08 | Chips in sentence order, typing narrows, panel beneath. Four pickers deleted. Thorns rebuilt by typing, byte-identical. 23 new tests. |
 | V4 Composable filters | **DONE** 2026-09-08 | `filterRegistry.js`: tagged / is_station / charges_below / worked, all negatable and AND-composed. 18 new tests. |
 | V5 Computed magnitudes | **DONE** 2026-09-08 | `magnitudeRegistry.js`: flat / % of a named stat / per-match count, with the second `counted` selector. 16 new tests. |
-| V6 Live instances, duration, chaining | **NOT STARTED** | Needs a save migration |
+| V6 Live instances, duration, chaining | **DONE** 2026-09-08 | `LiveEffects.js` + the `EFFECT_TICK` moment. `Applies` takes a library effect; duration 0 chains. 16 new tests. ⚠️ No save migration needed — `hero.statuses` is untouched and dies at V7. |
 | V7 The seven re-authored | **NOT STARTED** | Absorbs the old ER-10 |
 | V8 The rest of the verbs | **NOT STARTED** | |
 | V9 `Spawns` and `Transforms` | **NOT STARTED** | |

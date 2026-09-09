@@ -71,9 +71,16 @@ function targetOf(role, roles) {
         return heroId ? heroTarget(heroId) : null;
     }
 
-    // `self` and `source` are both tiles. Whoever is standing there takes it —
-    // the hero if one is present, otherwise the live enemy, which is the same
-    // occupant rule `StatusApplication` resolves by.
+    /**
+     * ⚠️ `self` may be a HERO rather than a tile (V6). A live effect sits on a
+     * person, so a Poison saying "deal 2 damage to this entity" means the person
+     * carrying it — there is no square involved.
+     */
+    if (role === ROLE.SELF && roles?.selfHeroId) return heroTarget(roles.selfHeroId);
+
+    // Otherwise both are tiles. Whoever is standing there takes it — the hero if
+    // one is present, otherwise the live enemy, which is the same occupant rule
+    // `StatusApplication` resolves by.
     const tile = role === ROLE.SOURCE ? roles?.source : roles?.self;
     if (tile == null) return null;
 

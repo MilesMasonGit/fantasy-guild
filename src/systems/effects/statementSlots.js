@@ -9,7 +9,7 @@ import {
 } from '../../config/registries/modifierPalette.js';
 import { getStatusEffect, authorableStatuses } from '../../config/registries/statusRegistry.js';
 import { RESTRICTION_KINDS, getRestrictionKind } from '../../config/registries/restrictionPalette.js';
-import { FILTER_KINDS, filtersOf, getFilterKind } from '../../config/registries/filterRegistry.js';
+import { FILTER_KINDS, filtersOf } from '../../config/registries/filterRegistry.js';
 import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
 
 /**
@@ -191,17 +191,51 @@ function payloadSlots(statement, ctx) {
         }
 
         case KEYWORD.APPLIES:
+            /**
+             * ⚠️ **Two shapes during V6.** A `statusId` is the old status path
+             * and still edits as it did; an `effectId` attaches a live library
+             * effect for a while, which is the shape that makes the status
+             * registry deletable. V7 removes the first half.
+             */
+            if (payload.statusId) {
+                return [
+                    {
+                        id: 'statusId', kind: SLOT_KIND.VOCABULARY, label: 'status',
+                        value: payload.statusId,
+                        options: authorableStatuses().map(s => option(s.id, s.name, s.description)),
+                        patch: v => ({ payload: { ...payload, statusId: v } })
+                    },
+                    {
+                        id: 'stacks', kind: SLOT_KIND.NUMBER, label: 'stacks',
+                        value: payload.stacks ?? 1, min: 1,
+                        patch: v => ({ payload: { ...payload, stacks: Math.max(1, Number(v) || 1) } })
+                    }
+                ];
+            }
             return [
                 {
-                    id: 'statusId', kind: SLOT_KIND.VOCABULARY, label: 'status',
-                    value: payload.statusId,
-                    options: authorableStatuses().map(s => option(s.id, s.name, s.description)),
-                    patch: v => ({ payload: { ...payload, statusId: v } })
+                    id: 'effectId', kind: SLOT_KIND.VOCABULARY, label: 'effect',
+                    value: payload.effectId || '',
+                    options: Object.values(ctx?.effects || {}).map(e => option(e.id, e.name || e.id)),
+                    patch: v => ({ payload: { ...payload, effectId: v } })
                 },
                 {
-                    id: 'stacks', kind: SLOT_KIND.NUMBER, label: 'stacks',
-                    value: payload.stacks ?? 1, min: 1,
-                    patch: v => ({ payload: { ...payload, stacks: Math.max(1, Number(v) || 1) } })
+                    id: 'scale', kind: SLOT_KIND.NUMBER, label: 'tier', min: 1,
+                    value: payload.scale ?? 1,
+                    patch: v => ({ payload: { ...payload, scale: Math.max(1, Number(v) || 1) } })
+                },
+                {
+                    /**
+                     * ⭐ Zero means **fire it once, now** — which is how chaining
+                     * works (G-17). One verb, both shapes, no new concept for
+                     * combos.
+                     */
+                    id: 'durationMs', kind: SLOT_KIND.NUMBER, label: 'for (ms)', min: 0, optional: true,
+                    value: payload.durationMs ?? 0,
+                    note: !payload.durationMs
+                        ? 'Zero means it fires once, immediately — that is how one effect sets off another.'
+                        : null,
+                    patch: v => ({ payload: { ...payload, durationMs: Math.max(0, Number(v) || 0) } })
                 }
             ];
 
