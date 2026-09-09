@@ -65,11 +65,29 @@ function listOf(hero) {
  * @param {string|null} sourceId  what applied it, for the readout
  * @returns {boolean} whether anything is now carried
  */
-export function applyToHero(heroId, spec, sourceId = null) {
+export function applyToHero(heroId, spec, sourceId = null, fire = null) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || !spec?.effectId || !EFFECTS[spec.effectId]) return false;
 
     const scale = normaliseScale(spec.scale);
+
+    /**
+     * ⭐ **No duration means fire it once, NOW** (G-17) — which is chaining.
+     *
+     * ⚠️ This used to push an instance whose `expiresAt` was already in the
+     * past. Nothing ran at the moment of application; its statements fired on
+     * the *next* five-second tick, if at all, and then it was swept. So
+     * "immediately" meant "up to five seconds later", and any statement on a
+     * moment other than `EFFECT_TICK` never fired at all. The editor's own hint
+     * promised otherwise.
+     */
+    if (!Number(spec.durationMs)) {
+        if (!fire) return false;
+        for (const statement of statementsFromEntry(EFFECTS[spec.effectId], { effectId: spec.effectId, scale })) {
+            fire(statement, { self: null, selfHeroId: heroId, actor: null, source: null });
+        }
+        return true;
+    }
     const list = listOf(hero);
     const existing = list.find(e => e.effectId === spec.effectId);
     const expiresAt = Date.now() + Math.max(0, Number(spec.durationMs) || 0);

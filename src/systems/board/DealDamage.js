@@ -36,10 +36,17 @@ import * as BoardCombat from './BoardCombat.js';
  * field on the statement, not a rule this module decides.
  *
  * ## ⚠️ Killing a hero announces; it never resolves the death itself
- * The same discipline `StatusEffectSystem` follows, for the same reason: the
- * whole of what dying costs is implemented once, in `BoardCombat.resolveDefeat`,
- * and this module must not import `BoardCombat` for it — that is a static cycle.
- * So a lethal blow publishes `hero_downed` and `BoardCombat` owns the response.
+ * The whole of what dying costs is implemented once, in
+ * `BoardCombat.resolveDefeat`. A lethal blow here publishes `hero_downed` and
+ * `BoardCombat` owns the response — the same discipline `StatusEffectSystem`
+ * follows.
+ *
+ * ⚠️ This module **does** import `BoardCombat`, for `isEnemyToken`/`getFight`,
+ * and that is not a cycle today: `BoardCombat` does not import back. The reason
+ * the death is still announced rather than resolved is not import mechanics — it
+ * is that dying must have exactly ONE implementation, and there must never be a
+ * second subscriber that also kills (CR2-070: that branch was a no-op for months
+ * and a poisoned hero worked on at 0 HP).
  * **There must never be a second subscriber that also kills** (CR2-070: that
  * branch was a no-op for months and a poisoned hero worked on at 0 HP).
  */

@@ -101,15 +101,44 @@ let unsubscribers = [];
  */
 export function init() {
     teardown();
-    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, ({ tile }) => {
-        if (tile != null) rebuildAround(tile);
+    /**
+     * ⚠️ **A hero LEAVING matters as much as one arriving**, and the event does
+     * not always say where they left.
+     *
+     * `HERO_MOVED` is published with `tile: null` on every recall and every
+     * displacement, and `placeHero` names only the destination — the vacated
+     * tile is never in the payload. Rebuilding only on arrival meant a `being
+     * worked` buff switched ON when a hero stepped up and never switched OFF
+     * when they were recalled: it stayed live for the rest of the session.
+     *
+     * So the departure case rebuilds from the hero's **last known tile**, which
+     * `lastTileOf` remembers precisely because the event cannot say.
+     */
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, ({ tile, heroId }) => {
+        const left = lastTileOf.get(heroId);
+        if (left != null && left !== tile) rebuildAround(left);
+        if (tile != null) {
+            lastTileOf.set(heroId, tile);
+            rebuildAround(tile);
+        } else {
+            lastTileOf.delete(heroId);
+        }
     }));
 }
+
+/**
+ * Where each hero was standing when we last heard.
+ *
+ * Runtime-only and rebuilt from events, exactly like the aggregators — it exists
+ * solely because `HERO_MOVED` reports a destination and never an origin.
+ */
+const lastTileOf = new Map();
 
 /** Drop the subscriptions. */
 export function teardown() {
     unsubscribers.forEach(u => u?.());
     unsubscribers = [];
+    lastTileOf.clear();
 }
 
 /** The source id one Token's buff registers under. Per COPY, never per type. */
@@ -333,10 +362,18 @@ function* applicableStatements(index) {
         const statements = statementsOf(def);
         if (!statements.length) continue;
 
-        if (def.noStackDuplicates) {
-            if (seenTypes.has(instance.typeId)) continue;
-            seenTypes.add(instance.typeId);
-        }
+        /**
+         * ⚠️ **The duplicate guard runs AFTER the reach test, not before.**
+         *
+         * The source set widened from eight neighbours to every occupied tile
+         * (P2), and the scan runs in ascending tile order. Claiming the
+         * `seenTypes` slot before checking reach meant a **distant** copy of a
+         * `noStackDuplicates` Token could take the slot and suppress an
+         * **adjacent** one whose rule actually reached here — the tile lost a
+         * buff it should have had, depending only on tile numbering.
+         */
+        const duplicate = def.noStackDuplicates && seenTypes.has(instance.typeId);
+        let claimed = false;
 
         for (const statement of statements) {
             if (statement?.when?.event) continue;
@@ -345,11 +382,21 @@ function* applicableStatements(index) {
             // unauthored reach resolves to `adjacent`, which is what every rule
             // written before P2 meant — so nothing shipped changed.
             if (!reachCovers(reachOf(statement), relation)) continue;
+            if (duplicate) continue;
+            if (def.noStackDuplicates && !claimed) {
+                seenTypes.add(instance.typeId);
+                claimed = true;
+            }
             // Every ambient keyword must name the thing it does, or it reaches
             // nothing: an effect axis for the two that scale a number, a status
             // for the one that puts something on a person.
             if (statement.keyword === KEYWORD.APPLIES) {
-                if (!statement.payload?.statusId) continue;
+                // ⚠️ EITHER shape counts (V6). The guard tested `statusId`
+                // alone, so an `Applies` naming a **library effect** — which is
+                // what the editor now produces by default — was never yielded,
+                // and the whole feature was inert on a Token while rendering a
+                // perfectly good sentence.
+                if (!statement.payload?.statusId && !statement.payload?.effectId) continue;
             } else if (!statement.payload?.type) {
                 continue;
             }

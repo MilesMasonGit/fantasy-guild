@@ -313,7 +313,19 @@ export default function SentenceEditor({ statement, onChange, names, form, ctx }
   // so the focus is resolved against the CURRENT slots every render rather than
   // held as an object that could go stale.
   const focused = slots.find((s) => s.id === focusedId) || null;
-  const needsForm = slots.some((s) => s.kind === SLOT_KIND.FORM);
+  /**
+   * ⚠️ **The payload form is always rendered, not only for list payloads.**
+   *
+   * It was gated on a `FORM`-kind slot existing, which is true only for
+   * `Converts`, `Restocks` and `Grants` — so every OTHER keyword lost the
+   * controls the sentence editor does not replace. `Works as` has no slot at
+   * all, which left it with a bare "does" chip and made **no new station Token
+   * authorable at all**; `Acts as` lost its tier, `Applies` its chance,
+   * `Cannot` its limit.
+   *
+   * The chips cover the vocabulary; the form covers what a sentence cannot
+   * hold. Both are needed, and the form is harmless where it renders nothing.
+   */
   const orphan = slots.find(slotIsOrphaned);
 
   return (
@@ -376,7 +388,7 @@ export default function SentenceEditor({ statement, onChange, names, form, ctx }
             <FilterStack key={s.id} slot={s} onChange={onChange} />
           ))}
 
-          {needsForm && form}
+          {form}
         </div>
 
         <div className="rounded p-2" style={{ border: '1px solid var(--color-border)' }}>

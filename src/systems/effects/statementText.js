@@ -271,11 +271,18 @@ function countedNounPhrase(statement, names) {
     const reach = counted.reach === REACH.BOARD ? 'Token on the board'
         : counted.reach === REACH.SELF ? 'this Token'
             : 'adjacent Token';
-    if (!counted.mode || counted.mode === 'all') return reach;
+    // ⚠️ The counted selector's FILTERS are honoured by `filterTargetTiles`, so
+    // the sentence has to say them too. Without this the card promised "per
+    // adjacent Token" while the game counted only the Coast ones — the card
+    // over-promising by however many neighbours did not match.
+    const filters = filtersPhrase(counted, names);
+    if (!counted.mode || counted.mode === 'all') return `${reach}${filters}`;
     if (counted.mode === 'tag') {
-        return counted.value ? `adjacent ${counted.value} Token` : 'adjacent … Token';
+        const noun = counted.value ? `adjacent ${counted.value} Token` : 'adjacent … Token';
+        return `${noun}${filters}`;
     }
-    return counted.value ? `adjacent ${names.token(counted.value)}` : 'adjacent …';
+    const noun = counted.value ? `adjacent ${names.token(counted.value)}` : 'adjacent …';
+    return `${noun}${filters}`;
 }
 
 /** "1 Coal every 30 seconds" — an item list with quantities. */

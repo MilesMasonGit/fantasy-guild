@@ -105,6 +105,13 @@ afterEach(() => {
     TileModifiers.teardown();
 });
 
+/**
+ * ⚠️ These stats are named for the **actor** and read the actor. They were
+ * labelled "the target's …" and read the actor anyway, which is only the same
+ * entity when the rule also aims at the actor — a rule taking "50% of the
+ * target's max HP" and dealing it to the SOURCE took its number off one hero and
+ * its damage to another.
+ */
 describe('⭐ a percentage of a named stat', () => {
     it('scales with the target rather than being a fixed number', () => {
         thornedProducer('fixture_pct_thorns', {
@@ -246,7 +253,7 @@ describe('the sentence says where the number came from (G-10)', () => {
 
     it('names the stat it is a percentage of', () => {
         expect(renderStatement(deals({ amount: 10, magnitude: 'stat', stat: 'actor_max_hp' })))
-            .toBe("When this Token's own cycle completes, deals damage equal to 10% of the target's max HP to the actor.");
+            .toBe("When this Token's own cycle completes, deals damage equal to 10% of the actor's max HP to the actor.");
     });
 
     it('⚠️ keeps the number in front for a count — it is per-match, not "equal to"', () => {

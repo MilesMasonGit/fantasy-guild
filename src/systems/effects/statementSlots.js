@@ -5,7 +5,7 @@ import { TRIGGER_EVENTS, getTriggerEvent, rolesOf } from '../../config/registrie
 import { ROLES, getRole } from '../../config/registries/roleRegistry.js';
 import { REACHES, reachOf, getReach } from '../../config/registries/reachRegistry.js';
 import {
-    TARGET_MODES, getPaletteEntry, bucketsFor, describeModifierDirection
+    TARGET_MODES, getPaletteEntry, bucketsFor, describeModifierDirection, clampModifierValue
 } from '../../config/registries/modifierPalette.js';
 import { getStatusEffect, authorableStatuses } from '../../config/registries/statusRegistry.js';
 import { RESTRICTION_KINDS, getRestrictionKind } from '../../config/registries/restrictionPalette.js';
@@ -163,8 +163,19 @@ function payloadSlots(statement, ctx) {
                     patch: v => ({ payload: { ...payload, bucket: v } })
                 },
                 {
+                    /**
+                     * ⚠️ **A percentage is typed as 5 and stored as 0.05.**
+                     *
+                     * The retired form divided by 100 for the percentage bucket
+                     * and clamped through `clampModifierValue`. The slot did
+                     * neither, so typing 5 for a percentage Yield stored 5 and
+                     * rendered *"500% more yield"* — and a proc's 0–100 clamp
+                     * was gone with it.
+                     */
                     id: 'value', kind: SLOT_KIND.NUMBER, label: 'amount',
-                    value: payload.value ?? 0,
+                    value: (payload.bucket === 'percentage' && entry?.shape !== 'proc')
+                        ? Math.round((payload.value ?? 0) * 1000) / 10
+                        : (payload.value ?? 0),
                     /**
                      * ⚠️ The buff-or-penalty reading, which the sign alone does
                      * not give. `+5%` on Yield is a gift and `+5%` on Work Time
@@ -174,7 +185,13 @@ function payloadSlots(statement, ctx) {
                      * what `inverted` exists to stop.
                      */
                     note: describeModifierDirection(entry, payload.value, payload.bucket)?.text,
-                    patch: v => ({ payload: { ...payload, value: Number(v) || 0 } })
+                    patch: v => {
+                        const typed = Number(v) || 0;
+                        const stored = (payload.bucket === 'percentage' && entry?.shape !== 'proc')
+                            ? typed / 100
+                            : typed;
+                        return { payload: { ...payload, value: clampModifierValue(entry, stored) } };
+                    }
                 },
                 ...(entry?.categories ? [{
                     // ⚠️ Optional: an unset skill scope means "any", which is the

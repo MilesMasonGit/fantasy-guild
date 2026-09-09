@@ -12,6 +12,7 @@ import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
+import * as LiveEffects from '../effects/LiveEffects.js';
 import { resolveRoles } from '../../config/registries/roleRegistry.js';
 import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
@@ -117,6 +118,15 @@ export function fireLiveStatement(statement, roles) {
         if (statement.keyword === KEYWORD.HEALS) EffectActions.heal(statement, roles);
         if (statement.keyword === KEYWORD.RESTORES) EffectActions.restore(statement, roles);
         if (statement.keyword === KEYWORD.REMOVES) EffectActions.remove(statement, roles);
+        /**
+         * ⭐ The other half of chaining (G-17): a live effect applying another.
+         * Without this the dispatch covered only the four damage-ish verbs, so
+         * the combo mechanism the editor advertises did not exist.
+         */
+        if (statement.keyword === KEYWORD.APPLIES && roles?.selfHeroId && statement.payload?.effectId) {
+            LiveEffects.applyToHero(roles.selfHeroId, statement.payload,
+                statement.sourceEffectId || null, fireLiveStatement);
+        }
     } finally {
         cascadeDepth -= 1;
     }
@@ -214,6 +224,8 @@ function fireStatement(tile, instance, statement, payload = null) {
     inFlight.add(key);
     cascadeDepth += 1;
     try {
+        // The charge delta lives inside, because only the actions know whether
+        // the bearer replaced itself and therefore has nothing left to pay with.
         runStatementActions(tile, instance, statement, payload);
     } finally {
         inFlight.delete(key);
@@ -237,6 +249,9 @@ function fireStatement(tile, instance, statement, payload = null) {
  * *participant* needs to know who was involved, and only the event knows that.
  */
 function runStatementActions(tile, instance, statement, payload = null) {
+    // Whether this statement swapped the Token standing on `tile` for a new
+    // one. See the note beside the charge delta at the end.
+    let bearerReplaced = false;
 
     /**
      * ⭐ `Deals` — damage to somebody the moment named.
@@ -261,10 +276,10 @@ function runStatementActions(tile, instance, statement, payload = null) {
         EffectActions.remove(statement, resolveRoles(payload, tile));
     }
     if (statement.keyword === KEYWORD.SPAWNS) {
-        EffectActions.spawn(statement, resolveRoles(payload, tile));
+        bearerReplaced = EffectActions.spawn(statement, resolveRoles(payload, tile)) === tile;
     }
     if (statement.keyword === KEYWORD.TRANSFORMS) {
-        EffectActions.transform(statement, resolveRoles(payload, tile));
+        bearerReplaced = EffectActions.transform(statement, resolveRoles(payload, tile));
     }
 
 
@@ -342,7 +357,23 @@ function runStatementActions(tile, instance, statement, payload = null) {
              * deterministic rather than arbitrary, the same tie-break
              * `Managers.js` already uses when it has to choose one neighbour.
              */
-            const destination = statement.to
+            /**
+             * ⚠️ **`all` means the FIRING TILE here, not "any neighbour"**
+             * (ER-14).
+             *
+             * `makeStatement` stamps `to: { mode: 'all' }` on every keyword that
+             * can aim, so a conversion authored in the CMS and otherwise
+             * untouched arrives with one. Treating that as "pick a neighbour"
+             * made the commonest possible conversion produce onto whichever
+             * Token happened to sit at the lowest adjacent index — while its
+             * sentence named no destination at all, and the CMS hint said the
+             * output "lands on this Token itself".
+             *
+             * The renderer and the editor were both right; this was the half
+             * that lied. An unaimed conversion produces where it was made (D-40).
+             */
+            const aimed = statement.to?.mode && statement.to.mode !== 'all';
+            const destination = aimed
                 ? filterTargetTiles(tile, statement).sort((a, b) => a - b)[0]
                 : tile;
             // A filter that named nothing produces nothing — the inputs are
@@ -371,7 +402,22 @@ function runStatementActions(tile, instance, statement, payload = null) {
      * `Charges.applyDelta`, along with the destroy-at-zero that used to be
      * written out here.
      */
+    /**
+     * ⚠️ **A Token that replaced itself does not pay.**
+     *
+     * `Transforms`, and `Spawns` onto its own tile, put a NEW instance on this
+     * square. Charging the old one is charging a discarded object: the delta
+     * lands on nothing, `TOKEN_CHARGES_CHANGED` announces a Token that is no
+     * longer there, and — the real damage — a `uses: 1` Sapling hits zero and
+     * `destroyToken` wipes **the Oak that just replaced it**, emptying the tile.
+     *
+     * The intended use is the broken one: "leave a Stump behind when this
+     * depletes" is exactly a one-charge Token that transforms.
+     */
+    if (bearerReplaced) return true;
+
     Charges.applyDelta(tile, instance, Charges.statementChargeDelta(statement));
+    return false;
 }
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
@@ -469,6 +515,9 @@ function handleGlobalItemThreshold() {
  * after a save load.
  */
 export function init() {
+    // The board owns "run a statement"; `StatusApplication` only knows who to
+    // run it on. Injected rather than imported, because it imports us.
+    StatusApplication.setStatementRunner(fireLiveStatement);
     teardown();
 
     resetCascadeGuard();

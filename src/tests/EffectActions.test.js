@@ -234,14 +234,27 @@ describe('the grammar declares all three', () => {
             expect(makeStatement(id).when.event, id).toBe('SELF_CYCLE_COMPLETE');
         }
     });
+
+    it('⚠️ gives each the default target its verb actually means', () => {
+        // Stamping `actor` on everything meant `Restores` and `Transforms` were
+        // born aiming at a hero, and both resolve a TILE from that role — so an
+        // unstaffed Token could never repair or transform itself on any board.
+        expect(makeStatement(KEYWORD.HEALS).target.role).toBe(ROLE.ACTOR);
+        expect(makeStatement(KEYWORD.REMOVES).target.role).toBe(ROLE.ACTOR);
+        expect(makeStatement(KEYWORD.RESTORES).target.role).toBe(ROLE.SELF);
+        expect(makeStatement(KEYWORD.TRANSFORMS).target.role).toBe(ROLE.SELF);
+    });
 });
 
 describe('the sentences read literally', () => {
     it('says health, charges and effects in their own words', () => {
         expect(renderStatement(makeStatement(KEYWORD.HEALS)))
             .toBe("When this Token's own cycle completes, heals 1 health on the actor.");
+        // ⚠️ `Restores` is born aiming at THIS TOKEN, not at the actor. Charges
+        // belong to a Token, and aiming at the hero meant an unstaffed Token
+        // could never repair itself on any board.
         expect(renderStatement(makeStatement(KEYWORD.RESTORES)))
-            .toBe("When this Token's own cycle completes, restores 1 charge to the actor.");
+            .toBe("When this Token's own cycle completes, restores 1 charge to this entity.");
     });
 
     it('⚠️ distinguishes the cure-all from a named cleanse', () => {

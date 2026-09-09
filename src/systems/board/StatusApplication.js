@@ -3,6 +3,24 @@
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
+
+/**
+ * How an instantly-applied effect runs its statements.
+ *
+ * ⚠️ **Injected, not imported.** `TriggerSystem` imports this module, so
+ * importing it back would be a static cycle. The board owns "run a statement";
+ * this module only knows *who* to run it on. Same shape as `LiveEffects.tick`,
+ * which takes its firer as an argument for the same reason.
+ *
+ * Null until the board wires it, and a chained apply simply does nothing until
+ * then — which is the honest answer outside a running board.
+ */
+let fireLive = null;
+
+/** Wired once by `TriggerSystem.init`. */
+export function setStatementRunner(fn) {
+    fireLive = fn;
+}
 import { filterTargetTiles } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -121,7 +139,7 @@ export function applyAt(tile, payload, random = Math.random) {
         if (!rollsChance(payload, random)) return false;
         const heroId = BoardState.heroOnTile(tile);
         if (!heroId) return false;
-        return LiveEffects.applyToHero(heroId, payload, payload.sourceEffectId || null);
+        return LiveEffects.applyToHero(heroId, payload, payload.sourceEffectId || null, fireLive);
     }
 
     if (!rolls(payload, random)) return false;
@@ -144,6 +162,25 @@ export function applyAt(tile, payload, random = Math.random) {
  */
 export function applyToNeighbours(sourceTile, statement, random = Math.random) {
     const payload = statement?.payload;
+
+    /**
+     * ⚠️ A **library effect** rather than a status (V6). `rolls` below insists
+     * on a `statusId`, so without this branch a triggered `Applies` naming an
+     * effect returned zero and the rule was inert — the same gap the ambient
+     * path had.
+     */
+    if (payload?.effectId) {
+        if (!rollsChance(payload, random)) return 0;
+        let landed = 0;
+        for (const anchor of filterTargetTiles(sourceTile, statement)) {
+            const heroId = BoardState.heroOnTile(anchor);
+            if (heroId && LiveEffects.applyToHero(heroId, payload, statement.sourceEffectId || null, fireLive)) {
+                landed += 1;
+            }
+        }
+        return landed;
+    }
+
     if (!rolls(payload, random)) return 0;
 
     let reached = 0;

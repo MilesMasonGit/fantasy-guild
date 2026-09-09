@@ -406,6 +406,37 @@ P4 (`STATUS_IMMUNITY` and the skill scope). v1 P3 — authoring real effects on
 items and the one enemy — is **still outstanding and still the owner's**; V2 does
 part of it by authoring Thorns.
 
+## 4b. ⚠️ Findings from the code review, and one that is still open
+
+A review of the whole implementation found thirteen defects, twelve of which are
+fixed and pinned by `src/tests/ReviewRegressions.test.js`. **Every one of them
+was invisible to a green suite**, and always for the same reason: a fixture
+dodged the exact condition that broke. `uses: null` skipped the charge path, a
+hero stood on every bearer tile, and a fixture carried no `to` key when the
+editor always writes one. That pattern is the lesson worth keeping.
+
+The four worst were:
+
+* **A transforming Token destroyed the Token it became.** The charge delta ran
+  against the discarded instance, and `applyDelta` destroys at zero by emptying
+  the **tile** — taking the new Token with it.
+* **A Token-borne `Applies <library effect>` was completely inert**, and it is
+  the editor's default shape. The guard tested `statusId` alone.
+* **`Works as` became unauthorable.** The payload form was rendered only when a
+  list-shaped slot existed, so every keyword the chips do not fully cover lost
+  its controls — and `stationSkillOf` is the sole input to `deriveTokenType`.
+* **A conversion produced onto a neighbour while its sentence named none.**
+  `makeStatement` stamps `to: { mode: 'all' }`, which the runtime read as "pick a
+  neighbour" and the renderer read as "no destination".
+
+⛔ **Still open, and a genuine design question:** a `uses: 1` Token **cannot
+transform on completion at all**. `commitPlan` destroys a depleted Token (D-118)
+*before* `CYCLE_COMPLETE` is published, so the tile is already empty when the
+rule fires. That makes *"leave a Stump behind when this depletes"* — the
+motivating case for `Spawns`/`Transforms` — unauthorable in its most natural
+form. Fixing it means either publishing a moment *before* depletion, or letting
+`TOKEN_DEPLETED` carry a transform; both are real design calls, not cleanups.
+
 ## 5. ⛔ Why V7 is blocked
 
 Everything additive is done. V7 is the only phase left, it is the **destructive**

@@ -259,12 +259,12 @@ describe('Converts aims at ONE destination (ER-14)', () => {
         // ⚠️ The rule that keeps the exchange honest. A conversion consumes a
         // fixed input; broadcasting the output would be free money, which is the
         // trap UE-7 names for scale, arriving here through the filter instead.
-        sigilAimedAt('fixture_sigil_at_all', { mode: 'all', value: '' });
+        sigilAimedAt('fixture_sigil_at_all', { mode: 'tag', value: 'seafood' });
 
         place(SOURCE, 'fixture_sigil_at_all');
-        place(NEIGHBOUR, 'fixture_passive');
-        place(14, 'fixture_passive');
-        place(22, 'fixture_passive');
+        place(NEIGHBOUR, 'fixture_seafood_producer');
+        place(14, 'fixture_seafood_producer');
+        place(22, 'fixture_seafood_producer');
         InventoryManager.addItem('item_coal', 2);
 
         expect(addressedTiles(addSprite, 'fixture_charcoal')).toHaveLength(1);
@@ -272,14 +272,37 @@ describe('Converts aims at ONE destination (ER-14)', () => {
     });
 
     it('picks the lowest-indexed match, so the destination is deterministic', () => {
-        sigilAimedAt('fixture_sigil_deterministic', { mode: 'all', value: '' });
+        sigilAimedAt('fixture_sigil_deterministic', { mode: 'tag', value: 'seafood' });
 
         place(SOURCE, 'fixture_sigil_deterministic');
-        place(22, 'fixture_passive');
-        place(14, 'fixture_passive');   // lower index, placed second on purpose
+        place(22, 'fixture_seafood_producer');
+        place(14, 'fixture_seafood_producer');   // lower index, placed second
         InventoryManager.addItem('item_coal', 2);
 
         expect(addressedTiles(addSprite, 'fixture_charcoal')).toEqual([14]);
+    });
+
+    it('⚠️ the EDITOR DEFAULT produces on its own tile, not on a neighbour', () => {
+        /**
+         * The shape `makeStatement` actually produces: `to: { mode: 'all' }`.
+         *
+         * This was the live bug. `all` is truthy, so the runtime went looking
+         * for a neighbour and put the output on whichever Token sat at the
+         * lowest adjacent index — while the sentence named no destination and
+         * the CMS hint said the output "lands on this Token itself". Every
+         * conversion authored after the sentence editor landed was affected.
+         *
+         * The renderer and the editor were both right; the runtime was the half
+         * that lied.
+         */
+        sigilAimedAt('fixture_sigil_default', { mode: 'all', value: '' });
+
+        place(SOURCE, 'fixture_sigil_default');
+        place(NEIGHBOUR, 'fixture_passive');
+        place(14, 'fixture_passive');
+        InventoryManager.addItem('item_coal', 2);
+
+        expect(addressedTiles(addSprite, 'fixture_charcoal')).toEqual([SOURCE]);
     });
 
     it('spends the inputs but produces nothing when the filter matches nothing', () => {

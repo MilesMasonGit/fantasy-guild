@@ -409,6 +409,27 @@ function auditStatements(out, where, def) {
             }
         }
 
+        /**
+         * ⚠️ **`EFFECT_TICK` only fires on a CARRIED effect.**
+         *
+         * `LiveEffects.tick` walks the instances a hero is carrying and fires
+         * their `EFFECT_TICK` statements. Nothing walks a Token's or an item's
+         * statements looking for that moment, so a rule authored with it on a
+         * bearer renders a perfectly good sentence and never fires — the
+         * authored-but-inert failure, arriving through the moment picker.
+         *
+         * The reverse is worth knowing too and is NOT an error: a library entry
+         * may legitimately be both applied to somebody and sat on a Token, and
+         * only its `EFFECT_TICK` half would be dormant in the second place.
+         * So this is reported on the BEARER, where the mistake actually is.
+         */
+        if (statement?.when?.event === 'EFFECT_TICK') {
+            out.push(finding(where,
+                `one of its rules fires "every few seconds, while carried" — but that only happens to ` +
+                `an effect somebody is CARRYING, and this is a Token. The rule never fires here. ` +
+                `Apply the effect to a hero for it to tick, or pick a moment this Token has.`));
+        }
+
         // A reach the vocabulary does not have resolves to "adjacent" rather
         // than to nothing, so a typo does not switch a rule off — but it does
         // mean the rule is not doing what its author typed.

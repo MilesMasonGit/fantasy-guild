@@ -274,6 +274,8 @@ export const KEYWORDS = Object.freeze([
          */
         id: KEYWORD.RESTORES,
         label: 'Restores',
+        // Charges belong to a Token, so this aims at one by default.
+        defaultRole: ROLE.SELF,
         scales: 'amount',
         blurb: 'Gives a Token some of its charges back.',
         filter: false,
@@ -320,6 +322,8 @@ export const KEYWORDS = Object.freeze([
          */
         id: KEYWORD.TRANSFORMS,
         label: 'Transforms into',
+        // "This Token becomes another" is about this Token.
+        defaultRole: ROLE.SELF,
         blurb: 'This Token becomes a different Token, where it stands.',
         filter: false,
         targetsRole: true,
@@ -533,7 +537,16 @@ export function makeStatement(keywordId, data = {}) {
          * migrating four old ones, and so the migration happens once, later,
          * with filters arriving at the same time.
          */
-        target: keyword?.targetsRole ? { role: ROLE.ACTOR } : null,
+        /**
+         * ⚠️ **The default target is per keyword, not one for all of them.**
+         *
+         * Stamping `actor` on everything meant `Restores` and `Transforms` were
+         * born aiming at the hero — and both resolve a *tile* from that role, so
+         * an unstaffed Token (a passive generator, D-116) could never transform
+         * or repair itself on any board. "Restores 1 charge to the actor" is not
+         * even a sentence that means anything: charges belong to a Token.
+         */
+        target: keyword?.targetsRole ? { role: keyword.defaultRole || ROLE.ACTOR } : null,
         when: keyword?.when === WHEN.REQUIRED ? defaultMoment(keywordId) : null,
         upkeep: null,
         ...data

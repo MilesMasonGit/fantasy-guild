@@ -25,6 +25,17 @@ import { ROLE, getRole } from './roleRegistry.js';
  * would make the commonest shape of this effect unsayable — so a statement
  * carries a separate `counted` selector used only to produce the number.
  *
+ * ## ⚠️ A stat says whose it is, and means it
+ * These read the **actor** — the hero who caused the moment — and are named for
+ * them. They were labelled *"the target's max HP"* and read the actor anyway,
+ * which is only the same entity when the rule happens to aim at the actor too.
+ * A rule dealing *"50% of the target's max HP"* **to the entity that caused
+ * this** took its number off one hero and its damage to another, and the
+ * sentence described neither.
+ *
+ * ⚠️ A live effect ticks with no actor at all, so an actor stat resolves to
+ * nothing there. `statsForRoles` is what keeps it off that moment's picker.
+ *
  * ## ⚠️ A stat row ships with a reader or not at all
  * Same discipline as every other vocabulary here. A stat that cannot be read off
  * the role it names is not offered, because a magnitude that silently resolves
@@ -49,21 +60,21 @@ export const MAGNITUDE_KIND = Object.freeze({
 export const MAGNITUDE_STATS = Object.freeze([
     {
         id: 'actor_max_hp',
-        label: "the target's max HP",
+        label: "the actor's max HP",
         role: ROLE.ACTOR,
         hint: 'Scales with how tough they are, so it stays relevant as heroes grow.',
         read: ({ actorHero }) => actorHero?.hp?.max ?? null
     },
     {
         id: 'actor_current_hp',
-        label: "the target's current HP",
+        label: "the actor's current HP",
         role: ROLE.ACTOR,
         hint: 'What they have left right now — an execute, or a mercy.',
         read: ({ actorHero }) => actorHero?.hp?.current ?? null
     },
     {
         id: 'actor_level',
-        label: "the target's level",
+        label: "the actor's level",
         role: ROLE.ACTOR,
         hint: 'Their overall level, averaged from their combat skills.',
         read: ({ actorHero }) => actorHero?.level ?? null
