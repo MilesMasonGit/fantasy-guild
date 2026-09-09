@@ -5,6 +5,15 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Rules are written as sentences now, not clicked through dropdowns.** A rule
+  is a row of words you type into: click any part, start typing, and only what
+  fits there is offered. Beneath it sits the sentence the rule will actually
+  read as. The nested picker boxes are gone.
+- **A panel under the rule lists everything that can go where you are.** With its
+  explanation, so the parts of the vocabulary you have not used yet are
+  discoverable rather than hidden behind knowing what to type.
+- **Changing a rule's verb rebuilds it properly**, instead of leaving the
+  previous verb's settings stranded behind the new word.
 - ⭐ **Rules can now hurt somebody — and Thorns exists.** A rule can deal damage
   to whoever just harvested or fought the thing carrying it. Author it once, name
   it Thorns, and put it on a monster *and* on a berry bush: the same entry works

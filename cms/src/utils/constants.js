@@ -63,6 +63,18 @@ export {
   rulesTextOf,
 } from '../../../src/systems/effects/statementText.js';
 
+// A statement as the ordered slots an author fills in (G-18) — the model behind
+// the sentence editor. It reads the same declarations the game reads, so adding
+// a keyword, a moment, a reach or a role puts it in the editor with no editor
+// change at all.
+export {
+  SLOT_KIND,
+  slotsOf,
+  slotDisplay,
+  slotIsOrphaned,
+  filterOptions,
+} from '../../../src/systems/effects/statementSlots.js';
+
 // The named effect library (Unified Effects P1). A statement no longer lives on
 // the Token that uses it: it lives in a named entry, and bearers reference that
 // entry by id. Same one-direction rule as everything else here — the *shape*

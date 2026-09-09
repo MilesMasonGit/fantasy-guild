@@ -215,7 +215,37 @@ that drifts from the sentence is exactly the drift UE-8 exists to prevent.
 
 **Verified when** Thorns — already authored through the form in V2 — can be
 rebuilt from scratch by typing, reads identically, and produces a byte-identical
-statement.
+statement. ✅ Typing `deal` and pressing enter produced *"When this Token's own
+cycle completes, deals 1 damage to the actor."*
+
+⚠️ **Five things worth recording from the build.**
+
+**The chips are the DECISIONS, not every word.** Rewriting `statementText` to
+emit segments — so every word of the sentence could be a chip — would have meant
+touching nine keyword branches that many tests assert byte-for-byte. Instead the
+chips show *slot values in sentence order* and the canonical sentence is printed
+beneath by the one renderer. G-18's real guarantee is intact: the statement is
+the state, there is no parser, and there is no second renderer that can disagree.
+
+⚠️ **Changing the verb has to REBUILD the statement.** The first version patched
+only the keyword, producing a `Deals` carrying a `Provides` payload with no
+moment and nothing to act on — a rule no author could have written. It goes
+through `makeStatement` now, **keeping the statement id**, because per-statement
+save state is keyed by it.
+
+⚠️ **Deleting the pickers lost three things, and the smoke test caught them.**
+The bucket picker (flat/percentage/multiplier), the buff-or-penalty reading, and
+the unknown-tag warning all lived in the deleted components. They are slot
+properties now — `note`, `warning`, `suggestions` — which makes them testable in
+the game's own suite rather than only visible on screen.
+
+⚠️ **An optional slot left empty is not a hole.** "Only for <skill>" unset means
+*any skill*, and painting it as a warning made every ordinary rule look
+half-written. Optional slots are declared and rendered dimmed.
+
+⚠️ **The panel is stacked, not a sidebar.** It began as a 240px side column and
+overlapped the chips: the CMS's centre editor column is narrow. Beneath the
+sentence it also lands directly under the chip just clicked.
 
 ### V4 — Composable filters
 
@@ -287,7 +317,7 @@ or a random free tile (G-15).
 |---|---|---|
 | V1 Moments declare roles | **DONE** 2026-09-08 | `roleRegistry.js` + `roles` on all ten triggers. `CYCLE_START` and both `COMBAT_RESOLVED` sites widened. 16 new tests, 8 of which fail when neutered. |
 | V2 `Deals`, the actor, Thorns | **DONE** 2026-09-08 | ⭐ One entry hurts a hero who harvests a bush AND one who kills a monster, proven in a real fight. 16 new tests, 6 of which fail when the verb is neutered. |
-| V3 ⭐ The sentence editor | **NOT STARTED** | Retires the form editor |
+| V3 ⭐ The sentence editor | **DONE** 2026-09-08 | Chips in sentence order, typing narrows, panel beneath. Four pickers deleted. Thorns rebuilt by typing, byte-identical. 23 new tests. |
 | V4 Composable filters | **NOT STARTED** | |
 | V5 Computed magnitudes | **NOT STARTED** | |
 | V6 Live instances, duration, chaining | **NOT STARTED** | Needs a save migration |
