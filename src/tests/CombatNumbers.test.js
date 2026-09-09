@@ -103,10 +103,26 @@ describe('the palette only offers axes combat actually reads', () => {
         }
     });
 
-    it('offers only the flat bucket on them', () => {
-        for (const axis of ['ARMOR', 'ACCURACY', 'BLOCK', 'RESIST_FLAT', 'DAMAGE']) {
+    it('offers only the flat bucket on the ones whose reader sums flats', () => {
+        // `ModifierAggregator.query` — what these readers call — sums flats and
+        // silently skips percentage and multiplier entries, so offering another
+        // bucket would offer something discarded.
+        for (const axis of ['ARMOR', 'ACCURACY', 'BLOCK', 'RESIST_FLAT']) {
             expect(bucketsFor(getPaletteEntry(axis)), axis).toEqual(['flat']);
         }
+    });
+
+    it('⚠️ makes DAMAGE the exception, because it has a real percentage reader', () => {
+        /**
+         * `computeHeroDamage` genuinely multiplies by a percentage bucket, and
+         * that is what makes a Well Fed style buff — *"+10% damage for a
+         * while"* — expressible as an ordinary library effect rather than as a
+         * hardcoded status type (V7).
+         *
+         * The rule has not changed: a bucket is offered where a reader consumes
+         * it. DAMAGE is the one combat axis where that is true of percentages.
+         */
+        expect(bucketsFor(getPaletteEntry('DAMAGE'))).toEqual(['flat', 'percentage']);
     });
 
     it('leaves every other effect accepting all three buckets', () => {
@@ -268,7 +284,11 @@ describe('the audit names a combat rule that reaches nobody', () => {
         const findings = auditContent();
         const mine = findings.filter((f) => f.where.includes('fixture_confused_forge'));
 
-        expect(mine.some((f) => /combat numbers only reach a hero/.test(f.what))).toBe(true);
+        // ⚠️ The wording generalised in Effects Robustness P4. The check keys on
+        // the palette's `heroOnly` flag rather than on `group === 'Combat'`,
+        // because `STATUS_IMMUNITY` has exactly the same property and is not
+        // combat — so the message can no longer say "combat numbers".
+        expect(mine.some((f) => /only reaches a hero/.test(f.what))).toBe(true);
     });
 
     it('says nothing about the same rule on an ENEMY, where it does work', () => {

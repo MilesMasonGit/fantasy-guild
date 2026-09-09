@@ -36,7 +36,7 @@ export const BOARD_EVENTS = {
     CYCLE_COMPLETE: 'board:cycle_complete',
 
     /**
-     * A Token began a new cycle — `{ tile, typeId }`.
+     * A Token began a new cycle — `{ tile, typeId, heroId }`.
      *
      * ⚠️ **The moment work actually starts, not the moment a tick runs.** Fired
      * when `cycleElapsedMs` is still zero and every guard above it has already
@@ -47,6 +47,11 @@ export const BOARD_EVENTS = {
      * Its mirror, `CYCLE_COMPLETE`, is what a rule wants when it cares that work
      * *happened*. This one is for rules that want to act on the work about to be
      * done — the buff that should already be up while the hero swings.
+     *
+     * ⚠️ `heroId` was added by Effects Grammar v2 V1. It was in scope at the
+     * publish site all along and simply not passed, which meant a rule reacting
+     * to work STARTING could not name the hero doing it while the same rule on
+     * work COMPLETING could.
      */
     CYCLE_START: 'board:cycle_start',
 
@@ -94,7 +99,7 @@ export const BOARD_EVENTS = {
     /** A tile's alert state changed — staffed-but-stuck, or resolved (D-114, D-149). Payload: `{ tile, alert }` */
     ALERT_CHANGED: 'board:alert_changed',
 
-    /** Combat on an enemy Token resolved. Payload: `{ tile, outcome: 'victory'|'defeat' }` */
+    /** Combat on an enemy Token resolved. Payload: `{ tile, outcome: 'victory'|'defeat', heroId, typeId }` */
     COMBAT_RESOLVED: 'board:combat_resolved',
 
     /** High-frequency cycle progress, for ref-based UI updates only. Payload: `{ tile, percent }` */

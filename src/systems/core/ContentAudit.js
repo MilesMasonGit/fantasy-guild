@@ -1,8 +1,11 @@
 // Fantasy Guild — boot-time content-integrity audit (CR2-108)
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD } from '../effects/statements.js';
-import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
+import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword } from '../effects/statements.js';
+import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
+import { getRole } from '../../config/registries/roleRegistry.js';
+import { getReach } from '../../config/registries/reachRegistry.js';
+import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/filterRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
@@ -219,10 +222,10 @@ function auditCombatAxes(out, where, def) {
     for (const statement of statementsOf(def)) {
         if (statement?.keyword !== KEYWORD.PROVIDES) continue;
         const entry = getPaletteEntry(statement.payload?.type);
-        if (entry?.group !== 'Combat') continue;
+        if (!entry?.heroOnly) continue;
 
         out.push(finding(where,
-            `has a ${entry.label} rule, but combat numbers only reach a hero from an item they ` +
+            `has a ${entry.label} rule, but that only reaches a hero from an item they ` +
             `carry or an enemy they fight — this Token is neither, so the rule does nothing. ` +
             `Put it on an item, or on an enemy Token.`));
     }
@@ -332,6 +335,108 @@ function auditStatements(out, where, def) {
         if (statement?.to?.mode === 'tag' && statement.to.value && !tokenTagsInUse().has(statement.to.value)) {
             out.push(finding(where,
                 `one of its rules aims at Tokens tagged "${statement.to.value}", and no Token carries that tag — so it reaches nothing`));
+        }
+
+        /**
+         * ⚠️ **A filter on a keyword that cannot aim** (Effects Robustness P1).
+         *
+         * This is the shape of the bug P1 fixed, caught structurally so the next
+         * one cannot last as long. A triggered `Grants` carried a filter that
+         * `TriggerSystem` discarded for the whole of Unified Effects — the
+         * sentence promised a neighbour and the item landed on the source. It
+         * survived because nothing compared the two.
+         *
+         * The check is deliberately about *legality*, not about the runtime: a
+         * `to` on a keyword whose grammar declares `filter: false` is data no
+         * reader will ever honour, whoever wrote it and whenever. That is the
+         * invariant, and it holds without this file knowing which system
+         * consumes which keyword.
+         */
+        const keyword = getKeyword(statement?.keyword);
+        if (statement?.to?.mode && keyword && !keyword.filter) {
+            out.push(finding(where,
+                `one of its rules is a "${keyword.label}" carrying a target filter, and that keyword cannot aim — ` +
+                `the filter is stored, shown in the sentence, and read by nothing. Clear it, or use a keyword that targets.`));
+        }
+
+        // The same invariant on the other targeting axis (ER-6). A reach on a
+        // keyword that cannot carry one is read by nothing, exactly as above.
+        if (statement?.reach && keyword && !keyword.reach) {
+            out.push(finding(where,
+                `one of its rules is a "${keyword.label}" carrying a reach, and that keyword has no reach to vary — ` +
+                `it is stored and read by nothing. Clear it.`));
+        }
+
+        /**
+         * ⚠️ **G-2: a target may only name a role its moment supplies.**
+         *
+         * The rule that keeps the targeting vocabulary bounded, enforced here so
+         * that content authored before a moment's roles narrowed — or through a
+         * hand-edited file — cannot sit there aiming at nobody. A rule targeting
+         * "the actor" on *"a neighbour runs out of charges"* reaches nothing
+         * whatever the board looks like, because a Token running dry has no
+         * actor: it is not a bad board state, it is a rule that can never work.
+         */
+        const targetRole = statement?.target?.role;
+        if (targetRole && !momentSupplies(statement?.when?.event, targetRole)) {
+            const moment = getTriggerEvent(statement?.when?.event);
+            const where_ = moment ? `"${moment.label}"` : 'a rule with no firing moment';
+            out.push(finding(where,
+                `one of its rules aims at ${getRole(targetRole)?.label || targetRole}, but ${where_} ` +
+                `never supplies one — so the rule reaches nobody, on any board. Pick a moment that has ` +
+                `one, or aim somewhere else.`));
+        }
+
+        /**
+         * ⚠️ **A state filter on a rule read at placement time can never pass.**
+         *
+         * `Cannot` is evaluated by `Placement.js` at the instant a Token is put
+         * down, against the DEFINITIONS around it — there is no live instance to
+         * ask how worn a neighbour is, and no cycle in progress to ask who is
+         * working it. `matchesFilters` refuses a filter it cannot evaluate, so
+         * such a rule refuses every placement check silently. The author is told
+         * here rather than left to wonder why the restriction never triggers.
+         */
+        if (statement?.keyword === KEYWORD.CANNOT) {
+            for (const entry of filtersOf(statement.to)) {
+                const kind = getFilterKind(entry.kind);
+                if (kind && kind.needs !== FILTER_NEEDS.DEF) {
+                    out.push(finding(where,
+                        `one of its "Cannot" rules filters on "${kind.label}", which is about a Token's ` +
+                        `live state — and a placement rule is checked before any of that exists, so the ` +
+                        `rule can never match. Filter on a tag or a kind of Token instead.`));
+                }
+            }
+        }
+
+        /**
+         * ⚠️ **`EFFECT_TICK` only fires on a CARRIED effect.**
+         *
+         * `LiveEffects.tick` walks the instances a hero is carrying and fires
+         * their `EFFECT_TICK` statements. Nothing walks a Token's or an item's
+         * statements looking for that moment, so a rule authored with it on a
+         * bearer renders a perfectly good sentence and never fires — the
+         * authored-but-inert failure, arriving through the moment picker.
+         *
+         * The reverse is worth knowing too and is NOT an error: a library entry
+         * may legitimately be both applied to somebody and sat on a Token, and
+         * only its `EFFECT_TICK` half would be dormant in the second place.
+         * So this is reported on the BEARER, where the mistake actually is.
+         */
+        if (statement?.when?.event === 'EFFECT_TICK') {
+            out.push(finding(where,
+                `one of its rules fires "every few seconds, while carried" — but that only happens to ` +
+                `an effect somebody is CARRYING, and this is a Token. The rule never fires here. ` +
+                `Apply the effect to a hero for it to tick, or pick a moment this Token has.`));
+        }
+
+        // A reach the vocabulary does not have resolves to "adjacent" rather
+        // than to nothing, so a typo does not switch a rule off — but it does
+        // mean the rule is not doing what its author typed.
+        if (statement?.reach && !getReach(statement.reach)) {
+            out.push(finding(where,
+                `one of its rules asks to reach "${statement.reach}", which is not a reach the game has — ` +
+                `it falls back to adjacent Tokens. Pick one from the list in the CMS.`));
         }
     }
 }

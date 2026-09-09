@@ -2,6 +2,8 @@
 
 import { MODIFIER_PALETTE, getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { blankRestriction } from '../../config/registries/restrictionPalette.js';
+import { DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
+import { ROLE } from '../../config/registries/roleRegistry.js';
 
 /**
  * A Token's rules are **statements**, and a statement is one sentence.
@@ -53,6 +55,12 @@ export const KEYWORD = Object.freeze({
     CONVERTS: 'converts',
     CANNOT: 'cannot',
     APPLIES: 'applies',
+    DEALS: 'deals',
+    HEALS: 'heals',
+    RESTORES: 'restores',
+    REMOVES: 'removes',
+    SPAWNS: 'spawns',
+    TRANSFORMS: 'transforms',
     STATION: 'station'
 });
 
@@ -67,10 +75,31 @@ export const WHEN = Object.freeze({
  * Every keyword, with what it accepts.
  *
  * `filter` says whether the statement may name *which* neighbours it reaches.
- * `Acts as`, `Requires`, `Restocks` and `Converts` have none: a capability is
- * handed to every neighbour without discrimination, a requirement is about this
- * Token, a restock list *is* its own filter, and a conversion touches the Bank
- * rather than any neighbour at all.
+ * `Acts as`, `Requires` and `Restocks` have none: a capability is handed to
+ * every neighbour without discrimination, a requirement is about this Token, and
+ * a restock list *is* its own filter.
+ *
+ * ⚠️ `Converts` gained one in ER-14, and it is the one filter that names a
+ * **single** destination rather than a set — see the note on its row.
+ *
+ * ## `reach` — how far the statement carries (Effects Robustness P2)
+ *
+ * A second, independent axis: `filter` says *which* Tokens, `reach` says *how
+ * far*. `reachRegistry.js` holds the vocabulary. Three keywords declare it, and
+ * the omissions are all deliberate (ER-6):
+ *
+ * * **`Requires` and `Works as`** are statements *about this Token*. There is
+ *   nothing for a reach to vary.
+ * * **`Acts as` and `Restocks`** hand things to neighbours with no filter at
+ *   all; giving them a reach without a filter would be half a targeting
+ *   vocabulary, and `Acts as` reaching further is a real balance change that the
+ *   concept declined for items on exactly those grounds.
+ * * **`Converts`** already names a *single destination* through its filter.
+ *   "How far" adds nothing coherent on top of "which one".
+ * * **`Cannot`** is a placement restriction read once by `Placement.js`, not an
+ *   effect that carries. A board-wide restriction — *"no more than three of
+ *   these anywhere"* — is a genuinely useful idea and a genuinely different
+ *   feature, so it waits for its own slice rather than arriving as fallout.
  */
 export const KEYWORDS = Object.freeze([
     {
@@ -78,6 +107,7 @@ export const KEYWORDS = Object.freeze([
         label: 'Provides',
         blurb: 'Changes a number on nearby Tokens — yield, work time, XP and the rest.',
         filter: true,
+        reach: true,
         when: WHEN.NEVER,
         upkeep: true
     },
@@ -86,6 +116,7 @@ export const KEYWORDS = Object.freeze([
         label: 'Grants',
         blurb: 'Hands a nearby Token an extra item when it finishes work.',
         filter: true,
+        reach: true,
         when: WHEN.OPTIONAL,
         upkeep: true
     },
@@ -123,10 +154,27 @@ export const KEYWORDS = Object.freeze([
         upkeep: true
     },
     {
+        /**
+         * ⚠️ **The filter picks ONE destination, not a set** (ER-14).
+         *
+         * Every other filtered keyword broadcasts: `Provides` reaches each
+         * neighbour it names, `Grants` gives each of them an item, `Applies`
+         * puts a status on each of their heroes. A conversion cannot, because it
+         * is an **exchange** with a fixed input — producing onto four Kilns
+         * would quadruple the output while the Bank paid once.
+         *
+         * So `TriggerSystem` takes the lowest-indexed match and the sentence
+         * says *"onto the nearest"* in as many words. The owner's own example is
+         * singular: a Sigil turning Stone into Bricks and putting them on the
+         * adjacent Kiln.
+         *
+         * An absent filter still means the firing tile (D-40), so nothing
+         * authored before this changed behaviour.
+         */
         id: KEYWORD.CONVERTS,
         label: 'Converts',
         blurb: 'Spends items from the Bank and produces others. Needs a firing moment.',
-        filter: false,
+        filter: true,
         when: WHEN.REQUIRED,
         upkeep: true
     },
@@ -157,6 +205,7 @@ export const KEYWORDS = Object.freeze([
          */
         id: KEYWORD.APPLIES,
         label: 'Applies',
+        reach: true,
         /**
          * A scale multiplies the **stacks** applied (UE-7). `Applies` is the
          * one scalable keyword whose payload has no palette row behind it —
@@ -166,6 +215,119 @@ export const KEYWORDS = Object.freeze([
         blurb: 'Puts a status on the heroes working nearby Tokens — Well Fed, Poison, and the rest.',
         filter: true,
         when: WHEN.OPTIONAL,
+        upkeep: true
+    },
+    {
+        /**
+         * ⭐ **The first keyword that DOES something to a person**
+         * (Effects Grammar v2, V2).
+         *
+         * Nine keywords and not one of them acted: `Provides` scales a number,
+         * `Grants` drops an item, `Applies` attaches a status. Nothing dealt
+         * damage, which is why Thorns was unauthorable.
+         *
+         * ⚠️ **A moment is REQUIRED.** Damage happens at an instant; a
+         * continuously-dealt 1 damage has no meaning and no reader. The default
+         * moment is `SELF_CYCLE_COMPLETE` because that is the Thorns case and
+         * the one this verb was built for — *"a cycle completed targeting this
+         * entity"* — which covers a hero harvesting a bush and a hero killing a
+         * monster alike, since one kill is one cycle (D-129).
+         *
+         * ⚠️ **It targets a ROLE, not a tile.** `to` filters Tokens by tag or
+         * id; damage is dealt to a *participant* — the actor, or the bearer.
+         * The two are different questions and this keyword asks the second, so
+         * it declares no `filter` and no `reach`.
+         */
+        id: KEYWORD.DEALS,
+        label: 'Deals',
+        scales: 'amount',
+        blurb: 'Deals damage to somebody involved in the moment — the hero who just harvested or fought this.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
+         * The mirror of `Deals`, and it shares its whole shape — a magnitude, a
+         * role, a moment. ⚠️ It never overheals: `modifyHeroHp` clamps to max,
+         * which is what every other heal in the game does.
+         */
+        id: KEYWORD.HEALS,
+        label: 'Heals',
+        scales: 'amount',
+        blurb: 'Restores health to somebody involved in the moment.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
+         * ⭐ Gives a Token charges back — and gives `CHARGE_EXTEND` the reader it
+         * has been named for and waited on since CMS-27.
+         *
+         * ⚠️ Targets a **tile**, not a person: charges belong to a Token. An
+         * unlimited Token ignores it (R-4), and `Charges.applyDelta` ceilings it
+         * at what the Token was authored to hold, so this is not a way to push
+         * one past its own maximum.
+         */
+        id: KEYWORD.RESTORES,
+        label: 'Restores',
+        // Charges belong to a Token, so this aims at one by default.
+        defaultRole: ROLE.SELF,
+        scales: 'amount',
+        blurb: 'Gives a Token some of its charges back.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
+         * ⭐ The cleanse. `StatusEffectSystem.purge` has existed, complete and
+         * correct, since the status engine was built and has been called by
+         * **nothing** — one of the four written-but-unreachable features the v1
+         * sweep named. This is what calls it.
+         *
+         * Naming no effect removes everything, which is the "cure all ills" case.
+         */
+        id: KEYWORD.REMOVES,
+        label: 'Removes',
+        blurb: 'Takes a lingering effect off somebody. Name one, or leave it blank to clear them all.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
+         * Puts a Token on the board. ⚠️ Where it lands is an authored **choice**
+         * from a short list (G-15), never a hidden fallback — see
+         * `placementRegistry.js` for why that distinction mattered.
+         */
+        id: KEYWORD.SPAWNS,
+        label: 'Spawns',
+        blurb: 'Puts a Token on the board — where this one stands, or on a free tile.',
+        filter: false,
+        targetsRole: false,
+        when: WHEN.REQUIRED,
+        upkeep: true
+    },
+    {
+        /**
+         * This Token becomes another. ⚠️ A **fresh** instance: charges and
+         * cooldowns belong to what it was, and carrying them across would give
+         * the new Token a history it never had.
+         */
+        id: KEYWORD.TRANSFORMS,
+        label: 'Transforms into',
+        // "This Token becomes another" is about this Token.
+        defaultRole: ROLE.SELF,
+        blurb: 'This Token becomes a different Token, where it stands.',
+        filter: false,
+        targetsRole: true,
+        when: WHEN.REQUIRED,
         upkeep: true
     },
     {
@@ -255,17 +417,68 @@ export function blankPayload(keywordId) {
             return { type: 'CONVERT', consumes: [], produces: [], chance: 100 };
         case KEYWORD.CANNOT:
             return blankRestriction();
+        case KEYWORD.SPAWNS:
+            return { typeId: '', placement: 'here' };
+        case KEYWORD.TRANSFORMS:
+            return { typeId: '' };
+        case KEYWORD.HEALS:
+            return { amount: 1 };
+        case KEYWORD.RESTORES:
+            return { amount: 1 };
+        case KEYWORD.REMOVES:
+            // Blank means "everything", which is the cure-all case.
+            return { effectId: '' };
+        case KEYWORD.DEALS:
+            // `ignoresArmor` is written out rather than left absent so the
+            // editor shows a real state and G-23's default — damage RESPECTS
+            // armour — is visible rather than implied.
+            return { amount: 1, ignoresArmor: false };
         case KEYWORD.APPLIES:
             // `target` is read only when an ITEM carries this rule (UE-24): a
             // Token's `Applies` uses its filter and ignores the field. Defaulted
             // to the hero because that is the reading a Token already has, so an
             // effect moved from a Token to an item keeps meaning the same thing.
-            return { statusId: '', stacks: 1, chance: 100, target: 'hero' };
+            /**
+             * ⚠️ **Two shapes during V6, one after V7.**
+             *
+             * `effectId` attaches a **library effect** for a while — the shape
+             * that deletes the status registry. `statusId` is the old shape and
+             * still works, so nothing authored breaks on the day this lands.
+             * V7 re-authors the seven statuses and removes the second half.
+             *
+             * A `durationMs` of 0 means **fire it once, now** — which is how
+             * chaining works (G-17). One verb, both shapes.
+             */
+            return { effectId: '', scale: 1, durationMs: 0, chance: 100, target: 'hero' };
         case KEYWORD.STATION:
             return { skill: '' };
         default:
             return {};
     }
+}
+
+/**
+ * The moment a keyword that REQUIRES one is born with.
+ *
+ * ⚠️ This used to be a single hardcoded `ITEM_THRESHOLD`, which was the right
+ * default for the only keyword that then required a moment (`Converts` watches
+ * the Bank). `Deals` requires one too and wants a completely different answer,
+ * so the default became a per-keyword question rather than a constant.
+ *
+ * A born-with-a-moment statement is never an unfireable rule the editor can sit
+ * in, even for an instant — the reason `Converts` got a default in the first
+ * place.
+ */
+function defaultMoment(keywordId) {
+    if ([KEYWORD.DEALS, KEYWORD.HEALS, KEYWORD.RESTORES, KEYWORD.REMOVES,
+        KEYWORD.SPAWNS, KEYWORD.TRANSFORMS].includes(keywordId)) {
+        // ⭐ The Thorns case: "a cycle completed targeting this entity", which
+        // is a hero harvesting a bush and a hero killing a monster alike
+        // (D-129). The moment this verb exists for, so it is the moment it
+        // starts on.
+        return { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 };
+    }
+    return { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 };
 }
 
 /**
@@ -304,9 +517,37 @@ export function makeStatement(keywordId, data = {}) {
          */
         chargeDelta: keyword?.when !== WHEN.NEVER ? DEFAULT_STATEMENT_CHARGE_DELTA : 0,
         to: keyword?.filter ? { mode: 'all', value: '' } : null,
-        when: keyword?.when === WHEN.REQUIRED
-            ? { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 }
-            : null,
+        /**
+         * Written out on the keywords that can carry one, the same way `to` is,
+         * so the editor shows a real value rather than a blank.
+         *
+         * ⚠️ Its **absence** still means `adjacent` (ER-5) — that is what makes
+         * every statement authored before P2 keep its behaviour without a
+         * migration touching a single file. `reachOf` owns that default; this
+         * only decides what a *new* statement starts as.
+         */
+        reach: keyword?.reach ? DEFAULT_REACH : null,
+        /**
+         * Who the statement acts on, as a **role** rather than a tile filter
+         * (Effects Grammar v2). Only the keywords that act on a participant
+         * carry one; everything else aims with `to` and `reach`.
+         *
+         * ⚠️ V4 folds `to`, `reach` and this into one selector shape. It is
+         * introduced separately here so the new verb is not blocked on
+         * migrating four old ones, and so the migration happens once, later,
+         * with filters arriving at the same time.
+         */
+        /**
+         * ⚠️ **The default target is per keyword, not one for all of them.**
+         *
+         * Stamping `actor` on everything meant `Restores` and `Transforms` were
+         * born aiming at the hero — and both resolve a *tile* from that role, so
+         * an unstaffed Token (a passive generator, D-116) could never transform
+         * or repair itself on any board. "Restores 1 charge to the actor" is not
+         * even a sentence that means anything: charges belong to a Token.
+         */
+        target: keyword?.targetsRole ? { role: keyword.defaultRole || ROLE.ACTOR } : null,
+        when: keyword?.when === WHEN.REQUIRED ? defaultMoment(keywordId) : null,
         upkeep: null,
         ...data
     };

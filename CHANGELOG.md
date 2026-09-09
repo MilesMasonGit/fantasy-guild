@@ -5,6 +5,105 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Every status is now authorable as an ordinary effect.** Poison, Burning,
+  Bleed, Armor Shield, Well Fed, Cookout and Stun can all be written in the
+  effects editor like anything else — three as damage on a clock, four as a
+  bonus that lasts a while. The four that last needed something new: an effect
+  you are carrying can now change your numbers, not just hurt you.
+- **A damage bonus can be a percentage**, so "+10% damage for a while" is
+  something you can write down rather than something only code could do.
+- ⭐ **Tokens can leave things behind, and become other things.** A felled tree
+  can leave a Stump, a watered Sapling can become an Oak. Where a spawned Token
+  lands is something you pick — this tile, the nearest free one, or a random one
+  — and the rules text says which, so it is never a hidden rule.
+- **Rules can heal, repair and cleanse.** A spring that mends whoever works it, a
+  Token that gives itself charges back, a shrine that lifts a curse — all
+  authorable, all with the same targeting as everything else. A heal never
+  overheals and a repair never pushes a Token past what it was built to hold.
+- ⭐ **Effects can stay on a hero and keep acting.** A poison, a regeneration, a
+  buff that lasts half a minute — all authored as ordinary named effects with a
+  clock on them, rather than as a separate kind of thing. Applying the same one
+  twice refreshes it rather than stacking, and a stronger version replaces a
+  weaker one.
+- ⭐ **One effect can set off another.** Give it no duration and it fires
+  immediately, which is how a combo is built.
+- **A rule can check what a hero is already under** — "every adjacent Token whose
+  hero is not already poisoned".
+- ⭐ **A rule's number can be worked out rather than typed.** Damage equal to 10%
+  of the target's maximum health, or one point per adjacent Coast Token — so an
+  effect can stay meaningful as heroes grow, or reward how you have arranged the
+  board.
+- ⭐ **Rules can be narrowed, and stacked.** A rule can now say *which* of the
+  things in range it actually hits: tagged something, working as a station,
+  running low on charges, or currently being worked — as many as you like, and
+  any of them can be flipped to mean the opposite.
+- **Rules can now react to a Token's live state**, not just to what it is. A
+  buff that only helps Tokens somebody is actually working is authorable.
+- ⭐ **Rules are written as sentences now, not clicked through dropdowns.** A rule
+  is a row of words you type into: click any part, start typing, and only what
+  fits there is offered. Beneath it sits the sentence the rule will actually
+  read as. The nested picker boxes are gone.
+- **A panel under the rule lists everything that can go where you are.** With its
+  explanation, so the parts of the vocabulary you have not used yet are
+  discoverable rather than hidden behind knowing what to type.
+- **Changing a rule's verb rebuilds it properly**, instead of leaving the
+  previous verb's settings stranded behind the new word.
+- ⭐ **Rules can now hurt somebody — and Thorns exists.** A rule can deal damage
+  to whoever just harvested or fought the thing carrying it. Author it once, name
+  it Thorns, and put it on a monster *and* on a berry bush: the same entry works
+  on both, because winning a fight and finishing a harvest have always been the
+  same event underneath.
+- **Thorns damage respects armour, and heavy armour can stop it outright.** Tick
+  "ignores armour" for a rule that should pierce regardless.
+- **A rule's price is set where you assign it.** The same effect can be free on
+  one Token and cost a charge on another.
+- **The editor stops offering targets a rule cannot reach.** Pick "when a
+  neighbour runs out of charges" and "the actor" is simply not in the list —
+  nobody acted, a Token ran dry. If a rule is already aiming somewhere
+  impossible, it says so.
+- **The rules text stopped shouting your proper nouns down.** It read "this
+  token's own cycle" and "the bank"; Token and Bank keep their capitals now.
+- **Rules can tell who did something to them.** Groundwork, invisible on its own:
+  every firing moment now says which participants it has — the entity itself, the
+  hero who caused it, the neighbour it happened to — so a rule will shortly be
+  able to say "whoever just harvested me". Two moments were quietly missing that
+  information and now carry it: a Token beginning a cycle, and a fight ending.
+- **Gear can make a hero immune to a status.** Poison, Burning, Stun and the rest
+  can be blocked outright by an item — the game has asked whether a hero is
+  immune every time a status landed, since the day statuses were built, and
+  nothing could ever say yes. Pick which status; it stops new stacks landing and
+  never strips ones already carried.
+- **A rule can apply to one skill only.** "+10% yield, but only for Mining work"
+  — the machinery has been running on every cycle for months with no way to write
+  it down.
+- **The editor stops offering settings a rule cannot use.** A combat or immunity
+  rule reaches a hero, never a tile, so it no longer shows a reach or a target to
+  set.
+- **A rule can now say how far it reaches — including "just me".** Every rule in
+  the game reached the eight surrounding tiles and nothing else, and never the
+  Token carrying it, so a Token could not improve its own work or put a status on
+  the hero standing on it. A rule now picks one of four: adjacent Tokens (what
+  every rule already meant), this Token only, this Token and its neighbours, or
+  every Token on the board. The rules text says which, in words.
+- ⚠️ **A board-wide rule is not capped.** It touches everything you own, and a
+  second copy of that Token doubles it. The editor warns you; nothing stops you.
+- **Nothing you have already authored changed.** A rule with no reach set still
+  means "adjacent", so every Token on your playmat behaves exactly as it did.
+- **A rule that fires now lands where its sentence says it lands.** A triggered
+  "grants an item" rule was ignoring the target you gave it and dropping the
+  item on the Token that fired instead — so a rule reading *"grant 1 Copper to
+  any adjacent Forge"* put the copper on itself. It now reaches the Tokens it
+  names, and a target that matches nothing correctly grants nothing. No shipped
+  Token was affected: every authored grant is the untriggered kind, which has
+  always aimed correctly.
+- **A conversion can send its output to a neighbour.** A Sigil that turns Stone
+  into Bricks can put them on the Kiln beside it. Unlike every other rule this
+  one picks a **single** destination — the nearest match — because a conversion
+  spends a fixed input, and producing onto all eight neighbours would multiply
+  what you get without multiplying what you pay. Leave the target alone and the
+  output lands where it always did.
+- **The content check now catches a rule aimed at something it cannot aim at**,
+  which is the shape of the bug above.
 - **Every rule in the game now has a name.** A Token's rules used to live on the
   Token that used them, unnamed and unshareable. They now live in a **named
   effect library**, and Tokens point at entries in it — so the same rule can sit

@@ -25,6 +25,7 @@ import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
 import { sumStatusEffect } from '../config/registries/statusRegistry.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 export { BASE_ATTACK_SPEED_MS, MIN_ATTACK_SPEED_MS, HERO_ATTACK_INTERVAL_MS, ENEMY_ATTACK_INTERVAL_MS };
 
@@ -189,6 +190,23 @@ export function rollDamage(minDamage, maxDamage) {
 }
 
 /**
+ * The outgoing-damage multiplier a hero carries.
+ *
+ * ⚠️ Reads BOTH sources while the absorb is in progress: `damage_pct` from the
+ * old status engine, and the `DAMAGE` percentage bucket that a carried library
+ * effect registers (V7). Written as one function so the two cannot drift, and so
+ * removing the first half later is a one-line edit in one place rather than the
+ * two call sites it used to be.
+ */
+export function damageMultiplierOf(hero) {
+    const fromStatuses = sumStatusEffect(hero?.statuses, 'damage_pct');
+    const fromEffects = hero?.aggregator?.getPercentageBucket
+        ? hero.aggregator.getPercentageBucket(EFFECT_TYPES.DAMAGE) - 1
+        : 0;
+    return 1 + fromStatuses + fromEffects;
+}
+
+/**
  * Compute damage dealt from hero to enemy (spec §7 steps 3-5).
  * Base = 4·G(style skill) + weapon damage (flat placeholder until the gear
  * pass prices weapons properly) + flat modifiers; ×0.85-1.15 spread; RPS ±10%;
@@ -200,8 +218,10 @@ export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selected
 
     let damage = rollDamageSpread(base);
 
-    // Damage buffs (Well Fed) sum additively per layer
-    damage *= 1 + sumStatusEffect(hero?.statuses, 'damage_pct');
+    // Damage buffs sum additively. ⚠️ Both sources during the absorb: the old
+    // status engine, and the aggregator that a carried library effect writes to
+    // (V7). The first half goes when the seven are re-authored.
+    damage *= damageMultiplierOf(hero);
 
     const enemyStyle = enemy?.combatType || 'melee';
     damage *= 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
@@ -209,10 +229,73 @@ export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selected
     // Crit hook (spec §7 step 4): innate 5%/2× lands with the crit pass.
 
     // Armor (spec §7 step 5): flat subtraction after crit — enemy budget
-    // deviations (later) plus any Armor Shield status on the enemy.
-    const armor = (enemy?.armor || 0) + sumStatusEffect(enemyStatuses, 'flat_armor');
+    // deviations (later), whatever the enemy is carrying, and any Armor Shield
+    // status on it while the old engine still runs.
+    const armor = enemyFlatArmor(enemy, enemyStatuses);
 
     return Math.max(1, Math.round(damage - armor));
+}
+
+
+/**
+ * The flat damage reduction a hero carries — Armor, legacy DEFENSE, and any
+ * armour a status is lending them.
+ *
+ * ## Why this is a function and not three lines at each call site
+ * It was three lines at each call site, twice, and Effects Grammar v2's `Deals`
+ * verb needs it a third time. Armour must mean **one** thing regardless of what
+ * hit you: a thorn and a goblin subtracting different numbers would be the kind
+ * of parallel definition CR2-074 named, arriving by copy-paste instead of by
+ * design.
+ *
+ * ⚠️ `DEFENSE` is summed in alongside `ARMOR` deliberately — existing armour
+ * items register their `defense` stat on that axis, and it is treated as flat
+ * Armor until the gear pass prices them properly. That is also why the palette
+ * offers `ARMOR` and not `DEFENSE`: two ways to say one thing.
+ */
+export function heroFlatArmor(hero) {
+    return (hero?.aggregator?.query('ARMOR') || 0)
+        + (hero?.aggregator?.query('DEFENSE') || 0)
+        + sumStatusEffect(hero?.statuses, 'flat_armor');
+}
+
+/**
+ * The flat damage reduction an **enemy** carries.
+ *
+ * ⚠️ This was written out inline at two call sites and read `enemy.armor` plus a
+ * status, with no aggregator — because until enemies became effect bearers there
+ * was no aggregator to read. Making it a function is the same discipline
+ * `heroFlatArmor` exists for: armour must mean one thing on both sides of a
+ * fight, and a third copy arriving by paste is how it stops meaning one thing.
+ *
+ * `enemyStatuses` is the old engine's list and is summed in during the absorb,
+ * exactly as `heroFlatArmor` still sums the hero's.
+ */
+export function enemyFlatArmor(enemy, enemyStatuses = null) {
+    return (enemy?.armor || 0)
+        + (enemy?.aggregator?.query('ARMOR') || 0)
+        + (enemy?.aggregator?.query('DEFENSE') || 0)
+        + sumStatusEffect(enemyStatuses, 'flat_armor');
+}
+
+/** The flat damage reduction applied after armour. */
+export function heroFlatResist(hero) {
+    return hero?.aggregator?.query('RESIST_FLAT') || 0;
+}
+
+/**
+ * Damage from a non-combat source, mitigated (Effects Grammar v2, G-23).
+ *
+ * ⚠️ **Floors at zero, where a combat hit floors at one**, and the difference is
+ * deliberate. Combat's minimum of 1 exists so a fight always progresses — two
+ * heavily armoured entities must not stand swinging forever. A thorn is not a
+ * fight: if armour exceeds it, "respects Armor" can only honestly mean it does
+ * nothing. A floor of 1 here would make heavy armour worth exactly as much as
+ * none against every thorn in the game.
+ */
+export function mitigateFlatDamage(hero, rawDamage) {
+    const reduced = rawDamage - heroFlatArmor(hero) - heroFlatResist(hero);
+    return Math.max(0, Math.round(reduced));
 }
 
 /**
@@ -231,10 +314,8 @@ export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
     // `defense` stat as DEFENSE modifiers — treated as flat Armor until the
     // gear pass introduces properly budgeted ARMOR values. Armor Shield
     // status stacks add on top (they decay via notifyHitTaken after impact).
-    const armor = (hero?.aggregator?.query('ARMOR') || 0)
-        + (hero?.aggregator?.query('DEFENSE') || 0)
-        + sumStatusEffect(hero?.statuses, 'flat_armor');
-    const flatResist = hero?.aggregator?.query('RESIST_FLAT') || 0;
+    const armor = heroFlatArmor(hero);
+    const flatResist = heroFlatResist(hero);
 
     return Math.max(1, Math.round(damage - armor - flatResist));
 }
@@ -246,10 +327,10 @@ export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
 export function getHeroDamageRange(hero, enemy, weapon, damageBonus = 0, selectedStyle = 'melee', enemyStatuses = null) {
     const skill = getHeroCombatSkill(hero, selectedStyle);
     const base = heroBaseDamage(skill) + (weapon?.damage || 0) + damageBonus;
-    const buffMult = 1 + sumStatusEffect(hero?.statuses, 'damage_pct');
+    const buffMult = damageMultiplierOf(hero);
     const enemyStyle = enemy?.combatType || 'melee';
     const rpsMult = 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
-    const armor = (enemy?.armor || 0) + sumStatusEffect(enemyStatuses, 'flat_armor');
+    const armor = enemyFlatArmor(enemy, enemyStatuses);
     return {
         min: Math.max(1, Math.round(base * DAMAGE_SPREAD_MIN * buffMult * rpsMult - armor)),
         max: Math.max(1, Math.round(base * DAMAGE_SPREAD_MAX * buffMult * rpsMult - armor))
@@ -263,10 +344,8 @@ export function getHeroDamageRange(hero, enemy, weapon, damageBonus = 0, selecte
 export function getEnemyDamageRange(enemy, hero = null, heroStyle = 'melee') {
     const enemyStyle = enemy?.combatType || 'melee';
     const rpsMult = 1 + rpsOutcome(enemyStyle, heroStyle) * RPS_DAMAGE_SHIFT;
-    const armor = (hero?.aggregator?.query('ARMOR') || 0)
-        + (hero?.aggregator?.query('DEFENSE') || 0)
-        + sumStatusEffect(hero?.statuses, 'flat_armor');
-    const flatResist = hero?.aggregator?.query('RESIST_FLAT') || 0;
+    const armor = heroFlatArmor(hero);
+    const flatResist = heroFlatResist(hero);
     return {
         min: Math.max(1, Math.round((enemy?.minDamage ?? 1) * rpsMult - armor - flatResist)),
         max: Math.max(1, Math.round((enemy?.maxDamage ?? 1) * rpsMult - armor - flatResist))

@@ -3,6 +3,8 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { enemyProfileOf, enemyDropsOf, isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { ModifierAggregator } from '../effects/ModifierAggregator.js';
+import * as LiveEffects from '../effects/LiveEffects.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { processCombat } from '../combat/CombatProcessor.js';
 import { applyDefeatPenalties } from '../combat/DefeatPenalties.js';
@@ -104,12 +106,36 @@ function enemyFor(instance) {
  * receives simply exist now, which they never did before.
  */
 function createFight(tile, heroId, enemy, drops) {
+    const aggregator = new ModifierAggregator(`enemy_${tile}`);
+    const effects = [];
+
+    // Wired onto the stat block here as well as on every later tick, so that
+    // `fight.enemy` is never the one profile in the game without them.
+    enemy.aggregator = aggregator;
+    enemy.effects = effects;
+
     return {
         id: `fight_${tile}`,
         tile,
         enemyId: enemy.id,
         enemy,
         drops,
+        /**
+         * ⭐ **What makes an enemy an effect bearer.**
+         *
+         * The list and the aggregator live on the FIGHT, not on the stat block:
+         * `enemyFor` derives a fresh profile every tick on purpose, so an enemy
+         * re-authored in the CMS takes effect immediately — anything stored
+         * there would be thrown away 100ms later.
+         *
+         * Living on the fight also gives them exactly the right lifetime. A
+         * fight is dropped when the hero leaves, when a different hero arrives,
+         * and on teardown, and "the enemy returns whole" (G-4) is already the
+         * rule — so a poison cannot survive a monster walking away from it, with
+         * nothing extra written to make that true.
+         */
+        effects,
+        aggregator,
         assignedHeroId: heroId,
         status: 'idle',
         traits: [],
@@ -152,8 +178,11 @@ function applyEnemyCombatModifiers(tile, heroId) {
     hero.aggregator.removeModifiersBySource(source);
 
     const def = getTokenType(BoardState.getToken(tile)?.typeId);
-    for (const { type, value } of HeroEffects.combatContributions(statementsOf(def))) {
-        hero.aggregator.addModifier({ type, value, bucket: 'flat', source });
+    for (const { type, value, category } of HeroEffects.combatContributions(statementsOf(def))) {
+        hero.aggregator.addModifier({
+            type, value, bucket: 'flat', source,
+            ...(category ? { target: { category } } : {})
+        });
     }
 }
 
@@ -162,6 +191,42 @@ function clearEnemyCombatModifiers(tile) {
     const heroId = fights.get(tile)?.assignedHeroId;
     const hero = heroId ? HeroManager.getHero(heroId) : null;
     hero?.aggregator?.removeModifiersBySource(fightSource(tile));
+}
+
+/**
+ * The bearer descriptor for a live fight's enemy.
+ *
+ * ⚠️ `self` is the TILE, not a person — the opposite of a hero's descriptor,
+ * where `self` is `selfHeroId` and there is no square involved. `selfFightTile`
+ * says which of the two this is, so a carried `Deals ... to this entity` on a
+ * monster hits the monster rather than whoever is standing on it.
+ */
+function enemyBearer(tile, fight) {
+    return {
+        target: fight,
+        name: fight.enemy?.name || fight.enemyId,
+        roles: { self: tile, selfFightTile: tile, selfHeroId: null, actor: null, source: null },
+        // A fight in intermission is between enemies (D-103's short rest); its
+        // clock keeps running, the same as a hero's does between cycles.
+        suspended: () => false,
+        notify: () => {}
+    };
+}
+
+/**
+ * Hand every live fight to the effects clock.
+ *
+ * Registered here rather than imported there so `LiveEffects` stays free of the
+ * board — the same injection `fire` uses.
+ */
+LiveEffects.registerBearerSource(
+    () => Array.from(fights, ([tile, fight]) => enemyBearer(tile, fight))
+);
+
+/** The bearer for whatever enemy is fighting on this tile, if any. */
+export function enemyBearerAt(tile) {
+    const fight = fights.get(tile);
+    return fight ? enemyBearer(tile, fight) : null;
 }
 
 /** Drop a tile's fight, so the next engagement starts clean. */
@@ -231,6 +296,16 @@ export function tickTile(tile, instance, delta, heroId) {
     }
 
     fight.assignedHeroId = heroId;
+
+    /**
+     * ⚠️ The stat block is re-derived every tick and the aggregator is not, so
+     * they have to be joined back up here. Without this line `computeHeroDamage`
+     * reads a profile with no aggregator on it and an enemy's carried armour is
+     * silently zero — which would look exactly like the feature working, since
+     * armour of zero is also the correct answer for an enemy carrying nothing.
+     */
+    enemy.aggregator = fight.aggregator;
+    enemy.effects = fight.effects;
 
     /**
      * An engagement is EVERY engagement, including each one after a kill
@@ -347,7 +422,13 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
         heroId: heroId || null,
         failed: false
     });
-    EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, { tile, outcome: 'victory' });
+    // ⚠️ `heroId` and `typeId` ride along since Effects Grammar v2 V1. This
+    // event carried neither, so a rule reacting to a fight ending could not
+    // name the victor or the creature — while `CYCLE_COMPLETE`, published four
+    // lines above from the same function, carried both.
+    EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
+        tile, outcome: 'victory', heroId: heroId || null, typeId: instance.typeId
+    });
 
     if (instance.usesRemaining != null && instance.usesRemaining <= 0) {
         BoardState.setToken(tile, null);
@@ -412,7 +493,9 @@ function resolveDefeat(tile, instance, heroId) {
     }
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
     if (tile != null) {
-        EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, { tile, outcome: 'defeat' });
+        EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
+            tile, outcome: 'defeat', heroId: heroId || null, typeId: instance?.typeId || null
+        });
     }
     EventBus.publish('heroes_updated', { source: 'board_combat_defeat' });
 

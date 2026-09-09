@@ -122,6 +122,33 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * ⚠️ A proc's scaled value is clamped by `clampModifierValue` like any other,
  * so a 40% chance at scale 3 is 100%, not 120%.
  *
+ * ## `categories` — what a row's optional narrowing field picks from (P4)
+ *
+ * `ModifierAggregator` has always matched on `mod.target.category`, and two
+ * different readers pass two different vocabularies into it:
+ *
+ * * `'skill'`  — `BoardRunner` passes the Token's `config.skill` on **every**
+ *   `resolveAxis` call, so a rule can read *"+10% yield to Mining only"*.
+ * * `'status'` — `StatusEffectSystem` passes a status id, which is how
+ *   `STATUS_IMMUNITY` names the one status it blocks.
+ *
+ * Both were live and unwritable: the machinery matched a field no editor
+ * offered. Declaring the vocabulary per row is what lets the CMS show a skill
+ * picker on Yield and a status picker on Immunity without knowing either list.
+ *
+ * A row without `categories` offers no narrowing at all, which is right for the
+ * combat axes — their readers call `query('ARMOR')` with no category, so
+ * anything but ALL would be registered and never matched.
+ *
+ * ## `heroOnly` — the axis reaches a person, never a tile
+ *
+ * Read off a **hero's** aggregator, so only an item (to its carrier) or an enemy
+ * (to its opponent) can write it. A plain Token carrying one reaches nobody, and
+ * both the sentence and `ContentAudit` say so. This was a hardcoded
+ * `group === 'Combat'` check in three places until P4; `STATUS_IMMUNITY` has the
+ * same property and is not combat, so the property is now declared rather than
+ * inferred from a label.
+ *
  * @type {Array<{type: string, label: string, shape: string, group: string, hint: string, inverted?: boolean, when: string, scales?: string}>}
  */
 export const MODIFIER_PALETTE = [
@@ -131,6 +158,7 @@ export const MODIFIER_PALETTE = [
         label: 'Yield',
         when: 'never',
         scales: 'value',
+        categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         hint: 'Units of output produced per cycle.'
@@ -140,6 +168,7 @@ export const MODIFIER_PALETTE = [
         label: 'Work Time',
         when: 'never',
         scales: 'value',
+        categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
@@ -150,6 +179,7 @@ export const MODIFIER_PALETTE = [
         label: 'Input Cost',
         when: 'never',
         scales: 'value',
+        categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
@@ -162,6 +192,7 @@ export const MODIFIER_PALETTE = [
         label: 'XP Bonus',
         when: 'never',
         scales: 'value',
+        categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Support',
         hint: 'XP awarded to the working hero per cycle.'
@@ -171,6 +202,7 @@ export const MODIFIER_PALETTE = [
         label: 'Double Loot Chance',
         when: 'never',
         scales: 'value',
+        categories: 'skill',
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance the whole cycle yields double.'
@@ -180,6 +212,7 @@ export const MODIFIER_PALETTE = [
         label: 'Failure Chance',
         when: 'never',
         scales: 'value',
+        categories: 'skill',
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance the cycle produces nothing. Inputs and charges are still spent.'
@@ -203,6 +236,7 @@ export const MODIFIER_PALETTE = [
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
+        heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Flat damage subtracted from every hit the hero takes.'
@@ -213,6 +247,7 @@ export const MODIFIER_PALETTE = [
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
+        heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Further flat damage subtracted, after Armor.'
@@ -223,6 +258,7 @@ export const MODIFIER_PALETTE = [
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
+        heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Improves the chance an attack lands.'
@@ -233,6 +269,7 @@ export const MODIFIER_PALETTE = [
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
+        heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Percentage points of block chance. A blocked hit deals no damage.'
@@ -242,10 +279,44 @@ export const MODIFIER_PALETTE = [
         label: 'Damage',
         when: 'never',
         scales: 'value',
-        buckets: ['flat'],
+        /**
+         * ⚠️ **The one combat axis with a percentage reader** (V7).
+         *
+         * Every other combat row is `flat` only, because `query` sums flats and
+         * silently skips the rest — offering a percentage there would offer
+         * something discarded. `computeHeroDamage` genuinely multiplies by a
+         * percentage bucket, which is what makes a Well Fed style buff
+         * (*"+10% damage for a while"*) expressible as an ordinary effect.
+         */
+        buckets: ['flat', 'percentage'],
+        heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Flat damage added to every hit the hero lands.'
+    },
+
+    // --- Protection (Effects Robustness P4) ---------------------------------
+    //
+    // ⚠️ Readable and unwritable since the status engine was built:
+    // `StatusEffectSystem.applyToHero` has always asked the hero's aggregator
+    // whether they are immune, and nothing has ever been able to say yes.
+    //
+    // It needed no new grammar. `query('STATUS_IMMUNITY', statusId)` passes the
+    // status id as the aggregator's **category**, which `_forEachMatching` has
+    // matched on all along — so the whole gap was a missing field in the editor.
+    {
+        type: EFFECT_TYPES.STATUS_IMMUNITY,
+        label: 'Status Immunity',
+        when: 'never',
+        // ⚠️ No `scales`. Immunity is a switch, not a magnitude: the reader asks
+        // `> 0`, so a scale of 3 would read exactly like a scale of 1 while
+        // looking to the author as though it did something.
+        buckets: ['flat'],
+        heroOnly: true,
+        categories: 'status',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Protection',
+        hint: 'Blocks a status from landing. Pick which one. Any value above 0 blocks it; this never strips stacks already carried.'
     },
 
     // --- Grants -------------------------------------------------------------

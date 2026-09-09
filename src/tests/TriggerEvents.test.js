@@ -227,6 +227,14 @@ describe('A neighbour produces a specific item', () => {
 describe("This Token's own cycle completes", () => {
     it('fires on its own completion, not on a neighbour’s', () => {
         place(9, 'fixture_self_reactor', 'hero_1');
+        // ⚠️ The receiver is required, and was not here before Effects
+        // Robustness P1. `grantOf` aims at "every adjacent Token", and until P1
+        // a triggered grant ignored its filter and dropped on the firing tile —
+        // so this Token used to appear to grant to itself while standing alone.
+        // Honouring the filter means an outward grant needs something to reach,
+        // which is also what `handleSelf` has always said it does: "the rule
+        // reaches outward from here exactly as any other statement does".
+        place(8, 'fixture_wood_lot');
 
         run(13000);
 
@@ -290,11 +298,22 @@ describe('⚠️ The loop guard', () => {
             tile: 1, typeId: 'fixture_domino'
         })).not.toThrow();
 
-        // Each level that fires drops one Bones. The cap is what keeps that
-        // number finite — and it must be the cap doing it, not the board
-        // running out of Tokens.
+        // The cap is what keeps the number finite — and it must be the cap
+        // doing it, not the board running out of Tokens.
+        //
+        // ⚠️ **Bones per level is no longer exactly one** (Effects Robustness
+        // P1). `grantOf` aims at "every adjacent Token" and a triggered grant
+        // now honours that, so a domino mid-line reaches BOTH its neighbours
+        // rather than dropping a single item on itself. A line gives each one at
+        // most two, which is where the bound below comes from.
+        //
+        // The assertion that matters is unchanged: the total is bounded by the
+        // cascade cap rather than by the length of the chain.
+        const MAX_NEIGHBOURS_IN_A_LINE = 2;
         expect(bonesOnBoard()).toBeGreaterThan(0);
-        expect(bonesOnBoard()).toBeLessThanOrEqual(TriggerSystem.MAX_CASCADE_DEPTH);
+        expect(bonesOnBoard()).toBeLessThanOrEqual(
+            TriggerSystem.MAX_CASCADE_DEPTH * MAX_NEIGHBOURS_IN_A_LINE
+        );
         expect(CHAIN.length).toBeGreaterThan(TriggerSystem.MAX_CASCADE_DEPTH);
     });
 
@@ -332,6 +351,7 @@ describe('⚠️ The loop guard', () => {
         TriggerSystem.init();
 
         place(9, 'fixture_self_reactor', 'hero_1');
+        place(8, 'fixture_wood_lot');   // something for the outward grant to reach (P1)
         run(13000);
 
         expect(bonesOnBoard()).toBeGreaterThan(0);

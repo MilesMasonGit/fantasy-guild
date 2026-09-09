@@ -226,8 +226,14 @@ export function recalculateEquipmentModifiers(hero) {
      * here.
      */
     const source = 'equip:loadout';
-    for (const { type, value } of HeroEffects.loadoutCombatContributions(hero)) {
-        hero.aggregator.addModifier({ type, value, bucket: 'flat', source, persistent: true });
+    for (const { type, value, category } of HeroEffects.loadoutCombatContributions(hero)) {
+        // `target.category` is the shape `ModifierAggregator._forEachMatching`
+        // matches on, and the only way `STATUS_IMMUNITY` can name one status
+        // rather than blocking every one of them (P4).
+        hero.aggregator.addModifier({
+            type, value, bucket: 'flat', source, persistent: true,
+            ...(category ? { target: { category } } : {})
+        });
     }
 }
 

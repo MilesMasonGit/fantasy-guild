@@ -6,10 +6,10 @@ import {
 import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
 import { Library, Pencil } from 'lucide-react';
 import {
-  KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement,
+  KEYWORD, KEYWORDS, getKeyword, paletteForKeyword, makeStatement,
   renderStatement, statementsOf,
-  MODIFIER_BUCKETS, bucketsFor, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
-  TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
+  bucketsFor, getPaletteEntry, MODIFIER_SHAPES,
+  clampModifierValue, describeModifierDirection,
   RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
   skillsByLayer, DEFAULT_STATEMENT_CHARGE_DELTA,
   effectRefsOf, expandBearer, rulesLinesOf,
@@ -17,6 +17,7 @@ import {
   scaleStatement, effectTitle, MAX_SCALE,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
+import SentenceEditor from './SentenceEditor';
 import InlineItemModal from '../shared/InlineItemModal';
 
 /**
@@ -561,11 +562,29 @@ function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
     </RowShell>
   );
 }
-
-/** One real statement. */
+/**
+ * One real statement, edited as a **sentence** (G-18).
+ *
+ * ⚠️ **The nested pickers are gone.** This row used to stack a payload box, a
+ * role picker, a reach picker, a filter picker and a trigger clause, each in its
+ * own labelled section — the "many nested dropdown menus" the owner asked to be
+ * rid of. Every one of them was an expression of the same thing: the slots of a
+ * statement. `statementSlots.js` describes those slots once, and
+ * `SentenceEditor` renders them as a row you type into.
+ *
+ * ⚠️ **Retired in the same commit rather than left beside it.** Two editors for
+ * one thing is the duplication this project keeps deleting, and a form that can
+ * drift from the sentence is the exact drift UE-8 exists to prevent.
+ *
+ * What survives is what a sentence genuinely cannot hold (G-20): the item lists
+ * of a conversion or a restock, the charge cost, and an upkeep clause. Those are
+ * tables and prices, and they stay as small forms beneath the line.
+ */
 function StatementRow({ statement, tokens, items, names, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
   const keyword = getKeyword(statement.keyword);
   const sentence = renderStatement(statement, names);
+  const capabilities = useCapabilityVocabulary(tokens);
+  const effects = useEntityStore((s) => s.effects);
 
   return (
     <RowShell
@@ -576,27 +595,14 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
       canMoveUp={canMoveUp}
       canMoveDown={canMoveDown}
     >
-      <PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />
+      <SentenceEditor
+        statement={statement}
+        onChange={onChange}
+        names={names}
+        ctx={{ tokens, items, capabilities, effects }}
+        form={<PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />}
+      />
 
-      {keyword?.filter && (
-        <FilterPicker
-          statement={statement}
-          tokens={tokens}
-          onChange={onChange}
-          // The same filter, asked three different ways round. "Reaches" is
-          // wrong in front of a restriction and wrong in front of a status, and
-          // a label that reads wrong is how an author picks the wrong thing.
-          label={
-            statement.keyword === KEYWORD.CANNOT ? 'Too many of what'
-              : statement.keyword === KEYWORD.APPLIES ? 'Heroes working'
-                : 'Reaches'
-          }
-        />
-      )}
-
-      {keyword?.when !== WHEN.NEVER && (
-        <TriggerClause statement={statement} tokens={tokens} items={items} onChange={onChange} />
-      )}
 
       {/*
         ⚠️ Outside the trigger gate since UE-20. Firing used to be the only
@@ -661,6 +667,9 @@ function PayloadFields({ statement, tokens, items, onChange }) {
 
     case KEYWORD.APPLIES:
       return <AppliesFields payload={payload} setPayload={setPayload} />;
+
+    case KEYWORD.DEALS:
+      return <DealsFields payload={payload} setPayload={setPayload} />;
 
     case KEYWORD.CONVERTS:
       return (
@@ -814,10 +823,74 @@ function EffectFields({ statement, onChange }) {
         )}
       </div>
 
+      {/*
+        The optional narrowing field (P4). Which vocabulary it draws from is
+        declared by the palette row, so this renders a skill picker on Yield and
+        a status picker on Immunity without knowing either list itself.
+      */}
+      {entry?.categories && (
+        <CategoryPicker entry={entry} payload={payload} onChange={onChange} />
+      )}
+
       {entry?.hint && <p className="text-[10px] text-gray-600 leading-relaxed">{entry.hint}</p>}
       {direction && (
         <p className="text-[10px]" style={{ color: direction.isBuff ? 'var(--color-accent-hover)' : 'var(--color-warning)' }}>
           {direction.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The narrowing field a palette row asks for — a skill, or a status.
+ *
+ * ⚠️ **Two vocabularies, one aggregator field.** `mod.target.category` is
+ * matched the same way whatever is in it; what differs is who passes what.
+ * `BoardRunner` passes the Token's skill, `StatusEffectSystem` passes a status
+ * id. The row says which, so an author never sees a list that cannot match.
+ *
+ * ⚠️ A `status` row is **required**, not optional: an immunity naming no status
+ * is registered against ALL and blocks every status in the game, which is never
+ * what anyone means by "immunity".
+ */
+function CategoryPicker({ entry, payload, onChange }) {
+  const isStatus = entry.categories === 'status';
+  // `skillsByLayer()` hands back [label, skills] pairs, not objects.
+  const options = isStatus
+    ? AUTHORABLE_STATUSES.map((s) => ({ id: s.id, name: s.name }))
+    : skillsByLayer().flatMap(([, skills]) => skills.map((s) => ({ id: s.id, name: s.name })));
+
+  const value = payload.category || '';
+
+  return (
+    <div className="space-y-1">
+      <Field label={isStatus ? 'Which status' : 'Only for'}>
+        <select
+          value={value}
+          onChange={(e) => {
+            const next = { ...payload };
+            if (e.target.value) next.category = e.target.value;
+            else delete next.category;   // absent means "everything", as it always has
+            onChange({ payload: next });
+          }}
+          className="w-full"
+          style={{ fontSize: 12 }}
+        >
+          <option value="">{isStatus ? '— pick a status —' : 'Any skill'}</option>
+          {options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+      </Field>
+      {isStatus && !value && (
+        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ Pick a status. Without one this blocks <strong>every</strong> status
+          in the game, which is almost certainly not what you meant.
+        </p>
+      )}
+      {!isStatus && value && (
+        <p className="text-[10px] text-gray-600 leading-relaxed">
+          Applies only when the Token is doing this skill’s work. Leave it on
+          “Any skill” for the usual case.
         </p>
       )}
     </div>
@@ -1031,260 +1104,44 @@ function AppliesFields({ payload, setPayload }) {
   );
 }
 
-/** Which neighbours the statement reaches. */
-function FilterPicker({ statement, tokens, onChange, label = 'Reaches' }) {
-  const to = statement.to || { mode: 'all', value: '' };
-  const knownTags = useMemo(() => {
-    const all = new Set();
-    for (const t of Object.values(tokens)) for (const tag of t.tags || []) all.add(tag);
-    return [...all].sort();
-  }, [tokens]);
-
-  const tagMisses = to.mode === 'tag' && to.value && !knownTags.includes(to.value);
-  const nearMiss = tagMisses && knownTags.find((t) => t.toLowerCase() === to.value.toLowerCase());
-
+/**
+ * ⭐ `Deals` — how much damage, and whether armour stops it.
+ *
+ * ⚠️ **No target picker here.** Who it hits is a *role*, and roles are legal
+ * only where the moment supplies them (G-2), so the picker lives beside the
+ * trigger where that question can actually be answered.
+ */
+function DealsFields({ payload, setPayload }) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex gap-3">
-        <Field label={label} className="flex-1">
-          <select
-            value={to.mode}
-            onChange={(e) => onChange({ to: { mode: e.target.value, value: '' } })}
+    <div className="space-y-2">
+      <div className="flex gap-3 items-end">
+        <Field label="Damage" className="w-24">
+          <input
+            type="number"
+            min={0}
+            value={payload.amount ?? 1}
+            onChange={(e) => setPayload({ amount: Math.max(0, Number(e.target.value) || 0) })}
             className="w-full"
             style={{ fontSize: 12 }}
-          >
-            {TARGET_MODES.map((m) => (
-              <option key={m.mode} value={m.mode}>{m.label}</option>
-            ))}
-          </select>
-        </Field>
-
-        {to.mode === 'tag' && (
-          <Field label="Tag" className="flex-1">
-            <input
-              type="text"
-              list="cms-known-token-tags"
-              value={to.value || ''}
-              onChange={(e) => onChange({ to: { mode: 'tag', value: e.target.value } })}
-              placeholder="e.g. Coast"
-              className="w-full"
-              style={{ fontSize: 12 }}
-            />
-            <datalist id="cms-known-token-tags">
-              {knownTags.map((t) => <option key={t} value={t} />)}
-            </datalist>
-          </Field>
-        )}
-
-        {to.mode === 'id' && (
-          <Field label="Token" className="flex-1">
-            <select
-              value={to.value || ''}
-              onChange={(e) => onChange({ to: { mode: 'id', value: e.target.value } })}
-              className="w-full"
-              style={{ fontSize: 12 }}
-            >
-              <option value="">— pick a Token —</option>
-              {Object.values(tokens).map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </Field>
-        )}
-      </div>
-
-      {tagMisses && (
-        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
-          ⚠️ No Token carries the tag “{to.value}”, so this reaches nothing.
-          {nearMiss && <> Did you mean <strong>{nearMiss}</strong>? Tags match exactly, including case.</>}
-        </p>
-      )}
-      {to.mode === 'all' && (
-        <p className="text-[10px] text-gray-600 leading-relaxed">
-          Every Token on the 8 surrounding tiles. Keep these effects small —
-          something that touches everything nearby adds up fast.
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** The `When …` clause — offered only where the keyword allows one. */
-function TriggerClause({ statement, tokens, items, onChange }) {
-  const keyword = getKeyword(statement.keyword);
-  const when = statement.when;
-  const required = keyword.when === WHEN.REQUIRED;
-
-  if (!when) {
-    return (
-      <button
-        onClick={() => onChange({ when: { event: TRIGGER_EVENTS[0].id, scope: TRIGGER_EVENTS[0].scopes[0], cooldownMs: 5000 } })}
-        className="flex items-center gap-1 px-2 py-1 rounded text-[10px]"
-        style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--color-text-secondary)', border: 'none', cursor: 'pointer' }}
-      >
-        <Plus size={10} /> Add a trigger
-      </button>
-    );
-  }
-
-  const definition = getTriggerEvent(when.event);
-  const isGlobal = when.scope === 'global';
-  // A self-scoped trigger has no neighbour to filter on and nothing outside
-  // itself to watch — the Token that fires it is the Token that reacts.
-  const isSelf = when.scope === 'self';
-  const set = (changes) => onChange({ when: { ...when, ...changes } });
-
-  return (
-    <div className="rounded-md border border-white/5 bg-black/20 p-2.5 space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-        <Zap size={11} /> When
-        {!required && (
-          <button
-            onClick={() => onChange({ when: null })}
-            className="ml-auto text-gray-600 hover:text-red-400 normal-case tracking-normal font-normal"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10 }}
-          >
-            remove
-          </button>
-        )}
-      </label>
-
-      <select
-        value={when.event}
-        onChange={(e) => {
-          const next = getTriggerEvent(e.target.value);
-          set({ event: e.target.value, scope: next?.scopes[0] || 'adjacent' });
-        }}
-        className="w-full"
-        style={{ fontSize: 12 }}
-      >
-        {TRIGGER_EVENTS.map((t) => (
-          <option key={t.id} value={t.id}>{t.label}</option>
-        ))}
-      </select>
-      {definition?.hint && <p className="text-[10px] text-gray-600 leading-relaxed">{definition.hint}</p>}
-
-      {definition?.needsItem && (
-        <ItemPicker
-          label="Which item"
-          value={when.watchItemId}
-          items={items}
-          onPick={(watchItemId) => set({ watchItemId })}
-        />
-      )}
-      {definition?.needsItem && !when.watchItemId && (
-        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
-          ⚠️ With no item named this fires on nothing at all. Pick one, or use
-          “a neighbour completes a cycle” instead.
-        </p>
-      )}
-
-      {!isGlobal && !isSelf && (
-        <div className="flex gap-3">
-          <Field label="From which neighbour" className="flex-1">
-            <select
-              value={when.source?.mode || ''}
-              onChange={(e) => set({ source: e.target.value ? { mode: e.target.value, value: '' } : null })}
-              className="w-full"
-              style={{ fontSize: 12 }}
-            >
-              <option value="">Any neighbour</option>
-              {TARGET_MODES.filter((m) => m.mode !== 'all').map((m) => (
-                <option key={m.mode} value={m.mode}>{m.label}</option>
-              ))}
-            </select>
-          </Field>
-          {when.source?.mode === 'id' && (
-            <Field label="Token" className="flex-1">
-              <select
-                value={when.source.value || ''}
-                onChange={(e) => set({ source: { mode: 'id', value: e.target.value } })}
-                className="w-full"
-                style={{ fontSize: 12 }}
-              >
-                <option value="">— pick a Token —</option>
-                {Object.values(tokens).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            </Field>
-          )}
-          {when.source?.mode === 'tag' && (
-            <Field label="Tag" className="flex-1">
-              <input
-                type="text"
-                value={when.source.value || ''}
-                onChange={(e) => set({ source: { mode: 'tag', value: e.target.value } })}
-                className="w-full"
-                style={{ fontSize: 12 }}
-              />
-            </Field>
-          )}
-        </div>
-      )}
-
-      {isGlobal && (
-        <div className="flex gap-3">
-          <ItemPicker
-            label="Watch for"
-            value={when.watchItemId}
-            items={items}
-            onPick={(watchItemId) => set({ watchItemId })}
-            className="flex-1"
           />
-          <Field label="At least" className="w-24">
-            <input
-              type="number" min={1} value={when.threshold ?? 1}
-              onChange={(e) => set({ threshold: Math.max(1, Number(e.target.value)) })}
-              className="w-full" style={{ fontSize: 12 }}
-            />
-          </Field>
-        </div>
-      )}
-
-      <Field label="At most once every (ms)">
-        <input
-          type="number" min={0} step={500} value={when.cooldownMs ?? 0}
-          onChange={(e) => set({ cooldownMs: Math.max(0, Number(e.target.value)) })}
-          className="w-full" style={{ fontSize: 11 }}
-        />
-      </Field>
-      {isGlobal && !when.cooldownMs && (
-        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
-          ⚠️ With no cooldown, a condition that stays true fires on every change to the Bank.
-        </p>
-      )}
-      {isSelf && (
-        <p className="text-[10px] text-gray-600 leading-relaxed">
-          This Token reacting to itself. Its rule still reaches outward from
-          here as normal — the filter below decides who it lands on. A cooldown
-          is a rate limit, not a safety net: the board stops a Token setting
-          itself off in a circle on its own.
-        </p>
-      )}
+        </Field>
+        <label className="flex items-center gap-1.5 text-[11px] pb-1.5">
+          <input
+            type="checkbox"
+            checked={!!payload.ignoresArmor}
+            onChange={(e) => setPayload({ ignoresArmor: e.target.checked })}
+          />
+          Ignores armour
+        </label>
+      </div>
+      <p className="text-[10px] text-gray-600 leading-relaxed">
+        Damage is reduced by the target’s armour, and heavy armour can stop it
+        entirely. Tick the box for a rule that should pierce regardless.
+      </p>
     </div>
   );
 }
 
-/**
- * What this statement does to its Token's charges, and when (UE-20).
- *
- * ## ⚠️ Offered on every statement now, not just the ones that fire
- * It used to appear only on keywords that can carry a trigger, because firing
- * was the only moment anything spent at. The moment is authored now, so a
- * permanent aura can be made to cost its Token a charge each cycle — and the
- * always-on case, which is most of them, is simply a cost of `0`.
- *
- * ## The moment list comes from the game, not from here
- * `chargeMomentsFor` returns the moments that are legal for this statement, and
- * the game declares them. P5 and P6 each add one; this component does not change
- * when they do. A statement with no `When` clause is not offered "each time it
- * fires", because it never fires.
- *
- * ## The box is never blank
- * An absent `chargeDelta` is −1 on a firing rule and 0 on one that does not
- * fire, so the control shows the real effective number rather than an empty box
- * that means something. A free effect is a written `0`, which stays a different
- * thing from having written nothing.
- */
 function ChargeClause({ statement, onChange }) {
   const moments = chargeMomentsFor(!!statement.when);
   const moment = chargeMomentOf(statement);

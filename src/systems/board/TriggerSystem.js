@@ -7,9 +7,13 @@ import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/re
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { neighboursOf } from './adjacency.js';
-import { matchesTokenTarget } from './TileModifiers.js';
+import { matchesTokenTarget, filterTargetTiles } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
+import * as DealDamage from './DealDamage.js';
+import * as EffectActions from './EffectActions.js';
+import * as LiveEffects from '../effects/LiveEffects.js';
+import { resolveRoles } from '../../config/registries/roleRegistry.js';
 import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -94,6 +98,40 @@ export const MAX_CASCADE_DEPTH = 8;
 let cascadeDepth = 0;
 let warnedAboutDepth = false;
 
+/**
+ * Run one statement carried by a **live effect instance** (V6).
+ *
+ * ⚠️ Deliberately NOT routed through `fireStatement`. That path is about a Token
+ * *instance* — it is where the cooldown lives and the charge delta is spent, and
+ * a live effect on a person has neither. It ticks on its own clock, which is
+ * already once every five seconds, so a cooldown would be redundant. The same
+ * reasoning P5 of Unified Effects recorded for carried item rules.
+ *
+ * The cascade guard still applies, because a live effect firing another effect
+ * is exactly the shape G-17 allows and therefore exactly the shape that can spin.
+ */
+export function fireLiveStatement(statement, roles) {
+    if (cascadeDepth >= MAX_CASCADE_DEPTH) return;
+    cascadeDepth += 1;
+    try {
+        if (statement.keyword === KEYWORD.DEALS) DealDamage.deal(statement, roles);
+        if (statement.keyword === KEYWORD.HEALS) EffectActions.heal(statement, roles);
+        if (statement.keyword === KEYWORD.RESTORES) EffectActions.restore(statement, roles);
+        if (statement.keyword === KEYWORD.REMOVES) EffectActions.remove(statement, roles);
+        /**
+         * ⭐ The other half of chaining (G-17): a live effect applying another.
+         * Without this the dispatch covered only the four damage-ish verbs, so
+         * the combo mechanism the editor advertises did not exist.
+         */
+        if (statement.keyword === KEYWORD.APPLIES && roles?.selfHeroId && statement.payload?.effectId) {
+            LiveEffects.applyToHero(roles.selfHeroId, statement.payload,
+                statement.sourceEffectId || null, fireLiveStatement);
+        }
+    } finally {
+        cascadeDepth -= 1;
+    }
+}
+
 /** Reset the guard. For tests, and for a board teardown mid-cascade. */
 export function resetCascadeGuard() {
     inFlight.clear();
@@ -149,7 +187,7 @@ function isReady(instance, statementId) {
  * see CMS-26 above. A statement that was on cooldown, or whose condition was not
  * met, has not served and costs nothing.
  */
-function fireStatement(tile, instance, statement) {
+function fireStatement(tile, instance, statement, payload = null, { settled = false } = {}) {
     if (!isReady(instance, statement.id)) return false;
 
     /**
@@ -161,7 +199,14 @@ function fireStatement(tile, instance, statement) {
      *
      * An unlimited Token passes this unconditionally (R-4).
      */
-    if (!Charges.canFireStatement(instance, statement)) return false;
+    /**
+     * ⚠️ **A settled moment neither pays nor is gated** — see
+     * `SELF_TOKEN_DEPLETED`. The Token has already spent its last charge and
+     * left the board, so asking it to afford one more would refuse every rule
+     * on the moment, and taking one would run a delta against a discarded
+     * object sitting where its replacement now is.
+     */
+    if (!settled && !Charges.canFireStatement(instance, statement)) return false;
 
     // --- The loop guard (see the note at the top of this file) --------------
     const key = `${tile}:${statement.id}`;
@@ -186,7 +231,9 @@ function fireStatement(tile, instance, statement) {
     inFlight.add(key);
     cascadeDepth += 1;
     try {
-        runStatementActions(tile, instance, statement);
+        // The charge delta lives inside, because only the actions know whether
+        // the bearer replaced itself and therefore has nothing left to pay with.
+        runStatementActions(tile, instance, statement, payload, { settled });
     } finally {
         inFlight.delete(key);
         cascadeDepth -= 1;
@@ -200,8 +247,48 @@ function fireStatement(tile, instance, statement) {
     return true;
 }
 
-/** What a fired statement actually does. Split out so the guard can wrap it. */
-function runStatementActions(tile, instance, statement) {
+/**
+ * What a fired statement actually does. Split out so the guard can wrap it.
+ *
+ * ⚠️ `payload` is the **board event's** payload, threaded through from the
+ * handler so `Deals` can resolve its roles (Effects Grammar v2 V2). Everything
+ * above it targets tiles and needs only `tile`; a verb that acts on a
+ * *participant* needs to know who was involved, and only the event knows that.
+ */
+function runStatementActions(tile, instance, statement, payload = null, { settled = false } = {}) {
+    // Whether this statement swapped the Token standing on `tile` for a new
+    // one. See the note beside the charge delta at the end.
+    let bearerReplaced = false;
+
+    /**
+     * ⭐ `Deals` — damage to somebody the moment named.
+     *
+     * Handled first because it is the one keyword whose target is a **role**
+     * rather than a tile filter, so none of the tile-shaped machinery below
+     * applies to it.
+     */
+    if (statement.keyword === KEYWORD.DEALS) {
+        DealDamage.deal(statement, resolveRoles(payload, tile));
+    }
+
+    // The rest of the action set (V8). Same shape, same role resolution — each
+    // one is a verb that does something to a participant rather than to a tile.
+    if (statement.keyword === KEYWORD.HEALS) {
+        EffectActions.heal(statement, resolveRoles(payload, tile));
+    }
+    if (statement.keyword === KEYWORD.RESTORES) {
+        EffectActions.restore(statement, resolveRoles(payload, tile));
+    }
+    if (statement.keyword === KEYWORD.REMOVES) {
+        EffectActions.remove(statement, resolveRoles(payload, tile));
+    }
+    if (statement.keyword === KEYWORD.SPAWNS) {
+        bearerReplaced = EffectActions.spawn(statement, resolveRoles(payload, tile)) === tile;
+    }
+    if (statement.keyword === KEYWORD.TRANSFORMS) {
+        bearerReplaced = EffectActions.transform(statement, resolveRoles(payload, tile));
+    }
+
 
     /**
      * `Applies` — a status on the people working the neighbours the filter
@@ -218,8 +305,32 @@ function runStatementActions(tile, instance, statement) {
         const hit = chance >= 100 || Math.random() * 100 < chance;
         if (!hit) continue;
 
+        /**
+         * ⚠️ **A firing rule lands where its sentence says it lands**
+         * (Effects Robustness P1).
+         *
+         * Both payloads below used to drop on `tile` — the Token that fired —
+         * no matter what filter the author wrote. `Grants` declares
+         * `filter: true`, so *"grant 1 Copper to any adjacent Forge"* was a
+         * sentence the editor generated, the CMS saved, the game loaded, and
+         * the runtime then ignored. That is the exact failure the statement
+         * grammar exists to make impossible, and the ambient path never had it:
+         * `applicableStatements` has matched the filter since the grammar
+         * shipped. Only the triggered path was missing the loop.
+         */
         if (modifier.type === EFFECT_TYPES.BONUS_DROP && modifier.itemId) {
-            SpriteLayer.addSprite('item', modifier.itemId, Math.max(1, modifier.quantity || 1), tile);
+            const quantity = Math.max(1, modifier.quantity || 1);
+            // An unfiltered grant is about the Token that fired, which is what
+            // an author with no filter means and what this always did.
+            const targets = statement.to ? filterTargetTiles(tile, statement) : [tile];
+            // ⚠️ A filter naming nothing grants nothing. "To any adjacent Forge"
+            // with no Forge beside it must reach nobody — falling back to the
+            // firing tile would make an unmatched filter silently universal,
+            // which is the failure `matchesTokenTarget` refuses for the same
+            // reason.
+            for (const target of targets) {
+                SpriteLayer.addSprite('item', modifier.itemId, quantity, target);
+            }
         }
 
         if (modifier.type === EFFECT_TYPES.CONVERT) {
@@ -234,10 +345,52 @@ function runStatementActions(tile, instance, statement) {
             for (const c of consumes) {
                 InventoryManager.removeItem(c.itemId, c.quantity || 1);
             }
+
+            /**
+             * ⚠️ **A conversion has ONE destination, not a broadcast** (ER-14).
+             *
+             * `Grants` above may name several neighbours because it is a bonus:
+             * granting to four Forges is four bonuses, which is what the
+             * sentence says and what the author priced. A conversion is an
+             * **exchange** — it consumes a fixed input — so producing onto every
+             * matching neighbour would multiply the output side while the input
+             * side stayed fixed. That is precisely the "scaling only the output
+             * turns a scale into free money" trap UE-7 names, arriving through
+             * the filter instead of through the scale.
+             *
+             * So the filter picks a **destination**, and the owner's own example
+             * is singular: *a Sigil that turns Stone into Bricks and puts them
+             * on the adjacent Kiln.* Lowest tile index wins when several match —
+             * deterministic rather than arbitrary, the same tie-break
+             * `Managers.js` already uses when it has to choose one neighbour.
+             */
+            /**
+             * ⚠️ **`all` means the FIRING TILE here, not "any neighbour"**
+             * (ER-14).
+             *
+             * `makeStatement` stamps `to: { mode: 'all' }` on every keyword that
+             * can aim, so a conversion authored in the CMS and otherwise
+             * untouched arrives with one. Treating that as "pick a neighbour"
+             * made the commonest possible conversion produce onto whichever
+             * Token happened to sit at the lowest adjacent index — while its
+             * sentence named no destination at all, and the CMS hint said the
+             * output "lands on this Token itself".
+             *
+             * The renderer and the editor were both right; this was the half
+             * that lied. An unaimed conversion produces where it was made (D-40).
+             */
+            const aimed = statement.to?.mode && statement.to.mode !== 'all';
+            const destination = aimed
+                ? filterTargetTiles(tile, statement).sort((a, b) => a - b)[0]
+                : tile;
+            // A filter that named nothing produces nothing — the inputs are
+            // still spent, exactly as a failed cycle still costs its inputs.
+            if (destination === undefined) continue;
+
             for (const p of modifier.produces || []) {
                 // Onto the board, not into the Bank (D-40) — the same place
                 // every other yield lands, so it reads as one economy.
-                SpriteLayer.addSprite('item', p.itemId, Math.max(1, p.quantity || 1), tile);
+                SpriteLayer.addSprite('item', p.itemId, Math.max(1, p.quantity || 1), destination);
             }
         }
     }
@@ -256,7 +409,22 @@ function runStatementActions(tile, instance, statement) {
      * `Charges.applyDelta`, along with the destroy-at-zero that used to be
      * written out here.
      */
+    /**
+     * ⚠️ **A Token that replaced itself does not pay.**
+     *
+     * `Transforms`, and `Spawns` onto its own tile, put a NEW instance on this
+     * square. Charging the old one is charging a discarded object: the delta
+     * lands on nothing, `TOKEN_CHARGES_CHANGED` announces a Token that is no
+     * longer there, and — the real damage — a `uses: 1` Sapling hits zero and
+     * `destroyToken` wipes **the Oak that just replaced it**, emptying the tile.
+     *
+     * The intended use is the broken one: "leave a Stump behind when this
+     * depletes" is exactly a one-charge Token that transforms.
+     */
+    if (bearerReplaced || settled) return true;
+
     Charges.applyDelta(tile, instance, Charges.statementChargeDelta(statement));
+    return false;
 }
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
@@ -300,7 +468,7 @@ function handleAdjacent(triggerId, payload) {
             if ((statement.when.scope || TRIGGER_SCOPES.ADJACENT) !== TRIGGER_SCOPES.ADJACENT) continue;
             if (!sourceMatches(statement.when, payload.typeId)) continue;
             if (!producedMatches(definition, statement.when, payload)) continue;
-            fireStatement(neighbour, instance, statement);
+            fireStatement(neighbour, instance, statement, payload);
         }
     }
 }
@@ -316,17 +484,26 @@ function handleAdjacent(triggerId, payload) {
  * `to` filter still works normally: the rule reaches outward from here exactly
  * as any other statement does.
  */
-function handleSelf(triggerId, payload) {
+function handleSelf(triggerId, payload, { settled = false } = {}) {
     const tile = payload?.tile;
     if (tile == null) return;
 
-    const instance = BoardState.getToken(tile);
+    /**
+     * ⚠️ The bearer may have **already left the tile**, and for one moment that
+     * is the normal case rather than an error: `SELF_TOKEN_DEPLETED` fires from
+     * `destroyToken`, after the square has been emptied. So the departing
+     * instance rides on the payload, and this is the only place that reads it.
+     *
+     * Falling back rather than preferring it: while a Token is still on its
+     * tile, the board is the authority on what is standing there.
+     */
+    const instance = BoardState.getToken(tile) || payload?.instance;
     if (!instance) return;
 
     const def = getTokenType(instance.typeId);
     for (const statement of triggeredStatements(def, triggerId)) {
         if (statement.when.scope !== TRIGGER_SCOPES.SELF) continue;
-        fireStatement(tile, instance, statement);
+        fireStatement(tile, instance, statement, payload, { settled });
     }
 }
 
@@ -354,12 +531,15 @@ function handleGlobalItemThreshold() {
  * after a save load.
  */
 export function init() {
+    // The board owns "run a statement"; `StatusApplication` only knows who to
+    // run it on. Injected rather than imported, because it imports us.
+    StatusApplication.setStatementRunner(fireLiveStatement);
     teardown();
 
     resetCascadeGuard();
 
     for (const definition of TRIGGER_EVENTS) {
-        const { id, event, scopes } = definition;
+        const { id, event, scopes, settled } = definition;
 
         if (scopes.includes(TRIGGER_SCOPES.GLOBAL)) {
             unsubscribers.push(EventBus.subscribe(event, () => handleGlobalItemThreshold()));
@@ -374,7 +554,7 @@ export function init() {
             // COMBAT_RESOLVED fires on defeat too; only a win is an event worth
             // cascading from — a lost fight is the same "nothing happened".
             if (id === 'COMBAT_RESOLVED' && payload?.outcome !== 'victory') return;
-            if (isSelf) handleSelf(id, payload);
+            if (isSelf) handleSelf(id, payload, { settled: !!settled });
             else handleAdjacent(id, payload);
         }));
     }

@@ -63,6 +63,18 @@ export {
   rulesTextOf,
 } from '../../../src/systems/effects/statementText.js';
 
+// A statement as the ordered slots an author fills in (G-18) — the model behind
+// the sentence editor. It reads the same declarations the game reads, so adding
+// a keyword, a moment, a reach or a role puts it in the editor with no editor
+// change at all.
+export {
+  SLOT_KIND,
+  slotsOf,
+  slotDisplay,
+  slotIsOrphaned,
+  filterOptions,
+} from '../../../src/systems/effects/statementSlots.js';
+
 // The named effect library (Unified Effects P1). A statement no longer lives on
 // the Token that uses it: it lives in a named entry, and bearers reference that
 // entry by id. Same one-direction rule as everything else here — the *shape*
@@ -129,6 +141,55 @@ export {
   TRIGGER_SCOPES,
   getTriggerEvent,
 } from '../../../src/config/registries/triggerRegistry.js';
+
+// How far a rule carries (ER-1). Same game-defines / CMS-renders split as the
+// trigger vocabulary above: adding a reach row in the game puts it in the
+// picker with no CMS change.
+export {
+  REACH,
+  REACHES,
+  DEFAULT_REACH,
+  reachOf,
+} from '../../../src/config/registries/reachRegistry.js';
+
+// Who a moment puts in the room (G-2). The CMS offers a role only where the
+// chosen moment supplies it, which is why `rolesOf` crosses the boundary too.
+export {
+  ROLE,
+  ROLES,
+  getRole,
+} from '../../../src/config/registries/roleRegistry.js';
+export { rolesOf } from '../../../src/config/registries/triggerRegistry.js';
+
+// The filters a selector may stack (G-9). AND-composed, negatable, and each row
+// declares what it needs to look at — so a filter the caller cannot evaluate
+// refuses rather than guessing.
+export {
+  FILTER_KINDS,
+  FILTER_NEEDS,
+  getFilterKind,
+  filtersOf,
+  filterPhrase,
+} from '../../../src/config/registries/filterRegistry.js';
+
+// Where a number comes from (G-13): typed, a percentage of a named stat, or a
+// count of a second selector's matches. A closed list, never arithmetic.
+export {
+  MAGNITUDE_KIND,
+  MAGNITUDE_STATS,
+  getMagnitudeStat,
+  statsForRoles,
+  magnitudePhrase,
+} from '../../../src/config/registries/magnitudeRegistry.js';
+
+// Where a spawned Token lands (G-15) — an authored choice from a short list,
+// never a hidden fallback.
+export {
+  PLACEMENT,
+  PLACEMENTS,
+  getPlacement,
+  placementOf,
+} from '../../../src/config/registries/placementRegistry.js';
 
 // What a `Cannot` may forbid. One row today — an adjacency limit — shaped like
 // the modifier palette so restriction #2 is a row in the game, not a rewrite of
