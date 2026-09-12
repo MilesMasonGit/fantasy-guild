@@ -253,7 +253,7 @@ function OptionButton({ option, current, highlighted, onPick }) {
  * A narrowed list, with the nearest words when nothing matches (E-4) and a count
  * when there is more than fits.
  */
-function OptionList({ list, query, current, highlight, onPick }) {
+function OptionList({ list, query, current, highlight, onPick, onCreate }) {
   return (
     <div className="max-h-80 overflow-y-auto space-y-0.5">
       {list.near && (
@@ -272,12 +272,91 @@ function OptionList({ list, query, current, highlight, onPick }) {
       {!list.near && list.total === 0 && (
         <p className="text-[10px] text-gray-500">Nothing to pick from yet.</p>
       )}
+      {onCreate && (
+        <button
+          type="button"
+          data-create
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onCreate}
+          className="w-full text-left px-1.5 py-1 rounded text-[12px] font-medium"
+          style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)' }}
+        >
+          + Create “{query.trim()}”
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * "Create …" for a typed name that is not in the list — or null.
+ *
+ * ⚠️ The retired item picker could create an item from its search, and
+ * deleting it must not quietly take that away (P4). Offered only on a slot that
+ * declares it creates (`creates: 'item'`), only when a real name was typed that
+ * does not already exist, and only when the list was given a way to create at
+ * all — a list handed its own `content` has none, because creating writes to
+ * the persisted store.
+ */
+function createFor(slot, query, onCreate) {
+  const typed = (query || '').trim();
+  if (!onCreate || !slot?.creates || !typed) return null;
+  const exists = (slot.options || []).some((o) => o.label.toLowerCase() === typed.toLowerCase());
+  return exists ? null : () => onCreate(typed);
+}
+
+/**
+ * ⭐ **Pick several** — the Tokens a Manager restocks (P4).
+ *
+ * A set with no per-row numbers, so E-8 gives it a slot rather than a form: a
+ * search, and a checkbox per Token. Ticking writes straight back; there is
+ * nothing to commit, because every state of the list is a valid rule.
+ */
+function ListPicker({ slot, onPatch }) {
+  const [query, setQuery] = useState('');
+  const chosen = slot.value || [];
+  const list = visibleOptions(slot, query);
+  const toggle = (id) => onPatch(slot.patch(chosen.includes(id) ? chosen.filter((v) => v !== id) : [...chosen, id]));
+  return (
+    <div className="space-y-1.5">
+      <input
+        type="text"
+        value={query}
+        placeholder={`Type to narrow ${slot.label}…`}
+        onChange={(e) => setQuery(e.target.value)}
+        className="w-full px-1.5 py-1 rounded text-[12px]"
+      />
+      <div className="max-h-80 overflow-y-auto space-y-0.5">
+        {list.near && (
+          <p className="text-[10px] text-gray-500" data-nearest>
+            Nothing here is called “{query.trim()}”. Nearest:
+          </p>
+        )}
+        {list.shown.map((o) => (
+          <label
+            key={o.id}
+            data-list-option={o.id}
+            className="flex items-center gap-2 px-1.5 py-1 rounded text-[12px] hover:bg-white/5"
+          >
+            <input type="checkbox" checked={chosen.includes(o.id)} onChange={() => toggle(o.id)} />
+            {o.label}
+          </label>
+        ))}
+        {list.total > list.shown.length && (
+          <p className="text-[10px] text-gray-500 pt-1" data-list-count>
+            Showing {list.shown.length} of {list.total} — keep typing to narrow.
+          </p>
+        )}
+        {!list.near && list.total === 0 && (
+          <p className="text-[10px] text-gray-500">Nothing to pick from yet.</p>
+        )}
+      </div>
     </div>
   );
 }
 
 /** A panel search for a vocabulary slot that has no word in the line to retype. */
-function PanelSearch({ slot, onPick }) {
+function PanelSearch({ slot, onPick, onCreate }) {
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState({ active: 0, moved: false });
   const list = visibleOptions(slot, query);
@@ -302,7 +381,7 @@ function PanelSearch({ slot, onPick }) {
         }}
         className="w-full px-1.5 py-1 rounded text-[12px]"
       />
-      <OptionList list={list} query={query} current={slot.value} highlight={highlight} onPick={onPick} />
+      <OptionList list={list} query={query} current={slot.value} highlight={highlight} onPick={onPick} onCreate={createFor(slot, query, onCreate)} />
     </div>
   );
 }
@@ -320,7 +399,7 @@ function PanelSearch({ slot, onPick }) {
  * @param {(patch: object) => void} onPatch        change that rule
  * @param {(id: string) => void} onPickRetyped     commit a picked option
  */
-export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped }) {
+export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped, onCreate = null }) {
   const retyping = !!slot && cursor?.mode === 'retype';
   const shown = slot ? slotDisplay(slot) : '';
   const blank = retyping && slot.kind === SLOT_KIND.VOCABULARY && (!shown || shown === '…');
@@ -350,6 +429,7 @@ export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped }) 
           current={slot.value}
           highlight={highlightOf(list, cursor)}
           onPick={onPickRetyped}
+          onCreate={createFor(slot, cursor.query, onCreate)}
         />
       </>
     );
@@ -364,7 +444,7 @@ export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped }) 
   } else {
     switch (slot.kind) {
       case SLOT_KIND.VOCABULARY:
-        body = <PanelSearch key={slot.id} slot={slot} onPick={(v) => onPatch(slot.patch(v))} />;
+        body = <PanelSearch key={slot.id} slot={slot} onPick={(v) => onPatch(slot.patch(v))} onCreate={onCreate} />;
         break;
       case SLOT_KIND.NUMBER:
         body = (
@@ -397,6 +477,9 @@ export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped }) 
             </span>
           </label>
         );
+        break;
+      case SLOT_KIND.LIST:
+        body = <ListPicker key={slot.id} slot={slot} onPatch={onPatch} />;
         break;
       case SLOT_KIND.FILTERS:
         body = <FilterStack slot={slot} onChange={onPatch} />;

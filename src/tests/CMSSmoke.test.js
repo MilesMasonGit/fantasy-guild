@@ -214,11 +214,12 @@ describe('CMS smoke — the screens mount without throwing', () => {
         }));
         const text = container.textContent;
 
-        // One deterministic, one proc, one item grant, one capability.
-        expect(text).toContain('Work Time');
-        expect(text).toContain('Double Loot Chance');
+        // One deterministic, one proc, one item grant, one capability — each a
+        // line whose decision words can be clicked. (Rules Line P4 deleted the
+        // per-keyword forms that used to print "Work Time" and render a select.)
+        expect(container.querySelectorAll('[data-rules-line]')).toHaveLength(5);
+        expect(container.querySelector('[data-rules-line] [data-slot="type"]')).toBeTruthy();
         expect(text).toContain('Acts as');
-        expect(container.querySelector('select')).toBeTruthy();
 
         const token = useEntityStore.getState().tokens[tokenId];
         const tokenRules = render(React.createElement(Statements, { token }));

@@ -3,15 +3,12 @@ import {
   Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Coins, Wrench, Package,
   Gauge, Truck, Repeat, HandCoins, Ban, Sparkles, Factory
 } from 'lucide-react';
-import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
+import { useEntityStore } from '../../stores/useEntityStore';
 import { Library, Pencil } from 'lucide-react';
 import {
-  KEYWORD, KEYWORDS, getKeyword, paletteForKeyword, makeStatement,
+  KEYWORD, KEYWORDS, getKeyword, makeStatement,
   renderStatement, statementsOf, slotsOf,
-  bucketsFor, getPaletteEntry, MODIFIER_SHAPES,
-  clampModifierValue, describeModifierDirection,
-  RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
-  skillsByLayer, DEFAULT_STATEMENT_CHARGE_DELTA,
+  getPaletteEntry, DEFAULT_STATEMENT_CHARGE_DELTA,
   effectRefsOf, expandBearer, rulesLinesOf,
   chargeMomentsFor, chargeMomentOf, getChargeMoment, DEFAULT_CHARGE_DELTA_BY_MOMENT,
   scaleStatement, effectTitle, MAX_SCALE,
@@ -82,6 +79,13 @@ export function StatementList({ statements, onChange, content }) {
   const tokens = content?.tokens ?? storeTokens;
   const items = content?.items ?? storeItems;
   const effects = content?.effects ?? storeEffects;
+  /**
+   * ⚠️ Creating an item WRITES to the persisted store — the same reason
+   * `content` exists. A list given its own vocabulary is a sandbox or a test,
+   * so it offers no "Create …" anywhere: not in the panel's search, and not
+   * in the conversion table's or the upkeep list's item pickers either.
+   */
+  const canCreate = !content;
   const capabilities = useCapabilityVocabulary(tokens);
   const ctx = useMemo(() => ({ tokens, items, capabilities, effects }), [tokens, items, capabilities, effects]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -97,6 +101,8 @@ export function StatementList({ statements, onChange, content }) {
    * just moved to.
    */
   const [cursor, setCursor] = useState(null);
+  // A name typed into an item search that is being created: `{ statementId, slotId, name }`.
+  const [creating, setCreating] = useState(null);
   const actionsFor = (statementId) => {
     const mine = (c) => c && c.statementId === statementId;
     const idle = { mode: 'panel', query: '', active: 0, moved: false };
@@ -169,8 +175,27 @@ export function StatementList({ statements, onChange, content }) {
             patch(focusedStatement.id, panelSlot.patch(value));
             actionsFor(focusedStatement.id).close();
           }}
+          onCreate={canCreate && focusedStatement && panelSlot
+            ? (name) => setCreating({ statementId: focusedStatement.id, slotId: panelSlot.id, name })
+            : null}
         />
       </aside>
+
+      {/* The item-creation dialog the retired item picker opened, now opened from the panel. */}
+      <InlineItemModal
+        isOpen={!!creating}
+        initialName={creating?.name || ''}
+        onClose={() => setCreating(null)}
+        onCreated={(id) => {
+          const target = list.find((st) => st.id === creating?.statementId);
+          const slot = target && slotsOf(target, ctx).find((sl) => sl.id === creating.slotId);
+          if (target && slot) {
+            patch(target.id, slot.patch(id));
+            actionsFor(target.id).close();
+          }
+          setCreating(null);
+        }}
+      />
 
       <div className="space-y-3" style={{ flex: '1 1 420px', minWidth: 0 }}>
       {list.length === 0 && (
@@ -190,6 +215,7 @@ export function StatementList({ statements, onChange, content }) {
           ctx={ctx}
           cursor={cursor?.statementId === statement.id ? cursor : null}
           actions={actionsFor(statement.id)}
+          canCreate={canCreate}
           canMoveUp={i > 0}
           canMoveDown={i < list.length - 1}
           onMove={(by) => move(statement.id, by)}
@@ -671,7 +697,7 @@ function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
  * of a conversion or a restock, the charge cost, and an upkeep clause. Those are
  * tables and prices, and they stay as small forms beneath the line.
  */
-function StatementRow({ statement, tokens, items, names, ctx, cursor, actions, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
+function StatementRow({ statement, items, names, ctx, cursor, actions, canCreate, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
   const keyword = getKeyword(statement.keyword);
 
   return (
@@ -689,7 +715,7 @@ function StatementRow({ statement, tokens, items, names, ctx, cursor, actions, o
         ctx={ctx}
         cursor={cursor}
         actions={actions}
-        form={<PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />}
+        form={<PayloadFields statement={statement} items={items} canCreate={canCreate} onChange={onChange} />}
       />
 
 
@@ -701,532 +727,45 @@ function StatementRow({ statement, tokens, items, names, ctx, cursor, actions, o
       */}
       <ChargeClause statement={statement} onChange={onChange} />
 
-      {keyword?.upkeep && <UpkeepClause statement={statement} items={items} onChange={onChange} />}
+      {keyword?.upkeep && <UpkeepClause statement={statement} items={items} canCreate={canCreate} onChange={onChange} />}
     </RowShell>
   );
 }
 
-/** The payload — different for every keyword, and only ever one thing. */
-function PayloadFields({ statement, tokens, items, onChange }) {
+/**
+ * ⭐ **The one form that survives the Rules Line** (E-8, P4).
+ *
+ * A conversion's two item lists are a genuine table — several rows, each with
+ * its own quantity — and a five-item exchange written out inline stops being
+ * a sentence.
+ *
+ * ⚠️ **Eight forms were deleted here, not hidden**: Provides (effect, combine,
+ * amount, direction, skill), Grants, Works as, Acts as, Restocks, Cannot,
+ * Applies and Deals. Every decision they held is a slot in the line now, and
+ * `FormFreeSlots.test.js` walks that inventory field by field — because a
+ * decision only a form could reach becomes silently unauthorable the day the
+ * form goes, and the last code review had already found one.
+ */
+function PayloadFields({ statement, items, canCreate, onChange }) {
+  if (statement.keyword !== KEYWORD.CONVERTS) return null;
   const payload = statement.payload || {};
   const setPayload = (changes) => onChange({ payload: { ...payload, ...changes } });
-
-  switch (statement.keyword) {
-    case KEYWORD.PROVIDES:
-      return <EffectFields statement={statement} onChange={onChange} />;
-
-    case KEYWORD.GRANTS:
-      return (
-        <div className="flex gap-3 items-end">
-          <ItemPicker
-            label="Item"
-            value={payload.itemId}
-            items={items}
-            onPick={(itemId) => setPayload({ itemId })}
-            className="flex-1"
-          />
-          <Field label="How many" className="w-24">
-            <input
-              type="number" min={1} value={payload.quantity ?? 1}
-              onChange={(e) => setPayload({ quantity: Math.max(1, Number(e.target.value)) })}
-              className="w-full" style={{ fontSize: 12 }}
-            />
-          </Field>
-          <Field label="Chance %" className="w-24">
-            <input
-              type="number" min={1} max={100} value={payload.chance ?? 100}
-              onChange={(e) => setPayload({ chance: Math.min(100, Math.max(1, Number(e.target.value))) })}
-              className="w-full" style={{ fontSize: 12 }}
-            />
-          </Field>
-        </div>
-      );
-
-    case KEYWORD.STATION:
-      return <StationFields payload={payload} setPayload={setPayload} />;
-
-    case KEYWORD.ACTS_AS:
-      return <ActsAsFields payload={payload} tokens={tokens} setPayload={setPayload} />;
-
-    case KEYWORD.RESTOCKS:
-      return <RestocksFields payload={payload} tokens={tokens} setPayload={setPayload} />;
-
-    case KEYWORD.CANNOT:
-      return <CannotFields payload={payload} setPayload={setPayload} onChange={onChange} />;
-
-    case KEYWORD.APPLIES:
-      return <AppliesFields payload={payload} setPayload={setPayload} />;
-
-    case KEYWORD.DEALS:
-      return <DealsFields payload={payload} setPayload={setPayload} />;
-
-    case KEYWORD.CONVERTS:
-      return (
-        <div className="grid grid-cols-2 gap-3">
-          <ItemList
-            label="Spends from the Bank"
-            entries={payload.consumes || []}
-            items={items}
-            onChange={(consumes) => setPayload({ consumes })}
-          />
-          <ItemList
-            label="Produces on the board"
-            entries={payload.produces || []}
-            items={items}
-            onChange={(produces) => setPayload({ produces })}
-          />
-        </div>
-      );
-
-    default:
-      return null;
-  }
-}
-
-/**
- * The one field a Station statement has: which skill's recipes it can run.
- *
- * The list comes from the game's `skillRegistry` (via `constants.js`), so the
- * CMS can never offer a skill the game has not heard of — the drift CMS-5
- * exists to prevent, and the exact failure that produced `industry` and
- * `culinary` in the old content.
- */
-function StationFields({ payload, setPayload }) {
   return (
-    <div className="flex gap-3">
-      <Field label="Skill" className="w-56">
-        <select
-          value={payload.skill || ''}
-          onChange={(e) => setPayload({ skill: e.target.value })}
-          className="w-full"
-          style={{ fontSize: 12 }}
-        >
-          <option value="">Pick a skill…</option>
-          {skillsByLayer().map(([label, group]) => (
-            <optgroup key={label} label={label}>
-              {group.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </Field>
-    </div>
-  );
-}
-
-/**
- * The number effect, with the **direction trap** designed out.
- *
- * ⚠️ You used to type `-0.05` into a box labelled "Value (−0.05 = 5% less)" on
- * an axis where lower is better, and nothing stopped you typing `0.05` and
- * shipping a curse — which is exactly what happened to the Forge Altar. Here
- * the magnitude is always positive and the **direction is a word**; the palette
- * already knows which axes run backwards (`inverted`), so the sign is derived
- * and the sentence reads back in the words you chose.
- */
-function EffectFields({ statement, onChange }) {
-  const payload = statement.payload || {};
-  const entry = getPaletteEntry(payload.type);
-  const palette = paletteForKeyword(KEYWORD.PROVIDES, !!statement.when);
-  const isProc = entry?.shape === MODIFIER_SHAPES.PROC;
-  const bucket = payload.bucket || 'percentage';
-  const direction = describeModifierDirection(entry, payload.value, bucket);
-
-  const magnitude = () => {
-    const v = Math.abs(Number(payload.value) || 0);
-    return bucket === 'percentage' && !isProc ? Math.round(v * 1000) / 10 : v;
-  };
-
-  const writeMagnitude = (raw, sign) => {
-    const n = Math.abs(Number(raw) || 0);
-    const scaled = bucket === 'percentage' && !isProc ? n / 100 : n;
-    onChange({ payload: { ...payload, value: clampModifierValue(entry, scaled * sign) } });
-  };
-
-  const sign = Number(payload.value) < 0 ? -1 : 1;
-
-  return (
-    <div className="space-y-2">
-      <div className="flex gap-3 items-end">
-        <Field label="Effect" className="flex-1">
-          <select
-            value={payload.type || ''}
-            onChange={(e) => {
-              const next = getPaletteEntry(e.target.value);
-              onChange({ payload: makeModifier(e.target.value, next?.shape) });
-            }}
-            className="w-full"
-            style={{ fontSize: 12 }}
-          >
-            {palette.map((p) => (
-              <option key={p.type} value={p.type}>{p.label}</option>
-            ))}
-          </select>
-        </Field>
-
-        {!isProc && (
-          <Field label="How it combines" className="w-32">
-            <select
-              value={bucket}
-              onChange={(e) => onChange({ payload: { ...payload, bucket: e.target.value } })}
-              className="w-full"
-              style={{ fontSize: 12 }}
-            >
-              {/* The palette says which buckets a row accepts. Combat axes take
-                  only `flat`, because the reader sums flats and silently skips
-                  the rest — offering a percentage would offer nothing. */}
-              {bucketsFor(entry).map((b) => (
-                <option key={b} value={b}>
-                  {b === 'percentage' ? '5%' : b === 'flat' ? '+5' : '×1.5'}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
-
-        <Field label={isProc ? 'Chance %' : 'Amount'} className="w-24">
-          <input
-            type="number"
-            min={0}
-            step={bucket === 'multiplier' ? 0.1 : 1}
-            value={magnitude()}
-            onChange={(e) => writeMagnitude(e.target.value, sign)}
-            className="w-full"
-            style={{ fontSize: 12 }}
-          />
-        </Field>
-
-        {!isProc && bucket !== 'multiplier' && (
-          <Field label="Direction" className="w-40">
-            <select
-              value={sign < 0 ? 'less' : 'more'}
-              onChange={(e) => writeMagnitude(magnitude(), e.target.value === 'less' ? -1 : 1)}
-              className="w-full"
-              style={{ fontSize: 12 }}
-            >
-              <option value="more">more {entry?.inverted ? '(a penalty)' : '(a buff)'}</option>
-              <option value="less">less {entry?.inverted ? '(a buff)' : '(a penalty)'}</option>
-            </select>
-          </Field>
-        )}
-      </div>
-
-      {/*
-        The optional narrowing field (P4). Which vocabulary it draws from is
-        declared by the palette row, so this renders a skill picker on Yield and
-        a status picker on Immunity without knowing either list itself.
-      */}
-      {entry?.categories && (
-        <CategoryPicker entry={entry} payload={payload} onChange={onChange} />
-      )}
-
-      {entry?.hint && <p className="text-[10px] text-gray-600 leading-relaxed">{entry.hint}</p>}
-      {direction && (
-        <p className="text-[10px]" style={{ color: direction.isBuff ? 'var(--color-accent-hover)' : 'var(--color-warning)' }}>
-          {direction.text}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/**
- * The narrowing field a palette row asks for — a skill, or a status.
- *
- * ⚠️ **Two vocabularies, one aggregator field.** `mod.target.category` is
- * matched the same way whatever is in it; what differs is who passes what.
- * `BoardRunner` passes the Token's skill, `StatusEffectSystem` passes a status
- * id. The row says which, so an author never sees a list that cannot match.
- *
- * ⚠️ A `status` row is **required**, not optional: an immunity naming no status
- * is registered against ALL and blocks every status in the game, which is never
- * what anyone means by "immunity".
- */
-function CategoryPicker({ entry, payload, onChange }) {
-  const isStatus = entry.categories === 'status';
-  // `skillsByLayer()` hands back [label, skills] pairs, not objects.
-  const options = isStatus
-    ? AUTHORABLE_STATUSES.map((s) => ({ id: s.id, name: s.name }))
-    : skillsByLayer().flatMap(([, skills]) => skills.map((s) => ({ id: s.id, name: s.name })));
-
-  const value = payload.category || '';
-
-  return (
-    <div className="space-y-1">
-      <Field label={isStatus ? 'Which status' : 'Only for'}>
-        <select
-          value={value}
-          onChange={(e) => {
-            const next = { ...payload };
-            if (e.target.value) next.category = e.target.value;
-            else delete next.category;   // absent means "everything", as it always has
-            onChange({ payload: next });
-          }}
-          className="w-full"
-          style={{ fontSize: 12 }}
-        >
-          <option value="">{isStatus ? '— pick a status —' : 'Any skill'}</option>
-          {options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-        </select>
-      </Field>
-      {isStatus && !value && (
-        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
-          ⚠️ Pick a status. Without one this blocks <strong>every</strong> status
-          in the game, which is almost certainly not what you meant.
-        </p>
-      )}
-      {!isStatus && value && (
-        <p className="text-[10px] text-gray-600 leading-relaxed">
-          Applies only when the Token is doing this skill’s work. Leave it on
-          “Any skill” for the usual case.
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** Acts as — capability plus **Tool Tier**, which lives on the sentence. */
-function ActsAsFields({ payload, tokens, setPayload }) {
-  const capabilities = useCapabilityVocabulary(tokens);
-  return (
-    <div className="space-y-2">
-      <div className="flex gap-3">
-        <Field label="Capability" className="flex-1">
-          <input
-            type="text"
-            list="cms-capability-tags"
-            value={payload.tag || ''}
-            placeholder="e.g. pickaxe"
-            onChange={(e) => setPayload({ tag: e.target.value.trim().toLowerCase() })}
-            className="w-full"
-            style={{ fontSize: 12 }}
-          />
-        </Field>
-        <Field label="Tool Tier" className="w-28">
-          <input
-            type="number" min={1} value={payload.tier ?? 1}
-            onChange={(e) => setPayload({ tier: Math.max(1, Number(e.target.value)) })}
-            className="w-full" style={{ fontSize: 12 }}
-          />
-        </Field>
-      </div>
-      <CapabilityDatalist capabilities={capabilities} />
-      <p className="text-[10px] text-gray-600 leading-relaxed">
-        A station asking for a Tier 2 tool will not accept a Tier 1 one. This is
-        the other end of the same wire as a rule’s <strong>Min Tool Tier</strong>.
-      </p>
-    </div>
-  );
-}
-
-/** Restocks — the list of Token types this Manager keeps supplied. */
-function RestocksFields({ payload, tokens, setPayload }) {
-  const chosen = payload.tokenIds || [];
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {chosen.length === 0 && <span className="text-[11px] text-gray-600">Nothing yet.</span>}
-        {chosen.map((id) => (
-          <span key={id} className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] bg-white/5 border border-white/10 text-gray-300">
-            {tokens[id]?.name || id}
-            <button
-              onClick={() => setPayload({ tokenIds: chosen.filter((x) => x !== id) })}
-              className="text-gray-500 hover:text-red-400"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
-            >
-              <X size={10} />
-            </button>
-          </span>
-        ))}
-      </div>
-      <select
-        value=""
-        onChange={(e) => e.target.value && setPayload({ tokenIds: [...new Set([...chosen, e.target.value])] })}
-        className="w-full"
-        style={{ fontSize: 12 }}
-      >
-        <option value="">— add a Token to restock —</option>
-        {Object.values(tokens).map((t) => (
-          <option key={t.id} value={t.id}>{t.name}</option>
-        ))}
-      </select>
-      <p className="text-[10px] text-gray-600 leading-relaxed">
-        Covers the 8 surrounding tiles and never wears out, but it can only move
-        a Token from the Bank — an empty Bank simply means the tile stays bare.
-      </p>
-    </div>
-  );
-}
-
-/**
- * Cannot — a restriction kind and its limit.
- *
- * The kind list has exactly one row today (design §1.3). It is still a picker
- * rather than a hardcoded "more than N" form, because that is the difference
- * between adding restriction #2 as a row in a registry and adding it as a
- * rewrite of this component.
- */
-function CannotFields({ payload, setPayload, onChange }) {
-  const kind = getRestrictionKind(payload.kind);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex gap-3">
-        <Field label="Cannot" className="flex-1">
-          <select
-            value={payload.kind || ''}
-            onChange={(e) => onChange({ payload: blankRestriction(e.target.value) })}
-            className="w-full"
-            style={{ fontSize: 12 }}
-          >
-            {RESTRICTION_KINDS.map((k) => (
-              <option key={k.id} value={k.id}>{k.label}</option>
-            ))}
-          </select>
-        </Field>
-        {payload.kind === 'adjacency_limit' && (
-          <Field label="No more than" className="w-28">
-            <input
-              type="number" min={0} value={payload.max ?? 2}
-              onChange={(e) => setPayload({ max: Math.max(0, Number(e.target.value)) })}
-              className="w-full" style={{ fontSize: 12 }}
-            />
-          </Field>
-        )}
-      </div>
-      {kind?.blurb && <p className="text-[10px] text-gray-600 leading-relaxed">{kind.blurb}</p>}
-      <p className="text-[10px] text-gray-600 leading-relaxed">
-        Breaking this refuses the drop: the Token flies back to wherever it came
-        from and the board flashes the reason. Nothing is ever destroyed, and a
-        saved board that already breaks the rule sends the offender to the Vault.
-      </p>
-    </div>
-  );
-}
-
-/**
- * Applies — a status, and how many stacks of it.
- *
- * ⚠️ **The filter below selects Tokens; the status lands on a person.** The
- * owner ruled that this uses the same filter as every other keyword, so there
- * is one targeting concept in the grammar rather than two — which means the
- * honest reading of "adjacent Coast Tokens" here is *the heroes working them*.
- * The generated sentence says exactly that, in those words.
- */
-function AppliesFields({ payload, setPayload }) {
-  const status = AUTHORABLE_STATUSES.find((s) => s.id === payload.statusId);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex gap-3 items-end">
-        <Field label="Status" className="flex-1">
-          <select
-            value={payload.statusId || ''}
-            onChange={(e) => setPayload({ statusId: e.target.value })}
-            className="w-full"
-            style={{ fontSize: 12 }}
-          >
-            <option value="">— pick a status —</option>
-            {AUTHORABLE_STATUSES.map((s) => (
-              <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Stacks" className="w-24">
-          <input
-            type="number" min={1} value={payload.stacks ?? 1}
-            onChange={(e) => setPayload({ stacks: Math.max(1, Number(e.target.value)) })}
-            className="w-full" style={{ fontSize: 12 }}
-          />
-        </Field>
-        <Field label="Chance %" className="w-24">
-          <input
-            type="number" min={1} max={100} value={payload.chance ?? 100}
-            onChange={(e) => setPayload({ chance: Math.min(100, Math.max(1, Number(e.target.value))) })}
-            className="w-full" style={{ fontSize: 12 }}
-          />
-        </Field>
-      </div>
-
-      {/*
-        ⚠️ The one choice an item-borne rule has (UE-24). An item is carried by
-        exactly one hero, so `Provides` and `Grants` have a single honest reading
-        and need no filter — but a status could land on either side of a fight,
-        and "Applies Poison" alone would be true of two opposite rules.
-
-        Shown on every `Applies`, because an effect entry does not know which
-        bearer will reference it. On a Token the field is ignored and the filter
-        above decides, which the hint says.
-      */}
-      <Field label="When carried by an item, it lands on">
-        <select
-          value={payload.target || 'hero'}
-          onChange={(e) => setPayload({ target: e.target.value })}
-          className="w-full"
-          style={{ fontSize: 12 }}
-        >
-          <option value="hero">The hero carrying it</option>
-          <option value="enemy">The enemy that hero is fighting</option>
-        </select>
-        <p className="text-[10px] text-gray-600 mt-1 leading-relaxed">
-          Ignored when a Token carries this effect — a Token&rsquo;s rule uses the
-          filter above instead.
-        </p>
-      </Field>
-
-      {status && (
-        <p
-          className="text-[10px] leading-relaxed"
-          style={{ color: status.category === 'debuff' ? 'var(--color-warning)' : 'var(--color-accent-hover)' }}
-        >
-          {status.description}
-        </p>
-      )}
-      {status?.combatOnly && (
-        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
-          ⚠️ {status.name} clears the moment a fight ends, so it does nothing at
-          all on a hero who is working rather than fighting.
-        </p>
-      )}
-    </div>
-  );
-}
-
-/**
- * ⭐ `Deals` — how much damage, and whether armour stops it.
- *
- * ⚠️ **No target picker here.** Who it hits is a *role*, and roles are legal
- * only where the moment supplies them (G-2), so the picker lives beside the
- * trigger where that question can actually be answered.
- */
-function DealsFields({ payload, setPayload }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex gap-3 items-end">
-        <Field label="Damage" className="w-24">
-          <input
-            type="number"
-            min={0}
-            value={payload.amount ?? 1}
-            onChange={(e) => setPayload({ amount: Math.max(0, Number(e.target.value) || 0) })}
-            className="w-full"
-            style={{ fontSize: 12 }}
-          />
-        </Field>
-        <label className="flex items-center gap-1.5 text-[11px] pb-1.5">
-          <input
-            type="checkbox"
-            checked={!!payload.ignoresArmor}
-            onChange={(e) => setPayload({ ignoresArmor: e.target.checked })}
-          />
-          Ignores armour
-        </label>
-      </div>
-      <p className="text-[10px] text-gray-600 leading-relaxed">
-        Damage is reduced by the target’s armour, and heavy armour can stop it
-        entirely. Tick the box for a rule that should pierce regardless.
-      </p>
+    <div className="grid grid-cols-2 gap-3">
+      <ItemList
+        label="Spends from the Bank"
+        entries={payload.consumes || []}
+        items={items}
+        canCreate={canCreate}
+        onChange={(consumes) => setPayload({ consumes })}
+      />
+      <ItemList
+        label="Produces on the board"
+        entries={payload.produces || []}
+        items={items}
+        canCreate={canCreate}
+        onChange={(produces) => setPayload({ produces })}
+      />
     </div>
   );
 }
@@ -1290,7 +829,7 @@ function ChargeClause({ statement, onChange }) {
 }
 
 /** The `, costing …` clause. */
-function UpkeepClause({ statement, items, onChange }) {
+function UpkeepClause({ statement, items, canCreate = true, onChange }) {
   const upkeep = statement.upkeep;
 
   if (!upkeep) {
@@ -1324,6 +863,7 @@ function UpkeepClause({ statement, items, onChange }) {
         label=""
         entries={upkeep.items || []}
         items={items}
+        canCreate={canCreate}
         onChange={(next) => set({ items: next })}
       />
 
@@ -1350,7 +890,7 @@ function UpkeepClause({ statement, items, onChange }) {
  * same `toLowerCase().includes()` filter written out again, and the create-item
  * modal wired up twice. One control, used everywhere.
  */
-function ItemPicker({ label, value, items, onPick, className }) {
+function ItemPicker({ label, value, items, onPick, className, canCreate = true }) {
   const [query, setQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -1400,7 +940,7 @@ function ItemPicker({ label, value, items, onPick, className }) {
               {i.name}
             </button>
           ))}
-          {!exactExists && (
+          {canCreate && !exactExists && (
             <button
               onClick={() => setModalOpen(true)}
               className="w-full flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold"
@@ -1423,7 +963,7 @@ function ItemPicker({ label, value, items, onPick, className }) {
 }
 
 /** A list of `{itemId, quantity}` entries — upkeep, and both sides of Converts. */
-function ItemList({ label, entries, items, onChange }) {
+function ItemList({ label, entries, items, onChange, canCreate = true }) {
   return (
     <div>
       {label && (
@@ -1454,6 +994,7 @@ function ItemList({ label, entries, items, onChange }) {
         label=""
         value=""
         items={items}
+        canCreate={canCreate}
         onPick={(itemId) => itemId && onChange([...entries, { itemId, quantity: 1 }])}
       />
     </div>
