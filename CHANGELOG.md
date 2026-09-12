@@ -5,6 +5,17 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **The rules editor's help panel sits on the left and follows you.** One panel
+  now serves every rule in an effect, stays in view as you scroll, and shows
+  what can go in whichever word you're on. On a narrow screen it moves above the
+  rules instead of overlapping them.
+- ⭐ **Rules can be edited from the keyboard.** Tab jumps to the next underlined
+  word and opens it; Shift+Tab goes back. Anything valid you typed is kept on the
+  way; anything that isn't a real word is simply dropped. The Up and Down arrows
+  move through the panel's list, and Enter takes the highlighted option.
+- **Blanks open a search.** Clicking a "…" asks you to pick, and long lists — like
+  every item in the game — show 30 at a time with a count, narrowing as you type.
+
 - ⭐ **Rules are edited by retyping their words.** In the effects editor a rule
   is now one line — the exact sentence the game prints — and every word that
   stands for a decision can be clicked. Click the "2" in "deals 2 damage", type
