@@ -146,15 +146,31 @@ export function resolveMagnitude(payload, entities = {}, matches = 0) {
 export function magnitudePhrase(payload, countedPhrase = '') {
     switch (payload?.magnitude) {
         case MAGNITUDE_KIND.STAT: {
-            const stat = getMagnitudeStat(payload.stat);
-            const amount = Number(payload.amount) || 0;
-            return `${amount}% of ${stat ? stat.label : '…'}`;
+            const { amount, stat } = magnitudeParts(payload);
+            return `${amount} of ${stat}`;
         }
         case MAGNITUDE_KIND.COUNT:
             return countedPhrase ? `per ${countedPhrase}` : 'per …';
         default:
             return null;
     }
+}
+
+/**
+ * "10%" and "the hero's max HP" — a stat magnitude's two decisions, apart.
+ *
+ * ⚠️ The ONE definition of how a stat magnitude reads. `magnitudePhrase` joins
+ * these for the string, and the renderer's segment form (Rules Line P1) keeps
+ * them apart so the number and the stat can be clicked separately. Two copies
+ * of "N% of X" would be free to drift, and the drift would be invisible until a
+ * sentence and its clickable words disagreed.
+ *
+ * @returns {{amount: string, stat: string}|null} null unless the magnitude is a stat
+ */
+export function magnitudeParts(payload) {
+    if (payload?.magnitude !== MAGNITUDE_KIND.STAT) return null;
+    const stat = getMagnitudeStat(payload.stat);
+    return { amount: `${Number(payload.amount) || 0}%`, stat: stat ? stat.label : '…' };
 }
 
 /** Whether a payload's magnitude needs the second, counted selector (G-14). */

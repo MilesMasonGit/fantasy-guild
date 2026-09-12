@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import './fixtures/testTokens.js';
 import { buildCorpus } from './fixtures/renderCorpus.js';
 
@@ -33,7 +35,9 @@ import { buildCorpus } from './fixtures/renderCorpus.js';
  * the review of what every player will see change.
  */
 
-const GOLDEN_PATH = path.join(__dirname, 'fixtures', 'renderGolden.json');
+// The house pattern for a test's own directory (see CMSBoundary, DeadEventWiring).
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const GOLDEN_PATH = path.join(HERE, 'fixtures', 'renderGolden.json');
 const UPDATE = !!process.env.UPDATE_RENDER_GOLDEN;
 
 /** Render the whole corpus. A throw is part of the behaviour, so it is pinned too. */

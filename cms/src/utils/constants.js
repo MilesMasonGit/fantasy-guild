@@ -59,6 +59,7 @@ export {
 
 export {
   renderStatement,
+  renderSegments,
   upkeepLine,
   rulesLinesOf,
   rulesTextOf,
