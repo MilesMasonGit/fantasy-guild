@@ -2,7 +2,7 @@
 
 *The authoritative plan. Vision: [`concept_rules_line_editor.md`](concept_rules_line_editor.md).*
 
-**Status: P0 done and passed 2026-09-12; P1 is next.** Decisions below marked
+**Status: P0 and P1 done 2026-09-12; P2 is next.** Decisions below marked
 locked came from owner interviews on 2026-09-09 and 2026-09-12 and are not to be
 re-litigated.
 
@@ -87,6 +87,25 @@ strings are byte-identical. Written before the refactor, run after.
 
 Twenty functions, 614 lines, 9 consumers. No behaviour change, no UI change.
 
+#### What P1 left deliberately coarse
+
+These words render correctly but are tagged as one wide span, or as plain
+text, because the editor has no finer slot for them **yet**. Each is P4's to
+split, and each is a place a click will feel imprecise until then:
+
+* `Grants` — "2 Oak Wood" and "40%" are both tagged `payload`, the form slot.
+* `Converts` and `Restocks` — whole item and Token lists are one `payload` span.
+* `Cannot` — "be adjacent to more than 2" is one `kind` span; the 2 has a `max`
+  slot but lives inside the restriction's own template.
+* `Works as` — the skill is plain text; its picker is still a form.
+* `BONUS_DROP` — the item and quantity are plain text; `Provides` has no item slot.
+* `Heals` — a computed heal keeps only its number clickable.
+
+⚠️ **To change a sentence on purpose:** regenerate the golden with
+`UPDATE_RENDER_GOLDEN=1 npx vitest run src/tests/RenderGolden.test.js` and
+**read the diff of `renderGolden.json`** before committing. That diff is the
+review of what every player will see change.
+
 ### P2 — The line
 
 Render the segments. Put the cursor on a decision segment; type to narrow against
@@ -123,7 +142,7 @@ Token editor and Item editor onto the same component (E-9).
 | Phase | State | Notes |
 |---|---|---|
 | P0 Prototype one rule | ✅ **DONE, and it passed** 2026-09-12 | ⭐ Four rules, not one — a simple rule is the flattering case. Owner's verdict: *"the fourth rule reads fine"*, so density is settled and the plan may proceed. Also ruled: **E-6 confirmed** (fine print stays beside the sentence) and **the panel moves to the left** (E-5). All four lines' hand-written segments joined byte-identically to the real renderer, which is early evidence P1 is reachable. |
-| P1 Renderer emits segments | **NOT STARTED** | Byte-identical assertion first. |
+| P1 Renderer emits segments | ✅ **DONE** 2026-09-12 | `renderSegments` is the source; `renderStatement` is its join, so all nine callers were untouched. ⭐ Golden written and committed FIRST: 1382 cases walked from the registries, one changed character turns 344 red. `RenderSegments` holds every tag to the slots `slotsOf` really emits — its first run caught `category` tagged on axes with no category picker. Three text-preserving wrong renderers each turned it red while the golden stayed green. |
 | P2 The line | **NOT STARTED** | |
 | P3 The panel | **NOT STARTED** | |
 | P4 Delete the forms | **NOT STARTED** | ⭐ The phase that fixes the actual complaint. |
