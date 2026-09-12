@@ -578,14 +578,103 @@ export function slotDisplay(slot) {
     }
 }
 
-/** Options whose label or hint matches what the author has typed. */
+/**
+ * Options whose label or hint matches what the author has typed, **best first**.
+ *
+ * ⚠️ Ranked, because Enter takes the top hit (Rules Line, E-1). Unranked, typing
+ * "tick" could commit whatever option merely *mentions* ticking in its hint
+ * ahead of the one called "On Tick". The order: an exact label, a label that
+ * starts with it, a label word that starts with it, a label containing it, and
+ * only then a hint containing it. Ties keep the vocabulary's own order.
+ */
 export function filterOptions(slot, query) {
     const options = slot?.options || [];
     const q = (query || '').trim().toLowerCase();
     if (!q) return options;
-    return options.filter(o =>
-        o.label.toLowerCase().includes(q) || (o.hint || '').toLowerCase().includes(q)
-    );
+    const tier = (o) => {
+        const label = o.label.toLowerCase();
+        if (label === q) return 0;
+        if (label.startsWith(q)) return 1;
+        if (label.split(/\s+/).some(w => w.startsWith(q))) return 2;
+        if (label.includes(q)) return 3;
+        return (o.hint || '').toLowerCase().includes(q) ? 4 : -1;
+    };
+    return options
+        .map((o, i) => ({ o, i, t: tier(o) }))
+        .filter(x => x.t >= 0)
+        .sort((a, b) => a.t - b.t || a.i - b.i)
+        .map(x => x.o);
+}
+
+/** Classic edit distance. Small strings only — option labels and a typed word. */
+function editDistance(a, b) {
+    const row = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+        let prev = row[0];
+        row[0] = i;
+        for (let j = 1; j <= b.length; j++) {
+            const kept = row[j];
+            row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+            prev = kept;
+        }
+    }
+    return row[b.length];
+}
+
+const closeness = (a, b) => (a || b ? 1 - editDistance(a, b) / Math.max(a.length, b.length) : 1);
+const wordsOf = (text) => text.toLowerCase().replace(/[^a-z0-9%\s]/g, '').split(/\s+/).filter(Boolean);
+
+/**
+ * ⭐ **The nearest legal words to something that is not a word here** (E-4).
+ *
+ * An unrecognised word inserts nothing — that is what keeps an invalid rule
+ * unwritable. But a dead end teaches nothing, so the panel offers the closest
+ * options instead, turning "depletd" into a way of finding *On Depleted*.
+ *
+ * Scored on each typed word's best match among the label's words (so a typo in
+ * one word still finds it), blended with the whole label's closeness (so "on
+ * cycel" prefers *On Cycle* over *On Neighbour's Cycle*, which shares both
+ * words but is further from what was typed).
+ *
+ * ⚠️ Only ever returns the slot's own options — it ranks, it never invents.
+ */
+export function nearestOptions(slot, query, limit = 5) {
+    const options = slot?.options || [];
+    const typed = (query || '').trim().toLowerCase();
+    const typedWords = wordsOf(typed);
+    if (!typedWords.length || !options.length) return [];
+    return options
+        .map((o, i) => {
+            const labelWords = wordsOf(o.label);
+            const perWord = typedWords.reduce((sum, w) =>
+                sum + Math.max(0, ...labelWords.map(lw => closeness(w, lw))), 0) / typedWords.length;
+            const whole = closeness(typed, wordsOf(o.label).join(' '));
+            return { o, i, score: perWord * 0.7 + whole * 0.3 };
+        })
+        .sort((a, b) => b.score - a.score || a.i - b.i)
+        .slice(0, limit)
+        .map(x => x.o);
+}
+
+/**
+ * The decisions this statement has that its SENTENCE never mentions.
+ *
+ * ⚠️ **This is what stops a decision becoming silently unauthorable.** The
+ * Rules Line makes the sentence's own words clickable — but a flat damage
+ * never says "measured as", "ignores armour" is absent until it is true, an
+ * empty filter stack says nothing, a tier of 1 is not printed. Each of those is
+ * a real slot with no word to click. The last code review found exactly this
+ * failure hiding behind a form (`Works as` became unauthorable), so the line
+ * offers every one of these explicitly.
+ *
+ * `FORM` slots are left out: their form renders beneath the line regardless.
+ *
+ * @param {Array<object>} slots     `slotsOf(statement)`
+ * @param {Array<{slot?: string}>} segments  `renderSegments(statement)`
+ */
+export function slotsWithoutWords(slots, segments) {
+    const worded = new Set((segments || []).map(s => s.slot).filter(Boolean));
+    return (slots || []).filter(s => s.kind !== SLOT_KIND.FORM && !worded.has(s.id));
 }
 
 /** Named exports the CMS leans on, re-checked here so a rename breaks loudly. */

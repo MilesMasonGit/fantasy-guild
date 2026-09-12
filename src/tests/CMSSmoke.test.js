@@ -257,6 +257,11 @@ describe('CMS smoke — the screens mount without throwing', () => {
 
         expect(text).toContain('Makes adjacent Coast Tokens work 5% faster.');
         expect(text).toContain('Acts as a Tier 1 net for adjacent stations.');
+
+        // ⚠️ Once, not three times. Before the Rules Line (P2) a rule's sentence
+        // sat in the chip editor's quote AND the row's footer; the line is the
+        // sentence now, and a second copy would be the duplication it removed.
+        expect(text.split('Makes adjacent Coast Tokens work 5% faster.').length - 1).toBe(1);
         cleanup();
 
         // The Token's panel repeats the entry's sentences read-only, under the
