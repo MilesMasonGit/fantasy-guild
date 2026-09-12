@@ -2,7 +2,7 @@
 
 *The authoritative plan. Vision: [`concept_rules_line_editor.md`](concept_rules_line_editor.md).*
 
-**Status: P0, P1 and P2 done 2026-09-12; P3 is next.** Decisions below marked
+**Status: P0–P3 done 2026-09-12; P4 is next.** Decisions below marked
 locked came from owner interviews on 2026-09-09 and 2026-09-12 and are not to be
 re-litigated.
 
@@ -130,16 +130,39 @@ unrecognised word inserts nothing (E-4).
   slot — a real browser named the "2" button "damage", and a re-rendered one had
   no name at all.
 
-#### Left for P3, deliberately
+#### Left for P3, deliberately — ✅ all done in P3
 
-* The panel still sits beneath the line; E-5 puts it on the left.
-* Clicking a blank ("…") should open a search to pick the item or Token.
-* Arrow keys through the panel's list, and Tab between words (Q3).
+* ~~The panel still sits beneath the line; E-5 puts it on the left.~~
+* ~~Clicking a blank ("…") should open a search to pick the item or Token.~~
+* ~~Arrow keys through the panel's list, and Tab between words (Q3).~~
 
 ### P3 — The panel, re-hosted
 
 `filterOptions` and the slot hints already exist and already drive the V3 panel.
 This is re-hosting them against the new cursor model, not rebuilding them.
+
+#### What P3 decided that the plan did not say
+
+* ⭐ **The cursor lives in `StatementList`, not in each line.** One panel serving
+  every rule has to follow the author between rules, so the list owns which word
+  is open. It remembers a word by **slot and occurrence**, never by position,
+  because committing a word re-renders the sentence and positions shift.
+* ⚠️ **`StatementList` accepts a `content` override** (tokens, items, effects).
+  The CMS store **persists itself to localStorage**, so seeding it — even to try
+  the editor — would add to the author's real workspace and could reach `data/`
+  on the next sync. The sandbox and the tests supply their own vocabulary.
+* **Long vocabularies show 30 at a time with a count** ("Showing 30 of 312 —
+  keep typing"). A search, not a wall.
+* ⚠️ **Tab never guesses.** It commits what was typed if it is valid and simply
+  drops it if not. Arrowing onto a suggestion IS an explicit choice, so Enter
+  takes it — E-4 still holds for plain Enter on a non-word.
+* **On a narrow editor column the panel wraps above the rules** rather than
+  squeezing them — the failure that originally pushed the V3 panel beneath.
+* ⚠️ **The line names effects by their name.** Found in the browser: picking
+  "Poison" from a blank printed "Applies effect_1". Fixed for the editable line.
+  ⚠️ **The same gap remains in four read-only rules panels** (EffectEditor's Rules
+  Text, the Item editor, the Token editor, and the Token's rules panel) — out of
+  this phase's scope and flagged as its own task.
 
 ### P4 — ⭐ Delete the fourteen forms
 
@@ -168,7 +191,7 @@ Token editor and Item editor onto the same component (E-9).
 | P0 Prototype one rule | ✅ **DONE, and it passed** 2026-09-12 | ⭐ Four rules, not one — a simple rule is the flattering case. Owner's verdict: *"the fourth rule reads fine"*, so density is settled and the plan may proceed. Also ruled: **E-6 confirmed** (fine print stays beside the sentence) and **the panel moves to the left** (E-5). All four lines' hand-written segments joined byte-identically to the real renderer, which is early evidence P1 is reachable. |
 | P1 Renderer emits segments | ✅ **DONE** 2026-09-12 | `renderSegments` is the source; `renderStatement` is its join, so all nine callers were untouched. ⭐ Golden written and committed FIRST: 1382 cases walked from the registries, one changed character turns 344 red. `RenderSegments` holds every tag to the slots `slotsOf` really emits — its first run caught `category` tagged on axes with no category picker. Three text-preserving wrong renderers each turned it red while the golden stayed green. |
 | P2 The line | ✅ **DONE** 2026-09-12 | `RulesLine.jsx` replaces `SentenceEditor.jsx` (deleted). The line is `renderSegments`' output; click a word, retype it, Enter commits, Escape reverts. An unknown word commits nothing and offers the nearest real words. Both quoted copies of the sentence are gone (Q1). 30 new tests; four deliberately wrong versions each caught. Verified by clicking and typing in a real browser on a sandbox (`?p2=1`) that never writes to the workspace. |
-| P3 The panel | **NOT STARTED** | |
+| P3 The panel | ✅ **DONE** 2026-09-12 | ONE panel for the whole list, on the left, pinned while the rules scroll, and wrapping above them on a narrow column. Tab and Shift+Tab walk the words (Q3); arrows move through the panel; a blank reads "Pick …" and searches, 30 at a time with a count. 32 interaction tests; six deliberately wrong versions each caught. Verified in a real browser on the sandbox: layout at 1280px and 640px, pinning over a 1,500px scroll, Tab/Shift+Tab, arrow + Enter, and picking an effect and an item from blanks. |
 | P4 Delete the forms | **NOT STARTED** | ⭐ The phase that fixes the actual complaint. |
 | P5 Cost and cadence | **NOT STARTED** | |
 | P6 Token and Item editors | **NOT STARTED** | |
@@ -184,9 +207,11 @@ same words twice, which is the duplication this whole rework exists to remove.
 offering verbs, or a starter sentence with every decision unset? The second is
 friendlier and the first is honest about there being nothing there yet.
 
-**Q3 — Keyboard-only authoring.** Tab between decisions, enter to commit, escape
-to revert? Worth settling once the line exists and the conventions can be felt
-rather than guessed.
+~~**Q3 — Keyboard-only authoring.**~~ ✅ **Answered 2026-09-12: Tab walks the
+words.** Tab moves to the next underlined word and opens it; Shift+Tab goes back;
+Up/Down move through the panel; Enter takes the highlighted option; Escape leaves
+the word as it was. Past the last word, Tab leaves the sentence normally. Built in
+P3.
 
 ## 6. Deliberately out of scope
 

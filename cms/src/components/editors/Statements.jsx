@@ -7,7 +7,7 @@ import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
 import { Library, Pencil } from 'lucide-react';
 import {
   KEYWORD, KEYWORDS, getKeyword, paletteForKeyword, makeStatement,
-  renderStatement, statementsOf,
+  renderStatement, statementsOf, slotsOf,
   bucketsFor, getPaletteEntry, MODIFIER_SHAPES,
   clampModifierValue, describeModifierDirection,
   RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
@@ -17,7 +17,7 @@ import {
   scaleStatement, effectTitle, MAX_SCALE,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
-import RulesLine from './RulesLine';
+import RulesLine, { RulesPanel } from './RulesLine';
 import InlineItemModal from '../shared/InlineItemModal';
 
 /**
@@ -67,10 +67,53 @@ const KEYWORD_ICON = {
  * view of a Token's own `acceptedTokens` field (owner Q5), which is a property
  * of that Token and not something a shared effect could carry.
  */
-export function StatementList({ statements, onChange }) {
-  const tokens = useEntityStore((s) => s.tokens);
-  const items = useEntityStore((s) => s.items);
+export function StatementList({ statements, onChange, content }) {
+  const storeTokens = useEntityStore((s) => s.tokens);
+  const storeItems = useEntityStore((s) => s.items);
+  const storeEffects = useEntityStore((s) => s.effects);
+  /**
+   * ⚠️ `content` lets a caller supply the vocabulary instead of the store.
+   *
+   * The CMS store PERSISTS itself to localStorage, so anything put into it —
+   * even briefly, even to try an editor out — becomes part of the author's
+   * workspace and can reach `data/` through the next sync. A sandbox or a test
+   * passes its own tokens, items and effects here and never writes a thing.
+   */
+  const tokens = content?.tokens ?? storeTokens;
+  const items = content?.items ?? storeItems;
+  const effects = content?.effects ?? storeEffects;
+  const capabilities = useCapabilityVocabulary(tokens);
+  const ctx = useMemo(() => ({ tokens, items, capabilities, effects }), [tokens, items, capabilities, effects]);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  /**
+   * ⭐ **One cursor for the whole list**, because there is one panel (E-5).
+   *
+   * `{ statementId, slotId, occurrence, mode, query, active, moved }` — which
+   * rule, which word (by slot and which occurrence of it), and whether it is
+   * being retyped (`retype`), holding keyboard focus without a typing box
+   * (`word`), or just shown in the panel (`panel`). Functional updates
+   * throughout, so a blur arriving after a Tab can never clobber the word Tab
+   * just moved to.
+   */
+  const [cursor, setCursor] = useState(null);
+  const actionsFor = (statementId) => {
+    const mine = (c) => c && c.statementId === statementId;
+    const idle = { mode: 'panel', query: '', active: 0, moved: false };
+    return {
+      set: (target) => setCursor({ statementId, occurrence: 0, query: '', active: 0, moved: false, ...target }),
+      query: (q) => setCursor((c) => (mine(c) ? { ...c, query: q, active: 0, moved: false } : c)),
+      move: (step, length) => setCursor((c) => (mine(c)
+        ? { ...c, active: Math.max(0, Math.min(length - 1, (c.moved ? c.active : 0) + step)), moved: true }
+        : c)),
+      close: () => setCursor((c) => (mine(c) ? { ...c, ...idle } : c)),
+      closeIf: (slotId, occurrence) => setCursor((c) => (
+        mine(c) && c.mode === 'retype' && c.slotId === slotId && (c.occurrence ?? 0) === occurrence
+          ? { ...c, ...idle }
+          : c
+      )),
+    };
+  };
 
   const list = statements || [];
   const patch = (id, changes) =>
@@ -86,13 +129,50 @@ export function StatementList({ statements, onChange }) {
     onChange(next);
   };
 
+  /**
+   * ⚠️ `effect` is here because the line reads it. Without it, picking "Poison"
+   * from a blank committed the right effect and then printed "Applies effect_1"
+   * — the id, not the name the author just chose — which is the one thing a
+   * search exists to avoid (found in the browser, Rules Line P3).
+   */
   const names = useMemo(() => ({
     token: (id) => tokens[id]?.name || id,
     item: (id) => items[id]?.name || id,
-  }), [tokens, items]);
+    effect: (id) => effects?.[id]?.name || id,
+  }), [tokens, items, effects]);
+
+  // What the panel is looking at: the focused rule, and the slot in it.
+  const focusedStatement = cursor ? list.find((st) => st.id === cursor.statementId) || null : null;
+  const panelSlot = focusedStatement
+    ? slotsOf(focusedStatement, ctx).find((sl) => sl.id === cursor.slotId) || null
+    : null;
 
   return (
-    <div className="space-y-3">
+    /*
+      ⭐ The panel on the LEFT, one for every rule (E-5, P0's approved layout).
+      ⚠️ It wraps above the rules when the editor column is too narrow for
+      both side by side — the reason the V3 editor put its panel beneath the
+      line was a fixed sidebar overlapping the chips in a narrow column.
+    */
+    <div data-rules-editor style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
+      <aside
+        data-rules-panel-column
+        style={{ flex: '0 0 260px', position: 'sticky', top: 12, maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}
+      >
+        <RulesPanel
+          slot={panelSlot}
+          cursor={focusedStatement ? cursor : null}
+          statement={focusedStatement}
+          onPatch={(changes) => focusedStatement && patch(focusedStatement.id, changes)}
+          onPickRetyped={(value) => {
+            if (!focusedStatement || !panelSlot) return;
+            patch(focusedStatement.id, panelSlot.patch(value));
+            actionsFor(focusedStatement.id).close();
+          }}
+        />
+      </aside>
+
+      <div className="space-y-3" style={{ flex: '1 1 420px', minWidth: 0 }}>
       {list.length === 0 && (
         <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
           This effect has a name and nothing behind it. A named effect must carry
@@ -107,6 +187,9 @@ export function StatementList({ statements, onChange }) {
           tokens={tokens}
           items={items}
           names={names}
+          ctx={ctx}
+          cursor={cursor?.statementId === statement.id ? cursor : null}
+          actions={actionsFor(statement.id)}
           canMoveUp={i > 0}
           canMoveDown={i < list.length - 1}
           onMove={(by) => move(statement.id, by)}
@@ -152,6 +235,7 @@ export function StatementList({ statements, onChange }) {
             <Plus size={12} /> Add rule
           </button>
         )}
+      </div>
       </div>
     </div>
   );
@@ -587,10 +671,8 @@ function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
  * of a conversion or a restock, the charge cost, and an upkeep clause. Those are
  * tables and prices, and they stay as small forms beneath the line.
  */
-function StatementRow({ statement, tokens, items, names, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
+function StatementRow({ statement, tokens, items, names, ctx, cursor, actions, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
   const keyword = getKeyword(statement.keyword);
-  const capabilities = useCapabilityVocabulary(tokens);
-  const effects = useEntityStore((s) => s.effects);
 
   return (
     <RowShell
@@ -604,7 +686,9 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
         statement={statement}
         onChange={onChange}
         names={names}
-        ctx={{ tokens, items, capabilities, effects }}
+        ctx={ctx}
+        cursor={cursor}
+        actions={actions}
         form={<PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />}
       />
 
