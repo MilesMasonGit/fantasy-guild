@@ -338,31 +338,32 @@ function itemList(entries, names) {
 function whenPhrase(statement, names) {
     const when = statement?.when;
     if (!when?.event) return '';
+
+    const definition = getTriggerEvent(when.event);
+    const label = definition?.label || when.event;
+
+    /**
+     * ⚠️ Two moments carry a **parameter**, and the tag has to keep it. "On Bank
+     * Holds" on its own names the picker rather than the rule — the whole point
+     * of a threshold is the number and the item.
+     */
     if (when.event === 'ITEM_THRESHOLD') {
         const item = when.watchItemId ? names.item(when.watchItemId) : '…';
-        return `When the Bank holds at least ${when.threshold || 1} ${item}`;
+        return `${label} ${when.threshold || 1} ${item}`;
     }
-    const definition = getTriggerEvent(when.event);
-    // A trigger that names an item reads better with the item in the clause
-    // than with a generic label — "when a neighbour produces Copper Ore" says
-    // the rule; "when a neighbour produces a specific item" says the picker.
     if (definition?.needsItem) {
-        const item = when.watchItemId ? names.item(when.watchItemId) : '…';
-        return `When a neighbour produces ${item}`;
+        return `${label} ${when.watchItemId ? names.item(when.watchItemId) : '…'}`;
     }
+
     /**
-     * ⚠️ **Only the FIRST letter is lowered, never the whole label** (G-10).
+     * ⭐ **The tag is printed as authored** — no "When", no lowercasing.
      *
-     * `.toLowerCase()` on the whole string destroyed every proper noun the
-     * vocabulary owns: *"This Token's own cycle completes"* came out as *"this
-     * token's"*, and *"The Bank holds enough of an item"* as *"the bank"*. Token
-     * and Bank are things in this game with capital letters, and a sentence that
-     * strips them is not literal — which is the one thing the rules text has to
-     * be. Lowering a single character joins the clause on without touching the
-     * words.
+     * The old form lowered the first character to join a clause onto "When …",
+     * which was careful work to avoid destroying the proper nouns the vocabulary
+     * owns ("Token", "Bank"). A tag is a label, not a clause, so it keeps its
+     * capital and the sentence joins with a colon instead.
      */
-    const label = definition?.label || when.event;
-    return `When ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
+    return label;
 }
 
 /** ", at most once every 5 seconds" — the cooldown, when there is one. */
@@ -653,7 +654,12 @@ export function renderStatement(statement, names = {}) {
     const resolve = { ...DEFAULT_NAMES, ...names };
     const when = whenPhrase(statement, resolve);
     const body = bodyOf(statement, resolve);
-    const sentence = when ? `${when}, ${body[0].toLowerCase()}${body.slice(1)}` : body;
+    /**
+     * ⚠️ A **colon**, not a comma (owner, 2026-09-12). "On Cycle, deals 1 damage"
+     * reads as a sentence missing its subject; the colon says the tag is a label
+     * attached to a rule, which is what it is.
+     */
+    const sentence = when ? `${when}: ${body[0].toLowerCase()}${body.slice(1)}` : body;
     return `${sentence}${cooldownPhrase(statement)}.`;
 }
 

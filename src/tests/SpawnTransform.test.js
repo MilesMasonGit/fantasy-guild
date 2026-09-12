@@ -244,6 +244,6 @@ describe('the sentence says where it lands', () => {
     it('reads a transform plainly', () => {
         expect(renderStatement(
             { ...makeStatement(KEYWORD.TRANSFORMS), payload: { typeId: 't_oak' } }, names
-        )).toBe("When this Token's cycle completes, transforms into Oak.");
+        )).toBe("On Cycle: transforms into Oak.");
     });
 });

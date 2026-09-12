@@ -68,12 +68,30 @@ export const TRIGGER_SCOPES = {
  *
  * @type {Array<{id: string, event: string, label: string, scopes: string[], roles: string[], hint: string}>}
  */
+/**
+ * ⭐ **A moment is a short TAG, not a sentence** (owner ruling, 2026-09-12).
+ *
+ * These read "On Cycle", not "When this Token's cycle completes". The owner's
+ * words: *"should be more simple or shorter. Maybe just 'On Cycle' and I'll
+ * teach the player what that means elsewhere."*
+ *
+ * ⚠️ **Terse everywhere, and the same words in game and in the CMS.** Half of
+ * these are about a NEIGHBOUR rather than this Token, and a half-terse
+ * vocabulary is the worst of both: you cannot tell by looking which kind a
+ * moment is, so the shortness stops carrying information. One vocabulary,
+ * because there is one renderer — two would be a second place for the game to
+ * disagree with itself.
+ *
+ * ⚠️ **The meaning moved into `hint`, it was not thrown away.** The panel shows
+ * both, and typing narrows on both, so the old prose is still how an author
+ * finds a moment they cannot yet name.
+ */
 export const TRIGGER_EVENTS = [
     {
         id: 'CYCLE_COMPLETE',
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
-        label: 'A neighbour completes a cycle',
+        label: "On Neighbour's Cycle",
         scopes: [TRIGGER_SCOPES.ADJACENT],
         hint: 'Fires when an adjacent Token finishes work — or wins a fight, since one kill is one cycle (D-129).'
     },
@@ -81,7 +99,7 @@ export const TRIGGER_EVENTS = [
         id: 'TOKEN_DEPLETED',
         roles: [ROLE.SELF, ROLE.SOURCE],
         event: BOARD_EVENTS.TOKEN_DEPLETED,
-        label: 'A neighbour runs out of charges',
+        label: 'On Neighbour Depleted',
         scopes: [TRIGGER_SCOPES.ADJACENT],
         hint: 'Fires when an adjacent Token spends its last charge and leaves the board.'
     },
@@ -105,7 +123,7 @@ export const TRIGGER_EVENTS = [
         id: 'SELF_TOKEN_DEPLETED',
         roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.TOKEN_DEPLETED,
-        label: 'This Token spends its last charge',
+        label: 'On Depleted',
         scopes: [TRIGGER_SCOPES.SELF],
         settled: true,
         hint: 'Fires as this Token leaves the board. Its square is already free, so a Spawns here can take its place. The actor is whoever spent the last charge, when a hero did.'
@@ -121,7 +139,7 @@ export const TRIGGER_EVENTS = [
         id: 'COMBAT_RESOLVED',
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.COMBAT_RESOLVED,
-        label: 'A neighbouring fight is won',
+        label: "On Neighbour's Kill",
         scopes: [TRIGGER_SCOPES.ADJACENT],
         hint: 'Fires when combat on an adjacent enemy Token ends in victory.'
     },
@@ -136,7 +154,7 @@ export const TRIGGER_EVENTS = [
         id: 'COMBAT_ENGAGED',
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
-        label: 'A neighbouring fight begins',
+        label: "On Neighbour's Fight",
         scopes: [TRIGGER_SCOPES.ADJACENT],
         hint: 'Fires each time a hero engages an adjacent enemy — including every fresh enemy after a kill, not just the first.'
     },
@@ -150,7 +168,7 @@ export const TRIGGER_EVENTS = [
         id: 'SELF_COMBAT_ENGAGED',
         roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
-        label: 'A hero engages this enemy',
+        label: 'On Engaged',
         scopes: [TRIGGER_SCOPES.SELF],
         hint: 'Fires on the enemy Token itself each time a hero engages it. This is how an enemy acts when it is attacked.'
     },
@@ -169,7 +187,7 @@ export const TRIGGER_EVENTS = [
         id: 'ITEM_PRODUCED',
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
-        label: 'A neighbour produces a specific item',
+        label: 'On Neighbour Produces',
         scopes: [TRIGGER_SCOPES.ADJACENT],
         needsItem: true,
         hint: 'Fires only when the adjacent Token really produced the named item that cycle. A chance-based output that missed does not count.'
@@ -191,7 +209,7 @@ export const TRIGGER_EVENTS = [
         id: 'SELF_CYCLE_COMPLETE',
         roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
-        label: "This Token's cycle completes",
+        label: 'On Cycle',
         scopes: [TRIGGER_SCOPES.SELF],
         hint: 'Fires when this very Token finishes its own work — not a neighbour. Its rule then reaches out from here as usual.'
     },
@@ -208,7 +226,7 @@ export const TRIGGER_EVENTS = [
         id: 'CYCLE_START',
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_START,
-        label: 'A neighbour begins a cycle',
+        label: "On Neighbour's Start",
         scopes: [TRIGGER_SCOPES.ADJACENT],
         hint: 'Fires as an adjacent Token starts work — not when it finishes. A Token waiting for inputs has not started, so it does not fire until it genuinely resumes.'
     },
@@ -221,7 +239,7 @@ export const TRIGGER_EVENTS = [
         id: 'SELF_CYCLE_START',
         roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.CYCLE_START,
-        label: "This Token's cycle begins",
+        label: 'On Start',
         scopes: [TRIGGER_SCOPES.SELF],
         hint: 'Fires as this very Token starts its own work. Its rule then reaches out from here as usual.'
     },
@@ -251,7 +269,7 @@ export const TRIGGER_EVENTS = [
          * seconds, while carried, deals 2 damage…"* — the label was written as a
          * standalone heading and the sentence is not a heading (G-10).
          */
-        label: 'A few seconds pass while this is carried',
+        label: 'On Tick',
         scopes: [TRIGGER_SCOPES.SELF],
         hint: 'Fires every 5 seconds on whoever is carrying this effect, until it wears off. This is how a poison or a regeneration works.'
     },
@@ -268,7 +286,7 @@ export const TRIGGER_EVENTS = [
         id: 'ITEM_THRESHOLD',
         roles: [ROLE.SELF],
         event: 'inventory_updated',
-        label: 'The Bank holds enough of an item',
+        label: 'On Bank Holds',
         scopes: [TRIGGER_SCOPES.GLOBAL],
         hint: 'Fires while the Bank holds at least the given quantity. Rate-limited by its cooldown.'
     }

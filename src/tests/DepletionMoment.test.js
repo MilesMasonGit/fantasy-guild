@@ -161,7 +161,11 @@ describe('the moment exists and declares itself', () => {
             payload: { typeId: 'fixture_producer', placement: PLACEMENT.HERE },
             when: { event: 'SELF_TOKEN_DEPLETED', scope: 'self' }
         });
-        expect(sentence.toLowerCase()).toContain('last charge');
+        // The moment is a tag now, not a clause; the prose that used to be the
+        // label ("spends its last charge") lives in the hint, which is what the
+        // editor panel shows beside it.
+        expect(sentence).toContain('On Depleted');
+        expect(getTriggerEvent('SELF_TOKEN_DEPLETED').hint).toContain('last charge');
     });
 });
 

@@ -229,7 +229,7 @@ describe('The sentence is literally true', () => {
             to: { mode: 'tag', value: 'Coast' },
             when: { event: 'CYCLE_COMPLETE', scope: 'adjacent' }
         })).toBe(
-            'When a neighbour completes a cycle, applies Poison to heroes on adjacent Coast Tokens, 50% of the time.'
+            'On Neighbour\'s Cycle: applies Poison to heroes on adjacent Coast Tokens, 50% of the time.'
         );
     });
 

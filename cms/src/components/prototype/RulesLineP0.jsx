@@ -42,14 +42,13 @@ const RULES = [
         id: 'simple',
         statement: { ...makeStatement(KEYWORD.DEALS), payload: { amount: 2 } },
         segments: [
-            T('When '),
-            D("this Token's cycle completes", 'moment', [
-                ["this Token's cycle completes", 'The moment this Token finishes its own work.'],
-                ['a neighbour completes a cycle', 'An adjacent Token finishes work — or wins a fight.'],
-                ['this Token spends its last charge', 'As this Token leaves the board.'],
-                ['a hero engages this enemy', 'The moment a fight starts on this tile.'],
+            D('On Cycle', 'moment', [
+                ['On Cycle', 'The moment this Token finishes its own work.'],
+                ["On Neighbour's Cycle", 'An adjacent Token finishes work — or wins a fight.'],
+                ['On Depleted', 'As this Token spends its last charge and leaves the board.'],
+                ['On Engaged', 'The moment a hero starts a fight on this tile.'],
             ]),
-            T(', deals '),
+            T(': deals '),
             D('2', 'amount', null),
             T(' damage to '),
             D('the hero', 'role', [
@@ -107,9 +106,8 @@ const RULES = [
             payload: { amount: 10, magnitude: 'stat', stat: 'actor_max_hp' },
         },
         segments: [
-            T('When '),
-            D("this Token's cycle completes", 'moment', null),
-            T(', deals damage equal to '),
+            D('On Cycle', 'moment', null),
+            T(': deals damage equal to '),
             D('10%', 'amount', null),
             T(' of '),
             D("the hero's max HP", 'stat', [
@@ -132,9 +130,8 @@ const RULES = [
             counted: { mode: 'tag', value: 'Coast', reach: 'board' },
         },
         segments: [
-            T('When '),
-            D("this Token's cycle completes", 'moment', null),
-            T(', deals '),
+            D('On Cycle', 'moment', null),
+            T(': deals '),
             D('1', 'amount', null),
             T(' damage per '),
             D('adjacent Coast Token', 'counted', [

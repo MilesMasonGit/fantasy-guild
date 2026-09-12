@@ -94,7 +94,7 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
       }],
     };
     expect(composeTokenDescription(token, items))
-      .toBe('When a neighbour completes a cycle, grants 1 Stone to every adjacent Token, 10% of the time.');
+      .toBe('On Neighbour\'s Cycle: grants 1 Stone to every adjacent Token, 10% of the time.');
   });
 
   /**

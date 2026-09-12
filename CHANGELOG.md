@@ -5,6 +5,12 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **A rule now opens with a short tag instead of a sentence.** "On Cycle:
+  deals 2 damage to the hero" rather than "When this Token's own cycle
+  completes, …". All twelve moments read this way — On Cycle, On Start, On
+  Depleted, On Engaged, On Tick, and the neighbour equivalents — so a rule's
+  opening stops eating half the line.
+
 - **Rules text reads like English, not like the engine.** A Token that works
   faster now says so — "Makes adjacent Coast Tokens work 5% faster" rather than
   "Provides 5% less work time". Upkeep is its own line and says "consumes"

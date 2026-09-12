@@ -331,23 +331,30 @@ describe('the grammar and the sentence', () => {
 
     it('reads literally, and keeps Token capitalised', () => {
         expect(renderStatement(makeStatement(KEYWORD.DEALS)))
-            .toBe("When this Token's cycle completes, deals 1 damage to the hero.");
+            .toBe("On Cycle: deals 1 damage to the hero.");
     });
 
     it('mentions armour only when it is being ignored', () => {
         const s = makeStatement(KEYWORD.DEALS);
         expect(renderStatement(s)).not.toContain('armour');
         expect(renderStatement({ ...s, payload: { amount: 2, ignoresArmor: true } }))
-            .toBe("When this Token's cycle completes, deals 2 damage to the hero, ignoring armour.");
+            .toBe("On Cycle: deals 2 damage to the hero, ignoring armour.");
     });
 
-    it('⚠️ no longer flattens the proper nouns the vocabulary owns', () => {
-        // `.toLowerCase()` on the whole trigger label turned "This Token's" into
-        // "this token's" and "The Bank" into "the bank". A sentence that strips
-        // the game's own capitals is not literal, which is the one thing the
-        // rules text has to be (G-10).
+    it('⚠️ prints a moment tag exactly as authored', () => {
+        /**
+         * The original failure here was `.toLowerCase()` on the whole trigger
+         * label, which turned "This Token's" into "this token's" and "The Bank"
+         * into "the bank" — a sentence stripping the game's own capitals is not
+         * literal, and literal is the one thing rules text has to be (G-10).
+         *
+         * ⚠️ Moments are short TAGS now ("On Cycle"), joined with a colon rather
+         * than folded into a "When …" clause, so nothing lowers a character any
+         * more. The guarantee is the same one and it is now structural: the tag
+         * is printed as authored.
+         */
         const line = renderStatement(makeStatement(KEYWORD.DEALS));
-        expect(line).toContain("this Token's");
-        expect(line).not.toContain('this token');
+        expect(line.startsWith('On Cycle: ')).toBe(true);
+        expect(line).not.toContain('on cycle');
     });
 });

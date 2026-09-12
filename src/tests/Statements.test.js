@@ -92,7 +92,7 @@ describe('The rules text is the rule, rendered', () => {
             payload: { consumes: [{ itemId: 'item_coal', quantity: 20 }], produces: [{ itemId: 'item_charcoal', quantity: 2 }] }
         };
         expect(renderStatement(sigil, names)).toBe(
-            'When the Bank holds at least 20 Coal, converts 20 Coal into 2 Charcoal, at most once every 5 seconds.'
+            'On Bank Holds 20 Coal: converts 20 Coal into 2 Charcoal, at most once every 5 seconds.'
         );
 
         const costed = {
