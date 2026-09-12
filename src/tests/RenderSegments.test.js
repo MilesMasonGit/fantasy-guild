@@ -87,8 +87,11 @@ describe('⚠️ every clickable word opens a slot that exists', () => {
             'moment', 'watchItem', 'threshold', 'cooldown', 'keyword', 'role',
             'amount', 'magnitude', 'stat', 'counted', 'ignoresArmor',
             'type', 'value', 'category', 'reach', 'filterMode', 'filterValue', 'filters',
-            'typeId', 'placement', 'effectId', 'statusId', 'stacks', 'durationMs',
-            'kind', 'tag', 'payload'
+            // `statusId` and `stacks` are gone: Applies offers library effects only (P4).
+            'typeId', 'placement', 'effectId', 'durationMs',
+            'kind', 'tag', 'payload',
+            // P4: every decision the retired forms held now has a word.
+            'quantity', 'itemId', 'chance', 'skill', 'tier', 'tokenIds', 'max', 'target'
         ]) {
             expect(seen.has(slot), `no word in the whole corpus is tagged "${slot}"`).toBe(true);
         }

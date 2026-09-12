@@ -211,22 +211,24 @@ describe('⭐ a Token-borne Applies reaches somebody', () => {
     });
 });
 
-describe('⭐ the payload form survives for keywords the chips do not cover', () => {
-    it('still offers a skill picker for Works as, so a station can be authored', () => {
+describe('⭐ a station can always be authored', () => {
+    it('offers a real skill picker for Works as, and picking one sets the skill', () => {
         /**
-         * `Works as` has no slot in the model, and the form was rendered only
-         * when a `FORM`-kind slot existed — so it had no control at all, and
-         * `stationSkillOf` being the sole input to `deriveTokenType` meant **no
-         * new station Token could be authored**.
+         * The original defect: `Works as` had no slot, and the payload form was
+         * rendered only when a `FORM`-kind slot existed — so it had no control
+         * at all, and since `stationSkillOf` is the sole input to
+         * `deriveTokenType`, **no new station Token could be authored**.
          *
-         * The form is unconditional now. This test guards the model half: a
-         * keyword with no slots must not be mistaken for one needing no editor.
+         * Rules Line P4 retired the forms, so the guarantee moved to the model:
+         * `Works as` now carries its own skill slot. This test pins THAT, rather
+         * than the old "keyword slot only, the form does the rest" shape it used
+         * to assert — a picker that exists is the thing that must never regress.
          */
-        const slots = slotsOf(makeStatement(KEYWORD.STATION));
-        const ids = slots.map(s => s.id);
-        // The verb chip is all the sentence can hold; everything else about a
-        // station is the form's job, and the editor must render it regardless.
-        expect(ids).toEqual(['keyword']);
+        const station = makeStatement(KEYWORD.STATION);
+        const skill = slotsOf(station).find(s => s.id === 'skill');
+        expect(skill, 'Works as lost its skill picker').toBeTruthy();
+        expect(skill.options.map(o => o.id)).toContain('cooking');
+        expect(skill.patch('cooking').payload.skill).toBe('cooking');
     });
 });
 

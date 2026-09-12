@@ -175,7 +175,9 @@ describe('typing narrows a slot', () => {
 describe('list payloads stay a form beneath the sentence (G-20)', () => {
     it('marks a conversion items as a form rather than spelling them inline', () => {
         expect(slot(makeStatement(KEYWORD.CONVERTS), 'payload').kind).toBe(SLOT_KIND.FORM);
-        expect(slot(makeStatement(KEYWORD.RESTOCKS), 'payload').kind).toBe(SLOT_KIND.FORM);
+        // P4: a Restocks list is a set of Tokens, not a table, so E-8 gives it a
+        // slot. Only a conversion keeps a form.
+        expect(slot(makeStatement(KEYWORD.RESTOCKS), 'tokenIds').kind).toBe(SLOT_KIND.LIST);
     });
 });
 

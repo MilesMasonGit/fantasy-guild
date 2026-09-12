@@ -36,6 +36,15 @@
  *   refusal: (payload: object, subject: string, tokenName: string) => string
  * }>}
  */
+/**
+ * "be adjacent to more than 2 Coast Tokens", as a template of its two decisions.
+ *
+ * ⚠️ One definition of the wording. `sentence` fills it for the string; the
+ * renderer fills it with markers so the LIMIT can be its own clickable word
+ * (Rules Line P4) — without a second copy of the phrase living there.
+ */
+const adjacencySentence = (limit, subject) => `be adjacent to more than ${limit} ${subject}`;
+
 export const RESTRICTION_KINDS = Object.freeze([
     {
         id: 'adjacency_limit',
@@ -49,8 +58,8 @@ export const RESTRICTION_KINDS = Object.freeze([
          * rest of the sentence, so a second kind can read completely
          * differently without the renderer growing a branch.
          */
-        sentence: (payload, subject) =>
-            `be adjacent to more than ${limitOf(payload)} ${subject}`,
+        template: adjacencySentence,
+        sentence: (payload, subject) => adjacencySentence(limitOf(payload), subject),
 
         /** What the player is told when the board refuses the drop. */
         refusal: (payload, subject, tokenName) =>
