@@ -5,6 +5,16 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Rules are edited by retyping their words.** In the effects editor a rule
+  is now one line — the exact sentence the game prints — and every word that
+  stands for a decision can be clicked. Click the "2" in "deals 2 damage", type
+  5, press Enter, and only that word changes. A word the game doesn't know
+  changes nothing and offers the closest real words instead. A number keeps its
+  direction when retyped, so "work 5% faster" stays faster unless you type a
+  minus or plus sign. Decisions the sentence doesn't mention yet, like "ignores
+  armour", sit in a small row underneath, and the two extra copies of the
+  sentence the old editor showed are gone.
+
 - ⭐ **A rule now opens with a short tag instead of a sentence.** "On Cycle:
   deals 2 damage to the hero" rather than "When this Token's own cycle
   completes, …". All twelve moments read this way — On Cycle, On Start, On

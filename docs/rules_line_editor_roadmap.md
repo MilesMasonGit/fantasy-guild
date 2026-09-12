@@ -2,7 +2,7 @@
 
 *The authoritative plan. Vision: [`concept_rules_line_editor.md`](concept_rules_line_editor.md).*
 
-**Status: P0 and P1 done 2026-09-12; P2 is next.** Decisions below marked
+**Status: P0, P1 and P2 done 2026-09-12; P3 is next.** Decisions below marked
 locked came from owner interviews on 2026-09-09 and 2026-09-12 and are not to be
 re-litigated.
 
@@ -112,6 +112,30 @@ Render the segments. Put the cursor on a decision segment; type to narrow agains
 `slotsOf`; enter commits. Nothing else in the sentence moves (E-3). An
 unrecognised word inserts nothing (E-4).
 
+#### What P2 decided that the plan did not say
+
+* ⚠️ **A retyped number keeps its direction.** "work 5% faster" stores −5, so
+  retyping the 5 as 20 would silently have made it slower. A typed number takes
+  the current sign unless the author types `+` or `-`; a trailing `%` is
+  accepted because that is what the sentence shows. "faster" is a different
+  word, and E-3 retypes one word.
+* ⚠️ **Every decision without a word gets a control.** A flat hit never says
+  "measured as", "ignores armour" is silent until true, an empty filter stack
+  says nothing. `slotsWithoutWords` lists them and a quiet row beneath the line
+  offers each. A test walks every keyword and fails if any slot is unreachable —
+  the failure the last code review found hiding behind a form.
+* **Typing ranks best-first**, because Enter takes the top hit: exact label,
+  label prefix, word prefix, label contains, then hint.
+* **Each clickable word is named by the word itself** (`aria-label`), not by its
+  slot — a real browser named the "2" button "damage", and a re-rendered one had
+  no name at all.
+
+#### Left for P3, deliberately
+
+* The panel still sits beneath the line; E-5 puts it on the left.
+* Clicking a blank ("…") should open a search to pick the item or Token.
+* Arrow keys through the panel's list, and Tab between words (Q3).
+
 ### P3 — The panel, re-hosted
 
 `filterOptions` and the slot hints already exist and already drive the V3 panel.
@@ -143,7 +167,7 @@ Token editor and Item editor onto the same component (E-9).
 |---|---|---|
 | P0 Prototype one rule | ✅ **DONE, and it passed** 2026-09-12 | ⭐ Four rules, not one — a simple rule is the flattering case. Owner's verdict: *"the fourth rule reads fine"*, so density is settled and the plan may proceed. Also ruled: **E-6 confirmed** (fine print stays beside the sentence) and **the panel moves to the left** (E-5). All four lines' hand-written segments joined byte-identically to the real renderer, which is early evidence P1 is reachable. |
 | P1 Renderer emits segments | ✅ **DONE** 2026-09-12 | `renderSegments` is the source; `renderStatement` is its join, so all nine callers were untouched. ⭐ Golden written and committed FIRST: 1382 cases walked from the registries, one changed character turns 344 red. `RenderSegments` holds every tag to the slots `slotsOf` really emits — its first run caught `category` tagged on axes with no category picker. Three text-preserving wrong renderers each turned it red while the golden stayed green. |
-| P2 The line | **NOT STARTED** | |
+| P2 The line | ✅ **DONE** 2026-09-12 | `RulesLine.jsx` replaces `SentenceEditor.jsx` (deleted). The line is `renderSegments`' output; click a word, retype it, Enter commits, Escape reverts. An unknown word commits nothing and offers the nearest real words. Both quoted copies of the sentence are gone (Q1). 30 new tests; four deliberately wrong versions each caught. Verified by clicking and typing in a real browser on a sandbox (`?p2=1`) that never writes to the workspace. |
 | P3 The panel | **NOT STARTED** | |
 | P4 Delete the forms | **NOT STARTED** | ⭐ The phase that fixes the actual complaint. |
 | P5 Cost and cadence | **NOT STARTED** | |

@@ -10,6 +10,7 @@ import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
 import ProgressionPanel from './components/progression/ProgressionPanel';
 import RulesLineP0 from './components/prototype/RulesLineP0';
+import RulesLineSandbox from './components/prototype/RulesLineSandbox';
 import { useEntityStore } from './stores/useEntityStore';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
 
@@ -34,6 +35,11 @@ const EDITOR_MAP = {
 function App() {
   if (new URLSearchParams(window.location.search).has('p0')) {
     return <RulesLineP0 />;
+  }
+  // ⚠️ P2 sandbox: the real rule editor on in-memory rules, so verifying the
+  // line never leaves a test effect in the workspace for a sync to ship.
+  if (new URLSearchParams(window.location.search).has('p2')) {
+    return <RulesLineSandbox />;
   }
   return (
     <AppShell>

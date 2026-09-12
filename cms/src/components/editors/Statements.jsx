@@ -17,7 +17,7 @@ import {
   scaleStatement, effectTitle, MAX_SCALE,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
-import SentenceEditor from './SentenceEditor';
+import RulesLine from './RulesLine';
 import InlineItemModal from '../shared/InlineItemModal';
 
 /**
@@ -460,7 +460,7 @@ export default function Statements({ token, item }) {
   );
 }
 
-/** One row's chrome: keyword name, reorder, delete, and the sentence. */
+/** One row's chrome: keyword name, reorder, delete — and a sentence, for a row with no line. */
 function RowShell({ keywordId, sentence, onMove, canMoveUp, canMoveDown, onRemove, children }) {
   const keyword = getKeyword(keywordId);
   const Icon = KEYWORD_ICON[keywordId] || Zap;
@@ -504,9 +504,16 @@ function RowShell({ keywordId, sentence, onMove, canMoveUp, canMoveDown, onRemov
 
       <div className="p-3 space-y-2.5">{children}</div>
 
-      <p className="px-3 py-2 border-t border-white/5 text-[11px] italic text-emerald-300/90 leading-relaxed">
-        “{sentence}”
-      </p>
+      {/*
+        ⚠️ Only a row with NO Rules Line passes a sentence (Requires). A rule row
+        shows its sentence once, as the line itself — the quoted copy that used
+        to sit here made it three times on one screen (Q1, retired 2026-09-12).
+      */}
+      {sentence && (
+        <p className="px-3 py-2 border-t border-white/5 text-[11px] italic text-emerald-300/90 leading-relaxed">
+          “{sentence}”
+        </p>
+      )}
     </div>
   );
 }
@@ -569,8 +576,8 @@ function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
  * role picker, a reach picker, a filter picker and a trigger clause, each in its
  * own labelled section — the "many nested dropdown menus" the owner asked to be
  * rid of. Every one of them was an expression of the same thing: the slots of a
- * statement. `statementSlots.js` describes those slots once, and
- * `SentenceEditor` renders them as a row you type into.
+ * statement. `statementSlots.js` describes those slots once, and `RulesLine`
+ * renders the rule as the sentence it is, with its decision words clickable.
  *
  * ⚠️ **Retired in the same commit rather than left beside it.** Two editors for
  * one thing is the duplication this project keeps deleting, and a form that can
@@ -582,20 +589,18 @@ function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
  */
 function StatementRow({ statement, tokens, items, names, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
   const keyword = getKeyword(statement.keyword);
-  const sentence = renderStatement(statement, names);
   const capabilities = useCapabilityVocabulary(tokens);
   const effects = useEntityStore((s) => s.effects);
 
   return (
     <RowShell
       keywordId={statement.keyword}
-      sentence={sentence}
       onRemove={onRemove}
       onMove={onMove}
       canMoveUp={canMoveUp}
       canMoveDown={canMoveDown}
     >
-      <SentenceEditor
+      <RulesLine
         statement={statement}
         onChange={onChange}
         names={names}
