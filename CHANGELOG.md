@@ -5,6 +5,19 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Monsters can carry effects too, not just suffer them.** A monster can be
+  poisoned, or be given armour that lasts a while, using the same named effects
+  everything else uses. Effects on a monster last as long as the fight — walk
+  away and it is whole again. Damage from a rule now respects a monster's
+  armour, and "ignores armour" works on that side too.
+- ⭐ **"Leave a Stump behind when this depletes" can now be written.** A Token
+  can react to spending its own last charge — the square is already free by
+  then, so something else can take its place. Rules on that moment cost nothing,
+  because the Token has already spent everything it had.
+- **Rules text uses the game's words.** "The actor" is now **the hero**, "this
+  entity" is **itself**, and "the entity that caused this" is **that Token**.
+  Nothing about what the rules do changed — only what they call things.
+
 - ⭐ **Every status is now authorable as an ordinary effect.** Poison, Burning,
   Bleed, Armor Shield, Well Fed, Cookout and Stun can all be written in the
   effects editor like anything else — three as damage on a clock, four as a

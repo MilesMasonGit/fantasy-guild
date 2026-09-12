@@ -75,7 +75,7 @@ describe('⭐ G-2 is enforced by the model, not by the UI', () => {
         // help the warning reads "actor" — a vocabulary the author never sees.
         let s = makeStatement(KEYWORD.DEALS);
         s = applySlot(s, 'moment', 'TOKEN_DEPLETED');
-        expect(slotDisplay(slot(s, 'role'))).toBe('the actor');
+        expect(slotDisplay(slot(s, 'role'))).toBe('the hero');
     });
 
     it('stops reporting it once the author picks again', () => {
@@ -130,7 +130,7 @@ describe('a slot writes itself back into the statement', () => {
 describe('what the chip says', () => {
     it('uses the vocabulary own label, never a paraphrase', () => {
         const s = makeStatement(KEYWORD.DEALS);
-        expect(slotDisplay(slot(s, 'role'))).toBe('the actor');
+        expect(slotDisplay(slot(s, 'role'))).toBe('the hero');
         expect(slotDisplay(slot(s, 'keyword'))).toBe('Deals');
         expect(slotDisplay(slot(s, 'moment'))).toBe("This Token's own cycle completes");
     });

@@ -60,21 +60,21 @@ export const MAGNITUDE_KIND = Object.freeze({
 export const MAGNITUDE_STATS = Object.freeze([
     {
         id: 'actor_max_hp',
-        label: "the actor's max HP",
+        label: "the hero's max HP",
         role: ROLE.ACTOR,
         hint: 'Scales with how tough they are, so it stays relevant as heroes grow.',
         read: ({ actorHero }) => actorHero?.hp?.max ?? null
     },
     {
         id: 'actor_current_hp',
-        label: "the actor's current HP",
+        label: "the hero's current HP",
         role: ROLE.ACTOR,
         hint: 'What they have left right now — an execute, or a mercy.',
         read: ({ actorHero }) => actorHero?.hp?.current ?? null
     },
     {
         id: 'actor_level',
-        label: "the actor's level",
+        label: "the hero's level",
         role: ROLE.ACTOR,
         hint: 'Their overall level, averaged from their combat skills.',
         read: ({ actorHero }) => actorHero?.level ?? null

@@ -62,19 +62,43 @@ export const ROLE = Object.freeze({
  * @type {ReadonlyArray<{id: string, label: string, hint: string}>}
  */
 export const ROLES = Object.freeze([
+    /**
+     * ⚠️ **These are the game's own words, not the code's** (owner, 2026-09-12).
+     *
+     * They used to read *"this entity"*, *"the actor"* and *"the entity that
+     * caused this"* — accurate, and none of them a term the game uses anywhere
+     * else. The owner's note was exact: *"'actor' isn't a term used in the
+     * game."* A rule that reads in vocabulary nobody plays with is a rule the
+     * author has to translate in their head every time.
+     *
+     * ⚠️ The ids below are untouched on purpose. They are stored in every
+     * authored statement, so renaming them would be a data migration bought
+     * nothing — the label is the only thing anybody reads.
+     */
     {
         id: ROLE.SELF,
-        label: 'this entity',
+        label: 'itself',
         hint: 'The Token, item or creature carrying this rule. Always available.'
     },
     {
+        /**
+         * ⚠️ "The hero" is not a narrowing — it is what this has always meant.
+         * The doc on `ROLE.ACTOR` above already said "the **hero** who caused
+         * this moment", and it is safe because enemies never initiate anything
+         * (D-14): the one who acted is always a hero.
+         */
         id: ROLE.ACTOR,
-        label: 'the actor',
+        label: 'the hero',
         hint: 'The hero who caused this — the one who harvested it, or who fought it. Nobody, if the work was unstaffed.'
     },
     {
+        /**
+         * ⚠️ "That Token" is true even when the neighbour is a monster, because
+         * enemies *are* Tokens in this game. It would have been a lie before
+         * enemies were folded in.
+         */
         id: ROLE.SOURCE,
-        label: 'the entity that caused this',
+        label: 'that Token',
         hint: 'The neighbour whose event this was — the Token that finished, not the hero who worked it.'
     }
 ]);

@@ -45,6 +45,12 @@ useful inventory. Its P5/P6/P7 are replaced by what follows.
 | **G-21** | **Built after V2, and driven by the registries.** | Owner's sequencing. V1–V2 prove the spine and get Thorns authored; the editor then arrives against a settled slot shape, and every later phase's rows appear in it for free because it reads the same registries the game does. The phases that add the most vocabulary are the ones that benefit most. |
 | **G-22** | ⭐ **G-10 and G-18 reinforce each other.** Because the editor *is* the sentence, improving the sentence language improves the tool in the same edit. | The owner's rule that a badly-reading rule means "improve the syntax" now has a direct payoff: there is no separate editor UI to update when the words change. |
 
+### The words the rules use *(owner ruling, 2026-09-12)*
+
+| # | Decision | Why |
+|---|---|---|
+| **G-24** | ⭐ **A role is named in the game's own words**, not the code's: `self` reads **itself**, `actor` reads **the hero**, `source` reads **that Token**. The stored ids are untouched. | Owner: *"'actor' isn't a term used in the game."* A rule written in vocabulary nobody plays with is one the author translates in their head every time — and under G-10 that is a syntax problem, not something to get used to. "The hero" is not a narrowing: `ROLE.ACTOR` was already documented as *"the hero who caused this moment"*, and it is safe because enemies never initiate (D-14). "That Token" is true of a monster too, because enemies **are** Tokens. Ids stay as they are because they sit in every authored statement, and renaming them would be a migration that buys nothing anybody reads. |
+
 ### Runtime
 
 | # | Decision | Why |
@@ -367,6 +373,22 @@ there*, and its sentence says so.
   *hero's* aggregator by design.)
 * A minimal status readout, so any of this can be watched (ER-17 stands).
 
+### V10 — `the opponent`, and one way to name it
+
+⭐ **The gap G-24 exposed.** A rule sitting *on* an enemy Token can already name
+both sides — `itself` is the monster, `the hero` is its attacker. But a rule on
+an **item a hero carries** cannot name the creature they are fighting: `self` is
+the hero, and no role points at the opponent.
+
+`Applies` alone can do it, through a one-off `target: 'enemy'` flag (UE-24). So
+*"applies Poison to the enemy"* is authorable and *"deals 2 damage to the enemy"*
+is not — an asymmetry with no design behind it, only history.
+
+V10 adds an `opponent` role that the combat moments supply, and **retires the
+one-off flag**, so there is one way to name the creature rather than two. Owner
+ruled it in on 2026-09-12 as its own slice — ⚠️ it touches shipped behaviour and
+needs its own tests, which is exactly why it is not folded into the editor work.
+
 ### V8 — The rest of the verbs
 
 `Heals`, `Restores`, `Removes` — each with its reader, each its own commit.
@@ -402,6 +424,7 @@ or a random free tile (G-15).
 | V7b.2 `SELF_TOKEN_DEPLETED` | **DONE** 2026-09-09 | ⭐ "Leave a Stump behind when this depletes" is authorable — §4b's open item is closed. The moment is `settled`: no charge paid, no charge gate. 13 tests, 5 of which fail when neutered. |
 | V7b.3 Author the seven, then delete the old engine | ⏸ **Owner deferred** | Ruled 2026-09-09: *"I don't really want to author these effects now. I want the system to be more complete first. These effects are just theoretical test effects, there may not be those effects in the final game."* Nothing waits on it — both engines run side by side. |
 | V8 The rest of the verbs | **DONE** 2026-09-08 | `Heals`, `Restores`, `Removes` in `EffectActions.js`. ⭐ `Restores` is the reader `CHARGE_EXTEND` was named for; `Removes` is the first caller a cleanse has ever had. 14 new tests. |
+| V10 `the opponent` role | **NOT STARTED** | Ruled in by the owner 2026-09-12. Closes the asymmetry where only `Applies` can name the creature a hero is fighting, and retires its one-off flag. |
 | V9 `Spawns` and `Transforms` | **DONE** 2026-09-08 | `placementRegistry.js` — the destination is an authored choice, never a hidden fallback. 15 new tests. |
 
 *Carried over and already done:* v1 P1 (the filter tells the truth), P2 (reach),

@@ -2,8 +2,9 @@
 
 *The authoritative plan. Vision: [`concept_rules_line_editor.md`](concept_rules_line_editor.md).*
 
-**Status: planned 2026-09-09, no code yet.** Decisions below marked locked came
-from an owner interview on 2026-09-09 and are not to be re-litigated.
+**Status: P0 done and passed 2026-09-12; P1 is next.** Decisions below marked
+locked came from owner interviews on 2026-09-09 and 2026-09-12 and are not to be
+re-litigated.
 
 ## 1. Locked decisions
 
@@ -13,7 +14,7 @@ from an owner interview on 2026-09-09 and are not to be re-litigated.
 | **E-2** | ⭐ **The line IS the rendered sentence.** `renderStatement` gains a segment form; the line is those segments with the decision segments made interactive. The string form becomes the joined segments. | One renderer, no inverse function, and the editor cannot disagree with what the game prints. Preserves G-22: improving the sentence language improves the tool in the same edit. |
 | **E-3** | **Click a word, retype that word.** The rest of the sentence stays put. | Owner's pick. Tweaking beats creating in frequency by a wide margin, and most tweaks are one word — a magnitude, a target, a moment. |
 | **E-4** | **An unrecognised word inserts nothing**; the panel shows the nearest legal terms with their hints. | Keeps "an invalid rule is unwritable" true, and turns a wrong guess into a way of finding the right word rather than a dead end. |
-| **E-5** | **The panel stays, always visible, following the cursor.** | Owner's pick. Typing is not self-documenting and the vocabulary is large. It is how an author meets a word they did not know existed, and it keeps the editor fully usable by clicking alone. G-19 survives intact. |
+| **E-5** | **The panel stays, always visible, following the cursor — on the LEFT** *(left side ruled by the owner 2026-09-12, seeing P0)*. | Owner's pick. Typing is not self-documenting and the vocabulary is large. It is how an author meets a word they did not know existed, and it keeps the editor fully usable by clicking alone. G-19 survives intact. |
 | **E-6** | **Cost and cadence live beside the sentence, not in it** — charge cost, cooldown, upkeep, chance, `requires`. | Owner's pick. A different kind of decision, changed far less often. In the line they would put four numbers in front of every sentence you read. |
 | **E-7** | **One rule at a time.** An effect is a list of lines; each is composed on its own. | Owner's pick over writing a whole effect as a block. Matches the data shape and keeps each sentence checkable on its own. |
 | **E-8** | ⭐ **Every payload decision becomes a segment, and the fourteen leftover forms are deleted — not hidden.** | The duplication is the single biggest complaint and the reason the screen reads as a maze. A decision that still needs a form is a decision the sentence cannot express, and each one is a hole the maze grows back through. |
@@ -33,13 +34,13 @@ from an owner interview on 2026-09-09 and are not to be re-litigated.
 ## 2. The shape
 
 ```
-┌─ the line ───────────────────────────────────┬─ what can go here ─┐
-│ When this Token's own cycle completes,       │ ▸ the actor        │
-│ deals [2] damage to [the actor].             │   whoever worked…  │
-│                     ↑ cursor                 │ ▸ this entity      │
-├─ cost and cadence ───────────────────────────┤   the Token itself │
-│ spends 1 charge · no cooldown · always       │ ▸ the source       │
-└──────────────────────────────────────────────┴────────────────────┘
+┌─ what can go here ─┬─ the line ───────────────────────────────────┐
+│ ▸ the hero         │ When this Token's own cycle completes,       │
+│   whoever worked…  │ deals [2] damage to [the hero].              │
+│ ▸ itself           │                     ↑ cursor                 │
+│   the Token itself ├─ cost and cadence ───────────────────────────┤
+│ ▸ that Token       │ spends 1 charge · no cooldown · always       │
+└────────────────────┴──────────────────────────────────────────────┘
 ```
 
 Three regions, and each has one job: the sentence says what the rule **does**,
@@ -47,15 +48,28 @@ the strip beneath says what it **costs**, the panel says what is **possible**.
 
 ## 3. The phases
 
-### P0 — One rule, on screen, not wired ⬅ *start here*
+### P0 — One rule, on screen, not wired ✅ *done, and it passed*
 
-A static prototype of the line and panel for a single `Deals` rule. No editing,
-no state, no integration. **Its only purpose is to answer "too dense to read"
-before anything is built on the assumption that it isn't.**
+A static prototype of the line and panel, at `?p0=1` in the CMS. No editing, no
+state, no integration. **Its only purpose was to answer "too dense to read"
+before anything was built on the assumption that it isn't.**
 
 ⚠️ Judged by the owner looking at it, not by tests. Density is the complaint that
-cannot be verified any other way, and the whole plan rests on the line reading as
-a sentence.
+cannot be verified any other way, and the whole plan rested on the line reading
+as a sentence.
+
+⭐ **Built with four rules, not the one the plan called for.** A simple `Deals`
+rule is the flattering case and would not have tested the complaint at all —
+density only appears once a rule carries a computed magnitude or a counted
+selector. The verdict came back on the hardest of the four.
+
+⚠️ The comparison column was the **real** editor (`StatementList` with the same
+statements), not a recreation, so the new line had to beat the actual thing
+rather than a strawman.
+
+Each line also printed whether its hand-written segments joined back to exactly
+what `renderStatement` produces. All four said yes — the first real evidence that
+P1's byte-identical guarantee is reachable rather than hoped for.
 
 ### P1 — The renderer learns to say where each word came from
 
@@ -108,7 +122,7 @@ Token editor and Item editor onto the same component (E-9).
 
 | Phase | State | Notes |
 |---|---|---|
-| P0 Prototype one rule | **NOT STARTED** | Owner judges density before anything is built on it. |
+| P0 Prototype one rule | ✅ **DONE, and it passed** 2026-09-12 | ⭐ Four rules, not one — a simple rule is the flattering case. Owner's verdict: *"the fourth rule reads fine"*, so density is settled and the plan may proceed. Also ruled: **E-6 confirmed** (fine print stays beside the sentence) and **the panel moves to the left** (E-5). All four lines' hand-written segments joined byte-identically to the real renderer, which is early evidence P1 is reachable. |
 | P1 Renderer emits segments | **NOT STARTED** | Byte-identical assertion first. |
 | P2 The line | **NOT STARTED** | |
 | P3 The panel | **NOT STARTED** | |
@@ -118,11 +132,10 @@ Token editor and Item editor onto the same component (E-9).
 
 ## 5. Open questions
 
-**Q1 — Does the read-only sentence beneath the line survive?** If the line *is*
-the sentence, a second copy of it underneath is redundant. My reading is that it
-goes, but the owner said the sentence-underneath is the part of today's screen
-that works, so this is worth confirming **when P0 is on screen** rather than in
-the abstract.
+~~**Q1 — Does the read-only sentence beneath the line survive?**~~ ✅ **Answered
+by P0, 2026-09-12: it goes.** The owner looked at the line with no separate
+sentence under it and judged that it reads fine. A second copy would now be the
+same words twice, which is the duplication this whole rework exists to remove.
 
 **Q2 — What does a brand-new, empty rule look like?** A blank line with the panel
 offering verbs, or a starter sentence with every decision unset? The second is

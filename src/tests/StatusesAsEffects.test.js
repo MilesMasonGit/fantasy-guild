@@ -138,7 +138,7 @@ describe('⭐ the three that tick — Poison, Burning, Bleed', () => {
 
     it('reads as one honest sentence', () => {
         expect(renderStatement(overTime(2)))
-            .toBe('When a few seconds pass while this is carried, deals 2 damage to this entity, ignoring armour.');
+            .toBe('When a few seconds pass while this is carried, deals 2 damage to itself, ignoring armour.');
     });
 });
 

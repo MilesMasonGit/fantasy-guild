@@ -51,10 +51,13 @@ const RULES = [
             T(', deals '),
             D('2', 'amount', null),
             T(' damage to '),
-            D('the actor', 'role', [
-                ['the actor', 'Whoever worked this Token, or won the fight.'],
-                ['this entity', 'The Token or creature carrying the rule.'],
-                ['the source', 'The neighbour whose event set this off.'],
+            D('the hero', 'role', [
+                ['the hero', 'Whoever worked this Token, or won the fight.'],
+                ['itself', 'The Token or creature carrying the rule.'],
+                // ⚠️ Was written as "the source" here, which is not a label the
+                // game uses anywhere — `ROLES` calls it this. A prototype that
+                // invents vocabulary is testing a sentence nobody would see.
+                ['that Token', 'The neighbour whose event this was — the Token that finished, not the hero who worked it.'],
             ]),
             T('.'),
         ],
@@ -108,14 +111,14 @@ const RULES = [
             T(', deals damage equal to '),
             D('10%', 'amount', null),
             T(' of '),
-            D("the actor's max HP", 'stat', [
-                ["the actor's max HP", 'Scales with how tough they are.'],
-                ["the actor's current HP", 'Scales with how healthy they are right now.'],
-                ["the actor's level", 'Scales with progression.'],
+            D("the hero's max HP", 'stat', [
+                ["the hero's max HP", 'Scales with how tough they are.'],
+                ["the hero's current HP", 'Scales with how healthy they are right now.'],
+                ["the hero's level", 'Scales with progression.'],
                 ['this Token’s charges left', 'Scales with how worn out it is.'],
             ]),
             T(' to '),
-            D('the actor', 'role', null),
+            D('the hero', 'role', null),
             T('.'),
         ],
         fine: { charge: '1 charge', cooldown: 'no cooldown', chance: 'always' },
@@ -139,7 +142,7 @@ const RULES = [
                 ['adjacent station', 'Only stations beside this one.'],
             ]),
             T(' to '),
-            D('the actor', 'role', null),
+            D('the hero', 'role', null),
             T(', '),
             D('ignoring armour', 'ignoresArmor', [
                 ['ignoring armour', 'Pierces regardless of what they are wearing.'],
@@ -344,7 +347,16 @@ export default function RulesLineP0() {
                 </label>
             </div>
 
+            {/*
+              ⚠️ The panel is on the LEFT (owner, 2026-09-12). Not cosmetic: the
+              eye starts at the left margin, so what-can-go-here is read before
+              the sentence rather than after it — and the lines keep a straight
+              left edge to read down, which they lose when a variable-width
+              panel sits in front of them.
+            */}
             <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                <Panel focusedSlot={focusedSlot} />
+
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--color-accent-hover)', marginBottom: 10 }}>
                         Proposed
@@ -359,8 +371,6 @@ export default function RulesLineP0() {
                         />
                     ))}
                 </div>
-
-                <Panel focusedSlot={focusedSlot} />
             </div>
 
             {showToday && (
