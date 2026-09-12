@@ -37,7 +37,7 @@ export const PLACEMENT = Object.freeze({
 export const PLACEMENTS = Object.freeze([
     {
         id: PLACEMENT.HERE,
-        label: 'on this Token’s own tile',
+        label: 'on this Token’s tile',
         hint: 'Replaces this Token where it stands. How a thing leaves something behind when it goes.'
     },
     {

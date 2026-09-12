@@ -331,14 +331,14 @@ describe('the grammar and the sentence', () => {
 
     it('reads literally, and keeps Token capitalised', () => {
         expect(renderStatement(makeStatement(KEYWORD.DEALS)))
-            .toBe("When this Token's own cycle completes, deals 1 damage to the hero.");
+            .toBe("When this Token's cycle completes, deals 1 damage to the hero.");
     });
 
     it('mentions armour only when it is being ignored', () => {
         const s = makeStatement(KEYWORD.DEALS);
         expect(renderStatement(s)).not.toContain('armour');
         expect(renderStatement({ ...s, payload: { amount: 2, ignoresArmor: true } }))
-            .toBe("When this Token's own cycle completes, deals 2 damage to the hero, ignoring armour.");
+            .toBe("When this Token's cycle completes, deals 2 damage to the hero, ignoring armour.");
     });
 
     it('⚠️ no longer flattens the proper nouns the vocabulary owns', () => {

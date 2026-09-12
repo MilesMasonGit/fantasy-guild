@@ -248,19 +248,19 @@ describe('the sentence says where the number came from (G-10)', () => {
 
     it('reads unchanged for a flat amount', () => {
         expect(renderStatement(deals({ amount: 1 })))
-            .toBe("When this Token's own cycle completes, deals 1 damage to the hero.");
+            .toBe("When this Token's cycle completes, deals 1 damage to the hero.");
     });
 
     it('names the stat it is a percentage of', () => {
         expect(renderStatement(deals({ amount: 10, magnitude: 'stat', stat: 'actor_max_hp' })))
-            .toBe("When this Token's own cycle completes, deals damage equal to 10% of the hero's max HP to the hero.");
+            .toBe("When this Token's cycle completes, deals damage equal to 10% of the hero's max HP to the hero.");
     });
 
     it('⚠️ keeps the number in front for a count — it is per-match, not "equal to"', () => {
         // The first version rendered a count as "equal to" and dropped the
         // number entirely: "damage equal to per adjacent Coast Token".
         expect(renderStatement(deals({ amount: 1, magnitude: 'count' }, { mode: 'tag', value: 'Coast' })))
-            .toBe("When this Token's own cycle completes, deals 1 damage per adjacent Coast Token to the hero.");
+            .toBe("When this Token's cycle completes, deals 1 damage per adjacent Coast Token to the hero.");
     });
 
     it('says the counted set in the singular, because it follows "per"', () => {

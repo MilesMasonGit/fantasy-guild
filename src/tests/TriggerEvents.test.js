@@ -24,7 +24,7 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
  * 1. **"A neighbour produces a specific item"** — finer than the existing "a
  *    neighbour completes a cycle", which fires on any completion including one
  *    that made nothing.
- * 2. **"This Token's own cycle completes"** — the first trigger that listens
+ * 2. **"This Token's cycle completes"** — the first trigger that listens
  *    *inward*. Every other one watches a neighbour or the Bank.
  *
  * ⚠️ **The second is the risky one.** A Token reacting to its own completion is
@@ -224,7 +224,7 @@ describe('A neighbour produces a specific item', () => {
     });
 });
 
-describe("This Token's own cycle completes", () => {
+describe("This Token's cycle completes", () => {
     it('fires on its own completion, not on a neighbour’s', () => {
         place(9, 'fixture_self_reactor', 'hero_1');
         // ⚠️ The receiver is required, and was not here before Effects

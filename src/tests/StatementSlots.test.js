@@ -132,7 +132,7 @@ describe('what the chip says', () => {
         const s = makeStatement(KEYWORD.DEALS);
         expect(slotDisplay(slot(s, 'role'))).toBe('the hero');
         expect(slotDisplay(slot(s, 'keyword'))).toBe('Deals');
-        expect(slotDisplay(slot(s, 'moment'))).toBe("This Token's own cycle completes");
+        expect(slotDisplay(slot(s, 'moment'))).toBe("This Token's cycle completes");
     });
 
     it('shows a blank rather than a guess when nothing is picked', () => {
@@ -155,9 +155,9 @@ describe('what the chip says', () => {
 describe('typing narrows a slot', () => {
     it('matches on the label', () => {
         const s = makeStatement(KEYWORD.DEALS);
-        const hits = filterOptions(slot(s, 'moment'), 'own cycle');
+        const hits = filterOptions(slot(s, 'moment'), "Token's cycle");
         expect(hits.length).toBeGreaterThan(0);
-        expect(hits.every(o => /own cycle/i.test(o.label))).toBe(true);
+        expect(hits.every(o => /Token's cycle/i.test(o.label))).toBe(true);
     });
 
     it('matches on the hint too, so you can search by meaning', () => {

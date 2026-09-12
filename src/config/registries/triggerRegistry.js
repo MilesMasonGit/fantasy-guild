@@ -191,7 +191,7 @@ export const TRIGGER_EVENTS = [
         id: 'SELF_CYCLE_COMPLETE',
         roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
-        label: "This Token's own cycle completes",
+        label: "This Token's cycle completes",
         scopes: [TRIGGER_SCOPES.SELF],
         hint: 'Fires when this very Token finishes its own work — not a neighbour. Its rule then reaches out from here as usual.'
     },
@@ -221,7 +221,7 @@ export const TRIGGER_EVENTS = [
         id: 'SELF_CYCLE_START',
         roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.CYCLE_START,
-        label: "This Token's own cycle begins",
+        label: "This Token's cycle begins",
         scopes: [TRIGGER_SCOPES.SELF],
         hint: 'Fires as this very Token starts its own work. Its rule then reaches out from here as usual.'
     },

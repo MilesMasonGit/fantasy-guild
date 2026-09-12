@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { KEYWORD, makeStatement, renderStatement } from '../../utils/constants';
 import { StatementList } from '../editors/Statements';
+import VocabularyGallery from './VocabularyGallery';
 
 /**
  * ⭐ **P0 — one look at the Rules Line, before anything is built on it.**
@@ -42,8 +43,8 @@ const RULES = [
         statement: { ...makeStatement(KEYWORD.DEALS), payload: { amount: 2 } },
         segments: [
             T('When '),
-            D("this Token's own cycle completes", 'moment', [
-                ["this Token's own cycle completes", 'The moment this Token finishes its own work.'],
+            D("this Token's cycle completes", 'moment', [
+                ["this Token's cycle completes", 'The moment this Token finishes its own work.'],
                 ['a neighbour completes a cycle', 'An adjacent Token finishes work — or wins a fight.'],
                 ['this Token spends its last charge', 'As this Token leaves the board.'],
                 ['a hero engages this enemy', 'The moment a fight starts on this tile.'],
@@ -107,7 +108,7 @@ const RULES = [
         },
         segments: [
             T('When '),
-            D("this Token's own cycle completes", 'moment', null),
+            D("this Token's cycle completes", 'moment', null),
             T(', deals damage equal to '),
             D('10%', 'amount', null),
             T(' of '),
@@ -132,7 +133,7 @@ const RULES = [
         },
         segments: [
             T('When '),
-            D("this Token's own cycle completes", 'moment', null),
+            D("this Token's cycle completes", 'moment', null),
             T(', deals '),
             D('1', 'amount', null),
             T(' damage per '),
@@ -372,6 +373,8 @@ export default function RulesLineP0() {
                     ))}
                 </div>
             </div>
+
+            <VocabularyGallery />
 
             {showToday && (
                 <div style={{ marginTop: 32, borderTop: `1px solid ${SUBTLE}`, paddingTop: 20 }}>

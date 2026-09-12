@@ -234,7 +234,7 @@ describe('the sentence says where it lands', () => {
     it('names the destination, so it is never a hidden rule', () => {
         expect(renderStatement(
             { ...makeStatement(KEYWORD.SPAWNS), payload: { typeId: 't_stump', placement: 'here' } }, names
-        )).toContain('spawns Stump on this Token’s own tile');
+        )).toContain('spawns Stump on this Token’s tile');
 
         expect(renderStatement(
             { ...makeStatement(KEYWORD.SPAWNS), payload: { typeId: 't_stump', placement: 'random_free' } }, names
@@ -244,6 +244,6 @@ describe('the sentence says where it lands', () => {
     it('reads a transform plainly', () => {
         expect(renderStatement(
             { ...makeStatement(KEYWORD.TRANSFORMS), payload: { typeId: 't_oak' } }, names
-        )).toBe("When this Token's own cycle completes, transforms into Oak.");
+        )).toBe("When this Token's cycle completes, transforms into Oak.");
     });
 });

@@ -249,12 +249,12 @@ describe('the grammar declares all three', () => {
 describe('the sentences read literally', () => {
     it('says health, charges and effects in their own words', () => {
         expect(renderStatement(makeStatement(KEYWORD.HEALS)))
-            .toBe("When this Token's own cycle completes, heals 1 health on the hero.");
+            .toBe("When this Token's cycle completes, heals 1 health on the hero.");
         // ⚠️ `Restores` is born aiming at THIS TOKEN, not at the actor. Charges
         // belong to a Token, and aiming at the hero meant an unstaffed Token
         // could never repair itself on any board.
         expect(renderStatement(makeStatement(KEYWORD.RESTORES)))
-            .toBe("When this Token's own cycle completes, restores 1 charge to itself.");
+            .toBe("When this Token's cycle completes, restores 1 charge to itself.");
     });
 
     it('⚠️ distinguishes the cure-all from a named cleanse', () => {
