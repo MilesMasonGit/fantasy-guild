@@ -165,6 +165,7 @@ export const MODIFIER_PALETTE = [
     },
     {
         type: EFFECT_TYPES.WORK_TIME,
+        reads: { up: (n) => `work ${n} slower`, down: (n) => `work ${n} faster` },
         label: 'Work Time',
         when: 'never',
         scales: 'value',
@@ -172,7 +173,7 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
-        hint: 'Milliseconds a cycle takes. NEGATIVE is faster.'
+        hint: 'How long a cycle takes. A negative value is faster.'
     },
     {
         type: EFFECT_TYPES.INPUT_COST,
@@ -183,12 +184,13 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
-        hint: 'Units of input consumed. NEGATIVE is cheaper.'
+        hint: 'Units of every input consumed. A negative value is cheaper. Applies to all of them — it cannot yet name one item.'
     },
 
     // --- Support ------------------------------------------------------------
     {
         type: EFFECT_TYPES.XP_BONUS,
+        reads: { up: (n) => `award ${n} more XP`, down: (n) => `award ${n} less XP` },
         label: 'XP Bonus',
         when: 'never',
         scales: 'value',
@@ -199,6 +201,10 @@ export const MODIFIER_PALETTE = [
     },
     {
         type: EFFECT_TYPES.LOOT_MULT,
+        reads: {
+            up: (n) => `have a ${n} chance of double loot`,
+            down: (n) => `have ${n} less chance of double loot`
+        },
         label: 'Double Loot Chance',
         when: 'never',
         scales: 'value',
@@ -209,6 +215,10 @@ export const MODIFIER_PALETTE = [
     },
     {
         type: EFFECT_TYPES.FAIL_CHANCE,
+        reads: {
+            up: (n) => `have a ${n} chance to fail`,
+            down: (n) => `have ${n} less chance to fail`
+        },
         label: 'Failure Chance',
         when: 'never',
         scales: 'value',

@@ -59,6 +59,7 @@ export {
 
 export {
   renderStatement,
+  upkeepLine,
   rulesLinesOf,
   rulesTextOf,
 } from '../../../src/systems/effects/statementText.js';

@@ -11,7 +11,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses, getTokenType, getProvidedTagsWithTiers } from '../config/registries/tokenRegistry.js';
 import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
 import { OUTPUT_CURRENCIES, isOutputCurrency } from '../config/registries/tokenConstants.js';
-import { renderStatement, rulesLinesOf } from '../systems/effects/statementText.js';
+import { renderStatement, upkeepLine, rulesLinesOf } from '../systems/effects/statementText.js';
 import {
     KEYWORD, KEYWORDS, WHEN, getKeyword, makeStatement, paletteForKeyword,
     statementsOf, hasRetiredEffectData
@@ -51,7 +51,7 @@ describe('The rules text is the rule, rendered', () => {
             payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.05 }
         };
         expect(renderStatement(statement, names))
-            .toBe('Provides 5% less work time to adjacent Coast Tokens.');
+            .toBe('Makes adjacent Coast Tokens work 5% faster.');
     });
 
     it('says the opposite when the sign is the wrong way round', () => {
@@ -64,7 +64,7 @@ describe('The rules text is the rule, rendered', () => {
             payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: 0.2 }
         };
         expect(renderStatement(statement, names))
-            .toBe('Provides 20% more work time to any adjacent Forge.');
+            .toBe('Makes any adjacent Forge work 20% slower.');
     });
 
     it('renders every other keyword too', () => {
@@ -101,9 +101,16 @@ describe('The rules text is the rule, rendered', () => {
             payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.1 },
             upkeep: { items: [{ itemId: 'item_coal', quantity: 1 }], cadenceMs: 30000 }
         };
+        /**
+         * ⚠️ Upkeep is its OWN line now (owner, 2026-09-12), and says "consumes"
+         * rather than "costing". It used to be a trailing clause on a sentence
+         * about something else entirely, which buried an ongoing drain on the
+         * Bank at the tail of a yield buff.
+         */
         expect(renderStatement(costed, names)).toBe(
-            'Provides 10% more yield to every adjacent Token, costing 1 Coal every 30 seconds.'
+            'Provides 10% more yield to every adjacent Token.'
         );
+        expect(upkeepLine(costed, names)).toBe('Consumes 1 Coal every 30 seconds.');
     });
 
     it('shows a blank as a blank rather than hiding it', () => {

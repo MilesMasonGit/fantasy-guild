@@ -61,25 +61,56 @@ function magnitude(entry, payload) {
 }
 
 /**
- * "5% less work time".
+ * "works 5% faster", "3 more armor", "a 25% chance of double loot".
  *
- * ⚠️ **Literal, never interpretive.** It would read more naturally as "5%
- * faster", but "faster" is a judgement about which direction is good and the
- * palette only knows which axis runs backwards, not what the author meant. The
- * editor puts the friendly reading beside the picker (where `inverted` says
- * "less work time — a buff"); the sentence stays plain so it cannot flatter a
- * mistake.
+ * ## ⚠️ An axis owns how it reads, in both directions
+ * This used to be strictly literal — *"5% less work time"* — on the reasoning
+ * that "faster" is a judgement and the palette only knows which axis runs
+ * backwards. The owner overruled it on 2026-09-12: *"Works 20% faster is better
+ * terminology."* And the reasoning was wrong anyway — `inverted` plus the sign
+ * is exactly enough to know that less work time IS faster.
+ *
+ * So an axis may declare `reads.up` and `reads.down`, the same discipline
+ * `filterRegistry` uses where every filter owns its positive **and** its
+ * negative wording. Negating mechanically is what produced "5% less work time"
+ * and "a 10% failure chance" for a rule that *removes* failure.
+ *
+ * ⚠️ **This is what fixes the sign being lost on chance-shaped axes.**
+ * `magnitude()` takes `Math.abs`, so a PROC axis rendered `-25` and `+25`
+ * identically — a rule removing double loot read exactly like one granting it.
+ * An axis with `reads` picks the wording by sign before the size is ever
+ * absolute-valued.
  */
-function effectPhrase(statement) {
+function effectPhrase(statement, names = DEFAULT_NAMES) {
     const entry = effectEntryOf(statement);
     const payload = statement?.payload || {};
     if (!entry) return '…';
     const size = magnitude(entry, payload);
+
+    /**
+     * ⚠️ **`BONUS_DROP` names its item, because it has one.**
+     *
+     * The item is authored on the payload and honoured at runtime
+     * (`TriggerSystem` reads `modifier.itemId`), and the sentence threw it away
+     * — so *"a 25% chance to drop 1 Raw Shrimp"* rendered as "25 more bonus
+     * drop". The axis whose whole point is *which* item was the one axis that
+     * would not say which.
+     */
+    if (payload.type === EFFECT_TYPES.BONUS_DROP) {
+        const qty = Math.max(1, Number(payload.quantity) || 1);
+        const item = payload.itemId ? names.item(payload.itemId) : '…';
+        // ⚠️ Always a percentage, whatever bucket it was authored in: the value
+        // IS a chance, and `magnitude()` would render a flat-bucketed 25 as a
+        // bare "25" — "a 25 chance to drop 1 Raw Shrimp".
+        return `a ${Math.abs(Number(payload.value) || 0)}% chance to drop ${qty} ${item}`;
+    }
     const label = entry.label.toLowerCase();
+    const value = Number(payload.value);
+
+    if (!value) return `no change to ${label}`;
+    if (entry.reads) return value < 0 ? entry.reads.down(size) : entry.reads.up(size);
     if (entry.shape === MODIFIER_SHAPES.PROC) return `a ${size} ${label}`;
-    const direction = Number(payload.value) < 0 ? 'less' : 'more';
-    if (!Number(payload.value)) return `no change to ${label}`;
-    return `${size} ${direction} ${label}`;
+    return `${size} ${value < 0 ? 'less' : 'more'} ${label}`;
 }
 
 /**
@@ -95,6 +126,11 @@ function effectPhrase(statement) {
  * `self` deliberately drops "adjacent" and every plural, because it names
  * exactly one Token — the one carrying the rule.
  */
+/** "every adjacent Token being worked" — the same set, as a SUBJECT. */
+function targetSubject(statement, names) {
+    return `${reachFramePhrase(statement, names, '')}${filtersPhrase(statement?.to, names)}`;
+}
+
 function filterPhrase(statement, names) {
     // ⚠️ Appended to whatever frame the reach chose, so "to every Coast Token on
     // the board" becomes "to every Coast Token on the board that is being
@@ -102,7 +138,12 @@ function filterPhrase(statement, names) {
     return `${reachFramePhrase(statement, names)}${filtersPhrase(statement?.to, names)}`;
 }
 
-function reachFramePhrase(statement, names) {
+function reachFramePhrase(statement, names, prep = 'to') {
+    // ⚠️ The preposition is a parameter so the same frame can be a target
+    // ("to every adjacent Token") or a SUBJECT ("every adjacent Token"). Built
+    // once, because deriving the subject by trimming "to " off the target would
+    // be string surgery on a sentence — the trick this file keeps refusing.
+    const P = prep ? `${prep} ` : '';
     const reach = reachOf(statement);
     const noun = subjectPhrase(statement, names);
     const to = statement?.to;
@@ -111,36 +152,36 @@ function reachFramePhrase(statement, names) {
     if (reach === REACH.SELF) {
         // A filter is meaningless here — there is one Token and the rule is on
         // it — so the words say the thing that is true and nothing more.
-        return 'to this Token';
+        return `${P}this Token`;
     }
 
     // ⚠️ "every" takes the SINGULAR — "every Coast Token", never "every Coast
     // Tokens" — so the board frame reaches for the singular noun even though
     // the set it names is a plural one.
     if (reach === REACH.BOARD) {
-        return `to every ${untargeted ? 'Token' : singularSubjectPhrase(statement, names)} on the board`;
+        return `${P}every ${untargeted ? 'Token' : singularSubjectPhrase(statement, names)} on the board`;
     }
 
     if (reach === REACH.SELF_AND_ADJACENT) {
         return untargeted
-            ? 'to this Token and every adjacent Token'
-            : `to this Token and adjacent ${noun}`;
+            ? `${P}this Token and every adjacent Token`
+            : `${P}this Token and adjacent ${noun}`;
     }
 
     // `adjacent` — the default, and the wording every rule authored before P2
     // has always produced. Left byte-for-byte identical on purpose.
-    if (untargeted) return 'to every adjacent Token';
+    if (untargeted) return `${P}every adjacent Token`;
     switch (to.mode) {
         case 'tag':
-            return to.value ? `to adjacent ${to.value} Tokens` : 'to adjacent Tokens tagged …';
+            return to.value ? `${P}adjacent ${to.value} Tokens` : `${P}adjacent Tokens tagged …`;
         case 'id':
-            return to.value ? `to any adjacent ${names.token(to.value)}` : 'to any adjacent …';
+            return to.value ? `${P}any adjacent ${names.token(to.value)}` : `${P}any adjacent …`;
         // Retired from the editor (Q2) but still renderable, so old content
         // reads as what it does rather than as a blank.
         case 'tokenType':
-            return to.value ? `to adjacent ${to.value} Tokens` : 'to every adjacent Token';
+            return to.value ? `${P}adjacent ${to.value} Tokens` : `${P}every adjacent Token`;
         default:
-            return 'to every adjacent Token';
+            return `${P}every adjacent Token`;
     }
 }
 
@@ -331,12 +372,23 @@ function cooldownPhrase(statement) {
     return `, at most once every ${Math.round(ms / 100) / 10} seconds`;
 }
 
-/** ", costing 1 Coal every 30 seconds" — the upkeep clause. */
-function upkeepPhrase(statement, names) {
+/**
+ * "Consumes 1 Coal every 30 seconds." — upkeep, as **its own sentence**.
+ *
+ * ⚠️ Owner ruling 2026-09-12: *"This would be a separate line. Instead of 'cost'
+ * it should be 'consumes'."* It used to be a trailing clause on the rule itself
+ * — *"…, costing 1 Coal every 30 seconds"* — which buried an ongoing drain on
+ * the Bank at the tail of a sentence about something else entirely.
+ *
+ * Returns an empty string when there is no upkeep, so callers concatenate
+ * without checking.
+ */
+export function upkeepLine(statement, names = {}) {
+    const resolve = { ...DEFAULT_NAMES, ...names };
     const upkeep = statement?.upkeep;
     if (!upkeep?.items?.length) return '';
     const every = Math.round((upkeep.cadenceMs || 0) / 100) / 10;
-    return `, costing ${itemList(upkeep.items, names)} every ${every} seconds`;
+    return `Consumes ${itemList(upkeep.items, resolve)} every ${every} seconds.`;
 }
 
 /** The body of the sentence — keyword, payload, filter. */
@@ -361,6 +413,25 @@ function bodyOf(statement, names) {
             const entry = effectEntryOf(statement);
 
             /**
+             * ⭐ **An axis that owns its wording gets a target-FIRST sentence.**
+             *
+             * The owner's own examples were both shaped this way — *"Works 20%
+             * faster"*, *"Adjacent tokens consume 1 less Charcoal"* — and
+             * "Provides works 20% slower to every adjacent Token" is what comes
+             * out if you force a verb phrase into the `Provides X to Y` frame.
+             *
+             * ⚠️ **"Makes …" is chosen to dodge number agreement**, which is the
+             * exact trap the filter phrasing already fell into once. A bare
+             * subject needs the verb to agree — *"this Token work 20% faster"* —
+             * and the subject may be singular or plural depending on reach. After
+             * "makes", English takes the bare infinitive and agreement never
+             * arises, for either.
+             */
+            if (entry?.reads) {
+                return `Makes ${targetSubject(statement, names)} ${effectPhrase(statement, names)}`;
+            }
+
+            /**
              * ⚠️ **Immunity is a switch, and its sentence says so** (P4).
              *
              * Every other `Provides` renders a magnitude, because every other
@@ -378,10 +449,10 @@ function bodyOf(statement, names) {
             }
 
             if (entry?.heroOnly) {
-                return `Provides ${effectPhrase(statement)} in combat — to the hero carrying this item, `
+                return `Provides ${effectPhrase(statement, names)} in combat — to the hero carrying this item, `
                     + `or on an enemy, to the hero fighting it`;
             }
-            return `Provides ${effectPhrase(statement)} ${filterPhrase(statement, names)}${skillScopePhrase(statement)}`;
+            return `Provides ${effectPhrase(statement, names)} ${filterPhrase(statement, names)}${skillScopePhrase(statement)}`;
         }
 
         case KEYWORD.GRANTS: {
@@ -583,7 +654,7 @@ export function renderStatement(statement, names = {}) {
     const when = whenPhrase(statement, resolve);
     const body = bodyOf(statement, resolve);
     const sentence = when ? `${when}, ${body[0].toLowerCase()}${body.slice(1)}` : body;
-    return `${sentence}${cooldownPhrase(statement)}${upkeepPhrase(statement, resolve)}.`;
+    return `${sentence}${cooldownPhrase(statement)}.`;
 }
 
 /**
@@ -604,6 +675,9 @@ export function rulesLinesOf(def, names = {}) {
     }
     for (const statement of statementsOf(def)) {
         lines.push(renderStatement(statement, names));
+        // Its own line, immediately under the rule it belongs to.
+        const upkeep = upkeepLine(statement, names);
+        if (upkeep) lines.push(upkeep);
     }
     return lines;
 }

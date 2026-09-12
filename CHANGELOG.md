@@ -5,6 +5,16 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Rules text reads like English, not like the engine.** A Token that works
+  faster now says so — "Makes adjacent Coast Tokens work 5% faster" rather than
+  "Provides 5% less work time". Upkeep is its own line and says "consumes"
+  rather than "costing", and no label shouts in capitals any more.
+- ⚠️ **Three rules were describing themselves backwards.** A rule that *reduced*
+  a Token's failure chance read as one that *caused* it, and removing a
+  double-loot bonus read exactly like granting one — the minus sign was being
+  thrown away before the sentence was written. A bonus-drop rule also refused to
+  say which item it dropped, though it always dropped the right one.
+
 - ⭐ **Monsters can carry effects too, not just suffer them.** A monster can be
   poisoned, or be given armour that lasts a while, using the same named effects
   everything else uses. Effects on a monster last as long as the fight — walk

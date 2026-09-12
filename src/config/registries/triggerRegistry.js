@@ -150,7 +150,7 @@ export const TRIGGER_EVENTS = [
         id: 'SELF_COMBAT_ENGAGED',
         roles: [ROLE.SELF, ROLE.ACTOR],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
-        label: 'A hero engages THIS enemy',
+        label: 'A hero engages this enemy',
         scopes: [TRIGGER_SCOPES.SELF],
         hint: 'Fires on the enemy Token itself each time a hero engages it. This is how an enemy acts when it is attacked.'
     },

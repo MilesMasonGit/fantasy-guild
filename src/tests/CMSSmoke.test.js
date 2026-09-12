@@ -255,7 +255,7 @@ describe('CMS smoke — the screens mount without throwing', () => {
         }));
         const text = container.textContent;
 
-        expect(text).toContain('Provides 5% less work time to adjacent Coast Tokens.');
+        expect(text).toContain('Makes adjacent Coast Tokens work 5% faster.');
         expect(text).toContain('Acts as a Tier 1 net for adjacent stations.');
         cleanup();
 
@@ -265,7 +265,7 @@ describe('CMS smoke — the screens mount without throwing', () => {
         const token = useEntityStore.getState().tokens[tokenId];
         const { container: tokenRules } = render(React.createElement(Statements, { token }));
         expect(tokenRules.textContent).toContain('Shrimp Trawler');
-        expect(tokenRules.textContent).toContain('Provides 5% less work time to adjacent Coast Tokens.');
+        expect(tokenRules.textContent).toContain('Makes adjacent Coast Tokens work 5% faster.');
         expect(tokenRules.textContent).toContain('Requires an adjacent Tier 1 net.');
     });
 

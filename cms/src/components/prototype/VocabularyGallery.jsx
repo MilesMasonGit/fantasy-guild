@@ -1,4 +1,4 @@
-import { KEYWORD, makeStatement, renderStatement } from '../../utils/constants';
+import { KEYWORD, makeStatement, renderStatement, upkeepLine } from '../../utils/constants';
 
 /**
  * ⭐ **The whole vocabulary, said aloud, for the owner to mark up.**
@@ -40,13 +40,13 @@ const GROUPS = [
             { s: S(KEYWORD.DEALS, { payload: { amount: 1 }, ...at('TOKEN_DEPLETED', 'adjacent') }) },
             {
                 s: S(KEYWORD.DEALS, { payload: { amount: 1 }, ...at('SELF_COMBAT_ENGAGED', 'self') }),
-                note: 'Shouty "THIS" — the only label in the vocabulary that shouts. "A hero engages this enemy"?',
+                fixed: 'No more shouting (owner, 2026-09-12).',
             },
             { s: S(KEYWORD.DEALS, { payload: { amount: 1 }, ...at('COMBAT_ENGAGED', 'adjacent') }) },
             { s: S(KEYWORD.DEALS, { payload: { amount: 1 }, ...at('COMBAT_RESOLVED', 'adjacent') }) },
             {
                 s: S(KEYWORD.DEALS, { payload: { amount: 1 }, ...at('ITEM_PRODUCED', 'adjacent') }),
-                note: 'An unset item leaves an ellipsis mid-sentence. Should it name a placeholder instead?',
+                ruled: 'Owner: the ellipsis is fine — clicking it should open a SEARCH in the panel to pick the item. Recorded for P2/P3; nothing to change in the wording.',
             },
             { s: S(KEYWORD.DEALS, { payload: { amount: 1 }, ...at('ITEM_THRESHOLD', 'global', { watchItemId: 'fixture_oak_wood', threshold: 10 }) }) },
             { s: S(KEYWORD.DEALS, { payload: { amount: 1 }, ...at('EFFECT_TICK', 'self') }) },
@@ -62,31 +62,31 @@ const GROUPS = [
             { s: prov('YIELD', 1) },
             {
                 s: prov('LOOT_MULT', 25),
-                note: 'This IS your "25% chance to double loot drops" — it already exists. But "a 25% double loot chance" reads as a noun, not as a thing that happens.',
+                fixed: 'Now a thing that happens rather than a noun.',
             },
             {
                 s: prov('LOOT_MULT', -25),
-                bug: 'Identical to the +25 sentence above. The sign is lost, so a rule that REMOVES double-loot reads exactly like one that grants it.',
+                fixed: 'The sign survives now — compare with the line above.',
             },
             {
                 s: prov('FAIL_CHANCE', -10),
-                bug: 'Same again, and worse: this rule REDUCES failure by 10% and the sentence says it causes a 10% failure chance. The opposite of the rule.',
+                fixed: 'Was the exact opposite of the rule. An axis now owns its wording in BOTH directions.',
             },
             {
                 s: prov('WORK_TIME', -0.20, 'percentage'),
-                note: '"Less work time" is engine jargon for "faster". Say "works 20% faster"?',
+                fixed: 'Owner: "Works 20% faster is better terminology."',
             },
             {
                 s: prov('INPUT_COST', -1),
-                note: '"1 less input cost" — cost of what? Probably "needs 1 less of each input".',
+                gap: 'Owner wants "Adjacent tokens consume 1 less Charcoal". ⚠️ Not a wording fix — this axis has no item at all. It applies to EVERY input equally, so naming one is a capability the grammar does not have. Needs its own slice.',
             },
             {
                 s: prov('XP_BONUS', 0.5, 'percentage'),
-                note: '"more xp bonus" doubles the noun. Should be "50% more XP".',
+                fixed: 'The doubled noun is gone.',
             },
             {
                 s: prov('BONUS_DROP', 25, 'flat', { payload: { type: 'BONUS_DROP', bucket: 'flat', value: 25, itemId: 'item_raw_shrimp' } }),
-                bug: 'The item is authored and the sentence drops it entirely. This is your "25% chance to drop 1 Raw Shrimp" and it refuses to say which item.',
+                fixed: 'It names the item now — and this is your second example, verbatim.',
             },
         ],
     },
@@ -141,10 +141,14 @@ const GROUPS = [
         title: 'Cost and cadence — the fine print',
         rows: [
             { s: S(KEYWORD.GRANTS, { payload: { itemId: 'fixture_oak_wood', quantity: 1 }, ...at('CYCLE_COMPLETE', 'adjacent', { cooldownMs: 10000 }) }) },
-            { s: prov('YIELD', 0.25, 'percentage', { payload: YLD, upkeep: { items: [{ itemId: 'fixture_oak_wood', quantity: 1 }], cadenceMs: 30000 } }) },
+            {
+                s: prov('YIELD', 0.25, 'percentage', { payload: YLD, upkeep: { items: [{ itemId: 'fixture_oak_wood', quantity: 1 }], cadenceMs: 30000 } }),
+                extraLine: true,
+                fixed: 'Owner: a separate line, and "consumes" rather than "costing". It used to be a trailing clause on a sentence about something else.',
+            },
             {
                 s: S(KEYWORD.GRANTS, { payload: { itemId: 'fixture_oak_wood', quantity: 1 }, chargeDelta: -2 }),
-                note: 'This rule costs 2 charges and the sentence never says so, while a cooldown right above it does. Under E-6 charge cost moves to the strip — but the game prints this sentence too.',
+                note: 'Still open: this rule costs 2 charges and the sentence never says so, while a cooldown right above it does.',
             },
         ],
     },
@@ -162,20 +166,33 @@ const GAPS = [
 
 const SUBTLE = 'var(--color-border-subtle)';
 
+const FLAGS = {
+    bug: ['✗', 'var(--color-error)'],
+    gap: ['⚠', 'var(--color-error)'],
+    note: ['•', 'var(--color-warning)'],
+    ruled: ['✓', 'var(--color-info)'],
+    fixed: ['✓', 'var(--color-success)'],
+};
+
 function Row({ row }) {
     const sentence = renderStatement(row.s, names);
-    const flag = row.bug ? 'bug' : row.note ? 'note' : null;
-    const colour = row.bug ? 'var(--color-error)' : 'var(--color-warning)';
+    const kind = ['bug', 'gap', 'note', 'ruled', 'fixed'].find((k) => row[k]);
+    const [mark, colour] = FLAGS[kind] || [];
 
     return (
         <div style={{ padding: '7px 0', borderBottom: `1px solid ${SUBTLE}` }}>
             <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
                 {sentence}
             </div>
-            {flag && (
+            {row.extraLine && upkeepLine(row.s, names) && (
+                <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
+                    {upkeepLine(row.s, names)}
+                </div>
+            )}
+            {kind && (
                 <div style={{ fontSize: 11, lineHeight: 1.5, color: colour, marginTop: 3, paddingLeft: 14, position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: 0 }}>{row.bug ? '✗' : '•'}</span>
-                    {row.bug || row.note}
+                    <span style={{ position: 'absolute', left: 0 }}>{mark}</span>
+                    {row[kind]}
                 </div>
             )}
         </div>
@@ -183,8 +200,9 @@ function Row({ row }) {
 }
 
 export default function VocabularyGallery() {
-    const bugs = GROUPS.flatMap((g) => g.rows).filter((r) => r.bug).length;
-    const notes = GROUPS.flatMap((g) => g.rows).filter((r) => r.note).length;
+    const all = GROUPS.flatMap((g) => g.rows);
+    const fixed = all.filter((r) => r.fixed).length;
+    const open = all.filter((r) => r.bug || r.note || r.gap).length;
 
     return (
         <div style={{ marginTop: 36, borderTop: `2px solid var(--color-border-default)`, paddingTop: 22 }}>
@@ -197,9 +215,9 @@ export default function VocabularyGallery() {
                 wording fix shows up here the moment it lands.
             </p>
             <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', maxWidth: 820, lineHeight: 1.65, marginBottom: 18 }}>
-                <span style={{ color: 'var(--color-error)' }}>✗ {bugs} can state the opposite of the rule</span>
+                <span style={{ color: 'var(--color-success)' }}>✓ {fixed} fixed from your notes</span>
                 {'  ·  '}
-                <span style={{ color: 'var(--color-warning)' }}>• {notes} I think read badly</span>
+                <span style={{ color: 'var(--color-warning)' }}>{open} still open</span>
                 {'  ·  '}the rest are here for you to mark up.
             </p>
 
