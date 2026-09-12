@@ -16,7 +16,8 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "hooks:install": "node scripts/install-hooks.mjs"
+    "hooks:install": "node scripts/install-hooks.mjs",
+    "cms:restore": "node scripts/backport-game-to-cms.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

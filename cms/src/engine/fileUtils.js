@@ -13,6 +13,7 @@ function snapshot(state) {
     items: state.items,
     tokens: state.tokens,
     maps: state.maps,
+    effects: state.effects,
     recipePools: state.recipePools,
   };
 }

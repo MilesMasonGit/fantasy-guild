@@ -103,6 +103,7 @@ export default function cmsFileApi() {
             !url.startsWith('/api/sprite-audit') &&
             !url.startsWith('/api/register-sprite') &&
             !url.startsWith('/api/sync-game-data') &&
+            !url.startsWith('/api/load-game-data') &&
             !url.startsWith('/data/palettes/')) {
           return next();
         }
@@ -582,10 +583,41 @@ export default function cmsFileApi() {
           return;
         }
 
-        // The GET /api/load-game-data route was removed in CMS rework v2
-        // Phase 0. CMS-4 reverses the import direction entirely: there is no
-        // game → CMS path, because current data/ content is hand-authored
-        // placeholder to be re-authored rather than a corpus worth importing.
+        // --- GET /api/load-game-data (Reconstruct workspace from data/) ---
+        if (req.method === 'GET' && req.url === '/api/load-game-data') {
+          try {
+            const dataDir = path.resolve(projectRoot, 'data');
+            const items = JSON.parse(fs.readFileSync(path.join(dataDir, 'items.json'), 'utf8'));
+            const tokens = JSON.parse(fs.readFileSync(path.join(dataDir, 'tokens.json'), 'utf8'));
+            const maps = JSON.parse(fs.readFileSync(path.join(dataDir, 'maps.json'), 'utf8'));
+            const effects = fs.existsSync(path.join(dataDir, 'effects.json'))
+              ? JSON.parse(fs.readFileSync(path.join(dataDir, 'effects.json'), 'utf8'))
+              : {};
+            const tokenRecipes = fs.existsSync(path.join(dataDir, 'tokenRecipes.json'))
+              ? JSON.parse(fs.readFileSync(path.join(dataDir, 'tokenRecipes.json'), 'utf8'))
+              : [];
+
+            const recipePools = {};
+            for (const recipe of tokenRecipes) {
+              const skill = recipe.skill || 'general';
+              if (!recipePools[skill]) recipePools[skill] = [];
+              recipePools[skill].push(recipe);
+            }
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              items,
+              tokens,
+              maps,
+              effects,
+              recipePools,
+            }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Failed to load game data: ' + err.message }));
+          }
+          return;
+        }
 
         // --- POST /api/sync-game-data (CMS-53 one-way full-file write to data/) ---
         if (req.method === 'POST' && req.url === '/api/sync-game-data') {

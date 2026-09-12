@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DatabaseBackup, Upload, Trash2, X, Plus, Clock, FileJson } from 'lucide-react';
+import { DatabaseBackup, Upload, Trash2, X, Plus, Clock, FileJson, DownloadCloud } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 
 export default function FileManagerModal({ isOpen, onClose }) {
@@ -40,13 +40,10 @@ export default function FileManagerModal({ isOpen, onClose }) {
       const state = useEntityStore.getState();
       const backupData = {
         items: state.items,
-        tasks: state.tasks,
-        recipes: state.recipes,
-        encounters: state.encounters,
-        stations: state.stations,
-        enemies: state.enemies,
-        areas: state.areas,
-        quests: state.quests,
+        tokens: state.tokens,
+        maps: state.maps,
+        effects: state.effects,
+        recipePools: state.recipePools,
       };
 
       const res = await fetch('/api/backups', {
@@ -75,6 +72,10 @@ export default function FileManagerModal({ isOpen, onClose }) {
     setConfirmState({ type: 'new', data: null, message: 'Create a new empty workspace? Make sure you have saved your current work.' });
   };
 
+  const requestRestoreFromGame = () => {
+    setConfirmState({ type: 'restoreFromGame', data: null, message: 'Restore workspace directly from game files (data/*.json)? This will load all current tokens, items, maps, recipes, and effects.' });
+  };
+
   const executeConfirm = async () => {
     if (!confirmState) return;
     const { type, data } = confirmState;
@@ -84,6 +85,12 @@ export default function FileManagerModal({ isOpen, onClose }) {
       if (type === 'load') {
         const res = await fetch(`/api/backups/${data}`);
         if (!res.ok) throw new Error('Failed to load backup');
+        const json = await res.json();
+        useEntityStore.getState().hydrate(json);
+        onClose();
+      } else if (type === 'restoreFromGame') {
+        const res = await fetch('/api/load-game-data');
+        if (!res.ok) throw new Error('Failed to load game data');
         const json = await res.json();
         useEntityStore.getState().hydrate(json);
         onClose();
@@ -149,7 +156,16 @@ export default function FileManagerModal({ isOpen, onClose }) {
               </button>
             </form>
             
-            <div className="flex-shrink-0 border-l pl-4" style={{ borderColor: 'var(--color-border-subtle)' }}>
+            <div className="flex-shrink-0 border-l pl-4 flex items-center gap-2" style={{ borderColor: 'var(--color-border-subtle)' }}>
+              <button 
+                type="button" 
+                className="btn-ghost flex items-center gap-1.5"
+                style={{ color: 'var(--color-accent-hover)' }}
+                onClick={requestRestoreFromGame}
+                title="Reconstruct and import CMS workspace directly from data/*.json game files"
+              >
+                <DownloadCloud size={14} /> Restore from Game
+              </button>
               <button 
                 type="button" 
                 className="btn-ghost flex items-center gap-2"
