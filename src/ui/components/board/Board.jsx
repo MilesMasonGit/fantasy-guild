@@ -12,6 +12,10 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { GameState } from '../../../state/GameState.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
+import { TERRAIN_ENABLED } from '../../../config/registries/terrainRegistry.js';
+
+/** Shared empty terrain, so a dormant board's selector returns a stable value. */
+const NO_TERRAIN = Object.freeze({});
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
@@ -168,12 +172,15 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
     // because a Token arriving is exactly what repaints (D-T10) — there is no
     // separate "terrain changed" event and adding one would be a second source
     // of truth for the same moment.
+    //
+    // While terrain is dormant (FP-10) neither is read: a save that holds
+    // terrain keeps it but shows none, and no seed is written into the save.
     const terrain = useGameState(
-        state => state.board?.terrain || {},
+        state => (TERRAIN_ENABLED ? state.board?.terrain || NO_TERRAIN : NO_TERRAIN),
         ['state_changed', BOARD_EVENTS.TILE_CHANGED]
     );
     const terrainSeed = useGameState(
-        () => BoardState.terrainSeed(),
+        () => (TERRAIN_ENABLED ? BoardState.terrainSeed() : 0),
         ['state_changed']
     );
 
@@ -270,7 +277,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                     transformOrigin: 'top left'
                 }}
             >
-            <TerrainCanvas terrain={terrain} seed={terrainSeed} />
+            {TERRAIN_ENABLED && <TerrainCanvas terrain={terrain} seed={terrainSeed} />}
             <div
                 className="grid shrink-0 relative"
                 style={{

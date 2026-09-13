@@ -5,6 +5,15 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Terrain is switched off** (Free Playmat slice 1.1, FP-10). Placing a Token no longer
+  paints the ground, bursting a Map no longer stamps its terrain on what comes out, and
+  the painted landscape under the board is gone — every tile shows its plain faint
+  outline on the table, as a new game always started. The **Playmat Tuner** dev panel,
+  which only tuned terrain, is hidden with it. *Nothing is deleted*: the terrain code
+  sleeps behind one switch (`TERRAIN_ENABLED` in `terrainRegistry.js`), and saves keep
+  any terrain they already hold. The free playmat has no tiles to paint, so terrain
+  had to go before free placement; it may come back in a form that suits a free mat.
+
 - **Dev tool: Sprite Animation Studio** — a developer-only viewer for hero animation
   sheets (idle / walk / active rows): playback, frame-by-frame scrubbing, alignment
   guides and onion skinning. Open it from the QA tester panel or with **Shift+A**; like
