@@ -1196,6 +1196,9 @@ export const useEntityStore = create(
                     tokens: finalTokens,
                     recipes,
                     maps,
+                    // For the FP-47 skill check, which must expand a Token to
+                    // recognise a Promotion Token. Read-only; nothing is written.
+                    effects: library,
                 }, sim.rows.map(describeRow));
 
                 useSimulationStore.getState().setAuditResults(

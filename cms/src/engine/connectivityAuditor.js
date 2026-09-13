@@ -1,4 +1,4 @@
-import { SKILLS } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY } from '../utils/constants';
 
 /**
  * Connectivity & Graph Auditor — Audits the Token, Recipe, and Item graph
@@ -44,7 +44,7 @@ const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.ski
 const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
 
 export function auditConnectivity(entities, solverRefusals = []) {
-  const { items = {}, tokens = {}, recipes = {}, enemies = {}, maps = {} } = entities;
+  const { items = {}, tokens = {}, recipes = {}, enemies = {}, maps = {}, effects = {} } = entities;
   const issues = [];
 
   const allItems = Object.values(items || {});
@@ -130,6 +130,22 @@ export function auditConnectivity(entities, solverRefusals = []) {
         });
       }
     }
+  }
+
+  // FP-47 (Free Playmat slice 1.0): a hero-worked Token must name a skill.
+  // The rule is the game's own (`workSkillRule.js`), so this tab and the boot
+  // audit name the same Tokens. Expanded first: a Promotion Token is only
+  // recognisable by its Promotes rule, which lives in the effect library.
+  for (const token of allTokens) {
+    if (!isWorkedWithoutSkill(expandBearer(token, effects))) continue;
+    issues.push({
+      entityId: token.id,
+      entityName: token.name || token.id,
+      entityType: 'Token',
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: `Worked by a hero but names no skill. ${WORK_SKILL_WHY}`,
+    });
   }
 
   // Check for recipes referencing non-existent items

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -85,7 +85,7 @@ export default function TokenEditor() {
         always-present empty panel at the top of every un-run Token is the thing
         this layout is trying to avoid.
       */}
-      <TokenSummary token={token} derived={derived} />
+      <TokenSummary token={token} derived={derived} needsSkill={isWorkedWithoutSkill(expanded)} />
 
       <Section title="Identity" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">
@@ -587,18 +587,25 @@ export default function TokenEditor() {
  * has never been recalculated shows no panel at all rather than an empty one,
  * which is the whole point of putting this at the top.
  */
-function TokenSummary({ token, derived }) {
+function TokenSummary({ token, derived, needsSkill }) {
   const answer = useSimulationStore((s) => s.simAnswers[token.id]);
   const scrap = token.scrapValue;
   const hasScrap = Number.isFinite(scrap);
 
-  if (!answer && !derived?.warn && !hasScrap) return null;
+  if (!answer && !derived?.warn && !needsSkill && !hasScrap) return null;
 
   return (
     <Section title="What the simulator decided" icon={<Gauge size={14} />}>
       {derived?.warn && (
         <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
           ⚠️ {derived.why}.
+        </p>
+      )}
+      {/* FP-47 (Free Playmat slice 1.0): the game's own rule, read live, so it
+          clears the moment a skill is picked — no Recalculate needed. */}
+      {needsSkill && (
+        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ This Token is worked by a hero but names no skill. {WORK_SKILL_WHY}
         </p>
       )}
 

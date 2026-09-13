@@ -5,6 +5,14 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Tokens with no skill are now flagged** (Free Playmat slice 1.0, FP-47). On the free
+  playmat a Token a hero works must name a skill or it won't be workable, and 17 Tokens
+  (the fruit bushes and trees, the grapevine, the wheat field, the watermelon patch and
+  the adamantine ore vein) have none today. They're named in the game's content check at
+  startup, on the CMS **Economy Audit** tab after a Recalculate, and at the top of the
+  Token's editor. Enemies and Promotion Tokens don't need one. *Nothing plays differently
+  yet* — pick each Token's skill under **Work Cycle → Skill**, then Recalculate and Sync.
+
 - **Fixed: Token descriptions said every rule twice** — "Works as a Smithing station.
   Works as a Smithing station." It affected 24 Tokens, every one that uses a library
   effect. The CMS's Recalculate added a Token's library rules a second time before

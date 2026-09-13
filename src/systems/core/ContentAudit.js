@@ -20,6 +20,7 @@ import { GUILD_HALL_DROP_SEQUENCE, GUILD_HALL_MAPS } from '../../config/registri
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { RANDOM_HUNTS } from '../quests/QuestManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
+import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -142,6 +143,12 @@ function auditTokens(out) {
         checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
         checkRef(out, where, 'map', def.mapId, 'The Map it opens');
         checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
+
+        // FP-47 (Free Playmat slice 1.0): a hero-worked Token must name a
+        // skill. Reported only — nothing about how the Token runs changes yet.
+        if (isWorkedWithoutSkill(def)) {
+            out.push(finding(where, `is worked by a hero but names no skill. ${WORK_SKILL_WHY}`));
+        }
 
         for (const input of def.config?.inputs || []) {
             checkRef(out, where, 'item', input?.itemId, 'An ingredient it consumes');

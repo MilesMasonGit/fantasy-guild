@@ -134,6 +134,10 @@ export {
 export { ENEMY_STYLES } from '../../../src/config/registries/enemyProfile.js';
 export { enemyCombatBudget } from '../../../src/config/FormulaRegistry.js';
 
+// FP-47 (Free Playmat slice 1.0): a hero-worked Token must name a skill. The
+// game's own rule and wording, so the CMS and the boot audit name the same Tokens.
+export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/workSkillRule.js';
+
 // `tokenType` is derived from what a Token has rather than picked (§1.2). The
 // CMS computes it and writes it into the file; the author never types it.
 export {
