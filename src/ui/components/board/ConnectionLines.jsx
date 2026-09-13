@@ -71,9 +71,8 @@ function relationshipsFor(tile) {
     }
 
     // Inbound: Tokens within Near that are supporting this tile — measured
-    // centre to centre (Free Playmat 1.2, FP-41). `nearby` names each Token once.
-    // ⚠️ Until slice 1.3 converts `RecipeResolver.servesFrom`, a line is drawn
-    // only where both agree, so a 2×2 Token's corner-diagonal inbound lines drop.
+    // centre to centre (Free Playmat 1.2, FP-41). `nearby` names each Token once,
+    // and `RecipeResolver.servesFrom` measures the same way since slice 1.3.
     for (const nAnchor of nearby(anchor, REACH.ADJACENT)) {
         const nInstance = BoardState.getToken(nAnchor);
         if (!nInstance) continue;

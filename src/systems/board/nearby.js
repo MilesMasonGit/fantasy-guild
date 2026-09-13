@@ -28,9 +28,20 @@ import * as BoardState from './BoardState.js';
  * `adjacent` stays the stored id and now means **Near**; `self_and_adjacent`
  * likewise; `self` and `board` are unchanged. No Close/Far rows (FP-53).
  *
- * ⚠️ Only the passive readers use this in slice 1.2. `RecipeResolver`,
- * `Charges`, `Managers`, `TriggerSystem.handleAdjacent`, `Restrictions` and
- * `Placement` still use `adjacency.js` until slice 1.3.
+ * ## Every reach reader uses it (slice 1.3)
+ * The passive readers (slice 1.2) and the active ones (slice 1.3) —
+ * `RecipeResolver`, `Charges`, `Managers`, `TriggerSystem.handleAdjacent`,
+ * `Restrictions` and `Placement`'s rebuild coverage — all measure here, so
+ * crafting context, tool wear, Manager reach, neighbour triggers and `Cannot`
+ * counts agree with buff reach for every Token shape (FP-41). `adjacency.js`
+ * has no production callers left.
+ *
+ * ## Tokens that are not (or no longer) on the board
+ * `nearby()` reads the live board. Three readers need a position the board
+ * cannot give: a Manager restocking a vacancy, a neighbour trigger whose source
+ * has just left, and a `Cannot` check on a layout that has not happened yet.
+ * They use {@link centreOf} (a position from an anchor and a type) with
+ * {@link tokensWithin} or {@link isWithin}, which is the same measurement.
  */
 
 /** The live Near radius, in mat units (Mat Tuner, FP-66). */
@@ -63,11 +74,51 @@ export function distance(a, b) {
     return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-/** Whether two mat points are within `radius` of each other (inclusive). */
-function within(a, b, radius) {
+/**
+ * Squared distance between two mat points. Centres on the grid are whole
+ * numbers, so this is exact — two equal distances compare equal, which a
+ * nearest-first tie-break depends on.
+ */
+export function distanceSq(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    return dx * dx + dy * dy <= radius * radius;
+    return dx * dx + dy * dy;
+}
+
+/** Whether two mat points are within `radius` of each other (inclusive). */
+function within(a, b, radius) {
+    return distanceSq(a, b) <= radius * radius;
+}
+
+/** Whether two mat points are within `radius` of each other (inclusive). */
+export function isWithin(a, b, radius = nearRadius()) {
+    return !!a && !!b && within(a, b, radius);
+}
+
+/**
+ * Where a Token of `typeId` anchored at `anchor` has its centre — whether or not
+ * it is on the board right now. Used for hypothetical layouts (`Restrictions`)
+ * and for Tokens that have just left (a vacancy, a depletion trigger).
+ */
+export function centreOf(anchor, typeId) {
+    return footprintCentre(anchor, getTokenType(typeId)?.size || 1);
+}
+
+/**
+ * Every Token on the board whose centre lies within `radius` of `point`, as
+ * anchors in ascending order, skipping `excludeAnchor`.
+ *
+ * The point-based form of {@link nearby}, for readers whose origin is not a
+ * Token currently on the board.
+ */
+export function tokensWithin(point, radius = nearRadius(), excludeAnchor = null) {
+    if (!point) return [];
+    const out = [];
+    for (const [anchor, instance] of BoardState.occupiedTiles()) {
+        if (!instance?.typeId || anchor === excludeAnchor) continue;
+        if (within(point, centreOf(anchor, instance.typeId), radius)) out.push(anchor);
+    }
+    return out;
 }
 
 /**
@@ -184,6 +235,39 @@ export function tilesToRebuild(indexOrFootprint, radius = nearRadius()) {
     const out = [];
     for (let i = 0; i < TILE_COUNT; i++) {
         if (ownSet.has(i) || within(origin, positionOf(i), reachU)) out.push(i);
+    }
+    return out;
+}
+
+/**
+ * The tiles to rebuild after a change touching `tiles`, when what used to stand
+ * there is not known (slice 1.3 — `Placement`'s single dirty event).
+ *
+ * ## Why not {@link tilesToRebuild} per tile
+ * `tilesToRebuild` measures an **occupied** tile from its current Token. After a
+ * swap, a push or a 2×2 cascade, the Token now on a tile is often not the one
+ * that left it — a 2×2 lands where three 1×1 Tokens stood — and the departed
+ * Token's buffs reached from a different centre. Any Token that covered a tile
+ * had its centre within `LARGEST_CENTRE_OFFSET` of that tile's centre, so
+ * `radius + LARGEST_CENTRE_OFFSET` from every changed tile covers both the
+ * arrival and the departure, whatever their shapes.
+ *
+ * Deliberately generous (about 20 tiles for one 1×1 change at 272 u): rebuilding
+ * an extra tile is harmless, missing one is a silently stale buff. 36 at most.
+ *
+ * @param {number[]} tiles
+ * @returns {number[]} ascending
+ */
+export function tilesAroundChange(tiles, radius = nearRadius()) {
+    const changed = (tiles || []).filter(isTileIndex);
+    if (!changed.length) return [];
+    const reachU = radius + LARGEST_CENTRE_OFFSET;
+    const centres = changed.map(tileCentre);
+    const changedSet = new Set(changed);
+    const out = [];
+    for (let i = 0; i < TILE_COUNT; i++) {
+        const p = positionOf(i);
+        if (changedSet.has(i) || centres.some(c => within(c, p, reachU))) out.push(i);
     }
     return out;
 }

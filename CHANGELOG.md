@@ -5,6 +5,26 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Crafting, tool wear, Managers, neighbour triggers and "Cannot" now reach the same
+  way buffs do** (Free Playmat slice 1.3, FP-41). Every "beside" question in the game —
+  whether a station has its tool, which stations a tool wears for, which Manager restocks
+  a spent Token, which Tokens hear "On Neighbour's …", and how many Coasts a Coast counts
+  — now uses the same **Near** distance as buffs. For ordinary 1×1 Tokens *nothing plays
+  differently*. **Large (2×2) Tokens now reach the same way for crafting, Managers,
+  triggers and Cannot as they already did for buffs**: the 8 tiles touching their sides,
+  not the 4 touching only a corner. Two small changes come with it: where two Managers
+  could restock the same spot, the **nearest** one does it (then the lower tile number),
+  which only changes whose name is on the "Restocked from" message; and raising Near in
+  the Mat Tuner now widens tool service, Manager reach, triggers and Cannot counts too.
+  Tool wear is still one charge per station served per cycle, and Managers still restock
+  in the exact spot.
+
+- **Fix: board-wide buffs now update everywhere at once.** A rule that reaches "every
+  Token on the board" used to refresh only the Tokens near where something changed, so
+  far-away Tokens could keep a buff from a Token that had left (or miss one from a Token
+  that had just arrived) until the game reloaded. Any change now refreshes the whole board
+  while such a rule is present.
+
 - **"Adjacent" is now measured as a distance** (Free Playmat slice 1.2, FP-41/FP-56). Buffs,
   item grants, statuses, damage and "per adjacent" counts now reach every Token whose
   centre is within **Near** (272 units — a tile step is 160) instead of looking up the 8

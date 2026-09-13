@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
-import { neighboursOf } from './adjacency.js';
+import { centreOf, distanceSq, nearRadius, tokensWithin } from './nearby.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
@@ -31,11 +31,12 @@ import { logger } from '../../utils/Logger.js';
  *    Goblin Camp refreshes Goblin-type enemy Tokens. Enemies are not a special
  *    case — they deplete, restock and automate exactly like resources (D-104),
  *    so one economic model covers the whole board.
- * 2. **Eight adjacent tiles, and never depletes** (D-140). A Manager that wore
- *    out would be a restocker needing restocking, which is precisely the chore
- *    it exists to remove. Where two Managers cover one tile, whichever acts
- *    first does the job — resolved here by ascending tile index, which is
- *    stable rather than merely arbitrary.
+ * 2. **Near reach, and never depletes** (D-140, Free Playmat 1.3). A Manager
+ *    that wore out would be a restocker needing restocking, which is precisely
+ *    the chore it exists to remove. Reach is `nearby()`'s Near, centre to centre
+ *    (FP-41) — the old 8 tiles for 1×1 Tokens at 272 u. Where several Managers
+ *    cover one tile, the **nearest** does the job, then the lowest anchor index
+ *    (roadmap §4 1.3), which is stable rather than merely arbitrary.
  * 3. **Restocks under a working hero, who resumes automatically** (D-151).
  *    ⚠️ **This is the whole point.** A hero whose Forest ran dry does not need
  *    re-placing, because a fresh Forest arrives under their feet and they carry
@@ -98,22 +99,38 @@ export function isManager(typeId) {
 }
 
 /**
- * The Manager covering a tile that looks after `typeId`, as `[tile, typeId]`,
+ * The Manager covering a tile that looks after `typeId`, as `[anchor, typeId]`,
  * or null.
  *
- * Ascending tile index is the "first come" of D-140 — with no ordering the two
- * overlapping Managers would restock unpredictably, which is a difference the
- * player can see (their stock drains from a different pile) for no benefit.
+ * ## Measured from the Token that is owed (Free Playmat 1.3)
+ * A vacancy is an empty tile, so there is no Token on the board to measure from.
+ * The owed Token's centre is: `typeId` anchored at `tile`, which is exactly
+ * where the restock will put it (FP-19). For a 2×2 that is its footprint
+ * centre, not the anchor tile's.
+ *
+ * ## Tie-break: nearest, then lowest anchor index
+ * The "first come" of D-140 — with no ordering overlapping Managers would
+ * restock unpredictably. Distances compare exactly (whole-number centres).
+ * Every candidate is also checked in full, not just an anchor within an 8-ring,
+ * so a 2×2 Manager is found from any tile it reaches.
  */
 export function managerFor(tile, typeId) {
     if (!typeId) return null;
-    // Copied before sorting — `neighboursOf` hands back a shared, frozen array.
-    for (const n of [...neighboursOf(tile)].sort((a, b) => a - b)) {
-        const instance = BoardState.getToken(n);
-        if (!instance) continue;
-        if (managedTypes(instance.typeId)?.includes(typeId)) return [n, instance.typeId];
+    const origin = centreOf(tile, typeId);
+    if (!origin) return null;
+
+    // Normally empty; if something is standing here it is not its own Manager.
+    const here = BoardState.getOccupyingToken(tile)?.anchorIndex ?? null;
+
+    let best = null;
+    for (const anchor of tokensWithin(origin, nearRadius(), here)) {
+        const instance = BoardState.getToken(anchor);
+        if (!instance || !managedTypes(instance.typeId)?.includes(typeId)) continue;
+        const d = distanceSq(origin, centreOf(anchor, instance.typeId));
+        // `tokensWithin` is ascending, so a strict `<` keeps the lowest anchor on a tie.
+        if (!best || d < best.d) best = { anchor, typeId: instance.typeId, d };
     }
-    return null;
+    return best ? [best.anchor, best.typeId] : null;
 }
 
 /**
