@@ -137,6 +137,18 @@ export const BOARD_EVENTS = {
     TOKEN_CHARGES_CHANGED: 'board:token_charges_changed',
 
     /**
+     * A hero finished training on a Token with a Promotes rule, and the game is
+     * asking whether to go through with it (Promotes rule P3).
+     * Payload: `{ tile, heroId, jobId, typeId }`
+     *
+     * ⚠️ **Nothing has happened yet when this fires.** No skills have moved and
+     * nothing has been spent — the tile is holding. `BoardPromotion.accept` and
+     * `.decline` are the two ways out, and the offer survives a reload because
+     * it lives on the Token instance.
+     */
+    PROMOTION_READY: 'board:promotion_ready',
+
+    /**
      * A named effect just did something on this tile — `{ tile, title }`.
      *
      * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to

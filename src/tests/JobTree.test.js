@@ -213,11 +213,23 @@ describe('The tree is connected and complete', () => {
         }
     });
 
-    it('advancing costs more than the first promotion', () => {
+    /**
+     * ⚠️ The gold half of this was deleted in Promotes rule P3 (PR-6). A
+     * promotion is paid for with a Token charge, so `PROMOTION_COSTS` holds only
+     * the skill threshold. What the tiers must still differ on is the
+     * QUALIFICATION: an advanced job has to ask more of a hero than a base one.
+     */
+    it('advancing demands more of a hero than the first promotion', () => {
         expect(PROMOTION_COST_AT(JOB_TIERS.ADVANCED).skillLevel)
             .toBeGreaterThan(PROMOTION_COST_AT(JOB_TIERS.BASE).skillLevel);
-        expect(PROMOTION_COST_AT(JOB_TIERS.ADVANCED).gold)
-            .toBeGreaterThan(PROMOTION_COST_AT(JOB_TIERS.BASE).gold);
+    });
+
+    /** The price is a Token, so nothing here may quietly re-grow a gold cost. */
+    it('charges no gold and no materials', () => {
+        for (const tier of [JOB_TIERS.BASE, JOB_TIERS.ADVANCED]) {
+            expect(PROMOTION_COST_AT(tier).gold).toBeUndefined();
+            expect(PROMOTION_COST_AT(tier).materials).toBeUndefined();
+        }
     });
 });
 

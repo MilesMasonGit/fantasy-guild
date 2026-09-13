@@ -437,12 +437,19 @@ describe('when a rule spends its charges (UE-20)', () => {
     it('offers only moments something actually spends at', () => {
         // ⚠️ If this grows, a reader grew with it. P5's cycle-start and P6's
         // engagement are deliberately absent until they are published.
-        expect(CHARGE_MOMENTS.map((m) => m.id)).toEqual(['on_fire', 'per_cycle']);
+        // `on_promote` arrived with its reader, `BoardPromotion.accept` (P3).
+        expect(CHARGE_MOMENTS.map((m) => m.id)).toEqual(['on_fire', 'per_cycle', 'on_promote']);
     });
 
     it('does not offer "each time it fires" to a rule that cannot fire', () => {
         expect(chargeMomentsFor(false).map((m) => m.id)).toEqual(['per_cycle']);
         expect(chargeMomentsFor(true).map((m) => m.id)).toEqual(['on_fire', 'per_cycle']);
+    });
+
+    it('offers a Promotes rule its own moment and nothing else — and nobody else that one', () => {
+        expect(chargeMomentsFor(false, 'promotes').map((m) => m.id)).toEqual(['on_promote']);
+        expect(chargeMomentsFor(true, 'grants').map((m) => m.id)).toEqual(['on_fire', 'per_cycle']);
+        expect(chargeMomentOf({ keyword: 'promotes', chargeWhen: 'per_cycle' })).toBe('on_promote');
     });
 
     it('infers the moment from the statement when unauthored', () => {

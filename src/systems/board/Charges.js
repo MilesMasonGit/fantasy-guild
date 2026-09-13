@@ -6,7 +6,7 @@ import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers } 
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
 import { DEFAULT_STATEMENT_CHARGE_DELTA, statementsOf } from '../effects/statements.js';
 import {
-    CHARGE_MOMENT, chargeMomentOf, DEFAULT_CHARGE_DELTA_BY_MOMENT,
+    CHARGE_MOMENT, chargeDeltaOf,
 } from '../../config/registries/chargeMomentRegistry.js';
 import * as BoardState from './BoardState.js';
 
@@ -102,9 +102,9 @@ export function canAfford(instance, amount) {
  * An authored number always wins, `0` included.
  */
 export function statementChargeDelta(statement) {
-    const authored = statement?.chargeDelta;
-    if (typeof authored === 'number') return authored;
-    return DEFAULT_CHARGE_DELTA_BY_MOMENT[chargeMomentOf(statement)] ?? DEFAULT_STATEMENT_CHARGE_DELTA;
+    // One reading, shared with the CMS cost strip — see `chargeDeltaOf`, which
+    // also carries the Promotes exception (Promotes rule P3).
+    return chargeDeltaOf(statement, DEFAULT_STATEMENT_CHARGE_DELTA);
 }
 
 /**
