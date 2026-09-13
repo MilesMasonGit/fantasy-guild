@@ -18,7 +18,7 @@ import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
-    migrateBearers, expandBearer, expandAll, effectRefsOf, provisionalName,
+    migrateBearers, migratePromotionFields, expandBearer, expandAll, effectRefsOf, provisionalName,
     normaliseScale,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
@@ -666,6 +666,26 @@ function seedEffectLibrary(state = {}) {
     return { ...state, tokens: bearers, effects };
 }
 
+/**
+ * A Token's retired `promotion: { jobId }` field → a Promotes rule in the
+ * library (Promotes rule P2).
+ *
+ * ⚠️ Runs after `seedEffectLibrary`, on the same three load paths (`merge`,
+ * `migrate`, `hydrate`), and calls the same pure function as
+ * `scripts/migrate-promotion-rules.mjs` — so this workspace and `data/` convert
+ * identically and the next sync writes no difference. Idempotent, and a no-op
+ * for any workspace without the field.
+ */
+function seedPromotionRules(state = {}) {
+    const tokens = state.tokens || {};
+    const needsMigration = Object.values(tokens)
+        .some((t) => t && Object.prototype.hasOwnProperty.call(t, 'promotion'));
+    if (!needsMigration) return state;
+
+    const { effects, tokens: next } = migratePromotionFields(tokens, { existing: state.effects || {} });
+    return { ...state, tokens: next, effects };
+}
+
 const FACTORIES = {
     items: { make: makeItem, prefix: 'item', type: 'item' },
     tokens: { make: makeToken, prefix: 'token', type: 'token' },
@@ -1020,12 +1040,12 @@ export const useEntityStore = create(
              * and neither is redundant.
              */
             hydrate: (data = {}) => {
-                const seeded = seedEffectLibrary(seedSimIntent({
+                const seeded = seedPromotionRules(seedEffectLibrary(seedSimIntent({
                     items: data.items || {},
                     tokens: data.tokens || {},
                     effects: data.effects || {},
                     recipePools: data.recipePools || {},
-                }));
+                })));
                 set({
                     items: data.items || {},
                     tokens: seeded.tokens,
@@ -1324,14 +1344,14 @@ export const useEntityStore = create(
              */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedEffectLibrary(seedSimIntent(persistedState)),
+                ...seedPromotionRules(seedEffectLibrary(seedSimIntent(persistedState))),
             }),
             /**
              * Reached only by a numbered version that is not 1 — there is none
              * yet. Seeds anyway: the normaliser is idempotent, and a future
              * migration should never be the reason intent went missing.
              */
-            migrate: (persistedState) => seedEffectLibrary(seedSimIntent(persistedState)),
+            migrate: (persistedState) => seedPromotionRules(seedEffectLibrary(seedSimIntent(persistedState))),
             /**
              * What survives a reload.
              *

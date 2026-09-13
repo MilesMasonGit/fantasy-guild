@@ -108,6 +108,7 @@ export {
 // libraries, and the next sync would silently overwrite one with the other.
 export {
   migrateBearers,
+  migratePromotionFields,
   provisionalName,
 } from '../../../src/systems/effects/effectMigration.js';
 

@@ -1,6 +1,6 @@
 // Fantasy Guild — inline statements → the named library (Unified Effects, P1)
 
-import { KEYWORD, statementsOf } from './statements.js';
+import { KEYWORD, statementsOf, makeStatement } from './statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { EFFECT_ID_PREFIX } from './effectLibrary.js';
 
@@ -200,4 +200,89 @@ export function migrateBearers(bearers = {}, { existing = {}, nameOf = titleCase
     }
 
     return { effects, bearers: out, moved };
+}
+
+/**
+ * ⭐ **A Token's `promotion` field → a library effect holding a Promotes rule**
+ * (Promotes rule P2 — `docs/promotes_rule_roadmap.md`).
+ *
+ * The unmerged `promotion-tokens` branch authored *Wizard Academy* and
+ * *Fighter's Academy* as `promotion: { jobId }`, and a CMS sync carried both
+ * into `data/` on `main`, where nothing reads the field. The owner then ruled
+ * that promotion is a rule (PR-1). This moves those Tokens onto the rule so
+ * nothing already authored is lost.
+ *
+ * ## ⚠️ Called from two places, like `migrateBearers`, for the same reason
+ * `scripts/migrate-promotion-rules.mjs` moves `data/`; `useEntityStore` moves
+ * the CMS workspace in the author's browser storage. If the two disagreed, the
+ * next "Sync to Game" would overwrite one with the other.
+ *
+ * ## ⚠️ Deterministic ids, not random ones
+ * Both copies run this independently, so anything random — `newStatementId` —
+ * would give the same rule two different ids and churn every sync afterwards.
+ * The statement id comes from the job; the effect id from its name, made unique
+ * against the library it is added to.
+ *
+ * ## The rules
+ * * A Token whose `promotion` names a job loses the field and gains a reference.
+ * * Every Token promoting to the **same job shares one effect**, and an effect
+ *   already in the library holding exactly one Promotes rule for that job is
+ *   reused rather than duplicated.
+ * * A Token whose field names no job is **left exactly as it is** — there is
+ *   nothing to convert, and deleting it would lose whatever it was meant to be.
+ * * An unknown job still converts. The rule then reads "Promotes the hero to
+ *   not_a_job." on screen, which is louder than a silently dropped field.
+ * * Idempotent: a Token with no `promotion` field passes through untouched.
+ *
+ * @param {Record<string, object>} tokens
+ * @param {object} [options]
+ * @param {Record<string, object>} [options.existing] the library to add to
+ * @returns {{ effects: Record<string, object>, tokens: Record<string, object>, moved: number }}
+ */
+export function migratePromotionFields(tokens = {}, { existing = {} } = {}) {
+    const effects = { ...existing };
+    const out = {};
+    let moved = 0;
+
+    const effectFor = (jobId) => Object.keys(effects).find((id) => {
+        const statements = statementsOf(effects[id]);
+        return statements.length === 1
+            && statements[0]?.keyword === KEYWORD.PROMOTES
+            && statements[0]?.payload?.jobId === jobId;
+    });
+
+    const uniqueId = (base) => {
+        let candidate = base;
+        let n = 2;
+        while (effects[candidate]) candidate = `${base}_${n++}`;
+        return candidate;
+    };
+
+    for (const [tokenId, def] of Object.entries(tokens)) {
+        const jobId = def?.promotion?.jobId;
+        if (!def || !Object.prototype.hasOwnProperty.call(def, 'promotion') || typeof jobId !== 'string' || !jobId) {
+            out[tokenId] = def;
+            continue;
+        }
+
+        let effectId = effectFor(jobId);
+        if (!effectId) {
+            const statement = makeStatement(KEYWORD.PROMOTES, {
+                id: `stm_promotes_${slug(jobId)}`,
+                payload: { jobId }
+            });
+            const name = provisionalName(statement);
+            effectId = uniqueId(`${EFFECT_ID_PREFIX}_${slug(name)}`);
+            effects[effectId] = { id: effectId, name, statements: [statement], autoSyncId: true };
+        }
+
+        const refs = Array.isArray(def.effects) ? def.effects : [];
+        const already = refs.some((ref) => (typeof ref === 'string' ? ref : ref?.effectId) === effectId);
+        const next = { ...def, effects: already ? refs : [...refs, { effectId, scale: 1 }] };
+        delete next.promotion;
+        out[tokenId] = next;
+        moved += 1;
+    }
+
+    return { effects, tokens: out, moved };
 }
