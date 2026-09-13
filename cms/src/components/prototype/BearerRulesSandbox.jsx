@@ -68,6 +68,10 @@ export default function BearerRulesSandbox() {
   const [status, setStatus] = useState('Preparing…');
   const activeType = useEntityStore((s) => s.activeEntityType);
 
+  /* eslint-disable react-hooks/set-state-in-effect --
+     Deliberate, and only in this throwaway: seeding must happen AFTER
+     persistence is switched off, which is itself a side effect, so it cannot
+     move into render. */
   useEffect(() => {
     const saved = window.localStorage.getItem(STORE_KEY);
     useEntityStore.persist.setOptions({ storage: nowhere });
@@ -89,6 +93,7 @@ export default function BearerRulesSandbox() {
     }, 500);
     return () => window.clearInterval(timer);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!ids) return <p style={{ padding: 20 }}>{status}</p>;
 
