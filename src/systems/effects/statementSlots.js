@@ -395,7 +395,8 @@ function payloadSlots(statement, ctx) {
          */
         case KEYWORD.ACTS_AS:
             return [
-                ...payloadSlots({ ...statement, keyword: KEYWORD.REQUIRES }, ctx),
+                // Only the capability — `Acts as` has a tier of its own, not a minimum.
+                ...payloadSlots({ ...statement, keyword: KEYWORD.REQUIRES }, ctx).filter(s => s.id === 'tag'),
                 {
                     id: 'tier', kind: SLOT_KIND.NUMBER, label: 'tool tier', min: 1,
                     value: payload.tier ?? 1,
@@ -417,6 +418,17 @@ function payloadSlots(statement, ctx) {
                      */
                     suggestions: (ctx?.capabilities || []).slice().sort(),
                     patch: v => ({ payload: { ...payload, tag: v } })
+                },
+                /**
+                 * ⚠️ The sentence says "Tier 2", and the retired Requires form's
+                 * "Min Tool Tier" box was the only way to change it (Rules Line
+                 * P6). A number the rules text prints with no control behind it
+                 * is exactly the silent hole P4 kept finding.
+                 */
+                {
+                    id: 'minTier', kind: SLOT_KIND.NUMBER, label: 'minimum tool tier', min: 1,
+                    value: payload.minTier ?? 1,
+                    patch: v => ({ payload: { ...payload, minTier: Math.max(1, Math.floor(Number(v) || 1)) } })
                 }
             ];
 
@@ -872,7 +884,10 @@ function chargeHint(delta, moment) {
  */
 export function costSlots(statement) {
     const keyword = getKeyword(statement?.keyword);
-    if (!keyword) return [];
+    // ⚠️ `Requires` is a view of a Token's `acceptedTokens`, not a rule (owner
+    // Q5): nothing spends on it, and a charge written here would be written into
+    // the Token's requirement list.
+    if (!keyword || keyword.id === KEYWORD.REQUIRES) return [];
 
     const moment = chargeMomentOf(statement);
     const delta = typeof statement.chargeDelta === 'number'

@@ -141,9 +141,12 @@ describe('CMS smoke — the screens mount without throwing', () => {
 
         // The sections the Token editor is made of. If one disappears or a
         // component inside it throws, this notices.
-        for (const heading of ['Identity', 'Tags', 'Rules', 'Rules Text', 'Lifecycle']) {
+        for (const heading of ['Identity', 'Tags', 'Rules', 'Lifecycle']) {
             expect(text).toContain(heading);
         }
+        // ⚠️ Retired in Rules Line P6 (owner): it printed the Rules section's
+        // sentences a second time.
+        expect(text).not.toContain('Rules Text');
         expect(container.querySelectorAll('input').length).toBeGreaterThan(3);
     });
 

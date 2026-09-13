@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText, Gauge } from 'lucide-react';
+import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, rulesLinesOf, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -16,12 +16,10 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 export default function TokenEditor() {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const token = useEntityStore((s) => s.tokens[activeId]);
-  const tokens = useEntityStore((s) => s.tokens);
   const updateToken = useEntityStore((s) => s.updateToken);
   const deleteToken = useEntityStore((s) => s.deleteToken);
   const setTokenPooling = useEntityStore((s) => s.setTokenPooling);
   const recipePools = useEntityStore((s) => s.recipePools);
-  const items = useEntityStore((s) => s.items);
   const effects = useEntityStore((s) => s.effects);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -65,14 +63,6 @@ export default function TokenEditor() {
   const enemyBudget = useMemo(
     () => (enemy?.level != null ? enemyCombatBudget(enemy.level, enemy.budgetScale ?? 1) : null),
     [enemy]
-  );
-
-  const rulesLines = useMemo(
-    () => rulesLinesOf(expanded, {
-      token: (id) => tokens[id]?.name || id,
-      item: (id) => items[id]?.name || id,
-    }),
-    [expanded, tokens, items]
   );
 
   if (!token) return <Empty text="Select a Token from the sidebar to edit" />;
@@ -417,28 +407,6 @@ export default function TokenEditor() {
 
       <Section title="Rules" icon={<Sparkles size={14} />}>
         <Statements token={token} />
-      </Section>
-
-      <Section title="Rules Text" icon={<ScrollText size={14} />}>
-        <div
-          className="rounded-lg p-3 space-y-1"
-          style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          {rulesLines.length === 0 ? (
-            <p className="text-[11px] text-gray-600 italic">
-              This Token has no rules. It can still produce, but it does nothing to its neighbours.
-            </p>
-          ) : (
-            rulesLines.map((line, i) => (
-              <p key={i} className="text-xs text-gray-200 leading-relaxed">{line}</p>
-            ))
-          )}
-        </div>
-        <p className="text-[10px] text-gray-600 mt-2 leading-relaxed">
-          Written by the game, from the rules above — the same sentence the
-          in-game tooltip shows. Read it: if it says something you did not mean,
-          a rule says something you did not mean.
-        </p>
       </Section>
 
       {/* Station-ness is a `Works as` statement (R-14/R-15). This checkbox is a

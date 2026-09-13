@@ -7,7 +7,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { Library, Pencil } from 'lucide-react';
 import {
   KEYWORD, KEYWORDS, getKeyword, makeStatement,
-  renderStatement, statementsOf, slotsOf, costSlots,
+  statementsOf, slotsOf, costSlots,
   getPaletteEntry,
   effectRefsOf, expandBearer, rulesLinesOf,
   scaleStatement, effectTitle, MAX_SCALE,
@@ -63,7 +63,24 @@ const KEYWORD_ICON = {
  * view of a Token's own `acceptedTokens` field (owner Q5), which is a property
  * of that Token and not something a shared effect could carry.
  */
-export function StatementList({ statements, onChange, content }) {
+/**
+ * @param {object} [cursor] / [onCursor]  a cursor held by the caller, so several
+ *   lists on one screen share ONE panel (Rules Line P6). Omitted, the list keeps
+ *   its own. `onCursor` takes a value or a function of this list's cursor.
+ * @param {'always'|'focused'} [panel]  `focused` shows the panel only while this
+ *   list holds the cursor — a Token's rules are several lists, and a panel per
+ *   list would be several idle panels.
+ * @param {boolean} [canAdd]  offer "Add rule"
+ * @param {boolean} [lockKeyword]  the verb cannot be retyped (Requires)
+ * @param {(statement) => React.ReactNode} [rowNote]  a line under each row
+ * @param {string|null} [emptyNote]  what an empty list says
+ */
+export function StatementList({
+  statements, onChange, content,
+  cursor: heldCursor, onCursor, panel = 'always', canAdd = true, lockKeyword = false,
+  rowNote = null,
+  emptyNote = 'This effect has a name and nothing behind it. A named effect must carry at least one rule — add one below, or delete the effect.',
+}) {
   const storeTokens = useEntityStore((s) => s.tokens);
   const storeItems = useEntityStore((s) => s.items);
   const storeEffects = useEntityStore((s) => s.effects);
@@ -99,7 +116,10 @@ export function StatementList({ statements, onChange, content }) {
    * throughout, so a blur arriving after a Tab can never clobber the word Tab
    * just moved to.
    */
-  const [cursor, setCursor] = useState(null);
+  const [ownCursor, setOwnCursor] = useState(null);
+  const held = typeof onCursor === 'function';
+  const cursor = held ? (heldCursor ?? null) : ownCursor;
+  const setCursor = held ? onCursor : setOwnCursor;
   // A name typed into an item search that is being created: `{ statementId, slotId, name }`.
   const [creating, setCreating] = useState(null);
   const actionsFor = (statementId) => {
@@ -161,6 +181,7 @@ export function StatementList({ statements, onChange, content }) {
       line was a fixed sidebar overlapping the chips in a narrow column.
     */
     <div data-rules-editor style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
+      {(panel === 'always' || cursor) && (
       <aside
         data-rules-panel-column
         style={{ flex: '0 0 260px', position: 'sticky', top: 12, maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}
@@ -180,6 +201,7 @@ export function StatementList({ statements, onChange, content }) {
             : null}
         />
       </aside>
+      )}
 
       {/* The item-creation dialog the retired item picker opened, now opened from the panel. */}
       <InlineItemModal
@@ -198,10 +220,9 @@ export function StatementList({ statements, onChange, content }) {
       />
 
       <div className="space-y-3" style={{ flex: '1 1 420px', minWidth: 0 }}>
-      {list.length === 0 && (
+      {list.length === 0 && emptyNote && (
         <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
-          This effect has a name and nothing behind it. A named effect must carry
-          at least one rule — add one below, or delete the effect.
+          {emptyNote}
         </p>
       )}
 
@@ -216,6 +237,8 @@ export function StatementList({ statements, onChange, content }) {
           cursor={cursor?.statementId === statement.id ? cursor : null}
           actions={actionsFor(statement.id)}
           canCreate={canCreate}
+          lockKeyword={lockKeyword}
+          note={rowNote ? rowNote(statement) : null}
           canMoveUp={i > 0}
           canMoveDown={i < list.length - 1}
           onMove={(by) => move(statement.id, by)}
@@ -224,7 +247,7 @@ export function StatementList({ statements, onChange, content }) {
         />
       ))}
 
-      <div className="pt-1">
+      {canAdd && <div className="pt-1">
         {menuOpen ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
             {KEYWORDS.filter((k) => k.id !== KEYWORD.REQUIRES).map((k) => {
@@ -261,7 +284,7 @@ export function StatementList({ statements, onChange, content }) {
             <Plus size={12} /> Add rule
           </button>
         )}
-      </div>
+      </div>}
       </div>
     </div>
   );
@@ -297,20 +320,40 @@ export default function Statements({ token, item }) {
   const addEffectRef = useEntityStore((s) => s.addEffectRef);
   const removeEffectRef = useEntityStore((s) => s.removeEffectRef);
   const setEffectRefScale = useEntityStore((s) => s.setEffectRefScale);
+  const setEffectStatements = useEntityStore((s) => s.setEffectStatements);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const [search, setSearch] = useState('');
 
+  /**
+   * ⭐ **One cursor across every rule on this bearer**, so ONE panel shows at a
+   * time (E-5) although the rules are several lists — one per effect, plus the
+   * Requires rows. `{ listId, cursor }`; each list sees only its own share.
+   */
+  const [held, setHeld] = useState(null);
+  const cursorFor = (listId) => ({
+    cursor: held?.listId === listId ? held.cursor : null,
+    onCursor: (update) => setHeld((prev) => {
+      const mine = prev?.listId === listId ? prev.cursor : null;
+      const next = typeof update === 'function' ? update(mine) : update;
+      if (next === mine) return prev;
+      if (next) return { listId, cursor: next };
+      return prev?.listId === listId ? null : prev;
+    }),
+  });
+
   const requirements = token ? (token.acceptedTokens || []) : [];
   const refs = effectRefsOf(record);
   const setRequirements = (next) => updateToken(record.id, { acceptedTokens: next });
 
+  // ⚠️ `effect` too: without it an Applies rule printed the effect's id (found in P3).
   const names = useMemo(() => ({
     token: (id) => tokens[id]?.name || id,
     item: (id) => items[id]?.name || id,
-  }), [tokens, items]);
+    effect: (id) => effects?.[id]?.name || id,
+  }), [tokens, items, effects]);
 
   /**
    * How many bearers use an entry — the number that makes an edit legible.
@@ -351,16 +394,24 @@ export default function Statements({ token, item }) {
         </div>
       )}
 
-      {requirements.map((req, i) => (
-        <RequiresRow
-          key={`req_${i}`}
-          requirement={req}
-          tokens={tokens}
-          names={names}
-          onChange={(next) => setRequirements(requirements.map((r, idx) => (idx === i ? next : r)))}
-          onRemove={() => setRequirements(requirements.filter((_, idx) => idx !== i))}
+      {/*
+        ⭐ Requires on the Rules Line (P6). Still a view of `acceptedTokens`
+        (owner Q5): each entry is shown as a Requires sentence and written back
+        as the plain `{ tag, minTier }` it was. The verb is locked, so it cannot
+        be retyped into a rule, and it has no cost strip, since nothing spends.
+      */}
+      {requirements.length > 0 && (
+        <StatementList
+          statements={requirements.map((req, i) => ({ id: `req_${i}`, keyword: KEYWORD.REQUIRES, payload: req }))}
+          onChange={(next) => setRequirements(next.map((st) => st.payload))}
+          {...cursorFor('requires')}
+          panel="focused"
+          canAdd={false}
+          lockKeyword
+          emptyNote={null}
+          rowNote={(st) => <RequiresNote requirement={st.payload} tokens={tokens} />}
         />
-      ))}
+      )}
 
       {refs.map(({ effectId, scale }) => {
         const entry = effects[effectId];
@@ -393,6 +444,14 @@ export default function Statements({ token, item }) {
           getPaletteEntry(st?.payload?.type)?.scales || getKeyword(st?.keyword)?.scales
         );
         const count = bearerCount(effectId);
+        /**
+         * ⭐ **Owner ruling 2026-09-12 (P6): edited in place only when not shared.**
+         * An effect only this bearer uses — the usual case, since "New rule"
+         * makes one — gets the full Rules Line here. A shared one stays
+         * read-only with its count and Edit, because an in-place edit would
+         * change every other bearer while looking local (Unified Effects P1).
+         */
+        const editable = count <= 1;
         /**
          * ⚠️ The sentences are rendered from the **scaled** statements, not the
          * entry's own. A row showing "5% less work time" beside a scale of 3 is
@@ -456,15 +515,34 @@ export default function Statements({ token, item }) {
                 <X size={12} />
               </button>
             </div>
-            <div className="px-3 py-2 space-y-1">
-              {lines.length === 0 ? (
-                <p className="text-[11px] italic" style={{ color: 'var(--color-warning)' }}>
-                  This effect has no rule behind it.
-                </p>
-              ) : lines.map((line, i) => (
-                <p key={i} className="text-[11px] text-gray-400 leading-relaxed">{line}</p>
-              ))}
-            </div>
+            {editable ? (
+              <div className="px-3 py-2 space-y-2" data-editable-effect={effectId}>
+                {scale > 1 && (
+                  <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-accent-hover)' }}>
+                    This {token ? 'Token' : 'item'} carries it at x{scale}. The numbers below are the
+                    effect’s own; the game multiplies them.
+                  </p>
+                )}
+                <StatementList
+                  statements={entry.statements || []}
+                  onChange={(next) => setEffectStatements(effectId, next)}
+                  {...cursorFor(effectId)}
+                  panel="focused"
+                  canAdd={false}
+                  emptyNote="This effect has no rule left. Open it to add one, or remove it from here."
+                />
+              </div>
+            ) : (
+              <div className="px-3 py-2 space-y-1" data-shared-effect={effectId}>
+                {lines.length === 0 ? (
+                  <p className="text-[11px] italic" style={{ color: 'var(--color-warning)' }}>
+                    This effect has no rule behind it.
+                  </p>
+                ) : lines.map((line, i) => (
+                  <p key={i} className="text-[11px] text-gray-400 leading-relaxed">{line}</p>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}
@@ -570,8 +648,8 @@ export default function Statements({ token, item }) {
   );
 }
 
-/** One row's chrome: keyword name, reorder, delete — and a sentence, for a row with no line. */
-function RowShell({ keywordId, sentence, onMove, canMoveUp, canMoveDown, onRemove, children }) {
+/** One row's chrome: keyword name, reorder, delete. */
+function RowShell({ keywordId, onMove, canMoveUp, canMoveDown, onRemove, children }) {
   const keyword = getKeyword(keywordId);
   const Icon = KEYWORD_ICON[keywordId] || Zap;
   return (
@@ -612,71 +690,36 @@ function RowShell({ keywordId, sentence, onMove, canMoveUp, canMoveDown, onRemov
         </button>
       </div>
 
-      <div className="p-3 space-y-2.5">{children}</div>
-
       {/*
-        ⚠️ Only a row with NO Rules Line passes a sentence (Requires). A rule row
-        shows its sentence once, as the line itself — the quoted copy that used
-        to sit here made it three times on one screen (Q1, retired 2026-09-12).
+        A row shows its sentence once, as the line itself — the quoted copy that
+        used to sit under Requires went when Requires got a line (P6).
       */}
-      {sentence && (
-        <p className="px-3 py-2 border-t border-white/5 text-[11px] italic text-emerald-300/90 leading-relaxed">
-          “{sentence}”
-        </p>
-      )}
+      <div className="p-3 space-y-2.5">{children}</div>
     </div>
   );
 }
 
-/** Requires — a view of the top-level `acceptedTokens` field (owner Q5). */
-function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
-  const capabilities = useCapabilityVocabulary(tokens);
+/**
+ * Which Tokens satisfy a requirement — the one thing the retired Requires form
+ * showed that its sentence does not say.
+ */
+function RequiresNote({ requirement, tokens }) {
   const effects = useEntityStore((s) => s.effects);
-  const sentence = renderStatement(
-    { keyword: KEYWORD.REQUIRES, payload: requirement }, names
-  );
   // Expanded: an `Acts as` rule lives in the library, so an unexpanded Token
   // provides nothing and this list would always read "nothing supplies this".
   const providers = Object.values(tokens).filter((t) =>
     providedTagsOf(expandBearer(t, effects || {}))
       .some((p) => p.tag === requirement.tag && (p.tier || 1) >= (requirement.minTier || 1))
   );
-
   return (
-    <RowShell keywordId={KEYWORD.REQUIRES} sentence={sentence} onRemove={onRemove}>
-      <div className="flex gap-3">
-        <Field label="Capability" className="flex-1">
-          <input
-            type="text"
-            list="cms-capability-tags"
-            value={requirement.tag || ''}
-            placeholder="e.g. pickaxe"
-            onChange={(e) => onChange({ ...requirement, tag: e.target.value.trim().toLowerCase() })}
-            className="w-full"
-            style={{ fontSize: 12 }}
-          />
-        </Field>
-        <Field label="Min Tool Tier" className="w-28">
-          <input
-            type="number"
-            min={1}
-            value={requirement.minTier ?? 1}
-            onChange={(e) => onChange({ ...requirement, minTier: Math.max(1, Number(e.target.value)) })}
-            className="w-full"
-            style={{ fontSize: 12 }}
-          />
-        </Field>
-      </div>
-      <CapabilityDatalist capabilities={capabilities} />
-      <p className="text-[10px] text-gray-500">
-        Satisfied by:{' '}
-        {providers.length === 0 ? (
-          <span className="text-amber-400">nothing yet — this Token can never work</span>
-        ) : (
-          providers.map((t) => t.name).join(', ')
-        )}
-      </p>
-    </RowShell>
+    <p className="text-[10px] text-gray-500" data-satisfied-by>
+      Satisfied by:{' '}
+      {providers.length === 0 ? (
+        <span className="text-amber-400">nothing yet — this Token can never work</span>
+      ) : (
+        providers.map((t) => t.name).join(', ')
+      )}
+    </p>
   );
 }
 /**
@@ -697,7 +740,7 @@ function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
  * (E-6, P5) — the charge cost and the upkeep, which the sentence never says —
  * with the upkeep's items as a small table under that.
  */
-function StatementRow({ statement, items, names, ctx, cursor, actions, canCreate, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
+function StatementRow({ statement, items, names, ctx, cursor, actions, canCreate, lockKeyword, note, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
   const keyword = getKeyword(statement.keyword);
   const upkeep = keyword?.upkeep ? statement.upkeep : null;
 
@@ -716,6 +759,7 @@ function StatementRow({ statement, items, names, ctx, cursor, actions, canCreate
         ctx={ctx}
         cursor={cursor}
         actions={actions}
+        lockKeyword={lockKeyword}
         form={<PayloadFields statement={statement} items={items} canCreate={canCreate} onChange={onChange} />}
         upkeepTable={upkeep && (
           <ItemList
@@ -727,6 +771,7 @@ function StatementRow({ statement, items, names, ctx, cursor, actions, canCreate
           />
         )}
       />
+      {note}
     </RowShell>
   );
 }
@@ -927,12 +972,4 @@ function providedTagsOf(token) {
     else if (p?.tag) out.push({ tag: p.tag, tier: p.tier || defaultTier });
   }
   return out;
-}
-
-function CapabilityDatalist({ capabilities }) {
-  return (
-    <datalist id="cms-capability-tags">
-      {capabilities.map((c) => <option key={c} value={c} />)}
-    </datalist>
-  );
 }

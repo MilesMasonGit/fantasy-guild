@@ -11,6 +11,7 @@ import AuditPanel from './components/audit/AuditPanel';
 import ProgressionPanel from './components/progression/ProgressionPanel';
 import RulesLineP0 from './components/prototype/RulesLineP0';
 import RulesLineSandbox from './components/prototype/RulesLineSandbox';
+import BearerRulesSandbox from './components/prototype/BearerRulesSandbox';
 import { useEntityStore } from './stores/useEntityStore';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
 
@@ -40,6 +41,11 @@ function App() {
   // line never leaves a test effect in the workspace for a sync to ship.
   if (new URLSearchParams(window.location.search).has('p2')) {
     return <RulesLineSandbox />;
+  }
+  // ⚠️ P6 sandbox: the real Token and Item editors on seeded content, with the
+  // store's persistence switched off first so the saved draft is never written.
+  if (new URLSearchParams(window.location.search).has('p6')) {
+    return <BearerRulesSandbox />;
   }
   return (
     <AppShell>

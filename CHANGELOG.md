@@ -5,6 +5,20 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Tokens and items edit their own rules in place.** On a Token or item, an effect
+  only it uses now shows the same clickable sentence and cost line as the effects
+  library, so you can change it without leaving the Token. An effect shared with
+  other Tokens or items still shows as plain text with "shared" and an Edit button,
+  so you can't change the others by accident. One help panel appears beside
+  whichever rule you're editing.
+- **Requirements read as sentences.** "Requires an adjacent Tier 1 net." is now
+  edited by clicking "1" or "net", with "Satisfied by" still shown underneath. The
+  old Capability and Min Tool Tier boxes are gone.
+- **The duplicate "Rules Text" section is gone** from the Token and Item editors. It
+  printed the same sentences a second time.
+- **Fixed: a shared effect that applies another effect showed that effect's internal
+  id** instead of its name on the Token and Item editors.
+
 - ⭐ **A rule's cost now reads beside its sentence.** Under each rule, one quiet line
   says what the rule's rules text doesn't: "spends 1 charge each time it fires ·
   no cooldown · consumes 1 Coal every 30 seconds". Click any underlined part to

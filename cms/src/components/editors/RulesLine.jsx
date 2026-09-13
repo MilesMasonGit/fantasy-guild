@@ -627,6 +627,9 @@ function CostStrip({ statement, costs, cooldown, upkeepAllowed, names, cursor, a
     );
   }
 
+  // Requires costs nothing and takes no upkeep, so it has no strip at all.
+  if (parts.length === 0) return null;
+
   return (
     <div
       data-cost-strip
@@ -657,9 +660,14 @@ function affordanceLabel(slot) {
  * @param {object|null} cursor  this rule's share of the list's cursor, or null
  *   when the author is working in another rule
  * @param {object} actions  cursor moves, bound to this rule by the list
+ * @param {boolean} lockKeyword  the verb is not retypeable — a Token's Requires
+ *   row, which is not a rule and must not be turned into one (P6)
  */
-export default function RulesLine({ statement, onChange, names, form, upkeepTable, ctx, cursor, actions }) {
-  const slots = useMemo(() => slotsOf(statement, ctx), [statement, ctx]);
+export default function RulesLine({ statement, onChange, names, form, upkeepTable, ctx, cursor, actions, lockKeyword = false }) {
+  const slots = useMemo(
+    () => slotsOf(statement, ctx).filter((s) => !(lockKeyword && s.id === 'keyword')),
+    [statement, ctx, lockKeyword]
+  );
   const segments = useMemo(() => renderSegments(statement, names), [statement, names]);
   const byId = useMemo(() => new Map(slots.map((s) => [s.id, s])), [slots]);
   const unworded = useMemo(() => slotsWithoutWords(slots, segments), [slots, segments]);

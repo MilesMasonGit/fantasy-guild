@@ -20,9 +20,14 @@ const aura = () => ({ ...makeStatement(KEYWORD.STATION), payload: { skill: 'cook
 
 describe('the charge cost', () => {
     it('is offered on every rule (UE-20)', () => {
-        for (const k of KEYWORDS) {
+        for (const k of KEYWORDS.filter(k => k.id !== KEYWORD.REQUIRES)) {
             expect(costSlots(makeStatement(k.id)).map(s => s.id), k.id).toEqual(expect.arrayContaining(['charge', 'chargeWhen']));
         }
+    });
+
+    it('⚠️ is never offered on Requires — a Token field, not a rule (P6)', () => {
+        // A charge written here would land inside the Token's acceptedTokens.
+        expect(costSlots({ keyword: KEYWORD.REQUIRES, payload: { tag: 'net', minTier: 1 } })).toEqual([]);
     });
 
     it('reads as what it spends, and agrees with what the game charges', () => {

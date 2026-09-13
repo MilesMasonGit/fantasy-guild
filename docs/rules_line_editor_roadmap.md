@@ -2,7 +2,7 @@
 
 *The authoritative plan. Vision: [`concept_rules_line_editor.md`](concept_rules_line_editor.md).*
 
-**Status: P0–P5 done 2026-09-12; P6 is next.** Decisions below marked
+**Status: P0–P6 done 2026-09-12 — the plan is complete.** Decisions below marked
 locked came from owner interviews on 2026-09-09 and 2026-09-12 and are not to be
 re-litigated.
 
@@ -234,6 +234,40 @@ Mostly relocating controls that already exist.
 
 Token editor and Item editor onto the same component (E-9).
 
+#### What P6 decided that the plan did not say
+
+* ⭐ **Owner ruling 2026-09-12: an effect is edited in place only when not
+  shared.** E-9 met Unified Effects P1, which made a Token's rules read-only
+  because an in-place edit to a shared effect changes every bearer while looking
+  local. An effect only this bearer references — the usual case, since "New
+  rule" makes one — gets the full Rules Line; a shared one keeps its sentences,
+  "shared xN" and Edit.
+* ⭐ **Owner ruling: the Token and Item editors' "Rules Text" section is
+  deleted.** It printed the Rules section's sentences a second time.
+* ⭐ **One panel across several lists.** A Token's rules are several lists (one
+  per effect, plus Requires), so `StatementList` accepts a cursor held by its
+  caller and a `panel="focused"` mode: the bearer holds `{ listId, cursor }`, and
+  only the list holding it shows the panel. Several idle panels would have been
+  worse than none. E-5's "always visible" holds in the effects library; here the
+  panel appears on the first click.
+* **Requires is a `StatementList` over `acceptedTokens`**, mapped to Requires
+  statements and back to plain `{ tag, minTier }`. Its verb is locked
+  (`lockKeyword`) so it cannot be retyped into a rule, and `costSlots` returns
+  nothing for it, so a charge can never be written into the Token's requirements.
+  "Satisfied by" survives as a row note.
+* ⚠️ **The minimum tier had no slot.** The sentence printed "Tier 1" and only the
+  retired Min Tool Tier box could change it — P4's lesson again. It is a word now,
+  and `Acts as` (which borrows Requires' slots) is kept from inheriting it.
+* **No "Add rule" inside an in-place effect.** "New rule" beside the list makes a
+  new effect; adding a second sentence to an existing one happens in the library.
+* **A scaled reference says so** ("carries it at x3 — the numbers below are the
+  effect's own"), since the line edits the entry, not the scaled copy.
+* ⚠️ **Fixed in passing: the bearer panel named applied effects by id** — one of
+  the four read-only panels flagged in P3. The EffectEditor's own Rules Text
+  panel still does (not in this phase's scope).
+* **Verified on a sandbox at `?p6=1`** that switches the store's persistence off
+  before seeding and checks the saved draft is byte-identical afterwards.
+
 ## 4. Implementation status
 
 | Phase | State | Notes |
@@ -244,7 +278,7 @@ Token editor and Item editor onto the same component (E-9).
 | P3 The panel | ✅ **DONE** 2026-09-12 | ONE panel for the whole list, on the left, pinned while the rules scroll, and wrapping above them on a narrow column. Tab and Shift+Tab walk the words (Q3); arrows move through the panel; a blank reads "Pick …" and searches, 30 at a time with a count. 32 interaction tests; six deliberately wrong versions each caught. Verified in a real browser on the sandbox: layout at 1280px and 640px, pinning over a 1,500px scroll, Tab/Shift+Tab, arrow + Enter, and picking an effect and an item from blanks. |
 | P4 Delete the forms | ✅ **DONE** 2026-09-12 | ⭐ The complaint is fixed. Eight forms deleted, not hidden; only a conversion’s item table survives (E-8). Read every form against the slots first and found the decisions only a form could reach — the skill scope (its option list was EMPTY), the `Works as` skill (no slot at all), the Grants item/quantity/chance, the tool tier, the Restocks list, the Applies chance and target — and gave each a slot before deleting anything. `FormFreeSlots` walks that inventory. Rules text unchanged (golden). Six deliberately wrong versions each caught. Verified in a real browser on the sandbox. |
 | P5 Cost and cadence | ✅ **DONE** 2026-09-12 | ⭐ One quiet strip under each rule — "spends 1 charge each time it fires · no cooldown · consumes 1 Coal every 30 seconds" — replaces the Charge cost and Costing boxes. Owner ruled the strip holds only what the sentence leaves unsaid, and that `requires` moves with P6. Fixed the cooldown word storing milliseconds. `CostSlots` (13) and 7 interaction tests; four deliberately wrong versions each caught. |
-| P6 Token and Item editors | **NOT STARTED** | |
+| P6 Token and Item editors | ✅ **DONE** 2026-09-12 | ⭐ A Token's or item's own effects are edited in place on the Rules Line; shared ones stay read-only with Edit (owner). One panel across all its rules. Requires is a sentence with clickable tier and capability — the tier had no slot. The duplicate Rules Text sections are gone (owner). `BearerRules` (12) tests; verified on a persistence-free sandbox. |
 
 ## 5. Open questions
 

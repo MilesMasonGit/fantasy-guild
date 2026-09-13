@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Settings2, Shield, HelpCircle, Lock, Sparkles, ScrollText } from 'lucide-react';
+import { Settings2, Shield, HelpCircle, Lock, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { EQUIP_CATEGORIES } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
-import { rulesLinesOf, expandBearer } from '../../utils/constants';
 import ChainInspector from '../shared/ChainInspector';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -38,20 +37,8 @@ export default function ItemEditor() {
   const item = useEntityStore((s) => s.items[activeId]);
   const updateItem = useEntityStore((s) => s.updateItem);
   const deleteItem = useEntityStore((s) => s.deleteItem);
-  const effects = useEntityStore((s) => s.effects);
-  const tokens = useEntityStore((s) => s.tokens);
-  const items = useEntityStore((s) => s.items);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
-
-  // Expanded against the library, so the sentences carry each reference's scale
-  // (P2) rather than the entry's unscaled numbers.
-  const rulesLines = item
-    ? rulesLinesOf(expandBearer(item, effects), {
-        token: (id) => tokens[id]?.name || id,
-        item: (id) => items[id]?.name || id,
-      })
-    : [];
 
   if (!item) return <Empty text="Select an item from the sidebar to edit" />;
 
@@ -172,24 +159,6 @@ export default function ItemEditor() {
       */}
       <Section title="Rules" icon={<Sparkles size={14} />}>
         <Statements item={item} />
-      </Section>
-
-      <Section title="Rules Text" icon={<ScrollText size={14} />}>
-        <div
-          className="rounded-lg p-3 space-y-1"
-          style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          {rulesLines.length === 0 ? (
-            <p className="text-[11px] text-gray-600 italic">
-              This item has no rules. It can still be worth gold, restore health
-              or be a crafting input — most items are exactly that.
-            </p>
-          ) : (
-            rulesLines.map((line, i) => (
-              <p key={i} className="text-[11px] text-gray-400 leading-relaxed">{line}</p>
-            ))
-          )}
-        </div>
       </Section>
 
       <Section title="Value" icon={<Lock size={14} />}>
