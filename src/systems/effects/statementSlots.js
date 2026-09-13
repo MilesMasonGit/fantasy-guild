@@ -1,6 +1,11 @@
 // Fantasy Guild — a statement as an ordered list of slots (Effects Grammar v2, V3)
 
-import { KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement } from './statements.js';
+import {
+    KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement, DEFAULT_STATEMENT_CHARGE_DELTA
+} from './statements.js';
+import {
+    CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, DEFAULT_CHARGE_DELTA_BY_MOMENT
+} from '../../config/registries/chargeMomentRegistry.js';
 import { TRIGGER_EVENTS, getTriggerEvent, rolesOf } from '../../config/registries/triggerRegistry.js';
 import { ROLES, getRole } from '../../config/registries/roleRegistry.js';
 import { REACHES, reachOf, getReach } from '../../config/registries/reachRegistry.js';
@@ -533,10 +538,19 @@ export function slotsOf(statement, ctx = {}) {
                 patch: v => ({ when: { ...statement.when, threshold: Math.max(1, Number(v) || 1) } })
             });
         }
+        /**
+         * ⚠️ **In seconds, because the sentence says seconds** (fixed in P5).
+         *
+         * The sentence reads "at most once every 5 seconds", and E-3 retypes
+         * the word the author sees. The slot used to take milliseconds, so
+         * retyping that 5 as 10 stored 10 ms and the sentence then read "every
+         * 0 seconds". The data stays in milliseconds; only the word converts.
+         */
         slots.push({
-            id: 'cooldown', kind: SLOT_KIND.NUMBER, label: 'cooldown (ms)', min: 0,
-            value: statement?.when?.cooldownMs ?? 0,
-            patch: v => ({ when: { ...statement.when, cooldownMs: Math.max(0, Number(v) || 0) } })
+            id: 'cooldown', kind: SLOT_KIND.NUMBER, label: 'cooldown (seconds)', min: 0,
+            value: Math.round((statement?.when?.cooldownMs ?? 0) / 100) / 10,
+            hint: 'The shortest gap between two firings. 0 lets it fire every time its moment happens.',
+            patch: v => ({ when: { ...statement.when, cooldownMs: Math.max(0, Math.round((Number(v) || 0) * 1000)) } })
         });
     }
 
@@ -811,6 +825,91 @@ export function nearestOptions(slot, query, limit = 5) {
 export function slotsWithoutWords(slots, segments) {
     const worded = new Set((segments || []).map(s => s.slot).filter(Boolean));
     return (slots || []).filter(s => s.kind !== SLOT_KIND.FORM && !worded.has(s.id));
+}
+
+/**
+ * Slots the sentence may say, but whose control lives in the cost strip when it
+ * does not (E-6, owner ruling 2026-09-12). Kept out of the quiet row beneath the
+ * line so a decision is never offered in two places.
+ */
+export const FINE_PRINT_SLOTS = Object.freeze(['cooldown']);
+
+/** What a charge cost means, in the words the retired Charge cost box used. */
+function chargeHint(delta, moment) {
+    const firing = moment === CHARGE_MOMENT.ON_FIRE;
+    const n = Math.abs(delta);
+    const charges = `${n} charge${n === 1 ? '' : 's'}`;
+    const body = delta < 0
+        ? firing
+            ? `Spends ${charges} each time it fires, and cannot fire at all with fewer left.`
+            : `Spends ${charges} every cycle this Token completes, on top of its own work cost.`
+        : delta === 0
+            ? 'Free — this rule never wears the Token down. This is how an always-on effect is authored.'
+            : firing
+                ? `Gives ${charges} back, up to the Token's starting charges.`
+                : 'A per-cycle rule can only cost, never restore — a Token topping itself up every cycle would never deplete.';
+    return `${body} A Token with unlimited charges ignores this in both directions. Type a minus sign to give charges back.`;
+}
+
+/**
+ * ⭐ **The fine print: what a rule costs, which its sentence never says** (E-6, P5).
+ *
+ * Owner ruling 2026-09-12: the strip beside the sentence holds only what the
+ * sentence leaves unsaid. Cooldown and chance are already words in the rules
+ * text, so they stay clickable there; the charge cost and the upkeep's clock
+ * are said nowhere, so they get slots here.
+ *
+ * Separate from `slotsOf` on purpose. Everything `slotsOf` returns is a decision
+ * the sentence can hold, and the tests hold every tag the renderer emits to it.
+ * None of these ever appears in the rules text.
+ *
+ * ⚠️ `charge` reads as what the rule SPENDS — positive — while `chargeDelta`
+ * stores the change to the Token, negative. Writing it pins `chargeWhen`, as the
+ * retired box did, so a rule's moment stops being inferred once a cost is typed.
+ *
+ * @param {object} statement
+ * @returns {Array<object>} slots shaped like `slotsOf`'s
+ */
+export function costSlots(statement) {
+    const keyword = getKeyword(statement?.keyword);
+    if (!keyword) return [];
+
+    const moment = chargeMomentOf(statement);
+    const delta = typeof statement.chargeDelta === 'number'
+        ? statement.chargeDelta
+        : (DEFAULT_CHARGE_DELTA_BY_MOMENT[moment] ?? DEFAULT_STATEMENT_CHARGE_DELTA);
+
+    const slots = [
+        {
+            id: 'charge', kind: SLOT_KIND.NUMBER, label: 'charges spent',
+            value: delta === 0 ? 0 : -delta,
+            hint: chargeHint(delta, moment),
+            patch: v => {
+                const n = Math.round(Number(v));
+                const spend = Number.isFinite(n) ? n : 0;
+                return { chargeDelta: spend === 0 ? 0 : -spend, chargeWhen: moment };
+            }
+        },
+        {
+            id: 'chargeWhen', kind: SLOT_KIND.VOCABULARY, label: 'spent',
+            value: moment,
+            options: chargeMomentsFor(!!statement.when).map(m => option(m.id, m.label, m.hint)),
+            patch: v => ({ chargeWhen: v })
+        }
+    ];
+
+    if (keyword.upkeep && statement.upkeep) {
+        const upkeep = statement.upkeep;
+        slots.push({
+            id: 'upkeepEvery', kind: SLOT_KIND.NUMBER, label: 'seconds between payments', min: 1,
+            value: Math.round((upkeep.cadenceMs ?? 30000) / 100) / 10,
+            hint: 'Its own clock, independent of any production cycle. When the Bank cannot pay, this rule switches off until stock returns — nothing is destroyed and no debt accrues.',
+            // The retired box's floor was one second.
+            patch: v => ({ upkeep: { ...upkeep, cadenceMs: Math.max(1000, Math.round((Number(v) || 0) * 1000)) } })
+        });
+    }
+
+    return slots;
 }
 
 /** Named exports the CMS leans on, re-checked here so a rename breaks loudly. */
