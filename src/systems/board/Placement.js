@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
+import { tilesAroundChange } from './nearby.js';
 import { isPlaceable, GUILD_HALL_TILE, TILE_PX, TILE_STEP_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors } from '../../config/boardGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
@@ -18,23 +18,26 @@ function forfeitCycle(instance) {
 }
 
 /**
- * Tell a tile and its neighbours that the neighbourhood changed.
+ * Tell the board that the Tokens on some tiles changed — **one event per
+ * change**, naming every tile whose modifiers must be rebuilt.
+ *
+ * ## Why one event with the set, not one event per ring tile (Free Playmat 1.3)
+ * This used to publish the changed tiles and their 8-ring one event at a time,
+ * and slice 1.2 had to widen the listener to rebuild around *each* of those to
+ * follow a larger Near radius — up to 81 rebuilds for one drop, and still tied
+ * to the ring. `tilesAroundChange` computes the right set for any radius and any
+ * Token shape once, including a departed Token that differs from the one now
+ * standing there (a push, a swap, a 2×2 cascade).
+ *
+ * `tile` stays in the payload for anything that only wants "where".
  */
 function markAdjacencyDirty(indexOrFootprint) {
-    if (Array.isArray(indexOrFootprint)) {
-        for (const t of indexOrFootprint) {
-            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: t });
-        }
-        for (const n of neighboursOfFootprint(indexOrFootprint)) {
-            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: n });
-        }
-        return;
-    }
-    const index = indexOrFootprint;
-    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: index });
-    for (const n of neighboursOf(index)) {
-        EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: n });
-    }
+    const changed = Array.isArray(indexOrFootprint) ? indexOrFootprint : [indexOrFootprint];
+    if (!changed.length) return;
+    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, {
+        tile: changed[0],
+        tiles: tilesAroundChange(changed)
+    });
 }
 
 /** Standard refusal shape, so callers can show the reason (UI §3). */

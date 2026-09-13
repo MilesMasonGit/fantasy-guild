@@ -649,12 +649,15 @@ export function init() {
     // empty aggregator after a reload is the classic failure this guards
     // against (`ModifierScopes.test.js` pins the rule).
     //
-    // ⚠️ Rebuilds everything within Near of the dirty tile, not just the tile
-    // (Free Playmat 1.2). The publishers (`Placement`, still on the 8-ring until
-    // slice 1.3) name only the tile and its 8 neighbours; a raised Near radius
-    // reaches further, and those tiles would otherwise keep stale buffs.
-    EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ tile }) => {
-        if (tile != null) TileModifiers.rebuildAround(tile);
+    // Two payload shapes (Free Playmat 1.3):
+    // * `Placement` sends one event per change carrying `tiles`, the full rebuild
+    //   set for the live Near radius — rebuilt exactly, once.
+    // * Everything else (a depletion, a restock, a save repair) names one `tile`,
+    //   and everything within Near of it is rebuilt.
+    // A board-reach rule widens either to the whole board (`rebuildTiles`).
+    EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ tile, tiles } = {}) => {
+        if (Array.isArray(tiles)) TileModifiers.rebuildTiles(tiles);
+        else if (tile != null) TileModifiers.rebuildAround(tile);
     });
     EventBus.subscribe('game_loaded', () => {
         TileModifiers.rebuildAll();

@@ -6,7 +6,7 @@ import { statementsOf, stationSkillOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
-import { neighboursOf } from './adjacency.js';
+import { centreOf, nearRadius, positionOf, tokensWithin } from './nearby.js';
 import { matchesTokenTarget, filterTargetTiles } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
@@ -452,14 +452,29 @@ function producedMatches(definition, when, payload) {
     return (payload?.produced || []).includes(when.watchItemId);
 }
 
-/** Handle an adjacency-scoped board event. */
+/**
+ * Handle an adjacency-scoped board event.
+ *
+ * ## "Neighbour" means Near (Free Playmat 1.3, FP-41)
+ * Listeners are every Token whose centre is within Near of the source's centre.
+ * A 2×2 source is measured from its footprint centre (it used to be only its
+ * anchor tile's 8-ring), and a 2×2 listener is found by its centre too.
+ *
+ * ⚠️ The source may already have left: `TOKEN_DEPLETED` fires after the tile is
+ * emptied. Its centre is then rebuilt from the payload's anchor and type, so a
+ * departed 2×2 is still heard from where it stood.
+ */
 function handleAdjacent(triggerId, payload) {
     const originTile = payload?.tile;
     if (originTile == null) return;
 
     const definition = getTriggerEvent(triggerId);
 
-    for (const neighbour of neighboursOf(originTile)) {
+    const occ = BoardState.getOccupyingToken(originTile);
+    const origin = occ?.instance ? positionOf(originTile) : centreOf(originTile, payload?.typeId);
+    if (!origin) return;
+
+    for (const neighbour of tokensWithin(origin, nearRadius(), occ?.instance ? occ.anchorIndex : null)) {
         const instance = BoardState.getToken(neighbour);
         if (!instance) continue;
 

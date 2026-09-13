@@ -3,7 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
+import { nearby } from './nearby.js';
 import { DEFAULT_STATEMENT_CHARGE_DELTA, statementsOf } from '../effects/statements.js';
 import {
     CHARGE_MOMENT, chargeDeltaOf,
@@ -245,32 +245,24 @@ export function applyDelta(tile, instance, delta, { heroId = null } = {}) {
 }
 
 /**
- * Every distinct Token on a tile's perimeter, with the context tags it offers.
+ * Every distinct Token near a tile, with the context tags it offers.
  *
- * Anchor-deduplicated, so a 2×2 Token touching four of a station's neighbour
- * squares is one provider and pays one cost, not four.
+ * Near is `nearby()`, centre to centre (Free Playmat 1.3, FP-41), and names each
+ * Token once by anchor — so a 2×2 Token is one provider and pays one cost.
  */
 export function contextProvidersAround(index) {
-    const occ = BoardState.getOccupyingToken(index);
-    const neighbours = occ && occ.footprint.length > 1
-        ? neighboursOfFootprint(occ.footprint)
-        : neighboursOf(index);
-
     const providers = [];
-    const seenAnchors = new Set();
 
-    for (const neighbour of neighbours) {
-        const nOcc = BoardState.getOccupyingToken(neighbour);
-        if (!nOcc?.instance) continue;
-        if (seenAnchors.has(nOcc.anchorIndex)) continue;
-        seenAnchors.add(nOcc.anchorIndex);
+    for (const anchor of nearby(index)) {
+        const instance = BoardState.getToken(anchor);
+        if (!instance) continue;
 
-        const def = getTokenType(nOcc.instance.typeId);
+        const def = getTokenType(instance.typeId);
         if (!def) continue;
         const tiers = getProvidedTagsWithTiers(def);
         if (!Object.keys(tiers).length) continue;
 
-        providers.push({ tile: nOcc.anchorIndex, instance: nOcc.instance, tiers });
+        providers.push({ tile: anchor, instance, tiers });
     }
     return providers;
 }

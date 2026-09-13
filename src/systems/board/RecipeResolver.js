@@ -1,6 +1,6 @@
 // Fantasy Guild — Context crafting (7×7 Playmat rework, Phase 5)
 
-import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
+import { nearby } from './nearby.js';
 import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken, contextTagsOf } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
@@ -37,6 +37,15 @@ import { BOARD_EVENTS } from './boardEvents.js';
  *    between two Forges serves both — and wears twice as fast for it (D-157).
  *  - Numerical buffs (D-119/D-120) remain a light layer on top, deliberately
  *    small.
+ *
+ * ## "Beside" means Near (Free Playmat 1.3, FP-41)
+ * Every "adjacent" question here — the context around a station, the tools it
+ * accepts, which stations a context Token serves, and whom it wears for — is
+ * `nearby()`: Tokens whose centres are within the Near radius, measured centre
+ * to centre. For 1×1 Tokens at the default 272 u that is exactly the old 8-tile
+ * ring. A 2×2 Token now reaches the 8 tiles touching its sides and not the 4
+ * touching only its corners, the same as its buffs. "Acts as" and recipe
+ * context carry no reach field of their own; they are Near.
  */
 
 /** Resolution outcomes for a station. */
@@ -47,20 +56,20 @@ export const RECIPE = {
     NONE: 'none'
 };
 
-/** Context tags and highest provided tiers supplied by a tile's surrounding perimeter. */
+/**
+ * Context tags and highest provided tiers supplied by the Tokens near a tile.
+ *
+ * Presence only, highest tier per tag wins — unchanged. `nearby` names each
+ * Token once, by anchor.
+ */
 export function contextTiersAround(index) {
     const tiers = {};
-    const occ = BoardState.getOccupyingToken(index);
-    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
-    const seenAnchors = new Set();
 
-    for (const neighbour of neighbours) {
-        const nOcc = BoardState.getOccupyingToken(neighbour);
-        if (!nOcc?.instance) continue;
-        if (seenAnchors.has(nOcc.anchorIndex)) continue;
-        seenAnchors.add(nOcc.anchorIndex);
+    for (const anchor of nearby(index)) {
+        const instance = BoardState.getToken(anchor);
+        if (!instance) continue;
 
-        const def = getTokenType(nOcc.instance.typeId);
+        const def = getTokenType(instance.typeId);
         if (!def) continue;
         const provided = getProvidedTagsWithTiers(def);
         for (const [tag, tier] of Object.entries(provided)) {
@@ -76,20 +85,23 @@ export function contextAround(index) {
     return new Set(Object.keys(tiers));
 }
 
+/** The type ids of every Token near a tile. */
+function typesNear(index) {
+    const types = new Set();
+    for (const anchor of nearby(index)) {
+        const typeId = BoardState.getToken(anchor)?.typeId;
+        if (typeId) types.add(typeId);
+    }
+    return types;
+}
+
 /**
- * Checks whether a token's acceptedTokens requirements are met by adjacent tiles.
+ * Checks whether a token's acceptedTokens requirements are met by Tokens near it.
  */
 export function checkAcceptedTokens(index, def) {
     if (!def?.acceptedTokens || def.acceptedTokens.length === 0) return true;
     const tiers = contextTiersAround(index);
-    const adjacentTokens = new Set();
-    const occ = BoardState.getOccupyingToken(index);
-    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
-
-    for (const neighbour of neighbours) {
-        const nOcc = BoardState.getOccupyingToken(neighbour);
-        if (nOcc?.instance?.typeId) adjacentTokens.add(nOcc.instance.typeId);
-    }
+    const adjacentTokens = typesNear(index);
 
     for (const req of def.acceptedTokens) {
         if (req.tag) {
@@ -219,15 +231,12 @@ export function servesFrom(contextTile) {
     const isBuff = hasAdjacencyEffect(def);
     if (!providedTags.length && !isBuff) return [];
 
-    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(contextTile);
     const served = [];
-    const seenAnchors = new Set();
 
-    for (const neighbour of neighbours) {
-        const nOcc = BoardState.getOccupyingToken(neighbour);
-        if (!nOcc?.instance) continue;
-        if (seenAnchors.has(nOcc.anchorIndex)) continue;
-        seenAnchors.add(nOcc.anchorIndex);
+    for (const anchor of nearby(contextTile)) {
+        const nInstance = BoardState.getToken(anchor);
+        if (!nInstance) continue;
+        const nOcc = { anchorIndex: anchor, instance: nInstance };
 
         const neighbourDef = getTokenType(nOcc.instance.typeId);
 
@@ -285,16 +294,14 @@ export function servesFrom(contextTile) {
  */
 export function wearAdjacentSupport(index, onDeplete, exclude = null) {
     const occ = BoardState.getOccupyingToken(index);
-    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
     const anchor = occ ? occ.anchorIndex : index;
     const depleted = [];
-    const seenAnchors = new Set();
 
-    for (const neighbour of neighbours) {
-        const nOcc = BoardState.getOccupyingToken(neighbour);
-        if (!nOcc?.instance) continue;
-        if (seenAnchors.has(nOcc.anchorIndex)) continue;
-        seenAnchors.add(nOcc.anchorIndex);
+    // Still −1 per station per cycle (D-113/D-157); only "beside" became Near.
+    for (const supportAnchor of nearby(index)) {
+        const supportInstance = BoardState.getToken(supportAnchor);
+        if (!supportInstance) continue;
+        const nOcc = { anchorIndex: supportAnchor, instance: supportInstance };
         if (exclude?.has(nOcc.anchorIndex)) continue;
 
         if (!servesFrom(nOcc.anchorIndex).includes(anchor)) continue;
@@ -334,14 +341,7 @@ export function getMissingRequirements(tileIndex, instance) {
     // 1. Check Accepted Tokens / Tools on the Token definition itself (e.g. tag 'anvil' or 'pickaxe')
     if (def.acceptedTokens?.length) {
         const tiers = contextTiersAround(tileIndex);
-        const adjacentTokens = new Set();
-        const occ = BoardState.getOccupyingToken(tileIndex);
-        const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(tileIndex);
-
-        for (const neighbour of neighbours) {
-            const nOcc = BoardState.getOccupyingToken(neighbour);
-            if (nOcc?.instance?.typeId) adjacentTokens.add(nOcc.instance.typeId);
-        }
+        const adjacentTokens = typesNear(tileIndex);
 
         const missingTools = [];
         for (const req of def.acceptedTokens) {

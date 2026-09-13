@@ -4,6 +4,7 @@ import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggrega
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
 import { nearby, tilesToRebuild } from './nearby.js';
+import { TILE_COUNT } from '../../config/boardGeometry.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
@@ -508,18 +509,65 @@ export function collectItemGrants(index, effectType) {
 }
 
 /**
+ * Whether any Token on the board carries a rule with `board` reach.
+ *
+ * Scanned, not cached: 36 Tokens at most, on board events only.
+ */
+function boardReachOnBoard() {
+    for (const [, instance] of BoardState.occupiedTiles()) {
+        const statements = statementsOf(getTokenType(instance?.typeId));
+        if (statements.some(s => reachOf(s) === REACH.BOARD)) return true;
+    }
+    return false;
+}
+
+/**
+ * Whether a board-reach rule was on the board at the last rebuild.
+ *
+ * ⚠️ Needed because the Token that matters may be the one that just **left**: by
+ * the time its departure is rebuilt it is gone and the scan above cannot see it.
+ * Remembering that one was there is what makes its leaving refresh every tile.
+ * Refreshed by every rebuild below, so it can only be stale for a Token that
+ * arrived with no rebuild at all.
+ */
+let boardReachLive = false;
+
+/**
+ * Rebuild exactly these tiles — or **every** tile when a board-reach rule is, or
+ * just was, on the board.
+ *
+ * ## The board-reach refresh (Free Playmat 1.3, pre-existing bug)
+ * A `board` rule reaches every tile, however far. Rebuilding only the tiles
+ * within Near of a change left distant tiles holding a buff from a Token that
+ * had left, or missing one from a Token that had just arrived or changed, until
+ * the next full rebuild. So while such a rule is (or was) present, a change
+ * anywhere rebuilds all 36 tiles — cheap, and on events only.
+ */
+export function rebuildTiles(tiles) {
+    const now = boardReachOnBoard();
+    const wholeBoard = now || boardReachLive;
+    boardReachLive = now;
+    if (wholeBoard) {
+        for (let i = 0; i < TILE_COUNT; i++) rebuildTile(i);
+        return;
+    }
+    for (const t of tiles || []) rebuildTile(t);
+}
+
+/**
  * Rebuild a tile and every tile within Near of it.
  *
  * ⚠️ Follows the live radius, not a fixed 8-ring, so raising Near in the Mat
  * Tuner cannot leave stale buffs outside the old ring (Free Playmat 1.2).
  */
 export function rebuildAround(indexOrFootprint) {
-    for (const t of tilesToRebuild(indexOrFootprint)) rebuildTile(t);
+    rebuildTiles(tilesToRebuild(indexOrFootprint));
 }
 
 /** Rebuild the whole board — on boot and after a save load. */
 export function rebuildAll() {
     clearAll();
+    boardReachLive = boardReachOnBoard();
     for (const [index] of BoardState.occupiedTiles()) rebuildTile(index);
 }
 

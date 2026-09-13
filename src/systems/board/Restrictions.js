@@ -4,7 +4,7 @@ import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.j
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
 import { tileFootprint } from '../../config/boardGeometry.js';
-import { neighboursOfToken } from './adjacency.js';
+import { centreOf, isWithin, nearRadius } from './nearby.js';
 import { matchesTokenTarget } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import { renderStatement } from '../effects/statementText.js';
@@ -118,16 +118,27 @@ export function project(plan = {}) {
     return view;
 }
 
-/** The anchors adjacent to one Token on a board view, never including itself. */
-function adjacentAnchors(view, anchor) {
-    const typeId = view.typeAt.get(anchor);
-    const size = getTokenType(typeId)?.size || 1;
-    const out = new Set();
-    for (const tile of neighboursOfToken(anchor, size)) {
-        const other = view.owner.get(tile);
-        if (other != null && other !== anchor) out.add(other);
+/**
+ * The anchors near one Token on a board view, never including itself, ascending.
+ *
+ * ## Near, measured on the view — not on the live board (Free Playmat 1.3)
+ * `nearby()` reads the board as it is, but every check here is about the board
+ * as it **would** be: after a drop, a displacement or a cascade shove. So the
+ * same centre-to-centre measurement (FP-41) is taken from the view's own anchors
+ * and types with `centreOf`. A 2×2 neighbour counts once, by its centre, exactly
+ * as it counts once for a buff.
+ *
+ * 36 Tokens at most, only for Tokens that carry a `Cannot` — cheap enough to run
+ * on every drop.
+ */
+function adjacentAnchors(view, anchor, radius = nearRadius()) {
+    const origin = centreOf(anchor, view.typeAt.get(anchor));
+    const out = [];
+    for (const [other, typeId] of view.typeAt) {
+        if (other === anchor) continue;
+        if (isWithin(origin, centreOf(other, typeId), radius)) out.push(other);
     }
-    return out;
+    return out.sort((a, b) => a - b);
 }
 
 /**
