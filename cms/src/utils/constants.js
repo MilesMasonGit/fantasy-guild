@@ -72,6 +72,8 @@ export {
 export {
   SLOT_KIND,
   slotsOf,
+  costSlots,
+  FINE_PRINT_SLOTS,
   nearestOptions,
   slotsWithoutWords,
   slotDisplay,

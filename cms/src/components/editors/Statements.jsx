@@ -1,16 +1,15 @@
 import { useMemo, useState } from 'react';
 import {
-  Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Coins, Wrench, Package,
+  Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Wrench, Package,
   Gauge, Truck, Repeat, HandCoins, Ban, Sparkles, Factory
 } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Library, Pencil } from 'lucide-react';
 import {
   KEYWORD, KEYWORDS, getKeyword, makeStatement,
-  renderStatement, statementsOf, slotsOf,
-  getPaletteEntry, DEFAULT_STATEMENT_CHARGE_DELTA,
+  renderStatement, statementsOf, slotsOf, costSlots,
+  getPaletteEntry,
   effectRefsOf, expandBearer, rulesLinesOf,
-  chargeMomentsFor, chargeMomentOf, getChargeMoment, DEFAULT_CHARGE_DELTA_BY_MOMENT,
   scaleStatement, effectTitle, MAX_SCALE,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
@@ -147,10 +146,11 @@ export function StatementList({ statements, onChange, content }) {
     effect: (id) => effects?.[id]?.name || id,
   }), [tokens, items, effects]);
 
-  // What the panel is looking at: the focused rule, and the slot in it.
+  // What the panel is looking at: the focused rule, and the slot in it — a word
+  // in the sentence, or one in the cost strip beside it (P5).
   const focusedStatement = cursor ? list.find((st) => st.id === cursor.statementId) || null : null;
   const panelSlot = focusedStatement
-    ? slotsOf(focusedStatement, ctx).find((sl) => sl.id === cursor.slotId) || null
+    ? [...slotsOf(focusedStatement, ctx), ...costSlots(focusedStatement)].find((sl) => sl.id === cursor.slotId) || null
     : null;
 
   return (
@@ -693,12 +693,13 @@ function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
  * one thing is the duplication this project keeps deleting, and a form that can
  * drift from the sentence is the exact drift UE-8 exists to prevent.
  *
- * What survives is what a sentence genuinely cannot hold (G-20): the item lists
- * of a conversion or a restock, the charge cost, and an upkeep clause. Those are
- * tables and prices, and they stay as small forms beneath the line.
+ * What survives beneath it: a conversion's item table (E-8), and the cost strip
+ * (E-6, P5) — the charge cost and the upkeep, which the sentence never says —
+ * with the upkeep's items as a small table under that.
  */
 function StatementRow({ statement, items, names, ctx, cursor, actions, canCreate, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
   const keyword = getKeyword(statement.keyword);
+  const upkeep = keyword?.upkeep ? statement.upkeep : null;
 
   return (
     <RowShell
@@ -716,18 +717,16 @@ function StatementRow({ statement, items, names, ctx, cursor, actions, canCreate
         cursor={cursor}
         actions={actions}
         form={<PayloadFields statement={statement} items={items} canCreate={canCreate} onChange={onChange} />}
+        upkeepTable={upkeep && (
+          <ItemList
+            label="Consumes from the Bank"
+            entries={upkeep.items || []}
+            items={items}
+            canCreate={canCreate}
+            onChange={(next) => onChange({ upkeep: { ...upkeep, items: next } })}
+          />
+        )}
       />
-
-
-      {/*
-        ⚠️ Outside the trigger gate since UE-20. Firing used to be the only
-        moment anything spent at, so the cost only made sense beside a trigger.
-        The moment is authored now — an always-on aura can be made to cost its
-        Token a charge per cycle, and the free case is a written 0.
-      */}
-      <ChargeClause statement={statement} onChange={onChange} />
-
-      {keyword?.upkeep && <UpkeepClause statement={statement} items={items} canCreate={canCreate} onChange={onChange} />}
     </RowShell>
   );
 }
@@ -766,119 +765,6 @@ function PayloadFields({ statement, items, canCreate, onChange }) {
         canCreate={canCreate}
         onChange={(produces) => setPayload({ produces })}
       />
-    </div>
-  );
-}
-
-function ChargeClause({ statement, onChange }) {
-  const moments = chargeMomentsFor(!!statement.when);
-  const moment = chargeMomentOf(statement);
-  const active = getChargeMoment(moment);
-  const delta = typeof statement.chargeDelta === 'number'
-    ? statement.chargeDelta
-    : (DEFAULT_CHARGE_DELTA_BY_MOMENT[moment] ?? DEFAULT_STATEMENT_CHARGE_DELTA);
-
-  const firing = moment === 'on_fire';
-
-  return (
-    <div className="rounded-md border border-white/5 bg-black/20 p-2.5 space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-        <Zap size={11} /> Charge cost
-      </label>
-
-      <div className="flex gap-2">
-        <input
-          type="number"
-          step={1}
-          value={delta}
-          onChange={(e) => onChange({ chargeDelta: Number(e.target.value), chargeWhen: moment })}
-          className="w-20"
-          style={{ fontSize: 11 }}
-        />
-        <select
-          value={moment}
-          onChange={(e) => onChange({ chargeWhen: e.target.value })}
-          className="flex-1"
-          style={{ fontSize: 11 }}
-          disabled={moments.length < 2}
-        >
-          {moments.map((m) => (
-            <option key={m.id} value={m.id}>{m.label}</option>
-          ))}
-        </select>
-      </div>
-
-      <p className="text-[10px] text-gray-600 leading-relaxed">
-        {delta < 0
-          ? firing
-            ? `Spends ${-delta} charge${delta === -1 ? '' : 's'} each time it fires, and cannot fire at all with fewer left.`
-            : `Spends ${-delta} charge${delta === -1 ? '' : 's'} every cycle this Token completes, on top of its own work cost.`
-          : delta === 0
-            ? 'Free — this rule never wears the Token down. This is how an always-on effect is authored.'
-            : firing
-              ? `Gives ${delta} charge${delta === 1 ? '' : 's'} back, up to the Token's starting charges.`
-              : 'A per-cycle rule can only cost, never restore — a Token topping itself up every cycle would never deplete.'}
-        {' '}A Token with unlimited charges ignores this in both directions.
-      </p>
-
-      {active?.hint && (
-        <p className="text-[10px] text-gray-600 leading-relaxed italic">{active.hint}</p>
-      )}
-    </div>
-  );
-}
-
-/** The `, costing …` clause. */
-function UpkeepClause({ statement, items, canCreate = true, onChange }) {
-  const upkeep = statement.upkeep;
-
-  if (!upkeep) {
-    return (
-      <button
-        onClick={() => onChange({ upkeep: { items: [], cadenceMs: 30000 } })}
-        className="flex items-center gap-1 px-2 py-1 rounded text-[10px]"
-        style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--color-text-secondary)', border: 'none', cursor: 'pointer' }}
-      >
-        <Plus size={10} /> Add an upkeep cost
-      </button>
-    );
-  }
-
-  const set = (changes) => onChange({ upkeep: { ...upkeep, ...changes } });
-
-  return (
-    <div className="rounded-md border border-white/5 bg-black/20 p-2.5 space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-        <Coins size={11} /> Costing
-        <button
-          onClick={() => onChange({ upkeep: null })}
-          className="ml-auto text-gray-600 hover:text-red-400 normal-case tracking-normal font-normal"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10 }}
-        >
-          remove
-        </button>
-      </label>
-
-      <ItemList
-        label=""
-        entries={upkeep.items || []}
-        items={items}
-        canCreate={canCreate}
-        onChange={(next) => set({ items: next })}
-      />
-
-      <Field label="Every (ms)">
-        <input
-          type="number" min={1000} step={1000} value={upkeep.cadenceMs ?? 30000}
-          onChange={(e) => set({ cadenceMs: Number(e.target.value) })}
-          className="w-full" style={{ fontSize: 11 }}
-        />
-      </Field>
-      <p className="text-[10px] text-gray-600 leading-relaxed">
-        Its own clock, independent of any production cycle. When the Bank cannot
-        pay, this rule switches off until stock returns — nothing is destroyed
-        and no debt accrues.
-      </p>
     </div>
   );
 }

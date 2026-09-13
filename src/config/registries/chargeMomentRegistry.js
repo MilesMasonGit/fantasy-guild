@@ -44,6 +44,8 @@ export const CHARGE_MOMENTS = Object.freeze([
     {
         id: CHARGE_MOMENT.ON_FIRE,
         label: 'Each time it fires',
+        // How the Rules Line's cost strip says it, mid-phrase: "spends 1 charge each time it fires".
+        phrase: 'each time it fires',
         requiresTrigger: true,
         hint: 'Spent when the rule’s When clause fires. A rule that cannot afford its own cost does not fire at all — it never fires on credit.'
     },
@@ -58,6 +60,7 @@ export const CHARGE_MOMENTS = Object.freeze([
          */
         id: CHARGE_MOMENT.PER_CYCLE,
         label: 'Every cycle of this Token',
+        phrase: 'every cycle of this Token',
         requiresTrigger: false,
         hint: 'Spent alongside the Token’s own work cost, each cycle it completes. A Token with no work cycle never completes one, so a cost here is never charged.'
     }

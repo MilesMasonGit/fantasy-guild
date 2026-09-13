@@ -5,6 +5,18 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **A rule's cost now reads beside its sentence.** Under each rule, one quiet line
+  says what the rule's rules text doesn't: "spends 1 charge each time it fires ·
+  no cooldown · consumes 1 Coal every 30 seconds". Click any underlined part to
+  change it in the panel. This replaces the separate "Charge cost" and "Costing"
+  boxes. A cooldown moves into the sentence itself once it has one, so it's never
+  shown in two places.
+- **Fixed: retyping a cooldown used the wrong unit.** The sentence shows seconds, but
+  typing a new number stored milliseconds, so "10" became a hundredth of a second
+  and the rule read "every 0 seconds". It now takes seconds.
+- **A charge cost reads the way you'd say it.** You type how many charges a rule
+  spends (1, not −1), and a minus sign gives charges back.
+
 - ⭐ **The old forms under each rule are gone.** Every rule in the effects editor is now
   just its sentence: what an item grants and how often, which skill a station works,
   a tool’s tier, a Manager’s Tokens, a limit, a chance — all edited by clicking the

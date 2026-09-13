@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useId, useEffect } from 'react';
 import {
   slotsOf, slotDisplay, slotIsOrphaned, slotsWithoutWords,
   SLOT_KIND, renderSegments, getFilterKind,
+  costSlots, FINE_PRINT_SLOTS, getChargeMoment, getKeyword,
 } from '../../utils/constants';
 import { visibleOptions, visibleSuggestions } from './rulesLineModel';
 
@@ -447,15 +448,7 @@ export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped, on
         body = <PanelSearch key={slot.id} slot={slot} onPick={(v) => onPatch(slot.patch(v))} onCreate={onCreate} />;
         break;
       case SLOT_KIND.NUMBER:
-        body = (
-          <input
-            type="number"
-            min={slot.min}
-            value={slot.value ?? ''}
-            onChange={(e) => onPatch(slot.patch(e.target.value))}
-            className="px-1.5 py-1 rounded text-[12px] w-24"
-          />
-        );
+        body = <NumberField key={`${statement?.id}:${slot.id}`} slot={slot} onPatch={onPatch} />;
         break;
       case SLOT_KIND.TEXT:
         body = (
@@ -505,6 +498,146 @@ export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped, on
   );
 }
 
+/**
+ * A number typed in the panel, written back as soon as it is a number.
+ *
+ * ⚠️ Holds what was typed until then. Writing every keystroke straight through
+ * turned a lone "-" into 0 before the 2 could follow, so "give 2 charges back"
+ * could not be typed at all.
+ */
+function NumberField({ slot, onPatch }) {
+  const [draft, setDraft] = useState(null);
+  return (
+    <div className="space-y-1.5">
+      <input
+        type="number"
+        min={slot.min}
+        aria-label={slot.label}
+        value={draft ?? String(slot.value ?? '')}
+        onChange={(e) => {
+          const typed = e.target.value;
+          setDraft(typed);
+          if (typed.trim() !== '' && Number.isFinite(Number(typed))) onPatch(slot.patch(typed));
+        }}
+        onBlur={() => setDraft(null)}
+        className="px-1.5 py-1 rounded text-[12px] w-24"
+      />
+      {slot.hint && <p className="text-[10px] text-gray-500 leading-relaxed">{slot.hint}</p>}
+    </div>
+  );
+}
+
+/** A word in the cost strip: opens its slot in the panel. */
+function StripWord({ slot, text, active, onOpen }) {
+  return (
+    <button
+      type="button"
+      data-slot={slot.id}
+      aria-label={text}
+      title={slot.label}
+      onClick={onOpen}
+      style={{
+        font: 'inherit',
+        cursor: 'pointer',
+        padding: '0 1px',
+        borderRadius: 2,
+        border: 'none',
+        borderBottom: '1px dashed var(--color-border-default)',
+        background: active ? 'var(--color-accent-muted)' : 'transparent',
+        color: 'var(--color-text-secondary)',
+      }}
+    >
+      {text}
+    </button>
+  );
+}
+
+/**
+ * ⭐ **Cost and cadence, beside the sentence** (E-6, Rules Line P5).
+ *
+ * > spends 1 charge each time it fires · no cooldown · consumes 1 Coal every 30 seconds
+ *
+ * Owner ruling 2026-09-12: **only what the sentence leaves unsaid.** The charge
+ * cost and the upkeep are said nowhere in the rules text, so they live here. A
+ * cooldown is a word in the sentence once there is one, so the strip offers it
+ * only while there is none — never in two places at once. Chance is always a
+ * word in the sentence and never appears here.
+ *
+ * Replaces the "Charge cost" and "Costing" boxes that sat under every rule.
+ */
+function CostStrip({ statement, costs, cooldown, upkeepAllowed, names, cursor, actions, onChange }) {
+  const byId = Object.fromEntries(costs.map((s) => [s.id, s]));
+  const open = (slot) => actions.set({ slotId: slot.id, occurrence: 0, mode: 'panel' });
+  const word = (slot, text) => (
+    <StripWord slot={slot} text={text} active={cursor?.slotId === slot.id} onOpen={() => open(slot)} />
+  );
+
+  const spend = byId.charge?.value ?? 0;
+  const count = Math.abs(spend);
+  const upkeep = statement.upkeep;
+  const parts = [];
+
+  if (byId.charge) {
+    parts.push(
+      <span key="charge">
+        {spend > 0 && 'spends '}
+        {spend < 0 && 'gives back '}
+        {word(byId.charge, spend === 0 ? 'free' : `${count} charge${count === 1 ? '' : 's'}`)}
+        {/* A free rule spends nothing at any moment, so the moment is not worth reading. */}
+        {spend !== 0 && byId.chargeWhen && (
+          <> {word(byId.chargeWhen, getChargeMoment(byId.chargeWhen.value)?.phrase || byId.chargeWhen.value)}</>
+        )}
+      </span>
+    );
+  }
+
+  if (cooldown) parts.push(<span key="cooldown">{word(cooldown, 'no cooldown')}</span>);
+
+  if (upkeepAllowed && upkeep && byId.upkeepEvery) {
+    const paid = (upkeep.items || []).map((e) => `${e.quantity ?? 1} ${names.item(e.itemId)}`).join(', ');
+    parts.push(
+      <span key="upkeep">
+        consumes{' '}
+        {paid || <span style={{ color: 'var(--color-warning)' }} title="An upkeep with no items costs nothing and the game ignores it.">nothing yet</span>}
+        {' '}every {word(byId.upkeepEvery, `${byId.upkeepEvery.value} seconds`)}{' '}
+        <button
+          type="button"
+          data-remove-upkeep
+          aria-label="Remove the upkeep"
+          title="Remove the upkeep"
+          onClick={() => onChange({ upkeep: null })}
+          className="opacity-60 hover:opacity-100"
+          style={{ font: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        >
+          ✕
+        </button>
+      </span>
+    );
+  } else if (upkeepAllowed) {
+    parts.push(
+      <button
+        key="upkeep"
+        type="button"
+        data-add-upkeep
+        onClick={() => onChange({ upkeep: { items: [], cadenceMs: 30000 } })}
+        style={{ font: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-text-muted)' }}
+      >
+        + upkeep
+      </button>
+    );
+  }
+
+  return (
+    <div
+      data-cost-strip
+      className="px-3 pt-1.5 text-[11px]"
+      style={{ lineHeight: 1.8, color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border-subtle)' }}
+    >
+      {parts.map((part, i) => <span key={i}>{i > 0 && ' · '}{part}</span>)}
+    </div>
+  );
+}
+
 /** How a decision with no word in the sentence is offered. */
 function affordanceLabel(slot) {
   if (slot.kind === SLOT_KIND.FLAG || slot.kind === SLOT_KIND.FILTERS) return `+ ${slot.label}`;
@@ -518,18 +651,23 @@ function affordanceLabel(slot) {
  * @param {object} statement
  * @param {(patch: object) => void} onChange  merged into the statement
  * @param {object} names  id → display name, for the rendered sentence
- * @param {React.ReactNode} form  the list-shaped payload editor, beneath the line
- *   until P4 folds it in
+ * @param {React.ReactNode} form  a conversion's item table (E-8's one exception)
+ * @param {React.ReactNode} upkeepTable  the upkeep's items, beneath the cost strip
  * @param {object} ctx  the content a slot may pick from
  * @param {object|null} cursor  this rule's share of the list's cursor, or null
  *   when the author is working in another rule
  * @param {object} actions  cursor moves, bound to this rule by the list
  */
-export default function RulesLine({ statement, onChange, names, form, ctx, cursor, actions }) {
+export default function RulesLine({ statement, onChange, names, form, upkeepTable, ctx, cursor, actions }) {
   const slots = useMemo(() => slotsOf(statement, ctx), [statement, ctx]);
   const segments = useMemo(() => renderSegments(statement, names), [statement, names]);
   const byId = useMemo(() => new Map(slots.map((s) => [s.id, s])), [slots]);
   const unworded = useMemo(() => slotsWithoutWords(slots, segments), [slots, segments]);
+  const costs = useMemo(() => costSlots(statement), [statement]);
+  // A fine-print slot the sentence does not say goes to the strip, not the quiet row.
+  const quiet = unworded.filter((s) => !FINE_PRINT_SLOTS.includes(s.id));
+  const unsaidCooldown = unworded.find((s) => FINE_PRINT_SLOTS.includes(s.id)) || null;
+  const upkeepAllowed = !!getKeyword(statement?.keyword)?.upkeep;
   const formRef = useRef(null);
   const idBase = useId();
 
@@ -659,9 +797,9 @@ export default function RulesLine({ statement, onChange, names, form, ctx, curso
         })}
       </p>
 
-      {unworded.length > 0 && (
+      {quiet.length > 0 && (
         <div data-rules-more className="flex flex-wrap gap-1.5">
-          {unworded.map((slot) => (
+          {quiet.map((slot) => (
             <button
               key={slot.id}
               type="button"
@@ -713,6 +851,20 @@ export default function RulesLine({ statement, onChange, names, form, ctx, curso
       )}
 
       <div ref={formRef}>{form}</div>
+
+      <CostStrip
+        statement={statement}
+        costs={costs}
+        cooldown={unsaidCooldown}
+        upkeepAllowed={upkeepAllowed}
+        names={names}
+        cursor={cursor}
+        actions={actions}
+        onChange={onChange}
+      />
+      {upkeepAllowed && statement.upkeep && upkeepTable && (
+        <div data-upkeep-table className="px-3">{upkeepTable}</div>
+      )}
     </div>
   );
 }

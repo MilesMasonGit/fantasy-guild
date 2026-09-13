@@ -530,3 +530,90 @@ describe('⚠️ a decision with no word still has a control', () => {
         expect(bad).toEqual([]);
     });
 });
+
+describe('⭐ cost and cadence, beside the sentence (E-6, P5)', () => {
+    const strip = (container, rule = 0) => container.querySelectorAll('[data-cost-strip]')[rule];
+    const number = (panel) => panel().querySelector('input[type="number"]');
+
+    it('says what the sentence never does, and leaves the sentence alone', () => {
+        const { container, line } = mount([deals()]);
+        expect(strip(container).textContent).toContain('spends 1 charge each time it fires');
+        expect(line().textContent).toBe(renderStatement(deals()));
+    });
+
+    it('edits the charge cost in the panel; a minus gives charges back', () => {
+        const { container, panel, latest } = mount([deals()]);
+        fireEvent.click(strip(container).querySelector('[data-slot="charge"]'));
+        expect(number(panel).value).toBe('1');
+        expect(panel().textContent).toContain('Spends 1 charge each time it fires');
+
+        fireEvent.change(number(panel), { target: { value: '3' } });
+        expect(latest().chargeDelta).toBe(-3);
+        expect(strip(container).textContent).toContain('spends 3 charges');
+
+        fireEvent.change(number(panel), { target: { value: '-2' } });
+        expect(latest().chargeDelta).toBe(2);
+        expect(strip(container).textContent).toContain('gives back 2 charges');
+
+        fireEvent.change(number(panel), { target: { value: '0' } });
+        expect(latest().chargeDelta).toBe(0);
+        expect(strip(container).textContent).toContain('free');
+    });
+
+    it('picks when the charge is spent', () => {
+        const { container, panel, latest } = mount([deals()]);
+        fireEvent.click(strip(container).querySelector('[data-slot="chargeWhen"]'));
+        fireEvent.click(panel().querySelector('[data-option="per_cycle"]'));
+        expect(latest().chargeWhen).toBe('per_cycle');
+        expect(strip(container).textContent).toContain('spends 1 charge every cycle of this Token');
+    });
+
+    it('⚠️ offers a cooldown in the strip only while the sentence does not say one', () => {
+        const { container, panel, latest, line } = mount([deals()]);
+        expect(container.querySelector('[data-rules-more] [data-slot="cooldown"]')).toBeNull();
+        fireEvent.click(strip(container).querySelector('[data-slot="cooldown"]'));
+        fireEvent.change(number(panel), { target: { value: '5' } });
+
+        expect(latest().when.cooldownMs).toBe(5000);
+        expect(line().textContent).toContain('at most once every 5 seconds');
+        // Now the sentence says it, so the sentence holds it — never both.
+        expect(strip(container).querySelector('[data-slot="cooldown"]')).toBeNull();
+        expect(line().querySelector('[data-slot="cooldown"]')).not.toBeNull();
+    });
+
+    it('adds, times, fills and removes an upkeep', () => {
+        const { container, panel, latest } = mount([faster()]);
+        fireEvent.click(strip(container).querySelector('[data-add-upkeep]'));
+        expect(latest().upkeep).toEqual({ items: [], cadenceMs: 30000 });
+        expect(strip(container).textContent).toContain('consumes nothing yet every 30 seconds');
+
+        fireEvent.click(strip(container).querySelector('[data-slot="upkeepEvery"]'));
+        fireEvent.change(number(panel), { target: { value: '10' } });
+        expect(latest().upkeep.cadenceMs).toBe(10000);
+
+        const table = container.querySelector('[data-upkeep-table]');
+        fireEvent.change(table.querySelector('input[type="text"]'), { target: { value: 'Item 4' } });
+        fireEvent.click([...table.querySelectorAll('button')].find((b) => b.textContent === 'Item 4'));
+        expect(latest().upkeep.items).toEqual([{ itemId: 'item_4', quantity: 1 }]);
+        expect(strip(container).textContent).toContain('consumes 1 Item 4 every 10 seconds');
+        // A list given its own `content` never offers to create an item.
+        expect(table.textContent).not.toContain('Create');
+
+        fireEvent.click(strip(container).querySelector('[data-remove-upkeep]'));
+        expect(latest().upkeep).toBeNull();
+        expect(container.querySelector('[data-upkeep-table]')).toBeNull();
+    });
+
+    it('offers no upkeep where the keyword takes none', () => {
+        const { container } = mount([makeStatement(KEYWORD.STATION)]);
+        expect(strip(container).querySelector('[data-add-upkeep]')).toBeNull();
+        expect(strip(container).textContent).toContain('free');
+    });
+
+    it('⚠️ the retired boxes are gone', () => {
+        const { container } = mount([deals(), { ...faster(), upkeep: { items: [], cadenceMs: 30000 } }]);
+        for (const retired of ['Charge cost', 'Costing', 'Every (ms)', 'Add an upkeep cost']) {
+            expect(container.textContent, retired).not.toContain(retired);
+        }
+    });
+});

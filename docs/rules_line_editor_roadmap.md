@@ -2,7 +2,7 @@
 
 *The authoritative plan. Vision: [`concept_rules_line_editor.md`](concept_rules_line_editor.md).*
 
-**Status: P0–P4 done 2026-09-12; P5 is next.** Decisions below marked
+**Status: P0–P5 done 2026-09-12; P6 is next.** Decisions below marked
 locked came from owner interviews on 2026-09-09 and 2026-09-12 and are not to be
 re-litigated.
 
@@ -201,6 +201,35 @@ expect more, and expect them to be silent.
 The strip beneath the line: charge cost, cooldown, upkeep, chance, `requires`.
 Mostly relocating controls that already exist.
 
+#### What P5 decided that the plan did not say
+
+* ⭐ **Owner ruling 2026-09-12: the strip holds only what the sentence leaves
+  unsaid.** E-6 listed cooldown and chance, but the rules text already says both
+  ("at most once every 5 seconds", "25% of the time") and they were already
+  clickable words. Listing them again would be the duplication this rework exists
+  to remove, and taking them out of the text would be a grammar change (§6). So:
+  * **Charge cost and its moment** — said nowhere, so always in the strip.
+  * **Cooldown** — in the strip as "no cooldown" *only while it is zero*; once
+    set, the sentence says it and the strip drops it. Never in both.
+  * **Chance** — always a word in the sentence; never in the strip.
+  * **Upkeep** — in the strip, with its items as a small table beneath (the same
+    tabular shape E-8 keeps for a conversion).
+* ⭐ **Owner ruling: `requires` moves with P6**, because it is a Token field edited
+  only in the Token editor, not part of a shared effect.
+* **`costSlots` is separate from `slotsOf`.** Everything `slotsOf` returns is a
+  decision the sentence can hold and is held to the renderer's tags; none of the
+  cost slots ever appears in rules text.
+* **The charge cost reads as what it spends** — 1, not the stored −1. A minus
+  sign gives charges back. A free rule hides its moment, since nothing is spent.
+* ⚠️ **Fixed: the cooldown word took milliseconds while the sentence says
+  seconds.** Retyping "5" as "10" stored 10 ms and read "every 0 seconds". Found
+  reading the code while relocating cooldown; live since P2.
+* ⚠️ **The panel's number box holds what was typed until it is a number.** Writing
+  every keystroke through turned a lone "-" into 0, so a negative could not be
+  typed at all.
+* **Not in the Tab walk.** Tab walks the sentence's words (Q3); the strip is
+  reached by clicking, like the quiet row.
+
 ### P6 — Everywhere else
 
 Token editor and Item editor onto the same component (E-9).
@@ -214,7 +243,7 @@ Token editor and Item editor onto the same component (E-9).
 | P2 The line | ✅ **DONE** 2026-09-12 | `RulesLine.jsx` replaces `SentenceEditor.jsx` (deleted). The line is `renderSegments`' output; click a word, retype it, Enter commits, Escape reverts. An unknown word commits nothing and offers the nearest real words. Both quoted copies of the sentence are gone (Q1). 30 new tests; four deliberately wrong versions each caught. Verified by clicking and typing in a real browser on a sandbox (`?p2=1`) that never writes to the workspace. |
 | P3 The panel | ✅ **DONE** 2026-09-12 | ONE panel for the whole list, on the left, pinned while the rules scroll, and wrapping above them on a narrow column. Tab and Shift+Tab walk the words (Q3); arrows move through the panel; a blank reads "Pick …" and searches, 30 at a time with a count. 32 interaction tests; six deliberately wrong versions each caught. Verified in a real browser on the sandbox: layout at 1280px and 640px, pinning over a 1,500px scroll, Tab/Shift+Tab, arrow + Enter, and picking an effect and an item from blanks. |
 | P4 Delete the forms | ✅ **DONE** 2026-09-12 | ⭐ The complaint is fixed. Eight forms deleted, not hidden; only a conversion’s item table survives (E-8). Read every form against the slots first and found the decisions only a form could reach — the skill scope (its option list was EMPTY), the `Works as` skill (no slot at all), the Grants item/quantity/chance, the tool tier, the Restocks list, the Applies chance and target — and gave each a slot before deleting anything. `FormFreeSlots` walks that inventory. Rules text unchanged (golden). Six deliberately wrong versions each caught. Verified in a real browser on the sandbox. |
-| P5 Cost and cadence | **NOT STARTED** | |
+| P5 Cost and cadence | ✅ **DONE** 2026-09-12 | ⭐ One quiet strip under each rule — "spends 1 charge each time it fires · no cooldown · consumes 1 Coal every 30 seconds" — replaces the Charge cost and Costing boxes. Owner ruled the strip holds only what the sentence leaves unsaid, and that `requires` moves with P6. Fixed the cooldown word storing milliseconds. `CostSlots` (13) and 7 interaction tests; four deliberately wrong versions each caught. |
 | P6 Token and Item editors | **NOT STARTED** | |
 
 ## 5. Open questions
