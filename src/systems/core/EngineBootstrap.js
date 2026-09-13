@@ -31,6 +31,7 @@ import * as LiveEffects from '../effects/LiveEffects.js';
 import * as TriggerSystem from '../board/TriggerSystem.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 import * as BoardCombat from '../board/BoardCombat.js';
+import * as BoardPromotion from '../board/BoardPromotion.js';
 import * as Managers from '../board/Managers.js';
 import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
@@ -74,6 +75,7 @@ export const EngineBootstrap = {
             TileModifiers,
             RecipeResolver,
             BoardCombat,
+            BoardPromotion,
             Managers,
             TokenBank,
             Cartographer,
@@ -108,6 +110,7 @@ export const EngineBootstrap = {
         TileModifiers.init();
         BoardRunner.init();
         BoardCombat.init();
+        BoardPromotion.init();
         Managers.init();
         Cartographer.init();
         QuestManager.init();

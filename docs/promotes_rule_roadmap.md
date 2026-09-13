@@ -3,7 +3,7 @@
 *The authoritative plan for letting a Token train a hero into a job, written as a
 rule. Status table in §5.*
 
-**Status: P1–P2 done 2026-09-12; P3 (the engine) is next.**
+**Status: P1–P3 done 2026-09-12; P4 (the ceremony) is next.**
 
 ## 1. Where this starts
 
@@ -144,6 +144,42 @@ training cycle, offer event, accept/decline, pause. Retire gold and materials fr
 `BoardPromotion` tests, and add ones for the rule shape and for an item carrying it
 (ignored).
 
+#### What P3 decided that the plan did not say
+
+* ⭐ **A Promotes rule's charge number counts only once its moment is authored**
+  (`chargeDeltaOf` in `chargeMomentRegistry.js`). P2 built both Academies through
+  `makeStatement`, which stamps `chargeDelta: 0` on any keyword that cannot fire.
+  Read literally, every Academy would promote heroes for free, forever — the
+  opposite of PR-6. Nothing before P3 could author a promotion price, so an
+  absent `chargeWhen` means "never set" and costs the default, one charge. The
+  cost strip writes `chargeWhen` beside a typed number, so a deliberate 0 still
+  makes an unlimited academy. Same opt-in rule `statementCycleCost` already
+  applies to per-cycle costs.
+* ⭐ **One reading of a charge number, shared.** `Charges.statementChargeDelta`
+  (what the board spends) and `costSlots` (what the CMS shows) both call
+  `chargeDeltaOf`, so they cannot disagree.
+* ⚠️ **The Change Job screen's preview-only change moved from P4 into P3.**
+  Removing the gold price with its confirm button still calling
+  `PromotionSystem.promote` would have opened a free, Token-less route to any job
+  for the length of the gap between phases. The trade display is unchanged; the
+  shared `PromotionTrade` component still ports in P4.
+* **A Token that cannot pay does not train** (`ALERT.CHARGES`). The branch's
+  Tokens always had one charge to give; a rule price of 2 on a Token with 1 left
+  would otherwise train a hero toward an offer that can never be accepted.
+* **Spending goes through `Charges.applyDelta`**, not the branch's hand-rolled
+  copy, so a spent Academy depletes exactly as every other Token does — vacancy,
+  `TOKEN_DEPLETED` with the instance and hero, hero left standing.
+* **A positive price is no price**, never a refund: promotion cannot restore
+  charges.
+* **The retired `promotion` field is ignored by the engine**, deliberately: only
+  the rule counts, so an unmigrated workspace cannot half-work.
+* **Two guard tests read the source**: the Promotes rule is read in exactly one
+  engine file, which reads Tokens (PR-3), and `PromotionSystem.promote` has
+  exactly one caller, `BoardPromotion` (PR-9).
+* ⚠️ **Between P3 and P4, an offer cannot be answered in play.** The engine
+  offers; the ceremony that accepts or declines is P4. A hero who finishes
+  training waits on the tile.
+
 ### P4 — The ceremony
 Port `PromotionCeremonyModal` and `PromotionTrade`, wire the offer into the UI,
 and make `JobChangeModal` preview-only. **Verified by playing**: stand a hero on
@@ -160,5 +196,5 @@ economic simulator the re-training sink moved from gold to a Token's drop rate.
 |---|---|---|
 | P1 Vocabulary | ✅ **DONE** 2026-09-12 | Keyword `promotes` (`tokensOnly`), `jobId` slot over every job with a parent, "Promotes the hero to Knight.", Token type `promotion`, hidden from the Item editor with a warning if attached anyway. `PromotesRule` (18) tests. Golden: 5 new cases; no existing sentence changed. |
 | P2 Academies become rules | ✅ **DONE** 2026-09-12 | Wizard Academy → *Wizard Training*, Fighter's Academy → *Fighter Training*, by `scripts/migrate-promotion-rules.mjs` (data) and the CMS store's load paths (workspace), one shared function. Deterministic, idempotent, second run writes nothing. `PromotionFieldMigration` (21) tests, including the game's own Token registry loading both Academies as `promotion` Tokens; six deliberately wrong versions each caught. The game boots on the migrated data with no console errors. Golden: 6 new shipped lines. ⚠️ Owner must reload the CMS before syncing. |
-| P3 Engine | **NOT STARTED** | |
+| P3 Engine | ✅ **DONE** 2026-09-12 | `BoardPromotion` ported to read the rule; price = the rule's charge cost at new moment `on_promote` (default 1; migrated 0 does not make the Academies free); gold/materials retired; Change Job screen preview-only (pulled forward from P4 to avoid a free route). `BoardPromotion` tests ported and extended, two re-training tests un-skipped. ⚠️ Offers can't be answered in play until P4. |
 | P4 Ceremony | **NOT STARTED** | |

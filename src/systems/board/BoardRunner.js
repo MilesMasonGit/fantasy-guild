@@ -16,6 +16,7 @@ import * as TriggerSystem from './TriggerSystem.js';
 import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
+import * as BoardPromotion from './BoardPromotion.js';
 import * as Managers from './Managers.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
@@ -477,6 +478,18 @@ export function tick(delta) {
             // fight — and its damaged enemy — alive forever, so a player could
             // chip a boss down across free retreats (`G-4`).
             BoardCombat.tickTile(index, instance, delta, heroId);
+            continue;
+        }
+
+        // A Token with a Promotes rule runs its own cycle rather than a recipe:
+        // what it produces is a different hero, and routing that through
+        // `RecipeResolver` would teach recipes about jobs (Promotes rule P3).
+        // Called unconditionally for the same reason as combat — `tickTile` also
+        // owns STOPPING: resetting a half-finished cycle when the hero leaves,
+        // and clearing an offer so the next hero is asked afresh.
+        if (BoardPromotion.isPromotionToken(instance)) {
+            const { alert } = BoardPromotion.tickTile(index, instance, delta, heroId);
+            setAlert(instance, index, heroId ? alert : null);
             continue;
         }
 

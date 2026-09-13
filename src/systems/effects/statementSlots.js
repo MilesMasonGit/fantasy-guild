@@ -4,7 +4,7 @@ import {
     KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement, DEFAULT_STATEMENT_CHARGE_DELTA
 } from './statements.js';
 import {
-    CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, DEFAULT_CHARGE_DELTA_BY_MOMENT
+    CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, chargeDeltaOf
 } from '../../config/registries/chargeMomentRegistry.js';
 import { TRIGGER_EVENTS, getTriggerEvent, rolesOf } from '../../config/registries/triggerRegistry.js';
 import { ROLES, getRole } from '../../config/registries/roleRegistry.js';
@@ -869,6 +869,14 @@ function chargeHint(delta, moment) {
     const firing = moment === CHARGE_MOMENT.ON_FIRE;
     const n = Math.abs(delta);
     const charges = `${n} charge${n === 1 ? '' : 's'}`;
+    if (moment === CHARGE_MOMENT.ON_PROMOTE) {
+        const promote = delta < 0
+            ? `Spends ${charges} each time a hero accepts a promotion here, and cannot promote anyone with fewer left. This is the whole price of the job.`
+            : delta === 0
+                ? 'Free — this Token promotes any number of heroes and never wears down.'
+                : 'A promotion can only cost charges, never give them back — this spends nothing.';
+        return `${promote} Declining spends nothing. A Token with unlimited charges never runs out. Type a number to set the price.`;
+    }
     const body = delta < 0
         ? firing
             ? `Spends ${charges} each time it fires, and cannot fire at all with fewer left.`
@@ -908,9 +916,8 @@ export function costSlots(statement) {
     if (!keyword || keyword.id === KEYWORD.REQUIRES) return [];
 
     const moment = chargeMomentOf(statement);
-    const delta = typeof statement.chargeDelta === 'number'
-        ? statement.chargeDelta
-        : (DEFAULT_CHARGE_DELTA_BY_MOMENT[moment] ?? DEFAULT_STATEMENT_CHARGE_DELTA);
+    // The same reading the board spends by (`Charges.statementChargeDelta`).
+    const delta = chargeDeltaOf(statement, DEFAULT_STATEMENT_CHARGE_DELTA);
 
     const slots = [
         {
@@ -926,7 +933,7 @@ export function costSlots(statement) {
         {
             id: 'chargeWhen', kind: SLOT_KIND.VOCABULARY, label: 'spent',
             value: moment,
-            options: chargeMomentsFor(!!statement.when).map(m => option(m.id, m.label, m.hint)),
+            options: chargeMomentsFor(!!statement.when, keyword.id).map(m => option(m.id, m.label, m.hint)),
             patch: v => ({ chargeWhen: v })
         }
     ];

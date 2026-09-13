@@ -5,6 +5,22 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Heroes train on Tokens with a Promotes rule.** Stand a qualified hero on Wizard
+  Academy or Fighter's Academy and they train for a cycle (30 seconds unless the Token
+  sets its own time). When it finishes, the game offers the job. Nothing about the hero
+  changes until the offer is accepted.
+- **The Token is the price.** Accepting spends the rule's charge cost — one charge
+  unless you change it in the rule's cost line (0 makes an academy that never wears
+  out). A Token that can't pay won't start training and shows the charges warning, and
+  a hero who doesn't meet the skill requirement won't start either.
+- **Promotion no longer costs gold or materials**, and the **Change Job screen now only
+  plans**: it still shows every job and what each would cost the hero in skills, and
+  tells you to promote on the board. It can no longer change a hero's job itself.
+- ⚠️ *Not yet playable end to end:* the window that asks "become a Fighter?" arrives in
+  the next phase. Until then a hero who finishes training waits on the Token.
+- **Two re-training tests switched back on.** They had been skipped on a note claiming
+  advanced promotion didn't work; it always did.
+
 - ⭐ **Wizard Academy and Fighter's Academy now carry Promotes rules.** They were
   authored with an older "promotion" setting that the game never read. Each now has
   a library effect, *Wizard Training* and *Fighter Training*, reading "Promotes the

@@ -69,17 +69,27 @@ describe('dead event wiring stays dead', () => {
         expect(sitesFor(/['"]ui:notify['"]/)).toEqual([]);
     });
 
+    /**
+     * ⚠️ **Repointed in Promotes rule P3.** This used to check `JobChangeModal`
+     * for both notifications. That screen no longer performs a promotion (PR-9)
+     * — it plans one, and the act happens on a Token — so requiring it to
+     * announce an outcome would be requiring it to lie.
+     *
+     * CR2-130's concern is unchanged: a job change must not pass in silence. The
+     * success announcement moved to `BoardPromotion`, which is what promotes.
+     * A refused acceptance returns its reason to the ceremony (P4), which shows
+     * it beside the button that was pressed.
+     */
     it('the Bank sale and the job change reach the player through NotificationSystem (CR2-130)', () => {
         const bank = CODE.find(f => f.path === 'ui/components/drawer/BankTab.jsx');
-        const job = CODE.find(f => f.path === 'ui/modals/JobChangeModal.jsx');
+        const promo = CODE.find(f => f.path === 'systems/board/BoardPromotion.js');
         expect(bank, 'BankTab.jsx').toBeDefined();
-        expect(job, 'JobChangeModal.jsx').toBeDefined();
+        expect(promo, 'BoardPromotion.js').toBeDefined();
 
         // A refused sale says why.
         expect(bank.text).toMatch(/NotificationSystem\.error\(/);
-        // A job change says so both ways round: refused, and done.
-        expect(job.text).toMatch(/NotificationSystem\.error\(/);
-        expect(job.text).toMatch(/NotificationSystem\.success\(/);
+        // A completed promotion says so.
+        expect(promo.text).toMatch(/NotificationSystem\.success\(/);
     });
 
     /**

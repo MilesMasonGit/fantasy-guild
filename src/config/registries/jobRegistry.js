@@ -69,16 +69,11 @@ export const JOB_TIERS = { RECRUIT: 0, BASE: 1, ADVANCED: 2 };
  * a punishing one is to recover from.
  */
 export const PROMOTION_COSTS = {
-    [JOB_TIERS.BASE]: {
-        skillLevel: 10,
-        gold: 250,
-        materials: [{ itemId: 'item_copper_ingot', quantity: 5 }]
-    },
-    [JOB_TIERS.ADVANCED]: {
-        skillLevel: 25,
-        gold: 1500,
-        materials: [{ itemId: 'item_iron_ingot', quantity: 10 }]
-    }
+    // ⚠️ Gold and materials retired (Promotes rule P3, PR-6): a promotion is
+    // paid for with a charge of the Token whose Promotes rule names the job.
+    // The skill threshold — the qualification — is all this table holds now.
+    [JOB_TIERS.BASE]: { skillLevel: 10 },
+    [JOB_TIERS.ADVANCED]: { skillLevel: 25 }
 };
 
 export const JOBS = {

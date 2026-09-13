@@ -595,6 +595,49 @@ export const FIXTURE_TOKENS = {
         }
     },
 
+    /**
+     * Promotion fixtures (Promotes rule P3) — Tokens whose Promotes rule makes a
+     * hero a Fighter.
+     *
+     * `fighter` rather than an advanced job: its gate is the tier-1 threshold,
+     * which a test hero reaches without walking the whole tree. The 20-second
+     * cycle is short enough to drive in a loop and long enough that "the offer
+     * only comes after the training" is actually observable.
+     *
+     * Three prices, because the price is now the rule's:
+     * - `fixture_promotion` — the migrated shape: `chargeDelta: 0` with no
+     *   `chargeWhen`, which must still cost the default ONE charge.
+     * - `fixture_promotion_costly` — an authored price of 2.
+     * - `fixture_promotion_free` — an authored price of 0: unlimited training.
+     */
+    fixture_promotion: {
+        id: 'fixture_promotion', name: 'Fixture Training Yard', tokenType: 'promotion',
+        rarity: 'rare', theme: 'fixture', uses: 1, sprite: 'skill_leadership',
+        requiresHero: true,
+        statements: [
+            { id: 'stm_fixture_promotes', keyword: 'promotes', payload: { jobId: 'fighter' }, chargeDelta: 0 }
+        ],
+        config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
+    },
+    fixture_promotion_costly: {
+        id: 'fixture_promotion_costly', name: 'Fixture Costly Yard', tokenType: 'promotion',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_leadership',
+        requiresHero: true,
+        statements: [
+            { id: 'stm_fixture_promotes_costly', keyword: 'promotes', payload: { jobId: 'fighter' }, chargeDelta: -2, chargeWhen: 'on_promote' }
+        ],
+        config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
+    },
+    fixture_promotion_free: {
+        id: 'fixture_promotion_free', name: 'Fixture Free Yard', tokenType: 'promotion',
+        rarity: 'rare', theme: 'fixture', uses: 1, sprite: 'skill_leadership',
+        requiresHero: true,
+        statements: [
+            { id: 'stm_fixture_promotes_free', keyword: 'promotes', payload: { jobId: 'fighter' }, chargeDelta: 0, chargeWhen: 'on_promote' }
+        ],
+        config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
+    },
+
     /** Mythic, for D-177's one-placed rule. */
     fixture_mythic: {
         id: 'fixture_mythic', name: 'Fixture Mythic', tokenType: 'resource',

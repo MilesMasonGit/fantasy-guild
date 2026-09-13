@@ -26,6 +26,11 @@ import { canHeroFight } from '../utils/CombatFormulas.js';
  *    also the ONLY respec the player has, which is why it needs to work
  *    perfectly in both directions.
  *
+ * ⚠️ **No gold, no materials (Promotes rule P3, PR-6).** A promotion is paid
+ * for with a charge of the Token whose Promotes rule names the job, spent by
+ * `BoardPromotion` — see `BoardPromotion.test.js`. This file tests the
+ * qualification and the skill-sheet swap, which is all `PromotionSystem` does.
+ *
  * Nothing below hardcodes a skill name where the registry can supply it — the
  * job tree is a first draft and these tests must survive it changing.
  */
@@ -35,26 +40,20 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     getQueue: vi.fn(() => [])
 }));
 
-/** A hero rich enough and skilled enough to take `jobId`. */
+/** A hero skilled enough to take `jobId`. */
 function makeQualified(jobId, { extraLevels = 0 } = {}) {
     const hero = generateHero();
     HeroManager.addHero(hero);
+    qualify(hero, jobId, extraLevels);
+    return hero;
+}
 
+/** Raise the skills `jobId` carries forward to its threshold. */
+function qualify(hero, jobId, extraLevels = 0) {
     const cost = getPromotionCost(jobId);
     for (const skillId of getPromotionGateSkills(jobId)) {
         if (!hero.skills[skillId]) hero.skills[skillId] = { xp: 0, level: 0 };
         hero.skills[skillId].level = cost.skillLevel + extraLevels;
-    }
-    fund(cost);
-    return hero;
-}
-
-/** Put enough gold and materials in the guild to pay a cost. */
-function fund(cost) {
-    if (!cost) return;
-    CurrencyManager.addGold(cost.gold * 4, 'test');
-    for (const m of cost.materials || []) {
-        InventoryManager.addItem(m.itemId, m.quantity * 4);
     }
 }
 
@@ -69,7 +68,6 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
     it('refuses a Recruit who has not trained the right skills', () => {
         const hero = generateHero();
         HeroManager.addHero(hero);
-        fund(getPromotionCost('fighter'));
 
         const verdict = PromotionSystem.canPromote(hero.id, 'fighter');
         expect(verdict.ok).toBe(false);
@@ -97,22 +95,23 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
         expect(PromotionSystem.canPromote(hero.id, 'fighter').ok).toBe(true);
     });
 
-    it('refuses when the gold is short, and says so', () => {
+    /**
+     * ⚠️ **Replaces two tests that asserted the retired price** — "refuses when
+     * the gold is short" and "refuses when the materials are short". They
+     * correctly described a rule the owner deliberately replaced (PR-6). This is
+     * the assertion that keeps the old price from creeping back.
+     */
+    it('does not care about gold or materials — the Token is the price', () => {
         const hero = makeQualified('fighter');
         GameState.state.currency.gold = 0;
-
-        const verdict = PromotionSystem.canPromote(hero.id, 'fighter');
-        expect(verdict.ok).toBe(false);
-        expect(verdict.reason).toBe(PromotionSystem.REFUSAL.NOT_ENOUGH_GOLD);
-    });
-
-    it('refuses when the materials are short', () => {
-        const hero = makeQualified('fighter');
         GameState.state.inventory.items = {};
 
-        const verdict = PromotionSystem.canPromote(hero.id, 'fighter');
-        expect(verdict.ok).toBe(false);
-        expect(verdict.reason).toBe(PromotionSystem.REFUSAL.SHORT_ON_MATERIALS);
+        expect(PromotionSystem.canPromote(hero.id, 'fighter').ok).toBe(true);
+    });
+
+    it('has no gold or material refusals left to give', () => {
+        expect(PromotionSystem.REFUSAL.NOT_ENOUGH_GOLD).toBeUndefined();
+        expect(PromotionSystem.REFUSAL.SHORT_ON_MATERIALS).toBeUndefined();
     });
 
     it('refuses the job the hero already holds', () => {
@@ -124,7 +123,7 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
     });
 });
 
-describe('A promotion swaps the sheet and charges for it', () => {
+describe('A promotion swaps the sheet', () => {
     it('leaves the hero holding exactly the new job sheet', () => {
         const hero = makeQualified('fighter');
         PromotionSystem.promote(hero.id, 'fighter');
@@ -133,22 +132,22 @@ describe('A promotion swaps the sheet and charges for it', () => {
         expect(Object.keys(hero.skills).sort()).toEqual([...getJobSkills('fighter')].sort());
     });
 
-    it('takes the gold and the materials', () => {
+    /** ⚠️ Replaces 'takes the gold and the materials' (PR-6). */
+    it('leaves the guild gold and materials completely alone', () => {
         const hero = makeQualified('fighter');
-        const cost = getPromotionCost('fighter');
+        CurrencyManager.addGold(500, 'test');
+        InventoryManager.addItem('item_copper_ingot', 10);
         const goldBefore = CurrencyManager.getCurrency('gold');
-        const matBefore = InventoryManager.getItemCount(cost.materials[0].itemId);
 
         PromotionSystem.promote(hero.id, 'fighter');
 
-        expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore - cost.gold);
-        expect(InventoryManager.getItemCount(cost.materials[0].itemId))
-            .toBe(matBefore - cost.materials[0].quantity);
+        expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore);
+        expect(InventoryManager.getItemCount('item_copper_ingot')).toBe(10);
     });
 
-    it('charges nothing and changes nothing when it refuses', () => {
-        const hero = makeQualified('fighter');
-        GameState.state.currency.gold = 0;
+    it('changes nothing when it refuses', () => {
+        const hero = generateHero();          // unqualified: no trained skills
+        HeroManager.addHero(hero);
         const skillsBefore = Object.keys(hero.skills).sort();
 
         const result = PromotionSystem.promote(hero.id, 'fighter');
@@ -207,7 +206,6 @@ describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
             const cost = getPromotionCost('cleric');
             if (hero.skills[skillId]) hero.skills[skillId].level = cost.skillLevel;
         }
-        fund(getPromotionCost('cleric'));
         const result = PromotionSystem.promote(hero.id, 'cleric');
 
         expect(result.success).toBe(true);
@@ -255,29 +253,19 @@ describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
 });
 
 describe('Re-training is the same act as promoting (D-248)', () => {
-    // ⚠️ Both cases below are SKIPPED because promotion past the first tier is
-    // not implemented yet — the owner is building it alongside Token effects
-    // (2026-08-18). They are not stale: `knight` and `warlord` are real jobs in
-    // `jobRegistry`, and these tests describe the intended behaviour of D-248.
-    // Un-skip them when promotion lands; they are the acceptance criteria.
-    it.skip('moves a hero sideways between siblings, at the same price', () => {
+    // ⚠️ Un-skipped in Promotes rule P3. Both were skipped on a claim that
+    // "promotion past the first tier is not implemented" — which was false: it
+    // worked all along (found 2026-09-06 on the promotion-tokens branch).
+    it('moves a hero sideways between siblings', () => {
         const hero = makeQualified('fighter');
         PromotionSystem.promote(hero.id, 'fighter');
 
         // Qualify for both Knight and Warlord, then take Knight.
-        for (const jobId of ['knight', 'warlord']) {
-            const cost = getPromotionCost(jobId);
-            for (const skillId of getPromotionGateSkills(jobId)) {
-                if (!hero.skills[skillId]) hero.skills[skillId] = { xp: 0, level: 0 };
-                hero.skills[skillId].level = cost.skillLevel;
-            }
-            fund(cost);
-        }
+        for (const jobId of ['knight', 'warlord']) qualify(hero, jobId);
         expect(PromotionSystem.promote(hero.id, 'knight').success).toBe(true);
         expect(hero.skills.armory).toBeDefined();
 
         // Re-train to the sibling. The signature swaps over.
-        fund(getPromotionCost('warlord'));
         const result = PromotionSystem.promote(hero.id, 'warlord');
 
         expect(result.success).toBe(true);
@@ -287,7 +275,7 @@ describe('Re-training is the same act as promoting (D-248)', () => {
         expect(hero.bankedSkills.armory, 'but banked, not destroyed').toBeDefined();
     });
 
-    it.skip('a full Recruit → Fighter → Knight run lands on exactly the Knight sheet', () => {
+    it('a full Recruit → Fighter → Knight run lands on exactly the Knight sheet', () => {
         const hero = makeQualified('fighter');
         PromotionSystem.promote(hero.id, 'fighter');
 
@@ -295,7 +283,6 @@ describe('Re-training is the same act as promoting (D-248)', () => {
         for (const skillId of getPromotionGateSkills('knight')) {
             hero.skills[skillId].level = cost.skillLevel;
         }
-        fund(cost);
         PromotionSystem.promote(hero.id, 'knight');
 
         expect(hero.jobId).toBe('knight');
@@ -304,12 +291,11 @@ describe('Re-training is the same act as promoting (D-248)', () => {
 });
 
 describe('The UI is told, so the Dock actually redraws', () => {
-    // ⚠️ Standing in for browser verification, which this phase cannot reach:
-    // promotion has no screen of its own until Phase 8, and its one visible
-    // effect — the Dock's six skill cells changing contents — hangs entirely
-    // off these two events. `DockSkillsGrid` subscribes to `heroes_updated`
-    // and projects `hero.skills`, so if the event does not fire the grid keeps
-    // showing the old job's skills and nothing looks wrong.
+    // ⚠️ Standing in for browser verification: the Dock's six skill cells
+    // changing contents hangs entirely off these two events. `DockSkillsGrid`
+    // subscribes to `heroes_updated` and projects `hero.skills`, so if the event
+    // does not fire the grid keeps showing the old job's skills and nothing
+    // looks wrong.
 
     it('publishes heroes_updated, which is what the Dock listens to', () => {
         const hero = makeQualified('fighter');

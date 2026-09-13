@@ -3,8 +3,6 @@
 
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
-import { CurrencyManager } from '../economy/CurrencyManager.js';
-import * as InputAllocator from '../board/InputAllocator.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import {
     getJob, getAllJobIds, getJobSkills, getPromotionCost,
@@ -17,7 +15,15 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
  *
  * A hero holds 6 of 27 skills and their job decides which 6. There is no free
  * re-slotting and no partial respec (D-248): changing what a hero can do means
- * moving them to a different job, and paying for it.
+ * moving them to a different job.
+ *
+ * ## ⚠️ This module charges nothing (Promotes rule P3, PR-6)
+ * Promotion used to take gold and materials. It is paid for now with a charge
+ * of the Token whose **Promotes rule** names the job, spent by
+ * `BoardPromotion.accept` — which is the only thing in a position to know which
+ * Token the hero is standing on. What survives here is the *qualification*:
+ * the skill gate of D-262. The owner decided this on 2026-09-06 with the
+ * unmerged `promotion-tokens` branch; P3 is where it reached `main`.
  *
  * ## Promotion and re-training are the same act
  * Deliberately. **Re-training is not an undo** — it is entering a job, priced
@@ -26,11 +32,11 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
  * rules; this way there is one, and a Knight becoming a Warlord is the same
  * operation as a Recruit becoming a Fighter.
  *
- * ⚠️ **This makes the re-training price the single most important balance
- * number in the rework** (D-248). It is the only thing standing between
- * "meaningfully specialised" and "punished for experimenting". The roadmap's
- * advice is to ship it cheap and raise it: a forgiving system is far easier to
- * tighten later than a punishing one is to recover from.
+ * ⚠️ D-248 called the re-training price the single most important balance
+ * number in the rework — the line between "meaningfully specialised" and
+ * "punished for experimenting". That dial still exists; it moved. It is now how
+ * often a job's Promotes Token drops and what its rule charges, tunable per Map
+ * pool rather than one global number.
  *
  * ## Nothing is ever lost, only banked (D-71)
  * A skill a promotion removes goes **dormant at its level**, not to zero. Come
@@ -45,9 +51,10 @@ export const REFUSAL = {
     NO_JOB: 'NO_JOB',
     SAME_JOB: 'SAME_JOB',
     VILLAGER: 'VILLAGER',
-    SKILL_TOO_LOW: 'SKILL_TOO_LOW',
-    NOT_ENOUGH_GOLD: 'NOT_ENOUGH_GOLD',
-    SHORT_ON_MATERIALS: 'SHORT_ON_MATERIALS'
+    SKILL_TOO_LOW: 'SKILL_TOO_LOW'
+    // ⚠️ `NOT_ENOUGH_GOLD` and `SHORT_ON_MATERIALS` are gone (P3). Whether the
+    // Token can pay is `BoardPromotion`'s question, not this module's; keeping
+    // dead refusals here would imply a price this system still charges.
 };
 
 /** A hero's banked skills, created lazily. */
@@ -95,10 +102,13 @@ export function getSkillSheet(heroId) {
 /**
  * Whether a hero may take a job, and why not.
  *
- * Two gates, both from D-262: the skills the job **carries forward** must each
- * reach its tier threshold, and the cost must be payable. Gating on the carried
- * skills is what makes promotion the payoff for work already done — the hero
- * you trained toward a job is the one who can take it.
+ * One gate, from D-262: the skills the job **carries forward** must each reach
+ * its tier threshold. Gating on the carried skills is what makes promotion the
+ * payoff for work already done — the hero you trained toward a job is the one
+ * who can take it.
+ *
+ * ⚠️ This answers "is this hero QUALIFIED", and nothing more. Whether the Token
+ * the hero stands on can pay is `BoardPromotion`'s half.
  *
  * @returns {{ ok: boolean, reason?: string, detail?: string, missing?: Array }}
  */
@@ -132,15 +142,6 @@ export function canPromote(heroId, jobId) {
         return { ok: false, reason: REFUSAL.SKILL_TOO_LOW, detail: `Needs ${names}`, missing };
     }
 
-    if (CurrencyManager.getCurrency('gold') < (cost.gold || 0)) {
-        return { ok: false, reason: REFUSAL.NOT_ENOUGH_GOLD, detail: `Needs ${cost.gold}g` };
-    }
-
-    const check = InputAllocator.checkInputs(cost.materials || []);
-    if (!check.ok) {
-        return { ok: false, reason: REFUSAL.SHORT_ON_MATERIALS, detail: 'Short on materials' };
-    }
-
     return { ok: true };
 }
 
@@ -154,10 +155,10 @@ export function getAvailablePromotions(heroId) {
 /**
  * Move a hero to a job — promotion and re-training alike.
  *
- * Order matters, and mirrors the Cartographer's purchase: **every check passes
- * before anything is taken.** A half-paid promotion that then refuses would be
- * the worst possible failure here, because the thing it is spending is a
- * hero's skills.
+ * ⚠️ **This does not check for a Token, and callers must.** It is the raw
+ * skill-sheet swap; `BoardPromotion.accept` is what makes it cost something.
+ * Call this directly and you have granted a free promotion — which is why the
+ * Change Job screen no longer calls it (PR-9).
  *
  * @returns {{ success: boolean, reason?: string, detail?: string,
  *             gained?: string[], banked?: string[], restored?: string[] }}
@@ -168,19 +169,7 @@ export function promote(heroId, jobId) {
 
     const hero = HeroManager.getHero(heroId);
     const job = getJob(jobId);
-    const cost = getPromotionCost(jobId);
     const fromJob = getJob(hero.jobId);
-
-    // Pay. Materials first, then gold — same order and same reasoning as the
-    // Map purchase: the harder thing to refund is taken last.
-    if (cost) {
-        if (!InputAllocator.consumeInputs(cost.materials || [])) {
-            return { success: false, reason: REFUSAL.SHORT_ON_MATERIALS, detail: 'Short on materials' };
-        }
-        if (!CurrencyManager.spendGold(cost.gold || 0, `Promotion: ${job.name}`)) {
-            return { success: false, reason: REFUSAL.NOT_ENOUGH_GOLD, detail: `Needs ${cost.gold}g` };
-        }
-    }
 
     const target = new Set(getJobSkills(jobId));
     const bank = bankOf(hero);

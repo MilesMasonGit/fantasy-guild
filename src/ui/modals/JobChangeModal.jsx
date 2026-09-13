@@ -6,10 +6,7 @@ import { GIModal } from '../components/base/GIModal.jsx';
 import {
     getJob, getJobsByTier, JOB_TIERS, STARTING_JOB_ID
 } from '../../config/registries/jobRegistry.js';
-import { getItem } from '../../config/registries/itemRegistry.js';
-import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
-import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
-import { ArrowRight, Coins, Check, Lock } from 'lucide-react';
+import { ArrowRight, Lock, GraduationCap } from 'lucide-react';
 
 /**
  * JobChangeModal — where a hero becomes someone else.
@@ -27,6 +24,14 @@ import { ArrowRight, Coins, Check, Lock } from 'lucide-react';
  * screen refuses to have a confirm button until a job is selected and its
  * consequences are on screen.
  *
+ * ## ⚠️ This screen PLANS a promotion; it no longer performs one (PR-9)
+ * A promotion is paid for with a charge of a Token whose Promotes rule names
+ * the job, and it happens on that Token's tile (Promotes rule P3). A confirm
+ * button here would be a second route to the same act with no Token at all —
+ * and once gold stopped being charged, a free one. What it keeps is what the
+ * board cannot give you: the whole tree at once, with every shortfall spelled
+ * out, so a player knows which hero to train toward what.
+ *
  * ## Ineligible jobs are shown, not hidden
  * With the reason, and the shortfall spelled out. A job that silently vanishes
  * from the list teaches nothing; one that says "Needs Mining 8/25" tells the
@@ -37,13 +42,13 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
     const [selected, setSelected] = useState(null);
 
     // Re-read on any hero change so the list reflects a promotion the moment
-    // it lands (and so costs update as gold and materials move).
+    // it lands on the board.
     const stamp = useGameState(
         state => {
             const h = (state.heroes || []).find(x => x.id === heroId);
             if (!h) return null;
             const skills = Object.entries(h.skills || {}).map(([k, v]) => `${k}:${v.level}`).join(',');
-            return `${h.jobId}|${skills}|${state.currency?.gold ?? 0}`;
+            return `${h.jobId}|${skills}`;
         },
         ['heroes_updated', 'hero_promoted', 'state_changed'],
         null,
@@ -63,21 +68,6 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
         { tier: JOB_TIERS.BASE, label: 'Base classes' },
         { tier: JOB_TIERS.ADVANCED, label: 'Advanced jobs' }
     ];
-
-    const confirm = () => {
-        const result = P.promote(heroId, selected);
-        // Both messages used to be published as `ui:notify`, an event with no
-        // listener anywhere (CR2-130), so a job change said nothing either way.
-        // Nothing else announces a promotion — `hero_promoted` has no
-        // notification subscriber — so these are the only two, not duplicates.
-        if (!result.success) {
-            NotificationSystem.error(result.detail || 'That job is out of reach');
-            return;
-        }
-        NotificationSystem.success(`${hero.name} is now a ${getJob(selected).name}`);
-        setSelected(null);
-        onClose();
-    };
 
     return (
         <GIModal
@@ -142,45 +132,29 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                                     )}
                                 />
                                 {preview.cost && (
-                                     <div className="flex flex-col gap-1 pt-1.5 border-t border-gi-border/30">
-                                         <span className="text-[9px] gi-caps tracking-wider text-gi-muted/60">Cost</span>
-                                         <EntityRibbon
-                                             kind="gold"
-                                             quantity={preview.cost.gold}
-                                             size="sm"
-                                             variant="cost"
-                                         />
-                                         {(preview.cost.materials || []).map(m => (
-                                             <EntityRibbon
-                                                 key={m.itemId}
-                                                 kind="item"
-                                                 id={m.itemId}
-                                                 quantity={m.quantity}
-                                                 size="sm"
-                                                 variant="cost"
-                                             />
-                                         ))}
-                                         <span className="text-[9px] text-gi-muted/70 mt-0.5">
-                                             Carried skills at level {preview.cost.skillLevel}
-                                         </span>
-                                     </div>
-                                 )}
+                                    <div className="flex flex-col gap-1 pt-1.5 border-t border-gi-border/30">
+                                        <span className="text-[9px] gi-caps tracking-wider text-gi-muted/60">Needs</span>
+                                        <span className="text-[9px] text-gi-muted/70">
+                                            Carried skills at level {preview.cost.skillLevel}
+                                        </span>
+                                    </div>
+                                )}
                                 {!preview.ok && (
                                     <span className="text-[9px] text-gi-danger">{preview.detail}</span>
                                 )}
-                                <button
-                                    onClick={confirm}
-                                    disabled={!preview.ok}
-                                    className={cn(
-                                        'mt-auto flex items-center justify-center gap-1.5 px-2 py-2 rounded border',
-                                        'text-[10px] font-bold gi-caps tracking-wide transition-colors',
-                                        preview.ok
-                                            ? 'border-gi-primary bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25'
-                                            : 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'
-                                    )}
+                                {/* Where the confirm button used to be (PR-9). The
+                                    price is a Token, so this says where to go
+                                    rather than offering a free way round it. */}
+                                <div
+                                    data-promotion-hint
+                                    className="mt-auto flex items-start gap-1.5 px-2 py-2 rounded border border-gi-border/40 text-[10px] text-gi-muted"
                                 >
-                                    <Check size={11} /> Become {getJob(selected)?.name}
-                                </button>
+                                    <GraduationCap size={11} className="shrink-0 mt-0.5" />
+                                    <span>
+                                        Promote on the board: stand {hero.name} on a Token that
+                                        promotes to {getJob(selected)?.name}.
+                                    </span>
+                                </div>
                             </>
                         )}
                     </div>
