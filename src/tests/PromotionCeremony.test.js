@@ -84,6 +84,14 @@ describe('asking', () => {
         expect(hero.jobId).toBe('recruit');
     });
 
+    it('names its buttons by what they say, not by their tooltips', () => {
+        const hero = qualifiedHero();
+        render(React.createElement(PromotionCeremonyModal, { offer: standingOffer(hero), onClose: () => {} }));
+        // A `title` alone made the browser expose "Not yet" as "Nothing is spent…".
+        expect(document.body.querySelector('button[aria-label="Not yet"]')).toBeTruthy();
+        expect(button('Become Fighter').getAttribute('aria-label')).toBeNull();
+    });
+
     it('has no corner close — declining must be a button the player pressed', () => {
         const hero = qualifiedHero();
         render(React.createElement(PromotionCeremonyModal, { offer: standingOffer(hero), onClose: () => {} }));

@@ -160,8 +160,13 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                             {/* Decline is a real answer, not a dismissal, so it
                                 says what happens: nothing is spent, and the
                                 hero stays put. */}
+                            {/* ⚠️ Named explicitly. With only a `title`, the
+                                button is announced by its tooltip ("Nothing is
+                                spent…") rather than by what it says — found in
+                                the browser, P4. */}
                             <button
                                 onClick={decline}
+                                aria-label="Not yet"
                                 title="Nothing is spent. Your hero stays where they are, and the Token waits."
                                 className={cn(
                                     'flex items-center justify-center gap-1.5 px-3 py-2.5 rounded border',
