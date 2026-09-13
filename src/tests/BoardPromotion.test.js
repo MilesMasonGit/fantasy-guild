@@ -429,6 +429,45 @@ describe('The offer survives a reload', () => {
         BoardState.setToken(TILE, reloaded);
         expect(BoardPromotion.getOffer(TILE)).toMatchObject({ tile: TILE, heroId: hero.id, jobId: 'fighter' });
     });
+
+    /**
+     * ⚠️ P4: after a reload the UI asks again about a standing offer — so a
+     * DECLINED offer must not count as standing, or the player who said "not
+     * yet" is asked again the moment they load their game (PR-7).
+     */
+    it('a declined offer is not a standing offer, before or after a reload', () => {
+        const hero = makeQualified();
+        setup(hero, { uses: 2 });
+        trainToOffer(hero.id);
+        BoardPromotion.decline(TILE);
+
+        expect(BoardPromotion.getOffer(TILE)).toBeNull();
+        BoardState.setToken(TILE, JSON.parse(JSON.stringify(BoardState.getToken(TILE))));
+        expect(BoardPromotion.getOffer(TILE)).toBeNull();
+        expect(BoardPromotion.isPaused(BoardState.getToken(TILE)), 'still holding the tile').toBe(true);
+    });
+
+    it('a declined offer cannot be accepted later', () => {
+        const hero = makeQualified();
+        setup(hero, { uses: 2 });
+        trainToOffer(hero.id);
+        BoardPromotion.decline(TILE);
+
+        expect(BoardPromotion.accept(TILE)).toMatchObject({ success: false, reason: 'NO_OFFER' });
+        expect(hero.jobId).toBe('recruit');
+    });
+
+    it('moving the hero off forgets the decline, so training can offer again', () => {
+        const hero = makeQualified();
+        setup(hero, { uses: 2 });
+        trainToOffer(hero.id);
+        BoardPromotion.decline(TILE);
+
+        BoardPromotion.tickTile(TILE, BoardState.getToken(TILE), 1000, null);
+        expect(BoardPromotion.isDeclined(BoardState.getToken(TILE))).toBe(false);
+        expect(trainToOffer(hero.id)).toHaveLength(1);
+        expect(BoardPromotion.getOffer(TILE)).not.toBeNull();
+    });
 });
 
 describe('⚠️ Tokens only (PR-3), and nothing else promotes (PR-9)', () => {

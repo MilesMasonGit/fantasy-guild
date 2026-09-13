@@ -125,6 +125,12 @@ export function clearPause(instance) {
     if (!instance || instance.promotionPaused == null) return;
     delete instance.promotionPaused;
     delete instance.promotionHeroId;
+    delete instance.promotionDeclined;
+}
+
+/** Whether the player already answered "not yet" to the offer on this tile. */
+export function isDeclined(instance) {
+    return instance?.promotionDeclined === true;
 }
 
 /**
@@ -213,7 +219,9 @@ export function accept(tile) {
     const instance = BoardState.getToken(tile);
     const job = jobFor(instance);
     const heroId = instance?.promotionHeroId;
-    if (!instance || !job || !heroId || !isPaused(instance)) return { success: false, reason: 'NO_OFFER' };
+    if (!instance || !job || !heroId || !isPaused(instance) || isDeclined(instance)) {
+        return { success: false, reason: 'NO_OFFER' };
+    }
 
     // Re-check rather than trusting the offer: the ceremony may have sat open
     // while something changed the hero or the Token underneath it, and a stale
@@ -254,9 +262,18 @@ export function accept(tile) {
  */
 export function decline(tile) {
     const instance = BoardState.getToken(tile);
-    if (!instance || !isPaused(instance)) return { success: false, reason: 'NO_OFFER' };
+    if (!instance || !isPaused(instance) || isDeclined(instance)) return { success: false, reason: 'NO_OFFER' };
 
     instance.cycleElapsedMs = 0;
+    /**
+     * ⚠️ **Recorded, not just implied by the pause** (Promotes rule P4).
+     *
+     * An unanswered offer and a declined one both hold the tile paused. After a
+     * reload the UI re-draws a standing offer so the player is asked — and
+     * without this flag it could not tell the two apart, and would re-ask a
+     * player who already said "not yet", which is the nagging PR-7 forbids.
+     */
+    instance.promotionDeclined = true;
 
     EventBus.publish(BOARD_EVENTS.PROGRESS, { tile, percent: 0 });
     logger.info('BoardPromotion', `Tile ${tile}: offer declined, holding`);
@@ -264,10 +281,15 @@ export function decline(tile) {
     return { success: true };
 }
 
-/** The live offer on a tile, for the UI to render — or null. */
+/**
+ * The live offer on a tile, for the UI to render — or null.
+ *
+ * A declined offer is not live: the player answered it, and it waits for the
+ * hero to be picked up and put back rather than asking again.
+ */
 export function getOffer(tile) {
     const instance = BoardState.getToken(tile);
-    if (!isPaused(instance) || !instance?.promotionHeroId) return null;
+    if (!isPaused(instance) || isDeclined(instance) || !instance?.promotionHeroId) return null;
     const job = jobFor(instance);
     if (!job) return null;
     return { tile, heroId: instance.promotionHeroId, jobId: job.id, typeId: instance.typeId };
