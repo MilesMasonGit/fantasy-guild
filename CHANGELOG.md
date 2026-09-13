@@ -5,6 +5,15 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Wizard Academy and Fighter's Academy now carry Promotes rules.** They were
+  authored with an older "promotion" setting that the game never read. Each now has
+  a library effect, *Wizard Training* and *Fighter Training*, reading "Promotes the
+  hero to Wizard." and "…to Fighter." Nothing you authored was lost. *Still no
+  training happens on the board — that is the next phase.*
+- ⚠️ **Reload the CMS before your next Sync to Game.** A CMS page opened before this
+  change still holds the old setting. Reloading converts it the same way; syncing
+  without reloading would write the old setting back.
+
 - ⭐ **New rule: "Promotes the hero to Knight."** A Token can now carry a rule naming
   the job it trains heroes into. Click the job to pick any job a hero can be
   promoted to. It's offered only on Tokens: an item's New rule menu leaves it out,

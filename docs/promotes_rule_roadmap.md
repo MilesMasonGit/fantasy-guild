@@ -3,7 +3,7 @@
 *The authoritative plan for letting a Token train a hero into a job, written as a
 rule. Status table in §5.*
 
-**Status: P1 done 2026-09-12; P2 (the Academies become rules) is next.**
+**Status: P1–P2 done 2026-09-12; P3 (the engine) is next.**
 
 ## 1. Where this starts
 
@@ -108,6 +108,35 @@ the two disagreed, the next sync would silently undo the work.
 exception the never-hand-edit rule already allows (a migration), and the plan
 says so rather than doing it quietly. Idempotent.
 
+#### What P2 decided that the plan did not say
+
+* **`migratePromotionFields` lives beside `migrateBearers`** in
+  `effectMigration.js`, re-exported to the CMS through `utils/constants.js`, and
+  runs on all three CMS load paths (`merge`, `migrate`, `hydrate`) after
+  `seedEffectLibrary`.
+* ⚠️ **Deterministic ids.** Script and CMS run independently, so a random
+  statement id would give the same rule two ids and churn every sync. The
+  statement is `stm_promotes_<job>`; the effect `effect_<job>_training`, made
+  unique against the library it joins.
+* **One effect per job, shared**, and a library effect already holding exactly
+  that one Promotes rule is reused. A field naming no job is left untouched; an
+  unknown job still converts, so it shows on screen rather than vanishing.
+* **The script ADDS to `data/effects.json`**, unlike the effects-library
+  migration, which replaced the old orphan file.
+* ⚠️ **It keeps each file's trailing newline as found.** The CMS sync writes
+  `data/` with none; the first run added one and would have made every later
+  sync flip it back. Caught reading the diff, fixed before committing.
+* ⚠️ **The owner must reload the CMS before the next Sync to Game.** A page
+  opened before this change holds the old field in memory; only a reload runs
+  the conversion. Logged in the changelog.
+* **The stored `tokenType` still says `buff`** on both Academies. The derived
+  type is `promotion`; the stored one is only rewritten by Recalculate, as for
+  every other type.
+* ⚠️ **The owner's CMS syncs commit onto whatever branch is checked out.** Two
+  syncs at 19:25 landed on `promotes-p1` and reached `main` with its merge; one
+  added `effect_bonus_drop_2`, so the golden went stale a second time and got a
+  second refresh commit, again kept apart from P2's own lines.
+
 ### P3 — The engine
 Port `BoardPromotion` from the branch to read the rule instead of the field:
 training cycle, offer event, accept/decline, pause. Retire gold and materials from
@@ -130,6 +159,6 @@ economic simulator the re-training sink moved from gold to a Token's drop rate.
 | Phase | State | Notes |
 |---|---|---|
 | P1 Vocabulary | ✅ **DONE** 2026-09-12 | Keyword `promotes` (`tokensOnly`), `jobId` slot over every job with a parent, "Promotes the hero to Knight.", Token type `promotion`, hidden from the Item editor with a warning if attached anyway. `PromotesRule` (18) tests. Golden: 5 new cases; no existing sentence changed. |
-| P2 Academies become rules | **NOT STARTED** | |
+| P2 Academies become rules | ✅ **DONE** 2026-09-12 | Wizard Academy → *Wizard Training*, Fighter's Academy → *Fighter Training*, by `scripts/migrate-promotion-rules.mjs` (data) and the CMS store's load paths (workspace), one shared function. Deterministic, idempotent, second run writes nothing. `PromotionFieldMigration` (20) tests. Golden: 6 new shipped lines. ⚠️ Owner must reload the CMS before syncing. |
 | P3 Engine | **NOT STARTED** | |
 | P4 Ceremony | **NOT STARTED** | |
