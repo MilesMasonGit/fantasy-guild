@@ -34,8 +34,17 @@ const dry = process.argv.includes('--dry');
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
-/** Two spaces and a trailing newline — how every other file in `data/` is written. */
-const writeJson = (path, value) => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+/**
+ * Two spaces, and the file's ending kept exactly as it was found.
+ *
+ * ⚠️ The CMS sync writes `data/` with NO trailing newline. Adding one here would
+ * make the very next sync flip it back — a one-character diff on every sync,
+ * noise in exactly the files whose diffs the owner reads.
+ */
+const writeJson = (path, value) => {
+    const endedWithNewline = readFileSync(path, 'utf8').endsWith('\n');
+    writeFileSync(path, `${JSON.stringify(value, null, 2)}${endedWithNewline ? '\n' : ''}`, 'utf8');
+};
 
 const tokens = readJson(tokensPath);
 const existing = readJson(effectsPath);
