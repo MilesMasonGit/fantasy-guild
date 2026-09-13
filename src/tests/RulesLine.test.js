@@ -1,9 +1,10 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, fireEvent, cleanup } from '@testing-library/react';
 import './fixtures/testTokens.js';
 import { StatementList } from '../../cms/src/components/editors/Statements.jsx';
 import { visibleOptions, LIST_CAP } from '../../cms/src/components/editors/rulesLineModel.js';
+import { RulesPanel } from '../../cms/src/components/editors/RulesLine.jsx';
 import { KEYWORD, KEYWORDS, makeStatement } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { slotsOf, SLOT_KIND } from '../systems/effects/statementSlots.js';
@@ -27,7 +28,10 @@ import { slotsOf, SLOT_KIND } from '../systems/effects/statementSlots.js';
  */
 
 const content = {
-    tokens: { tok_oak: { id: 'tok_oak', name: 'Oak Tree', tags: ['Forest'] } },
+    tokens: {
+        tok_oak: { id: 'tok_oak', name: 'Oak Tree', tags: ['Forest'] },
+        tok_quarry: { id: 'tok_quarry', name: 'Quarry', tags: ['Stone'] }
+    },
     items: Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`item_${i}`, { id: `item_${i}`, name: `Item ${i}` }])),
     effects: Object.fromEntries(Array.from({ length: 50 }, (_, i) => [`fx_${i}`, { id: `fx_${i}`, name: `Effect ${i}` }])),
 };
@@ -358,6 +362,140 @@ describe('every control is named by what it says', () => {
         expect(getByRole('button', { name: '2' }).getAttribute('data-slot')).toBe('amount');
         expect(getByRole('button', { name: 'On Cycle' }).getAttribute('data-slot')).toBe('moment');
         expect(getByRole('button', { name: '+ ignores armour' }).getAttribute('data-slot')).toBe('ignoresArmor');
+    });
+});
+
+describe('⭐ the forms are gone (P4)', () => {
+    // Labels and hints only the eight retired forms ever printed.
+    const retired = [
+        'How many', 'Chance %', 'Tool Tier', 'No more than', 'When carried by an item, it lands on',
+        'Which status', 'Only for', 'Direction', 'How it combines', 'Stacks', 'Damage is reduced by'
+    ];
+
+    it('leaves no retired form field on any rule', () => {
+        const { container } = mount(KEYWORDS.filter(k => k.id !== KEYWORD.REQUIRES).map(k => makeStatement(k.id)));
+        for (const label of retired) expect(container.textContent, label).not.toContain(label);
+    });
+
+    it('keeps the one table a sentence cannot hold: a conversion (E-8)', () => {
+        const { container } = mount([makeStatement(KEYWORD.CONVERTS)]);
+        expect(container.textContent).toContain('Spends from the Bank');
+        expect(container.textContent).toContain('Produces on the board');
+    });
+});
+
+describe('⭐ what the forms held, edited in the line (P4)', () => {
+    it('Grants: picks the item, then how many', () => {
+        const { word, type, press, latest, line } = mount([makeStatement(KEYWORD.GRANTS)]);
+        fireEvent.click(word('itemId'));
+        type('Item 3');
+        press('Enter');
+        expect(latest().payload.itemId).toBe('item_3');
+        fireEvent.click(word('quantity'));
+        type('4');
+        press('Enter');
+        expect(latest().payload.quantity).toBe(4);
+        expect(line().textContent).toContain('Grants 4 Item 3');
+    });
+
+    it('Grants: sets how often from the row beneath the line', () => {
+        const { container, panel, latest, line } = mount([{
+            ...makeStatement(KEYWORD.GRANTS), payload: { type: 'BONUS_DROP', itemId: 'item_1', quantity: 1, chance: 100 }
+        }]);
+        fireEvent.click(container.querySelector('[data-rules-more] [data-slot="chance"]'));
+        fireEvent.change(panel().querySelector('input[type="number"]'), { target: { value: '40' } });
+        expect(latest().payload.chance).toBe(40);
+        expect(line().textContent).toContain('40% of the time');
+    });
+
+    it('Works as: picks a skill', () => {
+        const { word, type, press, latest, line } = mount([makeStatement(KEYWORD.STATION)]);
+        fireEvent.click(word('skill'));
+        type('cook');
+        press('Enter');
+        expect(latest().payload.skill).toBe('cooking');
+        expect(line().textContent).toBe('Works as a Cooking station.');
+    });
+
+    it('Acts as: retypes the tool tier', () => {
+        const { word, type, press, latest } = mount([{ ...makeStatement(KEYWORD.ACTS_AS), payload: { tag: 'net', tier: 1 } }]);
+        fireEvent.click(word('tier'));
+        type('3');
+        press('Enter');
+        expect(latest().payload.tier).toBe(3);
+    });
+
+    it('Cannot: retypes the limit', () => {
+        const { word, type, press, latest } = mount([{
+            ...makeStatement(KEYWORD.CANNOT), payload: { kind: 'adjacency_limit', max: 2 }, to: { mode: 'tag', value: 'Coast' }
+        }]);
+        fireEvent.click(word('max'));
+        type('5');
+        press('Enter');
+        expect(latest().payload.max).toBe(5);
+    });
+
+    it('Restocks: ticks Tokens in the panel', () => {
+        const { word, panel, latest, line } = mount([makeStatement(KEYWORD.RESTOCKS)]);
+        fireEvent.click(word('tokenIds'));
+        const boxes = panel().querySelectorAll('[data-list-option] input[type="checkbox"]');
+        expect(boxes).toHaveLength(2);
+        fireEvent.click(boxes[0]);
+        expect(latest().payload.tokenIds).toEqual(['tok_oak']);
+        expect(line().textContent).toContain('Restocks adjacent Oak Tree from the Guild Bank');
+    });
+
+    it('Provides: scopes to a skill from the row beneath the line', () => {
+        const { container, panel, latest, line } = mount([{
+            ...makeStatement(KEYWORD.PROVIDES), payload: { type: 'YIELD', bucket: 'percentage', value: 0.1 }
+        }]);
+        fireEvent.click(container.querySelector('[data-rules-more] [data-slot="category"]'));
+        const search = panel().querySelector('input[type="text"]');
+        fireEvent.change(search, { target: { value: 'mining' } });
+        fireEvent.keyDown(search, { key: 'Enter' });
+        expect(latest().payload.category).toBe('mining');
+        expect(line().textContent).toContain('but only for Mining work');
+    });
+
+    it('Applies: offers library effects only, never a status (owner ruling)', () => {
+        const { word, panel } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '', durationMs: 1000 } }]);
+        fireEvent.click(word('effectId'));
+        const ids = [...panel().querySelectorAll('[data-option]')].map(o => o.getAttribute('data-option'));
+        expect(ids.length).toBeGreaterThan(0);
+        expect(ids.every(id => id.startsWith('fx_'))).toBe(true);
+    });
+});
+
+describe('⭐ creating an item from a search (P4)', () => {
+    const itemSlot = () => slotsOf(makeStatement(KEYWORD.GRANTS), ctx).find(s => s.id === 'itemId');
+    const panelWith = (slot, query, onCreate) => render(React.createElement(RulesPanel, {
+        slot, cursor: { mode: 'retype', query, active: 0, moved: false },
+        statement: makeStatement(KEYWORD.GRANTS), onPatch: () => {}, onPickRetyped: () => {}, onCreate
+    }));
+
+    it('offers "Create" for a name that does not exist, and hands that name over', () => {
+        const onCreate = vi.fn();
+        const { container } = panelWith(itemSlot(), 'Moonstone', onCreate);
+        fireEvent.click(container.querySelector('[data-create]'));
+        expect(onCreate).toHaveBeenCalledWith('Moonstone');
+    });
+
+    it('does not offer it for a name that already exists', () => {
+        const { container } = panelWith(itemSlot(), 'item 3', vi.fn());
+        expect(container.querySelector('[data-create]')).toBeNull();
+    });
+
+    it('does not offer it on a slot that cannot create', () => {
+        const moment = slotsOf(makeStatement(KEYWORD.DEALS), ctx).find(s => s.id === 'moment');
+        const { container } = panelWith(moment, 'zzzz', vi.fn());
+        expect(container.querySelector('[data-create]')).toBeNull();
+    });
+
+    it('⚠️ never offers it to a list handed its own content — nothing may write to the store', () => {
+        const { word, type, container } = mount([makeStatement(KEYWORD.GRANTS)]);
+        fireEvent.click(word('itemId'));
+        type('Moonstone');
+        expect(container.querySelector('[data-create]')).toBeNull();
     });
 });
 

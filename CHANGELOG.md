@@ -5,6 +5,18 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **The old forms under each rule are gone.** Every rule in the effects editor is now
+  just its sentence: what an item grants and how often, which skill a station works,
+  a tool’s tier, a Manager’s Tokens, a limit, a chance — all edited by clicking the
+  word in the sentence, or from the small row of extra choices underneath it. The one
+  exception is a conversion, which keeps its two item lists as a table. Picking an
+  item from a search can still create a new one when it doesn’t exist yet.
+- **“Applies” now offers your library effects only.** The old statuses are no longer
+  offered for new rules. A rule that still names a status keeps working, and clicking
+  it lets you swap in an effect.
+- **Scoping a bonus to a skill works from the sentence.** “…but only for Mining work”
+  could previously only be set through the old form.
+
 - ⭐ **The rules editor's help panel sits on the left and follows you.** One panel
   now serves every rule in an effect, stays in view as you scroll, and shows
   what can go in whichever word you're on. On a narrow screen it moves above the

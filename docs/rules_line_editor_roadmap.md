@@ -2,7 +2,7 @@
 
 *The authoritative plan. Vision: [`concept_rules_line_editor.md`](concept_rules_line_editor.md).*
 
-**Status: P0–P3 done 2026-09-12; P4 is next.** Decisions below marked
+**Status: P0–P4 done 2026-09-12; P5 is next.** Decisions below marked
 locked came from owner interviews on 2026-09-09 and 2026-09-12 and are not to be
 re-litigated.
 
@@ -175,6 +175,27 @@ was only ever authorable through a form will be found — the code review alread
 caught one (`Works as` became unauthorable when its form was gated wrongly), so
 expect more, and expect them to be silent.
 
+#### What P4 decided that the plan did not say
+
+* ⭐ **Owner ruling: `Applies` offers library effects only.** The retired form
+  authored only statuses and the line only effects, so one had to go. There is
+  no status slot; a rule still naming a status shows the effect picker in its
+  place, and picking an effect replaces the status (`statusId` and `stacks`
+  go). The engine still runs status rules, and no shipped rule uses `Applies`.
+* ⚠️ **Changing a `Provides` effect rebuilds its payload**, as the form did.
+  Swapping only the type kept a stale bucket, so Yield 25% switched to Double
+  Loot would have read “a 0.25% chance”.
+* **“Only for” offers every skill plus “Any skill”**, which clears the scope.
+* **`Restocks` is a new `LIST` slot** — a set of Tokens with no per-row numbers,
+  so E-8 gives it a slot, edited as checkboxes in the panel.
+* **`Cannot`’s limit is its own word**, split out of the restriction’s wording by
+  filling its template with markers, so the phrase still has one definition.
+* ⚠️ **“Create …” survives, and is gated.** The retired item picker could create
+  an item from its search; the panel now offers it for a name that does not
+  exist. Creating WRITES to the persisted store, so a list handed its own
+  `content` offers it nowhere — not in the panel, and not in the conversion
+  table’s or upkeep list’s item pickers either.
+
 ### P5 — Cost and cadence
 
 The strip beneath the line: charge cost, cooldown, upkeep, chance, `requires`.
@@ -192,7 +213,7 @@ Token editor and Item editor onto the same component (E-9).
 | P1 Renderer emits segments | ✅ **DONE** 2026-09-12 | `renderSegments` is the source; `renderStatement` is its join, so all nine callers were untouched. ⭐ Golden written and committed FIRST: 1382 cases walked from the registries, one changed character turns 344 red. `RenderSegments` holds every tag to the slots `slotsOf` really emits — its first run caught `category` tagged on axes with no category picker. Three text-preserving wrong renderers each turned it red while the golden stayed green. |
 | P2 The line | ✅ **DONE** 2026-09-12 | `RulesLine.jsx` replaces `SentenceEditor.jsx` (deleted). The line is `renderSegments`' output; click a word, retype it, Enter commits, Escape reverts. An unknown word commits nothing and offers the nearest real words. Both quoted copies of the sentence are gone (Q1). 30 new tests; four deliberately wrong versions each caught. Verified by clicking and typing in a real browser on a sandbox (`?p2=1`) that never writes to the workspace. |
 | P3 The panel | ✅ **DONE** 2026-09-12 | ONE panel for the whole list, on the left, pinned while the rules scroll, and wrapping above them on a narrow column. Tab and Shift+Tab walk the words (Q3); arrows move through the panel; a blank reads "Pick …" and searches, 30 at a time with a count. 32 interaction tests; six deliberately wrong versions each caught. Verified in a real browser on the sandbox: layout at 1280px and 640px, pinning over a 1,500px scroll, Tab/Shift+Tab, arrow + Enter, and picking an effect and an item from blanks. |
-| P4 Delete the forms | **NOT STARTED** | ⭐ The phase that fixes the actual complaint. |
+| P4 Delete the forms | ✅ **DONE** 2026-09-12 | ⭐ The complaint is fixed. Eight forms deleted, not hidden; only a conversion’s item table survives (E-8). Read every form against the slots first and found the decisions only a form could reach — the skill scope (its option list was EMPTY), the `Works as` skill (no slot at all), the Grants item/quantity/chance, the tool tier, the Restocks list, the Applies chance and target — and gave each a slot before deleting anything. `FormFreeSlots` walks that inventory. Rules text unchanged (golden). Six deliberately wrong versions each caught. Verified in a real browser on the sandbox. |
 | P5 Cost and cadence | **NOT STARTED** | |
 | P6 Token and Item editors | **NOT STARTED** | |
 

@@ -12,6 +12,7 @@ import { RESTRICTION_KINDS, getRestrictionKind } from '../../config/registries/r
 import { FILTER_KINDS, filtersOf } from '../../config/registries/filterRegistry.js';
 import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
 import { PLACEMENTS, placementOf } from '../../config/registries/placementRegistry.js';
+import { getAllSkills } from '../../config/registries/skillRegistry.js';
 
 /**
  * A statement, described as the **ordered slots an author fills in** — the model
@@ -67,7 +68,14 @@ export const SLOT_KIND = Object.freeze({
      */
     FORM: 'form',
     /** A stack of filters, each with its own value and a negate toggle. */
-    FILTERS: 'filters'
+    FILTERS: 'filters',
+    /**
+     * Pick SEVERAL of a declared list — the Tokens a Manager restocks (P4).
+     *
+     * A set, not a table: it has no per-row numbers, so E-8 gives it a slot
+     * rather than letting it keep a form.
+     */
+    LIST: 'list'
 });
 
 /** A vocabulary option, in the shape every picker wants. */
@@ -93,6 +101,55 @@ function momentOptions() {
 function roleOptions(statement) {
     const available = rolesOf(statement?.when?.event);
     return ROLES.filter(r => available.includes(r.id)).map(r => option(r.id, r.label, r.hint));
+}
+
+/** Every skill, as options — from the game registry, so the CMS can never offer one it lacks. */
+const skillOptions = () => Object.values(getAllSkills() || {}).map(s => option(s.id, s.name || s.id));
+
+/**
+ * A `Provides` payload rebuilt for a newly chosen axis (Rules Line P4).
+ *
+ * ⚠️ **Changing the effect REBUILDS the payload, as the retired form did.** A
+ * chance-shaped axis wants `flat` and anything else `percentage`; swapping only
+ * the type left the old bucket and value behind, so Yield at 25% switched to
+ * Double Loot read "a 0.25% chance". Mirrors `makeModifier` in the CMS store.
+ */
+function payloadForAxis(type) {
+    return getPaletteEntry(type)?.shape === 'proc'
+        ? { type, bucket: 'flat', value: 0 }
+        : { type, bucket: 'percentage', value: 0 };
+}
+
+/** A 1–100 chance, clamped as the retired forms clamped it. Unreadable input keeps "always". */
+const clampChance = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(100, Math.max(1, n)) : 100;
+};
+
+/**
+ * The `Applies` decisions that lived only in the retired form: how often, and
+ * — when an item carries the rule — which side of a fight it lands on.
+ *
+ * `target` retires along with the one-off flag when V10 adds `the opponent`.
+ */
+function appliesExtras(payload) {
+    const note = 'On a Token this is ignored — its filter decides who is reached.';
+    return [
+        {
+            id: 'chance', kind: SLOT_KIND.NUMBER, label: 'chance (%)', min: 1, max: 100, optional: true,
+            value: payload.chance ?? 100,
+            patch: v => ({ payload: { ...payload, chance: clampChance(v) } })
+        },
+        {
+            id: 'target', kind: SLOT_KIND.VOCABULARY, label: 'on an item, lands on', optional: true,
+            value: payload.target || 'hero',
+            options: [
+                option('hero', 'the hero carrying it', note),
+                option('enemy', 'the enemy that hero is fighting', note)
+            ],
+            patch: v => ({ payload: { ...payload, target: v } })
+        }
+    ];
 }
 
 /** The payload slots for one keyword. Each returns `[]` where it has none. */
@@ -150,7 +207,7 @@ function payloadSlots(statement, ctx) {
                     id: 'type', kind: SLOT_KIND.VOCABULARY, label: 'effect',
                     value: payload.type,
                     options: paletteForKeyword(KEYWORD.PROVIDES).map(p => option(p.type, p.label, p.hint)),
-                    patch: v => ({ payload: { ...payload, type: v } })
+                    patch: v => ({ payload: payloadForAxis(v) })
                 },
                 {
                     id: 'bucket', kind: SLOT_KIND.VOCABULARY, label: 'how it combines',
@@ -200,10 +257,20 @@ function payloadSlots(statement, ctx) {
                     // half-finished.
                     id: 'category', kind: SLOT_KIND.VOCABULARY, label: 'only for', optional: true,
                     value: payload.category || '',
+                    /**
+                     * ⚠️ The skill list was EMPTY here — only the retired form's
+                     * picker could scope a rule to a skill, so deleting it would
+                     * have made "but only for Mining work" unauthorable (P4).
+                     * "Any skill" clears the scope, which the form also did.
+                     */
                     options: entry.categories === 'status'
                         ? authorableStatuses().map(s => option(s.id, s.name, s.description))
-                        : [],
-                    patch: v => ({ payload: { ...payload, ...(v ? { category: v } : {}) } })
+                        : [option('', 'Any skill', 'No narrowing — the usual case.'), ...skillOptions()],
+                    patch: v => {
+                        const next = { ...payload };
+                        if (v) next.category = v; else delete next.category;
+                        return { payload: next };
+                    }
                 }] : [])
             ];
         }
@@ -257,27 +324,28 @@ function payloadSlots(statement, ctx) {
              * effect for a while, which is the shape that makes the status
              * registry deletable. V7 removes the first half.
              */
-            if (payload.statusId) {
-                return [
-                    {
-                        id: 'statusId', kind: SLOT_KIND.VOCABULARY, label: 'status',
-                        value: payload.statusId,
-                        options: authorableStatuses().map(s => option(s.id, s.name, s.description)),
-                        patch: v => ({ payload: { ...payload, statusId: v } })
-                    },
-                    {
-                        id: 'stacks', kind: SLOT_KIND.NUMBER, label: 'stacks',
-                        value: payload.stacks ?? 1, min: 1,
-                        patch: v => ({ payload: { ...payload, stacks: Math.max(1, Number(v) || 1) } })
-                    }
-                ];
-            }
+            /**
+             * ⭐ **Library effects only** (owner ruling, 2026-09-12).
+             *
+             * The retired form authored only statuses and the line only effects,
+             * so P4 had to choose. The owner chose effects: statuses are meant to
+             * become ordinary library effects, so new rules point there. No status
+             * slot is offered any more — and a rule that still names a status
+             * shows the effect picker in its place, where picking an effect
+             * replaces the status cleanly (its `statusId` and `stacks` go).
+             *
+             * The engine still RUNS status rules; nothing authored breaks.
+             */
             return [
                 {
                     id: 'effectId', kind: SLOT_KIND.VOCABULARY, label: 'effect',
                     value: payload.effectId || '',
                     options: Object.values(ctx?.effects || {}).map(e => option(e.id, e.name || e.id)),
-                    patch: v => ({ payload: { ...payload, effectId: v } })
+                    patch: v => {
+                        const { statusId, stacks, ...rest } = payload;
+                        void statusId; void stacks;
+                        return { payload: { ...rest, effectId: v } };
+                    }
                 },
                 {
                     id: 'scale', kind: SLOT_KIND.NUMBER, label: 'tier', min: 1,
@@ -296,7 +364,8 @@ function payloadSlots(statement, ctx) {
                         ? 'Zero means it fires once, immediately — that is how one effect sets off another.'
                         : null,
                     patch: v => ({ payload: { ...payload, durationMs: Math.max(0, Number(v) || 0) } })
-                }
+                },
+                ...appliesExtras(payload)
             ];
 
         case KEYWORD.CANNOT:
@@ -314,7 +383,21 @@ function payloadSlots(statement, ctx) {
                 }
             ];
 
+        /**
+         * `Acts as` is the `Requires` capability plus a **tool tier**, which
+         * lived only in the retired form (P4). A station asking for a Tier 2
+         * tool refuses a Tier 1 one, so this is a real decision.
+         */
         case KEYWORD.ACTS_AS:
+            return [
+                ...payloadSlots({ ...statement, keyword: KEYWORD.REQUIRES }, ctx),
+                {
+                    id: 'tier', kind: SLOT_KIND.NUMBER, label: 'tool tier', min: 1,
+                    value: payload.tier ?? 1,
+                    patch: v => ({ payload: { ...payload, tier: Math.max(1, Math.floor(Number(v) || 1)) } })
+                }
+            ];
+
         case KEYWORD.REQUIRES:
             return [
                 {
@@ -334,10 +417,59 @@ function payloadSlots(statement, ctx) {
 
         // ⚠️ Item lists are a table, not a sentence (G-20). They keep a small
         // form beneath the line rather than being spelled out inline.
+        /**
+         * ⚠️ A conversion's two item lists are the ONE form that survives (E-8):
+         * a genuine table, with a quantity on every row. Everything else a form
+         * used to hold is a slot below.
+         */
         case KEYWORD.CONVERTS:
-        case KEYWORD.RESTOCKS:
-        case KEYWORD.GRANTS:
             return [{ id: 'payload', kind: SLOT_KIND.FORM, label: 'what it moves' }];
+
+        /** `Grants` — how many, of which item, how often (P4: was a form). */
+        case KEYWORD.GRANTS:
+            return [
+                {
+                    id: 'quantity', kind: SLOT_KIND.NUMBER, label: 'how many', min: 1,
+                    value: payload.quantity ?? 1,
+                    patch: v => ({ payload: { ...payload, quantity: Math.max(1, Math.floor(Number(v) || 1)) } })
+                },
+                {
+                    // `creates` tells the editor it may offer "Create …" when the
+                    // search finds nothing — the retired item picker could.
+                    id: 'itemId', kind: SLOT_KIND.VOCABULARY, label: 'which item', creates: 'item',
+                    value: payload.itemId || '',
+                    options: Object.values(ctx?.items || {}).map(i => option(i.id, i.name || i.id)),
+                    patch: v => ({ payload: { ...payload, itemId: v } })
+                },
+                {
+                    id: 'chance', kind: SLOT_KIND.NUMBER, label: 'chance (%)', min: 1, max: 100, optional: true,
+                    value: payload.chance ?? 100,
+                    patch: v => ({ payload: { ...payload, chance: clampChance(v) } })
+                }
+            ];
+
+        /** `Restocks` — the Tokens a Manager keeps supplied (P4: was a form). */
+        case KEYWORD.RESTOCKS:
+            return [{
+                id: 'tokenIds', kind: SLOT_KIND.LIST, label: 'which Tokens',
+                value: Array.isArray(payload.tokenIds) ? payload.tokenIds : [],
+                options: Object.values(ctx?.tokens || {}).map(t => option(t.id, t.name || t.id)),
+                patch: v => ({ payload: { ...payload, tokenIds: [...new Set((v || []).filter(Boolean))] } })
+            }];
+
+        /**
+         * `Works as` — which skill's recipes a station runs (P4). It had NO slot
+         * at all; the retired form was its only control, and `stationSkillOf`
+         * is the sole input to `deriveTokenType`, so losing it would have made
+         * every new station unauthorable.
+         */
+        case KEYWORD.STATION:
+            return [{
+                id: 'skill', kind: SLOT_KIND.VOCABULARY, label: 'which skill',
+                value: payload.skill || '',
+                options: skillOptions(),
+                patch: v => ({ payload: { ...payload, skill: v } })
+            }];
 
         default:
             return [];
@@ -573,6 +705,10 @@ export function slotDisplay(slot) {
             return String(slot.value ?? '…');
         case SLOT_KIND.TEXT:
             return slot.value || '…';
+        case SLOT_KIND.LIST: {
+            const chosen = (slot.value || []).map(v => slot.options.find(o => o.id === v)?.label || v);
+            return chosen.length ? chosen.join(' and ') : '…';
+        }
         default:
             return slot.label;
     }

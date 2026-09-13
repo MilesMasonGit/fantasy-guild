@@ -61,6 +61,22 @@ const seed = () => [
   },
   { ...makeStatement(KEYWORD.APPLIES), id: 'sbx_apply', payload: { effectId: '', durationMs: 30000 } },
   { ...makeStatement(KEYWORD.SPAWNS), id: 'sbx_spawn', payload: { placement: 'nearest_free' } },
+  // P4: what the retired forms used to hold, now in the line.
+  { ...makeStatement(KEYWORD.GRANTS), id: 'sbx_grants' },
+  { ...makeStatement(KEYWORD.STATION), id: 'sbx_station' },
+  { ...makeStatement(KEYWORD.ACTS_AS), id: 'sbx_acts', payload: { tag: 'net', tier: 2 } },
+  { ...makeStatement(KEYWORD.RESTOCKS), id: 'sbx_restock', payload: { tokenIds: ['tok_oak'] } },
+  {
+    ...makeStatement(KEYWORD.CANNOT), id: 'sbx_cannot',
+    payload: { kind: 'adjacency_limit', max: 2 },
+    to: { mode: 'tag', value: 'Coast' },
+  },
+  {
+    // The one form that survives (E-8): a conversion's two item lists.
+    ...makeStatement(KEYWORD.CONVERTS), id: 'sbx_convert',
+    payload: { type: 'CONVERT', consumes: [{ itemId: 'item_4', quantity: 20 }], produces: [{ itemId: 'item_5', quantity: 2 }], chance: 100 },
+    when: { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: 'item_4', threshold: 20 },
+  },
 ];
 
 export default function RulesLineSandbox() {
