@@ -5,6 +5,17 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **Promotion is playable end to end.** When a hero finishes training on a Token with a
+  Promotes rule, a window asks "Wren has finished training. Make it official?", showing
+  the old job, the new one, and which skills are set aside and taken up. **Become
+  Wizard** promotes and spends the Token's charge; **Not yet** spends nothing, leaves the
+  hero where they are, and doesn't ask again until the hero is moved off and back on.
+- **An unanswered offer survives saving and reloading.** Load a game where a hero was
+  waiting to be asked and the window opens again. An offer you said "Not yet" to stays
+  quiet.
+- **The Change Job screen shows the same skill trade** as the promotion window, so the
+  two always agree.
+
 - ⭐ **Heroes train on Tokens with a Promotes rule.** Stand a qualified hero on Wizard
   Academy or Fighter's Academy and they train for a cycle (30 seconds unless the Token
   sets its own time). When it finishes, the game offers the job. Nothing about the hero
