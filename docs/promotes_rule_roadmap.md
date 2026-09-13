@@ -203,6 +203,14 @@ showed up in play.
   engine returns reason codes, not the branch's prose.
 * **The Change Job screen draws `PromotionTrade`**, retiring its own trade list,
   so the two screens cannot disagree.
+* **"Not yet" is named explicitly** (`aria-label`). With only a `title` the
+  browser exposed it by its tooltip; found while clicking through it.
+* **Seven deliberately wrong versions; six caught.** The miss — deleting
+  `hideClose` — changes nothing observable: `GIModal` offers a close control or
+  backdrop dismissal only when handed an `onClose`, and the ceremony passes
+  none. `hideClose` is a second lock on a door that is already shut.
+* **The console's duplicate-key warning predates P4.** A brand-new game with no
+  heroes, no Tokens and no promotion logs it too. Not investigated here.
 * **Verified by playing, in the real game:** training → window opens by itself →
   Become Wizard → "Promotion complete", still showing Recruit → Wizard and what
   was set aside (the branch's first play-found bug, not reintroduced) → Done
