@@ -4,11 +4,11 @@
 [`concept_free_playmat.md`](concept_free_playmat.md), corrected the same day
 against the code. Status table in §7, open questions in §8.*
 
-**Status: DRAFT — awaiting owner approval. No code written.**
+**Status: APPROVED by the owner 2026-09-13. Stage 0 next. No game code written.**
 
-**Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-55
-are the owner's answers of 2026-09-13 to the questions a code audit raised. Where
-the two differ, §1 here wins.
+**Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-62
+are the owner's rulings of 2026-09-13 on the questions a code audit raised and on
+this plan. Where the two differ, §1 here wins.
 
 ---
 
@@ -40,7 +40,7 @@ below. ~~**FP-15**~~ is ⛔ **REJECTED** (FP-40).
 | **FP-54** | **Hero tabs move to the bottom in Stage 1** (FP-38). | Owner. The Tray's removal rebuilds the layout anyway. |
 | **FP-55** | **The Time Bank is out of scope.** It is not made to work with flags or walking; if it breaks, it is left broken and noted. | Owner: on the back burner, possibly to be removed. |
 
-### 1.3 How this roadmap builds it (director's proposals — approve with the plan)
+### 1.3 How this roadmap builds it (director's proposals — approved by the owner 2026-09-13)
 
 | # | Decision | Why |
 |---|---|---|
@@ -48,6 +48,14 @@ below. ~~**FP-15**~~ is ⛔ **REJECTED** (FP-40).
 | **FP-57** | **Stage 1's simple flags pick nearest to the flag's centre.** No walking: the hero appears at the Token they work, and when it stops being workable they appear at the next. Stage 2 switches "nearest" to nearest to the hero and adds the walk. | The concept puts "nearest-first" in Stage 2, but a simple flag still has to choose. This is the least that works and nothing is thrown away (FP-31). |
 | **FP-58** | **Hero positions stay out of the save** (A-3, corrected): on reload heroes start at their flag; Token progress is kept; a fight in progress is dropped — all as today. | Matches what the code already does. |
 | **FP-59** | **One fresh-save bump, at the free-placement slice.** Slices after it may change the save shape without migration until Stage 1 is tagged. | FP-11; nothing between is released. |
+
+### 1.4 Follow-up rulings, 2026-09-13
+
+| # | Decision | Why / cost |
+|---|---|---|
+| **FP-60** | **A flag dropped on a Token its hero can't run gets no special treatment.** The hero works something else in range; the Token shows why it was skipped on hover. No red alert. Amends FP-28. | Owner (Q-A.1). Follows from FP-49. |
+| **FP-61** | **Promotion Tokens are the one exception to nearest-first:** a hero trains there only when their flag is planted on the Token. | Owner (Q-A.2). FP-34 forbids heroes choosing promotion on their own. |
+| **FP-62** | **The Vault is unlocked from the start** until the tutorial pass (FP-39). The `loot_token_placed` gate is removed in slice 1.9. | Owner (Q-B). FP-16 makes the gate's event impossible, which would lock the Vault forever on a fresh save. |
 
 ### What this changes in other plans
 
@@ -266,7 +274,7 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 
 | Slice | State | Notes |
 |---|---|---|
-| Roadmap + concept corrections | **IN REVIEW** | Branch `free-playmat-roadmap`; awaiting owner approval |
+| Roadmap + concept corrections | ✅ **DONE** 2026-09-13 | Owner approved the plan and FP-56…FP-62 |
 | S0 Feel trial | **NOT STARTED** | First after approval |
 | 1.0 Blank skills visible | **NOT STARTED** | Owner authors 17 skills in the CMS |
 | 1.1 Terrain off | **NOT STARTED** | |
@@ -291,19 +299,8 @@ ItemSellValue (1g sells), OneRuleOnePlace ×2 (Map materials), TerrainRegistry �
 
 ## 8. Open questions
 
-* **Q-A. Two edges of FP-49 (no unique targeting logic).**
-  1. If the flag lands on a Token the hero can't run, FP-48 skips it and the hero
-     works something else nearby; the Token under the flag shows its reason on hover
-     rather than a red alert. *Recommend: accept — it is what "no unique logic"
-     implies.*
-  2. Promotion Tokens can't be picked by nearest-first (FP-34), so they need one
-     rule: *worked only when the flag is planted on them*. *Recommend: accept this as
-     the single exception.*
-* **Q-B. The Vault's tutorial gate.** Vault deposits are locked until tutorial step 5
-  sees a loot Token dragged onto the board, which FP-16 makes impossible. The
-  recommended Q5 answer included "Vault unlocked from the start"; the owner's
-  answer quoted only the Hall half. *Recommend: unlock the Vault from the start in
-  slice 1.9 until the tutorial pass (FP-39).*
+* ~~Q-A. Two edges of FP-49~~ → FP-60, FP-61.
+* ~~Q-B. The Vault's tutorial gate~~ → FP-62.
 * ~~Packing guard~~ → FP-40. ~~Close/Far in Stage 1~~ → FP-53. ~~Hero tabs stage~~ → FP-54.
 * Still open from the concept: the Vault's fate (Stage 3), growth authoring (Stage 3),
   painting tools beyond disallow, loot pickup with walking heroes (Stage 2).
