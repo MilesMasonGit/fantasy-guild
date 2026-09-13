@@ -5,6 +5,13 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Fixed: Token descriptions said every rule twice** — "Works as a Smithing station.
+  Works as a Smithing station." It affected 24 Tokens, every one that uses a library
+  effect. The CMS's Recalculate added a Token's library rules a second time before
+  writing its description. ⚠️ *The saved descriptions in the game files are still
+  doubled until you run **Recalculate** and then **Sync to Game** in the CMS* — the
+  descriptions are written by the CMS, not by hand.
+
 - ⭐ **Promotion is playable end to end.** When a hero finishes training on a Token with a
   Promotes rule, a window asks "Wren has finished training. Make it official?", showing
   the old job, the new one, and which skills are set aside and taken up. **Become

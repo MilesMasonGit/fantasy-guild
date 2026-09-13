@@ -273,7 +273,17 @@ export function expandBearer(def, library = {}) {
     // Inline statements come first and survive. Nothing shipped mixes the two,
     // but dropping hand-authored rules because a ref was added beside them
     // would be exactly the silent half-translation this project keeps refusing.
-    return { ...def, statements: [...statementsOf(def), ...statements] };
+    //
+    // ⚠️ **Only statements that did NOT come from the library.** Every statement
+    // an expansion adds is stamped `sourceEffectId`. Keeping those as "inline"
+    // made a second expansion of an already-expanded bearer add every library
+    // rule again — which the CMS's Recalculate does (it expands for the
+    // simulator, then expands the result again for the description), so 24
+    // shipped Tokens were saved saying each rule twice: "Works as a Smithing
+    // station. Works as a Smithing station." Dropping the stamped copies makes
+    // expanding idempotent, wherever it happens twice.
+    const inline = statementsOf(def).filter(statement => !statement?.sourceEffectId);
+    return { ...def, statements: [...inline, ...statements] };
 }
 
 /** Every bearer in a keyed collection, expanded. */
