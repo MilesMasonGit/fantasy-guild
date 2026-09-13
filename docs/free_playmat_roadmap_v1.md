@@ -308,7 +308,7 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 |---|---|---|
 | Roadmap + concept corrections | ✅ **DONE** 2026-09-13 | Owner approved the plan and FP-56…FP-62 |
 | S0 Feel trial | ✅ **DONE** 2026-09-13 | Owner verdict GO; tag `feel-trial-0`; FP-63…FP-66 |
-| 1.0 Blank skills visible | **IN REVIEW** | Boot audit, CMS Economy Audit tab and Token editor flag blank skills (one shared rule); owner still to author the 17 |
+| 1.0 Blank skills visible | ✅ **DONE** 2026-09-13 | Boot audit, CMS Economy Audit tab and Token editor flag blank skills (one shared rule, `workSkillRule.js`); 13 new tests. ⏸ Authoring the 17 skills is **owner-deferred to the content polish pass** — ⚠️ from slice 1.4 those Tokens are unworkable until authored (accepted) |
 | 1.1 Terrain off | **NOT STARTED** | |
 | 1.2 `nearby()` + passive readers | **NOT STARTED** | Creates the Mat Tuner panel |
 | 1.3 Crafting, charges, Managers, triggers, Cannot | **NOT STARTED** | |
