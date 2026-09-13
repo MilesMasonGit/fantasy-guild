@@ -91,7 +91,9 @@ describe('⚠️ every clickable word opens a slot that exists', () => {
             'typeId', 'placement', 'effectId', 'durationMs',
             'kind', 'tag', 'payload',
             // P4: every decision the retired forms held now has a word.
-            'quantity', 'itemId', 'chance', 'skill', 'tier', 'tokenIds', 'max', 'target'
+            'quantity', 'itemId', 'chance', 'skill', 'tier', 'tokenIds', 'max', 'target',
+            // Promotes rule P1.
+            'jobId'
         ]) {
             expect(seen.has(slot), `no word in the whole corpus is tagged "${slot}"`).toBe(true);
         }

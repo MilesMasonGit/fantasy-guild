@@ -207,6 +207,11 @@ export function buildCorpus() {
     addS('station', S(KEYWORD.STATION, { payload: { skill: 'cooking' } }));
     addS('station:unknown-skill', S(KEYWORD.STATION, { payload: { skill: 'not_a_skill' } }));
     addS('station:blank', S(KEYWORD.STATION, { payload: {} }));
+    // Promotes (Promotes rule P1): a job with a parent, an unknown one, a blank.
+    addS('promotes', S(KEYWORD.PROMOTES, { payload: { jobId: 'knight' } }));
+    addS('promotes:base', S(KEYWORD.PROMOTES, { payload: { jobId: 'alchemist' } }));
+    addS('promotes:unknown-job', S(KEYWORD.PROMOTES, { payload: { jobId: 'not_a_job' } }));
+    addS('promotes:blank', S(KEYWORD.PROMOTES, { payload: {} }));
     addS('acts-as', S(KEYWORD.ACTS_AS, { payload: { tag: 'net', tier: 2 } }));
     addS('acts-as:no-tier', S(KEYWORD.ACTS_AS, { payload: { tag: 'net' } }));
     addS('acts-as:blank', S(KEYWORD.ACTS_AS, { payload: {} }));

@@ -3,7 +3,7 @@
 *The authoritative plan for letting a Token train a hero into a job, written as a
 rule. Status table in §5.*
 
-**Status: planned 2026-09-12. No code yet.**
+**Status: P1 done 2026-09-12; P2 (the Academies become rules) is next.**
 
 ## 1. Where this starts
 
@@ -73,6 +73,30 @@ Keyword, `jobId` slot, renderer wording, golden regenerated and its diff read,
 type derivation, and the Item editor not offering it. A Promotes rule can be
 written and reads correctly, and does nothing yet.
 
+#### What P1 decided that the plan did not say
+
+* **`tokensOnly: true` is a declaration on the keyword**, not a check in the
+  editor — so the CMS reads it (game defines, CMS renders) and P3's engine can
+  read the same flag to ignore the rule on an item.
+* ⚠️ **An item can still be handed one** through "Use an existing effect", since a
+  library effect is bearer-agnostic. The Item editor then says, in the warning
+  colour, that the rule does nothing there. Blocking the attachment outright
+  would need the library to know its bearers, which it deliberately does not.
+* **The job slot's hint names where each job comes from** ("Knight — from
+  Fighter"), because the gate a hero must pass is the parent job's skills.
+* **A Token with two Promotes rules uses the first job it names**
+  (`promotedJobOf`). PR-4 says one rule names one job; guessing between two
+  would hide an authoring mistake.
+* **A new Promotes effect is named "<Job> Training"**, e.g. *Knight Training*.
+* ⚠️ **The golden was already stale on `main`.** Today's 19:01 CMS syncs added
+  shipped content, and the golden reads shipped data. The refresh is its own
+  commit, separate from the five Promotes cases, so the diff that is P1's is
+  readable on its own.
+* **Not verified in a browser.** The CMS workspace in the preview browser is
+  empty and the sandbox pages were deleted at the owner's request, so the menus
+  and the retyped job are verified by `PromotesRule.test.js` against the real
+  components. P3 and P4 are verified by playing the game.
+
 ### P2 — The two Academies become rules
 One pure function turns `promotion: { jobId }` into a library effect holding a
 Promotes rule, referenced by the Token. Called from **both** the CMS store's load
@@ -105,7 +129,7 @@ economic simulator the re-training sink moved from gold to a Token's drop rate.
 
 | Phase | State | Notes |
 |---|---|---|
-| P1 Vocabulary | **NOT STARTED** | |
+| P1 Vocabulary | ✅ **DONE** 2026-09-12 | Keyword `promotes` (`tokensOnly`), `jobId` slot over every job with a parent, "Promotes the hero to Knight.", Token type `promotion`, hidden from the Item editor with a warning if attached anyway. `PromotesRule` (18) tests. Golden: 5 new cases; no existing sentence changed. |
 | P2 Academies become rules | **NOT STARTED** | |
 | P3 Engine | **NOT STARTED** | |
 | P4 Ceremony | **NOT STARTED** | |

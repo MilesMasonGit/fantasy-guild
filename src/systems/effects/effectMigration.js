@@ -88,6 +88,8 @@ export function provisionalName(statement, nameOf = titleCase) {
             return `Needs ${titleCase(payload.tag) || 'a Capability'}`;
         case KEYWORD.STATION:
             return `${titleCase(payload.skill) || 'Station'} Station`;
+        case KEYWORD.PROMOTES:
+            return payload.jobId ? `${titleCase(payload.jobId)} Training` : 'Promotion';
         case KEYWORD.PROVIDES: {
             const entry = getPaletteEntry(payload.type);
             const label = entry?.label || titleCase(payload.type) || 'Effect';
