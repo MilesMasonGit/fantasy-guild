@@ -358,5 +358,71 @@
     ],
     "autoSyncId": true,
     "id": "effect_thorns"
+  },
+  "effect_bonus_drop_2": {
+    "name": "Bonus Drop",
+    "statements": [
+      {
+        "id": "stm_hyus6ygxy",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "",
+          "quantity": 1,
+          "chance": 100
+        },
+        "chargeDelta": -1,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "adjacent",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_bonus_drop_2"
+  },
+  "effect_wizard_training": {
+    "id": "effect_wizard_training",
+    "name": "Wizard Training",
+    "statements": [
+      {
+        "id": "stm_promotes_wizard",
+        "keyword": "promotes",
+        "payload": {
+          "jobId": "wizard"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_fighter_training": {
+    "id": "effect_fighter_training",
+    "name": "Fighter Training",
+    "statements": [
+      {
+        "id": "stm_promotes_fighter",
+        "keyword": "promotes",
+        "payload": {
+          "jobId": "fighter"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
   }
 }

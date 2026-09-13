@@ -7,18 +7,8 @@
     "pool": [
       {
         "kind": "token",
-        "refId": "token_thorn_elemental",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_cow",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_fighter_s_academy",
-        "weight": 100
+        "refId": "token_wishing_well",
+        "weight": 12
       }
     ],
     "autoSyncId": true,
