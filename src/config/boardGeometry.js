@@ -60,6 +60,44 @@ export const colOf = (index) => index % BOARD_SIZE;
 export const isTileIndex = (index) =>
     Number.isInteger(index) && index >= 0 && index < TILE_COUNT;
 
+// ---------------------------------------------------------------------------
+// Mat units (Free Playmat slice 1.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * **Mat units** are today's natural board pixels: one tile step is 160 u
+ * (128 art + 32 gap). Distances on the playmat (`nearby.js`) are measured in
+ * them, so a radius means the same thing now, on the grid, as it will once
+ * Tokens sit anywhere (FP-56, FP-65).
+ *
+ * ⚠️ Nothing stores a position yet. Tiles stay the truth until free placement
+ * (slice 1.6); a position is always *derived* from the tile a Token sits on.
+ */
+export const MAT_UNITS_PER_STEP = TILE_STEP_PX;
+
+/** Centre of one tile, in mat units, or null for a non-tile. */
+export function tileCentre(index) {
+    if (!isTileIndex(index)) return null;
+    return {
+        x: colOf(index) * TILE_STEP_PX + TILE_PX / 2,
+        y: rowOf(index) * TILE_STEP_PX + TILE_PX / 2
+    };
+}
+
+/**
+ * Centre of a Token's whole footprint, in mat units — the point its distances
+ * are measured from (FP-41: centre to centre). A 1×1 Token's centre is its tile
+ * centre; a 2×2 Token's is the middle of its four tiles.
+ */
+export function footprintCentre(anchorIndex, size = 1) {
+    if (!isTileIndex(anchorIndex)) return null;
+    const span = TILE_PX * size + TILE_GAP_PX * (size - 1);
+    return {
+        x: colOf(anchorIndex) * TILE_STEP_PX + span / 2,
+        y: rowOf(anchorIndex) * TILE_STEP_PX + span / 2
+    };
+}
+
 /** Whether a tile can hold anything at all — every tile is placeable. */
 export const isPlaceable = (index) => isTileIndex(index);
 

@@ -5,6 +5,23 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **"Adjacent" is now measured as a distance** (Free Playmat slice 1.2, FP-41/FP-56). Buffs,
+  item grants, statuses, damage and "per adjacent" counts now reach every Token whose
+  centre is within **Near** (272 units — a tile step is 160) instead of looking up the 8
+  surrounding tiles. For ordinary 1×1 Tokens *nothing plays differently*: 272 reproduces
+  the same ring exactly. ⚠️ **Large (2×2) Tokens reach less**: measured from their middle
+  they reach the 8 tiles touching their sides but no longer the 4 touching only their
+  corners, and Tokens beside them measure to their middle too. Two large Tokens side by
+  side no longer reach each other. Crafting, tool wear, Managers, neighbour triggers and
+  "Cannot" rules still use the old 8 tiles until slice 1.3, so for a large Token those
+  can briefly disagree with its buffs. Rule wording still says "adjacent" (slice 1.10).
+
+- **Dev tool: Mat Tuner** (FP-66) — a new developer-only panel (the **TUNER** button beside
+  the QA tester, dev builds only) for the free playmat's numbers. Its first setting is
+  **Near radius**: drag it and buff reach changes live; the reset button restores 272.
+  Like the Playmat Tuner it remembers your setting on this device only — it is never in a
+  save — but unlike that panel, this one changes how the game plays while it's moved.
+
 - **Terrain is switched off** (Free Playmat slice 1.1, FP-10). Placing a Token no longer
   paints the ground, bursting a Map no longer stamps its terrain on what comes out, and
   the painted landscape under the board is gone — every tile shows its plain faint
