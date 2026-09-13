@@ -71,6 +71,17 @@ const seed = () => [
     payload: { kind: 'adjacency_limit', max: 2 },
     to: { mode: 'tag', value: 'Coast' },
   },
+  // P5: cost and cadence beside the sentence — a cooldown the sentence says, and an upkeep it does not.
+  {
+    ...makeStatement(KEYWORD.DEALS), id: 'sbx_cooled', payload: { amount: 3 },
+    when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 5000 }, chargeDelta: -2,
+  },
+  {
+    ...makeStatement(KEYWORD.PROVIDES), id: 'sbx_upkeep',
+    payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.2 },
+    to: { mode: 'tag', value: 'Forest' },
+    upkeep: { items: [{ itemId: 'item_4', quantity: 1 }], cadenceMs: 30000 },
+  },
   {
     // The one form that survives (E-8): a conversion's two item lists.
     ...makeStatement(KEYWORD.CONVERTS), id: 'sbx_convert',

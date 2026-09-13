@@ -291,11 +291,12 @@ describe('Charge delta authoring — P6b', () => {
             onChange: (next) => useEntityStore.getState().setEffectStatements(effectId, next),
         }));
 
-        const field = [...container.querySelectorAll('label')]
-            .find(l => l.textContent.includes('Charge cost')).parentElement;
-        const input = field.querySelector('input[type="number"]');
+        // The cost lives in the strip beside the sentence and is edited in the
+        // panel (Rules Line P5), and reads as what it spends: 1, not −1.
+        fireEvent.click(container.querySelector('[data-cost-strip] [data-slot="charge"]'));
+        const input = container.querySelector('[data-rules-panel] input[type="number"]');
 
-        expect(input.value).toBe('-1');
+        expect(input.value).toBe('1');
         expect(container.textContent).toContain('Spends 1 charge each time it fires');
 
         fireEvent.change(input, { target: { value: '0' } });
@@ -307,7 +308,8 @@ describe('Charge delta authoring — P6b', () => {
         const store = useEntityStore.getState();
         const effectId = store.addEffect({
             name: 'Cooking Station',
-            statements: [{ id: 'stm_s', keyword: 'station', payload: { skill: 'cooking' } }],
+            // A cost, so the strip names the moment it is spent at.
+            statements: [{ id: 'stm_s', keyword: 'station', payload: { skill: 'cooking' }, chargeDelta: -1 }],
         });
 
         const { container } = render(React.createElement(StatementList, {
@@ -318,8 +320,9 @@ describe('Charge delta authoring — P6b', () => {
         // The cost is offered on every rule now (UE-20) — what changes is the
         // moment list. A `Works as` statement has no When clause, so "each time
         // it fires" is not a moment it could ever reach and is not offered.
-        expect(container.textContent).toContain('Charge cost');
-        expect(container.textContent).toContain('Every cycle of this Token');
-        expect(container.textContent).not.toContain('Each time it fires');
+        fireEvent.click(container.querySelector('[data-cost-strip] [data-slot="chargeWhen"]'));
+        const panel = container.querySelector('[data-rules-panel]');
+        expect(panel.textContent).toContain('Every cycle of this Token');
+        expect(panel.textContent).not.toContain('Each time it fires');
     });
 });
