@@ -4,7 +4,7 @@
 [`concept_free_playmat.md`](concept_free_playmat.md), corrected the same day
 against the code. Status table in §7, open questions in §8.*
 
-**Status: APPROVED by the owner 2026-09-13. Stage 0 next. No game code written.**
+**Status: APPROVED 2026-09-13. Stage 0 DONE — owner verdict GO (tag `feel-trial-0`). Slice 1.0 next. No game code written.**
 
 **Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-62
 are the owner's rulings of 2026-09-13 on the questions a code audit raised and on
@@ -56,6 +56,15 @@ below. ~~**FP-15**~~ is ⛔ **REJECTED** (FP-40).
 | **FP-60** | **A flag dropped on a Token its hero can't run gets no special treatment.** The hero works something else in range; the Token shows why it was skipped on hover. No red alert. Amends FP-28. | Owner (Q-A.1). Follows from FP-49. |
 | **FP-61** | **Promotion Tokens are the one exception to nearest-first:** a hero trains there only when their flag is planted on the Token. | Owner (Q-A.2). FP-34 forbids heroes choosing promotion on their own. |
 | **FP-62** | **The Vault is unlocked from the start** until the tutorial pass (FP-39). The `loot_token_placed` gate is removed in slice 1.9. | Owner (Q-B). FP-16 makes the gate's event impossible, which would lock the Vault forever on a fresh save. |
+
+### 1.5 Stage 0 results, 2026-09-13
+
+| # | Decision | Why / cost |
+|---|---|---|
+| **FP-63** | ⭐ **Tokens crowd.** The collision hitbox is separate from the art and invisible: **80% of the art radius** (small Token: 51 u), with **40% overlap** allowed, so two small Tokens can sit **61 u** apart centre to centre (0.38 tile steps). Large Tokens use the same percentages of their own radius. Amends FP-6's "slight overlap". | Owner, from the feel trial: at 100% hitbox and even 40% overlap *"I still can't get the tokens as close as I want."* ⚠️ Magnifies FPR-1: at maximum packing a 272 u Near circle can hold ~70 Tokens, not ~8. Accepted under FP-40. |
+| **FP-64** | **Hitboxes are never drawn.** A Token at rest is just its art; its Near ring shows only while hovered or dragged, and a flag's radius ring only while its hero or flag is hovered or dragged (A-4). | Owner, from the feel trial. |
+| **FP-65** | **Starting values:** Near 272 u (≈1.7 steps, reproduces today's ring), flag radius 400 u (2.5 steps), mat 11 steps wide at a 0.64 aspect (1760 × 1126 u). | Owner kept the trial's defaults. Tuned for real at slice 1.11. |
+| **FP-66** | ⭐ **A new developer-only "Mat Tuner" panel** (separate from the terrain Playmat Tuner), shown only in dev builds like the QA tester. **Each slice adds the settings it introduces**; values the owner likes are written into the game's defaults at slice 1.11. | Owner, over extending the Playmat Tuner and a single panel slice. |
 
 ### What this changes in other plans
 
@@ -117,6 +126,23 @@ deleted after tagging.
 
 **If it's a no-go, the plan stops here** (FP-1). Nothing in the game was touched.
 
+#### What S0 decided that the plan did not say
+
+* ⭐ **Owner verdict: GO** (2026-09-13). Numbers recorded as FP-63…FP-65; the tuning
+  panel as FP-66.
+* ⚠️ **Crowding needed its own hitbox.** Tying collision to the art circle made
+  crowding impossible even at high overlap, so the hitbox is a separate, invisible
+  radius (FP-63).
+* ⚠️ **Crisp art has a floor.** Rounding sprites to whole-number scales (FP-5) never
+  goes below 1×, so on small windows 64px art spills past its circle. Check at slice
+  1.7 (FPR-6).
+* ⚠️ **FP-49 edge seen in play:** with nearest-*to-the-hero* (Stage 2), dropping a flag
+  on a Token does not guarantee that Token is next if the hero is mid-job. Stage 1's
+  nearest-to-the-flag (FP-57) doesn't have this; revisit when slicing Stage 2.
+* The trial lives only in the tag `feel-trial-0` (`87e7ea9`): `feel-trial.html` +
+  `feel-trial/`. To replay it, check out the tag and open `/feel-trial.html` on the
+  dev server.
+
 ---
 
 ## 4. Stage 1 — Free playmat
@@ -150,6 +176,8 @@ yet, so nothing becomes unworkable before the owner has authored.)
   migration). `self_and_adjacent` likewise.
 * Convert: `TileModifiers` (Provides, Grants, Applies, filters), `filterTargetTiles`
   and its callers (statuses, `DealDamage`, `EffectActions` counts), `ConnectionLines`.
+* **Mat Tuner panel created** (FP-66), dev builds only, with its first setting:
+  **Near radius** (default 272 u, FP-65).
 
 **Verified when** every existing test still passes except the ones pinning large-Token
 neighbours, which are rewritten to FP-41 and read by the director.
@@ -175,6 +203,7 @@ exactly as before.
   (FP-42). Recall mid-fight works (FP-43). Disallow per Token (FP-35).
 * "Who works this Token" becomes the claiming hero (§2) for damage, statuses, roles,
   gear and filters.
+* Mat Tuner gains **flag radius** (default 400 u, FP-65).
 
 **Verified when** tests cover each rule above, with a test that fails if the rule is
 removed.
@@ -196,7 +225,9 @@ the first playable preview of the new hero model.
   hero displacement are deleted (FP-6, FP-7). Save schema bumped; old saves refused
   with a clear message (FP-11, FP-59).
 * Drop anywhere; a too-close drop nudges the dropped Token; no legal spot flies back
-  (FP-46). "Cannot" is checked on the drop. Dropping on a matching copy restocks (FP-50).
+  (FP-46). Collision uses the invisible hitbox, not the art (FP-63, FP-64).
+* Mat Tuner gains **hitbox size** (80%), **overlap** (40%) and **mat size**
+  (11 steps) (FP-63, FP-65). "Cannot" is checked on the drop. Dropping on a matching copy restocks (FP-50).
 * The Hall is an ordinary movable Token (FP-8) and a new game starts with it on the
   mat (FP-44).
 * ⚠️ Largest slice; may split into engine and tests (1.6a) and tile-free readers (1.6b).
@@ -245,8 +276,9 @@ diff contains only that wording change.
 
 ### 1.11 — Tune and tag
 
-* Play a fresh game through; set mat size and Near radius; add a note to the
-  simulator dials about walking and idle time (FPR-5).
+* Play a fresh game through; write the Mat Tuner values the owner settles on into
+  the game's defaults (FP-66); add a note to the simulator dials about walking and
+  idle time (FPR-5).
 * Bump the five version files, CHANGELOG, tag **v0.8.0**.
 
 **Verified when** the owner has played Stage 1 and says it's a place worth stopping.
@@ -275,10 +307,10 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 | Slice | State | Notes |
 |---|---|---|
 | Roadmap + concept corrections | ✅ **DONE** 2026-09-13 | Owner approved the plan and FP-56…FP-62 |
-| S0 Feel trial | **NOT STARTED** | First after approval |
+| S0 Feel trial | ✅ **DONE** 2026-09-13 | Owner verdict GO; tag `feel-trial-0`; FP-63…FP-66 |
 | 1.0 Blank skills visible | **NOT STARTED** | Owner authors 17 skills in the CMS |
 | 1.1 Terrain off | **NOT STARTED** | |
-| 1.2 `nearby()` + passive readers | **NOT STARTED** | Needs S0's go |
+| 1.2 `nearby()` + passive readers | **NOT STARTED** | Creates the Mat Tuner panel |
 | 1.3 Crafting, charges, Managers, triggers, Cannot | **NOT STARTED** | |
 | 1.4 Flags engine | **NOT STARTED** | After Effects Grammar V10 |
 | 1.5 Flags UI | **NOT STARTED** | |
