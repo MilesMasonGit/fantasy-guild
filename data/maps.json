@@ -19,6 +19,11 @@
         "kind": "token",
         "refId": "token_fighter_s_academy",
         "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_wishing_well",
+        "weight": 12
       }
     ],
     "autoSyncId": true,

@@ -358,5 +358,31 @@
     ],
     "autoSyncId": true,
     "id": "effect_thorns"
+  },
+  "effect_bonus_drop_2": {
+    "name": "Bonus Drop",
+    "statements": [
+      {
+        "id": "stm_hyus6ygxy",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "",
+          "quantity": 1,
+          "chance": 100
+        },
+        "chargeDelta": -1,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "adjacent",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_bonus_drop_2"
   }
 }
