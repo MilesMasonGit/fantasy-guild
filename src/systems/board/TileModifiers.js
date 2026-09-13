@@ -3,7 +3,8 @@
 import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
-import { neighboursOf, neighboursOfFootprint, neighboursOfToken } from './adjacency.js';
+import { nearby, tilesToRebuild } from './nearby.js';
+import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import { isStatementPaid } from './BlockUpkeep.js';
@@ -124,6 +125,17 @@ export function init() {
             lastTileOf.delete(heroId);
         }
     }));
+
+    /**
+     * ⚠️ **A new Near radius changes what every tile reaches** (Free Playmat 1.2).
+     *
+     * Nothing on the board moves when the Mat Tuner's radius does, so no board
+     * event would ever refresh the aggregators. Rebuilding all of them is 36
+     * tiles, once per slider change — never per frame.
+     */
+    unsubscribers.push(onMatTuningChanged((key) => {
+        if (key == null || key === 'nearRadius') rebuildAll();
+    }));
 }
 
 /**
@@ -242,48 +254,31 @@ function modeMatches(spec, def) {
  * @returns {number[]} anchor indices of occupied neighbours the filter names
  */
 export function filterTargetTiles(sourceTile, statement) {
-    const sourceOcc = BoardState.getOccupyingToken(sourceTile);
-    const sourceDef = getTokenType(sourceOcc?.instance?.typeId);
-    const reach = reachOf(statement);
-
-    // The candidate set is the reach, and only the reach: `self` never walks the
-    // neighbours and `board` never walks them twice.
-    const candidates = [];
-    if (reach === REACH.SELF || reach === REACH.SELF_AND_ADJACENT) {
-        candidates.push(sourceTile);
-    }
-    if (reach === REACH.ADJACENT || reach === REACH.SELF_AND_ADJACENT) {
-        candidates.push(...neighboursOfToken(sourceTile, sourceDef?.size || 1));
-    }
-    if (reach === REACH.BOARD) {
-        for (const [tile] of BoardState.occupiedTiles()) candidates.push(tile);
-    }
-
-    const seen = new Set();
+    // The candidate set is the reach, and only the reach — now a distance query
+    // measured centre to centre (Free Playmat 1.2, FP-41). `nearby` already
+    // returns each Token once, by anchor.
     const targets = [];
 
-    for (const tile of candidates) {
-        const occ = BoardState.getOccupyingToken(tile);
-        if (!occ?.instance) continue;
-        if (seen.has(occ.anchorIndex)) continue;
-        seen.add(occ.anchorIndex);
+    for (const anchor of nearby(sourceTile, reachOf(statement))) {
+        const instance = BoardState.getToken(anchor);
+        if (!instance) continue;
 
         // ⚠️ `board` includes the Token carrying the rule, and that is right:
         // "every Token on the board" is not "every Token except me". A rule that
         // means to skip itself is `adjacent`, which is the default.
-        if (!matchesTokenTarget(statement?.to, getTokenType(occ.instance.typeId),
-            { instance: occ.instance, tile: occ.anchorIndex })) continue;
-        targets.push(occ.anchorIndex);
+        if (!matchesTokenTarget(statement?.to, getTokenType(instance.typeId),
+            { instance, tile: anchor })) continue;
+        targets.push(anchor);
     }
 
     return targets;
 }
 
 /**
- * Rebuild one tile's inbound modifiers from its 8 neighbours.
+ * Rebuild one tile's inbound modifiers from the Tokens within reach of it.
  *
- * Called whenever the neighbourhood changes. Cheap: at most 8 lookups, and only
- * the tiles actually affected are rebuilt.
+ * Called whenever the neighbourhood changes. Cheap: 36 tiles at most, and only
+ * the tiles within Near of the change are rebuilt (`nearby.tilesToRebuild`).
  *
  * ## Two rules land here
  * - **A Buff Token affects every adjacent Token** — the same scarce Sawmill
@@ -334,12 +329,9 @@ function* applicableStatements(index) {
     const seenTypes = new Set();
     const seenAnchors = new Set();
 
-    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
-    const adjacentAnchors = new Set();
-    for (const neighbour of neighbours) {
-        const nOcc = BoardState.getOccupyingToken(neighbour);
-        if (nOcc?.instance) adjacentAnchors.add(nOcc.anchorIndex);
-    }
+    // `adjacent` means Near: every other Token whose centre is within the Near
+    // radius of this tile's Token centre (Free Playmat 1.2, FP-41).
+    const adjacentAnchors = new Set(nearby(index, REACH.ADJACENT));
 
     for (const [sourceTile] of BoardState.occupiedTiles()) {
         const nOcc = BoardState.getOccupyingToken(sourceTile);
@@ -515,21 +507,14 @@ export function collectItemGrants(index, effectType) {
     return grants;
 }
 
-/** Rebuild a tile and every tile it touches. */
+/**
+ * Rebuild a tile and every tile within Near of it.
+ *
+ * ⚠️ Follows the live radius, not a fixed 8-ring, so raising Near in the Mat
+ * Tuner cannot leave stale buffs outside the old ring (Free Playmat 1.2).
+ */
 export function rebuildAround(indexOrFootprint) {
-    if (Array.isArray(indexOrFootprint)) {
-        for (const t of indexOrFootprint) rebuildTile(t);
-        for (const n of neighboursOfFootprint(indexOrFootprint)) rebuildTile(n);
-    } else {
-        const occ = BoardState.getOccupyingToken(indexOrFootprint);
-        if (occ && occ.footprint.length > 1) {
-            for (const t of occ.footprint) rebuildTile(t);
-            for (const n of neighboursOfFootprint(occ.footprint)) rebuildTile(n);
-        } else {
-            rebuildTile(indexOrFootprint);
-            for (const n of neighboursOf(indexOrFootprint)) rebuildTile(n);
-        }
-    }
+    for (const t of tilesToRebuild(indexOrFootprint)) rebuildTile(t);
 }
 
 /** Rebuild the whole board — on boot and after a save load. */

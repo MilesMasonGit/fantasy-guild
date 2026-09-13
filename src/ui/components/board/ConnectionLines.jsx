@@ -1,5 +1,6 @@
-import { BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, rowOf, colOf } from '../../../config/boardGeometry.js';
-import { neighboursOf, neighboursOfFootprint } from '../../../systems/board/adjacency.js';
+import { BOARD_PX, TILE_PX } from '../../../config/boardGeometry.js';
+import { nearby, positionOf } from '../../../systems/board/nearby.js';
+import { REACH } from '../../../config/registries/reachRegistry.js';
 import { getTokenType, getProvidedTagsWithTiers, hasAdjacencyEffect } from '../../../config/registries/tokenRegistry.js';
 import * as RecipeResolver from '../../../systems/board/RecipeResolver.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -27,17 +28,11 @@ import * as BoardState from '../../../systems/board/BoardState.js';
  * identically would suggest they are the same sort of thing.
  */
 
-/** Centre point of a tile, in board pixels (centered over 1x1 or 2x2 footprint). */
-const centre = (index) => {
-    const occ = BoardState.getOccupyingToken(index);
-    const size = occ?.instance?.typeId ? (getTokenType(occ.instance.typeId)?.size || 1) : 1;
-    const anchor = occ ? occ.anchorIndex : index;
-    const footSpan = size === 2 ? TILE_PX * 2 + TILE_GAP_PX : TILE_PX;
-    return {
-        x: colOf(anchor) * TILE_STEP_PX + footSpan / 2,
-        y: rowOf(anchor) * TILE_STEP_PX + footSpan / 2
-    };
-};
+/**
+ * Centre point of whatever covers a tile, in mat units (= board pixels on the
+ * grid) — the same position `nearby()` measures from (Free Playmat 1.2).
+ */
+const centre = (index) => positionOf(index);
 
 /**
  * Every relationship touching `tile`, in both directions.
@@ -60,7 +55,6 @@ function relationshipsFor(tile) {
     const anchor = occ.anchorIndex;
     const self = occ.instance;
     const selfDef = getTokenType(self.typeId);
-    const size = selfDef?.size || 1;
 
     // Outbound: this tile is support, and serves neighbours.
     //
@@ -76,13 +70,14 @@ function relationshipsFor(tile) {
         }
     }
 
-    // Inbound: neighbours that are supporting this tile.
-    const neighbours = size === 1 ? neighboursOf(anchor) : neighboursOfFootprint(occ.footprint);
-    for (const n of neighbours) {
-        const nOcc = BoardState.getOccupyingToken(n);
-        if (!nOcc?.instance) continue;
-        const nAnchor = nOcc.anchorIndex;
-        const def = getTokenType(nOcc.instance.typeId);
+    // Inbound: Tokens within Near that are supporting this tile — measured
+    // centre to centre (Free Playmat 1.2, FP-41). `nearby` names each Token once.
+    // ⚠️ Until slice 1.3 converts `RecipeResolver.servesFrom`, a line is drawn
+    // only where both agree, so a 2×2 Token's corner-diagonal inbound lines drop.
+    for (const nAnchor of nearby(anchor, REACH.ADJACENT)) {
+        const nInstance = BoardState.getToken(nAnchor);
+        if (!nInstance) continue;
+        const def = getTokenType(nInstance.typeId);
         if (!isSupport(def)) continue;
 
         if (RecipeResolver.servesFrom(nAnchor).includes(anchor)) {

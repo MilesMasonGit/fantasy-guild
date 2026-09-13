@@ -36,6 +36,7 @@ import ToastContainer from './components/base/ToastContainer.jsx';
 import { QuestColumn } from './components/quests/QuestColumn.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
 import PlaymatTuner from './components/PlaymatTuner.jsx';
+import MatTuner from './components/MatTuner.jsx';
 import { TERRAIN_ENABLED } from '../config/registries/terrainRegistry.js';
 import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
 
@@ -405,6 +406,8 @@ export const ReactRoot = ({ engine }) => {
                         <TestDashboard />
                         {/* Tunes terrain only, so hidden while it is dormant (FP-10). */}
                         {TERRAIN_ENABLED && <PlaymatTuner />}
+                        {/* Tunes the free playmat's rules (FP-66). */}
+                        <MatTuner />
                         <FPSCounter />
                     </>
                 )}
