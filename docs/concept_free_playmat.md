@@ -79,7 +79,7 @@ place to stop** if the feel isn't right. (FP-1)
 | FP-3 | **The Token Tray is retired.** Its space becomes ordinary, fully live mat — not a holding zone. Anything landing there joins nearby rules immediately. |
 | FP-4 | **Fixed shape, scales as a whole.** The mat keeps one aspect ratio and grows/shrinks with the window, with margins on odd screens. Positions are stored in mat units, so resizing never moves or pushes anything and "nearby" means the same on every monitor. |
 | FP-5 | **Smooth mat, crisp art.** Positions scale smoothly; Token sprites round to the nearest whole-number art scale so 64px pixel art stays sharp. |
-| FP-6 | **Round hitboxes, slight overlap.** A player's drop that is too close **nudges the dropped Token** to the nearest legal spot. Tokens already on the mat never move because of a player's drop. |
+| FP-6 | **Round hitboxes, slight overlap.** A player's drop that is too close **nudges the dropped Token** to the nearest legal spot. Tokens already on the mat never move because of a player's drop. *(Amended after the Stage 0 trial: Tokens **crowd**, not just slightly overlap — an invisible hitbox of 80% of the art radius with 40% overlap; roadmap FP-63/FP-64.)* |
 | FP-7 | **Large (2×2) Tokens become bigger circles.** The cascade-push logic is retired. |
 | FP-8 | **The Guild Hall is movable like any Token.** *(Corrected: the Hall has no positional aura in code today — see §7.2 — so there is nothing to move with it; new Maps appear beside it, FP-18.)* |
 | FP-9 | **Mat size ≈ today's board + Tray** — roughly 60–80 Tokens loosely spaced. Exact size to be tuned. |
