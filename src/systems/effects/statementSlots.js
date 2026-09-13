@@ -18,6 +18,7 @@ import { FILTER_KINDS, filtersOf } from '../../config/registries/filterRegistry.
 import { MAGNITUDE_KIND, statsForRoles } from '../../config/registries/magnitudeRegistry.js';
 import { PLACEMENTS, placementOf } from '../../config/registries/placementRegistry.js';
 import { getAllSkills } from '../../config/registries/skillRegistry.js';
+import { JOBS } from '../../config/registries/jobRegistry.js';
 
 /**
  * A statement, described as the **ordered slots an author fills in** — the model
@@ -486,6 +487,23 @@ function payloadSlots(statement, ctx) {
                 value: payload.skill || '',
                 options: skillOptions(),
                 patch: v => ({ payload: { ...payload, skill: v } })
+            }];
+
+        /**
+         * `Promotes` — which job (Promotes rule, P1).
+         *
+         * Every job that HAS a parent. The Recruit is where every hero starts
+         * and has no parent, so nothing can promote a hero *to* it. Read from
+         * `jobRegistry`, so a new job is offered with no editor change.
+         */
+        case KEYWORD.PROMOTES:
+            return [{
+                id: 'jobId', kind: SLOT_KIND.VOCABULARY, label: 'which job',
+                value: payload.jobId || '',
+                options: Object.values(JOBS)
+                    .filter(job => job.parent)
+                    .map(job => option(job.id, job.name, `from ${JOBS[job.parent]?.name || job.parent}`)),
+                patch: v => ({ payload: { ...payload, jobId: v } })
             }];
 
         default:

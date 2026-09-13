@@ -83,6 +83,11 @@ export function deriveTokenType(def) {
     if (isEnemyDef(def)) return { type: 'enemy', why: 'it is a creature a hero can fight' };
     if (def.mapId) return { type: 'map', why: 'it bursts into a Map' };
 
+    // ⚠️ Above the work-cycle rungs: a promotion Token HAS a cycle — the hero's
+    // training — and would otherwise file itself as a station or a passive
+    // (Promotes rule, P1).
+    if (has(KEYWORD.PROMOTES)) return { type: 'promotion', why: 'it promotes the hero standing on it to a job' };
+
     if (outputs.some(o => o?.currency)) {
         return {
             type: 'market',

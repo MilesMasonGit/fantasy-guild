@@ -5,6 +5,13 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- ⭐ **New rule: "Promotes the hero to Knight."** A Token can now carry a rule naming
+  the job it trains heroes into. Click the job to pick any job a hero can be
+  promoted to. It's offered only on Tokens: an item's New rule menu leaves it out,
+  and an item given one anyway says it does nothing there. A Token carrying it is
+  now its own "promotion" type. *The rule doesn't train anyone yet — that arrives
+  with the engine in a later phase.*
+
 - ⭐ **Tokens and items edit their own rules in place.** On a Token or item, an effect
   only it uses now shows the same clickable sentence and cost line as the effects
   library, so you can change it without leaving the Token. An effect shared with

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Wrench, Package,
-  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles, Factory
+  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles, Factory, GraduationCap
 } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Library, Pencil } from 'lucide-react';
@@ -52,6 +52,7 @@ const KEYWORD_ICON = {
   [KEYWORD.CANNOT]: Ban,
   [KEYWORD.APPLIES]: Sparkles,
   [KEYWORD.STATION]: Factory,
+  [KEYWORD.PROMOTES]: GraduationCap,
 };
 
 /**
@@ -515,6 +516,23 @@ export default function Statements({ token, item }) {
                 <X size={12} />
               </button>
             </div>
+            {/*
+              ⚠️ The item menu never offers a Tokens-only rule, but a library
+              effect can still be attached to an item from "Use an existing
+              effect". Say plainly that it does nothing there, rather than let
+              it look authored (PR-3).
+            */}
+            {!token && (() => {
+              const inert = [...new Set((entry.statements || [])
+                .map((st) => getKeyword(st?.keyword))
+                .filter((k) => k?.tokensOnly)
+                .map((k) => k.label))];
+              return inert.length > 0 && (
+                <p data-token-only-warning className="px-3 pt-2 text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+                  {inert.join(' and ')} only works on a Token. On an item this rule does nothing.
+                </p>
+              );
+            })()}
             {editable ? (
               <div className="px-3 py-2 space-y-2" data-editable-effect={effectId}>
                 {scale > 1 && (
@@ -593,7 +611,9 @@ export default function Statements({ token, item }) {
 
         {menuOpen ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
-            {KEYWORDS.filter((k) => token || k.id !== KEYWORD.REQUIRES).map((k) => {
+            {/* An item is offered neither Requires (a Token field, owner Q5) nor a
+                keyword declared `tokensOnly` — Promotes (PR-3). */}
+            {KEYWORDS.filter((k) => token || (k.id !== KEYWORD.REQUIRES && !k.tokensOnly)).map((k) => {
               const Icon = KEYWORD_ICON[k.id] || Zap;
               return (
                 <button

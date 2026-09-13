@@ -61,7 +61,8 @@ export const KEYWORD = Object.freeze({
     REMOVES: 'removes',
     SPAWNS: 'spawns',
     TRANSFORMS: 'transforms',
-    STATION: 'station'
+    STATION: 'station',
+    PROMOTES: 'promotes'
 });
 
 /** Whether a keyword may carry a `When …` clause. */
@@ -347,6 +348,33 @@ export const KEYWORDS = Object.freeze([
         filter: false,
         when: WHEN.NEVER,
         upkeep: false
+    },
+    {
+        /**
+         * ⭐ **A Token that trains the hero standing on it into one job**
+         * (Promotes rule, P1 — `docs/promotes_rule_roadmap.md`).
+         *
+         * Owner rulings 2026-09-12: promotion is a RULE, not the Token field
+         * the unmerged `promotion-tokens` branch used; it reads "Promotes the
+         * hero to Knight."; and it goes on **Tokens only** (`tokensOnly`) —
+         * training is a hero standing on a tile for a cycle, and an item has no
+         * cycle to train in.
+         *
+         * No `When` (the training cycle is implied, as `Works as` implies a
+         * station's work), no filter or reach (it is about the hero on THIS
+         * tile), no upkeep. "the hero" is fixed wording rather than a role slot:
+         * it is always whoever stands here, so offering other roles would offer
+         * rules that cannot happen.
+         *
+         * ⚠️ P1 is vocabulary only. Nothing in the engine reads this until P3.
+         */
+        id: KEYWORD.PROMOTES,
+        label: 'Promotes',
+        blurb: 'Trains the hero standing on this Token into one job.',
+        filter: false,
+        when: WHEN.NEVER,
+        upkeep: false,
+        tokensOnly: true
     }
 ]);
 
@@ -452,6 +480,8 @@ export function blankPayload(keywordId) {
             return { effectId: '', scale: 1, durationMs: 0, chance: 100, target: 'hero' };
         case KEYWORD.STATION:
             return { skill: '' };
+        case KEYWORD.PROMOTES:
+            return { jobId: '' };
         default:
             return {};
     }
@@ -569,6 +599,19 @@ export function statementsOf(def) {
 /** Statements of one keyword. */
 export function statementsWith(def, keywordId) {
     return statementsOf(def).filter(s => s?.keyword === keywordId);
+}
+
+/**
+ * The job a Token's `Promotes` rule names, or null.
+ *
+ * The first one with a job wins. One rule names one job (PR-4), and a Token
+ * carrying two is an authoring mistake the engine should not guess about.
+ */
+export function promotedJobOf(def) {
+    for (const statement of statementsWith(def, KEYWORD.PROMOTES)) {
+        if (statement?.payload?.jobId) return statement.payload.jobId;
+    }
+    return null;
 }
 
 /**
