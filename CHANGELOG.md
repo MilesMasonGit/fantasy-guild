@@ -5,6 +5,11 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Dev tool: Sprite Animation Studio** — a developer-only viewer for hero animation
+  sheets (idle / walk / active rows): playback, frame-by-frame scrubbing, alignment
+  guides and onion skinning. Open it from the QA tester panel or with **Shift+A**; like
+  the rest of that panel it only appears in development builds.
+
 - **Tokens with no skill are now flagged** (Free Playmat slice 1.0, FP-47). On the free
   playmat a Token a hero works must name a skill or it won't be workable, and 17 Tokens
   (the fruit bushes and trees, the grapevine, the wheat field, the watermelon patch and

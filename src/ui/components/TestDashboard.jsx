@@ -5,6 +5,7 @@ import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { Bug, Plus, X } from 'lucide-react';
 import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
 import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
+import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
 import { TypographyScaleModal } from '../modals/TypographyScaleModal.jsx';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
@@ -17,7 +18,25 @@ export const TestDashboard = React.memo(() => {
     const [isOpen, setIsOpen] = useState(false);
     const [showFontTest, setShowFontTest] = useState(false);
     const [showSpawnItem, setShowSpawnItem] = useState(false);
+    const [showAnimationStudio, setShowAnimationStudio] = useState(false);
     const cardWidth = useBannerCardWidth();
+
+    React.useEffect(() => {
+        if (!engine) return;
+        const unsub = engine.EventBus.subscribe('dev:open-animation-studio', () => {
+            setShowAnimationStudio(true);
+        });
+        const handleKeyDown = (e) => {
+            if (e.shiftKey && (e.key === 'A' || e.key === 'a') && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                setShowAnimationStudio(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            unsub?.();
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [engine]);
 
     if (!engine) return null;
 
@@ -102,6 +121,10 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🏹 Grant Ranged (temp)",
             onClick: () => grantCombatSkill('ranged')
+        },
+        {
+            label: "🎞️ Sprite Animation Studio",
+            onClick: () => setShowAnimationStudio(true)
         },
         {
             label: "🛠️ Toggle Layout Sandbox",
@@ -249,6 +272,12 @@ export const TestDashboard = React.memo(() => {
 
             {showFontTest && <TypographyScaleModal isOpen={showFontTest} onClose={() => setShowFontTest(false)} />}
             {showSpawnItem && <DevSpawnItemModal engine={engine} onClose={() => setShowSpawnItem(false)} />}
+            {showAnimationStudio && (
+                <AnimationStudioModal
+                    isOpen={showAnimationStudio}
+                    onClose={() => setShowAnimationStudio(false)}
+                />
+            )}
         </>
     );
 });
