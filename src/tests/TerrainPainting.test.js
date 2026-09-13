@@ -19,6 +19,15 @@ import { DEFAULT_TERRAIN } from '../config/registries/terrainAssignments.js';
  * Nothing renders yet. These are assertions about state.
  */
 
+// ⚠️ Terrain is dormant in the game (FP-10, `TERRAIN_ENABLED = false`). These
+// tests pin how painting behaves when it is switched back on, so they force the
+// switch on here rather than skipping — the code is dormant, not dead.
+// `TerrainOff.test.js` pins the switched-off behaviour.
+vi.mock('../config/registries/terrainRegistry.js', async (importOriginal) => ({
+    ...(await importOriginal()),
+    TERRAIN_ENABLED: true
+}));
+
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn()
 }));

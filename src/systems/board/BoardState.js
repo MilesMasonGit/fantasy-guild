@@ -4,6 +4,7 @@ import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
 import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../config/boardGeometry.js';
 import { terrainForToken } from '../../config/registries/terrainAssignments.js';
+import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -83,7 +84,10 @@ function board() {
     if (!state.board.vacancies) state.board.vacancies = {};
     if (!state.board.terrain) state.board.terrain = {};
     if (typeof state.board.nextPaintOrder !== 'number') state.board.nextPaintOrder = 0;
-    if (state.board.nextPaintOrder === 0) backfillTerrain(state.board);
+    // ⚠️ Guarded by the switch, not just the counter: with terrain off the
+    // counter never advances, so the backfill would walk every tile on every
+    // call to this — the board's most-called primitive (FP-10).
+    if (TERRAIN_ENABLED && state.board.nextPaintOrder === 0) backfillTerrain(state.board);
     return state.board;
 }
 
@@ -207,7 +211,7 @@ export function setToken(index, instance) {
         // Anything arriving satisfies the tile's claim on a restock, whether it
         // came from a Manager or from the player's hand.
         delete b.vacancies[index];
-        paintFootprint(b, index, instance);
+        if (TERRAIN_ENABLED) paintFootprint(b, index, instance); // dormant (FP-10)
     } else {
         // ⚠️ Terrain is NOT cleared here. A Token leaving a tile leaves its
         // ground behind (D-T10) — that is the point of the whole feature.
@@ -691,7 +695,7 @@ export function addToTokenBank(instance, slotCap = Infinity) {
     // produced it (D-T6). Absent rather than null when there is no stamp, so
     // Vault records stay the size they were.
     const copy = { usesRemaining: instance.usesRemaining ?? null };
-    if (instance.terrain) copy.terrain = instance.terrain;
+    if (TERRAIN_ENABLED && instance.terrain) copy.terrain = instance.terrain; // dormant (FP-10)
     bank[instance.typeId].push(copy);
     return true;
 }

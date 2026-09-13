@@ -11,6 +11,7 @@ import {
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { terrainForMap } from '../../config/registries/terrainAssignments.js';
+import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -376,7 +377,8 @@ export function openMap(instance, origin = null) {
     // afterwards: only 25 of the 75 Tokens appear in a pool at all, and six of
     // those appear in two, so "which Map did this come from" has no answer once
     // the Token exists. See `terrainAssignments.js`.
-    const stamp = terrainForMap(def.id);
+    // Dormant while terrain is off (FP-10): nothing is stamped.
+    const stamp = TERRAIN_ENABLED ? terrainForMap(def.id) : null;
     const isTray = origin === 'tray' || (typeof origin === 'object' && origin?.inTray);
     const originObj = typeof origin === 'object' && origin !== null ? origin : (origin === 'tray' ? { inTray: true, x: 0.5, y: 0.5 } : null);
     const scatterFrom = isTray ? (originObj || { inTray: true, x: 0.5, y: 0.5 }) : (origin == null ? centreOfBoard() : origin);

@@ -36,6 +36,7 @@ import ToastContainer from './components/base/ToastContainer.jsx';
 import { QuestColumn } from './components/quests/QuestColumn.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
 import PlaymatTuner from './components/PlaymatTuner.jsx';
+import { TERRAIN_ENABLED } from '../config/registries/terrainRegistry.js';
 import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
 
 /** Time Bank widget visibility — parked, not deleted (owner request
@@ -402,7 +403,8 @@ export const ReactRoot = ({ engine }) => {
                 {(import.meta.env.DEV || debugMode) && (
                     <>
                         <TestDashboard />
-                        <PlaymatTuner />
+                        {/* Tunes terrain only, so hidden while it is dormant (FP-10). */}
+                        {TERRAIN_ENABLED && <PlaymatTuner />}
                         <FPSCounter />
                     </>
                 )}

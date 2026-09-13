@@ -34,6 +34,34 @@
  */
 
 /**
+ * ⭐ **The terrain master switch (Free Playmat FP-10).**
+ *
+ * Terrain is **dormant**, not deleted. The free playmat has no tiles, and terrain
+ * is a subtile lattice laid under the grid, so it is switched off ahead of free
+ * placement. Every file of the system stays, and its pure-logic tests keep
+ * running, so it can be revived in a form that suits a free mat.
+ *
+ * While `false`:
+ * - placing a Token paints nothing (`BoardState.setToken`), and an old save's
+ *   Tokens are not backfilled with paint on load;
+ * - bursting a Map stamps nothing on what it produces (`Cartographer.openMap`);
+ * - a Token sent to the Vault does not carry a stamp (`addToTokenBank`);
+ * - the terrain canvas is not drawn and the board never reads terrain or its
+ *   seed (`Board.jsx`), so every tile shows its plain unpainted outline;
+ * - the Playmat Tuner dev panel is hidden (`ReactRoot.jsx`).
+ *
+ * The save is untouched either way: `board.terrain`, `nextPaintOrder` and
+ * `terrainSeed` stay in the schema, and a save that already holds terrain loads
+ * and keeps it. Setting this back to `true` restores the previous behaviour
+ * exactly.
+ *
+ * ⚠️ Read at the point of use, never copied, so a test can force it on with
+ * `vi.mock` (see `TerrainPainting.test.js`). `TerrainOff.test.js` fails if any
+ * of the guards above is removed.
+ */
+export const TERRAIN_ENABLED = false;
+
+/**
  * ⚠️ **Which set of ground art the playmat draws with — the experiment switch.**
  *
  * Two complete sets exist and they differ in how coarse the pixels are:
