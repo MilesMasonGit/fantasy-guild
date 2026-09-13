@@ -9,6 +9,11 @@
         "kind": "token",
         "refId": "token_thorn_elemental",
         "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_cow",
+        "weight": 100
       }
     ],
     "autoSyncId": true,

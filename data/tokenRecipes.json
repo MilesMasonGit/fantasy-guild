@@ -543,6 +543,34 @@
     }
   },
   {
+    "id": "recipe_mtym8vxh",
+    "name": "Steak",
+    "skill": "cooking",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_raw_beef",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_steak",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1
+      }
+    ],
+    "durationMs": 16000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "name": "Pickaxe Mould",
     "requiresContext": [
       "Pickaxe Mould"
