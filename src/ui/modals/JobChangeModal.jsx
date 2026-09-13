@@ -6,6 +6,7 @@ import { GIModal } from '../components/base/GIModal.jsx';
 import {
     getJob, getJobsByTier, JOB_TIERS, STARTING_JOB_ID
 } from '../../config/registries/jobRegistry.js';
+import { PromotionTrade } from '../components/hero/PromotionTrade.jsx';
 import { ArrowRight, Lock, GraduationCap } from 'lucide-react';
 
 /**
@@ -119,29 +120,10 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                             </span>
                         ) : (
                             <>
-                                <TradeList
-                                    title="Gives up"
-                                    tone="loss"
-                                    rows={preview.losing.map(l => `${l.name} ${l.level}`)}
-                                />
-                                <TradeList
-                                    title="Gains"
-                                    tone="gain"
-                                    rows={preview.arriving.map(a =>
-                                        `${a.name} ${a.level}${a.restored ? ' — back from set aside' : ''}`
-                                    )}
-                                />
-                                {preview.cost && (
-                                    <div className="flex flex-col gap-1 pt-1.5 border-t border-gi-border/30">
-                                        <span className="text-[9px] gi-caps tracking-wider text-gi-muted/60">Needs</span>
-                                        <span className="text-[9px] text-gi-muted/70">
-                                            Carried skills at level {preview.cost.skillLevel}
-                                        </span>
-                                    </div>
-                                )}
-                                {!preview.ok && (
-                                    <span className="text-[9px] text-gi-danger">{preview.detail}</span>
-                                )}
+                                {/* The same trade display the promotion ceremony
+                                    draws (P4), so the two screens can never
+                                    disagree about what a job costs a hero. */}
+                                <PromotionTrade preview={preview} />
                                 {/* Where the confirm button used to be (PR-9). The
                                     price is a Token, so this says where to go
                                     rather than offering a free way round it. */}
@@ -202,20 +184,8 @@ const JobRow = ({ jobId, verdict, isCurrent, isSelected, onSelect }) => {
     );
 };
 
-const TradeList = ({ title, tone, rows }) => (
-    <div className="flex flex-col gap-0.5">
-        <span className="text-[9px] gi-caps tracking-wider text-gi-muted/60">{title}</span>
-        {rows.length === 0
-            ? <span className="text-[10px] text-gi-muted/50 italic">nothing</span>
-            : rows.map(r => (
-                <span
-                    key={r}
-                    className={cn('text-[10px]', tone === 'loss' ? 'text-gi-danger/80' : 'text-gi-text')}
-                >
-                    {tone === 'loss' ? '−' : '+'} {r}
-                </span>
-            ))}
-    </div>
-);
+// The trade list that lived here moved to `components/hero/PromotionTrade.jsx`
+// (Promotes rule P4): the ceremony draws the same trade, and two copies of
+// "what this promotion costs you" is exactly the pair that drifts apart.
 
 export default JobChangeModal;

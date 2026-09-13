@@ -1,6 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
+import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { DOCK_MAX_PINNED } from '../components/dock/dockConstants.js';
 import { EventBus } from '../../systems/core/EventBus.js';
+
+/**
+ * The first promotion offer standing on the board, or null (Promotes rule P4).
+ *
+ * Read from the Token instances themselves — the saved truth — through
+ * `BoardPromotion.getOffer`, which already excludes declined offers.
+ */
+export function standingPromotionOffer(engine) {
+    const BoardState = engine?.BoardState;
+    const BoardPromotion = engine?.BoardPromotion;
+    if (!BoardState?.occupiedTiles || !BoardPromotion?.getOffer) return null;
+    try {
+        for (const [tile] of BoardState.occupiedTiles()) {
+            const offer = BoardPromotion.getOffer(tile);
+            if (offer) return offer;
+        }
+    } catch {
+        // No game in progress (the title screen has no board): nothing stands.
+    }
+    return null;
+}
 
 /**
  * useUIModals
@@ -82,6 +104,14 @@ export const useUIModals = (engine) => {
     // modal because changing job is a decision with consequences, not a
     // profile tweak sitting beside "rename".
     const [jobHeroId, setJobHeroId] = useState(null);
+
+    // The live promotion offer, or null — a hero finished training on a Token
+    // with a Promotes rule and the game is waiting for an answer (P4).
+    //
+    // ⚠️ This holds only WHICH offer to draw. The offer itself is state on the
+    // Token instance (`promotionPaused`), which is saved board state — so it is
+    // re-found on load (`standingPromotionOffer`) rather than lost with the tab.
+    const [promotionOffer, setPromotionOffer] = useState(null);
 
     // 'equipment' | 'skills' — which half of a pinned dock card's body shows.
     // One value for the whole dock, not one per card; see `toggleBodyView`.
@@ -245,7 +275,12 @@ export const useUIModals = (engine) => {
             // The Job modal — promote and re-train, which are one act (D-248).
             jobHeroId,
             openJob: useCallback((heroId) => setJobHeroId(heroId), []),
-            closeJob: useCallback(() => setJobHeroId(null), [])
+            closeJob: useCallback(() => setJobHeroId(null), []),
+            // The promotion ceremony (Promotes rule P4). Closing it only stops
+            // drawing: the ceremony's own buttons accept or decline, and an
+            // offer closed any other way is still standing on the tile.
+            promotionOffer,
+            closePromotion: useCallback(() => setPromotionOffer(null), [])
         },
         inspect: {
             selection: inspectSelection,
@@ -316,10 +351,32 @@ export const useUIModals = (engine) => {
                 const tab = data?.tab;
                 if (!tab || tab === 'heroes') return;
                 openDrawerTab(tab, data?.filter);
+            }),
+            // A hero finished training. Nothing has happened to them yet — the
+            // tile holds the offer open, and this only decides to draw it.
+            engine.EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
+                if (data?.tile == null) return;
+                setPromotionOffer(data);
+            }),
+            // ⚠️ A loaded save can carry an offer nobody answered. Without this
+            // the hero would stand on the Token forever with nothing asking —
+            // the tile holds, and the ready event already fired in another
+            // session. A DECLINED offer is not standing, so this never re-asks.
+            engine.EventBus.subscribe('game_loaded', () => {
+                setPromotionOffer(standingPromotionOffer(engine));
             })
         ];
 
-        return () => subs.forEach(unsub => unsub());
+        // The same, for a board that was already loaded when the UI mounted.
+        // Deferred a tick so it reads after the engine has finished starting.
+        const initial = setTimeout(() => {
+            setPromotionOffer((current) => current || standingPromotionOffer(engine));
+        }, 0);
+
+        return () => {
+            clearTimeout(initial);
+            subs.forEach(unsub => unsub());
+        };
     }, [engine]);
 
     const isAnyModalOpen = isSettingsOpen ||

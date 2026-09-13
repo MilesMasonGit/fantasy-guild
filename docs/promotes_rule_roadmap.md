@@ -3,7 +3,7 @@
 *The authoritative plan for letting a Token train a hero into a job, written as a
 rule. Status table in §5.*
 
-**Status: P1–P3 done 2026-09-12; P4 (the ceremony) is next.**
+**Status: P1–P4 done 2026-09-12 — promotion is playable end to end.**
 
 ## 1. Where this starts
 
@@ -186,6 +186,38 @@ and make `JobChangeModal` preview-only. **Verified by playing**: stand a hero on
 an Academy, train, accept, decline — the branch found two ceremony bugs that only
 showed up in play.
 
+#### What P4 decided that the plan did not say
+
+* ⭐ **It is a port, and the owner was right that it already existed.**
+  `PromotionCeremonyModal` and `PromotionTrade` were written and approved on the
+  unmerged `promotion-tokens` branch; P4 copies them onto `main` against the
+  rule-reading engine. They call the same three functions P3 ported
+  (`accept`, `decline`, `getOffer`), so the changes are small.
+* ⚠️ **A decline is now recorded on the Token** (`promotionDeclined`). The branch
+  saved an offer on the instance but only ever opened the window at the moment
+  training finished, so after a reload a waiting hero was never asked. P4 opens
+  the window for a standing offer on `game_loaded` and on mount — which needed
+  the decline recorded, or a player who said "not yet" would be asked again the
+  moment they loaded (PR-7). A declined offer can no longer be accepted either.
+* **A refused acceptance is explained in words** (`refusalText`), because P3's
+  engine returns reason codes, not the branch's prose.
+* **The Change Job screen draws `PromotionTrade`**, retiring its own trade list,
+  so the two screens cannot disagree.
+* **"Not yet" is named explicitly** (`aria-label`). With only a `title` the
+  browser exposed it by its tooltip; found while clicking through it.
+* **Seven deliberately wrong versions; six caught.** The miss — deleting
+  `hideClose` — changes nothing observable: `GIModal` offers a close control or
+  backdrop dismissal only when handed an `onClose`, and the ceremony passes
+  none. `hideClose` is a second lock on a door that is already shut.
+* **The console's duplicate-key warning predates P4.** A brand-new game with no
+  heroes, no Tokens and no promotion logs it too. Not investigated here.
+* **Verified by playing, in the real game:** training → window opens by itself →
+  Become Wizard → "Promotion complete", still showing Recruit → Wizard and what
+  was set aside (the branch's first play-found bug, not reintroduced) → Done
+  closes it; a second offer arrives unanswered (the branch's second bug, not
+  reintroduced); Not yet → nothing spent, not re-asked over 40 s; save, reload,
+  load → the unanswered offer's window reopens and the declined one stays quiet.
+
 ### After
 Delete the `promotion-tokens` branch once P4 is merged (owner's call). Tell the
 economic simulator the re-training sink moved from gold to a Token's drop rate.
@@ -197,4 +229,4 @@ economic simulator the re-training sink moved from gold to a Token's drop rate.
 | P1 Vocabulary | ✅ **DONE** 2026-09-12 | Keyword `promotes` (`tokensOnly`), `jobId` slot over every job with a parent, "Promotes the hero to Knight.", Token type `promotion`, hidden from the Item editor with a warning if attached anyway. `PromotesRule` (18) tests. Golden: 5 new cases; no existing sentence changed. |
 | P2 Academies become rules | ✅ **DONE** 2026-09-12 | Wizard Academy → *Wizard Training*, Fighter's Academy → *Fighter Training*, by `scripts/migrate-promotion-rules.mjs` (data) and the CMS store's load paths (workspace), one shared function. Deterministic, idempotent, second run writes nothing. `PromotionFieldMigration` (21) tests, including the game's own Token registry loading both Academies as `promotion` Tokens; six deliberately wrong versions each caught. The game boots on the migrated data with no console errors. Golden: 6 new shipped lines. ⚠️ Owner must reload the CMS before syncing. |
 | P3 Engine | ✅ **DONE** 2026-09-12 | `BoardPromotion` ported to read the rule; price = the rule's charge cost at new moment `on_promote` (default 1; migrated 0 does not make the Academies free); gold/materials retired; Change Job screen preview-only (pulled forward from P4 to avoid a free route). `BoardPromotion` tests ported and extended, two re-training tests un-skipped. ⚠️ Offers can't be answered in play until P4. |
-| P4 Ceremony | **NOT STARTED** | |
+| P4 Ceremony | ✅ **DONE** 2026-09-12 | Ported the branch's ceremony window and trade display; opens on training complete and re-opens for an unanswered offer on load; decline recorded so it never re-asks. Played end to end in the real game: accept, done, second offer, decline, save/reload. |
