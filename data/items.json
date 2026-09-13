@@ -709,5 +709,44 @@
     "valueSource": null,
     "autoSyncId": true,
     "id": "item_beer"
+  },
+  "item_raw_beef": {
+    "name": "Raw Beef",
+    "description": "",
+    "type": "material",
+    "sprite": "meat_beef_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_raw_beef"
+  },
+  "item_steak": {
+    "name": "Steak",
+    "description": "",
+    "type": "food",
+    "sprite": "meat_steak",
+    "stackable": true,
+    "restoreAmount": 35,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_steak"
+  },
+  "item_bones": {
+    "name": "Bones",
+    "description": "",
+    "type": "material",
+    "sprite": "item_bones",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_bones"
   }
 }

@@ -7,43 +7,8 @@
     "pool": [
       {
         "kind": "token",
-        "refId": "token_coal_vein",
-        "weight": 80
-      },
-      {
-        "kind": "token",
-        "refId": "token_copper_ore_vein",
-        "weight": 80
-      },
-      {
-        "kind": "token",
-        "refId": "token_clay_deposit",
-        "weight": 80
-      },
-      {
-        "kind": "token",
-        "refId": "token_quartz_deposit",
+        "refId": "token_thorn_elemental",
         "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_ceramics_kiln",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_pickaxe_mould",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_furnace",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_wishing_well",
-        "weight": 60
       }
     ],
     "autoSyncId": true,
@@ -83,7 +48,7 @@
       {
         "kind": "token",
         "refId": "token_oak_forest",
-        "weight": 80
+        "weight": 40
       },
       {
         "kind": "token",
@@ -118,17 +83,17 @@
       {
         "kind": "token",
         "refId": "token_copper_ore_vein",
-        "weight": 80
+        "weight": 40
       },
       {
         "kind": "token",
         "refId": "token_clay_deposit",
-        "weight": 80
+        "weight": 40
       },
       {
         "kind": "token",
         "refId": "token_copper_ore_minecart",
-        "weight": 60
+        "weight": 12
       },
       {
         "kind": "token",
@@ -138,7 +103,7 @@
       {
         "kind": "token",
         "refId": "token_coal_vein",
-        "weight": 80
+        "weight": 40
       }
     ],
     "autoSyncId": true,
@@ -153,12 +118,12 @@
       {
         "kind": "token",
         "refId": "token_grandma_s_kitchen",
-        "weight": 20
+        "weight": 4
       },
       {
         "kind": "token",
         "refId": "token_cooking_pot",
-        "weight": 80
+        "weight": 40
       },
       {
         "kind": "token",
@@ -188,12 +153,12 @@
       {
         "kind": "token",
         "refId": "token_coast",
-        "weight": 80
+        "weight": 40
       },
       {
         "kind": "token",
         "refId": "token_shrimp_coast",
-        "weight": 80
+        "weight": 40
       },
       {
         "kind": "token",
@@ -228,7 +193,7 @@
       {
         "kind": "token",
         "refId": "token_wishing_well",
-        "weight": 60
+        "weight": 12
       }
     ],
     "autoSyncId": true,

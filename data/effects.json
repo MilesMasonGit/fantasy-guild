@@ -331,5 +331,32 @@
     ],
     "autoSyncId": true,
     "id": "effect_charcoal_dust"
+  },
+  "effect_thorns": {
+    "name": "Thorns",
+    "statements": [
+      {
+        "id": "stm_crr11mz4m",
+        "keyword": "deals",
+        "payload": {
+          "amount": 1,
+          "ignoresArmor": false
+        },
+        "chargeDelta": -1,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "SELF_CYCLE_COMPLETE",
+          "scope": "self",
+          "cooldownMs": 0
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_thorns"
   }
 }
