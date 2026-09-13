@@ -159,6 +159,6 @@ economic simulator the re-training sink moved from gold to a Token's drop rate.
 | Phase | State | Notes |
 |---|---|---|
 | P1 Vocabulary | ✅ **DONE** 2026-09-12 | Keyword `promotes` (`tokensOnly`), `jobId` slot over every job with a parent, "Promotes the hero to Knight.", Token type `promotion`, hidden from the Item editor with a warning if attached anyway. `PromotesRule` (18) tests. Golden: 5 new cases; no existing sentence changed. |
-| P2 Academies become rules | ✅ **DONE** 2026-09-12 | Wizard Academy → *Wizard Training*, Fighter's Academy → *Fighter Training*, by `scripts/migrate-promotion-rules.mjs` (data) and the CMS store's load paths (workspace), one shared function. Deterministic, idempotent, second run writes nothing. `PromotionFieldMigration` (20) tests. Golden: 6 new shipped lines. ⚠️ Owner must reload the CMS before syncing. |
+| P2 Academies become rules | ✅ **DONE** 2026-09-12 | Wizard Academy → *Wizard Training*, Fighter's Academy → *Fighter Training*, by `scripts/migrate-promotion-rules.mjs` (data) and the CMS store's load paths (workspace), one shared function. Deterministic, idempotent, second run writes nothing. `PromotionFieldMigration` (21) tests, including the game's own Token registry loading both Academies as `promotion` Tokens; six deliberately wrong versions each caught. The game boots on the migrated data with no console errors. Golden: 6 new shipped lines. ⚠️ Owner must reload the CMS before syncing. |
 | P3 Engine | **NOT STARTED** | |
 | P4 Ceremony | **NOT STARTED** | |

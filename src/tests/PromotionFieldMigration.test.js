@@ -8,6 +8,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 /**
  * ⭐ **The Academies become rules** (Promotes rule P2).
@@ -189,6 +190,22 @@ describe('the shipped data', () => {
         const effects = data('effects.json');
         expect(promotedJobOf(expandBearer(tokens.token_wizard_academy, effects))).toBe('wizard');
         expect(promotedJobOf(expandBearer(tokens.token_fighter_s_academy, effects))).toBe('fighter');
+    });
+
+    it('⭐ reaches the game: its own Token registry loads both Academies as promotion Tokens', () => {
+        // The path the board uses — the loader expands library references into
+        // statements once, at load. No window.Game handle exposes a Token def,
+        // so this is where "the game sees the rule" is proved.
+        for (const [id, jobId, sentence] of [
+            ['token_wizard_academy', 'wizard', 'Promotes the hero to Wizard.'],
+            ['token_fighter_s_academy', 'fighter', 'Promotes the hero to Fighter.'],
+        ]) {
+            const def = getTokenType(id);
+            expect(promotedJobOf(def), id).toBe(jobId);
+            expect(deriveTokenType(def).type, id).toBe('promotion');
+            expect(statementsOf(def).map((st) => renderStatement(st)), id).toEqual([sentence]);
+            expect('promotion' in def, id).toBe(false);
+        }
     });
 
     it('uses the shared function in the data script, never a copy of it', () => {
