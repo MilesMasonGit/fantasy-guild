@@ -5,6 +5,41 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Heroes now hold flags and pick their own work** (Free Playmat slice 1.4b). Dropping a
+  hero on the board plants their flag there. The flag works one skill and looks within a
+  radius (400 by default, adjustable as "Flag radius" in the developer Mat Tuner), and the
+  hero works the **nearest Token they can run**. Dropping a hero on a Token still works it
+  when they can: it is the nearest thing to the flag. On a Token whose skill the hero
+  doesn't have, the flag keeps the hero's own skill and they work something else nearby.
+  What changed in play:
+  - **One hero per Token, and nobody gets pushed any more.** A second hero dropped on a
+    worked Token looks for other work instead of shoving the first hero aside.
+  - **A hero sticks with their Token.** Once working, they stay until it stops being
+    workable, you move their flag, or you recall them.
+  - **Moving a Token carries its hero, and its progress is kept** — even if you move it
+    out of the flag's reach. Anything that makes a hero leave a Token (moving on,
+    re-planting, recall) resets that Token's progress, as before.
+  - **Tokens with no skill are no longer worked.** The 17 bushes, fruit trees and other
+    Tokens the content check lists won't be worked until their skill is chosen in the
+    CMS. Enemies, Promotion Tokens and the Guild Hall are exempt; the Hall is worked only
+    when a flag is planted on it.
+  - **Skipped Tokens:** a hero passes over a Token they can't run and tries the next. If a
+    Token is stuck for a reason you can fix (missing materials, too few charges, a missing
+    Token beside it), it keeps its red mark, and you get **one** message when a hero goes
+    elsewhere because of it. A hero already working a Token that runs short stays put
+    until something else nearby can run. "Skill too low" shows no red mark.
+  - **Waiting for restocks:** when a hero's Token runs dry and a Manager nearby will
+    restock it from a copy in the Vault, the hero waits on the spot and carries on with the
+    new Token. With no Manager or no copy, they move on.
+  - **Saves convert automatically:** heroes in an existing save get a flag where they
+    stood. Enemies get a fighting flag; a hero who was on bare ground gets their best
+    work skill at the first tick.
+  - **Fights are unchanged for now:** a fighting flag only fights the enemy it was dropped
+    on, and recall and defeat take the flag down. Flags aren't drawn on the board yet (a
+    later slice); one hero is shown per tile and the dock shows the rest.
+  - Also fixed along the way: dragging a hero from the board onto the dock now recalls
+    them (that drop was silently doing nothing).
+
 - **"Applies" now has one way to aim at the enemy** (Effects Grammar V10b). The old
   "on an item, lands on the enemy" setting is gone; "aims at: the enemy" (from V10a) is
   the only way. Anything still saved the old way is converted automatically when the
