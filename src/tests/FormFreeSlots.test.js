@@ -26,7 +26,7 @@ import { renderSegments, renderStatement } from '../systems/effects/statementTex
  * | Acts as   | capability, tool tier                    |
  * | Restocks  | the Tokens                               |
  * | Cannot    | kind, limit                              |
- * | Applies   | status/effect, stacks, chance, target    |
+ * | Applies   | status/effect, stacks, chance            |
  * | Deals     | damage, ignores armour                   |
  */
 
@@ -50,7 +50,8 @@ describe('⭐ nothing the forms edited is left without a slot', () => {
         [KEYWORD.ACTS_AS]: ['tag', 'tier'],
         [KEYWORD.RESTOCKS]: ['tokenIds'],
         [KEYWORD.CANNOT]: ['kind', 'max'],
-        [KEYWORD.APPLIES]: ['chance', 'target'],
+        // V10b: `target` retired with the enemy flag — the "aims at" role slot replaces it.
+        [KEYWORD.APPLIES]: ['chance'],
         [KEYWORD.DEALS]: ['amount', 'ignoresArmor']
     };
     for (const [keyword, fields] of Object.entries(inventory)) {
@@ -180,12 +181,13 @@ describe('Cannot', () => {
 });
 
 describe('Applies — library effects only (owner ruling 2026-09-12)', () => {
-    it('offers an effect, a chance and a target — and never a status', () => {
+    it('offers an effect and a chance — and never a status, nor the retired target', () => {
         const effect = { ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '', durationMs: 0 } };
         const status = { ...makeStatement(KEYWORD.APPLIES), payload: { statusId: 'poison', stacks: 2 } };
         for (const st of [effect, status]) {
             const ids = slotsOf(st, ctx).map(s => s.id);
-            expect(ids).toEqual(expect.arrayContaining(['effectId', 'chance', 'target']));
+            expect(ids).toEqual(expect.arrayContaining(['effectId', 'chance']));
+            expect(ids).not.toContain('target');
             expect(ids).not.toContain('statusId');
             expect(ids).not.toContain('stacks');
         }
@@ -204,10 +206,13 @@ describe('Applies — library effects only (owner ruling 2026-09-12)', () => {
         expect(switched.payload.chance).toBe(50);
     });
 
-    it('makes the odds and the item target clickable where the sentence says them', () => {
-        const st = { ...makeStatement(KEYWORD.APPLIES), payload: { statusId: 'poison', stacks: 1, chance: 25, target: 'enemy' } };
+    it('makes the odds clickable, and the enemy is the role word — not a target slot (V10b)', () => {
+        const st = { ...makeStatement(KEYWORD.APPLIES), payload: { statusId: 'poison', stacks: 1, chance: 25 } };
         expect(wordFor(st, 'chance')).toEqual(['25%']);
-        expect(wordFor(st, 'target')).toEqual(['the enemy its hero is fighting']);
-        expect(after(st, 'target', 'hero').payload.target).toBe('hero');
+        expect(wordFor(st, 'target')).toEqual([]);
+
+        const aimed = { ...st, when: { event: 'COMBAT_ENGAGED', scope: 'self' }, target: { role: 'opponent' } };
+        expect(wordFor(aimed, 'role')).toEqual(['the enemy']);
+        expect(slotsOf(aimed, ctx).map(s => s.id)).not.toContain('target');
     });
 });

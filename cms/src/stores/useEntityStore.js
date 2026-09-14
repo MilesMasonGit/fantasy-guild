@@ -18,7 +18,7 @@ import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
-    migrateBearers, migratePromotionFields, expandBearer, expandAll, effectRefsOf, provisionalName,
+    migrateBearers, migratePromotionFields, migrateAppliesTargetsIn, expandBearer, expandAll, effectRefsOf, provisionalName,
     normaliseScale,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
@@ -686,6 +686,27 @@ function seedPromotionRules(state = {}) {
     return { ...state, tokens: next, effects };
 }
 
+/**
+ * The retired `target: 'enemy'` flag on `Applies` → the enemy role (Effects
+ * Grammar V10b).
+ *
+ * ⚠️ Runs on the same three load paths as the two above (`merge`, `migrate`,
+ * `hydrate`) and calls the same pure function the game's registries call on
+ * load. The game converting alone is not enough: "Sync to Game" writes this
+ * workspace wholesale, so a workspace still holding the flag would write it
+ * straight back into `data/`. Idempotent; a no-op without the flag.
+ */
+function seedAppliesTargets(state = {}) {
+    if (!state) return state;
+    const effects = migrateAppliesTargetsIn(state.effects || {});
+    const tokens = migrateAppliesTargetsIn(state.tokens || {});
+    const items = migrateAppliesTargetsIn(state.items || {});
+    if (effects === (state.effects || {}) && tokens === (state.tokens || {}) && items === (state.items || {})) {
+        return state;
+    }
+    return { ...state, effects, tokens, items };
+}
+
 const FACTORIES = {
     items: { make: makeItem, prefix: 'item', type: 'item' },
     tokens: { make: makeToken, prefix: 'token', type: 'token' },
@@ -1040,14 +1061,14 @@ export const useEntityStore = create(
              * and neither is redundant.
              */
             hydrate: (data = {}) => {
-                const seeded = seedPromotionRules(seedEffectLibrary(seedSimIntent({
+                const seeded = seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSimIntent({
                     items: data.items || {},
                     tokens: data.tokens || {},
                     effects: data.effects || {},
                     recipePools: data.recipePools || {},
-                })));
+                }))));
                 set({
-                    items: data.items || {},
+                    items: seeded.items,
                     tokens: seeded.tokens,
                     maps: data.maps || {},
                     effects: seeded.effects,
@@ -1347,14 +1368,14 @@ export const useEntityStore = create(
              */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedPromotionRules(seedEffectLibrary(seedSimIntent(persistedState))),
+                ...seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSimIntent(persistedState)))),
             }),
             /**
              * Reached only by a numbered version that is not 1 — there is none
              * yet. Seeds anyway: the normaliser is idempotent, and a future
              * migration should never be the reason intent went missing.
              */
-            migrate: (persistedState) => seedPromotionRules(seedEffectLibrary(seedSimIntent(persistedState))),
+            migrate: (persistedState) => seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSimIntent(persistedState)))),
             /**
              * What survives a reload.
              *

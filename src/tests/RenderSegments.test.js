@@ -91,7 +91,9 @@ describe('⚠️ every clickable word opens a slot that exists', () => {
             'typeId', 'placement', 'effectId', 'durationMs',
             'kind', 'tag', 'payload',
             // P4: every decision the retired forms held now has a word.
-            'quantity', 'itemId', 'chance', 'skill', 'tier', 'tokenIds', 'max', 'target',
+            // `target` is gone: it was the retired enemy flag's word (V10b); the
+            // enemy is now the `role` word.
+            'quantity', 'itemId', 'chance', 'skill', 'tier', 'tokenIds', 'max',
             // Promotes rule P1.
             'jobId'
         ]) {

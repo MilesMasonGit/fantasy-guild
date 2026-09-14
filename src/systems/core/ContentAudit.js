@@ -4,7 +4,7 @@ import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/reg
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
 import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
-import { getReach } from '../../config/registries/reachRegistry.js';
+import { getReach, DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
 import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/filterRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
@@ -265,6 +265,10 @@ function auditEffects(out) {
             continue;
         }
 
+        // Items carry their rules here, not inline, so the target-shape
+        // tripwires have to read the library too (V10b).
+        auditAppliesTargetShape(out, where, entry);
+
         if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0) {
             out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
                 'building what it is for — but nothing references it today.'));
@@ -307,8 +311,48 @@ function auditRetiredEffectShape(out, where, def) {
         `Open it in the CMS and rebuild its rules in the Rules section. ${summary}`));
 }
 
+/**
+ * ⚠️ **Two tripwires on how a rule names who it reaches** (Effects Grammar V10b).
+ *
+ * 1. **A leftover `payload.target`.** The retired `target: 'enemy'` flag is
+ *    converted to the enemy role on load, by the game and the CMS alike, and
+ *    the runtime no longer reads it. So one still present means a load path
+ *    that skipped the conversion, or a value the flag never had — either way it
+ *    is stored and read by nothing, which is exactly what this file names.
+ * 2. **An `Applies` with a role AND a filter or reach.** A role replaces the
+ *    filter and the reach (G-42), so an authored Coast filter or a board-wide
+ *    reach beside it is silently ignored. The blank defaults every new
+ *    statement is born with (`mode: 'all'`, adjacent) say nothing and are not
+ *    reported.
+ */
+function auditAppliesTargetShape(out, where, def) {
+    for (const statement of statementsOf(def)) {
+        const payload = statement?.payload;
+        if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'target')) {
+            out.push(finding(where,
+                `one of its rules still carries the retired "target: ${String(payload.target)}" setting, ` +
+                `which nothing reads any more — so it does not decide who the rule reaches. To aim at the ` +
+                `creature a hero is fighting, set "aims at" to the enemy in the CMS.`));
+        }
+
+        if (statement?.keyword !== KEYWORD.APPLIES || !statement?.target?.role) continue;
+        const to = statement.to;
+        const filtered = (to?.mode && to.mode !== 'all') || filtersOf(to).length > 0;
+        const reached = !!statement.reach && statement.reach !== DEFAULT_REACH;
+        if (filtered || reached) {
+            const role = getRole(statement.target.role)?.label || statement.target.role;
+            const what = [filtered && 'a target filter', reached && 'a reach'].filter(Boolean).join(' and ');
+            out.push(finding(where,
+                `one of its "Applies" rules aims at ${role} and also carries ${what} — the role replaces ` +
+                `both, so the ${filtered && reached ? 'filter and reach are' : filtered ? 'filter is' : 'reach is'} ` +
+                `stored and read by nothing. Clear ${filtered && reached ? 'them' : 'it'}, or clear the role.`));
+        }
+    }
+}
+
 /** Every reference a statement can make, followed. */
 function auditStatements(out, where, def) {
+    auditAppliesTargetShape(out, where, def);
     for (const statement of statementsOf(def)) {
         const payload = statement?.payload || {};
 

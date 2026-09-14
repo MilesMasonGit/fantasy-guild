@@ -76,58 +76,47 @@ import { ROLE } from '../../config/registries/roleRegistry.js';
  *
  * @returns {{apply: () => void}|null}
  */
-function occupantOf(tile, prefer = 'occupant') {
+function occupantOf(tile) {
     /**
-     * ⚠️ `prefer` exists for **item-borne** rules (UE-24), and only there.
-     *
      * A Token's `Applies` names Tokens and resolves to whoever is on them —
      * hero if somebody is standing there, otherwise the live enemy — and the
      * hero wins, because a hero standing on an enemy tile is the person the
-     * filter meant. An item carried by that same hero needs the opposite
-     * reading available: *"Applies Poison to the enemy I am fighting"* is a rule
-     * about the creature, said by something the hero is holding.
+     * filter meant.
      *
-     * So an item's rule says which, and everything else keeps the old answer.
+     * ⚠️ **There is no "prefer the enemy" reading any more** (V10b). A rule that
+     * means the creature a hero is fighting says so with the enemy role and is
+     * resolved by `applyToRole`, by hero, never by tile (G-43). The old
+     * `payload.target` flag is converted on load and ignored here if one slips
+     * through — `ContentAudit` names it.
      */
-    const enemyTarget = () => {
-        const instance = BoardState.getToken(tile);
-        if (!instance || !BoardCombat.isEnemyToken(instance)) return null;
-        const fight = BoardCombat.getFight(tile);
-        // Only a fight in progress: an enemy nobody has engaged has no status
-        // list to put anything on, and inventing one here would make a status
-        // that survives being ignored.
-        if (!fight) return null;
-        return { apply: (statusId, stacks) => StatusEffectSystem.applyToEnemy(fight, statusId, stacks) };
-    };
-
-    if (prefer === 'enemy') return enemyTarget();
-
     const heroId = BoardState.workerOf(tile);
     if (heroId) {
         return { apply: (statusId, stacks) => StatusEffectSystem.applyToHero(heroId, statusId, stacks) };
     }
 
-    return enemyTarget();
+    const instance = BoardState.getToken(tile);
+    if (!instance || !BoardCombat.isEnemyToken(instance)) return null;
+    const fight = BoardCombat.getFight(tile);
+    // Only a fight in progress: an enemy nobody has engaged has no status
+    // list to put anything on, and inventing one here would make a status
+    // that survives being ignored.
+    if (!fight) return null;
+    return { apply: (statusId, stacks) => StatusEffectSystem.applyToEnemy(fight, statusId, stacks) };
 }
 
 /**
  * Who is on a tile, as something a **library effect** can be carried by.
  *
- * The mirror of `occupantOf`, deliberately written beside it and with the same
- * `prefer` reading, so an item saying *"the enemy I am fighting"* means the same
- * creature whichever half of `Applies` it uses.
+ * The mirror of `occupantOf`, deliberately written beside it with the same
+ * hero-first reading, so both halves of `Applies` resolve a tile identically.
  */
-function liveBearerOf(tile, prefer = 'occupant') {
-    const enemyBearer = () => BoardCombat.enemyBearerAt(tile);
-
-    if (prefer === 'enemy') return enemyBearer();
-
+function liveBearerOf(tile) {
     const heroId = BoardState.workerOf(tile);
     if (heroId) {
         const hero = HeroManager.getHero(heroId);
         return hero ? LiveEffects.heroBearer(hero) : null;
     }
-    return enemyBearer();
+    return BoardCombat.enemyBearerAt(tile);
 }
 
 /** Whether a payload names a status the engine has, with a roll that hit. */
@@ -160,15 +149,13 @@ export function applyAt(tile, payload, random = Math.random) {
      */
     if (payload?.effectId) {
         if (!rollsChance(payload, random)) return false;
-        const bearer = liveBearerOf(tile, payload?.target === 'enemy' ? 'enemy' : 'occupant');
+        const bearer = liveBearerOf(tile);
         if (!bearer) return false;
         return LiveEffects.applyTo(bearer, payload, payload.sourceEffectId || null, fireLive);
     }
 
     if (!rolls(payload, random)) return false;
-    // `payload.target` is only ever set by an item-borne rule (UE-24); a
-    // Token's `Applies` leaves it unset and keeps the hero-first reading.
-    const target = occupantOf(tile, payload?.target === 'enemy' ? 'enemy' : 'occupant');
+    const target = occupantOf(tile);
     if (!target) return false;
     target.apply(payload.statusId, Math.max(1, payload.stacks || 1));
     return true;
@@ -182,8 +169,9 @@ export function applyAt(tile, payload, random = Math.random) {
  * never by tile (G-43). Nothing else resolves here: a role outside the
  * allowlist reaches nobody rather than guessing.
  *
- * ⚠️ The old `target: 'enemy'` flag above is untouched and still works — V10b
- * retires it.
+ * ⭐ Since V10b this is the ONLY way an `Applies` reaches the enemy: the old
+ * `target: 'enemy'` flag is converted to this role on load
+ * (`migrateAppliesTarget`).
  *
  * @returns {number} how many received it (0 or 1)
  */
@@ -227,7 +215,7 @@ export function applyToNeighbours(sourceTile, statement, random = Math.random) {
         if (!rollsChance(payload, random)) return 0;
         let landed = 0;
         for (const anchor of filterTargetTiles(sourceTile, statement)) {
-            const bearer = liveBearerOf(anchor, payload?.target === 'enemy' ? 'enemy' : 'occupant');
+            const bearer = liveBearerOf(anchor);
             if (bearer && LiveEffects.applyTo(bearer, payload, statement.sourceEffectId || null, fireLive)) {
                 landed += 1;
             }

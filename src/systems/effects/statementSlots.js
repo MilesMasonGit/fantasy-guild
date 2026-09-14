@@ -139,27 +139,18 @@ const clampChance = (v) => {
 };
 
 /**
- * The `Applies` decisions that lived only in the retired form: how often, and
- * — when an item carries the rule — which side of a fight it lands on.
+ * The `Applies` decision that lived only in the retired form: how often.
  *
- * `target` retires along with the one-off flag when V10 adds `the opponent`.
+ * ⚠️ There is no `target` slot any more (V10b). Who a rule reaches is its
+ * filter, or — on a combat moment — the "aims at" role slot, which is the one
+ * way to name the enemy.
  */
 function appliesExtras(payload) {
-    const note = 'On a Token this is ignored — its filter decides who is reached.';
     return [
         {
             id: 'chance', kind: SLOT_KIND.NUMBER, label: 'chance (%)', min: 1, max: 100, optional: true,
             value: payload.chance ?? 100,
             patch: v => ({ payload: { ...payload, chance: clampChance(v) } })
-        },
-        {
-            id: 'target', kind: SLOT_KIND.VOCABULARY, label: 'on an item, lands on', optional: true,
-            value: payload.target || 'hero',
-            options: [
-                option('hero', 'the hero carrying it', note),
-                option('enemy', 'the enemy that hero is fighting', note)
-            ],
-            patch: v => ({ payload: { ...payload, target: v } })
         }
     ];
 }

@@ -190,13 +190,15 @@ export function buildCorpus() {
     // ---- 7. Applies, in every shape it has ---------------------------------
     for (const statusId of [...Object.keys(getAllStatusEffects() || {}), 'not_a_status']) {
         for (const stacks of [1, 3]) {
-            for (const target of [undefined, 'enemy', 'hero']) {
-                for (const chance of [100, 25]) {
-                    const st = S(KEYWORD.APPLIES, { payload: { statusId, stacks, target, chance } });
-                    addS(`applies:status:${statusId}:${stacks}:${target}:${chance}`, st);
-                    addS(`applies:status:${statusId}:${stacks}:${target}:${chance}:triggered`,
-                        { ...st, when: { event: 'CYCLE_COMPLETE', scope: 'adjacent' } });
-                }
+            // V10b: the retired `target: 'enemy' | 'hero'` flag has no sentence of
+            // its own any more (the enemy is the role, covered in section 6), so
+            // its cases are gone. The `undefined` stays in the key so every
+            // surviving case keeps the name its golden line was captured under.
+            for (const chance of [100, 25]) {
+                const st = S(KEYWORD.APPLIES, { payload: { statusId, stacks, chance } });
+                addS(`applies:status:${statusId}:${stacks}:undefined:${chance}`, st);
+                addS(`applies:status:${statusId}:${stacks}:undefined:${chance}:triggered`,
+                    { ...st, when: { event: 'CYCLE_COMPLETE', scope: 'adjacent' } });
             }
         }
     }

@@ -294,12 +294,16 @@ describe('`Applies` reaches an enemy the same way a status does', () => {
         engage();
         authored('effect_applied_dot', overTime(2));
 
-        // Aimed at the creature explicitly, the way an item-borne rule does.
-        const landed = StatusApplication.applyAt(MONSTER, {
-            effectId: 'effect_applied_dot', target: 'enemy', durationMs: 60000
-        });
+        // Aimed at the creature explicitly, the way an item-borne rule does —
+        // since V10b through the enemy role, the only way to name it.
+        const landed = StatusApplication.applyToRole({
+            ...makeStatement(KEYWORD.APPLIES),
+            when: { event: 'COMBAT_ENGAGED', scope: 'self' },
+            target: { role: ROLE.OPPONENT },
+            payload: { effectId: 'effect_applied_dot', durationMs: 60000 }
+        }, { self: MONSTER, selfHeroId: 'hero_1', actor: 'hero_1', source: null });
 
-        expect(landed).toBe(true);
+        expect(landed).toBe(1);
         expect(BoardCombat.getFight(MONSTER).effects).toHaveLength(1);
     });
 
