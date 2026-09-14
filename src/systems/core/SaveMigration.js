@@ -1,6 +1,9 @@
 import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 import { logger } from '../../utils/Logger.js';
 import * as StationRecipe from '../board/StationRecipe.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isTileIndex, tileCentre, footprintCentre, tileFootprint } from '../../config/boardGeometry.js';
 
 /**
  * Thrown when a save was created under an incompatible schema version.
@@ -89,7 +92,86 @@ export function migrateState(state, savedVersion) {
      */
     StationRecipe.backfillBoardSelections(migrated);
 
+    convertHeroTilesToFlags(migrated);
+
     return migrated;
+}
+
+/**
+ * Turn a pre-flags save's `board.heroTiles` (hero → tile) into flags (Free
+ * Playmat slice 1.4b).
+ *
+ * **No schema bump** (FP-59), for the same reason as the recipe backfill above:
+ * this is a conversion, not a break, and bumping `GAME_VERSION` would refuse
+ * every existing save outright.
+ *
+ * Each hero gets a flag at the centre of whatever they stood on (a 2×2 Token's
+ * footprint centre), or the tile's own centre on bare ground, planted in the
+ * order the save listed them. Its skill:
+ * * an enemy → the combat flag;
+ * * a worked Token whose skill the hero holds → that skill, so they carry on
+ *   working the Token they were on (the same rule a drop uses, FPP-3);
+ * * anything else — bare ground, a Promotion Token, a skill the hero lacks →
+ *   no skill, filled at the first tick with their best (FPP-7).
+ *
+ * Every Token on the board also gets an instance `id` if it lacks one, because
+ * claims are keyed by it.
+ */
+export function convertHeroTilesToFlags(state) {
+    const board = state?.board;
+    if (!board || typeof board !== 'object') return;
+
+    const tiles = board.tiles && typeof board.tiles === 'object' ? board.tiles : {};
+    for (const key of Object.keys(tiles)) {
+        const instance = tiles[key];
+        if (instance && typeof instance === 'object' && !instance.id) {
+            instance.id = `tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}_${key}`;
+        }
+    }
+
+    const heroTiles = board.heroTiles;
+    delete board.heroTiles;
+    if (!heroTiles || typeof heroTiles !== 'object') return;
+
+    if (!board.flags || typeof board.flags !== 'object') board.flags = {};
+    let order = typeof board.nextFlagOrder === 'number' ? board.nextFlagOrder : 0;
+    const heroes = Array.isArray(state.heroes) ? state.heroes : [];
+
+    for (const [heroId, rawTile] of Object.entries(heroTiles)) {
+        const tile = Number(rawTile);
+        if (!isTileIndex(tile) || board.flags[heroId]) continue;
+
+        const occupant = occupantOf(tiles, tile);
+        const def = occupant ? getTokenType(occupant.instance.typeId) : null;
+        const point = occupant
+            ? footprintCentre(occupant.anchor, def?.size || 1)
+            : tileCentre(tile);
+
+        let skill = null;
+        if (def && isEnemyDef(def)) {
+            skill = 'combat';
+        } else if (def?.config && def.requiresHero !== false) {
+            const wanted = typeof def.config.skill === 'string' ? def.config.skill.trim() : '';
+            const hero = heroes.find(h => h?.id === heroId);
+            if (wanted && hero?.skills?.[wanted]) skill = wanted;
+        }
+
+        board.flags[heroId] = { x: point.x, y: point.y, skill, plantedAt: order++ };
+    }
+    board.nextFlagOrder = order;
+}
+
+/** The Token covering `tile` in a raw saved tile map, as `{ anchor, instance }`. */
+function occupantOf(tiles, tile) {
+    if (tiles[tile]?.typeId) return { anchor: tile, instance: tiles[tile] };
+    for (const key of Object.keys(tiles)) {
+        const instance = tiles[key];
+        if (!instance?.typeId) continue;
+        const anchor = Number(key);
+        const size = getTokenType(instance.typeId)?.size || 1;
+        if (size > 1 && tileFootprint(anchor, size).includes(tile)) return { anchor, instance };
+    }
+    return null;
 }
 
 /** An object we can merge field-by-field — not an array, not null. */

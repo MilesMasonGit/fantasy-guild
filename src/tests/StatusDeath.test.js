@@ -98,8 +98,9 @@ describe('A hero poisoned to 0 HP dies properly (CR2-070)', () => {
         StatusEffectSystem.applyToHero('hero_1', 'burning', 3);
         statusTick();
 
-        expect(BoardState.tileOfHero('hero_1')).toBeNull();
-        expect(BoardState.heroOnTile(10)).toBeNull();
+        // Their flag comes down with them (Free Playmat 1.4b).
+        expect(BoardState.flagOf('hero_1')).toBeNull();
+        expect(BoardState.workerOf(10)).toBeNull();
         expect(BoardState.getToken(10)?.typeId).toBe('fixture_producer');
     });
 
@@ -136,14 +137,14 @@ describe('A hero poisoned to 0 HP dies properly (CR2-070)', () => {
 
         expect(hero.hp.current).toBe(88);
         expect(hero.status).not.toBe('wounded');
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        expect(BoardState.workTileOf('hero_1')).toBe(10);
         expect(applyDefeatPenalties).not.toHaveBeenCalled();
     });
 
     it('works for a hero downed in the Dock, with no tile to leave', () => {
         // A DoT outlives the tile it was applied on: recall the hero and the
         // poison keeps ticking. `resolveDefeat` has to tolerate a null tile.
-        BoardState.setHeroTile('hero_1', null);
+        Placement.recallHeroById('hero_1');
 
         StatusEffectSystem.applyToHero('hero_1', 'burning', 3);
         statusTick();

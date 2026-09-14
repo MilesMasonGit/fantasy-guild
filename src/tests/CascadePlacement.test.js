@@ -20,7 +20,7 @@ describe('Cascade Placement & 2x2 Snapping', () => {
         GameState.state = {
             board: {
                 tiles: {},
-                heroTiles: {},
+                flags: {},
                 vacancies: {},
                 tray: [],
                 tokenBank: {},
@@ -154,11 +154,21 @@ describe('Cascade Placement & 2x2 Snapping', () => {
         });
 
         it('preserves assigned heroes on pushed tokens', () => {
-            const smallToken = makeToken('fixture_small_1');
+            // Free Playmat 1.4b: the hero's claim follows the pushed instance.
+            // A hero only works a Token with a work cycle and a skill they hold
+            // (FP-47, FP-48), so this Token has both and the hero holds it.
+            registerTokenTypes({
+                fixture_small_worked: {
+                    id: 'fixture_small_worked', name: 'Small Worked', size: 1, uses: 10, requiresHero: true,
+                    config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [] }
+                }
+            });
+            GameState.state.heroes[0].skills = { mining: { level: 5, xp: 0 } };
+            const smallToken = makeToken('fixture_small_worked');
             Placement.placeToken(7, smallToken);
-            BoardState.setHeroTile('hero_1', 7);
+            Placement.placeHero('hero_1', 7);
 
-            expect(BoardState.heroOnTile(7)).toBe('hero_1');
+            expect(BoardState.workerOf(7)).toBe('hero_1');
 
             // Place 2x2 token at anchor 0
             const bigMill = makeToken('fixture_big_mill');
@@ -167,8 +177,9 @@ describe('Cascade Placement & 2x2 Snapping', () => {
             expect(result.success).toBe(true);
             expect(BoardState.getToken(13)).toBe(smallToken);
             // Hero 1 should have moved with her token to tile 13
-            expect(BoardState.heroOnTile(13)).toBe('hero_1');
-            expect(BoardState.heroOnTile(7)).toBeNull();
+            expect(BoardState.workerOf(13)).toBe('hero_1');
+            // Tile 7 is now under the big mill, which nobody works.
+            expect(BoardState.workerOf(7)).toBeNull();
         });
 
         it('pushes multiple tokens in different quadrants simultaneously', () => {

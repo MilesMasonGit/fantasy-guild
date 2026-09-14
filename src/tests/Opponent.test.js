@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Flags from '../systems/board/Flags.js';
+import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -158,9 +160,9 @@ describe('2. ⭐ found by HERO, never by tile (G-43)', () => {
         place(BUSH, 'fixture_producer');
         carry(dealsToEnemy(5));
 
-        // The seam's writer, with no tick: the fight still names hero_1, but
-        // every tile lookup now says hero_1 is working the bush.
-        BoardState.setHeroTile('hero_1', BUSH);
+        // Re-plant the flag on the bush, with no tick: the fight still names
+        // hero_1, but every tile lookup now says hero_1 is working the bush.
+        Flags.plant('hero_1', positionOf(BUSH), { skill: 'logging' });
         expect(BoardState.workerOf(BUSH)).toBe('hero_1');
 
         const enemyBefore = fight.combat.enemyHp.current;

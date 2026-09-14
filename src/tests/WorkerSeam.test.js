@@ -5,8 +5,10 @@ import { fileURLToPath } from 'node:url';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as Flags from '../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { tileCentre } from '../config/boardGeometry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -17,31 +19,31 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * The worker seam (Free Playmat slice 1.4a).
+ * The worker seam (Free Playmat slices 1.4a, 1.4b).
  *
  * `workerOf`, `workTileOf` and `displayTileOf` are the only way anything
- * outside `BoardState` learns where a hero is. Slice 1.4b swaps what is behind
- * them (flags and claims instead of `heroTiles`); these tests pin what they
- * answer TODAY, so that swap is a visible, reviewed change rather than a drift.
+ * outside `BoardState` learns where a hero is. Slice 1.4a pinned what they
+ * answered from `heroTiles`; slice 1.4b swapped flags and claims in behind them,
+ * and these tests now pin the flag answers (roadmap §2).
  */
 
-describe('the worker seam answers exactly what heroTiles did', () => {
+describe('the worker seam answers from flags and claims', () => {
     beforeEach(() => {
         GameState.state = {
-            board: { tiles: {}, heroTiles: {}, vacancies: {}, tray: [], tokenBank: {}, maps: [] },
+            board: { tiles: {}, flags: {}, nextFlagOrder: 0, vacancies: {}, tray: [], tokenBank: {}, maps: [] },
             heroes: [
-                { id: 'hero_1', name: 'Althea', skills: {}, level: 1 },
-                { id: 'hero_2', name: 'Brom', skills: {}, level: 1 }
+                { id: 'hero_1', name: 'Althea', skills: { logging: { level: 5, xp: 0 } }, level: 1 },
+                { id: 'hero_2', name: 'Brom', skills: { logging: { level: 5, xp: 0 } }, level: 1 }
             ]
         };
         registerTokenTypes({
             fixture_seam_small: {
                 id: 'fixture_seam_small', name: 'Small', size: 1, uses: 10, requiresHero: true,
-                config: { cycleTimeMs: 5000, inputs: [], outputs: [] }
+                config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [] }
             },
             fixture_seam_large: {
                 id: 'fixture_seam_large', name: 'Large', size: 2, uses: 50, requiresHero: true,
-                config: { cycleTimeMs: 10000, inputs: [], outputs: [] }
+                config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 10000, inputs: [], outputs: [] }
             }
         });
     });
@@ -77,25 +79,25 @@ describe('the worker seam answers exactly what heroTiles did', () => {
         expect(BoardState.displayTileOf('hero_1')).toBe(0);
     });
 
-    it('2×2: the worker is found on the anchor, and NOT on the other three tiles', () => {
+    it('⭐ 2×2: the worker is found on EVERY tile of the footprint (1.4b), work tile is the anchor', () => {
         Placement.placeToken(0, BoardState.createTokenInstance('fixture_seam_large', 50));
-        // Dropped on a non-anchor tile — placement stores the anchor.
         Placement.placeHero('hero_1', 7);
 
-        expect(BoardState.workerOf(0)).toBe('hero_1');
-        for (const nonAnchor of [1, 6, 7]) {
-            expect(BoardState.workerOf(nonAnchor)).toBeNull();
+        for (const tile of [0, 1, 6, 7]) {
+            expect(BoardState.workerOf(tile)).toBe('hero_1');
         }
+        expect(BoardState.workerOf(2)).toBeNull();
         expect(BoardState.workTileOf('hero_1')).toBe(0);
         expect(BoardState.displayTileOf('hero_1')).toBe(0);
     });
 
-    it('⚠️ still reports a hero standing on a bare tile (D-57/D-60) — "no worker on empty ground" is 1.4b', () => {
-        BoardState.setHeroTile('hero_2', 14);
+    it('⭐ a bare tile has no worker, even with a flag planted on it (1.4b)', () => {
+        Flags.plant('hero_2', tileCentre(14), { skill: 'logging' });
 
         expect(BoardState.getToken(14)).toBeNull();
-        expect(BoardState.workerOf(14)).toBe('hero_2');
-        expect(BoardState.workTileOf('hero_2')).toBe(14);
+        expect(BoardState.workerOf(14)).toBeNull();
+        expect(BoardState.workTileOf('hero_2')).toBeNull();
+        // Drawn at their flag.
         expect(BoardState.displayTileOf('hero_2')).toBe(14);
     });
 
@@ -134,33 +136,46 @@ function stripComments(text) {
     return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
-describe('⭐ nothing reads hero position except through the seam (Free Playmat 1.4a)', () => {
-    const FORBIDDEN = /heroTiles|heroOnTile\(|tileOfHero\(/;
+describe('⭐ nothing reads hero position except through the seam (Free Playmat 1.4a, 1.4b)', () => {
+    /**
+     * The retired storage. Only the save conversion may name it in code;
+     * `StateSchema.js` may still explain it in a comment.
+     */
+    it('heroTiles appears only in SaveMigration.js (and StateSchema comments)', () => {
+        const offenders = FILES
+            .filter(f => f.path !== 'systems/core/SaveMigration.js')
+            .filter(f => {
+                const text = f.path === 'state/StateSchema.js' ? stripComments(f.text) : f.text;
+                return /heroTiles/.test(text);
+            })
+            .map(f => f.path);
+        expect(offenders).toEqual([]);
+    });
+
+    it('the retired primitives heroOnTile / tileOfHero / setHeroTile are gone everywhere', () => {
+        const offenders = FILES
+            .filter(f => /heroOnTile\(|tileOfHero\(|setHeroTile\(/.test(stripComments(f.text)))
+            .map(f => f.path);
+        expect(offenders).toEqual([]);
+    });
 
     /**
-     * `BoardState.js` owns the storage and the seam. `StateSchema.js` declares
-     * the empty board, so it may hold the one `heroTiles: {}` field (and talk
-     * about it in comments) — but nothing that reads it.
-     *
-     * Tests are excluded: they set boards up by hand and assert on the old
-     * primitives, and slice 1.4b rewrites them with the storage.
+     * `board.flags` is storage: `BoardState` owns it, `StateSchema` declares it
+     * and `SaveMigration` writes it while converting. Everything else asks
+     * `BoardState` or `Flags`.
      */
-    it('no file outside BoardState.js mentions heroTiles, heroOnTile( or tileOfHero(', () => {
+    it('board.flags is read only in BoardState.js (declared in StateSchema, written by SaveMigration)', () => {
+        const allowed = new Set(['systems/board/BoardState.js', 'state/StateSchema.js', 'systems/core/SaveMigration.js']);
         const offenders = FILES
-            .filter(f => f.path !== 'systems/board/BoardState.js')
-            .filter(f => {
-                if (f.path === 'state/StateSchema.js') {
-                    return FORBIDDEN.test(stripComments(f.text).replace(/\bheroTiles:\s*\{\s*\}/g, ''));
-                }
-                return FORBIDDEN.test(f.text);
-            })
+            .filter(f => !allowed.has(f.path))
+            .filter(f => /\bboard\??\.flags\b|\.board\??\.flags\b/.test(stripComments(f.text)))
             .map(f => f.path);
         expect(offenders).toEqual([]);
     });
 
     it('the scan actually sees the engine and UI files it guards', () => {
         const paths = FILES.map(f => f.path);
-        for (const p of ['systems/board/Placement.js', 'ui/components/board/Board.jsx', 'ui/components/dock/HeroDockTab.jsx']) {
+        for (const p of ['systems/board/Placement.js', 'systems/board/Flags.js', 'ui/components/board/Board.jsx', 'ui/components/dock/HeroDockTab.jsx', 'systems/core/SaveMigration.js']) {
             expect(paths).toContain(p);
         }
     });

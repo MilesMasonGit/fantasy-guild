@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Placement from '../systems/board/Placement.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as PromotionSystem from '../systems/hero/PromotionSystem.js';
@@ -55,11 +56,11 @@ function makeUnqualified(id = 'hero_low') {
     return hero;
 }
 
-/** Place a fixture Token and stand a hero on it. */
+/** Place a fixture Token and plant a hero's flag on it (Free Playmat 1.4b). */
 function setup(hero, { uses = 1, typeId = 'fixture_promotion' } = {}) {
     GameState.state.heroes = [hero];
     BoardState.setToken(TILE, { typeId, usesRemaining: uses, cycleElapsedMs: 0 });
-    BoardState.setHeroTile(hero.id, TILE);
+    Placement.placeHero(hero.id, TILE);
     return BoardState.getToken(TILE);
 }
 
@@ -316,7 +317,9 @@ describe('Accepting is the only thing that costs anything', () => {
 
         BoardPromotion.accept(TILE);
 
-        expect(BoardState.tileOfHero(hero.id)).toBe(TILE);
+        // Their flag stays planted on the spot (Free Playmat 1.4b).
+        expect(BoardState.flagOf(hero.id)).not.toBeNull();
+        expect(BoardState.displayTileOf(hero.id)).toBe(TILE);
     });
 
     /** ⚠️ A stale offer must not become a free promotion. */
@@ -363,7 +366,7 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
 
         BoardPromotion.decline(TILE);
 
-        expect(BoardState.tileOfHero(hero.id)).toBe(TILE);
+        expect(BoardState.workTileOf(hero.id)).toBe(TILE);
     });
 
     /** ⚠️ The cycle does not restart: re-asking a player who said no is nagging. */

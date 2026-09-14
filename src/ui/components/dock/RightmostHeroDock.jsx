@@ -92,7 +92,11 @@ export const RightmostHeroDock = ({
         accepts: p => p.kind === DRAG_KIND.HERO && (p.from?.tile != null || !!p.from?.areaId),
         onDrop: p => {
             if (p.from?.tile != null) {
-                engine.Placement?.recallHero(p.from.tile);
+                // By hero, not by tile (Free Playmat 1.4b): a tile can show a
+                // different hero than the one being dragged once flags choose.
+                // ⚠️ The engine exposes Placement as `BoardPlacement`; the old
+                // `engine.Placement` was undefined, so this drop did nothing.
+                engine.BoardPlacement?.recallHeroById(p.heroId);
             } else if (p.from?.areaId) {
                 engine.HeroAssignmentManager?.unassignHero(p.from.areaId);
             }

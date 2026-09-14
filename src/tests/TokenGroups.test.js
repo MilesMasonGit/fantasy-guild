@@ -22,7 +22,7 @@ const rows = (...typeIds) => typeIds.map(typeId => ({ typeId }));
 
 beforeEach(() => {
     GameState.initNew();
-    GameState.state.board = { tiles: {}, tokenBank: {}, tray: [], heroTiles: {}, vacancies: {} };
+    GameState.state.board = { tiles: {}, tokenBank: {}, tray: [], flags: {}, vacancies: {} };
 });
 
 describe('The tab strip is padded to the unlocked count', () => {

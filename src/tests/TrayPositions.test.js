@@ -21,7 +21,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 const fresh = () => {
     GameState.initNew();
-    GameState.state.board = { tiles: {}, tokenBank: {}, tray: [], heroTiles: {}, vacancies: {} };
+    GameState.state.board = { tiles: {}, tokenBank: {}, tray: [], flags: {}, vacancies: {} };
 };
 
 const add = (typeId, uses = 100) =>

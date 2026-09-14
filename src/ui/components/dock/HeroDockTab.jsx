@@ -8,7 +8,7 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { getJob } from '../../../config/registries/jobRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
-import * as BoardState from '../../../systems/board/BoardState.js';
+import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Pencil, Backpack, Heart } from 'lucide-react';
 
@@ -63,12 +63,17 @@ export const HeroDockTab = ({
         { deps: [heroId] }
     );
 
-    // The Token this hero works, through the worker seam (Free Playmat 1.4a).
+    // The Token this hero works, from their flag's status (Free Playmat 1.4b).
+    // Null unless they are working one — idle at a flag or waiting for a
+    // restock both read as not working here until slice 1.5's status line.
     // ⚠️ It listened for `board:hero_placed` / `board:hero_recalled`, which
-    // nothing has ever published; `HERO_MOVED` is what every placement, recall,
-    // displacement and defeat actually announces.
+    // nothing has ever published; `HERO_MOVED` is what every plant, claim
+    // change, recall and defeat actually announces.
     const tile = useGameState(
-        () => BoardState.workTileOf(heroId),
+        () => {
+            const status = Flags.statusOf(heroId);
+            return status.state === 'working' ? status.tile : null;
+        },
         [BOARD_EVENTS.HERO_MOVED, 'state_changed'],
         null,
         { deps: [heroId] }

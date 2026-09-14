@@ -77,7 +77,9 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
 
         const heroRes = Placement.placeHero('hero_test_1', 20);
         expect(heroRes.success).toBe(true);
-        expect(BoardState.heroOnTile(20)).toBe('hero_test_1');
+        // Under flags (1.4b) the hero's flag stands on the Hall. With no Wishing
+        // Well rank the Hall has no work cycle, so there is nothing to claim.
+        expect(BoardState.displayTileOf('hero_test_1')).toBe(20);
     });
 
     describe('Push & Cascade Shoving Protection', () => {

@@ -2,7 +2,10 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { tilesAroundChange } from './nearby.js';
+import { tilesAroundChange, positionOf } from './nearby.js';
+import * as Flags from './Flags.js';
+import * as BoardCombat from './BoardCombat.js';
+import * as BoardPromotion from './BoardPromotion.js';
 import { isPlaceable, GUILD_HALL_TILE, TILE_PX, TILE_STEP_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors } from '../../config/boardGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
@@ -189,7 +192,7 @@ function planCascadeFor2x2(anchorIndex) {
 /**
  * Place a Token instance on a tile (or 2x2 anchor).
  *
- * @returns {{success: boolean, reason?: string, displacedToken?: object, displacedHeroId?: string}}
+ * @returns {{success: boolean, reason?: string, displacedToken?: object}}
  */
 export function placeToken(index, instance) {
     if (!instance?.typeId) return refuse('Not a valid Token');
@@ -222,7 +225,7 @@ export function placeToken(index, instance) {
         const y = rowOf(index) * TILE_PX;
         BoardState.addBoardMap(instance.typeId, x, y, instance.usesRemaining);
         EventBus.publish('state_changed');
-        return { success: true, displacedToken: null, displacedHeroId: null };
+        return { success: true, displacedToken: null };
     }
 
     if (!isFootprintInBounds(index, size)) {
@@ -275,22 +278,19 @@ export function placeToken(index, instance) {
             return refuse(cascadeCheck.reason);
         }
 
-        // Execute Tray displacements
+        // Execute Tray displacements. A hero working a Token sent to the Tray
+        // is not touched here: their claim finds the Token gone on the next
+        // tick and their flag chooses again (Free Playmat 1.4b).
         let primaryDisplacedToken = null;
-        let primaryDisplacedHeroId = null;
-        for (const { anchor, instance: dispInst, heroId } of trayDisplacements) {
+        for (const { anchor, instance: dispInst } of trayDisplacements) {
             forfeitCycle(dispInst);
             BoardState.addToTray(dispInst);
             BoardState.setToken(anchor, null);
-            if (heroId) {
-                BoardState.setHeroTile(heroId, null);
-                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
-                if (!primaryDisplacedHeroId) primaryDisplacedHeroId = heroId;
-            }
             if (!primaryDisplacedToken) primaryDisplacedToken = dispInst;
         }
 
-        // Execute token shifts along cascade paths (end of line to start)
+        // Execute token shifts along cascade paths (end of line to start). A
+        // shifted Token keeps its hero: claims follow the instance (FP-68).
         const dirtyTiles = new Set(footprint);
         for (const { fromTile, toTile, instance: shiftedInst, heroId } of shifts) {
             BoardState.setToken(fromTile, null);
@@ -298,10 +298,7 @@ export function placeToken(index, instance) {
             dirtyTiles.add(fromTile);
             dirtyTiles.add(toTile);
 
-            if (heroId) {
-                BoardState.setHeroTile(heroId, toTile);
-                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: toTile, heroId });
-            }
+            if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: toTile, heroId });
 
             EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
                 fromTile,
@@ -312,21 +309,6 @@ export function placeToken(index, instance) {
             });
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: toTile, typeId: shiftedInst.typeId });
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: fromTile, typeId: null });
-        }
-
-        // Handle standing heroes on bare ground within the 2x2 footprint
-        for (const t of footprint) {
-            const standingHeroId = BoardState.workerOf(t);
-            if (standingHeroId && t !== index) {
-                if (def?.requiresHero !== false) {
-                    BoardState.setHeroTile(standingHeroId, index);
-                    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId: standingHeroId });
-                } else {
-                    BoardState.setHeroTile(standingHeroId, null);
-                    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: standingHeroId });
-                    if (!primaryDisplacedHeroId) primaryDisplacedHeroId = standingHeroId;
-                }
-            }
         }
 
         // Place the 2x2 token at anchor index
@@ -340,13 +322,12 @@ export function placeToken(index, instance) {
         markAdjacencyDirty(Array.from(dirtyTiles));
         EventBus.publish('state_changed');
 
-        return { success: true, displacedToken: primaryDisplacedToken, displacedHeroId: primaryDisplacedHeroId };
+        return { success: true, displacedToken: primaryDisplacedToken };
     }
 
     // 1x1 Standard Placement
     const occ = BoardState.getOccupyingToken(index);
     let displacedToken = null;
-    let displacedHeroId = null;
 
     /**
      * `Cannot` — the owner's ruling, on the same seam the one-Mythic rule uses.
@@ -537,20 +518,15 @@ export function placeToken(index, instance) {
                             BoardState.setToken(nextPushTarget, nextOcc.instance);
                             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: nextPushTarget, typeId: nextOcc.instance.typeId });
                             EventBus.publish(BOARD_EVENTS.TILE_PUSHED, { fromTile: nextIndex, toTile: nextPushTarget, instance: nextOcc.instance, heroId: nextHero });
-                            if (nextHero) {
-                                BoardState.setHeroTile(nextHero, nextPushTarget);
-                                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: nextPushTarget, heroId: nextHero });
-                            }
+                            // The pushed Token keeps its hero (claims follow the instance).
+                            if (nextHero) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: nextPushTarget, heroId: nextHero });
                             markAdjacencyDirty(nextPushTarget);
                         } else {
+                            // Off to the Tray: its hero's flag chooses again next tick.
                             forfeitCycle(nextOcc.instance);
                             nextOcc.instance.isLanding = true;
                             BoardState.addToTray(nextOcc.instance);
                             BoardState.setToken(nextIndex, null);
-                            if (nextHero) {
-                                BoardState.setHeroTile(nextHero, null);
-                                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: nextHero });
-                            }
                             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: nextIndex, typeId: null });
                             markAdjacencyDirty(nextIndex);
                         }
@@ -562,7 +538,8 @@ export function placeToken(index, instance) {
         }
 
         if (pushTarget != null) {
-            // Push covered token into adjacent empty cell
+            // Push covered token into adjacent empty cell. Its hero goes with
+            // it: claims are keyed by the Token instance (Free Playmat 1.4b).
             forfeitCycle(occ.instance);
             BoardState.setToken(occ.anchorIndex, null);
             BoardState.setToken(pushTarget, occ.instance);
@@ -576,10 +553,7 @@ export function placeToken(index, instance) {
             });
             markAdjacencyDirty(pushTarget);
 
-            if (heroOnTile) {
-                BoardState.setHeroTile(heroOnTile, pushTarget);
-                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: pushTarget, heroId: heroOnTile });
-            }
+            if (heroOnTile) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: pushTarget, heroId: heroOnTile });
         } else {
             // No free adjacent cell available — return to Tray with particle fly
             if (!BoardState.hasTraySpace()) {
@@ -609,27 +583,8 @@ export function placeToken(index, instance) {
                 instanceId: displacedToken.id
             });
 
-            if (heroOnTile) {
-                BoardState.setHeroTile(heroOnTile, null);
-                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: heroOnTile });
-                EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
-                    kind: 'hero',
-                    refId: heroOnTile,
-                    heroId: heroOnTile,
-                    quantity: 1,
-                    x,
-                    y,
-                    destination: 'dock'
-                });
-                displacedHeroId = heroOnTile;
-            }
-        }
-    } else {
-        const standingHeroId = BoardState.workerOf(index);
-        if (standingHeroId && def?.requiresHero === false) {
-            BoardState.setHeroTile(standingHeroId, null);
-            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: standingHeroId });
-            displacedHeroId = standingHeroId;
+            // The hero who worked it keeps their flag; their claim finds the
+            // Token gone on the next tick and they choose again (1.4b).
         }
     }
 
@@ -641,11 +596,16 @@ export function placeToken(index, instance) {
     markAdjacencyDirty(index);
     EventBus.publish('state_changed');
 
-    return { success: true, displacedToken, displacedHeroId };
+    return { success: true, displacedToken };
 }
 
 /**
  * Move a Token from one tile to another.
+ *
+ * ⭐ **A moved Token keeps its progress and carries its hero** (FP-68). The
+ * hero's claim is keyed by the Token instance, so it follows on its own — even
+ * outside their flag's radius — and this only has to stop `placeToken`'s
+ * forfeit and say that the hero moved.
  */
 export function moveToken(from, to) {
     if (from === to) return refuse('Already there');
@@ -653,8 +613,8 @@ export function moveToken(from, to) {
     if (!occ) return refuse('No Token there');
     const moving = occ.instance;
     const fromAnchor = occ.anchorIndex;
-
-    const heroLeftBehind = BoardState.workerOf(fromAnchor) || BoardState.workerOf(from);
+    const progress = moving.cycleElapsedMs || 0;
+    const heroId = BoardState.workerOf(fromAnchor);
 
     BoardState.setToken(fromAnchor, null);
 
@@ -665,15 +625,16 @@ export function moveToken(from, to) {
         return result;
     }
 
+    // Still on the board as itself (not absorbed into a matching copy, not
+    // bounced to the Tray): it keeps the cycle it was part-way through.
+    if (BoardState.findTokenById(moving.id)) moving.cycleElapsedMs = progress;
+
     for (const t of occ.footprint) {
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
-        const heroLeft = BoardState.workerOf(t);
-        if (heroLeft) {
-            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: t, heroId: heroLeft });
-        }
     }
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: BoardState.displayTileOf(heroId), heroId });
     markAdjacencyDirty(occ.footprint);
-    return { ...result, heroLeftBehind };
+    return result;
 }
 
 /**
@@ -705,8 +666,9 @@ export function returnTokenToTray(index, position = null) {
         return refuse('No room in the Tray');
     }
 
-    BoardState.setToken(occ.anchorIndex, null);
+    // Asked before the Token leaves: afterwards nobody works that tile.
     const heroId = BoardState.workerOf(occ.anchorIndex);
+    BoardState.setToken(occ.anchorIndex, null);
 
     if (position == null) {
         const col = colOf(occ.anchorIndex);
@@ -775,8 +737,9 @@ export function returnTokenToVault(index) {
         return refuse('No room in the Vault');
     }
 
-    BoardState.setToken(occ.anchorIndex, null);
+    // Asked before the Token leaves: afterwards nobody works that tile.
     const heroId = BoardState.workerOf(occ.anchorIndex);
+    BoardState.setToken(occ.anchorIndex, null);
 
     for (const t of occ.footprint) {
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
@@ -789,11 +752,44 @@ export function returnTokenToVault(index) {
 }
 
 // ---------------------------------------------------------------------------
-// Heroes
+// Heroes — the bridge to flags (Free Playmat slice 1.4b)
 // ---------------------------------------------------------------------------
 
 /**
- * Place a hero on a tile.
+ * The skill a flag dropped on this Token gets.
+ *
+ * * an enemy → the combat flag;
+ * * a worked Token naming a skill **the hero holds** → that skill (FP-27, FPP-3);
+ * * anything else — bare ground, a Promotion Token, a passive or skill-less
+ *   Token, or a skill the hero lacks → the flag keeps the skill it had, or
+ *   (a first plant) the hero's best non-combat skill.
+ */
+function bridgeSkill(heroId, instance) {
+    const previous = BoardState.flagOf(heroId)?.skill ?? null;
+    const keep = () => previous ?? Flags.bestWorkSkill(heroId);
+
+    if (!instance) return keep();
+    if (BoardCombat.isEnemyToken(instance)) return Flags.COMBAT_FLAG;
+    if (BoardPromotion.isPromotionToken(instance)) return keep();
+
+    const def = getTokenType(instance.typeId);
+    const skill = typeof def?.config?.skill === 'string' ? def.config.skill.trim() : '';
+    if (!def?.config || def.requiresHero === false || !skill) return keep();
+    return Flags.heroHolds(heroId, skill) ? skill : keep();
+}
+
+/**
+ * Drop a hero on a tile — **the bridge until slice 1.5 draws flags.**
+ *
+ * It plants the hero's flag at the centre of whatever is there (a 2×2 Token's
+ * footprint centre) or the tile's own centre, with the skill from
+ * `bridgeSkill`, and the flag chooses at once. Dropping on a Token therefore
+ * works it when it can — it is the nearest thing to the flag (FP-49) — and
+ * otherwise the hero works something else in range, or idles at the flag.
+ *
+ * ⚠️ **Nobody is displaced any more.** Two heroes can plant on one tile; only
+ * one works the Token (FP-25). Passive Tokens no longer refuse a drop: the flag
+ * simply finds nothing to work there.
  */
 export function placeHero(heroId, index) {
     if (!heroId) return refuse('No hero');
@@ -802,143 +798,67 @@ export function placeHero(heroId, index) {
     }
 
     const occ = BoardState.getOccupyingToken(index);
-    const targetAnchor = occ ? occ.anchorIndex : index;
-    const target = occ ? occ.instance : null;
+    const point = positionOf(index);
+    const skill = bridgeSkill(heroId, occ?.instance || null);
 
-    if (target) {
-        const targetDef = getTokenType(target.typeId);
-        if (targetDef && targetDef.requiresHero === false) {
-            return refuse('This token operates passively and does not accept a hero');
-        }
-    }
+    const planted = Flags.plant(heroId, point, { skill });
+    if (!planted.success) return planted;
+    if (planted.unchanged) return { success: true, workedTile: BoardState.workTileOf(heroId) };
 
-    const previous = BoardState.workTileOf(heroId);
-    if (previous === targetAnchor) return { success: true, displacedHeroId: null };
-
-    // Vacate wherever they were, forfeiting that cycle.
-    if (previous != null) {
-        const oldOcc = BoardState.getOccupyingToken(previous);
-        if (oldOcc?.instance) {
-            forfeitCycle(oldOcc.instance);
-        }
-    }
-
-    // If another hero was standing here, push them to a nearby cell or return them to Dock
-    const displacedHeroId = BoardState.workerOf(targetAnchor);
-    let heroPushTarget = null;
-
-    if (displacedHeroId) {
-        const pushVectors = getTilePushVectors(targetAnchor);
-        for (const vec of pushVectors) {
-            if (!vec) continue;
-            const nextRow = rowOf(targetAnchor) + vec.dRow;
-            const nextCol = colOf(targetAnchor) + vec.dCol;
-            if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
-            const nextIndex = nextRow * BOARD_SIZE + nextCol;
-            if (BoardState.workerOf(nextIndex)) continue;
-
-            const nextOcc = BoardState.getOccupyingToken(nextIndex);
-            if (nextOcc?.instance) {
-                const nextDef = getTokenType(nextOcc.instance.typeId);
-                if (nextDef?.requiresHero === false) continue;
-            }
-
-            heroPushTarget = nextIndex;
-            break;
-        }
-
-        if (heroPushTarget != null) {
-            // Push old hero to adjacent free cell
-            BoardState.setHeroTile(displacedHeroId, heroPushTarget);
-            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: heroPushTarget, heroId: displacedHeroId });
-            EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
-                fromTile: targetAnchor,
-                toTile: heroPushTarget,
-                heroId: displacedHeroId
-            });
-            const nextOcc = BoardState.getOccupyingToken(heroPushTarget);
-            if (nextOcc?.instance) {
-                EventBus.publish('hero_deployed', { tile: heroPushTarget, heroId: displacedHeroId, typeId: nextOcc.instance.typeId });
-            }
-        } else {
-            // No free adjacent cell available — return hero to Dock with particle fly
-            BoardState.setHeroTile(displacedHeroId, null);
-            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: displacedHeroId });
-            const col = colOf(targetAnchor);
-            const row = rowOf(targetAnchor);
-            const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
-            const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
-            EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
-                kind: 'hero',
-                refId: displacedHeroId,
-                heroId: displacedHeroId,
-                quantity: 1,
-                x,
-                y,
-                destination: 'dock'
-            });
-        }
-    }
-
-    if (target) forfeitCycle(target);
-    BoardState.setHeroTile(heroId, targetAnchor);
-
-    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: targetAnchor, heroId });
-    if (target) {
-        EventBus.publish('hero_deployed', { tile: targetAnchor, heroId, typeId: target.typeId });
+    if (occ) {
+        EventBus.publish('hero_deployed', { tile: occ.anchorIndex, heroId, typeId: occ.instance.typeId });
     }
     EventBus.publish('heroes_updated', { source: 'board_placement' });
     EventBus.publish('state_changed');
 
-    return { success: true, displacedHeroId, heroPushTarget, workedTile: target ? targetAnchor : null };
+    return { success: true, workedTile: BoardState.workTileOf(heroId) };
 }
 
-/** Take the hero off a tile and back to the Dock. Forfeits the cycle (D-131). */
+/**
+ * Recall whoever is on a tile: the hero working its Token, else one waiting
+ * there for a restock, else one whose flag is drawn there. Forfeits the cycle
+ * (D-131, FP-68).
+ */
 export function recallHero(index) {
     const occ = BoardState.getOccupyingToken(index);
-    const targetTile = occ ? occ.anchorIndex : index;
+    const anchor = occ ? occ.anchorIndex : index;
 
-    const heroId = BoardState.workerOf(targetTile) || BoardState.workerOf(index);
+    let heroId = BoardState.workerOf(anchor);
+    if (heroId == null) {
+        const onBoard = BoardState.heroesOnBoard();
+        heroId = onBoard.find(([id]) => BoardState.waitOfHero(id)?.tile === anchor)?.[0]
+            ?? onBoard.find(([, tile]) => tile === anchor || tile === index)?.[0]
+            ?? null;
+    }
     if (!heroId) return refuse('Nobody is standing on that tile');
 
-    const heroActualTile = BoardState.workTileOf(heroId);
-    BoardState.setHeroTile(heroId, null);
+    return recallHeroById(heroId);
+}
 
-    const instance = BoardState.getToken(heroActualTile);
-    if (instance) {
-        forfeitCycle(instance);
+/**
+ * Take a hero's flag down and bring them to the Dock, by id.
+ */
+export function recallHeroById(heroId) {
+    if (!heroId) return refuse('No hero');
+    const tile = BoardState.displayTileOf(heroId);
+    if (!Flags.furl(heroId, 'recall')) return { success: true, heroId };
+
+    if (tile != null) {
+        const col = colOf(tile);
+        const row = rowOf(tile);
+        EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+            kind: 'hero',
+            refId: heroId,
+            heroId,
+            quantity: 1,
+            x: col * TILE_STEP_PX + TILE_STEP_PX / 2,
+            y: row * TILE_STEP_PX + TILE_STEP_PX / 2,
+            destination: 'dock'
+        });
     }
-
-    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
-
-    const tileForCoord = heroActualTile != null ? heroActualTile : targetTile;
-    const col = colOf(tileForCoord);
-    const row = rowOf(tileForCoord);
-    const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
-    const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
-
-    EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
-        kind: 'hero',
-        refId: heroId,
-        heroId,
-        quantity: 1,
-        x,
-        y,
-        destination: 'dock'
-    });
 
     EventBus.publish('heroes_updated', { source: 'board_recall' });
     EventBus.publish('state_changed');
 
     return { success: true, heroId };
 }
-
-/**
- * Take a hero off the board wherever they are, by id.
- */
-export function recallHeroById(heroId) {
-    const index = BoardState.workTileOf(heroId);
-    if (index == null) return { success: true, heroId };
-    return recallHero(index);
-}
-

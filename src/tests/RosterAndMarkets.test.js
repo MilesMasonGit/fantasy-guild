@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MARKET_PREMIUM } from './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Flags from '../systems/board/Flags.js';
+import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -134,13 +136,18 @@ describe('A Market demands Commerce (D-259)', () => {
     it('refuses a hero without Commerce, however good they are otherwise', () => {
         // The whole point of D-259: a Market is not a thing any hero can run.
         GameState.state.heroes = [makeHero('hero_1', FOUNDATION_SKILL_IDS, 99)];
-        const token = place(10, 'fixture_market', 'hero_1');
+        const token = place(10, 'fixture_market');
+        // A Commerce flag, so the Market is a candidate; the flag skips it as
+        // UNSKILLED for hover rather than raising a red mark (Free Playmat 1.4b,
+        // FP-48, FP-60).
+        Flags.plant('hero_1', positionOf(10), { skill: 'commerce' });
         InventoryManager.addItem('item_market_goods', 100);
         const goldBefore = CurrencyManager.getCurrency('gold');
 
         run(20000);
 
-        expect(token.alert).toBe(BoardRunner.ALERT.UNSKILLED);
+        expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
+        expect(token.alert).toBeFalsy();
         expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore);
     });
 

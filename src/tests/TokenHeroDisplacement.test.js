@@ -6,16 +6,30 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
 import { getTilePushVectors } from '../config/boardGeometry.js';
+import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn()
 }));
 
-const token = (typeId, uses = 100) => BoardState.createTokenInstance(typeId, uses);
+function makeHero(id) {
+    const skills = {};
+    for (const s of getAllSkillIds()) skills[s] = { level: 50, xp: 0 };
+    return { id, name: id, status: 'idle', level: 50, skills, hp: { current: 100, max: 100 } };
+}
 
+/**
+ * Token pushing, and what it does to heroes.
+ *
+ * ⚠️ Free Playmat 1.4b deleted HERO displacement: an incoming hero no longer
+ * pushes a standing one, and a Token sent to the Tray no longer flies its hero
+ * to the Dock. What survives is the Token push itself, a pushed Token carrying
+ * its hero (claims follow the instance), and the recall particle.
+ */
 describe('Token & Hero Displacement Logic', () => {
     beforeEach(() => {
         GameState.initNew();
+        GameState.state.heroes = [makeHero('hero_aldric')];
     });
 
     it('calculates outward quadrant push vectors correctly for board tiles', () => {
@@ -127,97 +141,35 @@ describe('Token & Hero Displacement Logic', () => {
     });
 
     it('moves paired hero together with pushed token to maintain pairing', () => {
-        const tok1 = { id: 'tok_work', typeId: 'token_woodcutter' };
-        const tok2 = { id: 'tok_drop', typeId: 'token_woodcutter' };
+        const tok1 = { id: 'tok_work', typeId: 'fixture_producer', usesRemaining: 100 };
+        const tok2 = { id: 'tok_drop', typeId: 'fixture_buff_yield', usesRemaining: 100 };
 
         BoardState.setToken(7, tok1);
-        BoardState.setHeroTile('hero_aldric', 7);
+        Placement.placeHero('hero_aldric', 7);
 
-        expect(BoardState.heroOnTile(7)).toBe('hero_aldric');
+        expect(BoardState.workerOf(7)).toBe('hero_aldric');
 
         const res = Placement.placeToken(7, tok2);
         expect(res.success).toBe(true);
 
         // Token pushed to tile 1
         expect(BoardState.getToken(1)?.id).toBe('tok_work');
-        // Hero moved along with token to tile 1
-        expect(BoardState.heroOnTile(1)).toBe('hero_aldric');
-        expect(BoardState.heroOnTile(7)).toBeNull();
-    });
-
-    it('returns hero to dock via particle fly when token is displaced to Tray', () => {
-        // Tile 0 (corner): block remaining in-bounds directions (tiles 1 and 6)
-        BoardState.setToken(1, { id: 'tok_b1', typeId: 'token_woodcutter' });
-        BoardState.setToken(6, { id: 'tok_b2', typeId: 'token_woodcutter' });
-
-        const tok1 = { id: 'tok_corner', typeId: 'token_woodcutter' };
-        const tok2 = { id: 'tok_new', typeId: 'token_woodcutter' };
-
-        BoardState.setToken(0, tok1);
-        BoardState.setHeroTile('hero_aldric', 0);
-
-        const collectedEvents = [];
-        EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collectedEvents.push(e));
-
-        const res = Placement.placeToken(0, tok2);
-        expect(res.success).toBe(true);
-
-        // Hero vacated from tile 0 and recalled to dock
-        expect(BoardState.heroOnTile(0)).toBeNull();
-        expect(BoardState.tileOfHero('hero_aldric')).toBeNull();
-
-        // Hero particle fly event to dock published
-        expect(collectedEvents.some(e => e.kind === 'hero' && e.destination === 'dock' && e.heroId === 'hero_aldric')).toBe(true);
-    });
-
-    it('pushes existing hero to adjacent free cell when incoming hero is placed', () => {
-        // Tile 7: primary is tile 1
-        BoardState.setHeroTile('hero_old', 7);
-        expect(BoardState.heroOnTile(7)).toBe('hero_old');
-
-        const pushedEvents = [];
-        EventBus.subscribe(BOARD_EVENTS.TILE_PUSHED, e => pushedEvents.push(e));
-
-        const res = Placement.placeHero('hero_new', 7);
-        expect(res.success).toBe(true);
-
-        expect(BoardState.heroOnTile(7)).toBe('hero_new');
-        // Old hero pushed to tile 1
-        expect(BoardState.heroOnTile(1)).toBe('hero_old');
-        // TILE_PUSHED event emitted for hero animation
-        expect(pushedEvents.some(e => e.fromTile === 7 && e.toTile === 1 && e.heroId === 'hero_old')).toBe(true);
-    });
-
-    it('particle-flies hero back to dock when pushed by incoming hero with no adjacent cell available', () => {
-        // Corner tile 0: block remaining directions with heroes on tiles 1 and 6
-        BoardState.setHeroTile('hero_b1', 1);
-        BoardState.setHeroTile('hero_b2', 6);
-        BoardState.setHeroTile('hero_corner', 0);
-
-        const collectedEvents = [];
-        EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collectedEvents.push(e));
-
-        const res = Placement.placeHero('hero_drop', 0);
-        expect(res.success).toBe(true);
-
-        expect(BoardState.heroOnTile(0)).toBe('hero_drop');
-        expect(BoardState.tileOfHero('hero_corner')).toBeNull();
-
-        // Particle fly event published for hero_corner to dock
-        expect(collectedEvents.some(e => e.kind === 'hero' && e.destination === 'dock' && e.heroId === 'hero_corner')).toBe(true);
+        // Hero moved along with token to tile 1 — the claim follows the instance
+        expect(BoardState.workerOf(1)).toBe('hero_aldric');
+        expect(BoardState.workerOf(7)).toBeNull();
     });
 
     it('returns hero to dock via particle fly on direct recall (right click)', () => {
-        BoardState.setHeroTile('hero_aldric', 7);
-        expect(BoardState.heroOnTile(7)).toBe('hero_aldric');
+        Placement.placeHero('hero_aldric', 7);
+        expect(BoardState.displayTileOf('hero_aldric')).toBe(7);
 
         const collectedEvents = [];
         EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collectedEvents.push(e));
 
         const res = Placement.recallHero(7);
         expect(res.success).toBe(true);
-        expect(BoardState.heroOnTile(7)).toBeNull();
-        expect(BoardState.tileOfHero('hero_aldric')).toBeNull();
+        expect(BoardState.flagOf('hero_aldric')).toBeNull();
+        expect(BoardState.displayTileOf('hero_aldric')).toBeNull();
 
         expect(collectedEvents.some(e => e.kind === 'hero' && e.destination === 'dock' && e.heroId === 'hero_aldric')).toBe(true);
     });

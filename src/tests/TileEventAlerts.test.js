@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Flags from '../systems/board/Flags.js';
+import { positionOf } from '../systems/board/nearby.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 import * as Placement from '../systems/board/Placement.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -59,6 +62,20 @@ describe('On-Board Tile Event Alerts', () => {
         expect(exhaustEvent.message).toContain('Fixture Producer');
     });
 
+    /**
+     * A hero already working a Token that then goes stuck (Free Playmat 1.4b).
+     *
+     * A flag never claims a Token it cannot run (FP-48), so the runner's
+     * staffed-but-stuck alerts only ever describe a claim made while the Token
+     * could run. That claim is staged directly here, so the alert — not the
+     * chooser — is what each test below exercises.
+     */
+    function staff(tile, heroId) {
+        const instance = BoardState.getToken(tile);
+        Flags.plant(heroId, positionOf(tile), { skill: getTokenType(instance.typeId)?.config?.skill || null });
+        BoardState.setClaim(heroId, { instanceId: instance.id, tile, typeId: instance.typeId });
+    }
+
     it('emits Yellow alert when a staffed token lacks input materials', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
@@ -66,7 +83,7 @@ describe('On-Board Tile Event Alerts', () => {
         // Place a consumer without providing its inputs in inventory
         const consumer = BoardState.createTokenInstance('fixture_consumer');
         Placement.placeToken(8, consumer);
-        Placement.placeHero('hero_1', 8);
+        staff(8, 'hero_1');
 
         // Tick runner
         BoardRunner.tick(100);
@@ -88,7 +105,7 @@ describe('On-Board Tile Event Alerts', () => {
         // Place station with no context beside it
         const station = BoardState.createTokenInstance('fixture_station');
         Placement.placeToken(8, station);
-        Placement.placeHero('hero_1', 8);
+        staff(8, 'hero_1');
 
         // Tick runner
         BoardRunner.tick(100);
@@ -110,7 +127,7 @@ describe('On-Board Tile Event Alerts', () => {
         // Place token_oak_tree (requires axe) without an adjacent axe
         const tree = BoardState.createTokenInstance('token_oak_tree');
         Placement.placeToken(8, tree);
-        Placement.placeHero('hero_1', 8);
+        staff(8, 'hero_1');
 
         // Tick runner
         BoardRunner.tick(100);

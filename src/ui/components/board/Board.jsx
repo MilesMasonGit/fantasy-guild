@@ -9,6 +9,7 @@ import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as Flags from '../../../systems/board/Flags.js';
 import { GameState } from '../../../state/GameState.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
@@ -136,19 +137,30 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                 out[key] = { ...(out[key] || { typeId: null, usesRemaining: null, size: 1, isAnchor: true, anchorTile: Number(key) }), alert: ALERT.UNSTOCKED };
             }
 
-            // Where each hero is DRAWN goes through the worker seam (Free
-            // Playmat 1.4a). `heroesOnBoard` keeps today's order and any hero id
-            // the roster no longer holds, exactly as the old direct read did.
-            for (const [heroId] of BoardState.heroesOnBoard()) {
-                const rawKey = Number(BoardState.displayTileOf(heroId));
-                const hero = heroes.find(h => h.id === heroId);
-                const targetKey = out[rawKey]?.anchorTile != null ? out[rawKey].anchorTile : rawKey;
+            // Where each hero is DRAWN goes through the worker seam. Under flags
+            // several heroes can share a display tile (one working it, another
+            // idle at a flag planted there), and until slice 1.5 draws flags a
+            // tile shows ONE: working over waiting over idle, then planting
+            // order (FPP-6). The dock shows the rest.
+            const RANK = { working: 0, waiting: 1, idle: 2 };
+            const drawn = {};
+            for (const [heroId, displayTile] of BoardState.heroesOnBoard()) {
+                if (displayTile == null) continue;
+                const status = Flags.statusOf(heroId);
+                const rank = RANK[status.state] ?? 2;
+                const targetKey = out[displayTile]?.anchorTile != null ? out[displayTile].anchorTile : displayTile;
                 const key = String(targetKey);
+                if (drawn[key] != null && drawn[key] <= rank) continue;
+                drawn[key] = rank;
+                const hero = heroes.find(h => h.id === heroId);
                 out[key] = {
                     ...(out[key] || { typeId: null, usesRemaining: null, alert: null, size: 1, isAnchor: true, anchorTile: targetKey }),
                     heroId,
                     heroName: hero?.name || 'Hero',
-                    heroSprite: hero?.spriteId || hero?.classId || null
+                    heroSprite: hero?.spriteId || hero?.classId || null,
+                    // The idle mark follows the hero, not the tile: a hero idle
+                    // at a flag on a healthy Token is still idle.
+                    heroIdle: status.state === 'idle' || (status.state === 'working' && !!out[key]?.alert)
                 };
             }
             return out;
@@ -221,9 +233,10 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
 
     const handleAutoAssignHero = useCallback((index) => {
         const heroes = GameState.state?.heroes || [];
-        // ⚠️ Truthiness kept from the old direct read: a hero on tile 0 counts
-        // as free here. A pure refactor (Free Playmat 1.4a) does not fix that.
-        const idleHero = heroes.find(h => !BoardState.workTileOf(h.id));
+        // A hero with no flag is in the Dock and free to send (Free Playmat
+        // 1.4b). This also fixes the old truthiness slip that counted a hero
+        // on tile 0 as free.
+        const idleHero = heroes.find(h => !BoardState.flagOf(h.id));
         if (idleHero) {
             announce(Placement.placeHero(idleHero.id, index));
         } else if (heroes.length === 0) {

@@ -19,15 +19,18 @@ describe('2x2 Large Token Mechanics', () => {
         GameState.state = {
             board: {
                 tiles: {},
-                heroTiles: {},
+                flags: {},
+                nextFlagOrder: 0,
                 vacancies: {},
                 tray: [],
                 tokenBank: {},
                 maps: []
             },
+            // Both hold mining: a hero only works a Token whose skill they
+            // hold, and a Token with no skill is not workable (FP-47, FP-48).
             heroes: [
-                { id: 'hero_1', name: 'Althea', skills: {}, level: 1 },
-                { id: 'hero_2', name: 'Brom', skills: {}, level: 1 }
+                { id: 'hero_1', name: 'Althea', skills: { mining: { level: 5, xp: 0 } }, level: 1 },
+                { id: 'hero_2', name: 'Brom', skills: { mining: { level: 5, xp: 0 } }, level: 1 }
             ]
         };
 
@@ -39,7 +42,7 @@ describe('2x2 Large Token Mechanics', () => {
                 size: 1,
                 uses: 10,
                 requiresHero: true,
-                config: { cycleTimeMs: 5000, inputs: [], outputs: [] }
+                config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [] }
             },
             fixture_large_fortress: {
                 id: 'fixture_large_fortress',
@@ -47,7 +50,7 @@ describe('2x2 Large Token Mechanics', () => {
                 size: 2,
                 uses: 50,
                 requiresHero: true,
-                config: { cycleTimeMs: 10000, inputs: [], outputs: [] }
+                config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, inputs: [], outputs: [] }
             },
             fixture_large_passive_monolith: {
                 id: 'fixture_large_passive_monolith',
@@ -176,36 +179,35 @@ describe('2x2 Large Token Mechanics', () => {
             expect(res.success).toBe(true);
             expect(res.workedTile).toBe(0);
 
-            // Hero is recorded at anchor tile 0
-            expect(BoardState.tileOfHero('hero_1')).toBe(0);
-            expect(BoardState.heroOnTile(0)).toBe('hero_1');
+            // Hero works the Token at its anchor tile 0
+            expect(BoardState.workTileOf('hero_1')).toBe(0);
+            expect(BoardState.workerOf(0)).toBe('hero_1');
         });
 
-        it('pushes previous hero to adjacent cell when dropping a new hero onto 2x2 token', () => {
+        it('one hero per 2x2 Token: a second hero dropped on it does not take it (FP-25)', () => {
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
             Placement.placeToken(0, large);
 
             Placement.placeHero('hero_1', 1);
-            expect(BoardState.tileOfHero('hero_1')).toBe(0);
+            expect(BoardState.workTileOf('hero_1')).toBe(0);
 
-            // Place hero_2 on tile 6
+            // Place hero_2 on tile 6 — nobody is displaced any more (1.4b)
             const res2 = Placement.placeHero('hero_2', 6);
             expect(res2.success).toBe(true);
-            expect(res2.displacedHeroId).toBe('hero_1');
 
-            expect(BoardState.tileOfHero('hero_2')).toBe(0);
-            // hero_1 is pushed to an adjacent free cell
-            expect(res2.heroPushTarget).toBeDefined();
-            expect(BoardState.tileOfHero('hero_1')).toBe(res2.heroPushTarget);
+            expect(BoardState.workTileOf('hero_1')).toBe(0);
+            expect(BoardState.workTileOf('hero_2')).toBeNull();
+            expect(BoardState.flagOf('hero_2')).not.toBeNull();
         });
 
-        it('refuses placing hero on passive 2x2 token', () => {
+        it('a hero dropped on a passive 2x2 token plants there but never works it', () => {
             const passiveLarge = BoardState.createTokenInstance('fixture_large_passive_monolith', 100);
             Placement.placeToken(0, passiveLarge);
 
             const res = Placement.placeHero('hero_1', 0);
-            expect(res.success).toBe(false);
-            expect(res.reason).toContain('operates passively');
+            expect(res.success).toBe(true);
+            expect(BoardState.workerOf(0)).toBeNull();
+            expect(BoardState.flagOf('hero_1')).not.toBeNull();
         });
     });
 

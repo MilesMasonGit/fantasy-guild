@@ -5,6 +5,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Placement from '../systems/board/Placement.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as PromotionSystem from '../systems/hero/PromotionSystem.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
@@ -51,7 +52,7 @@ function qualifiedHero() {
 /** Train a hero to the offer on a fixture Token; returns the offer. */
 function standingOffer(hero, { typeId = 'fixture_promotion', uses = 2 } = {}) {
     BoardState.setToken(TILE, { typeId, usesRemaining: uses, cycleElapsedMs: 0 });
-    BoardState.setHeroTile(hero.id, TILE);
+    Placement.placeHero(hero.id, TILE);
     for (let i = 0; i < 25 && !BoardPromotion.getOffer(TILE); i++) {
         BoardPromotion.tickTile(TILE, BoardState.getToken(TILE), 1000, hero.id);
     }
@@ -154,7 +155,7 @@ describe('declining', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
         expect(hero.jobId).toBe('recruit');
         expect(BoardState.getToken(TILE).usesRemaining).toBe(2);
-        expect(BoardState.tileOfHero(hero.id)).toBe(TILE);
+        expect(BoardState.workTileOf(hero.id)).toBe(TILE);
     });
 });
 
