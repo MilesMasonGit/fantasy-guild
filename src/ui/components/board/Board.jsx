@@ -34,6 +34,25 @@ import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { StationRecipeModal } from './StationRecipeModal.jsx';
 
+/**
+ * A hero dragged **from the Dock** (or the hero sheet) dropped on a tile:
+ * plants their flag there (slice 1.5). The only drag that sends a hero out.
+ */
+export function dropHeroOnTile(index, payload) {
+    if (!payload?.heroId) return null;
+    return announce(Placement.placeHero(payload.heroId, index));
+}
+
+/**
+ * A FLAG drag dropped on a tile — the flag itself, or a hero picked up on the
+ * board, which drags their flag (FP-76): **moves the flag**, and the hero goes
+ * to their next job by their rules.
+ */
+export function dropFlagOnTile(index, payload) {
+    if (!payload?.heroId) return null;
+    return announce(Placement.moveFlag(payload.heroId, index));
+}
+
 export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspectedHeroId = null }) => {
     const { EventBus } = useEngine();
     const dndContext = useDndContext();
@@ -240,16 +259,10 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
         placeTokenFromDrag(index, payload, dropInfo, { scale: scaleRef.current });
     }, []);
 
-    const handlePlaceHero = useCallback((index, payload) => {
-        if (!payload.heroId) return;
-        announce(Placement.placeHero(payload.heroId, index));
-    }, []);
+    const handlePlaceHero = useCallback((index, payload) => { dropHeroOnTile(index, payload); }, []);
 
-    // A pennant dropped on a tile moves only the flag (slice 1.5, FPP-3).
-    const handleMoveFlag = useCallback((index, payload) => {
-        if (!payload.heroId) return;
-        announce(Placement.moveFlag(payload.heroId, index));
-    }, []);
+    // A flag, or a board hero (FP-76), dropped on a tile moves the flag.
+    const handleMoveFlag = useCallback((index, payload) => { dropFlagOnTile(index, payload); }, []);
 
     const handleRecallHero = useCallback((index) => {
         announce(Placement.recallHero(index));

@@ -5,6 +5,34 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Flags you move, in each hero's own colour, with a rules panel** (Free Playmat slice
+  1.5b, second half — still on today's grid).
+  - **You never move a hero, only their flag.** Dragging a hero on the board now picks up
+    their flag: drop it on another tile and the flag moves there, and the hero goes
+    straight to the best job near it (they appear at it; walking comes later). The hero
+    stays where they are while you carry the flag. Dragging a hero out of the Dock still
+    sends them out, and dropping a flag (or a board hero) on the Dock still calls them home.
+    Right-click a hero to call them home and left-click for their sheet, as before.
+  - **Flags use the new flag art**, drawn at the same 128 px size as heroes. The flag stands
+    at the bottom-left corner of its tile, with the cloth over the left of the Token so the
+    charges number stays readable. Clicking an empty part of the flag picture reaches the
+    Token underneath.
+  - **Every hero has their own flag colour**, given the first time they plant a flag (a
+    colour nobody else has, while there are colours left) and kept for good — reordering the
+    Dock does not change it, and it is saved. Change it in the **Edit Hero** window, which
+    now shows the eight flags to choose from.
+  - **A small gear on the flag opens that hero's rules** in a narrow panel over the
+    Notifications column, so the board stays in view. It appears while you hover the flag or
+    its hero. Each skill (and Fight, for heroes who can fight) has an **Allowed** tick box
+    and a priority from **1 (most wanted) to 5**; the job the hero is doing now is
+    highlighted, and **Reset to defaults** puts everything back to allowed, priority 3. The
+    panel also shows what the hero is doing and why their flag skipped nearby Tokens. Rules
+    are the hero's, so the panel keeps working after they are called home ("In the Guild").
+  - **An idle hero stands beside their flag** at full size, with a "…" on the pole; the
+    flag keeps its colour.
+  - **Several flags on one tile** spread out to the right, earlier flags in front; past
+    three, a "+N" badge counts the rest.
+
 - **Heroes work anything they can near their flag, by their own rules** (Free Playmat slice
   1.5b, first half — the engine; the rules panel, flag sprites and new dragging come next).
   - **A flag no longer has a skill.** A hero now works any Token near their flag that uses a

@@ -1,5 +1,6 @@
 import { EventBus } from '../../core/EventBus.js';
 import { getHero } from './HeroLookup.js';
+import { isFlagColour } from '../../board/FlagColours.js';
 
 /**
  * Hero State: Status and Resource (HP/Energy) mutations.
@@ -46,6 +47,12 @@ export function updateHeroProfile(heroId, updates = {}) {
 
     if (updates.spriteId !== undefined) {
         hero.spriteId = updates.spriteId;
+    }
+
+    // The hero's lasting flag colour (FP-82), chosen in the Edit Hero modal.
+    // Only one of the eight colours is accepted.
+    if (updates.flagColour !== undefined && isFlagColour(updates.flagColour)) {
+        hero.flagColour = updates.flagColour;
     }
 
     EventBus.publish('heroes_updated', { source: 'updateHeroProfile', heroId });

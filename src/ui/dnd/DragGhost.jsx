@@ -9,6 +9,7 @@ import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt } from '../component
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { GameState } from '../../state/GameState.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
+import { flagColourOf } from '../../systems/board/FlagColours.js';
 
 /**
  * DragGhost — the floating representation of whatever is being dragged.
@@ -85,13 +86,13 @@ export const DragGhost = ({ payload, bold }) => {
 };
 
 /**
- * A pennant in flight (Free Playmat slice 1.5) — the same gold flag as on the
- * board, a little larger in the hand, with no hero drawn: a pennant drag moves
- * only the flag.
+ * A flag in flight (Free Playmat slice 1.5b-ii) — the hero's own flag sprite at
+ * 128 px, lifted, with no hero drawn: a flag drag moves only the flag, and so
+ * does dragging a hero on the board (FP-76).
  */
-const FlagGhost = () => (
-    <div className="flex items-center justify-center" style={{ width: 48, height: 48 }}>
-        <FlagMark size={36} />
+export const FlagGhost = ({ payload }) => (
+    <div data-flag-ghost={payload?.heroId || ''} className="flex items-center justify-center" style={{ width: 128, height: 128 }}>
+        <FlagMark colour={flagColourOf(payload?.heroId)} size={128} lifted />
     </div>
 );
 

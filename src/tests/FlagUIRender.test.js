@@ -94,15 +94,23 @@ describe('the idle mark (FP-29)', () => {
         expect(container.querySelector('[data-board-hero="h1"]').className).toContain('gi-glow-active');
     });
 
-    it('an idle flag shows a grey pennant with a "…" chip and its hero small beside it', () => {
+    it('an idle flag keeps its colour, has a "…" chip, and its hero stands beside it at 128 px with no glow', () => {
+        GameState.state.heroes[0].spriteId = 'hero_recruit_0';   // rehydration's default portrait
         Flags.plant('h1', C(20));                             // bare ground, nothing in range
         expect(Flags.statusOf('h1').state).toBe('idle');
 
         const { container } = mount(h(FlagLayer));
-        const pennant = container.querySelector('[data-flag-pennant="h1"]');
-        expect(pennant.getAttribute('data-flag-state')).toBe('idle');
-        expect(pennant.querySelector('[data-flag-idle-chip]')).toBeTruthy();
-        expect(container.querySelector('[data-flag-idle-hero="h1"]')).toBeTruthy();
+        const flag = container.querySelector('[data-flag="h1"]');
+        expect(flag.getAttribute('data-flag-state')).toBe('idle');
+        expect(flag.getAttribute('data-flag-colour')).not.toBe('base');
+        expect(flag.querySelector('img').getAttribute('src')).toContain(`hero_flag_${flag.getAttribute('data-flag-colour')}.png`);
+        expect(flag.querySelector('[data-flag-idle-chip]').textContent).toContain('…');
+
+        const idle = container.querySelector('[data-flag-idle-hero="h1"]');
+        expect(idle.style.width).toBe('128px');
+        expect(idle.querySelector('img').style.width).toBe('128px');
+        expect(container.querySelector('.gi-glow-idle')).toBeNull();
+        expect(container.querySelector('.gi-glow-active')).toBeNull();
     });
 
     it('a working flag shows no chip and leaves its hero to the Token tile', () => {
@@ -111,20 +119,21 @@ describe('the idle mark (FP-29)', () => {
         expect(Flags.statusOf('h1').state).toBe('working');
 
         const { container } = mount(h(FlagLayer));
-        const pennant = container.querySelector('[data-flag-pennant="h1"]');
-        expect(pennant.getAttribute('data-flag-state')).toBe('working');
-        expect(pennant.querySelector('[data-flag-idle-chip]')).toBeNull();
+        const flag = container.querySelector('[data-flag="h1"]');
+        expect(flag.getAttribute('data-flag-state')).toBe('working');
+        expect(flag.querySelector('[data-flag-idle-chip]')).toBeNull();
         expect(container.querySelector('[data-flag-idle-hero="h1"]')).toBeNull();
     });
 
-    it('fans two flags on one tile 12 px apart', () => {
+    it('fans two flags on one tile 20 px apart, the earlier one in front', () => {
         Flags.plant('h1', C(20));
         Flags.plant('fighter', C(20));
         const { container } = mount(h(FlagLayer));
-        const a = container.querySelector('[data-flag-pennant="h1"]');
-        const b = container.querySelector('[data-flag-pennant="fighter"]');
-        expect(parseFloat(b.style.left) - parseFloat(a.style.left)).toBe(12);
+        const a = container.querySelector('[data-flag="h1"]');
+        const b = container.querySelector('[data-flag="fighter"]');
+        expect(parseFloat(b.style.left) - parseFloat(a.style.left)).toBe(20);
         expect(b.style.top).toBe(a.style.top);
+        expect(Number(a.style.zIndex)).toBeGreaterThan(Number(b.style.zIndex));
     });
 });
 
@@ -155,10 +164,10 @@ describe('the reach ring (FP-64, A-4)', () => {
         expect(ring(container).getAttribute('cy')).toBe(String(C(30).y));
     });
 
-    it('hovering the pennant itself draws it', () => {
+    it('hovering the flag itself draws it', () => {
         let hovered = null;
         const { container, rerender } = mount(h(FlagLayer, { onHoverHero: (id) => { hovered = id; } }));
-        fireEvent.mouseEnter(container.querySelector('[data-flag-pennant="h1"]'));
+        fireEvent.mouseEnter(container.querySelector('[data-flag="h1"]'));
         expect(hovered).toBe('h1');
         rerender(h(EngineContext.Provider, { value: { GameState, EventBus } },
             h(DndContext, null, h(FlagLayer, { hoverHeroId: hovered }))));
@@ -166,15 +175,20 @@ describe('the reach ring (FP-64, A-4)', () => {
     });
 });
 
-describe('the pennant has no skill since slice 1.5b (FP-71)', () => {
+describe('the flag has no skill since slice 1.5b (FP-71)', () => {
     it('draws no skill disc, clicking it opens nothing, and its tooltip title is the hero name', () => {
         Flags.plant('h1', C(20));
+        const opened = [];
+        const unsub = EventBus.subscribe('ui:open_flag_rules', (p) => opened.push(p));
         const { container } = mount(h(FlagLayer));
-        const pennant = container.querySelector('[data-flag-pennant="h1"]');
-        expect(pennant.querySelector('[data-flag-skill]')).toBeNull();
+        const flag = container.querySelector('[data-flag="h1"]');
+        expect(flag.querySelector('[data-flag-skill]')).toBeNull();
 
-        fireEvent.click(pennant);
+        fireEvent.click(flag);
+        unsub();
         expect(document.querySelector('[role="menu"]')).toBeNull();
+        // Rules open only from the gear (FPP-20), never from the flag itself.
+        expect(opened).toEqual([]);
 
         expect(flagTooltip('h1').title).toBe('h1');
     });

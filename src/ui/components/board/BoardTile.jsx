@@ -409,9 +409,10 @@ export const BoardTile = ({
     const drop = useEntityDrop({
         id: `tile-${index}`,
         surface: DND_SURFACE.BOARD,
-        // A hero or a pennant lands on any tile, passive Tokens included: the
-        // flag is planted there and simply finds nothing to work if there is
-        // nothing (slice 1.5; FP-49). A pennant needs a planted flag.
+        // A hero from the Dock or a flag lands on any tile, passive Tokens
+        // included: the flag is planted there and simply finds nothing to work
+        // if there is nothing (slice 1.5; FP-49). A FLAG drag — the flag, or a
+        // hero picked up on the board (FP-76) — needs a planted flag.
         accepts: (p) => {
             if (p.kind === DRAG_KIND.TOKEN) return true;
             if (p.kind === DRAG_KIND.HERO) return !!p.heroId;
@@ -711,18 +712,25 @@ export const BoardTile = ({
 };
 
 /**
- * The hero standing on a Token: drag to redeploy, click to recall.
+ * The hero standing on a Token: click for their sheet, right-click to recall.
+ *
+ * ⭐ **Dragging the hero drags their FLAG** (FP-76) — the player never moves a
+ * hero. The payload is `DRAG_KIND.FLAG`, exactly as if the flag itself were
+ * picked up: dropped on a tile it moves the flag and the hero goes to their next
+ * job; dropped on the Dock it recalls. The hero stays drawn where they are while
+ * the flag is in the hand.
  */
 const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle, glow, pushTransform, isPushing, onPickUp, onHover, tileHovered }) => {
     const drag = useEntityDrag({
         id: `tile-hero-${index}`,
-        kind: DRAG_KIND.HERO,
-        payload: { heroId, name: heroName, spriteId: heroSprite, from: { tile: index } },
+        kind: DRAG_KIND.FLAG,
+        payload: { heroId, name: heroName, from: { tile: index, hero: true } },
         sourceSurface: DND_SURFACE.BOARD
     });
 
+    // Only a hero carried out of the Dock is ever in the hand (FP-76).
     const { activePayload, isDragging } = useActiveDrag();
-    const isThisHeroDragging = isDragging && activePayload?.heroId === heroId;
+    const isThisHeroDragging = isDragging && activePayload?.kind === DRAG_KIND.HERO && activePayload?.heroId === heroId;
 
     const art = heroSprite ? resolveSpritePath(heroSprite) : null;
     const is2x = size === 2;
@@ -774,7 +782,7 @@ const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle
                 'absolute pointer-events-auto',
                 'cursor-grab active:cursor-grabbing',
                 glow,
-                (drag.isDragging || isThisHeroDragging) && 'opacity-0 pointer-events-none'
+                isThisHeroDragging && 'opacity-0 pointer-events-none'
             )}
         >
             {art && (

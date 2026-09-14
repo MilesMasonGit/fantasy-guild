@@ -1,20 +1,19 @@
-// Fantasy Guild — dropping a hero or a pennant on the Hero Dock (Free Playmat slice 1.5)
+// Fantasy Guild — dropping a flag on the Hero Dock (Free Playmat slices 1.5 and 1.5b-ii)
 
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 
 /**
- * Whether a drag dropped on the Dock means **recall**: a hero picked up off the
- * board (their sprite on a Token, or drawn idle beside their flag), or a
- * flag's pennant. A hero dragged from the Dock itself is a reorder, not this.
+ * Whether a drag dropped on the Dock means **recall**: any FLAG drag — the flag
+ * itself, or a hero picked up on the board, which drags their flag since the
+ * player never moves a hero (FP-76). A hero dragged from the Dock itself
+ * (`DRAG_KIND.HERO`) is a reorder, not this.
  *
- * Shared by the Dock's own drop zone and every hero tab in it, so a board hero
+ * Shared by the Dock's own drop zone and every hero tab in it, so a flag
  * dropped onto a tab recalls instead of being refused (the tab is the smaller
  * target and wins the collision).
  */
 export function isRecallDrop(p) {
-    if (!p?.heroId) return false;
-    if (p.kind === DRAG_KIND.FLAG) return true;
-    return p.kind === DRAG_KIND.HERO && (p.from?.tile != null || p.from?.flag === true);
+    return !!p?.heroId && p.kind === DRAG_KIND.FLAG;
 }
 
 /**
