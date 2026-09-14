@@ -132,6 +132,23 @@ These supersede the decisions named in each row.
 | **FP-83** | ⭐ **Flags sit freely on the playmat, like Tokens** — at the point they are dropped, in mat units. Flags may be very close together or slightly overlap; **they never push, nudge or hide each other or Tokens**. The grid-era fan-out, "+N" chip, hidden 4th-plus flags and the tile-corner pole position (FPP-20) are **stopgaps for today's grid only**, removed when free placement lands (slices 1.6–1.7; `flagGeometry.flagOrigin` is the one place that changes). | Owner. Restates FP-2/FP-20 for flags; corrects a grid-bound question. |
 | **FP-84** | **An idle hero stands next to their own flag** (walks back to it in Stage 2, A-1; until walking exists they appear beside it). | Owner. Restates FP-29. |
 
+### 1.9 Slice 1.6 rulings, 2026-09-14
+
+| # | Decision | Why / cost |
+|---|---|---|
+| **FP-85** | **Old saves simply stop loading — no message, no export.** The save version is bumped (FP-11, FP-59); nothing else is built for old slots. | Owner: *"I delete old saves and start new ones every time anyways."* |
+| **FP-86** | **For one slice the bigger mat (11 steps wide) is drawn in today's board space**, so Tokens look smaller and slightly soft until slice 1.7 grows the mat and sharpens the art. | Owner, over starting at today's width or pulling 1.7 into 1.6. |
+| **FP-87** | **Restock-on-copy leftovers stay on the mat**, nudged right beside the copy. Nothing is lost. | Owner, over "flies back" and "goes to the Vault". |
+| **FP-88** | ⭐ **A drop that would break a "Cannot" rule is nudged to the nearest spot that obeys it**; it flies back only if no such spot is within nudge reach. | Owner, over "flies back with the reason". |
+
+**Director's technical picks for 1.6 (provisional):** Tokens stay fully inside the mat edge; nudge reach 160 u (Mat Tuner row); ties go to the earlier-placed Token; a transformed Token loses its hero for one tick; spawns skip when no spot is found; the Guild Hall moves freely but can't leave the mat; Maps don't collide until 1.8; the upgrade board keeps its own geometry.
+
+**Slice 1.6 is split into four sub-slices**, each keeping `main` playable:
+* **1.6a — Storage by Token, save bump.** `board.tokens[id]` with x/y; spot-based vacancies; `GAME_VERSION` 0.8.0; new game has the Hall at the mat centre (FP-44). A labelled **stopgap shim** answers today's tile questions from positions so every reader keeps working; it is deleted in 1.6d.
+* **1.6b — Tile-free readers** ⚠️ riskiest: reach, rules, Managers, Cannot, fights, promotion, flags, effects, spawns, events and UI hooks all keyed by Token id and point.
+* **1.6c — The mat renderer**, with a labelled stopgap that still snaps drops to tidy spots so it plays like today.
+* **1.6d — Free placement.** Drop anywhere with nudge / fly-back (FP-6, FP-46, FP-63, FP-87, FP-88), restock-on-copy (FP-50), Mat Tuner hitbox / overlap / mat size / nudge reach, and every grid remnant (shim, cascade, `TrayMiniBoard`, `BoardTile`, `adjacency.js`, the playmat half of `boardGeometry`) deleted.
+
 * **FPP-21** *(owner, 2026-09-14: keep for now, revisit after 1.5b-ii)* — The flag's hover lists every skipped Token, including ones whose skill the hero lacks ("doesn't have the skill"), capped at 5 lines plus "more". To be judged again beside the rules drawer.
 * **Slicing:** **1.5b-i** engine, rules model, migration and both radii at 164; **1.5b-ii** dragging the hero moves the flag, flag sprites and colours (with the Edit Hero picker), the gear badge and the rules drawer.
 
@@ -408,7 +425,10 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 | 1.5 Flags UI | ✅ **DONE** 2026-09-14 | Pennants (`FlagLayer.jsx`, `FlagMark.jsx`), grey idle pennant + small unlit hero (D-172 glow removed), hero vs pennant drags (`DRAG_KIND.FLAG`), dock/tab drop recalls (`dockRecall.js`), skill picker (`Flags.setSkill` re-plants), dashed reach ring on hover/drag/inspect, skip-reason hover text (`flagText.js`), "Heroes may work this" checkbox + ⊘, dock status line; `hero_deployed` on every plant. 43 new tests, 16 neuterings caught. ⚠️ UI is provisional (FPP-15, FPP-16) — **owner to review in the game**. ⏸ **Owner's overnight stop point: 1.6 not started.** |
 | 1.5b-i Flag rules engine, both reaches 164 | ✅ **DONE** 2026-09-14 | `FlagRules.js` (`hero.flagRules`, priority 1–5, default 3, Fight rule); `Flags.evaluate` ranks priority → distance → anchor across work and enemies; `setRule`/`resetRules`; FP-80 switch at cycle end; `rule_off` skip; skill picker/`setSkill`/`bridgeSkill` removed; old `flag.skill` dropped; `flagRadius` and `nearRadius` defaults 164. 17 neuterings caught. ⚠️ Devices that touched the Mat Tuner keep old values until Reset. |
 | 1.5b-ii Drag moves the flag, sprites, colours, gear, rules drawer | ✅ **DONE** 2026-09-14 | FP-76 board hero drag = flag drag; FP-77 owner's flag sprites at 128 px (`flagGeometry.flagOrigin`, pole 8 px outside the tile's bottom-left, opaque-pixel hit-test); FP-82 `hero.flagColour` (`FlagColours.js`, auto at first plant, 8 swatches in Edit Hero); gear badge → `FlagRulesPanel` over the Notifications column (dedicated panel, not the Bank shell); idle hero at 128 px + "…"; fan-out 20 px + "+N" (flags past the 3rd not drawn). 32 new tests, 24 neuterings caught. ⚠️ Owner flagged that idle heroes / flag layering on a shared tile rests on a misunderstanding — **clarification pending before 1.6**. |
-| 1.6 Free placement + fresh save | **NOT STARTED** | May split |
+| 1.6a Storage by Token, save bump | **IN PROGRESS** 2026-09-14 | Branch `free-playmat/1.6a-storage`; FP-85 |
+| 1.6b Tile-free readers | **NOT STARTED** | ⚠️ riskiest sub-slice |
+| 1.6c Mat renderer (snapping stopgap) | **NOT STARTED** | FP-86 |
+| 1.6d Free placement | **NOT STARTED** | FP-87, FP-88; grid code deleted |
 | 1.7 Mat UI | **NOT STARTED** | |
 | 1.8 Arrivals on the mat | **NOT STARTED** | |
 | 1.9 Tray retired, tabs at bottom | **NOT STARTED** | |
