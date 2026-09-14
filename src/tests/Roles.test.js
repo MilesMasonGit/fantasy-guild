@@ -179,8 +179,8 @@ describe('every moment declares who it supplies', () => {
         expect(momentSupplies(null, ROLE.ACTOR)).toBe(false);
     });
 
-    it('declares exactly the three roles, each with a label and a hint', () => {
-        expect(ROLES.map(r => r.id)).toEqual([ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE]);
+    it('declares exactly the four roles, each with a label and a hint', () => {
+        expect(ROLES.map(r => r.id)).toEqual([ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT]);
         for (const role of ROLES) {
             expect(role.label).toBeTruthy();
             expect(role.hint).toBeTruthy();

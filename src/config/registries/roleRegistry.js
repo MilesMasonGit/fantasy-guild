@@ -55,8 +55,32 @@ export const ROLE = Object.freeze({
      * Only the adjacency-scoped moments have one. A self-scoped moment's source
      * *is* `self`, and saying so twice would be two names for one thing.
      */
-    SOURCE: 'source'
+    SOURCE: 'source',
+
+    /**
+     * ⭐ **The creature the hero in this moment is fighting** (Effects Grammar
+     * v2, V10a — G-40…G-43).
+     *
+     * One meaning everywhere (G-41): on an item it is the monster its hero is
+     * fighting, and on a monster's own rule it is that monster.
+     *
+     * ⚠️ **Found by HERO, never by tile** (G-43). The hero is `actor`, or the
+     * person carrying the rule (`selfHeroId`); the fight is whichever one names
+     * that hero. A tile lookup would break the moment a hero's recorded tile
+     * stops being the tile they fight on (Free Playmat FP-67). Resolved lazily
+     * inside each verb, so `resolveRoles` below stays free of board code.
+     */
+    OPPONENT: 'opponent'
 });
+
+/**
+ * The hero whose fight `opponent` means, or null.
+ *
+ * Pure: it only reads the roles object. The board looks the fight up.
+ */
+export function opponentSeekerOf(roles) {
+    return roles?.actor ?? roles?.selfHeroId ?? null;
+}
 
 /**
  * @type {ReadonlyArray<{id: string, label: string, hint: string}>}
@@ -100,6 +124,12 @@ export const ROLES = Object.freeze([
         id: ROLE.SOURCE,
         label: 'that Token',
         hint: 'The neighbour whose event this was — the Token that finished, not the hero who worked it.'
+    },
+    {
+        // G-40: the game's own word, one label for the picker, the sentence and the audit.
+        id: ROLE.OPPONENT,
+        label: 'the enemy',
+        hint: 'The creature the hero is fighting. On a monster’s own rule, that monster. Only while a fight is on.'
     }
 ]);
 

@@ -152,7 +152,9 @@ export const TRIGGER_EVENTS = [
          * is the swing before it.
          */
         id: 'COMBAT_ENGAGED',
-        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
+        // ⚠️ `opponent` here and on SELF_COMBAT_ENGAGED only (G-43). Not on
+        // COMBAT_RESOLVED: by then the creature is at 0 HP.
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
         label: "On Neighbour's Fight",
         scopes: [TRIGGER_SCOPES.ADJACENT],
@@ -166,7 +168,7 @@ export const TRIGGER_EVENTS = [
          * on `TRIGGER_SCOPES.SELF` and the guard in `TriggerSystem` first.
          */
         id: 'SELF_COMBAT_ENGAGED',
-        roles: [ROLE.SELF, ROLE.ACTOR],
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.OPPONENT],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
         label: 'On Engaged',
         scopes: [TRIGGER_SCOPES.SELF],

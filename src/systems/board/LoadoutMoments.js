@@ -3,6 +3,8 @@
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as StatusApplication from './StatusApplication.js';
+import * as DealDamage from './DealDamage.js';
+import * as EffectActions from './EffectActions.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import { KEYWORD } from '../effects/statements.js';
@@ -28,6 +30,12 @@ import { KEYWORD } from '../effects/statements.js';
  * A potion spent on a roll that missed would teach the player the opposite of
  * how often it works, so affordability is checked first, the rule acts, and only
  * then is the item consumed.
+ *
+ * ⚠️ **Since V10a, "acted" means it changed something.** `Deals`, `Heals` and
+ * `Removes` run here for the first time (they were silently skipped before). A
+ * hit fully stopped by armour, a heal on someone already whole and a cleanse
+ * with nothing to remove all did nothing, so none of them spends the item —
+ * the same rule a missed chance roll already followed.
  */
 
 /**
@@ -45,6 +53,13 @@ export function fire(tile, heroId, eventId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return 0;
 
+    /**
+     * Who a carried rule's roles name (V10a). The carrier is `self` and the
+     * actor alike; `the enemy` is looked up from that hero by the verb itself,
+     * never from `tile` (G-43).
+     */
+    const roles = { self: tile, selfHeroId: heroId, actor: heroId, source: null };
+
     let fired = 0;
 
     for (const statement of HeroEffects.loadoutStatements(hero)) {
@@ -55,7 +70,16 @@ export function fire(tile, heroId, eventId) {
         let acted = false;
 
         if (statement.keyword === KEYWORD.APPLIES) {
-            acted = StatusApplication.applyAt(tile, payload);
+            // G-42: a role, when set, replaces the tile's occupant reading.
+            acted = statement.target?.role
+                ? StatusApplication.applyToRole(statement, roles) > 0
+                : StatusApplication.applyAt(tile, payload);
+        } else if (statement.keyword === KEYWORD.DEALS) {
+            acted = DealDamage.deal(statement, roles) > 0;
+        } else if (statement.keyword === KEYWORD.HEALS) {
+            acted = EffectActions.heal(statement, roles) > 0;
+        } else if (statement.keyword === KEYWORD.REMOVES) {
+            acted = EffectActions.remove(statement, roles) > 0;
         } else if (statement.keyword === KEYWORD.GRANTS && payload.itemId) {
             const chance = payload.chance ?? 100;
             if (chance >= 100 || Math.random() * 100 < chance) {

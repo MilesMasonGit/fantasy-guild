@@ -25,6 +25,7 @@ import { filterTargetTiles } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as HeroManager from '../hero/HeroManager.js';
+import { ROLE } from '../../config/registries/roleRegistry.js';
 
 /**
  * `Applies` — content putting a status on somebody.
@@ -171,6 +172,37 @@ export function applyAt(tile, payload, random = Math.random) {
     if (!target) return false;
     target.apply(payload.statusId, Math.max(1, payload.stacks || 1));
     return true;
+}
+
+/**
+ * Put one `Applies` statement onto the **role** it aims at, instead of its
+ * filter (G-42).
+ *
+ * Only `the enemy` is allowed (`KEYWORDS`' allowlist), and it is found by hero,
+ * never by tile (G-43). Nothing else resolves here: a role outside the
+ * allowlist reaches nobody rather than guessing.
+ *
+ * ⚠️ The old `target: 'enemy'` flag above is untouched and still works — V10b
+ * retires it.
+ *
+ * @returns {number} how many received it (0 or 1)
+ */
+export function applyToRole(statement, roles, random = Math.random) {
+    if (statement?.target?.role !== ROLE.OPPONENT) return 0;
+    const payload = statement?.payload;
+
+    if (payload?.effectId) {
+        if (!rollsChance(payload, random)) return 0;
+        const bearer = BoardCombat.opponentBearerOf(statement, roles);
+        if (!bearer) return 0;
+        return LiveEffects.applyTo(bearer, payload, statement.sourceEffectId || null, fireLive) ? 1 : 0;
+    }
+
+    if (!rolls(payload, random)) return 0;
+    const fight = BoardCombat.opponentFightOf(statement, roles);
+    if (!fight) return 0;
+    StatusEffectSystem.applyToEnemy(fight, payload.statusId, Math.max(1, payload.stacks || 1));
+    return 1;
 }
 
 /**

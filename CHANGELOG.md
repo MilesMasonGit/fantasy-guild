@@ -5,6 +5,16 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Rules can now aim at "the enemy"** (Effects Grammar V10a). On a combat moment ("On
+  Neighbour's Fight", "On Engaged") a rule's *deals damage*, *heals*, *removes* and
+  *applies* can target the creature the hero is fighting; on a monster's own rule, "the
+  enemy" is that monster. *Restores* and *Transforms* can't aim there, and outside a fight
+  the choice isn't offered. **Items' damage, heal and cleanse rules now actually work** —
+  before this they were silently skipped — and like other item rules they use up the item
+  only when they do something. The enemy is found by which hero is fighting, never by
+  which square they're standing on. **A hero now fights one enemy at a time**: starting a
+  new fight ends any other fight that hero was in.
+
 - **Behind-the-scenes groundwork for flags: one place now answers "which hero is on
   this Token"** (Free Playmat slice 1.4a). Damage, statuses, rules, hero gear, filters,
   the board, the hero dock and drag-and-drop all used to look up hero positions on
