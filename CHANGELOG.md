@@ -5,6 +5,34 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Flags you can see and handle** (Free Playmat slice 1.5, still on today's grid). Every
+  choice here is provisional and cheap to change once you have seen it.
+  - **A small gold pennant marks each hero's flag**, in the top-left corner of the tile it
+    stands on, with the flag's skill drawn on it (crossed swords for a fighting flag).
+    Several flags on one tile fan out side by side.
+  - **Drag a hero** (from the dock, or off the board) onto any tile to plant their flag
+    there. **Drag the pennant** to move just the flag. Drop either one on the hero dock to
+    call the hero home. Right-clicking a hero still calls them home too. Heroes and flags
+    can now be dropped on any Token, including ones nobody works.
+  - **Click the pennant** to pick the skill the flag works: the hero's own skills with
+    their levels, plus **Fight** if the hero has a fighting skill. Changing it counts as
+    re-planting: the hero drops what they were doing and picks again.
+  - **Hover the pennant** to see the flag's reach as a faint dashed gold circle, and a note
+    saying what the hero is doing ("Working: Oak Forest", "Waiting for restock: Copper
+    Vein" or "Nothing to do") plus up to five Tokens the flag passed over and why ("Iron
+    Forge — needs materials"). The circle also shows while you drag the hero or flag, and
+    while the hero's panel is open. Hovering a Token lists the flags that passed it over.
+  - **An idle hero is quieter.** The bright yellow idle glow is gone. A hero with nothing
+    to do is drawn small beside a grey pennant with a "…" mark. A hero stuck on a Token
+    shows only that Token's red badge, as before.
+  - **"Heroes may work this"** is a new checkbox in a board Token's panel (for Tokens a
+    hero could work: resources, stations, enemies, Academies). Untick it and any hero
+    working it leaves; the Token shows a dim ⊘ in its corner. A Token restocked by a
+    Manager arrives allowed again.
+  - **The dock tab says what each hero is doing:** "Working: Oak Forest", "Waiting",
+    "Idle at flag" or "Idle in Guild".
+  - The "deploy a hero" quest now counts every flag planted, including on empty ground.
+
 - **Fighting, promotion and "don't work this" under flags** (Free Playmat slice 1.4c).
   - **Fighters find their own enemies.** A hero with a fighting flag now fights the
     nearest enemy within the flag's reach, then the next one when that one is cleared

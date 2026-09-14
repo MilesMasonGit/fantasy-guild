@@ -104,7 +104,15 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     }
     if (dragRing?.heroId) rings.set(dragRing.heroId, { x: dragRing.x, y: dragRing.y });
 
+    /**
+     * ⚠️ Two layers. Rings and idle heroes sit just above the Tokens (z 38);
+     * **pennants sit above the loot sprites** (`SpriteLayerView`, z 80). Loot
+     * lands beside the Token that dropped it — often right on the tile corner
+     * where the pennant stands — and a pennant under a pile of Oak Wood could
+     * not be clicked or dragged (found while verifying 1.5).
+     */
     return (
+        <>
         <div
             data-flag-layer
             className="absolute left-0 top-0 pointer-events-none"
@@ -137,11 +145,17 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
             {flags.filter(f => f.state === 'idle').map(f => (
                 <IdleHero key={`idle-${f.heroId}`} flag={f} onHover={onHoverHero} />
             ))}
-
+        </div>
+        <div
+            data-flag-pennants
+            className="absolute left-0 top-0 pointer-events-none"
+            style={{ width: BOARD_PX, height: BOARD_PX, zIndex: 85 }}
+        >
             {flags.map(f => (
                 <Pennant key={`flag-${f.heroId}`} flag={f} onHover={onHoverHero} />
             ))}
         </div>
+        </>
     );
 };
 
