@@ -117,7 +117,7 @@ let initialized = false;
  * The live sprite list, created if a save predates it.
  *
  * ⚠️ Creating the board here used to invent its own shape — one that dropped
- * `maps`, `heroTiles` and `vacancies` (CR2-049). It now builds the same board
+ * `maps`, hero positions and `vacancies` (CR2-049). It now builds the same board
  * everything else does.
  */
 function sprites() {

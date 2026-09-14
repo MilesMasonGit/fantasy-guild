@@ -65,7 +65,7 @@ export function heroFor(role, roles) {
     if (role === ROLE.ACTOR) return roles?.actor || null;
     if (role === ROLE.SELF && roles?.selfHeroId) return roles.selfHeroId;
     const tile = role === ROLE.SOURCE ? roles?.source : roles?.self;
-    return tile != null ? BoardState.heroOnTile(tile) : null;
+    return tile != null ? BoardState.workerOf(tile) : null;
 }
 
 /** The **tile** a role points at, or null. Only `self` and `source` have one. */
@@ -74,7 +74,7 @@ export function tileFor(role, roles) {
         // The actor is a person; the tile they are standing on is the honest
         // reading of "where the actor is".
         const heroId = roles?.actor;
-        return heroId ? BoardState.tileOfHero(heroId) : null;
+        return heroId ? BoardState.workTileOf(heroId) : null;
     }
     return role === ROLE.SOURCE ? (roles?.source ?? null) : (roles?.self ?? null);
 }

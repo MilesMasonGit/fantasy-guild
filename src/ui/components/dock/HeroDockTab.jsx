@@ -8,6 +8,8 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { getJob } from '../../../config/registries/jobRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Pencil, Backpack, Heart } from 'lucide-react';
 
 /**
@@ -61,9 +63,13 @@ export const HeroDockTab = ({
         { deps: [heroId] }
     );
 
+    // The Token this hero works, through the worker seam (Free Playmat 1.4a).
+    // ⚠️ It listened for `board:hero_placed` / `board:hero_recalled`, which
+    // nothing has ever published; `HERO_MOVED` is what every placement, recall,
+    // displacement and defeat actually announces.
     const tile = useGameState(
-        state => state.board?.heroTiles?.[heroId] ?? null,
-        ['board:hero_placed', 'board:hero_recalled', 'state_changed'],
+        () => BoardState.workTileOf(heroId),
+        [BOARD_EVENTS.HERO_MOVED, 'state_changed'],
         null,
         { deps: [heroId] }
     );

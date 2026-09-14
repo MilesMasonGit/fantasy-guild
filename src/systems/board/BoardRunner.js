@@ -444,7 +444,7 @@ export function tick(delta) {
 
     for (const [index, instance] of tiles) {
         const def = getTokenType(instance.typeId);
-        const heroId = BoardState.heroOnTile(index);
+        const heroId = BoardState.workerOf(index);
 
         // Effect-block upkeep runs on its OWN clock (CMS-60), before every
         // guard below: a Buff Token has no config, no hero and no work cycle,
@@ -706,8 +706,8 @@ export function isHeroIdle(heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || hero.status === 'wounded') return false;
 
-    const tile = BoardState.tileOfHero(heroId);
-    if (tile == null) return true;                    // in the Dock, doing nothing
+    const tile = BoardState.workTileOf(heroId);
+    if (tile == null) return true;                   // in the Dock, doing nothing
 
     const instance = BoardState.getToken(tile);
     if (!instance) return true;                       // standing on a bare tile

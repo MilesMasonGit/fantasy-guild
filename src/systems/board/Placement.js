@@ -75,7 +75,7 @@ function planCascadeFor2x2(anchorIndex) {
     for (const [idx, inst] of BoardState.occupiedTiles()) {
         const d = getTokenType(inst?.typeId);
         const sz = d?.size || 1;
-        const hId = BoardState.heroOnTile(idx);
+        const hId = BoardState.workerOf(idx);
         simTiles.set(idx, { instance: inst, heroId: hId, is2x2: sz === 2, anchor: idx });
         if (sz === 2) {
             const fp = tileFootprint(idx, 2);
@@ -316,7 +316,7 @@ export function placeToken(index, instance) {
 
         // Handle standing heroes on bare ground within the 2x2 footprint
         for (const t of footprint) {
-            const standingHeroId = BoardState.heroOnTile(t);
+            const standingHeroId = BoardState.workerOf(t);
             if (standingHeroId && t !== index) {
                 if (def?.requiresHero !== false) {
                     BoardState.setHeroTile(standingHeroId, index);
@@ -381,7 +381,7 @@ export function placeToken(index, instance) {
     if (occ) {
         const occDef = getTokenType(occ.instance?.typeId);
         const occSize = occDef?.size || 1;
-        const heroOnTile = BoardState.heroOnTile(occ.anchorIndex) || BoardState.heroOnTile(index);
+        const heroOnTile = BoardState.workerOf(occ.anchorIndex) || BoardState.workerOf(index);
 
         // Special behavior: Dropping a token onto a matching copy restocks its charges
         if (occ.instance.typeId === instance.typeId && occDef?.uses != null && occ.instance.usesRemaining != null && occ.instance.usesRemaining < occDef.uses) {
@@ -518,7 +518,7 @@ export function placeToken(index, instance) {
                     const nextIndex = nextRow * BOARD_SIZE + nextCol;
                     const nextOcc = BoardState.getOccupyingToken(nextIndex);
                     if (nextOcc && !isPermanentToken(nextOcc.instance?.typeId, nextOcc.instance)) {
-                        const nextHero = BoardState.heroOnTile(nextOcc.anchorIndex);
+                        const nextHero = BoardState.workerOf(nextOcc.anchorIndex);
                         let nextPushTarget = null;
                         const nextVectors = getTilePushVectors(nextIndex);
                         for (const nVec of nextVectors) {
@@ -625,7 +625,7 @@ export function placeToken(index, instance) {
             }
         }
     } else {
-        const standingHeroId = BoardState.heroOnTile(index);
+        const standingHeroId = BoardState.workerOf(index);
         if (standingHeroId && def?.requiresHero === false) {
             BoardState.setHeroTile(standingHeroId, null);
             EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: standingHeroId });
@@ -654,7 +654,7 @@ export function moveToken(from, to) {
     const moving = occ.instance;
     const fromAnchor = occ.anchorIndex;
 
-    const heroLeftBehind = BoardState.heroOnTile(fromAnchor) || BoardState.heroOnTile(from);
+    const heroLeftBehind = BoardState.workerOf(fromAnchor) || BoardState.workerOf(from);
 
     BoardState.setToken(fromAnchor, null);
 
@@ -667,7 +667,7 @@ export function moveToken(from, to) {
 
     for (const t of occ.footprint) {
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
-        const heroLeft = BoardState.heroOnTile(t);
+        const heroLeft = BoardState.workerOf(t);
         if (heroLeft) {
             EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: t, heroId: heroLeft });
         }
@@ -706,7 +706,7 @@ export function returnTokenToTray(index, position = null) {
     }
 
     BoardState.setToken(occ.anchorIndex, null);
-    const heroId = BoardState.heroOnTile(occ.anchorIndex);
+    const heroId = BoardState.workerOf(occ.anchorIndex);
 
     if (position == null) {
         const col = colOf(occ.anchorIndex);
@@ -776,7 +776,7 @@ export function returnTokenToVault(index) {
     }
 
     BoardState.setToken(occ.anchorIndex, null);
-    const heroId = BoardState.heroOnTile(occ.anchorIndex);
+    const heroId = BoardState.workerOf(occ.anchorIndex);
 
     for (const t of occ.footprint) {
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
@@ -812,7 +812,7 @@ export function placeHero(heroId, index) {
         }
     }
 
-    const previous = BoardState.tileOfHero(heroId);
+    const previous = BoardState.workTileOf(heroId);
     if (previous === targetAnchor) return { success: true, displacedHeroId: null };
 
     // Vacate wherever they were, forfeiting that cycle.
@@ -824,7 +824,7 @@ export function placeHero(heroId, index) {
     }
 
     // If another hero was standing here, push them to a nearby cell or return them to Dock
-    const displacedHeroId = BoardState.heroOnTile(targetAnchor);
+    const displacedHeroId = BoardState.workerOf(targetAnchor);
     let heroPushTarget = null;
 
     if (displacedHeroId) {
@@ -835,7 +835,7 @@ export function placeHero(heroId, index) {
             const nextCol = colOf(targetAnchor) + vec.dCol;
             if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
             const nextIndex = nextRow * BOARD_SIZE + nextCol;
-            if (BoardState.heroOnTile(nextIndex)) continue;
+            if (BoardState.workerOf(nextIndex)) continue;
 
             const nextOcc = BoardState.getOccupyingToken(nextIndex);
             if (nextOcc?.instance) {
@@ -898,10 +898,10 @@ export function recallHero(index) {
     const occ = BoardState.getOccupyingToken(index);
     const targetTile = occ ? occ.anchorIndex : index;
 
-    const heroId = BoardState.heroOnTile(targetTile) || BoardState.heroOnTile(index);
+    const heroId = BoardState.workerOf(targetTile) || BoardState.workerOf(index);
     if (!heroId) return refuse('Nobody is standing on that tile');
 
-    const heroActualTile = BoardState.tileOfHero(heroId);
+    const heroActualTile = BoardState.workTileOf(heroId);
     BoardState.setHeroTile(heroId, null);
 
     const instance = BoardState.getToken(heroActualTile);
@@ -937,7 +937,7 @@ export function recallHero(index) {
  * Take a hero off the board wherever they are, by id.
  */
 export function recallHeroById(heroId) {
-    const index = BoardState.tileOfHero(heroId);
+    const index = BoardState.workTileOf(heroId);
     if (index == null) return { success: true, heroId };
     return recallHero(index);
 }
