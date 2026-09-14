@@ -134,7 +134,9 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
                     ...makeStatement(KEYWORD.APPLIES),
                     when: { event: 'COMBAT_ENGAGED', scope: 'self' },
                     chargeDelta: -1,
-                    payload: { statusId: 'poison', stacks: 3, chance: 100, target: 'enemy' },
+                    // V10b: the enemy is named by its role, not the retired flag.
+                    target: { role: 'opponent' },
+                    payload: { statusId: 'poison', stacks: 3, chance: 100 },
                 }],
             },
         });

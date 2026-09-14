@@ -2,6 +2,18 @@
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { hasWorkingStatements, usedBy } from '../../systems/effects/effectLibrary.js';
+import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
+
+/**
+ * One entry on its way into the library, in the shape the game runs.
+ *
+ * ⚠️ V10b: the retired `target: 'enemy'` flag becomes the enemy role here, on
+ * every entry — shipped and fixture alike — so nothing downstream ever sees the
+ * flag. The CMS store runs the same function on its own copy.
+ */
+function admit(entry) {
+    return migrateAppliesTargets(entry);
+}
 
 /**
  * The named effect library — every rule in the game, once, with a name.
@@ -37,7 +49,7 @@ function loadJsonEffects() {
                 const data = module.default || module;
                 for (const [effectId, entry] of Object.entries(data)) {
                     if (!entry.id) entry.id = effectId;
-                    effects[effectId] = entry;
+                    effects[effectId] = admit(entry);
                 }
             } catch (error) {
                 console.warn(`[EffectRegistry] Error loading effect JSON from ${path}:`, error);
@@ -66,7 +78,9 @@ export const EFFECTS = loadJsonEffects();
  * `fixture_effect_*` needs the entry to exist before it is expanded.
  */
 export function registerEffects(entries) {
-    Object.assign(EFFECTS, entries || {});
+    for (const [effectId, entry] of Object.entries(entries || {})) {
+        EFFECTS[effectId] = admit(entry);
+    }
 }
 
 /** One entry, or null. */

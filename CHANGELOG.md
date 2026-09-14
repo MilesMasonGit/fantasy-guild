@@ -5,6 +5,15 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **"Applies" now has one way to aim at the enemy** (Effects Grammar V10b). The old
+  "on an item, lands on the enemy" setting is gone; "aims at: the enemy" (from V10a) is
+  the only way. Anything still saved the old way is converted automatically when the
+  game or the CMS loads it, so a Sync can't bring it back. No shipped content used the
+  old setting. The rules text is fixed too: an item rule that poisoned the enemy used
+  to read as if it hit "heroes on adjacent Tokens"; it now says "to the enemy". The
+  content check now warns about any leftover old setting, and about an "Applies" aimed
+  at the enemy that also has a filter or reach (which the enemy aim ignores).
+
 - **Rules can now aim at "the enemy"** (Effects Grammar V10a). On a combat moment ("On
   Neighbour's Fight", "On Engaged") a rule's *deals damage*, *heals*, *removes* and
   *applies* can target the creature the hero is fighting; on a monster's own rule, "the

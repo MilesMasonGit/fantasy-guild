@@ -37,6 +37,7 @@ import { recipesForToken, contextTagsOf } from './recipePoolRegistry.js';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { EFFECTS } from './effectRegistry.js';
 import { expandBearer } from '../../systems/effects/effectLibrary.js';
+import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
 
 /**
  * Merge every Token JSON source into one keyed object.
@@ -59,7 +60,9 @@ function loadJsonTokens() {
                     // TileModifiers, TriggerSystem, Restrictions, statementText,
                     // deriveTokenType — keeps reading `def.statements` and did
                     // not change when the library landed.
-                    tokens[typeId] = expandBearer(def, EFFECTS);
+                    // V10b: inline statements lose the retired enemy flag here;
+                    // library statements already lost it in `effectRegistry`.
+                    tokens[typeId] = expandBearer(migrateAppliesTargets(def), EFFECTS);
                 }
             } catch (error) {
                 console.warn(`[TokenRegistry] Error loading token JSON from ${path}:`, error);
@@ -110,7 +113,7 @@ export function registerTokenTypes(definitions) {
     // `statements` (which most do, and which still work untouched) or an
     // `effects` reference into a fixture library registered beforehand.
     for (const [typeId, def] of Object.entries(definitions || {})) {
-        TOKENS[typeId] = expandBearer(def, EFFECTS);
+        TOKENS[typeId] = expandBearer(migrateAppliesTargets(def), EFFECTS);
     }
 }
 

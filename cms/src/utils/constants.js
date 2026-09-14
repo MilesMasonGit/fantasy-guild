@@ -109,6 +109,7 @@ export {
 export {
   migrateBearers,
   migratePromotionFields,
+  migrateAppliesTargetsIn,
   provisionalName,
 } from '../../../src/systems/effects/effectMigration.js';
 

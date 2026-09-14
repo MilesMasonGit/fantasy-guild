@@ -68,7 +68,7 @@ beforeEach(() => {
             name: 'Draught of Vigour',
             statements: [statementFor(
                 KEYWORD.APPLIES,
-                { statusId: 'well_fed', stacks: 1, chance: 100, target: 'hero' },
+                { statusId: 'well_fed', stacks: 1, chance: 100 },
                 { chargeDelta: -1 },
             )],
         },
@@ -178,12 +178,12 @@ describe('the stack is the charge pool (UE-21)', () => {
 });
 
 describe('an item’s rules read truthfully (UE-24)', () => {
-    it('says who a carried status lands on', () => {
-        const toHero = statementFor(KEYWORD.APPLIES, { statusId: 'well_fed', stacks: 1, chance: 100, target: 'hero' });
-        const toEnemy = statementFor(KEYWORD.APPLIES, { statusId: 'poison', stacks: 2, chance: 100, target: 'enemy' });
-
-        expect(renderStatement(toHero, {})).toContain('to the hero carrying it');
-        expect(renderStatement(toEnemy, {})).toContain('to the enemy its hero is fighting');
+    it('says when a carried status lands on the enemy — through the role (V10b)', () => {
+        const toEnemy = statementFor(
+            KEYWORD.APPLIES, { statusId: 'poison', stacks: 2, chance: 100 },
+            { when: { event: 'COMBAT_ENGAGED', scope: 'self' }, target: { role: 'opponent' } }
+        );
+        expect(renderStatement(toEnemy, {})).toContain('applies 2 stacks of Poison to the enemy');
     });
 
     it('leaves a Token’s reading alone when no target is named', () => {

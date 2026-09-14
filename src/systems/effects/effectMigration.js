@@ -3,6 +3,7 @@
 import { KEYWORD, statementsOf, makeStatement } from './statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { EFFECT_ID_PREFIX } from './effectLibrary.js';
+import { ROLE } from '../../config/registries/roleRegistry.js';
 
 /**
  * The one-time move of every inline statement into a named library entry.
@@ -285,4 +286,76 @@ export function migratePromotionFields(tokens = {}, { existing = {} } = {}) {
     }
 
     return { effects, tokens: out, moved };
+}
+
+/**
+ * ⭐ **The retired `target: 'enemy'` flag → the enemy role** (Effects Grammar
+ * V10b, G-40…G-43).
+ *
+ * Before V10a, an `Applies` could reach the creature a hero fights only through
+ * a one-off `payload.target` flag (UE-24). V10a added `target: { role:
+ * 'opponent' }`; this makes the role the only way, so there is one way to name
+ * the enemy rather than two.
+ *
+ * * `payload.target === 'enemy'` → `target: { role: 'opponent' }`, flag removed.
+ * * `payload.target === 'hero'` → flag removed. With no role the rule already
+ *   reads as the hero working the tile, which is what the flag said.
+ * * No flag, another keyword, or a value the flag never had → returned as is.
+ *   An unknown value is left in place on purpose: `ContentAudit` names it,
+ *   which is louder than a guess.
+ * * A statement that already names a role keeps it; only the flag goes.
+ * * Idempotent, and returns the SAME object when there is nothing to change.
+ *
+ * ⚠️ On a **Token** rule the old flag preferred the enemy on the filtered
+ * tiles. Migrated, it means what the role means everywhere (G-41): the
+ * creature the hero in this moment is fighting. No shipped content used it.
+ *
+ * ## ⚠️ Called from two places, like `migrateBearers`, for the same reason
+ * The game's registries run it on load (`effectRegistry`, `tokenRegistry`) and
+ * the CMS store runs it on every load path. If only the game converted, the next
+ * "Sync to Game" would write the old flag straight back into `data/`.
+ *
+ * @param {object} statement
+ * @returns {object}
+ */
+export function migrateAppliesTarget(statement) {
+    if (statement?.keyword !== KEYWORD.APPLIES) return statement;
+    const payload = statement.payload;
+    if (!payload || !Object.prototype.hasOwnProperty.call(payload, 'target')) return statement;
+    if (payload.target !== 'enemy' && payload.target !== 'hero') return statement;
+
+    const { target: flag, ...rest } = payload;
+    const next = { ...statement, payload: rest };
+    if (flag === 'enemy' && !statement.target?.role) {
+        next.target = { ...(statement.target || {}), role: ROLE.OPPONENT };
+    }
+    return next;
+}
+
+/**
+ * `migrateAppliesTarget` over one bearer or library entry's `statements`.
+ * Returns the same object when no statement changed, so a loader can call it on
+ * everything without copying content that never had the flag.
+ */
+export function migrateAppliesTargets(def) {
+    const statements = statementsOf(def);
+    if (!statements.length) return def;
+    let changed = false;
+    const next = statements.map((statement) => {
+        const migrated = migrateAppliesTarget(statement);
+        if (migrated !== statement) changed = true;
+        return migrated;
+    });
+    return changed ? { ...def, statements: next } : def;
+}
+
+/** `migrateAppliesTargets` over a keyed collection (effects, tokens, items). */
+export function migrateAppliesTargetsIn(collection = {}) {
+    let changed = false;
+    const out = {};
+    for (const [id, def] of Object.entries(collection || {})) {
+        out[id] = migrateAppliesTargets(def);
+        if (out[id] !== def) changed = true;
+    }
+    return changed ? out : collection;
 }
