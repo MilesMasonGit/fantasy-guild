@@ -7,6 +7,8 @@ import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
 import { HeroSkillSheet } from '../components/hero/HeroSkillSheet.jsx';
 import { Check, Repeat } from 'lucide-react';
+import { FLAG_COLOURS, isFlagColour } from '../../systems/board/FlagColours.js';
+import { FlagMark } from '../components/board/FlagMark.jsx';
 
 /**
  * HeroEditModal — **the hero's full sheet**, plus everything about them that
@@ -31,7 +33,10 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     const hero = useGameState(
         state => {
             const h = (state.heroes || []).find(x => x.id === heroId);
-            return h ? { id: h.id, name: h.name, spriteId: h.spriteId, classId: h.classId } : null;
+            return h ? {
+                id: h.id, name: h.name, spriteId: h.spriteId, classId: h.classId,
+                flagColour: isFlagColour(h.flagColour) ? h.flagColour : null
+            } : null;
         },
         ['heroes_updated'],
         null,
@@ -40,12 +45,15 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
 
     const [name, setName] = useState('');
     const [spriteId, setSpriteId] = useState(null);
+    // The hero's lasting flag colour (FP-82). Null until their first plant.
+    const [flagColour, setFlagColour] = useState(null);
 
     // Seed the draft from the hero each time the modal opens on someone new.
     useEffect(() => {
         if (!isOpen || !hero) return;
         setName(hero.name);
         setSpriteId(hero.spriteId || hero.classId);
+        setFlagColour(hero.flagColour);
     }, [isOpen, heroId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // The hero is gone from the roster — close rather than render null.
@@ -56,11 +64,17 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     if (!hero) return null;
 
     const trimmed = name.trim();
-    const dirty = trimmed !== hero.name || spriteId !== (hero.spriteId || hero.classId);
+    const dirty = trimmed !== hero.name
+        || spriteId !== (hero.spriteId || hero.classId)
+        || flagColour !== hero.flagColour;
     const canSave = trimmed.length > 0 && dirty;
 
     const handleSave = () => {
-        engine.HeroManager.updateHeroProfile(heroId, { name: trimmed, spriteId });
+        engine.HeroManager.updateHeroProfile(heroId, {
+            name: trimmed,
+            spriteId,
+            ...(flagColour ? { flagColour } : {})
+        });
         onClose();
     };
 
@@ -126,6 +140,32 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                                 style={{ imageRendering: 'pixelated' }}
                             >
                                 <ItemIcon item={{ sprite: id }} size={32} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Flag colour (FP-82): the hero's lasting flag, drawn with the
+                    flag sprite itself. Full hero recolouring is later. */}
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Flag colour</span>
+                    <div className="grid grid-cols-8 gap-1.5 p-1">
+                        {FLAG_COLOURS.map(colour => (
+                            <button
+                                key={colour}
+                                type="button"
+                                data-flag-swatch={colour}
+                                aria-pressed={flagColour === colour}
+                                onClick={() => setFlagColour(colour)}
+                                title={colour}
+                                className={cn(
+                                    'aspect-square rounded border flex items-center justify-center overflow-hidden transition-colors',
+                                    flagColour === colour
+                                        ? 'border-gi-primary bg-gi-primary/15'
+                                        : 'border-gi-border/50 bg-black/30 hover:border-gi-muted'
+                                )}
+                            >
+                                <FlagMark colour={colour} size={40} alt={`${colour} flag`} />
                             </button>
                         ))}
                     </div>

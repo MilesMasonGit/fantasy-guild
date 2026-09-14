@@ -18,8 +18,10 @@ export const DRAG_KIND = {
     HERO: 'hero',
     ITEM: 'item',
     /**
-     * A flag's pennant (Free Playmat slice 1.5): moves only the flag. Carries
-     * `heroId` and the flag's `skill`. Dropping it on the Dock recalls the hero.
+     * A hero's flag (Free Playmat slices 1.5, 1.5b-ii): moves the flag. Carries
+     * `heroId`. Started by the flag itself **or by a hero on the board** — the
+     * player never moves a hero (FP-76). Dropping it on the Dock recalls.
+     * `HERO` is now only a hero carried out of the Dock or the hero sheet.
      */
     FLAG: 'flag'
 };

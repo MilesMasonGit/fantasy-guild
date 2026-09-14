@@ -12,6 +12,7 @@ import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import * as Managers from './Managers.js';
 import * as FlagRules from './FlagRules.js';
+import { ensureFlagColour } from './FlagColours.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as PromotionSystem from '../hero/PromotionSystem.js';
@@ -654,6 +655,9 @@ export function plant(heroId, point) {
     const r = rt();
     if (!r) return { success: false, reason: 'No board' };
 
+    // A hero's first flag gets their lasting colour (FP-82); later plants keep it.
+    ensureFlagColour(heroId);
+
     // Planting on a Promotion Token is the deliberate gesture that asks again
     // (PR-7, FP-61) — even onto the very spot the flag already stands on, the
     // flag-era "picked up and put back". Not when another hero holds the Token:
@@ -895,6 +899,21 @@ function cycleCompleted(heroId) {
     if (!r || !claim) return;
     forgetNotices(r, heroId, claim.instanceId);
     r.cycleEnded.add(heroId);
+}
+
+/**
+ * The rule the hero's current work answers to — a work skill id, or
+ * `FlagRules.FIGHT` for an enemy — or null (not working, or working a Promotion
+ * Token or the Guild Hall, which no rule governs). Read by the rules panel to
+ * highlight the row the hero is working now (slice 1.5b-ii).
+ */
+export function workingRuleOf(heroId) {
+    const claim = heroId ? BoardState.claimOfHero(heroId) : null;
+    if (!claim) return null;
+    const found = BoardState.findTokenById(claim.instanceId, claim.tile);
+    if (!found) return null;
+    const def = getTokenType(found.instance.typeId);
+    return ruleIdOf(kindOf(found.instance, def), def);
 }
 
 /** Drop every runtime record (claims, waits, skips) for the current board. */

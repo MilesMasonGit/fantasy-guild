@@ -1,32 +1,24 @@
-import { Flag } from 'lucide-react';
-import { cn } from '../../utils/cn.js';
+import { PixelArt } from '../base/TokenSprite.jsx';
+import { flagSpritePath } from '../../../systems/board/FlagColours.js';
+import { FLAG_PX } from './flagGeometry.js';
 
 /**
- * A flag's pennant mark (Free Playmat slice 1.5, FPP-15): a gold lucide `Flag`.
- * **Grey when idle** (FP-29); the "…" chip is the caller's. A flag has no skill
- * since slice 1.5b (FP-71), so there is no skill disc; slice 1.5b-ii replaces
- * this with the owner's flag sprites (FP-77).
+ * A hero's flag, drawn with the owner's sprites (Free Playmat slice 1.5b-ii,
+ * FP-77, FP-82): `hero_flag_<colour>.png`, or the plain base flag for a hero
+ * with no colour. 128 px by default (2× the 64 px art, pixelated).
  *
- * Drawn by the board's `FlagLayer` and by the drag ghost, so a pennant in the
- * hand looks like the one on the mat.
+ * Drawn by the board's `FlagLayer`, the drag ghost, the rules panel and the
+ * Edit Hero colour swatches, so a flag looks the same everywhere.
  */
-export const FlagMark = ({ size = 24, idle = false, className }) => {
-    return (
-        <span
-            className={cn('relative inline-block pointer-events-none select-none', className)}
-            style={{ width: size, height: size }}
-        >
-            <Flag
-                size={size}
-                strokeWidth={2.4}
-                className={cn(
-                    'absolute left-0 top-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]',
-                    idle ? 'text-stone-400' : 'text-gi-gold'
-                )}
-                fill={idle ? 'rgba(120, 113, 108, 0.55)' : 'rgba(251, 191, 36, 0.45)'}
-            />
-        </span>
-    );
-};
+export const FlagMark = ({ colour = null, size = FLAG_PX, lifted = false, alt = 'Flag', className, style }) => (
+    <PixelArt
+        src={flagSpritePath(colour)}
+        alt={alt}
+        size={size}
+        lifted={lifted}
+        className={className}
+        style={style}
+    />
+);
 
 export default FlagMark;

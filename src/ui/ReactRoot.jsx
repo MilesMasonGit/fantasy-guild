@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FlagRulesPanel } from './components/drawer/FlagRulesPanel.jsx';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -74,9 +76,10 @@ import PromotionCeremonyModal from './modals/PromotionCeremonyModal.jsx';
  * board. Refining it is expected — but note the floor: `Toast` carries
  * `min-w-[220px]`, so under about 240px the toasts overflow their own column.
  */
-const NotificationColumn = ({ menuRight = false }) => {
+const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
     const [notificationsHidden, setNotificationsHidden] = React.useState(false);
     const [questsHidden, setQuestsHidden] = React.useState(false);
+    const slideFrom = menuRight ? 40 : -40;
 
     return (
         <aside
@@ -89,6 +92,24 @@ const NotificationColumn = ({ menuRight = false }) => {
                 className="w-full relative shrink-0 flex flex-col justify-between"
                 style={{ height: BOARD_PX, maxHeight: '100%' }}
             >
+                {/* A hero's flag rules (Free Playmat 1.5b-ii, FP-81): a narrow
+                    panel over this column, so the board stays in view. A
+                    dedicated panel rather than the Bank drawer, which spans the
+                    board too (D-238). */}
+                <AnimatePresence>
+                    {flagRules?.heroId && (
+                        <motion.div
+                            key="flag-rules"
+                            initial={{ x: slideFrom, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: slideFrom, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                            className="absolute inset-0 z-20"
+                        >
+                            <FlagRulesPanel heroId={flagRules.heroId} onClose={flagRules.close} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                 {/* Top: Notifications */}
                 <div className="flex-1 min-h-0 flex flex-col">
                     <button
@@ -281,7 +302,7 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </aside>
                             ) : (
-                                <NotificationColumn />
+                                <NotificationColumn flagRules={ui.flagRules} />
                             )
                         )}
                         <div className="flex-1 relative flex flex-col overflow-hidden z-10">
@@ -389,7 +410,7 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </aside>
                             ) : (
-                                <NotificationColumn menuRight />
+                                <NotificationColumn menuRight flagRules={ui.flagRules} />
                             )
                         )}
                         {menuRight && <BubbleMenu ui={ui} side="right" />}

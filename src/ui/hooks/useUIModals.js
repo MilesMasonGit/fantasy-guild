@@ -113,6 +113,11 @@ export const useUIModals = (engine) => {
     // re-found on load (`standingPromotionOffer`) rather than lost with the tab.
     const [promotionOffer, setPromotionOffer] = useState(null);
 
+    // Whose flag rules panel is open, or null (Free Playmat 1.5b-ii, FP-73,
+    // FP-81). Opened only from a flag's gear badge (`ui:open_flag_rules`,
+    // FPP-20); one hero at a time — another gear swaps the hero.
+    const [flagRulesHeroId, setFlagRulesHeroId] = useState(null);
+
     // 'equipment' | 'skills' — which half of a pinned dock card's body shows.
     // One value for the whole dock, not one per card; see `toggleBodyView`.
     const [bodyView, setBodyView] = useState('equipment');
@@ -282,6 +287,11 @@ export const useUIModals = (engine) => {
             promotionOffer,
             closePromotion: useCallback(() => setPromotionOffer(null), [])
         },
+        flagRules: {
+            heroId: flagRulesHeroId,
+            open: useCallback((heroId) => setFlagRulesHeroId(heroId || null), []),
+            close: useCallback(() => setFlagRulesHeroId(null), [])
+        },
         inspect: {
             selection: inspectSelection,
             byPane: inspectByPane,
@@ -351,6 +361,11 @@ export const useUIModals = (engine) => {
                 const tab = data?.tab;
                 if (!tab || tab === 'heroes') return;
                 openDrawerTab(tab, data?.filter);
+            }),
+            // A flag's gear badge (FlagLayer) — the only route into a hero's
+            // flag rules (FP-73, FPP-20).
+            engine.EventBus.subscribe('ui:open_flag_rules', (data) => {
+                if (data?.heroId) setFlagRulesHeroId(data.heroId);
             }),
             // A hero finished training. Nothing has happened to them yet — the
             // tile holds the offer open, and this only decides to draw it.
