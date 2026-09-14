@@ -115,6 +115,17 @@ These supersede the decisions named in each row.
 | **FP-76** | ⭐ **The player never moves a hero.** Clicking and dragging a hero **moves their flag**; the hero goes to their next appropriate target (walking is Stage 2; until then they appear at it). Replaces FPP-15's "drag the hero to plant where dropped". | Owner: *"The player does not control the Hero. They move the flag, and the hero walks to the next appropriate target."* |
 | **FP-77** | **Flags use the owner's sprites** (`public/assets/ui/flag/`: a base flag and eight colours), replacing the icon pennant; **hero and flag sprites display at 128 px**. | Owner: *"I have flag sprites that can be used instead of an icon… These sprites should still be displayed at 128px size."* |
 | **FP-78** | **Built as slice 1.5b, before 1.6.** Hero walking itself stays in Stage 2. | Owner, over folding it into Stage 2. |
+| **FP-79** | **Priority is a number 1–5 per skill.** *Director's reading, to confirm: **1 is highest**, every skill starts at **3**.* Within the same number the hero takes the nearest job (FP-72). | Owner, over High/Normal/Low and a ranked list. |
+| **FP-80** | **A higher-priority job appearing mid-job: the hero finishes the current cycle, then switches** (in combat, after the win). No progress is lost. | Owner, over "stay until the job stops" and "switch at once". |
+| **FP-81** | **The rules drawer is a narrow panel that covers the Notifications column.** | Owner, over the full Bank-width drawer. |
+| **FP-82** | **Each hero has a lasting flag colour, given automatically and changeable in the Edit Hero modal.** Full hero recolouring is a later polish feature. | Owner, over "automatic only" and "plain flag means idle". |
+
+**Director's technical picks for 1.5b (provisional, owner may overturn):**
+* **FPP-17** — Rules live **on the hero** (`hero.flagRules`), so they survive a recall, a defeat and a save; a missing entry means allowed at priority 3; skills gained later start at the default, a banked-and-restored skill keeps its rule.
+* **FPP-18** — A skill switched off in a hero's rules is skipped with its own hover reason ("off in X's rules"), distinct from a Token being disallowed (FP-35).
+* **FPP-19** — Old saves' single `flag.skill` is **dropped**, not turned into a priority (FPP-16 had made most flags Cooking by accident).
+* **FPP-20** — On today's grid the 128 px flag's pole stands at the tile's **bottom-left corner**; rules open **only from the flag's gear badge** (FP-73), not also from the hero sheet.
+* **Slicing:** **1.5b-i** engine, rules model, migration and both radii at 164; **1.5b-ii** dragging the hero moves the flag, flag sprites and colours (with the Edit Hero picker), the gear badge and the rules drawer.
 
 ### What this changes in other plans
 
