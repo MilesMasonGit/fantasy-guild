@@ -392,6 +392,9 @@ function* applicableStatements(index) {
                 // and the whole feature was inert on a Token while rendering a
                 // perfectly good sentence.
                 if (!statement.payload?.statusId && !statement.payload?.effectId) continue;
+                // G-42: an `Applies` aimed at a role is not a filter rule, so it
+                // never reaches a tile's occupants this way.
+                if (statement.target?.role) continue;
             } else if (!statement.payload?.type) {
                 continue;
             }
@@ -483,7 +486,10 @@ function loadoutPayloads(index, keyword) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return [];
 
-    return HeroEffects.loadoutStatementsWith(hero, keyword).map(statement => ({
+    return HeroEffects.loadoutStatementsWith(hero, keyword)
+        // G-42: a role-aimed rule reaches its role, never this tile's occupant.
+        .filter(statement => !statement?.target?.role)
+        .map(statement => ({
         ...statement.payload,
         effectTitle: statement.effectTitle,
         chargeDelta: statement.chargeDelta,

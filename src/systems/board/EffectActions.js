@@ -8,6 +8,7 @@ import * as LiveEffects from '../effects/LiveEffects.js';
 import * as BoardState from './BoardState.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as Charges from './Charges.js';
+import * as BoardCombat from './BoardCombat.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { TILE_COUNT, BOARD_SIZE } from '../../config/boardGeometry.js';
@@ -62,6 +63,9 @@ export function amountOf(statement, roles) {
  * somebody, so "this entity" on a Poison means the person carrying it.
  */
 export function heroFor(role, roles) {
+    // ⚠️ `the enemy` is never a hero — without this it fell through to the
+    // occupant of `self` and would have healed or cleansed the hero (G-43).
+    if (role === ROLE.OPPONENT) return null;
     if (role === ROLE.ACTOR) return roles?.actor || null;
     if (role === ROLE.SELF && roles?.selfHeroId) return roles.selfHeroId;
     const tile = role === ROLE.SOURCE ? roles?.source : roles?.self;
@@ -70,6 +74,9 @@ export function heroFor(role, roles) {
 
 /** The **tile** a role points at, or null. Only `self` and `source` have one. */
 export function tileFor(role, roles) {
+    // G-42: Restores and Transforms cannot aim at the enemy, and a creature has
+    // no square of its own to name — it is found by hero, never by tile.
+    if (role === ROLE.OPPONENT) return null;
     if (role === ROLE.ACTOR) {
         // The actor is a person; the tile they are standing on is the honest
         // reading of "where the actor is".
@@ -91,7 +98,21 @@ export function heal(statement, roles) {
     const amount = Math.round(amountOf(statement, roles));
     if (!Number.isFinite(amount) || amount <= 0) return 0;
 
-    const heroId = heroFor(statement?.target?.role || ROLE.ACTOR, roles);
+    const role = statement?.target?.role || ROLE.ACTOR;
+
+    /**
+     * ⭐ Healing `the enemy` (G-42): its fight's HP, capped at its max — the
+     * same no-overheal rule the hero side has. Found by hero (G-43).
+     */
+    if (role === ROLE.OPPONENT) {
+        const hp = BoardCombat.opponentFightOf(statement, roles)?.combat?.enemyHp;
+        if (!hp) return 0;
+        const before = hp.current;
+        hp.current = Math.min(hp.max, hp.current + amount);
+        return hp.current - before;
+    }
+
+    const heroId = heroFor(role, roles);
     if (!heroId) return 0;
 
     const hero = HeroManager.getHero(heroId);
@@ -210,10 +231,18 @@ export function transform(statement, roles) {
  * An empty `effectId` removes everything, which is the "cure all ills" case.
  */
 export function remove(statement, roles) {
-    const heroId = heroFor(statement?.target?.role || ROLE.ACTOR, roles);
+    const role = statement?.target?.role || ROLE.ACTOR;
+    const effectId = statement?.payload?.effectId || null;
+
+    // ⭐ Cleansing `the enemy` (G-42): off the fight's own effect list.
+    if (role === ROLE.OPPONENT) {
+        const bearer = BoardCombat.opponentBearerOf(statement, roles);
+        return bearer ? LiveEffects.removeFrom(bearer, effectId) : 0;
+    }
+
+    const heroId = heroFor(role, roles);
     if (!heroId) return 0;
 
-    const effectId = statement?.payload?.effectId || null;
     const removed = LiveEffects.removeFromHero(heroId, effectId);
     if (removed) {
         logger.debug('EffectActions', `Removed ${removed} effect(s) from ${heroId}`);

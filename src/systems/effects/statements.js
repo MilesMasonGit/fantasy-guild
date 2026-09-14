@@ -214,6 +214,13 @@ export const KEYWORDS = Object.freeze([
          */
         scales: 'stacks',
         blurb: 'Puts a status on the heroes working nearby Tokens — Well Fed, Poison, and the rest.',
+        /**
+         * ⭐ An OPTIONAL role target (G-42). Unset, `Applies` reads its filter
+         * and reach exactly as before; set, the role replaces both. Only the
+         * enemy is on offer — the one participant a filter of Tokens cannot name.
+         */
+        optionalRole: true,
+        roles: [ROLE.OPPONENT],
         filter: true,
         when: WHEN.OPTIONAL,
         upkeep: true
@@ -245,6 +252,7 @@ export const KEYWORDS = Object.freeze([
         blurb: 'Deals damage to somebody involved in the moment — the hero who just harvested or fought this.',
         filter: false,
         targetsRole: true,
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT],
         when: WHEN.REQUIRED,
         upkeep: true
     },
@@ -260,6 +268,7 @@ export const KEYWORDS = Object.freeze([
         blurb: 'Restores health to somebody involved in the moment.',
         filter: false,
         targetsRole: true,
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT],
         when: WHEN.REQUIRED,
         upkeep: true
     },
@@ -281,6 +290,8 @@ export const KEYWORDS = Object.freeze([
         blurb: 'Gives a Token some of its charges back.',
         filter: false,
         targetsRole: true,
+        // G-42: never the enemy — a creature has no charges to give back.
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         when: WHEN.REQUIRED,
         upkeep: true
     },
@@ -298,6 +309,7 @@ export const KEYWORDS = Object.freeze([
         blurb: 'Takes a lingering effect off somebody. Name one, or leave it blank to clear them all.',
         filter: false,
         targetsRole: true,
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT],
         when: WHEN.REQUIRED,
         upkeep: true
     },
@@ -328,6 +340,8 @@ export const KEYWORDS = Object.freeze([
         blurb: 'This Token becomes a different Token, where it stands.',
         filter: false,
         targetsRole: true,
+        // G-42: never the enemy — a transform acts on a Token's square.
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         when: WHEN.REQUIRED,
         upkeep: true
     },
@@ -381,6 +395,31 @@ export const KEYWORDS = Object.freeze([
 /** One keyword's rules, or null. */
 export function getKeyword(id) {
     return KEYWORDS.find(k => k.id === id) || null;
+}
+
+/**
+ * The roles a keyword may aim at, whatever the moment (G-42).
+ *
+ * ⭐ One allowlist, read by the role picker (`statementSlots`) and by
+ * `ContentAudit`, so the editor cannot offer what the audit would flag.
+ * A keyword with no role target has none.
+ */
+export function rolesForKeyword(keywordId) {
+    return getKeyword(keywordId)?.roles || [];
+}
+
+/** Whether a keyword may aim at a role at all (G-42). */
+export function keywordAllowsRole(keywordId, role) {
+    return rolesForKeyword(keywordId).includes(role);
+}
+
+/**
+ * Whether an `Applies` aims at a role instead of its filter (G-42).
+ *
+ * Set, the role replaces the filter and the reach; unset, nothing changes.
+ */
+export function appliesByRole(statement) {
+    return statement?.keyword === KEYWORD.APPLIES && !!statement?.target?.role;
 }
 
 /**

@@ -1,7 +1,8 @@
 // Fantasy Guild — a statement as an ordered list of slots (Effects Grammar v2, V3)
 
 import {
-    KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement, DEFAULT_STATEMENT_CHARGE_DELTA
+    KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement, DEFAULT_STATEMENT_CHARGE_DELTA,
+    rolesForKeyword
 } from './statements.js';
 import {
     CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, chargeDeltaOf
@@ -106,7 +107,12 @@ function momentOptions() {
  */
 function roleOptions(statement) {
     const available = rolesOf(statement?.when?.event);
-    return ROLES.filter(r => available.includes(r.id)).map(r => option(r.id, r.label, r.hint));
+    // ⚠️ ...and the keyword decides too (G-42): "Restores 1 charge to the enemy"
+    // is never offered, whatever the moment. The same allowlist ContentAudit reads.
+    const allowed = rolesForKeyword(statement?.keyword);
+    return ROLES
+        .filter(r => available.includes(r.id) && allowed.includes(r.id))
+        .map(r => option(r.id, r.label, r.hint));
 }
 
 /** Every skill, as options — from the game registry, so the CMS can never offer one it lacks. */
@@ -630,7 +636,33 @@ export function slotsOf(statement, ctx = {}) {
         });
     }
 
-    if (keyword.reach) {
+    /**
+     * ⭐ `Applies` may aim at a role instead of its filter (G-42).
+     *
+     * Offered only where the moment supplies a role the keyword allows — so on
+     * a combat moment "the enemy" appears, and on a cycle moment the slot is
+     * absent and `Applies` edits exactly as before. A role already chosen keeps
+     * its slot on any moment, so an orphaned one can be seen and cleared.
+     */
+    const byRole = !!keyword.optionalRole && !!statement?.target?.role;
+    if (keyword.optionalRole) {
+        const offered = roleOptions(statement);
+        if (offered.length || byRole) {
+            slots.push({
+                id: 'role', kind: SLOT_KIND.VOCABULARY, label: 'aims at', optional: true,
+                value: statement?.target?.role || '',
+                options: [
+                    option('', 'whoever its filter reaches', 'No role — the reach and filter decide, as usual.'),
+                    ...offered
+                ],
+                labelFor: v => getRole(v)?.label,
+                patch: v => ({ target: v ? { ...(statement.target || {}), role: v } : null })
+            });
+        }
+    }
+
+    // A role replaces the filter and the reach, so neither is offered beside it.
+    if (keyword.reach && !byRole) {
         slots.push({
             id: 'reach', kind: SLOT_KIND.VOCABULARY, label: 'how far',
             value: reachOf(statement),
@@ -639,7 +671,7 @@ export function slotsOf(statement, ctx = {}) {
         });
     }
 
-    if (keyword.filter) {
+    if (keyword.filter && !byRole) {
         const mode = statement?.to?.mode || 'all';
         slots.push({
             id: 'filterMode', kind: SLOT_KIND.VOCABULARY, label: 'reaches',
@@ -691,7 +723,7 @@ export function slotsOf(statement, ctx = {}) {
         }
     }
 
-    if (keyword.filter) {
+    if (keyword.filter && !byRole) {
         /**
          * The stacked filters (G-9). A list rather than a single value, so it
          * gets the form treatment (G-20) — but the FILTER VOCABULARY still comes

@@ -4,9 +4,9 @@
 [`concept_free_playmat.md`](concept_free_playmat.md), corrected the same day
 against the code. Status table in §7, open questions in §8.*
 
-**Status: APPROVED 2026-09-13. Stage 0 DONE — owner verdict GO (tag `feel-trial-0`). Slice 1.0 next. No game code written.**
+**Status: APPROVED 2026-09-13. Stage 0 DONE (tag `feel-trial-0`); slices 1.0–1.3 and 1.4a DONE and merged. Effects Grammar V10 in progress, then 1.4b.**
 
-**Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-62
+**Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-70
 are the owner's rulings of 2026-09-13 on the questions a code audit raised and on
 this plan. Where the two differ, §1 here wins.
 
@@ -342,7 +342,7 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 | 1.2 `nearby()` + passive readers | ✅ **DONE** 2026-09-13 | `nearby.js` (centre-to-centre, Near 272 u) now drives `TileModifiers` (Provides/Grants/Applies, `filterTargetTiles` → statuses, damage, counts) and `ConnectionLines`; rebuilds follow the radius; 2×2 reach 12 → 8 per FP-41; dev-only Mat Tuner (`matTuning.js` + `MatTuner.jsx`) with Near radius |
 | 1.3 Crafting, charges, Managers, triggers, Cannot | ✅ **DONE** 2026-09-13 | `RecipeResolver`, `Charges`, `Managers` (nearest-then-anchor tie-break), `TriggerSystem` neighbour triggers and `Restrictions` (Near count on hypothetical layouts via `centreOf`) all measure with `nearby.js`; `Placement` publishes one dirty event with a radius-aware rebuild set; board-reach rules rebuild every tile; 36 new tests (`ActiveReaders`); `adjacency.js` has no production callers |
 | 1.4a Worker seam | ✅ **DONE** 2026-09-13 | `BoardState.workerOf` / `workTileOf` / `displayTileOf`, still backed by `heroTiles`; ~30 readers converted; `WorkerSeam.test.js` guard; no behaviour change. ⚠️ `workerOf` still returns a hero on a bare tile and `recallHeroById` resolves via the tile — both for 1.4b |
-| V10 `the opponent` role | **PLANNING** 2026-09-13 | Planned before code; owner questions first |
+| V10 `the enemy` role | 🔧 **V10a DONE, V10b IN PROGRESS** 2026-09-13 | Effects Grammar G-40…G-43; enemy found by hero, flag-proof |
 | 1.4b Flags replace `heroTiles`, work flags | **NOT STARTED** | After V10 |
 | 1.4c Combat, promotion, disallow | **NOT STARTED** | |
 | 1.5 Flags UI | **NOT STARTED** | |

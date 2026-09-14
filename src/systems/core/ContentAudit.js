@@ -1,7 +1,7 @@
 // Fantasy Guild — boot-time content-integrity audit (CR2-108)
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword } from '../effects/statements.js';
+import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
 import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { getReach } from '../../config/registries/reachRegistry.js';
@@ -392,6 +392,17 @@ function auditStatements(out, where, def) {
                 `one of its rules aims at ${getRole(targetRole)?.label || targetRole}, but ${where_} ` +
                 `never supplies one — so the rule reaches nobody, on any board. Pick a moment that has ` +
                 `one, or aim somewhere else.`));
+        }
+
+        /**
+         * ⚠️ **G-42: a keyword may only aim at the roles it allows.** The same
+         * allowlist the role picker reads, so a "Restores … to the enemy" that
+         * arrived by hand-edit or import is named rather than silently inert.
+         */
+        if (targetRole && keyword?.roles && !keywordAllowsRole(keyword.id, targetRole)) {
+            out.push(finding(where,
+                `one of its rules is a "${keyword.label}" aimed at ${getRole(targetRole)?.label || targetRole}, ` +
+                `and a "${keyword.label}" can never aim there — so the rule reaches nobody. Aim somewhere else.`));
         }
 
         /**

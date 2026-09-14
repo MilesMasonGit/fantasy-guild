@@ -123,7 +123,10 @@ export function fireLiveStatement(statement, roles) {
          * Without this the dispatch covered only the four damage-ish verbs, so
          * the combo mechanism the editor advertises did not exist.
          */
-        if (statement.keyword === KEYWORD.APPLIES && roles?.selfHeroId && statement.payload?.effectId) {
+        // G-42: an `Applies` aimed at a role goes to that role, not to the bearer.
+        if (statement.keyword === KEYWORD.APPLIES && statement.target?.role) {
+            StatusApplication.applyToRole(statement, roles);
+        } else if (statement.keyword === KEYWORD.APPLIES && roles?.selfHeroId && statement.payload?.effectId) {
             LiveEffects.applyToHero(roles.selfHeroId, statement.payload,
                 statement.sourceEffectId || null, fireLiveStatement);
         }
@@ -297,7 +300,9 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
      * targeting question is answered by `StatusApplication` rather than here.
      */
     if (statement.keyword === KEYWORD.APPLIES) {
-        StatusApplication.applyToNeighbours(tile, statement);
+        // G-42: a role, when set, replaces the filter and the reach.
+        if (statement.target?.role) StatusApplication.applyToRole(statement, resolveRoles(payload, tile));
+        else StatusApplication.applyToNeighbours(tile, statement);
     }
 
     for (const modifier of [statement.payload].filter(Boolean)) {

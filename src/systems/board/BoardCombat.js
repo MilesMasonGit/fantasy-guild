@@ -17,6 +17,8 @@ import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
+import { momentSupplies } from '../../config/registries/triggerRegistry.js';
+import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 
@@ -229,6 +231,51 @@ export function enemyBearerAt(tile) {
     return fight ? enemyBearer(tile, fight) : null;
 }
 
+/**
+ * ⭐ **The fight a hero is in, found by HERO — never by tile** (G-43).
+ *
+ * `the enemy` is looked up here. Where the hero is recorded as standing does
+ * not enter into it: under Free Playmat flags (FP-67) a hero's recorded tile
+ * and the tile they fight on can differ, and a rule aimed at their enemy must
+ * not quietly hit whoever is on the recorded tile instead.
+ *
+ * At most one fight names a hero — `tickTile` ends any other on creation.
+ */
+export function fightOfHero(heroId) {
+    if (!heroId) return null;
+    for (const fight of fights.values()) {
+        if (fight.assignedHeroId === heroId) return fight;
+    }
+    return null;
+}
+
+/** The bearer for the enemy `heroId` is fighting, or null (G-43). */
+export function enemyBearerOfHero(heroId) {
+    const fight = fightOfHero(heroId);
+    return fight ? enemyBearer(fight.tile, fight) : null;
+}
+
+/**
+ * The fight a statement aimed at `the enemy` reaches, or null — what every verb
+ * resolves `opponent` through.
+ *
+ * ⚠️ **Only on a moment that supplies the role** (G-2, G-43). The picker never
+ * offers the enemy elsewhere, and this makes the runtime agree: a rule on a
+ * cycle moment reaches nobody even if its hero happens to be mid-fight, rather
+ * than hitting a creature its sentence could not have meant. With no fight it
+ * also reaches nobody — and never falls back to the hero.
+ */
+export function opponentFightOf(statement, roles) {
+    if (!momentSupplies(statement?.when?.event, ROLE.OPPONENT)) return null;
+    return fightOfHero(opponentSeekerOf(roles));
+}
+
+/** The same, as a `LiveEffects` bearer. */
+export function opponentBearerOf(statement, roles) {
+    const fight = opponentFightOf(statement, roles);
+    return fight ? enemyBearer(fight.tile, fight) : null;
+}
+
 /** Drop a tile's fight, so the next engagement starts clean. */
 export function endFight(tile) {
     clearEnemyCombatModifiers(tile);
@@ -290,6 +337,15 @@ export function tickTile(tile, instance, delta, heroId) {
     }
 
     if (!fight) {
+        /**
+         * ⚠️ **One fight per hero** (G-43). A hero fighting somewhere else is
+         * no longer fighting there — end that fight first, which also takes
+         * back the numbers its enemy lent the hero. Without this two fights
+         * could name one hero and `fightOfHero` would have to guess.
+         */
+        for (const [otherTile, other] of fights) {
+            if (otherTile !== tile && other.assignedHeroId === heroId) endFight(otherTile);
+        }
         fight = createFight(tile, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)));
         fights.set(tile, fight);
         applyEnemyCombatModifiers(tile, heroId);

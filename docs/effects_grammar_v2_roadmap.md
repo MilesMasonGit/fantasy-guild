@@ -389,6 +389,22 @@ one-off flag**, so there is one way to name the creature rather than two. Owner
 ruled it in on 2026-09-12 as its own slice — ⚠️ it touches shipped behaviour and
 needs its own tests, which is exactly why it is not folded into the editor work.
 
+#### V10 rulings, 2026-09-13 (planned with the Free Playmat, FP-67)
+
+| # | Decision | Why |
+|---|---|---|
+| **G-40** | ⭐ **The role reads "the enemy"** in rules text, the picker and the audit (one label, from `ROLES`). | Owner, over "the opponent" and "the creature being fought". The game's own word (G-24). |
+| **G-41** | **One meaning everywhere: the creature the hero in this moment is fighting.** On a monster's own rule that is the monster itself. | Owner, over "the other side from the bearer". A shared effect (Thorns sits on items and monsters) reads and acts the same wherever it is attached. |
+| **G-42** | **Deals, Applies, Heals and Removes can aim at the enemy.** Restores and Transforms cannot. `Applies` gains an optional role target that replaces filter + reach when set. | Owner, over "also Restores/Transforms" and "Deals/Applies only". |
+| **G-43** | ⭐ **The enemy is found by hero, never by tile** — `BoardCombat.fightOfHero(heroId)` via the fight's `assignedHeroId`; one fight per hero. Supplied by `COMBAT_ENGAGED` and `SELF_COMBAT_ENGAGED` only (not `COMBAT_RESOLVED`: the creature is at 0 HP). Outside combat the role is not offered, and at runtime reaches nobody. | Director (technical), required by Free Playmat FP-67 so flags and claims (slice 1.4b/c) can't break it. |
+
+**Two sittings.** **V10a** adds the role, resolution by hero, and gives `LoadoutMoments` the
+`Deals`/`Heals`/`Removes` verbs (⚠️ items' damage/heal/cleanse rules act for the first time,
+and spend their charges). **V10b** retires the `target: 'enemy'` flag through a
+`migrateAppliesTarget` conversion run by both the game loader and the CMS normaliser (no shipped
+content uses it; tests only), deletes the flag's code paths, and fixes the sentence that today
+renders an enemy-targeted item `Applies` as "to heroes working this Token".
+
 ### V8 — The rest of the verbs
 
 `Heals`, `Restores`, `Removes` — each with its reader, each its own commit.
@@ -424,7 +440,8 @@ or a random free tile (G-15).
 | V7b.2 `SELF_TOKEN_DEPLETED` | **DONE** 2026-09-09 | ⭐ "Leave a Stump behind when this depletes" is authorable — §4b's open item is closed. The moment is `settled`: no charge paid, no charge gate. 13 tests, 5 of which fail when neutered. |
 | V7b.3 Author the seven, then delete the old engine | ⏸ **Owner deferred** | Ruled 2026-09-09: *"I don't really want to author these effects now. I want the system to be more complete first. These effects are just theoretical test effects, there may not be those effects in the final game."* Nothing waits on it — both engines run side by side. |
 | V8 The rest of the verbs | **DONE** 2026-09-08 | `Heals`, `Restores`, `Removes` in `EffectActions.js`. ⭐ `Restores` is the reader `CHARGE_EXTEND` was named for; `Removes` is the first caller a cleanse has ever had. 14 new tests. |
-| V10 `the opponent` role | **NOT STARTED** | Ruled in by the owner 2026-09-12. Closes the asymmetry where only `Applies` can name the creature a hero is fighting, and retires its one-off flag. |
+| V10a `the enemy` role | **DONE** 2026-09-13 | G-40…G-43. `ROLE.OPPONENT` ("the enemy") from `COMBAT_ENGAGED`/`SELF_COMBAT_ENGAGED`; resolved by hero via `BoardCombat.fightOfHero`; one fight per hero; Deals/Heals/Removes/Applies-with-role, including from items (`LoadoutMoments`, charge spent only when the rule changed something); per-keyword role allowlist in picker and ContentAudit. 17 tests, 13 neuterings caught. |
+| V10b Retire the `target: 'enemy'` flag | **IN PROGRESS** 2026-09-13 | `migrateAppliesTarget` in game loader + CMS normaliser; delete the flag's paths; fix the misleading item `Applies` sentence. |
 | V9 `Spawns` and `Transforms` | **DONE** 2026-09-08 | `placementRegistry.js` — the destination is an authored choice, never a hidden fallback. 15 new tests. |
 
 *Carried over and already done:* v1 P1 (the filter tells the truth), P2 (reach),

@@ -72,7 +72,17 @@ function countMatches(statement, roles) {
 }
 
 /** The entity a role points at, as something damage can be applied to. */
-function targetOf(role, roles) {
+function targetOf(role, roles, statement) {
+    /**
+     * ⭐ `the enemy` — found by hero, never by tile (G-43). No fight, or a
+     * moment that does not supply the role, reaches nobody; it never falls
+     * through to the occupant rule below, which would hit the hero.
+     */
+    if (role === ROLE.OPPONENT) {
+        const fight = BoardCombat.opponentFightOf(statement, roles);
+        return fight?.combat?.enemyHp ? enemyTarget(fight) : null;
+    }
+
     if (role === ROLE.ACTOR) {
         const heroId = roles?.actor;
         return heroId ? heroTarget(heroId) : null;
@@ -203,7 +213,7 @@ export function deal(statement, roles) {
     // nothing. That is the same honest nothing an unmatched filter returns, not
     // a failure, and `ContentAudit` is what warns about a rule that can NEVER
     // have a target rather than one that merely has none right now.
-    const target = targetOf(statement?.target?.role || ROLE.ACTOR, roles);
+    const target = targetOf(statement?.target?.role || ROLE.ACTOR, roles, statement);
     if (!target) return 0;
 
     return target.apply(amount, !!payload.ignoresArmor);
