@@ -4,7 +4,7 @@
 [`concept_free_playmat.md`](concept_free_playmat.md), corrected the same day
 against the code. Status table in §7, open questions in §8.*
 
-**Status: APPROVED 2026-09-13. Stage 0 DONE (tag `feel-trial-0`); slices 1.0–1.5 and Effects Grammar V10 DONE and merged (2026-09-14). Owner played the flags 2026-09-14 and ruled FP-71…FP-78 (§1.8); **slice 1.5b next, then 1.6.**
+**Status: APPROVED 2026-09-13. Stage 0 DONE (tag `feel-trial-0`); slices 1.0–1.5 and Effects Grammar V10 DONE and merged (2026-09-14). Owner played the flags 2026-09-14 and ruled FP-71…FP-84 (§1.8); slice 1.5b (i and ii) DONE and merged. **Slice 1.6 (free placement) next — to be planned with the owner.**
 
 **Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-70
 are the owner's rulings of 2026-09-13 on the questions a code audit raised and on
@@ -125,6 +125,13 @@ These supersede the decisions named in each row.
 * **FPP-18** — A skill switched off in a hero's rules is skipped with its own hover reason ("off in X's rules"), distinct from a Token being disallowed (FP-35).
 * **FPP-19** — Old saves' single `flag.skill` is **dropped**, not turned into a priority (FPP-16 had made most flags Cooking by accident).
 * **FPP-20** — On today's grid the 128 px flag's pole stands at the tile's **bottom-left corner**; rules open **only from the flag's gear badge** (FP-73), not also from the hero sheet.
+**Owner clarification, 2026-09-14 (after 1.5b-ii):** *"We won't have 'Tiles' in the new system. Tokens and flags sit freely around the playmat. When a hero is idle, they walk back to stand next to their flag. Flags can be very close together, slightly overlapping, but that isn't an issue."*
+
+| # | Decision | Why / cost |
+|---|---|---|
+| **FP-83** | ⭐ **Flags sit freely on the playmat, like Tokens** — at the point they are dropped, in mat units. Flags may be very close together or slightly overlap; **they never push, nudge or hide each other or Tokens**. The grid-era fan-out, "+N" chip, hidden 4th-plus flags and the tile-corner pole position (FPP-20) are **stopgaps for today's grid only**, removed when free placement lands (slices 1.6–1.7; `flagGeometry.flagOrigin` is the one place that changes). | Owner. Restates FP-2/FP-20 for flags; corrects a grid-bound question. |
+| **FP-84** | **An idle hero stands next to their own flag** (walks back to it in Stage 2, A-1; until walking exists they appear beside it). | Owner. Restates FP-29. |
+
 * **FPP-21** *(owner, 2026-09-14: keep for now, revisit after 1.5b-ii)* — The flag's hover lists every skipped Token, including ones whose skill the hero lacks ("doesn't have the skill"), capped at 5 lines plus "more". To be judged again beside the rules drawer.
 * **Slicing:** **1.5b-i** engine, rules model, migration and both radii at 164; **1.5b-ii** dragging the hero moves the flag, flag sprites and colours (with the Edit Hero picker), the gear badge and the rules drawer.
 
