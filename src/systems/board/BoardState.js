@@ -376,6 +376,62 @@ export function heroesOnBoard() {
 }
 
 // ---------------------------------------------------------------------------
+// The worker seam (Free Playmat slice 1.4a)
+// ---------------------------------------------------------------------------
+
+/**
+ * ⭐ **The only three questions the rest of the game may ask about where a hero
+ * is.** No file outside this one reads `board.heroTiles` or calls
+ * `heroOnTile` / `tileOfHero`; `WorkerSeam.test.js` fails if one does.
+ *
+ * Slice 1.4b replaces `heroTiles` with flags and claims (roadmap §2, "What 'the
+ * hero on this Token' means under flags"). Because every reader already goes
+ * through these, only the bodies below change then — the ~30 callers do not.
+ *
+ * The three are deliberately separate even though **today all three are the
+ * same lookup**. They stop being the same under flags, and each caller has
+ * already said which one it means:
+ *
+ *   * `workerOf(tile)`       — who works the Token here (damage, statuses,
+ *                              roles, gear feeding the Token, filters, the tick)
+ *   * `workTileOf(heroId)`   — the Token this hero works (their cycle, their
+ *                              idle mark, where their actor rules act from)
+ *   * `displayTileOf(heroId)` — where to draw them (badges, particles, level-up
+ *                              pops). Under flags it falls back to the flag.
+ *
+ * ## ⚠️ Today's exact semantics, preserved on purpose (no behaviour change)
+ *
+ * * `workerOf` is an **exact-tile** match on the hero's stored tile. A hero is
+ *   always stored at a Token's **anchor** (`placeHero` and the 2×2 cascade both
+ *   write the anchor), so asking a 2×2 Token's non-anchor tile normally returns
+ *   `null`. Callers that accept any tile of a Token ask the anchor first and
+ *   then the raw tile (`Placement.recallHero`, `moveToken`, 1×1 displacement),
+ *   exactly as they did before.
+ * * ⚠️ `workerOf` **still returns a hero standing on a bare tile** (D-57, D-60:
+ *   a hero whose Token ran dry waits where they stand). The roadmap's "an empty
+ *   tile has no worker" is a 1.4b rule; enforcing it here would break recalling
+ *   that hero by tile, the Manager restock under them (D-151) and 2×2
+ *   displacement of heroes on bare ground.
+ * * Tile 0 is a valid index and falsy — test the results with `== null`.
+ */
+export function workerOf(tile) {
+    return heroOnTile(tile);
+}
+
+/** The tile of the Token `heroId` works, or null in the Dock. Today: their tile. */
+export function workTileOf(heroId) {
+    return tileOfHero(heroId);
+}
+
+/**
+ * Where to draw `heroId`, or null in the Dock. Today: their tile. Under flags
+ * (1.4b) it is the claimed Token's tile, falling back to the flag's.
+ */
+export function displayTileOf(heroId) {
+    return tileOfHero(heroId);
+}
+
+// ---------------------------------------------------------------------------
 // Vacancies — what a tile used to hold (Phase 7, D-35)
 // ---------------------------------------------------------------------------
 

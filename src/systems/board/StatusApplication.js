@@ -63,7 +63,7 @@ import * as HeroManager from '../hero/HeroManager.js';
  *
  * ## ⚠️ A library effect reaches an enemy by the SAME occupant rule
  * `occupantOf` has always resolved hero-first-else-enemy, but the two
- * library-effect branches below asked `heroOnTile` directly and stopped there —
+ * library-effect branches below asked who was on the tile directly and stopped there —
  * so a `Applies Poison` naming an effect could never land on a monster, while
  * the identical rule naming a status could. `liveBearerOf` is the same rule
  * again, returning a `LiveEffects` bearer instead of a status target, so the two
@@ -101,7 +101,7 @@ function occupantOf(tile, prefer = 'occupant') {
 
     if (prefer === 'enemy') return enemyTarget();
 
-    const heroId = BoardState.heroOnTile(tile);
+    const heroId = BoardState.workerOf(tile);
     if (heroId) {
         return { apply: (statusId, stacks) => StatusEffectSystem.applyToHero(heroId, statusId, stacks) };
     }
@@ -121,7 +121,7 @@ function liveBearerOf(tile, prefer = 'occupant') {
 
     if (prefer === 'enemy') return enemyBearer();
 
-    const heroId = BoardState.heroOnTile(tile);
+    const heroId = BoardState.workerOf(tile);
     if (heroId) {
         const hero = HeroManager.getHero(heroId);
         return hero ? LiveEffects.heroBearer(hero) : null;

@@ -28,7 +28,7 @@ EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newL
         meta: { startLevel }
     });
 
-    const tile = BoardState.tileOfHero(heroId);
+    const tile = BoardState.displayTileOf(heroId);
     if (tile != null) {
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
             tile,

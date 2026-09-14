@@ -103,7 +103,7 @@ function targetOf(role, roles) {
     const tile = role === ROLE.SOURCE ? roles?.source : roles?.self;
     if (tile == null) return null;
 
-    const heroId = BoardState.heroOnTile(tile);
+    const heroId = BoardState.workerOf(tile);
     if (heroId) return heroTarget(heroId);
 
     const instance = BoardState.getToken(tile);

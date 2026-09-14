@@ -5,6 +5,16 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Behind-the-scenes groundwork for flags: one place now answers "which hero is on
+  this Token"** (Free Playmat slice 1.4a). Damage, statuses, rules, hero gear, filters,
+  the board, the hero dock and drag-and-drop all used to look up hero positions on
+  their own; they now all ask the board the same three questions (who works this Token,
+  which Token does this hero work, where to draw this hero). *Nothing plays
+  differently.* This is what lets the next slice swap standing-on-a-tile for flags in
+  one place. The hero dock tab was also listening for two event names nothing ever
+  sent; it now listens for the real "hero moved" event (it was already refreshing
+  through the general state update, so this is a tidy-up, not a visible fix).
+
 - **Crafting, tool wear, Managers, neighbour triggers and "Cannot" now reach the same
   way buffs do** (Free Playmat slice 1.3, FP-41). Every "beside" question in the game —
   whether a station has its tool, which stations a tool wears for, which Manager restocks

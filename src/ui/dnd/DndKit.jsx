@@ -11,7 +11,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { DragGhost } from './DragGhost.jsx';
 import { DND_SURFACE, DRAG_SFX, DRAG_KIND } from './dragConstants.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
-import { tileOfHero } from '../../systems/board/BoardState.js';
+import { displayTileOf } from '../../systems/board/BoardState.js';
 import { colOf, rowOf } from '../../config/boardGeometry.js';
 
 /**
@@ -200,7 +200,7 @@ export const DeckDndProvider = ({ children }) => {
         // When starting a hero drag from the dock tab or inspection panel, if the hero is already
         // on the playmat, shoot a flying sprite particle from the playmat tile straight to the cursor
         if (payload?.kind === DRAG_KIND.HERO && payload.heroId && payload.from?.dock) {
-            const currentTile = tileOfHero(payload.heroId);
+            const currentTile = displayTileOf(payload.heroId);
             if (currentTile != null) {
                 const col = colOf(currentTile);
                 const row = rowOf(currentTile);

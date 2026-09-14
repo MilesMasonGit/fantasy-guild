@@ -75,7 +75,6 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
     const tiles = useGameState(
         state => {
             const map = state.board?.tiles || {};
-            const standing = state.board?.heroTiles || {};
             const vacancies = state.board?.vacancies || {};
             const heroes = state.heroes || [];
             const out = {};
@@ -137,8 +136,11 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                 out[key] = { ...(out[key] || { typeId: null, usesRemaining: null, size: 1, isAnchor: true, anchorTile: Number(key) }), alert: ALERT.UNSTOCKED };
             }
 
-            for (const heroId of Object.keys(standing)) {
-                const rawKey = Number(standing[heroId]);
+            // Where each hero is DRAWN goes through the worker seam (Free
+            // Playmat 1.4a). `heroesOnBoard` keeps today's order and any hero id
+            // the roster no longer holds, exactly as the old direct read did.
+            for (const [heroId] of BoardState.heroesOnBoard()) {
+                const rawKey = Number(BoardState.displayTileOf(heroId));
                 const hero = heroes.find(h => h.id === heroId);
                 const targetKey = out[rawKey]?.anchorTile != null ? out[rawKey].anchorTile : rawKey;
                 const key = String(targetKey);
@@ -219,8 +221,9 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
 
     const handleAutoAssignHero = useCallback((index) => {
         const heroes = GameState.state?.heroes || [];
-        const heroTiles = GameState.state?.board?.heroTiles || {};
-        const idleHero = heroes.find(h => !heroTiles[h.id]);
+        // ⚠️ Truthiness kept from the old direct read: a hero on tile 0 counts
+        // as free here. A pure refactor (Free Playmat 1.4a) does not fix that.
+        const idleHero = heroes.find(h => !BoardState.workTileOf(h.id));
         if (idleHero) {
             announce(Placement.placeHero(idleHero.id, index));
         } else if (heroes.length === 0) {

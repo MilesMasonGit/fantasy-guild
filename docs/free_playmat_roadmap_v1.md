@@ -66,6 +66,15 @@ below. ~~**FP-15**~~ is ⛔ **REJECTED** (FP-40).
 | **FP-65** | **Starting values:** Near 272 u (≈1.7 steps, reproduces today's ring), flag radius 400 u (2.5 steps), mat 11 steps wide at a 0.64 aspect (1760 × 1126 u). | Owner kept the trial's defaults. Tuned for real at slice 1.11. |
 | **FP-66** | ⭐ **A new developer-only "Mat Tuner" panel** (separate from the terrain Playmat Tuner), shown only in dev builds like the QA tester. **Each slice adds the settings it introduces**; values the owner likes are written into the game's defaults at slice 1.11. | Owner, over extending the Playmat Tuner and a single panel slice. |
 
+### 1.6 Slice 1.4 rulings, 2026-09-13
+
+| # | Decision | Why / cost |
+|---|---|---|
+| **FP-67** | **Order: 1.4a → Effects Grammar V10 → 1.4b → 1.4c.** 1.4a is invisible plumbing; V10 is written to find a hero's opponent **by hero, not by tile**, so flags never break it. | Owner, over "V10 before all of 1.4" and "skip V10". |
+| **FP-68** | ⭐ **A hero leaving a Token mid-cycle resets that Token's progress** — moving on by themselves, their flag being moved, or a recall. D-131 is kept. **A moved Token keeps its progress and carries its hero with it; the hero stays on that Token even if it now sits outside their flag's radius**, until the Token stops being workable, the flag is moved or the hero is recalled. ⚠️ **Amends FP-30** (which had the hero move on outside the radius and progress wait on the Token). | Owner, 2026-09-13: *"A moved token keeps its progress. It brings the Hero with it, and it stays on the token even if outside of the flag radius."* |
+| **FP-69** | **Stuck Tokens:** today's red badge stays for problems the player can fix (missing inputs, charges, no recipe), plus **one notification when a hero leaves a Token for that reason**. Skill too low shows on hover only (FP-60). | Owner, over "hover only" and "a badge for every reason". |
+| **FP-70** | ⭐ **A hero whose Token runs dry waits on the empty spot for its Manager** (FP-19, D-151) — but only while a Manager in reach owes that spot **and can supply it** (a copy is in the Vault). Otherwise the hero moves on. | Owner, over "move on and return later". The supply guard is the director's, so a hero can never wait forever. |
+
 ### What this changes in other plans
 
 * **Effects Grammar v2:** V10 (`opponent` role) should land **before** Stage 1. G-15 / V9's
@@ -194,6 +203,26 @@ exactly as before.
 
 ### 1.4 — Flags on the grid, engine *(on the grid)*
 
+> **Split into three sub-slices (FP-67), with Effects Grammar V10 between 1.4a and 1.4b:**
+> * **1.4a — The worker seam.** No behaviour change. `BoardState` gains `workerOf(anchor)`,
+>   `workTileOf(heroId)` and `displayTileOf(heroId)`, still backed by `heroTiles`; every
+>   reader (engine, UI, dock, filters, damage, statuses, roles, gear) goes through them. A
+>   guard test fails if any other file reads `heroTiles` directly. `HeroDockTab`'s dead
+>   event names fixed.
+> * **V10 — `the opponent` role** (Effects Grammar v2 roadmap), resolving a hero's
+>   opponent by hero rather than by tile.
+> * **1.4b — Flags replace `heroTiles`; work flags choose jobs.** `board.flags`
+>   (converted from `heroTiles` on load; no save bump, FP-59), runtime claims keyed by
+>   Token instance, one shared "can this run?" check for choosing and running, sticky
+>   nearest-first claims, skip reasons, FP-47/48/68/69/70, hero displacement deleted,
+>   Mat Tuner **flag radius**. Bridge until 1.5: dropping a hero on a tile plants the flag
+>   there with that Token's skill.
+> * **1.4c — Combat, promotion, disallow.** Combat flags roam the radius; FP-42 defeat
+>   notification; FP-43 recall resets the enemy; promotion offers never wiped by a
+>   one-tick gap (PR-7); disallow per Token.
+>
+> The original bullets below remain the scope of 1.4 as a whole.
+
 * `board.flags` replaces `board.heroTiles`. A flag has a position, one skill, and the
   global radius (FP-23).
 * Simple flags (FP-57): nearest to the flag, one hero per Token (FP-25), skip what
@@ -312,7 +341,10 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 | 1.1 Terrain off | ✅ **DONE** 2026-09-13 | One switch, `TERRAIN_ENABLED = false` in `terrainRegistry.js`, guards painting, backfill, Map stamp, Vault stamp, canvas and Playmat Tuner; save schema untouched; `TerrainPainting` forces it on, new `TerrainOff` pins it off; the 5 `TerrainRegistry` failures are unchanged content-coverage gaps |
 | 1.2 `nearby()` + passive readers | ✅ **DONE** 2026-09-13 | `nearby.js` (centre-to-centre, Near 272 u) now drives `TileModifiers` (Provides/Grants/Applies, `filterTargetTiles` → statuses, damage, counts) and `ConnectionLines`; rebuilds follow the radius; 2×2 reach 12 → 8 per FP-41; dev-only Mat Tuner (`matTuning.js` + `MatTuner.jsx`) with Near radius |
 | 1.3 Crafting, charges, Managers, triggers, Cannot | ✅ **DONE** 2026-09-13 | `RecipeResolver`, `Charges`, `Managers` (nearest-then-anchor tie-break), `TriggerSystem` neighbour triggers and `Restrictions` (Near count on hypothetical layouts via `centreOf`) all measure with `nearby.js`; `Placement` publishes one dirty event with a radius-aware rebuild set; board-reach rules rebuild every tile; 36 new tests (`ActiveReaders`); `adjacency.js` has no production callers |
-| 1.4 Flags engine | **NOT STARTED** | After Effects Grammar V10 |
+| 1.4a Worker seam | ✅ **DONE** 2026-09-13 | `BoardState.workerOf` / `workTileOf` / `displayTileOf`, still backed by `heroTiles`; ~30 readers converted; `WorkerSeam.test.js` guard; no behaviour change. ⚠️ `workerOf` still returns a hero on a bare tile and `recallHeroById` resolves via the tile — both for 1.4b |
+| V10 `the opponent` role | **PLANNING** 2026-09-13 | Planned before code; owner questions first |
+| 1.4b Flags replace `heroTiles`, work flags | **NOT STARTED** | After V10 |
+| 1.4c Combat, promotion, disallow | **NOT STARTED** | |
 | 1.5 Flags UI | **NOT STARTED** | |
 | 1.6 Free placement + fresh save | **NOT STARTED** | May split |
 | 1.7 Mat UI | **NOT STARTED** | |

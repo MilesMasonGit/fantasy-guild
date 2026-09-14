@@ -196,7 +196,9 @@ export function matchesTokenTarget(spec, def, ctx = null) {
     if (ctx?.instance) available.add(FILTER_NEEDS.INSTANCE);
     if (ctx?.tile != null) available.add(FILTER_NEEDS.TILE);
 
-    const heroOnTile = ctx?.tile != null ? BoardState.heroOnTile(ctx.tile) : null;
+    // The filter context keeps its `heroOnTile` field name; it is filled from
+    // the worker seam (Free Playmat 1.4a).
+    const heroOnTile = ctx?.tile != null ? BoardState.workerOf(ctx.tile) : null;
     return matchesFilters(spec, {
         def,
         instance: ctx?.instance,
@@ -475,7 +477,7 @@ export function collectStatusApplications(index) {
  * caller acts, which items those were is no longer derivable.
  */
 function loadoutPayloads(index, keyword) {
-    const heroId = BoardState.heroOnTile(index);
+    const heroId = BoardState.workerOf(index);
     if (!heroId) return [];
 
     const hero = HeroManager.getHero(heroId);
@@ -630,7 +632,7 @@ export function resolveAxis(index, effectType, base, category = TARGET_CATEGORIE
 function heroContributions(index, effectType, category = TARGET_CATEGORIES.ALL) {
     const empty = { flat: 0, multipliers: [], percentages: [] };
 
-    const heroId = BoardState.heroOnTile(index);
+    const heroId = BoardState.workerOf(index);
     if (!heroId) return empty;
 
     const hero = HeroManager.getHero(heroId);

@@ -43,7 +43,7 @@ import { logger } from '../../utils/Logger.js';
  *    on. Without it Managers would restock tiles nobody was working while
  *    leaving idle heroes idle — the opposite of the mitigation they exist to
  *    provide. It is buildable at all only because Phase 7 moved hero position
- *    off the Token instance (see `BoardState.tileOfHero`).
+ *    off the Token instance (see `BoardState.workTileOf`).
  * 4. **An empty Bank fails silently** (D-133). A Manager cannot conjure a
  *    Token, only move one from storage. The tile stays depleted and the hero
  *    idles.
@@ -166,7 +166,7 @@ export function restockTile(tile, vacancy) {
         return 'unstocked';
     }
 
-    // The hero is untouched. They are standing on this tile in `heroTiles`, so
+    // The hero is untouched. They are still this tile's worker (`BoardState.workerOf`), so
     // a Token arriving underneath them is all it takes for work to resume on
     // the next tick — no re-placement, no reassignment, no event (D-151).
     BoardState.setToken(tile, instance);      // also clears the vacancy

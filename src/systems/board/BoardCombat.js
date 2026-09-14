@@ -521,7 +521,7 @@ export function resolveStatusDefeat(heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || hero.status === 'wounded') return;
 
-    const tile = BoardState.tileOfHero(heroId);
+    const tile = BoardState.workTileOf(heroId);
     const instance = tile != null ? BoardState.getToken(tile) : null;
     resolveDefeat(tile ?? null, instance, heroId);
 }
