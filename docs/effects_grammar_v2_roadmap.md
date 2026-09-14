@@ -440,7 +440,8 @@ or a random free tile (G-15).
 | V7b.2 `SELF_TOKEN_DEPLETED` | **DONE** 2026-09-09 | ⭐ "Leave a Stump behind when this depletes" is authorable — §4b's open item is closed. The moment is `settled`: no charge paid, no charge gate. 13 tests, 5 of which fail when neutered. |
 | V7b.3 Author the seven, then delete the old engine | ⏸ **Owner deferred** | Ruled 2026-09-09: *"I don't really want to author these effects now. I want the system to be more complete first. These effects are just theoretical test effects, there may not be those effects in the final game."* Nothing waits on it — both engines run side by side. |
 | V8 The rest of the verbs | **DONE** 2026-09-08 | `Heals`, `Restores`, `Removes` in `EffectActions.js`. ⭐ `Restores` is the reader `CHARGE_EXTEND` was named for; `Removes` is the first caller a cleanse has ever had. 14 new tests. |
-| V10 `the opponent` role | **NOT STARTED** | Ruled in by the owner 2026-09-12. Closes the asymmetry where only `Applies` can name the creature a hero is fighting, and retires its one-off flag. |
+| V10a `the enemy` role | **DONE** 2026-09-13 | G-40…G-43. `ROLE.OPPONENT` ("the enemy") from `COMBAT_ENGAGED`/`SELF_COMBAT_ENGAGED`; resolved by hero via `BoardCombat.fightOfHero`; one fight per hero; Deals/Heals/Removes/Applies-with-role, including from items (`LoadoutMoments`, charge spent only when the rule changed something); per-keyword role allowlist in picker and ContentAudit. 17 tests, 13 neuterings caught. |
+| V10b Retire the `target: 'enemy'` flag | **IN PROGRESS** 2026-09-13 | `migrateAppliesTarget` in game loader + CMS normaliser; delete the flag's paths; fix the misleading item `Applies` sentence. |
 | V9 `Spawns` and `Transforms` | **DONE** 2026-09-08 | `placementRegistry.js` — the destination is an authored choice, never a hidden fallback. 15 new tests. |
 
 *Carried over and already done:* v1 P1 (the filter tells the truth), P2 (reach),
