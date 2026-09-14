@@ -5,6 +5,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
@@ -136,10 +137,15 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
         expect(recruit.status).not.toBe('wounded');
     });
 
-    it('says so on the tile rather than failing silently', () => {
+    it('is skipped as unskilled, shown on hover, with no red mark (Free Playmat FP-60)', () => {
+        // Was: "says so on the tile" — a red UNSKILLED mark on the enemy. Under
+        // flags the Recruit never claims the enemy at all; the flag records why,
+        // and a skill problem is hover-only (FP-60, slice 1.4c).
         const bear = place(10, 'fixture_enemy', 'recruit_1');
         run(1000);
-        expect(bear.alert).toBe(BoardRunner.ALERT.UNSKILLED);
+        expect(bear.alert ?? null).toBeNull();
+        expect(BoardState.workerOf(10)).toBeNull();
+        expect(Flags.skipsOf(bear.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
     });
 
     it('is possession, not level — a level-1 fighter still fights', () => {

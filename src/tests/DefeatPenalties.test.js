@@ -128,6 +128,27 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
     });
 });
 
+describe('⭐ reports what was lost instead of announcing it (Free Playmat FP-42)', () => {
+    it('returns a destroyed piece and each stack loss by name', () => {
+        vi.spyOn(Math, 'random').mockReturnValue(0);      // the sword breaks
+        const lost = applyDefeatPenalties('hero_1');
+        Math.random.mockRestore();
+
+        expect(lost).toEqual(['25 Pie', '10 Ale', 'Sword']);
+    });
+
+    it('returns an empty list when nothing was lost, and sends no notification itself', async () => {
+        const NotificationSystem = await import('../systems/core/NotificationSystem.js');
+        hero._equipped = [{ index: 0, category: 'hand', itemId: 'g_sword' }];
+        vi.spyOn(Math, 'random').mockReturnValue(0.99);   // nothing breaks
+        const lost = applyDefeatPenalties('hero_1');
+        Math.random.mockRestore();
+
+        expect(lost).toEqual([]);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
+    });
+});
+
 describe('Gear loss (D-19)', () => {
     it('can permanently destroy an equipped gear piece', () => {
         vi.spyOn(Math, 'random').mockReturnValue(0);      // always breaks
