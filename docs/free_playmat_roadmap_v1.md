@@ -4,9 +4,9 @@
 [`concept_free_playmat.md`](concept_free_playmat.md), corrected the same day
 against the code. Status table in §7, open questions in §8.*
 
-**Status: APPROVED 2026-09-13. Stage 0 DONE — owner verdict GO (tag `feel-trial-0`). Slice 1.0 next. No game code written.**
+**Status: APPROVED 2026-09-13. Stage 0 DONE (tag `feel-trial-0`); slices 1.0–1.3 and 1.4a DONE and merged. Effects Grammar V10 in progress, then 1.4b.**
 
-**Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-62
+**Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-70
 are the owner's rulings of 2026-09-13 on the questions a code audit raised and on
 this plan. Where the two differ, §1 here wins.
 

@@ -389,6 +389,22 @@ one-off flag**, so there is one way to name the creature rather than two. Owner
 ruled it in on 2026-09-12 as its own slice — ⚠️ it touches shipped behaviour and
 needs its own tests, which is exactly why it is not folded into the editor work.
 
+#### V10 rulings, 2026-09-13 (planned with the Free Playmat, FP-67)
+
+| # | Decision | Why |
+|---|---|---|
+| **G-40** | ⭐ **The role reads "the enemy"** in rules text, the picker and the audit (one label, from `ROLES`). | Owner, over "the opponent" and "the creature being fought". The game's own word (G-24). |
+| **G-41** | **One meaning everywhere: the creature the hero in this moment is fighting.** On a monster's own rule that is the monster itself. | Owner, over "the other side from the bearer". A shared effect (Thorns sits on items and monsters) reads and acts the same wherever it is attached. |
+| **G-42** | **Deals, Applies, Heals and Removes can aim at the enemy.** Restores and Transforms cannot. `Applies` gains an optional role target that replaces filter + reach when set. | Owner, over "also Restores/Transforms" and "Deals/Applies only". |
+| **G-43** | ⭐ **The enemy is found by hero, never by tile** — `BoardCombat.fightOfHero(heroId)` via the fight's `assignedHeroId`; one fight per hero. Supplied by `COMBAT_ENGAGED` and `SELF_COMBAT_ENGAGED` only (not `COMBAT_RESOLVED`: the creature is at 0 HP). Outside combat the role is not offered, and at runtime reaches nobody. | Director (technical), required by Free Playmat FP-67 so flags and claims (slice 1.4b/c) can't break it. |
+
+**Two sittings.** **V10a** adds the role, resolution by hero, and gives `LoadoutMoments` the
+`Deals`/`Heals`/`Removes` verbs (⚠️ items' damage/heal/cleanse rules act for the first time,
+and spend their charges). **V10b** retires the `target: 'enemy'` flag through a
+`migrateAppliesTarget` conversion run by both the game loader and the CMS normaliser (no shipped
+content uses it; tests only), deletes the flag's code paths, and fixes the sentence that today
+renders an enemy-targeted item `Applies` as "to heroes working this Token".
+
 ### V8 — The rest of the verbs
 
 `Heals`, `Restores`, `Removes` — each with its reader, each its own commit.
