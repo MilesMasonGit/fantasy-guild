@@ -3,7 +3,6 @@
 import * as HeroManager from '../hero/HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getEquippedEntries, isGearCategory, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { DEFEAT_PENALTY } from '../../config/loopConstants.js';
@@ -37,8 +36,15 @@ import { DEFEAT_PENALTY } from '../../config/loopConstants.js';
  * approved for later tuning.
  */
 export function applyDefeatPenalties(heroId) {
+    /**
+     * ⭐ **Returns what was lost, as display names** (Free Playmat FP-42) —
+     * `"25 Pie"` for part of a stack, `"Sword"` for a destroyed piece — and
+     * announces nothing itself. The caller sends ONE defeat notification that
+     * names them all, instead of one warning per broken item.
+     */
+    const lost = [];
     const hero = HeroManager.getHero(heroId);
-    if (!hero) return;
+    if (!hero) return lost;
     const equipped = getEquippedEntries(hero);
 
     // 1. Consumable stack loss: a portion of each CARRIED consumable's banked
@@ -69,7 +75,10 @@ export function applyDefeatPenalties(heroId) {
         if (isConsumableCategory(entry.category)) continue;  // exempt: dormant, see above
         const banked = InventoryManager.getItemCount(entry.itemId);
         const loss = Math.ceil(banked * DEFEAT_PENALTY.CONSUMABLE_LOSS_RATIO);
-        if (loss > 0) InventoryManager.removeItem(entry.itemId, loss);
+        if (loss > 0) {
+            InventoryManager.removeItem(entry.itemId, loss);
+            lost.push(`${loss} ${getItem(entry.itemId)?.name || entry.itemId}`);
+        }
     }
 
     // 2. Permanent gear loss: each equipped GEAR piece can break. Unequip plus
@@ -84,7 +93,8 @@ export function applyDefeatPenalties(heroId) {
             const item = getItem(entry.itemId);
             EquipmentManager.unequipItem(heroId, entry.index);
             InventoryManager.removeItem(entry.itemId, 1);
-            NotificationSystem.warning(`${item?.name || entry.itemId} was destroyed in the defeat!`);
+            lost.push(item?.name || entry.itemId);
         }
     }
+    return lost;
 }

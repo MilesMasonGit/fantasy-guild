@@ -15,6 +15,8 @@ import * as Managers from './Managers.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
+import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as PromotionSystem from '../hero/PromotionSystem.js';
 
 /**
  * Flags — **a hero plants a flag, and the flag picks the work** (roadmap §4
@@ -32,17 +34,24 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
  * ## Choosing (phase 2 of `assign`)
  * Every Token whose centre is within the radius, nearest first (then lowest
  * anchor). For each, in order:
- *  1. no work cycle, or passive — not a candidate at all;
- *  2. **no skill named** — skipped as `no_skill` (FP-47);
- *  3. a different skill from the flag's — not a candidate;
+ *  1. no work cycle, or passive, or a different skill from the flag's — not a
+ *     candidate at all;
+ *  2. **the player disallowed it** — skipped as `disallowed` (FP-35);
+ *  3. **no skill named** — skipped as `no_skill` (FP-47);
  *  4. **another flag already holds it** — skipped as `claimed` (FP-25);
  *  5. the shared `WorkCheck` says it cannot run — skipped with that reason
  *     (FP-48: level too low, wrong skill, missing inputs, no recipe, charges);
  *  6. otherwise **claimed**.
- * Two exceptions come before the radius list and ignore it: a **Promotion Token**
- * is only ever worked when the flag's point is on it (FP-34, FP-61), and a
- * **combat flag** works only the enemy under its point (slice 1.4b — roaming the
- * radius is slice 1.4c). Neither is skill-matched.
+ *
+ * A **combat flag** does the same over the **enemies** in its radius instead
+ * (FP-32, slice 1.4c): disallowed, claimed, and — for a hero holding no combat
+ * skill — `unskilled`, shown on hover only (FP-60).
+ *
+ * A **Promotion Token** (and the Guild Hall, FPP-10) comes before the radius
+ * list and ignores it: worked only when the flag's point is on it (FP-34,
+ * FP-61), whatever the flag's skill. A hero the Token could not promote — one
+ * who already holds the job (`same_job`) or fails its skill gate — is skipped,
+ * so a hero who has just accepted goes back to ordinary work (PR-8).
  *
  * Nothing claimable → retry in a second of game time (or sooner, when the board
  * changes — see "dirty").
@@ -83,8 +92,24 @@ export const SKIP = Object.freeze({
     /** The Token names no skill, so no flag works it (FP-47). */
     NO_SKILL: 'no_skill',
     /** Another hero's flag already holds it (FP-25). */
-    CLAIMED: 'claimed'
+    CLAIMED: 'claimed',
+    /** The player marked it "heroes may not work this" (FP-35). */
+    DISALLOWED: 'disallowed',
+    /** A Promotion Token offering the job the hero already holds (PR-8). */
+    SAME_JOB: 'same_job'
 });
+
+/**
+ * Whether the player has marked this Token disallowed (FP-35).
+ *
+ * ⚠️ **Stops hero work and nothing else.** The Token's own rules (Provides,
+ * triggers), a Manager's service and restocks never read this. Saved on the
+ * instance, so it survives a reload and a move; a Vault copy is charges only,
+ * so a Token that goes through the Vault comes back allowed.
+ */
+export function isDisallowed(instance) {
+    return instance?.disallowed === true;
+}
 
 /** Fixable reasons — the ones that keep a red badge and earn a notice (FP-69). */
 export const FIXABLE = WorkCheck.FIXABLE;
@@ -182,8 +207,31 @@ export function heroHolds(heroId, skill) {
  * modifiers (or crash on a half-made hero record).
  */
 function heldSkills(heroId) {
-    const hero = (GameState.state?.heroes || []).find(h => h?.id === heroId);
+    const hero = heroRecord(heroId);
     return hero?.skills && typeof hero.skills === 'object' ? hero.skills : {};
+}
+
+function heroRecord(heroId) {
+    return (GameState.state?.heroes || []).find(h => h?.id === heroId) || null;
+}
+
+/** Whether the hero can fight at all — holds a combat skill (D-249). Same rule as `BoardCombat.canFight`, read from state. */
+function heroCanFight(heroId) {
+    return CombatFormulas.canHeroFight(heroRecord(heroId));
+}
+
+/**
+ * Why this Promotion Token would not train `heroId` — a skip reason — or null
+ * if it would (PR-8). Already holding the job reads `same_job`; failing the
+ * skill gate reads as the board's own `unskilled` / `access`.
+ */
+function promotionRefusal(heroId, instance) {
+    const job = BoardPromotion.jobFor(instance);
+    if (!job) return null;
+    const blocked = BoardPromotion.blockedReason(heroId, job.id);
+    if (!blocked) return null;
+    if (blocked.reason === PromotionSystem.REFUSAL.SAME_JOB) return SKIP.SAME_JOB;
+    return blocked.alert || ALERT.UNSKILLED;
 }
 
 /** Zero a Token's cycle — the forfeit of D-131, when a hero leaves it (FP-68). */
@@ -193,19 +241,29 @@ function resetProgress(anchor, instance) {
     EventBus.publish(BOARD_EVENTS.PROGRESS, { tile: anchor, percent: 0 });
 }
 
-/** Let go of `heroId`'s claim, resetting the Token they leave. */
+/**
+ * Let go of `heroId`'s claim, resetting the Token they leave — and ending their
+ * fight at once if it was an enemy (FP-43, G-4), so the enemy is whole the next
+ * time anyone engages it, including this hero re-planting on it (FP-49).
+ */
 function release(heroId) {
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return null;
     const found = BoardState.findTokenById(claim.instanceId, claim.tile);
     if (found) resetProgress(found.anchor, found.instance);
     BoardState.setClaim(heroId, null);
+    BoardCombat.endFightOfHero(heroId);
     return claim;
 }
 
 function claimToken(heroId, anchor, instance) {
     BoardState.setWait(heroId, null);
     BoardState.setClaim(heroId, { instanceId: instance.id, tile: anchor, typeId: instance.typeId });
+    // A different hero taking a Promotion Token is the gesture that asks again
+    // (PR-7). The same hero coming back after a gap is not.
+    if (instance.promotionHeroId && instance.promotionHeroId !== heroId) {
+        BoardPromotion.clearPause(instance);
+    }
     /**
      * ⚠️ A Token a flag skipped carries that skip's red badge (FPP-2). It passed
      * the check to be claimed, so the badge is stale — and phase 1 reads the
@@ -312,13 +370,14 @@ function evaluate(heroId, flag, excludeInstanceId = null) {
         const kind = kindOf(instance, def);
         if (!kind) continue;
 
-        if (UNDER_POINT.has(kind) || kind === 'enemy') {
-            if (kind === 'enemy' && flag.skill !== COMBAT_FLAG) continue;
+        if (UNDER_POINT.has(kind)) {
             if (pointOnToken(anchor, instance.typeId, point)) underPoint.push({ anchor, instance, def, kind });
             continue;
         }
 
-        if (flag.skill === COMBAT_FLAG) continue;
+        // A combat flag looks at enemies and only enemies; any other flag
+        // never at enemies (FP-32).
+        if ((kind === 'enemy') !== (flag.skill === COMBAT_FLAG)) continue;
         const d = distanceSq(point, centreOf(anchor, instance.typeId));
         if (d > radiusSq) continue;
         inRange.push({ anchor, instance, def, kind, d });
@@ -327,14 +386,22 @@ function evaluate(heroId, flag, excludeInstanceId = null) {
     inRange.sort((a, b) => a.d - b.d || a.anchor - b.anchor);
 
     const skips = [];
+    let canFight = null;
     for (const c of [...underPoint, ...inRange]) {
         const instanceId = c.instance.id;
-        if (c.kind === 'work') {
-            if (!hasWorkSkill(c.def)) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
-            if (c.def.config.skill !== flag.skill) continue;
-        }
+        if (c.kind === 'work' && hasWorkSkill(c.def) && c.def.config.skill !== flag.skill) continue;
+        if (isDisallowed(c.instance)) { skips.push({ instanceId, reason: SKIP.DISALLOWED }); continue; }
+        if (c.kind === 'work' && !hasWorkSkill(c.def)) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
         const holder = BoardState.heroOfInstance(instanceId);
         if (holder && holder !== heroId) { skips.push({ instanceId, reason: SKIP.CLAIMED }); continue; }
+        if (c.kind === 'enemy') {
+            if (canFight === null) canFight = heroCanFight(heroId);
+            if (!canFight) { skips.push({ instanceId, reason: ALERT.UNSKILLED }); continue; }
+        }
+        if (c.kind === 'promotion') {
+            const reason = promotionRefusal(heroId, c.instance);
+            if (reason) { skips.push({ instanceId, reason }); continue; }
+        }
         if (c.kind === 'work') {
             const reason = WorkCheck.whyCannotRun(c.anchor, c.instance, heroId, c.def.config);
             if (reason) { skips.push({ instanceId, reason }); continue; }
@@ -375,11 +442,16 @@ function choose(r, heroId) {
 }
 
 /** Whether a hero may wait on `tile` for a restock of `typeId` (FP-70, FPP-9). */
-function canWait(tile, typeId) {
+function canWait(tile, typeId, heroId) {
     const vacancy = BoardState.getVacancy(tile);
     if (!vacancy || vacancy.typeId !== typeId || vacancy.unstocked) return false;
     if (!Managers.managerFor(tile, typeId)) return false;
-    return BoardState.tokenBankCopies(typeId).length > 0;
+    if (BoardState.tokenBankCopies(typeId).length === 0) return false;
+    // ⚠️ Never wait for a Promotion Token that would not train this hero — the
+    // usual case being the one they just accepted with its last charge. They
+    // would be skipped the moment it arrived (PR-8), so waiting only idles them.
+    if (BoardPromotion.jobFor({ typeId }) && promotionRefusal(heroId, { typeId })) return false;
+    return true;
 }
 
 /** Phase 1 for a hero holding a claim. */
@@ -394,9 +466,12 @@ function keepOrRelease(r, heroId, dirty) {
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
 
-        const eligible = UNDER_POINT.has(kind)
-            || (kind === 'enemy' && flag.skill === COMBAT_FLAG)
-            || (kind === 'work' && hasWorkSkill(def) && def.config.skill === flag.skill);
+        const eligible = !isDisallowed(instance) && (
+            (kind === 'hall')
+            || (kind === 'promotion' && !promotionRefusal(heroId, instance))
+            || (kind === 'enemy' && flag.skill === COMBAT_FLAG && heroCanFight(heroId))
+            || (kind === 'work' && hasWorkSkill(def) && def.config.skill === flag.skill)
+        );
 
         if (!eligible) {
             release(heroId);
@@ -434,7 +509,10 @@ function keepOrRelease(r, heroId, dirty) {
         return;
     }
 
-    // The claimed Token has left the board.
+    // The claimed Token has left the board — and with it any fight against it
+    // (a depleted camp has already ended its own; a Token sent to the Tray or
+    // the Vault has not).
+    BoardCombat.endFightOfHero(heroId);
     const here = BoardState.getToken(claim.tile);
     if (here?.typeId === claim.typeId && !BoardState.heroOfInstance(here.id)) {
         resetProgress(claim.tile, here);
@@ -444,7 +522,7 @@ function keepOrRelease(r, heroId, dirty) {
     }
 
     BoardState.setClaim(heroId, null);
-    if (canWait(claim.tile, claim.typeId)) {
+    if (canWait(claim.tile, claim.typeId, heroId)) {
         BoardState.setWait(heroId, { tile: claim.tile, typeId: claim.typeId });
     } else {
         r.nextTryAt.delete(heroId);
@@ -463,7 +541,7 @@ function checkWait(r, heroId) {
         announceMoved(heroId);
         return;
     }
-    if (!here && canWait(wait.tile, wait.typeId)) return;
+    if (!here && canWait(wait.tile, wait.typeId, heroId)) return;
 
     BoardState.setWait(heroId, null);
     r.nextTryAt.delete(heroId);
@@ -532,6 +610,12 @@ export function plant(heroId, point, { skill = null } = {}) {
     const r = rt();
     if (!r) return { success: false, reason: 'No board' };
 
+    // Planting on a Promotion Token is the deliberate gesture that asks again
+    // (PR-7, FP-61) — even onto the very spot the flag already stands on, the
+    // flag-era "picked up and put back". Not when another hero holds the Token:
+    // that hero's standing offer is theirs to answer.
+    clearOfferUnder(heroId, point);
+
     const previous = BoardState.flagOf(heroId);
     if (previous && previous.x === point.x && previous.y === point.y && previous.skill === skill) {
         return { success: true, unchanged: true };
@@ -554,9 +638,20 @@ export function plant(heroId, point, { skill = null } = {}) {
     return { success: true };
 }
 
+/** Clear a standing promotion offer on the Token under `point`, unless another hero holds it. */
+function clearOfferUnder(heroId, point) {
+    const occ = BoardState.getOccupyingToken(BoardState.tileAtPoint(point));
+    if (!occ?.instance || !BoardPromotion.isPromotionToken(occ.instance)) return;
+    if (!pointOnToken(occ.anchorIndex, occ.instance.typeId, point)) return;
+    const holder = BoardState.heroOfInstance(occ.instance.id);
+    if (holder && holder !== heroId) return;
+    BoardPromotion.clearPause(occ.instance);
+}
+
 /**
  * Take `heroId`'s flag down — a recall, or a defeat. The hero goes to the Dock
- * and the Token they worked loses its progress (FP-68).
+ * and the Token they worked loses its progress (FP-68). A fight ends **in this
+ * call** (FP-43): `BoardCombat.fightOfHero` is null by the time it returns.
  *
  * @returns {boolean} whether there was a flag to take down
  */
@@ -566,6 +661,7 @@ export function furl(heroId, reason = 'recall') {
     quiet++;
     try {
         release(heroId);
+        BoardCombat.endFightOfHero(heroId);
         BoardState.setWait(heroId, null);
         clearSkips(r, heroId);
         forgetNotices(r, heroId);
@@ -577,6 +673,45 @@ export function furl(heroId, reason = 'recall') {
     }
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId, reason });
     return true;
+}
+
+/**
+ * ⭐ **Mark a Token "heroes may not work this"** — or allow it again (FP-35).
+ *
+ * Accepts any tile of the Token's footprint. Turning it on lets go of any hero
+ * working it (their progress there is reset, FP-68; a fight ends, FP-43) and
+ * their flag chooses again on the next tick; from then on every flag records
+ * `disallowed` against it and never claims it — work, combat, promotion and the
+ * Guild Hall alike. Nothing else about the Token changes: its rules, triggers,
+ * Manager service and restocks carry on (see `isDisallowed`).
+ *
+ * No UI yet (slice 1.5). From the console: `Game.Flags.setDisallowed(tile, true)`.
+ *
+ * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}
+ */
+export function setDisallowed(tile, on = true) {
+    const occ = BoardState.getOccupyingToken(tile);
+    if (!occ?.instance) return { success: false, reason: 'No Token there' };
+    const { anchorIndex: anchor, instance } = occ;
+    const next = !!on;
+    if (isDisallowed(instance) === next) return { success: true, unchanged: true };
+
+    if (next) instance.disallowed = true;
+    else delete instance.disallowed;
+
+    if (next) {
+        const heroId = BoardState.heroOfInstance(instance.id);
+        if (heroId) {
+            release(heroId);
+            rt()?.nextTryAt.delete(heroId);
+            announceMoved(heroId);
+        }
+    }
+
+    markDirty();
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: anchor, typeId: instance.typeId });
+    EventBus.publish('state_changed');
+    return { success: true };
 }
 
 /**

@@ -154,10 +154,15 @@ export function tickTile(tile, instance, delta, heroId) {
     if (!job) return { alert: null };
 
     // Nobody here. Reset the cycle so the next hero starts from zero rather than
-    // inheriting a stranger's progress, and drop any offer.
+    // inheriting a stranger's progress.
+    //
+    // ⚠️ **The offer is NOT dropped** (PR-7, FP-61; Free Playmat 1.4c). Under
+    // flags a tick with nobody here is not the player's gesture — a claim can
+    // lapse for a tick on its own — and clearing on it would re-ask a player
+    // who said "not yet". An offer is cleared only by a DIFFERENT hero claiming
+    // the Token, or by a flag being planted on it (`Flags.plant`).
     if (!heroId) {
         instance.cycleElapsedMs = 0;
-        clearPause(instance);
         return { alert: null };
     }
 
