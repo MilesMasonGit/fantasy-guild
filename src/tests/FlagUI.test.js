@@ -125,10 +125,13 @@ describe('dragging the pennant (FLAG) — Placement.moveFlag just moves the poin
 });
 
 describe('dropping on the Dock recalls (dockRecall)', () => {
+    // Since slice 1.5b-ii a hero picked up on the board drags their FLAG (FP-76),
+    // so every recall drop is a FLAG payload — these are the three shapes the
+    // board produces (`BoardTile`'s hero, `FlagLayer`'s idle hero, the flag).
     it.each([
-        ['a hero sprite from a Token', { kind: DRAG_KIND.HERO, heroId: 'h1', from: { tile: 15 } }],
-        ['an idle hero beside their flag', { kind: DRAG_KIND.HERO, heroId: 'h1', from: { flag: true } }],
-        ['a pennant', { kind: DRAG_KIND.FLAG, heroId: 'h1' }]
+        ['a hero on a Token (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { tile: 15, hero: true } }],
+        ['an idle hero beside their flag (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true, hero: true } }],
+        ['the flag itself', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }]
     ])('furls the flag for %s', (_label, payload) => {
         put(15, 'fixture_producer');
         Placement.placeHero('h1', 15);
