@@ -185,7 +185,7 @@ export const TokenInspectPopup = ({ typeId, tileIndex, anchorRect, onClose }) =>
                     ref={scrollRef}
                     className="max-h-[75vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
-                    <TokenInspection typeId={typeId} hideSprite={true} showSell={false} showAddToTray={false} />
+                    <TokenInspection typeId={typeId} tile={tileIndex} hideSprite={true} showSell={false} showAddToTray={false} />
                 </div>
 
                 {/* Flat Scroll Arrow: Bottom */}

@@ -11,6 +11,15 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Pencil, Backpack, Heart } from 'lucide-react';
+import { isRecallDrop, recallFromDrop } from './dockRecall.js';
+import { dockStatusLine } from '../board/flagText.js';
+
+/** The status line's colour: working green, waiting amber, idle at a flag stone, in the Guild blue. */
+const STATUS_TONE = {
+    working: 'text-emerald-400',
+    waiting: 'text-amber-300',
+    idle: 'text-stone-300'
+};
 
 /**
  * HeroDockTab — sliding hero tab in the rightmost Hero Dock.
@@ -63,21 +72,21 @@ export const HeroDockTab = ({
         { deps: [heroId] }
     );
 
-    // The Token this hero works, from their flag's status (Free Playmat 1.4b).
-    // Null unless they are working one — idle at a flag or waiting for a
-    // restock both read as not working here until slice 1.5's status line.
+    // What this hero is doing, from their flag's status: working, waiting for
+    // a restock, idle at their flag, or in the Guild (slice 1.5's status line).
     // ⚠️ It listened for `board:hero_placed` / `board:hero_recalled`, which
     // nothing has ever published; `HERO_MOVED` is what every plant, claim
     // change, recall and defeat actually announces.
-    const tile = useGameState(
+    const status = useGameState(
         () => {
-            const status = Flags.statusOf(heroId);
-            return status.state === 'working' ? status.tile : null;
+            const s = Flags.statusOf(heroId);
+            return { state: s.state, tile: s.tile, typeId: s.typeId };
         },
         [BOARD_EVENTS.HERO_MOVED, 'state_changed'],
         null,
         { deps: [heroId] }
     );
+    const tile = status?.state === 'working' ? status.tile : null;
 
     const token = useGameState(
         state => tile == null ? null : (state.board?.tiles?.[tile] || null),
@@ -104,9 +113,17 @@ export const HeroDockTab = ({
     const drop = useEntityDrop({
         id: `rightmost-dock-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
-        accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId) || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
+        // A hero off the board or a pennant dropped on any tab recalls (slice
+        // 1.5) — the tab is the smaller target, so it must say yes itself or
+        // the Dock's own recall zone never gets the drop. A tab dragged within
+        // the Dock is a reorder.
+        accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
+            || isRecallDrop(p)
+            || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
         onDrop: p => {
-            if (p.kind === DRAG_KIND.ITEM && p.itemId) {
+            if (isRecallDrop(p)) {
+                recallFromDrop(engine.BoardPlacement, p);
+            } else if (p.kind === DRAG_KIND.ITEM && p.itemId) {
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
                 engine.EquipmentManager.equipItem(heroId, p.itemId);
@@ -151,7 +168,7 @@ export const HeroDockTab = ({
     // - Hero drag: do NOT pop out or highlight the tab; only the insertion line between tabs is shown
     // - Drag settle delay: block hover popout during the spring layout reorder animation (~320ms)
     const isDraggingItem = globalDragging && drop.activePayload?.kind === DRAG_KIND.ITEM;
-    const isDraggingHero = globalDragging && drop.activePayload?.kind === DRAG_KIND.HERO;
+    const isDraggingHero = globalDragging && drop.activePayload?.kind === DRAG_KIND.HERO && !isRecallDrop(drop.activePayload);
 
     const expanded = (forceExpanded || (!globalDragging && !isDragSettling && isHovered)) && lift && !pinned && !drag.isDragging;
     const isDraggingHover = isDraggingItem && isHovered && !pinned && !forceExpanded;
@@ -278,12 +295,10 @@ export const HeroDockTab = ({
                                 <div className="text-[11px] truncate font-medium">
                                     {isWounded ? (
                                         <span className="text-red-400 font-bold">Wounded</span>
-                                    ) : isWorking ? (
-                                        <span className="text-emerald-400 truncate">
-                                            Working: {token ? tokenName(token.typeId) : 'Tile'}
-                                        </span>
                                     ) : (
-                                        <span className="text-blue-300">Idle in Guild</span>
+                                        <span data-dock-status={status?.state || 'docked'} className={cn('truncate', STATUS_TONE[status?.state] || 'text-blue-300')}>
+                                            {dockStatusLine(status)}
+                                        </span>
                                     )}
                                 </div>
 

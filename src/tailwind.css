@@ -695,7 +695,10 @@
   .gi-token-land { animation: none; }
 }
 
-/* Working and idle, said in colour (D-267).
+/* Working, said in colour (D-267).
+ *
+ * ⚠️ Since Free Playmat slice 1.5 only the green half remains — the yellow idle
+ * glow described below was retired (FP-29); see the note after `.gi-glow-active`.
  *
  * A staffed tile lights up: **green while the pairing works, yellow when it has
  * nothing to do**, on BOTH the hero and the Token, so the pair reads as one unit
@@ -734,10 +737,9 @@
   animation: gi-glow-active 2.6s ease-in-out infinite;
 }
 
-/* Steady on purpose — see above. */
-.gi-glow-idle {
-  filter: drop-shadow(0 0 4px rgba(255, 179, 0, 0.78)) drop-shadow(0 0 10px rgba(255, 179, 0, 0.45));
-}
+/* The steady yellow `gi-glow-idle` is gone (Free Playmat slice 1.5, FP-29):
+   an idle hero is now drawn small and unlit beside a grey pennant with a "…"
+   chip (`FlagLayer`), and a staffed-but-stuck Token shows only its red badge. */
 
 /* ⚠️ Reduced motion must NOT drop the green glow, only its breathing. The colour
    IS the state; losing it would leave a player who sets this preference unable

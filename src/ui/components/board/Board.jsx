@@ -1,9 +1,11 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
-import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex } from '../../../config/boardGeometry.js';
+import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex, tileCentre } from '../../../config/boardGeometry.js';
 import { closest2x2Anchor } from './boardConstants.js';
 import { placeTokenFromDrag, announce } from './placeTokenFromDrag.js';
 import { BoardTile } from './BoardTile.jsx';
+import { FlagLayer } from './FlagLayer.jsx';
+import { centreOf } from '../../../systems/board/nearby.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
@@ -32,9 +34,13 @@ import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { StationRecipeModal } from './StationRecipeModal.jsx';
 
-export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
+export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspectedHeroId = null }) => {
     const { EventBus } = useEngine();
     const dndContext = useDndContext();
+
+    // A hero hovered anywhere on the board — their pennant, their idle sprite
+    // or their sprite on a Token — shows that flag's reach ring (FP-64).
+    const [hoverHeroId, setHoverHeroId] = useState(null);
 
     // How much the 944px playmat is shrunk to fit this window (CR2-179).
     const fit = useBoardScale();
@@ -72,6 +78,17 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
         }
     }
 
+    // A hero or pennant being dragged over a tile: the reach ring follows the
+    // point the flag would be planted at — the Token's centre, else the tile's.
+    let dragRing = null;
+    if ((activeDrag?.kind === DRAG_KIND.HERO || activeDrag?.kind === DRAG_KIND.FLAG) && activeDrag.heroId
+        && overId && /^tile-\d+$/.test(String(overId))) {
+        const overTile = Number(String(overId).slice('tile-'.length));
+        const occ = BoardState.getOccupyingToken(overTile);
+        const point = occ ? centreOf(occ.anchorIndex, occ.instance.typeId) : tileCentre(overTile);
+        if (point) dragRing = { heroId: activeDrag.heroId, x: point.x, y: point.y };
+    }
+
     // One flat projection of the whole board.
     const tiles = useGameState(
         state => {
@@ -96,6 +113,9 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
 
                 out[anchorIndex] = {
                     typeId: t.typeId,
+                    instanceId: t.id || null,
+                    // FP-35: the player marked it "heroes may not work this" (⊘, FPP-8).
+                    disallowed: Flags.isDisallowed(t),
                     usesRemaining: t.usesRemaining,
                     alert: t.alert || null,
                     stationSkill,
@@ -137,17 +157,18 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                 out[key] = { ...(out[key] || { typeId: null, usesRemaining: null, size: 1, isAnchor: true, anchorTile: Number(key) }), alert: ALERT.UNSTOCKED };
             }
 
-            // Where each hero is DRAWN goes through the worker seam. Under flags
-            // several heroes can share a display tile (one working it, another
-            // idle at a flag planted there), and until slice 1.5 draws flags a
-            // tile shows ONE: working over waiting over idle, then planting
-            // order (FPP-6). The dock shows the rest.
-            const RANK = { working: 0, waiting: 1, idle: 2 };
+            // Where each hero is DRAWN goes through the worker seam. A working
+            // or waiting hero is drawn here, paired with their Token (D-266);
+            // an IDLE hero is drawn small beside their flag by `FlagLayer`
+            // (slice 1.5, FP-29), so is skipped. A working hero outranks a
+            // waiting one on a shared tile, then planting order (FPP-6).
+            const RANK = { working: 0, waiting: 1 };
             const drawn = {};
             for (const [heroId, displayTile] of BoardState.heroesOnBoard()) {
                 if (displayTile == null) continue;
                 const status = Flags.statusOf(heroId);
-                const rank = RANK[status.state] ?? 2;
+                const rank = RANK[status.state];
+                if (rank == null) continue;
                 const targetKey = out[displayTile]?.anchorTile != null ? out[displayTile].anchorTile : displayTile;
                 const key = String(targetKey);
                 if (drawn[key] != null && drawn[key] <= rank) continue;
@@ -158,9 +179,10 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                     heroId,
                     heroName: hero?.name || 'Hero',
                     heroSprite: hero?.spriteId || hero?.classId || null,
-                    // The idle mark follows the hero, not the tile: a hero idle
-                    // at a flag on a healthy Token is still idle.
-                    heroIdle: status.state === 'idle' || (status.state === 'working' && !!out[key]?.alert)
+                    // Not working productively: waiting for a restock, or on a
+                    // Token that is stuck. Such a hero gets no glow — the stuck
+                    // Token's red badge says it alone (slice 1.5, FP-29).
+                    heroIdle: status.state !== 'working' || !!out[key]?.alert
                 };
             }
             return out;
@@ -221,6 +243,12 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
     const handlePlaceHero = useCallback((index, payload) => {
         if (!payload.heroId) return;
         announce(Placement.placeHero(payload.heroId, index));
+    }, []);
+
+    // A pennant dropped on a tile moves only the flag (slice 1.5, FPP-3).
+    const handleMoveFlag = useCallback((index, payload) => {
+        if (!payload.heroId) return;
+        announce(Placement.moveFlag(payload.heroId, index));
     }, []);
 
     const handleRecallHero = useCallback((index) => {
@@ -316,6 +344,8 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                         isPreviewValid={isPreviewValid}
                         onPlaceToken={handlePlaceToken}
                         onPlaceHero={handlePlaceHero}
+                        onMoveFlag={handleMoveFlag}
+                        onHeroHover={setHoverHeroId}
                         onPickUp={handleRecallHero}
                         onReturnTokenToTray={handleReturnTokenToTray}
                         onOpenGuildHall={onOpenGuildHall}
@@ -331,6 +361,14 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
             {boardMaps.map(map => (
                 <BoardMapToken key={map.id} map={map} onBurst={handleBurstMap} />
             ))}
+
+            {/* Flags: pennants, idle heroes and reach rings (slice 1.5) */}
+            <FlagLayer
+                inspectedHeroId={inspectedHeroId}
+                hoverHeroId={hoverHeroId}
+                onHoverHero={setHoverHeroId}
+                dragRing={dragRing}
+            />
 
             <SpriteLayerView />
             </div>

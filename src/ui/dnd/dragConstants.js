@@ -16,7 +16,12 @@ export const DRAG_KIND = {
     /** A board object: dragged Tray→tile, tile→tile, or tile→Tray. */
     TOKEN: 'token',
     HERO: 'hero',
-    ITEM: 'item'
+    ITEM: 'item',
+    /**
+     * A flag's pennant (Free Playmat slice 1.5): moves only the flag. Carries
+     * `heroId` and the flag's `skill`. Dropping it on the Dock recalls the hero.
+     */
+    FLAG: 'flag'
 };
 
 /**
@@ -46,6 +51,7 @@ export const DRAG_SFX = {
         // they reuse the solid card-place thunk rather than a light click.
         [DRAG_KIND.TOKEN]: 'card_place',
         [DRAG_KIND.HERO]: 'hero_assign',
+        [DRAG_KIND.FLAG]: 'hero_assign',
         [DRAG_KIND.ITEM]: 'item_equip'
     }
 };

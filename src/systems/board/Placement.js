@@ -815,17 +815,30 @@ export function placeHero(heroId, index) {
     const point = positionOf(index);
     const skill = bridgeSkill(heroId, occ?.instance || null);
 
+    // `Flags.plant` announces `hero_deployed` itself, for every route (1.5).
     const planted = Flags.plant(heroId, point, { skill });
     if (!planted.success) return planted;
     if (planted.unchanged) return { success: true, workedTile: BoardState.workTileOf(heroId) };
 
-    if (occ) {
-        EventBus.publish('hero_deployed', { tile: occ.anchorIndex, heroId, typeId: occ.instance.typeId });
-    }
     EventBus.publish('heroes_updated', { source: 'board_placement' });
     EventBus.publish('state_changed');
 
     return { success: true, workedTile: BoardState.workTileOf(heroId) };
+}
+
+/**
+ * Drag a pennant onto a tile — **move only the flag** (slice 1.5, FPP-15).
+ *
+ * On today's grid this lands exactly where dropping the hero would: the flag
+ * keeps its skill on bare ground, and on a Token takes that Token's skill only
+ * if the hero holds it (FPP-3, via `bridgeSkill`). The difference is that a
+ * pennant always belongs to a planted flag, so a hero in the Dock cannot be
+ * sent out this way.
+ */
+export function moveFlag(heroId, index) {
+    if (!heroId) return refuse('No hero');
+    if (!BoardState.flagOf(heroId)) return refuse('That hero has no flag planted');
+    return placeHero(heroId, index);
 }
 
 /**

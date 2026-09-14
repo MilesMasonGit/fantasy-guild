@@ -12,6 +12,8 @@ import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as Flags from '../../../systems/board/Flags.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -34,7 +36,10 @@ export const TokenInspection = ({
     hideSprite = false,
     showSell = true,
     showAddToTray = true,
-    showViewInVault = false
+    showViewInVault = false,
+    // The board tile this panel was opened from, if any (slice 1.5). Only a
+    // Token on the board can be marked "heroes may not work this".
+    tile = null
 }) => {
     const def = getTokenType(typeId);
 
@@ -272,6 +277,8 @@ export const TokenInspection = ({
                         <span className="font-bold text-gi-text">{enemy.name} (Lv {enemy.level})</span>
                     </div>
                 )}
+
+                {tile != null && <HeroesMayWork tile={tile} />}
             </div>
 
             {/* Production Routes */}
@@ -381,6 +388,44 @@ export const TokenInspection = ({
                 />
             )}
         </div>
+    );
+};
+
+/**
+ * ⭐ The disallow toggle (FP-35, FP-36, FPP-8) — "Heroes may work this".
+ *
+ * Shown only for a board Token a hero could work: a work cycle that needs a
+ * hero and names a skill, an enemy, a Promotion Token, or the Guild Hall
+ * (`Flags.isHeroWorkable`). Unticking lets go of any hero working it and every
+ * flag skips it from then on; the Token itself keeps running its rules. A
+ * Token a Manager restocks arrives allowed (FPP-13).
+ */
+const HeroesMayWork = ({ tile }) => {
+    const view = useGameState(
+        () => {
+            const occ = BoardState.getOccupyingToken(tile);
+            if (!occ?.instance || !Flags.isHeroWorkable(occ.instance)) return null;
+            return { anchor: occ.anchorIndex, allowed: !Flags.isDisallowed(occ.instance) };
+        },
+        [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
+        null,
+        { deps: [tile] }
+    );
+    if (!view) return null;
+
+    return (
+        <label
+            data-heroes-may-work={view.allowed ? 'yes' : 'no'}
+            className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 hover:border-gi-gold/40 text-xs cursor-pointer transition-colors"
+        >
+            <span className="text-gi-muted">Heroes may work this</span>
+            <input
+                type="checkbox"
+                checked={view.allowed}
+                onChange={(e) => Flags.setDisallowed(view.anchor, !e.target.checked)}
+                className="w-4 h-4 accent-amber-400 cursor-pointer"
+            />
+        </label>
     );
 };
 

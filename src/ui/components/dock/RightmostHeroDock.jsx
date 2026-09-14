@@ -9,6 +9,7 @@ import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { BOARD_PX } from '../../../config/boardGeometry.js';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
+import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 
 /**
  * RightmostHeroDock — vertical sliding tabs dock on the far right edge of the screen.
@@ -89,14 +90,13 @@ export const RightmostHeroDock = ({
     const recall = useEntityDrop({
         id: 'rightmost-dock-recall',
         surface: DND_SURFACE.DRAWER,
-        accepts: p => p.kind === DRAG_KIND.HERO && (p.from?.tile != null || !!p.from?.areaId),
+        accepts: p => isRecallDrop(p) || (p.kind === DRAG_KIND.HERO && !!p.from?.areaId),
         onDrop: p => {
-            if (p.from?.tile != null) {
-                // By hero, not by tile (Free Playmat 1.4b): a tile can show a
-                // different hero than the one being dragged once flags choose.
-                // ⚠️ The engine exposes Placement as `BoardPlacement`; the old
-                // `engine.Placement` was undefined, so this drop did nothing.
-                engine.BoardPlacement?.recallHeroById(p.heroId);
+            if (isRecallDrop(p)) {
+                // A hero off the board or a flag's pennant (Free Playmat 1.5),
+                // recalled by hero, not by tile. ⚠️ The engine exposes
+                // Placement as `BoardPlacement`; `engine.Placement` is undefined.
+                recallFromDrop(engine.BoardPlacement, p);
             } else if (p.from?.areaId) {
                 engine.HeroAssignmentManager?.unassignHero(p.from.areaId);
             }

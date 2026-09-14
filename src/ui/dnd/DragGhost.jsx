@@ -8,6 +8,7 @@ import { DRAG_KIND } from './dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt } from '../components/base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { GameState } from '../../state/GameState.js';
+import { FlagMark } from '../components/board/FlagMark.jsx';
 
 /**
  * DragGhost — the floating representation of whatever is being dragged.
@@ -78,9 +79,21 @@ export const DragGhost = ({ payload, bold }) => {
             );
         case DRAG_KIND.HERO: return <div style={opacityStyle} className="transition-opacity duration-150"><HeroGhost payload={payload} /></div>;
         case DRAG_KIND.ITEM: return <div style={opacityStyle} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
+        case DRAG_KIND.FLAG: return <FlagGhost payload={payload} />;
         default: return null;
     }
 };
+
+/**
+ * A pennant in flight (Free Playmat slice 1.5) — the same gold flag and skill
+ * mark as on the board, a little larger in the hand, with no hero drawn: a
+ * pennant drag moves only the flag.
+ */
+const FlagGhost = ({ payload }) => (
+    <div className="flex items-center justify-center" style={{ width: 48, height: 48 }}>
+        <FlagMark skill={payload.skill} size={36} />
+    </div>
+);
 
 /**
  * A Token in flight — one size, no frame, all the way (D-219, D-220).
