@@ -157,13 +157,20 @@ describe('1. an item says "deals N damage to the enemy", and a real fight feels 
 describe('2. ⭐ found by HERO, never by tile (G-43)', () => {
     it('still hits the monster after the hero’s recorded tile moves onto a bush — and never the hero there', () => {
         const fight = engage();
-        place(BUSH, 'fixture_producer');
+        const bush = place(BUSH, 'fixture_producer');
         carry(dealsToEnemy(5));
 
-        // Re-plant the flag on the bush, with no tick: the fight still names
-        // hero_1, but every tile lookup now says hero_1 is working the bush.
-        Flags.plant('hero_1', positionOf(BUSH), { skill: 'logging' });
+        // Move hero_1's claim straight onto the bush, with no tick: the fight
+        // still names hero_1, but every tile lookup now says hero_1 is working
+        // the bush.
+        //
+        // Was: re-planting the flag on the bush. Since Free Playmat 1.4c a hero
+        // letting go of an enemy ends that fight in the same call (FP-43,
+        // FP-49), so a re-plant can no longer leave this state behind. The
+        // claim is set directly so the lookup-by-hero rule is still exercised.
+        BoardState.setClaim('hero_1', { instanceId: bush.id, tile: BUSH, typeId: bush.typeId });
         expect(BoardState.workerOf(BUSH)).toBe('hero_1');
+        expect(BoardCombat.fightOfHero('hero_1')).toBe(fight);
 
         const enemyBefore = fight.combat.enemyHp.current;
         const heroBefore = hero1().hp.current;
