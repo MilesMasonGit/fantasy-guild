@@ -138,9 +138,12 @@ describe('Flags.skillOptionsFor — what the picker lists', () => {
 
 describe('dragging the pennant (FLAG) — Placement.moveFlag (FPP-3)', () => {
     it('keeps the flag skill on bare ground', () => {
-        Flags.plant('h1', C(14), { skill: 'logging' });
+        // Mining, not logging: h1's best skill is logging (a 50/50 tie broken
+        // alphabetically), and a flag that lost its skill would be refilled
+        // with exactly that (FPP-7) — which would hide a skill that was dropped.
+        Flags.plant('h1', C(14), { skill: 'mining' });
         expect(Placement.moveFlag('h1', 20).success).toBe(true);
-        expect(BoardState.flagOf('h1')).toMatchObject({ ...C(20), skill: 'logging' });
+        expect(BoardState.flagOf('h1')).toMatchObject({ ...C(20), skill: 'mining' });
     });
 
     it('switches to a Token skill the hero holds, and keeps its own when the hero lacks it', () => {
