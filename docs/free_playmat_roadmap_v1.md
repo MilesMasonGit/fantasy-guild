@@ -75,6 +75,24 @@ below. ~~**FP-15**~~ is ⛔ **REJECTED** (FP-40).
 | **FP-69** | **Stuck Tokens:** today's red badge stays for problems the player can fix (missing inputs, charges, no recipe), plus **one notification when a hero leaves a Token for that reason**. Skill too low shows on hover only (FP-60). | Owner, over "hover only" and "a badge for every reason". |
 | **FP-70** | ⭐ **A hero whose Token runs dry waits on the empty spot for its Manager** (FP-19, D-151) — but only while a Manager in reach owes that spot **and can supply it** (a copy is in the Vault). Otherwise the hero moves on. | Owner, over "move on and return later". The supply guard is the director's, so a hero can never wait forever. |
 
+### 1.7 ⚠️ PROVISIONAL — director's picks while the owner was away (2026-09-13 night)
+
+The owner authorized continuing through slice 1.5, choosing the recommended option for any
+question the rulings above don't settle, and marking it here for review. **Each of these can be
+overturned; none is locked.**
+
+| # | Pick | Alternatives not taken |
+|---|---|---|
+| **FPP-1** | A claimed Token that hits a **fixable** problem (missing inputs, charges, no recipe) keeps its hero, progress and red badge **until another Token in the flag's radius is runnable**; then the hero leaves with the FP-69 notification. | Leave at once (brief shortages wipe progress); stay forever (the "claim and alert" FP-48 rejected). |
+| **FPP-2** | The red badge stays on any Token a flag skipped for a fixable reason, even with no hero on it. | Badge only on claimed Tokens (breaks FP-69). |
+| **FPP-3** | A flag dropped on a Token switches to that Token's skill **only if the hero holds that skill**; otherwise the flag keeps its skill and the reason shows on hover. | Always switch (hero idles on a skill they don't have). |
+| **FPP-4** | Moving an enemy mid-fight keeps its HP (the fight moves with it). | Reset the enemy. |
+| **FPP-5** | The FP-69 notification fires once per hero, Token and reason, until that hero completes a cycle there or re-plants. | Every leave; once per session. |
+| **FPP-6** | Until slice 1.5, one hero is drawn per tile (working over waiting over idle); the dock shows the rest. | Stacked badges now. |
+| **FPP-7** | An old save's hero on a bare tile gets a flag with no skill, filled at the first tick with their best held non-combat skill. | Pick during save conversion. |
+| **FPP-8** | A disallowed Token shows a dim ⊘ on the board at all times (slice 1.5). | Only visible on hover/inspection. |
+| **FPP-9** | FP-70's wait needs the spot not marked unstocked, a Manager within reach, and a copy in the Vault. | Looser (any Manager anywhere) or stricter (also a free Manager this tick). |
+
 ### What this changes in other plans
 
 * **Effects Grammar v2:** V10 (`opponent` role) should land **before** Stage 1. G-15 / V9's
@@ -343,7 +361,7 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 | 1.3 Crafting, charges, Managers, triggers, Cannot | ✅ **DONE** 2026-09-13 | `RecipeResolver`, `Charges`, `Managers` (nearest-then-anchor tie-break), `TriggerSystem` neighbour triggers and `Restrictions` (Near count on hypothetical layouts via `centreOf`) all measure with `nearby.js`; `Placement` publishes one dirty event with a radius-aware rebuild set; board-reach rules rebuild every tile; 36 new tests (`ActiveReaders`); `adjacency.js` has no production callers |
 | 1.4a Worker seam | ✅ **DONE** 2026-09-13 | `BoardState.workerOf` / `workTileOf` / `displayTileOf`, still backed by `heroTiles`; ~30 readers converted; `WorkerSeam.test.js` guard; no behaviour change. ⚠️ `workerOf` still returns a hero on a bare tile and `recallHeroById` resolves via the tile — both for 1.4b |
 | V10 `the enemy` role | ✅ **DONE** 2026-09-13 | Effects Grammar V10a + V10b (G-40…G-43); enemy found by hero, flag-proof; old `target: 'enemy'` flag retired |
-| 1.4b Flags replace `heroTiles`, work flags | **NOT STARTED** | After V10 |
+| 1.4b Flags replace `heroTiles`, work flags | **IN PROGRESS** 2026-09-13 | Branch `free-playmat/1.4b-flags`; provisional picks FPP-1…FPP-9 (§1.7) |
 | 1.4c Combat, promotion, disallow | **NOT STARTED** | |
 | 1.5 Flags UI | **NOT STARTED** | |
 | 1.6 Free placement + fresh save | **NOT STARTED** | May split |
