@@ -66,6 +66,38 @@ export const ALERT_HINT = {
     [ALERT.UNSTOCKED]: 'This tile ran dry and the Vault has no replacement — restock it'
 };
 
+/**
+ * Why a flag passed a Token over, as the tail of one hover line —
+ * "Iron Forge — needs materials" (Free Playmat slice 1.5, FP-48, FP-60).
+ *
+ * Keyed by every reason `Flags` can record: its own `SKIP` values plus the
+ * `ALERT` values `WorkCheck` and promotion return. `FlagUI.test.js` derives
+ * that list from the engine, so a new reason without a sentence fails. Short
+ * forms of `ALERT_HINT`'s wording, because up to five of these stack in one
+ * tooltip.
+ */
+export const SKIP_HINT = {
+    [ALERT.INPUTS]: 'needs materials',
+    [ALERT.ACCESS]: 'skill too low',
+    [ALERT.UNSKILLED]: 'doesn’t have the skill',
+    [ALERT.NO_RECIPE]: 'missing a Token its recipe needs beside it',
+    [ALERT.CHARGES]: 'not enough charges for a cycle',
+    [ALERT.UNSTOCKED]: 'ran dry, nothing in the Vault',
+    no_skill: 'names no skill',
+    disallowed: 'heroes not allowed',
+    claimed: 'being worked by {holder}',
+    same_job: 'already holds this job'
+};
+
+/**
+ * One skip as a sentence tail. `holder` names the hero who has a `claimed`
+ * Token; without one it reads "another hero".
+ */
+export function skipHint(reason, { holder = null } = {}) {
+    const text = SKIP_HINT[reason] || 'can’t work it';
+    return text.replace('{holder}', holder || 'another hero');
+}
+
 /** The two-word label printed on the alert bar itself. The sentence is in `ALERT_HINT`. */
 export const ALERT_LABEL = {
     [ALERT.INPUTS]: 'Need Items',

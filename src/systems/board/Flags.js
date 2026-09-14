@@ -4,7 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
-import { isCombatSkill } from '../../config/registries/skillRegistry.js';
+import { isCombatSkill, getSkill } from '../../config/registries/skillRegistry.js';
 import { TILE_STEP_PX, colOf, rowOf } from '../../config/boardGeometry.js';
 import * as BoardState from './BoardState.js';
 import { centreOf, distanceSq } from './nearby.js';
@@ -308,6 +308,27 @@ function recordSkips(r, heroId, skips) {
 /** Every flag that skipped this Token instance, as `[{ heroId, reason }]`. */
 export function skipsOf(instanceId) {
     return rt()?.skips.get(instanceId) || [];
+}
+
+/**
+ * What `heroId`'s flag passed over, in the order it looked (nearest first), as
+ * `[{ instanceId, reason, typeId, tile }]` — the pennant's hover text (slice
+ * 1.5). A Token that has since left the board is left out.
+ */
+export function skipsOfHero(heroId) {
+    const r = rt();
+    const ids = r?.skipsByHero.get(heroId);
+    if (!ids) return [];
+    const out = [];
+    for (const instanceId of new Set(ids)) {
+        const found = BoardState.findTokenById(instanceId);
+        if (!found) continue;
+        for (const s of r.skips.get(instanceId) || []) {
+            if (s.heroId !== heroId) continue;
+            out.push({ instanceId, reason: s.reason, typeId: found.instance.typeId, tile: found.anchor });
+        }
+    }
+    return out;
 }
 
 /** Whether some flag skipped this Token for a reason the player can fix (FPP-2). */
@@ -635,7 +656,70 @@ export function plant(heroId, point, { skill = null } = {}) {
         quiet--;
     }
     announceMoved(heroId);
+
+    /**
+     * ⭐ **The quest action "deploy a hero" is planting a flag** (roadmap slice
+     * 1.5) — every route: a drop from the dock, a hero dragged on the board, a
+     * pennant moved, the "+" badge, a skill change. Published here, once, so no
+     * caller can forget it or announce it twice. An unchanged plant is not a
+     * deployment and returned above.
+     */
+    const tile = BoardState.tileAtPoint(point);
+    const under = BoardState.getOccupyingToken(tile);
+    EventBus.publish('hero_deployed', { heroId, tile, typeId: under?.instance?.typeId ?? null });
     return { success: true };
+}
+
+/**
+ * Change the skill a planted flag works — the skill picker (slice 1.5, A-8).
+ *
+ * ⚠️ **A re-plant, not an edit.** The flag stays where it is, but the hero
+ * lets go of whatever they held (its progress resets, FP-68), any wait ends,
+ * the notices re-arm, and the flag chooses again at once with the new skill.
+ *
+ * Only a skill the hero holds (non-combat), or the combat flag for a hero who
+ * holds a combat skill, is accepted — the same list `skillOptionsFor` offers.
+ */
+export function setSkill(heroId, skill) {
+    const flag = BoardState.flagOf(heroId);
+    if (!flag) return { success: false, reason: 'That hero has no flag planted' };
+    const offered = skillOptionsFor(heroId).some(o => o.skill === skill);
+    if (!offered) return { success: false, reason: 'That hero cannot work that skill' };
+    if (flag.skill === skill) return { success: true, unchanged: true };
+    return plant(heroId, { x: flag.x, y: flag.y }, { skill });
+}
+
+/**
+ * What the skill picker lists for a hero: each held **non-combat** skill
+ * (highest level first, then name), then one **Fight** row — the combat flag —
+ * only if the hero holds a combat skill (D-249).
+ *
+ * Combat skills are not listed one by one: a flag fights with whatever the hero
+ * fights with, so there is a single combat choice (FP-32).
+ *
+ * @returns {{ skill: string, name: string, level: number|null, combat: boolean }[]}
+ */
+export function skillOptionsFor(heroId) {
+    const skills = heldSkills(heroId);
+    const work = Object.keys(skills)
+        .filter(id => !isCombatSkill(id))
+        .map(id => ({ skill: id, name: getSkill(id)?.name || id, level: skills[id]?.level ?? null, combat: false }))
+        .sort((a, b) => (b.level ?? 0) - (a.level ?? 0) || a.name.localeCompare(b.name));
+    if (heroCanFight(heroId)) work.push({ skill: COMBAT_FLAG, name: 'Fight', level: null, combat: true });
+    return work;
+}
+
+/**
+ * Whether a hero could ever work this board Token — the Tokens the "Heroes may
+ * work this" toggle is offered on (FP-35): a work cycle that needs a hero and
+ * names a skill (FP-47), an enemy, a Promotion Token, or the Guild Hall (FPP-10).
+ */
+export function isHeroWorkable(instance) {
+    if (!instance?.typeId) return false;
+    const def = getTokenType(instance.typeId);
+    const kind = kindOf(instance, def);
+    if (kind === 'work') return hasWorkSkill(def);
+    return kind !== null;
 }
 
 /** Clear a standing promotion offer on the Token under `point`, unless another hero holds it. */
@@ -685,7 +769,8 @@ export function furl(heroId, reason = 'recall') {
  * Guild Hall alike. Nothing else about the Token changes: its rules, triggers,
  * Manager service and restocks carry on (see `isDisallowed`).
  *
- * No UI yet (slice 1.5). From the console: `Game.Flags.setDisallowed(tile, true)`.
+ * The Token panel's "Heroes may work this" checkbox calls this (slice 1.5);
+ * from the console: `Game.Flags.setDisallowed(tile, true)`.
  *
  * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}
  */
