@@ -92,6 +92,8 @@ overturned; none is locked.**
 | **FPP-7** | An old save's hero on a bare tile gets a flag with no skill, filled at the first tick with their best held non-combat skill. | Pick during save conversion. |
 | **FPP-8** | A disallowed Token shows a dim ⊘ on the board at all times (slice 1.5). | Only visible on hover/inspection. |
 | **FPP-9** | FP-70's wait needs the spot not marked unstocked, a Manager within reach, and a copy in the Vault. | Looser (any Manager anywhere) or stricter (also a free Manager this tick). |
+| **FPP-10** | **The Guild Hall is exempt from FP-47.** Its Wishing Well cycle (written by `GuildUpgradeManager`) has no skill; the Hall is worked only when a flag stands on it, like a Promotion Token, with no skill check. | Author a skill for the Wishing Well; strict FP-47 (silently stops the water). |
+| **FPP-11** | The FP-69 notice also fires when a hero's choice **passes over a nearer Token stuck for a fixable reason** to work something else — not only when leaving a Token it held. Still once per hero, Token and reason (FPP-5). | Notify only on leaving a held Token (a stalled Forge nobody ever claimed would go unmentioned). |
 
 ### What this changes in other plans
 
@@ -361,8 +363,8 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 | 1.3 Crafting, charges, Managers, triggers, Cannot | ✅ **DONE** 2026-09-13 | `RecipeResolver`, `Charges`, `Managers` (nearest-then-anchor tie-break), `TriggerSystem` neighbour triggers and `Restrictions` (Near count on hypothetical layouts via `centreOf`) all measure with `nearby.js`; `Placement` publishes one dirty event with a radius-aware rebuild set; board-reach rules rebuild every tile; 36 new tests (`ActiveReaders`); `adjacency.js` has no production callers |
 | 1.4a Worker seam | ✅ **DONE** 2026-09-13 | `BoardState.workerOf` / `workTileOf` / `displayTileOf`, still backed by `heroTiles`; ~30 readers converted; `WorkerSeam.test.js` guard; no behaviour change. ⚠️ `workerOf` still returns a hero on a bare tile and `recallHeroById` resolves via the tile — both for 1.4b |
 | V10 `the enemy` role | ✅ **DONE** 2026-09-13 | Effects Grammar V10a + V10b (G-40…G-43); enemy found by hero, flag-proof; old `target: 'enemy'` flag retired |
-| 1.4b Flags replace `heroTiles`, work flags | **IN PROGRESS** 2026-09-13 | Branch `free-playmat/1.4b-flags`; provisional picks FPP-1…FPP-9 (§1.7) |
-| 1.4c Combat, promotion, disallow | **NOT STARTED** | |
+| 1.4b Flags replace `heroTiles`, work flags | ✅ **DONE** 2026-09-14 | `board.flags` + runtime claims by instance id (`BoardState`), `Flags.js` (two-phase assign, sticky claims, FP-68 carry, FP-70 waits, FP-69 notices), `WorkCheck.js` shared with the runner, hero displacement deleted, bridge `placeHero` plants a flag, `heroTiles` converted on load (no version bump), Mat Tuner `flagRadius`. 32 new tests, 34 neuterings caught; every rewritten test listed in the build report. Provisional picks FPP-1…FPP-11 (§1.7). Fixed in passing: the dock's recall-by-drop called an undefined `engine.Placement`. |
+| 1.4c Combat, promotion, disallow | **IN PROGRESS** 2026-09-14 | Branch `free-playmat/1.4c-combat-promotion-disallow` |
 | 1.5 Flags UI | **NOT STARTED** | |
 | 1.6 Free placement + fresh save | **NOT STARTED** | May split |
 | 1.7 Mat UI | **NOT STARTED** | |
