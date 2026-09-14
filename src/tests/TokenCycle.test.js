@@ -206,7 +206,10 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
 
         run(25000);
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
-        expect(token.alert).toBe(BoardRunner.ALERT.ACCESS);
+        // "Says so" under flags (FP-48, FP-60): the flag skips the Token and
+        // records ACCESS for hover — no red mark on the Token itself.
+        expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.ACCESS]);
+        expect(token.alert).toBeFalsy();
     });
 
     it('permits a hero who meets it, and clears the alert', () => {

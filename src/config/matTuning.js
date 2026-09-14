@@ -34,6 +34,14 @@ export const MAT_TUNABLES = Object.freeze([
         hint: 'How far an "adjacent" rule reaches, centre to centre. 272 reproduces today\'s 8-tile ring (diagonal neighbour 226 u, next ring 320 u).',
         min: 100, max: 600, step: 1, def: 272,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
+    },
+    {
+        key: 'flagRadius',
+        group: 'Flags',
+        label: 'Flag radius',
+        hint: 'How far from its flag a hero looks for work, centre to centre (FP-65). 400 is 2.5 tile steps.',
+        min: 160, max: 1000, step: 1, def: 400,
+        format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     }
 ]);
 

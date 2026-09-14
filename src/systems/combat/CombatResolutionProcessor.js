@@ -13,9 +13,8 @@ export function handleHeroWounded(fight, heroId) {
     // was "owned by LoopRunner._forcedRetreat, which runs on the next tick".
     // **`LoopRunner` was deleted by the playmat rework, and there are no areas.**
     // Getting the hero off the board is `BoardCombat.resolveDefeat`, which sees
-    // the wounded status this function just set and calls
-    // `BoardState.setHeroTile(heroId, null)` — but only for a hero standing on
-    // an enemy Token. (CR-028's point still holds: unassigning here was a no-op
+    // the wounded status this function just set and furls the hero's flag
+    // (`Flags.furl`) — but only for a hero fighting an enemy Token. (CR-028's point still holds: unassigning here was a no-op
     // on ephemeral cards, so this function deliberately does not try.)
     NotificationSystem.warning(`${HeroManager.getHero(heroId)?.name} has been wounded!`);
 }

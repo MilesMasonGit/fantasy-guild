@@ -160,8 +160,9 @@ describe('⚠️ Restocking UNDER a working hero, who resumes (D-151)', () => {
 
         run(13000);
 
-        expect(BoardState.tileOfHero('hero_1')).toBe(TILE);
-        expect(BoardState.heroOnTile(TILE)).toBe('hero_1');
+        // The hero waited on the spot for the restock (FP-70) and claimed it.
+        expect(BoardState.workTileOf('hero_1')).toBe(TILE);
+        expect(BoardState.workerOf(TILE)).toBe('hero_1');
     });
 
     it('and the hero then actually produces again, unattended', () => {

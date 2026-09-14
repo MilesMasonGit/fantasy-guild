@@ -19,15 +19,18 @@ describe('2x2 Large Token Mechanics', () => {
         GameState.state = {
             board: {
                 tiles: {},
-                heroTiles: {},
+                flags: {},
+                nextFlagOrder: 0,
                 vacancies: {},
                 tray: [],
                 tokenBank: {},
                 maps: []
             },
+            // Both hold mining: a hero only works a Token whose skill they
+            // hold, and a Token with no skill is not workable (FP-47, FP-48).
             heroes: [
-                { id: 'hero_1', name: 'Althea', skills: {}, level: 1 },
-                { id: 'hero_2', name: 'Brom', skills: {}, level: 1 }
+                { id: 'hero_1', name: 'Althea', skills: { mining: { level: 5, xp: 0 } }, level: 1 },
+                { id: 'hero_2', name: 'Brom', skills: { mining: { level: 5, xp: 0 } }, level: 1 }
             ]
         };
 
@@ -39,7 +42,7 @@ describe('2x2 Large Token Mechanics', () => {
                 size: 1,
                 uses: 10,
                 requiresHero: true,
-                config: { cycleTimeMs: 5000, inputs: [], outputs: [] }
+                config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [] }
             },
             fixture_large_fortress: {
                 id: 'fixture_large_fortress',
@@ -47,7 +50,7 @@ describe('2x2 Large Token Mechanics', () => {
                 size: 2,
                 uses: 50,
                 requiresHero: true,
-                config: { cycleTimeMs: 10000, inputs: [], outputs: [] }
+                config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, inputs: [], outputs: [] }
             },
             fixture_large_passive_monolith: {
                 id: 'fixture_large_passive_monolith',

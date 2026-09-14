@@ -41,7 +41,11 @@ export const GAME_VERSION = '0.7.0';
 export function createEmptyBoard() {
     return {
         tiles: {},
-        heroTiles: {},
+        // Each hero's flag, keyed by hero id (Free Playmat 1.4b). A hero with
+        // no flag is in the Dock. Which Token a flag works is runtime only.
+        flags: {},
+        // Counter behind each flag's `plantedAt` — the order flags choose in.
+        nextFlagOrder: 0,
         vacancies: {},
         tokenBank: {},
         tray: [],
@@ -254,7 +258,8 @@ export const INITIAL_STATE = {
 
     // === The Board (7×7 playmat) ===
     //   tiles       { [index 0-48]: { typeId, usesRemaining, cycleElapsedMs } }
-    //   heroTiles   { [heroId]: index }     where each hero STANDS (Phase 7)
+    //   flags       { [heroId]: { x, y, skill, plantedAt } }  each hero's flag (Free Playmat 1.4b)
+    //   nextFlagOrder number                the next flag's plantedAt
     //   vacancies   { [index]: { typeId, unstocked } }   tiles that ran dry
     //   tokenBank   { [typeId]: [{ usesRemaining }, ...] }  capped by DISTINCT types (D-137)
     //   tokenBankSlots  number              derived from the Storage upgrade track
@@ -266,10 +271,11 @@ export const INITIAL_STATE = {
     //
     // Index 24 is the permanent Guild Hall and is never placeable (D-106).
     //
-    // ⚠️ **`heroTiles` is a hero's position, and it is the only copy.** It used
-    // to be a `heroId` field on the Token instance, which meant a hero could not
-    // outlive the Token they stood on — see `BoardState.tileOfHero`. A hero with
-    // no entry here is in the Dock; the Dock is still not a data structure.
+    // ⚠️ **`flags` is a hero's place on the board, and it is the only copy.** It
+    // replaced `heroTiles` (hero → tile), which saves from before slice 1.4b
+    // still carry; `SaveMigration` converts them. Which Token a flag works is a
+    // runtime claim and is never saved (FP-58). A hero with no flag is in the
+    // Dock; the Dock is still not a data structure.
     board: createEmptyBoard(),
 
     // === Quests (Phase 8 Quests & Tutorial Chain) ===

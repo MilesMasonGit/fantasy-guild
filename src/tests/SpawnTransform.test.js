@@ -129,7 +129,12 @@ describe('⭐ Transforms — one Token becomes another', () => {
 
         run(13000);
 
-        expect(BoardState.heroOnTile(A)).toBe('hero_1');
+        // Free Playmat 1.4b: the Token it became is a new instance (and here a
+        // passive one), so the claim ends and the flag chooses again — but
+        // nobody is moved. The flag still stands on the spot.
+        expect(BoardState.flagOf('hero_1')).not.toBeNull();
+        expect(BoardState.displayTileOf('hero_1')).toBe(A);
+        expect(BoardState.workerOf(A)).toBeNull();
     });
 
     it('refuses a Token that does not exist', () => {

@@ -98,8 +98,9 @@ describe('A hero poisoned to 0 HP dies properly (CR2-070)', () => {
         StatusEffectSystem.applyToHero('hero_1', 'burning', 3);
         statusTick();
 
-        expect(BoardState.tileOfHero('hero_1')).toBeNull();
-        expect(BoardState.heroOnTile(10)).toBeNull();
+        // Their flag comes down with them (Free Playmat 1.4b).
+        expect(BoardState.flagOf('hero_1')).toBeNull();
+        expect(BoardState.workerOf(10)).toBeNull();
         expect(BoardState.getToken(10)?.typeId).toBe('fixture_producer');
     });
 

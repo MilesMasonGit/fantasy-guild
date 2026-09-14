@@ -55,11 +55,11 @@ function makeUnqualified(id = 'hero_low') {
     return hero;
 }
 
-/** Place a fixture Token and stand a hero on it. */
+/** Place a fixture Token and plant a hero's flag on it (Free Playmat 1.4b). */
 function setup(hero, { uses = 1, typeId = 'fixture_promotion' } = {}) {
     GameState.state.heroes = [hero];
     BoardState.setToken(TILE, { typeId, usesRemaining: uses, cycleElapsedMs: 0 });
-    BoardState.setHeroTile(hero.id, TILE);
+    Placement.placeHero(hero.id, TILE);
     return BoardState.getToken(TILE);
 }
 

@@ -51,7 +51,7 @@ function qualifiedHero() {
 /** Train a hero to the offer on a fixture Token; returns the offer. */
 function standingOffer(hero, { typeId = 'fixture_promotion', uses = 2 } = {}) {
     BoardState.setToken(TILE, { typeId, usesRemaining: uses, cycleElapsedMs: 0 });
-    BoardState.setHeroTile(hero.id, TILE);
+    Placement.placeHero(hero.id, TILE);
     for (let i = 0; i < 25 && !BoardPromotion.getOffer(TILE); i++) {
         BoardPromotion.tickTile(TILE, BoardState.getToken(TILE), 1000, hero.id);
     }

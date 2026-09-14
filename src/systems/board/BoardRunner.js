@@ -18,6 +18,8 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import * as Managers from './Managers.js';
+import * as Flags from './Flags.js';
+import * as WorkCheck from './WorkCheck.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
@@ -93,35 +95,11 @@ let tickCounter = 0;
 /** Publish progress every N engine ticks (~3/sec at 10Hz). */
 const PROGRESS_EVERY = 3;
 
-/**
- * Why the hero on a Token cannot work it — or `null` if they can.
- *
- * **Two gates, in order: possession, then level.**
- *
- * Possession is checked *even when the Token sets no level requirement*. That
- * ordering is the whole point of the rework and it was previously wrong: the
- * old version returned `true` the moment `skillRequired <= 0`, never
- * consulting the hero's skills, so a hero who did not hold the skill worked
- * the Token anyway. Harmless while every hero held all 15 skills; a hole
- * straight through possession now that they hold 6 of 27.
- *
- * A Token with no `skill` named at all still needs nothing but a body.
- *
- * @returns {'access'|'unskilled'|null} an `ALERT` reason, or null
+/*
+ * Why the hero on a Token cannot work it (possession, then level) lives in
+ * `WorkCheck.heroReason` since Free Playmat 1.4b, shared with the flags that
+ * choose which Token to work.
  */
-function heroRequirementAlert(heroId, config) {
-    if (!config.skill) return null;
-    if (!heroId) return ALERT.UNSKILLED;
-
-    const failure = SkillSystem.requirementFailure(heroId, {
-        skill: config.skill,
-        level: config.skillRequired || 0
-    });
-
-    if (failure === 'POSSESSION') return ALERT.UNSKILLED;
-    if (failure === 'LEVEL') return ALERT.ACCESS;
-    return null;
-}
 
 /**
  * How much faster the working hero is than a raw beginner — the SPEED axis
@@ -436,6 +414,11 @@ export function tick(delta) {
     // when restocking matters most.
     Managers.tick();
 
+    // Flags keep, change or find their work (Free Playmat 1.4b) — after the
+    // restocks above, so a hero waiting on a spot sees its new Token this tick,
+    // and before any Token ticks, so `workerOf` below is already settled.
+    Flags.assign(delta);
+
     const tiles = BoardState.occupiedTiles();
     if (!tiles.length) return;
 
@@ -502,12 +485,20 @@ export function tick(delta) {
         if (needsHero && !heroId) {
             // Quietly idle. NOT an alert: an unstaffed Token is not an error
             // (D-149), and most of the board is unstaffed at any moment.
-            setAlert(instance, index, null);
+            //
+            // ⚠️ One exception (FP-69, FPP-2): a Token some flag passed over for
+            // a reason the player can fix keeps its red badge, re-read live so
+            // it clears the moment the problem does. Skill too low, wrong skill
+            // and no skill are hover-only (FP-60) and never badge.
+            const skipped = Flags.hasFixableSkip(instance)
+                ? WorkCheck.fixableReason(index, instance).reason
+                : null;
+            setAlert(instance, index, skipped);
             continue;
         }
 
         if (needsHero) {
-            const skillAlert = heroRequirementAlert(heroId, config);
+            const skillAlert = WorkCheck.heroReason(heroId, config);
             if (skillAlert) {
                 setAlert(instance, index, skillAlert);
                 continue;
@@ -515,12 +506,15 @@ export function tick(delta) {
         }
 
         // What is this station making? Whatever the player set it to — see
-        // `StationRecipe.js`. This resolves whether the board around it lets
-        // that recipe run. A Token with no recipes at all is not a station and
-        // resolves straight through with its own outputs.
-        const io = RecipeResolver.effectiveIO(index, instance);
+        // `StationRecipe.js`. `WorkCheck` resolves whether the board around it
+        // lets that recipe run, whether the inputs are there and whether the
+        // charges are affordable — the same check a flag makes before claiming
+        // (Free Playmat 1.4b). The side effects stay here: they describe a
+        // hero actually standing on the Token.
+        const check = WorkCheck.fixableReason(index, instance);
+        const io = check.io;
 
-        if (io.status === RECIPE.NONE) {
+        if (check.reason === ALERT.NO_RECIPE) {
             // Its selected recipe wants context that is not beside it (or the
             // Token's pool is empty and it has nothing to select). Adjacency
             // no longer decides what a station makes, but it still decides
@@ -542,26 +536,23 @@ export function tick(delta) {
             continue;
         }
 
-        if (io.inputs?.length) {
-            const inputCheck = InputAllocator.checkInputs(io.inputs);
-            if (!inputCheck.ok) {
-                // Waits, keeping whatever progress it had. There are no partial
-                // cycles (D-127) — it does not run slower, it runs later.
-                InputAllocator.noteStarved(instance.typeId);
-                setAlert(instance, index, ALERT.INPUTS);
+        if (check.reason === ALERT.INPUTS) {
+            // Waits, keeping whatever progress it had. There are no partial
+            // cycles (D-127) — it does not run slower, it runs later.
+            InputAllocator.noteStarved(instance.typeId);
+            setAlert(instance, index, ALERT.INPUTS);
 
-                const missingItem = inputCheck.missing?.[0];
-                const itemDef = missingItem ? getItem(missingItem.itemId) : null;
-                const itemName = itemDef?.name || missingItem?.itemId || 'Item';
-                EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                    tile: index,
-                    severity: 'yellow',
-                    type: 'out_of_item',
-                    name: itemName,
-                    message: `Out of item: ${itemName}`
-                });
-                continue;
-            }
+            const missingItem = check.inputCheck?.missing?.[0];
+            const itemDef = missingItem ? getItem(missingItem.itemId) : null;
+            const itemName = itemDef?.name || missingItem?.itemId || 'Item';
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                tile: index,
+                severity: 'yellow',
+                type: 'out_of_item',
+                name: itemName,
+                message: `Out of item: ${itemName}`
+            });
+            continue;
         }
 
         /**
@@ -571,8 +562,7 @@ export function tick(delta) {
          * and says so, rather than counting down to a completion it will have
          * to abandon. Nothing is deducted by the check.
          */
-        const chargeCheck = Charges.planCycle(index, instance, io);
-        if (!chargeCheck.ok) {
+        if (check.reason === ALERT.CHARGES) {
             InputAllocator.noteStarved(instance.typeId);
             setAlert(instance, index, ALERT.CHARGES);
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
@@ -706,12 +696,11 @@ export function isHeroIdle(heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || hero.status === 'wounded') return false;
 
-    const tile = BoardState.workTileOf(heroId);
-    if (tile == null) return true;                   // in the Dock, doing nothing
-
-    const instance = BoardState.getToken(tile);
-    if (!instance) return true;                       // standing on a bare tile
-    const def = getTokenType(instance.typeId);
-    if (!def?.config) return true;                    // standing on something inert
-    return !!instance.alert;                          // staffed but stuck
+    // Under flags (Free Playmat 1.4b): a hero is idle when their flag found
+    // nothing to work, or in the Dock. Waiting on a spot for a Manager's
+    // restock is not idle (FP-70) — the work is coming.
+    const status = Flags.statusOf(heroId);
+    if (status.state === 'docked' || status.state === 'idle') return true;
+    if (status.state === 'waiting') return false;
+    return !!BoardState.getToken(status.tile)?.alert;   // working, but stuck
 }

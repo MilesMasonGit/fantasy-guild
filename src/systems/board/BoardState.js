@@ -2,7 +2,7 @@
 
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
-import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../config/boardGeometry.js';
+import { TILE_COUNT, BOARD_SIZE, TILE_STEP_PX, isTileIndex, isPlaceable, tileFootprint } from '../../config/boardGeometry.js';
 import { terrainForToken } from '../../config/registries/terrainAssignments.js';
 import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -47,8 +47,9 @@ function announceTray(reason) {
  * **Position is the map key, not a field**, so a Token can never disagree with
  * itself about where it is.
  *
- * ⚠️ **`heroId` is NOT on the instance** — see "Where a hero stands" below. It
- * used to be, and Phase 7 moved it.
+ * ⚠️ **`heroId` is NOT on the instance.** A hero's flag is their own state
+ * (`board.flags`), and which Token they work is a runtime claim keyed by the
+ * instance's `id` — see "Flags" and "Claims" below.
  *
  * The definition is deliberately never copied onto the instance. Retuning a
  * Token in the registry has to take effect immediately, everywhere — with
@@ -80,7 +81,8 @@ function board() {
     if (!state.board.tokenBank) state.board.tokenBank = {};
     if (!Array.isArray(state.board.tray)) state.board.tray = [];
     if (!Array.isArray(state.board.maps)) state.board.maps = [];
-    if (!state.board.heroTiles) state.board.heroTiles = {};
+    if (!state.board.flags || typeof state.board.flags !== 'object') state.board.flags = {};
+    if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.vacancies) state.board.vacancies = {};
     if (!state.board.terrain) state.board.terrain = {};
     if (typeof state.board.nextPaintOrder !== 'number') state.board.nextPaintOrder = 0;
@@ -128,9 +130,13 @@ function backfillTerrain(b) {
  * A Token that never came from a Map falls back to its own authored terrain —
  * see `terrainForToken`.
  */
+function newTokenId() {
+    return `tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
 export function createTokenInstance(typeId, uses = null, terrain = null) {
     const instance = {
-        id: `tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: newTokenId(),
         typeId,
         usesRemaining: uses,
         cycleElapsedMs: 0
@@ -207,7 +213,17 @@ export function setToken(index, instance) {
     const b = board();
     if (!b || !isTileIndex(index)) return;
     if (instance) {
+        // ⚠️ Claims are keyed by instance id (Free Playmat 1.4b), so every
+        // Token on the board must have one. Most routes build instances through
+        // `createTokenInstance`, which assigns one; this catches the rest (old
+        // saves, hand-built test boards) at the single choke point.
+        if (!instance.id) instance.id = newTokenId();
         b.tiles[index] = instance;
+        // A claimed Token that moved keeps its hero (FP-68); remember where.
+        const rt = runtimeOf(b);
+        for (const claim of rt.claims.values()) {
+            if (claim.instanceId === instance.id) claim.tile = index;
+        }
         // Anything arriving satisfies the tile's claim on a restock, whether it
         // came from a Manager or from the player's hand.
         delete b.vacancies[index];
@@ -316,119 +332,219 @@ export function emptyTiles() {
 }
 
 // ---------------------------------------------------------------------------
-// Heroes on the board
+// Heroes on the board — flags
 // ---------------------------------------------------------------------------
 
 /**
- * Where a hero stands — **their own state, not the Token's** (Phase 7).
+ * ## Flags (Free Playmat slice 1.4b) — the saved half
  *
- * `board.heroTiles` maps `heroId -> tileIndex`, and is the single source of
- * truth. It replaces the `heroId` field that used to live on the Token
- * instance, which had one fatal property: **a hero could not outlive the Token
- * they stood on.** When a Forest ran dry the instance was deleted and the
- * person went with it, silently, back to the Dock.
+ * `board.flags[heroId] = { x, y, skill, plantedAt }` is where each hero's flag
+ * stands, in mat units, with the one skill it works (FP-23). **A hero with no
+ * flag is in the Dock** — the Dock is still not a data structure.
  *
- * Three separate design rules need a hero to survive that moment:
+ * `plantedAt` comes from `board.nextFlagOrder`, a counter bumped on every plant,
+ * and is the order heroes choose in (earlier flags choose first).
  *
- *   * **D-57** — a hero may stand on an empty tile; they simply do nothing.
- *   * **D-60** — a hero whose Token stops producing *idles where they stand*,
- *     until the player returns.
- *   * **D-151** — a Manager restocks **under** a working hero, who carries on
- *     without being re-placed. This is the entire point of Managers, and it is
- *     unbuildable while a hero is a field on the thing that just vanished.
+ * It replaced the old hero → tile map. Old saves are converted in
+ * `SaveMigration`; nothing else knows that shape existed.
  *
- * **The Dock is still not a data structure** — a hero with no entry here IS in
- * the Dock. There is exactly one list, which is what stops a hero ending up in
- * both places or neither.
- *
- * ⚠️ Tile 0 is a valid index and is falsy. Every read here uses `?? null` and
- * every caller must test `== null`, never truthiness.
+ * This layer knows the shape only. Choosing, claiming and releasing are rules,
+ * and live in `Flags.js`.
  */
-export function tileOfHero(heroId) {
-    if (!heroId) return null;
-    return board()?.heroTiles?.[heroId] ?? null;
+export function getFlags() {
+    return board()?.flags || {};
 }
 
-/** The hero id standing on a tile, or null. Includes heroes on EMPTY tiles. */
-export function heroOnTile(index) {
-    if (!isTileIndex(index)) return null;
-    const map = board()?.heroTiles || {};
-    for (const heroId of Object.keys(map)) {
-        if (map[heroId] === index) return heroId;
+/** The flag `heroId` has planted, or null. */
+export function flagOf(heroId) {
+    if (!heroId) return null;
+    return board()?.flags?.[heroId] || null;
+}
+
+/** Plant (or with `null`, take down) a hero's flag. No rules — see `Flags.js`. */
+export function setFlag(heroId, flag) {
+    const b = board();
+    if (!b || !heroId) return;
+    if (flag) b.flags[heroId] = flag;
+    else delete b.flags[heroId];
+}
+
+/** Take the next `plantedAt` number. */
+export function takeFlagOrder() {
+    const b = board();
+    if (!b) return 0;
+    return b.nextFlagOrder++;
+}
+
+/** Every hero with a flag as `[heroId, displayTile]`, in planting order. */
+export function heroesOnBoard() {
+    const flags = getFlags();
+    return Object.keys(flags)
+        .sort((a, c) => (flags[a].plantedAt ?? 0) - (flags[c].plantedAt ?? 0))
+        .map(heroId => [heroId, displayTileOf(heroId)]);
+}
+
+// ---------------------------------------------------------------------------
+// Claims — the runtime half (Free Playmat slice 1.4b)
+// ---------------------------------------------------------------------------
+
+/**
+ * **Which Token each flag is working right now. Never saved** (FP-58): on a
+ * reload heroes start at their flag and choose again.
+ *
+ * * `claims`   heroId → `{ instanceId, tile, typeId }` — keyed by Token
+ *   **instance id**, so a Token that moves carries its hero (FP-68). `tile` is
+ *   only a hint for finding it quickly, refreshed whenever the Token is found.
+ * * `waits`    heroId → `{ tile, typeId }` — waiting on an empty spot for a
+ *   Manager's restock (FP-70).
+ * * the rest (`skips`, retry times, notices, clock) belong to `Flags.js`.
+ *
+ * ## ⚠️ Kept per board object, not per module
+ * A new game or a load replaces `GameState.state`, and with it the board, so
+ * nothing claimed on one board can leak onto another — including the hand-built
+ * boards the test suites swap in between tests.
+ */
+const runtimes = new WeakMap();
+
+function runtimeOf(b) {
+    let rt = runtimes.get(b);
+    if (!rt) {
+        rt = {
+            claims: new Map(),
+            waits: new Map(),
+            skips: new Map(),
+            skipsByHero: new Map(),
+            nextTryAt: new Map(),
+            notified: new Set(),
+            clock: 0,
+            dirty: true
+        };
+        runtimes.set(b, rt);
+    }
+    return rt;
+}
+
+/** The live runtime record for the current board. For `Flags.js` only. */
+export function flagRuntime() {
+    const b = board();
+    return b ? runtimeOf(b) : null;
+}
+
+/** The claim `heroId` holds, or null. */
+export function claimOfHero(heroId) {
+    return flagRuntime()?.claims.get(heroId) || null;
+}
+
+/** Record (or with `null`, drop) `heroId`'s claim. No rules — see `Flags.js`. */
+export function setClaim(heroId, claim) {
+    const rt = flagRuntime();
+    if (!rt || !heroId) return;
+    if (claim) rt.claims.set(heroId, claim);
+    else rt.claims.delete(heroId);
+}
+
+/** The wait `heroId` is on, or null. */
+export function waitOfHero(heroId) {
+    return flagRuntime()?.waits.get(heroId) || null;
+}
+
+/** Record (or with `null`, drop) `heroId`'s wait. */
+export function setWait(heroId, wait) {
+    const rt = flagRuntime();
+    if (!rt || !heroId) return;
+    if (wait) rt.waits.set(heroId, wait);
+    else rt.waits.delete(heroId);
+}
+
+/** The hero whose flag has claimed Token instance `instanceId`, or null. */
+export function heroOfInstance(instanceId) {
+    if (!instanceId) return null;
+    const rt = flagRuntime();
+    if (!rt) return null;
+    for (const [heroId, claim] of rt.claims) {
+        if (claim.instanceId === instanceId) return heroId;
     }
     return null;
 }
 
 /**
- * Put a hero on a tile, or take them off the board with `null`.
- * No rules applied — callers go through `Placement.js`.
+ * Where Token instance `instanceId` is on the board, as `{ anchor, instance }`,
+ * or null if it is not on the board. `hint` (a tile) is checked first.
  */
-export function setHeroTile(heroId, index) {
-    const b = board();
-    if (!b || !heroId) return;
-    if (index == null) delete b.heroTiles[heroId];
-    else if (isTileIndex(index)) b.heroTiles[heroId] = index;
+export function findTokenById(instanceId, hint = null) {
+    if (!instanceId) return null;
+    const tiles = board()?.tiles;
+    if (!tiles) return null;
+    if (hint != null && tiles[hint]?.id === instanceId) {
+        return { anchor: Number(hint), instance: tiles[hint] };
+    }
+    for (const key in tiles) {
+        if (tiles[key]?.id === instanceId) return { anchor: Number(key), instance: tiles[key] };
+    }
+    return null;
 }
 
-/** Every hero standing on the board as `[heroId, tileIndex]`. */
-export function heroesOnBoard() {
-    return Object.entries(board()?.heroTiles || {});
+/** The tile whose step cell holds a mat point (a tile plus the gap after it). */
+export function tileAtPoint(point) {
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+    const col = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor(point.x / TILE_STEP_PX)));
+    const row = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor(point.y / TILE_STEP_PX)));
+    return row * BOARD_SIZE + col;
 }
 
 // ---------------------------------------------------------------------------
-// The worker seam (Free Playmat slice 1.4a)
+// The worker seam (Free Playmat slices 1.4a, 1.4b)
 // ---------------------------------------------------------------------------
 
 /**
  * ⭐ **The only three questions the rest of the game may ask about where a hero
- * is.** No file outside this one reads `board.heroTiles` or calls
- * `heroOnTile` / `tileOfHero`; `WorkerSeam.test.js` fails if one does.
- *
- * Slice 1.4b replaces `heroTiles` with flags and claims (roadmap §2, "What 'the
- * hero on this Token' means under flags"). Because every reader already goes
- * through these, only the bodies below change then — the ~30 callers do not.
- *
- * The three are deliberately separate even though **today all three are the
- * same lookup**. They stop being the same under flags, and each caller has
- * already said which one it means:
+ * is.** `WorkerSeam.test.js` fails if any other file reads the flag storage.
  *
  *   * `workerOf(tile)`       — who works the Token here (damage, statuses,
  *                              roles, gear feeding the Token, filters, the tick)
  *   * `workTileOf(heroId)`   — the Token this hero works (their cycle, their
  *                              idle mark, where their actor rules act from)
  *   * `displayTileOf(heroId)` — where to draw them (badges, particles, level-up
- *                              pops). Under flags it falls back to the flag.
+ *                              pops)
  *
- * ## ⚠️ Today's exact semantics, preserved on purpose (no behaviour change)
+ * ## Under flags (slice 1.4b, roadmap §2)
+ * * `workerOf(tile)` is **the hero whose flag has claimed the Token covering
+ *   that tile** — any tile of its footprint, so a 2×2's four tiles all answer.
+ *   ⚠️ A bare tile has no worker, ever: a hero waiting on an empty spot for a
+ *   restock (FP-70) is not working it.
+ * * `workTileOf(heroId)` is the **anchor** of the claimed Token, or null.
+ * * `displayTileOf(heroId)` is the claimed Token's anchor, else the spot they
+ *   wait on, else the tile under their flag, else null (in the Dock).
  *
- * * `workerOf` is an **exact-tile** match on the hero's stored tile. A hero is
- *   always stored at a Token's **anchor** (`placeHero` and the 2×2 cascade both
- *   write the anchor), so asking a 2×2 Token's non-anchor tile normally returns
- *   `null`. Callers that accept any tile of a Token ask the anchor first and
- *   then the raw tile (`Placement.recallHero`, `moveToken`, 1×1 displacement),
- *   exactly as they did before.
- * * ⚠️ `workerOf` **still returns a hero standing on a bare tile** (D-57, D-60:
- *   a hero whose Token ran dry waits where they stand). The roadmap's "an empty
- *   tile has no worker" is a 1.4b rule; enforcing it here would break recalling
- *   that hero by tile, the Manager restock under them (D-151) and 2×2
- *   displacement of heroes on bare ground.
- * * Tile 0 is a valid index and falsy — test the results with `== null`.
+ * Tile 0 is a valid index and falsy — test the results with `== null`.
  */
 export function workerOf(tile) {
-    return heroOnTile(tile);
+    if (!isTileIndex(tile)) return null;
+    const occ = getOccupyingToken(tile);
+    if (!occ?.instance?.id) return null;
+    return heroOfInstance(occ.instance.id);
 }
 
-/** The tile of the Token `heroId` works, or null in the Dock. Today: their tile. */
+/** The anchor of the Token `heroId` works, or null. */
 export function workTileOf(heroId) {
-    return tileOfHero(heroId);
+    if (!heroId) return null;
+    const claim = claimOfHero(heroId);
+    if (!claim) return null;
+    const found = findTokenById(claim.instanceId, claim.tile);
+    if (!found) return null;
+    claim.tile = found.anchor;
+    return found.anchor;
 }
 
-/**
- * Where to draw `heroId`, or null in the Dock. Today: their tile. Under flags
- * (1.4b) it is the claimed Token's tile, falling back to the flag's.
- */
+/** Where to draw `heroId`: claimed Token > waiting spot > flag > null. */
 export function displayTileOf(heroId) {
-    return tileOfHero(heroId);
+    if (!heroId) return null;
+    const work = workTileOf(heroId);
+    if (work != null) return work;
+    const wait = waitOfHero(heroId);
+    if (wait) return wait.tile;
+    const flag = flagOf(heroId);
+    return flag ? tileAtPoint(flag) : null;
 }
 
 // ---------------------------------------------------------------------------

@@ -16,6 +16,7 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
+import * as Flags from './Flags.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
@@ -541,13 +542,13 @@ function resolveDefeat(tile, instance, heroId) {
     // Off the board. Recovery is tracked on the HERO (`woundedRemainingMs`),
     // never on the tile — so the tile is immediately free for someone else,
     // and it simply idles until re-staffed. A defeated hero genuinely LEAVES,
-    // unlike one whose Token merely ran dry: they are carried home.
-    BoardState.setHeroTile(heroId, null);
+    // unlike one whose Token merely ran dry: they are carried home, and their
+    // flag comes down with them (FP-42). `furl` announces the move.
+    Flags.furl(heroId, 'defeat');
     if (instance) {
         instance.cycleElapsedMs = 0;
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });
     }
-    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
     if (tile != null) {
         EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
             tile, outcome: 'defeat', heroId: heroId || null, typeId: instance?.typeId || null

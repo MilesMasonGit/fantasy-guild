@@ -106,24 +106,37 @@ describe('Hero Level is the average of the skills a hero HOLDS', () => {
 });
 
 describe('The gate is possession first, then level', () => {
+    /**
+     * ⚠️ Under flags (Free Playmat 1.4b) a hero who cannot run a Token does not
+     * stand on it with a red mark: their flag skips it and records why, for
+     * hover (FP-48, FP-60). Where the hero lacks the skill, the flag is planted
+     * with the Token's skill directly — a drop would keep the hero's own skill
+     * (FPP-3) and the Token would not even be a candidate.
+     */
+    const plantFor = (heroId, tile, skill) => Flags.plant(heroId, positionOf(tile), { skill });
+    const skipReasons = (token) => Flags.skipsOf(token.id).map(s => s.reason);
+
     it('refuses a hero whose level is too low, and calls it ACCESS', () => {
         // `fixture_gated` wants a Foundation skill at 25.
         GameState.state.heroes = [makeRecruit('hero_1', 5)];
         const token = place(10, 'fixture_gated', 'hero_1');
 
         run(25000);
-        expect(token.alert).toBe(BoardRunner.ALERT.ACCESS);
+        expect(skipReasons(token)).toEqual([BoardRunner.ALERT.ACCESS]);
+        expect(token.alert).toBeFalsy();
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
     });
 
     it('refuses a hero who does not hold the skill, and calls it UNSKILLED', () => {
-        // Two different problems, two different marks. Levelling fixes one of
+        // Two different problems, two different reasons. Levelling fixes one of
         // them and can never fix the other, so they must not look alike.
         GameState.state.heroes = [makeHero('hero_1', SIGNATURE_SKILL_IDS.slice(0, 2), 99)];
-        const token = place(10, 'fixture_gated', 'hero_1');
+        const token = place(10, 'fixture_gated');
+        plantFor('hero_1', 10, 'mining');
 
         run(25000);
-        expect(token.alert).toBe(BoardRunner.ALERT.UNSKILLED);
+        expect(skipReasons(token)).toEqual([BoardRunner.ALERT.UNSKILLED]);
+        expect(token.alert).toBeFalsy();
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
     });
 

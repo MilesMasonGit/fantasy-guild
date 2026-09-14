@@ -364,7 +364,9 @@ export const BoardTile = ({
     const offset = (paired && size === 1) ? PAIR_OFFSET_PX : 0;
 
     const staffed = !!token?.heroId;
-    const idle = staffed && (!hasToken || !!token.alert);
+    // Under flags the board projection says whether the drawn hero is idle
+    // (Free Playmat 1.4b); the tile-based guess is only a fallback.
+    const idle = staffed && (token.heroIdle ?? (!hasToken || !!token.alert));
     const glow = !staffed ? null : idle ? 'gi-glow-idle' : 'gi-glow-active';
     const isPermanent = token?.cannotLeaveBoard || token?.isGuildHall || token?.typeId === 'token_guild_hall';
     const isFiniteToken = hasToken && !isGuildHallToken && token?.usesRemaining != null;

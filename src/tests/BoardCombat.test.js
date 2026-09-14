@@ -228,8 +228,10 @@ describe('A kill', () => {
 
         expect(BoardState.getToken(10)).toBeNull();
         // Exactly what a spent Forest does. Enemies are not a special case
-        // (D-104) — including in what they leave behind.
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        // (D-104) — including in what they leave behind: the hero's flag stays
+        // planted there (Free Playmat 1.4b).
+        expect(BoardState.displayTileOf('hero_1')).toBe(10);
+        expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardState.getVacancy(10)?.typeId).toBe('fixture_enemy');
     });
 });

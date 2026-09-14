@@ -59,6 +59,20 @@ describe('On-Board Tile Event Alerts', () => {
         expect(exhaustEvent.message).toContain('Fixture Producer');
     });
 
+    /**
+     * A hero already working a Token that then goes stuck (Free Playmat 1.4b).
+     *
+     * A flag never claims a Token it cannot run (FP-48), so the runner's
+     * staffed-but-stuck alerts only ever describe a claim made while the Token
+     * could run. That claim is staged directly here, so the alert — not the
+     * chooser — is what each test below exercises.
+     */
+    function staff(tile, heroId) {
+        const instance = BoardState.getToken(tile);
+        Flags.plant(heroId, positionOf(tile), { skill: getTokenType(instance.typeId)?.config?.skill || null });
+        BoardState.setClaim(heroId, { instanceId: instance.id, tile, typeId: instance.typeId });
+    }
+
     it('emits Yellow alert when a staffed token lacks input materials', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
@@ -66,7 +80,7 @@ describe('On-Board Tile Event Alerts', () => {
         // Place a consumer without providing its inputs in inventory
         const consumer = BoardState.createTokenInstance('fixture_consumer');
         Placement.placeToken(8, consumer);
-        Placement.placeHero('hero_1', 8);
+        staff(8, 'hero_1');
 
         // Tick runner
         BoardRunner.tick(100);
