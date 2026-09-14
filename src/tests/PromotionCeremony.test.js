@@ -5,6 +5,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Placement from '../systems/board/Placement.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as PromotionSystem from '../systems/hero/PromotionSystem.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
@@ -154,7 +155,7 @@ describe('declining', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
         expect(hero.jobId).toBe('recruit');
         expect(BoardState.getToken(TILE).usesRemaining).toBe(2);
-        expect(BoardState.tileOfHero(hero.id)).toBe(TILE);
+        expect(BoardState.workTileOf(hero.id)).toBe(TILE);
     });
 });
 

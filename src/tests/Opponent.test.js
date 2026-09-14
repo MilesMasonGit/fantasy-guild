@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Flags from '../systems/board/Flags.js';
+import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';

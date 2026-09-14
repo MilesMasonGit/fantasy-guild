@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Flags from '../systems/board/Flags.js';
+import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -155,11 +157,13 @@ describe('The gate is possession first, then level', () => {
         // never looked at the hero's skills, so a hero who did not hold the
         // skill worked the Token anyway.
         GameState.state.heroes = [makeHero('hero_1', SIGNATURE_SKILL_IDS.slice(0, 1), 99)];
-        const token = place(10, 'fixture_ungated', 'hero_1');
+        const token = place(10, 'fixture_ungated');
+        plantFor('hero_1', 10, 'crafting');
 
         run(11000);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
-        expect(token.alert).toBe(BoardRunner.ALERT.UNSKILLED);
+        expect(skipReasons(token)).toEqual([BoardRunner.ALERT.UNSKILLED]);
+        expect(token.alert).toBeFalsy();
     });
 
     it('...and a hero who DOES hold it still works a zero-requirement Token', () => {

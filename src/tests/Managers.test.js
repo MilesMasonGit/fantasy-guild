@@ -209,7 +209,10 @@ describe('An empty Vault fails silently (D-133)', () => {
         run(13000);
 
         expect(BoardState.getToken(TILE)).toBeNull();
-        expect(BoardState.tileOfHero('hero_1')).toBe(TILE);
+        // No copy in the Vault, so no wait (FP-70, FPP-9): the flag stays
+        // planted and the hero idles at it.
+        expect(BoardState.displayTileOf('hero_1')).toBe(TILE);
+        expect(BoardState.waitOfHero('hero_1')).toBeNull();
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
     });
 

@@ -20,7 +20,7 @@ describe('Cascade Placement & 2x2 Snapping', () => {
         GameState.state = {
             board: {
                 tiles: {},
-                heroTiles: {},
+                flags: {},
                 vacancies: {},
                 tray: [],
                 tokenBank: {},

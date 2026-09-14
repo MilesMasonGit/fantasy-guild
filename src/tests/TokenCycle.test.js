@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Flags from '../systems/board/Flags.js';
+import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -327,7 +329,12 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
 
     it('counts blocked ticks per Token type so the balance pass has data', () => {
         InventoryManager.addItem('fixture_oak_wood', 3);
-        place(20, 'fixture_deep_consumer', 'hero_2');
+        // A flag never claims a Token it cannot run (FP-48), so the starving
+        // Token is staffed by a claim made directly — the runner's tally of a
+        // STAFFED Token going hungry is what this pins (Free Playmat 1.4b).
+        const deep = place(20, 'fixture_deep_consumer');
+        Flags.plant('hero_2', positionOf(20), { skill: 'smithing' });
+        BoardState.setClaim('hero_2', { instanceId: deep.id, tile: 20, typeId: deep.typeId });
         run(5000);
 
         const stats = InputAllocator.getStarvationStats();
@@ -382,7 +389,10 @@ describe('Charges and depletion (D-176, D-118)', () => {
         // get moved BY a Token vanishing either — the player returns to a
         // person standing on nothing, which is what the yellow mark is for
         // (D-172). This is also what D-151 restocks underneath.
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        // Under flags (1.4b) the flag stays planted there; with nothing to work
+        // and no Manager to wait for, the hero idles at it.
+        expect(BoardState.displayTileOf('hero_1')).toBe(10);
+        expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
     });
 

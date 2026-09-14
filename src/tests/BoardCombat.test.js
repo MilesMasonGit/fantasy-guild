@@ -282,6 +282,9 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         place(10, 'fixture_enemy', 'hero_1');
         run(4000);
 
+        // One hero per Token (FP-25): hero_2 only gets the enemy once hero_1's
+        // flag is taken down (Free Playmat 1.4b).
+        Placement.recallHeroById('hero_1');
         Placement.placeHero('hero_2', 10);
         run(100);
 
@@ -300,7 +303,8 @@ describe('Defeat costs equipment (D-74)', () => {
         run(30000);
 
         expect(weakling.status).toBe('wounded');
-        expect(BoardState.heroOnTile(10)).toBeNull();
+        expect(BoardState.workerOf(10)).toBeNull();
+        expect(BoardState.flagOf('hero_weak')).toBeNull();
     });
 
     it('leaves the enemy Token in place, ready for someone else', () => {

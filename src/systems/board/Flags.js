@@ -312,7 +312,7 @@ function evaluate(heroId, flag, excludeInstanceId = null) {
         const kind = kindOf(instance, def);
         if (!kind) continue;
 
-        if (kind === 'promotion' || kind === 'enemy') {
+        if (UNDER_POINT.has(kind) || kind === 'enemy') {
             if (kind === 'enemy' && flag.skill !== COMBAT_FLAG) continue;
             if (pointOnToken(anchor, instance.typeId, point)) underPoint.push({ anchor, instance, def, kind });
             continue;
@@ -394,7 +394,7 @@ function keepOrRelease(r, heroId, dirty) {
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
 
-        const eligible = kind === 'promotion'
+        const eligible = UNDER_POINT.has(kind)
             || (kind === 'enemy' && flag.skill === COMBAT_FLAG)
             || (kind === 'work' && hasWorkSkill(def) && def.config.skill === flag.skill);
 

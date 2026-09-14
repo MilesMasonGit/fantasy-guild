@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Flags from '../systems/board/Flags.js';
+import { positionOf } from '../systems/board/nearby.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 import * as Placement from '../systems/board/Placement.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -102,7 +105,7 @@ describe('On-Board Tile Event Alerts', () => {
         // Place station with no context beside it
         const station = BoardState.createTokenInstance('fixture_station');
         Placement.placeToken(8, station);
-        Placement.placeHero('hero_1', 8);
+        staff(8, 'hero_1');
 
         // Tick runner
         BoardRunner.tick(100);
@@ -124,7 +127,7 @@ describe('On-Board Tile Event Alerts', () => {
         // Place token_oak_tree (requires axe) without an adjacent axe
         const tree = BoardState.createTokenInstance('token_oak_tree');
         Placement.placeToken(8, tree);
-        Placement.placeHero('hero_1', 8);
+        staff(8, 'hero_1');
 
         // Tick runner
         BoardRunner.tick(100);
