@@ -108,7 +108,7 @@ function enemyFor(instance) {
  * the field named as it was means none of that needed migrating — the ids it
  * receives simply exist now, which they never did before.
  */
-function createFight(tile, heroId, enemy, drops) {
+function createFight(tile, heroId, enemy, drops, instanceId = null) {
     const aggregator = new ModifierAggregator(`enemy_${tile}`);
     const effects = [];
 
@@ -120,6 +120,12 @@ function createFight(tile, heroId, enemy, drops) {
     return {
         id: `fight_${tile}`,
         tile,
+        /**
+         * The enemy Token this fight is against, by instance id. Fights are
+         * keyed by tile, so this is what lets one follow its Token when the
+         * Token is moved (FPP-4) rather than being mistaken for a new enemy.
+         */
+        instanceId,
         enemyId: enemy.id,
         enemy,
         drops,
@@ -283,6 +289,66 @@ export function endFight(tile) {
     fights.delete(tile);
 }
 
+/**
+ * ⭐ **End whatever fight `heroId` is in, now** (FP-43, G-4).
+ *
+ * Called by `Flags` whenever a hero lets go of an enemy — a recall, a defeat, a
+ * re-plant, moving on. It has to be synchronous: waiting for the next tick to
+ * notice would leave `fightOfHero` answering for a hero already in the Dock, and
+ * a re-plant onto the same enemy would resume a damaged one instead of meeting
+ * it whole.
+ *
+ * @returns {boolean} whether there was a fight to end
+ */
+export function endFightOfHero(heroId) {
+    const fight = fightOfHero(heroId);
+    if (!fight) return false;
+    endFight(fight.tile);
+    return true;
+}
+
+/**
+ * ⭐ **A moved enemy keeps its fight, and so its HP** (FPP-4).
+ *
+ * Fights are keyed by tile, so a Token that moves has to take its fight along:
+ * re-keyed, its `tile` updated, and the numbers its enemy lends the hero taken
+ * back under the old tile's source and lent again under the new one. The hero's
+ * claim follows the Token by instance id (FP-68), so `fightOfHero` still finds
+ * the same fight afterwards.
+ *
+ * Call after the Token stands on `to`. A no-op when `from` has no fight.
+ */
+export function moveFight(from, to) {
+    if (from === to) return false;
+    return attachFight(detachFight(from), to);
+}
+
+/**
+ * Lift a tile's fight off the board without ending it, for a move whose
+ * destination is not known yet (`Placement.moveToken`: placing the Token can
+ * itself shove a neighbour — and its fight — onto the tile being vacated).
+ * Hand it back with `attachFight`; a fight never re-attached is simply over
+ * (its borrowed numbers were already taken back here).
+ */
+export function detachFight(tile) {
+    const fight = fights.get(tile);
+    if (!fight) return null;
+    clearEnemyCombatModifiers(tile);
+    fights.delete(tile);
+    return fight;
+}
+
+/** Put a detached fight down on `tile`, lending its numbers to its hero again. */
+export function attachFight(fight, tile) {
+    if (!fight || tile == null) return false;
+    if (fights.has(tile)) endFight(tile);
+    fight.tile = tile;
+    fight.id = `fight_${tile}`;
+    fights.set(tile, fight);
+    if (fight.assignedHeroId) applyEnemyCombatModifiers(tile, fight.assignedHeroId);
+    return true;
+}
+
 /** Test/debug view of a live fight. */
 export function getFight(tile) {
     return fights.get(tile) || null;
@@ -330,6 +396,16 @@ export function tickTile(tile, instance, delta, heroId) {
 
     let fight = fights.get(tile);
 
+    // The hero's enemy was moved here by some path that did not carry the
+    // fight itself (a cascade push, say). Same Token, same fight (FPP-4).
+    if (!fight) {
+        const theirs = fightOfHero(heroId);
+        if (theirs && theirs.instanceId && theirs.instanceId === instance.id && theirs.tile !== tile) {
+            moveFight(theirs.tile, tile);
+            fight = fights.get(tile);
+        }
+    }
+
     // A different hero arrived — start fresh rather than inheriting the last
     // one's attack timers.
     if (fight && fight.assignedHeroId !== heroId) {
@@ -347,7 +423,7 @@ export function tickTile(tile, instance, delta, heroId) {
         for (const [otherTile, other] of fights) {
             if (otherTile !== tile && other.assignedHeroId === heroId) endFight(otherTile);
         }
-        fight = createFight(tile, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)));
+        fight = createFight(tile, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)), instance.id || null);
         fights.set(tile, fight);
         applyEnemyCombatModifiers(tile, heroId);
     }
@@ -537,7 +613,7 @@ function resolveDefeat(tile, instance, heroId) {
 
     // A forced retreat cleanses every status, good or bad.
     StatusEffectSystem.clearAll(heroId);
-    applyDefeatPenalties(heroId);
+    const lost = applyDefeatPenalties(heroId) || [];
 
     // Off the board. Recovery is tracked on the HERO (`woundedRemainingMs`),
     // never on the tile — so the tile is immediately free for someone else,
@@ -556,8 +632,18 @@ function resolveDefeat(tile, instance, heroId) {
     }
     EventBus.publish('heroes_updated', { source: 'board_combat_defeat' });
 
-    NotificationSystem.warning(`${hero?.name || 'Your hero'} was defeated and carried home, injured!`);
+    // ⭐ **One notification for the whole defeat** (FP-42): who fell and what it
+    // cost. The wound and each lost item used to announce themselves
+    // separately, which buried the one message that matters under several.
+    NotificationSystem.warning(defeatMessage(hero?.name, lost));
     logger.info('BoardCombat', `Defeat on tile ${tile ?? 'none'}: ${heroId}`);
+}
+
+/** "X was defeated and carried home, injured. Lost: A, B." (FP-42) */
+export function defeatMessage(heroName, lost = []) {
+    const who = heroName || 'Your hero';
+    const what = lost.length ? `Lost: ${lost.join(', ')}.` : 'Nothing was lost.';
+    return `${who} was defeated and carried home, injured. ${what}`;
 }
 
 /**

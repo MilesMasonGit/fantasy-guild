@@ -2,7 +2,6 @@ import { EventBus } from '../core/EventBus.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 
 export function handleHeroWounded(fight, heroId) {
@@ -16,7 +15,9 @@ export function handleHeroWounded(fight, heroId) {
     // the wounded status this function just set and furls the hero's flag
     // (`Flags.furl`) — but only for a hero fighting an enemy Token. (CR-028's point still holds: unassigning here was a no-op
     // on ephemeral cards, so this function deliberately does not try.)
-    NotificationSystem.warning(`${HeroManager.getHero(heroId)?.name} has been wounded!`);
+    //
+    // No notification here any more (Free Playmat FP-42): `resolveDefeat` sends
+    // the one message for a defeat, naming the hero and what was lost.
 }
 
 export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {

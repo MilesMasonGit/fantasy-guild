@@ -94,6 +94,9 @@ overturned; none is locked.**
 | **FPP-9** | FP-70's wait needs the spot not marked unstocked, a Manager within reach, and a copy in the Vault. | Looser (any Manager anywhere) or stricter (also a free Manager this tick). |
 | **FPP-10** | **The Guild Hall is exempt from FP-47.** Its Wishing Well cycle (written by `GuildUpgradeManager`) has no skill; the Hall is worked only when a flag stands on it, like a Promotion Token, with no skill check. | Author a skill for the Wishing Well; strict FP-47 (silently stops the water). |
 | **FPP-11** | The FP-69 notice also fires when a hero's choice **passes over a nearer Token stuck for a fixable reason** to work something else — not only when leaving a Token it held. Still once per hero, Token and reason (FPP-5). | Notify only on leaving a held Token (a stalled Forge nobody ever claimed would go unmentioned). |
+| **FPP-12** | A hero who accepts a promotion that spends the Academy's **last charge** goes back to work at once; they don't wait for a replacement Academy they can no longer use (PR-8 skip). | Literal FP-70 wait: idle until the restock, then walk away from it. |
+| **FPP-13** | **Disallow is a mark on the Token itself.** A Token a Manager restocks arrives allowed, even if the one it replaced was disallowed. To revisit when slice 1.5 adds the toggle. | Carry the mark on the empty spot so the restock arrives disallowed. |
+| **FPP-14** | The separate "X has been wounded!" message is gone everywhere (including the older combat path); a defeat now says it once, with what was lost (FP-42). | Keep both messages. |
 
 ### What this changes in other plans
 
@@ -364,8 +367,8 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 | 1.4a Worker seam | ✅ **DONE** 2026-09-13 | `BoardState.workerOf` / `workTileOf` / `displayTileOf`, still backed by `heroTiles`; ~30 readers converted; `WorkerSeam.test.js` guard; no behaviour change. ⚠️ `workerOf` still returns a hero on a bare tile and `recallHeroById` resolves via the tile — both for 1.4b |
 | V10 `the enemy` role | ✅ **DONE** 2026-09-13 | Effects Grammar V10a + V10b (G-40…G-43); enemy found by hero, flag-proof; old `target: 'enemy'` flag retired |
 | 1.4b Flags replace `heroTiles`, work flags | ✅ **DONE** 2026-09-14 | `board.flags` + runtime claims by instance id (`BoardState`), `Flags.js` (two-phase assign, sticky claims, FP-68 carry, FP-70 waits, FP-69 notices), `WorkCheck.js` shared with the runner, hero displacement deleted, bridge `placeHero` plants a flag, `heroTiles` converted on load (no version bump), Mat Tuner `flagRadius`. 32 new tests, 34 neuterings caught; every rewritten test listed in the build report. Provisional picks FPP-1…FPP-11 (§1.7). Fixed in passing: the dock's recall-by-drop called an undefined `engine.Placement`. |
-| 1.4c Combat, promotion, disallow | **IN PROGRESS** 2026-09-14 | Branch `free-playmat/1.4c-combat-promotion-disallow` |
-| 1.5 Flags UI | **NOT STARTED** | |
+| 1.4c Combat, promotion, disallow | ✅ **DONE** 2026-09-14 | Combat flags roam the radius (FP-32); `BoardCombat.moveFight`/`detachFight`/`attachFight` keep a moved enemy's HP (FPP-4); `endFightOfHero` ends a fight the moment a hero lets go (FP-43); one defeat message listing losses (FP-42); a heroless tick no longer clears a promotion offer, a re-plant or different hero does (PR-7); `Flags.setDisallowed` (FP-35, console only until 1.5). 25 new tests, 26 neuterings caught. Provisional FPP-12…FPP-14. |
+| 1.5 Flags UI | **IN PROGRESS** 2026-09-14 | Branch `free-playmat/1.5-flag-ui`; UI choices provisional (§1.7); last slice before the owner's stop at 1.6 |
 | 1.6 Free placement + fresh save | **NOT STARTED** | May split |
 | 1.7 Mat UI | **NOT STARTED** | |
 | 1.8 Arrivals on the mat | **NOT STARTED** | |

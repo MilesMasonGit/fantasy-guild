@@ -77,6 +77,7 @@ export const EngineBootstrap = {
             RecipeResolver,
             BoardCombat,
             BoardPromotion,
+            Flags,
             Managers,
             TokenBank,
             Cartographer,

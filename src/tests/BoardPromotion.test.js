@@ -393,13 +393,17 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
         expect(result.alert).toBeNull();
     });
 
-    it('asks again once the hero leaves and returns', () => {
+    it('asks again once the hero is recalled and their flag planted back on it', () => {
+        // Was: one heroless tick cleared the offer. Under flags a claim can
+        // lapse for a tick on its own, so the gesture is a flag planted on the
+        // Token (PR-7, FP-61; Free Playmat 1.4c).
         const hero = makeQualified();
         setup(hero);
         trainToOffer(hero.id);
         BoardPromotion.decline(TILE);
 
-        BoardPromotion.tickTile(TILE, BoardState.getToken(TILE), 1000, null);
+        Placement.recallHeroById(hero.id);
+        Placement.placeHero(hero.id, TILE);
         expect(BoardPromotion.isPaused(BoardState.getToken(TILE))).toBe(false);
 
         expect(trainToOffer(hero.id)).toHaveLength(1);
@@ -460,13 +464,15 @@ describe('The offer survives a reload', () => {
         expect(hero.jobId).toBe('recruit');
     });
 
-    it('moving the hero off forgets the decline, so training can offer again', () => {
+    it('planting the hero back on it forgets the decline, so training can offer again', () => {
+        // Was: a heroless tick forgot the decline — see the PR-7 note above.
         const hero = makeQualified();
         setup(hero, { uses: 2 });
         trainToOffer(hero.id);
         BoardPromotion.decline(TILE);
 
-        BoardPromotion.tickTile(TILE, BoardState.getToken(TILE), 1000, null);
+        Placement.recallHeroById(hero.id);
+        Placement.placeHero(hero.id, TILE);
         expect(BoardPromotion.isDeclined(BoardState.getToken(TILE))).toBe(false);
         expect(trainToOffer(hero.id)).toHaveLength(1);
         expect(BoardPromotion.getOffer(TILE)).not.toBeNull();

@@ -20,6 +20,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tileCentre } from '../config/boardGeometry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -147,6 +148,12 @@ describe('what a flag never chooses by itself', () => {
     });
 
     it('works a Promotion Token only when the flag point is on it (FP-61)', () => {
+        // A hero the Token could promote: an unqualified one is now skipped
+        // (PR-8, Free Playmat 1.4c), which is not what this test is about.
+        const cost = getPromotionCost('fighter');
+        for (const skill of getPromotionGateSkills('fighter')) {
+            GameState.state.heroes[0].skills[skill] = { level: cost.skillLevel, xp: 0 };
+        }
         put(20, 'fixture_promotion');
         plant('h1', 14);
         expect(BoardState.workTileOf('h1')).toBeNull();
@@ -352,6 +359,9 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
 
 describe('the bridge: dropping a hero plants their flag (until slice 1.5)', () => {
     it('dropped on an enemy, the flag is a combat flag and fights it', () => {
+        // Holds a combat skill: a hero who cannot fight is skipped as unskilled
+        // (FP-60, Free Playmat 1.4c).
+        GameState.state.heroes = [hero('h1', { logging: 50, melee: 30 })];
         put(14, 'fixture_enemy');
         Placement.placeHero('h1', 14);
         expect(BoardState.flagOf('h1').skill).toBe(Flags.COMBAT_FLAG);

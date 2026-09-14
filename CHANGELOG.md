@@ -5,6 +5,33 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Fighting, promotion and "don't work this" under flags** (Free Playmat slice 1.4c).
+  - **Fighters find their own enemies.** A hero with a fighting flag now fights the
+    nearest enemy within the flag's reach, then the next one when that one is cleared
+    out, instead of only the enemy right under the flag. They stay with their enemy
+    through the short rest after each kill. A cleared-out enemy camp that a Manager can
+    restock from the Vault is waited for, just like a spent Forest.
+  - **A hero with no fighting skill ignores enemies.** They no longer stand on an enemy
+    doing nothing under a red mark; the enemy just isn't picked (the reason will show on
+    hover once flags get their own display).
+  - **Moving an enemy mid-fight keeps its wounds.** Drag it, or shove it aside with
+    another Token, and the fight carries on where it was.
+  - **Recalling a hero, or moving their flag off the enemy, ends the fight at once**, and
+    the enemy is back to full health next time.
+  - **One message when a hero is defeated**, saying who fell and what was lost (for
+    example "Aria was defeated and carried home, injured. Lost: Iron Sword."), instead of
+    separate "wounded" and "destroyed" pop-ups. Their flag still comes down.
+  - **A "not yet" on a promotion stays a "not yet."** The Academy no longer asks again
+    just because the hero briefly stopped working it. It asks again when you drop a
+    hero onto it (the same hero or a different one). After accepting, the hero goes back
+    to ordinary work instead of standing on the Academy, and doesn't wait around for a
+    replacement Academy they have no use for.
+  - **Any Token can be marked "heroes may not work this"** (no button yet; developers can
+    use `Game.Flags.setDisallowed(tile, true)` in the console). A hero working it leaves
+    at once and its progress resets. Everything else about the Token keeps working: its
+    bonuses, its triggers, and Manager restocking. The mark is saved with the game, and is
+    dropped if the Token goes into the Vault.
+
 - **Heroes now hold flags and pick their own work** (Free Playmat slice 1.4b). Dropping a
   hero on the board plants their flag there. The flag works one skill and looks within a
   radius (400 by default, adjustable as "Flag radius" in the developer Mat Tuner), and the

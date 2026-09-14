@@ -295,6 +295,7 @@ export function placeToken(index, instance) {
         for (const { fromTile, toTile, instance: shiftedInst, heroId } of shifts) {
             BoardState.setToken(fromTile, null);
             BoardState.setToken(toTile, shiftedInst);
+            BoardCombat.moveFight(fromTile, toTile);   // a shoved enemy keeps its HP (FPP-4)
             dirtyTiles.add(fromTile);
             dirtyTiles.add(toTile);
 
@@ -516,6 +517,7 @@ export function placeToken(index, instance) {
                             forfeitCycle(nextOcc.instance);
                             BoardState.setToken(nextIndex, null);
                             BoardState.setToken(nextPushTarget, nextOcc.instance);
+                            BoardCombat.moveFight(nextIndex, nextPushTarget);   // FPP-4
                             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: nextPushTarget, typeId: nextOcc.instance.typeId });
                             EventBus.publish(BOARD_EVENTS.TILE_PUSHED, { fromTile: nextIndex, toTile: nextPushTarget, instance: nextOcc.instance, heroId: nextHero });
                             // The pushed Token keeps its hero (claims follow the instance).
@@ -543,6 +545,7 @@ export function placeToken(index, instance) {
             forfeitCycle(occ.instance);
             BoardState.setToken(occ.anchorIndex, null);
             BoardState.setToken(pushTarget, occ.instance);
+            BoardCombat.moveFight(occ.anchorIndex, pushTarget);   // FPP-4
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: pushTarget, typeId: occ.instance.typeId });
             EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: pushTarget, typeId: occ.instance.typeId });
             EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
@@ -616,18 +619,29 @@ export function moveToken(from, to) {
     const progress = moving.cycleElapsedMs || 0;
     const heroId = BoardState.workerOf(fromAnchor);
 
+    // Lifted off first: placing the Token can shove a neighbour (and its
+    // fight) onto the tile this one is vacating (FPP-4).
+    const fight = BoardCombat.detachFight(fromAnchor);
+
     BoardState.setToken(fromAnchor, null);
 
     const result = placeToken(to, moving);
     if (!result.success) {
         // Roll back
         BoardState.setToken(fromAnchor, moving);
+        BoardCombat.attachFight(fight, fromAnchor);
         return result;
     }
 
     // Still on the board as itself (not absorbed into a matching copy, not
-    // bounced to the Tray): it keeps the cycle it was part-way through.
-    if (BoardState.findTokenById(moving.id)) moving.cycleElapsedMs = progress;
+    // bounced to the Tray): it keeps the cycle it was part-way through — and an
+    // enemy keeps its fight, so its HP (FPP-4). Gone from the board, the fight
+    // against it is over.
+    const landed = BoardState.findTokenById(moving.id);
+    if (landed) {
+        moving.cycleElapsedMs = progress;
+        BoardCombat.attachFight(fight, landed.anchor);
+    }
 
     for (const t of occ.footprint) {
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });

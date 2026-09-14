@@ -448,13 +448,11 @@ export function tick(delta) {
         // never aggroing — so a tile with no hero on it does nothing at all,
         // and raises no alert for the same reason an unstaffed Forest doesn't.
         if (BoardCombat.isEnemyToken(instance)) {
-            // A hero who holds no combat skill cannot fight (D-249), and that
-            // needs saying — a Recruit standing on a Bear with nothing
-            // happening is otherwise indistinguishable from a broken game.
-            // Still no alert when the tile is unstaffed: an untargeted enemy
-            // is not an error, exactly like an unstaffed Forest.
-            const unableToFight = heroId && !BoardCombat.canFight(heroId);
-            setAlert(instance, index, unableToFight ? ALERT.UNSKILLED : null);
+            // A hero who holds no combat skill cannot fight (D-249). Under
+            // flags that hero never claims an enemy at all: the flag records
+            // `unskilled` against it, shown on hover only (FP-60), so an enemy
+            // Token never carries a red mark (Free Playmat 1.4c).
+            setAlert(instance, index, null);
 
             // Called unconditionally: `tickTile` also owns ENDING a fight when
             // the hero has gone. Guarding on `heroId` here would leave the old
