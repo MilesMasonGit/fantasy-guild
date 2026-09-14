@@ -31,16 +31,16 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'nearRadius',
         group: 'Reach',
         label: 'Near radius',
-        hint: 'How far an "adjacent" rule reaches, centre to centre. 272 reproduces today\'s 8-tile ring (diagonal neighbour 226 u, next ring 320 u).',
-        min: 100, max: 600, step: 1, def: 272,
+        hint: 'How far an "adjacent" rule reaches, centre to centre. 164 reaches the four side neighbours (160 u) but not the diagonals (226 u) — FP-75; a 2×2 Token reaches nothing below 253 u. 272 was the old 8-tile ring.',
+        min: 100, max: 600, step: 1, def: 164,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },
     {
         key: 'flagRadius',
         group: 'Flags',
         label: 'Flag radius',
-        hint: 'How far from its flag a hero looks for work, centre to centre (FP-65). 400 is 2.5 tile steps.',
-        min: 160, max: 1000, step: 1, def: 400,
+        hint: 'How far from its flag a hero looks for work, centre to centre (FP-65, FP-75). 164 reaches the Token under the flag and its four side neighbours, not the diagonals (226 u). 400 was the old default.',
+        min: 100, max: 1000, step: 1, def: 164,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     }
 ]);

@@ -113,6 +113,10 @@ export function generateHero(options = {}) {
         // Skills
         skills,
 
+        // Flag rules — per skill (and Fight): allowed, priority 1–5. Sparse; a
+        // missing entry is allowed at priority 3 (Free Playmat FPP-17).
+        flagRules: {},
+
         // Active status effects (StatusEffectSystem) — persisted with the save
         statuses: [],
 

@@ -34,6 +34,7 @@ import * as BoardCombat from '../board/BoardCombat.js';
 import * as BoardPromotion from '../board/BoardPromotion.js';
 import * as Managers from '../board/Managers.js';
 import * as Flags from '../board/Flags.js';
+import * as FlagRules from '../board/FlagRules.js';
 import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
 import { QuestManager } from '../quests/QuestManager.js';
@@ -78,6 +79,7 @@ export const EngineBootstrap = {
             BoardCombat,
             BoardPromotion,
             Flags,
+            FlagRules,
             Managers,
             TokenBank,
             Cartographer,

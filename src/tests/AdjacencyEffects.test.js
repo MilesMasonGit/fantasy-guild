@@ -18,6 +18,7 @@ import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 /**
  * Adjacency — the spatial half of the game.
@@ -77,6 +78,11 @@ beforeEach(() => {
     SpriteLayer.init();
     TileModifiers.clearAll();
     InputAllocator.resetStarvationStats();
+    // ⚠️ Stacking and context combinations here are laid out on the 8-tile ring
+    // (diagonal neighbours), so Near is pinned at 272 u. The shipped default has
+    // been 164 u — side neighbours only — since FP-75.
+    resetMatTuning();
+    setMatTuning('nearRadius', 272);
     GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2'), makeHero('hero_3')];
     GameState.state.inventory.maxSlots = 50;
 });

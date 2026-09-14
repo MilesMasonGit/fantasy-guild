@@ -2,7 +2,6 @@ import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 import { logger } from '../../utils/Logger.js';
 import * as StationRecipe from '../board/StationRecipe.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { isTileIndex, tileCentre, footprintCentre, tileFootprint } from '../../config/boardGeometry.js';
 
 /**
@@ -107,12 +106,12 @@ export function migrateState(state, savedVersion) {
  *
  * Each hero gets a flag at the centre of whatever they stood on (a 2×2 Token's
  * footprint centre), or the tile's own centre on bare ground, planted in the
- * order the save listed them. Its skill:
- * * an enemy → the combat flag;
- * * a worked Token whose skill the hero holds → that skill, so they carry on
- *   working the Token they were on (the same rule a drop uses, FPP-3);
- * * anything else — bare ground, a Promotion Token, a skill the hero lacks →
- *   no skill, filled at the first tick with their best (FPP-7).
+ * order the save listed them. A flag has no skill (FP-71): the hero works by
+ * their rules, which a hero from an old save does not have yet — all allowed,
+ * priority 3.
+ *
+ * **A saved flag's old `skill` is dropped** (FPP-19), not turned into a
+ * priority: slice 1.5 had made most flags Cooking by accident (FPP-16).
  *
  * Every Token on the board also gets an instance `id` if it lacks one, because
  * claims are keyed by it.
@@ -129,13 +128,18 @@ export function convertHeroTilesToFlags(state) {
         }
     }
 
+    if (board.flags && typeof board.flags === 'object') {
+        for (const flag of Object.values(board.flags)) {
+            if (flag && typeof flag === 'object') delete flag.skill;
+        }
+    }
+
     const heroTiles = board.heroTiles;
     delete board.heroTiles;
     if (!heroTiles || typeof heroTiles !== 'object') return;
 
     if (!board.flags || typeof board.flags !== 'object') board.flags = {};
     let order = typeof board.nextFlagOrder === 'number' ? board.nextFlagOrder : 0;
-    const heroes = Array.isArray(state.heroes) ? state.heroes : [];
 
     for (const [heroId, rawTile] of Object.entries(heroTiles)) {
         const tile = Number(rawTile);
@@ -147,16 +151,7 @@ export function convertHeroTilesToFlags(state) {
             ? footprintCentre(occupant.anchor, def?.size || 1)
             : tileCentre(tile);
 
-        let skill = null;
-        if (def && isEnemyDef(def)) {
-            skill = 'combat';
-        } else if (def?.config && def.requiresHero !== false) {
-            const wanted = typeof def.config.skill === 'string' ? def.config.skill.trim() : '';
-            const hero = heroes.find(h => h?.id === heroId);
-            if (wanted && hero?.skills?.[wanted]) skill = wanted;
-        }
-
-        board.flags[heroId] = { x: point.x, y: point.y, skill, plantedAt: order++ };
+        board.flags[heroId] = { x: point.x, y: point.y, plantedAt: order++ };
     }
     board.nextFlagOrder = order;
 }

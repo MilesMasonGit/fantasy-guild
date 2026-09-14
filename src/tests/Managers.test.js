@@ -11,6 +11,7 @@ import * as Managers from '../systems/board/Managers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 /**
  * Managers (D-35, D-104, D-140, D-151, D-133) — the phase where the AFK story
@@ -63,6 +64,7 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     InputAllocator.resetStarvationStats();
+    resetMatTuning();
     GameState.state.heroes = [makeHero('hero_1')];
     GameState.state.inventory.maxSlots = 50;
 });
@@ -110,15 +112,24 @@ describe('Type-specific restocking (D-35)', () => {
 });
 
 describe('Eight adjacent tiles, and never depleting (D-140)', () => {
-    it('covers a diagonal neighbour', () => {
+    /**
+     * ⚠️ D-140's "eight adjacent tiles" is amended by FP-75: Near starts at
+     * 164 u, so a Manager reaches its four side neighbours and no diagonal.
+     * The same layout restocks again once Near is widened back to 272 u.
+     */
+    it('does not cover a diagonal neighbour at the shipped 164 u (FP-75), and does at 272 u', () => {
         place(4, 'fixture_manager');          // tile 4 is diagonal to tile 11
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         place(11, 'fixture_producer', 1);
         Placement.placeHero('hero_1', 11);
 
         run(13000);
+        expect(BoardState.getToken(11)).toBeNull();
 
+        setMatTuning('nearRadius', 272);
+        expect(Managers.sweep()).toBe(1);
         expect(BoardState.getToken(11)?.typeId).toBe('fixture_producer');
+        resetMatTuning();
     });
 
     it('does NOT reach beyond its 8 tiles', () => {

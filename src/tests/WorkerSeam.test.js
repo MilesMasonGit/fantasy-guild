@@ -92,7 +92,7 @@ describe('the worker seam answers from flags and claims', () => {
     });
 
     it('⭐ a bare tile has no worker, even with a flag planted on it (1.4b)', () => {
-        Flags.plant('hero_2', tileCentre(14), { skill: 'logging' });
+        Flags.plant('hero_2', tileCentre(14));
 
         expect(BoardState.getToken(14)).toBeNull();
         expect(BoardState.workerOf(14)).toBeNull();

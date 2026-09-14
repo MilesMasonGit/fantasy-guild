@@ -8,7 +8,7 @@ import {
     nearby, tilesWithin, tilesToRebuild, positionOf, nearRadius
 } from '../systems/board/nearby.js';
 import { TILE_COUNT, tileCentre, footprintCentre, tileFootprint } from '../config/boardGeometry.js';
-import { setMatTuning, resetMatTuning, matTuning } from '../config/matTuning.js';
+import { setMatTuning, resetMatTuning, matTuning, matTuningDefault } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { REACH } from '../config/registries/reachRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
@@ -80,6 +80,9 @@ beforeEach(() => {
     clearBoard();
     TileModifiers.clearAll();
     resetMatTuning();
+    // ⚠️ This file pins the geometry of the 8-tile ring, so Near is set to 272 u
+    // explicitly. It has shipped at 164 u since FP-75 — see the FP-75 block below.
+    setMatTuning('nearRadius', 272);
 });
 
 afterEach(() => {
@@ -102,8 +105,48 @@ describe('mat positions are derived from tiles', () => {
         for (const t of tileFootprint(7, 2)) expect(positionOf(t)).toEqual({ x: 304, y: 304 });
     });
 
-    it('Near defaults to 272 u (FP-65)', () => {
-        expect(nearRadius()).toBe(272);
+    it('Near defaults to 164 u (FP-75, was 272 u under FP-65)', () => {
+        resetMatTuning();
+        expect(nearRadius()).toBe(164);
+        expect(matTuningDefault('nearRadius')).toBe(164);
+    });
+});
+
+describe('⭐ at the shipped 164 u Near is the four side neighbours (FP-75)', () => {
+    beforeEach(() => resetMatTuning());
+
+    it('flag radius and Near both ship at 164 u', () => {
+        expect(matTuningDefault('flagRadius')).toBe(164);
+        expect(matTuningDefault('nearRadius')).toBe(164);
+        expect(matTuning('flagRadius')).toBe(164);
+    });
+
+    it('on a board full of 1×1 Tokens — corners 2, edges 3, centre 4, never a diagonal', () => {
+        fillAround();
+        const counts = new Set();
+        for (let i = 0; i < TILE_COUNT; i++) {
+            const col = i % 6;
+            const sides = [i - 6, i + 6, col > 0 ? i - 1 : -1, col < 5 ? i + 1 : -1]
+                .filter(t => t >= 0 && t < TILE_COUNT);
+            expect(sorted(nearby(i)), `tile ${i}`).toEqual(sorted(sides));
+            counts.add(sides.length);
+        }
+        expect(sorted(counts)).toEqual([2, 3, 4]);
+    });
+
+    it('a 2×2 Token reaches nothing and nothing reaches it', () => {
+        put(7, LARGE_BUFF);
+        fillAround(tileFootprint(7, 2));
+        expect(nearby(7)).toEqual([]);
+        for (const t of [1, 2, 6, 9, 12, 15, 19, 20]) expect(nearby(t)).not.toContain(7);
+    });
+
+    it('a Provides buff from a 1×1 Token reaches its side neighbours, not its diagonals', () => {
+        put(14, BUFF);
+        fillAround([14]);
+        TileModifiers.rebuildAll();
+        for (const t of [8, 13, 15, 20]) expect(yieldAt(t), `tile ${t}`).toBeCloseTo(105);
+        for (const t of [7, 9, 19, 21]) expect(yieldAt(t), `tile ${t}`).toBeCloseTo(100);
     });
 });
 
@@ -186,7 +229,7 @@ describe('a larger radius widens the set', () => {
         setMatTuning('nearRadius', 5000);
         expect(matTuning('nearRadius')).toBe(600);
         resetMatTuning();
-        expect(nearby(14)).toHaveLength(8);
+        expect(nearby(14)).toHaveLength(4);      // the shipped 164 u (FP-75)
     });
 });
 

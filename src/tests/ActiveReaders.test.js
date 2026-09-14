@@ -145,6 +145,10 @@ beforeEach(() => {
     clearBoard();
     TileModifiers.clearAll();
     resetMatTuning();
+    // ⚠️ These cases are laid out on the 8-tile ring (272 u), not the shipped
+    // default: Near has started at 164 u since FP-75, which reaches no diagonal
+    // and lets a 2×2 reach nothing. The shipped default is pinned in Nearby.test.js.
+    setMatTuning('nearRadius', 272);
     GameState.state.inventory.maxSlots = 50;
 });
 

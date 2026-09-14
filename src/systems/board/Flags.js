@@ -4,7 +4,6 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
-import { isCombatSkill, getSkill } from '../../config/registries/skillRegistry.js';
 import { TILE_STEP_PX, colOf, rowOf } from '../../config/boardGeometry.js';
 import * as BoardState from './BoardState.js';
 import { centreOf, distanceSq } from './nearby.js';
@@ -12,46 +11,44 @@ import * as WorkCheck from './WorkCheck.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import * as Managers from './Managers.js';
+import * as FlagRules from './FlagRules.js';
 import * as HeroManager from '../hero/HeroManager.js';
-import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as PromotionSystem from '../hero/PromotionSystem.js';
 
 /**
- * Flags — **a hero plants a flag, and the flag picks the work** (roadmap §4
- * slice 1.4, FP-20…FP-35, FP-47…FP-49, FP-57, FP-60, FP-61, FP-68…FP-70).
+ * Flags — **a hero plants a flag, and works anything they can around it**
+ * (roadmap §4 slices 1.4 and 1.5b, FP-20…FP-35, FP-47…FP-49, FP-57, FP-60,
+ * FP-61, FP-68…FP-72, FP-74, FP-80).
  *
- * The saved half (where each flag stands, and its skill) and the runtime claim
- * records live in `BoardState`. This file is the rules: which Token a flag
- * claims, when it lets go, and what it says about Tokens it passed over.
+ * The saved half (where each flag stands) and the runtime claim records live in
+ * `BoardState`; each hero's rules live on the hero (`FlagRules`, FPP-17). This
+ * file is the behaviour: which Token a flag claims, when it lets go, and what
+ * it says about Tokens it passed over.
  *
- * ## A flag (FP-23, FP-57)
- * A point on the mat, one skill, and the global **flag radius** (Mat Tuner,
- * default 400 u — FP-65). Stage 1's flags choose **nearest to the flag's point**,
- * one hero per Token (FP-25). The hero appears at the Token they work.
+ * ## A flag (FP-23, FP-57, FP-71)
+ * A point on the mat and the global **flag radius** (Mat Tuner, default 164 u —
+ * FP-75). A flag has **no skill of its own**: the hero works every skill they
+ * hold, plus combat, shaped by their rules (allowed, priority 1–5). One hero per
+ * Token (FP-25). The hero appears at the Token they work.
  *
  * ## Choosing (phase 2 of `assign`)
- * Every Token whose centre is within the radius, nearest first (then lowest
- * anchor). For each, in order:
- *  1. no work cycle, or passive, or a different skill from the flag's — not a
- *     candidate at all;
- *  2. **the player disallowed it** — skipped as `disallowed` (FP-35);
- *  3. **no skill named** — skipped as `no_skill` (FP-47);
- *  4. **another flag already holds it** — skipped as `claimed` (FP-25);
- *  5. the shared `WorkCheck` says it cannot run — skipped with that reason
- *     (FP-48: level too low, wrong skill, missing inputs, no recipe, charges);
- *  6. otherwise **claimed**.
- *
- * A **combat flag** does the same over the **enemies** in its radius instead
- * (FP-32, slice 1.4c): disallowed, claimed, and — for a hero holding no combat
- * skill — `unskilled`, shown on hover only (FP-60).
- *
- * A **Promotion Token** (and the Guild Hall, FPP-10) comes before the radius
- * list and ignores it: worked only when the flag's point is on it (FP-34,
- * FP-61), whatever the flag's skill. A hero the Token could not promote — one
- * who already holds the job (`same_job`) or fails its skill gate — is skipped,
- * so a hero who has just accepted goes back to ordinary work (PR-8).
+ * First any **Promotion Token or Guild Hall under the flag's point** (FP-34,
+ * FP-61, FPP-10) — the radius and the rules do not apply to them. Then every
+ * worked Token and enemy whose centre is within the radius, ordered by
+ * **priority (1 first), then distance, then lower anchor** (FP-72, FP-79). Each
+ * candidate's rule is its Token's skill, or `FlagRules.FIGHT` for an enemy.
+ * For each, in order (cheap checks before `WorkCheck`):
+ *  1. **the player disallowed it** — `disallowed` (FP-35);
+ *  2. a worked Token that **names no skill** — `no_skill` (FP-47);
+ *  3. the hero **lacks that skill / cannot fight** — `unskilled` (FP-60);
+ *  4. the hero's **rule for it is off** — `rule_off` (FPP-18);
+ *  5. **another flag already holds it** — `claimed` (FP-25);
+ *  6. a Promotion Token that would not train this hero — `same_job` or its gate
+ *     reason, so a hero who has just accepted goes back to work (PR-8);
+ *  7. the shared `WorkCheck` says it cannot run — skipped with that reason
+ *     (FP-48: level too low, missing inputs, no recipe, charges);
+ *  8. otherwise **claimed**.
  *
  * Nothing claimable → retry in a second of game time (or sooner, when the board
  * changes — see "dirty").
@@ -60,8 +57,15 @@ import * as PromotionSystem from '../hero/PromotionSystem.js';
  * A claim is **kept while its Token is workable, wherever that Token now is**:
  * a moved Token carries its hero, even outside the radius (FP-68). It is let go
  * when the Token stops being eligible, or the hero can no longer work it
- * (skill), or — for a fixable problem (inputs, charges, no recipe) — **only once
- * another Token in range can run** (FPP-1), with one notification (FP-69, FPP-5).
+ * (skill, or its rule switched off), or — for a fixable problem (inputs,
+ * charges, no recipe) — **only once another Token in range can run** (FPP-1),
+ * with one notification (FP-69, FPP-5).
+ *
+ * ## ⭐ Better work appears (FP-80)
+ * A hero never leaves **mid-cycle** for a higher priority. When the hero's
+ * cycle completes (a kill, for a fight), the next pass looks again, and they
+ * switch only to a **strictly better** priority they can claim. The finished
+ * cycle has already zeroed the Token, so nothing is lost.
  *
  * If the claimed Token is gone from the board:
  *  a. the same kind of Token stands at its last spot, unclaimed → claim that;
@@ -81,9 +85,6 @@ import * as PromotionSystem from '../hero/PromotionSystem.js';
  * furl). A stable board publishes none (`Flags.test.js` runs 100 ticks).
  */
 
-/** The flag skill that fights instead of working (FP-32). */
-export const COMBAT_FLAG = 'combat';
-
 /** How long a flag with nothing to do waits before looking again, in game ms. */
 export const RETRY_MS = 1000;
 
@@ -96,7 +97,9 @@ export const SKIP = Object.freeze({
     /** The player marked it "heroes may not work this" (FP-35). */
     DISALLOWED: 'disallowed',
     /** A Promotion Token offering the job the hero already holds (PR-8). */
-    SAME_JOB: 'same_job'
+    SAME_JOB: 'same_job',
+    /** The hero's own rule for this skill (or Fight) is switched off (FPP-18). */
+    RULE_OFF: 'rule_off'
 });
 
 /**
@@ -179,45 +182,32 @@ export function pointOnToken(anchor, typeId, point) {
 }
 
 /**
- * The hero's best non-combat skill — highest level, then alphabetical — or null.
- * What a flag with no skill works (FPP-7, and the bridge's fallback).
+ * The rule a candidate answers to: the worked Token's skill, or Fight for an
+ * enemy. Null for kinds the rules never touch (promotion, hall) and for a work
+ * Token naming no skill.
  */
-export function bestWorkSkill(heroId) {
-    const skills = heldSkills(heroId);
-    let best = null;
-    let bestLevel = -Infinity;
-    for (const skill of Object.keys(skills).sort()) {
-        if (isCombatSkill(skill)) continue;
-        const level = skills[skill]?.level ?? 0;
-        if (level > bestLevel) { best = skill; bestLevel = level; }
-    }
-    return best;
-}
-
-/** Whether the hero holds a skill at all (FPP-3). */
-export function heroHolds(heroId, skill) {
-    return !!skill && !!heldSkills(heroId)[skill];
+function ruleIdOf(kind, def) {
+    if (kind === 'enemy') return FlagRules.FIGHT;
+    if (kind === 'work' && hasWorkSkill(def)) return def.config.skill;
+    return null;
 }
 
 /**
- * The hero's saved skill map, read straight from state.
- *
- * ⚠️ Not through `HeroManager.getHero`: that rehydrates the hero as a side
- * effect, and a flag being planted must not be what rebuilds a hero's
- * modifiers (or crash on a half-made hero record).
+ * Where a claim ranks for FP-80: 0 for anything under the flag's point (it
+ * outranks every priority), else the priority of its rule. Lower is better.
  */
-function heldSkills(heroId) {
-    const hero = heroRecord(heroId);
-    return hero?.skills && typeof hero.skills === 'object' ? hero.skills : {};
+function rankOf(heroId, kind, def) {
+    if (UNDER_POINT.has(kind)) return 0;
+    const ruleId = ruleIdOf(kind, def);
+    return ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_MAX + 1;
 }
 
-function heroRecord(heroId) {
-    return (GameState.state?.heroes || []).find(h => h?.id === heroId) || null;
-}
-
-/** Whether the hero can fight at all — holds a combat skill (D-249). Same rule as `BoardCombat.canFight`, read from state. */
-function heroCanFight(heroId) {
-    return CombatFormulas.canHeroFight(heroRecord(heroId));
+/**
+ * Whether the hero may take this rule's work at all: holds it (or can fight)
+ * and has not switched it off. The single eligibility test phase 1 uses.
+ */
+function ruleAllows(heroId, ruleId) {
+    return FlagRules.holdsRule(heroId, ruleId) && FlagRules.ruleOf(heroId, ruleId).allowed;
 }
 
 /**
@@ -247,6 +237,8 @@ function resetProgress(anchor, instance) {
  * time anyone engages it, including this hero re-planting on it (FP-49).
  */
 function release(heroId) {
+    // A cycle-end mark belongs to the claim it was earned on (FP-80).
+    rt()?.cycleEnded.delete(heroId);
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return null;
     const found = BoardState.findTokenById(claim.instanceId, claim.tile);
@@ -257,6 +249,9 @@ function release(heroId) {
 }
 
 function claimToken(heroId, anchor, instance) {
+    // ⚠️ A new claim starts with no cycle-end mark, or FP-80 could switch the
+    // hero off it one tick into its first cycle.
+    rt()?.cycleEnded.delete(heroId);
     BoardState.setWait(heroId, null);
     BoardState.setClaim(heroId, { instanceId: instance.id, tile: anchor, typeId: instance.typeId });
     // A different hero taking a Promotion Token is the gesture that asks again
@@ -377,8 +372,13 @@ function forgetNotices(r, heroId, instanceId = null) {
 /**
  * Walk a flag's candidates in order and return the first it can claim, with
  * every skip recorded on the way — see the file comment for the order.
+ *
+ * @param {string|null} excludeInstanceId a Token not to consider (the one held)
+ * @param {number} [belowRank] only consider candidates ranked strictly better
+ *   than this (FP-80's look for better work) — the walk stops at the first
+ *   candidate that is not
  */
-function evaluate(heroId, flag, excludeInstanceId = null) {
+function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) {
     const point = { x: flag.x, y: flag.y };
     const radius = flagRadius();
     const radiusSq = radius * radius;
@@ -392,33 +392,33 @@ function evaluate(heroId, flag, excludeInstanceId = null) {
         if (!kind) continue;
 
         if (UNDER_POINT.has(kind)) {
-            if (pointOnToken(anchor, instance.typeId, point)) underPoint.push({ anchor, instance, def, kind });
+            if (pointOnToken(anchor, instance.typeId, point)) underPoint.push({ anchor, instance, def, kind, rank: 0 });
             continue;
         }
 
-        // A combat flag looks at enemies and only enemies; any other flag
-        // never at enemies (FP-32).
-        if ((kind === 'enemy') !== (flag.skill === COMBAT_FLAG)) continue;
+        // Work and enemies alike: no split between combat and work (FP-71, FP-74).
         const d = distanceSq(point, centreOf(anchor, instance.typeId));
         if (d > radiusSq) continue;
-        inRange.push({ anchor, instance, def, kind, d });
+        const ruleId = ruleIdOf(kind, def);
+        const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
+        inRange.push({ anchor, instance, def, kind, d, ruleId, rank });
     }
 
-    inRange.sort((a, b) => a.d - b.d || a.anchor - b.anchor);
+    // Priority first, then nearest, then the lower anchor (FP-72, FP-79).
+    inRange.sort((a, b) => a.rank - b.rank || a.d - b.d || a.anchor - b.anchor);
 
     const skips = [];
-    let canFight = null;
     for (const c of [...underPoint, ...inRange]) {
+        if (c.rank >= belowRank) break;
         const instanceId = c.instance.id;
-        if (c.kind === 'work' && hasWorkSkill(c.def) && c.def.config.skill !== flag.skill) continue;
         if (isDisallowed(c.instance)) { skips.push({ instanceId, reason: SKIP.DISALLOWED }); continue; }
-        if (c.kind === 'work' && !hasWorkSkill(c.def)) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
+        if (c.kind === 'work' && !c.ruleId) { skips.push({ instanceId, reason: SKIP.NO_SKILL }); continue; }
+        if (c.ruleId) {
+            if (!FlagRules.holdsRule(heroId, c.ruleId)) { skips.push({ instanceId, reason: ALERT.UNSKILLED }); continue; }
+            if (!FlagRules.ruleOf(heroId, c.ruleId).allowed) { skips.push({ instanceId, reason: SKIP.RULE_OFF }); continue; }
+        }
         const holder = BoardState.heroOfInstance(instanceId);
         if (holder && holder !== heroId) { skips.push({ instanceId, reason: SKIP.CLAIMED }); continue; }
-        if (c.kind === 'enemy') {
-            if (canFight === null) canFight = heroCanFight(heroId);
-            if (!canFight) { skips.push({ instanceId, reason: ALERT.UNSKILLED }); continue; }
-        }
         if (c.kind === 'promotion') {
             const reason = promotionRefusal(heroId, c.instance);
             if (reason) { skips.push({ instanceId, reason }); continue; }
@@ -437,12 +437,6 @@ function choose(r, heroId) {
     const flag = BoardState.flagOf(heroId);
     if (!flag) return false;
 
-    // FPP-7: a converted flag with no skill takes the hero's best, lazily.
-    if (flag.skill == null) {
-        const skill = bestWorkSkill(heroId);
-        if (skill) flag.skill = skill;
-    }
-
     const { pick, skips } = evaluate(heroId, flag);
     recordSkips(r, heroId, skips);
 
@@ -460,6 +454,21 @@ function choose(r, heroId) {
 
     announceMoved(heroId);
     return true;
+}
+
+/**
+ * FP-80's switch: let go of the held Token (already at zero — a cycle just
+ * ended) and claim `pick`. Skips are recorded and FPP-11's notice fires for a
+ * fixable Token passed over, exactly as when choosing.
+ */
+function switchTo(r, heroId, pick, skips) {
+    release(heroId);
+    recordSkips(r, heroId, skips);
+    claimToken(heroId, pick.anchor, pick.instance);
+    r.nextTryAt.delete(heroId);
+    const passed = skips.find(s => FIXABLE.has(s.reason));
+    if (passed) notifyLeft(r, heroId, BoardState.findTokenById(passed.instanceId)?.instance, passed.reason);
+    announceMoved(heroId);
 }
 
 /** Whether a hero may wait on `tile` for a restock of `typeId` (FP-70, FPP-9). */
@@ -490,16 +499,29 @@ function keepOrRelease(r, heroId, dirty) {
         const eligible = !isDisallowed(instance) && (
             (kind === 'hall')
             || (kind === 'promotion' && !promotionRefusal(heroId, instance))
-            || (kind === 'enemy' && flag.skill === COMBAT_FLAG && heroCanFight(heroId))
-            || (kind === 'work' && hasWorkSkill(def) && def.config.skill === flag.skill)
+            || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
+            || (kind === 'work' && hasWorkSkill(def) && ruleAllows(heroId, def.config.skill))
         );
 
         if (!eligible) {
+            r.cycleEnded.delete(heroId);
             release(heroId);
             r.nextTryAt.delete(heroId);
             announceMoved(heroId);
             return;
         }
+
+        // FP-80: a cycle (or a kill) just ended — take strictly better work if
+        // any can be claimed. Checked here, at the start of the next pass and
+        // before any Token ticks, so the Token left behind is still at zero.
+        if (r.cycleEnded.delete(heroId)) {
+            const { pick, skips } = evaluate(heroId, flag, instance.id, rankOf(heroId, kind, def));
+            if (pick) {
+                switchTo(r, heroId, pick, skips);
+                return;
+            }
+        }
+
         if (kind !== 'work') return;
 
         // The runner raised this last tick from the same `WorkCheck`.
@@ -617,14 +639,15 @@ export function assignHero(heroId) {
 // ---------------------------------------------------------------------------
 
 /**
- * Plant `heroId`'s flag at a mat point with a skill, and let it choose at once.
+ * Plant `heroId`'s flag at a mat point, and let it choose at once.
  *
- * Planting the same flag at the same point with the same skill changes nothing.
- * Anything else is a re-plant: the old claim is let go (its Token's progress
- * reset — FP-68), any wait ends, the notices re-arm (FPP-5), and the flag goes
- * to the back of the planting order.
+ * Planting the same flag at the same point changes nothing. Anything else is a
+ * re-plant: the old claim is let go (its Token's progress reset — FP-68), any
+ * wait ends, the notices re-arm (FPP-5), and the flag goes to the back of the
+ * planting order. A flag carries no skill (FP-71): what the hero works comes
+ * from their rules, which a re-plant does not touch.
  */
-export function plant(heroId, point, { skill = null } = {}) {
+export function plant(heroId, point) {
     if (!heroId || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
         return { success: false, reason: 'Nowhere to plant a flag' };
     }
@@ -638,7 +661,7 @@ export function plant(heroId, point, { skill = null } = {}) {
     clearOfferUnder(heroId, point);
 
     const previous = BoardState.flagOf(heroId);
-    if (previous && previous.x === point.x && previous.y === point.y && previous.skill === skill) {
+    if (previous && previous.x === point.x && previous.y === point.y) {
         return { success: true, unchanged: true };
     }
 
@@ -649,7 +672,8 @@ export function plant(heroId, point, { skill = null } = {}) {
         clearSkips(r, heroId);
         forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
-        BoardState.setFlag(heroId, { x: point.x, y: point.y, skill, plantedAt: BoardState.takeFlagOrder() });
+        r.cycleEnded.delete(heroId);
+        BoardState.setFlag(heroId, { x: point.x, y: point.y, plantedAt: BoardState.takeFlagOrder() });
         r.dirty = true;
         assignHero(heroId);
     } finally {
@@ -660,7 +684,7 @@ export function plant(heroId, point, { skill = null } = {}) {
     /**
      * ⭐ **The quest action "deploy a hero" is planting a flag** (roadmap slice
      * 1.5) — every route: a drop from the dock, a hero dragged on the board, a
-     * pennant moved, the "+" badge, a skill change. Published here, once, so no
+     * pennant moved, the "+" badge. Published here, once, so no
      * caller can forget it or announce it twice. An unchanged plant is not a
      * deployment and returned above.
      */
@@ -671,42 +695,83 @@ export function plant(heroId, point, { skill = null } = {}) {
 }
 
 /**
- * Change the skill a planted flag works — the skill picker (slice 1.5, A-8).
+ * ⭐ **Change one of a hero's flag rules** — allowed and/or priority (FP-71,
+ * FP-79, FPP-17). `ruleId` is a work skill id or `FlagRules.FIGHT`.
  *
- * ⚠️ **A re-plant, not an edit.** The flag stays where it is, but the hero
- * lets go of whatever they held (its progress resets, FP-68), any wait ends,
- * the notices re-arm, and the flag chooses again at once with the new skill.
+ * Refused: a skill the hero does not hold (a banked one included), Fight for a
+ * hero who cannot fight, a priority that is not a whole number 1–5.
  *
- * Only a skill the hero holds (non-combat), or the combat flag for a hero who
- * holds a combat skill, is accepted — the same list `skillOptionsFor` offers.
+ * ⚠️ **Not a re-plant.** The flag stays, `plantedAt` and the notices are
+ * untouched, and no `hero_deployed` is published. Two effects only:
+ * * switching **off** the rule of the Token the hero is working lets go of it
+ *   now (its progress resets, FP-68) and the hero chooses again next pass;
+ * * anything else just marks flags dirty — an idle hero looks again next tick,
+ *   and a busy one takes a now-better priority when their cycle ends (FP-80).
+ *
+ * Works with no flag planted: the rules live on the hero. From the console:
+ * `Game.Flags.setRule(heroId, 'logging', { priority: 1 })`.
+ *
+ * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}
  */
-export function setSkill(heroId, skill) {
-    const flag = BoardState.flagOf(heroId);
-    if (!flag) return { success: false, reason: 'That hero has no flag planted' };
-    const offered = skillOptionsFor(heroId).some(o => o.skill === skill);
-    if (!offered) return { success: false, reason: 'That hero cannot work that skill' };
-    if (flag.skill === skill) return { success: true, unchanged: true };
-    return plant(heroId, { x: flag.x, y: flag.y }, { skill });
+export function setRule(heroId, ruleId, { allowed, priority } = {}) {
+    const hero = FlagRules.heroRecord(heroId);
+    if (!hero) return { success: false, reason: 'No such hero' };
+    if (!FlagRules.holdsRule(heroId, ruleId)) {
+        return {
+            success: false,
+            reason: ruleId === FlagRules.FIGHT ? 'That hero cannot fight' : 'That hero does not hold that skill'
+        };
+    }
+    if (allowed !== undefined && typeof allowed !== 'boolean') return { success: false, reason: 'Allowed must be true or false' };
+    if (priority !== undefined && !FlagRules.isPriority(priority)) {
+        return { success: false, reason: `Priority must be a whole number from ${FlagRules.PRIORITY_MIN} to ${FlagRules.PRIORITY_MAX}` };
+    }
+
+    const current = FlagRules.ruleOf(heroId, ruleId);
+    const next = {
+        allowed: allowed ?? current.allowed,
+        priority: priority ?? current.priority
+    };
+    if (next.allowed === current.allowed && next.priority === current.priority) return { success: true, unchanged: true };
+
+    if (!hero.flagRules || typeof hero.flagRules !== 'object') hero.flagRules = {};
+    // Sparse (FPP-17): a rule back at the default is no entry at all.
+    if (next.allowed && next.priority === FlagRules.PRIORITY_DEFAULT) delete hero.flagRules[ruleId];
+    else hero.flagRules[ruleId] = next;
+
+    if (!next.allowed) releaseIfWorking(heroId, ruleId);
+    markDirty();
+    EventBus.publish('heroes_updated', { source: 'flag_rules', heroId });
+    return { success: true };
 }
 
-/**
- * What the skill picker lists for a hero: each held **non-combat** skill
- * (highest level first, then name), then one **Fight** row — the combat flag —
- * only if the hero holds a combat skill (D-249).
- *
- * Combat skills are not listed one by one: a flag fights with whatever the hero
- * fights with, so there is a single combat choice (FP-32).
- *
- * @returns {{ skill: string, name: string, level: number|null, combat: boolean }[]}
- */
-export function skillOptionsFor(heroId) {
-    const skills = heldSkills(heroId);
-    const work = Object.keys(skills)
-        .filter(id => !isCombatSkill(id))
-        .map(id => ({ skill: id, name: getSkill(id)?.name || id, level: skills[id]?.level ?? null, combat: false }))
-        .sort((a, b) => (b.level ?? 0) - (a.level ?? 0) || a.name.localeCompare(b.name));
-    if (heroCanFight(heroId)) work.push({ skill: COMBAT_FLAG, name: 'Fight', level: null, combat: true });
-    return work;
+/** Put every one of a hero's flag rules back to allowed, priority 3. */
+export function resetRules(heroId) {
+    const hero = FlagRules.heroRecord(heroId);
+    if (!hero) return { success: false, reason: 'No such hero' };
+    if (!hero.flagRules || Object.keys(hero.flagRules).length === 0) {
+        hero.flagRules = {};
+        return { success: true, unchanged: true };
+    }
+    hero.flagRules = {};
+    markDirty();
+    EventBus.publish('heroes_updated', { source: 'flag_rules', heroId });
+    return { success: true };
+}
+
+/** Let go of the hero's claim if it answers to `ruleId` (a rule just switched off). */
+function releaseIfWorking(heroId, ruleId) {
+    const claim = BoardState.claimOfHero(heroId);
+    if (!claim) return;
+    const found = BoardState.findTokenById(claim.instanceId, claim.tile);
+    if (!found) return;
+    const def = getTokenType(found.instance.typeId);
+    if (ruleIdOf(kindOf(found.instance, def), def) !== ruleId) return;
+    const r = rt();
+    r?.cycleEnded.delete(heroId);
+    release(heroId);
+    r?.nextTryAt.delete(heroId);
+    announceMoved(heroId);
 }
 
 /**
@@ -814,11 +879,22 @@ export function statusOf(heroId) {
     return { state: 'idle', tile: BoardState.displayTileOf(heroId), typeId: null, flag };
 }
 
-/** A hero finished a cycle: their notices about that Token re-arm (FPP-5). */
+/**
+ * A hero finished a cycle (or a kill): their notices about that Token re-arm
+ * (FPP-5), and the next pass looks for better work (FP-80).
+ *
+ * ⚠️ Only noted here, not acted on. This runs inside the runner's (or the
+ * fight's) completion, which carries on after publishing; letting go of the
+ * Token from in here would pull it out from under that code. The next
+ * `assign` runs before any Token ticks, so the switch still lands between
+ * cycles.
+ */
 function cycleCompleted(heroId) {
     const r = rt();
     const claim = heroId ? BoardState.claimOfHero(heroId) : null;
-    if (r && claim) forgetNotices(r, heroId, claim.instanceId);
+    if (!r || !claim) return;
+    forgetNotices(r, heroId, claim.instanceId);
+    r.cycleEnded.add(heroId);
 }
 
 /** Drop every runtime record (claims, waits, skips) for the current board. */
@@ -831,6 +907,7 @@ export function reset() {
     r.skipsByHero.clear();
     r.nextTryAt.clear();
     r.notified.clear();
+    r.cycleEnded.clear();
     r.dirty = true;
 }
 

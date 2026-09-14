@@ -12,6 +12,7 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { KEYWORD, getKeyword, makeStatement } from '../systems/effects/statements.js';
 import { rulesLinesOf } from '../systems/effects/statementText.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -134,6 +135,10 @@ beforeEach(() => {
     TileModifiers.clearAll();
     TriggerSystem.resetCascadeGuard();
     TriggerSystem.init();
+    // ⚠️ The "every match" case counts diagonal neighbours, so Near is pinned at
+    // the 8-tile ring (272 u); the shipped default is 164 u since FP-75.
+    resetMatTuning();
+    setMatTuning('nearRadius', 272);
     GameState.state.heroes = [makeHero('hero_1')];
     GameState.state.inventory.maxSlots = 50;
     addSprite = vi.spyOn(SpriteLayer, 'addSprite');
@@ -142,6 +147,7 @@ beforeEach(() => {
 afterEach(() => {
     TriggerSystem.teardown();
     addSprite.mockRestore();
+    resetMatTuning();
 });
 
 describe('a triggered Grants reaches the neighbour its filter names', () => {

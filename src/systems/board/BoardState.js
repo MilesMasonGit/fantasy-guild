@@ -397,7 +397,7 @@ export function heroesOnBoard() {
  *   only a hint for finding it quickly, refreshed whenever the Token is found.
  * * `waits`    heroId → `{ tile, typeId }` — waiting on an empty spot for a
  *   Manager's restock (FP-70).
- * * the rest (`skips`, retry times, notices, clock) belong to `Flags.js`.
+ * * the rest (`skips`, retry times, notices, cycle ends, clock) belong to `Flags.js`.
  *
  * ## ⚠️ Kept per board object, not per module
  * A new game or a load replaces `GameState.state`, and with it the board, so
@@ -416,6 +416,8 @@ function runtimeOf(b) {
             skipsByHero: new Map(),
             nextTryAt: new Map(),
             notified: new Set(),
+            // Heroes who just finished a cycle, to look for better work (FP-80).
+            cycleEnded: new Set(),
             clock: 0,
             dirty: true
         };

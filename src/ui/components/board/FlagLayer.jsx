@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Swords } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
@@ -15,7 +14,6 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { PixelArt } from '../base/TokenSprite.jsx';
-import { SkillIcon } from '../base/SkillIcon.jsx';
 import { FlagMark } from './FlagMark.jsx';
 import { flagTooltip } from './flagText.js';
 import { announce } from './placeTokenFromDrag.js';
@@ -26,10 +24,11 @@ import { announce } from './placeTokenFromDrag.js';
  * An absolute overlay over the playmat. On the grid, mat units are board
  * pixels, so a flag's `{ x, y }` is drawn where it stands with no conversion.
  *
- * * **Pennant** — a small gold flag with the skill's icon at the **top-left
- *   corner of the flag's tile**, clear of the Token art; several flags on one
- *   tile fan out 12 px. Drag it to move only the flag (`DRAG_KIND.FLAG`); click
- *   it for the skill picker; hover for status and skips.
+ * * **Pennant** — a small gold flag at the **top-left corner of the flag's
+ *   tile**, clear of the Token art; several flags on one tile fan out 12 px.
+ *   Drag it to move only the flag (`DRAG_KIND.FLAG`); hover for status and
+ *   skips. A flag has no skill since slice 1.5b (FP-71), so the skill picker is
+ *   gone; the rules drawer behind a gear badge is slice 1.5b-ii (FP-73).
  * * **Idle** (FP-29) — the pennant turns grey with a "…" chip, and the idle
  *   hero is drawn small beside it with **no glow** (replacing D-172's bright
  *   idle mark). Working and waiting heroes stay drawn by `BoardTile`, paired
@@ -72,7 +71,6 @@ function projectFlags() {
             heroId,
             x: flag.x,
             y: flag.y,
-            skill: flag.skill ?? null,
             tile,
             slot: slots[tile],
             state: Flags.statusOf(heroId).state,
@@ -166,25 +164,22 @@ function pennantOrigin(flag) {
     };
 }
 
-/** One flag's pennant: drag to move the flag, click for the picker, hover for why. */
+/** One flag's pennant: drag to move the flag, hover for why. */
 const Pennant = ({ flag, onHover }) => {
     const ref = useRef(null);
     const [hovered, setHovered] = useState(false);
-    const [pickerOpen, setPickerOpen] = useState(false);
     const { isDragging: anyDrag } = useActiveDrag();
     const idle = flag.state === 'idle';
 
     const drag = useEntityDrag({
         id: `flag-${flag.heroId}`,
         kind: DRAG_KIND.FLAG,
-        payload: { heroId: flag.heroId, skill: flag.skill, name: flag.name, from: { flag: true } },
+        payload: { heroId: flag.heroId, name: flag.name, from: { flag: true } },
         sourceSurface: DND_SURFACE.BOARD
     });
 
     useEffect(() => {
-        if (!drag.isDragging) return;
-        setPickerOpen(false);
-        setHovered(false);
+        if (drag.isDragging) setHovered(false);
     }, [drag.isDragging]);
 
     const setRefs = (node) => {
@@ -205,7 +200,7 @@ const Pennant = ({ flag, onHover }) => {
                 aria-label={`${flag.name}’s flag`}
                 onMouseEnter={() => { setHovered(true); onHover?.(flag.heroId); }}
                 onMouseLeave={() => { setHovered(false); onHover?.(null); }}
-                onClick={(e) => { e.stopPropagation(); setPickerOpen(open => !open); }}
+                onClick={(e) => { e.stopPropagation(); }}
                 className={cn(
                     'absolute pointer-events-auto p-0 m-0 bg-transparent border-0',
                     'cursor-grab active:cursor-grabbing transition-transform duration-150 ease-out hover:scale-110',
@@ -213,7 +208,7 @@ const Pennant = ({ flag, onHover }) => {
                 )}
                 style={{ left, top, width: PENNANT_PX, height: PENNANT_PX, zIndex: 2 + flag.slot }}
             >
-                <FlagMark skill={flag.skill} size={PENNANT_PX} idle={idle} />
+                <FlagMark size={PENNANT_PX} idle={idle} />
                 {idle && (
                     <span
                         data-flag-idle-chip
@@ -223,15 +218,7 @@ const Pennant = ({ flag, onHover }) => {
                     </span>
                 )}
             </button>
-            {hovered && !pickerOpen && !anyDrag && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
-            {pickerOpen && (
-                <SkillPicker
-                    anchor={ref.current}
-                    heroId={flag.heroId}
-                    current={flag.skill}
-                    onClose={() => setPickerOpen(false)}
-                />
-            )}
+            {hovered && !anyDrag && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
         </>
     );
 };
@@ -294,7 +281,7 @@ const STATE_TONE = {
 };
 
 /**
- * The pennant's hover text: hero and skill, what they are doing, and up to
+ * The pennant's hover text: the hero, what they are doing, and up to
  * five Tokens the flag passed over with the reason (FP-48, FP-60). Refreshed
  * twice a second while shown, because skips change without an event.
  */
@@ -321,88 +308,6 @@ export const FlagTooltip = ({ anchor, heroId }) => {
                     {tip.skips.map((line, i) => <li key={i}>{line}</li>)}
                     {tip.more > 0 && <li className="text-white/50">+{tip.more} more</li>}
                 </ul>
-            )}
-        </div>,
-        document.body
-    );
-};
-
-/**
- * The skill picker (A-8): the hero's own skills with their level, plus
- * "Fight" only for a hero holding a combat skill. Picking one re-plants the
- * flag with it (`Flags.setSkill`). Click outside or Esc closes it.
- */
-export const SkillPicker = ({ anchor, heroId, current, onClose }) => {
-    const panelRef = useRef(null);
-    const options = Flags.skillOptionsFor(heroId);
-    const heroName = (GameState.state?.heroes || []).find(h => h?.id === heroId)?.name || 'Hero';
-
-    useEffect(() => {
-        const onDown = (e) => {
-            if (panelRef.current?.contains(e.target)) return;
-            if (anchor?.contains?.(e.target)) return;   // the pennant toggles itself
-            onClose?.();
-        };
-        const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
-        document.addEventListener('pointerdown', onDown);
-        document.addEventListener('keydown', onKey);
-        return () => {
-            document.removeEventListener('pointerdown', onDown);
-            document.removeEventListener('keydown', onKey);
-        };
-    }, [anchor, onClose]);
-
-    const pick = (skill) => {
-        const res = Flags.setSkill(heroId, skill);
-        if (!res.success) announce(res);
-        else if (!res.unchanged) {
-            EventBus.publish('heroes_updated', { source: 'flag_skill' });
-            EventBus.publish('state_changed');
-        }
-        onClose?.();
-    };
-
-    if (typeof document === 'undefined') return null;
-
-    return createPortal(
-        <div
-            ref={panelRef}
-            role="menu"
-            data-flag-skill-picker={heroId}
-            className="fixed z-[90] w-56 bg-gi-surface/95 border border-gi-border rounded-lg shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden text-xs text-gi-text"
-            style={placeUnder(anchor, 224, 36 + options.length * 34)}
-        >
-            <div className="px-3 py-1.5 text-[9px] font-bold gi-caps tracking-widest text-gi-muted border-b border-white/10">
-                {heroName}’s flag works
-            </div>
-            {options.map(o => (
-                <button
-                    key={o.skill}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={o.skill === current}
-                    data-skill-option={o.skill}
-                    onClick={() => pick(o.skill)}
-                    className={cn(
-                        'w-full flex items-center gap-2 px-3 py-1.5 text-left border-l-2 transition-colors cursor-pointer',
-                        o.skill === current ? 'border-gi-gold/70 bg-black/30' : 'border-transparent',
-                        'hover:bg-black/50 hover:text-gi-gold hover:border-gi-gold/60'
-                    )}
-                >
-                    <span className="w-5 h-5 flex items-center justify-center shrink-0">
-                        {o.combat
-                            ? <Swords size={16} className="text-red-300" />
-                            : <SkillIcon skill={o.skill} size={20} />}
-                    </span>
-                    <span className="flex-1 font-bold truncate">{o.name}</span>
-                    {o.level != null && <span className="text-gi-muted tabular-nums">Lv {Math.floor(o.level)}</span>}
-                    <span className="w-4 shrink-0 flex justify-end">
-                        {o.skill === current && <Check size={14} className="text-gi-gold" />}
-                    </span>
-                </button>
-            ))}
-            {options.length === 0 && (
-                <div className="px-3 py-2 text-gi-muted">This hero holds no skills.</div>
             )}
         </div>,
         document.body

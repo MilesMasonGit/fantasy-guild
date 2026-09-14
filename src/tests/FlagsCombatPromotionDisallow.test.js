@@ -24,7 +24,8 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { tileCentre } from '../config/boardGeometry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { isCombatSkill } from '../config/registries/skillRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -42,7 +43,12 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
  * ⭐ Free Playmat slice 1.4c — combat flags, promotion offers, disallow.
  *
  * Geometry: 6×6, one tile step is 160 u. From tile 14, tile 15 is 160 u away,
- * 16 is 320, 17 is 480; tile 0 is 452 away. The flag radius is 400 (FP-65).
+ * 16 is 320, 17 is 480; tile 0 is 452 away.
+ *
+ * ⚠️ Laid out on the old reaches — flag radius 400 u, Near 272 u (a Manager on a
+ * diagonal) — so `beforeEach` sets both. Both ship at 164 u since FP-75.
+ * Since FP-71 a flag has no skill: "fighting" is just planting a hero who can
+ * fight near an enemy, with nothing better in range.
  */
 
 registerTokenTypes({
@@ -100,7 +106,7 @@ function put(tile, typeId, uses = undefined) {
     return BoardState.getToken(tile);
 }
 
-const fightAt = (heroId, tile) => Flags.plant(heroId, C(tile), { skill: Flags.COMBAT_FLAG });
+const fightAt = (heroId, tile) => Flags.plant(heroId, C(tile));
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 const reasons = (instance) => Flags.skipsOf(instance.id).map(s => s.reason);
 
@@ -135,6 +141,8 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
+    setMatTuning('flagRadius', 400);
+    setMatTuning('nearRadius', 272);
     GameState.initNew();
     GameState.state.progress.rosterLimit = 20;
     InventoryManager.init();
@@ -403,7 +411,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         Placement.recallHeroById('h1');
         expect(BoardPromotion.isPaused(academy)).toBe(true);   // recall alone does not
 
-        BoardState.setFlag('h2', { ...C(14), skill: null, plantedAt: 99 });
+        BoardState.setFlag('h2', { ...C(14), plantedAt: 99 });
         Flags.markDirty();
         Flags.assign(0);
 
@@ -417,7 +425,8 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         expect(train()).toHaveLength(1);
         expect(BoardPromotion.accept(14).success).toBe(true);
 
-        const skill = Flags.bestWorkSkill('h1');
+        // Any work skill the promoted hero holds: since FP-71 they work them all.
+        const skill = Object.keys(GameState.state.heroes[0].skills).find(s => !isCombatSkill(s));
         registerTokenTypes({
             ft_after_promotion: {
                 id: 'ft_after_promotion', name: 'Ordinary Work', uses: 100, requiresHero: true,
@@ -425,7 +434,6 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
                     outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] }
             }
         });
-        BoardState.flagOf('h1').skill = skill;
         put(15, 'ft_after_promotion');
 
         Flags.markDirty();
@@ -464,7 +472,7 @@ describe('⭐ disallow (FP-35)', () => {
     it('releases the hero at once, resets progress, announces itself, and the hero works elsewhere', () => {
         const forest = put(14, 'fixture_producer');
         put(16, 'fixture_producer');
-        Flags.plant('h1', C(14), { skill: 'logging' });
+        Flags.plant('h1', C(14));
         run(5000);
         expect(forest.cycleElapsedMs).toBeGreaterThan(0);
 
@@ -542,7 +550,7 @@ describe('⭐ disallow (FP-35)', () => {
 
         const reloaded = BoardState.getToken(14);
         expect(reloaded.disallowed).toBe(true);
-        Flags.plant('h1', C(14), { skill: 'logging' });
+        Flags.plant('h1', C(14));
         expect(BoardState.workTileOf('h1')).toBeNull();
         expect(reasons(reloaded)).toEqual([Flags.SKIP.DISALLOWED]);
 

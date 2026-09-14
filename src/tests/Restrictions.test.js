@@ -10,6 +10,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 /**
  * `Cannot` — the only rule in the game that says **no** to a placement.
@@ -85,6 +86,10 @@ beforeEach(() => {
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
+    // ⚠️ The Coast layouts count diagonal neighbours, so Near is pinned at the
+    // 8-tile ring (272 u); the shipped default is 164 u since FP-75.
+    resetMatTuning();
+    setMatTuning('nearRadius', 272);
 });
 
 describe('A `Cannot` refuses the placement, and says why', () => {

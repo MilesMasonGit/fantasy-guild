@@ -35,7 +35,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  *
  * Board geometry for reading these: 6×6, one tile step is 160 u, so a
  * neighbour is 160 u away, a diagonal 226, two steps 320, three steps 480.
- * The default flag radius is 400 (FP-65).
+ *
+ * ⚠️ These scenarios are laid out on the old reaches — flag radius 400 u and
+ * Near 272 u — so `beforeEach` sets both explicitly. Both have shipped at 164 u
+ * since FP-75; the per-hero rules and the shipped reach are pinned in
+ * `FlagRules.test.js`.
  */
 
 registerTokenTypes({
@@ -72,7 +76,7 @@ function put(tile, typeId, uses = undefined) {
     return BoardState.getToken(tile);
 }
 
-const plant = (heroId, tile, skill = 'logging') => Flags.plant(heroId, C(tile), { skill });
+const plant = (heroId, tile) => Flags.plant(heroId, C(tile));
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 const reasons = (instance) => Flags.skipsOf(instance.id).map(s => s.reason);
 
@@ -82,6 +86,8 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
+    setMatTuning('flagRadius', 400);
+    setMatTuning('nearRadius', 272);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -121,17 +127,17 @@ describe('the flag radius (FP-23, FP-65)', () => {
     });
 });
 
-describe('skill (FP-23, FP-47)', () => {
-    it('works only its own skill, and skips a blank-skill Token as no_skill', () => {
+describe('skill (FP-47, FP-60, FP-71)', () => {
+    it('skips a blank-skill Token as no_skill and a skill the hero lacks as unskilled', () => {
         const blank = put(15, 'ft_blank');                 // nearest
-        const mine = put(13, 'fixture_producer_alt');      // mining, just as near
+        const mine = put(13, 'fixture_producer_alt');      // mining, just as near — h1 holds only logging
         put(16, 'fixture_producer');                       // logging, further
 
-        plant('h1', 14, 'logging');
+        plant('h1', 14);
 
         expect(BoardState.workTileOf('h1')).toBe(16);
         expect(Flags.skipsOf(blank.id)).toEqual([{ heroId: 'h1', reason: Flags.SKIP.NO_SKILL }]);
-        expect(Flags.skipsOf(mine.id)).toEqual([]);        // another skill is not a candidate at all
+        expect(Flags.skipsOf(mine.id)).toEqual([{ heroId: 'h1', reason: ALERT.UNSKILLED }]);
     });
 });
 
@@ -180,8 +186,8 @@ describe('planting order, and claims are sticky', () => {
         put(15, 'fixture_producer');
         put(16, 'fixture_producer');
         // Written straight to storage so both choose in the same pass.
-        BoardState.setFlag('h1', { ...C(14), skill: 'logging', plantedAt: 5 });
-        BoardState.setFlag('h2', { ...C(14), skill: 'logging', plantedAt: 2 });
+        BoardState.setFlag('h1', { ...C(14), plantedAt: 5 });
+        BoardState.setFlag('h2', { ...C(14), plantedAt: 2 });
         Flags.markDirty();
         Flags.assign(0);
 
@@ -203,7 +209,7 @@ describe('skipping what cannot run (FP-48, FP-49, FP-60)', () => {
         const gated = put(15, 'fixture_gated');            // wants mining 25
         put(16, 'fixture_producer_alt');
 
-        plant('h1', 15, 'mining');                         // dropped right on it
+        plant('h1', 15);                                   // dropped right on it
         run(2000);
 
         expect(BoardState.workTileOf('h1')).toBe(16);
@@ -343,7 +349,7 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
         const first = put(14, 'fixture_producer', 1);
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         plant('h1', 14);
-        BoardState.setFlag('h2', { ...C(14), skill: 'logging', plantedAt: -1 });
+        BoardState.setFlag('h2', { ...C(14), plantedAt: -1 });
 
         Charges.destroyToken(14, first, { heroId: 'h1' });
         Flags.markDirty();
@@ -357,23 +363,24 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
     });
 });
 
-describe('the bridge: dropping a hero plants their flag (until slice 1.5)', () => {
-    it('dropped on an enemy, the flag is a combat flag and fights it', () => {
+describe('dropping a hero plants their flag — a flag has no skill (FP-71)', () => {
+    it('dropped on an enemy, a hero who can fight fights it (FP-74, Fight allowed by default)', () => {
         // Holds a combat skill: a hero who cannot fight is skipped as unskilled
         // (FP-60, Free Playmat 1.4c).
         GameState.state.heroes = [hero('h1', { logging: 50, melee: 30 })];
         put(14, 'fixture_enemy');
         Placement.placeHero('h1', 14);
-        expect(BoardState.flagOf('h1').skill).toBe(Flags.COMBAT_FLAG);
+        expect(BoardState.flagOf('h1')).toEqual({ ...C(14), plantedAt: expect.any(Number) });
         expect(BoardState.workerOf(14)).toBe('h1');
     });
 
-    it('dropped on a Token whose skill the hero lacks, the flag keeps the hero’s own skill (FPP-3)', () => {
+    it('dropped on a Token whose skill the hero lacks, they do not work it, and it says unskilled', () => {
         GameState.state.heroes = [hero('h1', { mining: 30 })];
-        put(14, 'fixture_producer');
+        const forest = put(14, 'fixture_producer');
         Placement.placeHero('h1', 14);
-        expect(BoardState.flagOf('h1').skill).toBe('mining');
+        expect(BoardState.flagOf('h1').skill).toBeUndefined();
         expect(BoardState.workerOf(14)).toBeNull();
+        expect(reasons(forest)).toEqual([ALERT.UNSKILLED]);
     });
 });
 
@@ -393,8 +400,8 @@ describe('⭐ no rebuild storms', () => {
     });
 });
 
-describe('an old save converts (FP-59, FPP-7)', () => {
-    it('turns heroTiles into flags at the Token centre, with no version bump', () => {
+describe('an old save converts (FP-59, FPP-19)', () => {
+    it('turns heroTiles into flags at the Token centre, with no skill and no version bump', () => {
         const migrated = migrateState({
             meta: { version: GAME_VERSION },
             board: {
@@ -409,16 +416,37 @@ describe('an old save converts (FP-59, FPP-7)', () => {
 
         const b = migrated.board;
         expect(b.heroTiles).toBeUndefined();
-        expect(b.flags.h1).toEqual({ ...C(9), skill: 'logging', plantedAt: 0 });
-        expect(b.flags.h2).toEqual({ ...C(20), skill: 'combat', plantedAt: 1 });
-        expect(b.flags.h3).toEqual({ ...C(4), skill: null, plantedAt: 2 });
+        expect(b.flags.h1).toEqual({ ...C(9), plantedAt: 0 });
+        expect(b.flags.h2).toEqual({ ...C(20), plantedAt: 1 });
+        expect(b.flags.h3).toEqual({ ...C(4), plantedAt: 2 });
         expect(b.nextFlagOrder).toBe(3);
         expect(b.tiles[9].id).toBeTruthy();
 
-        // FPP-7: the bare-tile hero's flag takes their best skill at the first tick.
         GameState.state.board = { ...GameState.state.board, ...b };
         Flags.assign(0);
-        expect(BoardState.flagOf('h3').skill).toBe('logging');
         expect(BoardState.workTileOf('h1')).toBe(9);
+    });
+
+    it('drops the skill a flag was saved with (FPP-19), and the save still plays', () => {
+        const migrated = migrateState({
+            meta: { version: GAME_VERSION },
+            board: {
+                tiles: { 15: { typeId: 'fixture_producer', usesRemaining: 10, cycleElapsedMs: 0 } },
+                flags: {
+                    h1: { ...C(14), skill: 'cooking', plantedAt: 0 },
+                    h2: { ...C(20), skill: 'combat', plantedAt: 1 }
+                },
+                nextFlagOrder: 2
+            },
+            heroes: [hero('h1'), hero('h2')]
+        }, GAME_VERSION);
+
+        expect(migrated.board.flags.h1).toEqual({ ...C(14), plantedAt: 0 });
+        expect(migrated.board.flags.h2).toEqual({ ...C(20), plantedAt: 1 });
+
+        GameState.state.board = { ...GameState.state.board, ...migrated.board };
+        Flags.assign(0);
+        // Its old skill was Cooking; h1 now works the logging Token beside the flag.
+        expect(BoardState.workTileOf('h1')).toBe(15);
     });
 });

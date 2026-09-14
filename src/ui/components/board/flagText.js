@@ -3,7 +3,6 @@
 import * as Flags from '../../../systems/board/Flags.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
-import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { GameState } from '../../../state/GameState.js';
 import { skipHint } from './boardConstants.js';
 
@@ -24,13 +23,6 @@ function heroName(heroId) {
     return (GameState.state?.heroes || []).find(h => h?.id === heroId)?.name || 'A hero';
 }
 
-/** The flag's skill as a word: the skill's name, "Fight", or "no skill yet". */
-export function flagSkillName(skill) {
-    if (!skill) return 'no skill yet';
-    if (skill === Flags.COMBAT_FLAG) return 'Fight';
-    return getSkill(skill)?.name || skill;
-}
-
 /** "Working: Oak Forest" · "Waiting for restock: Copper Vein" · "Nothing to do". */
 export function flagStatusLine(heroId) {
     const s = Flags.statusOf(heroId);
@@ -42,22 +34,22 @@ export function flagStatusLine(heroId) {
     }
 }
 
-/** One skipped Token as "Iron Forge — needs materials". */
-export function skipLine(skip) {
+/** One skipped Token as "Iron Forge — needs materials" — by `heroId`'s flag, for "off in X's rules". */
+export function skipLine(skip, heroId = null) {
     const holder = skip.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(skip.instanceId)) : null;
-    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(skip.reason, { holder })}`;
+    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(skip.reason, { holder, hero: heroName(heroId) })}`;
 }
 
 /**
  * Everything the pennant's tooltip shows, as
- * `{ title, state, status, skips: string[], more }`.
+ * `{ title, state, status, skips: string[], more }`. The title is the hero's
+ * name: a flag has no skill since slice 1.5b (FP-71).
  */
 export function flagTooltip(heroId) {
-    const flag = BoardState.flagOf(heroId);
     const state = Flags.statusOf(heroId).state;
-    const all = Flags.skipsOfHero(heroId).map(skipLine);
+    const all = Flags.skipsOfHero(heroId).map(s => skipLine(s, heroId));
     return {
-        title: `${heroName(heroId)} · ${flagSkillName(flag?.skill)}`,
+        title: heroName(heroId),
         state,
         status: flagStatusLine(heroId),
         skips: all.slice(0, MAX_SKIP_LINES),
@@ -70,7 +62,7 @@ export function tokenSkipLines(instanceId) {
     if (!instanceId) return [];
     return Flags.skipsOf(instanceId).map(s => {
         const holder = s.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(instanceId)) : null;
-        return `${heroName(s.heroId)}’s flag skipped this: ${skipHint(s.reason, { holder })}`;
+        return `${heroName(s.heroId)}’s flag skipped this: ${skipHint(s.reason, { holder, hero: heroName(s.heroId) })}`;
     });
 }
 

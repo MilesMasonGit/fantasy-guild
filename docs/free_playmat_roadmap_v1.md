@@ -4,7 +4,7 @@
 [`concept_free_playmat.md`](concept_free_playmat.md), corrected the same day
 against the code. Status table in §7, open questions in §8.*
 
-**Status: APPROVED 2026-09-13. Stage 0 DONE (tag `feel-trial-0`); slices 1.0–1.5 and Effects Grammar V10 DONE and merged (2026-09-14). ⏸ Paused before 1.6 for the owner to play the flags on the grid and review the provisional picks in §1.7 (FPP-1…FPP-16).**
+**Status: APPROVED 2026-09-13. Stage 0 DONE (tag `feel-trial-0`); slices 1.0–1.5 and Effects Grammar V10 DONE and merged (2026-09-14). Owner played the flags 2026-09-14 and ruled FP-71…FP-78 (§1.8); **slice 1.5b next, then 1.6.**
 
 **Do not re-litigate §1.** FP-1…FP-39 are the concept's locked decisions; FP-40…FP-70
 are the owner's rulings of 2026-09-13 on the questions a code audit raised and on
@@ -99,6 +99,34 @@ overturned; none is locked.**
 | **FPP-14** | The separate "X has been wounded!" message is gone everywhere (including the older combat path); a defeat now says it once, with what was lost (FP-42). | Keep both messages. |
 | **FPP-15** | **Slice 1.5 flag controls, on the grid.** A small gold **pennant** (flag icon with the skill's icon) marks each flag at the top-left corner of its tile; several flags on one tile fan out. **Idle:** the pennant turns grey with a "…" chip, and the idle hero is drawn small beside it with no glow (replaces D-172's bright idle mark). **Drag the hero** to plant their flag where dropped; **drag the pennant** to move only the flag; drop either on the dock to recall. **Click the pennant** for a skill picker listing the hero's own skills (plus "Fight" if they hold a combat skill). A dashed gold **reach ring** shows while the flag or hero is hovered, dragged or inspected. **Hover** the pennant for the hero's status and up to 5 skip reasons; hover a Token for its own skip reasons. **Disallow:** a "Heroes may work this" checkbox in the Token panel, plus a dim ⊘ on disallowed Tokens (FPP-8). The dock tab shows "Working: X / Waiting / Idle at flag / Idle in Guild". | Any other layout — all of this is cosmetic and cheap to change once the owner has seen it. |
 | **FPP-16** | A flag first planted on **bare ground** takes the hero's best held work skill; for a fresh recruit (every skill level 1) ties break alphabetically, so it becomes a **Cooking** flag. Kept until skills are authored. Also: the skill picker lists work skills one by one plus a single **Fight** row (a flag fights with whatever the hero fights with), and dropping a board hero on a hero tab now recalls them instead of silently reordering the dock. | Ask for a skill on first plant; tie-break by something other than name. |
+
+### 1.8 Owner rulings after playing flags, 2026-09-14
+
+The owner played slices 1.4–1.5 (*"It seems to be working"*) and clarified the flag model.
+These supersede the decisions named in each row.
+
+| # | Decision | Why / cost |
+|---|---|---|
+| **FP-71** | ⭐ **A hero works anything they can in range** — every skill they hold, plus combat — shaped by **per-skill rules: allow, disallow, and priority**. ⛔ Replaces FP-22 (one skill per flag), FP-27's skill switch, FPP-3, FPP-7, FPP-16 and FPP-15's skill picker. FP-47, FP-48, FP-60 and FP-61 still apply; promotion stays a deliberate order (FP-34). | Owner: *"I want the hero to work anything it can in range, with a rules setting to disallow/allow or prioritize certain skills."* |
+| **FP-72** | **Priority first, then nearest.** The hero takes the nearest runnable Token of their highest-priority allowed skill; only if none can run do they drop to the next priority. | Owner, over "nearest first, priority breaks ties" and "priority as a distance bonus". |
+| **FP-73** | **The rules are per hero, opened from a gear badge on the flag**, which slides out a **side drawer panel like the Bank or Vault**. | Owner. |
+| **FP-74** | **Combat is one of the rules, allowed by default.** ⚠️ Raises FPR-2 (unattended deaths); FP-42 (defeat furls the flag, one message) is the mitigation. | Owner, over "off by default" and "combat separate". |
+| **FP-75** | ⭐ **Both reaches start small: flag radius ~164 u and Near radius ~164 u** (the four side neighbours on today's grid, not the diagonals). Mat Tuner defaults change from 400 and 272. **Both will be upgradeable later.** ⚠️ Every Near reader shrinks with it — buffs, tools serving a station, Manager reach, neighbour triggers, "Cannot" counts — and a **2×2 Token reaches nothing and is reached by nothing** (its nearest centre-to-centre neighbour is ≥ 253 u) until upgrades or a Far reach exist. Amends FP-65 and FP-56's "Near reproduces today's ring". | Owner, 2026-09-14: *"both around 164… These ranges will be upgradeable later on."* |
+| **FP-76** | ⭐ **The player never moves a hero.** Clicking and dragging a hero **moves their flag**; the hero goes to their next appropriate target (walking is Stage 2; until then they appear at it). Replaces FPP-15's "drag the hero to plant where dropped". | Owner: *"The player does not control the Hero. They move the flag, and the hero walks to the next appropriate target."* |
+| **FP-77** | **Flags use the owner's sprites** (`public/assets/ui/flag/`: a base flag and eight colours), replacing the icon pennant; **hero and flag sprites display at 128 px**. | Owner: *"I have flag sprites that can be used instead of an icon… These sprites should still be displayed at 128px size."* |
+| **FP-78** | **Built as slice 1.5b, before 1.6.** Hero walking itself stays in Stage 2. | Owner, over folding it into Stage 2. |
+| **FP-79** | **Priority is a number 1–5 per skill.** **1 is highest** (owner confirmed 2026-09-14); every skill starts at **3**. Within the same number the hero takes the nearest job (FP-72). | Owner, over High/Normal/Low and a ranked list. |
+| **FP-80** | **A higher-priority job appearing mid-job: the hero finishes the current cycle, then switches** (in combat, after the win). No progress is lost. | Owner, over "stay until the job stops" and "switch at once". |
+| **FP-81** | **The rules drawer is a narrow panel that covers the Notifications column.** | Owner, over the full Bank-width drawer. |
+| **FP-82** | **Each hero has a lasting flag colour, given automatically and changeable in the Edit Hero modal.** Full hero recolouring is a later polish feature. | Owner, over "automatic only" and "plain flag means idle". |
+
+**Director's technical picks for 1.5b (provisional, owner may overturn):**
+* **FPP-17** — Rules live **on the hero** (`hero.flagRules`), so they survive a recall, a defeat and a save; a missing entry means allowed at priority 3; skills gained later start at the default, a banked-and-restored skill keeps its rule.
+* **FPP-18** — A skill switched off in a hero's rules is skipped with its own hover reason ("off in X's rules"), distinct from a Token being disallowed (FP-35).
+* **FPP-19** — Old saves' single `flag.skill` is **dropped**, not turned into a priority (FPP-16 had made most flags Cooking by accident).
+* **FPP-20** — On today's grid the 128 px flag's pole stands at the tile's **bottom-left corner**; rules open **only from the flag's gear badge** (FP-73), not also from the hero sheet.
+* **FPP-21** *(owner, 2026-09-14: keep for now, revisit after 1.5b-ii)* — The flag's hover lists every skipped Token, including ones whose skill the hero lacks ("doesn't have the skill"), capped at 5 lines plus "more". To be judged again beside the rules drawer.
+* **Slicing:** **1.5b-i** engine, rules model, migration and both radii at 164; **1.5b-ii** dragging the hero moves the flag, flag sprites and colours (with the Edit Hero picker), the gear badge and the rules drawer.
 
 ### What this changes in other plans
 
@@ -371,6 +399,8 @@ Vault decision (FP-37). Planned once Stage 2 is played.
 | 1.4b Flags replace `heroTiles`, work flags | ✅ **DONE** 2026-09-14 | `board.flags` + runtime claims by instance id (`BoardState`), `Flags.js` (two-phase assign, sticky claims, FP-68 carry, FP-70 waits, FP-69 notices), `WorkCheck.js` shared with the runner, hero displacement deleted, bridge `placeHero` plants a flag, `heroTiles` converted on load (no version bump), Mat Tuner `flagRadius`. 32 new tests, 34 neuterings caught; every rewritten test listed in the build report. Provisional picks FPP-1…FPP-11 (§1.7). Fixed in passing: the dock's recall-by-drop called an undefined `engine.Placement`. |
 | 1.4c Combat, promotion, disallow | ✅ **DONE** 2026-09-14 | Combat flags roam the radius (FP-32); `BoardCombat.moveFight`/`detachFight`/`attachFight` keep a moved enemy's HP (FPP-4); `endFightOfHero` ends a fight the moment a hero lets go (FP-43); one defeat message listing losses (FP-42); a heroless tick no longer clears a promotion offer, a re-plant or different hero does (PR-7); `Flags.setDisallowed` (FP-35, console only until 1.5). 25 new tests, 26 neuterings caught. Provisional FPP-12…FPP-14. |
 | 1.5 Flags UI | ✅ **DONE** 2026-09-14 | Pennants (`FlagLayer.jsx`, `FlagMark.jsx`), grey idle pennant + small unlit hero (D-172 glow removed), hero vs pennant drags (`DRAG_KIND.FLAG`), dock/tab drop recalls (`dockRecall.js`), skill picker (`Flags.setSkill` re-plants), dashed reach ring on hover/drag/inspect, skip-reason hover text (`flagText.js`), "Heroes may work this" checkbox + ⊘, dock status line; `hero_deployed` on every plant. 43 new tests, 16 neuterings caught. ⚠️ UI is provisional (FPP-15, FPP-16) — **owner to review in the game**. ⏸ **Owner's overnight stop point: 1.6 not started.** |
+| 1.5b-i Flag rules engine, both reaches 164 | ✅ **DONE** 2026-09-14 | `FlagRules.js` (`hero.flagRules`, priority 1–5, default 3, Fight rule); `Flags.evaluate` ranks priority → distance → anchor across work and enemies; `setRule`/`resetRules`; FP-80 switch at cycle end; `rule_off` skip; skill picker/`setSkill`/`bridgeSkill` removed; old `flag.skill` dropped; `flagRadius` and `nearRadius` defaults 164. 17 neuterings caught. ⚠️ Devices that touched the Mat Tuner keep old values until Reset. |
+| 1.5b-ii Drag moves the flag, sprites, colours, gear, rules drawer | **IN PROGRESS** 2026-09-14 | Branch `free-playmat/1.5b-ii-flag-ui`; FP-76, FP-77, FP-81, FP-82, FPP-20 |
 | 1.6 Free placement + fresh save | **NOT STARTED** | May split |
 | 1.7 Mat UI | **NOT STARTED** | |
 | 1.8 Arrivals on the mat | **NOT STARTED** | |
