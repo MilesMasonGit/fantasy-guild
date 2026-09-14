@@ -17,9 +17,9 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { BoardTile } from '../ui/components/board/BoardTile.jsx';
-import { FlagLayer, SkillPicker } from '../ui/components/board/FlagLayer.jsx';
+import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
-import { dockStatusLine } from '../ui/components/board/flagText.js';
+import { dockStatusLine, flagTooltip } from '../ui/components/board/flagText.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -31,8 +31,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ Free Playmat slice 1.5 — the flag UI as drawn: the idle mark, the reach
- * ring, the skill picker and the disallow toggle. The engine hooks are in
- * `FlagUI.test.js`.
+ * ring and the disallow toggle. The engine hooks are in `FlagUI.test.js`. The
+ * skill picker is gone since slice 1.5b (FP-71): a flag has no skill.
  */
 
 const C = (tile) => tileCentre(tile);
@@ -95,7 +95,7 @@ describe('the idle mark (FP-29)', () => {
     });
 
     it('an idle flag shows a grey pennant with a "…" chip and its hero small beside it', () => {
-        Flags.plant('h1', C(20), { skill: 'logging' });       // bare ground, nothing in range
+        Flags.plant('h1', C(20));                             // bare ground, nothing in range
         expect(Flags.statusOf('h1').state).toBe('idle');
 
         const { container } = mount(h(FlagLayer));
@@ -107,7 +107,7 @@ describe('the idle mark (FP-29)', () => {
 
     it('a working flag shows no chip and leaves its hero to the Token tile', () => {
         put(15, 'fixture_producer');
-        Flags.plant('h1', C(14), { skill: 'logging' });
+        Flags.plant('h1', C(14));
         expect(Flags.statusOf('h1').state).toBe('working');
 
         const { container } = mount(h(FlagLayer));
@@ -118,8 +118,8 @@ describe('the idle mark (FP-29)', () => {
     });
 
     it('fans two flags on one tile 12 px apart', () => {
-        Flags.plant('h1', C(20), { skill: 'logging' });
-        Flags.plant('fighter', C(20), { skill: 'logging' });
+        Flags.plant('h1', C(20));
+        Flags.plant('fighter', C(20));
         const { container } = mount(h(FlagLayer));
         const a = container.querySelector('[data-flag-pennant="h1"]');
         const b = container.querySelector('[data-flag-pennant="fighter"]');
@@ -129,7 +129,7 @@ describe('the idle mark (FP-29)', () => {
 });
 
 describe('the reach ring (FP-64, A-4)', () => {
-    beforeEach(() => { Flags.plant('h1', C(14), { skill: 'logging' }); });
+    beforeEach(() => { Flags.plant('h1', C(14)); });
 
     const ring = (container) => container.querySelector('[data-flag-ring="h1"]');
 
@@ -166,30 +166,17 @@ describe('the reach ring (FP-64, A-4)', () => {
     });
 });
 
-describe('the skill picker (A-8)', () => {
-    it('lists the hero skills, ticks the current one, and has no Fight row without a combat skill', () => {
-        Flags.plant('h1', C(20), { skill: 'logging' });
-        mount(h(SkillPicker, { anchor: null, heroId: 'h1', current: 'logging', onClose: () => {} }));
-        const options = [...document.querySelectorAll('[data-skill-option]')].map(b => b.getAttribute('data-skill-option'));
-        expect(options).toEqual(['logging', 'mining']);
-        expect(document.querySelector('[data-skill-option="logging"]').getAttribute('aria-checked')).toBe('true');
-    });
+describe('the pennant has no skill since slice 1.5b (FP-71)', () => {
+    it('draws no skill disc, clicking it opens nothing, and its tooltip title is the hero name', () => {
+        Flags.plant('h1', C(20));
+        const { container } = mount(h(FlagLayer));
+        const pennant = container.querySelector('[data-flag-pennant="h1"]');
+        expect(pennant.querySelector('[data-flag-skill]')).toBeNull();
 
-    it('adds Fight for a hero with a combat skill', () => {
-        Flags.plant('fighter', C(20), { skill: 'logging' });
-        mount(h(SkillPicker, { anchor: null, heroId: 'fighter', current: 'logging', onClose: () => {} }));
-        expect(document.querySelector(`[data-skill-option="${Flags.COMBAT_FLAG}"]`).textContent).toContain('Fight');
-    });
+        fireEvent.click(pennant);
+        expect(document.querySelector('[role="menu"]')).toBeNull();
 
-    it('picking a skill re-plants the flag with it and closes; Esc closes', () => {
-        Flags.plant('h1', C(20), { skill: 'logging' });
-        const onClose = vi.fn();
-        mount(h(SkillPicker, { anchor: null, heroId: 'h1', current: 'logging', onClose }));
-        fireEvent.click(document.querySelector('[data-skill-option="mining"]'));
-        expect(BoardState.flagOf('h1').skill).toBe('mining');
-        expect(onClose).toHaveBeenCalledTimes(1);
-        fireEvent.keyDown(document, { key: 'Escape' });
-        expect(onClose).toHaveBeenCalledTimes(2);
+        expect(flagTooltip('h1').title).toBe('h1');
     });
 });
 
@@ -198,7 +185,7 @@ describe('"Heroes may work this" (FP-35, FPP-8)', () => {
 
     it('unticking marks the Token disallowed and the hero working it leaves', async () => {
         const forest = put(15, 'fixture_producer');
-        Flags.plant('h1', C(15), { skill: 'logging' });
+        Flags.plant('h1', C(15));
         expect(BoardState.workTileOf('h1')).toBe(15);
 
         const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', tile: 15 }));

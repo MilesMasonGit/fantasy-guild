@@ -4,7 +4,6 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
 import { positionOf } from '../systems/board/nearby.js';
-import { getTokenType } from '../config/registries/tokenRegistry.js';
 import * as Placement from '../systems/board/Placement.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -72,7 +71,7 @@ describe('On-Board Tile Event Alerts', () => {
      */
     function staff(tile, heroId) {
         const instance = BoardState.getToken(tile);
-        Flags.plant(heroId, positionOf(tile), { skill: getTokenType(instance.typeId)?.config?.skill || null });
+        Flags.plant(heroId, positionOf(tile));
         BoardState.setClaim(heroId, { instanceId: instance.id, tile, typeId: instance.typeId });
     }
 
@@ -180,10 +179,11 @@ describe('On-Board Tile Event Alerts', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
-        // Place 3 plain coasts surrounding tile 9 (tiles 8, 10, 16)
+        // Place 3 plain coasts beside tile 9 (tiles 8, 10, 3). Side neighbours
+        // only: Near has reached no diagonal since FP-75 (164 u).
         Placement.placeToken(8, BoardState.createTokenInstance('fixture_plain_coast'));
         Placement.placeToken(10, BoardState.createTokenInstance('fixture_plain_coast'));
-        Placement.placeToken(16, BoardState.createTokenInstance('fixture_plain_coast'));
+        Placement.placeToken(3, BoardState.createTokenInstance('fixture_plain_coast'));
 
         // Attempt to drop fixture_coast on tile 9 (it allows at most 2 adjacent Coasts)
         const rejectResult = Placement.placeToken(9, BoardState.createTokenInstance('fixture_coast'));

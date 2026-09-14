@@ -13,7 +13,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tileCentre } from '../config/boardGeometry.js';
 import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
 import { isRecallDrop, recallFromDrop } from '../ui/components/dock/dockRecall.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
@@ -30,7 +30,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * ⭐ Free Playmat slice 1.5 — the engine hooks and plain helpers the flag UI
  * stands on. The React pieces are pinned in `FlagUIRender.test.js`.
  *
- * Geometry: 6×6, one tile step 160 u, default flag radius 400.
+ * Geometry: 6×6, one tile step 160 u. ⚠️ Laid out on the old flag radius
+ * (400 u), set in `beforeEach`; it has shipped at 164 u since FP-75.
  */
 
 registerTokenTypes({
@@ -63,6 +64,7 @@ afterAll(() => { Flags.teardown(); resetMatTuning(); });
 beforeEach(() => {
     vi.clearAllMocks();
     resetMatTuning();
+    setMatTuning('flagRadius', 400);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -90,72 +92,30 @@ describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
     });
 
     it('fires for a plant on bare ground and a pennant move, but not for an unchanged plant', () => {
-        expect(counting(() => Flags.plant('h1', C(20), { skill: 'logging' }))).toBe(1);
-        expect(counting(() => Flags.plant('h1', C(20), { skill: 'logging' }))).toBe(0);
+        expect(counting(() => Flags.plant('h1', C(20)))).toBe(1);
+        expect(counting(() => Flags.plant('h1', C(20)))).toBe(0);
         expect(counting(() => Placement.moveFlag('h1', 8))).toBe(1);
     });
 });
 
-describe('Flags.setSkill — the skill picker is a re-plant (FP-68)', () => {
-    it('lets go of the claim, resets its progress, and chooses again with the new skill', () => {
-        const forest = put(15, 'fixture_producer');         // logging
-        put(13, 'fixture_producer_alt');                     // mining, just as near
-        Flags.plant('h1', C(14), { skill: 'logging' });
-        expect(BoardState.workTileOf('h1')).toBe(15);
-
-        run(3000);
-        expect(forest.cycleElapsedMs).toBeGreaterThan(0);
-
-        const res = Flags.setSkill('h1', 'mining');
-        expect(res.success).toBe(true);
-        expect(BoardState.flagOf('h1').skill).toBe('mining');
-        expect(forest.cycleElapsedMs).toBe(0);
-        expect(BoardState.heroOfInstance(forest.id)).toBeNull();
-        expect(BoardState.workTileOf('h1')).toBe(13);
-    });
-
-    it('refuses a skill the hero does not hold, and a hero with no flag', () => {
-        Flags.plant('h2', C(14), { skill: 'logging' });
-        expect(Flags.setSkill('h2', 'mining').success).toBe(false);
-        expect(BoardState.flagOf('h2').skill).toBe('logging');
-        expect(Flags.setSkill('h1', 'logging').success).toBe(false);
-    });
-});
-
-describe('Flags.skillOptionsFor — what the picker lists', () => {
-    it('omits Fight for a hero with no combat skill', () => {
-        const options = Flags.skillOptionsFor('h1');
-        expect(options.map(o => o.skill).sort()).toEqual(['logging', 'mining']);
-        expect(options.some(o => o.skill === Flags.COMBAT_FLAG)).toBe(false);
-    });
-
-    it('adds one Fight row, last, for a hero holding a combat skill — and lists no combat skill itself', () => {
-        const options = Flags.skillOptionsFor('fighter');
-        expect(options.map(o => o.skill)).toEqual(['logging', Flags.COMBAT_FLAG]);
-        expect(options[1].name).toBe('Fight');
-    });
-});
-
-describe('dragging the pennant (FLAG) — Placement.moveFlag (FPP-3)', () => {
-    it('keeps the flag skill on bare ground', () => {
-        // Mining, not logging: h1's best skill is logging (a 50/50 tie broken
-        // alphabetically), and a flag that lost its skill would be refilled
-        // with exactly that (FPP-7) — which would hide a skill that was dropped.
-        Flags.plant('h1', C(14), { skill: 'mining' });
+describe('dragging the pennant (FLAG) — Placement.moveFlag just moves the point (FP-71)', () => {
+    it('moves the flag to the tile, with no skill written on it', () => {
+        Flags.plant('h1', C(14));
         expect(Placement.moveFlag('h1', 20).success).toBe(true);
-        expect(BoardState.flagOf('h1')).toMatchObject({ ...C(20), skill: 'mining' });
+        expect(BoardState.flagOf('h1')).toEqual({ ...C(20), plantedAt: expect.any(Number) });
     });
 
-    it('switches to a Token skill the hero holds, and keeps its own when the hero lacks it', () => {
+    it('on a Token, the hero works it if they hold its skill, and not otherwise', () => {
         put(13, 'fixture_producer_alt');                     // mining
-        Flags.plant('h1', C(20), { skill: 'logging' });
-        Flags.plant('h2', C(20), { skill: 'logging' });
+        Flags.plant('h1', C(20));
+        Flags.plant('h2', C(20));
 
-        Placement.moveFlag('h1', 13);
-        expect(BoardState.flagOf('h1').skill).toBe('mining');
+        Placement.moveFlag('h1', 13);                        // h1 holds mining
+        expect(BoardState.workTileOf('h1')).toBe(13);
 
-        Placement.moveFlag('h2', 13);
-        expect(BoardState.flagOf('h2').skill).toBe('logging');
+        Placement.recallHeroById('h1');
+        Placement.moveFlag('h2', 13);                        // h2 holds only logging
+        expect(BoardState.workTileOf('h2')).toBeNull();
     });
 
     it('refuses a hero with no flag (a pennant always belongs to one)', () => {
@@ -168,7 +128,7 @@ describe('dropping on the Dock recalls (dockRecall)', () => {
     it.each([
         ['a hero sprite from a Token', { kind: DRAG_KIND.HERO, heroId: 'h1', from: { tile: 15 } }],
         ['an idle hero beside their flag', { kind: DRAG_KIND.HERO, heroId: 'h1', from: { flag: true } }],
-        ['a pennant', { kind: DRAG_KIND.FLAG, heroId: 'h1', skill: 'logging' }]
+        ['a pennant', { kind: DRAG_KIND.FLAG, heroId: 'h1' }]
     ])('furls the flag for %s', (_label, payload) => {
         put(15, 'fixture_producer');
         Placement.placeHero('h1', 15);
@@ -182,7 +142,7 @@ describe('dropping on the Dock recalls (dockRecall)', () => {
     });
 
     it('is not a recall for a hero dragged out of the Dock itself (that is a reorder)', () => {
-        Flags.plant('h1', C(20), { skill: 'logging' });
+        Flags.plant('h1', C(20));
         const payload = { kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } };
         expect(isRecallDrop(payload)).toBe(false);
         recallFromDrop(Placement, payload);
@@ -194,7 +154,7 @@ describe('Flags.skipsOfHero — the pennant hover lines', () => {
     it('lists what the flag passed over, nearest first, with the Token', () => {
         const blank = put(15, 'ft_ui_blank');
         put(16, 'fixture_producer');
-        Flags.plant('h1', C(14), { skill: 'logging' });
+        Flags.plant('h1', C(14));
         expect(BoardState.workTileOf('h1')).toBe(16);
         expect(Flags.skipsOfHero('h1')).toEqual([
             { instanceId: blank.id, reason: Flags.SKIP.NO_SKILL, typeId: 'ft_ui_blank', tile: 15 }
@@ -227,5 +187,10 @@ describe('every skip reason the engine can record has hover text', () => {
     it('names the hero holding a claimed Token', () => {
         expect(skipHint(Flags.SKIP.CLAIMED, { holder: 'Aria' })).toBe('being worked by Aria');
         expect(skipHint(Flags.SKIP.NO_SKILL)).toBe('names no skill');
+    });
+
+    it('names the hero whose rules switched a skill off (FPP-18)', () => {
+        expect(skipHint(Flags.SKIP.RULE_OFF, { hero: 'Aria' })).toBe('off in Aria’s rules');
+        expect(skipHint(Flags.SKIP.RULE_OFF)).toBe('off in the hero’s rules');
     });
 });
