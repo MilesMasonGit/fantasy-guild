@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { TILE_PX, TILE_GAP_PX, TILE_STEP_PX, GUILD_HALL_TILE, colOf, rowOf } from '../../../config/boardGeometry.js';
 import { PAIR_OFFSET_PX, HERO_HIT_PX, ALERT_HINT } from './boardConstants.js';
+import { tokenSkipLines } from './flagText.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -343,6 +344,8 @@ export const BoardTile = ({
     isPreviewValid,
     onPlaceToken,
     onPlaceHero,
+    onMoveFlag,
+    onHeroHover,
     onPickUp,
     onReturnTokenToTray,
     onOpenGuildHall,
@@ -367,7 +370,10 @@ export const BoardTile = ({
     // Under flags the board projection says whether the drawn hero is idle
     // (Free Playmat 1.4b); the tile-based guess is only a fallback.
     const idle = staffed && (token.heroIdle ?? (!hasToken || !!token.alert));
-    const glow = !staffed ? null : idle ? 'gi-glow-idle' : 'gi-glow-active';
+    // ⚠️ Only working glows (slice 1.5, FP-29). The bright yellow idle glow is
+    // retired: an idle hero is drawn by `FlagLayer` beside a grey pennant, and
+    // a staffed-but-stuck Token shows only its red badge.
+    const glow = staffed && !idle ? 'gi-glow-active' : null;
     const isPermanent = token?.cannotLeaveBoard || token?.isGuildHall || token?.typeId === 'token_guild_hall';
     const isFiniteToken = hasToken && !isGuildHallToken && token?.usesRemaining != null;
 
@@ -403,16 +409,19 @@ export const BoardTile = ({
     const drop = useEntityDrop({
         id: `tile-${index}`,
         surface: DND_SURFACE.BOARD,
+        // A hero or a pennant lands on any tile, passive Tokens included: the
+        // flag is planted there and simply finds nothing to work if there is
+        // nothing (slice 1.5; FP-49). A pennant needs a planted flag.
         accepts: (p) => {
             if (p.kind === DRAG_KIND.TOKEN) return true;
-            if (p.kind === DRAG_KIND.HERO) {
-                return !hasToken || token?.requiresHero !== false;
-            }
+            if (p.kind === DRAG_KIND.HERO) return !!p.heroId;
+            if (p.kind === DRAG_KIND.FLAG) return !!p.heroId;
             return false;
         },
         onDrop: (p, info) => {
             if (p.kind === DRAG_KIND.TOKEN) onPlaceToken?.(index, p, info);
             else if (p.kind === DRAG_KIND.HERO) onPlaceHero?.(anchorIndex, p, info);
+            else if (p.kind === DRAG_KIND.FLAG) onMoveFlag?.(anchorIndex, p, info);
         }
     });
 
@@ -491,6 +500,18 @@ export const BoardTile = ({
      */
     const alertHint = token?.alert ? ALERT_HINT[token.alert] : null;
 
+    /**
+     * FP-60: hovering a Token also says which flags passed it over, and why.
+     * Skips change without an event (a flag re-checks every second), so they
+     * are read when the pointer arrives rather than kept in the projection.
+     */
+    const [skipLines, setSkipLines] = React.useState([]);
+    const hoverTitle = [
+        alertHint,
+        token?.disallowed ? 'Heroes may not work this' : null,
+        ...skipLines
+    ].filter(Boolean).join('\n') || undefined;
+
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -511,7 +532,7 @@ export const BoardTile = ({
     return (
         <div
             id={`tile-${index}`}
-            title={alertHint || undefined}
+            title={hoverTitle}
             data-tile-alert={token?.alert || undefined}
             data-tile-staffed={staffed && hasToken ? "true" : undefined}
             data-tile-has-token={hasToken ? "true" : undefined}
@@ -531,7 +552,11 @@ export const BoardTile = ({
                 hasToken ? (e) => onInspectToken?.(token.typeId, e.currentTarget.getBoundingClientRect(), anchorIndex)
                     : undefined
             }
-            onMouseEnter={() => { setTileHovered(true); onHover?.(anchorIndex); }}
+            onMouseEnter={() => {
+                setTileHovered(true);
+                setSkipLines(tokenSkipLines(token?.instanceId));
+                onHover?.(anchorIndex);
+            }}
             onMouseLeave={() => { setTileHovered(false); onHover?.(null); }}
             style={{
                 width: TILE_PX,
@@ -594,6 +619,7 @@ export const BoardTile = ({
                     pushTransform={pushTransform}
                     isPushing={isPushing}
                     onPickUp={onPickUp}
+                    onHover={onHeroHover}
                     tileHovered={tileHovered}
                 />
             )}
@@ -646,8 +672,20 @@ export const BoardTile = ({
                         />
                     )}
 
+                    {/* Disallowed (FP-35): a dim ⊘ in the bottom-left, always shown (FPP-8) */}
+                    {token?.disallowed && (
+                        <div
+                            data-tile-disallowed="true"
+                            aria-label="Heroes may not work this"
+                            className="absolute left-1.5 bottom-1 z-30 pointer-events-none select-none text-[26px] leading-none font-bold text-stone-200/55"
+                            style={{ textShadow: '0 1px 2px #000, 0 0 3px #000' }}
+                        >
+                            ⊘
+                        </div>
+                    )}
+
                     {/* Add Hero Button in Bottom-Left on hover when unassigned */}
-                    {token?.requiresHero !== false && !token?.heroId && (
+                    {token?.requiresHero !== false && !token?.heroId && !token?.disallowed && (
                         <AddHeroBadge
                             isHovered={tileHovered}
                             isDragging={drag.isDragging}
@@ -675,7 +713,7 @@ export const BoardTile = ({
 /**
  * The hero standing on a Token: drag to redeploy, click to recall.
  */
-const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle, glow, pushTransform, isPushing, onPickUp, tileHovered }) => {
+const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle, glow, pushTransform, isPushing, onPickUp, onHover, tileHovered }) => {
     const drag = useEntityDrag({
         id: `tile-hero-${index}`,
         kind: DRAG_KIND.HERO,
@@ -716,8 +754,11 @@ const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle
             {...drag.handleProps}
             data-alpha-test="true"
             type="button"
+            data-board-hero={heroId}
             onClick={handleClick}
             onContextMenu={handleContextMenu}
+            onMouseEnter={() => onHover?.(heroId)}
+            onMouseLeave={() => onHover?.(null)}
             style={{
                 left: leftPos,
                 top: topPos,

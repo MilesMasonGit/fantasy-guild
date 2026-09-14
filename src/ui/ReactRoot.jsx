@@ -315,6 +315,7 @@ export const ReactRoot = ({ engine }) => {
                                     />
                                 ) : (
                                     <Board
+                                        inspectedHeroId={inspectHeroId}
                                         onOpenGuildHall={handleOpenGuildHall}
                                         onInspectToken={(typeId, rect, tile) => ui.inspect.set('token', typeId, { rect, tile })}
                                         onClearInspect={() => ui.inspect.clear()}
