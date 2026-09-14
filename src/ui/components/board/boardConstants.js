@@ -86,16 +86,18 @@ export const SKIP_HINT = {
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',
-    same_job: 'already holds this job'
+    same_job: 'already holds this job',
+    rule_off: 'off in {hero}’s rules'
 };
 
 /**
  * One skip as a sentence tail. `holder` names the hero who has a `claimed`
- * Token; without one it reads "another hero".
+ * Token; without one it reads "another hero". `hero` names the hero whose
+ * rules switched it off (`rule_off`, FPP-18); without one, "the hero".
  */
-export function skipHint(reason, { holder = null } = {}) {
+export function skipHint(reason, { holder = null, hero = null } = {}) {
     const text = SKIP_HINT[reason] || 'can’t work it';
-    return text.replace('{holder}', holder || 'another hero');
+    return text.replace('{holder}', holder || 'another hero').replace('{hero}', hero || 'the hero');
 }
 
 /** The two-word label printed on the alert bar itself. The sentence is in `ALERT_HINT`. */

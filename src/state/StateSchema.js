@@ -258,7 +258,7 @@ export const INITIAL_STATE = {
 
     // === The Board (7×7 playmat) ===
     //   tiles       { [index 0-48]: { typeId, usesRemaining, cycleElapsedMs } }
-    //   flags       { [heroId]: { x, y, skill, plantedAt } }  each hero's flag (Free Playmat 1.4b)
+    //   flags       { [heroId]: { x, y, plantedAt } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero)
     //   nextFlagOrder number                the next flag's plantedAt
     //   vacancies   { [index]: { typeId, unstocked } }   tiles that ran dry
     //   tokenBank   { [typeId]: [{ usesRemaining }, ...] }  capped by DISTINCT types (D-137)

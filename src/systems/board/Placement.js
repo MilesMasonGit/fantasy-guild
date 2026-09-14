@@ -770,36 +770,14 @@ export function returnTokenToVault(index) {
 // ---------------------------------------------------------------------------
 
 /**
- * The skill a flag dropped on this Token gets.
- *
- * * an enemy → the combat flag;
- * * a worked Token naming a skill **the hero holds** → that skill (FP-27, FPP-3);
- * * anything else — bare ground, a Promotion Token, a passive or skill-less
- *   Token, or a skill the hero lacks → the flag keeps the skill it had, or
- *   (a first plant) the hero's best non-combat skill.
- */
-function bridgeSkill(heroId, instance) {
-    const previous = BoardState.flagOf(heroId)?.skill ?? null;
-    const keep = () => previous ?? Flags.bestWorkSkill(heroId);
-
-    if (!instance) return keep();
-    if (BoardCombat.isEnemyToken(instance)) return Flags.COMBAT_FLAG;
-    if (BoardPromotion.isPromotionToken(instance)) return keep();
-
-    const def = getTokenType(instance.typeId);
-    const skill = typeof def?.config?.skill === 'string' ? def.config.skill.trim() : '';
-    if (!def?.config || def.requiresHero === false || !skill) return keep();
-    return Flags.heroHolds(heroId, skill) ? skill : keep();
-}
-
-/**
- * Drop a hero on a tile — **the bridge until slice 1.5 draws flags.**
+ * Drop a hero on a tile — plants their flag there.
  *
  * It plants the hero's flag at the centre of whatever is there (a 2×2 Token's
- * footprint centre) or the tile's own centre, with the skill from
- * `bridgeSkill`, and the flag chooses at once. Dropping on a Token therefore
- * works it when it can — it is the nearest thing to the flag (FP-49) — and
- * otherwise the hero works something else in range, or idles at the flag.
+ * footprint centre) or the tile's own centre, and the flag chooses at once by
+ * the hero's rules (FP-71). Dropping on a Token the hero can work therefore
+ * works it unless a better-priority Token is runnable in range — within one
+ * priority it is the nearest thing to the flag (FP-49, FP-72) — and otherwise
+ * the hero works something else in range, or idles at the flag.
  *
  * ⚠️ **Nobody is displaced any more.** Two heroes can plant on one tile; only
  * one works the Token (FP-25). Passive Tokens no longer refuse a drop: the flag
@@ -813,10 +791,9 @@ export function placeHero(heroId, index) {
 
     const occ = BoardState.getOccupyingToken(index);
     const point = positionOf(index);
-    const skill = bridgeSkill(heroId, occ?.instance || null);
 
     // `Flags.plant` announces `hero_deployed` itself, for every route (1.5).
-    const planted = Flags.plant(heroId, point, { skill });
+    const planted = Flags.plant(heroId, point);
     if (!planted.success) return planted;
     if (planted.unchanged) return { success: true, workedTile: BoardState.workTileOf(heroId) };
 
@@ -829,11 +806,10 @@ export function placeHero(heroId, index) {
 /**
  * Drag a pennant onto a tile — **move only the flag** (slice 1.5, FPP-15).
  *
- * On today's grid this lands exactly where dropping the hero would: the flag
- * keeps its skill on bare ground, and on a Token takes that Token's skill only
- * if the hero holds it (FPP-3, via `bridgeSkill`). The difference is that a
- * pennant always belongs to a planted flag, so a hero in the Dock cannot be
- * sent out this way.
+ * On today's grid this lands exactly where dropping the hero would: it just
+ * moves the flag's point, and the hero's rules decide the rest (FP-71). The
+ * difference is that a pennant always belongs to a planted flag, so a hero in
+ * the Dock cannot be sent out this way.
  */
 export function moveFlag(heroId, index) {
     if (!heroId) return refuse('No hero');

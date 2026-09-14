@@ -85,13 +85,13 @@ export const DragGhost = ({ payload, bold }) => {
 };
 
 /**
- * A pennant in flight (Free Playmat slice 1.5) — the same gold flag and skill
- * mark as on the board, a little larger in the hand, with no hero drawn: a
- * pennant drag moves only the flag.
+ * A pennant in flight (Free Playmat slice 1.5) — the same gold flag as on the
+ * board, a little larger in the hand, with no hero drawn: a pennant drag moves
+ * only the flag.
  */
-const FlagGhost = ({ payload }) => (
+const FlagGhost = () => (
     <div className="flex items-center justify-center" style={{ width: 48, height: 48 }}>
-        <FlagMark skill={payload.skill} size={36} />
+        <FlagMark size={36} />
     </div>
 );
 

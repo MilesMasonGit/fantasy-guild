@@ -5,6 +5,36 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Heroes work anything they can near their flag, by their own rules** (Free Playmat slice
+  1.5b, first half — the engine; the rules panel, flag sprites and new dragging come next).
+  - **A flag no longer has a skill.** A hero now works any Token near their flag that uses a
+    skill they have, and fights any enemy near it if they can fight. The skill drawn on the
+    pennant and the skill menu you got by clicking the pennant are gone; the pennant's
+    hover note now starts with just the hero's name.
+  - **Each hero has rules**: every skill (and Fight) can be switched on or off, and given a
+    priority from 1 (most wanted) to 5. Everything starts switched on at priority 3. A hero
+    takes the nearest job of their best priority that can actually run, and only drops to
+    the next priority if none can. Rules belong to the hero, so they survive calling the
+    hero home, a defeat and saving. Until the rules panel arrives they can only be changed
+    from the browser console (`Game.Flags.setRule(heroId, 'logging', { priority: 1 })`).
+  - **Fighting is on by default.** A hero who can fight will fight enemies near their flag
+    when that is their best job.
+  - **A hero finishes what they are doing first.** If better-priority work appears, they
+    complete their current cycle (or win their current fight) and then switch, so nothing
+    is lost. Switching a skill off sends the hero away from it straight away.
+  - A Token skipped because the hero's rules switch it off says so on hover ("off in
+    Aria's rules").
+  - ⚠️ **Both reaches are now much shorter: 164 instead of 400 (flags) and 272 (Near).**
+    A flag now reaches only the tile it stands on and the four tiles beside it — not the
+    diagonals. Everything that works "next to" something shrinks the same way: buffs,
+    tools and other Tokens a station needs beside it, Managers restocking, "when a
+    neighbour…" triggers and "Cannot" counts all reach only the four side neighbours.
+    **Big 2×2 Tokens reach nothing and nothing reaches them** until reach upgrades exist.
+    Both reaches will be upgradeable later.
+  - ⚠️ If you have ever moved a slider in the **Mat Tuner**, your computer remembers the
+    old values: open the Mat Tuner and press **Reset** to get the new ones.
+  - Old saves load normally; the skill each flag used to have is simply forgotten.
+
 - **Flags you can see and handle** (Free Playmat slice 1.5, still on today's grid). Every
   choice here is provisional and cheap to change once you have seen it.
   - **A small gold pennant marks each hero's flag**, in the top-left corner of the tile it
