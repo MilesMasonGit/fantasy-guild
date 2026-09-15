@@ -139,7 +139,7 @@ export const HeroDockTab = ({
     if (!hero) return null;
 
     const def = token ? getTokenType(token.typeId) : null;
-    const isWorking = tile != null && !!def?.config && !token.alert;
+    const isWorking = workId != null && !!def?.config && !token.alert;
     const isWounded = hero.status === 'wounded';
     const job = hero.jobId ? getJob(hero.jobId) : null;
     const jobTitle = job ? job.name : (hero.className || 'Recruit');
