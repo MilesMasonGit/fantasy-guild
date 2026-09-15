@@ -86,35 +86,35 @@ beforeEach(() => {
 describe('A charge delta moves the pool', () => {
     it('spends on a negative delta and leaves the Token alive above zero', () => {
         const instance = place(STATION, 'fixture_charged_context');   // uses: 6
-        Charges.applyDelta(STATION, instance, -2);
+        Charges.applyDelta(instance, -2);
         expect(instance.usesRemaining).toBe(4);
         expect(BoardState.getToken(STATION)).toBe(instance);
     });
 
     it('changes nothing at all on a zero delta', () => {
         const instance = place(STATION, 'fixture_charged_context');
-        const result = Charges.applyDelta(STATION, instance, 0);
+        const result = Charges.applyDelta(instance, 0);
         expect(result.applied).toBe(0);
         expect(instance.usesRemaining).toBe(6);
     });
 
     it('restores on a positive delta', () => {
         const instance = place(STATION, 'fixture_charged_context', null, 2);
-        Charges.applyDelta(STATION, instance, 3);
+        Charges.applyDelta(instance, 3);
         expect(instance.usesRemaining).toBe(5);
     });
 
     /** The ceiling. Overshooting it inflates a save permanently. */
     it('never restores past the Token type’s starting charges', () => {
         const instance = place(STATION, 'fixture_charged_context', null, 5);
-        const result = Charges.applyDelta(STATION, instance, 99);
+        const result = Charges.applyDelta(instance, 99);
         expect(instance.usesRemaining).toBe(6);       // uses: 6, not 104
         expect(result.applied).toBe(1);
     });
 
     it('is a no-op on a Token already at its ceiling', () => {
         const instance = place(STATION, 'fixture_charged_context');   // already 6
-        const result = Charges.applyDelta(STATION, instance, 4);
+        const result = Charges.applyDelta(instance, 4);
         expect(instance.usesRemaining).toBe(6);
         expect(result.applied).toBe(0);
     });
@@ -123,14 +123,14 @@ describe('A charge delta moves the pool', () => {
 describe('An unlimited Token ignores charge deltas in both directions (R-4)', () => {
     it('is not spent by a negative delta', () => {
         const instance = place(STATION, 'fixture_charged_context_unlimited');
-        Charges.applyDelta(STATION, instance, -5);
+        Charges.applyDelta(instance, -5);
         expect(instance.usesRemaining).toBeNull();
         expect(BoardState.getToken(STATION)).toBe(instance);
     });
 
     it('is not filled by a positive delta', () => {
         const instance = place(STATION, 'fixture_charged_context_unlimited');
-        Charges.applyDelta(STATION, instance, 5);
+        Charges.applyDelta(instance, 5);
         expect(instance.usesRemaining).toBeNull();
     });
 
@@ -140,7 +140,7 @@ describe('An unlimited Token ignores charge deltas in both directions (R-4)', ()
      */
     it('is never destroyed by a delta', () => {
         const instance = place(STATION, 'fixture_charged_context_unlimited');
-        for (let i = 0; i < 20; i++) Charges.applyDelta(STATION, instance, -3);
+        for (let i = 0; i < 20; i++) Charges.applyDelta(instance, -3);
         expect(BoardState.getToken(STATION)).toBe(instance);
         expect(instance.usesRemaining).toBeNull();
     });
@@ -154,7 +154,7 @@ describe('An unlimited Token ignores charge deltas in both directions (R-4)', ()
 describe('Reaching zero destroys the Token', () => {
     it('empties the tile and leaves a vacancy behind it', () => {
         const instance = place(STATION, 'fixture_charged_context', null, 2);
-        const result = Charges.applyDelta(STATION, instance, -2);
+        const result = Charges.applyDelta(instance, -2);
         expect(result.depleted).toBe(true);
         expect(BoardState.getToken(STATION)).toBeNull();
         expect(BoardState.getVacancy(STATION)?.typeId).toBe('fixture_charged_context');

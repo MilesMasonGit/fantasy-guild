@@ -8,6 +8,7 @@ import * as Placement from '../systems/board/Placement.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
+import { tileCentre } from './fixtures/mat.js';
 
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 
@@ -25,6 +26,11 @@ function makeHero(id, level = 50) {
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 
+/**
+ * Since Free Playmat slice 1.6b every alert names its Token by **instance id**,
+ * and one with no Token to name (a refused drop, a Token that has just left)
+ * by the **mat point** — never by tile.
+ */
 describe('On-Board Tile Event Alerts', () => {
     beforeEach(() => {
         GameState.initNew();
@@ -53,10 +59,12 @@ describe('On-Board Tile Event Alerts', () => {
         const exhaustEvent = events.find(e => e.type === 'token_exhausted');
         expect(exhaustEvent).toBeDefined();
         expect(exhaustEvent).toMatchObject({
-            tile: 8,
+            instanceId: tok.id,
+            ...tileCentre(8),
             severity: 'red',
             type: 'token_exhausted'
         });
+        expect(exhaustEvent).not.toHaveProperty('tile');
         expect(exhaustEvent.message).toContain('Token Exhausted:');
         expect(exhaustEvent.message).toContain('Fixture Producer');
     });
@@ -72,7 +80,7 @@ describe('On-Board Tile Event Alerts', () => {
     function staff(tile, heroId) {
         const instance = BoardState.getToken(tile);
         Flags.plant(heroId, positionOf(tile));
-        BoardState.setClaim(heroId, { instanceId: instance.id, tile, typeId: instance.typeId });
+        BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId });
     }
 
     it('emits Yellow alert when a staffed token lacks input materials', () => {
@@ -90,7 +98,7 @@ describe('On-Board Tile Event Alerts', () => {
         const itemAlert = events.find(e => e.type === 'out_of_item');
         expect(itemAlert).toBeDefined();
         expect(itemAlert).toMatchObject({
-            tile: 8,
+            instanceId: consumer.id,
             severity: 'yellow',
             type: 'out_of_item'
         });
@@ -112,7 +120,7 @@ describe('On-Board Tile Event Alerts', () => {
         const tokenAlert = events.find(e => e.type === 'out_of_token');
         expect(tokenAlert).toBeDefined();
         expect(tokenAlert).toMatchObject({
-            tile: 8,
+            instanceId: station.id,
             severity: 'yellow',
             type: 'out_of_token'
         });
@@ -131,10 +139,10 @@ describe('On-Board Tile Event Alerts', () => {
         // Tick runner
         BoardRunner.tick(100);
 
-        const tokenAlert = events.find(e => e.type === 'out_of_token' && e.tile === 8);
+        const tokenAlert = events.find(e => e.type === 'out_of_token' && e.instanceId === tree.id);
         expect(tokenAlert).toBeDefined();
         expect(tokenAlert).toMatchObject({
-            tile: 8,
+            instanceId: tree.id,
             severity: 'yellow',
             type: 'out_of_token',
             name: 'Woodaxe',
@@ -164,10 +172,11 @@ describe('On-Board Tile Event Alerts', () => {
         // The unworked tool on tile 9 should have depleted and emitted Red alert
         expect(BoardState.getToken(9)).toBeNull();
 
-        const toolExhaustEvent = events.find(e => e.type === 'token_exhausted' && e.tile === 9);
+        const toolExhaustEvent = events.find(e => e.type === 'token_exhausted' && e.instanceId === contextA.id);
         expect(toolExhaustEvent).toBeDefined();
         expect(toolExhaustEvent).toMatchObject({
-            tile: 9,
+            instanceId: contextA.id,
+            ...tileCentre(9),
             severity: 'red',
             type: 'token_exhausted'
         });
@@ -189,11 +198,13 @@ describe('On-Board Tile Event Alerts', () => {
         const rejectResult = Placement.placeToken(9, BoardState.createTokenInstance('fixture_coast'));
         expect(rejectResult.success).toBe(false);
 
-        // Disallow alert should have been emitted on tile 9
-        const rejectAlert = events.find(e => e.type === 'drop_rejected' && e.tile === 9);
+        // A refused drop has no Token on the mat to name: the alert names the
+        // point it was refused at (tile 9's centre).
+        const at = tileCentre(9);
+        const rejectAlert = events.find(e => e.type === 'drop_rejected' && e.x === at.x && e.y === at.y);
         expect(rejectAlert).toBeDefined();
         expect(rejectAlert).toMatchObject({
-            tile: 9,
+            ...at,
             severity: 'disallow',
             type: 'drop_rejected',
             name: 'Fixture Coast',
@@ -215,11 +226,11 @@ describe('On-Board Tile Event Alerts', () => {
         const result = Placement.placeToken(8, incomingToken);
         expect(result.restocked).toBe(true);
 
-        // Verify Green alert was emitted on tile 8
-        const restockAlert = events.find(e => e.type === 'token_restocked' && e.tile === 8);
+        // Verify Green alert was emitted on the Token that took the charges
+        const restockAlert = events.find(e => e.type === 'token_restocked' && e.instanceId === onBoardToken.id);
         expect(restockAlert).toBeDefined();
         expect(restockAlert).toMatchObject({
-            tile: 8,
+            instanceId: onBoardToken.id,
             severity: 'green',
             type: 'token_restocked',
             name: 'Fixture Producer',
@@ -247,11 +258,13 @@ describe('On-Board Tile Event Alerts', () => {
         // Add enough XP to level up Mining 3 > 4
         SkillSystem.addXP('hero_1', 'mining', 500);
 
-        const levelUpAlerts = events.filter(e => e.type === 'hero_level_up' && e.tile === 8);
+        // Drawn on the Token the hero works (by id), at the point they are drawn.
+        const levelUpAlerts = events.filter(e => e.type === 'hero_level_up' && e.instanceId === tok.id);
         expect(levelUpAlerts.length).toBeGreaterThanOrEqual(1);
         const firstAlert = levelUpAlerts[0];
         expect(firstAlert).toMatchObject({
-            tile: 8,
+            instanceId: tok.id,
+            ...tileCentre(8),
             severity: 'upgrade',
             type: 'hero_level_up',
             heroName: 'Ryan',
@@ -262,7 +275,7 @@ describe('On-Board Tile Event Alerts', () => {
         });
         const finalAlert = levelUpAlerts[levelUpAlerts.length - 1];
         expect(finalAlert).toMatchObject({
-            tile: 8,
+            instanceId: tok.id,
             severity: 'upgrade',
             type: 'hero_level_up',
             heroName: 'Ryan',

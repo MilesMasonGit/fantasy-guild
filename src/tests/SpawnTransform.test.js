@@ -139,9 +139,10 @@ describe('⭐ Transforms — one Token becomes another', () => {
     });
 
     it('refuses a Token that does not exist', () => {
+        const bearer = place(A, 'fixture_passive');
         expect(EffectActions.transform(
             { payload: { typeId: 'no_such_token' }, target: { role: ROLE.SELF } },
-            { self: A }
+            { self: bearer.id }
         )).toBe(false);
     });
 });
@@ -173,46 +174,53 @@ describe('⭐ Spawns — putting a Token on the board', () => {
         expect(spawned.length).toBeGreaterThan(0);
     });
 
-    it('⚠️ never lands on an occupied tile', () => {
-        // Shoving a Token onto an occupied tile would silently destroy whatever
+    // Free Playmat slice 1.6b: `resolvePlacement` chooses among the free SPOTS
+    // (mat points) its caller found, measured from the bearer's point — it used
+    // to take tile numbers and a tile distance.
+    const d2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+
+    it('⚠️ never lands anywhere but a free spot', () => {
+        // Shoving a Token onto an occupied spot would silently destroy whatever
         // was there. `here` is the one placement where replacing IS the intent.
-        const board = {
-            allTiles: [0, 1, 2],
-            isFree: (t) => t === 2,
-            distance: (a, b) => Math.abs(a - b)
-        };
-        expect(resolvePlacement(PLACEMENT.NEAREST_FREE, 0, board)).toBe(2);
+        const view = { candidates: [{ x: 384, y: 64 }], distanceSq: d2 };
+        expect(resolvePlacement(PLACEMENT.NEAREST_FREE, { x: 64, y: 64 }, view)).toEqual({ x: 384, y: 64 });
     });
 
-    it('⚠️ does nothing at all when the board is full', () => {
-        // A full board is an ordinary state, not a failure.
-        const full = { allTiles: [0, 1], isFree: () => false, distance: () => 0 };
-        expect(resolvePlacement(PLACEMENT.NEAREST_FREE, 0, full)).toBeNull();
-        expect(resolvePlacement(PLACEMENT.RANDOM_FREE, 0, full)).toBeNull();
+    it('⚠️ does nothing at all when the mat is full (FP-46)', () => {
+        // A full mat is an ordinary state, not a failure.
+        const full = { candidates: [], distanceSq: d2 };
+        expect(resolvePlacement(PLACEMENT.NEAREST_FREE, { x: 64, y: 64 }, full)).toBeNull();
+        expect(resolvePlacement(PLACEMENT.RANDOM_FREE, { x: 64, y: 64 }, full)).toBeNull();
     });
 
-    it('breaks a distance tie toward the lower tile index', () => {
-        // Deterministic, the same tie-break `Managers` and `Converts` use.
-        const board = {
-            allTiles: [3, 7],
-            isFree: () => true,
-            distance: () => 1        // both equally near
-        };
-        expect(resolvePlacement(PLACEMENT.NEAREST_FREE, 5, board)).toBe(3);
+    it('picks the nearest spot, and breaks a distance tie in reading order', () => {
+        const from = { x: 224, y: 224 };
+        // Nearest wins outright.
+        expect(resolvePlacement(PLACEMENT.NEAREST_FREE, from, {
+            candidates: [{ x: 544, y: 224 }, { x: 384, y: 224 }], distanceSq: d2
+        })).toEqual({ x: 384, y: 224 });
+        // Equally near: the higher-up spot, then the one further left.
+        expect(resolvePlacement(PLACEMENT.NEAREST_FREE, from, {
+            candidates: [{ x: 384, y: 224 }, { x: 224, y: 64 }, { x: 64, y: 224 }], distanceSq: d2
+        })).toEqual({ x: 224, y: 64 });
+        expect(resolvePlacement(PLACEMENT.NEAREST_FREE, from, {
+            candidates: [{ x: 384, y: 224 }, { x: 64, y: 224 }], distanceSq: d2
+        })).toEqual({ x: 64, y: 224 });
     });
 
-    it('picks at random when told to, from the free tiles only', () => {
-        const board = {
-            allTiles: [0, 1, 2, 3],
-            isFree: (t) => t > 1,
-            distance: () => 0
-        };
-        expect([2, 3]).toContain(resolvePlacement(PLACEMENT.RANDOM_FREE, 0, board, () => 0.9));
+    it('picks at random when told to, from the free spots only, keeping the roomiest', () => {
+        const spots = [{ x: 64, y: 64 }, { x: 704, y: 704 }];
+        const view = { candidates: spots, distanceSq: d2, openness: (p) => p.x };
+        let n = 0;
+        const alternating = () => (n++ % 2 ? 0.9 : 0.1);
+        expect(resolvePlacement(PLACEMENT.RANDOM_FREE, { x: 0, y: 0 }, view, alternating)).toEqual({ x: 704, y: 704 });
+        expect(spots).toContainEqual(resolvePlacement(PLACEMENT.RANDOM_FREE, { x: 0, y: 0 }, { candidates: spots, distanceSq: d2 }, () => 0.9));
     });
 
     it('refuses a Token that does not exist', () => {
+        const bearer = place(A, 'fixture_passive');
         expect(EffectActions.spawn(
-            { payload: { typeId: 'no_such_token' } }, { self: A }
+            { payload: { typeId: 'no_such_token' } }, { self: bearer.id }
         )).toBeNull();
     });
 });

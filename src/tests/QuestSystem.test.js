@@ -37,7 +37,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
 
     it('immediately replenishes an opened slot with the next tutorial quest when claimed, delivering a BoardMap', () => {
         // Claim Step 0 (Place a Token)
-        EventBus.publish('token_placed', { tile: 24, typeId: 'token_guild_hall' });
+        EventBus.publish('token_placed', { instanceId: 'tok_24', typeId: 'token_guild_hall' });
         const initialMaps = BoardState.getBoardMaps().length;
 
         const res = QuestManager.claimQuest('tutorial_1');
@@ -180,7 +180,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(exhaustQuest).toBeDefined();
         expect(exhaustQuest.title).toBe('Exhaust one Token');
 
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: 10, typeId: 'token_oak_tree' });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_10', typeId: 'token_oak_tree' });
         expect(exhaustQuest.currentCount).toBe(1);
         expect(QuestManager.claimQuest('tutorial_9').success).toBe(true);
     });
@@ -223,7 +223,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(contextQuest.title).toBe('Add a Context Token');
 
         // Test placing context token
-        EventBus.publish('token_placed', { tile: 10, typeId: 'token_copper_pickaxe' });
+        EventBus.publish('token_placed', { instanceId: 'tok_10', typeId: 'token_copper_pickaxe' });
         expect(contextQuest.currentCount).toBe(1);
         expect(QuestManager.claimQuest('tutorial_14').success).toBe(true);
     });
@@ -340,12 +340,12 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(refuseRes.reason).toContain('Token Vault storage unlocks after completing');
 
         // Attempting to send a floor token sprite to vault should fail
-        SpriteLayer.addSprite('token', 'token_charcoal_kiln', 1, 0, 10);
+        SpriteLayer.addSprite('token', 'token_charcoal_kiln', 1, { centre: { x: 64, y: 64 } }, 10);
         const spriteId = SpriteLayer.getSprites().find(s => s.refId === 'token_charcoal_kiln')?.id;
         expect(SpriteLayer.sendTokenToVault(spriteId)).toBe(false);
 
         // Progress tutorial_5 to complete (without claiming)
-        EventBus.publish('loot_token_placed', { tile: 12, typeId: 'token_oak_forest' });
+        EventBus.publish('loot_token_placed', { instanceId: 'tok_12', typeId: 'token_oak_forest' });
         expect(QuestManager.isTokenVaultSendUnlocked()).toBe(true);
 
         // Now returning placed token to vault succeeds
@@ -406,7 +406,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         placedQuest.currentCount = 0;
 
         Placement.placeToken(11, BoardState.createTokenInstance('token_oak_forest'));
-        EventBus.publish('loot_token_placed', { tile: 11, typeId: 'token_oak_forest' });
+        EventBus.publish('loot_token_placed', { instanceId: 'tok_11', typeId: 'token_oak_forest' });
 
         expect(placedQuest.currentCount).toBe(1);
     });
@@ -418,7 +418,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         quest.requiredCount = 10;
         quest.currentCount = 0;
 
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: 12, typeId: 'token_oak_forest' });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: 'tok_12', typeId: 'token_oak_forest' });
 
         expect(quest.currentCount).toBe(0);
     });

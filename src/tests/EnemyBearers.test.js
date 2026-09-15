@@ -22,6 +22,7 @@ import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { enemyFlatArmor } from '../utils/CombatFormulas.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -90,7 +91,7 @@ const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); }
 function engage() {
     place(MONSTER, 'fixture_enemy', 'hero_1');
     run(300);
-    const fight = BoardCombat.getFight(MONSTER);
+    const fight = BoardCombat.getFight(idAt(MONSTER));
     expect(fight, 'no fight started - the hero cannot fight').toBeTruthy();
     return fight;
 }
@@ -112,7 +113,7 @@ const overTime = (amount, ignoresArmor = true) => ({
     payload: { amount, ignoresArmor }
 });
 
-const bearer = () => BoardCombat.enemyBearerAt(MONSTER);
+const bearer = () => BoardCombat.enemyBearerOfToken(idAt(MONSTER));
 
 beforeEach(() => {
     GameState.initNew();
@@ -160,24 +161,24 @@ describe('a fight is a bearer', () => {
         authored('effect_enemy_dot', overTime(3));
         LiveEffects.applyTo(bearer(), { effectId: 'effect_enemy_dot', durationMs: 60000 });
 
-        const before = BoardCombat.getFight(MONSTER).combat.enemyHp.current;
+        const before = BoardCombat.getFight(idAt(MONSTER)).combat.enemyHp.current;
         LiveEffects.tick(STATUS_TICK_INTERVAL_MS, TriggerSystem.fireLiveStatement);
 
-        expect(BoardCombat.getFight(MONSTER).combat.enemyHp.current).toBe(before - 3);
+        expect(BoardCombat.getFight(idAt(MONSTER)).combat.enemyHp.current).toBe(before - 3);
     });
 
     it('has the lifetime of the fight - a monster walked away from is whole again', () => {
         engage();
         authored('effect_enemy_shield', lasting(EFFECT_TYPES.ARMOR, 5));
         LiveEffects.applyTo(bearer(), { effectId: 'effect_enemy_shield', durationMs: 60000 });
-        expect(BoardCombat.getFight(MONSTER).effects).toHaveLength(1);
+        expect(BoardCombat.getFight(idAt(MONSTER)).effects).toHaveLength(1);
 
         // The hero leaves; `tickTile` drops the fight (G-4). Nothing extra had
         // to be written to make a poison die with the creature carrying it.
         Placement.recallHeroById('hero_1');
         run(200);
 
-        expect(BoardCombat.getFight(MONSTER)).toBeNull();
+        expect(BoardCombat.getFight(idAt(MONSTER))).toBeNull();
     });
 
     it('registering a bearer source twice registers it once', () => {
@@ -208,7 +209,7 @@ describe('an enemy has armour, and it means what a hero armour means', () => {
 
         const dealt = deal(
             { ...makeStatement(KEYWORD.DEALS), target: { role: ROLE.SELF }, payload: { amount: 4 } },
-            { self: MONSTER, selfFightTile: MONSTER }
+            { self: idAt(MONSTER), selfFightId: idAt(MONSTER) }
         );
 
         // WARNING: floors at ZERO, not at one - the same asymmetry
@@ -228,7 +229,7 @@ describe('an enemy has armour, and it means what a hero armour means', () => {
                 ...makeStatement(KEYWORD.DEALS), target: { role: ROLE.SELF },
                 payload: { amount: 4, ignoresArmor: true }
             },
-            { self: MONSTER, selfFightTile: MONSTER }
+            { self: idAt(MONSTER), selfFightId: idAt(MONSTER) }
         );
 
         expect(fight.combat.enemyHp.current).toBe(before - 4);
@@ -276,10 +277,10 @@ describe('WARNING: "this entity" on a monster means the MONSTER', () => {
             ...makeStatement(KEYWORD.DEALS), target: { role: ROLE.SELF },
             payload: { amount: 3, ignoresArmor: true }
         };
-        expect(deal(statement, { self: MONSTER, selfFightTile: MONSTER })).toBe(3);
+        expect(deal(statement, { self: idAt(MONSTER), selfFightId: idAt(MONSTER) })).toBe(3);
 
-        BoardCombat.endFight(MONSTER);
-        expect(deal(statement, { self: MONSTER, selfFightTile: MONSTER })).toBe(0);
+        BoardCombat.endFight(idAt(MONSTER));
+        expect(deal(statement, { self: idAt(MONSTER), selfFightId: idAt(MONSTER) })).toBe(0);
         expect(fight.combat.enemyHp.current).toBeGreaterThan(0);
     });
 });
@@ -301,26 +302,26 @@ describe('`Applies` reaches an enemy the same way a status does', () => {
             when: { event: 'COMBAT_ENGAGED', scope: 'self' },
             target: { role: ROLE.OPPONENT },
             payload: { effectId: 'effect_applied_dot', durationMs: 60000 }
-        }, { self: MONSTER, selfHeroId: 'hero_1', actor: 'hero_1', source: null });
+        }, { self: idAt(MONSTER), selfHeroId: 'hero_1', actor: 'hero_1', source: null });
 
         expect(landed).toBe(1);
-        expect(BoardCombat.getFight(MONSTER).effects).toHaveLength(1);
+        expect(BoardCombat.getFight(idAt(MONSTER)).effects).toHaveLength(1);
     });
 
     it('still prefers the hero when the rule does not ask for the enemy', () => {
         engage();
         authored('effect_hero_first', lasting(EFFECT_TYPES.ARMOR, 2));
 
-        StatusApplication.applyAt(MONSTER, { effectId: 'effect_hero_first', durationMs: 60000 });
+        StatusApplication.applyAt(idAt(MONSTER), { effectId: 'effect_hero_first', durationMs: 60000 });
 
         expect(LiveEffects.carries(HeroManager.getHero('hero_1'), 'effect_hero_first')).toBe(true);
-        expect(BoardCombat.getFight(MONSTER).effects).toHaveLength(0);
+        expect(BoardCombat.getFight(idAt(MONSTER)).effects).toHaveLength(0);
     });
 
     it('reaches nobody on an ordinary Token with nobody on it', () => {
         place(BUSH, 'fixture_producer');
         authored('effect_nobody', lasting(EFFECT_TYPES.ARMOR, 2));
-        expect(StatusApplication.applyAt(BUSH, {
+        expect(StatusApplication.applyAt(idAt(BUSH), {
             effectId: 'effect_nobody', durationMs: 60000
         })).toBe(false);
     });

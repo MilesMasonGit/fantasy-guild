@@ -308,7 +308,7 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
         if (other) put(20, 'fixture_producer');
         plant('h1', 14);
         expect(BoardState.workTileOf('h1')).toBe(14);
-        Charges.destroyToken(14, first, { heroId: 'h1' });
+        Charges.destroyToken(first, { heroId: 'h1' });
         Flags.assign(0);
         return first;
     }
@@ -352,7 +352,7 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
         plant('h1', 14);
         BoardState.setFlag('h2', { ...C(14), plantedAt: -1 });
 
-        Charges.destroyToken(14, first, { heroId: 'h1' });
+        Charges.destroyToken(first, { heroId: 'h1' });
         Flags.markDirty();
         Flags.assign(0);
         Managers.sweep();

@@ -233,7 +233,7 @@ describe('the departing Token is findable at all', () => {
         const unsub = EventBus.subscribe('board:token_depleted', (p) => { seen = p; });
 
         const instance = place(TILE, 'fixture_producer', null, 1);
-        Charges.applyDelta(TILE, instance, -1);
+        Charges.applyDelta(instance, -1);
         unsub();
 
         expect(BoardState.getToken(TILE), 'the tile should be empty').toBeNull();
@@ -242,7 +242,7 @@ describe('the departing Token is findable at all', () => {
 
     it('and the square really is free, which is what a Spawns here needs', () => {
         const instance = place(TILE, 'fixture_producer', null, 1);
-        Charges.applyDelta(TILE, instance, -1);
+        Charges.applyDelta(instance, -1);
         expect(BoardState.getToken(TILE)).toBeNull();
     });
 });
@@ -271,7 +271,7 @@ describe('a depletion rule can do more than spawn', () => {
         const thorned = saplingThatBecomes('fixture_lonely_gasp', 'effect_lonely_gasp');
 
         const instance = place(TILE, thorned, null, 1);
-        Charges.applyDelta(TILE, instance, -1);
+        Charges.applyDelta(instance, -1);
 
         expect(HeroManager.getHero('hero_1').hp.current).toBe(100);
     });
@@ -280,7 +280,7 @@ describe('a depletion rule can do more than spawn', () => {
 describe('ordinary Tokens are unaffected', () => {
     it('a Token with no depletion rule still just leaves', () => {
         const instance = place(TILE, 'fixture_producer', null, 1);
-        Charges.applyDelta(TILE, instance, -1);
+        Charges.applyDelta(instance, -1);
         expect(BoardState.getToken(TILE)).toBeNull();
     });
 
@@ -292,7 +292,7 @@ describe('ordinary Tokens are unaffected', () => {
         const sapling = saplingThatBecomes('fixture_sapling_d', 'effect_not_yet', 5);
 
         const instance = place(TILE, sapling, null, 5);
-        Charges.applyDelta(TILE, instance, -1);
+        Charges.applyDelta(instance, -1);
 
         expect(BoardState.getToken(TILE)?.typeId).toBe(sapling);
     });

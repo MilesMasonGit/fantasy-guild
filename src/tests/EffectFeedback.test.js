@@ -7,6 +7,7 @@ import { announce } from '../systems/board/EffectFeedback.js';
 import { EffectProcText } from '../ui/components/board/EffectProcText.jsx';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 import { statementsOf, makeStatement, KEYWORD } from '../systems/effects/statements.js';
+import { tileCentre } from './fixtures/mat.js';
 
 /**
  * Announcing a named effect — Unified Effects P3.
@@ -31,9 +32,9 @@ describe('the announcement channel', () => {
         if (typeof unsubscribe === 'function') unsubscribe();
     });
 
-    it('publishes the tile and the title', () => {
-        announce(7, { effectTitle: 'Shrimp Trawler' });
-        expect(heard).toEqual([{ tile: 7, title: 'Shrimp Trawler' }]);
+    it('publishes the Token (by instance id) and the title', () => {
+        announce('tok_7', { effectTitle: 'Shrimp Trawler' });
+        expect(heard).toEqual([{ instanceId: 'tok_7', title: 'Shrimp Trawler' }]);
     });
 
     it('says the SCALED title, because a bearer’s version is what fired', () => {
@@ -46,19 +47,19 @@ describe('the announcement channel', () => {
         };
         const def = expandBearer({ effects: [{ effectId: 'effect_trawler', scale: 3 }] }, library);
 
-        announce(2, statementsOf(def)[0]);
+        announce('tok_2', statementsOf(def)[0]);
         expect(heard[0].title).toBe('Shrimp Trawler III');
     });
 
     it('stays silent for a statement with no library entry behind it', () => {
         // A fixture authoring statements inline has no name to say, and a
         // nameless pop would be worse than none.
-        announce(3, makeStatement(KEYWORD.PROVIDES));
-        announce(3, null);
+        announce('tok_3', makeStatement(KEYWORD.PROVIDES));
+        announce('tok_3', null);
         expect(heard).toEqual([]);
     });
 
-    it('stays silent when there is no tile to say it on', () => {
+    it('stays silent when there is no Token to say it on', () => {
         announce(null, { effectTitle: 'Shrimp Trawler' });
         expect(heard).toEqual([]);
     });
@@ -74,8 +75,10 @@ describe('the popup', () => {
         vi.useRealTimers();
     });
 
+    // Since Free Playmat 1.6b the event names a Token by id, or a mat point; the
+    // popup still sits on today's drawn tile, so these fire at the tile's centre.
     const fire = (tile, title) => act(() => {
-        EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { tile, title });
+        EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { ...tileCentre(tile), title });
     });
 
     it('renders nothing at all until something fires', () => {

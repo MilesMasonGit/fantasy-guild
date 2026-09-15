@@ -25,6 +25,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { migrateAppliesTarget, migrateAppliesTargets } from '../systems/effects/effectMigration.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -220,10 +221,10 @@ describe('4. the runtime ignores a stray flag', () => {
     it('a status carrying target: enemy lands on the hero on the tile, as any tile rule does', () => {
         place(MONSTER, 'fixture_enemy', 'hero_1');
         run(600);
-        const fight = BoardCombat.getFight(MONSTER);
+        const fight = BoardCombat.getFight(idAt(MONSTER));
         expect(fight, 'no fight started').toBeTruthy();
 
-        const landed = StatusApplication.applyAt(MONSTER, { statusId: 'poison', stacks: 1, chance: 100, target: 'enemy' });
+        const landed = StatusApplication.applyAt(idAt(MONSTER), { statusId: 'poison', stacks: 1, chance: 100, target: 'enemy' });
         expect(landed).toBe(true);
         expect(hasStatus(hero1().statuses, 'poison')).toBe(true);
         expect(hasStatus(fight.combat.enemyStatuses, 'poison')).toBe(false);
@@ -232,11 +233,11 @@ describe('4. the runtime ignores a stray flag', () => {
     it('so does a library effect', () => {
         place(MONSTER, 'fixture_enemy', 'hero_1');
         run(600);
-        const fight = BoardCombat.getFight(MONSTER);
+        const fight = BoardCombat.getFight(idAt(MONSTER));
         registerEffects({ fixture_v10b_ward: { id: 'fixture_v10b_ward', name: 'Ward',
             statements: [{ ...makeStatement(KEYWORD.PROVIDES), id: 'stm_v10b_ward', payload: { type: 'ARMOR', bucket: 'flat', value: 1 } }] } });
 
-        StatusApplication.applyAt(MONSTER, { effectId: 'fixture_v10b_ward', durationMs: 60000, target: 'enemy' });
+        StatusApplication.applyAt(idAt(MONSTER), { effectId: 'fixture_v10b_ward', durationMs: 60000, target: 'enemy' });
         expect(LiveEffects.carries(hero1(), 'fixture_v10b_ward')).toBe(true);
         expect(fight.effects).toHaveLength(0);
     });
@@ -279,7 +280,7 @@ describe('6. end to end: an old-flag item poisons the creature in a real fight',
 
         place(MONSTER, 'fixture_enemy', 'hero_1');
         run(600);
-        const fight = BoardCombat.getFight(MONSTER);
+        const fight = BoardCombat.getFight(idAt(MONSTER));
         expect(fight, 'no fight started').toBeTruthy();
         expect(hasStatus(fight.combat.enemyStatuses, 'poison'), 'the enemy should be poisoned').toBe(true);
         expect(hasStatus(hero1().statuses, 'poison'), 'the hero must not be').toBe(false);

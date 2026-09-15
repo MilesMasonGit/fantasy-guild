@@ -39,7 +39,7 @@ describe('Token Restocking on Same-Type Drop', () => {
         // Event was emitted
         expect(restockEvents).toHaveLength(1);
         expect(restockEvents[0]).toMatchObject({
-            tile: 7,
+            instanceId: onBoard.id,
             typeId: 'fixture_producer',
             addedCharges: 50,
             currentCharges: 90

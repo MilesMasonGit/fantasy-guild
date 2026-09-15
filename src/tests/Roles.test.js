@@ -15,6 +15,7 @@ import {
     TRIGGER_EVENTS, TRIGGER_SCOPES, rolesOf, momentSupplies
 } from '../config/registries/triggerRegistry.js';
 import { ROLE, ROLES, AMBIENT_ROLES, getRole, resolveRoles } from '../config/registries/roleRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -96,7 +97,7 @@ describe('the two short payloads now carry an actor', () => {
         run(300);
 
         expect(seen.start.length).toBeGreaterThan(0);
-        expect(seen.start[0]).toMatchObject({ tile: TILE, typeId: 'fixture_producer', heroId: 'hero_1' });
+        expect(seen.start[0]).toMatchObject({ instanceId: idAt(TILE), typeId: 'fixture_producer', heroId: 'hero_1' });
     });
 
     it('reports a null actor rather than omitting the field when nobody is there', () => {
@@ -117,7 +118,7 @@ describe('the two short payloads now carry an actor', () => {
 
         expect(seen.complete.length).toBeGreaterThan(0);
         expect(seen.complete[0]).toMatchObject({
-            tile: TILE, typeId: 'fixture_producer', heroId: 'hero_1', failed: false
+            instanceId: idAt(TILE), typeId: 'fixture_producer', heroId: 'hero_1', failed: false
         });
     });
 });
@@ -190,26 +191,27 @@ describe('every moment declares who it supplies', () => {
 
 describe('resolving who is actually here', () => {
     it('reads the actor straight off the payload', () => {
-        const roles = resolveRoles({ tile: 9, heroId: 'hero_1' }, 9);
-        // ⚠️ `selfHeroId` joined the shape in V6: `self` is a TILE for a rule on
-        // a Token and a HERO for one a person is carrying, because a live effect
-        // instance sits on somebody rather than on a square. Only `LiveEffects`
-        // fills it, so it is null on every board-event path.
-        expect(roles).toEqual({ self: 9, selfHeroId: null, actor: 'hero_1', source: null });
+        const roles = resolveRoles({ instanceId: 'tok_9', heroId: 'hero_1' }, 'tok_9');
+        // ⚠️ `selfHeroId` joined the shape in V6: `self` is a TOKEN (by instance
+        // id since Free Playmat 1.6b) for a rule on a Token and a HERO for one a
+        // person is carrying, because a live effect instance sits on somebody.
+        // Only `LiveEffects` fills it, so it is null on every board-event path.
+        // `selfPoint` is where the bearer stands, when the caller knows.
+        expect(roles).toEqual({ self: 'tok_9', selfPoint: null, selfHeroId: null, actor: 'hero_1', source: null });
     });
 
     it('⚠️ reports a null actor rather than failing, when nobody was there', () => {
         // Declared and present are different questions. An unstaffed passive
         // generator completes cycles with no hero, and a rule aimed at the actor
         // reaches nobody — the same honest nothing an unmatched filter returns.
-        expect(resolveRoles({ tile: 9, heroId: null }, 9).actor).toBeNull();
-        expect(resolveRoles({ tile: 9 }, 9).actor).toBeNull();
+        expect(resolveRoles({ instanceId: 'tok_9', heroId: null }, 'tok_9').actor).toBeNull();
+        expect(resolveRoles({ instanceId: 'tok_9' }, 'tok_9').actor).toBeNull();
     });
 
-    it('names a source only when the event happened somewhere else', () => {
-        expect(resolveRoles({ tile: 10, heroId: 'h' }, 9).source).toBe(10);
+    it('names a source only when the event happened to another Token', () => {
+        expect(resolveRoles({ instanceId: 'tok_10', heroId: 'h' }, 'tok_9').source).toBe('tok_10');
         // Self-scoped: the source is the bearer, so it is not reported twice.
-        expect(resolveRoles({ tile: 9, heroId: 'h' }, 9).source).toBeNull();
+        expect(resolveRoles({ instanceId: 'tok_9', heroId: 'h' }, 'tok_9').source).toBeNull();
     });
 });
 
@@ -219,11 +221,11 @@ describe('⭐ a bush and a monster are the same case', () => {
         // `BoardRunner` and `BoardCombat` publish the same event with the same
         // payload (D-129: one kill is one cycle), so a rule that reads `actor`
         // cannot tell — and must not be able to tell — which it is standing on.
-        const harvest = { tile: 15, typeId: 'token_raspberry_bush', heroId: 'hero_1', failed: false };
-        const kill = { tile: 15, typeId: 'token_thorn_elemental', heroId: 'hero_1', failed: false };
+        const harvest = { instanceId: 'tok_15', typeId: 'token_raspberry_bush', heroId: 'hero_1', failed: false };
+        const kill = { instanceId: 'tok_15', typeId: 'token_thorn_elemental', heroId: 'hero_1', failed: false };
 
-        expect(resolveRoles(harvest, 15)).toEqual(resolveRoles(kill, 15));
-        expect(resolveRoles(harvest, 15).actor).toBe('hero_1');
+        expect(resolveRoles(harvest, 'tok_15')).toEqual(resolveRoles(kill, 'tok_15'));
+        expect(resolveRoles(harvest, 'tok_15').actor).toBe('hero_1');
     });
 
     it('and both moments declare the same roles', () => {

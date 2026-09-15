@@ -5,6 +5,22 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Fights, promotions, rules, spawned Tokens and the board's messages now follow each
+  Token itself, not the square it sits on** (Free Playmat slice 1.6b, second half). This
+  finishes moving the game's rules off squares — the next step towards placing Tokens
+  anywhere. The board still looks and plays as before. What you might notice:
+  - **A monster you move in the middle of a fight keeps its injuries**, and a promotion
+    offer stays with its training Token wherever you put it — both now simply belong to
+    the Token.
+  - **Loot from a Map that has nowhere else to come from now flies out of the Guild Hall.**
+    It used to come from a square in the bottom-right corner, a leftover from the old
+    7×7 board.
+  - **A "Converts" rule with several matching destinations now picks the nearest one**,
+    and only on a tie the one put on the board first.
+  - **"Spawns on the nearest free tile" now measures straight-line distance**, so a free
+    square directly beside the Token wins over a diagonal one; **"Spawns on a random free
+    tile" now prefers roomier spots** over ones crowded by neighbours.
+
 - **The game's "what is near this Token?" rules no longer think in squares** (Free Playmat
   slice 1.6b, first half). Buffs, tools and context beside a station, tool wear, Managers,
   neighbour triggers, "Cannot" placement rules and the way a flag picks its hero's job now

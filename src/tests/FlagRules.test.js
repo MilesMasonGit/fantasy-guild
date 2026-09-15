@@ -22,6 +22,7 @@ import { tileCentre } from '../config/boardGeometry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getJobSkills, getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 import { resetMatTuning, matTuning } from '../config/matTuning.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -275,7 +276,7 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         expect(BoardState.flagOf('h1').plantedAt).toBe(plantedAt);
 
         // The notice about the stuck mill is still spent: passing it again says nothing.
-        Charges.destroyToken(13, first, { heroId: 'h1' });
+        Charges.destroyToken(first, { heroId: 'h1' });
         Flags.assign(0);
         expect(BoardState.workTileOf('h1')).toBe(15);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
@@ -372,7 +373,7 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
         Flags.setRule('h1', 'mining', { priority: 1 });
 
         let completed = false;
-        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, p => { if (p.tile === 15) completed = true; });
+        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, p => { if (p.instanceId === idAt(15)) completed = true; });
         let sawProgress = false;
         try {
             for (let i = 0; i < 600 && !completed; i++) {

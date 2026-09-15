@@ -21,6 +21,7 @@ import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
+import { idAt } from './fixtures/mat.js';
 
 /**
  * One rule, one place.
@@ -185,7 +186,7 @@ describe('CR2-059: an alert only re-publishes on a real change', () => {
         Placement.placeToken(0, instance);
         BoardRunner.tick(100);
 
-        const spurious = seen.filter(p => p.tile === 0 && !p.alert);
+        const spurious = seen.filter(p => p.instanceId === idAt(0) && !p.alert);
         expect(spurious).toHaveLength(0);
         unsub?.();
     });

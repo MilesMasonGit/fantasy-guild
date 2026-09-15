@@ -15,6 +15,7 @@ import { TRIGGER_EVENTS, getTriggerEvent } from '../config/registries/triggerReg
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -74,7 +75,7 @@ describe('the event fires when work actually begins', () => {
         run(300);
 
         expect(started.length).toBeGreaterThan(0);
-        expect(started[0]).toMatchObject({ tile: TILE, typeId: 'fixture_producer' });
+        expect(started[0]).toMatchObject({ instanceId: idAt(TILE), typeId: 'fixture_producer' });
     });
 
     it('fires ONCE per cycle, not once per tick', () => {

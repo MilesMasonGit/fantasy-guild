@@ -14,6 +14,7 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { KEYWORD } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 /**
  * `Applies` — content putting a status on somebody.
@@ -195,15 +196,15 @@ describe('The chance roll', () => {
         const StatusApplication = await import('../systems/board/StatusApplication.js');
         place(9, 'fixture_shrimp_bed', 'hero_1');
 
-        expect(StatusApplication.applyAt(9, { statusId: 'cookout', chance: 100 })).toBe(true);
-        expect(StatusApplication.applyAt(9, { statusId: 'cookout', chance: 0 })).toBe(false);
+        expect(StatusApplication.applyAt(idAt(9), { statusId: 'cookout', chance: 100 })).toBe(true);
+        expect(StatusApplication.applyAt(idAt(9), { statusId: 'cookout', chance: 0 })).toBe(false);
     });
 
     it('refuses a status the engine has never heard of', async () => {
         const StatusApplication = await import('../systems/board/StatusApplication.js');
         place(9, 'fixture_shrimp_bed', 'hero_1');
 
-        expect(StatusApplication.applyAt(9, { statusId: 'blessed_by_the_moon' })).toBe(false);
+        expect(StatusApplication.applyAt(idAt(9), { statusId: 'blessed_by_the_moon' })).toBe(false);
         expect(statusesOf('hero_1')).toEqual([]);
     });
 });

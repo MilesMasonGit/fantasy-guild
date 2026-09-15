@@ -756,9 +756,14 @@ describe('End to end — a buff actually changes what lands on the board', () =>
     it('a Shrine beside a Forest raises the wood it produces', () => {
         // +10% on a base of 2 gives 2.2 — "2, plus a 20% chance of a 3rd".
         // Deterministic here by forcing the roll.
-        const rng = vi.spyOn(Math, 'random').mockReturnValue(0.01);   // always rounds up
+        //
+        // ⚠️ Pinned AFTER placing: Token instance ids include `Math.random()`,
+        // so with it pinned two Tokens created in the same millisecond get the
+        // same id and the second replaces the first on the mat. The roll this
+        // test forces happens while the board runs.
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_unique');
+        const rng = vi.spyOn(Math, 'random').mockReturnValue(0.01);   // always rounds up
 
         run(13000);
 
