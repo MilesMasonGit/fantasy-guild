@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
 import { dropOnMat } from './dropOnMat.js';

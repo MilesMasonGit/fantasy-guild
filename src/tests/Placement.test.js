@@ -188,7 +188,7 @@ describe('Forfeited cycles (D-54, D-131)', () => {
         Placement.placeHero('hero_1', 9);
         BoardState.getToken(9).cycleElapsedMs = 7000;
 
-        Placement.recallHero(9);
+        Placement.recallHeroById('hero_1');
 
         expect(BoardState.getToken(9).cycleElapsedMs).toBe(0);
     });
@@ -345,7 +345,7 @@ describe('Recalling a hero', () => {
         Placement.placeToken(9, token('fixture_producer'));
         Placement.placeHero('hero_1', 9);
 
-        expect(Placement.recallHero(9).heroId).toBe('hero_1');
+        expect(Placement.recallHeroById('hero_1').heroId).toBe('hero_1');
         expect(BoardState.flagOf('hero_1')).toBeNull();
         expect(BoardState.displayPointOf('hero_1')).toBeNull();
         expect(BoardState.getToken(9).typeId).toBe('fixture_producer');   // Token stays

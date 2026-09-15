@@ -74,7 +74,7 @@ export const MatBoard = ({
     }, [isDragging]);
 
     /** Every Token on the mat: where it is, and nothing about how it is doing. */
-    const tokens = useGameState(
+    const tokensRaw = useGameState(
         () => BoardState.tokens().map(t => ({
             id: t.id,
             typeId: t.typeId,
@@ -85,7 +85,8 @@ export const MatBoard = ({
         })),
         [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, 'state_changed'],
         null
-    ) || [];
+    );
+    const tokens = useMemo(() => tokensRaw || [], [tokensRaw]);
 
     /**
      * Back to front: lower on the mat draws in front, then the earlier-placed
@@ -111,7 +112,7 @@ export const MatBoard = ({
      * their flag by `FlagLayer` (FP-29, FP-84). Several heroes may stand on one
      * Token — the grid's one-per-tile rule (FPP-6) went with the grid.
      */
-    const heroes = useGameState(
+    const heroesRaw = useGameState(
         (state) => {
             const roster = state.heroes || [];
             const out = [];
@@ -146,7 +147,8 @@ export const MatBoard = ({
             'state_changed'
         ],
         null
-    ) || [];
+    );
+    const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
 
     /** Spots a Manager owes a Token it cannot supply (FP-19, ALERT.UNSTOCKED). */
     const ghosts = useGameState(

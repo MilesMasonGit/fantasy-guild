@@ -166,7 +166,7 @@ describe('A Token filter resolves to the heroes working those Tokens', () => {
         // directly above it in `BoardRunner.completeCycle`.)
         place(8, 'fixture_cook_fire');
         const token = place(9, 'fixture_shrimp_bed', 'hero_1');
-        Placement.recallHero(9);
+        Placement.recallHeroById('hero_1');
 
         run(13000);
 

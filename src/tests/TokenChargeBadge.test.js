@@ -1,16 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TokenChargeBadge, TokenNameBadge, AddHeroBadge, TokenChargeDeltaFloater } from '../ui/components/board/BoardTile.jsx';
+import {
+    TokenChargeBadge, TokenNameBadge, AddHeroBadge, TokenChargeDeltaFloater
+} from '../ui/components/board/TokenBadges.jsx';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { act } from '@testing-library/react';
-import { tileCentre } from './fixtures/mat.js';
 
 describe('TokenChargeBadge', () => {
     it('is hidden (opacity-0) when not hovered', () => {
         const { container } = render(
-            React.createElement(TokenChargeBadge, { tile: 0, usesRemaining: 5900, isDragging: false, isHovered: false })
+            React.createElement(TokenChargeBadge, { usesRemaining: 5900, isDragging: false, isHovered: false })
         );
         expect(container.firstChild.className).toContain('opacity-0');
         expect(container.firstChild.className).toContain('pointer-events-none');
@@ -18,7 +19,7 @@ describe('TokenChargeBadge', () => {
 
     it('displays full number when hovered (isHovered: true)', () => {
         const { container } = render(
-            React.createElement(TokenChargeBadge, { tile: 0, usesRemaining: 5900, isDragging: false, isHovered: true })
+            React.createElement(TokenChargeBadge, { usesRemaining: 5900, isDragging: false, isHovered: true })
         );
         expect(container.firstChild.className).toContain('opacity-100');
         expect(screen.getByText('5,900')).toBeDefined();
@@ -27,7 +28,7 @@ describe('TokenChargeBadge', () => {
 
     it('renders infinity icon when token has unlimited uses on hover', () => {
         const { container } = render(
-            React.createElement(TokenChargeBadge, { tile: 0, usesRemaining: null, isDragging: false, isHovered: true })
+            React.createElement(TokenChargeBadge, { usesRemaining: null, isDragging: false, isHovered: true })
         );
         expect(container.firstChild.className).toContain('opacity-100');
         expect(screen.getByLabelText('Unlimited charges')).toBeDefined();
@@ -36,14 +37,14 @@ describe('TokenChargeBadge', () => {
 
     it('does not render while dragging', () => {
         const { container } = render(
-            React.createElement(TokenChargeBadge, { tile: 0, usesRemaining: 5900, isDragging: true, isHovered: true })
+            React.createElement(TokenChargeBadge, { usesRemaining: 5900, isDragging: true, isHovered: true })
         );
         expect(container.firstChild).toBeNull();
     });
 
     it('expands to visible when hovering directly over the badge', () => {
         const { container } = render(
-            React.createElement(TokenChargeBadge, { tile: 0, usesRemaining: 12450, isDragging: false, isHovered: false })
+            React.createElement(TokenChargeBadge, { usesRemaining: 12450, isDragging: false, isHovered: false })
         );
         expect(container.firstChild.className).toContain('opacity-0');
 
@@ -56,17 +57,24 @@ describe('TokenChargeBadge', () => {
         expect(container.firstChild.className).toContain('opacity-0');
     });
 
+    it('sits higher up when there is a progress bar under it', () => {
+        const low = render(React.createElement(TokenChargeBadge, { usesRemaining: 5, isHovered: true }));
+        expect(low.container.firstChild.className).toContain('bottom-1.5');
+
+        const high = render(React.createElement(TokenChargeBadge, { usesRemaining: 5, isHovered: true, hasHero: true }));
+        expect(high.container.firstChild.className).toContain('bottom-5');
+    });
 });
 
 describe('TokenChargeDeltaFloater', () => {
-    // Since Free Playmat 1.6b the event names a Token by id, or a mat point; the
-    // floater still sits on today's drawn tile, so these fire at its centre.
+    // The event names the Token by instance id (slice 1.6b); the floater is
+    // drawn on that Token, so it listens for its own id and nothing else.
     it('displays floating -1 when a charge is consumed', () => {
-        render(React.createElement(TokenChargeDeltaFloater, { tile: 8 }));
+        render(React.createElement(TokenChargeDeltaFloater, { instanceId: 'tok_a' }));
 
         act(() => {
             EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-                ...tileCentre(8),
+                instanceId: 'tok_a',
                 delta: -1,
                 remaining: 24,
                 typeId: 'token_oak_tree'
@@ -77,11 +85,11 @@ describe('TokenChargeDeltaFloater', () => {
     });
 
     it('displays floating positive counter when a token is restocked', () => {
-        render(React.createElement(TokenChargeDeltaFloater, { tile: 12 }));
+        render(React.createElement(TokenChargeDeltaFloater, { instanceId: 'tok_a' }));
 
         act(() => {
             EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-                ...tileCentre(12),
+                instanceId: 'tok_a',
                 delta: 50,
                 remaining: 90,
                 typeId: 'token_copper_ore'
@@ -89,6 +97,21 @@ describe('TokenChargeDeltaFloater', () => {
         });
 
         expect(screen.getByText('+50')).toBeDefined();
+    });
+
+    it('⭐ ignores another Token’s charges', () => {
+        const { container } = render(React.createElement(TokenChargeDeltaFloater, { instanceId: 'tok_a' }));
+
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+                instanceId: 'tok_b',
+                delta: -1,
+                remaining: 3,
+                typeId: 'token_oak_tree'
+            });
+        });
+
+        expect(container.firstChild).toBeNull();
     });
 });
 

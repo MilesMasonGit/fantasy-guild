@@ -27,8 +27,9 @@ import { ROLE } from '../config/registries/roleRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { MAT_W, MAT_H } from '../config/matGeometry.js';
-import { TileProgressBar } from '../ui/components/board/TileProgressBar.jsx';
-import { TileEventAlert } from '../ui/components/board/TileEventAlert.jsx';
+import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
+import { TokenEventAlert } from '../ui/components/board/TokenEventAlert.jsx';
+import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { placeAt, clearMat, tileCentre } from './fixtures/mat.js';
 
@@ -308,14 +309,14 @@ describe('⭐ quest events carry instanceId, and still count', () => {
     });
 });
 
-describe('⚠️ STOPGAP UI adapter: today’s drawn tiles follow id payloads (deleted in 1.6c)', () => {
+describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () => {
     it('a progress bar updates from its Token’s id, and ignores another Token’s', () => {
         clearMat();
         const tok = placeAt('fixture_producer', C(14).x, C(14).y);
         const other = placeAt('fixture_producer', C(15).x, C(15).y);
         const { container } = render(React.createElement(
             EngineContext.Provider, { value: { EventBus } },
-            React.createElement(TileProgressBar, { tile: 14, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
+            React.createElement(TokenProgressBar, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
         ));
         const fill = container.querySelector('.relative > div');
 
@@ -326,22 +327,35 @@ describe('⚠️ STOPGAP UI adapter: today’s drawn tiles follow id payloads (d
         expect(fill.style.width).toBe('50%');
     });
 
-    it('a red alert shows from its Token’s id, and from a point with no Token', () => {
+    it('a red alert shows on its own Token, and not on another', () => {
         clearMat();
         const tok = placeAt('fixture_producer', C(14).x, C(14).y);
         const other = placeAt('fixture_producer', C(15).x, C(15).y);
         const alert = (extra) => ({ severity: 'red', type: 'token_exhausted', name: 'Forest', message: 'Token Exhausted: Forest', ...extra });
 
-        const first = render(React.createElement(TileEventAlert, { tile: 14 }));
+        const first = render(React.createElement(TokenEventAlert, { instanceId: tok.id }));
         act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert({ instanceId: other.id })); });
         expect(first.container.querySelector('img')).toBeNull();
         act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert({ instanceId: tok.id })); });
         expect(first.container.querySelector('img')?.getAttribute('alt')).toBe('Token Exhausted: Forest');
-        cleanup();
+    });
 
-        BoardState.removeToken(tok.id);   // gone: the event names where it stood
-        const second = render(React.createElement(TileEventAlert, { tile: 14 }));
+    it('⭐ a Token that has just left the mat says so at the point it stood on', () => {
+        clearMat();
+        const tok = placeAt('fixture_producer', C(14).x, C(14).y);
+        const alert = (extra) => ({ severity: 'red', type: 'token_exhausted', name: 'Forest', message: 'Token Exhausted: Forest', ...extra });
+
+        // Gone: the event still names it, and names where it stood. There is no
+        // Token left to draw the news on, so the mat draws it at that point.
+        BoardState.removeToken(tok.id);
+        const { container } = render(React.createElement(MatPointAlerts));
         act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert({ instanceId: tok.id, ...C(14) })); });
-        expect(second.container.querySelector('img')).not.toBeNull();
+
+        const mark = container.querySelector('[data-mat-point-alert]');
+        expect(mark).not.toBeNull();
+        expect(mark.querySelector('img')?.getAttribute('alt')).toBe('Token Exhausted: Forest');
+        // Centred on the point the Token stood on, one Token wide.
+        expect(parseFloat(mark.style.left)).toBe(C(14).x - 64);
+        expect(parseFloat(mark.style.top)).toBe(C(14).y - 64);
     });
 });

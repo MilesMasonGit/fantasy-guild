@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
-import { TileProgressBar } from '../ui/components/board/TileProgressBar.jsx';
+import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
 import { ALERT_HINT, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
@@ -12,13 +12,13 @@ import { EventBus } from '../systems/core/EventBus.js';
  *
  * `ALERT_HINT` sat in the tree for weeks as a complete, correct, entirely
  * unread table (CR2-156), while three of the six alert values drew nothing at
- * all on the tile (CR2-155). Both faults were invisible to the suite, because
- * nothing asserted that a blocked tile says anything. So: every alert value the
- * engine can set is pinned here to the sentence the player is shown for it.
+ * all on the Token (CR2-155). Both faults were invisible to the suite, because
+ * nothing asserted that a blocked Token says anything. So: every alert value
+ * the engine can set is pinned here to the sentence the player is shown for it.
  */
 
 /**
- * Every alert value that can reach the tile.
+ * Every alert value that can reach a Token.
  *
  * `UNSTOCKED` is published by `Managers`, not the runner, but it is in the same
  * enum now (CR2-060), so this list no longer has to append a hand-written
@@ -30,8 +30,8 @@ const renderBar = (alert) => render(
     React.createElement(
         EngineContext.Provider,
         { value: { EventBus } },
-        React.createElement(TileProgressBar, {
-            tile: 3,
+        React.createElement(TokenProgressBar, {
+            instanceId: 'tok_1',
             token: { typeId: 'fixture_missing_type', heroId: 'hero_1', alert },
             isHovered: true,
             alert
@@ -39,7 +39,7 @@ const renderBar = (alert) => render(
     )
 );
 
-describe('Tile alert hints (D-114)', () => {
+describe('Token alert hints (D-114)', () => {
     it('covers every alert value the engine can set', () => {
         for (const alert of ALERT_VALUES) {
             expect(ALERT_HINT[alert], `no hint for alert "${alert}"`).toBeTruthy();
@@ -83,13 +83,13 @@ describe('Tile alert hints (D-114)', () => {
         cleanup();
     });
 
-    it('shows no hint panel when the tile is fine', () => {
+    it('shows no hint panel when the Token is fine', () => {
         const { container } = render(
             React.createElement(
                 EngineContext.Provider,
                 { value: { EventBus } },
-                React.createElement(TileProgressBar, {
-                    tile: 3,
+                React.createElement(TokenProgressBar, {
+                    instanceId: 'tok_1',
                     token: { typeId: 'fixture_missing_type', heroId: 'hero_1', alert: null },
                     isHovered: true,
                     alert: null

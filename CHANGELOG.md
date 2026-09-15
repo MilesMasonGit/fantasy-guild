@@ -5,6 +5,25 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The playmat now draws everything where it actually stands** (Free Playmat slice 1.6c,
+  second part). The board is no longer a grid of squares on screen: each Token, hero and flag
+  is drawn at its own place on the mat. Dropping, working, fighting and restocking all behave
+  exactly as before — only the drawing has changed. What you might notice:
+  - **Flags stand exactly where you drop them, and several can share a spot.** They used to
+    shuffle sideways in threes, with a "+2" chip hiding the rest; now they simply overlap.
+  - **A faint outline shows where Tokens can still land**, on a slightly darker mat. Temporary,
+    until Tokens can sit anywhere.
+  - **Hovering picks the Token you are really pointing at** — the round art rather than an
+    invisible square around it — so two Tokens close together no longer steal each other's
+    hover, and the one you point at comes to the front.
+  - **A Token's sheet follows it** when it is pushed aside or moved somewhere else.
+  - **A spot waiting for a restock shows a grey ghost** of the Token it is owed, with its red
+    Restock bar, instead of an empty square.
+  - **News about a Token that has just gone** — it ran dry, or a drop was refused — now appears
+    at the spot it stood on.
+  - Under the hood, the board wakes only the Token a message is about, instead of every Token
+    on the mat checking every message.
+
 - **The playmat is now a bigger mat, with today's board sitting in its middle** (Free Playmat
   slice 1.6c, first part). Everything still looks and plays like the 6×6 board, drawn in the
   centre of a wider mat, and every drop on the board now lands at the point you let go. What
