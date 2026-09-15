@@ -400,53 +400,6 @@ describe('⭐ no rebuild storms', () => {
     });
 });
 
-describe('an old save converts (FP-59, FPP-19)', () => {
-    it('turns heroTiles into flags at the Token centre, with no skill and no version bump', () => {
-        const migrated = migrateState({
-            meta: { version: GAME_VERSION },
-            board: {
-                tiles: {
-                    9: { typeId: 'fixture_producer', usesRemaining: 10, cycleElapsedMs: 0 },
-                    20: { typeId: 'fixture_enemy', usesRemaining: 5, cycleElapsedMs: 0 }
-                },
-                heroTiles: { h1: 9, h2: 20, h3: 4 }
-            },
-            heroes: [hero('h1'), hero('h2'), hero('h3')]
-        }, GAME_VERSION);
-
-        const b = migrated.board;
-        expect(b.heroTiles).toBeUndefined();
-        expect(b.flags.h1).toEqual({ ...C(9), plantedAt: 0 });
-        expect(b.flags.h2).toEqual({ ...C(20), plantedAt: 1 });
-        expect(b.flags.h3).toEqual({ ...C(4), plantedAt: 2 });
-        expect(b.nextFlagOrder).toBe(3);
-        expect(b.tiles[9].id).toBeTruthy();
-
-        GameState.state.board = { ...GameState.state.board, ...b };
-        Flags.assign(0);
-        expect(BoardState.workTileOf('h1')).toBe(9);
-    });
-
-    it('drops the skill a flag was saved with (FPP-19), and the save still plays', () => {
-        const migrated = migrateState({
-            meta: { version: GAME_VERSION },
-            board: {
-                tiles: { 15: { typeId: 'fixture_producer', usesRemaining: 10, cycleElapsedMs: 0 } },
-                flags: {
-                    h1: { ...C(14), skill: 'cooking', plantedAt: 0 },
-                    h2: { ...C(20), skill: 'combat', plantedAt: 1 }
-                },
-                nextFlagOrder: 2
-            },
-            heroes: [hero('h1'), hero('h2')]
-        }, GAME_VERSION);
-
-        expect(migrated.board.flags.h1).toEqual({ ...C(14), plantedAt: 0 });
-        expect(migrated.board.flags.h2).toEqual({ ...C(20), plantedAt: 1 });
-
-        GameState.state.board = { ...GameState.state.board, ...migrated.board };
-        Flags.assign(0);
-        // Its old skill was Cooking; h1 now works the logging Token beside the flag.
-        expect(BoardState.workTileOf('h1')).toBe(15);
-    });
-});
+// The 'an old save converts (FP-59, FPP-19)' suite was deleted in Free Playmat
+// slice 1.6a with `convertHeroTilesToFlags`: saves from before schema 0.8.0 are
+// refused outright (FP-85), so there is nothing left to convert.

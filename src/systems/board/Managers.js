@@ -169,7 +169,13 @@ export function restockTile(tile, vacancy) {
     // The hero is untouched. They are still this tile's worker (`BoardState.workerOf`), so
     // a Token arriving underneath them is all it takes for work to resume on
     // the next tick — no re-placement, no reassignment, no event (D-151).
-    BoardState.setToken(tile, instance);      // also clears the vacancy
+    // Lands exactly on the spot that ran dry (FP-19, slice 1.6a); arriving
+    // there also clears the vacancy.
+    if (Number.isFinite(vacancy.x) && Number.isFinite(vacancy.y)) {
+        BoardState.addToken(instance, vacancy.x, vacancy.y);
+    } else {
+        BoardState.setToken(tile, instance);   // STOPGAP — deleted in slice 1.6d
+    }
     TileModifiers.rebuildAround(tile);
 
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });

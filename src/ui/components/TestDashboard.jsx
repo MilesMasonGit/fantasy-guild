@@ -178,7 +178,8 @@ export const TestDashboard = React.memo(() => {
             label: "🧹 Clear the Board",
             onClick: () => {
                 const state = engine.GameState.state;
-                state.board.tiles = {};
+                state.board.tokens = {};
+                state.board.vacancies = {};
                 state.board.tray = [];
                 state.board.sprites = [];
                 engine.EventBus.publish('state_changed');

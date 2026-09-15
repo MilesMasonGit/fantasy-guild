@@ -746,11 +746,11 @@ export function reportContentIntegrity(options) {
 function collectSaveRefs(state, note) {
     const board = state?.board || {};
 
-    for (const tile of Object.values(board.tiles || {})) {
-        note('Token', tile?.typeId, 'on the playmat');
+    for (const token of Object.values(board.tokens || {})) {
+        note('Token', token?.typeId, 'on the playmat');
     }
     for (const vacancy of Object.values(board.vacancies || {})) {
-        note('Token', vacancy?.typeId, 'on the playmat, on a tile that has run dry');
+        note('Token', vacancy?.typeId, 'on the playmat, on a spot that has run dry');
     }
     for (const entry of board.tray || []) {
         note('Token', entry?.typeId, 'in the Token tray');

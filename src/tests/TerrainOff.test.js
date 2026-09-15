@@ -54,30 +54,27 @@ describe('Terrain is switched off (FP-10)', () => {
     });
 
     it('placing a Token paints nothing, even one carrying a Map stamp', () => {
+        // Since Free Playmat 1.6a there is no paint hook and no terrain storage
+        // on the board at all (FP-10); placing still works.
         Placement.placeToken(9, BoardState.createTokenInstance('fixture_off_mine', 100, 'hills'));
         Placement.placeToken(7, BoardState.createTokenInstance('fixture_off_keep', null));
 
         expect(BoardState.getToken(9)?.typeId).toBe('fixture_off_mine');
-        expect(BoardState.terrainMap()).toEqual({});
-        expect(GameState.state.board.nextPaintOrder).toBe(0);
+        for (const field of ['terrain', 'nextPaintOrder', 'terrainSeed']) {
+            expect(field in GameState.state.board).toBe(false);
+            expect(field in createEmptyBoard()).toBe(false);
+        }
+        for (const fn of ['getTileTerrain', 'terrainMap', 'terrainSeed', 'paintTile']) {
+            expect(BoardState[fn]).toBeUndefined();
+        }
     });
 
-    it('does not backfill paint under an old save’s Tokens', () => {
-        GameState.state.board = createEmptyBoard();
-        GameState.state.board.tiles = {
-            9: { id: 'tok_old_1', typeId: 'fixture_off_mine', usesRemaining: 50, cycleElapsedMs: 0 }
-        };
-        expect(BoardState.getTileTerrain(9)).toBeNull();
-        expect(GameState.state.board.nextPaintOrder).toBe(0);
-    });
+    // Skipped since Free Playmat 1.6a: the backfill and the tile-keyed terrain
+    // storage these pinned were removed from BoardState and the save schema.
+    // Terrain stays dormant (FP-10) and needs new storage on a free mat.
+    it.skip('does not backfill paint under an old save’s Tokens (backfill removed in 1.6a, FP-10)', () => {});
 
-    it('keeps terrain a save already holds, untouched (save schema unchanged)', () => {
-        GameState.state.board.terrain = { 9: { terrainId: 'forest', paintedAt: 3 } };
-        GameState.state.board.nextPaintOrder = 4;
-        Placement.placeToken(9, BoardState.createTokenInstance('fixture_off_mine', 100, 'hills'));
-        expect(GameState.state.board.terrain).toEqual({ 9: { terrainId: 'forest', paintedAt: 3 } });
-        expect(GameState.state.board.nextPaintOrder).toBe(4);
-    });
+    it.skip('keeps terrain a save already holds, untouched (terrain left the schema in 1.6a, FP-10)', () => {});
 
     it('a Token sent to the Vault does not carry a stamp', () => {
         expect(TokenBank.deposit(BoardState.createTokenInstance('fixture_off_mine', 60, 'shore'))).toBe(true);

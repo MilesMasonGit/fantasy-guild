@@ -5,6 +5,13 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The save format has changed, and new games start with the Guild Hall already on the
+  board** (Free Playmat slice 1.6a). Behind the scenes the board now remembers each Token
+  by where it sits rather than by which square it is on — the groundwork for placing
+  Tokens anywhere. **Saves from earlier versions will not load**; start a new game. A new
+  game now opens with the Guild Hall standing on the board and an empty Tray, instead of
+  the Hall waiting in the Tray. Everything else plays exactly as before.
+
 - **Flags you move, in each hero's own colour, with a rules panel** (Free Playmat slice
   1.5b, second half — still on today's grid).
   - **You never move a hero, only their flag.** Dragging a hero on the board now picks up

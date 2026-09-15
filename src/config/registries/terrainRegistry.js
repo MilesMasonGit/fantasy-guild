@@ -42,18 +42,17 @@
  * running, so it can be revived in a form that suits a free mat.
  *
  * While `false`:
- * - placing a Token paints nothing (`BoardState.setToken`), and an old save's
- *   Tokens are not backfilled with paint on load;
+ * - placing a Token paints nothing — the paint hook and the old-save backfill
+ *   were removed from `BoardState` in Free Playmat slice 1.6a;
  * - bursting a Map stamps nothing on what it produces (`Cartographer.openMap`);
  * - a Token sent to the Vault does not carry a stamp (`addToTokenBank`);
  * - the terrain canvas is not drawn and the board never reads terrain or its
  *   seed (`Board.jsx`), so every tile shows its plain unpainted outline;
  * - the Playmat Tuner dev panel is hidden (`ReactRoot.jsx`).
  *
- * The save is untouched either way: `board.terrain`, `nextPaintOrder` and
- * `terrainSeed` stay in the schema, and a save that already holds terrain loads
- * and keeps it. Setting this back to `true` restores the previous behaviour
- * exactly.
+ * `board.terrain`, `nextPaintOrder` and `terrainSeed` left the save schema in
+ * slice 1.6a (they were keyed by tile). Reviving terrain on a free mat needs a
+ * new paint hook and new storage, not just this switch (FP-10).
  *
  * ⚠️ Read at the point of use, never copied, so a test can force it on with
  * `vi.mock` (see `TerrainPainting.test.js`). `TerrainOff.test.js` fails if any

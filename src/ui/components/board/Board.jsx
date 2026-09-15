@@ -111,17 +111,16 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
     // One flat projection of the whole board.
     const tiles = useGameState(
         state => {
-            const map = state.board?.tiles || {};
-            const vacancies = state.board?.vacancies || {};
+            // STOPGAP (deleted in slice 1.6d): the grid is drawn from the tile
+            // view over free positions (`gridShim.js`, via BoardState) until the
+            // mat renderer replaces it in slice 1.6c.
             const heroes = state.heroes || [];
             const out = {};
 
-            for (const key of Object.keys(map)) {
-                const t = map[key];
+            for (const [anchorIndex, t] of BoardState.occupiedTiles()) {
                 if (!t) continue;
                 const def = getTokenType(t.typeId);
                 const size = def?.size || 1;
-                const anchorIndex = Number(key);
                 const footprint = tileFootprint(anchorIndex, size);
 
                 // A Token is a station because it carries a `Works as` skill
@@ -171,8 +170,8 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
             // alert itself. `ALERT.UNSTOCKED` is the same constant `Managers`
             // publishes and `ALERT_HINT` is keyed on (CR2-060) — this used to be
             // a third hand-written copy of the string.
-            for (const key of Object.keys(vacancies)) {
-                if (!vacancies[key]?.unstocked) continue;
+            for (const [key, vacancy] of BoardState.vacancies()) {   // STOPGAP tile view — deleted in slice 1.6d
+                if (!vacancy?.unstocked) continue;
                 out[key] = { ...(out[key] || { typeId: null, usesRemaining: null, size: 1, isAnchor: true, anchorTile: Number(key) }), alert: ALERT.UNSTOCKED };
             }
 
@@ -234,10 +233,8 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
         state => (TERRAIN_ENABLED ? state.board?.terrain || NO_TERRAIN : NO_TERRAIN),
         ['state_changed', BOARD_EVENTS.TILE_CHANGED]
     );
-    const terrainSeed = useGameState(
-        () => (TERRAIN_ENABLED ? BoardState.terrainSeed() : 0),
-        ['state_changed']
-    );
+    // The per-save seed left the board in slice 1.6a (terrain dormant, FP-10).
+    const terrainSeed = 0;
 
     const handleBurstMap = useCallback((mapId) => {
         const map = BoardState.removeBoardMap(mapId);
@@ -295,7 +292,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
     const handleOpenRecipes = useCallback((index) => setRecipeTile(index), []);
     const closeRecipes = useCallback(() => setRecipeTile(null), []);
 
-    const recipeInstance = recipeTile != null ? GameState.state?.board?.tiles?.[recipeTile] : null;
+    const recipeInstance = recipeTile != null ? BoardState.getToken(recipeTile) : null;   // STOPGAP tile lookup — deleted in slice 1.6d
     const recipeDef = recipeInstance ? getTokenType(recipeInstance.typeId) : null;
     const recipeBanding = recipeDef
         ? bandStationRecipes(recipeDef, tiles?.[recipeTile]?.heroId, GameState.state?.heroes || [])
@@ -303,7 +300,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
 
     const handleSelectRecipe = useCallback((recipeId) => {
         if (recipeTile == null) return;
-        const instance = GameState.state?.board?.tiles?.[recipeTile];
+        const instance = BoardState.getToken(recipeTile);   // STOPGAP tile lookup — deleted in slice 1.6d
         // `setSelectedRecipe` is the only writer of `selectedRecipeId`, and it
         // refuses any id outside this station's own pool (P2).
         if (!StationRecipe.setSelectedRecipe(instance, recipeId)) return;

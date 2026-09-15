@@ -31,7 +31,7 @@ import './fixtures/fixtureItems.js';
 /** A save shaped like the real thing, with only the fields this pass reads. */
 function saveWith(board = {}, rest = {}) {
     return {
-        board: { tiles: {}, vacancies: {}, tray: [], tokenBank: {}, maps: [], ...board },
+        board: { tokens: {}, vacancies: {}, tray: [], tokenBank: {}, maps: [], ...board },
         inventory: { items: {} },
         heroes: [],
         ...rest
@@ -77,8 +77,8 @@ describe('Finding what a save is still holding', () => {
 
     it('looks in every place a save can hold a Token', () => {
         const ghosts = auditSaveContent(saveWith({
-            tiles: { 3: { typeId: 'token_sawmill' } },
-            vacancies: { 7: { typeId: 'token_trout_stream' } },
+            tokens: { tok_a: { id: 'tok_a', typeId: 'token_sawmill', x: 544, y: 64 } },
+            vacancies: { spot_224_224: { typeId: 'token_trout_stream', x: 224, y: 224 } },
             tray: [{ typeId: 'token_forest' }],
             tokenBank: { token_oakwood_grove: [{ usesRemaining: 5 }] },
             maps: [{ id: 'map_x', typeId: 'token_stew_pot' }]
@@ -175,7 +175,7 @@ describe('Saying it out loud', () => {
 describe('It reports. It never repairs.', () => {
     it('leaves the save byte-for-byte identical', () => {
         const save = saveWith({
-            tiles: { 3: { typeId: 'token_sawmill', usesRemaining: 12 } },
+            tokens: { tok_a: { id: 'tok_a', typeId: 'token_sawmill', x: 544, y: 64, usesRemaining: 12 } },
             tray: [{ typeId: 'token_forest', usesRemaining: 100 }],
             tokenBank: { token_oakwood_grove: [{ usesRemaining: 5 }, { usesRemaining: 5 }] }
         }, {
