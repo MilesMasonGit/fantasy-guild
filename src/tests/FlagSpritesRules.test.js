@@ -23,7 +23,7 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { BoardTile } from '../ui/components/board/BoardTile.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
-import { dropFlagOnTile, dropHeroOnTile } from '../ui/components/board/Board.jsx';
+import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { FlagGhost } from '../ui/dnd/DragGhost.jsx';
 import { FlagRulesPanel } from '../ui/components/drawer/FlagRulesPanel.jsx';
 import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
@@ -78,6 +78,8 @@ vi.mock('../ui/utils/alphaHitTest.js', async (importOriginal) => {
  */
 
 const C = (tile) => tileCentre(tile);
+/** A grid tile's drop handler, as `Board` wires it: the drop lands at the point (slice 1.6c). */
+const dropOnTile = (index, payload) => dropOnMat(payload, C(index));
 const h = React.createElement;
 const FOREST = 'fixture_producer';        // logging
 
@@ -163,7 +165,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 
         mount(h(React.Fragment, null,
             workingTile(13, 'h1'),
-            h(BoardTile, { index: 21, token: null, onMoveFlag: dropFlagOnTile, onPlaceHero: dropHeroOnTile })));
+            h(BoardTile, { index: 21, token: null, onMoveFlag: dropOnTile, onPlaceHero: dropOnTile })));
         const heroDrag = dnd.drags.find(d => d.id === 'tile-hero-13');
         const drop = dnd.drops.find(d => d.id === 'tile-21');
         const payload = { kind: heroDrag.kind, ...heroDrag.payload };
@@ -179,7 +181,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 
     it('a hero dragged from the Dock still plants their flag where dropped', () => {
         put(15, FOREST);
-        mount(h(BoardTile, { index: 15, token: { typeId: FOREST, size: 1, isAnchor: true, anchorTile: 15 }, onMoveFlag: dropFlagOnTile, onPlaceHero: dropHeroOnTile }));
+        mount(h(BoardTile, { index: 15, token: { typeId: FOREST, size: 1, isAnchor: true, anchorTile: 15 }, onMoveFlag: dropOnTile, onPlaceHero: dropOnTile }));
         const drop = dnd.drops.find(d => d.id === 'tile-15');
         const payload = { kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } };
         expect(drop.accepts(payload)).toBe(true);
@@ -315,8 +317,8 @@ describe('FPP-20 — where the flag stands on today’s grid', () => {
     it('flagOrigin puts the pole base at the tile’s bottom-left corner, pushed into the gap', () => {
         for (const tile of [0, 14, 35]) {
             const { left, top } = flagOrigin(C(tile), tile);
-            expect(left + POLE_BASE.x).toBe(colOf(tile) * TILE_STEP_PX - POLE_GAP_PUSH_PX);
-            expect(top + POLE_BASE.y).toBe(rowOf(tile) * TILE_STEP_PX + TILE_PX + POLE_GAP_PUSH_PX);
+            expect(left + POLE_BASE.x).toBe(C(tile).x - TILE_PX / 2 - POLE_GAP_PUSH_PX);
+            expect(top + POLE_BASE.y).toBe(C(tile).y + TILE_PX / 2 + POLE_GAP_PUSH_PX);
         }
     });
 

@@ -45,6 +45,21 @@ describe('⚠️ gridShim is a stopgap (deleted in slice 1.6d)', () => {
     });
 });
 
+/** ⚠️ STOPGAP allowlist — `oldSpotStopgap.js` and both importers are deleted in slice 1.6d. */
+const OLD_SPOT_IMPORTERS = ['ui/components/board/TrayMiniBoard.jsx', 'ui/components/board/dropOnMat.js'];
+
+describe('⚠️ oldSpotStopgap is a stopgap (deleted in slice 1.6d) — slice 1.6c', () => {
+    it('is imported only by dropOnMat.js and TrayMiniBoard.jsx', () => {
+        expect(importsOf('oldSpotStopgap')).toEqual(OLD_SPOT_IMPORTERS);
+    });
+
+    it('nothing imports the deleted placeTokenFromDrag, and the tile readers it leaned on are gone', () => {
+        expect(importsOf('placeTokenFromDrag')).toEqual([]);
+        const leftovers = FILES.filter(f => /\b(tileOfToken|displayTileOf|closest2x2Anchor)\b/.test(f.text)).map(f => f.path);
+        expect(leftovers).toEqual([]);
+    });
+});
+
 describe('the mat test helper stays in the tests', () => {
     it('no file outside src/tests imports tests/fixtures/mat.js', () => {
         expect(importsOf('fixtures/mat')).toEqual([]);

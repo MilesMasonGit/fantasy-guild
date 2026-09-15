@@ -17,6 +17,7 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { tileCentre } from './fixtures/mat.js';
 
 /**
  * Two new trigger events, and the guard the second one needed.
@@ -295,7 +296,7 @@ describe('⚠️ The loop guard', () => {
 
         // Knock the first one over by hand.
         expect(() => EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, {
-            x: 224, y: 64, typeId: 'fixture_domino'
+            ...tileCentre(1), typeId: 'fixture_domino'
         })).not.toThrow();
 
         // The cap is what keeps the number finite — and it must be the cap
@@ -319,7 +320,7 @@ describe('⚠️ The loop guard', () => {
 
     it('leaves Tokens beyond the cap alone rather than half-firing them', () => {
         for (const tile of CHAIN) place(tile, 'fixture_domino');
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { x: 224, y: 64, typeId: 'fixture_domino' });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...tileCentre(1), typeId: 'fixture_domino' });
 
         const survivors = CHAIN.filter(t => BoardState.getToken(t));
         expect(survivors.length).toBeGreaterThan(0);
@@ -336,7 +337,7 @@ describe('⚠️ The loop guard', () => {
         // that is not unwound leaves every trigger on the board silent
         // afterwards, and it would read as "triggers stopped working".
         for (const tile of CHAIN) place(tile, 'fixture_domino');
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { x: 224, y: 64, typeId: 'fixture_domino' });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...tileCentre(1), typeId: 'fixture_domino' });
 
         SpriteLayer.init();
         place(45, 'fixture_self_reactor', 'hero_1');

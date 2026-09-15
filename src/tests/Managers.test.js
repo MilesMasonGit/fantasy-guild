@@ -12,7 +12,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { idAt, pointAt } from './fixtures/mat.js';
+import { idAt, pointAt, tileCentre } from './fixtures/mat.js';
 
 /**
  * Managers (D-35, D-104, D-140, D-151, D-133) — the phase where the AFK story
@@ -223,7 +223,7 @@ describe('An empty Vault fails silently (D-133)', () => {
         expect(BoardState.getToken(TILE)).toBeNull();
         // No copy in the Vault, so no wait (FP-70, FPP-9): the flag stays
         // planted and the hero idles at it.
-        expect(BoardState.displayTileOf('hero_1')).toBe(TILE);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(TILE));
         expect(BoardState.waitOfHero('hero_1')).toBeNull();
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
     });

@@ -1,4 +1,4 @@
-import { idAt } from './fixtures/mat.js';
+import { idAt, anchorOf } from './fixtures/mat.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -259,7 +259,7 @@ describe('Adjacent context Tokens are chosen and shared', () => {
         );
 
         expect(plan.ok).toBe(true);
-        expect(plan.debits.map(d => [BoardState.tileOfToken(d.id), d.amount]).sort())
+        expect(plan.debits.map(d => [anchorOf(d.id), d.amount]).sort())
             .toEqual([[CONTEXT, 1], [CONTEXT_2, 2]].sort());
     });
 

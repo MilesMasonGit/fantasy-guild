@@ -3,7 +3,7 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import { BOARD_PX } from '../config/boardGeometry.js';
+import { MAT_W, MAT_H } from '../config/matGeometry.js';
 
 /**
  * Bank overflow — D-138: **nothing is ever lost to a full Bank.**
@@ -217,8 +217,8 @@ describe('Sprite behaviour', () => {
         for (const s of SpriteLayer.getSprites()) {
             expect(s.x).toBeGreaterThanOrEqual(0);
             expect(s.y).toBeGreaterThanOrEqual(0);
-            expect(s.x).toBeLessThanOrEqual(BOARD_PX);
-            expect(s.y).toBeLessThanOrEqual(BOARD_PX);
+            expect(s.x).toBeLessThanOrEqual(MAT_W);
+            expect(s.y).toBeLessThanOrEqual(MAT_H);
         }
     });
 

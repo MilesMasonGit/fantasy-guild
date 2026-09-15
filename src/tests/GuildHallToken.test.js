@@ -11,7 +11,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
 import { GUILD_HALL_TILE } from '../config/boardGeometry.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import { idAt } from './fixtures/mat.js';
+import { idAt, pointAt } from './fixtures/mat.js';
 
 describe('Guild Hall Mobile Token (New Token System)', () => {
     beforeEach(() => {
@@ -80,7 +80,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(heroRes.success).toBe(true);
         // Under flags (1.4b) the hero's flag stands on the Hall. With no Wishing
         // Well rank the Hall has no work cycle, so there is nothing to claim.
-        expect(BoardState.displayTileOf('hero_test_1')).toBe(20);
+        expect(BoardState.displayPointOf('hero_test_1')).toEqual(pointAt(20, 'token_guild_hall'));
     });
 
     describe('Push & Cascade Shoving Protection', () => {

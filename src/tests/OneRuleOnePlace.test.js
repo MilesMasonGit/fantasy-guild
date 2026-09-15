@@ -21,7 +21,7 @@ import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
-import { idAt } from './fixtures/mat.js';
+import { idAt, tileCentre } from './fixtures/mat.js';
 
 /**
  * One rule, one place.
@@ -148,7 +148,7 @@ describe('CR2-060: every alert value comes from one enum', () => {
 
         BoardState.setToken(1, BoardState.createTokenInstance(MANAGER, null));
         // The spot tile 0's Token stood on; Near (164 u) reaches the Manager on tile 1, 160 u away.
-        const at = { x: 64, y: 64 };
+        const at = tileCentre(0);
         BoardState.setVacancyAt(at, managed);
         const spotId = BoardState.spotIdAt(at.x, at.y);
         const vacancy = BoardState.vacancyAt(spotId);

@@ -6,6 +6,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { InventoryStore } from '../systems/inventory/InventoryStore.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import { OLD_AREA_ORIGIN } from '../config/boardGeometry.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Cartographer from '../systems/board/Cartographer.js';
@@ -48,9 +49,10 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         const boardMaps = BoardState.getBoardMaps();
         expect(boardMaps.length).toBe(initialMaps + 1);
         const lastMap = boardMaps[boardMaps.length - 1];
-        expect(lastMap.x).toBeGreaterThanOrEqual(10);
-        expect(lastMap.x).toBeLessThanOrEqual(450);
-        expect(lastMap.y).toBeGreaterThanOrEqual(250);
+        // Inside the old landing area, whose corner is at OLD_AREA_ORIGIN on the mat (FP-92).
+        expect(lastMap.x).toBeGreaterThanOrEqual(OLD_AREA_ORIGIN.x + 10);
+        expect(lastMap.x).toBeLessThanOrEqual(OLD_AREA_ORIGIN.x + 450);
+        expect(lastMap.y).toBeGreaterThanOrEqual(OLD_AREA_ORIGIN.y + 250);
 
         const active = QuestManager.getActiveQuests();
         expect(active.length).toBe(3);

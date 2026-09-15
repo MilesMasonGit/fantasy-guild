@@ -7,7 +7,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
 import { getTilePushVectors } from '../config/boardGeometry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
-import { idAt } from './fixtures/mat.js';
+import { idAt, tileCentre } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn()
@@ -162,7 +162,7 @@ describe('Token & Hero Displacement Logic', () => {
 
     it('returns hero to dock via particle fly on direct recall (right click)', () => {
         Placement.placeHero('hero_aldric', 7);
-        expect(BoardState.displayTileOf('hero_aldric')).toBe(7);
+        expect(BoardState.displayPointOf('hero_aldric')).toEqual(tileCentre(7));
 
         const collectedEvents = [];
         EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collectedEvents.push(e));
@@ -170,7 +170,7 @@ describe('Token & Hero Displacement Logic', () => {
         const res = Placement.recallHero(7);
         expect(res.success).toBe(true);
         expect(BoardState.flagOf('hero_aldric')).toBeNull();
-        expect(BoardState.displayTileOf('hero_aldric')).toBeNull();
+        expect(BoardState.displayPointOf('hero_aldric')).toBeNull();
 
         expect(collectedEvents.some(e => e.kind === 'hero' && e.destination === 'dock' && e.heroId === 'hero_aldric')).toBe(true);
     });
