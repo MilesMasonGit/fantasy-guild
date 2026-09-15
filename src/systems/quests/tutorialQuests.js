@@ -6,7 +6,7 @@ export const TUTORIAL_QUESTS = [
         id: 'tutorial_1',
         step: 0,
         title: 'Place a Token',
-        instruction: 'Drag and drop the Guild Hall Token from the Tray to the Playmat.',
+        instruction: 'Drag the Guild Hall to a new spot on the Playmat.',
         targetType: 'token_placed',
         requiredCount: 1,
         rewardMapId: 'map_guild_hall',
