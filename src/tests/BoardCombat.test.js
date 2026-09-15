@@ -14,7 +14,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as RegenSystem from '../systems/hero/RegenSystem.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { idAt } from './fixtures/mat.js';
+import { idAt, tileCentre } from './fixtures/mat.js';
 
 /**
  * Combat on the board — **ported, not rebuilt** (D-136).
@@ -237,7 +237,7 @@ describe('A kill', () => {
         // Exactly what a spent Forest does. Enemies are not a special case
         // (D-104) — including in what they leave behind: the hero's flag stays
         // planted there (Free Playmat 1.4b).
-        expect(BoardState.displayTileOf('hero_1')).toBe(10);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(10));
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardState.getVacancy(10)?.typeId).toBe('fixture_enemy');
     });

@@ -18,7 +18,7 @@ import { footprintCentre } from '../config/boardGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes, getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { placeAt, clearMat, SPACING, idAt } from './fixtures/mat.js';
+import { placeAt, clearMat, SPACING, idAt, anchorOf } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -62,7 +62,8 @@ registerTokenTypes({
 });
 
 /** Today's 160 u step, as a mat point (test layout only). */
-const P = (col, row) => ({ x: 64 + col * SPACING, y: 64 + row * SPACING });
+// Measured from tile 0's centre, which moved with the old area's corner (FP-92).
+const P = (col, row) => ({ x: footprintCentre(0, 1).x + col * SPACING, y: footprintCentre(0, 1).y + row * SPACING });
 const at = (typeIdOrInstance, point) => placeAt(typeIdOrInstance, point.x, point.y);
 const yieldOf = (instance) => TileModifiers.resolveAxis(instance.id, EFFECT_TYPES.YIELD, 100);
 const sortedIds = (ids) => [...ids].sort();
@@ -126,7 +127,7 @@ describe('⭐ a moved buff Token: its old neighbours lose it AND its new neighbo
     it('through Placement.moveToken and the engine listener', () => {
         const { oldSides, newSides, far, buff } = layout();
 
-        const from = BoardState.tileOfToken(buff.id);
+        const from = anchorOf(buff.id);
         const to = 4 * 6 + 5;                       // P(5, 4) in today's layout
         expect(Placement.moveToken(from, to).success).toBe(true);
         expect(centreOf(BoardState.getTokenById(buff.id))).toEqual(P(5, 4));
@@ -175,7 +176,7 @@ describe('⭐ nearby(id) at today\'s spacing equals the old tile reader, on a mi
             expect(anchors).toContain(7);
             for (const anchor of anchors) {
                 const id = idAt(anchor);
-                const answer = nearby(id).map(n => BoardState.tileOfToken(n)).sort((a, b) => a - b);
+                const answer = nearby(id).map(n => anchorOf(n)).sort((a, b) => a - b);
                 expect(answer, `Token on ${anchor}`).toEqual(oldNearbyTiles(anchor, radius));
             }
         });

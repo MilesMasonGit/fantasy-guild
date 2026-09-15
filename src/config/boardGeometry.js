@@ -75,12 +75,23 @@ export const isTileIndex = (index) =>
  */
 export const MAT_UNITS_PER_STEP = TILE_STEP_PX;
 
+/**
+ * # ⚠️ STOPGAP — deleted in slice 1.6d
+ *
+ * Where today's old 6×6 landing area sits on the bigger mat (1760 × 1126 u,
+ * `matGeometry.js`): **centred** (owner, FP-92). Every tile-shaped point adds
+ * it (`tileCentre`, `footprintCentre`) and `BoardState.tileAtPoint` takes it
+ * away, so the Guild Hall on tile 21 stands at (960, 643). Free placement
+ * (slice 1.6d) deletes the landing area, and this with it.
+ */
+export const OLD_AREA_ORIGIN = Object.freeze({ x: 416, y: 99 });
+
 /** Centre of one tile, in mat units, or null for a non-tile. */
 export function tileCentre(index) {
     if (!isTileIndex(index)) return null;
     return {
-        x: colOf(index) * TILE_STEP_PX + TILE_PX / 2,
-        y: rowOf(index) * TILE_STEP_PX + TILE_PX / 2
+        x: OLD_AREA_ORIGIN.x + colOf(index) * TILE_STEP_PX + TILE_PX / 2,
+        y: OLD_AREA_ORIGIN.y + rowOf(index) * TILE_STEP_PX + TILE_PX / 2
     };
 }
 
@@ -93,8 +104,8 @@ export function footprintCentre(anchorIndex, size = 1) {
     if (!isTileIndex(anchorIndex)) return null;
     const span = TILE_PX * size + TILE_GAP_PX * (size - 1);
     return {
-        x: colOf(anchorIndex) * TILE_STEP_PX + span / 2,
-        y: rowOf(anchorIndex) * TILE_STEP_PX + span / 2
+        x: OLD_AREA_ORIGIN.x + colOf(anchorIndex) * TILE_STEP_PX + span / 2,
+        y: OLD_AREA_ORIGIN.y + rowOf(anchorIndex) * TILE_STEP_PX + span / 2
     };
 }
 

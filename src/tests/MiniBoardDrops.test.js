@@ -5,8 +5,8 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { TILE_STEP_PX, BOARD_SIZE } from '../config/boardGeometry.js';
-import { placeTokenFromDrag } from '../ui/components/board/placeTokenFromDrag.js';
+import { BOARD_SIZE, tileCentre } from '../config/boardGeometry.js';
+import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { occupiedTileMap } from '../ui/components/board/TrayMiniBoard.jsx';
 
 /**
@@ -94,23 +94,24 @@ describe('occupiedTileMap — the mini-board must not call a covered tile empty'
 // The six drop routes — all of them, from either surface
 // ---------------------------------------------------------------------------
 
-describe('placeTokenFromDrag — every origin the board accepts', () => {
+describe('dropOnMat — every origin the board accepts', () => {
     it('route 1: a Map already on the playmat is repositioned, not lost', () => {
         const map = BoardState.addBoardMap('fixture_map', 0, 0, 1);
 
         // Tile 8 is row 1, col 2.
-        placeTokenFromDrag(8, { typeId: 'fixture_map', from: { boardMapId: map.id } });
+        dropOnMat({ typeId: 'fixture_map', from: { boardMapId: map.id } }, tileCentre(8));
 
         const maps = GameState.state.board.maps;
         expect(maps).toHaveLength(1);
         expect(maps[0].id).toBe(map.id);
-        expect(maps[0].x).toBe(2 * TILE_STEP_PX);
-        expect(maps[0].y).toBe(1 * TILE_STEP_PX);
+        // Loose on the mat, its 128 u box centred on the tile's point (slice 1.6c).
+        expect(maps[0].x).toBe(tileCentre(8).x - 64);
+        expect(maps[0].y).toBe(tileCentre(8).y - 64);
     });
 
     it('route 2: a Token already on a tile moves to the new tile', () => {
         BoardState.setToken(0, instance('fixture_producer', 100));
-        placeTokenFromDrag(5, { typeId: 'fixture_producer', from: { tile: 0 } });
+        dropOnMat({ typeId: 'fixture_producer', from: { instanceId: BoardState.getToken(0).id } }, tileCentre(5));
 
         expect(BoardState.getToken(0)).toBeNull();
         expect(BoardState.getToken(5)?.typeId).toBe('fixture_producer');
@@ -118,7 +119,7 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
 
     it('route 3: a loose loot Token on the floor is picked up onto the tile', () => {
         const sprite = SpriteLayer.addSprite('token', 'fixture_producer', 1, null, 100);
-        placeTokenFromDrag(6, { typeId: 'fixture_producer', from: { spriteId: sprite.id } });
+        dropOnMat({ typeId: 'fixture_producer', from: { spriteId: sprite.id } }, tileCentre(6));
 
         expect(BoardState.getToken(6)?.typeId).toBe('fixture_producer');
         expect(SpriteLayer.getSprites().find(s => s.id === sprite.id)).toBeUndefined();
@@ -126,7 +127,7 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
 
     it('route 4: a Token on the Tray leaves the Tray for the tile', () => {
         BoardState.addToTray(instance('fixture_producer', 100));
-        placeTokenFromDrag(7, { typeId: 'fixture_producer', from: { traySlot: 0 } });
+        dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, tileCentre(7));
 
         expect(BoardState.getToken(7)?.typeId).toBe('fixture_producer');
         expect(BoardState.getTray()).toHaveLength(0);
@@ -134,14 +135,14 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
 
     it('route 5: a Vault row is withdrawn onto the tile', () => {
         TokenBank.deposit(instance('fixture_producer', 100));
-        placeTokenFromDrag(8, { typeId: 'fixture_producer', from: { vaultTypeId: 'fixture_producer' } });
+        dropOnMat({ typeId: 'fixture_producer', from: { vaultTypeId: 'fixture_producer' } }, tileCentre(8));
 
         expect(BoardState.getToken(8)?.typeId).toBe('fixture_producer');
         expect(GameState.state.board.tokenBank.fixture_producer || []).toHaveLength(0);
     });
 
     it('route 6: a bare typeId with no origin creates a Token on the tile', () => {
-        placeTokenFromDrag(10, { typeId: 'fixture_producer', usesRemaining: 42 });
+        dropOnMat({ typeId: 'fixture_producer', usesRemaining: 42 }, tileCentre(10));
 
         expect(BoardState.getToken(10)?.typeId).toBe('fixture_producer');
         expect(BoardState.getToken(10)?.usesRemaining).toBe(42);
@@ -149,7 +150,7 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
 
     it('a Map dragged off the Tray lands loose on the playmat, not on a tile', () => {
         BoardState.addToTray(instance('fixture_map', 1));
-        placeTokenFromDrag(0, { typeId: 'fixture_map', from: { traySlot: 0 } });
+        dropOnMat({ typeId: 'fixture_map', from: { traySlot: 0 } }, tileCentre(0));
 
         expect(BoardState.getToken(0)).toBeNull();
         expect(GameState.state.board.maps).toHaveLength(1);
@@ -157,7 +158,7 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
     });
 
     it('does nothing at all when handed no payload', () => {
-        expect(() => placeTokenFromDrag(0, null)).not.toThrow();
+        expect(() => dropOnMat(null, tileCentre(0))).not.toThrow();
         expect(GameState.state.board.tokens).toEqual({});
     });
 });
@@ -166,12 +167,12 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
 // 2×2 anchoring with no playmat pixels to measure against
 // ---------------------------------------------------------------------------
 
-describe('placeTokenFromDrag — a 2×2 Token dropped without a pointer', () => {
+describe('dropOnMat — a 2×2 Token dropped without a pointer', () => {
     it('clamps to an anchor whose footprint still fits on the board', () => {
         // The bottom-right corner; a 2×2 anchored there would hang off two
         // edges. The last anchor that fits is one row and one column back.
         const corner = BOARD_SIZE * BOARD_SIZE - 1;
-        placeTokenFromDrag(corner, { typeId: 'fixture_big', usesRemaining: 50 });
+        dropOnMat({ typeId: 'fixture_big', usesRemaining: 50 }, tileCentre(corner));
 
         const expectedAnchor = (BOARD_SIZE - 2) * BOARD_SIZE + (BOARD_SIZE - 2);
         expect(BoardState.getToken(expectedAnchor)?.typeId).toBe('fixture_big');

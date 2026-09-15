@@ -1,11 +1,11 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
-import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex, tileCentre } from '../../../config/boardGeometry.js';
-import { closest2x2Anchor } from './boardConstants.js';
-import { placeTokenFromDrag, announce } from './placeTokenFromDrag.js';
+import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_COUNT, OLD_AREA_ORIGIN, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex, tileCentre } from '../../../config/boardGeometry.js';
+import { MAT_W, MAT_H, clampToMat } from '../../../config/matGeometry.js';
+import { dropOnMat, spotForDrop, announce } from './dropOnMat.js';
+import { pointerToMat } from './matPoint.js';
 import { BoardTile } from './BoardTile.jsx';
 import { FlagLayer } from './FlagLayer.jsx';
-import { centreOf } from '../../../systems/board/nearby.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
@@ -23,7 +23,7 @@ import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useEntityDrop, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { useDndContext } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
@@ -34,23 +34,18 @@ import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { StationRecipeModal } from './StationRecipeModal.jsx';
 
-/**
- * A hero dragged **from the Dock** (or the hero sheet) dropped on a tile:
- * plants their flag there (slice 1.5). The only drag that sends a hero out.
- */
-export function dropHeroOnTile(index, payload) {
-    if (!payload?.heroId) return null;
-    return announce(Placement.placeHero(payload.heroId, index));
+/** What the playmat's own drop target takes: any Token, and a hero or a flag with a hero. */
+export function matAccepts(p) {
+    if (p?.kind === DRAG_KIND.TOKEN) return true;
+    if (p?.kind === DRAG_KIND.HERO || p?.kind === DRAG_KIND.FLAG) return !!p.heroId;
+    return false;
 }
 
-/**
- * A FLAG drag dropped on a tile — the flag itself, or a hero picked up on the
- * board, which drags their flag (FP-76): **moves the flag**, and the hero goes
- * to their next job by their rules.
- */
-export function dropFlagOnTile(index, payload) {
-    if (!payload?.heroId) return null;
-    return announce(Placement.moveFlag(payload.heroId, index));
+/** Where on the mat the dragged thing's centre is: the ghost is centred on the cursor (grab offset 0, slice 1.6c). */
+function ghostPoint(dndContext, matEl) {
+    const ghost = dndContext?.active?.rect?.current?.translated;
+    if (!ghost || !matEl) return null;
+    return pointerToMat({ x: ghost.left + ghost.width / 2, y: ghost.top + ghost.height / 2 }, matEl.getBoundingClientRect());
 }
 
 export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspectedHeroId = null }) => {
@@ -61,10 +56,31 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
     // or their sprite on a Token — shows that flag's reach ring (FP-64).
     const [hoverHeroId, setHoverHeroId] = useState(null);
 
-    // How much the 944px playmat is shrunk to fit this window (CR2-179).
-    const fit = useBoardScale();
-    const scaleRef = useRef(fit.scale);
-    scaleRef.current = fit.scale;
+    // How much the 1760 × 1126 u mat is shrunk to fit this window (CR2-179, slice 1.6c).
+    const fit = useBoardScale(MAT_W, MAT_H);
+
+    // The mat's own element: every screen pointer is measured against it.
+    const matRef = useRef(null);
+
+    // The whole mat is one drop target (slice 1.6c). Today's grid tiles are
+    // smaller targets on top of it and win where they are; the mat takes the
+    // gaps, and everything outside the old landing area.
+    const matDrop = useEntityDrop({
+        id: 'mat',
+        surface: DND_SURFACE.BOARD,
+        accepts: matAccepts,
+        onDrop: (p, info) => {
+            const el = matRef.current;
+            const point = el ? pointerToMat(info?.pointer, el.getBoundingClientRect()) : null;
+            const result = dropOnMat(p, point);
+            // A Token dropped well outside the landing area flies back (FP-93).
+            return result?.flyBack ? false : undefined;
+        }
+    });
+    const setMatRef = useCallback((node) => {
+        matRef.current = node;
+        matDrop.setNodeRef(node);
+    }, [matDrop.setNodeRef]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Active drag preview footprint computation
     const activeDrag = dndContext?.active?.data?.current;
@@ -76,36 +92,28 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
         const rawIndex = Number(String(overId).replace('tile-', ''));
         if (isTileIndex(rawIndex)) {
             const size = getTokenType(activeDrag.typeId)?.size || 1;
+            // STOPGAP (deleted in 1.6c-2): the old spot the drop would use.
+            const spot = spotForDrop(activeDrag, ghostPoint(dndContext, matRef.current));
             let anchorIndex = rawIndex;
-            if (size === 2) {
-                const pointer = dndContext?.active?.rect?.current?.translated;
-                const originEl = typeof document !== 'undefined' ? document.querySelector('[data-board-origin]') : null;
-                if (pointer && originEl) {
-                    const r = originEl.getBoundingClientRect();
-                    const footSpan = 2 * TILE_PX + TILE_GAP_PX;
-                    const px = (pointer.left + footSpan / 2) - r.left;
-                    const py = (pointer.top + footSpan / 2) - r.top;
-                    anchorIndex = closest2x2Anchor(px, py);
-                } else {
-                    const row = Math.min(rowOf(rawIndex), BOARD_SIZE - 2);
-                    const col = Math.min(colOf(rawIndex), BOARD_SIZE - 2);
-                    anchorIndex = row * BOARD_SIZE + col;
-                }
+            if (spot != null) {
+                anchorIndex = spot;
+            } else if (size === 2) {
+                const row = Math.min(rowOf(rawIndex), BOARD_SIZE - 2);
+                const col = Math.min(colOf(rawIndex), BOARD_SIZE - 2);
+                anchorIndex = row * BOARD_SIZE + col;
             }
             previewFootprint = tileFootprint(anchorIndex, size);
             isPreviewValid = isFootprintInBounds(anchorIndex, size);
         }
     }
 
-    // A hero or pennant being dragged over a tile: the reach ring follows the
-    // point the flag would be planted at — the Token's centre, else the tile's.
+    // A hero or pennant being dragged over the mat: the reach ring follows the
+    // point the flag would be planted at — exactly under the cursor (FP-94).
     let dragRing = null;
     if ((activeDrag?.kind === DRAG_KIND.HERO || activeDrag?.kind === DRAG_KIND.FLAG) && activeDrag.heroId
-        && overId && /^tile-\d+$/.test(String(overId))) {
-        const overTile = Number(String(overId).slice('tile-'.length));
-        const occ = BoardState.getOccupyingToken(overTile);
-        const point = (occ && centreOf(occ.instance)) || tileCentre(overTile);
-        if (point) dragRing = { heroId: activeDrag.heroId, x: point.x, y: point.y };
+        && overId && (overId === 'mat' || /^tile-\d+$/.test(String(overId)))) {
+        const point = ghostPoint(dndContext, matRef.current);
+        if (point) dragRing = { heroId: activeDrag.heroId, ...clampToMat(point) };
     }
 
     // One flat projection of the whole board.
@@ -182,7 +190,12 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
             // waiting one on a shared tile, then planting order (FPP-6).
             const RANK = { working: 0, waiting: 1 };
             const drawn = {};
-            for (const [heroId, displayTile] of BoardState.heroesOnBoard()) {
+            for (const [heroId, displayPoint] of BoardState.heroesOnBoard()) {
+                // STOPGAP (deleted in 1.6c-2): the grid draws a hero on the old
+                // spot of the Token they work (by id), else the spot their point is on.
+                if (!displayPoint) continue;
+                const worked = BoardState.findTokenById(BoardState.workTokenOf(heroId));
+                const displayTile = worked?.anchor ?? BoardState.tileAtPoint(displayPoint);
                 if (displayTile == null) continue;
                 const status = Flags.statusOf(heroId);
                 const rank = RANK[status.state];
@@ -249,17 +262,18 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
         EventBus?.publish('state_changed', {});
     }, [EventBus]);
 
-    // The whole of "a Token was dragged onto tile N" lives in
-    // `placeTokenFromDrag`, which the Tray's mini-board calls too, so the two
-    // surfaces cannot drift apart again (CR2-160).
-    const handlePlaceToken = useCallback((index, payload, dropInfo) => {
-        placeTokenFromDrag(index, payload, dropInfo, { scale: scaleRef.current });
+    // Everything dropped on a grid tile lands through `dropOnMat`, at the
+    // point the player let go — the flag exactly there (FP-94), a Token at the
+    // nearest old spot. The Tray's mini-board calls it too, so the surfaces
+    // cannot drift apart again (CR2-160). Without a pointer (never, from the
+    // real board) the tile's own centre stands in.
+    const handleDropOnTile = useCallback((index, payload, dropInfo) => {
+        const el = matRef.current;
+        const point = (dropInfo?.pointer && el)
+            ? pointerToMat(dropInfo.pointer, el.getBoundingClientRect())
+            : tileCentre(index);
+        dropOnMat(payload, point);
     }, []);
-
-    const handlePlaceHero = useCallback((index, payload) => { dropHeroOnTile(index, payload); }, []);
-
-    // A flag, or a board hero (FP-76), dropped on a tile moves the flag.
-    const handleMoveFlag = useCallback((index, payload) => { dropFlagOnTile(index, payload); }, []);
 
     const handleRecallHero = useCallback((index) => {
         announce(Placement.recallHero(index));
@@ -318,18 +332,28 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
             ref={fit.ref}
             className="w-full h-full min-w-0 min-h-0 flex items-center justify-center p-8 overflow-hidden"
         >
-            {/* Outer box reserves the board's ON-SCREEN size, so the surrounding
-                layout centres the scaled board rather than the 944px one. */}
-            <div className="relative shrink-0" style={{ width: fit.size, height: fit.size }}>
+            {/* Outer box reserves the mat's ON-SCREEN size, so the surrounding
+                layout centres the scaled mat rather than the natural one. */}
+            <div className="relative shrink-0" style={{ width: fit.size, height: fit.height }}>
             <div
+                ref={setMatRef}
+                {...matDrop.droppableProps}
                 data-board-origin
+                data-natural-width={MAT_W}
                 className="relative shrink-0"
                 style={{
-                    width: BOARD_PX,
-                    height: BOARD_PX,
+                    width: MAT_W,
+                    height: MAT_H,
                     transform: `scale(${fit.scale})`,
                     transformOrigin: 'top left'
                 }}
+            >
+            {/* ⚠️ STOPGAP (deleted in 1.6c-2): today's grid, drawn over the old
+                landing area where it sits on the mat (OLD_AREA_ORIGIN, FP-92). */}
+            <div
+                data-old-area
+                className="absolute shrink-0"
+                style={{ left: OLD_AREA_ORIGIN.x, top: OLD_AREA_ORIGIN.y, width: BOARD_PX, height: BOARD_PX }}
             >
             {TERRAIN_ENABLED && <TerrainCanvas terrain={terrain} seed={terrainSeed} />}
             <div
@@ -352,9 +376,9 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
                         heroSprite={tiles[i]?.heroSprite}
                         isFootprintPreview={previewFootprint.includes(i)}
                         isPreviewValid={isPreviewValid}
-                        onPlaceToken={handlePlaceToken}
-                        onPlaceHero={handlePlaceHero}
-                        onMoveFlag={handleMoveFlag}
+                        onPlaceToken={handleDropOnTile}
+                        onPlaceHero={handleDropOnTile}
+                        onMoveFlag={handleDropOnTile}
                         onHeroHover={setHoverHeroId}
                         onPickUp={handleRecallHero}
                         onReturnTokenToTray={handleReturnTokenToTray}
@@ -365,6 +389,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
                         onOpenRecipes={handleOpenRecipes}
                     />
                 ))}
+            </div>
             </div>
 
             {/* Freely-sitting Map Tokens overtop the playmat */}

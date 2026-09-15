@@ -18,6 +18,23 @@ const STAGGER_RESET_MS = 250;
 const MAX_CONCURRENT = 12;
 
 /**
+ * Where a board point (natural board pixels / mat units) is on screen.
+ *
+ * ⚠️ The board is drawn at its natural size and then CSS-scaled to fit
+ * (`useBoardScale`), so its on-screen rect is the SCALED box. A board point has
+ * to be multiplied by that scale — `rect.width / data-natural-width` — before
+ * it is added to the rect's corner. Without it, loot sparkles and Map bursts
+ * started further from their Token the smaller the window (slice 1.6c). A board
+ * with no `data-natural-width` reads as unscaled.
+ */
+export function boardPointToScreen(boardEl, x, y) {
+    const r = boardEl.getBoundingClientRect();
+    const natural = Number(boardEl.getAttribute?.('data-natural-width'));
+    const scale = natural > 0 && r.width > 0 ? r.width / natural : 1;
+    return { x: r.left + x * scale, y: r.top + y * scale };
+}
+
+/**
  * ParticleOverlay - A high-performance Canvas layer for UI-space effects.
  * Visualizes items flying between Cards and the Bank nav bubble.
  */
@@ -278,12 +295,8 @@ class ParticleSystem {
         if (source && typeof source === 'object' && source.boardX != null) {
             const board = document.querySelector('[data-board-origin]');
             if (!board) return null;
-            const r = board.getBoundingClientRect();
-            return {
-                left: r.left + source.boardX, top: r.top + source.boardY,
-                width: 0, height: 0,
-                right: r.left + source.boardX, bottom: r.top + source.boardY
-            };
+            const { x, y } = boardPointToScreen(board, source.boardX, source.boardY);
+            return { left: x, top: y, width: 0, height: 0, right: x, bottom: y };
         }
         if (typeof source === 'string' && source.endsWith('-bubble-target')) {
             return document.getElementById(source)?.getBoundingClientRect();

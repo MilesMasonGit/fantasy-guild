@@ -63,7 +63,7 @@ function announceMoved() {
  * payload straight through:
  *
  * - `{ traySlot }`  — a Token loose on the Tray surface
- * - `{ tile }`      — a Token standing on the playmat
+ * - `{ instanceId }` — a Token standing on the playmat (by id since slice 1.6c)
  * - `{ spriteId }`  — a loose loot Token floating over the grid
  * - `{ boardMapId }`— a Map lying on the playmat (always refused, D-156)
  *
@@ -82,7 +82,11 @@ export function depositFrom(source) {
     if (!QuestManager.isTokenVaultSendUnlocked()) return refuse(VAULT_LOCKED);
 
     if (source.traySlot != null) return depositFromTray(source.traySlot);
-    if (source.tile != null) return depositFromTile(source.tile);
+    if (source.instanceId != null) {
+        // STOPGAP (deleted in 1.6d): a Token on the mat goes by its old spot.
+        const found = BoardState.findTokenById(source.instanceId);
+        return found?.anchor != null ? depositFromTile(found.anchor) : NOTHING;
+    }
     if (source.spriteId != null) return depositFromSprite(source.spriteId);
 
     // A Map on the playmat. Refused for the same reason as everywhere else, and

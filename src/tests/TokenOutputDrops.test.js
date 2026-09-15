@@ -11,7 +11,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
-import { colOf, rowOf, TILE_PX, TILE_STEP_PX } from '../config/boardGeometry.js';
+import { colOf, rowOf, TILE_PX, TILE_STEP_PX, tileCentre } from '../config/boardGeometry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
@@ -203,8 +203,7 @@ describe('It obeys the drop mechanics item outputs already use', () => {
         bench('drop_tool_and_item');
         run(11000);
 
-        const expectedX = colOf(STATION) * TILE_STEP_PX + TILE_PX / 2;
-        const expectedY = rowOf(STATION) * TILE_STEP_PX + TILE_PX / 2;
+        const { x: expectedX, y: expectedY } = tileCentre(STATION);
 
         const token = tokenSprites()[0];
         expect(token.fromX).toBeCloseTo(expectedX);

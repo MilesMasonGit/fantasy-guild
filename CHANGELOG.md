@@ -5,6 +5,18 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The playmat is now a bigger mat, with today's board sitting in its middle** (Free Playmat
+  slice 1.6c, first part). Everything still looks and plays like the 6×6 board, drawn in the
+  centre of a wider mat, and every drop on the board now lands at the point you let go. What
+  you might notice:
+  - **A flag stands exactly where you drop it** — from the Dock, or dragging a flag or a hero
+    already on the board — instead of jumping to the middle of a square.
+  - **A Token dropped well outside the board area flies back** with a short note, "Place inside
+    the play area for now." This is temporary, until Tokens can sit anywhere.
+  - **Loot sparkles and Map bursts start from the right spot on smaller windows.** They used to
+    start further from their Token the more the board was shrunk to fit.
+  - **A Map that cannot be put on a square goes back where it lay**, not to the top-left corner.
+
 - **Fights, promotions, rules, spawned Tokens and the board's messages now follow each
   Token itself, not the square it sits on** (Free Playmat slice 1.6b, second half). This
   finishes moving the game's rules off squares — the next step towards placing Tokens

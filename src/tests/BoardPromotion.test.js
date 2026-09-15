@@ -14,7 +14,7 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { getPromotionCost, getPromotionGateSkills, getJobSkills } from '../config/registries/jobRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { chargeDeltaOf } from '../config/registries/chargeMomentRegistry.js';
-import { idAt } from './fixtures/mat.js';
+import { idAt, tileCentre } from './fixtures/mat.js';
 
 /**
  * ⭐ **Promotion on the board — read from the Promotes rule** (Promotes rule P3).
@@ -321,7 +321,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
         // Their flag stays planted on the spot (Free Playmat 1.4b).
         expect(BoardState.flagOf(hero.id)).not.toBeNull();
-        expect(BoardState.displayTileOf(hero.id)).toBe(TILE);
+        expect(BoardState.displayPointOf(hero.id)).toEqual(tileCentre(TILE));
     });
 
     /** ⚠️ A stale offer must not become a free promotion. */

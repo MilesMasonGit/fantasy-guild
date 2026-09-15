@@ -19,7 +19,7 @@ import {
     PLACEMENT, PLACEMENTS, getPlacement, placementOf, resolvePlacement
 } from '../config/registries/placementRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
-import { idAt } from './fixtures/mat.js';
+import { idAt, tileCentre } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -134,7 +134,7 @@ describe('⭐ Transforms — one Token becomes another', () => {
         // passive one), so the claim ends and the flag chooses again — but
         // nobody is moved. The flag still stands on the spot.
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
-        expect(BoardState.displayTileOf('hero_1')).toBe(A);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(A));
         expect(BoardState.workerOf(idAt(A))).toBeNull();
     });
 

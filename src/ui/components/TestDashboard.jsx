@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useEngine } from '../hooks/useEngine.js';
 import { listTokenTypeIds, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { OLD_AREA_ORIGIN } from '../../config/boardGeometry.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { Bug, Plus, X } from 'lucide-react';
 import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
@@ -162,7 +163,8 @@ export const TestDashboard = React.memo(() => {
                 const count = 3 + Math.floor(Math.random() * 4);
                 for (let i = 0; i < count; i++) {
                     // A random point on the mat (sprite sources are points since slice 1.6b).
-                    const from = { centre: { x: 64 + Math.random() * 800, y: 64 + Math.random() * 800 } };
+                    // STOPGAP (deleted in 1.6d): inside the old landing area (OLD_AREA_ORIGIN, FP-92).
+                    const from = { centre: { x: OLD_AREA_ORIGIN.x + 64 + Math.random() * 800, y: OLD_AREA_ORIGIN.y + 64 + Math.random() * 800 } };
                     if (Math.random() < 0.6) {
                         engine.SpriteLayer.addSprite(
                             'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), from

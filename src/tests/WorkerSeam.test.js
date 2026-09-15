@@ -8,7 +8,7 @@ import * as Placement from '../systems/board/Placement.js';
 import * as Flags from '../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { tileCentre } from '../config/boardGeometry.js';
+import { tileCentre, footprintCentre } from '../config/boardGeometry.js';
 import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -22,7 +22,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * The worker seam (Free Playmat slices 1.4a, 1.4b).
  *
- * `workerOf`, `workTileOf` and `displayTileOf` are the only way anything
+ * `workerOf`, `workTileOf` and `displayPointOf` (was `displayTileOf` until slice 1.6c) are the only way anything
  * outside `BoardState` learns where a hero is. Slice 1.4a pinned what they
  * answered from `heroTiles`; slice 1.4b swapped flags and claims in behind them,
  * and these tests now pin the flag answers (roadmap §2).
@@ -51,7 +51,7 @@ describe('the worker seam answers from flags and claims', () => {
 
     it('a docked hero has no work tile and no display tile', () => {
         expect(BoardState.workTileOf('hero_1')).toBeNull();
-        expect(BoardState.displayTileOf('hero_1')).toBeNull();
+        expect(BoardState.displayPointOf('hero_1')).toBeNull();
         expect(BoardState.workTileOf(null)).toBeNull();
     });
 
@@ -67,7 +67,7 @@ describe('the worker seam answers from flags and claims', () => {
 
         expect(BoardState.workerOf(idAt(9))).toBe('hero_1');
         expect(BoardState.workTileOf('hero_1')).toBe(9);
-        expect(BoardState.displayTileOf('hero_1')).toBe(9);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(9));
         expect(BoardState.workerOf(idAt(10))).toBeNull();
     });
 
@@ -77,7 +77,7 @@ describe('the worker seam answers from flags and claims', () => {
 
         expect(BoardState.workerOf(idAt(0))).toBe('hero_1');
         expect(BoardState.workTileOf('hero_1')).toBe(0);
-        expect(BoardState.displayTileOf('hero_1')).toBe(0);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(0));
     });
 
     it('⭐ 2×2: the worker is found on EVERY tile of the footprint (1.4b), work tile is the anchor', () => {
@@ -89,7 +89,7 @@ describe('the worker seam answers from flags and claims', () => {
         }
         expect(BoardState.workerOf(idAt(2))).toBeNull();
         expect(BoardState.workTileOf('hero_1')).toBe(0);
-        expect(BoardState.displayTileOf('hero_1')).toBe(0);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(footprintCentre(0, 2));
     });
 
     it('⭐ a bare tile has no worker, even with a flag planted on it (1.4b)', () => {
@@ -99,7 +99,7 @@ describe('the worker seam answers from flags and claims', () => {
         expect(BoardState.workerOf(idAt(14))).toBeNull();
         expect(BoardState.workTileOf('hero_2')).toBeNull();
         // Drawn at their flag.
-        expect(BoardState.displayTileOf('hero_2')).toBe(14);
+        expect(BoardState.displayPointOf('hero_2')).toEqual(tileCentre(14));
     });
 
     it('recall clears all three answers', () => {
@@ -109,7 +109,7 @@ describe('the worker seam answers from flags and claims', () => {
 
         expect(BoardState.workerOf(idAt(9))).toBeNull();
         expect(BoardState.workTileOf('hero_1')).toBeNull();
-        expect(BoardState.displayTileOf('hero_1')).toBeNull();
+        expect(BoardState.displayPointOf('hero_1')).toBeNull();
     });
 });
 

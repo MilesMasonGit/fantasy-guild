@@ -12,7 +12,7 @@ import { setMatTuning, resetMatTuning, matTuning, matTuningDefault } from '../co
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { REACH } from '../config/registries/reachRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { idAt } from './fixtures/mat.js';
+import { idAt, anchorOf } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -63,7 +63,7 @@ registerTokenTypes({
 const sorted = (list) => [...list].sort((a, b) => a - b);
 
 /** Ids → the tiles those Tokens stand on (test layout). */
-const tilesOf = (ids) => ids.map(id => BoardState.tileOfToken(id));
+const tilesOf = (ids) => ids.map(id => anchorOf(id));
 
 /** `nearby` asked of the Token covering `tile`, answered as tiles. */
 const near = (tile, ...rest) => tilesOf(nearby(idAt(tile), ...rest));
@@ -101,7 +101,8 @@ afterEach(() => {
 
 describe('mat positions', () => {
     it('a tile step is 160 u and a 1×1 centre is its tile centre', () => {
-        expect(tileCentre(0)).toEqual({ x: 64, y: 64 });
+        // The old landing area is centred on the mat, its corner at (416, 99) (FP-92).
+        expect(tileCentre(0)).toEqual({ x: 480, y: 163 });
         expect(tileCentre(1).x - tileCentre(0).x).toBe(160);
         expect(tileCentre(6).y - tileCentre(0).y).toBe(160);
         put(14, SMALL);
@@ -110,8 +111,8 @@ describe('mat positions', () => {
 
     it('a 2×2 Token\'s centre is the centre of its footprint, from any of its tiles', () => {
         put(7, LARGE_BUFF);
-        expect(footprintCentre(7, 2)).toEqual({ x: 304, y: 304 });
-        for (const t of tileFootprint(7, 2)) expect(positionOf(t)).toEqual({ x: 304, y: 304 });
+        expect(footprintCentre(7, 2)).toEqual({ x: 720, y: 403 });
+        for (const t of tileFootprint(7, 2)) expect(positionOf(t)).toEqual({ x: 720, y: 403 });
     });
 
     it('Near defaults to 164 u (FP-75, was 272 u under FP-65)', () => {

@@ -16,6 +16,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import {
     REACH, REACHES, DEFAULT_REACH, reachOf, reachCovers, RELATION, getReach
 } from '../config/registries/reachRegistry.js';
+import { anchorOf } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -260,7 +261,7 @@ describe('a firing rule reaches as far as it says (the outbound side)', () => {
         const addressed = addSprite.mock.calls
             .filter(([kind, refId]) => kind === 'item' && refId === 'fixture_charcoal')
             // A sprite's source is a Token instance id since Free Playmat 1.6b.
-            .map(([, , , source]) => BoardState.tileOfToken(source));
+            .map(([, , , source]) => anchorOf(source));
         expect(addressed).toEqual([NEIGHBOUR]);   // the granter itself
         addSprite.mockRestore();
     });

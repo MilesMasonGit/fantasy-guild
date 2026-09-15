@@ -11,7 +11,6 @@
  * this file deliberately does not re-export it.
  */
 
-import { BOARD_SIZE, TILE_PX, TILE_GAP_PX, TILE_STEP_PX } from '../../../config/boardGeometry.js';
 import { ALERT } from '../../../systems/board/boardEvents.js';
 
 /**
@@ -28,22 +27,6 @@ export const PAIR_OFFSET_PX = 24;
  * The hero's clickable box — narrower than the art it draws.
  */
 export const HERO_HIT_PX = 64;
-
-/**
- * Calculates the best 2x2 top-left anchor tile given pointer coordinates on the board.
- * Snaps to the nearest top-left anchor in the grid with gap support.
- *
- * @param {number} px X pixel coordinate relative to top-left of board
- * @param {number} py Y pixel coordinate relative to top-left of board
- * @returns {number} Top-left tile index for the 2x2 block
- */
-export function closest2x2Anchor(px, py) {
-    const footSpan = 2 * TILE_PX + TILE_GAP_PX;
-    const step = TILE_STEP_PX;
-    const anchorCol = Math.max(0, Math.min(BOARD_SIZE - 2, Math.round((px - footSpan / 2) / step)));
-    const anchorRow = Math.max(0, Math.min(BOARD_SIZE - 2, Math.round((py - footSpan / 2) / step)));
-    return anchorRow * BOARD_SIZE + anchorCol;
-}
 
 /**
  * What the red mark means, in the player's words (D-114).

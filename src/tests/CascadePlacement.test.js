@@ -79,28 +79,6 @@ describe('Cascade Placement & 2x2 Snapping', () => {
         });
     });
 
-    describe('Intersection Anchor Snapping', () => {
-        it('calculates closest 2x2 anchor from cursor coordinates (center-aligned)', () => {
-            // A tile is 128px with a 32px gap, so the step is 160px and a 2x2
-            // spans 288px. The anchor is round((px - 144) / 160), clamped.
-
-            // Center of 2x2 at top-left intersection (144, 144) -> anchor 0
-            expect(boardConstants.closest2x2Anchor(144, 144)).toBe(0);
-
-            // Center of 2x2 at (304, 144) -> col 1, row 0 -> anchor 1
-            expect(boardConstants.closest2x2Anchor(304, 144)).toBe(1);
-
-            // Center of 2x2 at (304, 304) -> col 1, row 1 -> anchor 7
-            expect(boardConstants.closest2x2Anchor(304, 304)).toBe(7);
-
-            // Near bottom-right edge (900, 900) -> clamped to col 4, row 4 -> anchor 28
-            expect(boardConstants.closest2x2Anchor(900, 900)).toBe(28);
-
-            // Negative coordinates clamp safely to (0, 0)
-            expect(boardConstants.closest2x2Anchor(-50, -50)).toBe(0);
-        });
-    });
-
     describe('Directional Cascade Pushing', () => {
         it('places into empty space without shifting anything', () => {
             const bigMill = makeToken('fixture_big_mill');

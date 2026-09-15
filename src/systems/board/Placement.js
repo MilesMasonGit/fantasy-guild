@@ -5,7 +5,8 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { positionOf } from './nearby.js';
 import * as Flags from './Flags.js';
 import * as BoardPromotion from './BoardPromotion.js';
-import { isPlaceable, GUILD_HALL_TILE, TILE_PX, TILE_STEP_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors, tileCentre, footprintCentre } from '../../config/boardGeometry.js';
+import { isPlaceable, GUILD_HALL_TILE, TILE_PX, TILE_STEP_PX, OLD_AREA_ORIGIN, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors, tileCentre, footprintCentre } from '../../config/boardGeometry.js';
+import { clampToMat } from '../../config/matGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
@@ -240,8 +241,9 @@ export function placeToken(index, instance) {
 
     // Freely positioned Map Tokens sit overtop of the playmat (D-155)
     if (isMap) {
-        const x = colOf(index) * TILE_PX;
-        const y = rowOf(index) * TILE_PX;
+        // STOPGAP origin (deleted in 1.6d): inside the old landing area (FP-92).
+        const x = OLD_AREA_ORIGIN.x + colOf(index) * TILE_PX;
+        const y = OLD_AREA_ORIGIN.y + rowOf(index) * TILE_PX;
         BoardState.addBoardMap(instance.typeId, x, y, instance.usesRemaining);
         EventBus.publish('state_changed');
         return { success: true, displacedToken: null };
@@ -474,8 +476,8 @@ export function placeToken(index, instance) {
 
                 const col = colOf(occ.anchorIndex);
                 const row = rowOf(occ.anchorIndex);
-                const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
-                const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
+                const x = OLD_AREA_ORIGIN.x + col * TILE_STEP_PX + TILE_STEP_PX / 2;   // STOPGAP origin (1.6d)
+                const y = OLD_AREA_ORIGIN.y + row * TILE_STEP_PX + TILE_STEP_PX / 2;
 
                 EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
                     kind: 'token',
@@ -593,8 +595,8 @@ export function placeToken(index, instance) {
 
             const col = colOf(occ.anchorIndex);
             const row = rowOf(occ.anchorIndex);
-            const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
-            const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
+            const x = OLD_AREA_ORIGIN.x + col * TILE_STEP_PX + TILE_STEP_PX / 2;   // STOPGAP origin (1.6d)
+            const y = OLD_AREA_ORIGIN.y + row * TILE_STEP_PX + TILE_STEP_PX / 2;
 
             EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
                 kind: 'token',
@@ -703,8 +705,8 @@ export function returnTokenToTray(index, position = null) {
     if (position == null) {
         const col = colOf(occ.anchorIndex);
         const row = rowOf(occ.anchorIndex);
-        const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
-        const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
+        const x = OLD_AREA_ORIGIN.x + col * TILE_STEP_PX + TILE_STEP_PX / 2;   // STOPGAP origin (1.6d)
+        const y = OLD_AREA_ORIGIN.y + row * TILE_STEP_PX + TILE_STEP_PX / 2;
 
         EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
             kind: 'token',
@@ -821,6 +823,29 @@ export function placeHero(heroId, index) {
 }
 
 /**
+ * ⭐ Plant `heroId`'s flag **exactly at a mat point** (Free Playmat slice 1.6c,
+ * FP-94) — the point the player let go of it, clamped onto the mat. The
+ * point-based bridge every drop of a hero or a flag goes through
+ * (`ui/components/board/dropOnMat.js`); the flag chooses at once by the hero's
+ * rules, like `placeHero`, and publishes the same way.
+ */
+export function plantFlagAt(heroId, point) {
+    if (!heroId) return refuse('No hero');
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return refuse('Nowhere to plant a flag');
+    const at = clampToMat(point);
+
+    // `Flags.plant` announces `hero_deployed` itself, for every route (1.5).
+    const planted = Flags.plant(heroId, at);
+    if (!planted.success) return planted;
+    if (planted.unchanged) return { success: true, point: at, workedTile: BoardState.workTileOf(heroId) };
+
+    EventBus.publish('heroes_updated', { source: 'board_placement' });
+    EventBus.publish('state_changed');
+
+    return { success: true, point: at, workedTile: BoardState.workTileOf(heroId) };
+}
+
+/**
  * Drag a pennant onto a tile — **move only the flag** (slice 1.5, FPP-15).
  *
  * On today's grid this lands exactly where dropping the hero would: it just
@@ -845,7 +870,8 @@ export function recallHero(index) {
 
     let heroId = BoardState.workerOfTile(anchor);
     if (heroId == null) {
-        const onBoard = BoardState.heroesOnBoard();
+        // STOPGAP (deleted in 1.6c-2 with this function): the drawn tile of a hero is the tile their display point is on.
+        const onBoard = BoardState.heroesOnBoard().map(([id, point]) => [id, point ? BoardState.tileAtPoint(point) : null]);
         heroId = onBoard.find(([id, tile]) => BoardState.waitOfHero(id) && tile === anchor)?.[0]
             ?? onBoard.find(([, tile]) => tile === anchor || tile === index)?.[0]
             ?? null;
@@ -860,19 +886,17 @@ export function recallHero(index) {
  */
 export function recallHeroById(heroId) {
     if (!heroId) return refuse('No hero');
-    const tile = BoardState.displayTileOf(heroId);
+    const point = BoardState.displayPointOf(heroId);
     if (!Flags.furl(heroId, 'recall')) return { success: true, heroId };
 
-    if (tile != null) {
-        const col = colOf(tile);
-        const row = rowOf(tile);
+    if (point) {
         EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
             kind: 'hero',
             refId: heroId,
             heroId,
             quantity: 1,
-            x: col * TILE_STEP_PX + TILE_STEP_PX / 2,
-            y: row * TILE_STEP_PX + TILE_STEP_PX / 2,
+            x: point.x,
+            y: point.y,
             destination: 'dock'
         });
     }

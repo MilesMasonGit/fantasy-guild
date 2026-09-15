@@ -73,3 +73,12 @@ export function idAt(i) {
 export function pointAt(i, typeId) {
     return footprintCentre(i, getTokenType(typeId)?.size || 1);
 }
+
+/**
+ * The old spot (anchor tile) Token `id` stands on, or null. **Test layout
+ * only** — replaces `BoardState.tileOfToken`, deleted in slice 1.6c, for tests
+ * that still read their answers as tiles. Deleted with the grid in 1.6d.
+ */
+export function anchorOf(id) {
+    return BoardState.findTokenById(id)?.anchor ?? null;
+}

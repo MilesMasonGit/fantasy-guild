@@ -6,7 +6,8 @@ import { EventBus } from '../core/EventBus.js';
 import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { BOARD_PX, TILE_PX, TILE_STEP_PX } from '../../config/boardGeometry.js';
+import { TILE_PX, TILE_STEP_PX } from '../../config/boardGeometry.js';
+import { MAT_W, MAT_H } from '../../config/matGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
@@ -133,8 +134,9 @@ export function getSprites() {
     return sprites() || [];
 }
 
-/** Clamp a position to the board so nothing lands off the edge. */
-const clamp = (v) => Math.max(TILE_PX * 0.25, Math.min(BOARD_PX - TILE_PX * 0.25, v));
+/** Clamp a position to the mat so nothing lands off the edge (the mat's own size since slice 1.6c). */
+const clampX = (v) => Math.max(TILE_PX * 0.25, Math.min(MAT_W - TILE_PX * 0.25, v));
+const clampY = (v) => Math.max(TILE_PX * 0.25, Math.min(MAT_H - TILE_PX * 0.25, v));
 
 /**
  * Where a sprite lands: 1–2 tiles from its source, in a random direction
@@ -173,8 +175,8 @@ function getSourcePosition(source) {
     if (typeof source !== 'object') return null;
     if (source.inTray) {
         return {
-            x: BOARD_PX + 30,
-            y: clamp((source.y != null ? source.y : 0.5) * BOARD_PX)
+            x: MAT_W + 30,
+            y: clampY((source.y != null ? source.y : 0.5) * MAT_H)
         };
     }
     if (source.centre && Number.isFinite(source.centre.x) && Number.isFinite(source.centre.y)) {
@@ -204,16 +206,16 @@ function scatterFrom(source, kind = 'item', existingTarget = null) {
         const offsetAngle = Math.random() * Math.PI * 2;
         const offsetDistance = 24 + Math.random() * 24;
         return {
-            x: clamp(existingTarget.x + Math.cos(offsetAngle) * offsetDistance),
-            y: clamp(existingTarget.y + Math.sin(offsetAngle) * offsetDistance),
+            x: clampX(existingTarget.x + Math.cos(offsetAngle) * offsetDistance),
+            y: clampY(existingTarget.y + Math.sin(offsetAngle) * offsetDistance),
             fromX: fx,
             fromY: fy
         };
     }
 
     if (!sourcePos) {
-        const x = clamp(Math.random() * BOARD_PX);
-        const y = clamp(Math.random() * BOARD_PX);
+        const x = clampX(Math.random() * MAT_W);
+        const y = clampY(Math.random() * MAT_H);
         return { x, y, fromX: x, fromY: y };
     }
 
@@ -223,8 +225,8 @@ function scatterFrom(source, kind = 'item', existingTarget = null) {
         const distance = TILE_PX * (kind === 'item' ? (0.4 + 0.3 * Math.random()) : (0.5 + 0.3 * Math.random()));
         const angle = Math.PI + (Math.random() - 0.5) * 1.1; // westward onto the board
         return {
-            x: clamp(fromX + Math.cos(angle) * distance),
-            y: clamp(fromY + Math.sin(angle) * distance),
+            x: clampX(fromX + Math.cos(angle) * distance),
+            y: clampY(fromY + Math.sin(angle) * distance),
             fromX,
             fromY
         };
@@ -237,8 +239,8 @@ function scatterFrom(source, kind = 'item', existingTarget = null) {
         : TILE_PX * (0.4 + 0.45 * Math.random());
 
     return {
-        x: clamp(sourcePos.x + Math.cos(angle) * distance),
-        y: clamp(sourcePos.y + Math.sin(angle) * distance),
+        x: clampX(sourcePos.x + Math.cos(angle) * distance),
+        y: clampY(sourcePos.y + Math.sin(angle) * distance),
         fromX: sourcePos.x,
         fromY: sourcePos.y
     };

@@ -15,7 +15,7 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
-import { placeTokenFromDrag } from '../ui/components/board/placeTokenFromDrag.js';
+import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -26,7 +26,7 @@ import { getPromotionCost, getPromotionGateSkills } from '../config/registries/j
 import { ROLE } from '../config/registries/roleRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
-import { BOARD_PX } from '../config/boardGeometry.js';
+import { MAT_W, MAT_H } from '../config/matGeometry.js';
 import { TileProgressBar } from '../ui/components/board/TileProgressBar.jsx';
 import { TileEventAlert } from '../ui/components/board/TileEventAlert.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
@@ -238,7 +238,7 @@ describe('⭐ Map bursts throw from a real point', () => {
         expect(Cartographer.centreOfBoard()).toEqual(C(35));
 
         BoardState.removeToken(hall.id);
-        expect(Cartographer.centreOfBoard()).toEqual({ x: BOARD_PX / 2, y: BOARD_PX / 2 });
+        expect(Cartographer.centreOfBoard()).toEqual({ x: MAT_W / 2, y: MAT_H / 2 });
     });
 
     it('a burst with no origin flies its loot out of the Guild Hall', () => {
@@ -296,7 +296,7 @@ describe('⭐ quest events carry instanceId, and still count', () => {
         const off = EventBus.subscribe('loot_token_placed', (p) => seen.push(p));
         const progress = vi.spyOn(QuestManager, 'reportProgress');
         try {
-            placeTokenFromDrag(14, { typeId: 'fixture_passive', from: { spriteId: sprite.id } });
+            dropOnMat({ typeId: 'fixture_passive', from: { spriteId: sprite.id } }, tileCentre(14));
         } finally {
             off?.();
         }

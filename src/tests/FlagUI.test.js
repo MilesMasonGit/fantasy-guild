@@ -129,7 +129,7 @@ describe('dropping on the Dock recalls (dockRecall)', () => {
     // so every recall drop is a FLAG payload — these are the three shapes the
     // board produces (`BoardTile`'s hero, `FlagLayer`'s idle hero, the flag).
     it.each([
-        ['a hero on a Token (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { tile: 15, hero: true } }],
+        ['a hero on a Token (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { hero: true } }],
         ['an idle hero beside their flag (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true, hero: true } }],
         ['the flag itself', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }]
     ])('furls the flag for %s', (_label, payload) => {

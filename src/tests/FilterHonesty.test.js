@@ -13,6 +13,7 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { KEYWORD, getKeyword, makeStatement } from '../systems/effects/statements.js';
 import { rulesLinesOf } from '../systems/effects/statementText.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { anchorOf } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -74,7 +75,7 @@ function addressedTiles(spy, itemId) {
     return spy.mock.calls
         .filter(([kind, refId]) => kind === 'item' && refId === itemId)
         .map(([, , , source]) => (typeof source === 'string'
-            ? BoardState.tileOfToken(source)
+            ? anchorOf(source)
             : (source?.centre ? BoardState.tileAtPoint(source.centre) : source)));
 }
 

@@ -7,7 +7,7 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Flags from '../systems/board/Flags.js';
 import { GUILD_HALL_TILE, TILE_COUNT } from '../config/boardGeometry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
-import { idAt } from './fixtures/mat.js';
+import { idAt, pointAt, tileCentre } from './fixtures/mat.js';
 
 /**
  * Placement and displacement — D-134, D-143, D-147, plus the forfeited-cycle
@@ -129,7 +129,7 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
         expect(result.displacedHeroId).toBeUndefined();
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardState.workTileOf('hero_1')).toBeNull();
-        expect(BoardState.displayTileOf('hero_1')).toBe(0);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(0));
     });
 
     it('does NOT hand the displaced hero to the arriving Token', () => {
@@ -288,7 +288,7 @@ describe('Placing a hero (D-111, D-147)', () => {
         const standing = BoardState.heroesOnBoard()
             .filter(([heroId]) => heroId === 'hero_1');
         expect(standing).toHaveLength(1);
-        expect(standing[0][1]).toBe(30);
+        expect(standing[0][1]).toEqual(tileCentre(30));   // a display point since slice 1.6c
     });
 
     it('allows planting on an empty tile, where they simply do nothing (D-57)', () => {
@@ -297,7 +297,7 @@ describe('Placing a hero (D-111, D-147)', () => {
         // They are genuinely THERE and genuinely doing nothing — two different
         // facts. An empty tile and the Dock are not the same place.
         expect(result.workedTile).toBeNull();
-        expect(BoardState.displayTileOf('hero_1')).toBe(9);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(9));
         expect(BoardState.workerOf(idAt(9))).toBeNull();
     });
 
@@ -318,7 +318,7 @@ describe('Placing a hero (D-111, D-147)', () => {
         expect(Placement.placeHero('hero_1', GUILD_HALL_TILE).success).toBe(true);
         // A Hall with no Wishing Well rank has no work cycle: the flag stands
         // there with nothing to claim.
-        expect(BoardState.displayTileOf('hero_1')).toBe(GUILD_HALL_TILE);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(pointAt(GUILD_HALL_TILE, 'token_guild_hall'));
     });
 
     it('placing a hero where they already are is a no-op, not a forfeit', () => {
@@ -347,7 +347,7 @@ describe('Recalling a hero', () => {
 
         expect(Placement.recallHero(9).heroId).toBe('hero_1');
         expect(BoardState.flagOf('hero_1')).toBeNull();
-        expect(BoardState.displayTileOf('hero_1')).toBeNull();
+        expect(BoardState.displayPointOf('hero_1')).toBeNull();
         expect(BoardState.getToken(9).typeId).toBe('fixture_producer');   // Token stays
     });
 
@@ -387,7 +387,7 @@ describe('Returning a Token to the Tray', () => {
         Flags.assign(0);
 
         expect(result.idledHeroId).toBe('hero_1');
-        expect(BoardState.displayTileOf('hero_1')).toBe(9);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(9));
         expect(BoardState.workTileOf('hero_1')).toBeNull();
     });
 
@@ -491,12 +491,12 @@ describe('Passive vs Active Token Hero Constraints', () => {
         const result = Placement.placeHero('hero_1', 9);
         expect(result.success).toBe(true);
         expect(BoardState.workerOf(idAt(9))).toBeNull();
-        expect(BoardState.displayTileOf('hero_1')).toBe(9);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(9));
     });
 
     it('a passive token placed on a planted flag leaves the flag where it is', () => {
         Placement.placeHero('hero_1', 9);
-        expect(BoardState.displayTileOf('hero_1')).toBe(9);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(9));
 
         const result = Placement.placeToken(9, token('fixture_pickaxe_t1'));
         expect(result.success).toBe(true);

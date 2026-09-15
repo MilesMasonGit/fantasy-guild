@@ -12,6 +12,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
+import { tileCentre } from './fixtures/mat.js';
 
 /**
  * The board's cycle engine — Tokens working, and what stops them.
@@ -391,7 +392,7 @@ describe('Charges and depletion (D-176, D-118)', () => {
         // (D-172). This is also what D-151 restocks underneath.
         // Under flags (1.4b) the flag stays planted there; with nothing to work
         // and no Manager to wait for, the hero idles at it.
-        expect(BoardState.displayTileOf('hero_1')).toBe(10);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(10));
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
     });

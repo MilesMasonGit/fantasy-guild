@@ -5,7 +5,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { BOARD_PX } from '../../../config/boardGeometry.js';
+import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -19,7 +19,7 @@ import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { PixelArt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
 import { flagTooltip } from './flagText.js';
-import { announce } from './placeTokenFromDrag.js';
+import { announce } from './dropOnMat.js';
 import {
     FLAG_PX, IDLE_HERO_PX, MAX_FLAGS_SHOWN, GEAR_PX, GEAR_OFFSET,
     IDLE_CHIP_OFFSET, MORE_CHIP_OFFSET, IDLE_HERO_OFFSET, fannedOrigin
@@ -124,13 +124,13 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         <div
             data-flag-layer
             className="absolute left-0 top-0 pointer-events-none"
-            style={{ width: BOARD_PX, height: BOARD_PX, zIndex: 38 }}
+            style={{ width: MAT_W, height: MAT_H, zIndex: 38 }}
         >
             {rings.size > 0 && (
                 <svg
                     className="absolute left-0 top-0 overflow-visible pointer-events-none"
-                    width={BOARD_PX}
-                    height={BOARD_PX}
+                    width={MAT_W}
+                    height={MAT_H}
                 >
                     {[...rings].map(([heroId, p]) => (
                         <circle
@@ -153,7 +153,7 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         <div
             data-flag-pennants
             className="absolute left-0 top-0 pointer-events-none"
-            style={{ width: BOARD_PX, height: BOARD_PX, zIndex: 85 }}
+            style={{ width: MAT_W, height: MAT_H, zIndex: 85 }}
         >
             {shown.map(f => (
                 <Flag
