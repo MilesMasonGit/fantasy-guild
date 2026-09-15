@@ -36,7 +36,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 beforeEach(() => {
     GameState.initNew();
     SpriteLayer.init();
-    GameState.state.board.tiles = {};
+    GameState.state.board.tokens = {};
     GameState.state.board.maps = [];
     GameState.state.board.tray = [];
     GameState.state.board.tokenBank = {};
@@ -66,9 +66,9 @@ describe('occupiedTileMap — the mini-board must not call a covered tile empty'
         const anchor = BOARD_SIZE + 1;
         BoardState.setToken(anchor, instance('fixture_big', 50));
 
-        // This is the shape the old code read from, and it is the whole problem:
-        // state stores the Token ONCE, at its anchor.
-        expect(Object.keys(GameState.state.board.tiles)).toEqual([String(anchor)]);
+        // State stores the Token ONCE (since slice 1.6a by id, at its footprint
+        // centre) — nothing in storage names the three cells its body covers.
+        expect(Object.values(GameState.state.board.tokens)).toHaveLength(1);
 
         const occupied = occupiedTileMap();
         expect(occupied[anchor]).toBe(true);
@@ -158,7 +158,7 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
 
     it('does nothing at all when handed no payload', () => {
         expect(() => placeTokenFromDrag(0, null)).not.toThrow();
-        expect(GameState.state.board.tiles).toEqual({});
+        expect(GameState.state.board.tokens).toEqual({});
     });
 });
 

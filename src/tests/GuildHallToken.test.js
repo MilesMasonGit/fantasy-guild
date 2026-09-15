@@ -8,7 +8,7 @@ import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.
 import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { OPENING_TRAY } from '../systems/core/EngineBootstrap.js';
+import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
 import { GUILD_HALL_TILE } from '../config/boardGeometry.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 
@@ -19,8 +19,8 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         GuildUpgradeManager.recompute();
     });
 
-    it('starts with the Guild Hall token in the opening tray for new games', () => {
-        expect(OPENING_TRAY).toContain('token_guild_hall');
+    it('starts with the Guild Hall token on the mat for new games (FP-44)', () => {
+        expect(OPENING_MAT.map(t => t.typeId)).toContain('token_guild_hall');
     });
 
     it('can be placed from tray onto any legal tile including Tile 24', () => {

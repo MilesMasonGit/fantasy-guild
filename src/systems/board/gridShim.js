@@ -18,11 +18,17 @@
  * matches no tile is invisible to this view — that cannot happen until free
  * dropping arrives in 1.6d, which is when this file goes.
  *
- * ## Cached per board
- * The view (anchor → Token, covered tile → Token) is rebuilt only when
- * `invalidate(board)` is called — every `BoardState` mutator does — or when the
- * `tokens` object itself is swapped (a load, a test hand-building a board).
- * ⚠️ So a Token's `x`/`y` must only ever change through `BoardState`.
+ * ## Pinned when placed, cached per board
+ * `BoardState` **pins** a Token's tile at the moment it puts it down or moves it
+ * (`pin`), and unpins it when it lifts it off (`unpin`). The view (anchor →
+ * Token, covered tile → Token) is built from those pins and cached until the
+ * next pin/unpin or until the `tokens` object itself is swapped (a load, a test
+ * hand-building a board), when tiles are read afresh from `x`/`y`.
+ *
+ * ⚠️ Why pins, not a fresh read of `x`/`y` every time: the Tray also stores
+ * fractions in `x`/`y`, and `Placement` hands a Token to the Tray a moment
+ * *before* it clears the tile (asking who worked it in between). A fresh read
+ * would lose the Token from its tile in that moment.
  *
  * Everything here is pure over the board object it is handed; `BoardState`
  * owns the storage and wraps these as its old tile functions.
@@ -56,10 +62,33 @@ export function anchorOfPoint(x, y, typeId) {
 }
 
 const views = new WeakMap();
+/** board → { tokens, byId: Map(instance id → anchor tile) } — the tile each Token was put down on. */
+const pins = new WeakMap();
 
-/** STOPGAP: forget the cached view — call after any change to a Token's point or presence. */
-export function invalidate(board) {
-    if (board) views.delete(board);
+function pinsOf(board) {
+    let record = pins.get(board);
+    if (!record || record.tokens !== board.tokens) {
+        record = { tokens: board.tokens, byId: new Map() };
+        pins.set(board, record);
+    }
+    return record.byId;
+}
+
+/** STOPGAP: remember the tile `instance` now stands on, from its current point. */
+export function pin(board, instance) {
+    if (!board?.tokens || !instance?.id) return;
+    const anchor = anchorOfPoint(instance.x, instance.y, instance.typeId);
+    const byId = pinsOf(board);
+    if (anchor == null) byId.delete(instance.id);
+    else byId.set(instance.id, anchor);
+    views.delete(board);
+}
+
+/** STOPGAP: forget the tile Token `id` stood on — it has left the mat. */
+export function unpin(board, id) {
+    if (!board?.tokens) return;
+    pinsOf(board).delete(id);
+    views.delete(board);
 }
 
 function viewOf(board) {
@@ -68,6 +97,7 @@ function viewOf(board) {
     const cached = views.get(board);
     if (cached && cached.tokens === tokens) return cached;
 
+    const pinned = pinsOf(board);
     const anchors = new Map();   // anchor tile → instance
     const cover = new Map();     // any covered tile → { anchor, instance, footprint }
     const byId = new Map();      // instance id → anchor tile
@@ -78,7 +108,13 @@ function viewOf(board) {
         .filter(t => t?.typeId)
         .sort((a, b) => (a.placedAt ?? 0) - (b.placedAt ?? 0));
     for (const instance of ordered) {
-        const anchor = anchorOfPoint(instance.x, instance.y, instance.typeId);
+        // A Token BoardState has pinned answers from its pin; one arriving
+        // with the board (a load, a hand-built test board) from its point.
+        let anchor = pinned.get(instance.id);
+        if (anchor === undefined) {
+            anchor = anchorOfPoint(instance.x, instance.y, instance.typeId);
+            if (anchor != null) pinned.set(instance.id, anchor);
+        }
         if (anchor == null) continue;
         const prev = anchors.get(anchor);
         if (prev) byId.delete(prev.id);

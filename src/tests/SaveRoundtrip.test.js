@@ -38,10 +38,12 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         // Tokens they placed, their remaining charges, and who is working what.
         // Re-pointed from areaStates/outposts by the playmat rework (Phase 1);
         // the rule is unchanged, only its subject.
-        GameState.state.board.tiles = {
-            0: { typeId: 'token_forest', usesRemaining: 4200, heroId: 'hero_1', cycleElapsedMs: 0 },
-            48: { typeId: 'token_sawmill', usesRemaining: null, heroId: null, cycleElapsedMs: 0 }
+        // Stored by instance id at a mat point since Free Playmat 1.6a.
+        GameState.state.board.tokens = {
+            tok_a: { id: 'tok_a', typeId: 'token_forest', x: 0, y: 64, placedAt: 0, usesRemaining: 4200, cycleElapsedMs: 0 },
+            tok_b: { id: 'tok_b', typeId: 'token_sawmill', x: 864, y: 864, placedAt: 1, usesRemaining: null, cycleElapsedMs: 0 }
         };
+        GameState.state.board.nextTokenOrder = 2;
         GameState.state.board.tokenBank = { token_forest: [{ usesRemaining: 5000 }] };
         GameState.state.board.tray = [{ typeId: 'token_bear', usesRemaining: 12 }];
 
@@ -51,15 +53,17 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         expect(migrated.currency.gold).toBe(1234);
         expect(migrated.collection.cardUseCounts).toEqual({ token_forest: 17 });
 
-        // Tile 0 is a real tile — a save that dropped it because the index is
-        // falsy would silently lose a corner of the board.
-        expect(migrated.board.tiles[0].typeId).toBe('token_forest');
-        expect(migrated.board.tiles[0].usesRemaining).toBe(4200);
-        expect(migrated.board.tiles[0].heroId).toBe('hero_1');
+        // A coordinate of 0 is a real point — a save that dropped it because
+        // the value is falsy would silently move a Token.
+        expect(migrated.board.tokens.tok_a.typeId).toBe('token_forest');
+        expect(migrated.board.tokens.tok_a.usesRemaining).toBe(4200);
+        expect(migrated.board.tokens.tok_a.x).toBe(0);
+        expect(migrated.board.tokens.tok_a.placedAt).toBe(0);
+        expect(migrated.board.nextTokenOrder).toBe(2);
 
         // An unlimited-use Token stores null charges (D-176) and must not come
         // back as 0, which would read as depleted.
-        expect(migrated.board.tiles[48].usesRemaining).toBeNull();
+        expect(migrated.board.tokens.tok_b.usesRemaining).toBeNull();
 
         expect(migrated.board.tokenBank.token_forest[0].usesRemaining).toBe(5000);
         expect(migrated.board.tray[0].typeId).toBe('token_bear');

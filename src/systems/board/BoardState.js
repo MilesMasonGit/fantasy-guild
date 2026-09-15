@@ -131,7 +131,7 @@ function stampOrder(b, instance) {
 
 /** After a Token's point changes: a claimed Token keeps its hero (FP-68), and the claim's tile hint follows. */
 function afterPointChange(b, instance) {
-    Shim.invalidate(b);
+    Shim.pin(b, instance);   // STOPGAP — deleted in slice 1.6d
     const anchor = Shim.anchorOfId(b, instance.id);   // STOPGAP hint — deleted in slice 1.6d
     for (const claim of runtimeOf(b).claims.values()) {
         if (claim.instanceId === instance.id) claim.tile = anchor;
@@ -177,7 +177,7 @@ export function removeToken(id) {
     const instance = id ? b?.tokens?.[id] : null;
     if (!instance) return null;
     delete b.tokens[id];
-    Shim.invalidate(b);
+    Shim.unpin(b, id);   // STOPGAP — deleted in slice 1.6d
     return instance;
 }
 
@@ -647,11 +647,10 @@ export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
         if (!hasTraySpaceFor(1, capacity)) return false;
     }
 
-    // ⚠️ A Token entering the Tray leaves the mat first. Its `x`/`y` are
-    // about to become Tray fractions, and a Token still registered on the mat
-    // with those would vanish from the tile view (slice 1.6a). Callers still
-    // clear the tile afterwards; that is now a harmless no-op.
-    if (b.tokens?.[instance.id] === instance) removeToken(instance.id);
+    // A Token entering the Tray gives up its place in the mat's arrival order.
+    // Its caller still takes it off the mat just after this (slice 1.6a), and
+    // `gridShim` pins its tile, so the Tray fractions written below cannot
+    // hide it from the tile view in between.
     delete instance.placedAt;
 
     const at = position || scatterIntoTray(b.tray, { biasTop: isMap });

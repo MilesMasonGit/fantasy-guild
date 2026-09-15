@@ -144,7 +144,7 @@ describe('Migration repairs a partially-present section (CR2-042)', () => {
     /** A save that has a `board`, but only one of its fields. */
     const truncatedBoard = () => {
         const state = GameState.serialize().state;
-        state.board = { tiles: { 3: { typeId: 'token_forest', usesRemaining: 7 } } };
+        state.board = { tokens: { tok_f: { id: 'tok_f', typeId: 'token_forest', x: 544, y: 64, placedAt: 0, usesRemaining: 7 } } };
         return state;
     };
 
@@ -161,8 +161,8 @@ describe('Migration repairs a partially-present section (CR2-042)', () => {
 
     it('keeps what the incomplete section did contain', () => {
         const migrated = migrateState(truncatedBoard(), GAME_VERSION);
-        expect(migrated.board.tiles[3].typeId).toBe('token_forest');
-        expect(migrated.board.tiles[3].usesRemaining).toBe(7);
+        expect(migrated.board.tokens.tok_f.typeId).toBe('token_forest');
+        expect(migrated.board.tokens.tok_f.usesRemaining).toBe(7);
     });
 
     it('never overwrites a field the save already stores, including 0 and null', () => {
@@ -190,7 +190,7 @@ describe('Migration repairs a partially-present section (CR2-042)', () => {
     it('does not mutate the state handed to it', () => {
         const state = truncatedBoard();
         migrateState(state, GAME_VERSION);
-        expect(Object.keys(state.board)).toEqual(['tiles']);
+        expect(Object.keys(state.board)).toEqual(['tokens']);
     });
 });
 

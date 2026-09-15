@@ -150,56 +150,10 @@ describe('Persistence — until it reaches the Vault', () => {
     });
 });
 
-describe('Save migration — a save written before the field existed', () => {
-    /** A save whose placed stations carry no `selectedRecipeId`, as all do. */
-    function legacySave() {
-        const state = structuredClone(GameState.state);
-        state.board.tiles = {
-            17: { id: 'tok_a', typeId: 'fixture_kitchen', usesRemaining: 900, cycleElapsedMs: 0 },
-            18: { id: 'tok_b', typeId: 'fixture_station', usesRemaining: 700, cycleElapsedMs: 0 },
-            19: { id: 'tok_c', typeId: 'fixture_producer', usesRemaining: 5000, cycleElapsedMs: 0 }
-        };
-        return state;
-    }
-
-    it('comes out holding the R-5 default', () => {
-        const migrated = migrateState(legacySave(), GAME_VERSION);
-        expect(migrated.board.tiles[17].selectedRecipeId).toBe('pooled_gruel');
-        expect(migrated.board.tiles[18].selectedRecipeId).toBe('recipe_a');
-    });
-
-    it('leaves non-stations without the field', () => {
-        const migrated = migrateState(legacySave(), GAME_VERSION);
-        expect('selectedRecipeId' in migrated.board.tiles[19]).toBe(false);
-    });
-
-    it('does not overwrite a selection a save already carries', () => {
-        const state = legacySave();
-        state.board.tiles[17].selectedRecipeId = 'pooled_pie';
-
-        const migrated = migrateState(state, GAME_VERSION);
-        expect(migrated.board.tiles[17].selectedRecipeId).toBe('pooled_pie');
-    });
-
-    it('loads a migrated station straight into a runnable state', () => {
-        // The end-to-end claim: a save that predates the field is not merely
-        // patched, it plays. `pooled_gruel` needs no context, so the station
-        // resolves OK the moment it is on the board.
-        const migrated = migrateState(legacySave(), GAME_VERSION);
-        GameState.state.board = migrated.board;
-
-        const resolved = RecipeResolver.resolveRecipe(17, BoardState.getToken(17));
-        expect(resolved.status).toBe(RECIPE.OK);
-        expect(resolved.recipe.id).toBe('pooled_gruel');
-    });
-
-    it('needs no save-schema bump — the same version still loads', () => {
-        // The field is optional and its absence has a defined meaning, so
-        // bumping GAME_VERSION would refuse every existing save rather than
-        // migrate it.
-        expect(() => migrateState(legacySave(), GAME_VERSION)).not.toThrow();
-    });
-});
+// The 'Save migration — a save written before the field existed' suite was
+// deleted in Free Playmat slice 1.6a with `StationRecipe.backfillBoardSelections`:
+// saves from before schema 0.8.0 are refused outright (FP-85). A station placed
+// today still gets its R-5 default on placement — see the suites above.
 
 describe('Validation, not discovery', () => {
     it('reports the selected recipe\'s own missing context, and only that', () => {
