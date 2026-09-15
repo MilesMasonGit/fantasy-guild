@@ -45,17 +45,49 @@ describe('⚠️ gridShim is a stopgap (deleted in slice 1.6d)', () => {
     });
 });
 
-/** ⚠️ STOPGAP allowlist — `oldSpotStopgap.js` and both importers are deleted in slice 1.6d. */
-const OLD_SPOT_IMPORTERS = ['ui/components/board/TrayMiniBoard.jsx', 'ui/components/board/dropOnMat.js'];
+/**
+ * ⚠️ STOPGAP allowlist — `oldSpotStopgap.js` and all three importers are
+ * deleted in slice 1.6d. `MatRings` is on the list because the Near ring has to
+ * show where a dragged Token will really land, and until free placement that is
+ * the nearest old spot rather than the cursor (slice 1.6c-2).
+ */
+const OLD_SPOT_IMPORTERS = [
+    'ui/components/board/MatRings.jsx',
+    'ui/components/board/TrayMiniBoard.jsx',
+    'ui/components/board/dropOnMat.js'
+];
 
 describe('⚠️ oldSpotStopgap is a stopgap (deleted in slice 1.6d) — slice 1.6c', () => {
-    it('is imported only by dropOnMat.js and TrayMiniBoard.jsx', () => {
+    it('is imported only by the snapping stopgap’s three callers', () => {
         expect(importsOf('oldSpotStopgap')).toEqual(OLD_SPOT_IMPORTERS);
     });
 
     it('nothing imports the deleted placeTokenFromDrag, and the tile readers it leaned on are gone', () => {
         expect(importsOf('placeTokenFromDrag')).toEqual([]);
         const leftovers = FILES.filter(f => /\b(tileOfToken|displayTileOf|closest2x2Anchor)\b/.test(f.text)).map(f => f.path);
+        expect(leftovers).toEqual([]);
+    });
+});
+
+/**
+ * ⭐ The grid renderer is **gone** (slice 1.6c-2): Tokens, heroes and flags are
+ * drawn at their mat points by instance id. These are the leftovers that would
+ * mean some part of the UI still thinks in tiles — and a leftover import is
+ * exactly the kind of thing that crashes the running game while every test
+ * still passes, which has happened twice on this project.
+ */
+describe('⭐ nothing draws tiles any more (slice 1.6c-2)', () => {
+    it('the grid renderer and its payload→tile adapter are not imported anywhere', () => {
+        expect(importsOf('BoardTile')).toEqual([]);
+        expect(importsOf('payloadTile')).toEqual([]);
+        expect(importsOf('TileProgressBar')).toEqual([]);
+        expect(importsOf('TileEventAlert')).toEqual([]);
+    });
+
+    it('the grid-era flag fan-out and the tile drop preview are gone from src', () => {
+        const leftovers = FILES
+            .filter(f => /\b(fannedOrigin|MAX_FLAGS_SHOWN|FLAG_FAN_PX|MORE_CHIP_OFFSET|spotForDrop|payloadIsForTile)\b/.test(f.text))
+            .map(f => f.path);
         expect(leftovers).toEqual([]);
     });
 });

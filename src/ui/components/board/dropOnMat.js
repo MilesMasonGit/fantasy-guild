@@ -66,18 +66,6 @@ function mapBoxAt(point) {
     };
 }
 
-/**
- * STOPGAP (deleted in 1.6d): the old spot a Token drop at `point` would use, or
- * null for a drop that lands freely (a Map, a hero, a flag) or flies back. For
- * the grid renderer's footprint preview.
- */
-export function spotForDrop(payload, point) {
-    if (!payload?.typeId || isHeroDrop(payload) || !point) return null;
-    const def = getTokenType(payload.typeId);
-    if (def?.mapId || isFarOutsideArea(point)) return null;
-    return oldSpotAt(point, def?.size || 1);
-}
-
 export function dropOnMat(payload, point) {
     if (!payload) return null;
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return announce(refuse('Nowhere to drop that'));

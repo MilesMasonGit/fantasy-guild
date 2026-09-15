@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { payloadIsForTile } from './payloadTile.js';
+import { useTokenEvent } from './tokenEvents.js';
 
 /**
  * A named effect fired here — say its name, drift it upward, fade it out.
  *
- * ## Deliberately not a `TileEventAlert`
+ * ## Deliberately not a `TokenEventAlert`
  * That component is for **problems**: it draws a persistent icon, waits to be
  * hovered, holds for five seconds and can be dismissed, because a Token with no
  * inputs is a thing the player has to go and fix. An effect firing is the
@@ -22,7 +21,7 @@ import { payloadIsForTile } from './payloadTile.js';
  * A Token with two rules can serve both in one moment, and a busy board fires
  * often. Each announcement is its own line, stacked upward in arrival order, so
  * two effects firing together read as two things rather than one flickering
- * label. The list is capped: past a handful the tile is unreadable anyway, and
+ * label. The list is capped: past a handful the Token is unreadable anyway, and
  * the oldest are the ones already fading.
  */
 
@@ -36,45 +35,39 @@ import { payloadIsForTile } from './payloadTile.js';
  */
 const LIFETIME_MS = 2600;
 
-/** Past this many at once the tile is unreadable, so the oldest are dropped. */
+/** Past this many at once the Token is unreadable, so the oldest are dropped. */
 const MAX_VISIBLE = 4;
 
 let nextId = 1;
 
-export const EffectProcText = ({ tile }) => {
+export const EffectProcText = ({ instanceId }) => {
     const [lines, setLines] = useState([]);
     const timers = useRef(new Map());
 
+    useTokenEvent(BOARD_EVENTS.EFFECT_FIRED, instanceId, (payload) => {
+        if (!payload?.title) return;
+
+        const id = nextId++;
+        setLines((current) => [...current, { id, title: payload.title }].slice(-MAX_VISIBLE));
+
+        // Each line removes itself. Kept in a ref so the cleanup below can
+        // clear every pending one — a Token can be unmounted mid-fade when it
+        // is picked up, and a timer firing into a dead component is the classic
+        // React warning this avoids.
+        const timer = setTimeout(() => {
+            setLines((current) => current.filter((line) => line.id !== id));
+            timers.current.delete(id);
+        }, LIFETIME_MS);
+        timers.current.set(id, timer);
+    });
+
     useEffect(() => {
-        if (!EventBus || tile == null) return undefined;
-
-        const onFired = (payload) => {
-            // By instance id since slice 1.6b — STOPGAP adapter, deleted in 1.6c.
-            if (!payloadIsForTile(payload, tile) || !payload?.title) return;
-
-            const id = nextId++;
-            setLines((current) => [...current, { id, title: payload.title }].slice(-MAX_VISIBLE));
-
-            // Each line removes itself. Kept in a ref so the cleanup below can
-            // clear every pending one — a tile can be unmounted mid-fade when a
-            // Token is picked up, and a timer firing into a dead component is
-            // the classic React warning this avoids.
-            const timer = setTimeout(() => {
-                setLines((current) => current.filter((line) => line.id !== id));
-                timers.current.delete(id);
-            }, LIFETIME_MS);
-            timers.current.set(id, timer);
-        };
-
-        const unsubscribe = EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, onFired);
-
         const pending = timers.current;
         return () => {
-            if (typeof unsubscribe === 'function') unsubscribe();
             for (const timer of pending.values()) clearTimeout(timer);
             pending.clear();
         };
-    }, [tile]);
+    }, []);
 
     if (lines.length === 0) return null;
 
@@ -86,7 +79,7 @@ export const EffectProcText = ({ tile }) => {
          * the running game: `text-[10px]` lost the cascade and the label drew at
          * 16px, and `inset-x-0` pinned the container to the tile's 64px so a
          * title like "Shrimp Trawler III" was clipped to a stub. The class below
-         * centres on the tile and is free to be wider than it, which is what a
+         * centres on the Token and is free to be wider than it, which is what a
          * floating label wants.
          */
         <div className="effect-proc-layer">

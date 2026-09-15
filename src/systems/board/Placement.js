@@ -860,28 +860,6 @@ export function moveFlag(heroId, index) {
 }
 
 /**
- * Recall whoever is on a tile: the hero working its Token, else one waiting
- * there for a restock, else one whose flag is drawn there. Forfeits the cycle
- * (D-131, FP-68).
- */
-export function recallHero(index) {
-    const occ = BoardState.getOccupyingToken(index);
-    const anchor = occ ? occ.anchorIndex : index;
-
-    let heroId = BoardState.workerOfTile(anchor);
-    if (heroId == null) {
-        // STOPGAP (deleted in 1.6c-2 with this function): the drawn tile of a hero is the tile their display point is on.
-        const onBoard = BoardState.heroesOnBoard().map(([id, point]) => [id, point ? BoardState.tileAtPoint(point) : null]);
-        heroId = onBoard.find(([id, tile]) => BoardState.waitOfHero(id) && tile === anchor)?.[0]
-            ?? onBoard.find(([, tile]) => tile === anchor || tile === index)?.[0]
-            ?? null;
-    }
-    if (!heroId) return refuse('Nobody is standing on that tile');
-
-    return recallHeroById(heroId);
-}
-
-/**
  * Take a hero's flag down and bring them to the Dock, by id.
  */
 export function recallHeroById(heroId) {

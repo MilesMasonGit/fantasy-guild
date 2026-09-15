@@ -133,6 +133,18 @@ const GLOW_COMPACT = 'drop-shadow(0 4px 8px rgba(0,0,0,0.45))';
 
 export const DeckDndContext = React.createContext({ activePayload: null, isDragging: false });
 export const useActiveDrag = () => React.useContext(DeckDndContext);
+
+/**
+ * Where the cursor is while a drag is live, in viewport coordinates — or null
+ * when nothing is in the hand.
+ *
+ * ⚠️ **Its own context on purpose.** This changes on every animation frame, and
+ * the board has ~80 Tokens reading `useActiveDrag`. Putting the pointer in that
+ * context would re-render all of them 60 times a second for a value only the
+ * range rings care about (FP-64). Consumers of this one are leaves.
+ */
+export const DragPointerContext = React.createContext(null);
+export const useDragPointer = () => React.useContext(DragPointerContext);
 import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
 
 export class AlphaPointerSensor extends PointerSensor {
@@ -163,6 +175,11 @@ export const DeckDndProvider = ({ children }) => {
     const pointerRef = useRef({ x: 0, y: 0 });
     const glideTargetRef = useRef(null);
 
+    // The cursor, published at most once per frame so the range rings can
+    // follow the drag without a state update per pointermove event.
+    const [dragPointer, setDragPointer] = useState(null);
+    const frameRef = useRef(0);
+
     const sensors = useSensors(
         useSensor(AlphaPointerSensor, { activationConstraint: { distance: 8 } })
     );
@@ -173,6 +190,12 @@ export const DeckDndProvider = ({ children }) => {
         if (!activePayload) return;
         const onMove = (e) => {
             pointerRef.current = { x: e.clientX, y: e.clientY };
+            if (!frameRef.current && typeof requestAnimationFrame === 'function') {
+                frameRef.current = requestAnimationFrame(() => {
+                    frameRef.current = 0;
+                    setDragPointer(pointerRef.current);
+                });
+            }
             const s = surfaceAtPoint(e.clientX, e.clientY);
             if (s) {
                 setSurface(prev => (prev === s ? prev : s));
@@ -191,6 +214,7 @@ export const DeckDndProvider = ({ children }) => {
         if (a && 'clientX' in a) pointerRef.current = { x: a.clientX, y: a.clientY };
         setSurface(payload?.sourceSurface || DND_SURFACE.BOARD);
         setActivePayload(payload);
+        setDragPointer(pointerRef.current);
         setIsOverMiniboard(false);
         glideTargetRef.current = null;
         if (typeof document !== 'undefined') document.body.classList.add('gi-dnd-active');
@@ -230,6 +254,9 @@ export const DeckDndProvider = ({ children }) => {
     const finishDrag = useCallback(() => {
         setActivePayload(null);
         setIsOverMiniboard(false);
+        if (frameRef.current && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current);
+        frameRef.current = 0;
+        setDragPointer(null);
         if (typeof document !== 'undefined') document.body.classList.remove('gi-dnd-active');
     }, []);
 
@@ -325,8 +352,16 @@ export const DeckDndProvider = ({ children }) => {
 
     const bold = surface === DND_SURFACE.BOARD;
 
+    // Memoised: a fresh object here would re-render every drag consumer on the
+    // provider's own per-frame pointer updates.
+    const activeValue = React.useMemo(
+        () => ({ activePayload, isDragging: !!activePayload }),
+        [activePayload]
+    );
+
     return (
-        <DeckDndContext.Provider value={{ activePayload, isDragging: !!activePayload }}>
+        <DeckDndContext.Provider value={activeValue}>
+            <DragPointerContext.Provider value={dragPointer}>
             <DndContext
                 sensors={sensors}
                 collisionDetection={smallestWithin}
@@ -352,6 +387,7 @@ export const DeckDndProvider = ({ children }) => {
                     ) : null}
                 </DragOverlay>
             </DndContext>
+            </DragPointerContext.Provider>
         </DeckDndContext.Provider>
     );
 };
