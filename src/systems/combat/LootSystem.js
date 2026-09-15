@@ -42,7 +42,7 @@ const LootSystem = {
      * Handle combat victory - Selective Source Processing
      */
     handleCombatVictory(data) {
-        const { cardId, heroId, enemyId, enemyName, drops, areaId, tile } = data;
+        const { cardId, heroId, enemyId, enemyName, drops, areaId, instanceId } = data;
 
         // Source Resolution. An enemy's rewards are its inline `drops[]` and
         // nothing else — the card-era `dropTableId` lookup was deleted on
@@ -58,14 +58,14 @@ const LootSystem = {
         const generatedDrops = this.generateDrops(sourceData, areaId);
 
         if (generatedDrops.length > 0) {
-            if (tile != null) {
+            if (instanceId != null) {
                 // On the BOARD, loot drops as floating sprites where the kill
                 // happened (D-40) — it is not banked until collected. Routing
                 // combat loot straight into the Bank would make kills the one
                 // thing on the board that skips the sprite layer, and would
                 // quietly bypass D-138's "nothing is ever lost" guarantee.
                 for (const drop of generatedDrops) {
-                    SpriteLayer.addSprite('item', drop.itemId, drop.quantity, tile);
+                    SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId);
                 }
             } else {
                 TransactionProcessor.apply({
@@ -75,7 +75,7 @@ const LootSystem = {
             }
         }
 
-        EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, tile, drops: generatedDrops });
+        EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, instanceId, drops: generatedDrops });
     },
 
     /**

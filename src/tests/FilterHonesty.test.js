@@ -63,11 +63,19 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 // 15 and 16 are adjacent; 33 is not adjacent to either.
 const SOURCE = 15, NEIGHBOUR = 16, FAR = 33;
 
-/** Which tiles a given item was addressed to, in call order. */
+/**
+ * Which tiles a given item was addressed to, in call order.
+ *
+ * Since Free Playmat slice 1.6b a sprite's source is a Token instance id (or a
+ * mat point for a Token that has left); it is read back as the test layout's
+ * tile here.
+ */
 function addressedTiles(spy, itemId) {
     return spy.mock.calls
         .filter(([kind, refId]) => kind === 'item' && refId === itemId)
-        .map(([, , , sourceTile]) => sourceTile);
+        .map(([, , , source]) => (typeof source === 'string'
+            ? BoardState.tileOfToken(source)
+            : (source?.centre ? BoardState.tileAtPoint(source.centre) : source)));
 }
 
 function makeHero(id) {
@@ -277,15 +285,26 @@ describe('Converts aims at ONE destination (ER-14)', () => {
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
 
-    it('picks the earliest-placed match, so the destination is deterministic (slice 1.6b; was the lowest index)', () => {
+    it('⭐ picks the NEAREST match, so the destination is deterministic (FP-89; was the lowest index)', () => {
         sigilAimedAt('fixture_sigil_deterministic', { mode: 'tag', value: 'seafood' });
 
         place(SOURCE, 'fixture_sigil_deterministic');
-        place(22, 'fixture_seafood_producer');   // placed first
-        place(14, 'fixture_seafood_producer');   // lower index, placed second
+        place(22, 'fixture_seafood_producer');   // placed first, a diagonal: 226 u
+        place(14, 'fixture_seafood_producer');   // placed second, a side: 160 u
         InventoryManager.addItem('item_coal', 2);
 
-        expect(addressedTiles(addSprite, 'fixture_charcoal')).toEqual([22]);
+        expect(addressedTiles(addSprite, 'fixture_charcoal')).toEqual([14]);
+    });
+
+    it('⭐ on a distance tie, picks the earliest placed (FP-89)', () => {
+        sigilAimedAt('fixture_sigil_tie', { mode: 'tag', value: 'seafood' });
+
+        place(SOURCE, 'fixture_sigil_tie');
+        place(NEIGHBOUR, 'fixture_seafood_producer');   // placed first, 160 u
+        place(14, 'fixture_seafood_producer');          // placed second, also 160 u
+        InventoryManager.addItem('item_coal', 2);
+
+        expect(addressedTiles(addSprite, 'fixture_charcoal')).toEqual([NEIGHBOUR]);
     });
 
     it('⚠️ the EDITOR DEFAULT produces on its own tile, not on a neighbour', () => {

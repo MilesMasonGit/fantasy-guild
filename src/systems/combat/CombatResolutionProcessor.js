@@ -63,11 +63,12 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     fight.status = 'victory';
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, 'idle'));
 
-    // `tile` is forwarded when the fight is on the BOARD (playmat rework Phase
-    // 6). It is what lets loot land as a sprite where the kill happened (D-40)
-    // rather than teleporting into the Bank.
+    // `instanceId` — the enemy Token — is forwarded when the fight is on the
+    // BOARD (playmat rework Phase 6; by id since Free Playmat 1.6b). It is what
+    // lets loot land as a sprite where the kill happened (D-40) rather than
+    // teleporting into the Bank.
     EventBus.publish('combat_victory', {
-        cardId: fight.id, heroId, tile: fight.tile ?? null,
+        cardId: fight.id, heroId, instanceId: fight.instanceId ?? null,
         areaId: fight.areaId || 'area_guild_hall',
         enemyId: enemy.id, enemyName: enemy.name,
         drops: fight.drops || []

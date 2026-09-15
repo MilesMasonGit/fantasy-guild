@@ -18,6 +18,7 @@ import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -85,7 +86,7 @@ describe('the engagement moment', () => {
         run(600);
 
         expect(engagements.length).toBeGreaterThan(0);
-        expect(engagements[0]).toMatchObject({ tile: TILE, typeId: 'fixture_enemy', heroId: 'hero_1' });
+        expect(engagements[0]).toMatchObject({ instanceId: idAt(TILE), typeId: 'fixture_enemy', heroId: 'hero_1' });
     });
 
     it('does not fire again on the ticks in between', () => {
@@ -157,7 +158,7 @@ describe('⭐ a carried rule can put a status on the enemy — the path that had
         place(TILE, 'fixture_enemy', 'hero_1');
         run(600);
 
-        const fight = BoardCombat.getFight(TILE);
+        const fight = BoardCombat.getFight(idAt(TILE));
         expect(fight).toBeTruthy();
 
         const enemyPoison = (fight.combat.enemyStatuses || []).find((s) => s.id === 'poison');

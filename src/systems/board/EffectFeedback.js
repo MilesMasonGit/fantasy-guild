@@ -40,16 +40,16 @@ import { BOARD_EVENTS } from './boardEvents.js';
  */
 
 /**
- * Announce that the effect behind `statement` acted on `tile`.
+ * Announce that the effect behind `statement` acted on Token `instanceId`.
  *
  * Silent for anything with no title: a fixture authoring statements inline has
  * no library entry behind it, and a nameless pop would be worse than none.
  *
- * @param {number} tile
+ * @param {string} instanceId the Token it acted on (slice 1.6b)
  * @param {object} statement an expanded statement, carrying `effectTitle`
  */
-export function announce(tile, statement) {
+export function announce(instanceId, statement) {
     const title = statement?.effectTitle;
-    if (!title || tile == null) return;
-    EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { tile, title });
+    if (!title || instanceId == null) return;
+    EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId, title });
 }

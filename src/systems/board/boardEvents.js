@@ -1,13 +1,19 @@
 // Fantasy Guild — Board Event Names (7×7 Playmat rework, Phase 1)
 
 /**
- * Tile-scoped event naming convention: `board:<event_name>`.
+ * Board event naming convention: `board:<event_name>`.
  *
  * The successor to the deleted `core/areaEvents.js`. The convention it carried
  * is worth keeping and is kept: **every event names the thing it happened to**,
- * so subscribers can filter on `payload.tile` and ignore the rest rather than
- * recalculating the whole board. With up to 48 live tiles that matters more than
- * it did with 12 areas, not less.
+ * so subscribers can filter on it and ignore the rest rather than recalculating
+ * the whole board.
+ *
+ * ## ⭐ By Token instance id and mat point — never by tile (Free Playmat 1.6b)
+ * There are no tiles on the free playmat. An event about a Token names it by
+ * **`instanceId`**. An event with no Token to name — a spot that ran dry, a
+ * refused drop — names the **mat point** `x`, `y`; so does an event about a
+ * Token that has just left the mat, beside its `instanceId`. A `tile` field in
+ * any payload published from `src/systems` fails `FreeMatGuards.test.js`.
  *
  * Truly global changes (`inventory_updated`, `state_changed`, …) keep their
  * existing global names. Those must never trigger per-tile stat recalculation —
@@ -31,12 +37,12 @@ export const BOARD_EVENTS = {
      * Everything that "happens per cycle" hangs off this: context and buff Token
      * wear (D-126), status decay, and cycle counting.
      *
-     * Payload: `{ tile, typeId, heroId, failed }`
+     * Payload: `{ instanceId, typeId, heroId, failed, produced }`
      */
     CYCLE_COMPLETE: 'board:cycle_complete',
 
     /**
-     * A Token began a new cycle — `{ tile, typeId, heroId }`.
+     * A Token began a new cycle — `{ instanceId, typeId, heroId }`.
      *
      * ⚠️ **The moment work actually starts, not the moment a tick runs.** Fired
      * when `cycleElapsedMs` is still zero and every guard above it has already
@@ -55,13 +61,13 @@ export const BOARD_EVENTS = {
      */
     CYCLE_START: 'board:cycle_start',
 
-    /** A Token was placed, moved, removed or displaced. Payload: `{ tile, typeId }` */
+    /** A Token was placed, moved, removed or displaced. Payload: `{ instanceId, typeId }`, plus `x`, `y` for a Token that left (`typeId: null`) or a spot with none. */
     TILE_CHANGED: 'board:tile_changed',
 
     /**
      * A Token **landed on a tile** — the player action, as opposed to
      * `TILE_CHANGED`, which is every redraw reason a tile has (cleared,
-     * depleted, pushed, restocked, vault moved). Payload: `{ tile, typeId }`
+     * depleted, pushed, restocked, vault moved). Payload: `{ instanceId, typeId }`
      *
      * ⚠️ **This one deliberately keeps a global name rather than the
      * `board:` prefix**, because the event already existed as the bare string
@@ -87,22 +93,22 @@ export const BOARD_EVENTS = {
      */
     TRAY_CHANGED: 'board:tray_changed',
 
-    /** A hero was placed on, moved between, or knocked off tiles. Payload: `{ tile, heroId }` */
+    /** A hero's drawn place changed. Payload: `{ heroId, instanceId?, x?, y?, reason? }` — the Token they work and the point they are drawn at (neither in the Dock). */
     HERO_MOVED: 'board:hero_moved',
 
-    /** A Token ran out of charges and left the board (D-176). Payload: `{ tile, typeId }` */
+    /** A Token ran out of charges and left the board (D-176). Payload: `{ instanceId, x, y, typeId, instance?, heroId? }` */
     TOKEN_DEPLETED: 'board:token_depleted',
 
-    /** This tile's neighbourhood changed, so its recipe/modifiers need recomputing. Payload: `{ tile }` */
+    /** A neighbourhood changed, so modifiers need recomputing. Payload: `{ points }` — the mat points the change touched. */
     ADJACENCY_DIRTY: 'board:adjacency_dirty',
 
-    /** A tile's alert state changed — staffed-but-stuck, or resolved (D-114, D-149). Payload: `{ tile, alert }` */
+    /** A Token's alert state changed — staffed-but-stuck, or resolved (D-114, D-149). Payload: `{ instanceId, alert }`, or `{ spotId, x, y, alert }` for an unstocked spot. */
     ALERT_CHANGED: 'board:alert_changed',
 
-    /** Combat on an enemy Token resolved. Payload: `{ tile, outcome: 'victory'|'defeat', heroId, typeId }` */
+    /** Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat', heroId, typeId }` */
     COMBAT_RESOLVED: 'board:combat_resolved',
 
-    /** High-frequency cycle progress, for ref-based UI updates only. Payload: `{ tile, percent }` */
+    /** High-frequency cycle progress, for ref-based UI updates only. Payload: `{ instanceId, percent }` */
     PROGRESS: 'board:progress',
 
     /** A loot sprite was dropped, merged, collected or consumed. Payload: `{ spriteId? }` */
@@ -130,16 +136,16 @@ export const BOARD_EVENTS = {
     /** A lingering loot sprite was absorbed into its parent stack. Payload: `{ parentId, absorbedId, quantity }` */
     SPRITE_ABSORBED: 'board:sprite_absorbed',
 
-    /** On-board event notification alert (missing items, missing tokens, token exhausted). Payload: `{ tile, severity, type, name, message }` */
+    /** On-board event notification alert (missing items, missing tokens, token exhausted). Payload: `{ instanceId?, x?, y?, severity, type, name, message }` */
     TILE_EVENT_ALERT: 'board:tile_event_alert',
 
-    /** A token's charges changed (consumed cycle, support wear, or restocked). Payload: `{ tile, delta, remaining, typeId }` */
+    /** A token's charges changed (consumed cycle, support wear, or restocked). Payload: `{ instanceId, delta, remaining, typeId }` */
     TOKEN_CHARGES_CHANGED: 'board:token_charges_changed',
 
     /**
      * A hero finished training on a Token with a Promotes rule, and the game is
      * asking whether to go through with it (Promotes rule P3).
-     * Payload: `{ tile, heroId, jobId, typeId }`
+     * Payload: `{ instanceId, heroId, jobId, typeId }`
      *
      * ⚠️ **Nothing has happened yet when this fires.** No skills have moved and
      * nothing has been spent — the tile is holding. `BoardPromotion.accept` and
@@ -149,7 +155,7 @@ export const BOARD_EVENTS = {
     PROMOTION_READY: 'board:promotion_ready',
 
     /**
-     * A named effect just did something on this tile — `{ tile, title }`.
+     * A named effect just did something on a Token — `{ instanceId, title }`.
      *
      * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
      * act on (no inputs, no charges, a refused placement): it draws a persistent
@@ -161,7 +167,7 @@ export const BOARD_EVENTS = {
     EFFECT_FIRED: 'board:effect_fired',
 
     /**
-     * A hero engaged an enemy — `{ tile, typeId, heroId }`.
+     * A hero engaged an enemy — `{ instanceId, typeId, heroId }`.
      *
      * ⚠️ **Every engagement, including the ones after a kill** (UE-15). An enemy
      * Token holds charges, each kill spends one, and the enemy returns to full

@@ -63,7 +63,7 @@ export function tileCentre(i) {
  * lets a test that laid its board out by tile ask them.
  */
 export function idAt(i) {
-    return BoardState.tokenIdAtTile(i);
+    return BoardState.getOccupyingToken(i)?.instance?.id ?? null;
 }
 
 /**

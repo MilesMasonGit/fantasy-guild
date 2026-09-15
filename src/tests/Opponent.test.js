@@ -84,7 +84,7 @@ const hero1 = () => HeroManager.getHero('hero_1');
 function engage() {
     place(MONSTER, 'fixture_enemy', 'hero_1');
     run(600);
-    const fight = BoardCombat.getFight(MONSTER);
+    const fight = BoardCombat.getFight(idAt(MONSTER));
     expect(fight, 'no fight started - the hero cannot fight').toBeTruthy();
     return fight;
 }
@@ -139,12 +139,12 @@ describe('1. an item says "deals N damage to the enemy", and a real fight feels 
         // fires the loadout, so this is the HP the item's blow lands on.
         let before = null, after = null;
         const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, () => {
-            if (before == null) before = BoardCombat.getFight(MONSTER).combat.enemyHp.current;
+            if (before == null) before = BoardCombat.getFight(idAt(MONSTER)).combat.enemyHp.current;
         });
         try {
             for (let t = 0; t < 1000 && after == null; t += 100) {
                 BoardRunner.tick(100);
-                if (before != null) after = BoardCombat.getFight(MONSTER).combat.enemyHp.current;
+                if (before != null) after = BoardCombat.getFight(idAt(MONSTER)).combat.enemyHp.current;
             }
         } finally { off?.(); }
 
@@ -176,7 +176,7 @@ describe('2. ⭐ found by HERO, never by tile (G-43)', () => {
         const enemyBefore = fight.combat.enemyHp.current;
         const heroBefore = hero1().hp.current;
 
-        const fired = LoadoutMoments.fire(BoardState.workTileOf('hero_1'), 'hero_1', 'COMBAT_ENGAGED');
+        const fired = LoadoutMoments.fire(BoardState.workTokenOf('hero_1'), 'hero_1', 'COMBAT_ENGAGED');
 
         expect(fired).toBe(1);
         expect(fight.combat.enemyHp.current).toBe(enemyBefore - 5);
@@ -187,7 +187,7 @@ describe('2. ⭐ found by HERO, never by tile (G-43)', () => {
         const here = path.dirname(fileURLToPath(import.meta.url));
         const src = fs.readFileSync(path.resolve(here, '../systems/board/BoardCombat.js'), 'utf8');
         const start = src.indexOf('export function fightOfHero');
-        const end = src.indexOf('/** Drop a tile', start);
+        const end = src.indexOf('/** Drop the fight against', start);
         expect(start).toBeGreaterThan(0);
         expect(end).toBeGreaterThan(start);
         expect(src.slice(start, end)).not.toMatch(/workerOf|workTileOf|displayTileOf|heroTiles|getFight\(|fights\.get\(/);
@@ -213,16 +213,17 @@ describe('3. one fight per hero', () => {
         const a = place(MONSTER, 'fixture_enemy_v10a_debuffer');
         const b = place(OTHER_MONSTER, 'fixture_enemy_v10a_debuffer');
 
-        BoardCombat.tickTile(MONSTER, a, 100, 'hero_1');
-        expect(hero1().aggregator.modifiers.has(`fight:${MONSTER}`)).toBe(true);
+        // Fights and what they lend are keyed by the enemy's instance id (Free Playmat 1.6b).
+        BoardCombat.tickToken(a, 100, 'hero_1');
+        expect(hero1().aggregator.modifiers.has(`fight:${a.id}`)).toBe(true);
 
-        BoardCombat.tickTile(OTHER_MONSTER, b, 100, 'hero_1');
+        BoardCombat.tickToken(b, 100, 'hero_1');
 
-        expect(BoardCombat.getFight(MONSTER)).toBeNull();
-        expect(BoardCombat.getFight(OTHER_MONSTER)).toBeTruthy();
-        expect(BoardCombat.fightOfHero('hero_1')).toBe(BoardCombat.getFight(OTHER_MONSTER));
-        expect(hero1().aggregator.modifiers.has(`fight:${MONSTER}`)).toBe(false);
-        expect(hero1().aggregator.modifiers.has(`fight:${OTHER_MONSTER}`)).toBe(true);
+        expect(BoardCombat.getFight(a.id)).toBeNull();
+        expect(BoardCombat.getFight(b.id)).toBeTruthy();
+        expect(BoardCombat.fightOfHero('hero_1')).toBe(BoardCombat.getFight(b.id));
+        expect(hero1().aggregator.modifiers.has(`fight:${a.id}`)).toBe(false);
+        expect(hero1().aggregator.modifiers.has(`fight:${b.id}`)).toBe(true);
     });
 });
 
@@ -232,7 +233,7 @@ describe('4. no fight → nobody, no crash, and never the hero', () => {
         const item = carry(dealsToEnemy(9));
         const heroBefore = hero1().hp.current;
 
-        expect(() => LoadoutMoments.fire(BUSH, 'hero_1', 'COMBAT_ENGAGED')).not.toThrow();
+        expect(() => LoadoutMoments.fire(idAt(BUSH), 'hero_1', 'COMBAT_ENGAGED')).not.toThrow();
 
         expect(hero1().hp.current).toBe(heroBefore);
         expect(InventoryManager.getItemCount(item)).toBe(5);
@@ -241,7 +242,7 @@ describe('4. no fight → nobody, no crash, and never the hero', () => {
     it('each verb reaches nobody with the hero standing right there', () => {
         place(BUSH, 'fixture_producer', 'hero_1');
         hero1().hp.current = 50;
-        const roles = { self: BUSH, selfHeroId: 'hero_1', actor: 'hero_1', source: null };
+        const roles = { self: idAt(BUSH), selfHeroId: 'hero_1', actor: 'hero_1', source: null };
 
         expect(deal(dealsToEnemy(9), roles)).toBe(0);
         expect(EffectActions.heal({ ...makeStatement(KEYWORD.HEALS), when: onEngaged, target: toEnemy, payload: { amount: 9 } }, roles)).toBe(0);
@@ -271,7 +272,7 @@ describe('5. G-2: the enemy is offered only where a fight is', () => {
         const fight = engage();
         const before = fight.combat.enemyHp.current;
         const onCycle = dealsToEnemy(4, { when: { event: 'CYCLE_START', scope: 'self' } });
-        expect(deal(onCycle, { self: MONSTER, selfHeroId: 'hero_1', actor: 'hero_1' })).toBe(0);
+        expect(deal(onCycle, { self: idAt(MONSTER), selfHeroId: 'hero_1', actor: 'hero_1' })).toBe(0);
         expect(fight.combat.enemyHp.current).toBe(before);
     });
 
@@ -304,11 +305,11 @@ describe('6. Heals, Removes and Applies-with-role reach the fight', () => {
         const hp = fight.combat.enemyHp;
         hp.current = hp.max - 10;
         carry({ ...makeStatement(KEYWORD.HEALS), when: onEngaged, target: toEnemy, payload: { amount: 4 }, chargeDelta: 0 });
-        LoadoutMoments.fire(MONSTER, 'hero_1', 'COMBAT_ENGAGED');
+        LoadoutMoments.fire(idAt(MONSTER), 'hero_1', 'COMBAT_ENGAGED');
         expect(hp.current).toBe(hp.max - 6);
 
         carry({ ...makeStatement(KEYWORD.HEALS), when: onEngaged, target: toEnemy, payload: { amount: 999 }, chargeDelta: 0 });
-        LoadoutMoments.fire(MONSTER, 'hero_1', 'COMBAT_ENGAGED');
+        LoadoutMoments.fire(idAt(MONSTER), 'hero_1', 'COMBAT_ENGAGED');
         expect(hp.current).toBe(hp.max);
     });
 
@@ -320,7 +321,7 @@ describe('6. Heals, Removes and Applies-with-role reach the fight', () => {
         expect(fight.effects).toHaveLength(1);
 
         carry({ ...makeStatement(KEYWORD.REMOVES), when: onEngaged, target: toEnemy, payload: { effectId: '' }, chargeDelta: 0 });
-        LoadoutMoments.fire(MONSTER, 'hero_1', 'COMBAT_ENGAGED');
+        LoadoutMoments.fire(idAt(MONSTER), 'hero_1', 'COMBAT_ENGAGED');
 
         expect(fight.effects).toHaveLength(0);
         expect(LiveEffects.carries(hero1(), 'fixture_v10a_ward')).toBe(true);
@@ -334,7 +335,7 @@ describe('6. Heals, Removes and Applies-with-role reach the fight', () => {
             payload: { effectId: 'fixture_v10a_venom', durationMs: 30000, chance: 100 }
         };
         carry(rule);
-        LoadoutMoments.fire(MONSTER, 'hero_1', 'COMBAT_ENGAGED');
+        LoadoutMoments.fire(idAt(MONSTER), 'hero_1', 'COMBAT_ENGAGED');
 
         expect(LiveEffects.carries(fight, 'fixture_v10a_venom')).toBe(true);
         expect(LiveEffects.carries(hero1(), 'fixture_v10a_venom')).toBe(false);
@@ -382,13 +383,13 @@ describe('8. G-41: on a monster’s own rule, the enemy is the monster', () => {
         });
         place(MONSTER, 'fixture_enemy_v10a_selfharm', 'hero_1');
         run(600);
-        const fight = BoardCombat.getFight(MONSTER);
+        const fight = BoardCombat.getFight(idAt(MONSTER));
         expect(fight).toBeTruthy();
         fight.combat.enemyHp.current = fight.combat.enemyHp.max;
         const heroBefore = hero1().hp.current;
 
         // The real trigger path: the board event → TriggerSystem → the verb.
-        EventBus.publish(BOARD_EVENTS.COMBAT_ENGAGED, { tile: MONSTER, typeId: 'fixture_enemy_v10a_selfharm', heroId: 'hero_1' });
+        EventBus.publish(BOARD_EVENTS.COMBAT_ENGAGED, { instanceId: idAt(MONSTER), typeId: 'fixture_enemy_v10a_selfharm', heroId: 'hero_1' });
 
         expect(fight.combat.enemyHp.current).toBe(fight.combat.enemyHp.max - 6);
         expect(hero1().hp.current).toBe(heroBefore);

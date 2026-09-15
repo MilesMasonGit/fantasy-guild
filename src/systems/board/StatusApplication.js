@@ -21,7 +21,7 @@ let fireLive = null;
 export function setStatementRunner(fn) {
     fireLive = fn;
 }
-import { filterTargetTiles } from './TileModifiers.js';
+import { filterTargets } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -48,9 +48,12 @@ import { ROLE } from '../../config/registries/roleRegistry.js';
  * adjacent Coast Tokens"* — which is literally what happens, rather than a
  * shorter sentence that would leave the reader guessing.
  *
- * A filter that selects a Token nobody is standing on reaches nobody. That is
- * not a failure; it is the same as a buff aimed at an empty tile, and it is why
- * the sentence says *heroes on* rather than *Tokens*.
+ * A filter that selects a Token nobody is working reaches nobody. That is not a
+ * failure; it is the same as a buff aimed at an empty spot, and it is why the
+ * sentence says *heroes on* rather than *Tokens*.
+ *
+ * ## By instance id (Free Playmat slice 1.6b)
+ * Every Token here is named by its **instance id**; there are no tiles.
  *
  * ## Two moments, matching `Grants` exactly
  * * **Untriggered** — the neighbour finishing a cycle. It is the only ambient
@@ -64,39 +67,39 @@ import { ROLE } from '../../config/registries/roleRegistry.js';
  *
  * ## ⚠️ A library effect reaches an enemy by the SAME occupant rule
  * `occupantOf` has always resolved hero-first-else-enemy, but the two
- * library-effect branches below asked who was on the tile directly and stopped there —
- * so a `Applies Poison` naming an effect could never land on a monster, while
- * the identical rule naming a status could. `liveBearerOf` is the same rule
- * again, returning a `LiveEffects` bearer instead of a status target, so the two
- * halves of `Applies` cannot resolve targets differently.
+ * library-effect branches below asked who was on the Token directly and stopped
+ * there — so a `Applies Poison` naming an effect could never land on a monster,
+ * while the identical rule naming a status could. `liveBearerOf` is the same
+ * rule again, returning a `LiveEffects` bearer instead of a status target, so
+ * the two halves of `Applies` cannot resolve targets differently.
  */
 
 /**
- * Who is on a tile, as something a status can be applied to.
+ * Who is working Token `instanceId`, as something a status can be applied to.
  *
  * @returns {{apply: () => void}|null}
  */
-function occupantOf(tile) {
+function occupantOf(instanceId) {
     /**
      * A Token's `Applies` names Tokens and resolves to whoever is on them —
-     * hero if somebody is standing there, otherwise the live enemy — and the
-     * hero wins, because a hero standing on an enemy tile is the person the
-     * filter meant.
+     * hero if somebody is working it, otherwise the live enemy — and the hero
+     * wins, because a hero working an enemy Token is the person the filter
+     * meant.
      *
      * ⚠️ **There is no "prefer the enemy" reading any more** (V10b). A rule that
      * means the creature a hero is fighting says so with the enemy role and is
-     * resolved by `applyToRole`, by hero, never by tile (G-43). The old
+     * resolved by `applyToRole`, by hero, never by Token (G-43). The old
      * `payload.target` flag is converted on load and ignored here if one slips
      * through — `ContentAudit` names it.
      */
-    const heroId = BoardState.workerOfTile(tile);   // STOPGAP — roles still name tiles (removed in 1.6b part 2)
+    const heroId = BoardState.workerOf(instanceId);
     if (heroId) {
         return { apply: (statusId, stacks) => StatusEffectSystem.applyToHero(heroId, statusId, stacks) };
     }
 
-    const instance = BoardState.getToken(tile);
+    const instance = BoardState.getTokenById(instanceId);
     if (!instance || !BoardCombat.isEnemyToken(instance)) return null;
-    const fight = BoardCombat.getFight(tile);
+    const fight = BoardCombat.getFight(instanceId);
     // Only a fight in progress: an enemy nobody has engaged has no status
     // list to put anything on, and inventing one here would make a status
     // that survives being ignored.
@@ -105,18 +108,19 @@ function occupantOf(tile) {
 }
 
 /**
- * Who is on a tile, as something a **library effect** can be carried by.
+ * Who is working Token `instanceId`, as something a **library effect** can be
+ * carried by.
  *
  * The mirror of `occupantOf`, deliberately written beside it with the same
- * hero-first reading, so both halves of `Applies` resolve a tile identically.
+ * hero-first reading, so both halves of `Applies` resolve a Token identically.
  */
-function liveBearerOf(tile) {
-    const heroId = BoardState.workerOfTile(tile);   // STOPGAP — roles still name tiles (removed in 1.6b part 2)
+function liveBearerOf(instanceId) {
+    const heroId = BoardState.workerOf(instanceId);
     if (heroId) {
         const hero = HeroManager.getHero(heroId);
         return hero ? LiveEffects.heroBearer(hero) : null;
     }
-    return BoardCombat.enemyBearerAt(tile);
+    return BoardCombat.enemyBearerOfToken(instanceId);
 }
 
 /** Whether a payload names a status the engine has, with a roll that hit. */
@@ -132,16 +136,16 @@ function rollsChance(payload, random = Math.random) {
 }
 
 /**
- * Put one `Applies` payload onto whoever is working `tile`.
+ * Put one `Applies` payload onto whoever is working Token `instanceId`.
  *
  * Used by the **ambient** path: the statement was collected by
  * `TileModifiers.collectStatusApplications`, which already matched the filter
- * against this tile's Token, so the targeting question is settled by the time
- * this is called.
+ * against this Token, so the targeting question is settled by the time this is
+ * called.
  *
  * @returns {boolean} whether anybody actually received it
  */
-export function applyAt(tile, payload, random = Math.random) {
+export function applyAt(instanceId, payload, random = Math.random) {
     /**
      * ⭐ A library effect rather than a status (V6). This is the branch that
      * makes `statusRegistry` deletable: an `Applies` naming an `effectId`
@@ -149,13 +153,13 @@ export function applyAt(tile, payload, random = Math.random) {
      */
     if (payload?.effectId) {
         if (!rollsChance(payload, random)) return false;
-        const bearer = liveBearerOf(tile);
+        const bearer = liveBearerOf(instanceId);
         if (!bearer) return false;
         return LiveEffects.applyTo(bearer, payload, payload.sourceEffectId || null, fireLive);
     }
 
     if (!rolls(payload, random)) return false;
-    const target = occupantOf(tile);
+    const target = occupantOf(instanceId);
     if (!target) return false;
     target.apply(payload.statusId, Math.max(1, payload.stacks || 1));
     return true;
@@ -166,7 +170,7 @@ export function applyAt(tile, payload, random = Math.random) {
  * filter (G-42).
  *
  * Only `the enemy` is allowed (`KEYWORDS`' allowlist), and it is found by hero,
- * never by tile (G-43). Nothing else resolves here: a role outside the
+ * never by Token (G-43). Nothing else resolves here: a role outside the
  * allowlist reaches nobody rather than guessing.
  *
  * ⭐ Since V10b this is the ONLY way an `Applies` reaches the enemy: the old
@@ -200,9 +204,14 @@ export function applyToRole(statement, roles, random = Math.random) {
  * carrying it rather than from the Token receiving it, so the filter has to be
  * matched here.
  *
+ * @param {string} sourceId the Token carrying the statement (instance id)
+ * @param {object} statement
+ * @param {() => number} [random]
+ * @param {{x:number,y:number}|null} [fallbackPoint] where the bearer stood, if
+ *        it has already left the mat (a rule on its own depletion)
  * @returns {number} how many people received it
  */
-export function applyToNeighbours(sourceTile, statement, random = Math.random) {
+export function applyToNeighbours(sourceId, statement, random = Math.random, fallbackPoint = null) {
     const payload = statement?.payload;
 
     /**
@@ -214,8 +223,8 @@ export function applyToNeighbours(sourceTile, statement, random = Math.random) {
     if (payload?.effectId) {
         if (!rollsChance(payload, random)) return 0;
         let landed = 0;
-        for (const anchor of filterTargetTiles(sourceTile, statement)) {
-            const bearer = liveBearerOf(anchor);
+        for (const id of filterTargets(sourceId, statement, fallbackPoint)) {
+            const bearer = liveBearerOf(id);
             if (bearer && LiveEffects.applyTo(bearer, payload, statement.sourceEffectId || null, fireLive)) {
                 landed += 1;
             }
@@ -227,12 +236,12 @@ export function applyToNeighbours(sourceTile, statement, random = Math.random) {
 
     let reached = 0;
 
-    // The outbound filter loop lives in `TileModifiers.filterTargetTiles` since
+    // The outbound filter loop lives in `TileModifiers.filterTargets` since
     // Effects Robustness P1 — it used to be written out here, and being written
     // out here once was why `TriggerSystem` never got a copy and a triggered
     // `Grants` ignored its filter for the whole of Unified Effects.
-    for (const anchor of filterTargetTiles(sourceTile, statement)) {
-        const target = occupantOf(anchor);
+    for (const id of filterTargets(sourceId, statement, fallbackPoint)) {
+        const target = occupantOf(id);
         if (!target) continue;
         target.apply(payload.statusId, Math.max(1, payload.stacks || 1));
         reached += 1;

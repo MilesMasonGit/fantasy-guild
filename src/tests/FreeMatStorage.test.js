@@ -157,7 +157,7 @@ describe('⭐ vacancies are spots, and a restock lands exactly there (FP-19)', (
         const spent = placeAt(BoardState.createTokenInstance('fixture_spot_big', 1), spot.x, spot.y);
         placeAt('fixture_spot_camp', ...Object.values(tileCentre(10)));
 
-        Charges.destroyToken(8, spent);
+        Charges.destroyToken(spent);
 
         const vacancy = Object.values(GameState.state.board.vacancies);
         expect(vacancy).toEqual([{ typeId: 'fixture_spot_big', x: spot.x, y: spot.y, unstocked: false }]);

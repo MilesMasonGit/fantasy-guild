@@ -41,14 +41,15 @@ import { KEYWORD } from '../effects/statements.js';
 /**
  * Fire every carried rule waiting on `eventId`.
  *
- * @param {number} tile   where the moment happened — a grant lands here, and a
- *                        status resolves its target from this tile's occupants
+ * @param {string} instanceId the Token where the moment happened (by instance
+ *                        id, slice 1.6b) — a grant lands from here, and a status
+ *                        resolves its target from whoever works this Token
  * @param {string} heroId the hero whose loadout is being read
  * @param {string} eventId a `TRIGGER_EVENTS` id, e.g. `CYCLE_START`
  * @returns {number} how many rules actually did something
  */
-export function fire(tile, heroId, eventId) {
-    if (!heroId || tile == null) return 0;
+export function fire(instanceId, heroId, eventId) {
+    if (!heroId || instanceId == null) return 0;
 
     const hero = HeroManager.getHero(heroId);
     if (!hero) return 0;
@@ -56,9 +57,9 @@ export function fire(tile, heroId, eventId) {
     /**
      * Who a carried rule's roles name (V10a). The carrier is `self` and the
      * actor alike; `the enemy` is looked up from that hero by the verb itself,
-     * never from `tile` (G-43).
+     * never from the Token (G-43).
      */
-    const roles = { self: tile, selfHeroId: heroId, actor: heroId, source: null };
+    const roles = { self: instanceId, selfHeroId: heroId, actor: heroId, source: null };
 
     let fired = 0;
 
@@ -70,10 +71,10 @@ export function fire(tile, heroId, eventId) {
         let acted = false;
 
         if (statement.keyword === KEYWORD.APPLIES) {
-            // G-42: a role, when set, replaces the tile's occupant reading.
+            // G-42: a role, when set, replaces the Token's occupant reading.
             acted = statement.target?.role
                 ? StatusApplication.applyToRole(statement, roles) > 0
-                : StatusApplication.applyAt(tile, payload);
+                : StatusApplication.applyAt(instanceId, payload);
         } else if (statement.keyword === KEYWORD.DEALS) {
             acted = DealDamage.deal(statement, roles) > 0;
         } else if (statement.keyword === KEYWORD.HEALS) {
@@ -83,14 +84,14 @@ export function fire(tile, heroId, eventId) {
         } else if (statement.keyword === KEYWORD.GRANTS && payload.itemId) {
             const chance = payload.chance ?? 100;
             if (chance >= 100 || Math.random() * 100 < chance) {
-                SpriteLayer.addSprite('item', payload.itemId, Math.max(1, payload.quantity || 1), tile);
+                SpriteLayer.addSprite('item', payload.itemId, Math.max(1, payload.quantity || 1), instanceId);
                 acted = true;
             }
         }
 
         if (!acted) continue;
         HeroEffects.payLoadoutCost(statement);
-        EffectFeedback.announce(tile, statement);
+        EffectFeedback.announce(instanceId, statement);
         fired += 1;
     }
 

@@ -10,6 +10,7 @@ import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { BOARD_PX } from '../../config/boardGeometry.js';
 import { terrainForMap } from '../../config/registries/terrainAssignments.js';
 import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
@@ -362,7 +363,8 @@ export function rollBurst(mapId) {
  * not, and stands.
  *
  * @param {object} instance the Map Token being spent
- * @param {number|null} origin the tile it sat on, or null when opened from the Tray
+ * @param {string|object|null} origin where it burst from — `'tray'` or a Tray
+ *        origin, a Map box on the mat, a Token instance id, or null (the Guild Hall)
  */
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
@@ -381,7 +383,9 @@ export function openMap(instance, origin = null) {
     const stamp = TERRAIN_ENABLED ? terrainForMap(def.id) : null;
     const isTray = origin === 'tray' || (typeof origin === 'object' && origin?.inTray);
     const originObj = typeof origin === 'object' && origin !== null ? origin : (origin === 'tray' ? { inTray: true, x: 0.5, y: 0.5 } : null);
-    const scatterFrom = isTray ? (originObj || { inTray: true, x: 0.5, y: 0.5 }) : (origin == null ? centreOfBoard() : origin);
+    // A Map on the mat bursts from its box, a Map Token by its instance id from
+    // its centre (slice 1.6b), and one with no origin from the Guild Hall.
+    const scatterFrom = isTray ? (originObj || { inTray: true, x: 0.5, y: 0.5 }) : (origin == null ? { centre: centreOfBoard() } : origin);
     const firstSeen = [];
 
     for (const entry of contents) {
@@ -432,14 +436,23 @@ export function openMap(instance, origin = null) {
 }
 
 /**
- * Where a Tray-opened burst lands.
+ * Where a burst with no origin is thrown from, as a mat point.
  *
- * The Guild Hall is the one tile guaranteed to exist and never to hold
- * anything, so it is a stable centre to throw from — the sprite layer scatters
- * outward from here on its own.
+ * The **Guild Hall's point**: it is the one Token guaranteed to be on the mat,
+ * so it is a stable centre to throw from — the sprite layer scatters outward
+ * from here on its own. With no Hall (a hand-built test board) it is the mat's
+ * centre.
+ *
+ * ⚠️ This used to return `24`, a tile index left over from the 7×7 board — on
+ * the 6×6 board that was a tile in the bottom-right corner, not the Hall.
+ *
+ * STOPGAP (slice 1.6c): the mat centre is today's board size (`BOARD_PX`); the
+ * mat's own size arrives with the mat renderer.
  */
-function centreOfBoard() {
-    return 24;
+export function centreOfBoard() {
+    const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
+    if (hall && Number.isFinite(hall.x) && Number.isFinite(hall.y)) return { x: hall.x, y: hall.y };
+    return { x: BOARD_PX / 2, y: BOARD_PX / 2 };
 }
 
 /** Whether a Token instance is a Map. */

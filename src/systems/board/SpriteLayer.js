@@ -6,7 +6,7 @@ import { EventBus } from '../core/EventBus.js';
 import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { BOARD_PX, TILE_PX, TILE_STEP_PX, rowOf, colOf } from '../../config/boardGeometry.js';
+import { BOARD_PX, TILE_PX, TILE_STEP_PX } from '../../config/boardGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
@@ -153,25 +153,37 @@ const clamp = (v) => Math.max(TILE_PX * 0.25, Math.min(BOARD_PX - TILE_PX * 0.25
 /** Max distance (in px) between source token and an existing stack for them to merge (~2 tiles). */
 const MAX_STACK_MERGE_DISTANCE_PX = 2.25 * TILE_STEP_PX;
 
-/** Extract center (x, y) coordinates from a source tile descriptor. */
-function getSourcePosition(sourceTile) {
-    if (sourceTile == null) return null;
-    if (typeof sourceTile === 'object' && sourceTile !== null && sourceTile.inTray) {
+/**
+ * Where a sprite comes from, as a mat point (Free Playmat slice 1.6b — there
+ * are no tiles). A source is one of:
+ *
+ * * a Token **instance id** (string) — that Token's centre, while it is on the mat;
+ * * `{ centre: { x, y } }` — a mat point, e.g. where a Token that has just left stood;
+ * * `{ inTray: true, y }` — thrown onto the mat from the Tray;
+ * * `{ x, y, width?, height? }` — a box's top-left corner (a Map on the mat).
+ */
+function getSourcePosition(source) {
+    if (source == null) return null;
+    if (typeof source === 'string') {
+        const instance = BoardState.getTokenById(source);
+        return instance && Number.isFinite(instance.x) && Number.isFinite(instance.y)
+            ? { x: instance.x, y: instance.y }
+            : null;
+    }
+    if (typeof source !== 'object') return null;
+    if (source.inTray) {
         return {
             x: BOARD_PX + 30,
-            y: clamp((sourceTile.y != null ? sourceTile.y : 0.5) * BOARD_PX)
+            y: clamp((source.y != null ? source.y : 0.5) * BOARD_PX)
         };
     }
-    if (typeof sourceTile === 'object' && sourceTile !== null && typeof sourceTile.x === 'number' && typeof sourceTile.y === 'number') {
-        return {
-            x: sourceTile.x + (sourceTile.width != null ? sourceTile.width / 2 : TILE_PX / 2),
-            y: sourceTile.y + (sourceTile.height != null ? sourceTile.height / 2 : TILE_PX / 2)
-        };
+    if (source.centre && Number.isFinite(source.centre.x) && Number.isFinite(source.centre.y)) {
+        return { x: source.centre.x, y: source.centre.y };
     }
-    if (typeof sourceTile === 'number') {
+    if (typeof source.x === 'number' && typeof source.y === 'number') {
         return {
-            x: colOf(sourceTile) * TILE_STEP_PX + TILE_PX / 2,
-            y: rowOf(sourceTile) * TILE_STEP_PX + TILE_PX / 2
+            x: source.x + (source.width != null ? source.width / 2 : TILE_PX / 2),
+            y: source.y + (source.height != null ? source.height / 2 : TILE_PX / 2)
         };
     }
     return null;
@@ -183,8 +195,8 @@ function getSourcePosition(sourceTile) {
  *
  * If `existingTarget` is provided, lands in close proximity (~24-48px) to that stack.
  */
-function scatterFrom(sourceTile, kind = 'item', existingTarget = null) {
-    const sourcePos = getSourcePosition(sourceTile);
+function scatterFrom(source, kind = 'item', existingTarget = null) {
+    const sourcePos = getSourcePosition(source);
 
     if (existingTarget) {
         const fx = sourcePos ? sourcePos.x : existingTarget.x;
@@ -205,7 +217,7 @@ function scatterFrom(sourceTile, kind = 'item', existingTarget = null) {
         return { x, y, fromX: x, fromY: y };
     }
 
-    if (typeof sourceTile === 'object' && sourceTile !== null && sourceTile.inTray) {
+    if (typeof source === 'object' && source !== null && source.inTray) {
         const fromX = sourcePos.x;
         const fromY = sourcePos.y;
         const distance = TILE_PX * (kind === 'item' ? (0.4 + 0.3 * Math.random()) : (0.5 + 0.3 * Math.random()));
@@ -288,10 +300,12 @@ function scheduleAbsorption(spriteId, delayMs) {
  * @param {'item'|'token'} kind
  * @param {string} refId       item id or Token type id
  * @param {number} quantity
- * @param {number|null} sourceTile  tile it came from, or null for overflow
+ * @param {string|object|null} source  where it came from — a Token instance id,
+ *        `{ centre: {x, y} }`, a Tray origin or a Map box (see `getSourcePosition`),
+ *        or null for overflow
  * @param {number|null} usesRemaining  Tokens only; null means unlimited (D-176)
  */
-export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRemaining = null, terrain = null) {
+export function addSprite(kind, refId, quantity = 1, source = null, usesRemaining = null, terrain = null) {
     const list = sprites();
     if (!list || !refId || quantity <= 0) return null;
 
@@ -310,7 +324,7 @@ export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRema
     let targetExisting = null;
     if (kind === 'item') {
         ItemRateTracker.recordGain(refId, quantity);
-        const sourcePos = getSourcePosition(sourceTile);
+        const sourcePos = getSourcePosition(source);
 
         // Find primary stacks of the same item
         const candidates = list.filter(s =>
@@ -336,7 +350,7 @@ export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRema
         }
     }
 
-    const { x, y, fromX, fromY } = scatterFrom(sourceTile, kind, targetExisting);
+    const { x, y, fromX, fromY } = scatterFrom(source, kind, targetExisting);
     const sprite = {
         id: nextId(),
         kind,

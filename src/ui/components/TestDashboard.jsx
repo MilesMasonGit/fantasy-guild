@@ -161,14 +161,15 @@ export const TestDashboard = React.memo(() => {
                 const tokens = listTokenTypeIds();
                 const count = 3 + Math.floor(Math.random() * 4);
                 for (let i = 0; i < count; i++) {
-                    const tile = Math.floor(Math.random() * 49);
+                    // A random point on the mat (sprite sources are points since slice 1.6b).
+                    const from = { centre: { x: 64 + Math.random() * 800, y: 64 + Math.random() * 800 } };
                     if (Math.random() < 0.6) {
                         engine.SpriteLayer.addSprite(
-                            'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), tile
+                            'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), from
                         );
                     } else {
                         const typeId = tokens[Math.floor(Math.random() * tokens.length)];
-                        engine.SpriteLayer.addSprite('token', typeId, 1, tile, tokenStartingUses(typeId));
+                        engine.SpriteLayer.addSprite('token', typeId, 1, from, tokenStartingUses(typeId));
                     }
                 }
                 console.log(`[Dev] Scattered ${count} things onto the board`);

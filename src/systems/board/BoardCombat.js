@@ -35,11 +35,17 @@ import * as CombatFormulas from '../../utils/CombatFormulas.js';
  * instance — `card.combat`, `card.status`, `card.traits`. A Token instance is a
  * deliberately light thing (typeId, charges, elapsed). Rather than
  * fatten every Token to satisfy a signature, this keeps **one ephemeral combat
- * object per fighting tile**, held in a runtime-only map.
+ * object per fought enemy Token**, held in a runtime-only map keyed by the
+ * enemy's **instance id** (Free Playmat slice 1.6b).
  *
  * That is the same bridge the deck loop used between flyweight slots and the
  * execution engines, and it is kept for the same reason: at most a handful exist
- * at once (one per tile with a hero on an enemy), and none of it needs saving.
+ * at once (one per enemy with a hero on it), and none of it needs saving.
+ *
+ * ## ⭐ A moved enemy keeps its fight (FPP-4)
+ * Because a fight is keyed by the enemy Token's instance id, and a move keeps
+ * the id, the fight — and so the enemy's HP — simply stays with the Token
+ * wherever it is put. Nothing has to carry it across.
  * Combat internals are not persisted — reloading mid-fight restarts the
  * encounter with the enemy at full HP, which is the same outcome as walking away
  * (`G-4`), so nothing is lost by not saving it.
@@ -59,7 +65,7 @@ import * as CombatFormulas from '../../utils/CombatFormulas.js';
  * what gives "watch your first few fights" any weight.
  */
 
-/** Ephemeral combat state, one per fighting tile. Never saved. */
+/** Ephemeral combat state, one per fought enemy, keyed by its instance id. Never saved. */
 const fights = new Map();
 
 /**
@@ -108,8 +114,8 @@ function enemyFor(instance) {
  * the field named as it was means none of that needed migrating — the ids it
  * receives simply exist now, which they never did before.
  */
-function createFight(tile, heroId, enemy, drops, instanceId = null) {
-    const aggregator = new ModifierAggregator(`enemy_${tile}`);
+function createFight(instanceId, heroId, enemy, drops) {
+    const aggregator = new ModifierAggregator(`enemy_${instanceId}`);
     const effects = [];
 
     // Wired onto the stat block here as well as on every later tick, so that
@@ -118,13 +124,8 @@ function createFight(tile, heroId, enemy, drops, instanceId = null) {
     enemy.effects = effects;
 
     return {
-        id: `fight_${tile}`,
-        tile,
-        /**
-         * The enemy Token this fight is against, by instance id. Fights are
-         * keyed by tile, so this is what lets one follow its Token when the
-         * Token is moved (FPP-4) rather than being mistaken for a new enemy.
-         */
+        id: `fight_${instanceId}`,
+        /** The enemy Token this fight is against — also the fight's key (FPP-4). */
         instanceId,
         enemyId: enemy.id,
         enemy,
@@ -161,10 +162,10 @@ function createFight(tile, heroId, enemy, drops, instanceId = null) {
 /**
  * The source id under which a fight's enemy lends the hero its numbers.
  *
- * Per tile, so two heroes fighting two enemies never share an entry, and so
- * ending one fight cannot strip the other's.
+ * Per enemy Token, so two heroes fighting two enemies never share an entry, and
+ * so ending one fight cannot strip the other's.
  */
-const fightSource = (tile) => `fight:${tile}`;
+const fightSource = (instanceId) => `fight:${instanceId}`;
 
 /**
  * An enemy's own rules, applied to the hero fighting it (Unified Effects P7).
@@ -179,14 +180,14 @@ const fightSource = (tile) => `fight:${tile}`;
  * Registered per fight and removed with it, so the debuff cannot outlive the
  * creature that imposed it — the failure that would be most invisible here.
  */
-function applyEnemyCombatModifiers(tile, heroId) {
+function applyEnemyCombatModifiers(instanceId, heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero?.aggregator) return;
 
-    const source = fightSource(tile);
+    const source = fightSource(instanceId);
     hero.aggregator.removeModifiersBySource(source);
 
-    const def = getTokenType(BoardState.getToken(tile)?.typeId);
+    const def = getTokenType(BoardState.getTokenById(instanceId)?.typeId);
     for (const { type, value, category } of HeroEffects.combatContributions(statementsOf(def))) {
         hero.aggregator.addModifier({
             type, value, bucket: 'flat', source,
@@ -195,26 +196,26 @@ function applyEnemyCombatModifiers(tile, heroId) {
     }
 }
 
-/** Take back whatever the fight on this tile lent its hero. */
-function clearEnemyCombatModifiers(tile) {
-    const heroId = fights.get(tile)?.assignedHeroId;
+/** Take back whatever the fight against this enemy lent its hero. */
+function clearEnemyCombatModifiers(instanceId) {
+    const heroId = fights.get(instanceId)?.assignedHeroId;
     const hero = heroId ? HeroManager.getHero(heroId) : null;
-    hero?.aggregator?.removeModifiersBySource(fightSource(tile));
+    hero?.aggregator?.removeModifiersBySource(fightSource(instanceId));
 }
 
 /**
  * The bearer descriptor for a live fight's enemy.
  *
- * ⚠️ `self` is the TILE, not a person — the opposite of a hero's descriptor,
- * where `self` is `selfHeroId` and there is no square involved. `selfFightTile`
- * says which of the two this is, so a carried `Deals ... to this entity` on a
- * monster hits the monster rather than whoever is standing on it.
+ * ⚠️ `self` is the enemy TOKEN (its instance id), not a person — the opposite
+ * of a hero's descriptor, where `self` is `selfHeroId`. `selfFightId` says
+ * which of the two this is, so a carried `Deals ... to this entity` on a monster
+ * hits the monster rather than whoever is working it.
  */
-function enemyBearer(tile, fight) {
+function enemyBearer(instanceId, fight) {
     return {
         target: fight,
         name: fight.enemy?.name || fight.enemyId,
-        roles: { self: tile, selfFightTile: tile, selfHeroId: null, actor: null, source: null },
+        roles: { self: instanceId, selfFightId: instanceId, selfHeroId: null, actor: null, source: null },
         // A fight in intermission is between enemies (D-103's short rest); its
         // clock keeps running, the same as a hero's does between cycles.
         suspended: () => false,
@@ -229,24 +230,24 @@ function enemyBearer(tile, fight) {
  * board — the same injection `fire` uses.
  */
 LiveEffects.registerBearerSource(
-    () => Array.from(fights, ([tile, fight]) => enemyBearer(tile, fight))
+    () => Array.from(fights, ([instanceId, fight]) => enemyBearer(instanceId, fight))
 );
 
-/** The bearer for whatever enemy is fighting on this tile, if any. */
-export function enemyBearerAt(tile) {
-    const fight = fights.get(tile);
-    return fight ? enemyBearer(tile, fight) : null;
+/** The bearer for the live fight against enemy Token `instanceId`, if any. */
+export function enemyBearerOfToken(instanceId) {
+    const fight = instanceId ? fights.get(instanceId) : null;
+    return fight ? enemyBearer(instanceId, fight) : null;
 }
 
 /**
- * ⭐ **The fight a hero is in, found by HERO — never by tile** (G-43).
+ * ⭐ **The fight a hero is in, found by HERO — never by place** (G-43).
  *
  * `the enemy` is looked up here. Where the hero is recorded as standing does
- * not enter into it: under Free Playmat flags (FP-67) a hero's recorded tile
- * and the tile they fight on can differ, and a rule aimed at their enemy must
- * not quietly hit whoever is on the recorded tile instead.
+ * not enter into it: under Free Playmat flags (FP-67) a hero's flag and the
+ * Token they fight can differ, and a rule aimed at their enemy must not quietly
+ * hit whatever stands where their flag is instead.
  *
- * At most one fight names a hero — `tickTile` ends any other on creation.
+ * At most one fight names a hero — `tickToken` ends any other on creation.
  */
 export function fightOfHero(heroId) {
     if (!heroId) return null;
@@ -259,7 +260,7 @@ export function fightOfHero(heroId) {
 /** The bearer for the enemy `heroId` is fighting, or null (G-43). */
 export function enemyBearerOfHero(heroId) {
     const fight = fightOfHero(heroId);
-    return fight ? enemyBearer(fight.tile, fight) : null;
+    return fight ? enemyBearer(fight.instanceId, fight) : null;
 }
 
 /**
@@ -280,13 +281,14 @@ export function opponentFightOf(statement, roles) {
 /** The same, as a `LiveEffects` bearer. */
 export function opponentBearerOf(statement, roles) {
     const fight = opponentFightOf(statement, roles);
-    return fight ? enemyBearer(fight.tile, fight) : null;
+    return fight ? enemyBearer(fight.instanceId, fight) : null;
 }
 
-/** Drop a tile's fight, so the next engagement starts clean. */
-export function endFight(tile) {
-    clearEnemyCombatModifiers(tile);
-    fights.delete(tile);
+/** Drop the fight against enemy Token `instanceId`, so the next engagement starts clean. */
+export function endFight(instanceId) {
+    if (!instanceId) return;
+    clearEnemyCombatModifiers(instanceId);
+    fights.delete(instanceId);
 }
 
 /**
@@ -303,55 +305,13 @@ export function endFight(tile) {
 export function endFightOfHero(heroId) {
     const fight = fightOfHero(heroId);
     if (!fight) return false;
-    endFight(fight.tile);
+    endFight(fight.instanceId);
     return true;
 }
 
-/**
- * ⭐ **A moved enemy keeps its fight, and so its HP** (FPP-4).
- *
- * Fights are keyed by tile, so a Token that moves has to take its fight along:
- * re-keyed, its `tile` updated, and the numbers its enemy lends the hero taken
- * back under the old tile's source and lent again under the new one. The hero's
- * claim follows the Token by instance id (FP-68), so `fightOfHero` still finds
- * the same fight afterwards.
- *
- * Call after the Token stands on `to`. A no-op when `from` has no fight.
- */
-export function moveFight(from, to) {
-    if (from === to) return false;
-    return attachFight(detachFight(from), to);
-}
-
-/**
- * Lift a tile's fight off the board without ending it, for a move whose
- * destination is not known yet (`Placement.moveToken`: placing the Token can
- * itself shove a neighbour — and its fight — onto the tile being vacated).
- * Hand it back with `attachFight`; a fight never re-attached is simply over
- * (its borrowed numbers were already taken back here).
- */
-export function detachFight(tile) {
-    const fight = fights.get(tile);
-    if (!fight) return null;
-    clearEnemyCombatModifiers(tile);
-    fights.delete(tile);
-    return fight;
-}
-
-/** Put a detached fight down on `tile`, lending its numbers to its hero again. */
-export function attachFight(fight, tile) {
-    if (!fight || tile == null) return false;
-    if (fights.has(tile)) endFight(tile);
-    fight.tile = tile;
-    fight.id = `fight_${tile}`;
-    fights.set(tile, fight);
-    if (fight.assignedHeroId) applyEnemyCombatModifiers(tile, fight.assignedHeroId);
-    return true;
-}
-
-/** Test/debug view of a live fight. */
-export function getFight(tile) {
-    return fights.get(tile) || null;
+/** The live fight against enemy Token `instanceId`, or null. */
+export function getFight(instanceId) {
+    return (instanceId && fights.get(instanceId)) || null;
 }
 
 /** Drop every fight (on teardown, and in tests). */
@@ -359,25 +319,26 @@ export function clearAll() {
     // Hand every fight's borrowed numbers back before dropping them, or a
     // teardown would leave an enemy's debuff on a hero with no fight to explain
     // it — and nothing left that knows to remove it.
-    for (const tile of fights.keys()) clearEnemyCombatModifiers(tile);
+    for (const instanceId of fights.keys()) clearEnemyCombatModifiers(instanceId);
     fights.clear();
 }
 
 /**
- * Advance combat on one enemy tile.
+ * Advance combat on one enemy Token.
  *
- * Called from the board runner's tick for any enemy Token with a hero on it.
+ * Called from the board runner's tick for every enemy Token on the mat.
  * Enemies are **inert until targeted** (D-14) — they never initiate and never
- * aggro, so a tile with no hero does nothing at all.
+ * aggro, so an enemy with no hero does nothing at all.
  */
-export function tickTile(tile, instance, delta, heroId) {
+export function tickToken(instance, delta, heroId) {
     const enemy = enemyFor(instance);
-    if (!enemy) return;
+    const id = instance?.id;
+    if (!enemy || !id) return;
 
     // No hero: the fight is over before it began. Drop any in-flight state so
     // the enemy is whole again next time (`G-4`).
     if (!heroId) {
-        if (fights.has(tile)) endFight(tile);
+        if (fights.has(id)) endFight(id);
         return;
     }
 
@@ -390,26 +351,19 @@ export function tickTile(tile, instance, delta, heroId) {
     // tells a player their hero is outmatched, and every fight a hero *can*
     // start remains opt-in and retreatable. `BoardRunner` raises the tile mark.
     if (!canFight(heroId)) {
-        if (fights.has(tile)) endFight(tile);
+        if (fights.has(id)) endFight(id);
         return;
     }
 
-    let fight = fights.get(tile);
-
-    // The hero's enemy was moved here by some path that did not carry the
-    // fight itself (a cascade push, say). Same Token, same fight (FPP-4).
-    if (!fight) {
-        const theirs = fightOfHero(heroId);
-        if (theirs && theirs.instanceId && theirs.instanceId === instance.id && theirs.tile !== tile) {
-            moveFight(theirs.tile, tile);
-            fight = fights.get(tile);
-        }
-    }
+    // Keyed by the enemy's instance id, so a Token that was moved — dragged,
+    // shoved, anything — finds its own fight here with nothing carried across
+    // (FPP-4).
+    let fight = fights.get(id);
 
     // A different hero arrived — start fresh rather than inheriting the last
     // one's attack timers.
     if (fight && fight.assignedHeroId !== heroId) {
-        endFight(tile);
+        endFight(id);
         fight = null;
     }
 
@@ -420,12 +374,12 @@ export function tickTile(tile, instance, delta, heroId) {
          * back the numbers its enemy lent the hero. Without this two fights
          * could name one hero and `fightOfHero` would have to guess.
          */
-        for (const [otherTile, other] of fights) {
-            if (otherTile !== tile && other.assignedHeroId === heroId) endFight(otherTile);
+        for (const [otherId, other] of [...fights]) {
+            if (otherId !== id && other.assignedHeroId === heroId) endFight(otherId);
         }
-        fight = createFight(tile, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)), instance.id || null);
-        fights.set(tile, fight);
-        applyEnemyCombatModifiers(tile, heroId);
+        fight = createFight(id, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)));
+        fights.set(id, fight);
+        applyEnemyCombatModifiers(id, heroId);
     }
 
     fight.assignedHeroId = heroId;
@@ -471,20 +425,20 @@ export function tickTile(tile, instance, delta, heroId) {
 
     if (engaged) {
         EventBus.publish(BOARD_EVENTS.COMBAT_ENGAGED, {
-            tile,
+            instanceId: id,
             typeId: instance.typeId,
             heroId
         });
-        LoadoutMoments.fire(tile, heroId, 'COMBAT_ENGAGED');
+        LoadoutMoments.fire(id, heroId, 'COMBAT_ENGAGED');
     }
 
     // The ring tracks the CURRENT FIGHT (D-129) — one kill is one cycle for
     // every board system outside the combat engine, so the same ring means the
-    // same thing whether the tile is a Forest or a Bear.
+    // same thing whether the Token is a Forest or a Bear.
     const hp = fight.combat.enemyHp;
     if (hp?.max) {
         EventBus.publish(BOARD_EVENTS.PROGRESS, {
-            tile,
+            instanceId: id,
             percent: Math.max(0, Math.min(100, (1 - hp.current / hp.max) * 100)),
             combat: true,
             enemyHp: hp.current,
@@ -496,14 +450,17 @@ export function tickTile(tile, instance, delta, heroId) {
     // which sets the hero's status. Detect it and get them off the board.
     const hero = HeroManager.getHero(heroId);
     if (!hero || hero.status === 'wounded' || (hero.hp?.current ?? 1) <= 0) {
-        resolveDefeat(tile, instance, heroId);
+        resolveDefeat(instance, heroId);
         return;
     }
 
     if (fight.status === 'victory') {
-        resolveVictory(tile, instance, fight, enemy, heroId);
+        resolveVictory(instance, fight, enemy, heroId);
     }
 }
+
+/** A Token's centre as a mat point, for payloads about a Token that has just left. */
+const pointOf = (instance) => ({ x: instance.x, y: instance.y });
 
 /**
  * A kill.
@@ -518,42 +475,44 @@ export function tickTile(tile, instance, delta, heroId) {
  * to full HP when it expires. **Hero power shortens the fight but not the rest**,
  * so farming trivial content is capped while fighting hard content is not.
  */
-function resolveVictory(tile, instance, fight, enemy, heroId) {
+function resolveVictory(instance, fight, enemy, heroId) {
+    const id = instance.id;
+
     // Enemy Tokens deplete like any other (D-104) — a Bear is not an infinite
     // resource, and Managers are what refresh them (Phase 7).
     if (instance.usesRemaining != null) {
         instance.usesRemaining -= 1;
         EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-            tile,
+            instanceId: id,
             delta: -1,
             remaining: instance.usesRemaining,
             typeId: instance.typeId
         });
     }
 
-    // STOPGAP adapter (removed in 1.6b part 2): the wear reader is by instance
-    // id since 1.6b; this fight still names tiles.
-    RecipeResolver.wearAdjacentSupport(BoardState.tokenIdAtTile(tile), (supportId, supportInstance) => {
-        const supportTile = BoardState.tileOfToken(supportId);
+    // Support Tokens beside the enemy wear per kill (D-129), by instance id.
+    RecipeResolver.wearAdjacentSupport(id, (supportId, supportInstance) => {
         const support = supportInstance || BoardState.getTokenById(supportId);
         const sTypeId = support?.typeId;
         const sName = getTokenType(sTypeId)?.name || sTypeId || 'Support';
-        BoardState.setToken(supportTile, null);
-        if (sTypeId) BoardState.setVacancy(supportTile, sTypeId);
+        const spot = support ? pointOf(support) : null;
+        BoardState.removeToken(supportId);
+        if (sTypeId && spot) BoardState.setVacancyAt(spot, sTypeId);
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            tile: supportTile,
+            instanceId: supportId,
+            ...spot,
             severity: 'red',
             type: 'token_exhausted',
             name: sName,
             message: `Token Exhausted: ${sName}`
         });
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: supportTile, typeId: sTypeId || null });
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: supportTile, typeId: null });
-        TileModifiers.rebuildAroundTile(supportTile);   // STOPGAP (removed in 1.6b part 2)
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: supportId, ...spot, typeId: sTypeId || null });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: supportId, ...spot, typeId: null });
+        TileModifiers.rebuildAround([spot]);
     });
 
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
-        tile,
+        instanceId: id,
         typeId: instance.typeId,
         heroId: heroId || null,
         failed: false
@@ -563,30 +522,32 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
     // name the victor or the creature — while `CYCLE_COMPLETE`, published four
     // lines above from the same function, carried both.
     EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
-        tile, outcome: 'victory', heroId: heroId || null, typeId: instance.typeId
+        instanceId: id, outcome: 'victory', heroId: heroId || null, typeId: instance.typeId
     });
 
     if (instance.usesRemaining != null && instance.usesRemaining <= 0) {
-        BoardState.setToken(tile, null);
+        const spot = pointOf(instance);
+        BoardState.removeToken(id);
         // A cleared-out Goblin Camp is owed a restock exactly as a spent Forest
-        // is (D-104) — one economic model covers the whole board. Set AFTER
-        // setToken, which clears vacancies.
-        BoardState.setVacancy(tile, instance.typeId);
-        endFight(tile);
+        // is (D-104) — one economic model covers the whole board. The spot is
+        // the camp's own point (FP-19).
+        BoardState.setVacancyAt(spot, instance.typeId);
+        endFight(id);
         const eName = getTokenType(instance.typeId)?.name || instance.typeId;
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            tile,
+            instanceId: id,
+            ...spot,
             severity: 'red',
             type: 'token_exhausted',
             name: eName,
             message: `Token Exhausted: ${eName}`
         });
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: instance.typeId });
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
-        // The hero stays standing on the emptied tile (D-60), waiting for the
-        // player or for a Manager to restock underneath them (D-151).
-        if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile, heroId });
-        EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: id, ...spot, typeId: instance.typeId });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...spot, typeId: null });
+        // The hero waits on the emptied spot (FP-70) for the player or a
+        // Manager's restock (D-151).
+        if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...spot });
+        EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [spot] });
         return;
     }
 
@@ -604,12 +565,12 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
  * *only* way gear ever leaves a hero — logged as risk 12.
  *
  * ⚠️ **This is the one implementation of dying** (owner decision 11, CR2-070).
- * Poison kills route here too, via `resolveStatusDefeat` below, so `tile` and
- * `instance` may both be null: a hero can be downed by a DoT while sitting in
- * the Dock, with no square and no Token to tidy up.
+ * Poison kills route here too, via `resolveStatusDefeat` below, so `instance`
+ * may be null: a hero can be downed by a DoT while sitting in the Dock, with no
+ * Token to tidy up.
  */
-function resolveDefeat(tile, instance, heroId) {
-    endFight(tile);
+function resolveDefeat(instance, heroId) {
+    endFight(instance?.id);
 
     const hero = HeroManager.getHero(heroId);
     if (hero && hero.status !== 'wounded') HeroManager.setHeroStatus(heroId, 'wounded');
@@ -626,11 +587,9 @@ function resolveDefeat(tile, instance, heroId) {
     Flags.furl(heroId, 'defeat');
     if (instance) {
         instance.cycleElapsedMs = 0;
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });
-    }
-    if (tile != null) {
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
         EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
-            tile, outcome: 'defeat', heroId: heroId || null, typeId: instance?.typeId || null
+            instanceId: instance.id, outcome: 'defeat', heroId: heroId || null, typeId: instance.typeId || null
         });
     }
     EventBus.publish('heroes_updated', { source: 'board_combat_defeat' });
@@ -639,7 +598,7 @@ function resolveDefeat(tile, instance, heroId) {
     // cost. The wound and each lost item used to announce themselves
     // separately, which buried the one message that matters under several.
     NotificationSystem.warning(defeatMessage(hero?.name, lost));
-    logger.info('BoardCombat', `Defeat on tile ${tile ?? 'none'}: ${heroId}`);
+    logger.info('BoardCombat', `Defeat against ${instance?.id ?? 'nothing'}: ${heroId}`);
 }
 
 /** "X was defeated and carried home, injured. Lost: A, B." (FP-42) */
@@ -654,11 +613,11 @@ export function defeatMessage(heroName, lost = []) {
  * them (CR2-070; owner decision 11, 2026-08-19: *"one rule for dying however it
  * happens, so it cannot be dodged by dying to a damage-over-time effect"*).
  *
- * Deliberately **not** a second death path. All it does is work out where the
- * hero was standing and hand them to `resolveDefeat`, the same function an
- * enemy Token uses — so the wound, the cleanse, the gear roll and the trip home
- * stay written once. A hero downed while off the board passes nulls, which
- * `resolveDefeat` now tolerates.
+ * Deliberately **not** a second death path. All it does is work out which
+ * Token the hero was working and hand them to `resolveDefeat`, the same
+ * function an enemy Token uses — so the wound, the cleanse, the gear roll and
+ * the trip home stay written once. A hero downed while off the board passes a
+ * null Token, which `resolveDefeat` tolerates.
  *
  * Guarded against re-entry: an already-`wounded` hero is ignored, so a second
  * status tick in the same frame cannot roll their gear twice.
@@ -667,17 +626,14 @@ export function resolveStatusDefeat(heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || hero.status === 'wounded') return;
 
-    const tile = BoardState.workTileOf(heroId);
-    const instance = tile != null ? BoardState.getToken(tile) : null;
-    resolveDefeat(tile ?? null, instance, heroId);
+    resolveDefeat(BoardState.getTokenById(BoardState.workTokenOf(heroId)), heroId);
 }
 
 export function init() {
-    // Ending a fight is handled by `tickTile` seeing an empty tile, NOT by an
-    // event. `HERO_MOVED` fires with `tile: null` on a recall — it names where
-    // the hero WENT (the Dock), not where they came from — so subscribing here
-    // would never fire for the tile being vacated. The tick already visits
-    // every tile, so it is the reliable place to notice.
+    // Ending a fight is handled by `tickToken` seeing no hero, and by `Flags`
+    // calling `endFightOfHero` when a hero lets go — NOT by an event.
+    // `HERO_MOVED` on a recall names where the hero WENT (the Dock), not the
+    // Token they left.
     EventBus.subscribe('game_loaded', () => clearAll());
 
     // The status clock cannot call us directly — `StatusEffectSystem` is

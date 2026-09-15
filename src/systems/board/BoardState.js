@@ -307,18 +307,10 @@ export function emptyTiles() {
 }
 
 /**
- * STOPGAP (removed in 1.6b part 2 / 1.6c): the instance id of the Token covering
- * a tile, or null. The adapter for callers that still hold a tile and must now
- * ask an id-keyed reader (`RecipeResolver`, `TileModifiers`, `Flags`, …).
- */
-export function tokenIdAtTile(tile) {
-    return getOccupyingToken(tile)?.instance?.id ?? null;
-}
-
-/**
- * STOPGAP (removed in 1.6b part 2 / 1.6c): the tile Token `id` stands on, or
- * null. The adapter for id-keyed readers that still publish `{ tile }` events
- * or call a part-2 system (`BoardCombat`, `SpriteLayer`, roles) by tile.
+ * STOPGAP (deleted in 1.6c): the tile Token `id` stands on, or null. For the
+ * grid renderer's adapter (`ui/components/board/payloadTile.js`), which maps the
+ * id-keyed board events back onto today's drawn tiles until the mat renderer
+ * replaces them.
  */
 export function tileOfToken(id) {
     return id ? Shim.anchorOfId(board(), id) : null;
@@ -512,7 +504,8 @@ export function tileAtPoint(point) {
  *   wait on, else their flag's point, else null (in the Dock).
  *
  * The tile forms below them (`workerOfTile`, `workTileOf`, `displayTileOf`)
- * are STOPGAP adapters for the callers not yet moved off tiles.
+ * are STOPGAP adapters for the tile placement and drag code and the grid
+ * renderer, deleted with them in slices 1.6c/1.6d.
  */
 export function workerOf(instanceId) {
     if (typeof instanceId !== 'string' || !instanceId) return null;
@@ -544,21 +537,25 @@ export function displayPointOf(heroId) {
 }
 
 /**
- * STOPGAP (removed in 1.6b part 2 / 1.6c): who works the Token covering a tile
- * — any tile of its footprint. For `Placement`, `DealDamage`, `EffectActions`
- * and `StatusApplication`, which still hold tiles. Tile 0 is a valid index.
+ * STOPGAP (deleted in 1.6d): who works the Token covering a tile — any tile of
+ * its footprint. For `Placement`, which still places by tile. Tile 0 is a valid
+ * index.
  */
 export function workerOfTile(tile) {
     if (!isTileIndex(tile)) return null;
-    return workerOf(tokenIdAtTile(tile));
+    return workerOf(getOccupyingToken(tile)?.instance?.id ?? null);
 }
 
-/** STOPGAP (removed in 1.6b part 2 / 1.6c): the anchor tile of the Token `heroId` works, or null. */
+/** STOPGAP (deleted in 1.6d): the anchor tile of the Token `heroId` works, or null. For `Placement`'s results. */
 export function workTileOf(heroId) {
     return tileOfToken(workTokenOf(heroId));
 }
 
-/** STOPGAP (removed in 1.6b part 2 / 1.6c): the tile to draw `heroId` on — claimed Token > waiting spot > flag > null. */
+/**
+ * STOPGAP (deleted in 1.6c/1.6d): the tile to draw `heroId` on — claimed Token >
+ * waiting spot > flag > null. For the grid renderer (`heroesOnBoard`),
+ * `Placement.recallHero` and the drag code.
+ */
 export function displayTileOf(heroId) {
     if (!heroId) return null;
     const work = workTileOf(heroId);
@@ -627,11 +624,6 @@ export function vacancyAt(spotId) {
 export function spotVacancies() {
     const map = board()?.vacancies || {};
     return Object.keys(map).map(spotId => [spotId, map[spotId]]).filter(([, v]) => v?.typeId);
-}
-
-/** STOPGAP (removed in 1.6b part 2 / 1.6c): the tile a spot vacancy stands for, for `{ tile }` event payloads. */
-export function tileOfSpot(spotId) {
-    return Shim.vacancyAnchor(vacancyAt(spotId));
 }
 
 /** STOPGAP (deleted in slice 1.6d): record a vacancy for a tile — at the owed Token's point there. */

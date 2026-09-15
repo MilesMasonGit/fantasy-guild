@@ -236,7 +236,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         BoardRunner.tick(100);
         expect(hero.aggregator.query('ARMOR')).toBe(1);
 
-        BoardCombat.endFight(TILE);
+        BoardCombat.endFight(BoardState.getToken(TILE).id);
         expect(hero.aggregator.query('ARMOR')).toBe(3);
     });
 

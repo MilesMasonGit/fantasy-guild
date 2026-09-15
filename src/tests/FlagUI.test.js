@@ -160,7 +160,7 @@ describe('Flags.skipsOfHero — the pennant hover lines', () => {
         Flags.plant('h1', C(14));
         expect(BoardState.workTileOf('h1')).toBe(16);
         expect(Flags.skipsOfHero('h1')).toEqual([
-            { instanceId: blank.id, reason: Flags.SKIP.NO_SKILL, typeId: 'ft_ui_blank', tile: 15 }
+            { instanceId: blank.id, reason: Flags.SKIP.NO_SKILL, typeId: 'ft_ui_blank' }
         ]);
     });
 });

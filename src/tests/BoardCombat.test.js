@@ -95,7 +95,7 @@ describe('Enemies are inert until targeted (D-14)', () => {
         const bear = place(10, 'fixture_enemy');
         run(20000);
 
-        expect(BoardCombat.getFight(10)).toBeNull();
+        expect(BoardCombat.getFight(idAt(10))).toBeNull();
         expect(bear.usesRemaining).toBe(tokenStartingUses('fixture_enemy'));
     });
 
@@ -111,7 +111,7 @@ describe('Enemies are inert until targeted (D-14)', () => {
         Placement.placeHero('hero_1', 10);
         run(1000);
 
-        expect(BoardCombat.getFight(10)).not.toBeNull();
+        expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
     });
 });
 
@@ -124,7 +124,7 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
         const bear = place(10, 'fixture_enemy', 'recruit_1');
         run(20000);
 
-        expect(BoardCombat.getFight(10)).toBeNull();
+        expect(BoardCombat.getFight(idAt(10))).toBeNull();
         // The enemy is untouched: no charge spent, no damage dealt.
         expect(bear.usesRemaining).toBe(tokenStartingUses('fixture_enemy'));
     });
@@ -154,20 +154,20 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
         place(10, 'fixture_enemy', 'rookie');
         run(1000);
 
-        expect(BoardCombat.getFight(10)).not.toBeNull();
+        expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
     });
 
     it('promoting the Recruit lets the same hero start fighting', () => {
         place(10, 'fixture_enemy', 'recruit_1');
         run(5000);
-        expect(BoardCombat.getFight(10)).toBeNull();
+        expect(BoardCombat.getFight(idAt(10))).toBeNull();
 
         // What a first promotion does: grant one combat skill.
         GameState.state.heroes.find(h => h.id === 'recruit_1')
             .skills.melee = { level: 20, xp: 0 };
         run(1000);
 
-        expect(BoardCombat.getFight(10)).not.toBeNull();
+        expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
     });
 });
 
@@ -215,7 +215,7 @@ describe('A kill', () => {
         unsub();
 
         expect(seen.length).toBeGreaterThan(0);
-        expect(seen[0].tile).toBe(10);
+        expect(seen[0].instanceId).toBe(idAt(10));
     });
 
     it('wears adjacent support per kill, exactly as a craft would (D-126)', () => {
@@ -247,12 +247,12 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
     it('ends the fight immediately', () => {
         place(10, 'fixture_enemy', 'hero_1');
         run(3000);
-        expect(BoardCombat.getFight(10)).not.toBeNull();
+        expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
 
         Placement.recallHero(10);
         run(100);
 
-        expect(BoardCombat.getFight(10)).toBeNull();
+        expect(BoardCombat.getFight(idAt(10))).toBeNull();
     });
 
     it('⚠️ returns the enemy to FULL HP — retreat has a real cost', () => {
@@ -268,11 +268,11 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         // window can miss the damage by arriving after the reset. Tracking the
         // minimum catches the damaged state either way.
         run(100);                       // one tick, so the fight exists to read
-        const max = BoardCombat.getFight(10).combat.enemyHp.max;
-        let lowest = BoardCombat.getFight(10).combat.enemyHp.current;
+        const max = BoardCombat.getFight(idAt(10)).combat.enemyHp.max;
+        let lowest = BoardCombat.getFight(idAt(10)).combat.enemyHp.current;
         for (let elapsed = 0; elapsed < 20000 && lowest === max; elapsed += 100) {
             run(100);
-            lowest = Math.min(lowest, BoardCombat.getFight(10).combat.enemyHp.current);
+            lowest = Math.min(lowest, BoardCombat.getFight(idAt(10)).combat.enemyHp.current);
         }
         expect(lowest).toBeLessThan(max);
 
@@ -281,7 +281,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         Placement.placeHero('hero_1', 10);
         run(100);
 
-        const fresh = BoardCombat.getFight(10).combat.enemyHp;
+        const fresh = BoardCombat.getFight(idAt(10)).combat.enemyHp;
         expect(fresh.current).toBe(fresh.max);
     });
 
@@ -295,7 +295,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         Placement.placeHero('hero_2', 10);
         run(100);
 
-        const fight = BoardCombat.getFight(10);
+        const fight = BoardCombat.getFight(idAt(10));
         expect(fight.assignedHeroId).toBe('hero_2');
         expect(fight.combat.enemyHp.current).toBe(fight.combat.enemyHp.max);
     });

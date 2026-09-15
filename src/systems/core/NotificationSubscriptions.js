@@ -28,10 +28,14 @@ EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newL
         meta: { startLevel }
     });
 
-    const tile = BoardState.displayTileOf(heroId);
-    if (tile != null) {
+    // Where the hero is drawn: the Token they work (by instance id) and the mat
+    // point (slice 1.6b). A hero in the Dock has neither.
+    const point = BoardState.displayPointOf(heroId);
+    if (point) {
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            tile,
+            instanceId: BoardState.workTokenOf(heroId),
+            x: point.x,
+            y: point.y,
             heroId,
             skillId,
             severity: 'upgrade',

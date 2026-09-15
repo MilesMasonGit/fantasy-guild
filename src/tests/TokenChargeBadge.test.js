@@ -5,6 +5,7 @@ import { TokenChargeBadge, TokenNameBadge, AddHeroBadge, TokenChargeDeltaFloater
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { act } from '@testing-library/react';
+import { tileCentre } from './fixtures/mat.js';
 
 describe('TokenChargeBadge', () => {
     it('is hidden (opacity-0) when not hovered', () => {
@@ -58,12 +59,14 @@ describe('TokenChargeBadge', () => {
 });
 
 describe('TokenChargeDeltaFloater', () => {
+    // Since Free Playmat 1.6b the event names a Token by id, or a mat point; the
+    // floater still sits on today's drawn tile, so these fire at its centre.
     it('displays floating -1 when a charge is consumed', () => {
         render(React.createElement(TokenChargeDeltaFloater, { tile: 8 }));
 
         act(() => {
             EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-                tile: 8,
+                ...tileCentre(8),
                 delta: -1,
                 remaining: 24,
                 typeId: 'token_oak_tree'
@@ -78,7 +81,7 @@ describe('TokenChargeDeltaFloater', () => {
 
         act(() => {
             EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-                tile: 12,
+                ...tileCentre(12),
                 delta: 50,
                 remaining: 90,
                 typeId: 'token_copper_ore'

@@ -21,6 +21,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 import { useEngine } from '../ui/hooks/useEngine.js';
 import { PromotionCeremonyModal } from '../ui/modals/PromotionCeremonyModal.jsx';
 import { useUIModals, standingPromotionOffer } from '../ui/hooks/useUIModals.js';
+import { idAt } from './fixtures/mat.js';
 
 /**
  * ⭐ **The promotion ceremony** (Promotes rule P4).
@@ -53,10 +54,10 @@ function qualifiedHero() {
 function standingOffer(hero, { typeId = 'fixture_promotion', uses = 2 } = {}) {
     BoardState.setToken(TILE, { typeId, usesRemaining: uses, cycleElapsedMs: 0 });
     Placement.placeHero(hero.id, TILE);
-    for (let i = 0; i < 25 && !BoardPromotion.getOffer(TILE); i++) {
-        BoardPromotion.tickTile(TILE, BoardState.getToken(TILE), 1000, hero.id);
+    for (let i = 0; i < 25 && !BoardPromotion.getOffer(idAt(TILE)); i++) {
+        BoardPromotion.tickToken(BoardState.getToken(TILE), 1000, hero.id);
     }
-    return BoardPromotion.getOffer(TILE);
+    return BoardPromotion.getOffer(idAt(TILE));
 }
 
 const button = (label) => [...document.body.querySelectorAll('button')].find((b) => b.textContent.includes(label));
@@ -140,7 +141,7 @@ describe('accepting', () => {
         expect(hero.jobId).toBe('recruit');
         expect(document.body.querySelector('[data-promotion-refusal]').textContent)
             .toBe('This Token no longer has the charges to pay for it.');
-        expect(BoardPromotion.getOffer(TILE)).not.toBeNull();
+        expect(BoardPromotion.getOffer(idAt(TILE))).not.toBeNull();
     });
 });
 
@@ -167,7 +168,7 @@ describe('⭐ the game opens it', () => {
 
         act(() => { standingOffer(hero); });
 
-        expect(result.current.dock.promotionOffer).toMatchObject({ tile: TILE, heroId: hero.id, jobId: 'fighter' });
+        expect(result.current.dock.promotionOffer).toMatchObject({ instanceId: idAt(TILE), heroId: hero.id, jobId: 'fighter' });
         act(() => result.current.dock.closePromotion());
         expect(result.current.dock.promotionOffer).toBeNull();
     });
@@ -179,13 +180,13 @@ describe('⭐ the game opens it', () => {
 
         act(() => { EventBus.publish('game_loaded', { slot: 0 }); });
 
-        expect(result.current.dock.promotionOffer).toMatchObject({ tile: TILE, heroId: hero.id });
+        expect(result.current.dock.promotionOffer).toMatchObject({ instanceId: idAt(TILE), heroId: hero.id });
     });
 
     it('⚠️ never re-asks about an offer the player declined', () => {
         const hero = qualifiedHero();
         standingOffer(hero);
-        BoardPromotion.decline(TILE);
+        BoardPromotion.decline(idAt(TILE));
 
         expect(standingPromotionOffer(engine)).toBeNull();
         const { result } = renderHook(() => useUIModals(engine));

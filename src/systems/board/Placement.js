@@ -4,7 +4,6 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { positionOf } from './nearby.js';
 import * as Flags from './Flags.js';
-import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import { isPlaceable, GUILD_HALL_TILE, TILE_PX, TILE_STEP_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors, tileCentre, footprintCentre } from '../../config/boardGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
@@ -33,15 +32,26 @@ function forfeitCycle(instance) {
  * 113 u of that tile's centre, inside the 144 u margin.
  *
  * STOPGAP (deleted in 1.6d with the tile placement code): the points are tile
- * centres. `tile` stays in the payload for anything that only wants "where".
+ * centres.
  */
 function markAdjacencyDirty(indexOrFootprint) {
     const changed = Array.isArray(indexOrFootprint) ? indexOrFootprint : [indexOrFootprint];
     if (!changed.length) return;
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, {
-        tile: changed[0],
         points: changed.map(tileCentre).filter(Boolean)
     });
+}
+
+/**
+ * The payload for a tile this code has just emptied: the tile's centre as a mat
+ * point, because no Token stands there to name (Free Playmat slice 1.6b).
+ * STOPGAP (deleted in 1.6d with the tile placement code).
+ */
+const vacated = (tile) => ({ ...tileCentre(tile), typeId: null });
+
+/** Announce that a hero moved, by the Token they work and the point they are drawn at. */
+function announceHeroMoved(heroId) {
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, Flags.heroMovedPayload(heroId));
 }
 
 /**
@@ -278,7 +288,8 @@ export function placeToken(index, instance) {
         if (!cascadeCheck.ok) {
             const vName = tokenName(cascadeCheck.violatingTypeId) || tokenName(instance.typeId) || 'Token';
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                tile: index,
+                // A refused drop names the point it was refused at (slice 1.6b).
+                ...pointAt(index, instance.typeId),
                 severity: 'disallow',
                 type: 'drop_rejected',
                 name: vName,
@@ -306,11 +317,11 @@ export function placeToken(index, instance) {
         for (const { fromTile, toTile, instance: shiftedInst, heroId } of shifts) {
             BoardState.setToken(fromTile, null);
             BoardState.setToken(toTile, shiftedInst);
-            BoardCombat.moveFight(fromTile, toTile);   // a shoved enemy keeps its HP (FPP-4)
+            // A shoved enemy keeps its HP: its fight is keyed by instance id (FPP-4).
             dirtyTiles.add(fromTile);
             dirtyTiles.add(toTile);
 
-            if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: toTile, heroId });
+            announceHeroMoved(heroId);
 
             EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
                 fromTile,
@@ -319,18 +330,16 @@ export function placeToken(index, instance) {
                 heroId: heroId || null,
                 durationMs: 250
             });
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: toTile, typeId: shiftedInst.typeId });
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: fromTile, typeId: null });
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: shiftedInst.id, typeId: shiftedInst.typeId });
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(fromTile));
         }
 
         // Place the 2x2 token at anchor index
         forfeitCycle(instance);
         BoardState.setToken(index, instance);
 
-        for (const t of footprint) {
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: instance.typeId });
-        }
-        EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: index, typeId: instance.typeId });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
+        EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
         markAdjacencyDirty(Array.from(dirtyTiles));
         EventBus.publish('state_changed');
 
@@ -361,7 +370,8 @@ export function placeToken(index, instance) {
     if (!check.ok) {
         const vName = tokenName(check.violatingTypeId) || tokenName(instance.typeId) || 'Token';
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            tile: index,
+            // A refused drop names the point it was refused at (slice 1.6b).
+            ...pointAt(index, instance.typeId),
             severity: 'disallow',
             type: 'drop_rejected',
             name: vName,
@@ -389,7 +399,7 @@ export function placeToken(index, instance) {
 
             const tName = tokenName(instance.typeId) || 'Token';
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                tile: occ.anchorIndex,
+                instanceId: occ.instance.id,
                 severity: 'green',
                 type: 'token_restocked',
                 name: tName,
@@ -398,14 +408,14 @@ export function placeToken(index, instance) {
             });
 
             EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-                tile: occ.anchorIndex,
+                instanceId: occ.instance.id,
                 delta: transferred,
                 remaining: occ.instance.usesRemaining,
                 typeId: occ.instance.typeId
             });
 
             EventBus.publish('token_restocked', {
-                tile: occ.anchorIndex,
+                instanceId: occ.instance.id,
                 typeId: instance.typeId,
                 addedCharges: transferred,
                 currentCharges: occ.instance.usesRemaining
@@ -444,8 +454,8 @@ export function placeToken(index, instance) {
             if (pushTarget != null) {
                 forfeitCycle(instance);
                 BoardState.setToken(pushTarget, instance);
-                EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: pushTarget, typeId: instance.typeId });
-                EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: pushTarget, typeId: instance.typeId });
+                EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
+                EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
                 EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
                     fromTile: occ.anchorIndex,
                     toTile: pushTarget,
@@ -531,11 +541,10 @@ export function placeToken(index, instance) {
                             forfeitCycle(nextOcc.instance);
                             BoardState.setToken(nextIndex, null);
                             BoardState.setToken(nextPushTarget, nextOcc.instance);
-                            BoardCombat.moveFight(nextIndex, nextPushTarget);   // FPP-4
-                            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: nextPushTarget, typeId: nextOcc.instance.typeId });
+                            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: nextOcc.instance.id, typeId: nextOcc.instance.typeId });
                             EventBus.publish(BOARD_EVENTS.TILE_PUSHED, { fromTile: nextIndex, toTile: nextPushTarget, instance: nextOcc.instance, heroId: nextHero });
                             // The pushed Token keeps its hero (claims follow the instance).
-                            if (nextHero) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: nextPushTarget, heroId: nextHero });
+                            announceHeroMoved(nextHero);
                             markAdjacencyDirty(nextPushTarget);
                         } else {
                             // Off to the Tray: its hero's flag chooses again next tick.
@@ -543,7 +552,7 @@ export function placeToken(index, instance) {
                             nextOcc.instance.isLanding = true;
                             BoardState.addToTray(nextOcc.instance);
                             BoardState.setToken(nextIndex, null);
-                            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: nextIndex, typeId: null });
+                            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(nextIndex));
                             markAdjacencyDirty(nextIndex);
                         }
                         pushTarget = nextIndex;
@@ -559,9 +568,8 @@ export function placeToken(index, instance) {
             forfeitCycle(occ.instance);
             BoardState.setToken(occ.anchorIndex, null);
             BoardState.setToken(pushTarget, occ.instance);
-            BoardCombat.moveFight(occ.anchorIndex, pushTarget);   // FPP-4
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: pushTarget, typeId: occ.instance.typeId });
-            EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: pushTarget, typeId: occ.instance.typeId });
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: occ.instance.id, typeId: occ.instance.typeId });
+            EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: occ.instance.id, typeId: occ.instance.typeId });
             EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
                 fromTile: occ.anchorIndex,
                 toTile: pushTarget,
@@ -570,7 +578,7 @@ export function placeToken(index, instance) {
             });
             markAdjacencyDirty(pushTarget);
 
-            if (heroOnTile) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: pushTarget, heroId: heroOnTile });
+            announceHeroMoved(heroOnTile);
         } else {
             // No free adjacent cell available — return to Tray with particle fly
             if (!BoardState.hasTraySpace()) {
@@ -608,8 +616,8 @@ export function placeToken(index, instance) {
     forfeitCycle(instance);
     BoardState.setToken(index, instance);
 
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: instance.typeId });
-    EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: index, typeId: instance.typeId });
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
+    EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: instance.id, typeId: instance.typeId });
     markAdjacencyDirty(index);
     EventBus.publish('state_changed');
 
@@ -633,34 +641,28 @@ export function moveToken(from, to) {
     const progress = moving.cycleElapsedMs || 0;
     const heroId = BoardState.workerOfTile(fromAnchor);
 
-    // Lifted off first: placing the Token can shove a neighbour (and its
-    // fight) onto the tile this one is vacating (FPP-4).
-    const fight = BoardCombat.detachFight(fromAnchor);
-
     BoardState.setToken(fromAnchor, null);
 
     const result = placeToken(to, moving);
     if (!result.success) {
         // Roll back
         BoardState.setToken(fromAnchor, moving);
-        BoardCombat.attachFight(fight, fromAnchor);
         return result;
     }
 
     // Still on the board as itself (not absorbed into a matching copy, not
-    // bounced to the Tray): it keeps the cycle it was part-way through — and an
-    // enemy keeps its fight, so its HP (FPP-4). Gone from the board, the fight
-    // against it is over.
+    // bounced to the Tray): it keeps the cycle it was part-way through. An
+    // enemy keeps its fight, and so its HP, with nothing done here: fights are
+    // keyed by the Token's instance id (FPP-4).
     const landed = BoardState.findTokenById(moving.id);
     if (landed) {
         moving.cycleElapsedMs = progress;
-        BoardCombat.attachFight(fight, landed.anchor);
     }
 
     for (const t of occ.footprint) {
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(t));
     }
-    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: BoardState.displayTileOf(heroId), heroId });
+    announceHeroMoved(heroId);
     markAdjacencyDirty(occ.footprint);
     return result;
 }
@@ -674,7 +676,7 @@ export function returnTokenToTray(index, position = null) {
     if (isPermanentToken(occ.instance?.typeId, occ.instance)) {
         const tName = tokenName(occ.instance?.typeId) || 'Guild Hall';
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            tile: occ.anchorIndex,
+            instanceId: occ.instance.id,
             severity: 'disallow',
             type: 'drop_rejected',
             name: tName,
@@ -718,9 +720,10 @@ export function returnTokenToTray(index, position = null) {
     }
 
     for (const t of occ.footprint) {
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(t));
     }
-    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: occ.anchorIndex, heroId });
+    // Where the Token was — the point the hero's work just left (slice 1.6b).
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...pointAt(occ.anchorIndex, instance.typeId) });
     markAdjacencyDirty(occ.footprint);
     EventBus.publish('state_changed');
 
@@ -736,7 +739,7 @@ export function returnTokenToVault(index) {
     if (isPermanentToken(occ.instance?.typeId, occ.instance)) {
         const tName = tokenName(occ.instance?.typeId) || 'Guild Hall';
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            tile: occ.anchorIndex,
+            instanceId: occ.instance.id,
             severity: 'disallow',
             type: 'drop_rejected',
             name: tName,
@@ -770,9 +773,9 @@ export function returnTokenToVault(index) {
     BoardState.setToken(occ.anchorIndex, null);
 
     for (const t of occ.footprint) {
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(t));
     }
-    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: occ.anchorIndex, heroId });
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...pointAt(occ.anchorIndex, instance.typeId) });
     markAdjacencyDirty(occ.footprint);
     EventBus.publish('state_changed');
 

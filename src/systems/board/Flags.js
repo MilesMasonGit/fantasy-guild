@@ -139,9 +139,24 @@ export function markDirty() {
 /** Batching depth: while > 0, claim changes do not announce themselves. */
 let quiet = 0;
 
+/**
+ * A `HERO_MOVED` payload for `heroId`: the Token they work (`instanceId`, or
+ * null) and the mat point they are drawn at (`x`, `y`, absent in the Dock).
+ * By instance id and point since slice 1.6b.
+ */
+export function heroMovedPayload(heroId, extra = {}) {
+    const point = BoardState.displayPointOf(heroId);
+    return {
+        heroId,
+        instanceId: BoardState.workTokenOf(heroId),
+        ...(point ? { x: point.x, y: point.y } : {}),
+        ...extra
+    };
+}
+
 function announceMoved(heroId) {
     if (quiet > 0) return;
-    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: BoardState.displayTileOf(heroId), heroId });
+    EventBus.publish(BOARD_EVENTS.HERO_MOVED, heroMovedPayload(heroId));
 }
 
 /**
@@ -248,8 +263,7 @@ function promotionRefusal(heroId, instance) {
 function resetProgress(instance) {
     if (!instance || !(instance.cycleElapsedMs > 0)) return;
     instance.cycleElapsedMs = 0;
-    // STOPGAP payload (removed in 1.6b part 2): the progress bar still listens by tile.
-    EventBus.publish(BOARD_EVENTS.PROGRESS, { tile: BoardState.tileOfToken(instance.id), percent: 0 });
+    EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: instance.id, percent: 0 });
 }
 
 /**
@@ -287,8 +301,7 @@ function claimToken(heroId, instance) {
      */
     if (instance.alert) {
         instance.alert = null;
-        // STOPGAP payload (removed in 1.6b part 2): alerts are still drawn by tile.
-        EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile: BoardState.tileOfToken(instance.id), alert: null });
+        EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: instance.id, alert: null });
     }
 }
 
@@ -328,9 +341,8 @@ export function skipsOf(instanceId) {
 
 /**
  * What `heroId`'s flag passed over, in the order it looked (nearest first), as
- * `[{ instanceId, reason, typeId, tile }]` — the pennant's hover text (slice
- * 1.5). A Token that has since left the board is left out. `tile` is a STOPGAP
- * for the UI (removed in 1.6c).
+ * `[{ instanceId, reason, typeId }]` — the pennant's hover text (slice 1.5). A
+ * Token that has since left the board is left out.
  */
 export function skipsOfHero(heroId) {
     const r = rt();
@@ -342,7 +354,7 @@ export function skipsOfHero(heroId) {
         if (!instance) continue;
         for (const s of r.skips.get(instanceId) || []) {
             if (s.heroId !== heroId) continue;
-            out.push({ instanceId, reason: s.reason, typeId: instance.typeId, tile: BoardState.tileOfToken(instanceId) });
+            out.push({ instanceId, reason: s.reason, typeId: instance.typeId });
         }
     }
     return out;
@@ -726,10 +738,12 @@ export function plant(heroId, point) {
      * pennant moved, the "+" badge. Published here, once, so no
      * caller can forget it or announce it twice. An unchanged plant is not a
      * deployment and returned above.
+     *
+     * Names the Token the flag was planted on by `instanceId` (and its type),
+     * or null for bare mat (slice 1.6b).
      */
-    const tile = BoardState.tileAtPoint(point);   // STOPGAP payload — hero_deployed moves to instanceId in 1.6b part 2
-    const under = BoardState.getOccupyingToken(tile);
-    EventBus.publish('hero_deployed', { heroId, tile, typeId: under?.instance?.typeId ?? null });
+    const under = tokenAtPoint(point);
+    EventBus.publish('hero_deployed', { heroId, instanceId: under?.id ?? null, typeId: under?.typeId ?? null });
     return { success: true };
 }
 
@@ -858,7 +872,7 @@ export function furl(heroId, reason = 'recall') {
     } finally {
         quiet--;
     }
-    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId, reason });
+    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, instanceId: null, reason });
     return true;
 }
 
@@ -896,8 +910,7 @@ export function setDisallowed(instanceId, on = true) {
     }
 
     markDirty();
-    // STOPGAP payload (removed in 1.6b part 2): the board still redraws by tile.
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: BoardState.tileOfToken(instance.id), typeId: instance.typeId });
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
     EventBus.publish('state_changed');
     return { success: true };
 }
@@ -906,21 +919,20 @@ export function setDisallowed(instanceId, on = true) {
  * What a hero is doing, for the dock and the idle mark:
  * `docked` (no flag) · `working` · `waiting` (for a restock) · `idle` (a flag,
  * nothing to do). `instanceId` is the Token they work (or null), `point` where
- * they are drawn; `tile` is the STOPGAP tile the UI still draws them on
- * (removed in 1.6c).
+ * they are drawn.
  */
 export function statusOf(heroId) {
     const flag = BoardState.flagOf(heroId);
-    if (!flag) return { state: 'docked', tile: null, instanceId: null, point: null, typeId: null, flag: null };
+    if (!flag) return { state: 'docked', instanceId: null, point: null, typeId: null, flag: null };
     const workId = BoardState.workTokenOf(heroId);
     if (workId) {
         return {
-            state: 'working', tile: BoardState.tileOfToken(workId), instanceId: workId,
+            state: 'working', instanceId: workId,
             point: BoardState.displayPointOf(heroId), typeId: BoardState.getTokenById(workId)?.typeId ?? null, flag
         };
     }
     const wait = BoardState.waitOfHero(heroId);
-    const common = { tile: BoardState.displayTileOf(heroId), instanceId: null, point: BoardState.displayPointOf(heroId), flag };
+    const common = { instanceId: null, point: BoardState.displayPointOf(heroId), flag };
     if (wait) return { state: 'waiting', ...common, typeId: wait.typeId };
     return { state: 'idle', ...common, typeId: null };
 }

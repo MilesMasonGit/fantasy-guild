@@ -144,12 +144,12 @@ export const DEFAULT_TRAINING_MS = 30000;
 /**
  * Advance a promotion tile.
  *
- * Mirrors `BoardCombat.tickTile`: called every tick whether or not a hero is on
- * it, because this also owns *stopping*.
+ * Mirrors `BoardCombat.tickToken`: called every tick whether or not a hero is on
+ * it, because this also owns *stopping*. By instance (Free Playmat slice 1.6b).
  *
  * @returns {{ alert: string|null }}
  */
-export function tickTile(tile, instance, delta, heroId) {
+export function tickToken(instance, delta, heroId) {
     const job = jobFor(instance);
     if (!job) return { alert: null };
 
@@ -193,7 +193,7 @@ export function tickTile(tile, instance, delta, heroId) {
     instance.cycleElapsedMs = (instance.cycleElapsedMs || 0) + delta;
 
     EventBus.publish(BOARD_EVENTS.PROGRESS, {
-        tile,
+        instanceId: instance.id,
         percent: Math.max(0, Math.min(100, (instance.cycleElapsedMs / cycleMs) * 100))
     });
 
@@ -205,7 +205,7 @@ export function tickTile(tile, instance, delta, heroId) {
     instance.promotionHeroId = heroId;
 
     EventBus.publish(BOARD_EVENTS.PROMOTION_READY, {
-        tile,
+        instanceId: instance.id,
         heroId,
         jobId: job.id,
         typeId: instance.typeId
@@ -218,10 +218,12 @@ export function tickTile(tile, instance, delta, heroId) {
  * The player said yes.
  *
  * Everything that costs something happens here and nowhere else — the only
- * place a promotion is ever paid for.
+ * place a promotion is ever paid for. The offer is named by the Token's
+ * **instance id** (Free Playmat slice 1.6b), so it is found wherever the Token
+ * has been moved to.
  */
-export function accept(tile) {
-    const instance = BoardState.getToken(tile);
+export function accept(instanceId) {
+    const instance = BoardState.getTokenById(instanceId);
     const job = jobFor(instance);
     const heroId = instance?.promotionHeroId;
     if (!instance || !job || !heroId || !isPaused(instance) || isDeclined(instance)) {
@@ -244,17 +246,16 @@ export function accept(tile) {
     instance.cycleElapsedMs = 0;
 
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
-        tile, typeId: instance.typeId, heroId, failed: false
+        instanceId: instance.id, typeId: instance.typeId, heroId, failed: false
     });
 
     // Spend the price. `applyDelta` also removes a Token its last charge
-    // empties — exactly as a depleted Forest or Bear leaves (D-104) — and the
-    // hero stays standing on the bare tile, as they do after a kill.
-    if (price > 0) Charges.applyDelta(tile, instance, -price, { heroId });
+    // empties — exactly as a depleted Forest or Bear leaves (D-104).
+    if (price > 0) Charges.applyDelta(instance, -price, { heroId });
 
     const hero = HeroManager.getHero(heroId);
     NotificationSystem.success(`${hero?.name || 'Your hero'} is now a ${job.name}!`);
-    logger.info('BoardPromotion', `Tile ${tile}: ${heroId} → ${job.id} (spent ${price})`);
+    logger.info('BoardPromotion', `Token ${instance.id}: ${heroId} → ${job.id} (spent ${price})`);
 
     return { success: true, jobId: job.id, spent: price, ...result };
 }
@@ -265,8 +266,8 @@ export function accept(tile) {
  * Nothing is spent and nobody moves. The tile holds, and asks again when a hero
  * is picked up and put back down.
  */
-export function decline(tile) {
-    const instance = BoardState.getToken(tile);
+export function decline(instanceId) {
+    const instance = BoardState.getTokenById(instanceId);
     if (!instance || !isPaused(instance) || isDeclined(instance)) return { success: false, reason: 'NO_OFFER' };
 
     instance.cycleElapsedMs = 0;
@@ -280,24 +281,24 @@ export function decline(tile) {
      */
     instance.promotionDeclined = true;
 
-    EventBus.publish(BOARD_EVENTS.PROGRESS, { tile, percent: 0 });
-    logger.info('BoardPromotion', `Tile ${tile}: offer declined, holding`);
+    EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: instance.id, percent: 0 });
+    logger.info('BoardPromotion', `Token ${instance.id}: offer declined, holding`);
 
     return { success: true };
 }
 
 /**
- * The live offer on a tile, for the UI to render — or null.
+ * The live offer on Token `instanceId`, for the UI to render — or null.
  *
  * A declined offer is not live: the player answered it, and it waits for the
  * hero to be picked up and put back rather than asking again.
  */
-export function getOffer(tile) {
-    const instance = BoardState.getToken(tile);
+export function getOffer(instanceId) {
+    const instance = BoardState.getTokenById(instanceId);
     if (!isPaused(instance) || isDeclined(instance) || !instance?.promotionHeroId) return null;
     const job = jobFor(instance);
     if (!job) return null;
-    return { tile, heroId: instance.promotionHeroId, jobId: job.id, typeId: instance.typeId };
+    return { instanceId: instance.id, heroId: instance.promotionHeroId, jobId: job.id, typeId: instance.typeId };
 }
 
 export function init() {

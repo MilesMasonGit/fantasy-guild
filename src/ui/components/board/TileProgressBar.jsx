@@ -4,6 +4,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { cn } from '../../utils/cn.js';
 import { ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
+import { payloadIsForTile } from './payloadTile.js';
 
 /**
  * TileProgressBar — zero-re-render cycle progress bar at the bottom of a tile frame.
@@ -228,20 +229,22 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
         };
 
         const unsubs = [
+            // Payloads name Tokens by instance id since slice 1.6b; the STOPGAP
+            // adapter maps them onto this drawn tile (deleted in 1.6c).
             EventBus.subscribe(BOARD_EVENTS.PROGRESS, (p) => {
-                if (p?.tile !== tile) return;
+                if (!payloadIsForTile(p, tile)) return;
                 apply(p);
             }),
             EventBus.subscribe(BOARD_EVENTS.ALERT_CHANGED, (p) => {
-                if (p?.tile !== tile) return;
+                if (!payloadIsForTile(p, tile)) return;
                 setEventAlert(p?.alert || null);
                 renderAlert(p?.alert);
             }),
             EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => {
-                if (p?.tile === tile) onCycleComplete();
+                if (payloadIsForTile(p, tile)) onCycleComplete();
             }),
             EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
-                if (p?.tile === tile) onTileChanged();
+                if (payloadIsForTile(p, tile)) onTileChanged();
             })
         ];
 

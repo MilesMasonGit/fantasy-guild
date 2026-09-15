@@ -15,6 +15,7 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
+import { payloadIsForTile } from './payloadTile.js';
 import { Infinity as InfinityIcon, Settings } from 'lucide-react';
 import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
 
@@ -40,21 +41,21 @@ export const TokenChargeBadge = ({ tile, usesRemaining, isDragging, isHovered, h
     useEffect(() => {
         if (!EventBus || tile == null) return;
 
+        // Payloads name Tokens by instance id since slice 1.6b; the STOPGAP
+        // adapter maps them onto this drawn tile (deleted in 1.6c).
         const unsubs = [
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
-                if (p?.tile === tile) {
+                if (payloadIsForTile(p, tile)) {
                     setHeroStationed(!!p?.heroId);
-                } else if (p?.from === tile) {
-                    setHeroStationed(false);
                 }
             }),
             EventBus.subscribe(BOARD_EVENTS.ALERT_CHANGED, (p) => {
-                if (p?.tile === tile) {
+                if (payloadIsForTile(p, tile)) {
                     setEventAlert(p?.alert || null);
                 }
             }),
             EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
-                if (p?.tile === tile) {
+                if (payloadIsForTile(p, tile)) {
                     setEventAlert(null);
                 }
             })
@@ -116,24 +117,22 @@ export const TokenChargeDeltaFloater = ({ tile, hasHero = false, alert = null })
 
         const unsubs = [
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
-                if (p?.tile === tile) {
+                if (payloadIsForTile(p, tile)) {
                     setHeroStationed(!!p?.heroId);
-                } else if (p?.from === tile) {
-                    setHeroStationed(false);
                 }
             }),
             EventBus.subscribe(BOARD_EVENTS.ALERT_CHANGED, (p) => {
-                if (p?.tile === tile) {
+                if (payloadIsForTile(p, tile)) {
                     setEventAlert(p?.alert || null);
                 }
             }),
             EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
-                if (p?.tile === tile) {
+                if (payloadIsForTile(p, tile)) {
                     setEventAlert(null);
                 }
             }),
             EventBus.subscribe(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, (p) => {
-                if (p?.tile !== tile || p?.delta == null || p?.delta === 0) return;
+                if (!payloadIsForTile(p, tile) || p?.delta == null || p?.delta === 0) return;
                 const id = Math.random().toString(36).slice(2);
                 setDeltas(prev => [...prev, { id, delta: p.delta }]);
                 setTimeout(() => {
@@ -385,7 +384,7 @@ export const BoardTile = ({
             from: { tile: anchorIndex },
             onMiss: isPermanent ? () => {
                 EventBus?.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                    tile: anchorIndex,
+                    instanceId: token?.instanceId ?? null,
                     severity: 'disallow',
                     type: 'drop_rejected',
                     name: 'Guild Hall',
@@ -432,7 +431,7 @@ export const BoardTile = ({
         if (!EventBus) return;
         let timer = null;
         const unsub = EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
-            if (p?.tile !== anchorIndex || !p?.typeId) return;
+            if (!payloadIsForTile(p, anchorIndex) || !p?.typeId) return;
             setLanding(true);
             clearTimeout(timer);
             timer = setTimeout(() => setLanding(false), 400);

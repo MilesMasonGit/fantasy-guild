@@ -193,10 +193,10 @@ export const QuestManager = {
             // add a second source back.**
             EventBus.subscribe(BOARD_EVENTS.TOKEN_PLACED, (data) => {
                 this.reportProgress('token_placed');
-                if (data?.tile != null && data?.typeId) {
+                if (data?.instanceId != null && data?.typeId) {
                     const def = getTokenType(data.typeId);
-                    // STOPGAP adapter (removed in 1.6b part 2): the event names a tile; servesFrom is by instance id.
-                    const serves = RecipeResolver.servesFrom(BoardState.tokenIdAtTile(data.tile));
+                    // The event names the placed Token by instance id (Free Playmat 1.6b).
+                    const serves = RecipeResolver.servesFrom(data.instanceId);
                     if (serves.length > 0 || def?.tokenType === 'context' || (def?.provides && def.provides.length > 0)) {
                         this.reportProgress('context_token_placed');
                     }

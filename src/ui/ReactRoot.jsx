@@ -478,7 +478,7 @@ export const ReactRoot = ({ engine }) => {
                         // get asked again, and the window still showed the old
                         // answer with only a "Done" button. Found by playing, on
                         // the branch this was ported from.
-                        key={`${ui.dock.promotionOffer.tile}:${ui.dock.promotionOffer.heroId}:${ui.dock.promotionOffer.jobId}`}
+                        key={`${ui.dock.promotionOffer.instanceId}:${ui.dock.promotionOffer.heroId}:${ui.dock.promotionOffer.jobId}`}
                         offer={ui.dock.promotionOffer}
                         onClose={ui.dock.closePromotion}
                     />

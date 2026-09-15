@@ -350,7 +350,7 @@ describe('TriggerSystem: neighbour triggers listen within Near', () => {
     afterEach(() => TriggerSystem.teardown());
 
     const cycleAt = (tile, typeId) =>
-        EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { tile, typeId, heroId: null, failed: false, produced: [] });
+        EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: idAt(tile), typeId, heroId: null, failed: false, produced: [] });
     const bones = () => SpriteLayer.countOnBoard('item_bones');
 
     it('1×1 at 272 u: a diagonal neighbour hears it, one two steps away does not', () => {
@@ -395,7 +395,7 @@ describe('TriggerSystem: neighbour triggers listen within Near', () => {
 
     it('⭐ a departed 2×2 is still heard from where it stood (TOKEN_DEPLETED)', () => {
         put(SIDE, 'fixture_trigger_depleted');
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: BIG, typeId: 'fixture_large_producer' });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...pointAt(BIG, 'fixture_large_producer'), typeId: 'fixture_large_producer' });
         expect(bones()).toBe(1);
     });
 

@@ -53,7 +53,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(BoardState.getToken(15)).not.toBeNull();
 
         expect(alerts).toHaveLength(1);
-        expect(alerts[0].tile).toBe(15);
+        expect(alerts[0].instanceId).toBe(idAt(15));
         expect(alerts[0].severity).toBe('disallow');
         expect(alerts[0].type).toBe('drop_rejected');
         expect(alerts[0].title).toBe('Guild Hall cannot be removed from the playmat.');
@@ -65,7 +65,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(BoardState.getToken(15)).not.toBeNull();
 
         expect(alerts).toHaveLength(2);
-        expect(alerts[1].tile).toBe(15);
+        expect(alerts[1].instanceId).toBe(idAt(15));
         expect(alerts[1].severity).toBe('disallow');
         expect(alerts[1].title).toBe('Guild Hall cannot be removed from the playmat.');
 

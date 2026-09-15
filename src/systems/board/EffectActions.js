@@ -11,9 +11,12 @@ import * as Charges from './Charges.js';
 import * as BoardCombat from './BoardCombat.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { TILE_COUNT, BOARD_SIZE } from '../../config/boardGeometry.js';
+import { centreOf, distanceSq } from './nearby.js';
+import { artRadiusOf } from '../../config/matGeometry.js';
+import { matTuning } from '../../config/matTuning.js';
+import { TILE_STEP_PX, footprintCentre, isFootprintInBounds } from '../../config/boardGeometry.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { resolvePlacement, placementOf } from '../../config/registries/placementRegistry.js';
+import { PLACEMENT, resolvePlacement, placementOf } from '../../config/registries/placementRegistry.js';
 
 /**
  * `Heals`, `Restores` and `Removes` — the rest of the action set (G-11).
@@ -30,8 +33,13 @@ import { resolvePlacement, placementOf } from '../../config/registries/placement
  * | `Removes`  | `LiveEffects.removeFromHero` — and `purge()`'s job at last |
  *
  * ⚠️ `Moves`/displace is deliberately **not** here (G-11). "Where to" and "what
- * if that tile is occupied" have no answers yet, and a verb with undecided
+ * if that spot is taken" have no answers yet, and a verb with undecided
  * targeting is how one slice becomes three.
+ *
+ * ## By instance id (Free Playmat slice 1.6b)
+ * The roles `self` and `source` are Token **instance ids**; `selfPoint` is where
+ * the bearer stands (or stood, if it has already left the mat). There are no
+ * tiles.
  *
  * ## ⚠️ Magnitudes resolve the same way they do for damage
  * A heal may be *"20% of the target's max HP"* exactly as a thorn may be. The
@@ -43,45 +51,45 @@ import { resolvePlacement, placementOf } from '../../config/registries/placement
 export function countMatches(statement, roles) {
     if (!usesCountedSelector(statement?.payload)) return 0;
     if (roles?.self == null) return 0;
-    return TileModifiers.filterTargetTiles(roles.self, {
+    return TileModifiers.filterTargets(roles.self, {
         to: statement.counted, reach: statement.counted?.reach
-    }).length;
+    }, roles.selfPoint || null).length;
 }
 
 /** The number a statement means right now, computed or flat. */
 export function amountOf(statement, roles) {
     return resolveMagnitude(statement?.payload, {
         actorHero: roles?.actor ? HeroManager.getHero(roles.actor) : null,
-        selfInstance: roles?.self != null ? BoardState.getToken(roles.self) : null
+        selfInstance: roles?.self != null ? BoardState.getTokenById(roles.self) : null
     }, countMatches(statement, roles));
 }
 
 /**
  * The **hero** a role points at, or null.
  *
- * ⚠️ `self` may be a person rather than a tile — a live effect instance sits on
+ * ⚠️ `self` may be a person rather than a Token — a live effect instance sits on
  * somebody, so "this entity" on a Poison means the person carrying it.
  */
 export function heroFor(role, roles) {
     // ⚠️ `the enemy` is never a hero — without this it fell through to the
-    // occupant of `self` and would have healed or cleansed the hero (G-43).
+    // worker of `self` and would have healed or cleansed the hero (G-43).
     if (role === ROLE.OPPONENT) return null;
     if (role === ROLE.ACTOR) return roles?.actor || null;
     if (role === ROLE.SELF && roles?.selfHeroId) return roles.selfHeroId;
-    const tile = role === ROLE.SOURCE ? roles?.source : roles?.self;
-    return tile != null ? BoardState.workerOfTile(tile) : null;   // STOPGAP — roles still name tiles (removed in 1.6b part 2)
+    const id = role === ROLE.SOURCE ? roles?.source : roles?.self;
+    return id != null ? BoardState.workerOf(id) : null;
 }
 
-/** The **tile** a role points at, or null. Only `self` and `source` have one. */
-export function tileFor(role, roles) {
-    // G-42: Restores and Transforms cannot aim at the enemy, and a creature has
-    // no square of its own to name — it is found by hero, never by tile.
+/** The **Token** a role points at, as an instance id, or null. Only `self`, `source` and the actor's work have one. */
+export function tokenFor(role, roles) {
+    // G-42: Restores and Transforms cannot aim at the enemy, and a creature is
+    // found by hero, never by the Token it is.
     if (role === ROLE.OPPONENT) return null;
     if (role === ROLE.ACTOR) {
-        // The actor is a person; the tile they are standing on is the honest
-        // reading of "where the actor is".
+        // The actor is a person; the Token they work is the honest reading of
+        // "where the actor is".
         const heroId = roles?.actor;
-        return heroId ? BoardState.workTileOf(heroId) : null;
+        return heroId ? BoardState.workTokenOf(heroId) : null;
     }
     return role === ROLE.SOURCE ? (roles?.source ?? null) : (roles?.self ?? null);
 }
@@ -135,63 +143,147 @@ export function restore(statement, roles) {
     const amount = Math.round(amountOf(statement, roles));
     if (!Number.isFinite(amount) || amount <= 0) return 0;
 
-    const tile = tileFor(statement?.target?.role || ROLE.SELF, roles);
-    if (tile == null) return 0;
-
-    const instance = BoardState.getToken(tile);
+    const instance = BoardState.getTokenById(tokenFor(statement?.target?.role || ROLE.SELF, roles));
     if (!instance) return 0;
 
-    Charges.applyDelta(tile, instance, amount);
+    Charges.applyDelta(instance, amount);
     return amount;
 }
 
+// ---------------------------------------------------------------------------
+// Where a spawned or transformed Token lands (Free Playmat slice 1.6b)
+// ---------------------------------------------------------------------------
+
 /**
- * The board, as the placement vocabulary needs to see it.
+ * ⚠️ STOPGAP (owned by slice 1.8): the smallest centre-to-centre gap a spawned
+ * Token keeps from every other Token.
  *
- * Built here rather than imported into the registry, so the registry stays a
- * pure declaration with no board dependency — the same split every other
- * vocabulary in this project uses.
+ * When the Mat Tuner has hitbox and overlap rows (slice 1.6d) it is
+ * `(hitbox(a) + hitbox(b)) × (1 − overlap)`. Until then it is **today's tile
+ * spacing** (160 u), which on today's tile-centred layout is exactly "a free
+ * tile": every Token on a neighbouring tile is ≥ 160 u away, and a 2×2 is
+ * 113 u from the tiles it covers.
  */
-function boardView() {
-    return {
-        allTiles: Array.from({ length: TILE_COUNT }, (_, i) => i),
-        isFree: (tile) => !BoardState.getToken(tile),
-        distance: (a, b) => {
-            const ax = a % BOARD_SIZE, ay = Math.floor(a / BOARD_SIZE);
-            const bx = b % BOARD_SIZE, by = Math.floor(b / BOARD_SIZE);
-            // Chebyshev, because adjacency here is the 8 surrounding tiles —
-            // a diagonal neighbour is as near as an orthogonal one.
-            return Math.max(Math.abs(ax - bx), Math.abs(ay - by));
-        }
-    };
+export function minCentreGap(typeA, typeB) {
+    const hitbox = matTuning('hitboxPct');
+    const overlap = matTuning('overlapPct');
+    if (Number.isFinite(hitbox) && Number.isFinite(overlap)) {
+        return (artRadiusOf(typeA) + artRadiusOf(typeB)) * (hitbox / 100) * (1 - overlap / 100);
+    }
+    return TILE_STEP_PX;
+}
+
+/** Whether a Token of `typeId` may stand at `point` without crowding any other Token. */
+function isLegalSpot(typeId, point) {
+    for (const other of BoardState.tokens()) {
+        const centre = centreOf(other);
+        if (!centre) continue;
+        const gap = minCentreGap(typeId, other.typeId);
+        if (distanceSq(point, centre) < gap * gap) return false;
+    }
+    return true;
 }
 
 /**
- * `Spawns` — put a Token on the board.
+ * The free spots a spawned Token of `typeId` may land on.
  *
- * ⚠️ **Never onto an occupied tile.** `here` replaces the bearer, which is what
+ * ⚠️ STOPGAP (deleted in slice 1.6d): until the mat renderer and free placement
+ * exist, a Token must stand on a **tile centre** to be drawn and picked up, so
+ * the candidates are the legal free tile-centre points (a 2×2's footprint
+ * centre). Slice 1.6d replaces this with a free spot search.
+ */
+function freeSpots(typeId) {
+    const size = getTokenType(typeId)?.size || 1;
+    const out = [];
+    for (const tile of BoardState.emptyTiles()) {
+        if (!isFootprintInBounds(tile, size)) continue;
+        const point = footprintCentre(tile, size);
+        if (isLegalSpot(typeId, point)) out.push(point);
+    }
+    return out;
+}
+
+/** How open a spot is: the squared distance to the nearest Token (bigger is roomier). */
+function openness(point) {
+    let nearest = Infinity;
+    for (const other of BoardState.tokens()) {
+        const centre = centreOf(other);
+        if (centre) nearest = Math.min(nearest, distanceSq(point, centre));
+    }
+    return nearest;
+}
+
+/**
+ * The point a Token of `typeId` takes when it replaces a bearer of `bearerTypeId`
+ * standing at `point` — the bearer's own point.
+ *
+ * ⚠️ STOPGAP (deleted in slice 1.6d): when the two differ in size, the new Token
+ * takes the point it would have on the bearer's tile (a 2×2 Sapling becoming a
+ * 1×1 Stump lands on the Sapling's anchor tile), so it stays on a tile centre
+ * the grid can draw — exactly where it landed before.
+ */
+function hereSpot(typeId, bearerTypeId, point) {
+    const size = getTokenType(typeId)?.size || 1;
+    const bearerSize = getTokenType(bearerTypeId)?.size || 1;
+    if (size === bearerSize) return { x: point.x, y: point.y };
+    const tile = BoardState.tileAtPoint(point);
+    return tile == null ? { x: point.x, y: point.y } : footprintCentre(tile, size);
+}
+
+/**
+ * `Spawns` — put a Token on the mat.
+ *
+ * ⚠️ **Never onto another Token.** `here` replaces the bearer, which is what
  * "leave a Stump behind" means and is the only case where destroying something
- * is the intent. Every other placement looks for a free tile and does nothing
- * when there is none — a full board is an ordinary state, and shoving a Token
- * onto an occupied one would silently destroy whatever was there.
+ * is the intent. Every other placement looks for a free spot and does nothing
+ * when there is none (FP-46) — a full mat is an ordinary state, and shoving a
+ * Token onto another would silently destroy whatever was there.
+ *
+ * ## Where (Free Playmat slice 1.6b; stopgaps owned by slice 1.8)
+ * * `here` — the bearer's point. A death drop (the bearer already left) lands
+ *   where it stood.
+ * * `nearest_free` — the free spot nearest the bearer's point.
+ * * `random_free` — the roomiest of up to 40 random free spots.
+ *
+ * No pushing and no `Cannot` check, as before.
+ *
+ * @returns {{instanceId: string, x: number, y: number, replacedBearer: boolean}|null}
  */
 export function spawn(statement, roles, random = Math.random) {
     const typeId = statement?.payload?.typeId;
     if (!typeId || !getTokenType(typeId)) return null;
 
-    const bearer = roles?.self;
-    if (bearer == null) return null;
+    const bearerId = roles?.self;
+    if (bearerId == null) return null;
 
-    const where = resolvePlacement(placementOf(statement.payload), bearer, boardView(), random);
-    if (where == null) return null;
-    if (where !== bearer && BoardState.getToken(where)) return null;
+    const bearer = BoardState.getTokenById(bearerId);
+    const from = centreOf(bearer) || roles?.selfPoint || null;
+    if (!from) return null;
+
+    const placement = placementOf(statement.payload);
+    const replacesBearer = placement === PLACEMENT.HERE;
+    const where = replacesBearer
+        ? hereSpot(typeId, bearer?.typeId ?? typeId, from)
+        : resolvePlacement(placement, from, {
+            candidates: freeSpots(typeId),
+            distanceSq,
+            openness
+        }, random);
+    if (!where) return null;
+
+    if (replacesBearer) {
+        // The bearer (if it is still there) and anything else standing on the
+        // very point are replaced.
+        if (bearer) BoardState.removeToken(bearer.id);
+        for (const other of BoardState.tokensAtPoint(where.x, where.y)) BoardState.removeToken(other.id);
+    }
 
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    BoardState.setToken(where, instance);
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: where, typeId });
-    TileModifiers.rebuildAroundTile(where);   // STOPGAP — spawns still name tiles (removed in 1.6b part 2)
-    logger.debug('EffectActions', `Spawned ${typeId} on tile ${where}`);
-    return where;
+    BoardState.addToken(instance, where.x, where.y);
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
+    TileModifiers.rebuildAround([from, where]);
+    logger.debug('EffectActions', `Spawned ${typeId} at (${where.x}, ${where.y})`);
+    return { instanceId: instance.id, x: where.x, y: where.y, replacedBearer: replacesBearer };
 }
 
 /**
@@ -201,22 +293,27 @@ export function spawn(statement, roles, random = Math.random) {
  * state all belong to what the Token WAS; carrying them across would give the
  * new Token a worn-down history it never had, and the two may not even have the
  * same number of charges. A Sapling becoming an Oak is a new thing standing
- * where the old one stood.
+ * where the old one stood — at the same point (slice 1.6b).
  *
- * ⚠️ **The hero stays put.** Somebody working a Sapling is still standing there
- * when it becomes an Oak; moving them would be a displacement nobody authored.
+ * ⚠️ **The hero chooses again.** A hero's claim is on the old instance, so
+ * whoever worked the Sapling picks their next job on the next tick — usually
+ * the Oak (stopgap owned by slice 1.8).
  */
 export function transform(statement, roles) {
     const typeId = statement?.payload?.typeId;
     if (!typeId || !getTokenType(typeId)) return false;
 
-    const tile = tileFor(statement?.target?.role || ROLE.SELF, roles);
-    if (tile == null || !BoardState.getToken(tile)) return false;
+    const old = BoardState.getTokenById(tokenFor(statement?.target?.role || ROLE.SELF, roles));
+    if (!old) return false;
 
-    BoardState.setToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId });
-    TileModifiers.rebuildAroundTile(tile);   // STOPGAP — transforms still name tiles (removed in 1.6b part 2)
-    logger.debug('EffectActions', `Transformed tile ${tile} into ${typeId}`);
+    const from = centreOf(old);
+    const at = hereSpot(typeId, old.typeId, from);
+    BoardState.removeToken(old.id);
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    BoardState.addToken(instance, at.x, at.y);
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
+    TileModifiers.rebuildAround([from, at]);
+    logger.debug('EffectActions', `Transformed ${old.id} into ${typeId}`);
     return true;
 }
 

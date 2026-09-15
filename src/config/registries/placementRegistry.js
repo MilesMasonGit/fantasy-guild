@@ -62,41 +62,64 @@ export function placementOf(payload) {
     return getPlacement(payload?.placement) ? payload.placement : PLACEMENT.HERE;
 }
 
+/** How many random free spots `random_free` tries before keeping the roomiest (plan §D). */
+export const RANDOM_FREE_DARTS = 40;
+
 /**
- * Choose the tile a spawn lands on.
+ * Choose the mat point a spawn lands on (Free Playmat slice 1.6b).
  *
- * ⚠️ Returns `null` when there is nowhere to go, and the caller does nothing.
- * A full board is an ordinary state, not a failure, and shoving a Token onto an
- * occupied tile would silently destroy whatever was there.
+ * ⚠️ Returns `null` when there is nowhere to go, and the caller does nothing
+ * (FP-46). A full mat is an ordinary state, not a failure, and shoving a Token
+ * onto another would silently destroy whatever was there.
+ *
+ * Kept free of the board: the caller hands in the free spots it found.
+ *
+ * * `here` — the bearer's own point.
+ * * `nearest_free` — the free spot with the nearest centre, straight-line;
+ *   ties go to the higher-up spot, then the one further left (reading order),
+ *   so the choice is deterministic.
+ * * `random_free` — up to `RANDOM_FREE_DARTS` random free spots, keeping the
+ *   roomiest (`openness`), so a spawn spreads out rather than crowding.
  *
  * @param {string} placement
- * @param {number} bearerTile
- * @param {{isFree: (tile: number) => boolean, allTiles: number[], distance: (a, b) => number}} board
+ * @param {{x:number,y:number}} from the bearer's point
+ * @param {{candidates: Array<{x:number,y:number}>, distanceSq: (a, b) => number, openness?: (p) => number}} view
  * @param {() => number} random
+ * @returns {{x:number,y:number}|null}
  */
-export function resolvePlacement(placement, bearerTile, board, random = Math.random) {
+export function resolvePlacement(placement, from, view, random = Math.random) {
     switch (placement) {
         case PLACEMENT.NEAREST_FREE: {
-            const free = board.allTiles.filter(board.isFree);
-            if (!free.length) return null;
-            // Deterministic: ties break toward the lower tile index, the same
-            // tie-break `Managers` and `Converts` already use when they must
-            // choose one neighbour out of several.
-            return free.reduce((best, tile) => {
-                const d = board.distance(bearerTile, tile);
-                const bd = board.distance(bearerTile, best);
-                if (d < bd) return tile;
-                if (d === bd) return Math.min(best, tile);
-                return best;
-            }, free[0]);
+            const spots = view?.candidates || [];
+            if (!spots.length || !from) return null;
+            let best = null;
+            let bestD = Infinity;
+            for (const p of spots) {
+                const d = view.distanceSq(from, p);
+                if (d < bestD || (d === bestD && (p.y < best.y || (p.y === best.y && p.x < best.x)))) {
+                    best = p;
+                    bestD = d;
+                }
+            }
+            return best;
         }
         case PLACEMENT.RANDOM_FREE: {
-            const free = board.allTiles.filter(board.isFree);
-            if (!free.length) return null;
-            return free[Math.floor(random() * free.length)];
+            const spots = view?.candidates || [];
+            if (!spots.length) return null;
+            let best = null;
+            let bestScore = -Infinity;
+            for (let i = 0; i < RANDOM_FREE_DARTS; i++) {
+                const p = spots[Math.min(spots.length - 1, Math.floor(random() * spots.length))];
+                const score = view.openness ? view.openness(p) : 0;
+                if (score > bestScore) {
+                    best = p;
+                    bestScore = score;
+                }
+            }
+            return best;
         }
         case PLACEMENT.HERE:
         default:
-            return bearerTile ?? null;
+            return from ? { x: from.x, y: from.y } : null;
     }
 }

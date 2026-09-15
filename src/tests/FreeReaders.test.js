@@ -18,7 +18,7 @@ import { footprintCentre } from '../config/boardGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes, getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { placeAt, clearMat, SPACING } from './fixtures/mat.js';
+import { placeAt, clearMat, SPACING, idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -174,7 +174,7 @@ describe('⭐ nearby(id) at today\'s spacing equals the old tile reader, on a mi
             const anchors = BoardState.occupiedTiles().map(([a]) => a);
             expect(anchors).toContain(7);
             for (const anchor of anchors) {
-                const id = BoardState.tokenIdAtTile(anchor);
+                const id = idAt(anchor);
                 const answer = nearby(id).map(n => BoardState.tileOfToken(n)).sort((a, b) => a - b);
                 expect(answer, `Token on ${anchor}`).toEqual(oldNearbyTiles(anchor, radius));
             }
@@ -332,7 +332,7 @@ describe('⭐ flags claim by instance id and wait by spot id', () => {
         Flags.plant('h1', spot);
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
 
-        Charges.destroyToken(null, forest, { heroId: 'h1' });
+        Charges.destroyToken(forest, { heroId: 'h1' });
         Flags.assign(0);
 
         const spotId = BoardState.spotIdAt(spot.x, spot.y);

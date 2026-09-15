@@ -81,20 +81,20 @@ export const HeroDockTab = ({
     const status = useGameState(
         () => {
             const s = Flags.statusOf(heroId);
-            return { state: s.state, tile: s.tile, typeId: s.typeId };
+            return { state: s.state, instanceId: s.instanceId, typeId: s.typeId };
         },
         [BOARD_EVENTS.HERO_MOVED, 'state_changed'],
         null,
         { deps: [heroId] }
     );
-    const tile = status?.state === 'working' ? status.tile : null;
+    const workId = status?.state === 'working' ? status.instanceId : null;
 
     const token = useGameState(
-        // STOPGAP tile lookup (deleted in slice 1.6d) — Tokens are stored by id since 1.6a.
-        () => tile == null ? null : BoardState.getToken(tile),
+        // The Token they work, by instance id (Free Playmat slice 1.6b).
+        () => workId == null ? null : BoardState.getTokenById(workId),
         ['board:tile_changed', 'state_changed'],
         null,
-        { deps: [tile] }
+        { deps: [workId] }
     );
 
     const justDroppedRef = useRef(false);
@@ -139,7 +139,7 @@ export const HeroDockTab = ({
     if (!hero) return null;
 
     const def = token ? getTokenType(token.typeId) : null;
-    const isWorking = tile != null && !!def?.config && !token.alert;
+    const isWorking = workId != null && !!def?.config && !token.alert;
     const isWounded = hero.status === 'wounded';
     const job = hero.jobId ? getJob(hero.jobId) : null;
     const jobTitle = job ? job.name : (hero.className || 'Recruit');

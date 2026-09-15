@@ -167,26 +167,26 @@ export function canFireStatement(instance, statement) {
  *
  * ## By instance (slice 1.6b)
  * The Token removed is `instance`, by its id; the vacancy is its own point.
- * `tile` is a STOPGAP used only for the `{ tile }` event payloads (removed in
- * 1.6b part 2) — pass null and it is looked up before the Token leaves.
+ * Every event names it by `instanceId` and, because it has just left the mat,
+ * by the point `x`, `y` it stood on.
  */
-export function destroyToken(tile, instance, { heroId = null } = {}) {
+export function destroyToken(instance, { heroId = null } = {}) {
     const typeId = instance?.typeId || null;
     const name = getTokenType(typeId)?.name || tokenName(typeId) || typeId || 'Token';
+    const instanceId = instance?.id ?? null;
 
     // The vacancy is the SPOT the spent Token stood on (slice 1.6a), which is
     // exactly where a Manager's restock lands (FP-19). Read before removing.
-    // STOPGAP fallback (removed in 1.6b part 2): a caller whose instance is not
-    // the one on the mat names the Token by tile.
-    const spent = BoardState.getTokenById(instance?.id) || (tile != null ? BoardState.getToken(tile) : null);
+    const spent = BoardState.getTokenById(instanceId);
     const spot = spent ? { x: spent.x, y: spent.y } : null;
-    if (tile == null && spent) tile = BoardState.tileOfToken(spent.id);   // STOPGAP payload
+    const at = spot || (Number.isFinite(instance?.x) && Number.isFinite(instance?.y) ? { x: instance.x, y: instance.y } : {});
 
     if (spent) BoardState.removeToken(spent.id);
     if (typeId && spot) BoardState.setVacancyAt(spot, typeId);
 
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-        tile,
+        instanceId,
+        ...at,
         severity: 'red',
         type: 'token_exhausted',
         name,
@@ -203,11 +203,11 @@ export function destroyToken(tile, instance, { heroId = null } = {}) {
      *
      * `heroId` is whoever spent the last charge, when a hero did.
      */
-    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId, instance, heroId });
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
-    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile, heroId });
+    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId, ...at, typeId, instance, heroId });
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId, ...at, typeId: null });
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
     // `points`: rebuild around the spot the Token left (slice 1.6b).
-    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile, points: spot ? [spot] : [] });
+    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: spot ? [spot] : [] });
 }
 
 /**
@@ -221,17 +221,15 @@ export function destroyToken(tile, instance, { heroId = null } = {}) {
  * - **Zero**, and anything on an unlimited Token, changes nothing and publishes
  *   nothing (R-4).
  *
- * The Token is `instance`. `tile` is a STOPGAP used only for the `{ tile }`
- * event payloads (removed in 1.6b part 2) — pass null and it is looked up.
+ * The Token is `instance`, named in events by its `instanceId` (slice 1.6b).
  *
  * @returns {{applied: number, remaining: number|null, depleted: boolean}}
  *          `applied` is what actually moved, which is not always `delta`.
  */
-export function applyDelta(tile, instance, delta, { heroId = null } = {}) {
+export function applyDelta(instance, delta, { heroId = null } = {}) {
     if (!instance || isUnlimited(instance)) {
         return { applied: 0, remaining: instance?.usesRemaining ?? null, depleted: false };
     }
-    if (tile == null) tile = BoardState.tileOfToken(instance.id);   // STOPGAP payload
 
     let applied = 0;
     if (delta > 0) {
@@ -248,14 +246,14 @@ export function applyDelta(tile, instance, delta, { heroId = null } = {}) {
 
     instance.usesRemaining += applied;
     EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-        tile,
+        instanceId: instance.id,
         delta: applied,
         remaining: instance.usesRemaining,
         typeId: instance.typeId
     });
 
     if (instance.usesRemaining <= 0) {
-        destroyToken(tile, instance, { heroId });
+        destroyToken(instance, { heroId });
         return { applied, remaining: instance.usesRemaining, depleted: true };
     }
 
@@ -402,7 +400,7 @@ export function commitPlan(plan, { heroId = null } = {}) {
     if (!plan?.ok) return [];
     const depleted = [];
     for (const debit of plan.debits) {
-        const result = applyDelta(null, debit.instance, -debit.amount, {
+        const result = applyDelta(debit.instance, -debit.amount, {
             heroId: debit.isStation ? heroId : null
         });
         if (result.depleted) depleted.push(debit.id);

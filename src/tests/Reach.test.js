@@ -259,7 +259,8 @@ describe('a firing rule reaches as far as it says (the outbound side)', () => {
 
         const addressed = addSprite.mock.calls
             .filter(([kind, refId]) => kind === 'item' && refId === 'fixture_charcoal')
-            .map(([, , , tile]) => tile);
+            // A sprite's source is a Token instance id since Free Playmat 1.6b.
+            .map(([, , , source]) => BoardState.tileOfToken(source));
         expect(addressed).toEqual([NEIGHBOUR]);   // the granter itself
         addSprite.mockRestore();
     });

@@ -277,8 +277,6 @@ describe('⭐ a Provides buff reaches exactly the Near set', () => {
         const statement = { keyword: 'applies', to: { mode: 'all', value: '' } };
 
         expect(tilesOf(TileModifiers.filterTargets(idAt(7), statement))).toEqual([1, 2, 6, 9, 12, 15, 19, 20]);
-        // The STOPGAP tile form still gives the same answer.
-        expect(TileModifiers.filterTargetTiles(7, statement)).toEqual([1, 2, 6, 9, 12, 15, 19, 20]);
 
         clearBoard();
         fillAround();
