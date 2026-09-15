@@ -116,7 +116,10 @@ describe('⚠️ STOPGAP gridShim answers the tile API as the old tile storage d
         // Placement asks who worked a tile between `addToTray` and clearing it.
         const a = inst('fixture_producer');
         BoardState.setToken(9, a);
-        BoardState.addToTray(a);
+        BoardState.addToTray(a);             // a.x / a.y are now Tray fractions
+        // Something else lands meanwhile, so the tile view is rebuilt — from
+        // pins, not from a's Tray fractions.
+        BoardState.setToken(20, inst('fixture_manager'));
         expect(BoardState.getToken(9)?.id).toBe(a.id);
         BoardState.setToken(9, null);
         expect(BoardState.getToken(9)).toBeNull();
