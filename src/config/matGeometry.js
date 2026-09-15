@@ -15,6 +15,27 @@ import { getTokenType } from './registries/tokenRegistry.js';
  * Mat units: 1 u = one natural board pixel.
  */
 
+/**
+ * ## The mat's own size (Free Playmat slice 1.6c, FP-92)
+ *
+ * The mat is `MAT_STEPS` of today's 160 u steps wide, at a 0.64 aspect:
+ * **1760 × 1126 u**. Its top-left is (0, 0). The Mat Tuner's mat-size row
+ * (slice 1.6d) changes `MAT_STEPS`.
+ */
+export const MAT_STEPS = 11;
+export const MAT_STEP_U = 160;
+export const MAT_ASPECT = 0.64;
+export const MAT_W = MAT_STEPS * MAT_STEP_U;
+export const MAT_H = Math.round(MAT_W * MAT_ASPECT);
+
+/** A point clamped onto the mat. */
+export function clampToMat(point) {
+    return {
+        x: Math.max(0, Math.min(MAT_W, point.x)),
+        y: Math.max(0, Math.min(MAT_H, point.y))
+    };
+}
+
 /** Art radius by Token size, in mat units. */
 export const ART_RADIUS_BY_SIZE = Object.freeze({ 1: 64, 2: 144 });
 

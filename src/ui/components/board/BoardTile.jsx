@@ -381,7 +381,7 @@ export const BoardTile = ({
         kind: DRAG_KIND.TOKEN,
         payload: {
             typeId: token?.typeId,
-            from: { tile: anchorIndex },
+            from: { instanceId: token?.instanceId ?? null },
             onMiss: isPermanent ? () => {
                 EventBus?.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
                     instanceId: token?.instanceId ?? null,
@@ -723,7 +723,7 @@ const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle
     const drag = useEntityDrag({
         id: `tile-hero-${index}`,
         kind: DRAG_KIND.FLAG,
-        payload: { heroId, name: heroName, from: { tile: index, hero: true } },
+        payload: { heroId, name: heroName, from: { hero: true } },
         sourceSurface: DND_SURFACE.BOARD
     });
 

@@ -57,6 +57,7 @@ export const GuildHallBoard = ({
             <div
                 data-board-origin
                 data-guild-hall-board="true"
+                data-natural-width={UPGRADE_BOARD_PX}
                 className="relative shrink-0"
                 style={{
                     width: UPGRADE_BOARD_PX,

@@ -118,7 +118,7 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
             // 2026-08-25): every Vault control accepts whatever any of them
             // accepts. `depositFrom` handles all four — including naming the
             // Map refusal instead of silently ignoring the drop.
-            return (p.from?.traySlot != null || p.from?.tile != null || p.from?.spriteId != null || p.from?.boardMapId != null);
+            return (p.from?.traySlot != null || p.from?.instanceId != null || p.from?.spriteId != null || p.from?.boardMapId != null);
         },
         onDrop: (p) => {
             const res = VaultTransfer.depositFrom(p.from);

@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { BOARD_PX } from '../../../config/boardGeometry.js';
+import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
 import { PixelArt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -67,7 +67,7 @@ export const SpriteLayerView = () => {
     return (
         <div
             className="absolute top-0 left-0 pointer-events-none"
-            style={{ width: BOARD_PX, height: BOARD_PX, zIndex: 80 }}
+            style={{ width: MAT_W, height: MAT_H, zIndex: 80 }}
         >
             {sprites.map(sprite => (
                 <LootSprite key={sprite.id} sprite={sprite} allSprites={sprites} onCollect={collect} />

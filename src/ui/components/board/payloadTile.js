@@ -21,7 +21,8 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 export function tileOfPayload(payload) {
     if (!payload) return null;
     if (payload.instanceId) {
-        const tile = BoardState.tileOfToken(payload.instanceId);
+        // STOPGAP (deleted with this file in 1.6c-2): the Token's old spot.
+        const tile = BoardState.findTokenById(payload.instanceId)?.anchor ?? null;
         if (tile != null) return tile;
     }
     if (Number.isFinite(payload.x) && Number.isFinite(payload.y)) {

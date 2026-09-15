@@ -2,7 +2,7 @@
 
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
-import { BOARD_SIZE, TILE_STEP_PX, isTileIndex } from '../../config/boardGeometry.js';
+import { BOARD_SIZE, TILE_STEP_PX, OLD_AREA_ORIGIN, isTileIndex } from '../../config/boardGeometry.js';
 import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
 import * as Shim from './gridShim.js';   // STOPGAP — deleted in slice 1.6d
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -306,16 +306,6 @@ export function emptyTiles() {
     return Shim.emptyTiles(board());
 }
 
-/**
- * STOPGAP (deleted in 1.6c): the tile Token `id` stands on, or null. For the
- * grid renderer's adapter (`ui/components/board/payloadTile.js`), which maps the
- * id-keyed board events back onto today's drawn tiles until the mat renderer
- * replaces them.
- */
-export function tileOfToken(id) {
-    return id ? Shim.anchorOfId(board(), id) : null;
-}
-
 // ---------------------------------------------------------------------------
 // Heroes on the board — flags
 // ---------------------------------------------------------------------------
@@ -361,12 +351,12 @@ export function takeFlagOrder() {
     return b.nextFlagOrder++;
 }
 
-/** Every hero with a flag as `[heroId, displayTile]`, in planting order. */
+/** Every hero with a flag as `[heroId, displayPoint]`, in planting order (see `displayPointOf`). */
 export function heroesOnBoard() {
     const flags = getFlags();
     return Object.keys(flags)
         .sort((a, c) => (flags[a].plantedAt ?? 0) - (flags[c].plantedAt ?? 0))
-        .map(heroId => [heroId, displayTileOf(heroId)]);
+        .map(heroId => [heroId, displayPointOf(heroId)]);
 }
 
 // ---------------------------------------------------------------------------
@@ -470,11 +460,15 @@ export function findTokenById(instanceId, hint = null) { // eslint-disable-line 
     return { anchor: Shim.anchorOfId(b, instanceId), instance };
 }
 
-/** STOPGAP (deleted in slice 1.6d): the tile whose step cell holds a mat point (a tile plus the gap after it). */
+/**
+ * STOPGAP (deleted in slice 1.6d): the tile whose step cell holds a mat point
+ * (a tile plus the gap after it), measured from the old landing area's corner
+ * (`OLD_AREA_ORIGIN`, FP-92) and clamped onto the 6×6.
+ */
 export function tileAtPoint(point) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
-    const col = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor(point.x / TILE_STEP_PX)));
-    const row = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor(point.y / TILE_STEP_PX)));
+    const col = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor((point.x - OLD_AREA_ORIGIN.x) / TILE_STEP_PX)));
+    const row = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor((point.y - OLD_AREA_ORIGIN.y) / TILE_STEP_PX)));
     return row * BOARD_SIZE + col;
 }
 
@@ -503,9 +497,8 @@ export function tileAtPoint(point) {
  * * `displayPointOf(heroId)` is the claimed Token's centre, else the spot they
  *   wait on, else their flag's point, else null (in the Dock).
  *
- * The tile forms below them (`workerOfTile`, `workTileOf`, `displayTileOf`)
- * are STOPGAP adapters for the tile placement and drag code and the grid
- * renderer, deleted with them in slices 1.6c/1.6d.
+ * The tile forms below them (`workerOfTile`, `workTileOf`) are STOPGAP
+ * adapters for the tile placement code, deleted with it in slice 1.6d.
  */
 export function workerOf(instanceId) {
     if (typeof instanceId !== 'string' || !instanceId) return null;
@@ -548,22 +541,7 @@ export function workerOfTile(tile) {
 
 /** STOPGAP (deleted in 1.6d): the anchor tile of the Token `heroId` works, or null. For `Placement`'s results. */
 export function workTileOf(heroId) {
-    return tileOfToken(workTokenOf(heroId));
-}
-
-/**
- * STOPGAP (deleted in 1.6c/1.6d): the tile to draw `heroId` on — claimed Token >
- * waiting spot > flag > null. For the grid renderer (`heroesOnBoard`),
- * `Placement.recallHero` and the drag code.
- */
-export function displayTileOf(heroId) {
-    if (!heroId) return null;
-    const work = workTileOf(heroId);
-    if (work != null) return work;
-    const wait = waitOfHero(heroId);
-    if (wait) return Shim.anchorOfPoint(wait.x, wait.y, wait.typeId);
-    const flag = flagOf(heroId);
-    return flag ? tileAtPoint(flag) : null;
+    return findTokenById(workTokenOf(heroId))?.anchor ?? null;
 }
 
 // ---------------------------------------------------------------------------

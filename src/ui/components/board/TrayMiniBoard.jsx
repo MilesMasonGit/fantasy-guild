@@ -6,7 +6,9 @@ import { DropTarget } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE, DRAG_KIND } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { placeTokenFromDrag } from './placeTokenFromDrag.js';
+import { dropOnMat } from './dropOnMat.js';
+// STOPGAP (deleted with the mini-board in 1.6d).
+import { oldSpotPoint } from './oldSpotStopgap.js';
 
 /**
  * The mini-board is the playmat in miniature, drawn on the Tray so a Token can
@@ -15,7 +17,7 @@ import { placeTokenFromDrag } from './placeTokenFromDrag.js';
  * ⚠️ It is a *substitute* for the board, so it must behave like the board. It
  * used to carry its own partial copy of the drop handler and its own idea of
  * which tiles were full, and both had drifted (CR2-160). Placement now goes
- * through the same `placeTokenFromDrag` the playmat uses, and occupancy is asked
+ * through the same `dropOnMat` the playmat uses, and occupancy is asked
  * of the engine rather than guessed from the state shape.
  */
 
@@ -28,10 +30,10 @@ const MiniBoardCell = ({ index, isOccupied }) => {
             NotificationSystem.warning('Cannot place here');
             return;
         }
-        // Deliberately no `dropInfo`: the pointer is over the Tray, not over the
-        // playmat, so pixel-snapping a Map or a 2×2 Token against it would land
-        // it somewhere the player never pointed.
-        placeTokenFromDrag(index, payload);
+        // Deliberately not the pointer: it is over the Tray, not over the
+        // playmat, so measuring against it would land a Map or a 2×2 Token
+        // somewhere the player never pointed. The cell's own old spot instead.
+        dropOnMat(payload, oldSpotPoint(index));
     };
 
     return (

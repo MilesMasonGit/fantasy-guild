@@ -61,7 +61,7 @@ export const MIN_BOARD_SCALE = 0.1;
  *   is the factor to transform by; `size` is the footprint to reserve, so
  *   surrounding layout sees the board's real on-screen size.
  */
-export function useBoardScale(naturalPx = BOARD_PX) {
+export function useBoardScale(naturalPx = BOARD_PX, naturalH = naturalPx) {
     const [scale, setScale] = useState(1);
     const nodeRef = useRef(null);
     const observerRef = useRef(null);
@@ -75,13 +75,13 @@ export function useBoardScale(naturalPx = BOARD_PX) {
         if (!w || !h) return;
         const next = Math.max(
             MIN_BOARD_SCALE,
-            Math.min(1, w / naturalPx, h / naturalPx)
+            Math.min(1, w / naturalPx, h / naturalH)
         );
         // Round to whole percent so a one-pixel resize does not re-render the
         // whole board, and so the value is stable enough to compare.
         const rounded = Math.round(next * 100) / 100;
         setScale(prev => (prev === rounded ? prev : rounded));
-    }, [naturalPx]);
+    }, [naturalPx, naturalH]);
 
     const ref = useCallback((el) => {
         observerRef.current?.disconnect();
@@ -109,7 +109,9 @@ export function useBoardScale(naturalPx = BOARD_PX) {
         };
     }, [measure]);
 
-    return { ref, scale, size: Math.round(naturalPx * scale) };
+    // `size` is the width (a square board's only side); `height` is for a board
+    // that is not square — the free playmat (1760 × 1126 u, slice 1.6c).
+    return { ref, scale, size: Math.round(naturalPx * scale), height: Math.round(naturalH * scale) };
 }
 
 export default useBoardScale;

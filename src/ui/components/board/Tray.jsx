@@ -127,12 +127,12 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
         surface: DND_SURFACE.DRAWER,
         accepts: (p) => {
             if (p.kind !== DRAG_KIND.TOKEN) return false;
-            if (p.from?.tile != null) {
+            if (p.from?.instanceId != null) {
                 const def = getTokenType(p.typeId);
                 if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
             }
             return (
-                p.from?.tile != null ||
+                p.from?.instanceId != null ||
                 p.from?.traySlot != null ||
                 p.from?.spriteId != null ||
                 p.from?.boardMapId != null ||
@@ -196,7 +196,9 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
             // Off the board and into the Tray, landing where it was dropped
             // (D-227). A null `at` scatters instead, which is the right
             // fallback rather than a failure.
-            Placement.returnTokenToTray(p.from.tile, at);
+            // STOPGAP (deleted in 1.6d): by the Token's old spot.
+            const found = BoardState.findTokenById(p.from.instanceId);
+            if (found?.anchor != null) Placement.returnTokenToTray(found.anchor, at);
         }
     });
 
@@ -213,7 +215,7 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
             if (p.kind !== DRAG_KIND.TOKEN) return false;
             const def = getTokenType(p.typeId);
             if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
-            return (p.from?.traySlot != null || p.from?.tile != null || p.from?.spriteId != null || p.from?.boardMapId != null);
+            return (p.from?.traySlot != null || p.from?.instanceId != null || p.from?.spriteId != null || p.from?.boardMapId != null);
         },
         // The whole rule — every refusal, the movement and the repaint — lives in
         // `VaultTransfer.depositFrom` (CR2-134). This drop's only job is to say

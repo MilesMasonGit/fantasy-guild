@@ -1,6 +1,6 @@
 // Fantasy Guild — where a flag is drawn (Free Playmat slice 1.5b-ii, FPP-20)
 
-import { TILE_PX, TILE_STEP_PX, colOf, rowOf } from '../../../config/boardGeometry.js';
+import { TILE_PX, tileCentre } from '../../../config/boardGeometry.js';
 
 /**
  * Every number about **where a flag sprite sits** on the board, in one place.
@@ -59,8 +59,11 @@ export const IDLE_HERO_OFFSET = Object.freeze({ left: POLE_BASE.x + POLE_GAP_PUS
  * @param {number} tile the tile that point is on
  */
 export function flagOrigin(point, tile) {
-    const poleX = colOf(tile) * TILE_STEP_PX - POLE_GAP_PUSH_PX;
-    const poleY = rowOf(tile) * TILE_STEP_PX + TILE_PX + POLE_GAP_PUSH_PX;
+    // The tile's corner comes from its centre, so it follows the old landing
+    // area's place on the mat (OLD_AREA_ORIGIN, FP-92).
+    const centre = tileCentre(tile);
+    const poleX = centre.x - TILE_PX / 2 - POLE_GAP_PUSH_PX;
+    const poleY = centre.y + TILE_PX / 2 + POLE_GAP_PUSH_PX;
     return { left: poleX - POLE_BASE.x, top: poleY - POLE_BASE.y };
 }
 

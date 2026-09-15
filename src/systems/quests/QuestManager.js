@@ -10,6 +10,7 @@ import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getMap, listMaps } from '../../config/registries/mapRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { OLD_AREA_ORIGIN } from '../../config/boardGeometry.js';
 import { tokenForMap, getPurchasedMaps } from '../board/Cartographer.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from '../board/BoardState.js';
@@ -465,19 +466,24 @@ export const QuestManager = {
             InventoryManager.removeItem(quest.itemId, quest.requiredCount);
         }
 
-        // Toss Map Token sideways onto the playmat with natural spread across the left/mid playmat
-        const clampX = Math.round(50 + Math.random() * 320);
-        let clampY = Math.round(260 + Math.random() * 150);
+        // Toss Map Token sideways onto the playmat with natural spread across the left/mid playmat.
+        // STOPGAP (deleted in 1.6d): the ranges are inside the old landing area, so they add
+        // its corner on the mat (OLD_AREA_ORIGIN, FP-92).
+        const clampX = OLD_AREA_ORIGIN.x + Math.round(50 + Math.random() * 320);
+        let clampY = OLD_AREA_ORIGIN.y + Math.round(260 + Math.random() * 150);
 
         // If triggered from a specific quest card in the UI, match the flight Y height to the card!
         if (sourceRect && typeof document !== 'undefined') {
             const boardEl = document.querySelector('[data-board-origin]') || document.querySelector('[data-dnd-surface="board"]');
             const boardRect = boardEl?.getBoundingClientRect();
             if (boardRect) {
+                // The board is CSS-scaled to fit: screen pixels → board units (slice 1.6c).
+                const natural = Number(boardEl.getAttribute?.('data-natural-width'));
+                const scale = natural > 0 && boardRect.width > 0 ? boardRect.width / natural : 1;
                 const questCenterY = sourceRect.top + (sourceRect.height || 0) / 2;
-                const relativeY = Math.round(questCenterY - boardRect.top - 64);
+                const relativeY = Math.round((questCenterY - boardRect.top) / scale - 64);
                 // Clamp within valid playmat area
-                clampY = Math.max(120, Math.min(720, relativeY));
+                clampY = Math.max(OLD_AREA_ORIGIN.y + 120, Math.min(OLD_AREA_ORIGIN.y + 720, relativeY));
             }
         }
 

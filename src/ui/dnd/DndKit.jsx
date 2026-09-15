@@ -11,8 +11,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { DragGhost } from './DragGhost.jsx';
 import { DND_SURFACE, DRAG_SFX, DRAG_KIND } from './dragConstants.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
-import { displayTileOf } from '../../systems/board/BoardState.js';
-import { colOf, rowOf } from '../../config/boardGeometry.js';
+import { displayPointOf } from '../../systems/board/BoardState.js';
 
 /**
  * DndKit — the deck-loop drag-and-drop system (DnD rework, 2026-07-15).
@@ -200,12 +199,10 @@ export const DeckDndProvider = ({ children }) => {
         // When starting a hero drag from the dock tab or inspection panel, if the hero is already
         // on the playmat, shoot a flying sprite particle from the playmat tile straight to the cursor
         if (payload?.kind === DRAG_KIND.HERO && payload.heroId && payload.from?.dock) {
-            const currentTile = displayTileOf(payload.heroId);
-            if (currentTile != null) {
-                const col = colOf(currentTile);
-                const row = rowOf(currentTile);
-                const x = col * 136 + 68;
-                const y = row * 136 + 68;
+            // The point the hero is drawn at, in mat units (slice 1.6c).
+            const at = displayPointOf(payload.heroId);
+            if (at) {
+                const { x, y } = at;
                 const toScreenX = a?.clientX ?? (typeof window !== 'undefined' ? window.innerWidth - 40 : 0);
                 const toScreenY = a?.clientY ?? (typeof window !== 'undefined' ? window.innerHeight / 2 : 0);
 
@@ -257,8 +254,13 @@ export const DeckDndProvider = ({ children }) => {
                 // dropped (D-227). `pointerRef` is the live cursor in viewport
                 // coordinates, already tracked for the glide animation above.
                 // Every other target ignores the second argument.
-                data.onDrop?.(payload, { pointer: pointerRef.current });
-                success = true;
+                //
+                // A target that can only tell at the moment of the drop that it
+                // will not take it (the playmat, for a Token dropped well
+                // outside the landing area — FP-93) returns `false`: the drop
+                // counts as a miss, so the ghost flies back.
+                success = data.onDrop?.(payload, { pointer: pointerRef.current }) !== false;
+                if (!success) glideTargetRef.current = null;
             }
         }
 

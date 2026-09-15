@@ -100,7 +100,11 @@ export const TileEventAlert = ({ tile }) => {
 
     // If a token on this tile is being picked up / moved, dismiss the alert immediately
     useEffect(() => {
-        if (activePayload?.from?.tile === tile && alertData && !isDismissed) {
+        // STOPGAP (deleted in 1.6c-2): the dragged Token's old spot.
+        const draggedTile = activePayload?.from?.instanceId != null
+            ? BoardState.findTokenById(activePayload.from.instanceId)?.anchor
+            : null;
+        if (draggedTile != null && draggedTile === tile && alertData && !isDismissed) {
             dismissAlert();
         }
     }, [activePayload, tile, alertData, isDismissed, dismissAlert]);
