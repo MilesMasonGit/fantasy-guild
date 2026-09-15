@@ -405,7 +405,7 @@ const HeroesMayWork = ({ tile }) => {
         () => {
             const occ = BoardState.getOccupyingToken(tile);
             if (!occ?.instance || !Flags.isHeroWorkable(occ.instance)) return null;
-            return { anchor: occ.anchorIndex, allowed: !Flags.isDisallowed(occ.instance) };
+            return { id: occ.instance.id, allowed: !Flags.isDisallowed(occ.instance) };
         },
         [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
         null,
@@ -422,7 +422,7 @@ const HeroesMayWork = ({ tile }) => {
             <input
                 type="checkbox"
                 checked={view.allowed}
-                onChange={(e) => Flags.setDisallowed(view.anchor, !e.target.checked)}
+                onChange={(e) => Flags.setDisallowed(view.id, !e.target.checked)}
                 className="w-4 h-4 accent-amber-400 cursor-pointer"
             />
         </label>

@@ -104,7 +104,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
         && overId && /^tile-\d+$/.test(String(overId))) {
         const overTile = Number(String(overId).slice('tile-'.length));
         const occ = BoardState.getOccupyingToken(overTile);
-        const point = occ ? centreOf(occ.anchorIndex, occ.instance.typeId) : tileCentre(overTile);
+        const point = (occ && centreOf(occ.instance)) || tileCentre(overTile);
         if (point) dragRing = { heroId: activeDrag.heroId, x: point.x, y: point.y };
     }
 

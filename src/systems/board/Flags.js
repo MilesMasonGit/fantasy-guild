@@ -4,7 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
-import { TILE_STEP_PX, colOf, rowOf } from '../../config/boardGeometry.js';
+import { artRadiusOf } from '../../config/matGeometry.js';
 import * as BoardState from './BoardState.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
@@ -37,7 +37,8 @@ import * as PromotionSystem from '../hero/PromotionSystem.js';
  * First any **Promotion Token or Guild Hall under the flag's point** (FP-34,
  * FP-61, FPP-10) — the radius and the rules do not apply to them. Then every
  * worked Token and enemy whose centre is within the radius, ordered by
- * **priority (1 first), then distance, then lower anchor** (FP-72, FP-79). Each
+ * **priority (1 first), then distance, then the earlier-placed Token** (FP-72,
+ * FP-79; `placedAt` replaced "lower anchor" in slice 1.6b). Each
  * candidate's rule is its Token's skill, or `FlagRules.FIGHT` for an enemy.
  * For each, in order (cheap checks before `WorkCheck`):
  *  1. **the player disallowed it** — `disallowed` (FP-35);
@@ -173,13 +174,31 @@ function kindOf(instance, def) {
 /** Kinds worked only when the flag's point is on them, ignoring skill and radius. */
 const UNDER_POINT = new Set(['promotion', 'hall']);
 
-/** Whether a mat point sits on a Token's footprint (its tiles plus their gaps). */
-export function pointOnToken(anchor, typeId, point) {
-    const size = getTokenType(typeId)?.size || 1;
-    const col = Math.floor(point.x / TILE_STEP_PX);
-    const row = Math.floor(point.y / TILE_STEP_PX);
-    return col >= colOf(anchor) && col < colOf(anchor) + size
-        && row >= rowOf(anchor) && row < rowOf(anchor) + size;
+/**
+ * Whether a mat point sits on a Token — inside its **art circle** (1×1: 64 u,
+ * 2×2: 144 u from its centre, `matGeometry`). Slice 1.6b; it was the Token's
+ * tiles plus their gaps.
+ */
+export function pointOnToken(instance, point) {
+    const centre = centreOf(instance);
+    if (!centre || !point) return false;
+    const r = artRadiusOf(instance.typeId);
+    return distanceSq(point, centre) <= r * r;
+}
+
+/**
+ * The Token under a mat point: of every Token whose art circle holds the point,
+ * the one with the **nearest centre** (the earlier-placed on a tie), or null.
+ */
+export function tokenAtPoint(point) {
+    if (!point) return null;
+    let best = null;
+    for (const instance of BoardState.tokens()) {
+        if (!pointOnToken(instance, point)) continue;
+        const d = distanceSq(point, centreOf(instance));
+        if (!best || d < best.d) best = { instance, d };
+    }
+    return best ? best.instance : null;
 }
 
 /**
@@ -226,10 +245,11 @@ function promotionRefusal(heroId, instance) {
 }
 
 /** Zero a Token's cycle — the forfeit of D-131, when a hero leaves it (FP-68). */
-function resetProgress(anchor, instance) {
+function resetProgress(instance) {
     if (!instance || !(instance.cycleElapsedMs > 0)) return;
     instance.cycleElapsedMs = 0;
-    EventBus.publish(BOARD_EVENTS.PROGRESS, { tile: anchor, percent: 0 });
+    // STOPGAP payload (removed in 1.6b part 2): the progress bar still listens by tile.
+    EventBus.publish(BOARD_EVENTS.PROGRESS, { tile: BoardState.tileOfToken(instance.id), percent: 0 });
 }
 
 /**
@@ -242,19 +262,18 @@ function release(heroId) {
     rt()?.cycleEnded.delete(heroId);
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return null;
-    const found = BoardState.findTokenById(claim.instanceId, claim.tile);
-    if (found) resetProgress(found.anchor, found.instance);
+    resetProgress(BoardState.getTokenById(claim.instanceId));
     BoardState.setClaim(heroId, null);
     BoardCombat.endFightOfHero(heroId);
     return claim;
 }
 
-function claimToken(heroId, anchor, instance) {
+function claimToken(heroId, instance) {
     // ⚠️ A new claim starts with no cycle-end mark, or FP-80 could switch the
     // hero off it one tick into its first cycle.
     rt()?.cycleEnded.delete(heroId);
     BoardState.setWait(heroId, null);
-    BoardState.setClaim(heroId, { instanceId: instance.id, tile: anchor, typeId: instance.typeId });
+    BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId, x: instance.x, y: instance.y });
     // A different hero taking a Promotion Token is the gesture that asks again
     // (PR-7). The same hero coming back after a gap is not.
     if (instance.promotionHeroId && instance.promotionHeroId !== heroId) {
@@ -268,7 +287,8 @@ function claimToken(heroId, anchor, instance) {
      */
     if (instance.alert) {
         instance.alert = null;
-        EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile: anchor, alert: null });
+        // STOPGAP payload (removed in 1.6b part 2): alerts are still drawn by tile.
+        EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile: BoardState.tileOfToken(instance.id), alert: null });
     }
 }
 
@@ -309,7 +329,8 @@ export function skipsOf(instanceId) {
 /**
  * What `heroId`'s flag passed over, in the order it looked (nearest first), as
  * `[{ instanceId, reason, typeId, tile }]` — the pennant's hover text (slice
- * 1.5). A Token that has since left the board is left out.
+ * 1.5). A Token that has since left the board is left out. `tile` is a STOPGAP
+ * for the UI (removed in 1.6c).
  */
 export function skipsOfHero(heroId) {
     const r = rt();
@@ -317,11 +338,11 @@ export function skipsOfHero(heroId) {
     if (!ids) return [];
     const out = [];
     for (const instanceId of new Set(ids)) {
-        const found = BoardState.findTokenById(instanceId);
-        if (!found) continue;
+        const instance = BoardState.getTokenById(instanceId);
+        if (!instance) continue;
         for (const s of r.skips.get(instanceId) || []) {
             if (s.heroId !== heroId) continue;
-            out.push({ instanceId, reason: s.reason, typeId: found.instance.typeId, tile: found.anchor });
+            out.push({ instanceId, reason: s.reason, typeId: instance.typeId, tile: BoardState.tileOfToken(instanceId) });
         }
     }
     return out;
@@ -385,28 +406,32 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
     const radiusSq = radius * radius;
     const underPoint = [];
     const inRange = [];
+    const under = tokenAtPoint(point);
 
-    for (const [anchor, instance] of BoardState.occupiedTiles()) {
+    for (const instance of BoardState.tokens()) {
         if (!instance?.typeId || instance.id === excludeInstanceId) continue;
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
         if (!kind) continue;
 
         if (UNDER_POINT.has(kind)) {
-            if (pointOnToken(anchor, instance.typeId, point)) underPoint.push({ anchor, instance, def, kind, rank: 0 });
+            if (instance === under) underPoint.push({ instance, def, kind, rank: 0 });
             continue;
         }
 
         // Work and enemies alike: no split between combat and work (FP-71, FP-74).
-        const d = distanceSq(point, centreOf(anchor, instance.typeId));
+        const centre = centreOf(instance);
+        if (!centre) continue;
+        const d = distanceSq(point, centre);
         if (d > radiusSq) continue;
         const ruleId = ruleIdOf(kind, def);
         const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
-        inRange.push({ anchor, instance, def, kind, d, ruleId, rank });
+        inRange.push({ instance, def, kind, d, ruleId, rank });
     }
 
-    // Priority first, then nearest, then the lower anchor (FP-72, FP-79).
-    inRange.sort((a, b) => a.rank - b.rank || a.d - b.d || a.anchor - b.anchor);
+    // Priority first, then nearest, then the earlier-placed Token (FP-72, FP-79).
+    inRange.sort((a, b) => a.rank - b.rank || a.d - b.d
+        || (a.instance.placedAt ?? 0) - (b.instance.placedAt ?? 0));
 
     const skips = [];
     for (const c of [...underPoint, ...inRange]) {
@@ -425,7 +450,7 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
             if (reason) { skips.push({ instanceId, reason }); continue; }
         }
         if (c.kind === 'work') {
-            const reason = WorkCheck.whyCannotRun(c.anchor, c.instance, heroId, c.def.config);
+            const reason = WorkCheck.whyCannotRun(c.instance.id, c.instance, heroId, c.def.config);
             if (reason) { skips.push({ instanceId, reason }); continue; }
         }
         return { pick: c, skips };
@@ -446,12 +471,12 @@ function choose(r, heroId) {
         return false;
     }
 
-    claimToken(heroId, pick.anchor, pick.instance);
+    claimToken(heroId, pick.instance);
     r.nextTryAt.delete(heroId);
 
     // Went past a nearer Token the player could fix: say so, once (FP-69).
     const passed = skips.find(s => FIXABLE.has(s.reason));
-    if (passed) notifyLeft(r, heroId, BoardState.findTokenById(passed.instanceId)?.instance, passed.reason);
+    if (passed) notifyLeft(r, heroId, BoardState.getTokenById(passed.instanceId), passed.reason);
 
     announceMoved(heroId);
     return true;
@@ -465,18 +490,26 @@ function choose(r, heroId) {
 function switchTo(r, heroId, pick, skips) {
     release(heroId);
     recordSkips(r, heroId, skips);
-    claimToken(heroId, pick.anchor, pick.instance);
+    claimToken(heroId, pick.instance);
     r.nextTryAt.delete(heroId);
     const passed = skips.find(s => FIXABLE.has(s.reason));
-    if (passed) notifyLeft(r, heroId, BoardState.findTokenById(passed.instanceId)?.instance, passed.reason);
+    if (passed) notifyLeft(r, heroId, BoardState.getTokenById(passed.instanceId), passed.reason);
     announceMoved(heroId);
 }
 
-/** Whether a hero may wait on `tile` for a restock of `typeId` (FP-70, FPP-9). */
-function canWait(tile, typeId, heroId) {
-    const vacancy = BoardState.getVacancy(tile);
+/**
+ * The unclaimed-or-not Token of `typeId` standing exactly on a remembered
+ * point — what a hero whose Token left looks for at its last spot.
+ */
+function sameKindAt(x, y, typeId) {
+    return BoardState.tokensAtPoint(x, y).find(t => t.typeId === typeId) || null;
+}
+
+/** Whether a hero may wait on spot `spotId` for a restock of `typeId` (FP-70, FPP-9). */
+function canWait(spotId, typeId, heroId) {
+    const vacancy = BoardState.vacancyAt(spotId);
     if (!vacancy || vacancy.typeId !== typeId || vacancy.unstocked) return false;
-    if (!Managers.managerFor(tile, typeId)) return false;
+    if (!Managers.managerFor(vacancy, typeId)) return false;
     if (BoardState.tokenBankCopies(typeId).length === 0) return false;
     // ⚠️ Never wait for a Promotion Token that would not train this hero — the
     // usual case being the one they just accepted with its last charge. They
@@ -489,11 +522,11 @@ function canWait(tile, typeId, heroId) {
 function keepOrRelease(r, heroId, dirty) {
     const flag = BoardState.flagOf(heroId);
     const claim = BoardState.claimOfHero(heroId);
-    const found = BoardState.findTokenById(claim.instanceId, claim.tile);
+    const instance = BoardState.getTokenById(claim.instanceId);
 
-    if (found) {
-        claim.tile = found.anchor;
-        const { instance } = found;
+    if (instance) {
+        claim.x = instance.x;
+        claim.y = instance.y;
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
 
@@ -546,7 +579,7 @@ function keepOrRelease(r, heroId, dirty) {
             notifyLeft(r, heroId, instance, alert);
             // The Token left behind keeps its red badge (FPP-2).
             recordSkips(r, heroId, [{ instanceId: instance.id, reason: alert }, ...skips]);
-            claimToken(heroId, pick.anchor, pick.instance);
+            claimToken(heroId, pick.instance);
             r.nextTryAt.delete(heroId);
             announceMoved(heroId);
         }
@@ -555,19 +588,20 @@ function keepOrRelease(r, heroId, dirty) {
 
     // The claimed Token has left the board — and with it any fight against it
     // (a depleted camp has already ended its own; a Token sent to the Tray or
-    // the Vault has not).
+    // the Vault has not). Its last spot is the claim's remembered point.
     BoardCombat.endFightOfHero(heroId);
-    const here = BoardState.getToken(claim.tile);
-    if (here?.typeId === claim.typeId && !BoardState.heroOfInstance(here.id)) {
-        resetProgress(claim.tile, here);
-        claimToken(heroId, claim.tile, here);
+    const here = sameKindAt(claim.x, claim.y, claim.typeId);
+    if (here && !BoardState.heroOfInstance(here.id)) {
+        resetProgress(here);
+        claimToken(heroId, here);
         announceMoved(heroId);
         return;
     }
 
     BoardState.setClaim(heroId, null);
-    if (canWait(claim.tile, claim.typeId, heroId)) {
-        BoardState.setWait(heroId, { tile: claim.tile, typeId: claim.typeId });
+    const spotId = Number.isFinite(claim.x) && Number.isFinite(claim.y) ? BoardState.spotIdAt(claim.x, claim.y) : null;
+    if (spotId && canWait(spotId, claim.typeId, heroId)) {
+        BoardState.setWait(heroId, { spotId, typeId: claim.typeId, x: claim.x, y: claim.y });
     } else {
         r.nextTryAt.delete(heroId);
     }
@@ -577,15 +611,16 @@ function keepOrRelease(r, heroId, dirty) {
 /** Phase 1 for a hero waiting on a restock. */
 function checkWait(r, heroId) {
     const wait = BoardState.waitOfHero(heroId);
-    const here = BoardState.getToken(wait.tile);
+    const atSpot = BoardState.tokensAtPoint(wait.x, wait.y);
+    const here = atSpot.find(t => t.typeId === wait.typeId) || null;
 
-    if (here?.typeId === wait.typeId && !BoardState.heroOfInstance(here.id)) {
-        resetProgress(wait.tile, here);
-        claimToken(heroId, wait.tile, here);
+    if (here && !BoardState.heroOfInstance(here.id)) {
+        resetProgress(here);
+        claimToken(heroId, here);
         announceMoved(heroId);
         return;
     }
-    if (!here && canWait(wait.tile, wait.typeId, heroId)) return;
+    if (!atSpot.length && canWait(wait.spotId, wait.typeId, heroId)) return;
 
     BoardState.setWait(heroId, null);
     r.nextTryAt.delete(heroId);
@@ -692,7 +727,7 @@ export function plant(heroId, point) {
      * caller can forget it or announce it twice. An unchanged plant is not a
      * deployment and returned above.
      */
-    const tile = BoardState.tileAtPoint(point);
+    const tile = BoardState.tileAtPoint(point);   // STOPGAP payload — hero_deployed moves to instanceId in 1.6b part 2
     const under = BoardState.getOccupyingToken(tile);
     EventBus.publish('hero_deployed', { heroId, tile, typeId: under?.instance?.typeId ?? null });
     return { success: true };
@@ -767,10 +802,10 @@ export function resetRules(heroId) {
 function releaseIfWorking(heroId, ruleId) {
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return;
-    const found = BoardState.findTokenById(claim.instanceId, claim.tile);
-    if (!found) return;
-    const def = getTokenType(found.instance.typeId);
-    if (ruleIdOf(kindOf(found.instance, def), def) !== ruleId) return;
+    const instance = BoardState.getTokenById(claim.instanceId);
+    if (!instance) return;
+    const def = getTokenType(instance.typeId);
+    if (ruleIdOf(kindOf(instance, def), def) !== ruleId) return;
     const r = rt();
     r?.cycleEnded.delete(heroId);
     release(heroId);
@@ -793,12 +828,11 @@ export function isHeroWorkable(instance) {
 
 /** Clear a standing promotion offer on the Token under `point`, unless another hero holds it. */
 function clearOfferUnder(heroId, point) {
-    const occ = BoardState.getOccupyingToken(BoardState.tileAtPoint(point));
-    if (!occ?.instance || !BoardPromotion.isPromotionToken(occ.instance)) return;
-    if (!pointOnToken(occ.anchorIndex, occ.instance.typeId, point)) return;
-    const holder = BoardState.heroOfInstance(occ.instance.id);
+    const instance = tokenAtPoint(point);
+    if (!instance || !BoardPromotion.isPromotionToken(instance)) return;
+    const holder = BoardState.heroOfInstance(instance.id);
     if (holder && holder !== heroId) return;
-    BoardPromotion.clearPause(occ.instance);
+    BoardPromotion.clearPause(instance);
 }
 
 /**
@@ -831,22 +865,21 @@ export function furl(heroId, reason = 'recall') {
 /**
  * ⭐ **Mark a Token "heroes may not work this"** — or allow it again (FP-35).
  *
- * Accepts any tile of the Token's footprint. Turning it on lets go of any hero
- * working it (their progress there is reset, FP-68; a fight ends, FP-43) and
- * their flag chooses again on the next tick; from then on every flag records
+ * Names the Token by **instance id** (slice 1.6b). Turning it on lets go of any
+ * hero working it (their progress there is reset, FP-68; a fight ends, FP-43)
+ * and their flag chooses again on the next tick; from then on every flag records
  * `disallowed` against it and never claims it — work, combat, promotion and the
  * Guild Hall alike. Nothing else about the Token changes: its rules, triggers,
  * Manager service and restocks carry on (see `isDisallowed`).
  *
  * The Token panel's "Heroes may work this" checkbox calls this (slice 1.5);
- * from the console: `Game.Flags.setDisallowed(tile, true)`.
+ * from the console: `Game.Flags.setDisallowed(instanceId, true)`.
  *
  * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}
  */
-export function setDisallowed(tile, on = true) {
-    const occ = BoardState.getOccupyingToken(tile);
-    if (!occ?.instance) return { success: false, reason: 'No Token there' };
-    const { anchorIndex: anchor, instance } = occ;
+export function setDisallowed(instanceId, on = true) {
+    const instance = BoardState.getTokenById(instanceId);
+    if (!instance) return { success: false, reason: 'No Token there' };
     const next = !!on;
     if (isDisallowed(instance) === next) return { success: true, unchanged: true };
 
@@ -863,7 +896,8 @@ export function setDisallowed(tile, on = true) {
     }
 
     markDirty();
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: anchor, typeId: instance.typeId });
+    // STOPGAP payload (removed in 1.6b part 2): the board still redraws by tile.
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: BoardState.tileOfToken(instance.id), typeId: instance.typeId });
     EventBus.publish('state_changed');
     return { success: true };
 }
@@ -871,16 +905,24 @@ export function setDisallowed(tile, on = true) {
 /**
  * What a hero is doing, for the dock and the idle mark:
  * `docked` (no flag) · `working` · `waiting` (for a restock) · `idle` (a flag,
- * nothing to do). `tile` is where they are drawn.
+ * nothing to do). `instanceId` is the Token they work (or null), `point` where
+ * they are drawn; `tile` is the STOPGAP tile the UI still draws them on
+ * (removed in 1.6c).
  */
 export function statusOf(heroId) {
     const flag = BoardState.flagOf(heroId);
-    if (!flag) return { state: 'docked', tile: null, typeId: null, flag: null };
-    const work = BoardState.workTileOf(heroId);
-    if (work != null) return { state: 'working', tile: work, typeId: BoardState.getToken(work)?.typeId ?? null, flag };
+    if (!flag) return { state: 'docked', tile: null, instanceId: null, point: null, typeId: null, flag: null };
+    const workId = BoardState.workTokenOf(heroId);
+    if (workId) {
+        return {
+            state: 'working', tile: BoardState.tileOfToken(workId), instanceId: workId,
+            point: BoardState.displayPointOf(heroId), typeId: BoardState.getTokenById(workId)?.typeId ?? null, flag
+        };
+    }
     const wait = BoardState.waitOfHero(heroId);
-    if (wait) return { state: 'waiting', tile: wait.tile, typeId: wait.typeId, flag };
-    return { state: 'idle', tile: BoardState.displayTileOf(heroId), typeId: null, flag };
+    const common = { tile: BoardState.displayTileOf(heroId), instanceId: null, point: BoardState.displayPointOf(heroId), flag };
+    if (wait) return { state: 'waiting', ...common, typeId: wait.typeId };
+    return { state: 'idle', ...common, typeId: null };
 }
 
 /**
@@ -910,10 +952,10 @@ function cycleCompleted(heroId) {
 export function workingRuleOf(heroId) {
     const claim = heroId ? BoardState.claimOfHero(heroId) : null;
     if (!claim) return null;
-    const found = BoardState.findTokenById(claim.instanceId, claim.tile);
-    if (!found) return null;
-    const def = getTokenType(found.instance.typeId);
-    return ruleIdOf(kindOf(found.instance, def), def);
+    const instance = BoardState.getTokenById(claim.instanceId);
+    if (!instance) return null;
+    const def = getTokenType(instance.typeId);
+    return ruleIdOf(kindOf(instance, def), def);
 }
 
 /** Drop every runtime record (claims, waits, skips) for the current board. */

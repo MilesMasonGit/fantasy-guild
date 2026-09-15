@@ -195,7 +195,8 @@ export const QuestManager = {
                 this.reportProgress('token_placed');
                 if (data?.tile != null && data?.typeId) {
                     const def = getTokenType(data.typeId);
-                    const serves = RecipeResolver.servesFrom(data.tile);
+                    // STOPGAP adapter (removed in 1.6b part 2): the event names a tile; servesFrom is by instance id.
+                    const serves = RecipeResolver.servesFrom(BoardState.tokenIdAtTile(data.tile));
                     if (serves.length > 0 || def?.tokenType === 'context' || (def?.provides && def.provides.length > 0)) {
                         this.reportProgress('context_token_placed');
                     }

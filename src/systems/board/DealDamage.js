@@ -113,7 +113,7 @@ function targetOf(role, roles, statement) {
     const tile = role === ROLE.SOURCE ? roles?.source : roles?.self;
     if (tile == null) return null;
 
-    const heroId = BoardState.workerOf(tile);
+    const heroId = BoardState.workerOfTile(tile);   // STOPGAP — roles still name tiles (removed in 1.6b part 2)
     if (heroId) return heroTarget(heroId);
 
     const instance = BoardState.getToken(tile);

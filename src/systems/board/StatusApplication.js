@@ -89,7 +89,7 @@ function occupantOf(tile) {
      * `payload.target` flag is converted on load and ignored here if one slips
      * through — `ContentAudit` names it.
      */
-    const heroId = BoardState.workerOf(tile);
+    const heroId = BoardState.workerOfTile(tile);   // STOPGAP — roles still name tiles (removed in 1.6b part 2)
     if (heroId) {
         return { apply: (statusId, stacks) => StatusEffectSystem.applyToHero(heroId, statusId, stacks) };
     }
@@ -111,7 +111,7 @@ function occupantOf(tile) {
  * hero-first reading, so both halves of `Applies` resolve a tile identically.
  */
 function liveBearerOf(tile) {
-    const heroId = BoardState.workerOf(tile);
+    const heroId = BoardState.workerOfTile(tile);   // STOPGAP — roles still name tiles (removed in 1.6b part 2)
     if (heroId) {
         const hero = HeroManager.getHero(heroId);
         return hero ? LiveEffects.heroBearer(hero) : null;

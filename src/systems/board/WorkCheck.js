@@ -61,8 +61,8 @@ export function heroReason(heroId, config) {
  * available, then the charges must be affordable. `io` is returned so the
  * runner does not resolve the recipe twice.
  */
-export function fixableReason(tile, instance) {
-    const io = RecipeResolver.effectiveIO(tile, instance);
+export function fixableReason(instanceId, instance) {
+    const io = RecipeResolver.effectiveIO(instanceId, instance);
 
     if (io.status === RECIPE.NONE) return { reason: ALERT.NO_RECIPE, io };
 
@@ -71,17 +71,17 @@ export function fixableReason(tile, instance) {
         if (!inputCheck.ok) return { reason: ALERT.INPUTS, io, inputCheck };
     }
 
-    if (!Charges.planCycle(tile, instance, io).ok) return { reason: ALERT.CHARGES, io };
+    if (!Charges.planCycle(instanceId, instance, io).ok) return { reason: ALERT.CHARGES, io };
 
     return { reason: null, io };
 }
 
 /**
- * The first reason `heroId` cannot run the Token on `tile` — the hero's gate
+ * The first reason `heroId` cannot run Token `instanceId` — the hero's gate
  * first, then the Token's — or null if they can. What a flag records as a skip.
  */
-export function whyCannotRun(tile, instance, heroId, config) {
+export function whyCannotRun(instanceId, instance, heroId, config) {
     const hero = heroReason(heroId, config);
     if (hero) return hero;
-    return fixableReason(tile, instance).reason;
+    return fixableReason(instanceId, instance).reason;
 }

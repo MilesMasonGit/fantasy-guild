@@ -531,8 +531,11 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
         });
     }
 
-    RecipeResolver.wearAdjacentSupport(tile, (supportTile, supportInstance) => {
-        const support = supportInstance || BoardState.getToken(supportTile);
+    // STOPGAP adapter (removed in 1.6b part 2): the wear reader is by instance
+    // id since 1.6b; this fight still names tiles.
+    RecipeResolver.wearAdjacentSupport(BoardState.tokenIdAtTile(tile), (supportId, supportInstance) => {
+        const supportTile = BoardState.tileOfToken(supportId);
+        const support = supportInstance || BoardState.getTokenById(supportId);
         const sTypeId = support?.typeId;
         const sName = getTokenType(sTypeId)?.name || sTypeId || 'Support';
         BoardState.setToken(supportTile, null);
@@ -546,7 +549,7 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
         });
         EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: supportTile, typeId: sTypeId || null });
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: supportTile, typeId: null });
-        TileModifiers.rebuildAround(supportTile);
+        TileModifiers.rebuildAroundTile(supportTile);   // STOPGAP (removed in 1.6b part 2)
     });
 
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {

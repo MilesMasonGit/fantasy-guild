@@ -29,6 +29,7 @@ import * as TokenBank from './TokenBank.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
+import { centreOf } from './nearby.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -154,17 +155,23 @@ function setAlert(instance, index, reason) {
  * any of it happens is what stops a Token handing out output it cannot afford —
  * the bug `CardPreflight` was written for, kept as a rule now that its old home
  * is gone.
+ *
+ * Every reader is asked by the Token's instance id (Free Playmat 1.6b). `index`
+ * is a STOPGAP tile, used only for `{ tile }` event payloads and the systems
+ * still called by tile — sprites, statuses, announcements (removed in 1.6b
+ * part 2).
  */
 function completeCycle(index, instance, def, io, heroId) {
     const config = def.config;
+    const id = instance.id;
 
-    // INPUT_COST, widened to read the 8 neighbours (G-5). A Tool Rack beside a
-    // Forge makes it cheaper to run; before this, only the Token's own
+    // INPUT_COST, widened to read the Token's neighbours (G-5). A Tool Rack
+    // beside a Forge makes it cheaper to run; before this, only the Token's own
     // aggregator was ever consulted and a neighbour could not touch it.
     const inputs = (io.inputs || []).map(input => ({
         ...input,
         quantity: Math.max(1, Math.round(TileModifiers.resolveAxis(
-            index, EFFECT_TYPES.INPUT_COST, input.quantity || 1, config.skill
+            id, EFFECT_TYPES.INPUT_COST, input.quantity || 1, config.skill
         )))
     }));
 
@@ -182,7 +189,7 @@ function completeCycle(index, instance, def, io, heroId) {
      * order in which a station that spends its last charge is destroyed only
      * once the cycle it paid for has actually produced.
      */
-    const chargePlan = Charges.planCycle(index, instance, io);
+    const chargePlan = Charges.planCycle(id, instance, io);
     if (!chargePlan.ok) {
         InputAllocator.noteStarved(instance.typeId);
         setAlert(instance, index, ALERT.CHARGES);
@@ -210,7 +217,7 @@ function completeCycle(index, instance, def, io, heroId) {
      * triggers Phase 6 adds, which fire on success only (CMS-34).
      */
     const failChance = TileModifiers.resolveAxis(
-        index, EFFECT_TYPES.FAIL_CHANCE, 0, config.skill
+        id, EFFECT_TYPES.FAIL_CHANCE, 0, config.skill
     );
     const failed = failChance > 0 && Math.random() * 100 < failChance;
 
@@ -230,7 +237,7 @@ function completeCycle(index, instance, def, io, heroId) {
      */
     const isGuildHall = instance.typeId === 'token_guild_hall';
     const doubleChance = (failed || isGuildHall) ? 0 : TileModifiers.resolveAxis(
-        index, EFFECT_TYPES.LOOT_MULT, 0, config.skill
+        id, EFFECT_TYPES.LOOT_MULT, 0, config.skill
     );
     const doubled = doubleChance > 0 && Math.random() * 100 < doubleChance;
 
@@ -251,7 +258,7 @@ function completeCycle(index, instance, def, io, heroId) {
         const scaled = isGuildHall
             ? rollOutputQuantity(output)
             : Math.max(0, TileModifiers.resolveAxis(
-                index, EFFECT_TYPES.YIELD, rollOutputQuantity(output), config.skill
+                id, EFFECT_TYPES.YIELD, rollOutputQuantity(output), config.skill
             ));
         const whole = Math.floor(scaled);
         const rolled = whole + (Math.random() < (scaled - whole) ? 1 : 0);
@@ -303,7 +310,7 @@ function completeCycle(index, instance, def, io, heroId) {
      * the Bank, so it reads as part of the same completion.
      */
     if (!failed && !isGuildHall) {
-        for (const grant of TileModifiers.collectItemGrants(index, EFFECT_TYPES.BONUS_DROP)) {
+        for (const grant of TileModifiers.collectItemGrants(id, EFFECT_TYPES.BONUS_DROP)) {
             const chance = grant.chance ?? 100;
             if (chance < 100 && Math.random() * 100 > chance) continue;
             // An item-borne grant spends units of the item that granted it
@@ -333,7 +340,7 @@ function completeCycle(index, instance, def, io, heroId) {
      * tick would pin every DoT at maximum and never let a buff decay.
      */
     if (!failed && heroId) {
-        for (const application of TileModifiers.collectStatusApplications(index)) {
+        for (const application of TileModifiers.collectStatusApplications(id)) {
             // `applyAt` already answers whether it rolled AND found somebody to
             // land on, so the announcement follows the status rather than the
             // attempt.
@@ -354,7 +361,7 @@ function completeCycle(index, instance, def, io, heroId) {
     // XP_BONUS then widens it the same way YIELD widens output.
     const baseXp = io.xp ?? config.xp;
     const xpAwarded = failed ? 0 : Math.round(TileModifiers.resolveAxis(
-        index, EFFECT_TYPES.XP_BONUS, baseXp || 0, config.skill
+        id, EFFECT_TYPES.XP_BONUS, baseXp || 0, config.skill
     ));
     if (xpAwarded > 0 && heroId && config.skill) {
         SkillSystem.addXP(heroId, config.skill, xpAwarded);
@@ -367,22 +374,24 @@ function completeCycle(index, instance, def, io, heroId) {
      * is also where `null`-means-unlimited is honoured (R-4, D-176) — `null` is
      * the opposite of 0, not a large version of it.
      */
-    const chargedTiles = new Set(chargePlan.debits.map(d => d.tile));
+    const chargedIds = new Set(chargePlan.debits.map(d => d.id));
     Charges.commitPlan(chargePlan, { heroId });
 
     // Context and Buff Tokens wear per cycle they SERVE (D-126). One Tool Rack
     // serving three Forges wears three times as fast, which is what makes
     // shared context a rate trade rather than free value (D-157).
     //
-    // Tiles the plan above already charged are excluded: a context Token whose
+    // Tokens the plan above already charged are excluded: a context Token whose
     // charges the recipe names as an input has been billed once for this cycle
     // already, and D-126's flat wear on top of it would bill it twice.
-    RecipeResolver.wearAdjacentSupport(index, (tile, supportInstance) => {
-        Charges.destroyToken(tile, supportInstance || BoardState.getToken(tile));
-        // The neighbourhood, not just this tile: an aura going dark has to stop
+    RecipeResolver.wearAdjacentSupport(id, (supportId, supportInstance) => {
+        const support = supportInstance || BoardState.getTokenById(supportId);
+        const spot = centreOf(support);
+        Charges.destroyToken(null, support);
+        // The neighbourhood, not just this Token: an aura going dark has to stop
         // applying to everything it reached, which means their aggregators too.
-        TileModifiers.rebuildAround(tile);
-    }, chargedTiles);
+        TileModifiers.rebuildAround([spot]);
+    }, chargedIds);
 
     // The board's universal unit of work. One kill counts as one cycle too
     // (D-129), so combat feeds this exactly as production does.
@@ -419,15 +428,23 @@ export function tick(delta) {
     // and before any Token ticks, so `workerOf` below is already settled.
     Flags.assign(delta);
 
-    const tiles = BoardState.occupiedTiles();
-    if (!tiles.length) return;
+    // Every Token on the mat, by instance id, in arrival order (Free Playmat 1.6b).
+    const onMat = BoardState.tokens();
+    if (!onMat.length) return;
 
     tickCounter++;
     const publishProgress = tickCounter % PROGRESS_EVERY === 0;
 
-    for (const [index, instance] of tiles) {
+    for (const instance of onMat) {
+        const id = instance.id;
+        // STOPGAP (removed in 1.6b part 2): the tile this Token stands on, used
+        // only for `{ tile }` event payloads and the systems still called by
+        // tile (combat, promotion, sprites, statuses, announcements). A Token
+        // taken off the mat earlier in this same tick has none and is skipped.
+        const index = BoardState.tileOfToken(id);
+        if (index == null) continue;
         const def = getTokenType(instance.typeId);
-        const heroId = BoardState.workerOf(index);
+        const heroId = BoardState.workerOf(id);
 
         // Effect-block upkeep runs on its OWN clock (CMS-60), before every
         // guard below: a Buff Token has no config, no hero and no work cycle,
@@ -435,7 +452,7 @@ export function tick(delta) {
         // switches between paid and unpaid the neighbourhood must be rebuilt —
         // an aura going dark has to actually stop applying, not just be flagged.
         if (BlockUpkeep.tickUpkeep(instance, def, delta)) {
-            TileModifiers.rebuildAround(index);
+            TileModifiers.rebuildAround([centreOf(instance)]);
         }
 
         // Triggered Tokens are rate-limited by a cooldown rather than a cycle
@@ -489,7 +506,7 @@ export function tick(delta) {
             // it clears the moment the problem does. Skill too low, wrong skill
             // and no skill are hover-only (FP-60) and never badge.
             const skipped = Flags.hasFixableSkip(instance)
-                ? WorkCheck.fixableReason(index, instance).reason
+                ? WorkCheck.fixableReason(id, instance).reason
                 : null;
             setAlert(instance, index, skipped);
             continue;
@@ -509,7 +526,7 @@ export function tick(delta) {
         // charges are affordable — the same check a flag makes before claiming
         // (Free Playmat 1.4b). The side effects stay here: they describe a
         // hero actually standing on the Token.
-        const check = WorkCheck.fixableReason(index, instance);
+        const check = WorkCheck.fixableReason(id, instance);
         const io = check.io;
 
         if (check.reason === ALERT.NO_RECIPE) {
@@ -517,7 +534,7 @@ export function tick(delta) {
             // Token's pool is empty and it has nothing to select). Adjacency
             // no longer decides what a station makes, but it still decides
             // whether it can make it.
-            const reqs = RecipeResolver.getMissingRequirements(index, instance);
+            const reqs = RecipeResolver.getMissingRequirements(id, instance);
             const missingNames = reqs.items?.length > 0
                 ? reqs.items.join(', ')
                 : (def?.name || tokenName(instance.typeId) || instance.typeId);
@@ -611,7 +628,7 @@ export function tick(delta) {
         const cycleTime = isGuildHall
             ? (config.cycleTimeMs || 10000)
             : Math.max(1000, TileModifiers.resolveAxis(
-                index, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
+                id, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
             ) / heroSpeedFactor(heroId, config.skill));
 
         if (instance.cycleElapsedMs >= cycleTime) {
@@ -637,15 +654,16 @@ export function init() {
     // empty aggregator after a reload is the classic failure this guards
     // against (`ModifierScopes.test.js` pins the rule).
     //
-    // Two payload shapes (Free Playmat 1.3):
-    // * `Placement` sends one event per change carrying `tiles`, the full rebuild
-    //   set for the live Near radius — rebuilt exactly, once.
-    // * Everything else (a depletion, a restock, a save repair) names one `tile`,
-    //   and everything within Near of it is rebuilt.
-    // A board-reach rule widens either to the whole board (`rebuildTiles`).
-    EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ tile, tiles } = {}) => {
-        if (Array.isArray(tiles)) TileModifiers.rebuildTiles(tiles);
-        else if (tile != null) TileModifiers.rebuildAround(tile);
+    // Two payload shapes (Free Playmat 1.6b):
+    // * `points` — the mat points a change touched (where Tokens left AND where
+    //   they landed); every Token within Near of any of them is rebuilt.
+    // * `tile` only — a STOPGAP for publishers not yet moved off tiles
+    //   (`BoardCombat`, the save repair below); rebuilt around that tile's
+    //   centre (removed in 1.6b part 2).
+    // A board-reach rule widens either to the whole board (`rebuildTokens`).
+    EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ tile, points } = {}) => {
+        if (Array.isArray(points)) TileModifiers.rebuildAround(points);
+        else if (tile != null) TileModifiers.rebuildAroundTile(tile);
     });
     EventBus.subscribe('game_loaded', () => {
         TileModifiers.rebuildAll();
@@ -700,5 +718,5 @@ export function isHeroIdle(heroId) {
     const status = Flags.statusOf(heroId);
     if (status.state === 'docked' || status.state === 'idle') return true;
     if (status.state === 'waiting') return false;
-    return !!BoardState.getToken(status.tile)?.alert;   // working, but stuck
+    return !!BoardState.getTokenById(status.instanceId)?.alert;   // working, but stuck
 }
