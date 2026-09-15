@@ -3,6 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { centreOf, distanceSq, nearRadius, tokensWithin } from './nearby.js';
+// ⚠️ `centreOf` takes a Token instance and `tokensWithin` answers instance ids (slice 1.6b).
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
@@ -33,10 +34,11 @@ import { logger } from '../../utils/Logger.js';
  *    so one economic model covers the whole board.
  * 2. **Near reach, and never depletes** (D-140, Free Playmat 1.3). A Manager
  *    that wore out would be a restocker needing restocking, which is precisely
- *    the chore it exists to remove. Reach is `nearby()`'s Near, centre to centre
- *    (FP-41) — the old 8 tiles for 1×1 Tokens at 272 u. Where several Managers
- *    cover one tile, the **nearest** does the job, then the lowest anchor index
- *    (roadmap §4 1.3), which is stable rather than merely arbitrary.
+ *    the chore it exists to remove. Reach is Near, centre to centre (FP-41),
+ *    measured from the spot that ran dry. Where several Managers reach one
+ *    spot, the **nearest** does the job, then the one placed earlier (slice
+ *    1.6b; it was the lowest anchor index), which is stable rather than merely
+ *    arbitrary.
  * 3. **Restocks under a working hero, who resumes automatically** (D-151).
  *    ⚠️ **This is the whole point.** A hero whose Forest ran dry does not need
  *    re-placing, because a fresh Forest arrives under their feet and they carry
@@ -99,51 +101,52 @@ export function isManager(typeId) {
 }
 
 /**
- * The Manager covering a tile that looks after `typeId`, as `[anchor, typeId]`,
- * or null.
+ * The Manager in reach of a spot that looks after `typeId`, as
+ * `[managerInstanceId, managerTypeId]`, or null.
  *
- * ## Measured from the Token that is owed (Free Playmat 1.3)
- * A vacancy is an empty tile, so there is no Token on the board to measure from.
- * The owed Token's centre is: `typeId` anchored at `tile`, which is exactly
- * where the restock will put it (FP-19). For a 2×2 that is its footprint
- * centre, not the anchor tile's.
+ * ## Measured from the spot (Free Playmat 1.3, by point since 1.6b)
+ * A vacancy is a spot with no Token on it, so there is no Token to measure
+ * from. The spot is the owed Token's own point — exactly where the restock will
+ * put it (FP-19) — so the Manager is measured from `spot.x`, `spot.y`.
  *
- * ## Tie-break: nearest, then lowest anchor index
+ * ## Tie-break: nearest, then the earlier-placed Manager
  * The "first come" of D-140 — with no ordering overlapping Managers would
  * restock unpredictably. Distances compare exactly (whole-number centres).
- * Every candidate is also checked in full, not just an anchor within an 8-ring,
- * so a 2×2 Manager is found from any tile it reaches.
+ * `tokensWithin` answers in arrival order, so a strict `<` keeps the Manager
+ * placed first on a tie (`placedAt` replaced "lowest anchor", plan §A).
+ *
+ * @param {{x: number, y: number}} spot  a vacancy, or any mat point
+ * @param {string} typeId                what is owed there
  */
-export function managerFor(tile, typeId) {
-    if (!typeId) return null;
-    const origin = centreOf(tile, typeId);
-    if (!origin) return null;
-
-    // Normally empty; if something is standing here it is not its own Manager.
-    const here = BoardState.getOccupyingToken(tile)?.anchorIndex ?? null;
+export function managerFor(spot, typeId) {
+    if (!typeId || !spot || !Number.isFinite(spot.x) || !Number.isFinite(spot.y)) return null;
+    const origin = { x: spot.x, y: spot.y };
 
     let best = null;
-    for (const anchor of tokensWithin(origin, nearRadius(), here)) {
-        const instance = BoardState.getToken(anchor);
+    for (const id of tokensWithin(origin, nearRadius())) {
+        const instance = BoardState.getTokenById(id);
         if (!instance || !managedTypes(instance.typeId)?.includes(typeId)) continue;
-        const d = distanceSq(origin, centreOf(anchor, instance.typeId));
-        // `tokensWithin` is ascending, so a strict `<` keeps the lowest anchor on a tie.
-        if (!best || d < best.d) best = { anchor, typeId: instance.typeId, d };
+        const d = distanceSq(origin, centreOf(instance));
+        // Normally nothing stands on a vacancy; a Token that does is not its own Manager.
+        if (d === 0) continue;
+        if (!best || d < best.d) best = { id, typeId: instance.typeId, d };
     }
-    return best ? [best.anchor, best.typeId] : null;
+    return best ? [best.id, best.typeId] : null;
 }
 
 /**
- * Try to restock one vacant tile.
+ * Try to restock one spot that ran dry.
  *
+ * @param {string} spotId the vacancy's key (`BoardState.spotIdAt`)
  * @returns {'restocked'|'unstocked'|'unmanaged'} what happened, for the sweep
  *          and for tests. `unstocked` is D-133's silent failure.
  */
-export function restockTile(tile, vacancy) {
+export function restockSpot(spotId) {
+    const vacancy = BoardState.vacancyAt(spotId);
     const owed = vacancy?.typeId;
     if (!owed) return 'unmanaged';
 
-    const manager = managerFor(tile, owed);
+    const manager = managerFor(vacancy, owed);
     if (!manager) return 'unmanaged';
 
     // **It can only move a Token from storage, never conjure one** (D-133).
@@ -161,25 +164,23 @@ export function restockTile(tile, vacancy) {
         // publishes and `boardConstants` reads, so the string is written once.
         if (!vacancy.unstocked) {
             vacancy.unstocked = true;
+            const tile = BoardState.tileOfSpot(spotId);   // STOPGAP payload — removed in 1.6b part 2
             EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile, alert: ALERT.UNSTOCKED });
         }
         return 'unstocked';
     }
 
-    // The hero is untouched. They are still this tile's worker (`BoardState.workerOf`), so
-    // a Token arriving underneath them is all it takes for work to resume on
-    // the next tick — no re-placement, no reassignment, no event (D-151).
-    // Lands exactly on the spot that ran dry (FP-19, slice 1.6a); arriving
-    // there also clears the vacancy.
-    if (Number.isFinite(vacancy.x) && Number.isFinite(vacancy.y)) {
-        BoardState.addToken(instance, vacancy.x, vacancy.y);
-    } else {
-        BoardState.setToken(tile, instance);   // STOPGAP — deleted in slice 1.6d
-    }
-    TileModifiers.rebuildAround(tile);
+    // The hero is untouched. A hero waiting on this spot (FP-70) claims the
+    // Token arriving on it at the next flag pass — no re-placement, no
+    // reassignment, no event (D-151). Lands exactly on the spot that ran dry
+    // (FP-19); arriving there also clears the vacancy.
+    const spot = { x: vacancy.x, y: vacancy.y };
+    BoardState.addToken(instance, spot.x, spot.y);
+    TileModifiers.rebuildAround([spot]);
 
+    const tile = BoardState.tileOfToken(instance.id);   // STOPGAP payload — removed in 1.6b part 2
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });
-    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });
+    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile, points: [spot] });
     const sourceName = tokenName(manager[1]) || tokenName(owed) || 'Manager';
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
         tile,
@@ -200,22 +201,23 @@ export function restockTile(tile, vacancy) {
 
     EventBus.publish('state_changed');
 
-    logger.debug('Managers', `${tokenName(manager[1])} restocked ${tokenName(owed)} on tile ${tile}`);
+    logger.debug('Managers', `${tokenName(manager[1])} restocked ${tokenName(owed)} at (${spot.x}, ${spot.y})`);
     return 'restocked';
 }
 
 /**
- * Restock every vacancy a Manager covers and the Bank can supply.
+ * Restock every vacancy a Manager covers and the Bank can supply, in the order
+ * the spots ran dry.
  *
- * @returns {number} how many tiles were restocked
+ * @returns {number} how many spots were restocked
  */
 export function sweep() {
-    const pending = BoardState.vacancies();
+    const pending = BoardState.spotVacancies();
     if (!pending.length) return 0;
 
     let restocked = 0;
-    for (const [tile, vacancy] of pending) {
-        if (restockTile(tile, vacancy) === 'restocked') restocked++;
+    for (const [spotId] of pending) {
+        if (restockSpot(spotId) === 'restocked') restocked++;
     }
     return restocked;
 }

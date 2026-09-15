@@ -215,7 +215,7 @@ export const ALERT = {
     CHARGES: 'charges',
     /**
      * The tile ran dry and its Manager found nothing in the Vault to restock it
-     * with — D-133's silent failure. Published by `Managers.restockTile`, not by
+     * with — D-133's silent failure. Published by `Managers.restockSpot`, not by
      * the runner, and carried on the vacancy rather than on a Token instance:
      * there is no Token left on the tile to hang it from.
      */

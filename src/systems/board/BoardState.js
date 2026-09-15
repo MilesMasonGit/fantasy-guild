@@ -129,12 +129,35 @@ function stampOrder(b, instance) {
     if (!Number.isInteger(instance.placedAt)) instance.placedAt = b.nextTokenOrder++;
 }
 
-/** After a Token's point changes: a claimed Token keeps its hero (FP-68), and the claim's tile hint follows. */
+/**
+ * ## The layout version (Free Playmat slice 1.6b)
+ * A counter bumped whenever any Token is put on the mat, moved, or taken off,
+ * kept per `tokens` object (so a load or a hand-built test board starts a new
+ * count). Readers that cache something about *where Tokens are* — the
+ * neighbour-id cache in `nearby.js` — key their cache on it, so a cached answer
+ * can never outlive a change to the layout.
+ */
+const layoutVersions = new WeakMap();
+
+function bumpLayout(b) {
+    layoutVersions.set(b.tokens, (layoutVersions.get(b.tokens) || 0) + 1);
+}
+
+/** `{ tokens, version }` — changes identity or number whenever the layout does. */
+export function layoutVersion() {
+    const tokensObj = board()?.tokens || null;
+    return { tokens: tokensObj, version: tokensObj ? (layoutVersions.get(tokensObj) || 0) : 0 };
+}
+
+/** After a Token's point changes: a claimed Token keeps its hero (FP-68), and the claim's last-known point follows. */
 function afterPointChange(b, instance) {
     Shim.pin(b, instance);   // STOPGAP — deleted in slice 1.6d
-    const anchor = Shim.anchorOfId(b, instance.id);   // STOPGAP hint — deleted in slice 1.6d
+    bumpLayout(b);
     for (const claim of runtimeOf(b).claims.values()) {
-        if (claim.instanceId === instance.id) claim.tile = anchor;
+        if (claim.instanceId === instance.id) {
+            claim.x = instance.x;
+            claim.y = instance.y;
+        }
     }
 }
 
@@ -178,6 +201,7 @@ export function removeToken(id) {
     if (!instance) return null;
     delete b.tokens[id];
     Shim.unpin(b, id);   // STOPGAP — deleted in slice 1.6d
+    bumpLayout(b);
     return instance;
 }
 
@@ -205,6 +229,12 @@ export function tokens() {
     return Object.values(map)
         .filter(t => t?.typeId)
         .sort((a, b) => (a.placedAt ?? 0) - (b.placedAt ?? 0));
+}
+
+/** Every Token whose centre is exactly `(x, y)`, in arrival order. */
+export function tokensAtPoint(x, y) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return [];
+    return tokens().filter(t => t.x === x && t.y === y);
 }
 
 // ---------------------------------------------------------------------------
@@ -276,6 +306,24 @@ export function emptyTiles() {
     return Shim.emptyTiles(board());
 }
 
+/**
+ * STOPGAP (removed in 1.6b part 2 / 1.6c): the instance id of the Token covering
+ * a tile, or null. The adapter for callers that still hold a tile and must now
+ * ask an id-keyed reader (`RecipeResolver`, `TileModifiers`, `Flags`, …).
+ */
+export function tokenIdAtTile(tile) {
+    return getOccupyingToken(tile)?.instance?.id ?? null;
+}
+
+/**
+ * STOPGAP (removed in 1.6b part 2 / 1.6c): the tile Token `id` stands on, or
+ * null. The adapter for id-keyed readers that still publish `{ tile }` events
+ * or call a part-2 system (`BoardCombat`, `SpriteLayer`, roles) by tile.
+ */
+export function tileOfToken(id) {
+    return id ? Shim.anchorOfId(board(), id) : null;
+}
+
 // ---------------------------------------------------------------------------
 // Heroes on the board — flags
 // ---------------------------------------------------------------------------
@@ -337,11 +385,12 @@ export function heroesOnBoard() {
  * **Which Token each flag is working right now. Never saved** (FP-58): on a
  * reload heroes start at their flag and choose again.
  *
- * * `claims`   heroId → `{ instanceId, tile, typeId }` — keyed by Token
- *   **instance id**, so a Token that moves carries its hero (FP-68). `tile` is
- *   only a hint for finding it quickly, refreshed whenever the Token is found.
- * * `waits`    heroId → `{ tile, typeId }` — waiting on an empty spot for a
- *   Manager's restock (FP-70).
+ * * `claims`   heroId → `{ instanceId, typeId, x, y }` — keyed by Token
+ *   **instance id**, so a Token that moves carries its hero (FP-68). `x`, `y`
+ *   is the Token's last-known point, refreshed whenever it moves, so a hero
+ *   whose Token has left can still find the spot it stood on (slice 1.6b).
+ * * `waits`    heroId → `{ spotId, typeId, x, y }` — waiting on a spot for a
+ *   Manager's restock (FP-70); `x`, `y` is the spot's point.
  * * the rest (`skips`, retry times, notices, cycle ends, clock) belong to `Flags.js`.
  *
  * ## ⚠️ Kept per board object, not per module
@@ -420,6 +469,7 @@ export function heroOfInstance(instanceId) {
  *
  * `anchor` is the STOPGAP tile the Token stands on (deleted in slice 1.6d);
  * `hint` is accepted and ignored, for the callers that still pass one.
+ * Id-keyed readers use `getTokenById` instead.
  */
 export function findTokenById(instanceId, hint = null) { // eslint-disable-line no-unused-vars
     const b = board();
@@ -444,53 +494,77 @@ export function tileAtPoint(point) {
  * ⭐ **The only three questions the rest of the game may ask about where a hero
  * is.** `WorkerSeam.test.js` fails if any other file reads the flag storage.
  *
- *   * `workerOf(tile)`       — who works the Token here (damage, statuses,
- *                              roles, gear feeding the Token, filters, the tick)
- *   * `workTileOf(heroId)`   — the Token this hero works (their cycle, their
- *                              idle mark, where their actor rules act from)
- *   * `displayTileOf(heroId)` — where to draw them (badges, particles, level-up
- *                              pops)
+ *   * `workerOf(instanceId)`   — who works this Token (damage, statuses, roles,
+ *                                gear feeding the Token, filters, the tick)
+ *   * `workTokenOf(heroId)`    — the instance id of the Token this hero works
+ *                                (their cycle, their idle mark, where their
+ *                                actor rules act from)
+ *   * `displayPointOf(heroId)` — the mat point to draw them at (badges,
+ *                                particles, level-up pops)
  *
- * ## Under flags (slice 1.4b, roadmap §2)
- * * `workerOf(tile)` is **the hero whose flag has claimed the Token covering
- *   that tile** — any tile of its footprint, so a 2×2's four tiles all answer.
- *   ⚠️ A bare tile has no worker, ever: a hero waiting on an empty spot for a
- *   restock (FP-70) is not working it.
- * * `workTileOf(heroId)` is the **anchor** of the claimed Token, or null.
- * * `displayTileOf(heroId)` is the claimed Token's anchor, else the spot they
- *   wait on, else the tile under their flag, else null (in the Dock).
+ * ## Under flags (slice 1.4b, roadmap §2), by id and point (slice 1.6b)
+ * * `workerOf(id)` is **the hero whose flag has claimed that Token**, while it
+ *   is on the mat. ⚠️ A spot with no Token has no worker, ever: a hero waiting
+ *   on an empty spot for a restock (FP-70) is not working it.
+ * * `workTokenOf(heroId)` is the claimed Token's id while it is on the mat, or
+ *   null.
+ * * `displayPointOf(heroId)` is the claimed Token's centre, else the spot they
+ *   wait on, else their flag's point, else null (in the Dock).
  *
- * Tile 0 is a valid index and falsy — test the results with `== null`.
- *
- * ⚠️ STOPGAP: all three still speak in tiles, answered through `gridShim.js`.
- * Slice 1.6b re-keys them by instance id and point; the tile forms are deleted
- * in slice 1.6d.
+ * The tile forms below them (`workerOfTile`, `workTileOf`, `displayTileOf`)
+ * are STOPGAP adapters for the callers not yet moved off tiles.
  */
-export function workerOf(tile) {
-    if (!isTileIndex(tile)) return null;
-    const occ = getOccupyingToken(tile);
-    if (!occ?.instance?.id) return null;
-    return heroOfInstance(occ.instance.id);
+export function workerOf(instanceId) {
+    if (typeof instanceId !== 'string' || !instanceId) return null;
+    if (!board()?.tokens?.[instanceId]) return null;
+    return heroOfInstance(instanceId);
 }
 
-/** The anchor of the Token `heroId` works, or null. */
-export function workTileOf(heroId) {
+/** The instance id of the Token `heroId` works, or null. */
+export function workTokenOf(heroId) {
     if (!heroId) return null;
     const claim = claimOfHero(heroId);
     if (!claim) return null;
-    const found = findTokenById(claim.instanceId, claim.tile);
-    if (!found) return null;
-    claim.tile = found.anchor;
-    return found.anchor;
+    const instance = getTokenById(claim.instanceId);
+    if (!instance) return null;
+    claim.x = instance.x;
+    claim.y = instance.y;
+    return instance.id;
 }
 
-/** Where to draw `heroId`: claimed Token > waiting spot > flag > null. */
+/** The mat point to draw `heroId` at: claimed Token > waiting spot > flag > null. */
+export function displayPointOf(heroId) {
+    if (!heroId) return null;
+    const work = getTokenById(workTokenOf(heroId));
+    if (work) return { x: work.x, y: work.y };
+    const wait = waitOfHero(heroId);
+    if (wait && Number.isFinite(wait.x) && Number.isFinite(wait.y)) return { x: wait.x, y: wait.y };
+    const flag = flagOf(heroId);
+    return flag ? { x: flag.x, y: flag.y } : null;
+}
+
+/**
+ * STOPGAP (removed in 1.6b part 2 / 1.6c): who works the Token covering a tile
+ * — any tile of its footprint. For `Placement`, `DealDamage`, `EffectActions`
+ * and `StatusApplication`, which still hold tiles. Tile 0 is a valid index.
+ */
+export function workerOfTile(tile) {
+    if (!isTileIndex(tile)) return null;
+    return workerOf(tokenIdAtTile(tile));
+}
+
+/** STOPGAP (removed in 1.6b part 2 / 1.6c): the anchor tile of the Token `heroId` works, or null. */
+export function workTileOf(heroId) {
+    return tileOfToken(workTokenOf(heroId));
+}
+
+/** STOPGAP (removed in 1.6b part 2 / 1.6c): the tile to draw `heroId` on — claimed Token > waiting spot > flag > null. */
 export function displayTileOf(heroId) {
     if (!heroId) return null;
     const work = workTileOf(heroId);
     if (work != null) return work;
     const wait = waitOfHero(heroId);
-    if (wait) return wait.tile;
+    if (wait) return Shim.anchorOfPoint(wait.x, wait.y, wait.typeId);
     const flag = flagOf(heroId);
     return flag ? tileAtPoint(flag) : null;
 }
@@ -538,6 +612,26 @@ export function setVacancyAt(point, typeId) {
 /** Clear any vacancy standing exactly at `(x, y)`. */
 function clearVacancyAt(b, x, y) {
     delete b.vacancies[spotIdAt(x, y)];
+}
+
+/** The vacancy recorded for `spotId`, or null. */
+export function vacancyAt(spotId) {
+    if (!spotId) return null;
+    return board()?.vacancies?.[spotId] || null;
+}
+
+/**
+ * Every spot vacancy as `[spotId, vacancy]`, in the order the spots ran dry.
+ * Sparse — usually empty.
+ */
+export function spotVacancies() {
+    const map = board()?.vacancies || {};
+    return Object.keys(map).map(spotId => [spotId, map[spotId]]).filter(([, v]) => v?.typeId);
+}
+
+/** STOPGAP (removed in 1.6b part 2 / 1.6c): the tile a spot vacancy stands for, for `{ tile }` event payloads. */
+export function tileOfSpot(spotId) {
+    return Shim.vacancyAnchor(vacancyAt(spotId));
 }
 
 /** STOPGAP (deleted in slice 1.6d): record a vacancy for a tile — at the owed Token's point there. */

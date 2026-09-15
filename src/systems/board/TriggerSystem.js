@@ -6,8 +6,8 @@ import { statementsOf, stationSkillOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
-import { centreOf, nearRadius, positionOf, tokensWithin } from './nearby.js';
-import { matchesTokenTarget, filterTargetTiles } from './TileModifiers.js';
+import { anchorCentre, centreOf, nearRadius, tokensWithin } from './nearby.js';
+import { matchesTokenTarget, filterTargets } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as DealDamage from './DealDamage.js';
@@ -212,7 +212,8 @@ function fireStatement(tile, instance, statement, payload = null, { settled = fa
     if (!settled && !Charges.canFireStatement(instance, statement)) return false;
 
     // --- The loop guard (see the note at the top of this file) --------------
-    const key = `${tile}:${statement.id}`;
+    // Keyed by the Token's instance id (slice 1.6b).
+    const key = `${instance?.id ?? tile}:${statement.id}`;
     if (inFlight.has(key)) return false;
     if (cascadeDepth >= MAX_CASCADE_DEPTH) {
         if (!warnedAboutDepth) {
@@ -327,7 +328,7 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
             const quantity = Math.max(1, modifier.quantity || 1);
             // An unfiltered grant is about the Token that fired, which is what
             // an author with no filter means and what this always did.
-            const targets = statement.to ? filterTargetTiles(tile, statement) : [tile];
+            const targets = statement.to ? targetTilesOf(instance, statement) : [tile];
             // ⚠️ A filter naming nothing grants nothing. "To any adjacent Forge"
             // with no Forge beside it must reach nobody — falling back to the
             // firing tile would make an unmatched filter silently universal,
@@ -383,10 +384,13 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
              *
              * The renderer and the editor were both right; this was the half
              * that lied. An unaimed conversion produces where it was made (D-40).
+             *
+             * Since slice 1.6b "lowest tile index" is **the earliest-placed**
+             * matching Token (`filterTargets` answers in arrival order).
              */
             const aimed = statement.to?.mode && statement.to.mode !== 'all';
             const destination = aimed
-                ? filterTargetTiles(tile, statement).sort((a, b) => a - b)[0]
+                ? targetTilesOf(instance, statement)[0]
                 : tile;
             // A filter that named nothing produces nothing — the inputs are
             // still spent, exactly as a failed cycle still costs its inputs.
@@ -432,6 +436,18 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
     return false;
 }
 
+/**
+ * The Tokens a firing rule's filter names — by instance id, measured from the
+ * bearer (or from the point it stood on, when it has already left the mat) —
+ * as the STOPGAP tiles `SpriteLayer` still drops items on (removed in 1.6b
+ * part 2).
+ */
+function targetTilesOf(instance, statement) {
+    return filterTargets(instance?.id, statement, centreOf(instance))
+        .map(id => BoardState.tileOfToken(id))
+        .filter(t => t != null);
+}
+
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
 function sourceMatches(when, sourceTypeId) {
     if (!when.source?.mode) return true;                // any neighbour
@@ -460,14 +476,14 @@ function producedMatches(definition, when, payload) {
 /**
  * Handle an adjacency-scoped board event.
  *
- * ## "Neighbour" means Near (Free Playmat 1.3, FP-41)
- * Listeners are every Token whose centre is within Near of the source's centre.
- * A 2×2 source is measured from its footprint centre (it used to be only its
- * anchor tile's 8-ring), and a 2×2 listener is found by its centre too.
+ * ## "Neighbour" means Near (Free Playmat 1.3, FP-41; by id and point since 1.6b)
+ * Listeners are every Token whose centre is within Near of the source's centre,
+ * named by instance id, in arrival order.
  *
- * ⚠️ The source may already have left: `TOKEN_DEPLETED` fires after the tile is
- * emptied. Its centre is then rebuilt from the payload's anchor and type, so a
- * departed 2×2 is still heard from where it stood.
+ * ⚠️ The source may already have left: `TOKEN_DEPLETED` fires after it is taken
+ * off the mat. It is then heard from the point its departing instance still
+ * carries — or, for a payload with no instance, from where a Token of its type
+ * anchored at the payload's tile stood (STOPGAP, removed in 1.6b part 2).
  */
 function handleAdjacent(triggerId, payload) {
     const originTile = payload?.tile;
@@ -475,12 +491,15 @@ function handleAdjacent(triggerId, payload) {
 
     const definition = getTriggerEvent(triggerId);
 
-    const occ = BoardState.getOccupyingToken(originTile);
-    const origin = occ?.instance ? positionOf(originTile) : centreOf(originTile, payload?.typeId);
+    // STOPGAP (removed in 1.6b part 2): the event still names its source by tile.
+    const source = BoardState.getOccupyingToken(originTile)?.instance || null;
+    const origin = source
+        ? centreOf(source)
+        : (centreOf(payload?.instance) || anchorCentre(originTile, payload?.typeId));
     if (!origin) return;
 
-    for (const neighbour of tokensWithin(origin, nearRadius(), occ?.instance ? occ.anchorIndex : null)) {
-        const instance = BoardState.getToken(neighbour);
+    for (const id of tokensWithin(origin, nearRadius(), source?.id ?? null)) {
+        const instance = BoardState.getTokenById(id);
         if (!instance) continue;
 
         const def = getTokenType(instance.typeId);
@@ -488,7 +507,8 @@ function handleAdjacent(triggerId, payload) {
             if ((statement.when.scope || TRIGGER_SCOPES.ADJACENT) !== TRIGGER_SCOPES.ADJACENT) continue;
             if (!sourceMatches(statement.when, payload.typeId)) continue;
             if (!producedMatches(definition, statement.when, payload)) continue;
-            fireStatement(neighbour, instance, statement, payload);
+            // The tile is a STOPGAP for roles, sprites and announcements (1.6b part 2).
+            fireStatement(BoardState.tileOfToken(id), instance, statement, payload);
         }
     }
 }
@@ -517,7 +537,7 @@ function handleSelf(triggerId, payload, { settled = false } = {}) {
      * Falling back rather than preferring it: while a Token is still on its
      * tile, the board is the authority on what is standing there.
      */
-    const instance = BoardState.getToken(tile) || payload?.instance;
+    const instance = BoardState.getToken(tile) || payload?.instance;   // STOPGAP — the event names its bearer by tile (1.6b part 2)
     if (!instance) return;
 
     const def = getTokenType(instance.typeId);
@@ -534,13 +554,14 @@ function handleSelf(triggerId, payload, { settled = false } = {}) {
  * Every Triggered Token on the board is considered, wherever it sits.
  */
 function handleGlobalItemThreshold() {
-    for (const [tile, instance] of BoardState.occupiedTiles()) {
+    for (const instance of BoardState.tokens()) {
         const def = getTokenType(instance.typeId);
         for (const statement of triggeredStatements(def, 'ITEM_THRESHOLD')) {
             const { watchItemId, threshold } = statement.when;
             if (!watchItemId) continue;
             if (InventoryManager.getItemCount(watchItemId) < (threshold || 1)) continue;
-            fireStatement(tile, instance, statement);
+            // The tile is a STOPGAP for roles, sprites and announcements (1.6b part 2).
+            fireStatement(BoardState.tileOfToken(instance.id), instance, statement);
         }
     }
 }

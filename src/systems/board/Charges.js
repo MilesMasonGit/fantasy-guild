@@ -3,7 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { nearby } from './nearby.js';
+import { neighbourIds } from './nearby.js';
 import { DEFAULT_STATEMENT_CHARGE_DELTA, statementsOf } from '../effects/statements.js';
 import {
     CHARGE_MOMENT, chargeDeltaOf,
@@ -162,23 +162,28 @@ export function canFireStatement(instance, statement) {
  * returns or a Manager restocks underneath them (D-60, D-151) — the hero is not
  * touched here, only re-announced so the UI redraws them on a bare tile.
  *
- * The vacancy is set AFTER `setToken(null)`, which clears vacancies, so that a
- * type-specific Manager knows what this tile is owed (D-35).
+ * The vacancy is set AFTER the Token is taken off, which clears vacancies, so
+ * that a type-specific Manager knows what this spot is owed (D-35).
+ *
+ * ## By instance (slice 1.6b)
+ * The Token removed is `instance`, by its id; the vacancy is its own point.
+ * `tile` is a STOPGAP used only for the `{ tile }` event payloads (removed in
+ * 1.6b part 2) — pass null and it is looked up before the Token leaves.
  */
 export function destroyToken(tile, instance, { heroId = null } = {}) {
     const typeId = instance?.typeId || null;
     const name = getTokenType(typeId)?.name || tokenName(typeId) || typeId || 'Token';
 
     // The vacancy is the SPOT the spent Token stood on (slice 1.6a), which is
-    // exactly where a Manager's restock lands (FP-19). Read before clearing.
-    const spent = BoardState.getToken(tile);   // STOPGAP tile lookup — deleted in slice 1.6d
+    // exactly where a Manager's restock lands (FP-19). Read before removing.
+    // STOPGAP fallback (removed in 1.6b part 2): a caller whose instance is not
+    // the one on the mat names the Token by tile.
+    const spent = BoardState.getTokenById(instance?.id) || (tile != null ? BoardState.getToken(tile) : null);
     const spot = spent ? { x: spent.x, y: spent.y } : null;
+    if (tile == null && spent) tile = BoardState.tileOfToken(spent.id);   // STOPGAP payload
 
-    BoardState.setToken(tile, null);
-    if (typeId) {
-        if (spot) BoardState.setVacancyAt(spot, typeId);
-        else BoardState.setVacancy(tile, typeId);   // STOPGAP — deleted in slice 1.6d
-    }
+    if (spent) BoardState.removeToken(spent.id);
+    if (typeId && spot) BoardState.setVacancyAt(spot, typeId);
 
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
         tile,
@@ -201,7 +206,8 @@ export function destroyToken(tile, instance, { heroId = null } = {}) {
     EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId, instance, heroId });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
     if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile, heroId });
-    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });
+    // `points`: rebuild around the spot the Token left (slice 1.6b).
+    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile, points: spot ? [spot] : [] });
 }
 
 /**
@@ -215,6 +221,9 @@ export function destroyToken(tile, instance, { heroId = null } = {}) {
  * - **Zero**, and anything on an unlimited Token, changes nothing and publishes
  *   nothing (R-4).
  *
+ * The Token is `instance`. `tile` is a STOPGAP used only for the `{ tile }`
+ * event payloads (removed in 1.6b part 2) — pass null and it is looked up.
+ *
  * @returns {{applied: number, remaining: number|null, depleted: boolean}}
  *          `applied` is what actually moved, which is not always `delta`.
  */
@@ -222,6 +231,7 @@ export function applyDelta(tile, instance, delta, { heroId = null } = {}) {
     if (!instance || isUnlimited(instance)) {
         return { applied: 0, remaining: instance?.usesRemaining ?? null, depleted: false };
     }
+    if (tile == null) tile = BoardState.tileOfToken(instance.id);   // STOPGAP payload
 
     let applied = 0;
     if (delta > 0) {
@@ -253,16 +263,18 @@ export function applyDelta(tile, instance, delta, { heroId = null } = {}) {
 }
 
 /**
- * Every distinct Token near a tile, with the context tags it offers.
+ * Every distinct Token near a Token, with the context tags it offers, as
+ * `{ id, instance, tiers }` in arrival order.
  *
- * Near is `nearby()`, centre to centre (Free Playmat 1.3, FP-41), and names each
- * Token once by anchor — so a 2×2 Token is one provider and pays one cost.
+ * Near is centre to centre (Free Playmat 1.3, FP-41), by instance id since
+ * slice 1.6b (the cached `neighbourIds`) — so a 2×2 Token is one provider and
+ * pays one cost.
  */
-export function contextProvidersAround(index) {
+export function contextProvidersAround(instanceId) {
     const providers = [];
 
-    for (const anchor of nearby(index)) {
-        const instance = BoardState.getToken(anchor);
+    for (const id of neighbourIds(instanceId)) {
+        const instance = BoardState.getTokenById(id);
         if (!instance) continue;
 
         const def = getTokenType(instance.typeId);
@@ -270,7 +282,7 @@ export function contextProvidersAround(index) {
         const tiers = getProvidedTagsWithTiers(def);
         if (!Object.keys(tiers).length) continue;
 
-        providers.push({ tile: anchor, instance, tiers });
+        providers.push({ id, instance, tiers });
     }
     return providers;
 }
@@ -290,15 +302,15 @@ export function contextProvidersAround(index) {
  * free, and no finite neighbour is charged for it either — there is no reason
  * to wear a Token down when something beside it supplies the same tag forever.
  *
- * @returns {{ok: boolean, debits: Array<{tile, instance, amount}>, missing: Array<{tag, reason, short?: number}>}}
+ * @returns {{ok: boolean, debits: Array<{id, instance, amount}>, missing: Array<{tag, reason, short?: number}>}}
  */
-export function planContextCharges(index, requirements) {
-    const providers = contextProvidersAround(index);
-    const planned = new Map();          // tile → charges this plan already claims
+export function planContextCharges(instanceId, requirements) {
+    const providers = contextProvidersAround(instanceId);
+    const planned = new Map();          // provider id → charges this plan already claims
     const debits = [];
     const missing = [];
 
-    const claimed = tile => planned.get(tile) || 0;
+    const claimed = id => planned.get(id) || 0;
 
     for (const req of requirements || []) {
         if (!req?.tag) continue;
@@ -314,15 +326,15 @@ export function planContextCharges(index, requirements) {
         if (eligible.some(p => isUnlimited(p.instance))) continue;
 
         const byScarcity = [...eligible].sort(
-            (a, b) => (a.instance.usesRemaining - claimed(a.tile)) - (b.instance.usesRemaining - claimed(b.tile))
+            (a, b) => (a.instance.usesRemaining - claimed(a.id)) - (b.instance.usesRemaining - claimed(b.id))
         );
 
         let owed = cost;
         for (const provider of byScarcity) {
-            const free = provider.instance.usesRemaining - claimed(provider.tile);
+            const free = provider.instance.usesRemaining - claimed(provider.id);
             if (free <= 0) continue;
             const take = Math.min(free, owed);
-            planned.set(provider.tile, claimed(provider.tile) + take);
+            planned.set(provider.id, claimed(provider.id) + take);
             owed -= take;
             if (owed === 0) break;
         }
@@ -330,9 +342,9 @@ export function planContextCharges(index, requirements) {
         if (owed > 0) missing.push({ tag: req.tag, reason: 'charges', short: owed });
     }
 
-    for (const [tile, amount] of planned) {
-        const provider = providers.find(p => p.tile === tile);
-        debits.push({ tile, instance: provider.instance, amount });
+    for (const [id, amount] of planned) {
+        const provider = providers.find(p => p.id === id);
+        debits.push({ id, instance: provider.instance, amount });
     }
 
     return { ok: missing.length === 0, debits, missing };
@@ -348,9 +360,9 @@ export function planContextCharges(index, requirements) {
  *
  * @param {object} io the resolved recipe/IO from `RecipeResolver.effectiveIO`
  */
-export function planCycle(index, instance, io) {
+export function planCycle(instanceId, instance, io) {
     const stationCost = io?.recipe?.stationChargeCost ?? DEFAULT_STATION_CHARGE_COST;
-    const context = planContextCharges(index, io?.recipe?.requiresContext);
+    const context = planContextCharges(instanceId, io?.recipe?.requiresContext);
 
     const debits = [...context.debits];
     const missing = [...context.missing];
@@ -373,7 +385,7 @@ export function planCycle(index, instance, io) {
         if (instance.usesRemaining < ownCost) {
             missing.push({ reason: 'station', short: ownCost - instance.usesRemaining });
         } else {
-            debits.push({ tile: index, instance, amount: ownCost, isStation: true });
+            debits.push({ id: instanceId, instance, amount: ownCost, isStation: true });
         }
     }
 
@@ -384,16 +396,16 @@ export function planCycle(index, instance, io) {
  * Spend a plan. Every debit, or none — the caller has already established that
  * the whole cycle is affordable, including its bank items.
  *
- * @returns {number[]} the tiles whose Token depleted and was removed
+ * @returns {string[]} the instance ids of the Tokens that depleted and were removed
  */
 export function commitPlan(plan, { heroId = null } = {}) {
     if (!plan?.ok) return [];
     const depleted = [];
     for (const debit of plan.debits) {
-        const result = applyDelta(debit.tile, debit.instance, -debit.amount, {
+        const result = applyDelta(null, debit.instance, -debit.amount, {
             heroId: debit.isStation ? heroId : null
         });
-        if (result.depleted) depleted.push(debit.tile);
+        if (result.depleted) depleted.push(debit.id);
     }
     return depleted;
 }

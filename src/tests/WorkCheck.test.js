@@ -14,6 +14,7 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { tileCentre } from '../config/boardGeometry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -87,7 +88,7 @@ describe('the runner and the chooser give the same answer', () => {
         it(c.name, () => {
             const instance = c.build();
             staff(instance);
-            const chooser = WorkCheck.whyCannotRun(TILE, instance, 'h1', getTokenType(instance.typeId).config);
+            const chooser = WorkCheck.whyCannotRun(idAt(TILE), instance, 'h1', getTokenType(instance.typeId).config);
 
             BoardRunner.tick(100);
 
@@ -104,7 +105,7 @@ describe('the check is pure', () => {
         const offs = [BOARD_EVENTS.TILE_EVENT_ALERT, BOARD_EVENTS.ALERT_CHANGED]
             .map(e => EventBus.subscribe(e, (p) => events.push(p)));
         try {
-            expect(WorkCheck.whyCannotRun(TILE, instance, 'h1', getTokenType(instance.typeId).config)).toBe(ALERT.INPUTS);
+            expect(WorkCheck.whyCannotRun(idAt(TILE), instance, 'h1', getTokenType(instance.typeId).config)).toBe(ALERT.INPUTS);
         } finally { offs.forEach(o => o?.()); }
 
         expect(events).toEqual([]);

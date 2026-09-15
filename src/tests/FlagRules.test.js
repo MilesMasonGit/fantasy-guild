@@ -430,9 +430,10 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
 
     it('⭐ publishes zero HERO_MOVED over stable ticks with mixed priorities', () => {
         put(15, FOREST);
+        // Placed in tile order: equal distances break on the earlier-placed Token (slice 1.6b).
+        put(8, MINE);                                  // spare: claimable, never better
         put(13, MINE);
         put(20, MINE);
-        put(8, MINE);                                  // spare: claimable, never better
         Flags.setRule('h1', 'logging', { priority: 1 });
         Flags.setRule('h2', 'mining', { priority: 1 });
         Flags.setRule('h3', 'logging', { priority: 1 });   // its priority-1 forest is h1's

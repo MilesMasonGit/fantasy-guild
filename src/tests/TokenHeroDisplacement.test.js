@@ -7,6 +7,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
 import { getTilePushVectors } from '../config/boardGeometry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn()
@@ -147,7 +148,7 @@ describe('Token & Hero Displacement Logic', () => {
         BoardState.setToken(7, tok1);
         Placement.placeHero('hero_aldric', 7);
 
-        expect(BoardState.workerOf(7)).toBe('hero_aldric');
+        expect(BoardState.workerOf(idAt(7))).toBe('hero_aldric');
 
         const res = Placement.placeToken(7, tok2);
         expect(res.success).toBe(true);
@@ -155,8 +156,8 @@ describe('Token & Hero Displacement Logic', () => {
         // Token pushed to tile 1
         expect(BoardState.getToken(1)?.id).toBe('tok_work');
         // Hero moved along with token to tile 1 — the claim follows the instance
-        expect(BoardState.workerOf(1)).toBe('hero_aldric');
-        expect(BoardState.workerOf(7)).toBeNull();
+        expect(BoardState.workerOf(idAt(1))).toBe('hero_aldric');
+        expect(BoardState.workerOf(idAt(7))).toBeNull();
     });
 
     it('returns hero to dock via particle fly on direct recall (right click)', () => {

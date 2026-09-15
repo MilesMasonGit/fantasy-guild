@@ -46,7 +46,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     Placement.placeToken(tile, instance);
     // Mirrors the adjacency suite: nothing subscribes ADJACENCY_DIRTY here, so
     // the neighbourhood is rebuilt explicitly.
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }

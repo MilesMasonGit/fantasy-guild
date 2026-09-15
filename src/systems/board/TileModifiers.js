@@ -3,8 +3,7 @@
 import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
-import { nearby, tilesToRebuild } from './nearby.js';
-import { TILE_COUNT } from '../../config/boardGeometry.js';
+import { nearby, reachFrom, tokensAround, positionOf } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
@@ -62,20 +61,25 @@ import * as LiveEffects from '../effects/LiveEffects.js';
  */
 const AMBIENT_KEYWORDS = new Set([KEYWORD.PROVIDES, KEYWORD.GRANTS, KEYWORD.APPLIES]);
 
-/** @type {Map<number, ModifierAggregator>} */
+/**
+ * One aggregator per **Token instance id** (Free Playmat slice 1.6b) — the
+ * inbound modifiers of the Token with that id. There are no tiles.
+ *
+ * @type {Map<string, ModifierAggregator>}
+ */
 const aggregators = new Map();
 
-/** The aggregator for a tile, created on first use. */
-export function getTileAggregator(index) {
-    let agg = aggregators.get(index);
+/** The aggregator for Token `instanceId`, created on first use. */
+export function getTokenAggregator(instanceId) {
+    let agg = aggregators.get(instanceId);
     if (!agg) {
-        agg = new ModifierAggregator(`tile:${index}`);
-        aggregators.set(index, agg);
+        agg = new ModifierAggregator(`token:${instanceId}`);
+        aggregators.set(instanceId, agg);
     }
     return agg;
 }
 
-/** Drop every tile aggregator (before a rehydrate, and in tests). */
+/** Drop every Token aggregator (before a rehydrate, and in tests). */
 export function clearAll() {
     aggregators.clear();
 }
@@ -107,32 +111,31 @@ export function init() {
      * ⚠️ **A hero LEAVING matters as much as one arriving**, and the event does
      * not always say where they left.
      *
-     * `HERO_MOVED` is published with `tile: null` on every recall and every
-     * displacement, and `placeHero` names only the destination — the vacated
-     * tile is never in the payload. Rebuilding only on arrival meant a `being
-     * worked` buff switched ON when a hero stepped up and never switched OFF
-     * when they were recalled: it stayed live for the rest of the session.
+     * `HERO_MOVED` is published with `tile: null` on every recall, and names
+     * only where the hero is now — the place they left is never in the payload.
+     * Rebuilding only on arrival meant a `being worked` buff switched ON when a
+     * hero stepped up and never switched OFF when they were recalled: it stayed
+     * live for the rest of the session.
      *
-     * So the departure case rebuilds from the hero's **last known tile**, which
-     * `lastTileOf` remembers precisely because the event cannot say.
+     * So the departure case rebuilds around the hero's **last known point**,
+     * which `lastPointOf` remembers precisely because the event cannot say.
+     * Where they are now is asked of the seam (`displayPointOf`), not read off
+     * the payload's tile (slice 1.6b).
      */
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, ({ tile, heroId }) => {
-        const left = lastTileOf.get(heroId);
-        if (left != null && left !== tile) rebuildAround(left);
-        if (tile != null) {
-            lastTileOf.set(heroId, tile);
-            rebuildAround(tile);
-        } else {
-            lastTileOf.delete(heroId);
-        }
+        const left = lastPointOf.get(heroId) || null;
+        const now = tile != null ? BoardState.displayPointOf(heroId) : null;
+        if (now) lastPointOf.set(heroId, now);
+        else lastPointOf.delete(heroId);
+        rebuildAround([left, now]);
     }));
 
     /**
      * ⚠️ **A new Near radius changes what every tile reaches** (Free Playmat 1.2).
      *
      * Nothing on the board moves when the Mat Tuner's radius does, so no board
-     * event would ever refresh the aggregators. Rebuilding all of them is 36
-     * tiles, once per slider change — never per frame.
+     * event would ever refresh the aggregators. Rebuilding all of them is one
+     * pass over the Tokens, once per slider change — never per frame.
      */
     unsubscribers.push(onMatTuningChanged((key) => {
         if (key == null || key === 'nearRadius') rebuildAll();
@@ -140,22 +143,22 @@ export function init() {
 }
 
 /**
- * Where each hero was standing when we last heard.
+ * Where each hero was drawn when we last heard, as a mat point.
  *
  * Runtime-only and rebuilt from events, exactly like the aggregators — it exists
  * solely because `HERO_MOVED` reports a destination and never an origin.
  */
-const lastTileOf = new Map();
+const lastPointOf = new Map();
 
 /** Drop the subscriptions. */
 export function teardown() {
     unsubscribers.forEach(u => u?.());
     unsubscribers = [];
-    lastTileOf.clear();
+    lastPointOf.clear();
 }
 
-/** The source id one Token's buff registers under. Per COPY, never per type. */
-const sourceIdFor = (tile, typeId) => `tile:${tile}:${typeId}`;
+/** The source id one Token's buff registers under. Per COPY (instance id), never per type. */
+const sourceIdFor = (instanceId, typeId) => `token:${instanceId}:${typeId}`;
 
 /**
  * Does a targeted buff apply to the Token on the tile being rebuilt? (CMS-18/23)
@@ -187,22 +190,25 @@ export function matchesTokenTarget(spec, def, ctx = null) {
     /**
      * ⚠️ The stacked filters (G-9), which need more than a definition.
      *
-     * `ctx` is what the caller could supply — an instance, a tile, both or
-     * neither — and `matchesFilters` refuses any filter it cannot evaluate
-     * rather than guessing. A caller passing nothing gets the pre-V4 behaviour
-     * exactly, which is what keeps every rule authored before this unchanged.
+     * `ctx` is what the caller could supply — an instance, the id of a Token
+     * standing on the mat (`tokenId`), both or neither — and `matchesFilters`
+     * refuses any filter it cannot evaluate rather than guessing. A caller
+     * passing nothing gets the pre-V4 behaviour exactly, which is what keeps
+     * every rule authored before this unchanged.
+     *
+     * The filter kinds still call "where it stands" `FILTER_NEEDS.TILE`; since
+     * slice 1.6b it is satisfied by a Token id on the mat, not a tile.
      */
     const available = new Set([FILTER_NEEDS.DEF]);
     if (ctx?.instance) available.add(FILTER_NEEDS.INSTANCE);
-    if (ctx?.tile != null) available.add(FILTER_NEEDS.TILE);
+    if (ctx?.tokenId) available.add(FILTER_NEEDS.TILE);
 
     // The filter context keeps its `heroOnTile` field name; it is filled from
-    // the worker seam (Free Playmat 1.4a).
-    const heroOnTile = ctx?.tile != null ? BoardState.workerOf(ctx.tile) : null;
+    // the worker seam (Free Playmat 1.4a), by instance id (1.6b).
+    const heroOnTile = ctx?.tokenId ? BoardState.workerOf(ctx.tokenId) : null;
     return matchesFilters(spec, {
         def,
         instance: ctx?.instance,
-        tile: ctx?.tile,
         heroOnTile,
         // Supplied as a closure so the filter never has to reach into the hero
         // registry itself — the same reason `renderStatement` takes a `names`
@@ -248,40 +254,60 @@ function modeMatches(spec, def) {
  * whatever its sentence said. Extracting the loop here gives both paths one
  * answer, and gives `Converts` (ER-14) the same one for free.
  *
- * ⚠️ **Anchors, not tiles.** A multi-tile Token occupies several indices and
- * must be named once; the returned list is de-duplicated by anchor for exactly
- * the reason `applicableStatements` de-duplicates its own.
+ * ## By instance id (Free Playmat slice 1.6b)
+ * Answers with the **instance ids** of the Tokens named, in arrival order.
  *
- * @param {number} sourceTile  the tile whose Token carries the statement
+ * `fallbackPoint` is for a bearer that has already left the mat (a rule firing
+ * on its own depletion): the reach is then measured from that point, with no
+ * "self" to include.
+ *
+ * @param {string} sourceId  the Token carrying the statement
  * @param {object} statement
- * @returns {number[]} anchor indices of occupied neighbours the filter names
+ * @param {{x:number,y:number}|null} [fallbackPoint]
+ * @returns {string[]} instance ids of the Tokens the filter names
  */
-export function filterTargetTiles(sourceTile, statement) {
-    // The candidate set is the reach, and only the reach — now a distance query
-    // measured centre to centre (Free Playmat 1.2, FP-41). `nearby` already
-    // returns each Token once, by anchor.
-    const targets = [];
+export function filterTargets(sourceId, statement, fallbackPoint = null) {
+    // The candidate set is the reach, and only the reach — a distance query
+    // measured centre to centre (Free Playmat 1.2, FP-41).
+    const source = BoardState.getTokenById(sourceId);
+    const candidates = source
+        ? nearby(source.id, reachOf(statement))
+        : reachFrom(fallbackPoint, null, reachOf(statement));
 
-    for (const anchor of nearby(sourceTile, reachOf(statement))) {
-        const instance = BoardState.getToken(anchor);
+    const targets = [];
+    for (const id of candidates) {
+        const instance = BoardState.getTokenById(id);
         if (!instance) continue;
 
         // ⚠️ `board` includes the Token carrying the rule, and that is right:
         // "every Token on the board" is not "every Token except me". A rule that
         // means to skip itself is `adjacent`, which is the default.
         if (!matchesTokenTarget(statement?.to, getTokenType(instance.typeId),
-            { instance, tile: anchor })) continue;
-        targets.push(anchor);
+            { instance, tokenId: id })) continue;
+        targets.push(id);
     }
 
     return targets;
 }
 
 /**
+ * STOPGAP (removed in 1.6b part 2): {@link filterTargets} for callers that
+ * still hold a bearer tile (`DealDamage`, `EffectActions`, `StatusApplication`).
+ * Measures from the Token covering `sourceTile`, or from the tile's own centre
+ * when it is empty (a bearer that has left), and answers with anchor tiles.
+ */
+export function filterTargetTiles(sourceTile, statement) {
+    const id = BoardState.tokenIdAtTile(sourceTile);
+    return filterTargets(id, statement, id ? null : positionOf(sourceTile))
+        .map(t => BoardState.tileOfToken(t))
+        .filter(t => t != null);
+}
+
+/**
  * Rebuild one tile's inbound modifiers from the Tokens within reach of it.
  *
  * Called whenever the neighbourhood changes. Cheap: 36 tiles at most, and only
- * the tiles within Near of the change are rebuilt (`nearby.tilesToRebuild`).
+ * the Tokens within Near of the change are rebuilt (`nearby.tokensAround`).
  *
  * ## Two rules land here
  * - **A Buff Token affects every adjacent Token** — the same scarce Sawmill
@@ -318,38 +344,32 @@ export function filterTargetTiles(sourceTile, statement) {
  *
  * ## The cost, and why it is acceptable
  * This walks every occupied tile rather than eight neighbours — at most 36 on a
- * 6×6 board. It runs on board changes (`rebuildTile`) and on cycle completion
+ * 6×6 board. It runs on board changes (`rebuildToken`) and on cycle completion
  * (`collectItemGrants`, `collectStatusApplications`), neither of which is a hot
  * loop; the per-frame path reads the *cached* aggregator and does not come
  * through here at all. Scanning unconditionally is chosen over a "does any Token
  * have board reach?" cache because a stale cache here is a silently missing
  * effect, which is the failure mode this project keeps paying for.
  */
-function* applicableStatements(index) {
-    const occ = BoardState.getOccupyingToken(index);
-    const selfDef = getTokenType(occ?.instance?.typeId);
-    const selfAnchor = occ?.anchorIndex ?? index;
+function* applicableStatements(selfId) {
+    const self = BoardState.getTokenById(selfId);
+    if (!self) return;
+    const selfDef = getTokenType(self.typeId);
     const seenTypes = new Set();
-    const seenAnchors = new Set();
 
     // `adjacent` means Near: every other Token whose centre is within the Near
-    // radius of this tile's Token centre (Free Playmat 1.2, FP-41).
-    const adjacentAnchors = new Set(nearby(index, REACH.ADJACENT));
+    // radius of this Token's centre (Free Playmat 1.2, FP-41; by id since 1.6b).
+    const adjacentIds = new Set(nearby(self.id, REACH.ADJACENT));
 
-    for (const [sourceTile] of BoardState.occupiedTiles()) {
-        const nOcc = BoardState.getOccupyingToken(sourceTile);
-        if (!nOcc?.instance) continue;
-        if (seenAnchors.has(nOcc.anchorIndex)) continue;
-        seenAnchors.add(nOcc.anchorIndex);
-
-        // Where this source stands relative to the tile being rebuilt. Computed
+    // Every Token on the mat, once each, in arrival order.
+    for (const instance of BoardState.tokens()) {
+        // Where this source stands relative to the Token being rebuilt. Computed
         // once per source rather than per statement, because it is a fact about
         // the board and every statement on the Token shares it.
-        const relation = nOcc.anchorIndex === selfAnchor ? RELATION.SELF
-            : adjacentAnchors.has(nOcc.anchorIndex) ? RELATION.ADJACENT
+        const relation = instance.id === self.id ? RELATION.SELF
+            : adjacentIds.has(instance.id) ? RELATION.ADJACENT
                 : RELATION.DISTANT;
 
-        const instance = nOcc.instance;
         const def = getTokenType(instance.typeId);
 
         // A Token may carry SEVERAL statements — two effects aimed at different
@@ -400,21 +420,26 @@ function* applicableStatements(index) {
             }
 
             // CMS-18/23: a targeted statement only reaches Tokens it names.
-            if (!matchesTokenTarget(statement.to, selfDef, { instance: occ?.instance, tile: index })) continue;
+            if (!matchesTokenTarget(statement.to, selfDef, { instance: self, tokenId: self.id })) continue;
 
             // CMS-60/97: an unpaid statement is simply off until stock returns.
             if (!isStatementPaid(instance, statement.id)) continue;
 
-            yield { statement, neighbour: nOcc.anchorIndex, instance };
+            yield { statement, neighbour: instance.id, instance };
         }
     }
 }
 
-export function rebuildTile(index) {
-    const agg = getTileAggregator(index);
+/** Rebuild Token `instanceId`'s inbound modifiers. A Token not on the mat loses its aggregator. */
+export function rebuildToken(instanceId) {
+    if (!BoardState.getTokenById(instanceId)) {
+        aggregators.delete(instanceId);
+        return;
+    }
+    const agg = getTokenAggregator(instanceId);
     agg.clearAll();
 
-    for (const { statement, neighbour, instance } of applicableStatements(index)) {
+    for (const { statement, neighbour, instance } of applicableStatements(instanceId)) {
         if (statement.keyword !== KEYWORD.PROVIDES) continue;
         // The source id carries the statement's **stable id** rather than its
         // position, so reordering a Token's rules cannot make one statement's
@@ -450,9 +475,9 @@ export function rebuildTile(index) {
  * tile's Token by `applicableStatements`, so the caller only has to find the
  * person standing here.
  */
-export function collectStatusApplications(index) {
+export function collectStatusApplications(instanceId) {
     const out = [];
-    for (const { statement } of applicableStatements(index)) {
+    for (const { statement } of applicableStatements(instanceId)) {
         // The title rides along so the caller can announce which named effect
         // landed (P3). Copied rather than pushed by reference, because the
         // payload belongs to the statement and callers should not be able to
@@ -461,7 +486,7 @@ export function collectStatusApplications(index) {
             out.push({ ...statement.payload, effectTitle: statement.effectTitle });
         }
     }
-    out.push(...loadoutPayloads(index, KEYWORD.APPLIES));
+    out.push(...loadoutPayloads(instanceId, KEYWORD.APPLIES));
     return out;
 }
 
@@ -479,8 +504,8 @@ export function collectStatusApplications(index) {
  * means consuming one of the items that granted it (UE-21), and by the time the
  * caller acts, which items those were is no longer derivable.
  */
-function loadoutPayloads(index, keyword) {
-    const heroId = BoardState.workerOf(index);
+function loadoutPayloads(instanceId, keyword) {
+    const heroId = BoardState.workerOf(instanceId);
     if (!heroId) return [];
 
     const hero = HeroManager.getHero(heroId);
@@ -500,9 +525,9 @@ function loadoutPayloads(index, keyword) {
 /**
  * Item-granting statements reaching this tile, as raw payloads (CMS-27/72).
  */
-export function collectItemGrants(index, effectType) {
+export function collectItemGrants(instanceId, effectType) {
     const grants = [];
-    for (const { statement } of applicableStatements(index)) {
+    for (const { statement } of applicableStatements(instanceId)) {
         const payload = statement.payload;
         // Carries `effectTitle` for the same reason as the statuses above.
         if (payload?.type === effectType && payload.itemId) {
@@ -510,7 +535,7 @@ export function collectItemGrants(index, effectType) {
         }
     }
     // The hero's own items grant at this tile too (UE-23).
-    for (const payload of loadoutPayloads(index, KEYWORD.GRANTS)) {
+    for (const payload of loadoutPayloads(instanceId, KEYWORD.GRANTS)) {
         if (payload?.type === effectType && payload.itemId) grants.push(payload);
     }
     return grants;
@@ -519,10 +544,10 @@ export function collectItemGrants(index, effectType) {
 /**
  * Whether any Token on the board carries a rule with `board` reach.
  *
- * Scanned, not cached: 36 Tokens at most, on board events only.
+ * Scanned, not cached: a few dozen Tokens at most, on board events only.
  */
 function boardReachOnBoard() {
-    for (const [, instance] of BoardState.occupiedTiles()) {
+    for (const instance of BoardState.tokens()) {
         const statements = statementsOf(getTokenType(instance?.typeId));
         if (statements.some(s => reachOf(s) === REACH.BOARD)) return true;
     }
@@ -534,69 +559,97 @@ function boardReachOnBoard() {
  *
  * ⚠️ Needed because the Token that matters may be the one that just **left**: by
  * the time its departure is rebuilt it is gone and the scan above cannot see it.
- * Remembering that one was there is what makes its leaving refresh every tile.
+ * Remembering that one was there is what makes its leaving refresh every Token.
  * Refreshed by every rebuild below, so it can only be stale for a Token that
  * arrived with no rebuild at all.
  */
 let boardReachLive = false;
 
 /**
- * Rebuild exactly these tiles — or **every** tile when a board-reach rule is, or
- * just was, on the board.
+ * Rebuild exactly these Tokens — or **every** Token when a board-reach rule is,
+ * or just was, on the mat.
  *
  * ## The board-reach refresh (Free Playmat 1.3, pre-existing bug)
- * A `board` rule reaches every tile, however far. Rebuilding only the tiles
- * within Near of a change left distant tiles holding a buff from a Token that
+ * A `board` rule reaches every Token, however far. Rebuilding only the Tokens
+ * within Near of a change left distant Tokens holding a buff from a Token that
  * had left, or missing one from a Token that had just arrived or changed, until
  * the next full rebuild. So while such a rule is (or was) present, a change
- * anywhere rebuilds all 36 tiles — cheap, and on events only.
+ * anywhere rebuilds every Token on the mat — cheap, and on events only.
+ *
+ * @param {string[]} ids instance ids
  */
-export function rebuildTiles(tiles) {
+export function rebuildTokens(ids) {
     const now = boardReachOnBoard();
     const wholeBoard = now || boardReachLive;
     boardReachLive = now;
     if (wholeBoard) {
-        for (let i = 0; i < TILE_COUNT; i++) rebuildTile(i);
+        for (const instance of BoardState.tokens()) rebuildToken(instance.id);
         return;
     }
-    for (const t of tiles || []) rebuildTile(t);
+    for (const id of ids || []) rebuildToken(id);
 }
 
 /**
- * Rebuild a tile and every tile within Near of it.
+ * Rebuild every Token whose modifiers a change at these mat points can touch —
+ * every Token within Near (+ the largest art radius) of **any** of them
+ * (`nearby.tokensAround`).
  *
- * ⚠️ Follows the live radius, not a fixed 8-ring, so raising Near in the Mat
- * Tuner cannot leave stale buffs outside the old ring (Free Playmat 1.2).
+ * ⚠️ **Pass the departure point AND the arrival point.** A Token moving from A
+ * to B takes its buffs away from A's neighbours and gives them to B's; rebuilding
+ * around only one of the two leaves the other side holding a stale buff (the
+ * slice's top risk). `null` entries are ignored, so a caller can pass
+ * `[oldPoint, newPoint]` without checking either.
+ *
+ * Follows the live radius, not a fixed ring, so raising Near in the Mat Tuner
+ * cannot leave stale buffs outside the old reach (Free Playmat 1.2).
+ *
+ * @param {Array<{x:number,y:number}|null>} points
  */
-export function rebuildAround(indexOrFootprint) {
-    rebuildTiles(tilesToRebuild(indexOrFootprint));
+export function rebuildAround(points) {
+    // ⚠️ A tile number here would be silently ignored as "no point" and leave
+    // buffs stale — so a caller not yet moved off tiles fails loudly instead.
+    if (typeof points === 'number') {
+        throw new TypeError('TileModifiers.rebuildAround takes mat points; use rebuildAroundTile for a tile (STOPGAP)');
+    }
+    rebuildTokens(tokensAround(Array.isArray(points) ? points : [points]));
 }
 
-/** Rebuild the whole board — on boot and after a save load. */
+/**
+ * STOPGAP (removed in 1.6b part 2): {@link rebuildAround} for callers that
+ * still name a tile (`BoardCombat`, `EffectActions`, `{ tile }`-only
+ * `ADJACENCY_DIRTY` events). Rebuilds around the centre of the Token covering
+ * the tile, or the tile's own centre when it is empty — a departed 2×2's centre
+ * is within 113 u of its anchor tile's, inside `tokensAround`'s 144 u margin.
+ */
+export function rebuildAroundTile(tile) {
+    rebuildAround([positionOf(tile)]);
+}
+
+/** Rebuild every Token on the mat — on boot and after a save load. */
 export function rebuildAll() {
     clearAll();
     boardReachLive = boardReachOnBoard();
-    for (const [index] of BoardState.occupiedTiles()) rebuildTile(index);
+    for (const instance of BoardState.tokens()) rebuildToken(instance.id);
 }
 
 /**
- * Resolve one effect axis for a tile, merging **every scope into one set of
+ * Resolve one effect axis for a Token, merging **every scope into one set of
  * buckets** before applying the three-bucket formula.
  *
  * Scopes, all contributing to the same buckets:
- *  - the tile's own inbound modifiers (its neighbours' buffs)
+ *  - the Token's own inbound modifiers (its neighbours' buffs)
  *  - the guild-wide aggregator (Guild Hall Global upgrades, D-121)
- *  - **the loadout of the hero standing here** (Unified Effects P4)
+ *  - **the loadout of the hero working it** (Unified Effects P4)
  *
- * @param {number} index      tile
+ * @param {string} instanceId the Token, by instance id (slice 1.6b)
  * @param {string} effectType EFFECT_TYPES key
  * @param {number} base       the authored value
  * @param {string} [category] skill category, for targeted buffs
  */
-export function resolveAxis(index, effectType, base, category = TARGET_CATEGORIES.ALL) {
-    const tile = getTileAggregator(index);
+export function resolveAxis(instanceId, effectType, base, category = TARGET_CATEGORIES.ALL) {
+    const tile = getTokenAggregator(instanceId);
     const guild = getGlobalAggregator();
-    const hero = heroContributions(index, effectType, category);
+    const hero = heroContributions(instanceId, effectType, category);
 
     const flat = [
         tile.getFlat(effectType, category),
@@ -635,10 +688,10 @@ export function resolveAxis(index, effectType, base, category = TARGET_CATEGORIE
  * filter authored on it is ignored rather than obeyed, because there is nothing
  * for it to choose between.
  */
-function heroContributions(index, effectType, category = TARGET_CATEGORIES.ALL) {
+function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.ALL) {
     const empty = { flat: 0, multipliers: [], percentages: [] };
 
-    const heroId = BoardState.workerOf(index);
+    const heroId = BoardState.workerOf(instanceId);
     if (!heroId) return empty;
 
     const hero = HeroManager.getHero(heroId);

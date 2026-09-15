@@ -19,6 +19,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { computeHeroDamage, damageMultiplierOf, heroFlatArmor } from '../utils/CombatFormulas.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -68,7 +69,7 @@ function makeHero(id, hp = 100) {
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }
@@ -167,10 +168,10 @@ describe('⭐ the four that linger — and the capability V7 had to build', () =
             lasting(EFFECT_TYPES.YIELD, 1.0, 'percentage'));
 
         place(TILE, 'fixture_producer', 'hero_1');
-        expect(TileModifiers.resolveAxis(TILE, EFFECT_TYPES.YIELD, 2, 'logging')).toBe(2);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(2);
 
         carry('effect_cookout');
-        expect(TileModifiers.resolveAxis(TILE, EFFECT_TYPES.YIELD, 2, 'logging')).toBe(4);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(4);
     });
 
     it('Stun: a hit-chance penalty, re-authored rather than translated', () => {

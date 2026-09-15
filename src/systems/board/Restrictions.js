@@ -3,8 +3,7 @@
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
-import { tileFootprint } from '../../config/boardGeometry.js';
-import { centreOf, isWithin, nearRadius } from './nearby.js';
+import { isWithin, nearRadius } from './nearby.js';
 import { matchesTokenTarget } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import { renderStatement } from '../effects/statementText.js';
@@ -20,7 +19,7 @@ import { renderStatement } from '../effects/statementText.js';
  * The refusal goes out through the same channel the one-Mythic-placed rule
  * already uses — `Placement.js` returns `{ success: false, reason }` and every
  * caller already puts the Token back exactly where it came from (the Tray slot,
- * the Vault, the sprite it was dragged from, the tile it was moved off) and
+ * the Vault, the sprite it was dragged from, the spot it was moved off) and
  * flashes the reason. That is why this file exports checks and not actions:
  * **the fly-back was already built**, and inventing a second refusal path
  * beside it would have been the wrong shape.
@@ -32,60 +31,41 @@ import { renderStatement } from '../effects/statementText.js';
  * every Token in the affected neighbourhood, not only of the one being placed.
  *
  * ## The paths that have no "last location"
- * The owner: *"There should always be a last location, but we can make it fly
- * to the vault as a fallback in case."* Three paths were candidates, and only
- * one of them turned out to be real:
+ * * **A Map burst** — not a placement at all; its contents are sprites, and
+ *   putting one down is an ordinary placement this refuses like any other.
+ * * **A placement that shoves other Tokens** — handled by **refusing the whole
+ *   placement**: `Placement` hands the moves to {@link checkPlacement}, so the
+ *   shoved Tokens are checked where they would land.
+ * * **An old save loading into a now-illegal board** — the one case with
+ *   genuinely no origin to fly back to. {@link reconcile} lifts the offenders
+ *   into the Vault, the owner's fallback.
  *
- * * **A Map burst** — not a placement at all. `Cartographer.openMap` scatters
- *   its contents as *sprites* on the floor; picking one up and putting it down
- *   is an ordinary placement that this refuses like any other. Nothing to do.
- * * **A 2×2 cascade push** — real, and handled by **refusing the whole
- *   placement** rather than by shoving a Token into an illegal spot and then
- *   rescuing it. `Placement` hands the cascade plan to {@link checkPlacement},
- *   so the shoved Tokens are checked where they would land. Refusing is
- *   strictly kinder than displacing and then confiscating.
- * * **An old save loading into a now-illegal board** — real, and the one case
- *   with genuinely no origin to fly back to. {@link reconcile} lifts the
- *   offenders into the Vault. That is the owner's fallback, used exactly where
- *   it was meant to be used.
+ * ## By instance id and mat point (Free Playmat slice 1.6b)
+ * A board view is a `Map` of **instance id → `{ typeId, x, y }`**, and "Near"
+ * is a distance between those points. There are no tiles here.
  */
 
 /**
- * A board as a pair of lookups: which anchor owns each tile, and what type
- * sits on each anchor.
+ * A board as a map of Tokens by instance id, with their type and point.
  *
  * Built fresh for every check rather than cached. A placement check runs on a
- * drag-drop, not on the tick, and a stale copy of the board is the one thing
- * that would make a restriction refuse the wrong Token.
+ * drop, not on the tick, and a stale copy of the board is the one thing that
+ * would make a restriction refuse the wrong Token.
  *
- * @typedef {{owner: Map<number, number>, typeAt: Map<number, string>}} BoardView
+ * @typedef {Map<string, {typeId: string, x: number, y: number}>} BoardView
  */
 
-/** The board exactly as it is now. */
+/** The id a Token being placed takes in a view when it brings no id of its own. */
+export const PLACING_ID = '__placing__';
+
+/** The board exactly as it is now, in arrival order. */
 export function snapshot() {
-    const view = { owner: new Map(), typeAt: new Map() };
-    for (const [anchor, instance] of BoardState.occupiedTiles()) {
-        if (!instance?.typeId) continue;
-        addTo(view, anchor, instance.typeId);
+    const view = new Map();
+    for (const instance of BoardState.tokens()) {
+        if (!Number.isFinite(instance.x) || !Number.isFinite(instance.y)) continue;
+        view.set(instance.id, { typeId: instance.typeId, x: instance.x, y: instance.y });
     }
     return view;
-}
-
-/** Put a Token onto a board view. */
-function addTo(view, anchor, typeId) {
-    const size = getTokenType(typeId)?.size || 1;
-    view.typeAt.set(anchor, typeId);
-    for (const tile of tileFootprint(anchor, size)) view.owner.set(tile, anchor);
-}
-
-/** Take a Token off a board view. */
-function removeFrom(view, anchor) {
-    if (!view.typeAt.has(anchor)) return;
-    const size = getTokenType(view.typeAt.get(anchor))?.size || 1;
-    for (const tile of tileFootprint(anchor, size)) {
-        if (view.owner.get(tile) === anchor) view.owner.delete(tile);
-    }
-    view.typeAt.delete(anchor);
 }
 
 /**
@@ -93,67 +73,66 @@ function removeFrom(view, anchor) {
  * placement moves out of the way.
  *
  * @param {{
- *   place?: {anchor: number, typeId: string},
- *   remove?: number[],
- *   shifts?: Array<{fromTile: number, toTile: number}>
+ *   place?: {id?: string, typeId: string, x: number, y: number},
+ *   remove?: string[],
+ *   move?: Array<{id: string, x: number, y: number}>
  * }} plan
  */
 export function project(plan = {}) {
     const view = snapshot();
 
-    for (const anchor of plan.remove || []) removeFrom(view, anchor);
+    for (const id of plan.remove || []) view.delete(id);
 
-    // Cascade shifts are 1×1 only (a displaced 2×2 goes to the Tray instead),
-    // so the tile IS the anchor on both sides. Applied in order, because the
-    // plan is a chain: A moves into B's tile only once B has moved on.
-    for (const { fromTile, toTile } of plan.shifts || []) {
-        const typeId = view.typeAt.get(fromTile);
-        if (typeId == null) continue;
-        removeFrom(view, fromTile);
-        addTo(view, toTile, typeId);
+    for (const { id, x, y } of plan.move || []) {
+        const entry = view.get(id);
+        if (!entry) continue;
+        view.set(id, { ...entry, x, y });
     }
 
-    if (plan.place?.typeId != null) addTo(view, plan.place.anchor, plan.place.typeId);
+    const place = plan.place;
+    if (place?.typeId != null && Number.isFinite(place.x) && Number.isFinite(place.y)) {
+        const id = place.id || PLACING_ID;
+        // A Token already in the view (placed back down elsewhere) is moved, not doubled.
+        view.delete(id);
+        view.set(id, { typeId: place.typeId, x: place.x, y: place.y });
+    }
 
     return view;
 }
 
 /**
- * The anchors near one Token on a board view, never including itself, ascending.
+ * The ids near one Token on a board view, never including itself, in view order.
  *
- * ## Near, measured on the view — not on the live board (Free Playmat 1.3)
- * `nearby()` reads the board as it is, but every check here is about the board
- * as it **would** be: after a drop, a displacement or a cascade shove. So the
- * same centre-to-centre measurement (FP-41) is taken from the view's own anchors
- * and types with `centreOf`. A 2×2 neighbour counts once, by its centre, exactly
- * as it counts once for a buff.
- *
- * 36 Tokens at most, only for Tokens that carry a `Cannot` — cheap enough to run
- * on every drop.
+ * ## Near, measured on the view — not on the live board
+ * Every check here is about the board as it **would** be, so the same
+ * centre-to-centre measurement (FP-41) is taken from the view's own points.
+ * Only for Tokens that carry a `Cannot` — cheap enough to run on every drop.
  */
-function adjacentAnchors(view, anchor, radius = nearRadius()) {
-    const origin = centreOf(anchor, view.typeAt.get(anchor));
+function nearIds(view, id, radius = nearRadius()) {
+    const origin = view.get(id);
+    if (!origin) return [];
     const out = [];
-    for (const [other, typeId] of view.typeAt) {
-        if (other === anchor) continue;
-        if (isWithin(origin, centreOf(other, typeId), radius)) out.push(other);
+    for (const [other, entry] of view) {
+        if (other === id) continue;
+        if (isWithin(origin, entry, radius)) out.push(other);
     }
-    return out.sort((a, b) => a - b);
+    return out;
 }
 
 /**
  * Whether one Token's own restrictions are satisfied on a board view.
  *
- * @returns {{anchor: number, typeId: string, reason: string, rulesText: string}|null}
+ * @returns {{id: string, typeId: string, x: number, y: number, reason: string, rulesText: string}|null}
  */
-export function violationAt(view, anchor) {
-    const typeId = view.typeAt.get(anchor);
+export function violationAt(view, id) {
+    const entry = view.get(id);
+    const typeId = entry?.typeId;
     const def = getTokenType(typeId);
     const restrictions = statementsWith(def, KEYWORD.CANNOT);
     if (!restrictions.length) return null;
 
-    const neighbours = [...adjacentAnchors(view, anchor)]
-        .map(a => getTokenType(view.typeAt.get(a)))
+    const neighbours = nearIds(view, id)
+        .map(other => getTokenType(view.get(other).typeId))
         .filter(Boolean);
 
     for (const statement of restrictions) {
@@ -168,9 +147,11 @@ export function violationAt(view, anchor) {
         const matched = neighbours.filter(d => matchesTokenTarget(statement.to, d)).length;
         if (matched > limitOf(payload)) {
             return {
-                anchor,
+                id,
                 typeId,
-                rulesText: renderStatement(statement, { token: id => tokenName(id) || id }),
+                x: entry.x,
+                y: entry.y,
+                rulesText: renderStatement(statement, { token: tid => tokenName(tid) || tid }),
                 reason: kind.refusal(payload, subjectOf(statement), tokenName(typeId))
             };
         }
@@ -194,55 +175,59 @@ function subjectOf(statement) {
 }
 
 /**
- * Every Token on a board view whose restrictions are broken.
- *
- * @returns {Array<{anchor: number, typeId: string, reason: string}>}
+ * Every Token on a board view whose restrictions are broken, in view order
+ * (arrival order for a snapshot).
  */
 export function violations(view = snapshot()) {
     const out = [];
-    for (const anchor of view.typeAt.keys()) {
-        const hit = violationAt(view, anchor);
+    for (const id of view.keys()) {
+        const hit = violationAt(view, id);
         if (hit) out.push(hit);
     }
     return out;
 }
+
+const refusalOf = (hit) => ({ ok: false, reason: hit.reason, violatingTypeId: hit.typeId, rulesText: hit.rulesText });
 
 /**
  * Whether a placement is legal, and if not, why not — in a sentence a player
  * can act on.
  *
  * Checks the incoming Token first so the message names the rule the player just
- * broke, then everything else in the neighbourhood so the symmetric case is
- * caught too.
+ * broke, then everything else near it so the symmetric case is caught too, then
+ * everything near each Token the placement moves.
  *
- * @param {number} anchor    where it would land
- * @param {string} typeId    what is landing
- * @param {object} [plan]    what else the placement moves — see {@link project}
+ * @param {{x: number, y: number}} point  where the Token's centre would land
+ * @param {string} typeId                 what is landing
+ * @param {object} [plan]                 what else the placement does — see {@link project};
+ *                                        `plan.id` names the Token being placed, if it has one
  * @returns {{ok: true} | {ok: false, reason: string, violatingTypeId?: string, rulesText?: string}}
  */
-export function checkPlacement(anchor, typeId, plan = {}) {
+export function checkPlacement(point, typeId, plan = {}) {
     const def = getTokenType(typeId);
-    if (!def) return { ok: true };
+    if (!def || !point) return { ok: true };
 
-    const view = project({ ...plan, place: { anchor, typeId } });
+    const placedId = plan.id || PLACING_ID;
+    const view = project({ ...plan, place: { id: placedId, typeId, x: point.x, y: point.y } });
 
-    const own = violationAt(view, anchor);
-    if (own) return { ok: false, reason: own.reason, violatingTypeId: own.typeId, rulesText: own.rulesText };
+    const own = violationAt(view, placedId);
+    if (own) return refusalOf(own);
 
-    for (const other of adjacentAnchors(view, anchor)) {
+    for (const other of nearIds(view, placedId)) {
         const hit = violationAt(view, other);
-        if (hit) return { ok: false, reason: hit.reason, violatingTypeId: hit.typeId, rulesText: hit.rulesText };
+        if (hit) return refusalOf(hit);
     }
 
-    // A cascade moves Tokens away from the anchor as well as towards it, so a
-    // shoved Token can break a rule several tiles from where the player
-    // dropped anything. Checking only the drop site would let that through.
-    for (const { toTile } of plan.shifts || []) {
-        const hit = violationAt(view, toTile);
-        if (hit) return { ok: false, reason: hit.reason, violatingTypeId: hit.typeId, rulesText: hit.rulesText };
-        for (const other of adjacentAnchors(view, toTile)) {
+    // A shove moves Tokens away from the drop as well as towards it, so a moved
+    // Token can break a rule far from where the player dropped anything.
+    // Checking only the drop site would let that through.
+    for (const { id } of plan.move || []) {
+        if (!view.has(id)) continue;
+        const hit = violationAt(view, id);
+        if (hit) return refusalOf(hit);
+        for (const other of nearIds(view, id)) {
             const near = violationAt(view, other);
-            if (near) return { ok: false, reason: near.reason, violatingTypeId: near.typeId, rulesText: near.rulesText };
+            if (near) return refusalOf(near);
         }
     }
 
@@ -260,13 +245,15 @@ export function checkPlacement(anchor, typeId, plan = {}) {
  * ⚠️ **Re-checked after every lift, one at a time.** A row of four Coasts
  * breaks the rule in several places at once, but removing one Coast can fix
  * three of those findings, and confiscating all four would take three Tokens
- * the player never had to lose. Lifting the offender with the most trouble
- * around it and then asking again is what keeps the cost minimal.
+ * the player never had to lose. The earliest-arrived offender is lifted and the
+ * question asked again.
  *
  * @param {(instance: object) => boolean} depositToVault — injected so this
  *   module does not import `TokenBank`, which imports `BoardState`, which is a
  *   circle the board layer keeps out of.
- * @returns {Array<{anchor: number, typeId: string, reason: string}>} what moved
+ * @returns {Array<{id: string, typeId: string, x: number, y: number, anchor: number|null, reason: string}>}
+ *   what moved; `anchor` is a STOPGAP tile for `{ tile }` event payloads
+ *   (removed in 1.6b part 2)
  */
 export function reconcile(depositToVault) {
     const moved = [];
@@ -278,7 +265,7 @@ export function reconcile(depositToVault) {
         if (!found.length) break;
 
         const worst = found[0];
-        const instance = BoardState.getToken(worst.anchor);
+        const instance = BoardState.getTokenById(worst.id);
         if (!instance) break;
 
         // If the Vault will not take it, leave it where it is rather than
@@ -286,8 +273,9 @@ export function reconcile(depositToVault) {
         // the player owned and no longer does is not.
         if (!depositToVault(instance)) break;
 
-        BoardState.setToken(worst.anchor, null);
-        moved.push(worst);
+        const anchor = BoardState.tileOfToken(worst.id);   // STOPGAP — event payload only
+        BoardState.removeToken(worst.id);
+        moved.push({ ...worst, anchor });
     }
 
     return moved;

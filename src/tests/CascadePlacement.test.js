@@ -4,6 +4,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as boardConstants from '../ui/components/board/boardConstants.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -168,7 +169,7 @@ describe('Cascade Placement & 2x2 Snapping', () => {
             Placement.placeToken(7, smallToken);
             Placement.placeHero('hero_1', 7);
 
-            expect(BoardState.workerOf(7)).toBe('hero_1');
+            expect(BoardState.workerOf(idAt(7))).toBe('hero_1');
 
             // Place 2x2 token at anchor 0
             const bigMill = makeToken('fixture_big_mill');
@@ -177,9 +178,9 @@ describe('Cascade Placement & 2x2 Snapping', () => {
             expect(result.success).toBe(true);
             expect(BoardState.getToken(13)).toBe(smallToken);
             // Hero 1 should have moved with her token to tile 13
-            expect(BoardState.workerOf(13)).toBe('hero_1');
+            expect(BoardState.workerOf(idAt(13))).toBe('hero_1');
             // Tile 7 is now under the big mill, which nobody works.
-            expect(BoardState.workerOf(7)).toBeNull();
+            expect(BoardState.workerOf(idAt(7))).toBeNull();
         });
 
         it('pushes multiple tokens in different quadrants simultaneously', () => {

@@ -18,6 +18,7 @@ import {
 } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { tickUpkeep, isStatementPaid } from '../systems/board/BlockUpkeep.js';
+import { tileCentre, idAt } from './fixtures/mat.js';
 
 /**
  * The statement grammar — the shape that replaced effect blocks.
@@ -344,7 +345,7 @@ describe('Old-shape content breaks visibly, never silently', () => {
     it('contributes nothing from an old-shape Token rather than half-reading it', () => {
         const TILE = 15, NEIGHBOUR = 16;
         Placement.placeToken(NEIGHBOUR, BoardState.createTokenInstance('fixture_buff_hero', null));
-        TileModifiers.rebuildAround(NEIGHBOUR);
-        expect(TileModifiers.resolveAxis(TILE, EFFECT_TYPES.HP_REGEN, 10)).toBe(10);
+        TileModifiers.rebuildAround([tileCentre(NEIGHBOUR)]);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.HP_REGEN, 10)).toBe(10);
     });
 });

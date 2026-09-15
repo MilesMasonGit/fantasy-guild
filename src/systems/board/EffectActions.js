@@ -69,7 +69,7 @@ export function heroFor(role, roles) {
     if (role === ROLE.ACTOR) return roles?.actor || null;
     if (role === ROLE.SELF && roles?.selfHeroId) return roles.selfHeroId;
     const tile = role === ROLE.SOURCE ? roles?.source : roles?.self;
-    return tile != null ? BoardState.workerOf(tile) : null;
+    return tile != null ? BoardState.workerOfTile(tile) : null;   // STOPGAP — roles still name tiles (removed in 1.6b part 2)
 }
 
 /** The **tile** a role points at, or null. Only `self` and `source` have one. */
@@ -189,7 +189,7 @@ export function spawn(statement, roles, random = Math.random) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     BoardState.setToken(where, instance);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: where, typeId });
-    TileModifiers.rebuildAround(where);
+    TileModifiers.rebuildAroundTile(where);   // STOPGAP — spawns still name tiles (removed in 1.6b part 2)
     logger.debug('EffectActions', `Spawned ${typeId} on tile ${where}`);
     return where;
 }
@@ -215,7 +215,7 @@ export function transform(statement, roles) {
 
     BoardState.setToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId });
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAroundTile(tile);   // STOPGAP — transforms still name tiles (removed in 1.6b part 2)
     logger.debug('EffectActions', `Transformed tile ${tile} into ${typeId}`);
     return true;
 }

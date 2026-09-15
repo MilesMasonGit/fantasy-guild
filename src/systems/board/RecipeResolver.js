@@ -1,6 +1,6 @@
 // Fantasy Guild — Context crafting (7×7 Playmat rework, Phase 5)
 
-import { nearby } from './nearby.js';
+import { neighbourIds } from './nearby.js';
 import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken, contextTagsOf } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
@@ -38,14 +38,17 @@ import { BOARD_EVENTS } from './boardEvents.js';
  *  - Numerical buffs (D-119/D-120) remain a light layer on top, deliberately
  *    small.
  *
- * ## "Beside" means Near (Free Playmat 1.3, FP-41)
+ * ## "Beside" means Near (Free Playmat 1.3, FP-41; by instance id since 1.6b)
  * Every "adjacent" question here — the context around a station, the tools it
  * accepts, which stations a context Token serves, and whom it wears for — is
- * `nearby()`: Tokens whose centres are within the Near radius, measured centre
- * to centre. For 1×1 Tokens at the default 272 u that is exactly the old 8-tile
- * ring. A 2×2 Token now reaches the 8 tiles touching its sides and not the 4
- * touching only its corners, the same as its buffs. "Acts as" and recipe
+ * `nearby.neighbourIds()`: Tokens whose centres are within the Near radius,
+ * measured centre to centre, named by **instance id**. "Acts as" and recipe
  * context carry no reach field of their own; they are Near.
+ *
+ * Every function here takes the station's (or context Token's) instance id and
+ * answers in instance ids. The neighbour list is cached per instance and
+ * dropped on any Token add, move or removal or a Near change, because this
+ * module asks it several times per station per tick.
  */
 
 /** Resolution outcomes for a station. */
@@ -57,16 +60,16 @@ export const RECIPE = {
 };
 
 /**
- * Context tags and highest provided tiers supplied by the Tokens near a tile.
+ * Context tags and highest provided tiers supplied by the Tokens near a Token.
  *
- * Presence only, highest tier per tag wins — unchanged. `nearby` names each
- * Token once, by anchor.
+ * Presence only, highest tier per tag wins — unchanged. Each Token is named
+ * once, by instance id.
  */
-export function contextTiersAround(index) {
+export function contextTiersAround(instanceId) {
     const tiers = {};
 
-    for (const anchor of nearby(index)) {
-        const instance = BoardState.getToken(anchor);
+    for (const id of neighbourIds(instanceId)) {
+        const instance = BoardState.getTokenById(id);
         if (!instance) continue;
 
         const def = getTokenType(instance.typeId);
@@ -79,17 +82,17 @@ export function contextTiersAround(index) {
     return tiers;
 }
 
-/** Every context tag supplied by a tile's surrounding perimeter. */
-export function contextAround(index) {
-    const tiers = contextTiersAround(index);
+/** Every context tag supplied by the Tokens near a Token. */
+export function contextAround(instanceId) {
+    const tiers = contextTiersAround(instanceId);
     return new Set(Object.keys(tiers));
 }
 
-/** The type ids of every Token near a tile. */
-function typesNear(index) {
+/** The type ids of every Token near a Token. */
+function typesNear(instanceId) {
     const types = new Set();
-    for (const anchor of nearby(index)) {
-        const typeId = BoardState.getToken(anchor)?.typeId;
+    for (const id of neighbourIds(instanceId)) {
+        const typeId = BoardState.getTokenById(id)?.typeId;
         if (typeId) types.add(typeId);
     }
     return types;
@@ -98,10 +101,10 @@ function typesNear(index) {
 /**
  * Checks whether a token's acceptedTokens requirements are met by Tokens near it.
  */
-export function checkAcceptedTokens(index, def) {
+export function checkAcceptedTokens(instanceId, def) {
     if (!def?.acceptedTokens || def.acceptedTokens.length === 0) return true;
-    const tiers = contextTiersAround(index);
-    const adjacentTokens = typesNear(index);
+    const tiers = contextTiersAround(instanceId);
+    const adjacentTokens = typesNear(instanceId);
 
     for (const req of def.acceptedTokens) {
         if (req.tag) {
@@ -125,15 +128,15 @@ export function checkAcceptedTokens(index, def) {
  * Tier is compared rather than mere presence, so a Tier 2 Anvil satisfies a
  * requirement for Tier 1 and a Tier 1 does not satisfy Tier 2 (concept §2.4).
  */
-export function unmetContext(index, recipe) {
+export function unmetContext(instanceId, recipe) {
     const required = recipe?.requiresContext || [];
     if (!required.length) return [];
-    const tiers = contextTiersAround(index);
+    const tiers = contextTiersAround(instanceId);
     return required.filter(req => (tiers[req.tag] || 0) < (req.minTier || 1));
 }
 
 /**
- * Whether the station on a tile can run the recipe it is set to.
+ * Whether a station can run the recipe it is set to.
  *
  * **Validation, not discovery.** The recipe is whatever `selectedRecipeId` says
  * (defaulted on placement per R-5); this only answers whether the board around
@@ -153,11 +156,11 @@ export function unmetContext(index, recipe) {
  *
  * @returns {{status: string, recipe: object|null, reason?: string, missingContext?: object[]}}
  */
-export function resolveRecipe(index, instance) {
+export function resolveRecipe(instanceId, instance) {
     const def = getTokenType(instance?.typeId);
 
     // First verify Accepted Tokens on the Token definition itself (e.g. Copper Ore needing Pickaxe)
-    if (!checkAcceptedTokens(index, def)) {
+    if (!checkAcceptedTokens(instanceId, def)) {
         return { status: RECIPE.NONE, recipe: null, reason: 'missing_tool' };
     }
 
@@ -171,7 +174,7 @@ export function resolveRecipe(index, instance) {
     const recipe = StationRecipe.ensureSelection(instance, def);
     if (!recipe) return { status: RECIPE.NONE, recipe: null, reason: 'no_pool' };
 
-    const missing = unmetContext(index, recipe);
+    const missing = unmetContext(instanceId, recipe);
     if (missing.length) {
         return { status: RECIPE.NONE, recipe, reason: 'missing_context', missingContext: missing };
     }
@@ -194,9 +197,9 @@ export function resolveRecipe(index, instance) {
  * cycle either way, and `BoardRunner` and `TileProgressBar` read it by that
  * name for both kinds of Token.
  */
-export function effectiveIO(index, instance) {
+export function effectiveIO(instanceId, instance) {
     const def = getTokenType(instance?.typeId);
-    const { status, recipe } = resolveRecipe(index, instance);
+    const { status, recipe } = resolveRecipe(instanceId, instance);
 
     if (status !== RECIPE.OK) return { status, inputs: [], outputs: [] };
 
@@ -211,7 +214,8 @@ export function effectiveIO(index, instance) {
 }
 
 /**
- * Every adjacent tile whose Token is a station this context Token serves.
+ * Every nearby Token (by instance id, arrival order) that is a station this
+ * context Token serves.
  *
  * This is what D-126 charges wear against: a Context Token loses one use per
  * cycle **each adjacent station completes**, so one Tool Rack serving three
@@ -222,9 +226,8 @@ export function effectiveIO(index, instance) {
  * > — three times faster, and wearing out three times sooner. Clustering buys
  * > throughput now at the cost of restocking sooner.
  */
-export function servesFrom(contextTile) {
-    const occ = BoardState.getOccupyingToken(contextTile);
-    const instance = occ?.instance;
+export function servesFrom(contextId) {
+    const instance = BoardState.getTokenById(contextId);
     const def = getTokenType(instance?.typeId);
     const providedMap = getProvidedTagsWithTiers(def);
     const providedTags = Object.keys(providedMap);
@@ -233,12 +236,11 @@ export function servesFrom(contextTile) {
 
     const served = [];
 
-    for (const anchor of nearby(contextTile)) {
-        const nInstance = BoardState.getToken(anchor);
+    for (const id of neighbourIds(contextId)) {
+        const nInstance = BoardState.getTokenById(id);
         if (!nInstance) continue;
-        const nOcc = { anchorIndex: anchor, instance: nInstance };
 
-        const neighbourDef = getTokenType(nOcc.instance.typeId);
+        const neighbourDef = getTokenType(nInstance.typeId);
 
         // "Runs" means a work cycle OR a fight. **One kill is one cycle**
         // (D-129), so a Weapon Rack beside an enemy Token must wear exactly as a
@@ -258,68 +260,67 @@ export function servesFrom(contextTile) {
             return false;
         });
         if (matchesAccepted) {
-            served.push(nOcc.anchorIndex);
+            served.push(id);
             continue;
         }
 
         // A buff Token serves anything that runs beside it. A context Token
         // serves only stations whose active recipe it actually contributes to.
-        if (isBuff) { served.push(nOcc.anchorIndex); continue; }
+        if (isBuff) { served.push(id); continue; }
 
-        const { recipe } = resolveRecipe(nOcc.anchorIndex, nOcc.instance);
+        const { recipe } = resolveRecipe(id, nInstance);
         if (recipe && contextTagsOf(recipe).some(tag => providedTags.includes(tag))) {
-            served.push(nOcc.anchorIndex);
+            served.push(id);
         }
     }
     return served;
 }
 
 /**
- * Charge every Context and Buff Token adjacent to a tile that just completed a
- * cycle (D-126).
+ * Charge every Context and Buff Token near a Token that just completed a cycle
+ * (D-126).
  *
  * **Wear is per cycle served**, which is what makes shared context a rate trade
  * rather than free value (D-157). Called from the cycle engine on completion —
  * and because one kill counts as one cycle (D-129), a Weapon Rack beside an
  * enemy Token burns down as it is used, exactly like a Tool Rack beside a Forge.
  *
- * ## `exclude` — the tiles this cycle has already billed (P1)
+ * ## `exclude` — the Tokens this cycle has already billed (P1)
  * A recipe can name an adjacent context Token's charges as an explicit input
- * and pay them through `Charges.planCycle`. Those tiles are passed in here so
+ * and pay them through `Charges.planCycle`. Their ids are passed in here so
  * D-126's flat per-cycle wear does not bill them a second time for the same
  * cycle. A Token nobody's recipe named still wears exactly as it always did.
  *
- * @param {Set<number>} [exclude] anchor tiles already charged for this cycle
- * @returns {number[]} tiles whose Token depleted and was removed
+ * @param {string} instanceId the Token that completed the cycle
+ * @param {(supportId: string, support: object) => void} [onDeplete] removes a worn-out support Token
+ * @param {Set<string>} [exclude] instance ids already charged for this cycle
+ * @returns {string[]} instance ids of the support Tokens that wore out
  */
-export function wearAdjacentSupport(index, onDeplete, exclude = null) {
-    const occ = BoardState.getOccupyingToken(index);
-    const anchor = occ ? occ.anchorIndex : index;
+export function wearAdjacentSupport(instanceId, onDeplete, exclude = null) {
     const depleted = [];
 
     // Still −1 per station per cycle (D-113/D-157); only "beside" became Near.
-    for (const supportAnchor of nearby(index)) {
-        const supportInstance = BoardState.getToken(supportAnchor);
-        if (!supportInstance) continue;
-        const nOcc = { anchorIndex: supportAnchor, instance: supportInstance };
-        if (exclude?.has(nOcc.anchorIndex)) continue;
+    // Iterates a copy: `onDeplete` takes Tokens off the mat, which drops the cache.
+    for (const supportId of [...neighbourIds(instanceId)]) {
+        const support = BoardState.getTokenById(supportId);
+        if (!support) continue;
+        if (exclude?.has(supportId)) continue;
 
-        if (!servesFrom(nOcc.anchorIndex).includes(anchor)) continue;
+        if (!servesFrom(supportId).includes(instanceId)) continue;
 
-        const support = nOcc.instance;
         // Unlimited-use support never wears (D-176) — `null` is not a number.
         if (support.usesRemaining == null) continue;
 
         support.usesRemaining -= 1;
         EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-            tile: nOcc.anchorIndex,
+            tile: BoardState.tileOfToken(supportId),   // STOPGAP payload — removed in 1.6b part 2
             delta: -1,
             remaining: support.usesRemaining,
             typeId: support.typeId
         });
         if (support.usesRemaining <= 0) {
-            depleted.push(nOcc.anchorIndex);
-            onDeplete?.(nOcc.anchorIndex, support);
+            depleted.push(supportId);
+            onDeplete?.(supportId, support);
         }
     }
 
@@ -327,21 +328,21 @@ export function wearAdjacentSupport(index, onDeplete, exclude = null) {
 }
 
 /**
- * Returns missing requirements for a tile with strict priority:
+ * Returns missing requirements for a Token with strict priority:
  * 1. Tokens/Tools priority: If accepted tokens/tools are missing, or context recipes missing/conflicting.
  * 2. Items priority: Only once all token requirements are satisfied and recipe is resolved.
  *
  * @returns {{ type: 'tokens'|'items'|null, items: string[] }}
  */
-export function getMissingRequirements(tileIndex, instance) {
+export function getMissingRequirements(instanceId, instance) {
     if (!instance?.typeId) return { type: null, items: [] };
     const def = getTokenType(instance.typeId);
     if (!def) return { type: null, items: [] };
 
     // 1. Check Accepted Tokens / Tools on the Token definition itself (e.g. tag 'anvil' or 'pickaxe')
     if (def.acceptedTokens?.length) {
-        const tiers = contextTiersAround(tileIndex);
-        const adjacentTokens = typesNear(tileIndex);
+        const tiers = contextTiersAround(instanceId);
+        const adjacentTokens = typesNear(instanceId);
 
         const missingTools = [];
         for (const req of def.acceptedTokens) {
@@ -372,8 +373,8 @@ export function getMissingRequirements(tileIndex, instance) {
     // candidate recipe could want was the right answer while adjacency chose
     // the recipe; now the station has already chosen, and listing the rest
     // would tell the player to fetch Tokens for work they did not ask for.
-    const { recipe } = resolveRecipe(tileIndex, instance);
-    const missingContext = unmetContext(tileIndex, recipe);
+    const { recipe } = resolveRecipe(instanceId, instance);
+    const missingContext = unmetContext(instanceId, recipe);
     if (missingContext.length) {
         return {
             type: 'tokens',
@@ -384,7 +385,7 @@ export function getMissingRequirements(tileIndex, instance) {
     }
 
     // 3. Tokens are satisfied! Now check missing input Items
-    const io = effectiveIO(tileIndex, instance);
+    const io = effectiveIO(instanceId, instance);
     if (io.inputs?.length) {
         const check = InputAllocator.checkInputs(io.inputs);
         if (!check.ok) {

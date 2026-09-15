@@ -46,7 +46,8 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
     // Compute missing items or tokens list regardless of staffing state
     const missingReqs = useMemo(() => {
         if (!token) return { type: null, items: [] };
-        return getMissingRequirements(tile, token);
+        // The reader is by instance id since Free Playmat 1.6b; the tile projection carries it.
+        return getMissingRequirements(token.instanceId ?? null, token);
     }, [tile, token]);
 
     // Effective alert: only applicable while a hero is assigned to work the token

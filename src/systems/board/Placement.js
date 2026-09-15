@@ -2,11 +2,11 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { tilesAroundChange, positionOf } from './nearby.js';
+import { positionOf } from './nearby.js';
 import * as Flags from './Flags.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
-import { isPlaceable, GUILD_HALL_TILE, TILE_PX, TILE_STEP_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors } from '../../config/boardGeometry.js';
+import { isPlaceable, GUILD_HALL_TILE, TILE_PX, TILE_STEP_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors, tileCentre, footprintCentre } from '../../config/boardGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
@@ -22,25 +22,34 @@ function forfeitCycle(instance) {
 
 /**
  * Tell the board that the Tokens on some tiles changed — **one event per
- * change**, naming every tile whose modifiers must be rebuilt.
+ * change**, naming the mat points to rebuild around.
  *
- * ## Why one event with the set, not one event per ring tile (Free Playmat 1.3)
- * This used to publish the changed tiles and their 8-ring one event at a time,
- * and slice 1.2 had to widen the listener to rebuild around *each* of those to
- * follow a larger Near radius — up to 81 rebuilds for one drop, and still tied
- * to the ring. `tilesAroundChange` computes the right set for any radius and any
- * Token shape once, including a departed Token that differs from the one now
- * standing there (a push, a swap, a 2×2 cascade).
+ * ## Why one event with every point (Free Playmat 1.3, points since 1.6b)
+ * The listener rebuilds every Token within Near (+ the largest art radius) of
+ * any point (`TileModifiers.rebuildAround`). Naming the centre of **every tile
+ * the change touched** — where Tokens left as well as where they landed —
+ * covers a departed Token that differs from the one now standing there (a push,
+ * a swap, a 2×2 cascade): any Token that covered a tile had its centre within
+ * 113 u of that tile's centre, inside the 144 u margin.
  *
- * `tile` stays in the payload for anything that only wants "where".
+ * STOPGAP (deleted in 1.6d with the tile placement code): the points are tile
+ * centres. `tile` stays in the payload for anything that only wants "where".
  */
 function markAdjacencyDirty(indexOrFootprint) {
     const changed = Array.isArray(indexOrFootprint) ? indexOrFootprint : [indexOrFootprint];
     if (!changed.length) return;
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, {
         tile: changed[0],
-        tiles: tilesAroundChange(changed)
+        points: changed.map(tileCentre).filter(Boolean)
     });
+}
+
+/**
+ * STOPGAP (deleted in 1.6d): the mat point a Token of `typeId` anchored at tile
+ * `index` would stand at — what `Restrictions.checkPlacement` now takes.
+ */
+function pointAt(index, typeId) {
+    return footprintCentre(index, getTokenType(typeId)?.size || 1);
 }
 
 /** Standard refusal shape, so callers can show the reason (UI §3). */
@@ -78,7 +87,7 @@ function planCascadeFor2x2(anchorIndex) {
     for (const [idx, inst] of BoardState.occupiedTiles()) {
         const d = getTokenType(inst?.typeId);
         const sz = d?.size || 1;
-        const hId = BoardState.workerOf(idx);
+        const hId = BoardState.workerOfTile(idx);
         simTiles.set(idx, { instance: inst, heroId: hId, is2x2: sz === 2, anchor: idx });
         if (sz === 2) {
             const fp = tileFootprint(idx, 2);
@@ -260,9 +269,11 @@ export function placeToken(index, instance) {
          * completing the shove and then confiscating whatever it broke — and it
          * is the only version where nothing has to be rescued afterwards.
          */
-        const cascadeCheck = Restrictions.checkPlacement(index, instance.typeId, {
-            remove: trayDisplacements.map(d => d.anchor),
-            shifts
+        // STOPGAP plan (deleted in 1.6d): the cascade's tiles as ids and points.
+        const cascadeCheck = Restrictions.checkPlacement(pointAt(index, instance.typeId), instance.typeId, {
+            id: instance.id,
+            remove: trayDisplacements.map(d => d.instance.id),
+            move: shifts.map(s => ({ id: s.instance.id, ...tileCentre(s.toTile) }))
         });
         if (!cascadeCheck.ok) {
             const vName = tokenName(cascadeCheck.violatingTypeId) || tokenName(instance.typeId) || 'Token';
@@ -343,8 +354,9 @@ export function placeToken(index, instance) {
      * Token being covered is on its way off the board, so it must not count
      * towards the newcomer's neighbours.
      */
-    const check = Restrictions.checkPlacement(index, instance.typeId, {
-        remove: occ ? [occ.anchorIndex] : []
+    const check = Restrictions.checkPlacement(pointAt(index, instance.typeId), instance.typeId, {
+        id: instance.id,
+        remove: occ ? [occ.instance.id] : []
     });
     if (!check.ok) {
         const vName = tokenName(check.violatingTypeId) || tokenName(instance.typeId) || 'Token';
@@ -363,7 +375,7 @@ export function placeToken(index, instance) {
     if (occ) {
         const occDef = getTokenType(occ.instance?.typeId);
         const occSize = occDef?.size || 1;
-        const heroOnTile = BoardState.workerOf(occ.anchorIndex) || BoardState.workerOf(index);
+        const heroOnTile = BoardState.workerOfTile(occ.anchorIndex) || BoardState.workerOfTile(index);
 
         // Special behavior: Dropping a token onto a matching copy restocks its charges
         if (occ.instance.typeId === instance.typeId && occDef?.uses != null && occ.instance.usesRemaining != null && occ.instance.usesRemaining < occDef.uses) {
@@ -418,7 +430,8 @@ export function placeToken(index, instance) {
                     const nextIndex = nextRow * BOARD_SIZE + nextCol;
                     if (BoardState.getOccupyingToken(nextIndex)) continue;
 
-                    const pushCheck = Restrictions.checkPlacement(nextIndex, instance.typeId, {
+                    const pushCheck = Restrictions.checkPlacement(pointAt(nextIndex, instance.typeId), instance.typeId, {
+                        id: instance.id,
                         remove: []
                     });
                     if (pushCheck.ok) {
@@ -481,8 +494,9 @@ export function placeToken(index, instance) {
                 const nextIndex = nextRow * BOARD_SIZE + nextCol;
                 if (BoardState.getOccupyingToken(nextIndex)) continue;
 
-                const pushCheck = Restrictions.checkPlacement(nextIndex, occ.instance.typeId, {
-                    remove: [occ.anchorIndex]
+                const pushCheck = Restrictions.checkPlacement(pointAt(nextIndex, occ.instance.typeId), occ.instance.typeId, {
+                    id: occ.instance.id,
+                    remove: [occ.instance.id]
                 });
                 if (pushCheck.ok) {
                     pushTarget = nextIndex;
@@ -500,7 +514,7 @@ export function placeToken(index, instance) {
                     const nextIndex = nextRow * BOARD_SIZE + nextCol;
                     const nextOcc = BoardState.getOccupyingToken(nextIndex);
                     if (nextOcc && !isPermanentToken(nextOcc.instance?.typeId, nextOcc.instance)) {
-                        const nextHero = BoardState.workerOf(nextOcc.anchorIndex);
+                        const nextHero = BoardState.workerOfTile(nextOcc.anchorIndex);
                         let nextPushTarget = null;
                         const nextVectors = getTilePushVectors(nextIndex);
                         for (const nVec of nextVectors) {
@@ -617,7 +631,7 @@ export function moveToken(from, to) {
     const moving = occ.instance;
     const fromAnchor = occ.anchorIndex;
     const progress = moving.cycleElapsedMs || 0;
-    const heroId = BoardState.workerOf(fromAnchor);
+    const heroId = BoardState.workerOfTile(fromAnchor);
 
     // Lifted off first: placing the Token can shove a neighbour (and its
     // fight) onto the tile this one is vacating (FPP-4).
@@ -681,7 +695,7 @@ export function returnTokenToTray(index, position = null) {
     }
 
     // Asked before the Token leaves: afterwards nobody works that tile.
-    const heroId = BoardState.workerOf(occ.anchorIndex);
+    const heroId = BoardState.workerOfTile(occ.anchorIndex);
     BoardState.setToken(occ.anchorIndex, null);
 
     if (position == null) {
@@ -752,7 +766,7 @@ export function returnTokenToVault(index) {
     }
 
     // Asked before the Token leaves: afterwards nobody works that tile.
-    const heroId = BoardState.workerOf(occ.anchorIndex);
+    const heroId = BoardState.workerOfTile(occ.anchorIndex);
     BoardState.setToken(occ.anchorIndex, null);
 
     for (const t of occ.footprint) {
@@ -826,10 +840,10 @@ export function recallHero(index) {
     const occ = BoardState.getOccupyingToken(index);
     const anchor = occ ? occ.anchorIndex : index;
 
-    let heroId = BoardState.workerOf(anchor);
+    let heroId = BoardState.workerOfTile(anchor);
     if (heroId == null) {
         const onBoard = BoardState.heroesOnBoard();
-        heroId = onBoard.find(([id]) => BoardState.waitOfHero(id)?.tile === anchor)?.[0]
+        heroId = onBoard.find(([id, tile]) => BoardState.waitOfHero(id) && tile === anchor)?.[0]
             ?? onBoard.find(([, tile]) => tile === anchor || tile === index)?.[0]
             ?? null;
     }

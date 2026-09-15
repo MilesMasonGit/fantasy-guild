@@ -9,6 +9,7 @@ import * as Flags from '../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { tileCentre } from '../config/boardGeometry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -55,26 +56,26 @@ describe('the worker seam answers from flags and claims', () => {
     });
 
     it('an empty tile nobody stands on has no worker', () => {
-        expect(BoardState.workerOf(9)).toBeNull();
-        expect(BoardState.workerOf(null)).toBeNull();
-        expect(BoardState.workerOf(-1)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
+        expect(BoardState.workerOf(idAt(null))).toBeNull();
+        expect(BoardState.workerOf(idAt(-1))).toBeNull();
     });
 
     it('1×1: the hero working a Token is its worker, and it is their work and display tile', () => {
         Placement.placeToken(9, BoardState.createTokenInstance('fixture_seam_small', 10));
         Placement.placeHero('hero_1', 9);
 
-        expect(BoardState.workerOf(9)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(9))).toBe('hero_1');
         expect(BoardState.workTileOf('hero_1')).toBe(9);
         expect(BoardState.displayTileOf('hero_1')).toBe(9);
-        expect(BoardState.workerOf(10)).toBeNull();
+        expect(BoardState.workerOf(idAt(10))).toBeNull();
     });
 
     it('⚠️ tile 0 is a real answer, not "nowhere"', () => {
         Placement.placeToken(0, BoardState.createTokenInstance('fixture_seam_small', 10));
         Placement.placeHero('hero_1', 0);
 
-        expect(BoardState.workerOf(0)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(0))).toBe('hero_1');
         expect(BoardState.workTileOf('hero_1')).toBe(0);
         expect(BoardState.displayTileOf('hero_1')).toBe(0);
     });
@@ -84,9 +85,9 @@ describe('the worker seam answers from flags and claims', () => {
         Placement.placeHero('hero_1', 7);
 
         for (const tile of [0, 1, 6, 7]) {
-            expect(BoardState.workerOf(tile)).toBe('hero_1');
+            expect(BoardState.workerOf(idAt(tile))).toBe('hero_1');
         }
-        expect(BoardState.workerOf(2)).toBeNull();
+        expect(BoardState.workerOf(idAt(2))).toBeNull();
         expect(BoardState.workTileOf('hero_1')).toBe(0);
         expect(BoardState.displayTileOf('hero_1')).toBe(0);
     });
@@ -95,7 +96,7 @@ describe('the worker seam answers from flags and claims', () => {
         Flags.plant('hero_2', tileCentre(14));
 
         expect(BoardState.getToken(14)).toBeNull();
-        expect(BoardState.workerOf(14)).toBeNull();
+        expect(BoardState.workerOf(idAt(14))).toBeNull();
         expect(BoardState.workTileOf('hero_2')).toBeNull();
         // Drawn at their flag.
         expect(BoardState.displayTileOf('hero_2')).toBe(14);
@@ -106,7 +107,7 @@ describe('the worker seam answers from flags and claims', () => {
         Placement.placeHero('hero_1', 9);
         Placement.recallHero(9);
 
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
         expect(BoardState.workTileOf('hero_1')).toBeNull();
         expect(BoardState.displayTileOf('hero_1')).toBeNull();
     });

@@ -13,6 +13,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { tileCentre, idAt } from './fixtures/mat.js';
 
 /** A tile well away from the Guild Hall's reserved square. */
 const TILE = 10;
@@ -222,16 +223,16 @@ describe('a carried rule reaches the tile its hero is working', () => {
 
         const instance = BoardState.createTokenInstance('fixture_producer', 100);
         Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround(TILE);
+        TileModifiers.rebuildAround([tileCentre(TILE)]);
 
         // Nobody standing here: the tile resolves its own base.
-        expect(TileModifiers.resolveAxis(TILE, EFFECT_TYPES.YIELD, 10)).toBeCloseTo(10);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(10);
 
         // The hero arrives carrying a +5% Yield effect at scale 2 — the number
         // travels with the person, not the square, which is the whole reason
         // the hero is a third scope rather than a cached tile modifier.
         Placement.placeHero('hero_1', TILE);
-        expect(TileModifiers.resolveAxis(TILE, EFFECT_TYPES.YIELD, 10)).toBeCloseTo(11);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(11);
     });
 
     it('stops contributing the moment the Bank runs dry (UE-22)', () => {
@@ -244,14 +245,14 @@ describe('a carried rule reaches the tile its hero is working', () => {
 
         const instance = BoardState.createTokenInstance('fixture_producer', 100);
         Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround(TILE);
+        TileModifiers.rebuildAround([tileCentre(TILE)]);
         Placement.placeHero('hero_1', TILE);
 
-        expect(TileModifiers.resolveAxis(TILE, EFFECT_TYPES.YIELD, 10)).toBeCloseTo(11);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(11);
 
         // No rebuild, no re-equip — the loadout is read live, so an emptied
         // Bank is felt on the very next resolution.
         InventoryManager.removeItem('fixture_sword', 5);
-        expect(TileModifiers.resolveAxis(TILE, EFFECT_TYPES.YIELD, 10)).toBeCloseTo(10);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(10);
     });
 });

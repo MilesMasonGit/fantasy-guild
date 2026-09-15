@@ -34,6 +34,7 @@ import { KEYWORD, makeStatement, rolesForKeyword } from '../systems/effects/stat
 import { slotsOf } from '../systems/effects/statementSlots.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -71,7 +72,7 @@ function fighter(id) {
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }
@@ -169,7 +170,7 @@ describe('2. ⭐ found by HERO, never by tile (G-43)', () => {
         // FP-49), so a re-plant can no longer leave this state behind. The
         // claim is set directly so the lookup-by-hero rule is still exercised.
         BoardState.setClaim('hero_1', { instanceId: bush.id, tile: BUSH, typeId: bush.typeId });
-        expect(BoardState.workerOf(BUSH)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(BUSH))).toBe('hero_1');
         expect(BoardCombat.fightOfHero('hero_1')).toBe(fight);
 
         const enemyBefore = fight.combat.enemyHp.current;

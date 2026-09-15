@@ -14,6 +14,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as RegenSystem from '../systems/hero/RegenSystem.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 /**
  * Combat on the board — **ported, not rebuilt** (D-136).
@@ -68,7 +69,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
     Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }
@@ -144,7 +145,7 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
         const bear = place(10, 'fixture_enemy', 'recruit_1');
         run(1000);
         expect(bear.alert ?? null).toBeNull();
-        expect(BoardState.workerOf(10)).toBeNull();
+        expect(BoardState.workerOf(idAt(10))).toBeNull();
         expect(Flags.skipsOf(bear.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
     });
 
@@ -309,7 +310,7 @@ describe('Defeat costs equipment (D-74)', () => {
         run(30000);
 
         expect(weakling.status).toBe('wounded');
-        expect(BoardState.workerOf(10)).toBeNull();
+        expect(BoardState.workerOf(idAt(10))).toBeNull();
         expect(BoardState.flagOf('hero_weak')).toBeNull();
     });
 
