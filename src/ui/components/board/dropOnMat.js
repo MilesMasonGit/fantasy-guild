@@ -101,7 +101,7 @@ export function dropOnMat(payload, point) {
             EventBus.publish('state_changed', {});
             return { success: true };
         }
-        let instance = null;
+        let instance;
         if (from.traySlot != null) instance = BoardState.takeFromTray(from.traySlot);
         else if (from.instanceId != null) {
             // STOPGAP (deleted in 1.6d): lifted off the mat by its old spot.

@@ -190,7 +190,12 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect, inspect
             // waiting one on a shared tile, then planting order (FPP-6).
             const RANK = { working: 0, waiting: 1 };
             const drawn = {};
-            for (const [heroId, displayTile] of BoardState.heroesOnBoard()) {
+            for (const [heroId, displayPoint] of BoardState.heroesOnBoard()) {
+                // STOPGAP (deleted in 1.6c-2): the grid draws a hero on the old
+                // spot of the Token they work (by id), else the spot their point is on.
+                if (!displayPoint) continue;
+                const worked = BoardState.findTokenById(BoardState.workTokenOf(heroId));
+                const displayTile = worked?.anchor ?? BoardState.tileAtPoint(displayPoint);
                 if (displayTile == null) continue;
                 const status = Flags.statusOf(heroId);
                 const rank = RANK[status.state];

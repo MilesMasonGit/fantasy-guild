@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
+import * as BoardState from '../../../systems/board/BoardState.js';
 import { cn } from '../../utils/cn.js';
 import { payloadIsForTile } from './payloadTile.js';
 
