@@ -2,9 +2,9 @@
 
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
-import { TILE_COUNT, BOARD_SIZE, TILE_STEP_PX, isTileIndex, isPlaceable, tileFootprint } from '../../config/boardGeometry.js';
-import { terrainForToken } from '../../config/registries/terrainAssignments.js';
+import { BOARD_SIZE, TILE_STEP_PX, isTileIndex } from '../../config/boardGeometry.js';
 import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
+import * as Shim from './gridShim.js';   // STOPGAP — deleted in slice 1.6d
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -44,8 +44,13 @@ function announceTray(reason) {
  * `StationRecipe.js` is the only thing that reads or writes it, and its absence
  * on a station means "not chosen yet", which resolves to the pool default.
  *
- * **Position is the map key, not a field**, so a Token can never disagree with
- * itself about where it is.
+ * ## Where a Token is (Free Playmat slice 1.6a)
+ * `board.tokens[id]` holds every Token on the mat, keyed by its instance id,
+ * and the instance itself carries its point: `x`, `y` in mat units (1 u = one
+ * natural board pixel; a tile step is 160 u) and `placedAt`, from
+ * `board.nextTokenOrder`, the order it arrived on the mat in. There are no
+ * tiles in this storage. The tile-index functions further down are a labelled
+ * STOPGAP view over it (`gridShim.js`), deleted in slice 1.6d.
  *
  * ⚠️ **`heroId` is NOT on the instance.** A hero's flag is their own state
  * (`board.flags`), and which Token they work is a runtime claim keyed by the
@@ -72,53 +77,23 @@ function announceTray(reason) {
  * carry its own shorter list, one of three that disagreed (CR2-049). The
  * per-field guards below stay because they also repair a board that is present
  * but has a field of the wrong type.
+ *
+ * Terrain's paint hook and its backfill of old saves were removed from this
+ * file in slice 1.6a (terrain is dormant, FP-10; its modules stay).
  */
 function board() {
     const state = GameState.state;
     if (!state) return null;
     if (!state.board) state.board = createEmptyBoard();
-    if (!state.board.tiles) state.board.tiles = {};
+    if (!state.board.tokens || typeof state.board.tokens !== 'object') state.board.tokens = {};
+    if (typeof state.board.nextTokenOrder !== 'number') state.board.nextTokenOrder = 0;
     if (!state.board.tokenBank) state.board.tokenBank = {};
     if (!Array.isArray(state.board.tray)) state.board.tray = [];
     if (!Array.isArray(state.board.maps)) state.board.maps = [];
     if (!state.board.flags || typeof state.board.flags !== 'object') state.board.flags = {};
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.vacancies) state.board.vacancies = {};
-    if (!state.board.terrain) state.board.terrain = {};
-    if (typeof state.board.nextPaintOrder !== 'number') state.board.nextPaintOrder = 0;
-    // ⚠️ Guarded by the switch, not just the counter: with terrain off the
-    // counter never advances, so the backfill would walk every tile on every
-    // call to this — the board's most-called primitive (FP-10).
-    if (TERRAIN_ENABLED && state.board.nextPaintOrder === 0) backfillTerrain(state.board);
     return state.board;
-}
-
-/**
- * Paint terrain under the Tokens a pre-terrain save already had on the board.
- *
- * Terrain was added without a save migration, because it is purely additive — an
- * older save simply has no terrain and is otherwise identical. But loading one
- * and finding bare ground under a board full of Tokens would look broken, so the
- * first read paints what is already there, in tile order.
- *
- * ## ⚠️ The guard is `nextPaintOrder === 0`, not "is `terrain` missing"
- *
- * It was the latter, and it never fired: the save loader merges the declared
- * schema into whatever it loads, so an old save arrives with `terrain` already
- * created as `{}` and the absence this was watching for never happens.
- *
- * A paint counter still at zero is the honest test — it means nothing has ever
- * been painted on this board, which is true of a new game (where there are no
- * Tokens to walk) and of a pre-terrain save (where there are). It also
- * self-limits: painting anything advances the counter, so this cannot run twice
- * and renumber a board.
- */
-function backfillTerrain(b) {
-    const tiles = b.tiles || {};
-    for (const key of Object.keys(tiles).map(Number).sort((a, b2) => a - b2)) {
-        const instance = tiles[key];
-        if (instance?.typeId) paintFootprint(b, key, instance);
-    }
 }
 
 /**
@@ -146,189 +121,159 @@ export function createTokenInstance(typeId, uses = null, terrain = null) {
 }
 
 // ---------------------------------------------------------------------------
-// Tiles
+// Tokens on the mat (Free Playmat slice 1.6a)
 // ---------------------------------------------------------------------------
 
-/** The Token instance on a tile, or null. Direct lookup at anchor tile. */
-export function getToken(index) {
-    if (!isTileIndex(index)) return null;
-    return board()?.tiles?.[index] || null;
+/** Stamp `placedAt` from the board's counter, unless the instance already has one. */
+function stampOrder(b, instance) {
+    if (!Number.isInteger(instance.placedAt)) instance.placedAt = b.nextTokenOrder++;
+}
+
+/** After a Token's point changes: a claimed Token keeps its hero (FP-68), and the claim's tile hint follows. */
+function afterPointChange(b, instance) {
+    Shim.invalidate(b);
+    const anchor = Shim.anchorOfId(b, instance.id);   // STOPGAP hint — deleted in slice 1.6d
+    for (const claim of runtimeOf(b).claims.values()) {
+        if (claim.instanceId === instance.id) claim.tile = anchor;
+    }
 }
 
 /**
- * For any tile index, find the Token that occupies it (either as the top-left anchor
- * or as part of a multi-tile footprint).
+ * Put a Token on the mat at `(x, y)`. **No rules** — callers apply them.
+ *
+ * The instance itself is stored (not a copy) and gains `x`, `y` and, if it has
+ * none, `placedAt`. A Token that is already on the mat is simply moved.
+ * Anything landing exactly on a spot vacancy satisfies it, whether it came from
+ * a Manager or from the player's hand.
+ *
+ * @returns the instance, or null
+ */
+export function addToken(instance, x, y) {
+    const b = board();
+    if (!b || !instance?.typeId || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+    // ⚠️ Claims are keyed by instance id (Free Playmat 1.4b), so every Token
+    // on the mat must have one.
+    if (!instance.id) instance.id = newTokenId();
+    const current = b.tokens[instance.id];
+    if (current && current !== instance) delete b.tokens[instance.id];
+    instance.x = x;
+    instance.y = y;
+    stampOrder(b, instance);
+    b.tokens[instance.id] = instance;
+    clearVacancyAt(b, x, y);
+    afterPointChange(b, instance);
+    return instance;
+}
+
+/**
+ * Take Token `id` off the mat and return it (or null). No rules.
+ *
+ * Its `x`, `y` and `placedAt` stay on the instance: a Token lifted and put
+ * straight back down elsewhere keeps its place in the arrival order, as a move
+ * does. Only entering the Tray clears `placedAt` (see `addToTray`).
+ */
+export function removeToken(id) {
+    const b = board();
+    const instance = id ? b?.tokens?.[id] : null;
+    if (!instance) return null;
+    delete b.tokens[id];
+    Shim.invalidate(b);
+    return instance;
+}
+
+/** Move Token `id` to `(x, y)`, keeping its `placedAt`. No rules. Returns false if it is not on the mat. */
+export function setTokenPoint(id, x, y) {
+    const b = board();
+    const instance = id ? b?.tokens?.[id] : null;
+    if (!instance || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    instance.x = x;
+    instance.y = y;
+    clearVacancyAt(b, x, y);
+    afterPointChange(b, instance);
+    return true;
+}
+
+/** The Token on the mat with instance id `id`, or null. A direct lookup, never a scan. */
+export function getTokenById(id) {
+    if (!id) return null;
+    return board()?.tokens?.[id] || null;
+}
+
+/** Every Token on the mat, in the order they arrived (`placedAt` ascending). */
+export function tokens() {
+    const map = board()?.tokens || {};
+    return Object.values(map)
+        .filter(t => t?.typeId)
+        .sort((a, b) => (a.placedAt ?? 0) - (b.placedAt ?? 0));
+}
+
+// ---------------------------------------------------------------------------
+// ⚠️ STOPGAP — the tile-index API, answered by `gridShim.js`. Deleted in slice 1.6d.
+// ---------------------------------------------------------------------------
+//
+// Every function in this section is the old tile API kept alive over free
+// positions, so the readers written against it keep working unchanged while
+// slices 1.6b and 1.6c move them off it. None of it stores a tile.
+
+/** STOPGAP (deleted in 1.6d): the Token anchored at a tile, or null. */
+export function getToken(index) {
+    return Shim.getToken(board(), index);
+}
+
+/**
+ * STOPGAP (deleted in 1.6d): the Token covering a tile — its anchor or any tile
+ * of a 2×2 footprint.
  *
  * @returns {{ anchorIndex: number, instance: object, isAnchor: boolean, footprint: number[] } | null}
  */
 export function getOccupyingToken(tileIndex) {
-    if (!isTileIndex(tileIndex)) return null;
-    const direct = getToken(tileIndex);
-    if (direct) {
-        const size = getTokenType(direct.typeId)?.size || 1;
-        return {
-            anchorIndex: tileIndex,
-            instance: direct,
-            isAnchor: true,
-            footprint: tileFootprint(tileIndex, size)
-        };
-    }
-
-    // Covered by some multi-tile Token's body? This is the **common** path,
-    // because most of a 7×7 board is empty most of the time, and it is the
-    // board's most-called primitive (CR2-062).
-    //
-    // It used to walk `occupiedTiles()`, which builds an array of keys, maps
-    // them to numbers, **sorts**, and maps again into pairs — four allocations
-    // and a sort to answer "no". Iterating the tile map directly is the same
-    // answer: footprints cannot overlap, so the order they are checked in
-    // cannot change which Token is found.
-    const tiles = board()?.tiles;
-    if (!tiles) return null;
-    for (const key in tiles) {
-        const inst = tiles[key];
-        if (!inst?.typeId) continue;
-        const size = getTokenType(inst.typeId)?.size || 1;
-        if (size <= 1) continue;                 // 1×1 Tokens cover only their anchor
-        const anchor = Number(key);
-        const footprint = tileFootprint(anchor, size);
-        if (footprint.includes(tileIndex)) {
-            return { anchorIndex: anchor, instance: inst, isAnchor: false, footprint };
-        }
-    }
-    return null;
+    return Shim.getOccupyingToken(board(), tileIndex);
 }
 
-/** Whether a tile currently holds or is covered by a Token. */
+/** STOPGAP (deleted in 1.6d): whether a tile currently holds or is covered by a Token. */
 export function hasToken(index) {
     return getOccupyingToken(index) !== null;
 }
 
-
 /**
- * Write a Token instance to a tile, or clear it with `null`.
+ * STOPGAP (deleted in 1.6d): put a Token on a tile — at that tile's centre, or a
+ * 2×2's footprint centre — or clear the tile with `null`.
  * No rules applied — callers go through `Placement.js`.
  */
 export function setToken(index, instance) {
     const b = board();
     if (!b || !isTileIndex(index)) return;
     if (instance) {
-        // ⚠️ Claims are keyed by instance id (Free Playmat 1.4b), so every
-        // Token on the board must have one. Most routes build instances through
-        // `createTokenInstance`, which assigns one; this catches the rest (old
-        // saves, hand-built test boards) at the single choke point.
         if (!instance.id) instance.id = newTokenId();
-        b.tiles[index] = instance;
-        // A claimed Token that moved keeps its hero (FP-68); remember where.
-        const rt = runtimeOf(b);
-        for (const claim of rt.claims.values()) {
-            if (claim.instanceId === instance.id) claim.tile = index;
-        }
-        // Anything arriving satisfies the tile's claim on a restock, whether it
-        // came from a Manager or from the player's hand.
-        delete b.vacancies[index];
-        if (TERRAIN_ENABLED) paintFootprint(b, index, instance); // dormant (FP-10)
+        // The old tile map was last-write-wins: whatever was anchored here is gone.
+        const other = Shim.getToken(b, index);
+        if (other && other.id !== instance.id) removeToken(other.id);
+        const at = Shim.anchorPoint(index, instance.typeId);
+        addToken(instance, at.x, at.y);
+        // Anything arriving satisfies the tile's restock, whatever its shape.
+        const entry = Shim.vacancyEntryAt(b, index);
+        if (entry) delete b.vacancies[entry[0]];
     } else {
-        // ⚠️ Terrain is NOT cleared here. A Token leaving a tile leaves its
-        // ground behind (D-T10) — that is the point of the whole feature.
-        delete b.tiles[index];
+        const here = Shim.getToken(b, index);
+        if (here) removeToken(here.id);
     }
 }
 
-/**
- * Paint a Token's terrain across the tiles it covers.
- *
- * Hooked into `setToken` rather than into `Placement` deliberately. Every route
- * a Token can take onto a tile ends here — the player's drag, a Manager's
- * restock, a cascade shoving a Token sideways, a Vault withdrawal — and a route
- * that skipped painting would leave a Token sitting on ground that does not
- * match it, with no obvious cause. One choke point cannot be missed.
- *
- * All four tiles of a 2×2 share one `paintedAt`, because one drop is one act:
- * they should win and lose contested subtiles together, not in reading order.
- */
-function paintFootprint(b, anchorIndex, instance) {
-    const terrainId = terrainForToken(instance.typeId, instance.terrain);
-    const size = getTokenType(instance.typeId)?.size || 1;
-    const paintedAt = b.nextPaintOrder++;
-    for (const tile of tileFootprint(anchorIndex, size)) {
-        if (isTileIndex(tile)) b.terrain[tile] = { terrainId, paintedAt };
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Terrain (dynamic terrain roadmap P1)
-// ---------------------------------------------------------------------------
-
-/** What a tile has been painted with, as `{ terrainId, paintedAt }`, or null. */
-export function getTileTerrain(index) {
-    if (!isTileIndex(index)) return null;
-    return board()?.terrain?.[index] || null;
-}
-
-/** The whole painted board, keyed by tile index. Sparse. */
-export function terrainMap() {
-    return board()?.terrain || {};
-}
-
-/**
- * The per-save seed the derived subtile detail is generated from (D-T11).
- *
- * Assigned on first read rather than at board creation, so that a test or a
- * tool can pin it beforehand and get a reproducible board.
- */
-export function terrainSeed() {
-    const b = board();
-    if (!b) return 0;
-    if (typeof b.terrainSeed !== 'number') {
-        b.terrainSeed = Math.floor(Math.random() * 0x7fffffff);
-    }
-    return b.terrainSeed;
-}
-
-/**
- * Paint a tile directly, outside of any Token arriving.
- *
- * Nothing in the game calls this — Tokens paint through `setToken`. It exists
- * for tests and for tools that need to set a board up without placing Tokens.
- */
-export function paintTile(index, terrainId) {
-    const b = board();
-    if (!b || !isTileIndex(index) || !terrainId) return;
-    b.terrain[index] = { terrainId, paintedAt: b.nextPaintOrder++ };
-}
-
-/**
- * Remove and return the Token instance on a tile (or null).
- */
+/** STOPGAP (deleted in 1.6d): remove and return the Token anchored at a tile (or null). */
 export function takeToken(index) {
     const instance = getToken(index);
     if (instance) setToken(index, null);
     return instance;
 }
 
-/**
- * Every occupied tile as `[index, instance]`, index ascending.
- *
- * Tiles are a **sparse map**, not a 49-length array: an empty board should cost
- * nothing, and a board with four Tokens on it should iterate four times rather
- * than forty-nine. That matters for the tick loop, which walks this every frame.
- */
+/** STOPGAP (deleted in 1.6d): every occupied anchor tile as `[index, instance]`, index ascending. */
 export function occupiedTiles() {
-    const tiles = board()?.tiles || {};
-    return Object.keys(tiles)
-        .map(Number)
-        .sort((a, b) => a - b)
-        .map(index => [index, tiles[index]]);
+    return Shim.occupiedTiles(board());
 }
 
-/** Tiles with no Token on them. Excludes the Guild Hall, which can never hold one. */
+/** STOPGAP (deleted in 1.6d): tiles with no Token on them. */
 export function emptyTiles() {
-    const out = [];
-    for (let i = 0; i < TILE_COUNT; i++) {
-        if (isPlaceable(i) && !hasToken(i)) out.push(i);
-    }
-    return out;
+    return Shim.emptyTiles(board());
 }
 
 // ---------------------------------------------------------------------------
@@ -345,8 +290,8 @@ export function emptyTiles() {
  * `plantedAt` comes from `board.nextFlagOrder`, a counter bumped on every plant,
  * and is the order heroes choose in (earlier flags choose first).
  *
- * It replaced the old hero → tile map. Old saves are converted in
- * `SaveMigration`; nothing else knows that shape existed.
+ * It replaced the old hero → tile map. Saves from before the 0.8.0 schema
+ * (slice 1.6a) are refused outright, so nothing converts that shape any more.
  *
  * This layer knows the shape only. Choosing, claiming and releasing are rules,
  * and live in `Flags.js`.
@@ -470,23 +415,20 @@ export function heroOfInstance(instanceId) {
 }
 
 /**
- * Where Token instance `instanceId` is on the board, as `{ anchor, instance }`,
- * or null if it is not on the board. `hint` (a tile) is checked first.
+ * Where Token instance `instanceId` is on the mat, as `{ anchor, instance }`,
+ * or null if it is not on the mat. A direct lookup by id (slice 1.6a).
+ *
+ * `anchor` is the STOPGAP tile the Token stands on (deleted in slice 1.6d);
+ * `hint` is accepted and ignored, for the callers that still pass one.
  */
-export function findTokenById(instanceId, hint = null) {
-    if (!instanceId) return null;
-    const tiles = board()?.tiles;
-    if (!tiles) return null;
-    if (hint != null && tiles[hint]?.id === instanceId) {
-        return { anchor: Number(hint), instance: tiles[hint] };
-    }
-    for (const key in tiles) {
-        if (tiles[key]?.id === instanceId) return { anchor: Number(key), instance: tiles[key] };
-    }
-    return null;
+export function findTokenById(instanceId, hint = null) { // eslint-disable-line no-unused-vars
+    const b = board();
+    const instance = instanceId ? b?.tokens?.[instanceId] : null;
+    if (!instance) return null;
+    return { anchor: Shim.anchorOfId(b, instanceId), instance };
 }
 
-/** The tile whose step cell holds a mat point (a tile plus the gap after it). */
+/** STOPGAP (deleted in slice 1.6d): the tile whose step cell holds a mat point (a tile plus the gap after it). */
 export function tileAtPoint(point) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
     const col = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor(point.x / TILE_STEP_PX)));
@@ -519,6 +461,10 @@ export function tileAtPoint(point) {
  *   wait on, else the tile under their flag, else null (in the Dock).
  *
  * Tile 0 is a valid index and falsy — test the results with `== null`.
+ *
+ * ⚠️ STOPGAP: all three still speak in tiles, answered through `gridShim.js`.
+ * Slice 1.6b re-keys them by instance id and point; the tile forms are deleted
+ * in slice 1.6d.
  */
 export function workerOf(tile) {
     if (!isTileIndex(tile)) return null;
@@ -550,37 +496,70 @@ export function displayTileOf(heroId) {
 }
 
 // ---------------------------------------------------------------------------
-// Vacancies — what a tile used to hold (Phase 7, D-35)
+// Vacancies — the spot a spent Token stood on (Phase 7, D-35; by spot since 1.6a)
 // ---------------------------------------------------------------------------
 
 /**
- * A tile that **ran dry**, remembering what depleted on it.
+ * A **spot that ran dry**, remembering what depleted on it.
+ *
+ * `board.vacancies[spotId] = { typeId, x, y, unstocked }`, where `x`, `y` is
+ * the spent Token's own point — exactly where a Manager's restock lands
+ * (FP-19). The spot id is derived from that point, so a second Token running
+ * dry on the same point replaces the first record rather than adding one.
  *
  * This is what makes a Manager type-specific without making it invasive. A
- * Lumber Camp refills a tile where a *Forest* wore out; it never colonises a
- * tile that was simply always empty, so placing a Manager cannot carpet the
+ * Lumber Camp refills a spot where a *Forest* wore out; it never colonises
+ * ground that was simply always empty, so placing a Manager cannot carpet the
  * ground you were saving for something else (owner decision 2026-08-06).
  *
- * Set only by depletion. Cleared the moment anything is placed on the tile —
+ * Set only by depletion. Cleared the moment anything lands on the spot —
  * including by hand, which is the player overriding the Manager's claim.
  */
+export function spotIdAt(x, y) {
+    return `spot_${x}_${y}`;
+}
+
+/** Record (or with a null `typeId`, clear) the vacancy at a mat point. */
+export function setVacancyAt(point, typeId) {
+    const b = board();
+    if (!b || !Number.isFinite(point?.x) || !Number.isFinite(point?.y)) return;
+    const spotId = spotIdAt(point.x, point.y);
+    if (!typeId) {
+        delete b.vacancies[spotId];
+        return;
+    }
+    // STOPGAP (deleted in 1.6d): one vacancy per tile, as the tile map had.
+    const anchor = Shim.anchorOfPoint(point.x, point.y, typeId);
+    const clash = anchor == null ? null : Shim.vacancyEntryAt(b, anchor);
+    if (clash) delete b.vacancies[clash[0]];
+    b.vacancies[spotId] = { typeId, x: point.x, y: point.y, unstocked: false };
+}
+
+/** Clear any vacancy standing exactly at `(x, y)`. */
+function clearVacancyAt(b, x, y) {
+    delete b.vacancies[spotIdAt(x, y)];
+}
+
+/** STOPGAP (deleted in slice 1.6d): record a vacancy for a tile — at the owed Token's point there. */
 export function setVacancy(index, typeId) {
     const b = board();
     if (!b || !isTileIndex(index)) return;
-    if (typeId) b.vacancies[index] = { typeId, unstocked: false };
-    else delete b.vacancies[index];
+    if (typeId) {
+        setVacancyAt(Shim.anchorPoint(index, typeId), typeId);
+    } else {
+        const entry = Shim.vacancyEntryAt(b, index);
+        if (entry) delete b.vacancies[entry[0]];
+    }
 }
 
-/** What ran dry on a tile, or null. */
+/** STOPGAP (deleted in slice 1.6d): what ran dry on a tile, or null. */
 export function getVacancy(index) {
-    if (!isTileIndex(index)) return null;
-    return board()?.vacancies?.[index] || null;
+    return Shim.vacancyEntryAt(board(), index)?.[1] || null;
 }
 
-/** Every vacant tile as `[index, vacancy]`. Sparse — usually empty. */
+/** STOPGAP (deleted in slice 1.6d): every vacancy as `[anchorTile, vacancy]`, tile ascending. Sparse — usually empty. */
 export function vacancies() {
-    const map = board()?.vacancies || {};
-    return Object.keys(map).map(Number).map(i => [i, map[i]]);
+    return Shim.vacancyTiles(board());
 }
 
 // ---------------------------------------------------------------------------
@@ -667,6 +646,13 @@ export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
     } else {
         if (!hasTraySpaceFor(1, capacity)) return false;
     }
+
+    // ⚠️ A Token entering the Tray leaves the mat first. Its `x`/`y` are
+    // about to become Tray fractions, and a Token still registered on the mat
+    // with those would vanish from the tile view (slice 1.6a). Callers still
+    // clear the tile afterwards; that is now a harmless no-op.
+    if (b.tokens?.[instance.id] === instance) removeToken(instance.id);
+    delete instance.placedAt;
 
     const at = position || scatterIntoTray(b.tray, { biasTop: isMap });
     instance.x = clamp01(at.x);

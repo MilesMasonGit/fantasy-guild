@@ -135,30 +135,6 @@ export function ensureSelection(instance, def = null) {
     return fallback;
 }
 
-/**
- * Backfill selections across a loaded save's board (P2 migration).
- *
- * Existing saves have placed stations with no `selectedRecipeId`, because the
- * field did not exist when they were written. They come out with the R-5
- * default, which is the same state a station placed today would be in.
- *
- * This does **not** need a save-schema bump: the field is optional and its
- * absence has a defined meaning, exactly as Tray positions did
- * (`BoardState.backfillTrayPositions`). Bumping `GAME_VERSION` would refuse
- * every existing save rather than migrate it — `migrateState` has no partial
- * path — which is the opposite of what this phase is for.
- *
- * @returns {number} how many tiles were given a selection
- */
-export function backfillBoardSelections(state) {
-    const tiles = state?.board?.tiles;
-    if (!tiles) return 0;
-    let filled = 0;
-    for (const key of Object.keys(tiles)) {
-        const instance = tiles[key];
-        if (!instance?.typeId) continue;
-        if (selectedRecipe(instance)) continue;
-        if (ensureSelection(instance)) filled++;
-    }
-    return filled;
-}
+// `backfillBoardSelections` (the P2 save migration) was deleted in Free Playmat
+// slice 1.6a: it only carried pre-0.8.0 boards forward, and those saves are now
+// refused outright.

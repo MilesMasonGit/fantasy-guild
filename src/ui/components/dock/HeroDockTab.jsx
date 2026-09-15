@@ -9,6 +9,7 @@ import { getJob } from '../../../config/registries/jobRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Flags from '../../../systems/board/Flags.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Pencil, Backpack, Heart } from 'lucide-react';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
@@ -89,7 +90,8 @@ export const HeroDockTab = ({
     const tile = status?.state === 'working' ? status.tile : null;
 
     const token = useGameState(
-        state => tile == null ? null : (state.board?.tiles?.[tile] || null),
+        // STOPGAP tile lookup (deleted in slice 1.6d) — Tokens are stored by id since 1.6a.
+        () => tile == null ? null : BoardState.getToken(tile),
         ['board:tile_changed', 'state_changed'],
         null,
         { deps: [tile] }

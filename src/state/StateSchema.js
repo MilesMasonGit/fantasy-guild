@@ -25,8 +25,13 @@
  *           combat skill, and every hero gains a job. A migration would
  *           produce nonsense heroes, so old saves are refused — see
  *           skill_class_rework_roadmap_v1.md Phase 0.
+ * '0.8.0' — Free Playmat slice 1.6a (FP-85). Tokens are stored by instance id
+ *           at a point on the mat (`board.tokens`), not by tile, vacancies by
+ *           the spot that ran dry, and the terrain fields leave the board. Old
+ *           saves are refused through the existing version check — no message
+ *           of their own, no export, no conversion.
  */
-export const GAME_VERSION = '0.7.0';
+export const GAME_VERSION = '0.8.0';
 
 /**
  * The board's default shape, in one place.
@@ -40,7 +45,11 @@ export const GAME_VERSION = '0.7.0';
  */
 export function createEmptyBoard() {
     return {
-        tiles: {},
+        // Every Token on the mat, keyed by instance id; each carries its own
+        // point `x`, `y` (mat units) and `placedAt` (Free Playmat 1.6a).
+        tokens: {},
+        // Counter behind each Token's `placedAt` — the order Tokens arrived in.
+        nextTokenOrder: 0,
         // Each hero's flag, keyed by hero id (Free Playmat 1.4b). A hero with
         // no flag is in the Dock. Which Token a flag works is runtime only.
         flags: {},
@@ -65,36 +74,10 @@ export function createEmptyBoard() {
         // The Token Vault's tabs. Shape is owned by `TokenGroups.makeDefault()`
         // and built on first read, deliberately — declaring it here would be a
         // second copy of that shape. Null means "not opened yet".
-        tokenGroups: null,
+        tokenGroups: null
 
-        // === Terrain (dynamic terrain roadmap P1) ===
-        //
-        // What the playmat has been painted with, keyed by tile index:
-        // `{ terrainId, paintedAt }`. Sparse — a tile nothing has ever been
-        // placed on is simply absent, and reads as unpainted.
-        //
-        // ⚠️ Terrain is NEVER erased (D-T10). Lifting a Token leaves its
-        // terrain behind; that is the whole "painting the board" idea. The only
-        // way an entry changes is being painted over.
-        //
-        // This is deliberately two small numbers per tile rather than the
-        // 29×29 subtile grid the board actually draws (D-T11). Everything below
-        // tile resolution — which variant each subtile uses, which side wins a
-        // contested subtile in the gaps, where props sit — is derived from the
-        // tile position, these numbers and `terrainSeed`, so the board redraws
-        // identically without storing 841 cells.
-        terrain: {},
-
-        // `paintedAt` values come from here, not from the clock: a plain
-        // counter is deterministic, ordering-only, and immune to two paints
-        // landing in the same millisecond. Higher wins a contested subtile
-        // (D-T3, "most recently painted wins").
-        nextPaintOrder: 0,
-
-        // Fixed per save, so the derived detail above is stable across reloads
-        // but differs between one player's board and another's. Null until the
-        // board is first touched; `BoardState.terrainSeed()` fills it in.
-        terrainSeed: null
+        // Terrain's `terrain`, `nextPaintOrder` and `terrainSeed` left the board
+        // in slice 1.6a: they were keyed by tile, and terrain is dormant (FP-10).
     };
 }
 
@@ -256,11 +239,12 @@ export const INITIAL_STATE = {
         newDiscoveries: {}               // { [id]: true } - IDs with active "New!" badges
     },
 
-    // === The Board (7×7 playmat) ===
-    //   tiles       { [index 0-48]: { typeId, usesRemaining, cycleElapsedMs } }
+    // === The Board (the playmat) ===
+    //   tokens      { [id]: { id, typeId, x, y, placedAt, usesRemaining, cycleElapsedMs, selectedRecipeId? } }  (Free Playmat 1.6a)
+    //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero)
     //   nextFlagOrder number                the next flag's plantedAt
-    //   vacancies   { [index]: { typeId, unstocked } }   tiles that ran dry
+    //   vacancies   { [spotId]: { typeId, x, y, unstocked } }   spots that ran dry, at the spent Token's point
     //   tokenBank   { [typeId]: [{ usesRemaining }, ...] }  capped by DISTINCT types (D-137)
     //   tokenBankSlots  number              derived from the Storage upgrade track
     //   tray        [ { typeId, usesRemaining }, ... ]   ~15-20 slots (D-168)
@@ -269,11 +253,8 @@ export const INITIAL_STATE = {
     //   tokenTabsUnlocked  number           derived from the Token tabs upgrade
     //   tokenGroups { groupOrder, groupDefs, overrides }  the Vault's tabs
     //
-    // Index 24 is the permanent Guild Hall and is never placeable (D-106).
-    //
-    // ⚠️ **`flags` is a hero's place on the board, and it is the only copy.** It
-    // replaced `heroTiles` (hero → tile), which saves from before slice 1.4b
-    // still carry; `SaveMigration` converts them. Which Token a flag works is a
+    // ⚠️ **`flags` is a hero's place on the board, and it is the only copy.**
+    // Which Token a flag works is a
     // runtime claim and is never saved (FP-58). A hero with no flag is in the
     // Dock; the Dock is still not a data structure.
     board: createEmptyBoard(),

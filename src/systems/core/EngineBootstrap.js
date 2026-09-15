@@ -39,13 +39,23 @@ import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { GUILD_HALL_TILE, tileCentre } from '../../config/boardGeometry.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 
 /**
- * The opening state of a new game.
- * The player starts with the Guild Hall token in the tray, no items, zero gold, and zero Heroes.
+ * The opening state of a new game (FP-44): the Guild Hall already standing on
+ * the mat, an empty Tray, no items, zero gold, and zero Heroes.
+ *
+ * Each entry is a Token type and the mat point it starts at.
+ *
+ * ⚠️ STOPGAP — the Hall's point is the centre of the old Guild Hall tile, not
+ * the centre of the mat, because until the renderer changes (slice 1.6c) the
+ * board still draws tiles through `gridShim.js` and a Token must sit on a tile
+ * centre to be drawn. Slice 1.6d moves it to the mat centre.
  */
-export const OPENING_TRAY = ['token_guild_hall'];
+export const OPENING_MAT = [
+    { typeId: 'token_guild_hall', ...tileCentre(GUILD_HALL_TILE) }
+];
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -123,7 +133,8 @@ export const EngineBootstrap = {
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
 
-        reportContentIntegrity({ openingTray: OPENING_TRAY });
+        // `openingTray` is the audit's name for "the Tokens a new game starts with".
+        reportContentIntegrity({ openingTray: OPENING_MAT.map(t => t.typeId) });
 
         // The same question asked of the loaded SAVE, every time one is loaded
         // (CR2-120). The audit above sees only the authored content set, so a
@@ -205,22 +216,25 @@ export const EngineBootstrap = {
             state.heroes = [];
         }
 
-        // Start with no tokens in the tray
+        // The Tray starts empty; the opening Tokens stand on the mat (FP-44).
         if (state.board) {
             state.board.tray = [];
         }
-        for (const typeId of OPENING_TRAY) {
-            BoardState.addToTray(
-                BoardState.createTokenInstance(typeId, tokenStartingUses(typeId))
+        for (const { typeId, x, y } of OPENING_MAT) {
+            BoardState.addToken(
+                BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)), x, y
             );
         }
+        // What a loaded save gets on `game_loaded`: the tile caches built for
+        // the Tokens already standing on the mat.
+        TileModifiers.rebuildAll();
 
         // Initialize exploration tracking
         if (!GameState.exploration) {
             GameState.exploration = { count: 0 };
         }
 
-        logger.info('Engine', 'New game: 0 heroes, 1 token (Guild Hall) in tray, 0 items, 0 gold.');
+        logger.info('Engine', 'New game: 0 heroes, the Guild Hall on the mat, an empty Tray, 0 items, 0 gold.');
     },
 
     /**

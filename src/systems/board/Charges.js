@@ -169,8 +169,16 @@ export function destroyToken(tile, instance, { heroId = null } = {}) {
     const typeId = instance?.typeId || null;
     const name = getTokenType(typeId)?.name || tokenName(typeId) || typeId || 'Token';
 
+    // The vacancy is the SPOT the spent Token stood on (slice 1.6a), which is
+    // exactly where a Manager's restock lands (FP-19). Read before clearing.
+    const spent = BoardState.getToken(tile);   // STOPGAP tile lookup — deleted in slice 1.6d
+    const spot = spent ? { x: spent.x, y: spent.y } : null;
+
     BoardState.setToken(tile, null);
-    if (typeId) BoardState.setVacancy(tile, typeId);
+    if (typeId) {
+        if (spot) BoardState.setVacancyAt(spot, typeId);
+        else BoardState.setVacancy(tile, typeId);   // STOPGAP — deleted in slice 1.6d
+    }
 
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
         tile,
