@@ -26,6 +26,7 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { isCombatSkill } from '../config/registries/skillRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -182,7 +183,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
     it('skips a disallowed enemy as disallowed (FP-35)', () => {
         const near = put(15, 'fixture_enemy');
         put(16, 'fixture_enemy');
-        Flags.setDisallowed(15, true);
+        Flags.setDisallowed(idAt(15), true);
 
         fightAt('h1', 14);
 
@@ -247,7 +248,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         expect(BoardState.getToken(14)).toBeNull();
         Flags.assign(0);
 
-        expect(BoardState.waitOfHero('h1')).toEqual({ tile: 14, typeId: 'fixture_enemy' });
+        expect(BoardState.waitOfHero('h1')).toEqual({ spotId: BoardState.spotIdAt(C(14).x, C(14).y), typeId: 'fixture_enemy', ...C(14) });
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
 
         Managers.sweep();
@@ -454,7 +455,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         expect(BoardState.getToken(14)).toBeNull();
         // Everything FP-70 asks for is there — only the hero has no use for it.
         expect(BoardState.getVacancy(14)?.typeId).toBe('fixture_promotion');
-        expect(Managers.managerFor(14, 'fixture_promotion')).not.toBeNull();
+        expect(Managers.managerFor(C(14), 'fixture_promotion')).not.toBeNull();
         expect(BoardState.tokenBankCopies('fixture_promotion').length).toBe(1);
 
         Flags.assign(0);
@@ -484,7 +485,7 @@ describe('⭐ disallow (FP-35)', () => {
         ];
         let result;
         try {
-            result = Flags.setDisallowed(14, true);
+            result = Flags.setDisallowed(idAt(14), true);
         } finally {
             offs.forEach(off => off?.());
         }
@@ -500,14 +501,14 @@ describe('⭐ disallow (FP-35)', () => {
         expect(BoardState.workTileOf('h1')).toBe(16);
         expect(reasons(forest)).toEqual([Flags.SKIP.DISALLOWED]);
 
-        Flags.setDisallowed(14, false);
+        Flags.setDisallowed(idAt(14), false);
         expect(forest.disallowed).toBeUndefined();
     });
 
     it('is never claimed as a Promotion Token either', () => {
         GameState.state.heroes = [qualified('h1')];
         const academy = put(14, 'fixture_promotion', 2);
-        Flags.setDisallowed(14, true);
+        Flags.setDisallowed(idAt(14), true);
 
         Placement.placeHero('h1', 14);
 
@@ -518,22 +519,22 @@ describe('⭐ disallow (FP-35)', () => {
     it('does not stop the Token’s own Provides', () => {
         put(14, 'fixture_producer');
         put(15, 'fixture_buff_yield');
-        TileModifiers.rebuildAround(15);
-        const allowed = TileModifiers.resolveAxis(14, EFFECT_TYPES.YIELD, 100, 'logging');
+        TileModifiers.rebuildAround([tileCentre(15)]);
+        const allowed = TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'logging');
         expect(allowed).toBeGreaterThan(100);
 
-        Flags.setDisallowed(15, true);
-        TileModifiers.rebuildAround(15);
+        Flags.setDisallowed(idAt(15), true);
+        TileModifiers.rebuildAround([tileCentre(15)]);
 
-        expect(TileModifiers.resolveAxis(14, EFFECT_TYPES.YIELD, 100, 'logging')).toBe(allowed);
+        expect(TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'logging')).toBe(allowed);
     });
 
     it('does not stop a Manager restocking — a disallowed Manager, onto a disallowed Token’s spot', () => {
         put(15, 'fixture_manager');
         const forest = put(14, 'fixture_producer', 1);
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
-        Flags.setDisallowed(15, true);
-        Flags.setDisallowed(14, true);
+        Flags.setDisallowed(idAt(15), true);
+        Flags.setDisallowed(idAt(14), true);
 
         Charges.destroyToken(14, forest);
         expect(Managers.sweep()).toBe(1);
@@ -543,7 +544,7 @@ describe('⭐ disallow (FP-35)', () => {
 
     it('survives a save and reload, and a trip through the Vault drops it', async () => {
         put(14, 'fixture_producer');
-        Flags.setDisallowed(14, true);
+        Flags.setDisallowed(idAt(14), true);
 
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         await GameState.initFromSave(migrateState(saved.state, saved.version));

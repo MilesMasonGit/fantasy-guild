@@ -19,6 +19,7 @@ import {
     PLACEMENT, PLACEMENTS, getPlacement, placementOf, resolvePlacement
 } from '../config/registries/placementRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -52,7 +53,7 @@ function makeHero(id) {
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }
@@ -134,7 +135,7 @@ describe('⭐ Transforms — one Token becomes another', () => {
         // nobody is moved. The flag still stands on the spot.
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardState.displayTileOf('hero_1')).toBe(A);
-        expect(BoardState.workerOf(A)).toBeNull();
+        expect(BoardState.workerOf(idAt(A))).toBeNull();
     });
 
     it('refuses a Token that does not exist', () => {

@@ -79,7 +79,7 @@ function makeHero(id) {
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }
@@ -277,15 +277,15 @@ describe('Converts aims at ONE destination (ER-14)', () => {
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
 
-    it('picks the lowest-indexed match, so the destination is deterministic', () => {
+    it('picks the earliest-placed match, so the destination is deterministic (slice 1.6b; was the lowest index)', () => {
         sigilAimedAt('fixture_sigil_deterministic', { mode: 'tag', value: 'seafood' });
 
         place(SOURCE, 'fixture_sigil_deterministic');
-        place(22, 'fixture_seafood_producer');
+        place(22, 'fixture_seafood_producer');   // placed first
         place(14, 'fixture_seafood_producer');   // lower index, placed second
         InventoryManager.addItem('item_coal', 2);
 
-        expect(addressedTiles(addSprite, 'fixture_charcoal')).toEqual([14]);
+        expect(addressedTiles(addSprite, 'fixture_charcoal')).toEqual([22]);
     });
 
     it('⚠️ the EDITOR DEFAULT produces on its own tile, not on a neighbour', () => {

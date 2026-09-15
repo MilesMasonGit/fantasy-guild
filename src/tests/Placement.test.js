@@ -7,6 +7,7 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Flags from '../systems/board/Flags.js';
 import { GUILD_HALL_TILE, TILE_COUNT } from '../config/boardGeometry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 /**
  * Placement and displacement — D-134, D-143, D-147, plus the forfeited-cycle
@@ -109,7 +110,7 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
         expect(result.success).toBe(true);
         // Hero stayed with pushed token at tile 3 — the claim follows the instance
         expect(BoardState.workTileOf('hero_1')).toBe(3);
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
     });
 
     it('a working hero keeps their flag when their Token goes to the Tray, and stops working it', () => {
@@ -139,7 +140,7 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
 
         Placement.placeToken(9, token('fixture_buff_yield'));
 
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
     });
 
     it('refuses the placement outright when no cell is free and the Tray is full, losing nothing', () => {
@@ -157,7 +158,7 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
         expect(result.success).toBe(false);
         // The board is exactly as it was — Token and hero both still there.
         expect(BoardState.getToken(0).typeId).toBe('fixture_producer');
-        expect(BoardState.workerOf(0)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(0))).toBe('hero_1');
     });
 });
 
@@ -202,7 +203,7 @@ describe('Forfeited cycles (D-54, D-131)', () => {
         Placement.placeHero('hero_1', 30);
 
         expect(BoardState.getToken(9).cycleElapsedMs).toBe(0);
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
     });
 });
 
@@ -223,9 +224,9 @@ describe('Moving a Token', () => {
         const result = Placement.moveToken(9, 20);
 
         expect(result.success).toBe(true);
-        expect(BoardState.workerOf(20)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(20))).toBe('hero_1');
         expect(BoardState.workTileOf('hero_1')).toBe(20);
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
     });
 
     it('rolls back completely if the destination refuses', () => {
@@ -248,7 +249,7 @@ describe('Placing a hero (D-111, D-147)', () => {
     it('puts a hero on a Token', () => {
         Placement.placeToken(9, token('fixture_producer'));
         expect(Placement.placeHero('hero_1', 9).success).toBe(true);
-        expect(BoardState.workerOf(9)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(9))).toBe('hero_1');
     });
 
     it('one hero per Token: a second hero dropped there does not take it (FP-25)', () => {
@@ -259,7 +260,7 @@ describe('Placing a hero (D-111, D-147)', () => {
         const result = Placement.placeHero('hero_2', 9);
 
         expect(result.success).toBe(true);
-        expect(BoardState.workerOf(9)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(9))).toBe('hero_1');
         expect(BoardState.workTileOf('hero_2')).toBeNull();
         expect(Flags.skipsOf(first.id)).toContainEqual({ heroId: 'hero_2', reason: Flags.SKIP.CLAIMED });
     });
@@ -273,7 +274,7 @@ describe('Placing a hero (D-111, D-147)', () => {
         Placement.placeHero('hero_1', 20);
 
         expect(BoardState.workTileOf('hero_1')).toBe(20);
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
     });
 
     it('never leaves a hero on two tiles at once', () => {
@@ -297,7 +298,7 @@ describe('Placing a hero (D-111, D-147)', () => {
         // facts. An empty tile and the Dock are not the same place.
         expect(result.workedTile).toBeNull();
         expect(BoardState.displayTileOf('hero_1')).toBe(9);
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
     });
 
     it('a Token placed under a planted flag is worked without re-placing them', () => {
@@ -309,7 +310,7 @@ describe('Placing a hero (D-111, D-147)', () => {
         Flags.assign(1000);
 
         expect(BoardState.workTileOf('hero_1')).toBe(9);
-        expect(BoardState.workerOf(9)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(9))).toBe('hero_1');
     });
 
     it('plants a hero on the Guild Hall token', () => {
@@ -328,14 +329,14 @@ describe('Placing a hero (D-111, D-147)', () => {
         Placement.placeHero('hero_1', 9);
 
         expect(BoardState.getToken(9).cycleElapsedMs).toBe(4000);
-        expect(BoardState.workerOf(9)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(9))).toBe('hero_1');
     });
 
     it('works on tile 0', () => {
         Placement.placeToken(0, token('fixture_producer'));
         Placement.placeHero('hero_1', 0);
         expect(BoardState.workTileOf('hero_1')).toBe(0);
-        expect(BoardState.workerOf(0)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(0))).toBe('hero_1');
     });
 });
 
@@ -489,7 +490,7 @@ describe('Passive vs Active Token Hero Constraints', () => {
 
         const result = Placement.placeHero('hero_1', 9);
         expect(result.success).toBe(true);
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
         expect(BoardState.displayTileOf('hero_1')).toBe(9);
     });
 
@@ -500,7 +501,7 @@ describe('Passive vs Active Token Hero Constraints', () => {
         const result = Placement.placeToken(9, token('fixture_pickaxe_t1'));
         expect(result.success).toBe(true);
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
-        expect(BoardState.workerOf(9)).toBeNull();
+        expect(BoardState.workerOf(idAt(9))).toBeNull();
     });
 
     it('allows placing a hero on an active token (requiresHero === true)', () => {

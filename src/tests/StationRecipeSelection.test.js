@@ -12,6 +12,7 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
+import { idAt } from './fixtures/mat.js';
 
 /**
  * Station recipe selection (Recipe & Charges rework, P2).
@@ -160,7 +161,7 @@ describe('Validation, not discovery', () => {
         const kitchen = place(A, 'fixture_kitchen');
         StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
 
-        const missing = RecipeResolver.getMissingRequirements(A, kitchen);
+        const missing = RecipeResolver.getMissingRequirements(idAt(A), kitchen);
         expect(missing.type).toBe('tokens');
         // The pie's two tags. Not `ctx_fixture_a`, which only the stew wants.
         expect(missing.items.sort()).toEqual(['Ctx Berry Cookbook', 'Ctx Pie Tin']);
@@ -170,7 +171,7 @@ describe('Validation, not discovery', () => {
         const kitchen = place(A, 'fixture_kitchen');
         StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
 
-        const resolved = RecipeResolver.resolveRecipe(A, kitchen);
+        const resolved = RecipeResolver.resolveRecipe(idAt(A), kitchen);
         expect(resolved.status).toBe(RECIPE.NONE);
         expect(resolved.reason).toBe('missing_context');
         expect(resolved.recipe.id).toBe('pooled_pie');
@@ -181,7 +182,7 @@ describe('Validation, not discovery', () => {
         StationRecipe.setSelectedRecipe(kitchen, 'pooled_stew');
         place(NEIGHBOUR, 'fixture_context_a');
 
-        expect(RecipeResolver.resolveRecipe(A, kitchen).status).toBe(RECIPE.OK);
+        expect(RecipeResolver.resolveRecipe(idAt(A), kitchen).status).toBe(RECIPE.OK);
     });
 
     it('has no CONFLICT state left to reach', () => {

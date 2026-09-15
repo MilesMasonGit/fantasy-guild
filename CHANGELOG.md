@@ -5,6 +5,16 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The game's "what is near this Token?" rules no longer think in squares** (Free Playmat
+  slice 1.6b, first half). Buffs, tools and context beside a station, tool wear, Managers,
+  neighbour triggers, "Cannot" placement rules and the way a flag picks its hero's job now
+  all look at each Token itself and its position on the board, instead of the square it
+  sits on — the next step towards placing Tokens anywhere. The board still looks and plays
+  as before, with one small difference: **when two choices are exactly tied** — two
+  Managers equally close to an empty spot, two equally near jobs for a flag, or a
+  conversion with two matching destinations — **the one put on the board first now wins**,
+  where before the one on the lower-numbered square did.
+
 - **The save format has changed, and new games start with the Guild Hall already on the
   board** (Free Playmat slice 1.6a). Behind the scenes the board now remembers each Token
   by where it sits rather than by which square it is on — the groundwork for placing

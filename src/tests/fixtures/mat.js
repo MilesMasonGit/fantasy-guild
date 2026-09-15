@@ -14,8 +14,8 @@
  */
 
 import * as BoardState from '../../systems/board/BoardState.js';
-import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { tileCentre as geometryTileCentre } from '../../config/boardGeometry.js';
+import { tokenStartingUses, getTokenType } from '../../config/registries/tokenRegistry.js';
+import { tileCentre as geometryTileCentre, footprintCentre } from '../../config/boardGeometry.js';
 
 /** One layout step, in mat units — today's tile step (128 art + 32 gap). Test layout only. */
 export const SPACING = 160;
@@ -55,4 +55,21 @@ export function clearMat() {
  */
 export function tileCentre(i) {
     return geometryTileCentre(i);
+}
+
+/**
+ * The instance id of the Token covering tile `i` of the old layout, or null.
+ * **Test layout only** — the engine readers take ids since slice 1.6b, and this
+ * lets a test that laid its board out by tile ask them.
+ */
+export function idAt(i) {
+    return BoardState.tokenIdAtTile(i);
+}
+
+/**
+ * Where a Token of `typeId` anchored at tile `i` of the old layout has its
+ * centre (a 2×2's footprint centre). **Test layout only.**
+ */
+export function pointAt(i, typeId) {
+    return footprintCentre(i, getTokenType(typeId)?.size || 1);
 }

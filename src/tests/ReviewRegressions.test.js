@@ -19,6 +19,7 @@ import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { slotsOf } from '../systems/effects/statementSlots.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -58,7 +59,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
     Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }
@@ -276,12 +277,12 @@ describe('⭐ a hero leaving switches a state filter back off', () => {
         place(NEIGHBOUR, 'fixture_worked_buff');
         place(A, 'fixture_producer', 'hero_1');
 
-        const buffed = TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2, 'logging');
+        const buffed = TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'logging');
         expect(buffed).toBe(4);
 
         Placement.recallHeroById('hero_1');
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2, 'logging')).toBe(2);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(2);
     });
 });
 
@@ -310,7 +311,7 @@ describe('⭐ a distant duplicate cannot suppress an adjacent one', () => {
         place(NEIGHBOUR, 'fixture_unique_buff');  // adjacent to A
         place(A, 'fixture_producer', 'hero_1');
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2, 'logging')).toBe(4);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(4);
     });
 });
 

@@ -13,6 +13,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getStatusStacks } from '../config/registries/statusRegistry.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 /**
  * **Dying to poison (CR2-070).**
@@ -100,7 +101,7 @@ describe('A hero poisoned to 0 HP dies properly (CR2-070)', () => {
 
         // Their flag comes down with them (Free Playmat 1.4b).
         expect(BoardState.flagOf('hero_1')).toBeNull();
-        expect(BoardState.workerOf(10)).toBeNull();
+        expect(BoardState.workerOf(idAt(10))).toBeNull();
         expect(BoardState.getToken(10)?.typeId).toBe('fixture_producer');
     });
 

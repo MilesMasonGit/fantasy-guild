@@ -137,7 +137,7 @@ describe('CR2-060: every alert value comes from one enum', () => {
 
     it('Managers publishes the alert once, on the transition into unstocked', () => {
         // A tile with a Manager beside it that manages a type the Vault has no
-        // copy of: `restockTile` takes the unstocked branch every sweep.
+        // copy of: `restockSpot` takes the unstocked branch every sweep.
         const managed = aPlainTokenId();
         const MANAGER = 'fixture_one_rule_manager';
         getAllTokenTypes()[MANAGER] = {
@@ -146,20 +146,24 @@ describe('CR2-060: every alert value comes from one enum', () => {
         };
 
         BoardState.setToken(1, BoardState.createTokenInstance(MANAGER, null));
-        const vacancy = { typeId: managed, unstocked: false };
+        // The spot tile 0's Token stood on; Near (164 u) reaches the Manager on tile 1, 160 u away.
+        const at = { x: 64, y: 64 };
+        BoardState.setVacancyAt(at, managed);
+        const spotId = BoardState.spotIdAt(at.x, at.y);
+        const vacancy = BoardState.vacancyAt(spotId);
 
         const seen = [];
         const unsub = EventBus.subscribe(BOARD_EVENTS.ALERT_CHANGED, p => seen.push(p));
 
-        expect(Managers.restockTile(0, vacancy)).toBe('unstocked');
+        expect(Managers.restockSpot(spotId)).toBe('unstocked');
         expect(vacancy.unstocked).toBe(true);
         expect(seen).toHaveLength(1);
         expect(seen[0].alert).toBe(ALERT.UNSTOCKED);
 
         // The sweep retries on a throttle. The mark is already showing, so
         // nothing has changed and nothing more may be published (CR2-060).
-        expect(Managers.restockTile(0, vacancy)).toBe('unstocked');
-        expect(Managers.restockTile(0, vacancy)).toBe('unstocked');
+        expect(Managers.restockSpot(spotId)).toBe('unstocked');
+        expect(Managers.restockSpot(spotId)).toBe('unstocked');
         expect(seen).toHaveLength(1);
 
         unsub?.();

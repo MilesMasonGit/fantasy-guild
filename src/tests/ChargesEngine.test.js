@@ -1,3 +1,4 @@
+import { idAt } from './fixtures/mat.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -55,7 +56,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
     Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }
@@ -233,14 +234,16 @@ describe('Adjacent context Tokens are chosen and shared', () => {
     it('draws from the Token with the fewest charges left first', () => {
         const scarce = place(CONTEXT, 'fixture_charged_context', null, 2);
         const full = place(CONTEXT_2, 'fixture_charged_context');
+        // The reader measures from the station Token itself (slice 1.6b), so one stands there.
+        place(STATION, 'fixture_charge_station');
 
         const plan = Charges.planContextCharges(
-            STATION, [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }]
+            idAt(STATION), [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }]
         );
 
         expect(plan.ok).toBe(true);
         expect(plan.debits).toEqual([
-            { tile: CONTEXT, instance: scarce, amount: 2 }
+            { id: scarce.id, instance: scarce, amount: 2 }
         ]);
         expect(full.usesRemaining).toBe(6);
     });
@@ -248,22 +251,26 @@ describe('Adjacent context Tokens are chosen and shared', () => {
     it('spreads one requirement across providers when the first cannot cover it', () => {
         place(CONTEXT, 'fixture_charged_context', null, 1);
         place(CONTEXT_2, 'fixture_charged_context');
+        // The reader measures from the station Token itself (slice 1.6b), so one stands there.
+        place(STATION, 'fixture_charge_station');
 
         const plan = Charges.planContextCharges(
-            STATION, [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 3 }]
+            idAt(STATION), [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 3 }]
         );
 
         expect(plan.ok).toBe(true);
-        expect(plan.debits.map(d => [d.tile, d.amount]).sort())
+        expect(plan.debits.map(d => [BoardState.tileOfToken(d.id), d.amount]).sort())
             .toEqual([[CONTEXT, 1], [CONTEXT_2, 2]].sort());
     });
 
     it('charges nothing when an unlimited provider supplies the tag (R-4)', () => {
         place(CONTEXT, 'fixture_charged_context');
         place(CONTEXT_2, 'fixture_charged_context_unlimited');
+        // The reader measures from the station Token itself (slice 1.6b), so one stands there.
+        place(STATION, 'fixture_charge_station');
 
         const plan = Charges.planContextCharges(
-            STATION, [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }]
+            idAt(STATION), [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }]
         );
 
         expect(plan.ok).toBe(true);

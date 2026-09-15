@@ -11,6 +11,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
 import { GUILD_HALL_TILE } from '../config/boardGeometry.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
+import { idAt } from './fixtures/mat.js';
 
 describe('Guild Hall Mobile Token (New Token System)', () => {
     beforeEach(() => {
@@ -164,7 +165,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             Placement.placeHero('hero_test_1', 24);
 
             // Inject a mock haste/speed modifier on tile 24 that would normally cut work time in half
-            TileModifiers.getTileAggregator(24).addModifier(EFFECT_TYPES.WORK_TIME, {
+            TileModifiers.getTokenAggregator(idAt(24)).addModifier(EFFECT_TYPES.WORK_TIME, {
                 percentage: -0.50
             });
 

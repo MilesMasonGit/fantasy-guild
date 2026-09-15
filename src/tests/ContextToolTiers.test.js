@@ -7,6 +7,7 @@ import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
+import { idAt } from './fixtures/mat.js';
 
 /**
  * Hierarchical tool tiers (concept §2.4, R-17).
@@ -84,7 +85,7 @@ function missingTags(recipeId) {
     const recipe = { requiresContext: recipeId === 'tier_two_job'
         ? [{ tag: 'pickaxe', minTier: 2 }]
         : [{ tag: 'pickaxe', minTier: 1 }] };
-    return RecipeResolver.unmetContext(STATION, recipe).map(r => r.tag);
+    return RecipeResolver.unmetContext(idAt(STATION), recipe).map(r => r.tag);
 }
 
 beforeEach(() => {
@@ -95,7 +96,7 @@ describe('Hierarchical tool tiers (concept §2.4)', () => {
     it('reads the neighbour’s tier, not merely the presence of its tag', () => {
         place(STATION, 'fixture_tiered_bench');
         place(NEIGHBOUR, 'fixture_pickaxe_t2');
-        expect(RecipeResolver.contextTiersAround(STATION).pickaxe).toBe(2);
+        expect(RecipeResolver.contextTiersAround(idAt(STATION)).pickaxe).toBe(2);
     });
 
     it('lets a Tier 2 tool satisfy a Tier 1 requirement', () => {

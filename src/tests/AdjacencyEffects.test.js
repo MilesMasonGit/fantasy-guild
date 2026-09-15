@@ -19,6 +19,7 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { tileCentre, idAt } from './fixtures/mat.js';
 
 /**
  * Adjacency — the spatial half of the game.
@@ -63,7 +64,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
     Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround(tile);
+    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
     if (heroId) Placement.placeHero(heroId, tile);
     return BoardState.getToken(tile);
 }
@@ -97,7 +98,7 @@ describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
 
-        const resolved = TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100);
+        const resolved = TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100);
         expect(resolved).toBeCloseTo(105);          // +5%
     });
 
@@ -105,23 +106,23 @@ describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)
         place(A, 'fixture_producer', 'hero_1');
         place(FAR, 'fixture_buff_yield');
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
     });
 
     it('a Tool Rack beside a station shortens its WORK_TIME', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_speed');
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.WORK_TIME, 10000)).toBeCloseTo(9000);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.WORK_TIME, 10000)).toBeCloseTo(9000);
     });
 
     it('resolves back to base once the neighbour is removed', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
         Placement.returnTokenToTray(NEIGHBOUR);
-        TileModifiers.rebuildAround(NEIGHBOUR);
+        TileModifiers.rebuildAround([tileCentre(NEIGHBOUR)]);
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
     });
 });
 
@@ -130,12 +131,12 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
         place(16, 'fixture_buff_yield');
-        TileModifiers.rebuildTile(A);
+        TileModifiers.rebuildToken(idAt(A));
 
         // +5% and +5% = +10%. Compounding would give 1.1025 — the bug the
         // three-bucket rule exists to prevent.
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(110);
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).not.toBeCloseTo(110.25);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(110);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).not.toBeCloseTo(110.25);
     });
 
     it('eight Sawmills still only give a small number', () => {
@@ -148,9 +149,9 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
         const CENTRE = 9;
         place(CENTRE, 'fixture_producer', 'hero_1');
         for (const n of [2, 3, 4, 8, 10, 14, 15, 16]) place(n, 'fixture_buff_yield');
-        TileModifiers.rebuildTile(CENTRE);
+        TileModifiers.rebuildToken(idAt(CENTRE));
 
-        const resolved = TileModifiers.resolveAxis(CENTRE, EFFECT_TYPES.YIELD, 100);
+        const resolved = TileModifiers.resolveAxis(idAt(CENTRE), EFFECT_TYPES.YIELD, 100);
         expect(resolved).toBeCloseTo(140);              // +40%, not +400%
         expect(resolved).toBeLessThan(200);
     });
@@ -159,10 +160,10 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_unique');
         place(16, 'fixture_buff_unique');
-        TileModifiers.rebuildTile(A);
+        TileModifiers.rebuildToken(idAt(A));
 
         // Two Shrines, one effect — the Token opted out of repetition.
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(110);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(110);
     });
 });
 
@@ -173,8 +174,8 @@ describe('Hero buffs are NOT tile modifiers (D-112, D-152)', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_hero');
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.HP_REGEN, 0)).toBeCloseTo(0);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.HP_REGEN, 0)).toBeCloseTo(0);
     });
 });
 
@@ -212,7 +213,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
 
         Placement.returnTokenToTray(NEIGHBOUR);
-        TileModifiers.rebuildAround(NEIGHBOUR);
+        TileModifiers.rebuildAround([tileCentre(NEIGHBOUR)]);
         place(NEIGHBOUR, 'fixture_context_b');
         run(17000);
 
@@ -280,7 +281,7 @@ describe('Effect blocks (CMS-58, CMS-59, CMS-65)', () => {
     it('reads a legacy `buff` as one block, unchanged', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');    // authored as `buff`
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
     });
 
     it('applies only the block whose target matches', () => {
@@ -288,13 +289,13 @@ describe('Effect blocks (CMS-58, CMS-59, CMS-65)', () => {
         // by id (+50%). A seafood Token must get only the first.
         place(A, 'fixture_seafood_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_two_blocks');
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
     });
 
     it('applies the other block to the Token IT names', () => {
         place(FAR, 'fixture_producer', 'hero_2');
         place(FAR - 1, 'fixture_two_blocks');
-        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
+        expect(TileModifiers.resolveAxis(idAt(FAR), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
     });
 
     it('keeps two blocks on one Token in separate aggregator sources', () => {
@@ -305,7 +306,7 @@ describe('Effect blocks (CMS-58, CMS-59, CMS-65)', () => {
 
         // Only the id-targeted block matches fixture_producer, so +50%.
         // The assertion that matters is that it is not 0 (overwritten) or 200.
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
     });
 });
 
@@ -316,7 +317,7 @@ describe('Block upkeep — its own clock, and OFF when unpaid (CMS-60, CMS-97)',
         place(NEIGHBOUR, 'fixture_upkeep_aura');
 
         run(1000);
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
     });
 
     it('charges on its OWN cadence, not the neighbour\'s cycle time', () => {
@@ -334,10 +335,10 @@ describe('Block upkeep — its own clock, and OFF when unpaid (CMS-60, CMS-97)',
         place(NEIGHBOUR, 'fixture_upkeep_aura');
 
         run(5100);    // first charge paid
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
 
         run(5100);    // second charge unaffordable
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
     });
 
     it('comes back on by itself once stock returns', () => {
@@ -347,11 +348,11 @@ describe('Block upkeep — its own clock, and OFF when unpaid (CMS-60, CMS-97)',
         place(NEIGHBOUR, 'fixture_upkeep_aura');
 
         run(10200);
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
 
         InventoryManager.addItem('item_coal', 5);
         run(5100);
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
     });
 
     it('never half-pays a multi-item upkeep', () => {
@@ -482,34 +483,34 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
         place(A, 'fixture_seafood_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_tag');
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
     });
 
     it('does NOT apply a tag-targeted buff to a Token without the tag', () => {
         place(A, 'fixture_producer', 'hero_1');   // no `seafood` tag
         place(NEIGHBOUR, 'fixture_buff_tag');
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
     });
 
     it('applies an ID-targeted buff only to that exact Token type', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_id');
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
 
         place(FAR, 'fixture_producer_alt', 'hero_2');
         place(FAR - 1, 'fixture_buff_id');
-        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+        expect(TileModifiers.resolveAxis(idAt(FAR), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
     });
 
     it('applies a TOKENTYPE-targeted buff to the whole category', () => {
         place(A, 'fixture_station', 'hero_1');            // tokenType: station
         place(NEIGHBOUR, 'fixture_buff_type');
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
 
         place(FAR, 'fixture_producer', 'hero_2');         // tokenType: resource
         place(FAR - 1, 'fixture_buff_type');
-        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+        expect(TileModifiers.resolveAxis(idAt(FAR), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
     });
 
     it('leaves an UNTARGETED buff applying to everything, as before', () => {
@@ -517,7 +518,7 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
         // buffs rather than amending the old one.
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
     });
 
     it('⚠️ makes a buff with an unknown target mode inert, never universal', () => {
@@ -526,7 +527,7 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
         place(A, 'fixture_seafood_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_bad_target');
 
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
     });
 
     it('re-evaluates targeting when the Token on the tile changes', () => {
@@ -535,12 +536,12 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
         // neighbour's buff reaches it.
         place(NEIGHBOUR, 'fixture_buff_tag');
         place(A, 'fixture_producer', 'hero_1');
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
 
         Placement.returnTokenToTray(A);
-        TileModifiers.rebuildAround(A);
+        TileModifiers.rebuildAround([tileCentre(A)]);
         place(A, 'fixture_seafood_producer', 'hero_1');
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
     });
 
     it('actually changes what a targeted Token produces, end to end', () => {
@@ -694,10 +695,10 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
         place(NEIGHBOUR, 'fixture_pie_tin');
 
         // One of the two: still gated.
-        expect(RecipeResolver.resolveRecipe(A, kitchen).status).toBe(RECIPE.NONE);
+        expect(RecipeResolver.resolveRecipe(idAt(A), kitchen).status).toBe(RECIPE.NONE);
 
         place(16, 'fixture_cookbook');
-        const resolved = RecipeResolver.resolveRecipe(A, kitchen);
+        const resolved = RecipeResolver.resolveRecipe(idAt(A), kitchen);
         expect(resolved.status).toBe(RECIPE.OK);
         expect(resolved.recipe.id).toBe('pooled_pie');
     });
@@ -787,7 +788,7 @@ describe('Scope composition — the rule Phase 0 pinned before it had a consumer
         // +5% and +5% = +10%. Resolved separately and multiplied it would be
         // +10.25% — small here, and exactly how "small adjacency effects"
         // quietly become large ones.
-        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(110);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(110);
         getGlobalAggregator().clearAll();
     });
 });

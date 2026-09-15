@@ -22,6 +22,7 @@ import { auditContent } from '../systems/core/ContentAudit.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { tileCentre } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -214,7 +215,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
 
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
         Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround(TILE);
+        TileModifiers.rebuildAround([tileCentre(TILE)]);
         Placement.placeHero('hero_1', TILE);
         BoardRunner.tick(100);
 
@@ -230,7 +231,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
 
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
         Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround(TILE);
+        TileModifiers.rebuildAround([tileCentre(TILE)]);
         Placement.placeHero('hero_1', TILE);
         BoardRunner.tick(100);
         expect(hero.aggregator.query('ARMOR')).toBe(1);
@@ -245,7 +246,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
 
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
         Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround(TILE);
+        TileModifiers.rebuildAround([tileCentre(TILE)]);
         Placement.placeHero('hero_1', TILE);
         BoardRunner.tick(100);
         expect(hero.aggregator.query('ARMOR')).toBe(-2);

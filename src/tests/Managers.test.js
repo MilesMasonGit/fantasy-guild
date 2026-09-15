@@ -12,6 +12,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { idAt, pointAt } from './fixtures/mat.js';
 
 /**
  * Managers (D-35, D-104, D-140, D-151, D-133) — the phase where the AFK story
@@ -173,7 +174,7 @@ describe('⚠️ Restocking UNDER a working hero, who resumes (D-151)', () => {
 
         // The hero waited on the spot for the restock (FP-70) and claimed it.
         expect(BoardState.workTileOf('hero_1')).toBe(TILE);
-        expect(BoardState.workerOf(TILE)).toBe('hero_1');
+        expect(BoardState.workerOf(idAt(TILE))).toBe('hero_1');
     });
 
     it('and the hero then actually produces again, unattended', () => {
@@ -292,14 +293,14 @@ describe('Only tiles that ran dry', () => {
 });
 
 describe('Overlapping Managers resolve first-come (D-140)', () => {
-    it('lets the lowest-indexed Manager do the job, stably', () => {
+    it('lets the earlier-placed Manager do the job, stably (slice 1.6b; was the lowest index)', () => {
         // With no ordering, two overlapping Managers would drain unpredictably
         // different piles — a difference the player can see, for no benefit.
         place(8, 'fixture_manager');
         place(NEIGHBOUR, 'fixture_manager');
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
 
-        expect(Managers.managerFor(TILE, 'fixture_producer')[0]).toBe(8);
+        expect(Managers.managerFor(pointAt(TILE, 'fixture_producer'), 'fixture_producer')[0]).toBe(idAt(8));
     });
 
     it('restocks exactly once, not once per covering Manager', () => {

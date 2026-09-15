@@ -5,6 +5,7 @@ import * as Placement from '../systems/board/Placement.js';
 import * as adjacency from '../systems/board/adjacency.js';
 import * as geometry from '../config/boardGeometry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -181,7 +182,7 @@ describe('2x2 Large Token Mechanics', () => {
 
             // Hero works the Token at its anchor tile 0
             expect(BoardState.workTileOf('hero_1')).toBe(0);
-            expect(BoardState.workerOf(0)).toBe('hero_1');
+            expect(BoardState.workerOf(idAt(0))).toBe('hero_1');
         });
 
         it('one hero per 2x2 Token: a second hero dropped on it does not take it (FP-25)', () => {
@@ -206,7 +207,7 @@ describe('2x2 Large Token Mechanics', () => {
 
             const res = Placement.placeHero('hero_1', 0);
             expect(res.success).toBe(true);
-            expect(BoardState.workerOf(0)).toBeNull();
+            expect(BoardState.workerOf(idAt(0))).toBeNull();
             expect(BoardState.flagOf('hero_1')).not.toBeNull();
         });
     });

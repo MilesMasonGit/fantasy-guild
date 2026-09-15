@@ -21,6 +21,7 @@ import { tileCentre } from '../config/boardGeometry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
+import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -106,11 +107,11 @@ describe('choosing — nearest first (FP-57)', () => {
         expect(BoardState.workTileOf('h1')).toBe(15);
     });
 
-    it('breaks a distance tie on the lower anchor', () => {
+    it('breaks a distance tie on the earlier-placed Token (slice 1.6b; was the lower anchor)', () => {
         put(15, 'fixture_producer');
         put(13, 'fixture_producer');
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(13);
+        expect(BoardState.workTileOf('h1')).toBe(15);
     });
 });
 
@@ -315,7 +316,7 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
     it('waits on the spot, then claims the restocked Token — a different instance, from zero', () => {
         const first = dryForest();
 
-        expect(BoardState.waitOfHero('h1')).toEqual({ tile: 14, typeId: 'fixture_producer' });
+        expect(BoardState.waitOfHero('h1')).toEqual({ spotId: BoardState.spotIdAt(C(14).x, C(14).y), typeId: 'fixture_producer', ...C(14) });
         expect(BoardRunner.isHeroIdle('h1')).toBe(false);
 
         Managers.sweep();
@@ -371,7 +372,7 @@ describe('dropping a hero plants their flag — a flag has no skill (FP-71)', ()
         put(14, 'fixture_enemy');
         Placement.placeHero('h1', 14);
         expect(BoardState.flagOf('h1')).toEqual({ ...C(14), plantedAt: expect.any(Number) });
-        expect(BoardState.workerOf(14)).toBe('h1');
+        expect(BoardState.workerOf(idAt(14))).toBe('h1');
     });
 
     it('dropped on a Token whose skill the hero lacks, they do not work it, and it says unskilled', () => {
@@ -379,7 +380,7 @@ describe('dropping a hero plants their flag — a flag has no skill (FP-71)', ()
         const forest = put(14, 'fixture_producer');
         Placement.placeHero('h1', 14);
         expect(BoardState.flagOf('h1').skill).toBeUndefined();
-        expect(BoardState.workerOf(14)).toBeNull();
+        expect(BoardState.workerOf(idAt(14))).toBeNull();
         expect(reasons(forest)).toEqual([ALERT.UNSKILLED]);
     });
 });
