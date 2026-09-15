@@ -174,6 +174,15 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(BoardState.getToken(7)?.typeId).toBe('fixture_big');
     });
 
+    it('⚠️ from the Tray with the Tray’s real payload — `traySlot` AND `instanceId` (found in game)', () => {
+        const tray = instance('fixture_producer', 100);
+        BoardState.addToTray(tray);
+        const result = dropOnMat({ typeId: 'fixture_producer', instanceId: tray.id, from: { traySlot: 0, instanceId: tray.id } }, near(9));
+        expect(result.success).toBe(true);
+        expect(BoardState.getToken(9)?.id).toBe(tray.id);
+        expect(BoardState.getTray()).toHaveLength(0);
+    });
+
     it('from the Tray', () => {
         BoardState.addToTray(instance('fixture_producer', 100));
         dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, near(9));

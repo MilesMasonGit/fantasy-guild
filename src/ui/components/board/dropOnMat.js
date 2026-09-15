@@ -131,12 +131,6 @@ export function dropOnMat(payload, point) {
         if (!result.success) BoardState.addBoardMap(instance.typeId, instance.x, instance.y, instance.usesRemaining);
         return result;
     }
-    if (from.instanceId != null) {
-        // STOPGAP (deleted in 1.6d): moved by its old spot.
-        const found = BoardState.findTokenById(from.instanceId);
-        if (found?.anchor == null) return announce(refuse('No Token there'));
-        return announce(Placement.moveToken(found.anchor, index));
-    }
     if (from.spriteId != null) {
         const instance = SpriteLayer.takeTokenSprite(from.spriteId);
         if (!instance) return null;
@@ -163,6 +157,15 @@ export function dropOnMat(payload, point) {
     // withdrawal twice on every quest that watches for it (CR2-146).
     if (from.vaultTypeId != null) {
         return announce(VaultTransfer.withdrawTo(from.vaultTypeId, { tile: index }));
+    }
+    // ⚠️ Checked LAST of the origins: a Tray Token's payload carries its
+    // `instanceId` beside `traySlot`, so `instanceId` alone means "a Token on
+    // the mat" only when no other origin is named.
+    if (from.instanceId != null) {
+        // STOPGAP (deleted in 1.6d): moved by its old spot.
+        const found = BoardState.findTokenById(from.instanceId);
+        if (found?.anchor == null) return announce(refuse('No Token there'));
+        return announce(Placement.moveToken(found.anchor, index));
     }
     if (payload.typeId) {
         const instance = BoardState.createTokenInstance(payload.typeId, payload.usesRemaining);
