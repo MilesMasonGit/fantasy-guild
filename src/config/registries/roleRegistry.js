@@ -161,18 +161,25 @@ export const AMBIENT_ROLES = Object.freeze([ROLE.SELF]);
  * filled, or make a rule silently inert on the perfectly ordinary occasions when
  * nobody was around.
  *
- * @param {object} payload the board event's payload
- * @param {number} bearerTile the tile of the entity carrying the rule
- * @returns {{self: number, actor: string|null, source: number|null}}
+ * ## By instance id (Free Playmat slice 1.6b)
+ * `self` and `source` are Token **instance ids**, never tiles. `selfPoint` is
+ * the bearer's mat point, for a bearer that has already left the mat (a rule on
+ * its own depletion) — the only way a verb can still measure from it.
+ *
+ * @param {object} payload the board event's payload (names its Token by `instanceId`)
+ * @param {string} bearerId the instance id of the Token carrying the rule
+ * @param {{x:number,y:number}|null} [bearerPoint] where that Token stands (or stood)
+ * @returns {{self: string, selfPoint: object|null, actor: string|null, source: string|null}}
  */
-export function resolveRoles(payload, bearerTile) {
-    const eventTile = payload?.tile;
+export function resolveRoles(payload, bearerId, bearerPoint = null) {
+    const eventId = payload?.instanceId ?? null;
     return {
-        self: bearerTile,
+        self: bearerId ?? null,
+        selfPoint: bearerPoint || null,
         /**
-         * ⚠️ `self` is a TILE for a rule on a Token, and a HERO for a rule the
+         * ⚠️ `self` is a TOKEN for a rule on a Token, and a HERO for a rule the
          * hero is carrying (V6). A live effect instance sits on a person, not on
-         * a square, so "this entity" has to be able to mean either.
+         * a Token, so "this entity" has to be able to mean either.
          *
          * Null here: only `LiveEffects` fills it, because only it knows the
          * bearer is a person.
@@ -181,6 +188,6 @@ export function resolveRoles(payload, bearerTile) {
         actor: payload?.heroId ?? null,
         // A self-scoped moment's source is the bearer, which is `self` — so it
         // reports null rather than duplicating it under a second name.
-        source: eventTile != null && eventTile !== bearerTile ? eventTile : null
+        source: eventId != null && eventId !== bearerId ? eventId : null
     };
 }

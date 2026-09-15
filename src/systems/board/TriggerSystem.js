@@ -6,7 +6,7 @@ import { statementsOf, stationSkillOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
-import { anchorCentre, centreOf, nearRadius, tokensWithin } from './nearby.js';
+import { centreOf, distanceSq, nearRadius, tokensWithin } from './nearby.js';
 import { matchesTokenTarget, filterTargets } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
@@ -76,7 +76,7 @@ let unsubscribers = [];
  *
  * So the guard is structural and does not depend on either fact:
  *
- * 1. **Re-entrancy.** A statement already in flight on a tile cannot be
+ * 1. **Re-entrancy.** A statement already in flight on a Token cannot be
  *    re-entered. This alone makes a Token-eats-itself loop impossible.
  * 2. **Cascade depth.** A chain of *different* Tokens setting each other off
  *    is bounded, so a long ring cannot spin either. When the cap is reached the
@@ -190,8 +190,8 @@ function isReady(instance, statementId) {
  * see CMS-26 above. A statement that was on cooldown, or whose condition was not
  * met, has not served and costs nothing.
  */
-function fireStatement(tile, instance, statement, payload = null, { settled = false } = {}) {
-    if (!isReady(instance, statement.id)) return false;
+function fireStatement(instance, statement, payload = null, { settled = false } = {}) {
+    if (!instance || !isReady(instance, statement.id)) return false;
 
     /**
      * A statement's own charge cost gates it (concept §3.2). An effect that
@@ -213,7 +213,7 @@ function fireStatement(tile, instance, statement, payload = null, { settled = fa
 
     // --- The loop guard (see the note at the top of this file) --------------
     // Keyed by the Token's instance id (slice 1.6b).
-    const key = `${instance?.id ?? tile}:${statement.id}`;
+    const key = `${instance.id}:${statement.id}`;
     if (inFlight.has(key)) return false;
     if (cascadeDepth >= MAX_CASCADE_DEPTH) {
         if (!warnedAboutDepth) {
@@ -237,7 +237,7 @@ function fireStatement(tile, instance, statement, payload = null, { settled = fa
     try {
         // The charge delta lives inside, because only the actions know whether
         // the bearer replaced itself and therefore has nothing left to pay with.
-        runStatementActions(tile, instance, statement, payload, { settled });
+        runStatementActions(instance, statement, payload, { settled });
     } finally {
         inFlight.delete(key);
         cascadeDepth -= 1;
@@ -246,7 +246,7 @@ function fireStatement(tile, instance, statement, payload = null, { settled = fa
     // The statement served, so its name is said — the same moment and the same
     // rule as the charge delta above it (CMS-26): what is announced is that the
     // Token acted, not that every proc inside it happened to hit.
-    EffectFeedback.announce(tile, statement);
+    EffectFeedback.announce(instance.id, statement);
 
     return true;
 }
@@ -255,42 +255,47 @@ function fireStatement(tile, instance, statement, payload = null, { settled = fa
  * What a fired statement actually does. Split out so the guard can wrap it.
  *
  * ⚠️ `payload` is the **board event's** payload, threaded through from the
- * handler so `Deals` can resolve its roles (Effects Grammar v2 V2). Everything
- * above it targets tiles and needs only `tile`; a verb that acts on a
- * *participant* needs to know who was involved, and only the event knows that.
+ * handler so `Deals` can resolve its roles (Effects Grammar v2 V2). A verb that
+ * acts on a *participant* needs to know who was involved, and only the event
+ * knows that.
+ *
+ * By instance id (Free Playmat slice 1.6b): the bearer is `instance`, which may
+ * already have left the mat (a rule on its own depletion) — its `x`, `y` is then
+ * where it stood.
  */
-function runStatementActions(tile, instance, statement, payload = null, { settled = false } = {}) {
-    // Whether this statement swapped the Token standing on `tile` for a new
-    // one. See the note beside the charge delta at the end.
+function runStatementActions(instance, statement, payload = null, { settled = false } = {}) {
+    // Whether this statement swapped the bearer for a new Token. See the note
+    // beside the charge delta at the end.
     let bearerReplaced = false;
+    const bearerPoint = centreOf(instance);
+    const roles = () => resolveRoles(payload, instance.id, bearerPoint);
 
     /**
      * ⭐ `Deals` — damage to somebody the moment named.
      *
      * Handled first because it is the one keyword whose target is a **role**
-     * rather than a tile filter, so none of the tile-shaped machinery below
-     * applies to it.
+     * rather than a filter, so none of the filter machinery below applies to it.
      */
     if (statement.keyword === KEYWORD.DEALS) {
-        DealDamage.deal(statement, resolveRoles(payload, tile));
+        DealDamage.deal(statement, roles());
     }
 
     // The rest of the action set (V8). Same shape, same role resolution — each
-    // one is a verb that does something to a participant rather than to a tile.
+    // one is a verb that does something to a participant.
     if (statement.keyword === KEYWORD.HEALS) {
-        EffectActions.heal(statement, resolveRoles(payload, tile));
+        EffectActions.heal(statement, roles());
     }
     if (statement.keyword === KEYWORD.RESTORES) {
-        EffectActions.restore(statement, resolveRoles(payload, tile));
+        EffectActions.restore(statement, roles());
     }
     if (statement.keyword === KEYWORD.REMOVES) {
-        EffectActions.remove(statement, resolveRoles(payload, tile));
+        EffectActions.remove(statement, roles());
     }
     if (statement.keyword === KEYWORD.SPAWNS) {
-        bearerReplaced = EffectActions.spawn(statement, resolveRoles(payload, tile)) === tile;
+        bearerReplaced = !!EffectActions.spawn(statement, roles())?.replacedBearer;
     }
     if (statement.keyword === KEYWORD.TRANSFORMS) {
-        bearerReplaced = EffectActions.transform(statement, resolveRoles(payload, tile));
+        bearerReplaced = EffectActions.transform(statement, roles());
     }
 
 
@@ -302,8 +307,8 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
      */
     if (statement.keyword === KEYWORD.APPLIES) {
         // G-42: a role, when set, replaces the filter and the reach.
-        if (statement.target?.role) StatusApplication.applyToRole(statement, resolveRoles(payload, tile));
-        else StatusApplication.applyToNeighbours(tile, statement);
+        if (statement.target?.role) StatusApplication.applyToRole(statement, roles());
+        else StatusApplication.applyToNeighbours(instance.id, statement, Math.random, bearerPoint);
     }
 
     for (const modifier of [statement.payload].filter(Boolean)) {
@@ -315,8 +320,8 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
          * ⚠️ **A firing rule lands where its sentence says it lands**
          * (Effects Robustness P1).
          *
-         * Both payloads below used to drop on `tile` — the Token that fired —
-         * no matter what filter the author wrote. `Grants` declares
+         * Both payloads below used to drop on the Token that fired no matter
+         * what filter the author wrote. `Grants` declares
          * `filter: true`, so *"grant 1 Copper to any adjacent Forge"* was a
          * sentence the editor generated, the CMS saved, the game loaded, and
          * the runtime then ignored. That is the exact failure the statement
@@ -328,10 +333,10 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
             const quantity = Math.max(1, modifier.quantity || 1);
             // An unfiltered grant is about the Token that fired, which is what
             // an author with no filter means and what this always did.
-            const targets = statement.to ? targetTilesOf(instance, statement) : [tile];
+            const targets = statement.to ? targetsOf(instance, statement) : [bearerSource(instance)];
             // ⚠️ A filter naming nothing grants nothing. "To any adjacent Forge"
             // with no Forge beside it must reach nobody — falling back to the
-            // firing tile would make an unmatched filter silently universal,
+            // firing Token would make an unmatched filter silently universal,
             // which is the failure `matchesTokenTarget` refuses for the same
             // reason.
             for (const target of targets) {
@@ -366,12 +371,14 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
              *
              * So the filter picks a **destination**, and the owner's own example
              * is singular: *a Sigil that turns Stone into Bricks and puts them
-             * on the adjacent Kiln.* Lowest tile index wins when several match —
-             * deterministic rather than arbitrary, the same tie-break
-             * `Managers.js` already uses when it has to choose one neighbour.
+             * on the adjacent Kiln.* ⭐ **The nearest matching Token wins, then
+             * the earliest placed** (FP-89) — deterministic rather than
+             * arbitrary, the same tie-break Managers and flags use when they
+             * have to choose one Token. It used to be the lowest tile index,
+             * which a free mat does not have.
              */
             /**
-             * ⚠️ **`all` means the FIRING TILE here, not "any neighbour"**
+             * ⚠️ **`all` means the FIRING TOKEN here, not "any neighbour"**
              * (ER-14).
              *
              * `makeStatement` stamps `to: { mode: 'all' }` on every keyword that
@@ -384,14 +391,11 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
              *
              * The renderer and the editor were both right; this was the half
              * that lied. An unaimed conversion produces where it was made (D-40).
-             *
-             * Since slice 1.6b "lowest tile index" is **the earliest-placed**
-             * matching Token (`filterTargets` answers in arrival order).
              */
             const aimed = statement.to?.mode && statement.to.mode !== 'all';
             const destination = aimed
-                ? targetTilesOf(instance, statement)[0]
-                : tile;
+                ? nearestTargetOf(instance, statement)
+                : bearerSource(instance);
             // A filter that named nothing produces nothing — the inputs are
             // still spent, exactly as a failed cycle still costs its inputs.
             if (destination === undefined) continue;
@@ -421,31 +425,62 @@ function runStatementActions(tile, instance, statement, payload = null, { settle
     /**
      * ⚠️ **A Token that replaced itself does not pay.**
      *
-     * `Transforms`, and `Spawns` onto its own tile, put a NEW instance on this
-     * square. Charging the old one is charging a discarded object: the delta
+     * `Transforms`, and `Spawns ... here`, put a NEW instance where this one
+     * stood. Charging the old one is charging a discarded object: the delta
      * lands on nothing, `TOKEN_CHARGES_CHANGED` announces a Token that is no
-     * longer there, and — the real damage — a `uses: 1` Sapling hits zero and
-     * `destroyToken` wipes **the Oak that just replaced it**, emptying the tile.
+     * longer there, and a `uses: 1` Sapling hitting zero would announce a
+     * depletion for a Token that has already become an Oak.
      *
      * The intended use is the broken one: "leave a Stump behind when this
      * depletes" is exactly a one-charge Token that transforms.
      */
     if (bearerReplaced || settled) return true;
 
-    Charges.applyDelta(tile, instance, Charges.statementChargeDelta(statement));
+    Charges.applyDelta(instance, Charges.statementChargeDelta(statement));
     return false;
 }
 
 /**
- * The Tokens a firing rule's filter names — by instance id, measured from the
- * bearer (or from the point it stood on, when it has already left the mat) —
- * as the STOPGAP tiles `SpriteLayer` still drops items on (removed in 1.6b
- * part 2).
+ * The Tokens a firing rule's filter names, as instance ids in arrival order —
+ * measured from the bearer, or from the point it stood on when it has already
+ * left the mat.
  */
-function targetTilesOf(instance, statement) {
-    return filterTargets(instance?.id, statement, centreOf(instance))
-        .map(id => BoardState.tileOfToken(id))
-        .filter(t => t != null);
+function targetsOf(instance, statement) {
+    return filterTargets(instance?.id, statement, centreOf(instance));
+}
+
+/**
+ * The one Token a conversion lands on: of those its filter names, the **nearest**
+ * to the bearer, then the **earliest placed** (FP-89). `undefined` when the
+ * filter names nothing.
+ */
+function nearestTargetOf(instance, statement) {
+    const from = centreOf(instance);
+    const ids = targetsOf(instance, statement);
+    if (!from) return ids[0];
+    let best;
+    let bestD = Infinity;
+    // `ids` is in arrival order, so keeping the first of equal distances keeps
+    // the earliest placed.
+    for (const id of ids) {
+        const centre = centreOf(BoardState.getTokenById(id));
+        const d = centre ? distanceSq(from, centre) : Infinity;
+        if (best === undefined || d < bestD) {
+            best = id;
+            bestD = d;
+        }
+    }
+    return best;
+}
+
+/**
+ * Where something the bearer itself produces flies from: the bearer while it
+ * is on the mat, else the point it stood on.
+ */
+function bearerSource(instance) {
+    if (BoardState.getTokenById(instance?.id)) return instance.id;
+    const point = centreOf(instance);
+    return point ? { centre: point } : null;
 }
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
@@ -482,23 +517,19 @@ function producedMatches(definition, when, payload) {
  *
  * ⚠️ The source may already have left: `TOKEN_DEPLETED` fires after it is taken
  * off the mat. It is then heard from the point its departing instance still
- * carries — or, for a payload with no instance, from where a Token of its type
- * anchored at the payload's tile stood (STOPGAP, removed in 1.6b part 2).
+ * carries, or the point the event names (`x`, `y`).
  */
 function handleAdjacent(triggerId, payload) {
-    const originTile = payload?.tile;
-    if (originTile == null) return;
+    const sourceId = payload?.instanceId ?? null;
+    const source = BoardState.getTokenById(sourceId);
+    const origin = centreOf(source)
+        || centreOf(payload?.instance)
+        || (Number.isFinite(payload?.x) && Number.isFinite(payload?.y) ? { x: payload.x, y: payload.y } : null);
+    if (!origin) return;
 
     const definition = getTriggerEvent(triggerId);
 
-    // STOPGAP (removed in 1.6b part 2): the event still names its source by tile.
-    const source = BoardState.getOccupyingToken(originTile)?.instance || null;
-    const origin = source
-        ? centreOf(source)
-        : (centreOf(payload?.instance) || anchorCentre(originTile, payload?.typeId));
-    if (!origin) return;
-
-    for (const id of tokensWithin(origin, nearRadius(), source?.id ?? null)) {
+    for (const id of tokensWithin(origin, nearRadius(), sourceId)) {
         const instance = BoardState.getTokenById(id);
         if (!instance) continue;
 
@@ -507,8 +538,7 @@ function handleAdjacent(triggerId, payload) {
             if ((statement.when.scope || TRIGGER_SCOPES.ADJACENT) !== TRIGGER_SCOPES.ADJACENT) continue;
             if (!sourceMatches(statement.when, payload.typeId)) continue;
             if (!producedMatches(definition, statement.when, payload)) continue;
-            // The tile is a STOPGAP for roles, sprites and announcements (1.6b part 2).
-            fireStatement(BoardState.tileOfToken(id), instance, statement, payload);
+            fireStatement(instance, statement, payload);
         }
     }
 }
@@ -518,32 +548,29 @@ function handleAdjacent(triggerId, payload) {
  * that reacts.
  *
  * Deliberately its own function rather than a flag inside `handleAdjacent`.
- * The two differ in the thing that matters most — *which tile the statement
+ * The two differ in the thing that matters most — *which Token the statement
  * runs on* — and a self-scoped statement has no "from which neighbour" filter
  * to apply, because there is no neighbour involved in the firing at all. Its
  * `to` filter still works normally: the rule reaches outward from here exactly
  * as any other statement does.
  */
 function handleSelf(triggerId, payload, { settled = false } = {}) {
-    const tile = payload?.tile;
-    if (tile == null) return;
-
     /**
-     * ⚠️ The bearer may have **already left the tile**, and for one moment that
+     * ⚠️ The bearer may have **already left the mat**, and for one moment that
      * is the normal case rather than an error: `SELF_TOKEN_DEPLETED` fires from
-     * `destroyToken`, after the square has been emptied. So the departing
+     * `destroyToken`, after the Token has been taken off. So the departing
      * instance rides on the payload, and this is the only place that reads it.
      *
-     * Falling back rather than preferring it: while a Token is still on its
-     * tile, the board is the authority on what is standing there.
+     * Falling back rather than preferring it: while a Token is still on the mat,
+     * the board is the authority on it.
      */
-    const instance = BoardState.getToken(tile) || payload?.instance;   // STOPGAP — the event names its bearer by tile (1.6b part 2)
+    const instance = BoardState.getTokenById(payload?.instanceId) || payload?.instance;
     if (!instance) return;
 
     const def = getTokenType(instance.typeId);
     for (const statement of triggeredStatements(def, triggerId)) {
         if (statement.when.scope !== TRIGGER_SCOPES.SELF) continue;
-        fireStatement(tile, instance, statement, payload, { settled });
+        fireStatement(instance, statement, payload, { settled });
     }
 }
 
@@ -560,8 +587,7 @@ function handleGlobalItemThreshold() {
             const { watchItemId, threshold } = statement.when;
             if (!watchItemId) continue;
             if (InventoryManager.getItemCount(watchItemId) < (threshold || 1)) continue;
-            // The tile is a STOPGAP for roles, sprites and announcements (1.6b part 2).
-            fireStatement(BoardState.tileOfToken(instance.id), instance, statement);
+            fireStatement(instance, statement);
         }
     }
 }

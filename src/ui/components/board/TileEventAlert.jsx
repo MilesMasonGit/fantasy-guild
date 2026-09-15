@@ -4,6 +4,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { cn } from '../../utils/cn.js';
+import { payloadIsForTile } from './payloadTile.js';
 
 /**
  * On-board floating event alert icon in the top-left corner of a tile.
@@ -43,8 +44,10 @@ export const TileEventAlert = ({ tile }) => {
     useEffect(() => {
         if (!EventBus || tile == null) return;
 
+        // Payloads name a Token by instance id, or a point (slice 1.6b); the
+        // STOPGAP adapter maps them onto this drawn tile (deleted in 1.6c).
         const unsub = EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => {
-            if (p?.tile !== tile) return;
+            if (!payloadIsForTile(p, tile)) return;
             // Clear any active fadeout timers
             if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
             if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
@@ -81,7 +84,7 @@ export const TileEventAlert = ({ tile }) => {
         });
 
         const unsubClear = EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
-            if (p?.tile === tile) {
+            if (payloadIsForTile(p, tile)) {
                 // Moving a token or placing a new token on this tile immediately dismisses the alert
                 dismissAlert();
             }

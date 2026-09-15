@@ -164,8 +164,8 @@ export function restockSpot(spotId) {
         // publishes and `boardConstants` reads, so the string is written once.
         if (!vacancy.unstocked) {
             vacancy.unstocked = true;
-            const tile = BoardState.tileOfSpot(spotId);   // STOPGAP payload — removed in 1.6b part 2
-            EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile, alert: ALERT.UNSTOCKED });
+            // A spot with no Token is named by its point (slice 1.6b).
+            EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { spotId, x: vacancy.x, y: vacancy.y, alert: ALERT.UNSTOCKED });
         }
         return 'unstocked';
     }
@@ -178,12 +178,12 @@ export function restockSpot(spotId) {
     BoardState.addToken(instance, spot.x, spot.y);
     TileModifiers.rebuildAround([spot]);
 
-    const tile = BoardState.tileOfToken(instance.id);   // STOPGAP payload — removed in 1.6b part 2
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });
-    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile, points: [spot] });
+    const instanceId = instance.id;
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId, typeId: instance.typeId });
+    EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [spot] });
     const sourceName = tokenName(manager[1]) || tokenName(owed) || 'Manager';
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-        tile,
+        instanceId,
         severity: 'green',
         type: 'token_restocked',
         name: tokenName(owed) || 'Token',
@@ -192,7 +192,7 @@ export function restockSpot(spotId) {
     });
     if (instance.usesRemaining != null) {
         EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-            tile,
+            instanceId,
             delta: instance.usesRemaining,
             remaining: instance.usesRemaining,
             typeId: instance.typeId

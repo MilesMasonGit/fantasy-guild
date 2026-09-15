@@ -1,8 +1,7 @@
 // Fantasy Guild — Distance on the playmat (Free Playmat slices 1.2, 1.6b)
 
-import { isTileIndex, tileCentre, footprintCentre } from '../../config/boardGeometry.js';
+import { isTileIndex, tileCentre } from '../../config/boardGeometry.js';
 import { LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { REACH } from '../../config/registries/reachRegistry.js';
 import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
@@ -184,26 +183,17 @@ export function neighbourIds(instanceId) {
 }
 
 // ---------------------------------------------------------------------------
-// ⚠️ STOPGAP — tile-shaped positions (removed in 1.6b part 2 / 1.6d)
+// ⚠️ STOPGAP — tile-shaped positions (deleted in 1.6d)
 // ---------------------------------------------------------------------------
 
 /**
  * STOPGAP (deleted in 1.6d): a mat point for a tile — the centre of whatever
  * Token covers it, or the tile's own centre when empty. For `Placement`, which
- * still plants flags by tile, and the stopgap tile adapters.
+ * still plants flags by tile until free dropping replaces it.
  */
 export function positionOf(tile) {
     if (!isTileIndex(tile)) return null;
     const occ = BoardState.getOccupyingToken(tile);
     if (occ?.instance) return centreOf(occ.instance) || tileCentre(tile);
     return tileCentre(tile);
-}
-
-/**
- * STOPGAP (removed in 1.6b part 2): where a Token of `typeId` anchored at tile
- * `anchor` has its centre — for a `{ tile }` event whose Token has already left
- * and carried no instance (a support Token worn out by `BoardCombat`).
- */
-export function anchorCentre(anchor, typeId) {
-    return footprintCentre(anchor, getTokenType(typeId)?.size || 1);
 }

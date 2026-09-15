@@ -313,7 +313,7 @@ export function wearAdjacentSupport(instanceId, onDeplete, exclude = null) {
 
         support.usesRemaining -= 1;
         EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-            tile: BoardState.tileOfToken(supportId),   // STOPGAP payload — removed in 1.6b part 2
+            instanceId: supportId,
             delta: -1,
             remaining: support.usesRemaining,
             typeId: support.typeId

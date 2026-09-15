@@ -3,7 +3,7 @@
 import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
-import { nearby, reachFrom, tokensAround, positionOf } from './nearby.js';
+import { nearby, reachFrom, tokensAround } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
@@ -111,20 +111,20 @@ export function init() {
      * ⚠️ **A hero LEAVING matters as much as one arriving**, and the event does
      * not always say where they left.
      *
-     * `HERO_MOVED` is published with `tile: null` on every recall, and names
-     * only where the hero is now — the place they left is never in the payload.
-     * Rebuilding only on arrival meant a `being worked` buff switched ON when a
-     * hero stepped up and never switched OFF when they were recalled: it stayed
-     * live for the rest of the session.
+     * `HERO_MOVED` on a recall names only where the hero is now (the Dock) —
+     * the place they left is never in the payload. Rebuilding only on arrival
+     * meant a `being worked` buff switched ON when a hero stepped up and never
+     * switched OFF when they were recalled: it stayed live for the rest of the
+     * session.
      *
      * So the departure case rebuilds around the hero's **last known point**,
      * which `lastPointOf` remembers precisely because the event cannot say.
-     * Where they are now is asked of the seam (`displayPointOf`), not read off
-     * the payload's tile (slice 1.6b).
+     * Where they are now is asked of the seam (`displayPointOf`, null in the
+     * Dock), not read off the payload (slice 1.6b).
      */
-    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, ({ tile, heroId }) => {
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, ({ heroId } = {}) => {
         const left = lastPointOf.get(heroId) || null;
-        const now = tile != null ? BoardState.displayPointOf(heroId) : null;
+        const now = BoardState.displayPointOf(heroId);
         if (now) lastPointOf.set(heroId, now);
         else lastPointOf.delete(heroId);
         rebuildAround([left, now]);
@@ -288,19 +288,6 @@ export function filterTargets(sourceId, statement, fallbackPoint = null) {
     }
 
     return targets;
-}
-
-/**
- * STOPGAP (removed in 1.6b part 2): {@link filterTargets} for callers that
- * still hold a bearer tile (`DealDamage`, `EffectActions`, `StatusApplication`).
- * Measures from the Token covering `sourceTile`, or from the tile's own centre
- * when it is empty (a bearer that has left), and answers with anchor tiles.
- */
-export function filterTargetTiles(sourceTile, statement) {
-    const id = BoardState.tokenIdAtTile(sourceTile);
-    return filterTargets(id, statement, id ? null : positionOf(sourceTile))
-        .map(t => BoardState.tileOfToken(t))
-        .filter(t => t != null);
 }
 
 /**
@@ -607,22 +594,11 @@ export function rebuildTokens(ids) {
  */
 export function rebuildAround(points) {
     // ⚠️ A tile number here would be silently ignored as "no point" and leave
-    // buffs stale — so a caller not yet moved off tiles fails loudly instead.
+    // buffs stale — so a caller still holding a tile fails loudly instead.
     if (typeof points === 'number') {
-        throw new TypeError('TileModifiers.rebuildAround takes mat points; use rebuildAroundTile for a tile (STOPGAP)');
+        throw new TypeError('TileModifiers.rebuildAround takes mat points, not a tile');
     }
     rebuildTokens(tokensAround(Array.isArray(points) ? points : [points]));
-}
-
-/**
- * STOPGAP (removed in 1.6b part 2): {@link rebuildAround} for callers that
- * still name a tile (`BoardCombat`, `EffectActions`, `{ tile }`-only
- * `ADJACENCY_DIRTY` events). Rebuilds around the centre of the Token covering
- * the tile, or the tile's own centre when it is empty — a departed 2×2's centre
- * is within 113 u of its anchor tile's, inside `tokensAround`'s 144 u margin.
- */
-export function rebuildAroundTile(tile) {
-    rebuildAround([positionOf(tile)]);
 }
 
 /** Rebuild every Token on the mat — on boot and after a save load. */

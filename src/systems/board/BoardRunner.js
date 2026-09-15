@@ -141,11 +141,11 @@ function heroSpeedFactor(heroId, skill) {
  * on every load and every reload, as a burst across the whole board, at the
  * moment the UI is already busiest.
  */
-function setAlert(instance, index, reason) {
+function setAlert(instance, reason) {
     const next = reason || null;
     if ((instance.alert || null) === next) return;
     instance.alert = next;
-    EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile: index, alert: instance.alert });
+    EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: instance.id, alert: instance.alert });
 }
 
 /**
@@ -156,12 +156,10 @@ function setAlert(instance, index, reason) {
  * the bug `CardPreflight` was written for, kept as a rule now that its old home
  * is gone.
  *
- * Every reader is asked by the Token's instance id (Free Playmat 1.6b). `index`
- * is a STOPGAP tile, used only for `{ tile }` event payloads and the systems
- * still called by tile — sprites, statuses, announcements (removed in 1.6b
- * part 2).
+ * Every reader is asked by the Token's instance id, and every event names it by
+ * `instanceId` (Free Playmat 1.6b). There are no tiles.
  */
-function completeCycle(index, instance, def, io, heroId) {
+function completeCycle(instance, def, io, heroId) {
     const config = def.config;
     const id = instance.id;
 
@@ -192,7 +190,7 @@ function completeCycle(index, instance, def, io, heroId) {
     const chargePlan = Charges.planCycle(id, instance, io);
     if (!chargePlan.ok) {
         InputAllocator.noteStarved(instance.typeId);
-        setAlert(instance, index, ALERT.CHARGES);
+        setAlert(instance,ALERT.CHARGES);
         return;
     }
 
@@ -200,7 +198,7 @@ function completeCycle(index, instance, def, io, heroId) {
         // Raced by another Token between the availability check and here.
         // Keep the progress and wait — the cycle is not lost, only delayed.
         InputAllocator.noteStarved(instance.typeId);
-        setAlert(instance, index, ALERT.INPUTS);
+        setAlert(instance,ALERT.INPUTS);
         return;
     }
 
@@ -292,11 +290,11 @@ function completeCycle(index, instance, def, io, heroId) {
              */
             for (let i = 0; i < quantity; i++) {
                 SpriteLayer.addSprite(
-                    'token', output.tokenId, 1, index, tokenStartingUses(output.tokenId)
+                    'token', output.tokenId, 1, id, tokenStartingUses(output.tokenId)
                 );
             }
         } else {
-            SpriteLayer.addSprite('item', output.itemId, quantity, index);
+            SpriteLayer.addSprite('item', output.itemId, quantity, id);
             produced.push(output.itemId);
         }
     }
@@ -319,12 +317,12 @@ function completeCycle(index, instance, def, io, heroId) {
             // Token's grant carries no `sourceItemIds` and pays nothing here.
             if (!HeroEffects.payLoadoutCost(grant)) continue;
             const quantity = Math.max(1, grant.quantity || 1);
-            SpriteLayer.addSprite('item', grant.itemId, quantity, index);
+            SpriteLayer.addSprite('item', grant.itemId, quantity, id);
             produced.push(grant.itemId);
             // Announced only once the roll has actually landed — a 5% grant that
             // missed did nothing, and saying its name would teach the player the
             // opposite of how often it works (P3).
-            EffectFeedback.announce(index, grant);
+            EffectFeedback.announce(id, grant);
         }
     }
 
@@ -349,9 +347,9 @@ function completeCycle(index, instance, def, io, heroId) {
             // missed; paying without checking first could apply a status the
             // hero cannot afford. Three steps, in that order.
             if (!HeroEffects.canPayLoadoutCost(application)) continue;
-            if (StatusApplication.applyAt(index, application)) {
+            if (StatusApplication.applyAt(id, application)) {
                 HeroEffects.payLoadoutCost(application);
-                EffectFeedback.announce(index, application);
+                EffectFeedback.announce(id, application);
             }
         }
     }
@@ -387,7 +385,7 @@ function completeCycle(index, instance, def, io, heroId) {
     RecipeResolver.wearAdjacentSupport(id, (supportId, supportInstance) => {
         const support = supportInstance || BoardState.getTokenById(supportId);
         const spot = centreOf(support);
-        Charges.destroyToken(null, support);
+        Charges.destroyToken(support);
         // The neighbourhood, not just this Token: an aura going dark has to stop
         // applying to everything it reached, which means their aggregators too.
         TileModifiers.rebuildAround([spot]);
@@ -396,7 +394,7 @@ function completeCycle(index, instance, def, io, heroId) {
     // The board's universal unit of work. One kill counts as one cycle too
     // (D-129), so combat feeds this exactly as production does.
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
-        tile: index,
+        instanceId: id,
         typeId: instance.typeId,
         heroId: heroId || null,
         failed,
@@ -437,12 +435,8 @@ export function tick(delta) {
 
     for (const instance of onMat) {
         const id = instance.id;
-        // STOPGAP (removed in 1.6b part 2): the tile this Token stands on, used
-        // only for `{ tile }` event payloads and the systems still called by
-        // tile (combat, promotion, sprites, statuses, announcements). A Token
-        // taken off the mat earlier in this same tick has none and is skipped.
-        const index = BoardState.tileOfToken(id);
-        if (index == null) continue;
+        // A Token taken off the mat earlier in this same tick is skipped.
+        if (!BoardState.getTokenById(id)) continue;
         const def = getTokenType(instance.typeId);
         const heroId = BoardState.workerOf(id);
 
@@ -469,13 +463,13 @@ export function tick(delta) {
             // flags that hero never claims an enemy at all: the flag records
             // `unskilled` against it, shown on hover only (FP-60), so an enemy
             // Token never carries a red mark (Free Playmat 1.4c).
-            setAlert(instance, index, null);
+            setAlert(instance,null);
 
             // Called unconditionally: `tickTile` also owns ENDING a fight when
             // the hero has gone. Guarding on `heroId` here would leave the old
             // fight — and its damaged enemy — alive forever, so a player could
             // chip a boss down across free retreats (`G-4`).
-            BoardCombat.tickTile(index, instance, delta, heroId);
+            BoardCombat.tickToken(instance, delta, heroId);
             continue;
         }
 
@@ -486,8 +480,8 @@ export function tick(delta) {
         // owns STOPPING: resetting a half-finished cycle when the hero leaves,
         // and clearing an offer so the next hero is asked afresh.
         if (BoardPromotion.isPromotionToken(instance)) {
-            const { alert } = BoardPromotion.tickTile(index, instance, delta, heroId);
-            setAlert(instance, index, heroId ? alert : null);
+            const { alert } = BoardPromotion.tickToken(instance, delta, heroId);
+            setAlert(instance,heroId ? alert : null);
             continue;
         }
 
@@ -508,14 +502,14 @@ export function tick(delta) {
             const skipped = Flags.hasFixableSkip(instance)
                 ? WorkCheck.fixableReason(id, instance).reason
                 : null;
-            setAlert(instance, index, skipped);
+            setAlert(instance,skipped);
             continue;
         }
 
         if (needsHero) {
             const skillAlert = WorkCheck.heroReason(heroId, config);
             if (skillAlert) {
-                setAlert(instance, index, skillAlert);
+                setAlert(instance,skillAlert);
                 continue;
             }
         }
@@ -539,9 +533,9 @@ export function tick(delta) {
                 ? reqs.items.join(', ')
                 : (def?.name || tokenName(instance.typeId) || instance.typeId);
 
-            setAlert(instance, index, ALERT.NO_RECIPE);
+            setAlert(instance,ALERT.NO_RECIPE);
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                tile: index,
+                instanceId: id,
                 severity: 'yellow',
                 type: 'out_of_token',
                 name: missingNames,
@@ -555,13 +549,13 @@ export function tick(delta) {
             // Waits, keeping whatever progress it had. There are no partial
             // cycles (D-127) — it does not run slower, it runs later.
             InputAllocator.noteStarved(instance.typeId);
-            setAlert(instance, index, ALERT.INPUTS);
+            setAlert(instance,ALERT.INPUTS);
 
             const missingItem = check.inputCheck?.missing?.[0];
             const itemDef = missingItem ? getItem(missingItem.itemId) : null;
             const itemName = itemDef?.name || missingItem?.itemId || 'Item';
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                tile: index,
+                instanceId: id,
                 severity: 'yellow',
                 type: 'out_of_item',
                 name: itemName,
@@ -579,9 +573,9 @@ export function tick(delta) {
          */
         if (check.reason === ALERT.CHARGES) {
             InputAllocator.noteStarved(instance.typeId);
-            setAlert(instance, index, ALERT.CHARGES);
+            setAlert(instance,ALERT.CHARGES);
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                tile: index,
+                instanceId: id,
                 severity: 'yellow',
                 type: 'out_of_charges',
                 name: def?.name || tokenName(instance.typeId) || instance.typeId,
@@ -590,7 +584,7 @@ export function tick(delta) {
             continue;
         }
 
-        setAlert(instance, index, null);
+        setAlert(instance,null);
 
         /**
          * A new cycle begins here (Unified Effects P5).
@@ -612,8 +606,8 @@ export function tick(delta) {
             // reacting to a cycle STARTING could never know who started it —
             // while the same rule on a cycle COMPLETING could. One word of
             // difference between the two moments, for no reason anyone chose.
-            EventBus.publish(BOARD_EVENTS.CYCLE_START, { tile: index, typeId: instance.typeId, heroId: heroId || null });
-            LoadoutMoments.fire(index, heroId, 'CYCLE_START');
+            EventBus.publish(BOARD_EVENTS.CYCLE_START, { instanceId: id, typeId: instance.typeId, heroId: heroId || null });
+            LoadoutMoments.fire(id, heroId, 'CYCLE_START');
         }
 
         // --- the fast path: everything above is a cheap guard, this is the work
@@ -632,13 +626,13 @@ export function tick(delta) {
             ) / heroSpeedFactor(heroId, config.skill));
 
         if (instance.cycleElapsedMs >= cycleTime) {
-            completeCycle(index, instance, def, io, heroId);
+            completeCycle(instance, def, io, heroId);
         } else if (publishProgress) {
             // Ref-based UI updates only — this bypasses React entirely, because
             // 48 tiles re-rendering three times a second is the cascade the
             // deck loop's ref-bar pattern existed to avoid.
             EventBus.publish(BOARD_EVENTS.PROGRESS, {
-                tile: index,
+                instanceId: id,
                 percent: Math.min(100, (instance.cycleElapsedMs / cycleTime) * 100),
                 elapsedMs: instance.cycleElapsedMs,
                 cycleTimeMs: cycleTime
@@ -654,16 +648,12 @@ export function init() {
     // empty aggregator after a reload is the classic failure this guards
     // against (`ModifierScopes.test.js` pins the rule).
     //
-    // Two payload shapes (Free Playmat 1.6b):
-    // * `points` — the mat points a change touched (where Tokens left AND where
-    //   they landed); every Token within Near of any of them is rebuilt.
-    // * `tile` only — a STOPGAP for publishers not yet moved off tiles
-    //   (`BoardCombat`, the save repair below); rebuilt around that tile's
-    //   centre (removed in 1.6b part 2).
-    // A board-reach rule widens either to the whole board (`rebuildTokens`).
-    EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ tile, points } = {}) => {
+    // The payload is `points` — the mat points a change touched (where Tokens
+    // left AND where they landed); every Token within Near of any of them is
+    // rebuilt (Free Playmat 1.6b). A board-reach rule widens it to the whole
+    // board (`rebuildTokens`).
+    EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ points } = {}) => {
         if (Array.isArray(points)) TileModifiers.rebuildAround(points);
-        else if (tile != null) TileModifiers.rebuildAroundTile(tile);
     });
     EventBus.subscribe('game_loaded', () => {
         TileModifiers.rebuildAll();
@@ -679,9 +669,9 @@ export function init() {
          * only Tokens carrying a `Cannot` are examined at all.
          */
         const lifted = Restrictions.reconcile(instance => TokenBank.deposit(instance));
-        for (const { anchor } of lifted) {
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: anchor, typeId: null });
-            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: anchor });
+        for (const { id, x, y } of lifted) {
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, x, y, typeId: null });
+            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [{ x, y }] });
         }
         if (lifted.length) {
             TileModifiers.rebuildAll();

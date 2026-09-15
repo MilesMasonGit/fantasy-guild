@@ -1,6 +1,6 @@
 // Fantasy Guild — one drop handler for "a Token was dragged onto a tile" (CR2-160)
 
-import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_STEP_PX, colOf, rowOf } from '../../../config/boardGeometry.js';
+import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_STEP_PX, colOf, rowOf, tileCentre } from '../../../config/boardGeometry.js';
 import { closest2x2Anchor } from './boardConstants.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -149,9 +149,11 @@ export function placeTokenFromDrag(index, payload, dropInfo = null, options = {}
         if (!instance) return;
         const result = announce(Placement.placeToken(targetIndex, instance));
         if (!result.success) {
-            SpriteLayer.addSprite('token', instance.typeId, 1, targetIndex, instance.usesRemaining);
+            // STOPGAP (deleted in 1.6c): back onto the floor from the tile it was refused at.
+            SpriteLayer.addSprite('token', instance.typeId, 1, { centre: tileCentre(targetIndex) }, instance.usesRemaining);
         } else {
-            EventBus.publish('loot_token_placed', { tile: targetIndex, typeId: instance.typeId });
+            // By instance id since slice 1.6b.
+            EventBus.publish('loot_token_placed', { instanceId: instance.id, typeId: instance.typeId });
         }
         return;
     }

@@ -75,7 +75,7 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
     const accept = () => {
         // Captured first — `accept` mutates the hero.
         const snapshot = { preview: livePreview, fromJob: getJob(hero.jobId) };
-        const result = engine.BoardPromotion.accept(offer.tile);
+        const result = engine.BoardPromotion.accept(offer.instanceId);
         if (!result.success) {
             // Re-checked at the last moment and refused — say so rather than
             // closing silently, because the tile will still be holding.
@@ -86,7 +86,7 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
     };
 
     const decline = () => {
-        engine.BoardPromotion.decline(offer.tile);
+        engine.BoardPromotion.decline(offer.instanceId);
         onClose();
     };
 

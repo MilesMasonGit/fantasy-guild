@@ -54,10 +54,12 @@ import * as BoardCombat from './BoardCombat.js';
 /**
  * How many things the statement's second, `counted` selector matched (G-14).
  *
- * ⚠️ Counted from the **bearer's** tile, not the target's. *"1 damage per
- * adjacent Coast Token"* on a monster means the Tokens beside the monster; it
- * would be a different rule, and a much stranger one, if it counted what
- * happened to be beside whoever it hit.
+ * ⚠️ Counted from the **bearer**, not the target. *"1 damage per adjacent
+ * Coast Token"* on a monster means the Tokens beside the monster; it would be a
+ * different rule, and a much stranger one, if it counted what happened to be
+ * beside whoever it hit.
+ *
+ * By instance id, measured from the bearer's point if it has left (slice 1.6b).
  *
  * Zero when the rule does not use a count, so the multiply is harmless.
  */
@@ -66,9 +68,9 @@ function countMatches(statement, roles) {
     if (roles?.self == null) return 0;
     // The counted selector carries its own reach, so "per Coast Token on the
     // board" is as sayable as "per adjacent Coast Token".
-    return TileModifiers.filterTargetTiles(roles.self, {
+    return TileModifiers.filterTargets(roles.self, {
         to: statement.counted, reach: statement.counted?.reach
-    }).length;
+    }, roles.selfPoint || null).length;
 }
 
 /** The entity a role points at, as something damage can be applied to. */
@@ -89,36 +91,36 @@ function targetOf(role, roles, statement) {
     }
 
     /**
-     * ⚠️ `self` may be a HERO rather than a tile (V6). A live effect sits on a
+     * ⚠️ `self` may be a HERO rather than a Token (V6). A live effect sits on a
      * person, so a Poison saying "deal 2 damage to this entity" means the person
-     * carrying it — there is no square involved.
+     * carrying it.
      */
     if (role === ROLE.SELF && roles?.selfHeroId) return heroTarget(roles.selfHeroId);
 
     /**
      * ⚠️ ...and `self` may be a live ENEMY, for the same reason. A Poison on a
      * monster says "deal 2 damage to this entity" and must mean the monster, not
-     * the hero standing on its tile — which is what the occupant rule below
-     * would otherwise resolve it to, silently turning every debuff on a monster
-     * into a debuff on its attacker.
+     * the hero fighting it — which is what the occupant rule below would
+     * otherwise resolve it to, silently turning every debuff on a monster into a
+     * debuff on its attacker.
      */
-    if (role === ROLE.SELF && roles?.selfFightTile != null) {
-        const fight = BoardCombat.getFight(roles.selfFightTile);
+    if (role === ROLE.SELF && roles?.selfFightId != null) {
+        const fight = BoardCombat.getFight(roles.selfFightId);
         return fight?.combat?.enemyHp ? enemyTarget(fight) : null;
     }
 
-    // Otherwise both are tiles. Whoever is standing there takes it — the hero if
-    // one is present, otherwise the live enemy, which is the same occupant rule
-    // `StatusApplication` resolves by.
-    const tile = role === ROLE.SOURCE ? roles?.source : roles?.self;
-    if (tile == null) return null;
+    // Otherwise both are Tokens, by instance id (slice 1.6b). Whoever works it
+    // takes it — the hero if one is present, otherwise the live enemy, which is
+    // the same occupant rule `StatusApplication` resolves by.
+    const id = role === ROLE.SOURCE ? roles?.source : roles?.self;
+    if (id == null) return null;
 
-    const heroId = BoardState.workerOfTile(tile);   // STOPGAP — roles still name tiles (removed in 1.6b part 2)
+    const heroId = BoardState.workerOf(id);
     if (heroId) return heroTarget(heroId);
 
-    const instance = BoardState.getToken(tile);
+    const instance = BoardState.getTokenById(id);
     if (!instance || !BoardCombat.isEnemyToken(instance)) return null;
-    const fight = BoardCombat.getFight(tile);
+    const fight = BoardCombat.getFight(id);
     // Only a fight in progress: an enemy nobody has engaged has no HP bar to
     // take damage off, and inventing one would make a hit that lands on nothing.
     if (!fight?.combat?.enemyHp) return null;
@@ -187,7 +189,7 @@ function enemyTarget(fight) {
  * Run one `Deals` statement.
  *
  * @param {object} statement the expanded statement
- * @param {{self: number, actor: string|null, source: number|null}} roles
+ * @param {{self: string, actor: string|null, source: string|null}} roles instance ids
  * @returns {number} damage actually dealt, after mitigation
  */
 export function deal(statement, roles) {
@@ -203,7 +205,7 @@ export function deal(statement, roles) {
      */
     const amount = resolveMagnitude(payload, {
         actorHero: roles?.actor ? HeroManager.getHero(roles.actor) : null,
-        selfInstance: roles?.self != null ? BoardState.getToken(roles.self) : null
+        selfInstance: roles?.self != null ? BoardState.getTokenById(roles.self) : null
     }, countMatches(statement, roles));
 
     if (!Number.isFinite(amount) || amount <= 0) return 0;

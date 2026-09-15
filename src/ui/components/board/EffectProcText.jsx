@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { payloadIsForTile } from './payloadTile.js';
 
 /**
  * A named effect fired here — say its name, drift it upward, fade it out.
@@ -48,7 +49,8 @@ export const EffectProcText = ({ tile }) => {
         if (!EventBus || tile == null) return undefined;
 
         const onFired = (payload) => {
-            if (payload?.tile !== tile || !payload?.title) return;
+            // By instance id since slice 1.6b — STOPGAP adapter, deleted in 1.6c.
+            if (!payloadIsForTile(payload, tile) || !payload?.title) return;
 
             const id = nextId++;
             setLines((current) => [...current, { id, title: payload.title }].slice(-MAX_VISIBLE));

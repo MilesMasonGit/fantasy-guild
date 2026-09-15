@@ -251,9 +251,8 @@ export function checkPlacement(point, typeId, plan = {}) {
  * @param {(instance: object) => boolean} depositToVault — injected so this
  *   module does not import `TokenBank`, which imports `BoardState`, which is a
  *   circle the board layer keeps out of.
- * @returns {Array<{id: string, typeId: string, x: number, y: number, anchor: number|null, reason: string}>}
- *   what moved; `anchor` is a STOPGAP tile for `{ tile }` event payloads
- *   (removed in 1.6b part 2)
+ * @returns {Array<{id: string, typeId: string, x: number, y: number, reason: string}>}
+ *   what moved, and the point it moved from
  */
 export function reconcile(depositToVault) {
     const moved = [];
@@ -273,9 +272,8 @@ export function reconcile(depositToVault) {
         // the player owned and no longer does is not.
         if (!depositToVault(instance)) break;
 
-        const anchor = BoardState.tileOfToken(worst.id);   // STOPGAP — event payload only
         BoardState.removeToken(worst.id);
-        moved.push({ ...worst, anchor });
+        moved.push({ ...worst });
     }
 
     return moved;

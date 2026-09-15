@@ -12,10 +12,11 @@ import { EventBus } from '../../systems/core/EventBus.js';
 export function standingPromotionOffer(engine) {
     const BoardState = engine?.BoardState;
     const BoardPromotion = engine?.BoardPromotion;
-    if (!BoardState?.occupiedTiles || !BoardPromotion?.getOffer) return null;
+    if (!BoardState?.tokens || !BoardPromotion?.getOffer) return null;
     try {
-        for (const [tile] of BoardState.occupiedTiles()) {
-            const offer = BoardPromotion.getOffer(tile);
+        // Every Token on the mat, in arrival order, by instance id (slice 1.6b).
+        for (const instance of BoardState.tokens()) {
+            const offer = BoardPromotion.getOffer(instance.id);
             if (offer) return offer;
         }
     } catch {
@@ -370,7 +371,7 @@ export const useUIModals = (engine) => {
             // A hero finished training. Nothing has happened to them yet — the
             // tile holds the offer open, and this only decides to draw it.
             engine.EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
-                if (data?.tile == null) return;
+                if (data?.instanceId == null) return;
                 setPromotionOffer(data);
             }),
             // ⚠️ A loaded save can carry an offer nobody answered. Without this
