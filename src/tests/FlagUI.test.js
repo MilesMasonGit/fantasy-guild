@@ -11,7 +11,6 @@ import * as Flags from '../systems/board/Flags.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { tileCentre } from '../config/boardGeometry.js';
 import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
@@ -42,7 +41,20 @@ registerTokenTypes({
     }
 });
 
-const C = (tile) => tileCentre(tile);
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * a lattice of mat points 160 u apart, inside the 400 u flag radius set below.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** Which spot the Token a hero works stands on, or null. */
+function workTileOf(heroId) {
+    const instance = BoardState.getTokenById(BoardState.workTokenOf(heroId));
+    if (!instance) return null;
+    const col = Math.round((instance.x - 400) / 160);
+    const row = Math.round((instance.y - 200) / 160);
+    return row * 6 + col;
+}
 
 function hero(id, skills = { logging: 50 }) {
     const out = {};
@@ -52,8 +64,8 @@ function hero(id, skills = { logging: 50 }) {
 
 function put(tile, typeId) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -88,20 +100,27 @@ describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
 
     it('fires exactly once for a hero dropped on a Token', () => {
         put(15, 'fixture_producer');
-        expect(counting(() => Placement.placeHero('h1', 15))).toBe(1);
+        expect(counting(() => Placement.plantFlagAt('h1', C(15)))).toBe(1);
     });
 
     it('fires for a plant on bare ground and a pennant move, but not for an unchanged plant', () => {
         expect(counting(() => Flags.plant('h1', C(20)))).toBe(1);
         expect(counting(() => Flags.plant('h1', C(20)))).toBe(0);
-        expect(counting(() => Placement.moveFlag('h1', 8))).toBe(1);
+        expect(counting(() => Placement.plantFlagAt('h1', C(8)))).toBe(1);
     });
 });
 
-describe('dragging the pennant (FLAG) — Placement.moveFlag just moves the point (FP-71)', () => {
-    it('moves the flag to the tile, with no skill written on it', () => {
+/**
+ * ⚠️ `Placement.moveFlag` went with the index adapters in slice 1.6d-2. Dragging
+ * a pennant lands through `plantFlagAt`, which is the one route a flag moves by
+ * (FP-94) — so these say the same things through it. The third case, that
+ * `moveFlag` refused a hero with no flag planted, pinned that adapter's own
+ * guard and went with it: planting is always allowed.
+ */
+describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
+    it('moves the flag to the spot, with no skill written on it', () => {
         Flags.plant('h1', C(14));
-        expect(Placement.moveFlag('h1', 20).success).toBe(true);
+        expect(Placement.plantFlagAt('h1', C(20)).success).toBe(true);
         expect(BoardState.flagOf('h1')).toEqual({ ...C(20), plantedAt: expect.any(Number) });
     });
 
@@ -110,17 +129,12 @@ describe('dragging the pennant (FLAG) — Placement.moveFlag just moves the poin
         Flags.plant('h1', C(20));
         Flags.plant('h2', C(20));
 
-        Placement.moveFlag('h1', 13);                        // h1 holds mining
-        expect(BoardState.workTileOf('h1')).toBe(13);
+        Placement.plantFlagAt('h1', C(13));                  // h1 holds mining
+        expect(workTileOf('h1')).toBe(13);
 
         Placement.recallHeroById('h1');
-        Placement.moveFlag('h2', 13);                        // h2 holds only logging
-        expect(BoardState.workTileOf('h2')).toBeNull();
-    });
-
-    it('refuses a hero with no flag (a pennant always belongs to one)', () => {
-        expect(Placement.moveFlag('h1', 20).success).toBe(false);
-        expect(BoardState.flagOf('h1')).toBeNull();
+        Placement.plantFlagAt('h2', C(13));                  // h2 holds only logging
+        expect(workTileOf('h2')).toBeNull();
     });
 });
 
@@ -134,14 +148,14 @@ describe('dropping on the Dock recalls (dockRecall)', () => {
         ['the flag itself', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }]
     ])('furls the flag for %s', (_label, payload) => {
         put(15, 'fixture_producer');
-        Placement.placeHero('h1', 15);
+        Placement.plantFlagAt('h1', C(15));
         expect(BoardState.flagOf('h1')).not.toBeNull();
 
         expect(isRecallDrop(payload)).toBe(true);
         recallFromDrop(Placement, payload);
 
         expect(BoardState.flagOf('h1')).toBeNull();
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
     });
 
     it('is not a recall for a hero dragged out of the Dock itself (that is a reorder)', () => {
@@ -158,7 +172,7 @@ describe('Flags.skipsOfHero — the pennant hover lines', () => {
         const blank = put(15, 'ft_ui_blank');
         put(16, 'fixture_producer');
         Flags.plant('h1', C(14));
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(Flags.skipsOfHero('h1')).toEqual([
             { instanceId: blank.id, reason: Flags.SKIP.NO_SKILL, typeId: 'ft_ui_blank' }
         ]);
