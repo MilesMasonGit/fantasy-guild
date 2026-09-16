@@ -14,7 +14,17 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { KEYWORD } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * spots 8, 9 and 10 are a row 160 u apart, so the Cook Fire in the middle is a
+ * neighbour of the beds either side of it at the shipped 164 u Near.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /**
  * `Applies` — content putting a status on somebody.
@@ -100,9 +110,10 @@ function makeHero(id) {
 }
 
 function place(tile, typeId, heroId = null) {
-    Placement.placeToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    Placement.placeTokenAt(instance, C(tile));
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -129,7 +140,7 @@ describe('A Token filter resolves to the heroes working those Tokens', () => {
     });
 
     it('reaches nobody at all when the Token is unstaffed', () => {
-        // Not a failure — the same as a buff aimed at an empty tile. It is
+        // Not a failure — the same as a buff aimed at an unworked Token. It is
         // precisely why the sentence says "heroes on" rather than "Tokens".
         place(8, 'fixture_cook_fire');
         place(9, 'fixture_shrimp_bed');          // nobody working it
