@@ -26,6 +26,18 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const token = (typeId, uses = null) => BoardState.createTokenInstance(typeId, uses);
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * these name two spots on the mat, far enough apart to be independent.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+
+/** Drop a Token on spot `i`, through the real placement rules. */
+const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+
 beforeEach(() => {
     GameState.initNew();
     SpriteLayer.init();
@@ -361,29 +373,32 @@ describe('Mythics are unique on the BOARD, not to own (D-177)', () => {
     });
 
     it('refuses a second copy onto the board, naming the reason', () => {
-        expect(Placement.placeToken(10, token('fixture_mythic', 8000)).success).toBe(true);
+        expect(put(10, token('fixture_mythic', 8000)).success).toBe(true);
 
-        const result = Placement.placeToken(20, token('fixture_mythic', 8000));
+        const result = put(20, token('fixture_mythic', 8000));
         expect(result.success).toBe(false);
         expect(result.reason).toMatch(/only one/i);
     });
 
     it('lets a placed Mythic be MOVED — it does not trip over itself', () => {
-        Placement.placeToken(10, token('fixture_mythic', 8000));
-        expect(Placement.moveToken(10, 20).success).toBe(true);
-        expect(BoardState.getToken(20).typeId).toBe('fixture_mythic');
+        const mythic = token('fixture_mythic', 8000);
+        put(10, mythic);
+
+        expect(Placement.moveTokenTo(mythic.id, C(20)).success).toBe(true);
+        expect(tokenAt(20).typeId).toBe('fixture_mythic');
     });
 
     it('frees the board once the placed copy is lifted off', () => {
-        Placement.placeToken(10, token('fixture_mythic', 8000));
-        Placement.returnTokenToTray(10);
+        const mythic = token('fixture_mythic', 8000);
+        put(10, mythic);
+        Placement.returnTokenToTrayById(mythic.id);
 
-        expect(Placement.placeToken(20, token('fixture_mythic', 8000)).success).toBe(true);
+        expect(put(20, token('fixture_mythic', 8000)).success).toBe(true);
     });
 
     it('does not constrain non-Mythics at all', () => {
-        expect(Placement.placeToken(10, token('fixture_producer', 5000)).success).toBe(true);
-        expect(Placement.placeToken(20, token('fixture_producer', 5000)).success).toBe(true);
+        expect(put(10, token('fixture_producer', 5000)).success).toBe(true);
+        expect(put(20, token('fixture_producer', 5000)).success).toBe(true);
     });
 });
 

@@ -38,17 +38,27 @@ function makeHero(id, level = 50) {
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * spots 14, 15 and 16 are a row 160 u apart — inside the shipped 164 u Near —
+ * and spot 33 is 480 u away, well outside it.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+
 function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId,
         uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
+    Placement.placeTokenAt(instance, C(tile));
     // Mirrors the adjacency suite: nothing subscribes ADJACENCY_DIRTY here, so
     // the neighbourhood is rebuilt explicitly.
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 function run(ms) {
@@ -102,7 +112,7 @@ describe('The Wheelbarrow — reacting to a NEIGHBOUR\'s cycle (CMS-29, CMS-30)'
         expect(SpriteLayer.countOnBoard('item_bones')).toBe(1);
     });
 
-    it('is not reached from a non-adjacent tile — reach is exactly 8 (D-81)', () => {
+    it('is not reached from a Token out of range', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(FAR, 'fixture_wheelbarrow');
 
@@ -116,7 +126,7 @@ describe('The Wheelbarrow — reacting to a NEIGHBOUR\'s cycle (CMS-29, CMS-30)'
         // Reacting to a stuck neighbour would trigger off nothing being made.
         //
         // ⚠️ The failing buff needs a spot of its OWN beside the producer. It
-        // used to be dropped onto the wheelbarrow's tile and take it by pushing
+        // used to be dropped onto the wheelbarrow's spot and take it by pushing
         // the wheelbarrow off; free placement (slice 1.6d-1) deleted the push,
         // so a drop on an occupied spot now moves ITSELF aside — far enough that
         // the buff no longer reached the producer, and the cycle stopped failing.
@@ -219,7 +229,7 @@ describe('⚠️ The charge burns on SERVICE, not on luck (CMS-26, D-126)', () =
 
         run(13000 * 3 + 1000);
 
-        expect(BoardState.getToken(NEIGHBOUR)).toBeFalsy();
+        expect(tokenAt(NEIGHBOUR)).toBeFalsy();
     });
 
     it('announces its depletion like any other Token', () => {

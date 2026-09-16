@@ -7,7 +7,6 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { GUILD_HALL_TILE, tileCentre, footprintCentre, OLD_AREA_ORIGIN } from '../config/boardGeometry.js';
 import { MAT_W, MAT_H, MAT_STEPS } from '../config/matGeometry.js';
 import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -27,13 +26,18 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ Free Playmat slice 1.6c-1 — the mat frame and the one drop function.
  *
- * * The mat is 1760 × 1126 u; today's landing area is centred on it (FP-92).
+ * * The mat is 1760 × 1126 u (FP-92).
  * * A screen pointer becomes a mat point by the mat's on-screen scale.
  * * Everything dropped on the playmat goes through `dropOnMat(payload, point)`:
- *   a flag stands at the raw point (FP-94); a Map lies free; any other Token
- *   snaps to the nearest old spot — occupied or not (STOPGAP, 1.6d) — or flies
- *   back when dropped well outside the landing area (FP-93).
+ *   a flag stands at the raw point (FP-94), a Map lies free, and any other Token
+ *   lands **exactly where it was let go** — nothing snaps (slice 1.6d-1).
+ *
+ * ⭐ **Test layout only** (slice 1.6d-2): `C(i)` names spots on a 160 u lattice
+ * so a drop can be aimed near a known point. The game has no tiles.
  */
+
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+const big = (i) => ({ x: C(i).x + 80, y: C(i).y + 80 });
 
 describe('the mat frame (FP-92)', () => {
     it('is 11 steps of 160 u at a 0.64 aspect: 1760 × 1126 u', () => {
@@ -42,16 +46,12 @@ describe('the mat frame (FP-92)', () => {
         expect(MAT_H).toBe(1126);
     });
 
-    it('a new game stands the Guild Hall at (960, 643) — the old area centred on the mat', () => {
-        expect(OLD_AREA_ORIGIN).toEqual({ x: 416, y: 99 });
+    it('a new game stands the Guild Hall at (960, 643) — its historical opening spot', () => {
+        // Half a step down and right of the mat's centre. The assertions about
+        // the old landing area's corner, and `tileAtPoint` taking it back off,
+        // went with the grid in slice 1.6d-2.
         const hall = OPENING_MAT.find(t => t.typeId === 'token_guild_hall');
         expect({ x: hall.x, y: hall.y }).toEqual({ x: 960, y: 643 });
-        expect(tileCentre(GUILD_HALL_TILE)).toEqual({ x: 960, y: 643 });
-    });
-
-    it('tileAtPoint takes the origin back off', () => {
-        expect(BoardState.tileAtPoint({ x: 960, y: 643 })).toBe(GUILD_HALL_TILE);
-        expect(BoardState.tileAtPoint(tileCentre(0))).toBe(0);
     });
 });
 
@@ -120,25 +120,26 @@ describe('dropOnMat — one drop function for the playmat', () => {
     });
 
     const instance = (typeId, uses = null) => BoardState.createTokenInstance(typeId, uses);
-    const near = (tile, dx = 50, dy = -60) => ({ x: tileCentre(tile).x + dx, y: tileCentre(tile).y + dy });
+    const near = (tile, dx = 50, dy = -60) => ({ x: C(tile).x + dx, y: C(tile).y + dy });
     /** The one Token on the mat — these tests start from an empty one. */
     const only = () => BoardState.tokens()[0];
 
     it('⭐ a Token on the mat moves to the EXACT point it was dropped at, by its instance id', () => {
-        BoardState.setToken(0, instance('fixture_producer', 100));
-        const id = BoardState.getToken(0).id;
+        const sitting = instance('fixture_producer', 100);
+        BoardState.addToken(sitting, C(0).x, C(0).y);
+        const id = sitting.id;
         const point = near(14);
 
         expect(dropOnMat({ typeId: 'fixture_producer', from: { instanceId: id } }, point).success).toBe(true);
 
         // Nothing snaps: it stands where the pointer was, not on a spot.
         expect({ x: BoardState.getTokenById(id).x, y: BoardState.getTokenById(id).y }).toEqual(point);
-        expect(BoardState.getToken(0)).toBeNull();
+        expect(BoardState.tokensAtPoint(C(0).x, C(0).y)).toHaveLength(0);
     });
 
     it('a drop ON a matching copy restocks it (FP-50)', () => {
         const copy = instance('fixture_producer', 100);
-        BoardState.setToken(14, copy);
+        BoardState.addToken(copy, C(14).x, C(14).y);
         BoardState.addToTray(instance('fixture_producer', 400));
 
         // ⚠️ Within the copy's art circle (64 u) — restocking is aiming AT it,
@@ -150,7 +151,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     });
 
     it('a 2×2 lands at the point too, with no anchor to snap to', () => {
-        const p = footprintCentre(7, 2);
+        const p = big(7);
         const point = { x: p.x + 40, y: p.y - 30 };
         dropOnMat({ typeId: 'fixture_big', usesRemaining: 50 }, point);
 
@@ -204,9 +205,9 @@ describe('dropOnMat — one drop function for the playmat', () => {
                 uses: 5, requiresHero: false, config: { cycleTimeMs: 12000, inputs: [], outputs: [] }
             }
         });
-        BoardState.setToken(0, instance('fixture_mythic_drop', 5));
+        BoardState.addToken(instance('fixture_mythic_drop', 5), C(0).x, C(0).y);
         const sprite = SpriteLayer.addSprite('token', 'fixture_mythic_drop', 1, null, 5);
-        const point = { x: tileCentre(14).x + 33, y: tileCentre(14).y - 21 };
+        const point = { x: C(14).x + 33, y: C(14).y - 21 };
         expect(dropOnMat({ typeId: 'fixture_mythic_drop', from: { spriteId: sprite.id } }, point).success).toBe(false);
 
         const back = SpriteLayer.getSprites().filter(s => s.refId === 'fixture_mythic_drop');
@@ -253,7 +254,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect({ x: map.x, y: map.y }).toEqual({ x: 1436, y: 936 });
         expect(BoardState.tokens()).toHaveLength(0);
 
-        // Well outside the old landing area is fine for a Map; clamped onto the mat.
+        // Well off the mat is fine for a Map; it is clamped back onto it.
         dropOnMat({ typeId: 'fixture_map', from: { boardMapId: map.id } }, { x: 5000, y: -40 });
         expect(GameState.state.board.maps[0]).toMatchObject({ id: map.id, x: MAT_W - 128, y: 0 });
     });
@@ -265,7 +266,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     });
 
     it('⭐ a dragged flag moves to the raw point, clamped to the mat (FP-94)', () => {
-        dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } }, tileCentre(3));
+        dropOnMat({ kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } }, C(3));
         dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, { x: 1234.5, y: 77 });
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 1234.5, y: 77 });
 
@@ -274,7 +275,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     });
 
     it('a flag drag for a hero with no flag is refused', () => {
-        expect(dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, tileCentre(3)).success).toBe(false);
+        expect(dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, C(3)).success).toBe(false);
         expect(BoardState.flagOf('h1')).toBeNull();
     });
 
@@ -283,7 +284,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
      * Token dropped far from where the old 6×6 board used to be is no longer
      * refused — the whole mat is the play area now.
      */
-    it('⭐ a Token dropped far outside the OLD board area simply lands there now', () => {
+    it('⭐ a Token dropped far from the middle of the mat simply lands there now', () => {
         BoardState.addToTray(instance('fixture_producer', 100));
         const point = { x: 100, y: 100 };
 

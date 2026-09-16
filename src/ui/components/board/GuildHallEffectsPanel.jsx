@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { BOARD_PX } from '../../../config/boardGeometry.js';
+import { SIDE_COLUMN_PX } from './boardConstants.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
@@ -35,10 +35,10 @@ export const GuildHallEffectsPanel = ({ menuRight = false }) => {
                 menuRight ? "pl-8 pr-0" : "pr-8 pl-0"
             )}
         >
-            {/* Inner Wrapper matched to BOARD_PX (Playmat Height) */}
+            {/* Inner Wrapper matched to SIDE_COLUMN_PX (Playmat Height) */}
             <div
                 className="w-full relative shrink-0 flex flex-col"
-                style={{ height: BOARD_PX, maxHeight: '100%' }}
+                style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             >
                 {/* Wooden Frame Box matching the exact height and styling of the Token Tray */}
                 <div

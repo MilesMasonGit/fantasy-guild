@@ -77,9 +77,25 @@ registerTokenTypes({
     }
 });
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
+ * A lattice of mat points 160 u apart, so the Coast layouts below keep exactly
+ * the neighbourhoods they were written for at the 272 u Near set in `beforeEach`:
+ * 8, 9 and 10 are a row 160 u apart, and 16 is a 226 u diagonal of 9.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+const big = (i) => ({ x: C(i).x + 80, y: C(i).y + 80 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+
+/** Put a Token straight on spot `i`, no rules — how a save rehydrates one. */
+const seat = (i, instance) => BoardState.addToken(instance, C(i).x, C(i).y);
+
 function place(tile, typeId) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    return { result: Placement.placeToken(tile, instance), instance };
+    const where = typeId === 'fixture_big_slab' ? big(tile) : C(tile);
+    return { result: Placement.placeTokenAt(instance, where), instance };
 }
 
 beforeEach(() => {
@@ -129,7 +145,7 @@ describe('A `Cannot` refuses the placement, and says why', () => {
         place(9, 'fixture_coast');
 
         // It moved off the offending spot, and the board is legal.
-        expect(BoardState.getToken(9)).toBeFalsy();
+        expect(tokenAt(9)).toBeFalsy();
         expect(Restrictions.violations()).toEqual([]);
     });
 
@@ -145,7 +161,7 @@ describe('A `Cannot` refuses the placement, and says why', () => {
 
         expect(result.success).toBe(true);
         expect(result.nudged).toBe(true);
-        expect(BoardState.getToken(16)).toBeFalsy();
+        expect(tokenAt(16)).toBeFalsy();
         expect(Restrictions.violations()).toEqual([]);
     });
 
@@ -160,7 +176,7 @@ describe('A `Cannot` refuses the placement, and says why', () => {
         const { result } = place(16, 'fixture_plain_coast');
 
         expect(result.success).toBe(true);
-        expect(BoardState.getToken(16)?.typeId).toBe('fixture_plain_coast');
+        expect(tokenAt(16)?.typeId).toBe('fixture_plain_coast');
         expect(Restrictions.violations()).toEqual([]);
     });
 
@@ -188,12 +204,12 @@ describe('A move that would break the rule is moved aside, not sent back (FP-88)
         place(10, 'fixture_plain_coast');
         const { instance } = place(30, 'fixture_plain_coast');   // far away, legal
 
-        const result = Placement.moveToken(30, 16);
+        const result = Placement.moveTokenTo(instance.id, C(16));
 
         expect(result.success).toBe(true);
-        // It left tile 30 and is not standing on the spot that breaks the rule.
-        expect(BoardState.getToken(30)).toBeFalsy();
-        expect(BoardState.getToken(16)).toBeFalsy();
+        // It left spot 30 and is not standing on the spot that breaks the rule.
+        expect(tokenAt(30)).toBeFalsy();
+        expect(tokenAt(16)).toBeFalsy();
         expect(BoardState.getTokenById(instance.id)).not.toBeNull();
         expect(Restrictions.violations()).toEqual([]);
     });
@@ -270,9 +286,9 @@ describe('A saved board that already breaks a rule is repaired, never destroyed'
     it('lifts the offender into the Vault', () => {
         // Build the illegal board directly, the way a save from before the rule
         // existed would rehydrate it — bypassing placement entirely.
-        BoardState.setToken(9, BoardState.createTokenInstance('fixture_coast', 500));
+        seat(9, BoardState.createTokenInstance('fixture_coast', 500));
         for (const tile of [8, 10, 16]) {
-            BoardState.setToken(tile, BoardState.createTokenInstance('fixture_plain_coast', 500));
+            seat(tile, BoardState.createTokenInstance('fixture_plain_coast', 500));
         }
         expect(Restrictions.violations()).not.toEqual([]);
 
@@ -287,9 +303,9 @@ describe('A saved board that already breaks a rule is repaired, never destroyed'
     });
 
     it('takes the fewest Tokens it can', () => {
-        BoardState.setToken(9, BoardState.createTokenInstance('fixture_coast', 500));
+        seat(9, BoardState.createTokenInstance('fixture_coast', 500));
         for (const tile of [8, 10, 16]) {
-            BoardState.setToken(tile, BoardState.createTokenInstance('fixture_plain_coast', 500));
+            seat(tile, BoardState.createTokenInstance('fixture_plain_coast', 500));
         }
 
         const moved = Restrictions.reconcile(instance => TokenBank.deposit(instance));
@@ -304,20 +320,20 @@ describe('A saved board that already breaks a rule is repaired, never destroyed'
         place(9, 'fixture_coast');
 
         expect(Restrictions.reconcile(() => true)).toEqual([]);
-        expect(BoardState.getToken(9)?.typeId).toBe('fixture_coast');
+        expect(tokenAt(9)?.typeId).toBe('fixture_coast');
     });
 
     it('would rather leave an illegal board than destroy a Token', () => {
-        BoardState.setToken(9, BoardState.createTokenInstance('fixture_coast', 500));
+        seat(9, BoardState.createTokenInstance('fixture_coast', 500));
         for (const tile of [8, 10, 16]) {
-            BoardState.setToken(tile, BoardState.createTokenInstance('fixture_plain_coast', 500));
+            seat(tile, BoardState.createTokenInstance('fixture_plain_coast', 500));
         }
 
         // A Vault that refuses everything.
         const moved = Restrictions.reconcile(() => false);
 
         expect(moved).toEqual([]);
-        expect(BoardState.getToken(9)?.typeId).toBe('fixture_coast');
+        expect(tokenAt(9)?.typeId).toBe('fixture_coast');
     });
 });
 

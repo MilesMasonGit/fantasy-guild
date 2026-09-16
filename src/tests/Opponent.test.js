@@ -6,7 +6,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
-import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -34,7 +33,20 @@ import { KEYWORD, makeStatement, rolesForKeyword } from '../systems/effects/stat
 import { slotsOf } from '../systems/effects/statementSlots.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * these are named spots on a 160 u lattice.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Put a Token on spot `i`, and plant a hero's flag there. */
+const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -71,10 +83,10 @@ function fighter(id) {
 
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    put(tile, instance);
+    TileModifiers.rebuildAround([tokenAt(tile)]);
+    if (heroId) plant(heroId, tile);
+    return tokenAt(tile);
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -156,20 +168,20 @@ describe('1. an item says "deals N damage to the enemy", and a real fight feels 
 });
 
 describe('2. ⭐ found by HERO, never by tile (G-43)', () => {
-    it('still hits the monster after the hero’s recorded tile moves onto a bush — and never the hero there', () => {
+    it('still hits the monster after the hero’s recorded claim moves onto a bush — and never the hero there', () => {
         const fight = engage();
         const bush = place(BUSH, 'fixture_producer');
         carry(dealsToEnemy(5));
 
         // Move hero_1's claim straight onto the bush, with no tick: the fight
-        // still names hero_1, but every tile lookup now says hero_1 is working
-        // the bush.
+        // still names hero_1, but every by-Token lookup now says hero_1 is
+        // working the bush.
         //
         // Was: re-planting the flag on the bush. Since Free Playmat 1.4c a hero
         // letting go of an enemy ends that fight in the same call (FP-43,
         // FP-49), so a re-plant can no longer leave this state behind. The
         // claim is set directly so the lookup-by-hero rule is still exercised.
-        BoardState.setClaim('hero_1', { instanceId: bush.id, tile: BUSH, typeId: bush.typeId });
+        BoardState.setClaim('hero_1', { instanceId: bush.id, typeId: bush.typeId });
         expect(BoardState.workerOf(idAt(BUSH))).toBe('hero_1');
         expect(BoardCombat.fightOfHero('hero_1')).toBe(fight);
 

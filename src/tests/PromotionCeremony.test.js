@@ -21,7 +21,25 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 import { useEngine } from '../ui/hooks/useEngine.js';
 import { PromotionCeremonyModal } from '../ui/modals/PromotionCeremonyModal.jsx';
 import { useUIModals, standingPromotionOffer } from '../ui/hooks/useUIModals.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the Academy to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Which spot the Token a hero works stands on, or null. */
+function workTileOf(heroId) {
+    const instance = BoardState.getTokenById(BoardState.workTokenOf(heroId));
+    if (!instance) return null;
+    const col = Math.round((instance.x - 400) / 160);
+    const row = Math.round((instance.y - 200) / 160);
+    return row * 6 + col;
+}
 
 /**
  * ⭐ **The promotion ceremony** (Promotes rule P4).
@@ -52,10 +70,10 @@ function qualifiedHero() {
 
 /** Train a hero to the offer on a fixture Token; returns the offer. */
 function standingOffer(hero, { typeId = 'fixture_promotion', uses = 2 } = {}) {
-    BoardState.setToken(TILE, { typeId, usesRemaining: uses, cycleElapsedMs: 0 });
-    Placement.placeHero(hero.id, TILE);
+    BoardState.addToken({ typeId, usesRemaining: uses, cycleElapsedMs: 0 }, C(TILE).x, C(TILE).y);
+    Placement.plantFlagAt(hero.id, C(TILE));
     for (let i = 0; i < 25 && !BoardPromotion.getOffer(idAt(TILE)); i++) {
-        BoardPromotion.tickToken(BoardState.getToken(TILE), 1000, hero.id);
+        BoardPromotion.tickToken(tokenAt(TILE), 1000, hero.id);
     }
     return BoardPromotion.getOffer(idAt(TILE));
 }
@@ -111,7 +129,7 @@ describe('accepting', () => {
         fireEvent.click(button('Become Fighter'));
 
         expect(hero.jobId).toBe('fighter');
-        expect(BoardState.getToken(TILE).usesRemaining).toBe(1);
+        expect(tokenAt(TILE).usesRemaining).toBe(1);
         expect(document.body.textContent).toContain('Promotion complete');
         expect(document.body.textContent).toContain('Ada is now a Fighter');
     });
@@ -135,7 +153,7 @@ describe('accepting', () => {
         render(React.createElement(PromotionCeremonyModal, { offer, onClose: () => {} }));
 
         // The Token is drained while the window sits open.
-        BoardState.getToken(TILE).usesRemaining = 1;
+        tokenAt(TILE).usesRemaining = 1;
         fireEvent.click(button('Become Fighter'));
 
         expect(hero.jobId).toBe('recruit');
@@ -155,8 +173,8 @@ describe('declining', () => {
 
         expect(onClose).toHaveBeenCalledTimes(1);
         expect(hero.jobId).toBe('recruit');
-        expect(BoardState.getToken(TILE).usesRemaining).toBe(2);
-        expect(BoardState.workTileOf(hero.id)).toBe(TILE);
+        expect(tokenAt(TILE).usesRemaining).toBe(2);
+        expect(workTileOf(hero.id)).toBe(TILE);
     });
 });
 
@@ -196,6 +214,9 @@ describe('⭐ the game opens it', () => {
 
     it('finds nothing — and does not throw — with no game in progress', () => {
         expect(standingPromotionOffer({})).toBeNull();
-        expect(standingPromotionOffer({ BoardState: { occupiedTiles: () => { throw new Error('no board'); } }, BoardPromotion })).toBeNull();
+        // ⚠️ Stubs the reader `standingPromotionOffer` actually calls. It used to
+        // stub `occupiedTiles`, which the guard never reached — so the try/catch
+        // this is named for was never exercised at all.
+        expect(standingPromotionOffer({ BoardState: { tokens: () => { throw new Error('no board'); } }, BoardPromotion })).toBeNull();
     });
 });

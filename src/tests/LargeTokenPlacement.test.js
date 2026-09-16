@@ -2,10 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as adjacency from '../systems/board/adjacency.js';
-import * as geometry from '../config/boardGeometry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -15,11 +12,41 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
-describe('2x2 Large Token Mechanics', () => {
+/**
+ * 2×2 Tokens on the free playmat.
+ *
+ * ## ⭐ What went with the grid (Free Playmat slice 1.6d-2)
+ * Most of this file used to describe a **footprint**: four tiles a large Token
+ * covered, the anchor among them, the twelve tiles around the outside, and the
+ * board edges it could overflow. None of that exists any more — a 2×2 Token is
+ * one circle at one point, 288 u across — so three blocks were deleted rather
+ * than migrated, because each only pinned the shape of the deleted grid:
+ *
+ * * **Geometry & Bounds Checks** — `tileFootprint`, `isFootprintInBounds` and a
+ *   placement refused for overflowing the board's right or bottom edge. A Token
+ *   is now kept on the mat by its art circle (`MatPlacement.insideMat`), which
+ *   `MatFrameDrops.test.js` pins.
+ * * **the footprint query test** — `getOccupyingToken`, `hasToken` and
+ *   `emptyTiles`, the whole "four tiles answer for one Token" view.
+ * * **12-Tile Perimeter Adjacency** — `adjacency.neighboursOfFootprint`, from
+ *   the deleted `adjacency.js`. What a 2×2 actually reaches is a distance now,
+ *   and `Nearby.test.js` pins it (FP-41).
+ *
+ * What survives is what a large Token still does: it moves **itself** rather
+ * than displacing what it lands on, only one hero works it, and a passive one is
+ * never worked at all.
+ */
+
+/** Test layout only: a spot on a 160 u lattice, and the centre of a 2×2 over it. */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+const big = (i) => ({ x: C(i).x + 80, y: C(i).y + 80 });
+
+describe('2×2 Large Token Mechanics', () => {
     beforeEach(() => {
         GameState.state = {
             board: {
-                tiles: {},
+                tokens: {},
+                nextTokenOrder: 0,
                 flags: {},
                 nextFlagOrder: 0,
                 vacancies: {},
@@ -35,7 +62,6 @@ describe('2x2 Large Token Mechanics', () => {
             ]
         };
 
-        // Register test tokens with 1x1 and 2x2 sizes
         registerTokenTypes({
             fixture_small_mine: {
                 id: 'fixture_small_mine',
@@ -64,73 +90,7 @@ describe('2x2 Large Token Mechanics', () => {
         });
     });
 
-    describe('Geometry & Bounds Checks', () => {
-        it('calculates 4-tile footprint for 2x2 token', () => {
-            const SIZE = geometry.BOARD_SIZE;
-            const fp = geometry.tileFootprint(0, 2);
-            expect(fp).toEqual([0, 1, SIZE, SIZE + 1]);
-        });
-
-        it('validates in-bounds footprint and rejects right/bottom edge overflows', () => {
-            const SIZE = geometry.BOARD_SIZE;
-            const LAST_COL = SIZE - 1;                    // rightmost column
-            const LAST_ROW_START = (SIZE - 1) * SIZE;     // first tile of the bottom row
-            expect(geometry.isFootprintInBounds(0, 2)).toBe(true);
-            expect(geometry.isFootprintInBounds(LAST_COL, 2)).toBe(false);
-            expect(geometry.isFootprintInBounds(LAST_ROW_START, 2)).toBe(false);
-        });
-
-        it('refuses placing 2x2 token that overflows board boundary', () => {
-            const inst = BoardState.createTokenInstance('fixture_large_fortress');
-            const SIZE = geometry.BOARD_SIZE;
-            const resultRight = Placement.placeToken(SIZE - 1, inst); // rightmost column
-            expect(resultRight.success).toBe(false);
-            expect(resultRight.reason).toContain('Token does not fit');
-
-            const resultBottom = Placement.placeToken((SIZE - 1) * SIZE, inst); // bottom row
-            expect(resultBottom.success).toBe(false);
-            expect(resultBottom.reason).toContain('Token does not fit');
-        });
-
-        it('allows placing 2x2 token that overlaps the Guild Hall tile', () => {
-            const inst = BoardState.createTokenInstance('fixture_large_fortress');
-            // The Guild Hall tile is a standard placeable tile.
-            expect(Placement.placeToken(14, inst).success).toBe(true);
-            expect(BoardState.getToken(14)).toBe(inst);
-        });
-    });
-
-    describe('Placement, Footprint & State Querying', () => {
-        it('places a 2x2 token at anchor tile and query helpers recognize all 4 tiles', () => {
-            const inst = BoardState.createTokenInstance('fixture_large_fortress', 50);
-            const res = Placement.placeToken(0, inst);
-            expect(res.success).toBe(true);
-
-            expect(BoardState.getToken(0)).toBe(inst);
-            expect(BoardState.getToken(1)).toBe(null); // Subordinate tiles don't hold duplicate objects
-
-            // getOccupyingToken returns the token for all 4 tiles
-            for (const t of [0, 1, 6, 7]) {
-                const occ = BoardState.getOccupyingToken(t);
-                expect(occ).not.toBe(null);
-                expect(occ.anchorIndex).toBe(0);
-                expect(occ.instance.typeId).toBe('fixture_large_fortress');
-                expect(occ.footprint).toEqual([0, 1, 6, 7]);
-                expect(BoardState.hasToken(t)).toBe(true);
-            }
-
-            expect(BoardState.getOccupyingToken(2)).toBe(null);
-            expect(BoardState.hasToken(2)).toBe(false);
-
-            // emptyTiles excludes all 4 tiles
-            const empty = BoardState.emptyTiles();
-            expect(empty).not.toContain(0);
-            expect(empty).not.toContain(1);
-            expect(empty).not.toContain(6);
-            expect(empty).not.toContain(7);
-            expect(empty).toContain(2);
-        });
-
+    describe('Placement', () => {
         /**
          * ⭐ Free placement (slice 1.6d-1) deleted the 2×2 cascade: a large
          * Token dropped over small ones no longer shoves them sideways or into
@@ -140,18 +100,20 @@ describe('2x2 Large Token Mechanics', () => {
         it('⭐ never displaces the small Tokens it is dropped over — it moves itself', () => {
             const s1 = BoardState.createTokenInstance('fixture_small_mine', 10);
             const s2 = BoardState.createTokenInstance('fixture_small_mine', 10);
-            Placement.placeToken(0, s1);
-            Placement.placeToken(7, s2);
+            Placement.placeTokenAt(s1, C(0));
+            Placement.placeTokenAt(s2, C(7));
 
+            // Dropped straight onto the first one, with the second alongside.
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
-            const res = Placement.placeToken(0, large);
+            const res = Placement.placeTokenAt(large, C(0));
 
             expect(res.success).toBe(true);
             // Both small Tokens are exactly where they were, and none went to the Tray.
             expect(BoardState.getTokenById(s1.id)).not.toBeNull();
-            expect(BoardState.getTokenById(s2.id)).not.toBeNull();
+            expect({ x: s1.x, y: s1.y }).toEqual(C(0));
+            expect({ x: s2.x, y: s2.y }).toEqual(C(7));
             expect(BoardState.getTray()).toHaveLength(0);
-            // The large Token stands clear of both.
+            // The large Token stands clear of both — small-to-large is 99.6 u.
             const placed = BoardState.getTokenById(large.id);
             expect(Math.hypot(placed.x - s1.x, placed.y - s1.y)).toBeGreaterThanOrEqual(99.6 - 1e-6);
             expect(Math.hypot(placed.x - s2.x, placed.y - s2.y)).toBeGreaterThanOrEqual(99.6 - 1e-6);
@@ -159,75 +121,41 @@ describe('2x2 Large Token Mechanics', () => {
     });
 
     describe('Hero Assignment & Staffing', () => {
-        it('assigns hero to anchor when placed on any of the 4 constituent tiles', () => {
+        it('a hero planted on a 2×2 Token works it', () => {
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
-            Placement.placeToken(0, large);
+            Placement.placeTokenAt(large, big(0));
 
-            // Place hero on subordinate tile 7
-            const res = Placement.placeHero('hero_1', 7);
+            const res = Placement.plantFlagAt('hero_1', big(0));
             expect(res.success).toBe(true);
-            expect(res.workedTile).toBe(0);
 
-            // Hero works the Token at its anchor tile 0
-            expect(BoardState.workTileOf('hero_1')).toBe(0);
-            expect(BoardState.workerOf(idAt(0))).toBe('hero_1');
+            expect(BoardState.workTokenOf('hero_1')).toBe(large.id);
+            expect(BoardState.workerOf(large.id)).toBe('hero_1');
         });
 
-        it('one hero per 2x2 Token: a second hero dropped on it does not take it (FP-25)', () => {
+        it('one hero per 2×2 Token: a second hero dropped on it does not take it (FP-25)', () => {
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
-            Placement.placeToken(0, large);
+            Placement.placeTokenAt(large, big(0));
 
-            Placement.placeHero('hero_1', 1);
-            expect(BoardState.workTileOf('hero_1')).toBe(0);
+            Placement.plantFlagAt('hero_1', big(0));
+            expect(BoardState.workTokenOf('hero_1')).toBe(large.id);
 
-            // Place hero_2 on tile 6 — nobody is displaced any more (1.4b)
-            const res2 = Placement.placeHero('hero_2', 6);
+            // Nobody is displaced any more (1.4b): the second flag simply stands there.
+            const res2 = Placement.plantFlagAt('hero_2', big(0));
             expect(res2.success).toBe(true);
 
-            expect(BoardState.workTileOf('hero_1')).toBe(0);
-            expect(BoardState.workTileOf('hero_2')).toBeNull();
+            expect(BoardState.workTokenOf('hero_1')).toBe(large.id);
+            expect(BoardState.workTokenOf('hero_2')).toBeNull();
             expect(BoardState.flagOf('hero_2')).not.toBeNull();
         });
 
-        it('a hero dropped on a passive 2x2 token plants there but never works it', () => {
+        it('a hero dropped on a passive 2×2 token plants there but never works it', () => {
             const passiveLarge = BoardState.createTokenInstance('fixture_large_passive_monolith', 100);
-            Placement.placeToken(0, passiveLarge);
+            Placement.placeTokenAt(passiveLarge, big(0));
 
-            const res = Placement.placeHero('hero_1', 0);
+            const res = Placement.plantFlagAt('hero_1', big(0));
             expect(res.success).toBe(true);
-            expect(BoardState.workerOf(idAt(0))).toBeNull();
+            expect(BoardState.workerOf(passiveLarge.id)).toBeNull();
             expect(BoardState.flagOf('hero_1')).not.toBeNull();
-        });
-    });
-
-    describe('12-Tile Perimeter Adjacency', () => {
-        it('computes 12 surrounding tiles for an interior 2x2 footprint', () => {
-            // Anchor at tile 7 (row 1, col 1) on 6x6
-            // Footprint is [7, 8, 13, 14] (rows 1-2, cols 1-2)
-            // Exterior perimeter should be 12 tiles:
-            // Top row: 0, 1, 2, 3
-            // Row 1: 6, 9
-            // Row 2: 12, 15
-            // Bottom row: 18, 19, 20, 21
-            const footprint = geometry.tileFootprint(7, 2);
-            expect(footprint).toEqual([7, 8, 13, 14]);
-
-            const perim = adjacency.neighboursOfFootprint(footprint);
-            expect(perim).toEqual([0, 1, 2, 3, 6, 9, 12, 15, 18, 19, 20, 21]);
-            expect(perim.length).toBe(12);
-        });
-
-        it('computes perimeter neighbours along corner/edges correctly', () => {
-            // Anchor at tile 0 (row 0, col 0)
-            // Footprint: [0, 1, 6, 7]
-            // Perimeter should be:
-            // Right of row 0: 2
-            // Right of row 1: 8
-            // Row below (row 2): 12, 13, 14
-            const fpCorner = geometry.tileFootprint(0, 2);
-            const perimCorner = adjacency.neighboursOfFootprint(fpCorner);
-            expect(perimCorner).toEqual([2, 8, 12, 13, 14]);
-            expect(perimCorner.length).toBe(5);
         });
     });
 });

@@ -8,8 +8,6 @@ import * as Placement from '../systems/board/Placement.js';
 import * as Flags from '../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { tileCentre, footprintCentre } from '../config/boardGeometry.js';
-import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -22,16 +20,30 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * The worker seam (Free Playmat slices 1.4a, 1.4b).
  *
- * `workerOf`, `workTileOf` and `displayPointOf` (was `displayTileOf` until slice 1.6c) are the only way anything
+ * `workerOf`, `workTokenOf` and `displayPointOf` are the only way anything
  * outside `BoardState` learns where a hero is. Slice 1.4a pinned what they
  * answered from `heroTiles`; slice 1.4b swapped flags and claims in behind them,
- * and these tests now pin the flag answers (roadmap §2).
+ * and these tests pin the flag answers (roadmap §2).
+ *
+ * ## ⭐ Three questions, no tiles (Free Playmat slice 1.6d-2)
+ * The seam used to have tile-shaped twins — `workerOfTile` and `workTileOf` —
+ * for the placement code that still spoke in indices. Both are gone with the
+ * grid: a Token is named by its **instance id** and a hero is drawn at a **mat
+ * point**, and those are the only two currencies left.
  */
+
+/** The scene, in mat units. */
+const A = { x: 400, y: 300 };
+const B = { x: 560, y: 300 };
+const ELSEWHERE = { x: 1200, y: 800 };
 
 describe('the worker seam answers from flags and claims', () => {
     beforeEach(() => {
         GameState.state = {
-            board: { tiles: {}, flags: {}, nextFlagOrder: 0, vacancies: {}, tray: [], tokenBank: {}, maps: [] },
+            board: {
+                tokens: {}, nextTokenOrder: 0, flags: {}, nextFlagOrder: 0,
+                vacancies: {}, tray: [], tokenBank: {}, maps: []
+            },
             heroes: [
                 { id: 'hero_1', name: 'Althea', skills: { logging: { level: 5, xp: 0 } }, level: 1 },
                 { id: 'hero_2', name: 'Brom', skills: { logging: { level: 5, xp: 0 } }, level: 1 }
@@ -49,66 +61,74 @@ describe('the worker seam answers from flags and claims', () => {
         });
     });
 
-    it('a docked hero has no work tile and no display tile', () => {
-        expect(BoardState.workTileOf('hero_1')).toBeNull();
+    /** Put a Token down at a point, no rules, and hand back the instance. */
+    function put(typeId, point, uses) {
+        const instance = BoardState.createTokenInstance(typeId, uses);
+        Placement.placeTokenAt(instance, point);
+        return instance;
+    }
+
+    it('a docked hero has no work Token and no display point', () => {
+        expect(BoardState.workTokenOf('hero_1')).toBeNull();
         expect(BoardState.displayPointOf('hero_1')).toBeNull();
-        expect(BoardState.workTileOf(null)).toBeNull();
+        expect(BoardState.workTokenOf(null)).toBeNull();
     });
 
-    it('an empty tile nobody stands on has no worker', () => {
-        expect(BoardState.workerOf(idAt(9))).toBeNull();
-        expect(BoardState.workerOf(idAt(null))).toBeNull();
-        expect(BoardState.workerOf(idAt(-1))).toBeNull();
+    it('a Token nobody stands on has no worker, and neither has nothing', () => {
+        const alone = put('fixture_seam_small', A, 10);
+        expect(BoardState.workerOf(alone.id)).toBeNull();
+        expect(BoardState.workerOf(null)).toBeNull();
+        expect(BoardState.workerOf('tok_nobody')).toBeNull();
     });
 
-    it('1×1: the hero working a Token is its worker, and it is their work and display tile', () => {
-        Placement.placeToken(9, BoardState.createTokenInstance('fixture_seam_small', 10));
-        Placement.placeHero('hero_1', 9);
+    it('1×1: the hero working a Token is its worker, and it is their work Token and display point', () => {
+        const small = put('fixture_seam_small', A, 10);
+        const other = put('fixture_seam_small', ELSEWHERE, 10);
+        Placement.plantFlagAt('hero_1', A);
 
-        expect(BoardState.workerOf(idAt(9))).toBe('hero_1');
-        expect(BoardState.workTileOf('hero_1')).toBe(9);
-        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(9));
-        expect(BoardState.workerOf(idAt(10))).toBeNull();
+        expect(BoardState.workerOf(small.id)).toBe('hero_1');
+        expect(BoardState.workTokenOf('hero_1')).toBe(small.id);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(A);
+        expect(BoardState.workerOf(other.id)).toBeNull();
     });
 
-    it('⚠️ tile 0 is a real answer, not "nowhere"', () => {
-        Placement.placeToken(0, BoardState.createTokenInstance('fixture_seam_small', 10));
-        Placement.placeHero('hero_1', 0);
+    it('⚠️ the mat’s corner is a real answer, not "nowhere"', () => {
+        const corner = { x: 64, y: 64 };
+        const small = put('fixture_seam_small', corner, 10);
+        Placement.plantFlagAt('hero_1', corner);
 
-        expect(BoardState.workerOf(idAt(0))).toBe('hero_1');
-        expect(BoardState.workTileOf('hero_1')).toBe(0);
-        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(0));
+        expect(BoardState.workerOf(small.id)).toBe('hero_1');
+        expect(BoardState.workTokenOf('hero_1')).toBe(small.id);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(corner);
     });
 
-    it('⭐ 2×2: the worker is found on EVERY tile of the footprint (1.4b), work tile is the anchor', () => {
-        Placement.placeToken(0, BoardState.createTokenInstance('fixture_seam_large', 50));
-        Placement.placeHero('hero_1', 7);
+    it('⭐ 2×2: a big Token is found by its id like any other, and drawn at its own centre', () => {
+        // There is no footprint to search any more (slice 1.6d-2) — a Token of
+        // any size is one circle at one point, named by one instance id.
+        const large = put('fixture_seam_large', A, 50);
+        Placement.plantFlagAt('hero_1', A);
 
-        for (const tile of [0, 1, 6, 7]) {
-            expect(BoardState.workerOf(idAt(tile))).toBe('hero_1');
-        }
-        expect(BoardState.workerOf(idAt(2))).toBeNull();
-        expect(BoardState.workTileOf('hero_1')).toBe(0);
-        expect(BoardState.displayPointOf('hero_1')).toEqual(footprintCentre(0, 2));
+        expect(BoardState.workerOf(large.id)).toBe('hero_1');
+        expect(BoardState.workTokenOf('hero_1')).toBe(large.id);
+        expect(BoardState.displayPointOf('hero_1')).toEqual(A);
     });
 
-    it('⭐ a bare tile has no worker, even with a flag planted on it (1.4b)', () => {
-        Flags.plant('hero_2', tileCentre(14));
+    it('⭐ bare ground has no worker, even with a flag planted on it (1.4b)', () => {
+        Flags.plant('hero_2', B);
 
-        expect(BoardState.getToken(14)).toBeNull();
-        expect(BoardState.workerOf(idAt(14))).toBeNull();
-        expect(BoardState.workTileOf('hero_2')).toBeNull();
+        expect(BoardState.tokensAtPoint(B.x, B.y)).toHaveLength(0);
+        expect(BoardState.workTokenOf('hero_2')).toBeNull();
         // Drawn at their flag.
-        expect(BoardState.displayPointOf('hero_2')).toEqual(tileCentre(14));
+        expect(BoardState.displayPointOf('hero_2')).toEqual(B);
     });
 
     it('recall clears all three answers', () => {
-        Placement.placeToken(9, BoardState.createTokenInstance('fixture_seam_small', 10));
-        Placement.placeHero('hero_1', 9);
+        const small = put('fixture_seam_small', A, 10);
+        Placement.plantFlagAt('hero_1', A);
         Placement.recallHeroById('hero_1');
 
-        expect(BoardState.workerOf(idAt(9))).toBeNull();
-        expect(BoardState.workTileOf('hero_1')).toBeNull();
+        expect(BoardState.workerOf(small.id)).toBeNull();
+        expect(BoardState.workTokenOf('hero_1')).toBeNull();
         expect(BoardState.displayPointOf('hero_1')).toBeNull();
     });
 });

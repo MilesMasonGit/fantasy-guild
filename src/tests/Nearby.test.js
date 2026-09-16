@@ -3,16 +3,13 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
-import { neighboursOf, neighboursOfFootprint } from '../systems/board/adjacency.js';
 import {
-    nearby, tokensWithin, tokensAround, positionOf, nearRadius
+    nearby, tokensWithin, tokensAround, nearRadius
 } from '../systems/board/nearby.js';
-import { TILE_COUNT, tileCentre, footprintCentre, tileFootprint } from '../config/boardGeometry.js';
 import { setMatTuning, resetMatTuning, matTuning, matTuningDefault } from '../config/matTuning.js';
-import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { REACH } from '../config/registries/reachRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { idAt, anchorOf } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -25,15 +22,19 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * **`nearby()` — reach as a distance** (Free Playmat slices 1.2, 1.6b).
  *
- * FP-56: every passive reader is a centre-to-centre distance query. Since slice
- * 1.6b the readers take and answer **instance ids**; these tests lay Tokens out
- * on the old tile centres and translate ids back to tiles (`near`, below) so the
- * familiar ring geometry can still be pinned exactly.
+ * FP-56: every passive reader is a centre-to-centre distance query, and since
+ * slice 1.6b the readers take and answer **instance ids**.
  *
- * FP-41: a 2×2 Token, measured from its footprint centre, reaches the 8
- * side-touching tiles and loses the 4 corner-diagonal ones (at 272 u).
+ * FP-41: a 2×2 Token, measured from its own centre, reaches the 8 side-touching
+ * spots and loses the 4 corner-diagonal ones (at 272 u).
  *
- * 6×6 board, row-major:
+ * ## ⭐ Test layout only (Free Playmat slice 1.6d-2)
+ * The game has no tiles. The scene below is a 6 × 6 lattice of mat points 160 u
+ * apart — the step the old board had — so the familiar ring geometry can still
+ * be pinned exactly: a side neighbour is 160 u, a diagonal 226 u, and a 2×2's
+ * centre sits half a step in from its anchor spot, putting it 253 u from a
+ * side-touching spot and 339 u from a corner-diagonal one.
+ *
  * ```
  *    0  1  2  3  4  5
  *    6  7  8  9 10 11
@@ -42,7 +43,37 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  *   24 25 26 27 28 29
  *   30 31 32 33 34 35
  * ```
+ *
+ * ⚠️ The blocks that pinned `tileCentre`, `footprintCentre`, `positionOf` and
+ * `adjacency.js` were **deleted** with those functions in slice 1.6d-2 — they
+ * asserted the shape of the grid itself, which no longer exists. What survives
+ * here is the live behaviour: what `nearby`, `tokensWithin`, `tokensAround` and
+ * `filterTargets` actually answer.
  */
+
+const COLS = 6;
+const ROWS = 6;
+const SPOTS = COLS * ROWS;
+
+/** A spot on the lattice. Rows start at y = 200 so all 36 fit on the mat. */
+const C = (i) => ({ x: 400 + (i % COLS) * 160, y: 200 + Math.floor(i / COLS) * 160 });
+
+/** The four spots a 2×2 anchored at `i` covers — test layout, for laying scenes out. */
+const footprintOf = (i) => [i, i + 1, i + COLS, i + COLS + 1];
+
+/** The eight spots surrounding `i` — the old ring, computed here rather than imported. */
+function ringOf(i) {
+    const row = Math.floor(i / COLS);
+    const col = i % COLS;
+    const out = [];
+    for (const [dr, dc] of [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]) {
+        const r = row + dr;
+        const c = col + dc;
+        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+        out.push(r * COLS + c);
+    }
+    return out;
+}
 
 const LARGE_BUFF = 'fixture_nearby_large_buff';
 const SMALL = 'fixture_producer';
@@ -62,34 +93,51 @@ registerTokenTypes({
 
 const sorted = (list) => [...list].sort((a, b) => a - b);
 
-/** Ids → the tiles those Tokens stand on (test layout). */
-const tilesOf = (ids) => ids.map(id => anchorOf(id));
+/** Which spot a Token stands on, by instance id — a 2×2 answers with its anchor. */
+function spotOf(id) {
+    const instance = BoardState.getTokenById(id);
+    if (!instance) return null;
+    const off = ((getTokenType(instance.typeId)?.size || 1) - 1) * 80;
+    const col = Math.round((instance.x - off - 400) / 160);
+    const row = Math.round((instance.y - off - 200) / 160);
+    return row * COLS + col;
+}
 
-/** `nearby` asked of the Token covering `tile`, answered as tiles. */
-const near = (tile, ...rest) => tilesOf(nearby(idAt(tile), ...rest));
+/** Ids → the spots those Tokens stand on (test layout). */
+const spotsOf = (ids) => ids.map(id => spotOf(id));
 
-function put(tile, typeId) {
-    BoardState.setToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
+/** The instance id standing on spot `i`, whatever its size. */
+const idAt = (i) => BoardState.tokens().find(t => spotOf(t.id) === i)?.id ?? null;
+
+/** `nearby` asked of the Token on spot `i`, answered as spots. */
+const near = (i, ...rest) => spotsOf(nearby(idAt(i), ...rest));
+
+/** Put a Token on the mat with no rules — a 2×2 at the centre of its four spots. */
+function put(i, typeId) {
+    const off = ((getTokenType(typeId)?.size || 1) - 1) * 80;
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    BoardState.addToken(instance, C(i).x + off, C(i).y + off);
+    return instance;
 }
 
 function clearBoard() {
-    for (const [index] of BoardState.occupiedTiles()) BoardState.setToken(index, null);
+    for (const token of BoardState.tokens()) BoardState.removeToken(token.id);
 }
 
-/** Fill every tile not covered by `taken` with a 1×1 Token, in ascending tile order. */
+/** Fill every spot not covered by `taken` with a 1×1 Token, in ascending spot order. */
 function fillAround(taken = []) {
     const skip = new Set(taken);
-    for (let i = 0; i < TILE_COUNT; i++) if (!skip.has(i)) put(i, SMALL);
+    for (let i = 0; i < SPOTS; i++) if (!skip.has(i)) put(i, SMALL);
 }
 
-const yieldAt = (tile) => TileModifiers.resolveAxis(idAt(tile), EFFECT_TYPES.YIELD, 100);
+const yieldAt = (i) => TileModifiers.resolveAxis(idAt(i), EFFECT_TYPES.YIELD, 100);
 
 beforeEach(() => {
     GameState.initNew();
     clearBoard();
     TileModifiers.clearAll();
     resetMatTuning();
-    // ⚠️ This file pins the geometry of the 8-tile ring, so Near is set to 272 u
+    // ⚠️ This file pins the geometry of the 8-spot ring, so Near is set to 272 u
     // explicitly. It has shipped at 164 u since FP-75 — see the FP-75 block below.
     setMatTuning('nearRadius', 272);
 });
@@ -99,23 +147,8 @@ afterEach(() => {
     resetMatTuning();
 });
 
-describe('mat positions', () => {
-    it('a tile step is 160 u and a 1×1 centre is its tile centre', () => {
-        // The old landing area is centred on the mat, its corner at (416, 99) (FP-92).
-        expect(tileCentre(0)).toEqual({ x: 480, y: 163 });
-        expect(tileCentre(1).x - tileCentre(0).x).toBe(160);
-        expect(tileCentre(6).y - tileCentre(0).y).toBe(160);
-        put(14, SMALL);
-        expect(positionOf(14)).toEqual(tileCentre(14));
-    });
-
-    it('a 2×2 Token\'s centre is the centre of its footprint, from any of its tiles', () => {
-        put(7, LARGE_BUFF);
-        expect(footprintCentre(7, 2)).toEqual({ x: 720, y: 403 });
-        for (const t of tileFootprint(7, 2)) expect(positionOf(t)).toEqual({ x: 720, y: 403 });
-    });
-
-    it('Near defaults to 164 u (FP-75, was 272 u under FP-65)', () => {
+describe('the Near radius', () => {
+    it('defaults to 164 u (FP-75, was 272 u under FP-65)', () => {
         resetMatTuning();
         expect(nearRadius()).toBe(164);
         expect(matTuningDefault('nearRadius')).toBe(164);
@@ -131,14 +164,14 @@ describe('⭐ at the shipped 164 u Near is the four side neighbours (FP-75)', ()
         expect(matTuning('flagRadius')).toBe(164);
     });
 
-    it('on a board full of 1×1 Tokens — corners 2, edges 3, centre 4, never a diagonal', () => {
+    it('on a mat full of 1×1 Tokens — corners 2, edges 3, centre 4, never a diagonal', () => {
         fillAround();
         const counts = new Set();
-        for (let i = 0; i < TILE_COUNT; i++) {
-            const col = i % 6;
-            const sides = [i - 6, i + 6, col > 0 ? i - 1 : -1, col < 5 ? i + 1 : -1]
-                .filter(t => t >= 0 && t < TILE_COUNT);
-            expect(sorted(near(i)), `tile ${i}`).toEqual(sorted(sides));
+        for (let i = 0; i < SPOTS; i++) {
+            const col = i % COLS;
+            const sides = [i - COLS, i + COLS, col > 0 ? i - 1 : -1, col < COLS - 1 ? i + 1 : -1]
+                .filter(t => t >= 0 && t < SPOTS);
+            expect(sorted(near(i)), `spot ${i}`).toEqual(sorted(sides));
             counts.add(sides.length);
         }
         expect(sorted(counts)).toEqual([2, 3, 4]);
@@ -146,7 +179,7 @@ describe('⭐ at the shipped 164 u Near is the four side neighbours (FP-75)', ()
 
     it('a 2×2 Token reaches nothing and nothing reaches it', () => {
         put(7, LARGE_BUFF);
-        fillAround(tileFootprint(7, 2));
+        fillAround(footprintOf(7));
         expect(near(7)).toEqual([]);
         for (const t of [1, 2, 6, 9, 12, 15, 19, 20]) expect(near(t)).not.toContain(7);
     });
@@ -155,26 +188,26 @@ describe('⭐ at the shipped 164 u Near is the four side neighbours (FP-75)', ()
         put(14, BUFF);
         fillAround([14]);
         TileModifiers.rebuildAll();
-        for (const t of [8, 13, 15, 20]) expect(yieldAt(t), `tile ${t}`).toBeCloseTo(105);
-        for (const t of [7, 9, 19, 21]) expect(yieldAt(t), `tile ${t}`).toBeCloseTo(100);
+        for (const t of [8, 13, 15, 20]) expect(yieldAt(t), `spot ${t}`).toBeCloseTo(105);
+        for (const t of [7, 9, 19, 21]) expect(yieldAt(t), `spot ${t}`).toBeCloseTo(100);
     });
 });
 
-describe('⭐ at 272 u Near is exactly today\'s 8-tile ring for every 1×1 tile', () => {
-    it('measured from a point: the Tokens within 272 u of each tile centre are its ring', () => {
+describe('⭐ at 272 u Near is exactly the old 8-spot ring for every 1×1 Token', () => {
+    it('measured from a point: the Tokens within 272 u of each spot are its ring', () => {
         fillAround();
-        for (let i = 0; i < TILE_COUNT; i++) {
-            const within = tilesOf(tokensWithin(tileCentre(i), 272, idAt(i)));
-            expect(sorted(within), `tile ${i}`).toEqual(sorted(neighboursOf(i)));
+        for (let i = 0; i < SPOTS; i++) {
+            const within = spotsOf(tokensWithin(C(i), 272, idAt(i)));
+            expect(sorted(within), `spot ${i}`).toEqual(sorted(ringOf(i)));
         }
     });
 
-    it('as Tokens, on a board full of 1×1 Tokens — corners 3, edges 5, centre 8', () => {
+    it('as Tokens, on a mat full of 1×1 Tokens — corners 3, edges 5, centre 8', () => {
         fillAround();
         const counts = new Set();
-        for (let i = 0; i < TILE_COUNT; i++) {
+        for (let i = 0; i < SPOTS; i++) {
             const ring = near(i);
-            expect(sorted(ring), `tile ${i}`).toEqual(sorted(neighboursOf(i)));
+            expect(sorted(ring), `spot ${i}`).toEqual(sorted(ringOf(i)));
             counts.add(ring.length);
         }
         expect(sorted(counts)).toEqual([3, 5, 8]);
@@ -183,8 +216,8 @@ describe('⭐ at 272 u Near is exactly today\'s 8-tile ring for every 1×1 tile'
     it('self, self_and_adjacent and board are unchanged', () => {
         fillAround();
         expect(near(14, REACH.SELF)).toEqual([14]);
-        expect(near(14, REACH.SELF_AND_ADJACENT)).toEqual([14, ...sorted(neighboursOf(14))]);
-        expect(nearby(idAt(14), REACH.BOARD)).toHaveLength(TILE_COUNT);
+        expect(near(14, REACH.SELF_AND_ADJACENT)).toEqual([14, ...sorted(ringOf(14))]);
+        expect(nearby(idAt(14), REACH.BOARD)).toHaveLength(SPOTS);
     });
 
     it('a Token not on the mat reaches nothing', () => {
@@ -195,27 +228,24 @@ describe('⭐ at 272 u Near is exactly today\'s 8-tile ring for every 1×1 tile'
 });
 
 describe('⚠️ a 2×2 Token reaches less, measured from its centre (FP-41)', () => {
-    it('an interior 2×2 reaches its 8 side-touching tiles, not the 4 corner diagonals (12 → 8)', () => {
+    it('an interior 2×2 reaches its 8 side-touching spots, not the 4 corner diagonals', () => {
         put(7, LARGE_BUFF);
-        fillAround(tileFootprint(7, 2));
+        fillAround(footprintOf(7));
 
-        expect(neighboursOfFootprint(tileFootprint(7, 2))).toHaveLength(12);   // the old ring
         expect(near(7)).toEqual([1, 2, 6, 9, 12, 15, 19, 20]);
-        expect(near(14)).toEqual([1, 2, 6, 9, 12, 15, 19, 20]);              // from a non-anchor tile
         for (const corner of [0, 3, 18, 21]) expect(near(7)).not.toContain(corner);
     });
 
-    it('a corner 2×2 reaches 4 instead of 5', () => {
+    it('a corner 2×2 reaches 4', () => {
         put(0, LARGE_BUFF);
-        fillAround(tileFootprint(0, 2));
+        fillAround(footprintOf(0));
 
-        expect(neighboursOfFootprint(tileFootprint(0, 2))).toEqual([2, 8, 12, 13, 14]);
         expect(near(0)).toEqual([2, 8, 12, 13]);
     });
 
-    it('tiles near a 2×2 measure to its centre too, so the relation is symmetric', () => {
+    it('spots near a 2×2 measure to its centre too, so the relation is symmetric', () => {
         put(7, LARGE_BUFF);
-        fillAround(tileFootprint(7, 2));
+        fillAround(footprintOf(7));
 
         expect(near(21)).not.toContain(7);    // corner diagonal
         expect(near(20)).toContain(7);        // side-touching
@@ -229,11 +259,11 @@ describe('⚠️ a 2×2 Token reaches less, measured from its centre (FP-41)', (
 });
 
 describe('a larger radius widens the set', () => {
-    it('400 u adds the straight and knight\'s-move tiles two steps out', () => {
+    it('400 u adds the straight and knight\'s-move spots two steps out', () => {
         fillAround();
         const wide = near(14, REACH.ADJACENT, 400);
         expect(wide).toHaveLength(20);
-        for (const n of neighboursOf(14)) expect(wide).toContain(n);
+        for (const n of ringOf(14)) expect(wide).toContain(n);
         expect(wide).toContain(12);             // 320 u
         expect(wide).toContain(1);              // 358 u
         expect(wide).not.toContain(0);          // 453 u
@@ -256,32 +286,32 @@ describe('⭐ a Provides buff reaches exactly the Near set', () => {
         fillAround([14]);
         TileModifiers.rebuildAll();
 
-        const ring = new Set(neighboursOf(14));
-        for (let t = 0; t < TILE_COUNT; t++) {
+        const ring = new Set(ringOf(14));
+        for (let t = 0; t < SPOTS; t++) {
             if (t === 14) continue;
-            expect(yieldAt(t), `tile ${t}`).toBeCloseTo(ring.has(t) ? 105 : 100);
+            expect(yieldAt(t), `spot ${t}`).toBeCloseTo(ring.has(t) ? 105 : 100);
         }
     });
 
-    it('from a 2×2 Token: the 8 side-touching tiles, and not the 4 corner diagonals', () => {
+    it('from a 2×2 Token: the 8 side-touching spots, and not the 4 corner diagonals', () => {
         put(7, LARGE_BUFF);
-        fillAround(tileFootprint(7, 2));
+        fillAround(footprintOf(7));
         TileModifiers.rebuildAll();
 
-        for (const t of [1, 2, 6, 9, 12, 15, 19, 20]) expect(yieldAt(t), `tile ${t}`).toBeCloseTo(105);
-        for (const t of [0, 3, 18, 21]) expect(yieldAt(t), `tile ${t}`).toBeCloseTo(100);
+        for (const t of [1, 2, 6, 9, 12, 15, 19, 20]) expect(yieldAt(t), `spot ${t}`).toBeCloseTo(105);
+        for (const t of [0, 3, 18, 21]) expect(yieldAt(t), `spot ${t}`).toBeCloseTo(100);
     });
 
     it('filterTargets (triggered statuses, damage, counts) names the same set, by id', () => {
         put(7, LARGE_BUFF);
-        fillAround(tileFootprint(7, 2));
+        fillAround(footprintOf(7));
         const statement = { keyword: 'applies', to: { mode: 'all', value: '' } };
 
-        expect(tilesOf(TileModifiers.filterTargets(idAt(7), statement))).toEqual([1, 2, 6, 9, 12, 15, 19, 20]);
+        expect(spotsOf(TileModifiers.filterTargets(idAt(7), statement))).toEqual([1, 2, 6, 9, 12, 15, 19, 20]);
 
         clearBoard();
         fillAround();
-        expect(sorted(tilesOf(TileModifiers.filterTargets(idAt(14), statement)))).toEqual(sorted(neighboursOf(14)));
+        expect(sorted(spotsOf(TileModifiers.filterTargets(idAt(14), statement)))).toEqual(sorted(ringOf(14)));
         setMatTuning('nearRadius', 400);
         expect(TileModifiers.filterTargets(idAt(14), statement)).toHaveLength(20);
     });
@@ -290,39 +320,39 @@ describe('⭐ a Provides buff reaches exactly the Near set', () => {
 describe('rebuild coverage follows the radius', () => {
     it('tokensAround covers every Token within Near + 144 u of the point, and nothing further', () => {
         fillAround();
-        const origin = tileCentre(14);
+        const origin = C(14);
         const reach = 272 + 144;
         const expected = [];
-        for (let t = 0; t < TILE_COUNT; t++) {
-            const c = tileCentre(t);
+        for (let t = 0; t < SPOTS; t++) {
+            const c = C(t);
             if (Math.hypot(c.x - origin.x, c.y - origin.y) <= reach) expected.push(t);
         }
-        expect(sorted(tilesOf(tokensAround([origin])))).toEqual(expected);
+        expect(sorted(spotsOf(tokensAround([origin])))).toEqual(expected);
         // Always at least the Token itself and its whole ring.
-        for (const t of [14, ...neighboursOf(14)]) expect(expected).toContain(t);
+        for (const t of [14, ...ringOf(14)]) expect(expected).toContain(t);
     });
 
     it('several points: the union of what each would cover', () => {
         fillAround();
-        const a = tilesOf(tokensAround([tileCentre(0)]));
-        const b = tilesOf(tokensAround([tileCentre(35)]));
-        expect(sorted(tilesOf(tokensAround([tileCentre(0), tileCentre(35)]))))
+        const a = spotsOf(tokensAround([C(0)]));
+        const b = spotsOf(tokensAround([C(35)]));
+        expect(sorted(spotsOf(tokensAround([C(0), C(35)]))))
             .toEqual(sorted([...new Set([...a, ...b])]));
         expect(tokensAround([null, undefined])).toEqual([]);
     });
 
-    it('at 400 u, placing a buff reaches a Token two tiles away with only rebuildAround', () => {
+    it('at 400 u, placing a buff reaches a Token two steps away with only rebuildAround', () => {
         setMatTuning('nearRadius', 400);
         put(12, SMALL);
         TileModifiers.rebuildAll();
         expect(yieldAt(12)).toBeCloseTo(100);
 
-        put(14, BUFF);                          // 320 u from tile 12
-        TileModifiers.rebuildAround([tileCentre(14)]);
+        put(14, BUFF);                          // 320 u from spot 12
+        TileModifiers.rebuildAround([C(14)]);
         expect(yieldAt(12)).toBeCloseTo(105);
 
-        BoardState.setToken(14, null);
-        TileModifiers.rebuildAround([tileCentre(14)]);
+        BoardState.removeToken(idAt(14));
+        TileModifiers.rebuildAround([C(14)]);
         expect(yieldAt(12)).toBeCloseTo(100);
     });
 
@@ -332,12 +362,12 @@ describe('rebuild coverage follows the radius', () => {
         TileModifiers.rebuildAll();
         expect(yieldAt(1)).toBeCloseTo(105);
 
-        BoardState.setToken(7, null);
-        TileModifiers.rebuildAround([tileCentre(14)]);   // a non-anchor tile's centre, 113 u off its centre
+        BoardState.removeToken(idAt(7));
+        TileModifiers.rebuildAround([C(14)]);    // a nearby spot, 113 u off its centre
         expect(yieldAt(1)).toBeCloseTo(100);
     });
 
-    it('rebuildAround refuses a tile number rather than silently rebuilding nothing', () => {
+    it('rebuildAround refuses a bare number rather than silently rebuilding nothing', () => {
         expect(() => TileModifiers.rebuildAround(14)).toThrow(TypeError);
     });
 

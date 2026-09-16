@@ -4,7 +4,7 @@ import {
     UPGRADE_BOARD_SIZE,
     UPGRADE_BOARD_TILE_COUNT,
     UPGRADE_BOARD_GUILD_HALL_TILE
-} from './boardGeometry.js';
+} from './upgradeBoardGeometry.js';
 
 /**
  * Heroes a guild starts with, before any Roster Size rank is bought.

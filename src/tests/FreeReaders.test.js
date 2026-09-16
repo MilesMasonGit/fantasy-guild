@@ -14,11 +14,10 @@ import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { nearby, neighbourIds, centreOf, tokensAround } from '../systems/board/nearby.js';
-import { footprintCentre } from '../config/boardGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { registerTokenTypes, getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { placeAt, clearMat, SPACING, idAt, anchorOf } from './fixtures/mat.js';
+import { placeAt, clearMat, SPACING } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -61,9 +60,12 @@ registerTokenTypes({
     }
 });
 
-/** Today's 160 u step, as a mat point (test layout only). */
-// Measured from tile 0's centre, which moved with the old area's corner (FP-92).
-const P = (col, row) => ({ x: footprintCentre(0, 1).x + col * SPACING, y: footprintCentre(0, 1).y + row * SPACING });
+/**
+ * A 160 u step, as a mat point (test layout only). The origin is stated
+ * outright since slice 1.6d-2 — it used to be read off the deleted grid.
+ */
+const ORIGIN = { x: 480, y: 163 };
+const P = (col, row) => ({ x: ORIGIN.x + col * SPACING, y: ORIGIN.y + row * SPACING });
 const at = (typeIdOrInstance, point) => placeAt(typeIdOrInstance, point.x, point.y);
 const yieldOf = (instance) => TileModifiers.resolveAxis(instance.id, EFFECT_TYPES.YIELD, 100);
 const sortedIds = (ids) => [...ids].sort();
@@ -124,12 +126,10 @@ describe('⭐ a moved buff Token: its old neighbours lose it AND its new neighbo
         expect(yieldOf(far)).toBeCloseTo(100);
     });
 
-    it('through Placement.moveToken and the engine listener', () => {
+    it('through Placement.moveTokenTo and the engine listener', () => {
         const { oldSides, newSides, far, buff } = layout();
 
-        const from = anchorOf(buff.id);
-        const to = 4 * 6 + 5;                       // P(5, 4) in today's layout
-        expect(Placement.moveToken(from, to).success).toBe(true);
+        expect(Placement.moveTokenTo(buff.id, P(5, 4)).success).toBe(true);
         expect(centreOf(BoardState.getTokenById(buff.id))).toEqual(P(5, 4));
 
         for (const s of oldSides) expect(yieldOf(s)).toBeCloseTo(100);
@@ -138,50 +138,11 @@ describe('⭐ a moved buff Token: its old neighbours lose it AND its new neighbo
     });
 });
 
-// ---------------------------------------------------------------------------
-// nearby(id) gives today's tile answer
-// ---------------------------------------------------------------------------
-
-describe('⭐ nearby(id) at today\'s spacing equals the old tile reader, on a mixed board with 2×2s', () => {
-    const sizeOf = (instance) => getTokenType(instance.typeId)?.size || 1;
-
-    /** The pre-1.6b tile reader, written out: other anchors whose footprint centres are within the radius. */
-    function oldNearbyTiles(tile, radius) {
-        const occ = BoardState.getOccupyingToken(tile);
-        if (!occ) return [];
-        const origin = footprintCentre(occ.anchorIndex, sizeOf(occ.instance));
-        return BoardState.occupiedTiles()
-            .filter(([anchor, instance]) => {
-                if (anchor === occ.anchorIndex) return false;
-                const c = footprintCentre(anchor, sizeOf(instance));
-                return Math.hypot(c.x - origin.x, c.y - origin.y) <= radius;
-            })
-            .map(([anchor]) => anchor)
-            .sort((a, b) => a - b);
-    }
-
-    function mixedBoard() {
-        BoardState.setToken(7, BoardState.createTokenInstance(LARGE_BUFF, null));    // 2×2 on 7, 8, 13, 14
-        BoardState.setToken(22, BoardState.createTokenInstance(LARGE_BUFF, null));   // 2×2 on 22, 23, 28, 29
-        for (const t of [0, 3, 5, 12, 15, 16, 19, 20, 26, 30, 33, 35]) {
-            BoardState.setToken(t, BoardState.createTokenInstance('fixture_producer', 5000));
-        }
-    }
-
-    for (const radius of [164, 272, 400]) {
-        it(`at ${radius} u, for every Token`, () => {
-            mixedBoard();
-            setMatTuning('nearRadius', radius);
-            const anchors = BoardState.occupiedTiles().map(([a]) => a);
-            expect(anchors).toContain(7);
-            for (const anchor of anchors) {
-                const id = idAt(anchor);
-                const answer = nearby(id).map(n => anchorOf(n)).sort((a, b) => a - b);
-                expect(answer, `Token on ${anchor}`).toEqual(oldNearbyTiles(anchor, radius));
-            }
-        });
-    }
-});
+// ⚠️ The block that compared `nearby(id)` against **the old tile reader written
+// out** — `getOccupyingToken`, `occupiedTiles` and `footprintCentre` over a
+// 6×6 — was deleted with the grid in slice 1.6d-2. It existed to prove the new
+// reader agreed with the one it replaced, and the one it replaced is gone. What
+// `nearby` answers is pinned on its own terms in `Nearby.test.js`.
 
 // ---------------------------------------------------------------------------
 // Managers — by spot point
@@ -237,7 +198,7 @@ describe('⭐ Restrictions on a projected view (place / remove / move) give toda
         // ⭐ The VIEW still says no to that exact point — but since FP-88 the
         // engine does not refuse the drop, it moves it to the nearest point that
         // obeys the rule. Either way the board is never left illegal.
-        const res = Placement.placeToken(8, BoardState.createTokenInstance('fixture_plain_coast', 500));
+        const res = Placement.placeTokenAt(BoardState.createTokenInstance('fixture_plain_coast', 500), P(2, 1));
         expect(res.success).toBe(true);
         expect(res.nudged).toBe(true);
         expect(Restrictions.violations()).toEqual([]);

@@ -12,7 +12,17 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * `A` and `NEIGHBOUR` are 160 u apart, so the context Token beside the station
+ * is a neighbour at the shipped 164 u Near.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /**
  * Station recipe selection (Recipe & Charges rework, P2).
@@ -51,8 +61,8 @@ const A = 15, NEIGHBOUR = 16;
 
 function place(tile, typeId) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    return instance;
 }
 
 beforeEach(() => {
@@ -121,20 +131,20 @@ describe('Persistence — until it reaches the Vault', () => {
         const forge = place(A, 'fixture_station');
         StationRecipe.setSelectedRecipe(forge, 'recipe_b');
 
-        Placement.moveToken(A, 30);
+        Placement.moveTokenTo(forge.id, C(30));
 
-        expect(BoardState.getToken(30).selectedRecipeId).toBe('recipe_b');
+        expect(tokenAt(30).selectedRecipeId).toBe('recipe_b');
     });
 
     it('keeps its recipe through the Tray', () => {
         const forge = place(A, 'fixture_station');
         StationRecipe.setSelectedRecipe(forge, 'recipe_b');
 
-        Placement.returnTokenToTray(A);
+        Placement.returnTokenToTrayById(idAt(A));
         const fromTray = BoardState.takeFromTray(0);
-        Placement.placeToken(A, fromTray);
+        Placement.placeTokenAt(fromTray, C(A));
 
-        expect(BoardState.getToken(A).selectedRecipeId).toBe('recipe_b');
+        expect(tokenAt(A).selectedRecipeId).toBe('recipe_b');
     });
 
     it('forgets it in the Vault, and re-defaults when placed again', () => {
@@ -142,11 +152,11 @@ describe('Persistence — until it reaches the Vault', () => {
         const forge = place(A, 'fixture_station');
         StationRecipe.setSelectedRecipe(forge, 'recipe_b');
 
-        Placement.returnTokenToVault(A);
+        Placement.returnTokenToVaultById(idAt(A));
         const drawn = TokenBank.withdraw('fixture_station');
-        Placement.placeToken(A, drawn);
+        Placement.placeTokenAt(drawn, C(A));
 
-        expect(BoardState.getToken(A).selectedRecipeId).toBe('recipe_a');
+        expect(tokenAt(A).selectedRecipeId).toBe('recipe_a');
         vi.restoreAllMocks();
     });
 });

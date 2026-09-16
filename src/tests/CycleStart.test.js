@@ -15,7 +15,16 @@ import { TRIGGER_EVENTS, getTriggerEvent } from '../config/registries/triggerReg
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the Token to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -45,10 +54,10 @@ function makeHero(id, equipment = []) {
 
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -70,7 +79,7 @@ beforeEach(() => {
 });
 
 describe('the event fires when work actually begins', () => {
-    it('announces the tile and the Token starting', () => {
+    it('announces the Token starting, by its instance id', () => {
         place(TILE, 'fixture_producer', 'hero_1');
         run(300);
 
@@ -166,7 +175,7 @@ describe('a carried rule that asked for the start of the cycle', () => {
         GameState.state.heroes = [makeHero('hero_1', ['fixture_prep_kit'])];
         place(TILE, 'fixture_producer', 'hero_1');
 
-        const instance = BoardState.getToken(TILE);
+        const instance = tokenAt(TILE);
         const cycle = instance.config?.cycleTimeMs ?? 12000;
         // Four cycles' worth against a stack of three.
         run(cycle * 4 + 400);

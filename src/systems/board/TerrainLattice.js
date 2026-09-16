@@ -1,8 +1,38 @@
 // Fantasy Guild — The terrain subtile lattice (dynamic terrain roadmap P2).
 
-import { BOARD_SIZE, TILE_PX, TILE_GAP_PX } from '../../config/boardGeometry.js';
 import { substrateArtPx, fringeOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
+
+/**
+ * # ⚠️ Dormant terrain (FP-10) — the last of the old 6×6 grid
+ *
+ * Terrain is switched off (`TERRAIN_ENABLED = false`) and its lattice is still
+ * laid out on the grid the playmat used to be: six 128px tiles with 32px gaps,
+ * 928px across. Free Playmat slice 1.6d-2 deleted `boardGeometry.js` and every
+ * other tile in the game, so these four numbers — which exist **only** to keep
+ * the dormant terrain stack compiling and drawing exactly as it did — live here,
+ * in the stack that is the sole remaining user of them.
+ *
+ * ⚠️ These are **not** playmat geometry and nothing outside the terrain files
+ * may import them. The mat is a free surface (`matGeometry.js`); it has no size
+ * in tiles, no tile step and no 928px anything. When terrain is revived it is
+ * re-latticed over the mat itself and this block goes with the grid it describes.
+ */
+export const LEGACY_BOARD_SIZE = 6;
+export const LEGACY_TILE_PX = 128;
+export const LEGACY_TILE_GAP_PX = 32;
+export const LEGACY_BOARD_PX =
+    LEGACY_TILE_PX * LEGACY_BOARD_SIZE + LEGACY_TILE_GAP_PX * (LEGACY_BOARD_SIZE - 1);
+
+/**
+ * Where the dormant lattice is blitted onto the mat: the old 928px area,
+ * centred (FP-92). Slice 1.6d-3 owns re-pointing this at the mat proper.
+ */
+export const LEGACY_AREA_ORIGIN = Object.freeze({ x: 416, y: 99 });
+
+const BOARD_SIZE = LEGACY_BOARD_SIZE;
+const TILE_PX = LEGACY_TILE_PX;
+const TILE_GAP_PX = LEGACY_TILE_GAP_PX;
 
 /**
  * Which terrain each of the board's 841 subtiles shows.

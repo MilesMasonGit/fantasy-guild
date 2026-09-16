@@ -4,12 +4,28 @@
  * What is left here is presentation: offsets and hit boxes that only React
  * draws with, and the pointer-to-tile snapping the drag layer uses.
  *
- * The board's actual geometry — its size, tile count, Guild Hall tile, tile
- * metrics and footprint maths — lives in `src/config/boardGeometry.js`, because
- * the board engine in `src/systems/board/` depends on it and must not import
- * out of the UI tree (CR2-051). Import geometry from there, not from here;
- * this file deliberately does not re-export it.
+ * The mat's actual geometry — its size in mat units, Token art radii and the
+ * clamp onto it — lives in `src/config/matGeometry.js`, because the board engine
+ * in `src/systems/board/` depends on it and must not import out of the UI tree
+ * (CR2-051). Import geometry from there, not from here; this file deliberately
+ * does not re-export it.
  */
+
+/**
+ * The height of the columns flanking the playmat — the Tray, the Hero Dock, the
+ * Guild Hall effects panel and the left-hand rules column.
+ *
+ * ⚠️ **A layout number, not a board measurement** (Free Playmat slice 1.6d-2).
+ * It used to be `BOARD_PX`, the old 6×6 grid's 928px width, which is why these
+ * columns are this tall and not some other height. The grid is gone, so the
+ * number is now stated plainly here rather than being derived from a board that
+ * no longer exists — the mat is 1126 u tall and using *that* would silently
+ * change every column's height.
+ *
+ * Each of these columns is also capped to `maxHeight: 100%`, so on a short
+ * window they shrink with the mat rather than hanging off the bottom (CR2-179).
+ */
+export const SIDE_COLUMN_PX = 928;
 
 import { ALERT } from '../../../systems/board/boardEvents.js';
 

@@ -39,7 +39,7 @@ import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { GUILD_HALL_TILE, tileCentre } from '../../config/boardGeometry.js';
+import { MAT_W, MAT_H, MAT_STEP_U } from '../../config/matGeometry.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 
 /**
@@ -48,13 +48,24 @@ import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
  *
  * Each entry is a Token type and the mat point it starts at.
  *
- * ⚠️ STOPGAP — the Hall's point is the centre of the old Guild Hall tile, not
- * the centre of the mat, because until the renderer changes (slice 1.6c) the
- * board still draws tiles through `gridShim.js` and a Token must sit on a tile
- * centre to be drawn. Slice 1.6d moves it to the mat centre.
+ * ## Where the Hall stands: (960, 643)
+ * Half a step down and right of the mat's centre — **the historical opening
+ * spot**, kept to the mat unit (Free Playmat slice 1.6d-2). It used to be
+ * written as the centre of the old Guild Hall tile, and it reads oddly for a
+ * reason: the deleted 6×6 grid had no true centre square, so the Hall sat half a
+ * tile off centre. The grid is gone and this is now stated in mat units, but the
+ * number is deliberately unchanged — 1.6d-2 is a deletion slice and moves
+ * nothing a player would see.
+ *
+ * Slice 1.6d-3 makes the mat resizable, and is what should make this follow the
+ * mat's centre properly rather than preserving the old grid's off-by-half.
  */
 export const OPENING_MAT = [
-    { typeId: 'token_guild_hall', ...tileCentre(GUILD_HALL_TILE) }
+    {
+        typeId: 'token_guild_hall',
+        x: MAT_W / 2 + MAT_STEP_U / 2,
+        y: MAT_H / 2 + MAT_STEP_U / 2
+    }
 ];
 
 /**

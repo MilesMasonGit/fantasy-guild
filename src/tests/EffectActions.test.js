@@ -36,7 +36,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * first caller `purge()` has ever had.
  */
 
-const A = 15;
+const A = { x: 400, y: 300 };
 
 function makeHero(id, hp = 100) {
     const skills = {};
@@ -48,14 +48,14 @@ function makeHero(id, hp = 100) {
     };
 }
 
-function place(tile, typeId, heroId = null, uses = undefined) {
+function place(point, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, point);
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, point);
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -162,7 +162,7 @@ describe('Restores — the reader CHARGE_EXTEND was named for', () => {
         expect(token.usesRemaining).toBeLessThanOrEqual(tokenStartingUses('fixture_over_repair'));
     });
 
-    it('reaches nothing when the role points at no tile', () => {
+    it('reaches nothing when the role points at no Token', () => {
         expect(EffectActions.restore(
             { payload: { amount: 5 }, target: { role: ROLE.SELF } },
             { self: null, actor: null, source: null }

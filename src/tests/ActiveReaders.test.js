@@ -19,7 +19,6 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { tileCentre, idAt, pointAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -36,37 +35,61 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * rest — crafting context, tool wear, Manager reach, neighbour triggers and
  * `Cannot` counts — to the same `nearby()` measurement:
  *
- * * 1×1 Tokens at 272 u: exactly today's 8-tile ring;
- * * 2×2 Tokens (FP-41): the 8 tiles touching their sides, not the 4 touching
+ * * 1×1 Tokens at 272 u: exactly the old 8-tile ring;
+ * * 2×2 Tokens (FP-41): the neighbours touching their sides, not those touching
  *   only a corner;
  * * a larger Near radius widens every one of them.
  *
- * 6×6 board, row-major. The 2×2 used throughout sits on anchor **7**, covering
- * 7, 8, 13, 14. Its side-touching tiles are 1, 2, 6, 9, 12, 15, 19, 20; its
- * corner-diagonal tiles are 0, 3, 18, 21.
+ * ## ⭐ The scene is a lattice of points, not a grid (Free Playmat slice 1.6d-2)
+ * There are no tiles left to lay this out on, so the spots below are explicit
+ * mat points 160 u apart — the step the old board had. **Every distance these
+ * tests turn on is unchanged**, which is the whole reason for keeping the
+ * spacing: a side neighbour is 160 u, a diagonal 226 u, two steps 320 u. A 2×2
+ * Token's centre sits half a step (80 u) down and right of the 1×1 spot it used
+ * to be anchored on, which is what puts it 253 u from a side-touching spot and
+ * 339 u from a corner-diagonal one.
+ *
  * ```
- *    0  1  2  3  4  5
- *    6  7  8  9 10 11
- *   12 13 14 15 16 17
- *   18 19 20 21 22 23
- *   24 25 26 27 28 29
- *   30 31 32 33 34 35
+ *   (0,0) (0,1) (0,2) (0,3) …      P(row, col) = 400 + col·160, 300 + row·160
+ *   (1,0) (1,1) (1,2) (1,3) …      BIG is the 2×2 centred between the four
+ *   (2,0) (2,1) (2,2) (2,3) …      spots around (1,1) — 640, 540.
  * ```
  */
 
-const BIG = 7;
-const SIDE = 20;        // touches the 2×2's side: 253 u from its centre
-const CORNER = 21;      // touches only its corner: 339 u — outside Near at 272 u
+/** A spot on the 160 u lattice — the step the old board used. */
+const P = (row, col) => ({ x: 400 + col * 160, y: 300 + row * 160 });
+
+/** The centre of a 2×2 Token sitting over the four spots around `(row, col)`. */
+const big = (row, col) => ({ x: P(row, col).x + 80, y: P(row, col).y + 80 });
+
+const BIG = big(1, 1);          // the 2×2 used throughout: centre (640, 540)
+const SIDE = P(3, 2);           // touches the 2×2's side: 253 u from its centre
+const CORNER = P(3, 3);         // touches only its corner: 339 u — outside Near at 272 u
+
+// The rest of the scene, by the spot each case needs.
+const S0 = P(0, 0);
+const S1 = P(0, 1);
+const S3 = P(0, 3);
+const S9 = P(1, 3);
+const S12 = P(2, 0);
+const S13 = P(2, 1);
+const S14 = P(2, 2);
+const S15 = P(2, 3);
+const S16 = P(2, 4);
+const S17 = P(2, 5);
+const S22 = P(3, 4);
+const S27 = P(4, 3);
+const S35 = P(4, 5);            // the far corner; row 5 would fall off the mat
 
 registerTokenTypes({
-    /** The fixture tool, two tiles square. */
+    /** The fixture tool, two spots square. */
     fixture_large_tool: {
         id: 'fixture_large_tool', name: 'Fixture Large Tool', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 80, sprite: 'skill_industry', size: 2,
         isTool: true, requiresHero: false,
         provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
     },
-    /** The tool-gated resource, two tiles square. */
+    /** The tool-gated resource, two spots square. */
     fixture_large_gated: {
         id: 'fixture_large_gated', name: 'Fixture Large Gated', tokenType: 'resource',
         rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 'skill_nature', size: 2,
@@ -75,7 +98,7 @@ registerTokenTypes({
             { id: 'stm_fixture_large_gated', keyword: KEYWORD.STATION, payload: { skill: 'fixture_gated_skill' } }
         ]
     },
-    /** A Manager two tiles square, over the 1×1 producer and the 2×2 one. */
+    /** A Manager two spots square, over the 1×1 producer and the 2×2 one. */
     fixture_large_manager: {
         id: 'fixture_large_manager', name: 'Fixture Large Manager', tokenType: 'manager',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social', size: 2,
@@ -96,7 +119,7 @@ registerTokenTypes({
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 2, chance: 100 }]
         }
     },
-    /** `fixture_trigger_any`, two tiles square. */
+    /** `fixture_trigger_any`, two spots square. */
     fixture_large_trigger_any: {
         id: 'fixture_large_trigger_any', name: 'Fixture Large Trigger Any', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry', size: 2,
@@ -107,7 +130,7 @@ registerTokenTypes({
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
-    /** A plain Coast two tiles square — counted, carries no rule. */
+    /** A plain Coast two spots square — counted, carries no rule. */
     fixture_large_coast: {
         id: 'fixture_large_coast', name: 'Fixture Large Coast', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature', size: 2,
@@ -124,19 +147,29 @@ registerTokenTypes({
     }
 });
 
-/** Put a Token straight onto the board — no cascade, no events. */
-function put(tile, typeId, uses = undefined) {
+/** Put a Token straight on the mat at a point — no rules, no events. */
+function put(point, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
-    BoardState.setToken(tile, instance);
+    BoardState.addToken(instance, point.x, point.y);
     return instance;
 }
 
 function clearBoard() {
-    for (const [index] of BoardState.occupiedTiles()) BoardState.setToken(index, null);
+    for (const token of BoardState.tokens()) BoardState.removeToken(token.id);
+}
+
+/** The Token standing exactly at a point, and its instance id. */
+const tokenAt = (point) => BoardState.tokensAtPoint(point.x, point.y)[0] ?? null;
+const idAt = (point) => tokenAt(point)?.id ?? null;
+
+/** Take the Token standing at a point off the mat. */
+function lift(point) {
+    const id = idAt(point);
+    if (id) BoardState.removeToken(id);
 }
 
 /** Resolve the station's selected recipe and say whether its context is met. */
-const statusOf = (tile) => RecipeResolver.resolveRecipe(idAt(tile), BoardState.getToken(tile)).status;
+const statusOf = (point) => RecipeResolver.resolveRecipe(idAt(point), tokenAt(point)).status;
 
 beforeEach(() => {
     GameState.initNew();
@@ -145,9 +178,10 @@ beforeEach(() => {
     clearBoard();
     TileModifiers.clearAll();
     resetMatTuning();
-    // ⚠️ These cases are laid out on the 8-tile ring (272 u), not the shipped
-    // default: Near has started at 164 u since FP-75, which reaches no diagonal
-    // and lets a 2×2 reach nothing. The shipped default is pinned in Nearby.test.js.
+    // ⚠️ These cases are laid out on the old 8-neighbour ring (272 u), not the
+    // shipped default: Near has started at 164 u since FP-75, which reaches no
+    // diagonal and lets a 2×2 reach nothing. The shipped default is pinned in
+    // Nearby.test.js.
     setMatTuning('nearRadius', 272);
     GameState.state.inventory.maxSlots = 50;
 });
@@ -161,15 +195,15 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('RecipeResolver: a tool near a station', () => {
-    it('1×1 at 272 u: a diagonal tool serves, one two steps away does not (today\'s ring)', () => {
-        put(14, 'fixture_tool_gated');
-        put(21, 'fixture_tool');                       // diagonal, 226 u
-        expect(statusOf(14)).toBe(RecipeResolver.RECIPE.OK);
-        expect(RecipeResolver.contextTiersAround(idAt(14))).toEqual({ ctx_fixture_tool: 1 });
+    it('1×1 at 272 u: a diagonal tool serves, one two steps away does not (the old ring)', () => {
+        put(S14, 'fixture_tool_gated');
+        put(CORNER, 'fixture_tool');                   // diagonal, 226 u
+        expect(statusOf(S14)).toBe(RecipeResolver.RECIPE.OK);
+        expect(RecipeResolver.contextTiersAround(idAt(S14))).toEqual({ ctx_fixture_tool: 1 });
 
-        BoardState.setToken(21, null);
-        put(16, 'fixture_tool');                       // 320 u
-        expect(statusOf(14)).toBe(RecipeResolver.RECIPE.NONE);
+        lift(CORNER);
+        put(S16, 'fixture_tool');                      // 320 u
+        expect(statusOf(S14)).toBe(RecipeResolver.RECIPE.NONE);
     });
 
     it('⭐ a 2×2 tool serves a side-touching station but not a corner-diagonal one (FP-41)', () => {
@@ -180,7 +214,7 @@ describe('RecipeResolver: a tool near a station', () => {
         expect(statusOf(SIDE)).toBe(RecipeResolver.RECIPE.OK);
         expect(statusOf(CORNER)).toBe(RecipeResolver.RECIPE.NONE);
         expect(RecipeResolver.contextTiersAround(idAt(CORNER))).toEqual({});
-        expect(RecipeResolver.getMissingRequirements(idAt(CORNER), BoardState.getToken(CORNER)).type).toBe('tokens');
+        expect(RecipeResolver.getMissingRequirements(idAt(CORNER), tokenAt(CORNER)).type).toBe('tokens');
         expect(RecipeResolver.servesFrom(idAt(BIG))).toEqual([idAt(SIDE)]);
     });
 
@@ -189,7 +223,7 @@ describe('RecipeResolver: a tool near a station', () => {
         put(CORNER, 'fixture_tool');
         expect(statusOf(BIG)).toBe(RecipeResolver.RECIPE.NONE);
 
-        BoardState.setToken(CORNER, null);
+        lift(CORNER);
         put(SIDE, 'fixture_tool');
         expect(statusOf(BIG)).toBe(RecipeResolver.RECIPE.OK);
         expect(RecipeResolver.servesFrom(idAt(SIDE))).toEqual([idAt(BIG)]);
@@ -197,22 +231,22 @@ describe('RecipeResolver: a tool near a station', () => {
 
     it('accepted tools (Requires) measure the same way', () => {
         const vein = { acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }] };
-        put(14, 'fixture_copper_vein');
-        put(16, 'fixture_pickaxe_t1');                  // 320 u
-        expect(RecipeResolver.checkAcceptedTokens(idAt(14), vein)).toBe(false);
+        put(S14, 'fixture_copper_vein');
+        put(S16, 'fixture_pickaxe_t1');                 // 320 u
+        expect(RecipeResolver.checkAcceptedTokens(idAt(S14), vein)).toBe(false);
 
-        put(21, 'fixture_pickaxe_t1');                  // diagonal
-        expect(RecipeResolver.checkAcceptedTokens(idAt(14), vein)).toBe(true);
+        put(CORNER, 'fixture_pickaxe_t1');              // diagonal
+        expect(RecipeResolver.checkAcceptedTokens(idAt(S14), vein)).toBe(true);
     });
 
     it('a larger radius widens it: at 400 u a tool two steps away serves', () => {
-        put(14, 'fixture_tool_gated');
-        put(16, 'fixture_tool');                       // 320 u
-        expect(statusOf(14)).toBe(RecipeResolver.RECIPE.NONE);
+        put(S14, 'fixture_tool_gated');
+        put(S16, 'fixture_tool');                      // 320 u
+        expect(statusOf(S14)).toBe(RecipeResolver.RECIPE.NONE);
 
         setMatTuning('nearRadius', 400);
-        expect(statusOf(14)).toBe(RecipeResolver.RECIPE.OK);
-        expect(RecipeResolver.servesFrom(idAt(16))).toEqual([idAt(14)]);
+        expect(statusOf(S14)).toBe(RecipeResolver.RECIPE.OK);
+        expect(RecipeResolver.servesFrom(idAt(S16))).toEqual([idAt(S14)]);
 
         put(BIG, 'fixture_large_tool');
         put(CORNER, 'fixture_tool_gated');              // 339 u from the 2×2 centre
@@ -226,23 +260,23 @@ describe('RecipeResolver: a tool near a station', () => {
 
 describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-157)', () => {
     it('1×1 at 272 u: −1 per station served; a station out of reach does not wear it', () => {
-        const tool = put(14, 'fixture_tool');
-        put(13, 'fixture_tool_gated');
-        put(15, 'fixture_tool_gated');
-        put(16, 'fixture_tool_gated');                  // 320 u from the tool
+        const tool = put(S14, 'fixture_tool');
+        put(S13, 'fixture_tool_gated');
+        put(S15, 'fixture_tool_gated');
+        put(S16, 'fixture_tool_gated');                 // 320 u from the tool
 
-        RecipeResolver.wearAdjacentSupport(idAt(13));
-        RecipeResolver.wearAdjacentSupport(idAt(15));
+        RecipeResolver.wearAdjacentSupport(idAt(S13));
+        RecipeResolver.wearAdjacentSupport(idAt(S15));
         expect(tool.usesRemaining).toBe(78);            // two stations served, one cycle each
 
-        RecipeResolver.wearAdjacentSupport(idAt(16));
+        RecipeResolver.wearAdjacentSupport(idAt(S16));
         expect(tool.usesRemaining).toBe(78);
     });
 
     it('a null-charge tool never wears', () => {
-        const tool = put(14, 'fixture_tool', null);
-        put(13, 'fixture_tool_gated');
-        RecipeResolver.wearAdjacentSupport(idAt(13));
+        const tool = put(S14, 'fixture_tool', null);
+        put(S13, 'fixture_tool_gated');
+        RecipeResolver.wearAdjacentSupport(idAt(S13));
         expect(tool.usesRemaining).toBeNull();
     });
 
@@ -266,13 +300,13 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
     });
 
     it('a larger radius widens it: at 400 u the far station wears the tool too', () => {
-        const tool = put(14, 'fixture_tool');
-        put(16, 'fixture_tool_gated');
+        const tool = put(S14, 'fixture_tool');
+        put(S16, 'fixture_tool_gated');
         setMatTuning('nearRadius', 400);
 
-        RecipeResolver.wearAdjacentSupport(idAt(16));
+        RecipeResolver.wearAdjacentSupport(idAt(S16));
         expect(tool.usesRemaining).toBe(79);
-        expect(Charges.contextProvidersAround(idAt(16)).map(p => p.id)).toEqual([idAt(14)]);
+        expect(Charges.contextProvidersAround(idAt(S16)).map(p => p.id)).toEqual([idAt(S14)]);
     });
 });
 
@@ -281,63 +315,60 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
 // ---------------------------------------------------------------------------
 
 describe('Managers: reach is Near, measured from the spot that is owed', () => {
-    /** The spot a `typeId` Token anchored at `tile` stood on (test layout). */
-    const spot = (tile, typeId = 'fixture_producer') => pointAt(tile, typeId);
-
     it('1×1 at 272 u: a diagonal Manager covers the vacancy, one two steps away does not', () => {
-        put(16, 'fixture_manager');                     // diagonal to 9
-        expect(Managers.managerFor(spot(9), 'fixture_producer')).toEqual([idAt(16), 'fixture_manager']);
+        put(S16, 'fixture_manager');                    // diagonal to S9
+        expect(Managers.managerFor(S9, 'fixture_producer')).toEqual([idAt(S16), 'fixture_manager']);
 
-        BoardState.setToken(16, null);
-        put(21, 'fixture_manager');                     // 320 u below 9
-        expect(Managers.managerFor(spot(9), 'fixture_producer')).toBeNull();
+        lift(S16);
+        put(CORNER, 'fixture_manager');                 // 320 u below S9
+        expect(Managers.managerFor(S9, 'fixture_producer')).toBeNull();
     });
 
     it('⭐ tie-break: the nearest Manager first, then the earlier-placed one (slice 1.6b; was the lower anchor)', () => {
-        const diagonal = put(8, 'fixture_manager');     // diagonal to 15: 226 u
-        const right = put(16, 'fixture_manager');       // beside 15: 160 u, placed first
-        const left = put(14, 'fixture_manager');        // beside 15: 160 u, placed second
-        expect(Managers.managerFor(spot(15), 'fixture_producer')[0]).toBe(right.id);
+        const diagonal = put(P(1, 2), 'fixture_manager');   // diagonal to S15: 226 u
+        const right = put(S16, 'fixture_manager');          // beside S15: 160 u, placed first
+        const left = put(S14, 'fixture_manager');           // beside S15: 160 u, placed second
+        expect(Managers.managerFor(S15, 'fixture_producer')[0]).toBe(right.id);
 
         BoardState.removeToken(right.id);
-        expect(Managers.managerFor(spot(15), 'fixture_producer')[0]).toBe(left.id);
+        expect(Managers.managerFor(S15, 'fixture_producer')[0]).toBe(left.id);
 
         BoardState.removeToken(left.id);
-        expect(Managers.managerFor(spot(15), 'fixture_producer')[0]).toBe(diagonal.id);   // nearer beats earlier
+        expect(Managers.managerFor(S15, 'fixture_producer')[0]).toBe(diagonal.id);   // nearer beats earlier
     });
 
-    it('⭐ a 2×2 Manager covers its side-touching tiles and not its corner-diagonal ones (FP-41)', () => {
-        const big = put(BIG, 'fixture_large_manager');
-        expect(Managers.managerFor(spot(SIDE), 'fixture_producer')).toEqual([big.id, 'fixture_large_manager']);
-        expect(Managers.managerFor(spot(15), 'fixture_producer')?.[0]).toBe(big.id);
-        expect(Managers.managerFor(spot(CORNER), 'fixture_producer')).toBeNull();
-        expect(Managers.managerFor(spot(0), 'fixture_producer')).toBeNull();   // in the anchor's old ring
+    it('⭐ a 2×2 Manager covers its side-touching spots and not its corner-diagonal ones (FP-41)', () => {
+        const bigManager = put(BIG, 'fixture_large_manager');
+        expect(Managers.managerFor(SIDE, 'fixture_producer')).toEqual([bigManager.id, 'fixture_large_manager']);
+        expect(Managers.managerFor(S15, 'fixture_producer')?.[0]).toBe(bigManager.id);
+        expect(Managers.managerFor(CORNER, 'fixture_producer')).toBeNull();
+        expect(Managers.managerFor(S0, 'fixture_producer')).toBeNull();   // in the anchor's old ring
     });
 
-    it('⭐ a vacated 2×2 spot is measured from its own centre, not its anchor tile', () => {
+    it('⭐ a vacated 2×2 spot is measured from its own centre, not from a corner of it', () => {
         const side = put(SIDE, 'fixture_small_large_manager');   // 253 u from the 2×2 centre
-        expect(Managers.managerFor(spot(BIG, 'fixture_large_producer'), 'fixture_large_producer')?.[0]).toBe(side.id);
+        expect(Managers.managerFor(BIG, 'fixture_large_producer')?.[0]).toBe(side.id);
 
-        BoardState.setToken(SIDE, null);
+        lift(SIDE);
         put(CORNER, 'fixture_small_large_manager');     // 339 u
-        expect(Managers.managerFor(spot(BIG, 'fixture_large_producer'), 'fixture_large_producer')).toBeNull();
+        expect(Managers.managerFor(BIG, 'fixture_large_producer')).toBeNull();
     });
 
     it('restocks in the exact spot the vacancy names (FP-19)', () => {
         put(BIG, 'fixture_large_manager');
-        const at = spot(SIDE);
+        const at = SIDE;
         BoardState.setVacancyAt(at, 'fixture_producer');
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
 
         expect(Managers.restockSpot(BoardState.spotIdAt(at.x, at.y))).toBe('restocked');
-        expect(BoardState.getToken(SIDE)?.typeId).toBe('fixture_producer');
+        expect(tokenAt(SIDE)?.typeId).toBe('fixture_producer');
         expect(BoardState.tokensAtPoint(at.x, at.y).map(t => t.typeId)).toEqual(['fixture_producer']);
     });
 
     it('a larger radius widens it: at 400 u the Manager two steps away covers the vacancy', () => {
-        const far = put(21, 'fixture_manager');
+        const far = put(CORNER, 'fixture_manager');
         setMatTuning('nearRadius', 400);
-        expect(Managers.managerFor(spot(9), 'fixture_producer')?.[0]).toBe(far.id);
+        expect(Managers.managerFor(S9, 'fixture_producer')?.[0]).toBe(far.id);
     });
 });
 
@@ -349,32 +380,32 @@ describe('TriggerSystem: neighbour triggers listen within Near', () => {
     beforeEach(() => TriggerSystem.init());
     afterEach(() => TriggerSystem.teardown());
 
-    const cycleAt = (tile, typeId) =>
-        EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: idAt(tile), typeId, heroId: null, failed: false, produced: [] });
+    const cycleAt = (point, typeId) =>
+        EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { instanceId: idAt(point), typeId, heroId: null, failed: false, produced: [] });
     const bones = () => SpriteLayer.countOnBoard('item_bones');
 
     it('1×1 at 272 u: a diagonal neighbour hears it, one two steps away does not', () => {
-        put(15, 'fixture_producer');
-        put(22, 'fixture_trigger_any');                 // diagonal
-        cycleAt(15, 'fixture_producer');
+        put(S15, 'fixture_producer');
+        put(S22, 'fixture_trigger_any');                // diagonal
+        cycleAt(S15, 'fixture_producer');
         expect(bones()).toBe(1);
 
-        BoardState.setToken(22, null);
-        put(17, 'fixture_trigger_any');                 // 320 u
-        cycleAt(15, 'fixture_producer');
+        lift(S22);
+        put(S17, 'fixture_trigger_any');                // 320 u
+        cycleAt(S15, 'fixture_producer');
         expect(bones()).toBe(1);
     });
 
-    it('⭐ a 2×2 source is heard from a side tile outside its anchor\'s old ring (FP-41)', () => {
+    it('⭐ a 2×2 source is heard from a side spot outside its old anchor ring (FP-41)', () => {
         put(BIG, 'fixture_large_producer');
-        put(SIDE, 'fixture_trigger_any');               // side-touching; not in tile 7's 8-ring
+        put(SIDE, 'fixture_trigger_any');               // side-touching
         cycleAt(BIG, 'fixture_large_producer');
         expect(bones()).toBe(1);
     });
 
-    it('⭐ a 2×2 source is NOT heard from its corner diagonals, even one in its anchor\'s old ring (FP-41)', () => {
+    it('⭐ a 2×2 source is NOT heard from its corner diagonals, even one in its old anchor ring (FP-41)', () => {
         put(BIG, 'fixture_large_producer');
-        put(0, 'fixture_trigger_any');                  // in tile 7's 8-ring, but a corner diagonal
+        put(S0, 'fixture_trigger_any');                 // in the old 8-ring, but a corner diagonal
         put(CORNER, 'fixture_trigger_any');
         cycleAt(BIG, 'fixture_large_producer');
         expect(bones()).toBe(0);
@@ -395,15 +426,15 @@ describe('TriggerSystem: neighbour triggers listen within Near', () => {
 
     it('⭐ a departed 2×2 is still heard from where it stood (TOKEN_DEPLETED)', () => {
         put(SIDE, 'fixture_trigger_depleted');
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...pointAt(BIG, 'fixture_large_producer'), typeId: 'fixture_large_producer' });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...BIG, typeId: 'fixture_large_producer' });
         expect(bones()).toBe(1);
     });
 
     it('a larger radius widens it: at 400 u a listener two steps away hears it', () => {
-        put(15, 'fixture_producer');
-        put(17, 'fixture_trigger_any');
+        put(S15, 'fixture_producer');
+        put(S17, 'fixture_trigger_any');
         setMatTuning('nearRadius', 400);
-        cycleAt(15, 'fixture_producer');
+        cycleAt(S15, 'fixture_producer');
         expect(bones()).toBe(1);
     });
 });
@@ -413,50 +444,49 @@ describe('TriggerSystem: neighbour triggers listen within Near', () => {
 // ---------------------------------------------------------------------------
 
 describe('Restrictions: "Cannot be adjacent to more than 2 Coast" counts within Near', () => {
-    /** The restricted Coast on 21, exactly at its limit: plain Coasts on 20 and 22. */
+    /** The restricted Coast at CORNER, exactly at its limit: plain Coasts either side. */
     const atLimit = () => {
-        put(21, 'fixture_coast');
-        put(20, 'fixture_plain_coast');
-        put(22, 'fixture_plain_coast');
+        put(CORNER, 'fixture_coast');
+        put(SIDE, 'fixture_plain_coast');
+        put(S22, 'fixture_plain_coast');
     };
 
-    it('1×1 at 272 u, hypothetical drop: diagonal is refused, two steps away is not — nothing moves', () => {
+    it('1×1 at 272 u, hypothetical drop: near is refused, two steps away is not — nothing moves', () => {
         atLimit();
-        const before = BoardState.occupiedTiles().map(([t]) => t);
+        const before = BoardState.tokens().map(t => t.id);
 
-        const at = (tile) => pointAt(tile, 'fixture_plain_coast');
-        expect(Restrictions.checkPlacement(at(15), 'fixture_plain_coast').ok).toBe(false);   // diagonal
-        expect(Restrictions.checkPlacement(at(27), 'fixture_plain_coast').ok).toBe(false);   // below
-        expect(Restrictions.checkPlacement(at(17), 'fixture_plain_coast').ok).toBe(true);    // 358 u
-        expect(Restrictions.checkPlacement(at(9), 'fixture_plain_coast').ok).toBe(true);     // 320 u
+        expect(Restrictions.checkPlacement(S15, 'fixture_plain_coast').ok).toBe(false);   // 160 u above
+        expect(Restrictions.checkPlacement(S27, 'fixture_plain_coast').ok).toBe(false);   // 160 u below
+        expect(Restrictions.checkPlacement(S17, 'fixture_plain_coast').ok).toBe(true);    // 358 u
+        expect(Restrictions.checkPlacement(S9, 'fixture_plain_coast').ok).toBe(true);     // 320 u
 
-        expect(BoardState.occupiedTiles().map(([t]) => t)).toEqual(before);
+        expect(BoardState.tokens().map(t => t.id)).toEqual(before);
     });
 
-    it('a displaced Token does not count (remove)', () => {
+    it('a removed Token does not count (remove)', () => {
         atLimit();
-        expect(Restrictions.checkPlacement(pointAt(15, 'fixture_plain_coast'), 'fixture_plain_coast', { remove: [idAt(20)] }).ok).toBe(true);
+        expect(Restrictions.checkPlacement(S15, 'fixture_plain_coast', { remove: [idAt(SIDE)] }).ok).toBe(true);
     });
 
     it('1×1 at 272 u, a moved Token: a Coast moved into reach is refused; moved short of it is not', () => {
         atLimit();
-        const shoved = put(3, 'fixture_plain_coast');   // far from 21
-        const drop = pointAt(0, 'fixture_large_tool');
+        const shoved = put(S3, 'fixture_plain_coast');   // far from CORNER
+        const drop = big(0, 0);
 
-        const into = Restrictions.checkPlacement(drop, 'fixture_large_tool', { move: [{ id: shoved.id, ...tileCentre(15) }] });
+        const into = Restrictions.checkPlacement(drop, 'fixture_large_tool', { move: [{ id: shoved.id, ...S15 }] });
         expect(into.ok).toBe(false);
         expect(into.reason).toContain('Fixture Coast');
 
-        expect(Restrictions.checkPlacement(drop, 'fixture_large_tool', { move: [{ id: shoved.id, ...tileCentre(9) }] }).ok).toBe(true);
+        expect(Restrictions.checkPlacement(drop, 'fixture_large_tool', { move: [{ id: shoved.id, ...S9 }] }).ok).toBe(true);
     });
 
     it('⭐ a 2×2 Coast counts from its side, not from its corner (FP-41)', () => {
         atLimit();
 
-        // Anchor 7 covers 14, which only touches 21 at a corner: 339 u, not near.
-        expect(Restrictions.checkPlacement(pointAt(BIG, 'fixture_large_coast'), 'fixture_large_coast').ok).toBe(true);
-        // Anchor 8 covers 15, which touches 21's side: 253 u, near — a third Coast.
-        const side = Restrictions.checkPlacement(pointAt(8, 'fixture_large_coast'), 'fixture_large_coast');
+        // BIG's centre is 339 u from CORNER — a corner diagonal, not near.
+        expect(Restrictions.checkPlacement(BIG, 'fixture_large_coast').ok).toBe(true);
+        // Half a step to the right is 253 u from CORNER — near, so a third Coast.
+        const side = Restrictions.checkPlacement(big(1, 2), 'fixture_large_coast');
         expect(side.ok).toBe(false);
         expect(side.violatingTypeId).toBe('fixture_coast');
     });
@@ -464,38 +494,38 @@ describe('Restrictions: "Cannot be adjacent to more than 2 Coast" counts within 
     it('⭐ through Placement: the corner 2×2 lands, and the side one is nudged clear (FP-88)', () => {
         atLimit();
 
-        // The side anchor would break the rule, so since FP-88 the drop is moved
+        // The side spot would break the rule, so since FP-88 the drop is moved
         // to the nearest spot that obeys it rather than being refused.
         const side = BoardState.createTokenInstance('fixture_large_coast', 500);
-        const sideRes = Placement.placeToken(8, side);
+        const sideRes = Placement.placeTokenAt(side, big(1, 2));
         expect(sideRes.success).toBe(true);
         expect(sideRes.nudged).toBe(true);
         expect(Restrictions.violations()).toEqual([]);
         BoardState.removeToken(side.id);
 
-        // The corner anchor breaks nothing, so it lands exactly where it was put.
+        // The corner spot breaks nothing, so it lands exactly where it was put.
         const corner = BoardState.createTokenInstance('fixture_large_coast', 500);
-        const cornerRes = Placement.placeToken(BIG, corner);
+        const cornerRes = Placement.placeTokenAt(corner, BIG);
         expect(cornerRes.success).toBe(true);
         expect(cornerRes.nudged).toBe(false);
         expect(Restrictions.violations()).toEqual([]);
     });
 
     it('⭐ the restricted Coast as a 2×2 neighbour counts once, by its centre', () => {
-        put(21, 'fixture_coast');
+        put(CORNER, 'fixture_coast');
         put(BIG, 'fixture_large_coast');                // corner — not counted
-        put(22, 'fixture_plain_coast');
-        put(27, 'fixture_plain_coast');
+        put(S22, 'fixture_plain_coast');
+        put(S27, 'fixture_plain_coast');
         expect(Restrictions.violations()).toEqual([]); // 2 within Near, the 2×2 is not one of them
     });
 
     it('a larger radius widens it: at 400 u a Coast two steps away counts, on a drop and on a shift', () => {
         atLimit();
-        const shoved = put(3, 'fixture_plain_coast');
+        const shoved = put(S3, 'fixture_plain_coast');
         setMatTuning('nearRadius', 400);
 
-        expect(Restrictions.checkPlacement(pointAt(17, 'fixture_plain_coast'), 'fixture_plain_coast').ok).toBe(false);   // 358 u
-        expect(Restrictions.checkPlacement(pointAt(0, 'fixture_large_tool'), 'fixture_large_tool', { move: [{ id: shoved.id, ...tileCentre(9) }] }).ok).toBe(false);
+        expect(Restrictions.checkPlacement(S17, 'fixture_plain_coast').ok).toBe(false);   // 358 u
+        expect(Restrictions.checkPlacement(big(0, 0), 'fixture_large_tool', { move: [{ id: shoved.id, ...S9 }] }).ok).toBe(false);
     });
 });
 
@@ -504,7 +534,7 @@ describe('Restrictions: "Cannot be adjacent to more than 2 Coast" counts within 
 // ---------------------------------------------------------------------------
 
 describe('Placement publishes one dirty event per change, covering the Near radius', () => {
-    const yieldAt = (tile) => TileModifiers.resolveAxis(idAt(tile), EFFECT_TYPES.YIELD, 100);
+    const yieldAt = (point) => TileModifiers.resolveAxis(idAt(point), EFFECT_TYPES.YIELD, 100);
 
     beforeAll(() => {
         // The engine's own listener. Its subscription is not idempotent, so it
@@ -516,27 +546,27 @@ describe('Placement publishes one dirty event per change, covering the Near radi
         const events = [];
         const off = EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, (p) => events.push(p));
         try {
-            Placement.placeToken(14, BoardState.createTokenInstance('fixture_producer', 5000));
+            Placement.placeTokenAt(BoardState.createTokenInstance('fixture_producer', 5000), S14);
         } finally {
             off();
         }
         expect(events).toHaveLength(1);
-        expect(events[0].points).toEqual([tileCentre(14)]);
+        expect(events[0].points).toEqual([S14]);
     });
 
     it('at 400 u a dropped buff reaches a Token two steps away, and lifting it clears it', () => {
         setMatTuning('nearRadius', 400);
-        put(12, 'fixture_producer');
+        put(S12, 'fixture_producer');
         TileModifiers.rebuildAll();
 
-        Placement.placeToken(14, BoardState.createTokenInstance('fixture_buff_yield', 800));
-        expect(yieldAt(12)).toBeCloseTo(105);
+        Placement.placeTokenAt(BoardState.createTokenInstance('fixture_buff_yield', 800), S14);
+        expect(yieldAt(S12)).toBeCloseTo(105);
 
-        Placement.returnTokenToTray(14);
-        expect(yieldAt(12)).toBeCloseTo(100);
+        Placement.returnTokenToTrayById(idAt(S14));
+        expect(yieldAt(S12)).toBeCloseTo(100);
     });
 
-    it('a 2×2 moved away clears its buff from tiles its new position does not reach', () => {
+    it('a 2×2 moved away clears its buff from spots its new position does not reach', () => {
         registerTokenTypes({
             fixture_large_yield: {
                 id: 'fixture_large_yield', name: 'Fixture Large Yield', tokenType: 'buff',
@@ -548,59 +578,59 @@ describe('Placement publishes one dirty event per change, covering the Near radi
                 }]
             }
         });
-        put(1, 'fixture_producer');                     // side-touching the 2×2 on 7
-        put(BIG, 'fixture_large_yield');
+        put(S1, 'fixture_producer');                    // side-touching the 2×2 at BIG
+        const buff = put(BIG, 'fixture_large_yield');
         TileModifiers.rebuildAll();
-        expect(yieldAt(1)).toBeCloseTo(105);
+        expect(yieldAt(S1)).toBeCloseTo(105);
 
-        expect(Placement.moveToken(BIG, 22).success).toBe(true);
-        expect(yieldAt(1)).toBeCloseTo(100);
+        expect(Placement.moveTokenTo(buff.id, big(3, 4)).success).toBe(true);
+        expect(yieldAt(S1)).toBeCloseTo(100);
     });
 });
 
-describe('⭐ a board-reach rule refreshes distant tiles (pre-existing bug)', () => {
-    const yieldAt = (tile) => TileModifiers.resolveAxis(idAt(tile), EFFECT_TYPES.YIELD, 100);
+describe('⭐ a board-reach rule refreshes distant Tokens (pre-existing bug)', () => {
+    const yieldAt = (point) => TileModifiers.resolveAxis(idAt(point), EFFECT_TYPES.YIELD, 100);
 
-    it('arriving: a Token across the board gains the buff from one local rebuild', () => {
-        put(35, 'fixture_producer');
+    it('arriving: a Token across the mat gains the buff from one local rebuild', () => {
+        put(S35, 'fixture_producer');
         TileModifiers.rebuildAll();
-        expect(yieldAt(35)).toBeCloseTo(100);
+        expect(yieldAt(S35)).toBeCloseTo(100);
 
-        put(0, 'fixture_board_buff');
-        TileModifiers.rebuildAround([tileCentre(0)]);                 // 35 is nowhere near 0
-        expect(yieldAt(35)).toBeCloseTo(105);
+        put(S0, 'fixture_board_buff');
+        TileModifiers.rebuildAround([S0]);              // S35 is nowhere near S0
+        expect(yieldAt(S35)).toBeCloseTo(105);
     });
 
     it('leaving: the distant Token loses it again', () => {
-        put(35, 'fixture_producer');
-        put(0, 'fixture_board_buff');
+        put(S35, 'fixture_producer');
+        put(S0, 'fixture_board_buff');
         TileModifiers.rebuildAll();
-        expect(yieldAt(35)).toBeCloseTo(105);
+        expect(yieldAt(S35)).toBeCloseTo(105);
 
-        BoardState.setToken(0, null);
-        TileModifiers.rebuildAround([tileCentre(0)]);
-        expect(yieldAt(35)).toBeCloseTo(100);
+        lift(S0);
+        TileModifiers.rebuildAround([S0]);
+        expect(yieldAt(S35)).toBeCloseTo(100);
     });
 
     it('changing: replaced by a Token with no board rule, the distant buff goes', () => {
-        put(35, 'fixture_producer');
-        put(0, 'fixture_board_buff');
+        put(S35, 'fixture_producer');
+        put(S0, 'fixture_board_buff');
         TileModifiers.rebuildAll();
 
-        BoardState.setToken(0, null);
-        put(0, 'fixture_producer');
-        TileModifiers.rebuildAround([tileCentre(0)]);
-        expect(yieldAt(35)).toBeCloseTo(100);
+        lift(S0);
+        put(S0, 'fixture_producer');
+        TileModifiers.rebuildAround([S0]);
+        expect(yieldAt(S35)).toBeCloseTo(100);
     });
 
     it('through Placement and the engine\'s listener', () => {
-        put(35, 'fixture_producer');
+        put(S35, 'fixture_producer');
         TileModifiers.rebuildAll();
 
-        Placement.placeToken(0, BoardState.createTokenInstance('fixture_board_buff', null));
-        expect(yieldAt(35)).toBeCloseTo(105);
+        Placement.placeTokenAt(BoardState.createTokenInstance('fixture_board_buff', null), S0);
+        expect(yieldAt(S35)).toBeCloseTo(105);
 
-        Placement.returnTokenToTray(0);
-        expect(yieldAt(35)).toBeCloseTo(100);
+        Placement.returnTokenToTrayById(idAt(S0));
+        expect(yieldAt(S35)).toBeCloseTo(100);
     });
 });

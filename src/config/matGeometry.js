@@ -36,6 +36,22 @@ export function clampToMat(point) {
     };
 }
 
+/**
+ * ## How big a Token is drawn (Free Playmat slice 1.6d-2)
+ *
+ * Token art is authored at 64px and shown at exactly 2× (D-216), so a 1×1 Token
+ * is drawn 128 u across. These used to be `ART_PX` and `TILE_PX` in the deleted
+ * `boardGeometry.js`; `TOKEN_PX` is the same number under a name that does not
+ * claim there is a tile under it.
+ *
+ * ⚠️ The 2× is an integer ratio on purpose. Deriving either number from the
+ * space available breaks it and makes every sprite blurry — the mat is scaled
+ * with a CSS transform instead (`useBoardScale`).
+ */
+export const ART_PX = 64;
+export const TOKEN_SCALE = 2;
+export const TOKEN_PX = ART_PX * TOKEN_SCALE;
+
 /** Art radius by Token size, in mat units. */
 export const ART_RADIUS_BY_SIZE = Object.freeze({ 1: 64, 2: 144 });
 

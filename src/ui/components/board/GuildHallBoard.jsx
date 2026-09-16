@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
-    TILE_PX,
+    UPGRADE_BOARD_TILE_PX,
     UPGRADE_BOARD_SIZE,
     UPGRADE_BOARD_TILE_COUNT,
     UPGRADE_BOARD_PX,
     UPGRADE_BOARD_TILE_GAP_PX,
     UPGRADE_BOARD_GUILD_HALL_TILE
-} from '../../../config/boardGeometry.js';
+} from '../../../config/upgradeBoardGeometry.js';
 import {
     getUpgradeDefByTile, isTileAccessible, toRoman, getUpgradeCost
 } from '../../../config/guildUpgrades.js';
@@ -69,7 +69,7 @@ export const GuildHallBoard = ({
                 <div
                     className="grid shrink-0"
                     style={{
-                        gridTemplateColumns: `repeat(${UPGRADE_BOARD_SIZE}, ${TILE_PX}px)`,
+                        gridTemplateColumns: `repeat(${UPGRADE_BOARD_SIZE}, ${UPGRADE_BOARD_TILE_PX}px)`,
                         gap: `${UPGRADE_BOARD_TILE_GAP_PX}px`,
                         width: UPGRADE_BOARD_PX,
                         height: UPGRADE_BOARD_PX,
@@ -102,8 +102,8 @@ export const GuildHallBoard = ({
                                     }
                                 }}
                                 style={{
-                                    width: TILE_PX,
-                                    height: TILE_PX,
+                                    width: UPGRADE_BOARD_TILE_PX,
+                                    height: UPGRADE_BOARD_TILE_PX,
                                     backgroundImage: `url(${floorFor(index)})`,
                                     backgroundSize: 'cover',
                                     imageRendering: 'pixelated'

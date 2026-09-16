@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
     LATTICE_SIZE, SUBTILE_PX, SUBTILES_PER_TILE, SUBTILES_PER_GAP,
     subtileArtPx, edgeAmplitude,
-    ownerOf, variantAt, resolveLattice, edgeProfile, edgeStrips
+    ownerOf, variantAt, resolveLattice, edgeProfile, edgeStrips,
+    LEGACY_BOARD_SIZE as BOARD_SIZE, LEGACY_BOARD_PX as BOARD_PX,
+    LEGACY_TILE_PX as TILE_PX, LEGACY_TILE_GAP_PX as TILE_GAP_PX
 } from '../systems/board/TerrainLattice.js';
-import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX } from '../config/boardGeometry.js';
 
 /**
  * Terrain P2 — the subtile lattice.

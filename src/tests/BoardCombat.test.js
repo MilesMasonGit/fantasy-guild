@@ -14,7 +14,21 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as RegenSystem from '../systems/hero/RegenSystem.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { idAt, tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
+ * A lattice of mat points 160 u apart — the step the old board had — so spots
+ * 10 and 11 are 160 u apart and therefore neighbours at the shipped 164 u Near,
+ * which is what the adjacent-support case below depends on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** What ran dry on spot `i`, or null. */
+const vacancyAt = (i) => BoardState.vacancyAt(BoardState.spotIdAt(C(i).x, C(i).y));
 
 /**
  * Combat on the board — **ported, not rebuilt** (D-136).
@@ -68,10 +82,10 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 function run(ms) {
@@ -108,7 +122,7 @@ describe('Enemies are inert until targeted (D-14)', () => {
     it('starts fighting the moment a hero is placed on it', () => {
         place(10, 'fixture_enemy');
         run(5000);
-        Placement.placeHero('hero_1', 10);
+        Placement.plantFlagAt('hero_1', C(10));
         run(1000);
 
         expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
@@ -233,13 +247,13 @@ describe('A kill', () => {
         const bear = place(10, 'fixture_enemy', 'hero_1', 1);
         run(60000);
 
-        expect(BoardState.getToken(10)).toBeNull();
+        expect(tokenAt(10)).toBeNull();
         // Exactly what a spent Forest does. Enemies are not a special case
         // (D-104) — including in what they leave behind: the hero's flag stays
         // planted there (Free Playmat 1.4b).
-        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(10));
+        expect(BoardState.displayPointOf('hero_1')).toEqual(C(10));
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
-        expect(BoardState.getVacancy(10)?.typeId).toBe('fixture_enemy');
+        expect(vacancyAt(10)?.typeId).toBe('fixture_enemy');
     });
 });
 
@@ -278,7 +292,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
 
         Placement.recallHeroById('hero_1');
         run(100);
-        Placement.placeHero('hero_1', 10);
+        Placement.plantFlagAt('hero_1', C(10));
         run(100);
 
         const fresh = BoardCombat.getFight(idAt(10)).combat.enemyHp;
@@ -292,7 +306,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         // One hero per Token (FP-25): hero_2 only gets the enemy once hero_1's
         // flag is taken down (Free Playmat 1.4b).
         Placement.recallHeroById('hero_1');
-        Placement.placeHero('hero_2', 10);
+        Placement.plantFlagAt('hero_2', C(10));
         run(100);
 
         const fight = BoardCombat.getFight(idAt(10));
@@ -324,7 +338,7 @@ describe('Defeat costs equipment (D-74)', () => {
         place(10, 'fixture_enemy', 'hero_weak');
         run(30000);
 
-        expect(BoardState.getToken(10)?.typeId).toBe('fixture_enemy');
+        expect(tokenAt(10)?.typeId).toBe('fixture_enemy');
     });
 
     it('a wounded hero cannot simply be put back to keep fighting', () => {

@@ -22,7 +22,20 @@ import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { enemyFlatArmor } from '../utils/CombatFormulas.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * these are two named spots on a 160 u lattice.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Put a Token on spot `i`, and plant a hero's flag there. */
+const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -46,7 +59,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * 1. A fight holds a list and an aggregator, with the fight's lifetime.
  * 2. `Deals` at an enemy respects its armour, the way it does at a hero.
  * 3. The clock reaches enemies, so a carried effect ticks.
- * 4. `self` on a carried effect means the **monster**, not the hero on its tile.
+ * 4. `self` on a carried effect means the **monster**, not the hero standing on it.
  *
  * WARNING: (4) is the one that would have been invisible. Every other reading of
  * a tile in the game resolves through the occupant rule - hero first - so a
@@ -79,10 +92,10 @@ function fighter(id) {
 
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    put(tile, instance);
+    TileModifiers.rebuildAround([tokenAt(tile)]);
+    if (heroId) plant(heroId, tile);
+    return tokenAt(tile);
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };

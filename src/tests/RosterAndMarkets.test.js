@@ -3,7 +3,6 @@ import { MARKET_PREMIUM } from './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
-import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -43,11 +42,17 @@ function makeHero(id, held, level = 50) {
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the Market to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 function run(ms) {
@@ -140,7 +145,7 @@ describe('A Market demands Commerce (D-259)', () => {
         // A Commerce flag, so the Market is a candidate; the flag skips it as
         // UNSKILLED for hover rather than raising a red mark (Free Playmat 1.4b,
         // FP-48, FP-60).
-        Flags.plant('hero_1', positionOf(10), { skill: 'commerce' });
+        Flags.plant('hero_1', C(10), { skill: 'commerce' });
         InventoryManager.addItem('item_market_goods', 100);
         const goldBefore = CurrencyManager.getCurrency('gold');
 

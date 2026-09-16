@@ -1,6 +1,5 @@
 // Fantasy Guild — Distance on the playmat (Free Playmat slices 1.2, 1.6b)
 
-import { isTileIndex, tileCentre } from '../../config/boardGeometry.js';
 import { LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
 import { REACH } from '../../config/registries/reachRegistry.js';
 import { matTuning } from '../../config/matTuning.js';
@@ -12,13 +11,11 @@ import * as BoardState from './BoardState.js';
  * ## By Token instance id and mat point (slice 1.6b)
  * The owner's framing rule: *there are no Tiles.* Every Token on the mat has a
  * centre (`instance.x`, `instance.y`), and every question here is asked of an
- * **instance id** or a **mat point** and answers with **instance ids**. While
- * Tokens still sit on today's tile centres (until slice 1.6d) the answers are
- * exactly the ones the tile readers gave.
+ * **instance id** or a **mat point** and answers with **instance ids**.
  *
  * ## Near (FP-65, FP-75)
- * The Mat Tuner's Near radius — 164 u shipped — reaches a Token's four side
- * neighbours at today's 160 u step but not the diagonals (226 u).
+ * The Mat Tuner's Near radius — 164 u shipped — reaches a Token 160 u away but
+ * not one 226 u away, the two distances the old grid's sides and diagonals had.
  *
  * ## Ties go to the earlier arrival
  * Where an ordering is needed, ids come back in **arrival order** (`placedAt`
@@ -132,8 +129,8 @@ export function nearby(instanceId, reach = REACH.ADJACENT, radius = nearRadius()
  * or of B, so rebuilding around **both** points is what keeps buffs from going
  * stale (the slice's top risk). The extra `LARGEST_ART_RADIUS` (144 u) covers a
  * caller that can only name a point near the change rather than the centre that
- * moved — a stopgap tile centre, say. Rebuilding an extra Token is harmless;
- * missing one is a silently stale buff.
+ * moved. Rebuilding an extra Token is harmless; missing one is a silently stale
+ * buff.
  *
  * @param {Array<{x:number,y:number}|null>} points
  * @returns {string[]}
@@ -180,20 +177,4 @@ export function neighbourIds(instanceId) {
         neighbourCache.byId.set(instanceId, ids);
     }
     return ids;
-}
-
-// ---------------------------------------------------------------------------
-// ⚠️ STOPGAP — tile-shaped positions (deleted in 1.6d)
-// ---------------------------------------------------------------------------
-
-/**
- * STOPGAP (deleted in 1.6d): a mat point for a tile — the centre of whatever
- * Token covers it, or the tile's own centre when empty. For `Placement`, which
- * still plants flags by tile until free dropping replaces it.
- */
-export function positionOf(tile) {
-    if (!isTileIndex(tile)) return null;
-    const occ = BoardState.getOccupyingToken(tile);
-    if (occ?.instance) return centreOf(occ.instance) || tileCentre(tile);
-    return tileCentre(tile);
 }

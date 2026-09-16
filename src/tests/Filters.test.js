@@ -34,7 +34,13 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * so a caller that cannot evaluate one refuses rather than guessing.
  */
 
-const A = 15, NEIGHBOUR = 16;
+/**
+ * Three spots in a line, 160 u apart — inside the live Near radius (164 u), so
+ * each is a neighbour of the next but not of the one beyond it.
+ */
+const A = { x: 400, y: 300 };
+const NEIGHBOUR = { x: 560, y: 300 };
+const THIRD = { x: 720, y: 300 };
 
 function makeHero(id) {
     const skills = {};
@@ -42,14 +48,14 @@ function makeHero(id) {
     return { id, name: id, status: 'idle', level: 50, skills, hp: { current: 100, max: 100 } };
 }
 
-function place(tile, typeId, heroId = null, uses = undefined) {
+function place(point, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, point);
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, point);
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -75,7 +81,7 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     TileModifiers.clearAll();
-    // The `being worked` filter needs the tile caches to follow hero movement.
+    // The `being worked` filter needs the Token caches to follow hero movement.
     TileModifiers.init();
     GameState.state.heroes = [makeHero('hero_1')];
     GameState.state.inventory.maxSlots = 50;
@@ -165,7 +171,7 @@ describe('state filters read the live board, not the definition', () => {
         filteredBuff('fixture_only_worked', [{ kind: 'worked' }]);
         place(NEIGHBOUR, 'fixture_only_worked');
         place(A, 'fixture_producer', 'hero_1');     // worked
-        place(17, 'fixture_producer');              // idle, no hero
+        place(THIRD, 'fixture_producer');           // idle, no hero
 
         run(13000);
 

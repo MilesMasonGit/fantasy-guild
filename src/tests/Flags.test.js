@@ -17,11 +17,9 @@ import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { tileCentre } from '../config/boardGeometry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
-import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -63,7 +61,30 @@ registerTokenTypes({
     }
 });
 
-const C = (tile) => tileCentre(tile);
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
+ * This is a lattice of mat points 160 u apart — the step the old board had — so
+ * every distance these scenarios turn on is the one they were written for: a
+ * side neighbour 160 u, a diagonal 226 u, two steps 320 u, three steps 480 u.
+ * The numbers below are shorthand for spots on that lattice, nothing more.
+ *
+ * ⚠️ The rows start at y = 200 so that the lowest one used here still leaves a
+ * Token's art circle fully inside the 1126 u mat.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Which spot the Token a hero works stands on, or null. */
+function workTileOf(heroId) {
+    const instance = BoardState.getTokenById(BoardState.workTokenOf(heroId));
+    if (!instance) return null;
+    const col = Math.round((instance.x - 400) / 160);
+    const row = Math.round((instance.y - 200) / 160);
+    return row * 6 + col;
+}
 
 function hero(id, skills = { logging: 50 }) {
     const out = {};
@@ -73,8 +94,8 @@ function hero(id, skills = { logging: 50 }) {
 
 function put(tile, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
-    Placement.placeToken(tile, instance);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    return instance;
 }
 
 const plant = (heroId, tile) => Flags.plant(heroId, C(tile));
@@ -104,14 +125,14 @@ describe('choosing — nearest first (FP-57)', () => {
         put(21, 'fixture_producer');      // 226 u (diagonal)
         put(15, 'fixture_producer');      // 160 u
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
     });
 
     it('breaks a distance tie on the earlier-placed Token (slice 1.6b; was the lower anchor)', () => {
         put(15, 'fixture_producer');
         put(13, 'fixture_producer');
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
     });
 });
 
@@ -119,12 +140,12 @@ describe('the flag radius (FP-23, FP-65)', () => {
     it('ignores a Token 480 u away at 400, and claims it once the radius is 500', () => {
         put(3, 'fixture_producer');       // three steps from tile 0
         plant('h1', 0);
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
 
         setMatTuning('flagRadius', 500);  // the Mat Tuner marks flags dirty
         Flags.assign(0);
 
-        expect(BoardState.workTileOf('h1')).toBe(3);
+        expect(workTileOf('h1')).toBe(3);
     });
 });
 
@@ -136,7 +157,7 @@ describe('skill (FP-47, FP-60, FP-71)', () => {
 
         plant('h1', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(Flags.skipsOf(blank.id)).toEqual([{ heroId: 'h1', reason: Flags.SKIP.NO_SKILL }]);
         expect(Flags.skipsOf(mine.id)).toEqual([{ heroId: 'h1', reason: ALERT.UNSKILLED }]);
     });
@@ -151,7 +172,7 @@ describe('what a flag never chooses by itself', () => {
 
         plant('h1', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
     });
 
     it('works a Promotion Token only when the flag point is on it (FP-61)', () => {
@@ -163,10 +184,10 @@ describe('what a flag never chooses by itself', () => {
         }
         put(20, 'fixture_promotion');
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
 
         plant('h1', 20);
-        expect(BoardState.workTileOf('h1')).toBe(20);
+        expect(workTileOf('h1')).toBe(20);
     });
 });
 
@@ -176,8 +197,8 @@ describe('one hero per Token (FP-25)', () => {
         plant('h1', 14);
         plant('h2', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(15);
-        expect(BoardState.workTileOf('h2')).toBeNull();
+        expect(workTileOf('h1')).toBe(15);
+        expect(workTileOf('h2')).toBeNull();
         expect(Flags.skipsOf(forest.id)).toEqual([{ heroId: 'h2', reason: Flags.SKIP.CLAIMED }]);
     });
 });
@@ -192,15 +213,15 @@ describe('planting order, and claims are sticky', () => {
         Flags.markDirty();
         Flags.assign(0);
 
-        expect(BoardState.workTileOf('h2')).toBe(15);
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h2')).toBe(15);
+        expect(workTileOf('h1')).toBe(16);
 
         put(14, 'fixture_producer');     // right under both flags
         Flags.markDirty();
         Flags.assign(0);
 
-        expect(BoardState.workTileOf('h2')).toBe(15);
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h2')).toBe(15);
+        expect(workTileOf('h1')).toBe(16);
     });
 });
 
@@ -213,7 +234,7 @@ describe('skipping what cannot run (FP-48, FP-49, FP-60)', () => {
         plant('h1', 15);                                   // dropped right on it
         run(2000);
 
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(reasons(gated)).toEqual([ALERT.ACCESS]);
         expect(gated.alert ?? null).toBeNull();
     });
@@ -227,10 +248,10 @@ describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
         const progress = forest.cycleElapsedMs;
         expect(progress).toBeGreaterThan(0);
 
-        Placement.moveToken(14, 17);                       // 480 u from the flag
+        Placement.moveTokenTo(forest.id, C(17));           // 480 u from the flag
         run(100);
 
-        expect(BoardState.workTileOf('h1')).toBe(17);
+        expect(workTileOf('h1')).toBe(17);
         expect(forest.cycleElapsedMs).toBeGreaterThanOrEqual(progress);
     });
 
@@ -257,7 +278,7 @@ describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
         GameState.state.heroes[0].skills.logging.level = 0;  // now below skillRequired 1
         run(300);
 
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
         expect(forest.cycleElapsedMs).toBe(0);
     });
 });
@@ -269,10 +290,10 @@ describe('fixable problems (FP-69, FPP-1, FPP-2, FPP-5)', () => {
         put(16, 'fixture_producer');       // 320 u, so the flag chooses again and passes the mill a second time
 
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
         run(15000);                        // 150 ticks, one cycle (~9.6s) and a re-choose
 
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
         expect(hungry.alert).toBe(ALERT.INPUTS);
     });
@@ -282,18 +303,18 @@ describe('fixable problems (FP-69, FPP-1, FPP-2, FPP-5)', () => {
         const hungry = put(14, 'ft_hungry');
         plant('h1', 14);
         run(1000);
-        expect(BoardState.workTileOf('h1')).toBe(14);
+        expect(workTileOf('h1')).toBe(14);
 
         InventoryManager.removeItem('item_coal', 10);
         run(3000);
-        expect(BoardState.workTileOf('h1')).toBe(14);
+        expect(workTileOf('h1')).toBe(14);
         expect(hungry.alert).toBe(ALERT.INPUTS);
         expect(NotificationSystem.warning).not.toHaveBeenCalled();
 
         put(16, 'fixture_producer');
         run(1500);
 
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
         expect(hungry.cycleElapsedMs).toBe(0);
         expect(hungry.alert).toBe(ALERT.INPUTS);
@@ -307,7 +328,7 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
         if (copy) TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         if (other) put(20, 'fixture_producer');
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(14);
+        expect(workTileOf('h1')).toBe(14);
         Charges.destroyToken(first, { heroId: 'h1' });
         Flags.assign(0);
         return first;
@@ -322,8 +343,8 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
         Managers.sweep();
         Flags.assign(0);
 
-        const restocked = BoardState.getToken(14);
-        expect(BoardState.workTileOf('h1')).toBe(14);
+        const restocked = tokenAt(14);
+        expect(workTileOf('h1')).toBe(14);
         expect(restocked.id).not.toBe(first.id);
         expect(restocked.cycleElapsedMs).toBe(0);
     });
@@ -331,18 +352,18 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
     it('moves on when the Vault has no copy', () => {
         dryForest({ copy: false, other: true });
         expect(BoardState.waitOfHero('h1')).toBeNull();
-        expect(BoardState.workTileOf('h1')).toBe(20);
+        expect(workTileOf('h1')).toBe(20);
     });
 
     it('moves on when the Manager is taken away', () => {
         dryForest({ other: true });
         expect(BoardState.waitOfHero('h1')).not.toBeNull();
 
-        Placement.returnTokenToTray(15);
+        Placement.returnTokenToTrayById(idAt(15));
         Flags.assign(0);
 
         expect(BoardState.waitOfHero('h1')).toBeNull();
-        expect(BoardState.workTileOf('h1')).toBe(20);
+        expect(workTileOf('h1')).toBe(20);
     });
 
     it('a waiting hero gets the restock before an earlier-planted hero looking for work', () => {
@@ -359,8 +380,8 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
         Flags.markDirty();
         Flags.assign(0);
 
-        expect(BoardState.workTileOf('h1')).toBe(14);
-        expect(BoardState.workTileOf('h2')).toBeNull();
+        expect(workTileOf('h1')).toBe(14);
+        expect(workTileOf('h2')).toBeNull();
     });
 });
 
@@ -370,7 +391,7 @@ describe('dropping a hero plants their flag — a flag has no skill (FP-71)', ()
         // (FP-60, Free Playmat 1.4c).
         GameState.state.heroes = [hero('h1', { logging: 50, melee: 30 })];
         put(14, 'fixture_enemy');
-        Placement.placeHero('h1', 14);
+        Placement.plantFlagAt('h1', C(14));
         expect(BoardState.flagOf('h1')).toEqual({ ...C(14), plantedAt: expect.any(Number) });
         expect(BoardState.workerOf(idAt(14))).toBe('h1');
     });
@@ -378,7 +399,7 @@ describe('dropping a hero plants their flag — a flag has no skill (FP-71)', ()
     it('dropped on a Token whose skill the hero lacks, they do not work it, and it says unskilled', () => {
         GameState.state.heroes = [hero('h1', { mining: 30 })];
         const forest = put(14, 'fixture_producer');
-        Placement.placeHero('h1', 14);
+        Placement.plantFlagAt('h1', C(14));
         expect(BoardState.flagOf('h1').skill).toBeUndefined();
         expect(BoardState.workerOf(idAt(14))).toBeNull();
         expect(reasons(forest)).toEqual([ALERT.UNSKILLED]);

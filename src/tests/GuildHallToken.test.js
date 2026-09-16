@@ -9,9 +9,22 @@ import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
-import { GUILD_HALL_TILE } from '../config/boardGeometry.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
-import { idAt, pointAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles,
+ * and the Guild Hall no longer has one of its own — it stands wherever it is
+ * put, like everything else.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Put a Token on spot `i`, and plant a hero's flag there. */
+const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
 
 describe('Guild Hall Mobile Token (New Token System)', () => {
     beforeEach(() => {
@@ -24,33 +37,31 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(OPENING_MAT.map(t => t.typeId)).toContain('token_guild_hall');
     });
 
-    it('can be placed from tray onto any legal tile including Tile 24', () => {
+    it('can be placed anywhere on the mat, and moved anywhere else', () => {
         const gh = BoardState.createTokenInstance('token_guild_hall');
-        
-        // Place on Tile 24 (the center tile)
-        const resCenter = Placement.placeToken(GUILD_HALL_TILE, gh);
-        expect(resCenter.success).toBe(true);
-        expect(BoardState.getToken(GUILD_HALL_TILE).typeId).toBe('token_guild_hall');
 
-        // Move to another tile (Tile 10)
-        const resMove = Placement.moveToken(GUILD_HALL_TILE, 10);
+        const resCentre = put(21, gh);
+        expect(resCentre.success).toBe(true);
+        expect(tokenAt(21).typeId).toBe('token_guild_hall');
+
+        const resMove = Placement.moveTokenTo(gh.id, C(10));
         expect(resMove.success).toBe(true);
-        expect(BoardState.getToken(GUILD_HALL_TILE)).toBeNull();
-        expect(BoardState.getToken(10).typeId).toBe('token_guild_hall');
+        expect(tokenAt(21)).toBeNull();
+        expect(tokenAt(10).typeId).toBe('token_guild_hall');
     });
 
     it('cannot be removed from the playmat back to Tray or Vault once placed, and emits a disallow alert', () => {
         const gh = BoardState.createTokenInstance('token_guild_hall');
-        Placement.placeToken(15, gh);
+        put(15, gh);
 
         const alerts = [];
         const unsub = EventBus.subscribe('board:tile_event_alert', (e) => alerts.push(e));
 
         // Attempt return to Tray
-        const trayRes = Placement.returnTokenToTray(15);
+        const trayRes = Placement.returnTokenToTrayById(idAt(15));
         expect(trayRes.success).toBe(false);
         expect(trayRes.reason).toMatch(/cannot be removed from the playmat/i);
-        expect(BoardState.getToken(15)).not.toBeNull();
+        expect(tokenAt(15)).not.toBeNull();
 
         expect(alerts).toHaveLength(1);
         expect(alerts[0].instanceId).toBe(idAt(15));
@@ -59,10 +70,10 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(alerts[0].title).toBe('Guild Hall cannot be removed from the playmat.');
 
         // Attempt deposit to Vault
-        const vaultRes = Placement.returnTokenToVault(15);
+        const vaultRes = Placement.returnTokenToVaultById(idAt(15));
         expect(vaultRes.success).toBe(false);
         expect(vaultRes.reason).toMatch(/cannot be removed from the playmat/i);
-        expect(BoardState.getToken(15)).not.toBeNull();
+        expect(tokenAt(15)).not.toBeNull();
 
         expect(alerts).toHaveLength(2);
         expect(alerts[1].instanceId).toBe(idAt(15));
@@ -74,13 +85,13 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
 
     it('allows heroes to staff the Guild Hall token', () => {
         const gh = BoardState.createTokenInstance('token_guild_hall');
-        Placement.placeToken(20, gh);
+        put(20, gh);
 
-        const heroRes = Placement.placeHero('hero_test_1', 20);
+        const heroRes = plant('hero_test_1', 20);
         expect(heroRes.success).toBe(true);
         // Under flags (1.4b) the hero's flag stands on the Hall. With no Wishing
         // Well rank the Hall has no work cycle, so there is nothing to claim.
-        expect(BoardState.displayPointOf('hero_test_1')).toEqual(pointAt(20, 'token_guild_hall'));
+        expect(BoardState.displayPointOf('hero_test_1')).toEqual({ x: gh.x, y: gh.y });
     });
 
     /**
@@ -92,11 +103,11 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
     describe('Nothing can shove the Guild Hall (slice 1.6d-1)', () => {
         it('a Token dropped on the Guild Hall leaves it exactly where it stands', () => {
             const gh = BoardState.createTokenInstance('token_guild_hall');
-            Placement.placeToken(1, gh);
+            put(1, gh);
             const where = { x: gh.x, y: gh.y };
 
             const incoming = BoardState.createTokenInstance('token_copper_ore_vein');
-            const res = Placement.placeToken(1, incoming);
+            const res = put(1, incoming);
 
             expect(res.success).toBe(true);
             expect({ x: BoardState.getTokenById(gh.id).x, y: BoardState.getTokenById(gh.id).y }).toEqual(where);
@@ -105,12 +116,13 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
 
         it('a large Token dropped over it cannot send it to the Tray', () => {
             const gh = BoardState.createTokenInstance('token_guild_hall');
-            Placement.placeToken(8, gh);
+            put(8, gh);
             const where = { x: gh.x, y: gh.y };
 
             const bearDef = getTokenType('token_smelter') || { size: 2 };
             bearDef.size = 2;
-            const res = Placement.placeToken(0, { typeId: 'token_smelter', usesRemaining: null });
+            // Dropped straight onto the Hall: it is the newcomer that moves.
+            const res = put(8, { typeId: 'token_smelter', usesRemaining: null });
 
             expect(res.success).toBe(true);
             expect({ x: BoardState.getTokenById(gh.id).x, y: BoardState.getTokenById(gh.id).y }).toEqual(where);
@@ -157,11 +169,11 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             GuildUpgradeManager.purchase('wishing_well'); // rank 1 = 1 water
 
             const gh = BoardState.createTokenInstance('token_guild_hall');
-            Placement.placeToken(24, gh);
-            Placement.placeHero('hero_test_1', 24);
+            put(24, gh);
+            plant('hero_test_1', 24);
 
             // Inject a mock haste/speed modifier on tile 24 that would normally cut work time in half
-            TileModifiers.getTokenAggregator(idAt(24)).addModifier(EFFECT_TYPES.WORK_TIME, {
+            TileModifiers.getTokenAggregator(gh.id).addModifier(EFFECT_TYPES.WORK_TIME, {
                 percentage: -0.50
             });
 

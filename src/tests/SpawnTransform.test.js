@@ -19,7 +19,16 @@ import {
     PLACEMENT, PLACEMENTS, getPlacement, placementOf, resolvePlacement
 } from '../config/registries/placementRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
-import { idAt, tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the bearer to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -52,10 +61,10 @@ function makeHero(id) {
 
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -106,7 +115,7 @@ describe('⭐ Transforms — one Token becomes another', () => {
 
         run(13000);
 
-        expect(BoardState.getToken(A).typeId).toBe('fixture_passive');
+        expect(tokenAt(A).typeId).toBe('fixture_passive');
     });
 
     it('⚠️ arrives FRESH, not carrying the old Token’s wear', () => {
@@ -118,7 +127,7 @@ describe('⭐ Transforms — one Token becomes another', () => {
 
         run(13000);
 
-        expect(BoardState.getToken(A).usesRemaining)
+        expect(tokenAt(A).usesRemaining)
             .toBe(tokenStartingUses('fixture_enemy'));
     });
 
@@ -134,7 +143,7 @@ describe('⭐ Transforms — one Token becomes another', () => {
         // passive one), so the claim ends and the flag chooses again — but
         // nobody is moved. The flag still stands on the spot.
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
-        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(A));
+        expect(BoardState.displayPointOf('hero_1')).toEqual(C(A));
         expect(BoardState.workerOf(idAt(A))).toBeNull();
     });
 
@@ -156,7 +165,7 @@ describe('⭐ Spawns — putting a Token on the board', () => {
 
         run(13000);
 
-        expect(BoardState.getToken(A).typeId).toBe('fixture_passive');
+        expect(tokenAt(A).typeId).toBe('fixture_passive');
     });
 
     it('lands on the nearest free tile when told to', () => {
@@ -168,10 +177,10 @@ describe('⭐ Spawns — putting a Token on the board', () => {
         run(13000);
 
         // The bearer is untouched, and something new stands beside it.
-        // ⚠️ Asked of the mat, not of the tiles: since free placement (1.6d-1)
-        // a spawn lands at the nearest legal POINT, which is usually not a tile
-        // centre at all, so `occupiedTiles` cannot see it.
-        expect(BoardState.getToken(A).typeId).toBe('fixture_seeder');
+        // ⚠️ Asked of the mat as a whole: since free placement (1.6d-1) a spawn
+        // lands at the nearest legal POINT, which is usually not one of the
+        // named spots at all.
+        expect(tokenAt(A).typeId).toBe('fixture_seeder');
         const spawned = BoardState.tokens().filter(t => t.typeId === 'fixture_passive');
         expect(spawned.length).toBeGreaterThan(0);
     });

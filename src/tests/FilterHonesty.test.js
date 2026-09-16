@@ -13,7 +13,21 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { KEYWORD, getKeyword, makeStatement } from '../systems/effects/statements.js';
 import { rulesLinesOf } from '../systems/effects/statementText.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { anchorOf } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * a lattice of mat points 160 u apart, so at the 272 u Near pinned below spots
+ * 15 and 16 are side neighbours, 16 and 23 a 226 u diagonal, and 33 is 480 u
+ * away from either — well out of reach.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** Which spot a mat point is, and which spot a Token stands on. */
+const spotOfPoint = (p) => Math.round((p.y - 200) / 160) * 6 + Math.round((p.x - 400) / 160);
+const spotOf = (id) => {
+    const instance = BoardState.getTokenById(id);
+    return instance ? spotOfPoint(instance) : null;
+};
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -51,32 +65,32 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * failure `matchesTokenTarget` already refuses for unknown modes.
  *
  * ## ⚠️ Why these assert on `addSprite` rather than on the board
- * A sprite does not remember which tile it came from — `addSprite` scatters it
- * 1–2 tiles away and **merges it into any nearby stack of the same item**. So
- * "how many Charcoal are lying on tile 16" is not a question the board can
- * answer, and two grants to two neighbours may well end up as one stack.
+ * A sprite does not remember where it came from — `addSprite` scatters it a step
+ * or two away and **merges it into any nearby stack of the same item**. So "how
+ * many Charcoal are lying on spot 16" is not a question the board can answer,
+ * and two grants to two neighbours may well end up as one stack.
  *
- * The tile a grant was *addressed to* is the actual contract here, and it is the
- * argument `TriggerSystem` passes. Spying on it asserts the thing under test
+ * The Token a grant was *addressed to* is the actual contract here, and it is
+ * the argument `TriggerSystem` passes. Spying on it asserts the thing under test
  * instead of a rendering side effect downstream of it.
  */
 
-// 15 and 16 are adjacent; 33 is not adjacent to either.
+// 15 and 16 are neighbours; 33 is near neither.
 const SOURCE = 15, NEIGHBOUR = 16, FAR = 33;
 
 /**
- * Which tiles a given item was addressed to, in call order.
+ * Which spots a given item was addressed to, in call order.
  *
  * Since Free Playmat slice 1.6b a sprite's source is a Token instance id (or a
  * mat point for a Token that has left); it is read back as the test layout's
- * tile here.
+ * spot here.
  */
 function addressedTiles(spy, itemId) {
     return spy.mock.calls
         .filter(([kind, refId]) => kind === 'item' && refId === itemId)
         .map(([, , , source]) => (typeof source === 'string'
-            ? anchorOf(source)
-            : (source?.centre ? BoardState.tileAtPoint(source.centre) : source)));
+            ? spotOf(source)
+            : (source?.centre ? spotOfPoint(source.centre) : source)));
 }
 
 function makeHero(id) {
@@ -87,10 +101,10 @@ function makeHero(id) {
 
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -145,7 +159,7 @@ beforeEach(() => {
     TriggerSystem.resetCascadeGuard();
     TriggerSystem.init();
     // ⚠️ The "every match" case counts diagonal neighbours, so Near is pinned at
-    // the 8-tile ring (272 u); the shipped default is 164 u since FP-75.
+    // the old 8-neighbour ring (272 u); the shipped default is 164 u since FP-75.
     resetMatTuning();
     setMatTuning('nearRadius', 272);
     GameState.state.heroes = [makeHero('hero_1')];

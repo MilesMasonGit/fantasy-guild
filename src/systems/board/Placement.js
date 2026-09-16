@@ -2,12 +2,8 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { positionOf } from './nearby.js';
 import * as Flags from './Flags.js';
-import {
-    TILE_PX, isPlaceable, isFootprintInBounds, footprintCentre
-} from '../../config/boardGeometry.js';
-import { clampToMat, MAT_W, MAT_H } from '../../config/matGeometry.js';
+import { clampToMat, MAT_W, MAT_H, TOKEN_PX } from '../../config/matGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
@@ -40,14 +36,11 @@ import { warnMissingContent } from '../../utils/missingContent.js';
  * which is also the only version where the player's existing arrangement is
  * never rearranged behind their back. `TILE_PUSHED` went with them.
  *
- * ## ⚠️ STOPGAP — the index-taking functions (deleted in slice 1.6d-2)
- * {@link placeToken}, {@link moveToken}, {@link returnTokenToTray},
- * {@link returnTokenToVault}, {@link placeHero} and {@link moveFlag} still take
- * an old tile index. They are **thin adapters**: each turns its index into a mat
- * point and calls the point function beside it, so there is exactly one copy of
- * every rule. They exist only so the readers and tests written against the tile
- * API keep working until 1.6d-2 moves them off it, and they are deleted with the
- * rest of the grid there.
+ * ## ⭐ Every route takes a mat point (slice 1.6d-2)
+ * The six index-taking adapters that stood at the bottom of this file —
+ * `placeToken`, `moveToken`, `returnTokenToTray`, `returnTokenToVault`,
+ * `placeHero` and `moveFlag` — were deleted with the grid. Nothing on the mat is
+ * addressed by anything but a point or an instance id.
  */
 
 /** Wipe in-flight cycle progress. The forfeit in D-54 / D-131, in one place. */
@@ -109,8 +102,8 @@ export function isPermanentToken(typeId, instance) {
 /** Where a Map's 128 u box sits when its centre lands on `point`, kept on the mat. */
 function mapBoxAt(point) {
     return {
-        x: Math.max(0, Math.min(MAT_W - TILE_PX, Math.round(point.x - TILE_PX / 2))),
-        y: Math.max(0, Math.min(MAT_H - TILE_PX, Math.round(point.y - TILE_PX / 2)))
+        x: Math.max(0, Math.min(MAT_W - TOKEN_PX, Math.round(point.x - TOKEN_PX / 2))),
+        y: Math.max(0, Math.min(MAT_H - TOKEN_PX, Math.round(point.y - TOKEN_PX / 2)))
     };
 }
 
@@ -417,12 +410,12 @@ export function plantFlagAt(heroId, point) {
     // `Flags.plant` announces `hero_deployed` itself, for every route (1.5).
     const planted = Flags.plant(heroId, at);
     if (!planted.success) return planted;
-    if (planted.unchanged) return { success: true, point: at, workedTile: BoardState.workTileOf(heroId) };
+    if (planted.unchanged) return { success: true, point: at, workedToken: BoardState.workTokenOf(heroId) };
 
     EventBus.publish('heroes_updated', { source: 'board_placement' });
     EventBus.publish('state_changed');
 
-    return { success: true, point: at, workedTile: BoardState.workTileOf(heroId) };
+    return { success: true, point: at, workedToken: BoardState.workTokenOf(heroId) };
 }
 
 /**
@@ -449,61 +442,4 @@ export function recallHeroById(heroId) {
     EventBus.publish('state_changed');
 
     return { success: true, heroId };
-}
-
-// ---------------------------------------------------------------------------
-// ⚠️ STOPGAP — the index-taking adapters. Deleted in slice 1.6d-2.
-// ---------------------------------------------------------------------------
-//
-// Each one turns an old tile index into a mat point and calls the point
-// function above it. No rule lives down here; these exist only so the readers
-// and tests still written in tile indices keep working until 1.6d-2 moves them.
-
-/** STOPGAP (deleted in 1.6d-2): place a Token by old tile index. */
-export function placeToken(index, instance) {
-    if (!instance?.typeId) return refuse('Not a valid Token');
-    const size = getTokenType(instance.typeId)?.size || 1;
-    if (!isPlaceable(index)) return refuse('Token does not fit on the board');
-    if (!isFootprintInBounds(index, size)) return refuse('Token does not fit on the board');
-    return placeTokenAt(instance, footprintCentre(index, size));
-}
-
-/** STOPGAP (deleted in 1.6d-2): move the Token covering one tile to another. */
-export function moveToken(from, to) {
-    if (from === to) return refuse('Already there');
-    const occ = BoardState.getOccupyingToken(from);
-    if (!occ) return refuse('No Token there');
-    const size = getTokenType(occ.instance.typeId)?.size || 1;
-    if (!isPlaceable(to) || !isFootprintInBounds(to, size)) {
-        return refuse('Token does not fit on the board');
-    }
-    return moveTokenTo(occ.instance.id, footprintCentre(to, size));
-}
-
-/** STOPGAP (deleted in 1.6d-2): return the Token covering a tile to the Tray. */
-export function returnTokenToTray(index, position = null) {
-    const occ = BoardState.getOccupyingToken(index);
-    if (!occ) return refuse('No Token there');
-    return returnTokenToTrayById(occ.instance.id, position);
-}
-
-/** STOPGAP (deleted in 1.6d-2): deposit the Token covering a tile into the Vault. */
-export function returnTokenToVault(index) {
-    const occ = BoardState.getOccupyingToken(index);
-    if (!occ) return refuse('No Token there');
-    return returnTokenToVaultById(occ.instance.id);
-}
-
-/** STOPGAP (deleted in 1.6d-2): plant a hero's flag on a tile. */
-export function placeHero(heroId, index) {
-    if (!heroId) return refuse('No hero');
-    if (!isPlaceable(index)) return refuse('Not a tile');
-    return plantFlagAt(heroId, positionOf(index));
-}
-
-/** STOPGAP (deleted in 1.6d-2): move a planted flag to a tile. */
-export function moveFlag(heroId, index) {
-    if (!heroId) return refuse('No hero');
-    if (!BoardState.flagOf(heroId)) return refuse('That hero has no flag planted');
-    return placeHero(heroId, index);
 }

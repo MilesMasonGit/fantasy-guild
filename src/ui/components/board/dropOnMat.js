@@ -1,8 +1,7 @@
 // Fantasy Guild — the one drop function for the playmat (Free Playmat slice 1.6d)
 
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
-import { TILE_PX } from '../../../config/boardGeometry.js';
-import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
+import { MAT_W, MAT_H, TOKEN_PX } from '../../../config/matGeometry.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -55,8 +54,8 @@ const isHeroDrop = (payload) => payload?.kind === DRAG_KIND.HERO || payload?.kin
 /** Where a Map's 128 u box sits when dropped at `point`: centred on it, kept on the mat. */
 function mapBoxAt(point) {
     return {
-        x: Math.max(0, Math.min(MAT_W - TILE_PX, Math.round(point.x - TILE_PX / 2))),
-        y: Math.max(0, Math.min(MAT_H - TILE_PX, Math.round(point.y - TILE_PX / 2)))
+        x: Math.max(0, Math.min(MAT_W - TOKEN_PX, Math.round(point.x - TOKEN_PX / 2))),
+        y: Math.max(0, Math.min(MAT_H - TOKEN_PX, Math.round(point.y - TOKEN_PX / 2)))
     };
 }
 

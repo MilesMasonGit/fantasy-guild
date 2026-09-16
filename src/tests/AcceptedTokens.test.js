@@ -24,14 +24,24 @@ function makeHero(id, level = 50) {
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * the node and the tool beside it are 160 u apart, inside the shipped 164 u
+ * Near, which is what makes the tool serve the node.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+
 function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 function run(ms, step = 500) {
@@ -42,7 +52,7 @@ function run(ms, step = 500) {
 
 describe('Accepted Tokens & Tool Tiers System', () => {
     const TILE_NODE = 12;
-    const TILE_TOOL = 13; // Adjacent tile
+    const TILE_TOOL = 13; // the spot beside it, 160 u away
 
     beforeEach(() => {
         GameState.initNew();
@@ -72,7 +82,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
 
         // Tool spent 1 charge (10 -> 9)
-        const tool = BoardState.getToken(TILE_TOOL);
+        const tool = tokenAt(TILE_TOOL);
         expect(tool.usesRemaining).toBe(9);
     });
 
@@ -84,17 +94,17 @@ describe('Accepted Tokens & Tool Tiers System', () => {
 
         // Under-tiered tool — nothing produced, tool charges untouched
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
-        expect(BoardState.getToken(TILE_TOOL).usesRemaining).toBe(10);
+        expect(tokenAt(TILE_TOOL).usesRemaining).toBe(10);
 
         // Replace with Tier 2 Pickaxe
-        BoardState.setToken(TILE_TOOL, null);
+        BoardState.removeToken(tokenAt(TILE_TOOL).id);
         place(TILE_TOOL, 'fixture_pickaxe_t2');
 
         run(15000);
 
         // Now it runs!
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
-        expect(BoardState.getToken(TILE_TOOL).usesRemaining).toBe(9);
+        expect(tokenAt(TILE_TOOL).usesRemaining).toBe(9);
     });
 
     it('a higher tier tool can satisfy lower tier requirements', () => {
@@ -105,6 +115,6 @@ describe('Accepted Tokens & Tool Tiers System', () => {
 
         // Tier 2 pickaxe works on Tier 1 copper vein
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
-        expect(BoardState.getToken(TILE_TOOL).usesRemaining).toBe(9);
+        expect(tokenAt(TILE_TOOL).usesRemaining).toBe(9);
     });
 });

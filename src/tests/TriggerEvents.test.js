@@ -17,7 +17,16 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
-import { tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * a lattice of mat points 160 u apart, so each domino below is a side neighbour
+ * of the next and the chain really is a chain.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
 /**
  * Two new trigger events, and the guard the second one needed.
@@ -135,9 +144,10 @@ function makeHero(id) {
 }
 
 function place(tile, typeId, heroId = null) {
-    Placement.placeToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    Placement.placeTokenAt(instance, C(tile));
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -296,7 +306,7 @@ describe('⚠️ The loop guard', () => {
 
         // Knock the first one over by hand.
         expect(() => EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, {
-            ...tileCentre(1), typeId: 'fixture_domino'
+            ...C(1), typeId: 'fixture_domino'
         })).not.toThrow();
 
         // The cap is what keeps the number finite — and it must be the cap
@@ -320,9 +330,9 @@ describe('⚠️ The loop guard', () => {
 
     it('leaves Tokens beyond the cap alone rather than half-firing them', () => {
         for (const tile of CHAIN) place(tile, 'fixture_domino');
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...tileCentre(1), typeId: 'fixture_domino' });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...C(1), typeId: 'fixture_domino' });
 
-        const survivors = CHAIN.filter(t => BoardState.getToken(t));
+        const survivors = CHAIN.filter(t => tokenAt(t));
         expect(survivors.length).toBeGreaterThan(0);
     });
 
@@ -337,10 +347,17 @@ describe('⚠️ The loop guard', () => {
         // that is not unwound leaves every trigger on the board silent
         // afterwards, and it would read as "triggers stopped working".
         for (const tile of CHAIN) place(tile, 'fixture_domino');
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...tileCentre(1), typeId: 'fixture_domino' });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { ...C(1), typeId: 'fixture_domino' });
 
+        // ⚠️ This used to place at index 45, which was off the old 6×6 board
+        // entirely — the drop was refused, nothing was ever placed, and the
+        // assertion below passed on bones left over from the cascade above. It
+        // now stands in the far corner, well clear of the chain, with a
+        // neighbour for its outward grant to reach (P1) — the same shape its
+        // sibling test uses.
         SpriteLayer.init();
-        place(45, 'fixture_self_reactor', 'hero_1');
+        place(5, 'fixture_self_reactor', 'hero_1');
+        place(11, 'fixture_wood_lot');
         run(13000);
 
         expect(bonesOnBoard()).toBeGreaterThan(0);

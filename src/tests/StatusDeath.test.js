@@ -13,7 +13,23 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getStatusStacks } from '../config/registries/statusRegistry.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the Token to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Which spot the Token a hero works stands on, or null. */
+function workTileOf(heroId) {
+    const instance = BoardState.getTokenById(BoardState.workTokenOf(heroId));
+    if (!instance) return null;
+    return Math.round((instance.y - 200) / 160) * 6 + Math.round((instance.x - 400) / 160);
+}
 
 /**
  * **Dying to poison (CR2-070).**
@@ -82,8 +98,8 @@ beforeEach(() => {
     const instance = BoardState.createTokenInstance(
         'fixture_producer', tokenStartingUses('fixture_producer')
     );
-    Placement.placeToken(10, instance);
-    Placement.placeHero('hero_1', 10);
+    Placement.placeTokenAt(instance, C(10));
+    Placement.plantFlagAt('hero_1', C(10));
 });
 
 describe('A hero poisoned to 0 HP dies properly (CR2-070)', () => {
@@ -95,14 +111,14 @@ describe('A hero poisoned to 0 HP dies properly (CR2-070)', () => {
         expect(hero.status).toBe('wounded');
     });
 
-    it('is carried off the board, leaving the tile free for someone else', () => {
+    it('is carried off the board, leaving the Token free for someone else', () => {
         StatusEffectSystem.applyToHero('hero_1', 'burning', 3);
         statusTick();
 
         // Their flag comes down with them (Free Playmat 1.4b).
         expect(BoardState.flagOf('hero_1')).toBeNull();
         expect(BoardState.workerOf(idAt(10))).toBeNull();
-        expect(BoardState.getToken(10)?.typeId).toBe('fixture_producer');
+        expect(tokenAt(10)?.typeId).toBe('fixture_producer');
     });
 
     it('costs equipment, through the SAME penalty the combat path uses', () => {
@@ -138,13 +154,13 @@ describe('A hero poisoned to 0 HP dies properly (CR2-070)', () => {
 
         expect(hero.hp.current).toBe(88);
         expect(hero.status).not.toBe('wounded');
-        expect(BoardState.workTileOf('hero_1')).toBe(10);
+        expect(workTileOf('hero_1')).toBe(10);
         expect(applyDefeatPenalties).not.toHaveBeenCalled();
     });
 
-    it('works for a hero downed in the Dock, with no tile to leave', () => {
-        // A DoT outlives the tile it was applied on: recall the hero and the
-        // poison keeps ticking. `resolveDefeat` has to tolerate a null tile.
+    it('works for a hero downed in the Dock, with nothing to leave', () => {
+        // A DoT outlives the Token it was applied on: recall the hero and the
+        // poison keeps ticking. `resolveDefeat` has to tolerate having no Token.
         Placement.recallHeroById('hero_1');
 
         StatusEffectSystem.applyToHero('hero_1', 'burning', 3);

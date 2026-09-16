@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { MAT_W, MAT_H, artRadius } from '../../../config/matGeometry.js';
-import { TILE_PX } from '../../../config/boardGeometry.js';
+import { MAT_W, MAT_H, artRadius, TOKEN_PX } from '../../../config/matGeometry.js';
 import { MAT_Z, tokenZ } from './matLayers.js';
 import { PAIR_OFFSET_PX, HERO_HIT_PX, ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -481,8 +480,8 @@ const BoardMapToken = ({ map, onBurst }) => {
             style={{
                 left: map.x,
                 top: map.y,
-                width: TILE_PX,
-                height: TILE_PX,
+                width: TOKEN_PX,
+                height: TOKEN_PX,
                 zIndex: MAT_Z.MAP,
                 opacity: isThisDragging ? 0 : 1,
                 visibility: isThisDragging ? 'hidden' : 'visible'

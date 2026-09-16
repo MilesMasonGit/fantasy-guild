@@ -14,7 +14,25 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { getPromotionCost, getPromotionGateSkills, getJobSkills } from '../config/registries/jobRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { chargeDeltaOf } from '../config/registries/chargeMomentRegistry.js';
-import { idAt, tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the Academy to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Which spot the Token a hero works stands on, or null. */
+function workTileOf(heroId) {
+    const instance = BoardState.getTokenById(BoardState.workTokenOf(heroId));
+    if (!instance) return null;
+    const col = Math.round((instance.x - 400) / 160);
+    const row = Math.round((instance.y - 200) / 160);
+    return row * 6 + col;
+}
 
 /**
  * ⭐ **Promotion on the board — read from the Promotes rule** (Promotes rule P3).
@@ -60,9 +78,11 @@ function makeUnqualified(id = 'hero_low') {
 /** Place a fixture Token and plant a hero's flag on it (Free Playmat 1.4b). */
 function setup(hero, { uses = 1, typeId = 'fixture_promotion' } = {}) {
     GameState.state.heroes = [hero];
-    BoardState.setToken(TILE, { typeId, usesRemaining: uses, cycleElapsedMs: 0 });
-    Placement.placeHero(hero.id, TILE);
-    return BoardState.getToken(TILE);
+    const instance = BoardState.addToken(
+        { typeId, usesRemaining: uses, cycleElapsedMs: 0 }, C(TILE).x, C(TILE).y
+    );
+    Placement.plantFlagAt(hero.id, C(TILE));
+    return instance;
 }
 
 /** Run the tile until it offers, or give up. Returns the offers seen. */
@@ -70,7 +90,7 @@ function trainToOffer(heroId, ticks = 40) {
     const offers = [];
     const unsub = EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, d => offers.push(d));
     for (let i = 0; i < ticks; i++) {
-        const instance = BoardState.getToken(TILE);
+        const instance = tokenAt(TILE);
         if (!instance) break;
         BoardPromotion.tickToken(instance, 1000, heroId);
         if (offers.length) break;
@@ -149,7 +169,7 @@ describe('Training happens first, and the offer comes after (PR-5)', () => {
 
         expect(hero.jobId).toBe('recruit');
         expect(Object.keys(hero.skills).sort()).toEqual(skillsBefore);
-        expect(BoardState.getToken(TILE).usesRemaining, 'the Token is unspent').toBe(1);
+        expect(tokenAt(TILE).usesRemaining, 'the Token is unspent').toBe(1);
     });
 
     it('resets a half-finished cycle when the hero walks away', () => {
@@ -178,7 +198,7 @@ describe('Training happens first, and the offer comes after (PR-5)', () => {
 });
 
 describe('It refuses BEFORE the work, never after (PR-8)', () => {
-    it('does not train a hero who fails the skill gate, and says so on the tile', () => {
+    it('does not train a hero who fails the skill gate, and says so on the Token', () => {
         const hero = makeUnqualified();
         const instance = setup(hero);
 
@@ -200,7 +220,7 @@ describe('It refuses BEFORE the work, never after (PR-8)', () => {
         setup(hero);
         PromotionSystem.promote(hero.id, 'fighter');
 
-        const instance = BoardState.getToken(TILE);
+        const instance = tokenAt(TILE);
         const result = BoardPromotion.tickToken(instance, CYCLE_MS, hero.id);
 
         expect(result.alert, 'having arrived is not a problem').toBeNull();
@@ -236,7 +256,7 @@ describe('⭐ the price is the rule’s own charge cost (PR-6)', () => {
         const result = BoardPromotion.accept(idAt(TILE));
 
         expect(result).toMatchObject({ success: true, spent: 2 });
-        expect(BoardState.getToken(TILE).usesRemaining).toBe(1);
+        expect(tokenAt(TILE).usesRemaining).toBe(1);
     });
 
     it('spends nothing when the author wrote a price of 0 — an unlimited academy', () => {
@@ -247,7 +267,7 @@ describe('⭐ the price is the rule’s own charge cost (PR-6)', () => {
         const result = BoardPromotion.accept(idAt(TILE));
 
         expect(result).toMatchObject({ success: true, spent: 0 });
-        expect(BoardState.getToken(TILE).usesRemaining).toBe(1);
+        expect(tokenAt(TILE).usesRemaining).toBe(1);
     });
 
     it('treats a positive number as no price, never as a refund', () => {
@@ -282,7 +302,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
         BoardPromotion.accept(idAt(TILE));
 
-        expect(BoardState.getToken(TILE).usesRemaining).toBe(1);
+        expect(tokenAt(TILE).usesRemaining).toBe(1);
     });
 
     it('takes no gold and no materials', () => {
@@ -307,7 +327,7 @@ describe('Accepting is the only thing that costs anything', () => {
         BoardPromotion.accept(academyId);
         if (typeof unsub === 'function') unsub();
 
-        expect(BoardState.getToken(TILE)).toBeNull();
+        expect(tokenAt(TILE)).toBeNull();
         expect(depleted).toHaveLength(1);
         expect(depleted[0]).toMatchObject({ instanceId: academyId, typeId: 'fixture_promotion', heroId: hero.id });
     });
@@ -321,7 +341,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
         // Their flag stays planted on the spot (Free Playmat 1.4b).
         expect(BoardState.flagOf(hero.id)).not.toBeNull();
-        expect(BoardState.displayPointOf(hero.id)).toEqual(tileCentre(TILE));
+        expect(BoardState.displayPointOf(hero.id)).toEqual(C(TILE));
     });
 
     /** ⚠️ A stale offer must not become a free promotion. */
@@ -336,7 +356,7 @@ describe('Accepting is the only thing that costs anything', () => {
         const result = BoardPromotion.accept(idAt(TILE));
 
         expect(result.success).toBe(false);
-        expect(BoardState.getToken(TILE).usesRemaining, 'and the Token is not spent').toBe(2);
+        expect(tokenAt(TILE).usesRemaining, 'and the Token is not spent').toBe(2);
     });
 
     it('does nothing when there is no offer standing', () => {
@@ -345,7 +365,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
         expect(BoardPromotion.accept(idAt(TILE))).toMatchObject({ success: false, reason: 'NO_OFFER' });
         expect(hero.jobId).toBe('recruit');
-        expect(BoardState.getToken(TILE).usesRemaining).toBe(2);
+        expect(tokenAt(TILE).usesRemaining).toBe(2);
     });
 });
 
@@ -358,7 +378,7 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
         BoardPromotion.decline(idAt(TILE));
 
         expect(hero.jobId).toBe('recruit');
-        expect(BoardState.getToken(TILE).usesRemaining).toBe(1);
+        expect(tokenAt(TILE).usesRemaining).toBe(1);
     });
 
     it('leaves the hero standing on the Token', () => {
@@ -368,11 +388,11 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
 
         BoardPromotion.decline(idAt(TILE));
 
-        expect(BoardState.workTileOf(hero.id)).toBe(TILE);
+        expect(workTileOf(hero.id)).toBe(TILE);
     });
 
     /** ⚠️ The cycle does not restart: re-asking a player who said no is nagging. */
-    it('holds the tile paused instead of training again', () => {
+    it('holds the Token paused instead of training again', () => {
         const hero = makeQualified();
         setup(hero);
         trainToOffer(hero.id);
@@ -381,7 +401,7 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
         const offers = trainToOffer(hero.id, 60);
 
         expect(offers).toHaveLength(0);
-        expect(BoardPromotion.isPaused(BoardState.getToken(TILE))).toBe(true);
+        expect(BoardPromotion.isPaused(tokenAt(TILE))).toBe(true);
     });
 
     it('raises no alert while paused — the player chose this', () => {
@@ -390,7 +410,7 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
         trainToOffer(hero.id);
         BoardPromotion.decline(idAt(TILE));
 
-        const result = BoardPromotion.tickToken(BoardState.getToken(TILE), 1000, hero.id);
+        const result = BoardPromotion.tickToken(tokenAt(TILE), 1000, hero.id);
 
         expect(result.alert).toBeNull();
     });
@@ -405,8 +425,8 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
         BoardPromotion.decline(idAt(TILE));
 
         Placement.recallHeroById(hero.id);
-        Placement.placeHero(hero.id, TILE);
-        expect(BoardPromotion.isPaused(BoardState.getToken(TILE))).toBe(false);
+        Placement.plantFlagAt(hero.id, C(TILE));
+        expect(BoardPromotion.isPaused(tokenAt(TILE))).toBe(false);
 
         expect(trainToOffer(hero.id)).toHaveLength(1);
     });
@@ -429,13 +449,13 @@ describe('The offer survives a reload', () => {
         setup(hero);
         trainToOffer(hero.id);
 
-        const instance = BoardState.getToken(TILE);
+        const instance = tokenAt(TILE);
         expect(instance.promotionPaused).toBe(true);
         expect(instance.promotionHeroId).toBe(hero.id);
 
         // A save is the instance as JSON; the offer must read back from that alone.
         const reloaded = JSON.parse(JSON.stringify(instance));
-        BoardState.setToken(TILE, reloaded);
+        BoardState.addToken(reloaded, C(TILE).x, C(TILE).y);
         expect(BoardPromotion.getOffer(idAt(TILE))).toMatchObject({ instanceId: idAt(TILE), heroId: hero.id, jobId: 'fighter' });
     });
 
@@ -451,9 +471,9 @@ describe('The offer survives a reload', () => {
         BoardPromotion.decline(idAt(TILE));
 
         expect(BoardPromotion.getOffer(idAt(TILE))).toBeNull();
-        BoardState.setToken(TILE, JSON.parse(JSON.stringify(BoardState.getToken(TILE))));
+        BoardState.addToken(JSON.parse(JSON.stringify(tokenAt(TILE))), C(TILE).x, C(TILE).y);
         expect(BoardPromotion.getOffer(idAt(TILE))).toBeNull();
-        expect(BoardPromotion.isPaused(BoardState.getToken(TILE)), 'still holding the tile').toBe(true);
+        expect(BoardPromotion.isPaused(tokenAt(TILE)), 'still holding the Token').toBe(true);
     });
 
     it('a declined offer cannot be accepted later', () => {
@@ -474,8 +494,8 @@ describe('The offer survives a reload', () => {
         BoardPromotion.decline(idAt(TILE));
 
         Placement.recallHeroById(hero.id);
-        Placement.placeHero(hero.id, TILE);
-        expect(BoardPromotion.isDeclined(BoardState.getToken(TILE))).toBe(false);
+        Placement.plantFlagAt(hero.id, C(TILE));
+        expect(BoardPromotion.isDeclined(tokenAt(TILE))).toBe(false);
         expect(trainToOffer(hero.id)).toHaveLength(1);
         expect(BoardPromotion.getOffer(idAt(TILE))).not.toBeNull();
     });

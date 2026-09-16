@@ -1,5 +1,4 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { BOARD_PX } from '../../config/boardGeometry.js';
 
 /**
  * A degenerate-case guard, NOT a legibility floor.
@@ -36,11 +35,11 @@ export const MIN_BOARD_SCALE = 0.1;
  * than a minimum window size or smaller tiles, the whole board is drawn at its
  * natural size and then transformed to fit.
  *
- * ## Why a transform rather than recomputing the tile size
- * `TILE_PX` is `ART_PX × 2` because Token art is 64px shown at exactly 2×
+ * ## Why a transform rather than recomputing the Token size
+ * `TOKEN_PX` is `ART_PX × 2` because Token art is 64px shown at exactly 2×
  * (D-216). Recomputing it from the available space breaks that integer ratio
  * and makes every sprite blurry. A CSS transform leaves every layout decision,
- * every constant and every stored coordinate in the 944px space untouched.
+ * every constant and every stored coordinate in the natural space untouched.
  *
  * ## Drop targeting comes along for free — mostly
  * `getBoundingClientRect()` reports the *transformed* box, and dnd-kit measures
@@ -52,8 +51,9 @@ export const MIN_BOARD_SCALE = 0.1;
  *
  * ## Two boards, two natural sizes
  * The Guild Hall upgrade board is its own 7×7 surface and is a different number
- * of pixels wide from the playmat, so callers pass their own `naturalPx`. It
- * defaults to the playmat's, which is what every caller but that one wants.
+ * of pixels wide from the playmat, so every caller passes its own `naturalPx` —
+ * the mat passes `MAT_W, MAT_H`, the upgrade board `UPGRADE_BOARD_PX`. There is
+ * no default: the old one was the deleted grid's `BOARD_PX` (slice 1.6d-2).
  *
  * @param {number} [naturalPx] The board's untransformed size in pixels.
  * @returns {{ ref: Function, scale: number, size: number }}
@@ -77,7 +77,7 @@ export function fitScale(w, h, natW, natH = natW) {
     return Math.round(next * 100) / 100;
 }
 
-export function useBoardScale(naturalPx = BOARD_PX, naturalH = naturalPx) {
+export function useBoardScale(naturalPx, naturalH = naturalPx) {
     const [scale, setScale] = useState(1);
     const nodeRef = useRef(null);
     const observerRef = useRef(null);

@@ -7,7 +7,6 @@ import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
-import { idAt } from './fixtures/mat.js';
 
 /**
  * Hierarchical tool tiers (concept §2.4, R-17).
@@ -30,7 +29,12 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     getQueue: vi.fn(() => [])
 }));
 
-const STATION = 15, NEIGHBOUR = 16;
+/**
+ * The station and the tool beside it, 160 u apart — inside the live Near radius
+ * (164 u), which is what makes the tool a neighbour of the station.
+ */
+const STATION = { x: 400, y: 300 };
+const NEIGHBOUR = { x: 560, y: 300 };
 
 registerTokenTypes({
     fixture_tiered_bench: {
@@ -74,18 +78,21 @@ registerRecipePools({
     ]
 });
 
-function place(tile, typeId) {
+function place(point, typeId) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, point);
+    return instance;
 }
+
+/** The station instance standing at `STATION`, by id. */
+const stationId = () => BoardState.tokensAtPoint(STATION.x, STATION.y)[0]?.id ?? null;
 
 /** What the station is still missing, by tag. */
 function missingTags(recipeId) {
     const recipe = { requiresContext: recipeId === 'tier_two_job'
         ? [{ tag: 'pickaxe', minTier: 2 }]
         : [{ tag: 'pickaxe', minTier: 1 }] };
-    return RecipeResolver.unmetContext(idAt(STATION), recipe).map(r => r.tag);
+    return RecipeResolver.unmetContext(stationId(), recipe).map(r => r.tag);
 }
 
 beforeEach(() => {
@@ -96,7 +103,7 @@ describe('Hierarchical tool tiers (concept §2.4)', () => {
     it('reads the neighbour’s tier, not merely the presence of its tag', () => {
         place(STATION, 'fixture_tiered_bench');
         place(NEIGHBOUR, 'fixture_pickaxe_t2');
-        expect(RecipeResolver.contextTiersAround(idAt(STATION)).pickaxe).toBe(2);
+        expect(RecipeResolver.contextTiersAround(stationId()).pickaxe).toBe(2);
     });
 
     it('lets a Tier 2 tool satisfy a Tier 1 requirement', () => {

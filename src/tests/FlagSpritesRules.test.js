@@ -16,7 +16,6 @@ import { FLAG_COLOURS, flagColourOf } from '../systems/board/FlagColours.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { tileCentre } from '../config/boardGeometry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
@@ -80,7 +79,22 @@ vi.mock('../ui/utils/alphaHitTest.js', async (importOriginal) => {
  * point the player let go — so the drops here are made the same way.
  */
 
-const C = (tile) => tileCentre(tile);
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * a lattice of mat points 160 u apart, so spot 22 stays a side neighbour of 21
+ * at the shipped 164 u reach while spot 13 stays well outside it (358 u).
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** Which spot the Token a hero works stands on, or null. */
+function workTileOf(heroId) {
+    const instance = BoardState.getTokenById(BoardState.workTokenOf(heroId));
+    if (!instance) return null;
+    const col = Math.round((instance.x - 400) / 160);
+    const row = Math.round((instance.y - 200) / 160);
+    return row * 6 + col;
+}
+
 const h = React.createElement;
 const FOREST = 'fixture_producer';        // logging
 
@@ -91,8 +105,9 @@ function hero(id, skills) {
 }
 
 function put(tile, typeId) {
-    Placement.placeToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
-    return BoardState.getToken(tile);
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    Placement.placeTokenAt(instance, C(tile));
+    return instance;
 }
 
 const engine = { GameState, EventBus, HeroManager: HeroManager.HeroManager };
@@ -135,7 +150,7 @@ beforeEach(() => {
 describe('FP-76 — the player never moves a hero: dragging one drags their flag', () => {
     it('a hero on a Token starts a FLAG drag, not a HERO drag', () => {
         put(15, FOREST);
-        Placement.placeHero('h1', 15);
+        Placement.plantFlagAt('h1', C(15));
         mount(h(MatBoard));
 
         const heroDrag = dnd.drags.find(d => d.id === 'hero-h1');
@@ -150,11 +165,12 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
     });
 
     it('a board hero dropped elsewhere moves the flag — one hero_deployed — and the hero goes to their job', () => {
-        // 13 is out of tile 21's reach (164 u); 22 is its side neighbour.
+        // 13 is out of spot 21's reach (358 u at the shipped 164 u); 22 is its
+        // side neighbour, 160 u away.
         put(13, FOREST);
         put(22, FOREST);
-        Placement.placeHero('h1', 13);
-        expect(BoardState.workTileOf('h1')).toBe(13);
+        Placement.plantFlagAt('h1', C(13));
+        expect(workTileOf('h1')).toBe(13);
 
         mount(h(MatBoard));
         const heroDrag = dnd.drags.find(d => d.id === 'hero-h1');
@@ -167,7 +183,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         // The flag stands exactly where it was let go (FP-94).
         expect(BoardState.flagOf('h1')).toMatchObject(C(21));
         // Bare ground at 21: the hero appears at the nearest job in reach, the Forest on 22.
-        expect(BoardState.workTileOf('h1')).toBe(22);
+        expect(workTileOf('h1')).toBe(22);
     });
 
     it('a hero dragged from the Dock still plants their flag where dropped', () => {
@@ -175,12 +191,12 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         const payload = { kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } };
         expect(matAccepts(payload)).toBe(true);
         expect(counting('hero_deployed', () => dropOnMat(payload, C(15)))).toBe(1);
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
     });
 
     it('the payload a board hero starts recalls when dropped on the Dock or a hero tab', () => {
         put(15, FOREST);
-        Placement.placeHero('h1', 15);
+        Placement.plantFlagAt('h1', C(15));
         mount(h(MatBoard));
         const heroDrag = dnd.drags.find(d => d.id === 'hero-h1');
         const payload = { kind: heroDrag.kind, ...heroDrag.payload };
@@ -192,7 +208,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 
     it('left-click on a board hero still opens the sheet, right-click still recalls', () => {
         put(15, FOREST);
-        Placement.placeHero('h1', 15);
+        Placement.plantFlagAt('h1', C(15));
         const inspected = [];
         const unsub = EventBus.subscribe('inspect_hero', (p) => inspected.push(p.heroId));
         const { container } = mount(h(MatBoard));
@@ -444,7 +460,7 @@ describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
 
     it('highlights the row of the job the hero is working now', () => {
         put(15, FOREST);
-        Placement.placeHero('h1', 15);
+        Placement.plantFlagAt('h1', C(15));
         const { container } = panel('h1');
         expect(row(container, 'logging').getAttribute('data-rule-working')).toBe('true');
         expect(row(container, 'mining').getAttribute('data-rule-working')).toBeNull();
@@ -470,7 +486,7 @@ describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
 
     it('a recalled hero’s panel stays editable and reads "In the Guild"', async () => {
         put(15, FOREST);
-        Placement.placeHero('h1', 15);
+        Placement.plantFlagAt('h1', C(15));
         const { container } = panel('h1');
         await act(async () => { Placement.recallHeroById('h1'); });
         expect(container.querySelector('[data-flag-rules-status]').textContent).toBe('In the Guild');

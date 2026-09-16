@@ -8,7 +8,7 @@ import {
 import {
     UPGRADE_BOARD_SIZE as SIZE,
     UPGRADE_BOARD_GUILD_HALL_TILE as GH
-} from '../config/boardGeometry.js';
+} from '../config/upgradeBoardGeometry.js';
 
 // The six upgrade tiles, named by where they sit relative to the Guild Hall so
 // this file does not have to be rewritten every time the board is resized.

@@ -56,10 +56,11 @@ describe('Terrain is switched off (FP-10)', () => {
     it('placing a Token paints nothing, even one carrying a Map stamp', () => {
         // Since Free Playmat 1.6a there is no paint hook and no terrain storage
         // on the board at all (FP-10); placing still works.
-        Placement.placeToken(9, BoardState.createTokenInstance('fixture_off_mine', 100, 'hills'));
-        Placement.placeToken(7, BoardState.createTokenInstance('fixture_off_keep', null));
+        const mine = BoardState.createTokenInstance('fixture_off_mine', 100, 'hills');
+        Placement.placeTokenAt(mine, { x: 400, y: 300 });
+        Placement.placeTokenAt(BoardState.createTokenInstance('fixture_off_keep', null), { x: 1000, y: 700 });
 
-        expect(BoardState.getToken(9)?.typeId).toBe('fixture_off_mine');
+        expect(BoardState.getTokenById(mine.id)?.typeId).toBe('fixture_off_mine');
         for (const field of ['terrain', 'nextPaintOrder', 'terrainSeed']) {
             expect(field in GameState.state.board).toBe(false);
             expect(field in createEmptyBoard()).toBe(false);
