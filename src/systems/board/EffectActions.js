@@ -12,11 +12,10 @@ import * as BoardCombat from './BoardCombat.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { centreOf, distanceSq } from './nearby.js';
-import { artRadiusOf } from '../../config/matGeometry.js';
-import { matTuning } from '../../config/matTuning.js';
-import { TILE_STEP_PX, footprintCentre, isFootprintInBounds } from '../../config/boardGeometry.js';
+import { artRadiusOf, MAT_W, MAT_H } from '../../config/matGeometry.js';
+import * as MatPlacement from './MatPlacement.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { PLACEMENT, resolvePlacement, placementOf } from '../../config/registries/placementRegistry.js';
+import { PLACEMENT, RANDOM_FREE_DARTS, placementOf } from '../../config/registries/placementRegistry.js';
 
 /**
  * `Heals`, `Restores` and `Removes` — the rest of the action set (G-11).
@@ -155,52 +154,58 @@ export function restore(statement, roles) {
 // ---------------------------------------------------------------------------
 
 /**
- * ⚠️ STOPGAP (owned by slice 1.8): the smallest centre-to-centre gap a spawned
- * Token keeps from every other Token.
+ * The smallest centre-to-centre gap a spawned Token keeps from every other
+ * Token — **the same rule a hand-placed Token obeys** (FP-63).
  *
- * When the Mat Tuner has hitbox and overlap rows (slice 1.6d) it is
- * `(hitbox(a) + hitbox(b)) × (1 − overlap)`. Until then it is **today's tile
- * spacing** (160 u), which on today's tile-centred layout is exactly "a free
- * tile": every Token on a neighbouring tile is ≥ 160 u away, and a 2×2 is
- * 113 u from the tiles it covers.
+ * Kept as a named export because it is the sentence a spawn's spacing is
+ * described by, but it is not a second definition: `MatPlacement.minGap` is the
+ * one place the hitbox and overlap percentages are turned into a distance, and
+ * a spawn crowding differently from a drop would be exactly the kind of drift
+ * the free-placement rework exists to remove.
  */
 export function minCentreGap(typeA, typeB) {
-    const hitbox = matTuning('hitboxPct');
-    const overlap = matTuning('overlapPct');
-    if (Number.isFinite(hitbox) && Number.isFinite(overlap)) {
-        return (artRadiusOf(typeA) + artRadiusOf(typeB)) * (hitbox / 100) * (1 - overlap / 100);
-    }
-    return TILE_STEP_PX;
-}
-
-/** Whether a Token of `typeId` may stand at `point` without crowding any other Token. */
-function isLegalSpot(typeId, point) {
-    for (const other of BoardState.tokens()) {
-        const centre = centreOf(other);
-        if (!centre) continue;
-        const gap = minCentreGap(typeId, other.typeId);
-        if (distanceSq(point, centre) < gap * gap) return false;
-    }
-    return true;
+    return MatPlacement.minGap(typeA, typeB);
 }
 
 /**
- * The free spots a spawned Token of `typeId` may land on.
+ * Where a spawned Token of `typeId` lands, or null when there is nowhere
+ * (FP-46 — the spawn is simply skipped).
  *
- * ⚠️ STOPGAP (deleted in slice 1.6d): until the mat renderer and free placement
- * exist, a Token must stand on a **tile centre** to be drawn and picked up, so
- * the candidates are the legal free tile-centre points (a 2×2's footprint
- * centre). Slice 1.6d replaces this with a free spot search.
+ * * `here` — the bearer's own point, exactly.
+ * * `nearest_free` — the nearest legal point to the bearer (`findSpot`), within
+ *   the **same nudge reach a hand-placed Token gets**. One reach number for the
+ *   whole game rather than a second one invented for spawns: a spawn that has to
+ *   travel further than a player's own drop would is not "nearest" in any sense
+ *   the player could predict. (Spawn behaviour on a crowded mat is slice 1.8's.)
+ * * `random_free` — up to 40 random darts across the mat, the roomiest legal
+ *   one kept, so a spawn spreads out rather than crowding.
  */
-function freeSpots(typeId) {
-    const size = getTokenType(typeId)?.size || 1;
-    const out = [];
-    for (const tile of BoardState.emptyTiles()) {
-        if (!isFootprintInBounds(tile, size)) continue;
-        const point = footprintCentre(tile, size);
-        if (isLegalSpot(typeId, point)) out.push(point);
+function spawnPoint(typeId, placement, from, random) {
+    if (placement === PLACEMENT.NEAREST_FREE) {
+        const spot = MatPlacement.findSpot(typeId, from);
+        return spot ? { x: spot.x, y: spot.y } : null;
     }
-    return out;
+
+    if (placement === PLACEMENT.RANDOM_FREE) {
+        const r = artRadiusOf(typeId);
+        let best = null;
+        let bestScore = -Infinity;
+        for (let i = 0; i < RANDOM_FREE_DARTS; i++) {
+            const dart = {
+                x: r + random() * Math.max(0, MAT_W - 2 * r),
+                y: r + random() * Math.max(0, MAT_H - 2 * r)
+            };
+            if (!MatPlacement.isLegal(typeId, dart)) continue;
+            const score = openness(dart);
+            if (score > bestScore) {
+                best = dart;
+                bestScore = score;
+            }
+        }
+        return best;
+    }
+
+    return from ? { x: from.x, y: from.y } : null;
 }
 
 /** How open a spot is: the squared distance to the nearest Token (bigger is roomier). */
@@ -211,23 +216,6 @@ function openness(point) {
         if (centre) nearest = Math.min(nearest, distanceSq(point, centre));
     }
     return nearest;
-}
-
-/**
- * The point a Token of `typeId` takes when it replaces a bearer of `bearerTypeId`
- * standing at `point` — the bearer's own point.
- *
- * ⚠️ STOPGAP (deleted in slice 1.6d): when the two differ in size, the new Token
- * takes the point it would have on the bearer's tile (a 2×2 Sapling becoming a
- * 1×1 Stump lands on the Sapling's anchor tile), so it stays on a tile centre
- * the grid can draw — exactly where it landed before.
- */
-function hereSpot(typeId, bearerTypeId, point) {
-    const size = getTokenType(typeId)?.size || 1;
-    const bearerSize = getTokenType(bearerTypeId)?.size || 1;
-    if (size === bearerSize) return { x: point.x, y: point.y };
-    const tile = BoardState.tileAtPoint(point);
-    return tile == null ? { x: point.x, y: point.y } : footprintCentre(tile, size);
 }
 
 /**
@@ -262,13 +250,7 @@ export function spawn(statement, roles, random = Math.random) {
 
     const placement = placementOf(statement.payload);
     const replacesBearer = placement === PLACEMENT.HERE;
-    const where = replacesBearer
-        ? hereSpot(typeId, bearer?.typeId ?? typeId, from)
-        : resolvePlacement(placement, from, {
-            candidates: freeSpots(typeId),
-            distanceSq,
-            openness
-        }, random);
+    const where = spawnPoint(typeId, placement, from, random);
     if (!where) return null;
 
     if (replacesBearer) {
@@ -306,8 +288,10 @@ export function transform(statement, roles) {
     const old = BoardState.getTokenById(tokenFor(statement?.target?.role || ROLE.SELF, roles));
     if (!old) return false;
 
+    // A Sapling becoming an Oak stands exactly where the Sapling stood, whatever
+    // the two sizes are — there is no tile to re-anchor to (slice 1.6d).
     const from = centreOf(old);
-    const at = hereSpot(typeId, old.typeId, from);
+    const at = { x: from.x, y: from.y };
     BoardState.removeToken(old.id);
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     BoardState.addToken(instance, at.x, at.y);

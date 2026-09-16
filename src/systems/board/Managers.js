@@ -9,6 +9,7 @@ import { KEYWORD, statementsWith } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import * as TileModifiers from './TileModifiers.js';
+import * as MatPlacement from './MatPlacement.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -174,7 +175,24 @@ export function restockSpot(spotId) {
     // Token arriving on it at the next flag pass — no re-placement, no
     // reassignment, no event (D-151). Lands exactly on the spot that ran dry
     // (FP-19); arriving there also clears the vacancy.
-    const spot = { x: vacancy.x, y: vacancy.y };
+    //
+    // ⚠️ Unless something has since been put down on top of it. Free placement
+    // (slice 1.6d) lets a player stand a Token anywhere, including across a spot
+    // waiting for a restock — and a Manager that insisted on the exact point
+    // would then stack two Tokens on each other for as long as the neighbour
+    // stayed, which is the one outcome free placement must never produce. So the
+    // spot is tried first and, only if it is no longer clear, the nearest legal
+    // point to it is used instead.
+    let spot = { x: vacancy.x, y: vacancy.y };
+    if (!MatPlacement.isClear(instance.typeId, spot)) {
+        const found = MatPlacement.findSpot(instance.typeId, spot);
+        if (!found) {
+            // Nowhere to put it: the Bank keeps it and the spot stays dry.
+            TokenBank.deposit(instance);
+            return 'unmanaged';
+        }
+        spot = { x: found.x, y: found.y };
+    }
     BoardState.addToken(instance, spot.x, spot.y);
     TileModifiers.rebuildAround([spot]);
 

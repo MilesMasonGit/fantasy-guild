@@ -82,11 +82,7 @@ export function depositFrom(source) {
     if (!QuestManager.isTokenVaultSendUnlocked()) return refuse(VAULT_LOCKED);
 
     if (source.traySlot != null) return depositFromTray(source.traySlot);
-    if (source.instanceId != null) {
-        // STOPGAP (deleted in 1.6d): a Token on the mat goes by its old spot.
-        const found = BoardState.findTokenById(source.instanceId);
-        return found?.anchor != null ? depositFromTile(found.anchor) : NOTHING;
-    }
+    if (source.instanceId != null) return depositFromMat(source.instanceId);
     if (source.spriteId != null) return depositFromSprite(source.spriteId);
 
     // A Map on the playmat. Refused for the same reason as everywhere else, and
@@ -109,13 +105,14 @@ function depositFromTray(slot) {
 }
 
 /**
- * The tile route already had an engine home — `Placement.returnTokenToVault`,
- * which knows about the Guild Hall, multi-tile footprints, the hero standing on
- * top and the forfeited cycle. It is not re-implemented here; it is called.
- * It publishes its own `state_changed`, so this adds only the tile repaint.
+ * The mat route already had an engine home — `Placement.returnTokenToVaultById`,
+ * which knows about the Guild Hall, the hero working the Token and the forfeited
+ * cycle. It is not re-implemented here; it is called. It publishes its own
+ * `state_changed`, so this adds only the repaint.
  */
-function depositFromTile(tile) {
-    const res = Placement.returnTokenToVault(tile);
+function depositFromMat(instanceId) {
+    if (!BoardState.getTokenById(instanceId)) return NOTHING;
+    const res = Placement.returnTokenToVaultById(instanceId);
     if (res?.success) EventBus.publish(BOARD_EVENTS.TILE_CHANGED, {});
     return res;
 }
@@ -147,10 +144,19 @@ function depositFromSprite(spriteId) {
 /**
  * Take one copy of `typeId` out of the Vault and put it somewhere.
  *
- * `target` is `{ tile }` to place it straight onto the playmat, or `{ at }` (or
- * nothing at all) to land it on the Tray — `at` being the `{x, y}` fraction the
- * player dropped it at (D-227), omitted for the click-driven routes that just
- * scatter it.
+ * `target` is `{ at }` — a **mat point** — to put it straight on the playmat, or
+ * `{ trayAt }` (or nothing at all) to land it on the Tray, `trayAt` being the
+ * `{x, y}` *fraction* the player dropped it at (D-227), omitted for the
+ * click-driven routes that just scatter it.
+ *
+ * ## ⚠️ Why `trayAt` rather than reusing `at` (slice 1.6d)
+ * The two are different coordinate systems that look identical: a mat point is
+ * `{x: 960, y: 643}` in mat units, a Tray position is `{x: 0.4, y: 0.7}` as
+ * fractions of a surface whose size changes with the window. One key meaning
+ * both would be read as a mat point by one branch and a fraction by the other,
+ * and a Vault withdrawal onto the Tray would have landed in the mat's top-left
+ * corner. The board route took the name `at` because it is the one every drop
+ * handler already speaks; the Tray's kept its own.
  *
  * `TokenBank.withdraw` picks the **fullest copy** (D-77). If the destination
  * refuses the Token it goes straight back into the Vault (D-138).
@@ -165,8 +171,8 @@ export function withdrawTo(typeId, target = {}) {
     // the Token until a particle that is never coming lands on it.
     delete instance.isLanding;
 
-    if (target.tile != null) {
-        const res = Placement.placeToken(target.tile, instance);
+    if (target.at != null) {
+        const res = Placement.placeTokenAt(instance, target.at);
         if (!res?.success) {
             TokenBank.deposit(instance);
             return res;
@@ -175,7 +181,7 @@ export function withdrawTo(typeId, target = {}) {
         return { success: true, instance };
     }
 
-    if (!BoardState.addToTray(instance, undefined, target.at)) {
+    if (!BoardState.addToTray(instance, undefined, target.trayAt)) {
         TokenBank.deposit(instance);
         return refuse(TRAY_FULL);
     }

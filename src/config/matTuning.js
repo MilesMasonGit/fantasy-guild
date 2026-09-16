@@ -26,6 +26,14 @@
 /** Tile step in mat units, repeated here so this config file imports nothing. */
 const STEP_U = 160;
 
+/**
+ * A small Token's art radius, repeated here for the same reason — this file
+ * imports nothing, so the hints below can quote real numbers without dragging
+ * `matGeometry` (and the Token registry behind it) into the config layer.
+ * Kept in step with `ART_RADIUS_BY_SIZE[1]` in `matGeometry.js`.
+ */
+const SMALL_ART_R = 64;
+
 export const MAT_TUNABLES = Object.freeze([
     {
         key: 'nearRadius',
@@ -41,6 +49,30 @@ export const MAT_TUNABLES = Object.freeze([
         label: 'Flag radius',
         hint: 'How far from its flag a hero looks for work, centre to centre (FP-65, FP-75). 164 reaches the Token under the flag and its four side neighbours, not the diagonals (226 u). 400 was the old default.',
         min: 100, max: 1000, step: 1, def: 164,
+        format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
+    },
+    {
+        key: 'hitboxPct',
+        group: 'Crowding',
+        label: 'Token hitbox',
+        hint: 'How much of a Token’s art actually collides, as a percentage of its radius (FP-63, FP-64). Never drawn — a Token at rest is just its art. 80% makes a small Token’s hitbox 51 u of its 64 u art.',
+        min: 40, max: 100, step: 1, def: 80,
+        format: (v) => `${Math.round(v)}% · small ${Math.round(SMALL_ART_R * v / 100)} u`
+    },
+    {
+        key: 'overlapPct',
+        group: 'Crowding',
+        label: 'Overlap allowed',
+        hint: 'How far two hitboxes may overlap before a drop is refused (FP-63). At 80% hitbox, 40% overlap lets two small Tokens sit 61 u apart centre to centre — well under a 160 u tile step.',
+        min: 0, max: 80, step: 1, def: 40,
+        format: (v) => `${Math.round(v)}% · two small ${Math.round(2 * Math.round(SMALL_ART_R * matTuning('hitboxPct') / 100) * (1 - v / 100))} u apart`
+    },
+    {
+        key: 'nudgeReach',
+        group: 'Crowding',
+        label: 'Nudge reach',
+        hint: 'How far a drop with no room may be shifted to find a legal spot before it flies back instead (FP-46, FP-88). 0 makes every crowded drop fly back; 160 is one old tile step.',
+        min: 0, max: 400, step: 1, def: 160,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     }
 ]);

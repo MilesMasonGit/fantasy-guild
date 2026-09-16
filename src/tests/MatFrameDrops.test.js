@@ -12,11 +12,9 @@ import { MAT_W, MAT_H, MAT_STEPS } from '../config/matGeometry.js';
 import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { pointerToMat } from '../ui/components/board/matPoint.js';
-import { dropOnMat, PLAY_AREA_NOTE } from '../ui/components/board/dropOnMat.js';
-import { oldSpotAt, oldSpotPoint, isFarOutsideArea } from '../ui/components/board/oldSpotStopgap.js';
+import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { boardPointToScreen } from '../ui/components/base/ParticleOverlay.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { anchorOf } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -93,33 +91,6 @@ describe('ParticleOverlay scales board coordinates', () => {
     });
 });
 
-describe('⚠️ STOPGAP oldSpotStopgap — nearest old spot (deleted in 1.6d)', () => {
-    it('a point near a spot’s centre is that spot; far away clamps to the edge', () => {
-        expect(oldSpotAt({ x: tileCentre(14).x + 70, y: tileCentre(14).y - 70 })).toBe(14);
-        expect(oldSpotAt({ x: -500, y: -500 })).toBe(0);
-        expect(oldSpotAt({ x: 5000, y: 5000 })).toBe(35);
-        expect(oldSpotPoint(14)).toEqual(tileCentre(14));
-    });
-
-    // Moved from CascadePlacement.test.js (closest2x2Anchor), measured from the old area's corner.
-    it('a 2×2 snaps to the anchor whose footprint centre is nearest, clamped so it fits', () => {
-        const at = (x, y) => ({ x: OLD_AREA_ORIGIN.x + x, y: OLD_AREA_ORIGIN.y + y });
-        expect(oldSpotAt(at(144, 144), 2)).toBe(0);
-        expect(oldSpotAt(at(304, 144), 2)).toBe(1);
-        expect(oldSpotAt(at(304, 304), 2)).toBe(7);
-        expect(oldSpotAt(at(900, 900), 2)).toBe(28);
-        expect(oldSpotAt(at(-50, -50), 2)).toBe(0);
-    });
-
-    it('far outside means more than half a step (80 u) beyond the landing area (FP-93)', () => {
-        const edge = OLD_AREA_ORIGIN.x;
-        expect(isFarOutsideArea(tileCentre(14))).toBe(false);
-        expect(isFarOutsideArea({ x: edge - 79, y: 400 })).toBe(false);
-        expect(isFarOutsideArea({ x: edge - 81, y: 400 })).toBe(true);
-        expect(isFarOutsideArea({ x: 100, y: 100 })).toBe(true);
-    });
-});
-
 describe('dropOnMat — one drop function for the playmat', () => {
     beforeAll(() => Flags.init());
     afterAll(() => { Flags.teardown(); resetMatTuning(); });
@@ -150,57 +121,78 @@ describe('dropOnMat — one drop function for the playmat', () => {
 
     const instance = (typeId, uses = null) => BoardState.createTokenInstance(typeId, uses);
     const near = (tile, dx = 50, dy = -60) => ({ x: tileCentre(tile).x + dx, y: tileCentre(tile).y + dy });
+    /** The one Token on the mat — these tests start from an empty one. */
+    const only = () => BoardState.tokens()[0];
 
-    it('a Token on the mat dropped near spot 14 moves there, by its instance id', () => {
+    it('⭐ a Token on the mat moves to the EXACT point it was dropped at, by its instance id', () => {
         BoardState.setToken(0, instance('fixture_producer', 100));
         const id = BoardState.getToken(0).id;
-        expect(dropOnMat({ typeId: 'fixture_producer', from: { instanceId: id } }, near(14)).success).toBe(true);
-        expect(anchorOf(id)).toBe(14);
+        const point = near(14);
+
+        expect(dropOnMat({ typeId: 'fixture_producer', from: { instanceId: id } }, point).success).toBe(true);
+
+        // Nothing snaps: it stands where the pointer was, not on a spot.
+        expect({ x: BoardState.getTokenById(id).x, y: BoardState.getTokenById(id).y }).toEqual(point);
         expect(BoardState.getToken(0)).toBeNull();
     });
 
-    it('a drop on a matching copy restocks it — the nearest spot, occupied or not (FP-50)', () => {
-        BoardState.setToken(14, instance('fixture_producer', 100));
+    it('a drop ON a matching copy restocks it (FP-50)', () => {
+        const copy = instance('fixture_producer', 100);
+        BoardState.setToken(14, copy);
         BoardState.addToTray(instance('fixture_producer', 400));
-        dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, near(14));
+
+        // ⚠️ Within the copy's art circle (64 u) — restocking is aiming AT it,
+        // and since 1.6d a drop 78 u away is simply a drop beside it.
+        dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, near(14, 20, -20));
 
         expect(BoardState.tokens()).toHaveLength(1);
-        expect(BoardState.getToken(14).usesRemaining).toBe(500);
+        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(500);
     });
 
-    it('a 2×2 snaps to the nearest anchor', () => {
+    it('a 2×2 lands at the point too, with no anchor to snap to', () => {
         const p = footprintCentre(7, 2);
-        dropOnMat({ typeId: 'fixture_big', usesRemaining: 50 }, { x: p.x + 40, y: p.y - 30 });
-        expect(BoardState.getToken(7)?.typeId).toBe('fixture_big');
+        const point = { x: p.x + 40, y: p.y - 30 };
+        dropOnMat({ typeId: 'fixture_big', usesRemaining: 50 }, point);
+
+        expect(only().typeId).toBe('fixture_big');
+        expect({ x: only().x, y: only().y }).toEqual(point);
     });
 
     it('⚠️ from the Tray with the Tray’s real payload — `traySlot` AND `instanceId` (found in game)', () => {
         const tray = instance('fixture_producer', 100);
         BoardState.addToTray(tray);
-        const result = dropOnMat({ typeId: 'fixture_producer', instanceId: tray.id, from: { traySlot: 0, instanceId: tray.id } }, near(9));
+        const point = near(9);
+        const result = dropOnMat({ typeId: 'fixture_producer', instanceId: tray.id, from: { traySlot: 0, instanceId: tray.id } }, point);
         expect(result.success).toBe(true);
-        expect(BoardState.getToken(9)?.id).toBe(tray.id);
+        expect(only().id).toBe(tray.id);
+        expect({ x: only().x, y: only().y }).toEqual(point);
         expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('from the Tray', () => {
         BoardState.addToTray(instance('fixture_producer', 100));
-        dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, near(9));
-        expect(BoardState.getToken(9)?.typeId).toBe('fixture_producer');
+        const point = near(9);
+        dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, point);
+        expect(only().typeId).toBe('fixture_producer');
+        expect({ x: only().x, y: only().y }).toEqual(point);
         expect(BoardState.getTray()).toHaveLength(0);
     });
 
-    it('from the Vault', () => {
+    it('from the Vault, straight onto the mat point', () => {
         TokenBank.deposit(instance('fixture_producer', 100));
-        dropOnMat({ typeId: 'fixture_producer', from: { vaultTypeId: 'fixture_producer' } }, near(8));
-        expect(BoardState.getToken(8)?.typeId).toBe('fixture_producer');
+        const point = near(8);
+        dropOnMat({ typeId: 'fixture_producer', from: { vaultTypeId: 'fixture_producer' } }, point);
+        expect(only().typeId).toBe('fixture_producer');
+        expect({ x: only().x, y: only().y }).toEqual(point);
         expect(GameState.state.board.tokenBank.fixture_producer || []).toHaveLength(0);
     });
 
     it('from a loot sprite on the floor', () => {
         const sprite = SpriteLayer.addSprite('token', 'fixture_producer', 1, null, 100);
-        dropOnMat({ typeId: 'fixture_producer', from: { spriteId: sprite.id } }, near(6));
-        expect(BoardState.getToken(6)?.typeId).toBe('fixture_producer');
+        const point = near(6);
+        dropOnMat({ typeId: 'fixture_producer', from: { spriteId: sprite.id } }, point);
+        expect(only().typeId).toBe('fixture_producer');
+        expect({ x: only().x, y: only().y }).toEqual(point);
         expect(SpriteLayer.getSprites()).toHaveLength(0);
     });
 
@@ -225,7 +217,33 @@ describe('dropOnMat — one drop function for the playmat', () => {
 
     it('a bare typeId is made on the spot', () => {
         dropOnMat({ typeId: 'fixture_producer', usesRemaining: 42 }, near(10));
-        expect(BoardState.getToken(10)?.usesRemaining).toBe(42);
+        expect(only().usesRemaining).toBe(42);
+    });
+
+    /**
+     * ⭐ FP-97: the Tray's mini mat is a scaled picture of the playmat, and it
+     * converts a pointer by **its own** on-screen size before calling this same
+     * function. A pointer a given fraction across the little board therefore
+     * means the very same mat point as one that far across the big one.
+     */
+    it('⭐ the mini mat drops at the right mat point, at its own scale', () => {
+        const target = { x: 1320, y: 844.5 };   // three quarters across the mat
+
+        // The mini mat is ~300 px wide; the playmat, here, its natural 1760.
+        const mini = { left: 12, top: 30, width: 300, height: 300 * (MAT_H / MAT_W) };
+        const pointer = {
+            x: mini.left + (target.x / MAT_W) * mini.width,
+            y: mini.top + (target.y / MAT_H) * (mini.width * (MAT_H / MAT_W))
+        };
+
+        const point = pointerToMat(pointer, mini);
+        expect(point.x).toBeCloseTo(target.x, 6);
+        expect(point.y).toBeCloseTo(target.y, 6);
+
+        BoardState.addToTray(instance('fixture_producer', 100));
+        expect(dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, point).success).toBe(true);
+        expect(only().x).toBeCloseTo(target.x, 6);
+        expect(only().y).toBeCloseTo(target.y, 6);
     });
 
     it('a Map lands free, its box centred on the point — from the Tray and from the mat', () => {
@@ -260,18 +278,29 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(BoardState.flagOf('h1')).toBeNull();
     });
 
-    it('⚠️ a Token dropped well outside the landing area flies back with the note (FP-93)', () => {
+    /**
+     * ⭐ The FP-93 practice area is gone with the snapping (slice 1.6d-1). A
+     * Token dropped far from where the old 6×6 board used to be is no longer
+     * refused — the whole mat is the play area now.
+     */
+    it('⭐ a Token dropped far outside the OLD board area simply lands there now', () => {
         BoardState.addToTray(instance('fixture_producer', 100));
-        const result = dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, { x: 100, y: 100 });
+        const point = { x: 100, y: 100 };
 
-        expect(result).toMatchObject({ success: false, flyBack: true, reason: PLAY_AREA_NOTE });
-        expect(NotificationSystem.warning).toHaveBeenCalledWith(PLAY_AREA_NOTE);
-        expect(BoardState.getTray()).toHaveLength(1);
-        expect(BoardState.tokens()).toHaveLength(0);
+        const result = dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, point);
+
+        expect(result.success).toBe(true);
+        expect(result.flyBack).toBeUndefined();
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
+        expect(BoardState.getTray()).toHaveLength(0);
+        expect({ x: only().x, y: only().y }).toEqual(point);
     });
 
-    it('just outside the landing area (within half a step) still snaps in', () => {
-        dropOnMat({ typeId: 'fixture_producer', usesRemaining: 5 }, { x: OLD_AREA_ORIGIN.x - 60, y: tileCentre(0).y });
-        expect(BoardState.getToken(0)?.typeId).toBe('fixture_producer');
+    it('but a drop off the mat entirely is pulled back on, art and all', () => {
+        BoardState.addToTray(instance('fixture_producer', 100));
+
+        expect(dropOnMat({ typeId: 'fixture_producer', from: { traySlot: 0 } }, { x: -400, y: 5 }).success).toBe(true);
+        expect(only().x).toBeGreaterThanOrEqual(64);
+        expect(only().y).toBeGreaterThanOrEqual(64);
     });
 });

@@ -202,25 +202,40 @@ describe('⭐ spawns land by point (stopgaps owned by slice 1.8)', () => {
         expect(BoardState.tokens().map(t => [t.typeId, t.x, t.y])).toEqual([['fixture_passive', at.x, at.y]]);
     });
 
-    it('nearest_free: the free spot nearest the bearer’s point', () => {
+    /**
+     * ⭐ Free placement (slice 1.6d-1): there are no tiles left to be "free", so
+     * `nearest_free` means the nearest POINT that clears every neighbour. That
+     * is much closer than the old 160 u tile step — the spawn tucks in beside
+     * its bearer rather than taking a whole square of its own.
+     */
+    it('nearest_free: the nearest legal point to the bearer’s point', () => {
         const bearer = placeAt('fixture_producer', C(14).x, C(14).y);
         for (const t of [13, 15, 8]) placeAt('fixture_passive', C(t).x, C(t).y);   // left, right, above
 
         const result = EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id });
 
-        // Below is 160 u away; the diagonals are 226 u.
-        expect({ x: result.x, y: result.y }).toEqual(C(20));
         expect(result.replacedBearer).toBe(false);
+        const away = Math.hypot(result.x - bearer.x, result.y - bearer.y);
+        expect(away).toBeGreaterThanOrEqual(61.2 - 1e-6);   // clear of the bearer
+        expect(away).toBeLessThan(160);                     // but nearer than a tile step
         expect(BoardState.getTokenById(bearer.id)).not.toBeNull();
     });
 
-    it('a full mat skips the spawn, and nothing is lost (FP-46)', () => {
-        for (let i = 0; i < 36; i++) placeAt('fixture_passive', C(i).x, C(i).y);
-        const bearer = BoardState.getToken(14);
+    it('no room for the spawn skips it, and nothing is lost (FP-46)', () => {
+        // ⚠️ Packed at exactly the minimum gap, which leaves NO legal point
+        // inside the block: the hole between any four is only 43 u across. A mat
+        // merely full of Tokens on tile centres has room everywhere now.
+        const P = (c, r) => ({ x: 600 + c * 61.2, y: 380 + r * 61.2 });
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (c === 4 && r === 4) continue;
+                placeAt('fixture_passive', P(c, r).x, P(c, r).y);
+            }
+        }
+        const bearer = placeAt('fixture_producer', P(4, 4).x, P(4, 4).y);
         const before = BoardState.tokens().length;
 
         expect(EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id })).toBeNull();
-        expect(EffectActions.spawn(spawnOf(PLACEMENT.RANDOM_FREE), { self: bearer.id })).toBeNull();
         expect(BoardState.tokens()).toHaveLength(before);
     });
 });

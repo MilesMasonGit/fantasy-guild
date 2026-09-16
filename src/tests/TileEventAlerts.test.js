@@ -8,6 +8,7 @@ import * as Placement from '../systems/board/Placement.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { tileCentre } from './fixtures/mat.js';
 
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -36,6 +37,7 @@ describe('On-Board Tile Event Alerts', () => {
         GameState.initNew();
         InventoryManager.init();
         BoardRunner.init();
+        resetMatTuning();
         GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2')];
         GameState.state.inventory.maxSlots = 50;
     });
@@ -184,7 +186,7 @@ describe('On-Board Tile Event Alerts', () => {
         expect(toolExhaustEvent.message).toContain('Fixture Context A');
     });
 
-    it('emits Disallow alert with exact rules text when a drop is rejected by restrictions', () => {
+    it('emits Disallow alert with exact rules text when a drop has nowhere legal to go', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
@@ -193,6 +195,12 @@ describe('On-Board Tile Event Alerts', () => {
         Placement.placeToken(8, BoardState.createTokenInstance('fixture_plain_coast'));
         Placement.placeToken(10, BoardState.createTokenInstance('fixture_plain_coast'));
         Placement.placeToken(3, BoardState.createTokenInstance('fixture_plain_coast'));
+
+        // ⚠️ Since FP-88 a drop that would break a rule is NUDGED to the nearest
+        // spot that obeys it, and flies back only when there is nowhere within
+        // nudge reach. With the reach at zero there is nowhere by definition —
+        // which is the refusal path, and the only one that raises this mark.
+        setMatTuning('nudgeReach', 0);
 
         // Attempt to drop fixture_coast on tile 9 (it allows at most 2 adjacent Coasts)
         const rejectResult = Placement.placeToken(9, BoardState.createTokenInstance('fixture_coast'));

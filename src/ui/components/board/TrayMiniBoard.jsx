@@ -1,102 +1,121 @@
+import { useCallback, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
-import { BOARD_SIZE, TILE_COUNT, GUILD_HALL_TILE, isPlaceable as checkPlaceable } from '../../../config/boardGeometry.js';
+import { MAT_W, MAT_H, artRadius } from '../../../config/matGeometry.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { DropTarget } from '../../dnd/DndKit.jsx';
+import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE, DRAG_KIND } from '../../dnd/dragConstants.js';
+import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { pointerToMat } from './matPoint.js';
 import { dropOnMat } from './dropOnMat.js';
-// STOPGAP (deleted with the mini-board in 1.6d).
-import { oldSpotPoint } from './oldSpotStopgap.js';
 
 /**
- * The mini-board is the playmat in miniature, drawn on the Tray so a Token can
- * still be placed while a drawer covers the real board.
+ * ⭐ **The mini mat** — the playmat drawn small on the Tray, so a Token can
+ * still be placed while a drawer covers the real board (FP-97).
  *
- * ⚠️ It is a *substitute* for the board, so it must behave like the board. It
- * used to carry its own partial copy of the drop handler and its own idea of
- * which tiles were full, and both had drifted (CR2-160). Placement now goes
- * through the same `dropOnMat` the playmat uses, and occupancy is asked
- * of the engine rather than guessed from the state shape.
+ * Until slice 1.6d this was a 6×6 grid of cells, each its own drop target. The
+ * owner's framing rule leaves no tiles anywhere, so it is now what its name
+ * always claimed: **a scaled picture of the mat**, with free placement on it.
+ * Every Token on the real mat is drawn here at its own point, shrunk; a drop
+ * anywhere on it is converted to a mat point by this board's own scale and
+ * handed to the same `dropOnMat` the playmat uses. Placing here and placing
+ * there cannot drift apart, because there is only one of each.
+ *
+ * ## The scale takes care of itself
+ * The mini mat is laid out in **percentages of `MAT_W` × `MAT_H`**, so nothing
+ * measures anything to draw. For the drop, `pointerToMat` already divides the
+ * pointer's offset by `rect.width / MAT_W` — the same maths the full-size mat
+ * uses, which at this size simply happens to be a much smaller number. So a
+ * pointer 30% across this board and a pointer 30% across the playmat produce the
+ * very same mat point.
+ *
+ * ⚠️ Slice 1.9 retires this entirely, when the drawer slides aside instead
+ * (FP-45).
  */
 
-const MiniBoardCell = ({ index, isOccupied }) => {
-    const isCenter = index === GUILD_HALL_TILE;
-    const isPlaceable = checkPlaceable(index);
-
-    const handleDrop = (payload) => {
-        if (!isPlaceable || isOccupied || isCenter) {
-            NotificationSystem.warning('Cannot place here');
-            return;
-        }
-        // Deliberately not the pointer: it is over the Tray, not over the
-        // playmat, so measuring against it would land a Map or a 2×2 Token
-        // somewhere the player never pointed. The cell's own old spot instead.
-        dropOnMat(payload, oldSpotPoint(index));
-    };
-
-    return (
-        <DropTarget
-            id={`miniboard-tile-${index}`}
-            surface={DND_SURFACE.MINIBOARD}
-            accepts={(p) => isPlaceable && !isOccupied && !isCenter && p.kind === DRAG_KIND.TOKEN}
-            onDrop={handleDrop}
-            className={cn(
-                "w-full h-full aspect-square rounded-[3px] transition-all duration-100",
-                isCenter && "bg-purple-600/80 border-2 border-amber-300 shadow-[0_0_8px_rgba(217,119,6,0.6)]",
-                !isCenter && isOccupied && "bg-cyan-400/85 border-2 border-cyan-200 shadow-[0_0_8px_rgba(34,211,238,0.6)]",
-                !isCenter && !isOccupied && isPlaceable && "bg-black/50 border border-white/40 hover:border-white/80",
-                !isPlaceable && "bg-black/90 border border-neutral-700/50 opacity-40"
-            )}
-            acceptClassName="!bg-emerald-400 !shadow-[0_0_20px_rgba(52,211,153,1)] !border-2 !border-emerald-100 !scale-110 z-30"
-            rejectClassName="!bg-rose-500 !shadow-[0_0_20px_rgba(244,63,94,1)] !border-2 !border-rose-100 !scale-105 z-30"
-        />
-    );
-};
-
-/**
- * Which tiles are full, asked of the engine.
- *
- * ⚠️ `state.board.tiles` is keyed by **anchor only** — a 2×2 Token appears in it
- * once, and the three cells its body covers are not keys at all. Reading the keys
- * directly, as this used to, made those three cells render as free and offer
- * themselves as drop targets; `Placement` then refused the drop and the player
- * got a warning from a cell that had looked available. `BoardState.hasToken`
- * resolves footprints, so it answers for covered cells too.
- */
-export function occupiedTileMap() {
-    const out = {};
-    for (let i = 0; i < TILE_COUNT; i++) {
-        if (BoardState.hasToken(i)) out[i] = true;
-    }
-    return out;
-}
+/** What the mini mat takes: any Token, exactly as the playmat does. */
+const accepts = (p) => p?.kind === DRAG_KIND.TOKEN;
 
 export const TrayMiniBoard = ({ className }) => {
-    const tiles = useGameState(
-        occupiedTileMap,
+    const matRef = useRef(null);
+
+    const tokens = useGameState(
+        () => BoardState.tokens().map(t => ({
+            id: t.id,
+            typeId: t.typeId,
+            x: t.x,
+            y: t.y,
+            size: getTokenType(t.typeId)?.size || 1
+        })),
         [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
         null
-    );
+    ) || [];
+
+    const handleDrop = useCallback((payload, info) => {
+        const el = matRef.current;
+        if (!el) return undefined;
+        const point = pointerToMat(info?.pointer, el.getBoundingClientRect());
+        const result = dropOnMat(payload, point);
+        // Nowhere to put it: the drag counts as a miss so the ghost flies back.
+        return result?.flyBack ? false : undefined;
+    }, []);
+
+    const drop = useEntityDrop({
+        id: 'mini-mat',
+        surface: DND_SURFACE.MINIBOARD,
+        accepts,
+        onDrop: handleDrop
+    });
+
+    const setRef = useCallback((node) => {
+        matRef.current = node;
+        drop.setNodeRef(node);
+    }, [drop.setNodeRef]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div
             data-dnd-region={DND_SURFACE.MINIBOARD}
-            className={cn("pointer-events-auto w-full flex items-center justify-center px-1", className)}
+            className={cn('pointer-events-auto w-full flex items-center justify-center px-1', className)}
         >
             <div
+                ref={setRef}
+                {...drop.droppableProps}
+                data-mini-mat
                 data-dnd-region={DND_SURFACE.MINIBOARD}
-                className="grid w-full max-w-[280px] md:max-w-[320px] aspect-square gap-1.5 p-2.5 bg-black/90 rounded-xl border-2 border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.9)] backdrop-blur-md"
-                style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)` }}
+                className={cn(
+                    'relative w-full max-w-[280px] md:max-w-[320px] rounded-lg overflow-hidden',
+                    'bg-black/90 border-2 border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.9)] backdrop-blur-md',
+                    'transition-all duration-100',
+                    drop.valid && '!border-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.9)]',
+                    drop.invalid && '!border-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.9)]'
+                )}
+                style={{ aspectRatio: `${MAT_W} / ${MAT_H}` }}
             >
-                {Array.from({ length: TILE_COUNT }, (_, i) => (
-                    <MiniBoardCell
-                        key={i}
-                        index={i}
-                        isOccupied={!!tiles?.[i]}
-                    />
-                ))}
+                {tokens.map(t => {
+                    const r = artRadius(t.size);
+                    return (
+                        <div
+                            key={t.id}
+                            data-mini-token={t.id}
+                            className="absolute pointer-events-none"
+                            style={{
+                                left: `${((t.x - r) / MAT_W) * 100}%`,
+                                top: `${((t.y - r) / MAT_H) * 100}%`,
+                                width: `${((r * 2) / MAT_W) * 100}%`,
+                                height: `${((r * 2) / MAT_H) * 100}%`
+                            }}
+                        >
+                            <TokenSprite
+                                typeId={t.typeId}
+                                surface={TOKEN_SURFACE.BOARD}
+                                alt={tokenName(t.typeId) || 'Token'}
+                                className="w-full h-full"
+                            />
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

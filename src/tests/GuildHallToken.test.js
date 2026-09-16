@@ -83,41 +83,37 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(BoardState.displayPointOf('hero_test_1')).toEqual(pointAt(20, 'token_guild_hall'));
     });
 
-    describe('Push & Cascade Shoving Protection', () => {
-        it('shoves adjacent tokens out of the way when Guild Hall is pushed at board boundary', () => {
-            // Place regular token on corner tile 0 and Guild Hall on tile 1
-            const regularA = BoardState.createTokenInstance('token_copper_pickaxe');
+    /**
+     * ⭐ Free placement (slice 1.6d-1) deleted the push and the cascade, and
+     * with them the special shove that kept the Guild Hall on the board when
+     * something landed on it. It needs no protection any more: a drop that has
+     * no room moves **itself**, so nothing can push the Hall anywhere at all.
+     */
+    describe('Nothing can shove the Guild Hall (slice 1.6d-1)', () => {
+        it('a Token dropped on the Guild Hall leaves it exactly where it stands', () => {
             const gh = BoardState.createTokenInstance('token_guild_hall');
-            const incoming = BoardState.createTokenInstance('token_copper_ore_vein');
-
-            Placement.placeToken(0, regularA);
             Placement.placeToken(1, gh);
+            const where = { x: gh.x, y: gh.y };
 
-            // Drop incoming token onto tile 1 (where Guild Hall is)
+            const incoming = BoardState.createTokenInstance('token_copper_ore_vein');
             const res = Placement.placeToken(1, incoming);
-            expect(res.success).toBe(true);
 
-            // Guild Hall must still be on the board (shoved to tile 0 or an open neighbor)
-            const ghFound = BoardState.occupiedTiles().find(([idx, inst]) => inst?.typeId === 'token_guild_hall');
-            expect(ghFound).toBeDefined();
-            expect(ghFound[0]).toBeDefined();
+            expect(res.success).toBe(true);
+            expect({ x: BoardState.getTokenById(gh.id).x, y: BoardState.getTokenById(gh.id).y }).toEqual(where);
+            expect(BoardState.getTray().some(t => t.typeId === 'token_guild_hall')).toBe(false);
         });
 
-        it('is never displaced to Tray during a 2x2 cascade placement', () => {
-            // Place Guild Hall inside a 2x2 footprint (e.g. tile 8 in 2x2 anchored at 0)
+        it('a large Token dropped over it cannot send it to the Tray', () => {
             const gh = BoardState.createTokenInstance('token_guild_hall');
             Placement.placeToken(8, gh);
+            const where = { x: gh.x, y: gh.y };
 
-            // 2x2 token
             const bearDef = getTokenType('token_smelter') || { size: 2 };
             bearDef.size = 2;
-
             const res = Placement.placeToken(0, { typeId: 'token_smelter', usesRemaining: null });
-            expect(res.success).toBe(true);
 
-            // Guild Hall MUST still be on the playmat
-            const ghPos = BoardState.occupiedTiles().find(([idx, inst]) => inst?.typeId === 'token_guild_hall');
-            expect(ghPos).toBeDefined();
+            expect(res.success).toBe(true);
+            expect({ x: BoardState.getTokenById(gh.id).x, y: BoardState.getTokenById(gh.id).y }).toEqual(where);
             expect(BoardState.getTray().some(t => t.typeId === 'token_guild_hall')).toBe(false);
         });
     });

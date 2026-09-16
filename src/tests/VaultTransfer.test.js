@@ -192,13 +192,16 @@ describe('withdrawTo — and the double-count that used to come with it (CR2-146
         expect(BoardState.getTray()).toHaveLength(0);
     });
 
-    it('can place the withdrawn copy straight onto a playmat tile', () => {
+    it('can place the withdrawn copy straight onto a mat point', () => {
         TokenBank.deposit(token('fixture_producer', 100));
 
-        const res = VaultTransfer.withdrawTo('fixture_producer', { tile: 10 });
+        // ⚠️ `at` is a MAT POINT since slice 1.6d — the Tray's own fraction is
+        // `trayAt`, so the two destinations can never be confused for each other.
+        const res = VaultTransfer.withdrawTo('fixture_producer', { at: { x: 900, y: 700 } });
 
         expect(res.success).toBe(true);
-        expect(BoardState.getToken(10)?.typeId).toBe('fixture_producer');
         expect(BoardState.getTray()).toHaveLength(0);
+        const [placed] = BoardState.tokens().filter(t => t.typeId === 'fixture_producer');
+        expect({ x: placed.x, y: placed.y }).toEqual({ x: 900, y: 700 });
     });
 });

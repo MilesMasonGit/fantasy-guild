@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MAT_W, MAT_H, artRadius } from '../../../config/matGeometry.js';
-import { OLD_AREA_ORIGIN, BOARD_PX, TILE_PX } from '../../../config/boardGeometry.js';
+import { TILE_PX } from '../../../config/boardGeometry.js';
 import { MAT_Z, tokenZ } from './matLayers.js';
 import { PAIR_OFFSET_PX, HERO_HIT_PX, ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -199,10 +199,7 @@ export const MatBoard = ({
     }, []);
 
     const handleReturnToTray = useCallback((instanceId) => {
-        // STOPGAP (deleted in 1.6d): the Token is lifted off by its old spot.
-        const anchor = BoardState.findTokenById(instanceId)?.anchor;
-        if (anchor == null) return;
-        announce(Placement.returnTokenToTray(anchor));
+        announce(Placement.returnTokenToTrayById(instanceId));
     }, []);
 
     const handleAutoAssignHero = useCallback((instanceId) => {
@@ -252,34 +249,22 @@ export const MatBoard = ({
             onPointerMove={handlePointerMove}
             onPointerLeave={clearHover}
         >
-            {/* 0 — the mat itself: a subtle darker surface (FP-93). */}
+            {/* 0 — ⭐ the mat itself (FP-96): a plain darker surface with a soft
+                rounded border. A placeholder until the owner gives it art — and
+                with free placement (1.6d) the only edge there is, since a Token
+                may now stand anywhere on it. The practice outline went with the
+                snapping it existed to explain. */}
             <div
                 data-mat-surface
-                className="absolute left-0 top-0 rounded-[10px] pointer-events-auto"
+                className="absolute left-0 top-0 pointer-events-auto"
                 style={{
                     width: MAT_W,
                     height: MAT_H,
                     zIndex: MAT_Z.SURFACE,
+                    borderRadius: 28,
                     backgroundColor: 'rgba(0, 0, 0, 0.22)',
-                    boxShadow: 'inset 0 0 60px rgba(0, 0, 0, 0.35)'
-                }}
-            />
-
-            {/* ⚠️ STOPGAP (deleted in 1.6d): a faint outline of where Tokens may
-                land, because a drop well outside it flies back (FP-93). Free
-                placement removes both the outline and the refusal. */}
-            <div
-                data-play-area-outline
-                aria-hidden="true"
-                className="absolute pointer-events-none rounded-[4px]"
-                style={{
-                    left: OLD_AREA_ORIGIN.x,
-                    top: OLD_AREA_ORIGIN.y,
-                    width: BOARD_PX,
-                    height: BOARD_PX,
-                    zIndex: MAT_Z.SURFACE,
-                    border: '3px solid rgba(255, 255, 255, 0.10)',
-                    boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.35)'
+                    border: '2px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: 'inset 0 0 90px rgba(0, 0, 0, 0.40), 0 0 0 1px rgba(0, 0, 0, 0.35)'
                 }}
             />
 
