@@ -167,7 +167,7 @@ describe('Token & Hero Displacement Logic', () => {
         const collectedEvents = [];
         EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collectedEvents.push(e));
 
-        const res = Placement.recallHero(7);
+        const res = Placement.recallHeroById('hero_aldric');
         expect(res.success).toBe(true);
         expect(BoardState.flagOf('hero_aldric')).toBeNull();
         expect(BoardState.displayPointOf('hero_aldric')).toBeNull();

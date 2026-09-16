@@ -198,7 +198,7 @@ describe('⚠️ Restocking UNDER a working hero, who resumes (D-151)', () => {
         place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
         run(13000);                                  // restock #1, under the hero
-        Placement.recallHero(TILE);
+        Placement.recallHeroById('hero_1');
 
         BoardState.setToken(TILE, null);
         BoardState.setVacancy(TILE, 'fixture_producer');

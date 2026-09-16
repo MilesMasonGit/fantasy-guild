@@ -14,9 +14,10 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tileCentre } from '../config/boardGeometry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { ALERT } from '../systems/board/boardEvents.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
-import { BoardTile } from '../ui/components/board/BoardTile.jsx';
+import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { dockStatusLine, flagTooltip } from '../ui/components/board/flagText.js';
@@ -33,6 +34,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * ⭐ Free Playmat slice 1.5 — the flag UI as drawn: the idle mark, the reach
  * ring and the disallow toggle. The engine hooks are in `FlagUI.test.js`. The
  * skill picker is gone since slice 1.5b (FP-71): a flag has no skill.
+ *
+ * Since slice 1.6c-2 the board these draw on is `MatBoard`, which draws every
+ * Token and hero **at its mat point, by instance id** — there are no tiles to
+ * hand a projected `token` prop to any more, so these mount the real mat over
+ * real board state.
  */
 
 const C = (tile) => tileCentre(tile);
@@ -73,24 +79,27 @@ beforeEach(() => {
 });
 
 describe('the idle mark (FP-29)', () => {
-    const tileWithHero = (heroIdle) => h(BoardTile, {
-        index: 15,
-        token: {
-            typeId: 'fixture_producer', usesRemaining: 10, alert: null, size: 1,
-            isAnchor: true, anchorTile: 15, heroId: 'h1', heroName: 'h1', heroIdle
-        },
-        heroName: 'h1'
-    });
+    it('draws no idle glow on a board hero whose Token is stuck', () => {
+        const forest = put(15, 'fixture_producer');
+        Flags.plant('h1', C(15));
+        expect(Flags.statusOf('h1').state).toBe('working');
 
-    it('draws no idle glow on a board hero who is not working', () => {
-        const { container } = mount(tileWithHero(true));
-        expect(container.querySelector('[data-board-hero="h1"]')).toBeTruthy();
+        // A hero on a Token that cannot run gets no glow: the Token's own red
+        // badge says it alone (slice 1.5, FP-29).
+        forest.alert = ALERT.INPUTS;
+
+        const { container } = mount(h(MatBoard));
+        const drawn = container.querySelector('[data-board-hero="h1"]');
+        expect(drawn).toBeTruthy();
+        expect(drawn.className).not.toContain('gi-glow-active');
         expect(container.querySelector('.gi-glow-idle')).toBeNull();
-        expect(container.querySelector('.gi-glow-active')).toBeNull();
     });
 
     it('keeps the working glow', () => {
-        const { container } = mount(tileWithHero(false));
+        put(15, 'fixture_producer');
+        Flags.plant('h1', C(15));
+
+        const { container } = mount(h(MatBoard));
         expect(container.querySelector('[data-board-hero="h1"]').className).toContain('gi-glow-active');
     });
 
@@ -113,7 +122,7 @@ describe('the idle mark (FP-29)', () => {
         expect(container.querySelector('.gi-glow-active')).toBeNull();
     });
 
-    it('a working flag shows no chip and leaves its hero to the Token tile', () => {
+    it('a working flag shows no chip and leaves its hero to the Token', () => {
         put(15, 'fixture_producer');
         Flags.plant('h1', C(14));
         expect(Flags.statusOf('h1').state).toBe('working');
@@ -125,15 +134,18 @@ describe('the idle mark (FP-29)', () => {
         expect(container.querySelector('[data-flag-idle-hero="h1"]')).toBeNull();
     });
 
-    it('fans two flags on one tile 20 px apart, the earlier one in front', () => {
+    it('⭐ two flags planted on one point simply overlap — no fan-out (FP-83)', () => {
         Flags.plant('h1', C(20));
         Flags.plant('fighter', C(20));
         const { container } = mount(h(FlagLayer));
         const a = container.querySelector('[data-flag="h1"]');
         const b = container.querySelector('[data-flag="fighter"]');
-        expect(parseFloat(b.style.left) - parseFloat(a.style.left)).toBe(20);
+
+        expect(b.style.left).toBe(a.style.left);
         expect(b.style.top).toBe(a.style.top);
-        expect(Number(a.style.zIndex)).toBeGreaterThan(Number(b.style.zIndex));
+        // Later plantings draw in front; nothing is pushed aside or hidden.
+        expect(Number(b.style.zIndex)).toBeGreaterThan(Number(a.style.zIndex));
+        expect(container.querySelector('[data-flag-more]')).toBeNull();
     });
 });
 
@@ -200,35 +212,35 @@ describe('"Heroes may work this" (FP-35, FPP-8)', () => {
     it('unticking marks the Token disallowed and the hero working it leaves', async () => {
         const forest = put(15, 'fixture_producer');
         Flags.plant('h1', C(15));
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(BoardState.workTokenOf('h1')).toBe(forest.id);
 
-        const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', tile: 15 }));
+        const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
         const box = toggle(container).querySelector('input[type="checkbox"]');
         expect(box.checked).toBe(true);
 
         await act(async () => { fireEvent.click(box); });
 
         expect(Flags.isDisallowed(forest)).toBe(true);
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(BoardState.workTokenOf('h1')).toBeNull();
         expect(toggle(container).getAttribute('data-heroes-may-work')).toBe('no');
     });
 
     it('is offered only for a board Token a hero could work', () => {
-        put(15, 'fixture_passive');
-        put(16, 'fixture_enemy');
-        expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_passive', tile: 15 })).container)).toBeNull();
+        const passive = put(15, 'fixture_passive');
+        const enemy = put(16, 'fixture_enemy');
+        expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_passive', instanceId: passive.id })).container)).toBeNull();
         cleanup();
-        expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_enemy', tile: 16 })).container)).toBeTruthy();
+        expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_enemy', instanceId: enemy.id })).container)).toBeTruthy();
         cleanup();
         // Not opened from the board (the Vault, the Tray): no toggle.
         expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_enemy' })).container)).toBeNull();
     });
 
-    it('a disallowed Token shows a dim ⊘ on its tile', () => {
-        const { container } = mount(h(BoardTile, {
-            index: 15,
-            token: { typeId: 'fixture_producer', usesRemaining: 10, alert: null, size: 1, isAnchor: true, anchorTile: 15, disallowed: true }
-        }));
+    it('a disallowed Token shows a dim ⊘ on the mat', () => {
+        const forest = put(15, 'fixture_producer');
+        Flags.setDisallowed(forest.id, true);
+
+        const { container } = mount(h(MatBoard));
         expect(container.querySelector('[data-tile-disallowed]').textContent).toContain('⊘');
     });
 });

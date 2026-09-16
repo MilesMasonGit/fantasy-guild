@@ -7,7 +7,7 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { BAND, bandForLevel, bandStationRecipes, guildLevelFor, workerLevelFor } from '../systems/board/RecipeBands.js';
 import { StationRecipeModal } from '../ui/components/board/StationRecipeModal.jsx';
-import { StationGearBadge } from '../ui/components/board/BoardTile.jsx';
+import { StationGearBadge } from '../ui/components/board/TokenBadges.jsx';
 
 /**
  * Recipe modal banding (Recipe & Charges rework, P3).

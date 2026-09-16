@@ -249,7 +249,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         run(3000);
         expect(BoardCombat.getFight(idAt(10))).not.toBeNull();
 
-        Placement.recallHero(10);
+        Placement.recallHeroById('hero_1');
         run(100);
 
         expect(BoardCombat.getFight(idAt(10))).toBeNull();
@@ -276,7 +276,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         }
         expect(lowest).toBeLessThan(max);
 
-        Placement.recallHero(10);
+        Placement.recallHeroById('hero_1');
         run(100);
         Placement.placeHero('hero_1', 10);
         run(100);

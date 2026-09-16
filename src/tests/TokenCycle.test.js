@@ -194,7 +194,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
     it('stops when the hero leaves, and forfeits the cycle (D-131)', () => {
         place(10, 'fixture_producer', 'hero_1');
         run(8000);
-        Placement.recallHero(10);
+        Placement.recallHeroById('hero_1');
 
         expect(BoardState.getToken(10).cycleElapsedMs).toBe(0);
         run(30000);

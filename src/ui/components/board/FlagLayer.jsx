@@ -3,9 +3,10 @@ import { createPortal } from 'react-dom';
 import { Settings } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
+import { MAT_W, MAT_H, clampToMat } from '../../../config/matGeometry.js';
+import { MAT_Z } from './matLayers.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -19,34 +20,35 @@ import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { PixelArt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
 import { flagTooltip } from './flagText.js';
+import { pointerToMat } from './matPoint.js';
 import { announce } from './dropOnMat.js';
 import {
-    FLAG_PX, IDLE_HERO_PX, MAX_FLAGS_SHOWN, GEAR_PX, GEAR_OFFSET,
-    IDLE_CHIP_OFFSET, MORE_CHIP_OFFSET, IDLE_HERO_OFFSET, fannedOrigin
+    FLAG_PX, IDLE_HERO_PX, GEAR_PX, GEAR_OFFSET,
+    IDLE_CHIP_OFFSET, IDLE_HERO_OFFSET, flagOrigin
 } from './flagGeometry.js';
 
 /**
- * FlagLayer — **flags drawn on today's grid** (Free Playmat slices 1.5 and
- * 1.5b-ii).
+ * FlagLayer — **flags standing freely on the playmat** (Free Playmat slices 1.5
+ * and 1.6c-2).
  *
- * An absolute overlay over the playmat. On the grid, mat units are board
- * pixels, so a flag's `{ x, y }` needs no conversion. Where each sprite sits is
- * `flagGeometry.js` — free placement changes only `flagOrigin` there.
+ * An absolute overlay over the mat, in mat units.
  *
- * * **Flag** (FP-77, FP-82) — the owner's sprite in the hero's lasting colour,
- *   128 px, its pole at the tile's bottom-left corner (FPP-20). Drag it to move
- *   the flag (`DRAG_KIND.FLAG`); hover for status and skips. It answers **only
- *   on opaque pixels** (`data-alpha-test`, FP-64): a click on the sky around the
- *   cloth reaches the Token underneath. Several flags on one tile fan out 20 px
- *   right, earlier flags in front; past the third a "+N" chip counts the rest.
+ * * **Flag** (FP-77, FP-82, FP-83) — the owner's sprite in the hero's lasting
+ *   colour, 128 px, its **pole base standing exactly on the flag's point**. Drag
+ *   it to move the flag (`DRAG_KIND.FLAG`); hover for status and skips. It
+ *   answers **only on opaque pixels** (`data-alpha-test`, FP-64): a click on the
+ *   sky around the cloth reaches the Token underneath.
+ *   ⛔ The grid's fan-out, its three-flag cap and its "+N" chip are **gone**:
+ *   flags may stand very close together or overlap, and never push, nudge or
+ *   hide each other (FP-83). Later flags draw in front of earlier ones.
  * * **Gear badge** (FP-73) — top-right of the cloth, shown while the flag or its
  *   hero is hovered or the hero is inspected. Opens that hero's rules panel
  *   (`ui:open_flag_rules`); it is not part of the drag handle, so a click on it
  *   never starts a drag. The only way into the rules (FPP-20).
- * * **Idle** (FP-29) — the flag keeps its colour; the hero stands beside it at
- *   128 px with **no glow**, and a "…" chip sits near the top of the pole.
- *   Working and waiting heroes stay drawn by `BoardTile`, paired with their
- *   Token (D-266).
+ * * **Idle** (FP-29, FP-84) — the flag keeps its colour; the hero stands beside
+ *   it at 128 px with **no glow**, and a "…" chip sits near the top of the pole.
+ *   Working and waiting heroes are drawn by `MatBoard`, paired with their Token
+ *   (D-266).
  * * **The player never moves a hero** (FP-76) — dragging the idle hero, like
  *   dragging a working hero on a Token, drags their FLAG.
  * * **Reach ring** (FP-64, A-4) — a dashed gold circle of the live flag radius,
@@ -63,68 +65,80 @@ function useFlagRadius() {
 /** A flat, comparable projection of every flag, in planting order. */
 function projectFlags() {
     const heroes = GameState.state?.heroes || [];
-    const slots = {};
-    const counts = {};
     const out = [];
     for (const [heroId] of BoardState.heroesOnBoard()) {
         const flag = BoardState.flagOf(heroId);
         if (!flag) continue;
-        const tile = BoardState.tileAtPoint(flag);
-        slots[tile] = (slots[tile] ?? -1) + 1;
-        counts[tile] = (counts[tile] ?? 0) + 1;
         const hero = heroes.find(h => h?.id === heroId);
         out.push({
             heroId,
             x: flag.x,
             y: flag.y,
-            tile,
-            slot: slots[tile],
             state: Flags.statusOf(heroId).state,
             name: hero?.name || 'Hero',
             sprite: hero?.spriteId || hero?.classId || null,
             colour: flagColourOf(heroId)
         });
     }
-    for (const f of out) f.onTile = counts[f.tile];
     return out;
+}
+
+/**
+ * Where a flag being dragged would be planted: under the cursor, exactly
+ * (FP-94). Null unless a flag or a board hero is actually in the hand.
+ */
+function useFlagDragPoint(matRef) {
+    const { activePayload, isDragging } = useActiveDrag();
+    const pointer = useDragPointer();
+
+    if (!isDragging || !pointer || !matRef?.current) return null;
+    const kind = activePayload?.kind;
+    if (kind !== DRAG_KIND.FLAG && kind !== DRAG_KIND.HERO) return null;
+    if (!activePayload?.heroId) return null;
+
+    const point = pointerToMat(pointer, matRef.current.getBoundingClientRect());
+    if (!point) return null;
+    // Off the mat entirely (over the Tray, the Dock): nothing to preview.
+    if (point.x < 0 || point.y < 0 || point.x > MAT_W || point.y > MAT_H) return null;
+    return { heroId: activePayload.heroId, ...clampToMat(point) };
 }
 
 /**
  * @param {string|null} inspectedHeroId the hero whose panel is open
  * @param {string|null} hoverHeroId a hero hovered anywhere on the board
  * @param {(heroId: string|null) => void} onHoverHero
- * @param {{ heroId: string, x: number, y: number }|null} dragRing where a flag
- *   being dragged would plant — the ring follows it
+ * @param {{ heroId: string, x: number, y: number }|null} dragRing an explicit
+ *   plant preview; without one the layer follows the live drag itself
+ * @param {{current: HTMLElement|null}} matRef the mat's own element
  */
-export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null }) => {
+export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null, matRef = null }) => {
     const flags = useGameState(
         projectFlags,
         [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, 'heroes_updated', 'state_changed']
     ) || [];
     const radius = useFlagRadius();
+    const liveDragRing = useFlagDragPoint(matRef);
+    const ring = dragRing || liveDragRing;
 
     const rings = new Map();
     for (const id of [inspectedHeroId, hoverHeroId]) {
         const flag = id ? flags.find(f => f.heroId === id) : null;
         if (flag) rings.set(id, { x: flag.x, y: flag.y });
     }
-    if (dragRing?.heroId) rings.set(dragRing.heroId, { x: dragRing.x, y: dragRing.y });
-
-    const shown = flags.filter(f => f.slot < MAX_FLAGS_SHOWN);
+    if (ring?.heroId) rings.set(ring.heroId, { x: ring.x, y: ring.y });
 
     /**
-     * ⚠️ Two layers. Rings sit just above the Tokens (z 38); **flags and idle
-     * heroes sit above the loot sprites** (`SpriteLayerView`, z 80). Loot lands
-     * beside the Token that dropped it — often right where a flag stands — and
-     * a flag under a pile of Oak Wood could not be clicked or dragged (found
-     * while verifying 1.5).
+     * ⚠️ Two layers. Rings sit above the Tokens; **flags and idle heroes sit
+     * above the loot sprites**. Loot lands beside the Token that dropped it —
+     * often right where a flag stands — and a flag under a pile of Oak Wood
+     * could not be clicked or dragged (found while verifying 1.5).
      */
     return (
         <>
         <div
             data-flag-layer
             className="absolute left-0 top-0 pointer-events-none"
-            style={{ width: MAT_W, height: MAT_H, zIndex: 38 }}
+            style={{ width: MAT_W, height: MAT_H, zIndex: MAT_Z.RINGS }}
         >
             {rings.size > 0 && (
                 <svg
@@ -153,19 +167,21 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         <div
             data-flag-pennants
             className="absolute left-0 top-0 pointer-events-none"
-            style={{ width: MAT_W, height: MAT_H, zIndex: 85 }}
+            style={{ width: MAT_W, height: MAT_H, zIndex: MAT_Z.FLAGS }}
         >
-            {shown.map(f => (
+            {flags.map((f, i) => (
                 <Flag
                     key={`flag-${f.heroId}`}
                     flag={f}
+                    z={i * 3}
                     onHover={onHoverHero}
                     boardHovered={hoverHeroId === f.heroId}
                     inspected={inspectedHeroId === f.heroId}
                 />
             ))}
-            {shown.filter(f => f.state === 'idle').map(f => (
-                <IdleHero key={`idle-${f.heroId}`} flag={f} onHover={onHoverHero} />
+            {flags.map((f, i) => (f.state === 'idle'
+                ? <IdleHero key={`idle-${f.heroId}`} flag={f} z={i * 3 + 1} onHover={onHoverHero} />
+                : null
             ))}
         </div>
         </>
@@ -190,7 +206,7 @@ function useLingering(wanted) {
 }
 
 /** One hero's flag: drag to move it, hover for why, gear for the rules. */
-const Flag = ({ flag, onHover, boardHovered = false, inspected = false }) => {
+const Flag = ({ flag, z = 0, onHover, boardHovered = false, inspected = false }) => {
     const ref = useRef(null);
     const [hovered, setHovered] = useState(false);
     const [gearHovered, setGearHovered] = useState(false);
@@ -219,9 +235,7 @@ const Flag = ({ flag, onHover, boardHovered = false, inspected = false }) => {
         drag.setNodeRef(node);
     };
 
-    const { left, top } = fannedOrigin(flag, flag.tile, flag.slot);
-    const zIndex = 10 + (MAX_FLAGS_SHOWN - flag.slot) * 3;
-    const more = flag.slot === MAX_FLAGS_SHOWN - 1 ? flag.onTile - MAX_FLAGS_SHOWN : 0;
+    const { left, top } = flagOrigin(flag);
 
     // Only opaque pixels are the flag (FP-64). The global alpha manager already
     // passes pointer events through transparent pixels; this is the backstop.
@@ -249,7 +263,7 @@ const Flag = ({ flag, onHover, boardHovered = false, inspected = false }) => {
                     'cursor-grab active:cursor-grabbing',
                     carried && 'opacity-30'
                 )}
-                style={{ left, top, width: FLAG_PX, height: FLAG_PX, zIndex }}
+                style={{ left, top, width: FLAG_PX, height: FLAG_PX, zIndex: z }}
             >
                 <FlagMark colour={flag.colour} size={FLAG_PX} alt={`${flag.name}’s flag`} className="absolute left-0 top-0" />
                 {idle && (
@@ -286,21 +300,11 @@ const Flag = ({ flag, onHover, boardHovered = false, inspected = false }) => {
                     top: top + GEAR_OFFSET.top,
                     width: GEAR_PX,
                     height: GEAR_PX,
-                    zIndex: zIndex + 2
+                    zIndex: z + 2
                 }}
             >
                 <Settings size={16} />
             </button>
-
-            {more > 0 && (
-                <span
-                    data-flag-more={flag.tile}
-                    className="absolute px-1.5 rounded-full bg-black/90 border border-gi-gold/50 text-[11px] leading-4 font-bold text-gi-gold pointer-events-none"
-                    style={{ left: left + MORE_CHIP_OFFSET.left, top: top + MORE_CHIP_OFFSET.top, zIndex: zIndex + 2 }}
-                >
-                    +{more}
-                </span>
-            )}
 
             {hovered && !anyDrag && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
         </>
@@ -308,11 +312,11 @@ const Flag = ({ flag, onHover, boardHovered = false, inspected = false }) => {
 };
 
 /**
- * An idle hero, standing beside their flag at 128 px, with no glow (FP-29).
- * Dragging them drags their flag (FP-76); click for the hero sheet; right-click
- * recalls. Opaque pixels only, like every hero on the board.
+ * An idle hero, standing beside their flag at 128 px, with no glow (FP-29,
+ * FP-84). Dragging them drags their flag (FP-76); click for the hero sheet;
+ * right-click recalls. Opaque pixels only, like every hero on the board.
  */
-const IdleHero = ({ flag, onHover }) => {
+const IdleHero = ({ flag, z = 0, onHover }) => {
     const drag = useEntityDrag({
         id: `flag-hero-${flag.heroId}`,
         kind: DRAG_KIND.FLAG,
@@ -321,7 +325,7 @@ const IdleHero = ({ flag, onHover }) => {
     });
 
     const art = flag.sprite ? resolveSpritePath(flag.sprite) : null;
-    const { left, top } = fannedOrigin(flag, flag.tile, flag.slot);
+    const { left, top } = flagOrigin(flag);
     const opaque = (e) => !e.currentTarget || isElementOpaqueAtPoint(e.currentTarget, e.clientX, e.clientY);
 
     return (
@@ -352,7 +356,7 @@ const IdleHero = ({ flag, onHover }) => {
                 width: IDLE_HERO_PX,
                 height: IDLE_HERO_PX,
                 // In front of its own flag's pole, behind the gear.
-                zIndex: 10 + (MAX_FLAGS_SHOWN - flag.slot) * 3 + 1
+                zIndex: z
             }}
         >
             {art && <PixelArt src={art} alt={flag.name} size={IDLE_HERO_PX} className="absolute left-0 top-0" />}

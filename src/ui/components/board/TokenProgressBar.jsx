@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { cn } from '../../utils/cn.js';
 import { ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
-import { payloadIsForTile } from './payloadTile.js';
+import { subscribeToken } from './tokenEvents.js';
 
 /**
- * TileProgressBar — zero-re-render cycle progress bar at the bottom of a tile frame.
+ * TokenProgressBar — zero-re-render cycle progress bar across the bottom of a Token.
  *
  * Uses requestAnimationFrame continuous interpolation to guarantee 60fps buttery-smooth
  * filling between engine ticks, with instantaneous zero-reset on cycle completion.
@@ -16,30 +15,33 @@ import { payloadIsForTile } from './payloadTile.js';
  * Skill", ...) and, on hover, drops down the `ALERT_HINT` sentence for that
  * alert (D-114) followed by the missing requirement rows when there are any.
  * Every alert value the engine can set gets a branch — CR2-155 was three of
- * them falling off the end of `renderAlert`, leaving a stalled tile showing a
+ * them falling off the end of `renderAlert`, leaving a stalled Token showing a
  * countdown for work that would never finish.
  *
- * ## The subscriptions are keyed on the tile and nothing else (CR2-168 item 1)
+ * ## The subscriptions are keyed on the Token and nothing else (CR2-168 item 1)
  * ⚠️ They used to be keyed on `isHovered`, `missingReqs`, `effectiveAlert` and
  * `token?.heroId` as well. Two consequences, both measured 2026-08-26:
  *
- *  - Moving the cursor onto a tile tore down all four subscriptions, rebuilt
+ *  - Moving the cursor onto a Token tore down all four subscriptions, rebuilt
  *    them, and **cancelled the animation frame** — so the bar stopped filling
  *    and stayed stopped until the next `board:progress` event, up to ~300ms.
  *  - `missingReqs` is a fresh object whenever the `token` prop changes
- *    identity, and `Board` rebuilds a fresh projection object per tile on
- *    every `state_changed`. Five re-renders with identical content cost
- *    **twenty** extra subscribe calls.
+ *    identity, and the board rebuilds a fresh projection object on every
+ *    `state_changed`. Five re-renders with identical content cost **twenty**
+ *    extra subscribe calls.
  *
  * Everything the handlers need now lives in `liveRef`, refreshed on each
  * render. Anything added to this component that the handlers read must go
  * through that ref, not through the dependency array.
+ *
+ * ## Which events reach it (slice 1.6c-2)
+ * Through `tokenEvents.js`, so ~80 bars share **one** bus subscription per
+ * event type and a progress tick wakes only the bar it is about.
  */
-export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: initialAlert = null, className }) => {
+export const TokenProgressBar = ({ instanceId = null, token = null, isHovered = false, alert: initialAlert = null, className }) => {
     const containerRef = useRef(null);
     const fillRef = useRef(null);
     const labelRef = useRef(null);
-    const { EventBus } = useEngine();
     const [eventAlert, setEventAlert] = useState(initialAlert || token?.alert || null);
 
     const hasHero = !!token?.heroId;
@@ -47,9 +49,9 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
     // Compute missing items or tokens list regardless of staffing state
     const missingReqs = useMemo(() => {
         if (!token) return { type: null, items: [] };
-        // The reader is by instance id since Free Playmat 1.6b; the tile projection carries it.
-        return getMissingRequirements(token.instanceId ?? null, token);
-    }, [tile, token]);
+        // The reader is by instance id since Free Playmat 1.6b.
+        return getMissingRequirements(token.instanceId ?? instanceId ?? null, token);
+    }, [instanceId, token]);
 
     // Effective alert: only applicable while a hero is assigned to work the token
     const effectiveAlert = useMemo(() => {
@@ -73,8 +75,8 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
         }
     }, [isHovered, effectiveAlert, missingReqs]);
 
-    // Everything the event handlers below read that is NOT `tile`. Kept in a
-    // ref so a hover, a new `token` object or a changed alert re-renders
+    // Everything the event handlers below read that is NOT `instanceId`. Kept in
+    // a ref so a hover, a new `token` object or a changed alert re-renders
     // without touching the subscriptions (CR2-168 item 1).
     const liveRef = useRef({ isHovered, missingReqs, effectiveAlert, hasHero });
     liveRef.current = { isHovered, missingReqs, effectiveAlert, hasHero };
@@ -84,7 +86,7 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
     const applyCurrentRef = useRef(null);
 
     useEffect(() => {
-        if (!EventBus) return;
+        if (!instanceId) return undefined;
 
         let active = false;
         let lastElapsed = 0;
@@ -189,7 +191,7 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
             }
         };
 
-        const onTileChanged = () => {
+        const onTokenChanged = () => {
             const { effectiveAlert: alertNow, hasHero: hasHeroNow } = liveRef.current;
             active = false;
             cancelAnimationFrame(rafId);
@@ -229,23 +231,13 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
         };
 
         const unsubs = [
-            // Payloads name Tokens by instance id since slice 1.6b; the STOPGAP
-            // adapter maps them onto this drawn tile (deleted in 1.6c).
-            EventBus.subscribe(BOARD_EVENTS.PROGRESS, (p) => {
-                if (!payloadIsForTile(p, tile)) return;
-                apply(p);
-            }),
-            EventBus.subscribe(BOARD_EVENTS.ALERT_CHANGED, (p) => {
-                if (!payloadIsForTile(p, tile)) return;
+            subscribeToken(BOARD_EVENTS.PROGRESS, instanceId, apply),
+            subscribeToken(BOARD_EVENTS.ALERT_CHANGED, instanceId, (p) => {
                 setEventAlert(p?.alert || null);
                 renderAlert(p?.alert);
             }),
-            EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => {
-                if (payloadIsForTile(p, tile)) onCycleComplete();
-            }),
-            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
-                if (payloadIsForTile(p, tile)) onTileChanged();
-            })
+            subscribeToken(BOARD_EVENTS.CYCLE_COMPLETE, instanceId, onCycleComplete),
+            subscribeToken(BOARD_EVENTS.TILE_CHANGED, instanceId, onTokenChanged)
         ];
 
         return () => {
@@ -254,17 +246,17 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
             applyCurrentRef.current = null;
             unsubs.forEach(u => u());
         };
-        // ⚠️ `tile` and `EventBus` ONLY. See the note at the top of the file —
-        // anything else these handlers need is read from `liveRef`.
-    }, [EventBus, tile]);
+        // ⚠️ `instanceId` ONLY. See the note at the top of the file — anything
+        // else these handlers need is read from `liveRef`.
+    }, [instanceId]);
 
     // The cheap half of the old effect: redraw when the alert or the staffing
     // changes. Declared after the subscription effect so `applyCurrentRef` is
-    // already populated on mount; `tile` is listed because a bar reused for a
-    // different tile has to redraw for its new one.
+    // already populated on mount; `instanceId` is listed because a bar reused
+    // for a different Token has to redraw for its new one.
     useEffect(() => {
         applyCurrentRef.current?.();
-    }, [tile, effectiveAlert, hasHero]);
+    }, [instanceId, effectiveAlert, hasHero]);
 
     return (
         <div
@@ -327,4 +319,4 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
     );
 };
 
-export default TileProgressBar;
+export default TokenProgressBar;

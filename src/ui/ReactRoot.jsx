@@ -338,7 +338,7 @@ export const ReactRoot = ({ engine }) => {
                                     <Board
                                         inspectedHeroId={inspectHeroId}
                                         onOpenGuildHall={handleOpenGuildHall}
-                                        onInspectToken={(typeId, rect, tile) => ui.inspect.set('token', typeId, { rect, tile })}
+                                        onInspectToken={(typeId, rect, instanceId) => ui.inspect.set('token', typeId, { rect, instanceId })}
                                         onClearInspect={() => ui.inspect.clear()}
                                     />
                                 )}
@@ -435,10 +435,10 @@ export const ReactRoot = ({ engine }) => {
                 )}
 
                 {/* 3. Modal Layer Overlays */}
-                {ui.inspect.selection?.type === 'token' && (ui.inspect.selection.source?.rect || ui.inspect.selection.source?.tile != null) && (
+                {ui.inspect.selection?.type === 'token' && (ui.inspect.selection.source?.rect || ui.inspect.selection.source?.instanceId != null) && (
                     <TokenInspectPopup
                         typeId={ui.inspect.selection.id}
-                        tileIndex={ui.inspect.selection.source?.tile}
+                        instanceId={ui.inspect.selection.source?.instanceId}
                         anchorRect={ui.inspect.selection.source?.rect}
                         onClose={() => ui.inspect.clear()}
                     />

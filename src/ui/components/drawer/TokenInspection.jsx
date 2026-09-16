@@ -37,9 +37,10 @@ export const TokenInspection = ({
     showSell = true,
     showAddToTray = true,
     showViewInVault = false,
-    // The board tile this panel was opened from, if any (slice 1.5). Only a
-    // Token on the board can be marked "heroes may not work this".
-    tile = null
+    // The board Token this panel was opened from, by instance id (slice
+    // 1.6c-2). Only a Token on the board can be marked "heroes may not work
+    // this".
+    instanceId = null
 }) => {
     const def = getTokenType(typeId);
 
@@ -278,7 +279,7 @@ export const TokenInspection = ({
                     </div>
                 )}
 
-                {tile != null && <HeroesMayWork tile={tile} />}
+                {instanceId != null && <HeroesMayWork instanceId={instanceId} />}
             </div>
 
             {/* Production Routes */}
@@ -400,16 +401,16 @@ export const TokenInspection = ({
  * flag skips it from then on; the Token itself keeps running its rules. A
  * Token a Manager restocks arrives allowed (FPP-13).
  */
-const HeroesMayWork = ({ tile }) => {
+const HeroesMayWork = ({ instanceId }) => {
     const view = useGameState(
         () => {
-            const occ = BoardState.getOccupyingToken(tile);
-            if (!occ?.instance || !Flags.isHeroWorkable(occ.instance)) return null;
-            return { id: occ.instance.id, allowed: !Flags.isDisallowed(occ.instance) };
+            const instance = BoardState.getTokenById(instanceId);
+            if (!instance || !Flags.isHeroWorkable(instance)) return null;
+            return { id: instance.id, allowed: !Flags.isDisallowed(instance) };
         },
         [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
         null,
-        { deps: [tile] }
+        { deps: [instanceId] }
     );
     if (!view) return null;
 

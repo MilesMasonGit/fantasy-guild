@@ -2,14 +2,33 @@ import { useRef, useLayoutEffect, useState, useEffect, useCallback } from 'react
 import { cn } from '../../utils/cn.js';
 import TokenInspection from '../drawer/TokenInspection.jsx';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { useTokenEvent } from './tokenEvents.js';
 
-export const TokenInspectPopup = ({ typeId, tileIndex, anchorRect, onClose }) => {
+/**
+ * The Token sheet, floating beside the Token it is about.
+ *
+ * ## It follows the Token, not a remembered rectangle (slice 1.6c-2)
+ * It used to anchor to `#tile-N` — a square that never moved. On the mat a
+ * Token moves: it is pushed by a 2×2 cascade, or dragged somewhere else, and
+ * the popup has to come along or it ends up pointing at bare mat. So the anchor
+ * is looked up live by **instance id** (`[data-token-id]`), and re-measured
+ * whenever something happens to that Token — once straight away, and once more
+ * after the CSS move has finished, because a Token slides to its new point over
+ * 220ms and measuring mid-slide would anchor to where it was passing through.
+ */
+
+/** Long enough for `MatToken`'s left/top transition to have settled. */
+const MOVE_SETTLE_MS = 280;
+
+export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClose }) => {
     const popupRef = useRef(null);
     const scrollRef = useRef(null);
     const [coords, setCoords] = useState({ top: 0, left: 0, dir: 'top', tailOffset: 0 });
     const [isVisible, setIsVisible] = useState(false);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
+    const [targetRect, setTargetRect] = useState(anchorRect || null);
 
     const checkScroll = useCallback(() => {
         const el = scrollRef.current;
@@ -18,8 +37,29 @@ export const TokenInspectPopup = ({ typeId, tileIndex, anchorRect, onClose }) =>
         setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 6);
     }, []);
 
+    /** Where the Token is on screen right now, falling back to where it was. */
+    const measure = useCallback(() => {
+        const el = instanceId && typeof document !== 'undefined'
+            ? document.querySelector(`[data-token-id="${instanceId}"]`)
+            : null;
+        setTargetRect(el ? el.getBoundingClientRect() : (anchorRect || null));
+    }, [instanceId, anchorRect]);
+
+    useLayoutEffect(() => { measure(); }, [measure]);
+
+    // The Token moved, was replaced, or ran dry: re-anchor to wherever it is.
+    useTokenEvent(BOARD_EVENTS.TILE_CHANGED, instanceId, () => {
+        measure();
+        setTimeout(measure, MOVE_SETTLE_MS);
+    });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+        window.addEventListener('resize', measure);
+        return () => window.removeEventListener('resize', measure);
+    }, [measure]);
+
     useLayoutEffect(() => {
-        const targetRect = anchorRect || (tileIndex != null ? document.getElementById(`tile-${tileIndex}`)?.getBoundingClientRect() : null);
         if (!targetRect || !popupRef.current) return;
 
         const popupEl = popupRef.current;
@@ -55,34 +95,34 @@ export const TokenInspectPopup = ({ typeId, tileIndex, anchorRect, onClose }) =>
         let left = 0;
         let tailOffset = 0;
 
-        const tileCenterX = targetRect.left + targetRect.width / 2;
-        const tileCenterY = targetRect.top + targetRect.height / 2;
+        const tokenCenterX = targetRect.left + targetRect.width / 2;
+        const tokenCenterY = targetRect.top + targetRect.height / 2;
 
         if (dir === 'top') {
             top = Math.max(margin, targetRect.top - tailGap - popupH);
-            const idealLeft = tileCenterX - popupW / 2;
+            const idealLeft = tokenCenterX - popupW / 2;
             left = Math.max(margin, Math.min(viewportW - margin - popupW, idealLeft));
-            tailOffset = Math.max(16, Math.min(popupW - 16, tileCenterX - left));
+            tailOffset = Math.max(16, Math.min(popupW - 16, tokenCenterX - left));
         } else if (dir === 'bottom') {
             top = Math.min(viewportH - margin - popupH, targetRect.bottom + tailGap);
-            const idealLeft = tileCenterX - popupW / 2;
+            const idealLeft = tokenCenterX - popupW / 2;
             left = Math.max(margin, Math.min(viewportW - margin - popupW, idealLeft));
-            tailOffset = Math.max(16, Math.min(popupW - 16, tileCenterX - left));
+            tailOffset = Math.max(16, Math.min(popupW - 16, tokenCenterX - left));
         } else if (dir === 'right') {
             left = Math.min(viewportW - margin - popupW, targetRect.right + tailGap);
-            const idealTop = tileCenterY - popupH / 2;
+            const idealTop = tokenCenterY - popupH / 2;
             top = Math.max(margin, Math.min(viewportH - margin - popupH, idealTop));
-            tailOffset = Math.max(16, Math.min(popupH - 16, tileCenterY - top));
+            tailOffset = Math.max(16, Math.min(popupH - 16, tokenCenterY - top));
         } else if (dir === 'left') {
             left = Math.max(margin, targetRect.left - tailGap - popupW);
-            const idealTop = tileCenterY - popupH / 2;
+            const idealTop = tokenCenterY - popupH / 2;
             top = Math.max(margin, Math.min(viewportH - margin - popupH, idealTop));
-            tailOffset = Math.max(16, Math.min(popupH - 16, tileCenterY - top));
+            tailOffset = Math.max(16, Math.min(popupH - 16, tokenCenterY - top));
         }
 
         setCoords({ top, left, dir, tailOffset });
         requestAnimationFrame(() => setIsVisible(true));
-    }, [anchorRect, tileIndex, typeId]);
+    }, [targetRect, typeId]);
 
     useEffect(() => {
         checkScroll();
@@ -99,9 +139,9 @@ export const TokenInspectPopup = ({ typeId, tileIndex, anchorRect, onClose }) =>
     useEffect(() => {
         const handleGlobalClick = (e) => {
             if (popupRef.current && !popupRef.current.contains(e.target)) {
-                // Check if clicking another tile to inspect
-                const isTile = e.target.closest('[data-tile-index]');
-                if (!isTile) {
+                // Clicking another Token just moves the inspection to it.
+                const onToken = e.target.closest('[data-token-id]');
+                if (!onToken) {
                     onClose();
                 }
             }
@@ -143,32 +183,32 @@ export const TokenInspectPopup = ({ typeId, tileIndex, anchorRect, onClose }) =>
                 left: coords.left
             }}
         >
-            {/* Tail pointing toward the anchor tile */}
+            {/* Tail pointing toward the anchored Token */}
             {coords.dir === 'top' && (
-                <div 
+                <div
                     className="absolute bottom-0 translate-y-full -translate-x-1/2 w-0 h-0 border-solid border-t-[8px] border-l-[8px] border-r-[8px] border-b-0 border-t-gi-border border-l-transparent border-r-transparent pointer-events-none drop-shadow"
                     style={{ left: coords.tailOffset }}
                 />
             )}
             {coords.dir === 'bottom' && (
-                <div 
+                <div
                     className="absolute top-0 -translate-y-full -translate-x-1/2 w-0 h-0 border-solid border-b-[8px] border-l-[8px] border-r-[8px] border-t-0 border-b-gi-border border-l-transparent border-r-transparent pointer-events-none drop-shadow"
                     style={{ left: coords.tailOffset }}
                 />
             )}
             {coords.dir === 'right' && (
-                <div 
+                <div
                     className="absolute left-0 -translate-x-full -translate-y-1/2 w-0 h-0 border-solid border-r-[8px] border-t-[8px] border-b-[8px] border-l-0 border-r-gi-border border-t-transparent border-b-transparent pointer-events-none drop-shadow"
                     style={{ top: coords.tailOffset }}
                 />
             )}
             {coords.dir === 'left' && (
-                <div 
+                <div
                     className="absolute right-0 translate-x-full -translate-y-1/2 w-0 h-0 border-solid border-l-[8px] border-t-[8px] border-b-[8px] border-r-0 border-l-gi-border border-t-transparent border-b-transparent pointer-events-none drop-shadow"
                     style={{ top: coords.tailOffset }}
                 />
             )}
-            
+
             <div className="w-full flex-1 flex flex-col overflow-hidden rounded-lg">
                 {/* Flat Scroll Arrow: Top */}
                 {canScrollUp && (
@@ -185,7 +225,7 @@ export const TokenInspectPopup = ({ typeId, tileIndex, anchorRect, onClose }) =>
                     ref={scrollRef}
                     className="max-h-[75vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
-                    <TokenInspection typeId={typeId} tile={tileIndex} hideSprite={true} showSell={false} showAddToTray={false} />
+                    <TokenInspection typeId={typeId} instanceId={instanceId} hideSprite={true} showSell={false} showAddToTray={false} />
                 </div>
 
                 {/* Flat Scroll Arrow: Bottom */}

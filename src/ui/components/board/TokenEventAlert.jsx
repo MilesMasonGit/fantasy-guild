@@ -1,37 +1,47 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
-import * as BoardState from '../../../systems/board/BoardState.js';
 import { cn } from '../../utils/cn.js';
-import { payloadIsForTile } from './payloadTile.js';
+import { useTokenEvent } from './tokenEvents.js';
 
 /**
- * On-board floating event alert icon in the top-left corner of a tile.
- * Displays a pop-up text bubble at the top of the tile on hover.
- * When unhovered after inspection, begins a 5s countdown followed by a 3s smooth fadeout.
- * Re-hovering resets the timer and restores 100% opacity.
+ * The floating alert mark — "Token Exhausted", "Missing Items", a refused drop.
  *
- * Dismissal behavior:
- * - Moving a token on this tile, placing a new token on this tile, or clicking the icon immediately starts fadeout.
- * - Once dismissed, hovering does not restore the alert.
+ * Shown at the top-left of the thing it is about, with a pop-up bubble on hover.
+ * Unhovered after being read it waits 5s, then fades out over 3s. Re-hovering
+ * resets the wait. Clicking it, or anything happening to its Token, dismisses it
+ * at once; once dismissed, hovering does not bring it back.
+ *
+ * Two things draw one: {@link TokenEventAlert}, on a Token, by instance id; and
+ * `MatPointAlerts`, at a bare mat point, for an alert whose Token has just left
+ * the mat or never existed (a refused drop). The state machine and the mark are
+ * shared between them so the two cannot drift.
  */
-export const TileEventAlert = ({ tile }) => {
+
+/** The alert's life: what it says, whether it is fading, and how to end it. */
+export function useEventAlert(onGone = null) {
     const [alertData, setAlertData] = useState(null);
     const [isHovered, setIsHovered] = useState(false);
     const [isFading, setIsFading] = useState(false);
     const [isDismissed, setIsDismissed] = useState(false);
     const [iconRect, setIconRect] = useState(null);
 
-    const { activePayload } = useActiveDrag();
     const iconRef = useRef(null);
     const delayTimerRef = useRef(null);
     const fadeTimerRef = useRef(null);
+    const goneRef = useRef(onGone);
+    goneRef.current = onGone;
 
-    const dismissAlert = useCallback(() => {
+    const clearTimers = () => {
         if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
         if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    };
+
+    useEffect(() => clearTimers, []);
+
+    const dismiss = useCallback(() => {
+        clearTimers();
         setIsHovered(false);
         setIsDismissed(true);
         setIsFading(true);
@@ -39,108 +49,73 @@ export const TileEventAlert = ({ tile }) => {
             setAlertData(null);
             setIsFading(false);
             setIsDismissed(false);
+            goneRef.current?.();
         }, 400);
     }, []);
 
-    useEffect(() => {
-        if (!EventBus || tile == null) return;
-
-        // Payloads name a Token by instance id, or a point (slice 1.6b); the
-        // STOPGAP adapter maps them onto this drawn tile (deleted in 1.6c).
-        const unsub = EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => {
-            if (!payloadIsForTile(p, tile)) return;
-            // Clear any active fadeout timers
-            if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
-            if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-
-            setIsDismissed(false);
-            setIsFading(false);
-            setAlertData(prev => {
-                let startLevel = p.startLevel;
-                let newLevel = p.newLevel;
-                const isHeroLevelUp = p.type === 'hero_level_up' || p.severity === 'upgrade';
-                if (isHeroLevelUp && prev && (prev.type === 'hero_level_up' || prev.severity === 'upgrade') && prev.heroId === p.heroId && prev.skillId === p.skillId) {
-                    startLevel = prev.startLevel ?? startLevel;
-                }
-                const message = isHeroLevelUp && p.heroName && p.skillName
-                    ? `${p.heroName} leveled up ${p.skillName} ${startLevel}>${newLevel}!`
-                    : (p.title || p.message);
-
-                return {
-                    severity: p.severity || (p.type === 'token_exhausted' ? 'red' : p.type === 'drop_rejected' ? 'disallow' : isHeroLevelUp ? 'upgrade' : 'yellow'),
-                    type: p.type,
-                    name: p.name,
-                    title: message,
-                    rulesText: p.rulesText,
-                    message: message,
-                    heroId: p.heroId,
-                    skillId: p.skillId,
-                    heroName: p.heroName,
-                    skillName: p.skillName,
-                    startLevel,
-                    newLevel,
-                    iconSrc: p.iconSrc
-                };
-            });
-        });
-
-        const unsubClear = EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
-            if (payloadIsForTile(p, tile)) {
-                // Moving a token or placing a new token on this tile immediately dismisses the alert
-                dismissAlert();
-            }
-        });
-
-        return () => {
-            unsub();
-            unsubClear();
-            if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
-            if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-        };
-    }, [EventBus, tile, dismissAlert]);
-
-    // If a token on this tile is being picked up / moved, dismiss the alert immediately
-    useEffect(() => {
-        // STOPGAP (deleted in 1.6c-2): the dragged Token's old spot.
-        const draggedTile = activePayload?.from?.instanceId != null
-            ? BoardState.findTokenById(activePayload.from.instanceId)?.anchor
-            : null;
-        if (draggedTile != null && draggedTile === tile && alertData && !isDismissed) {
-            dismissAlert();
-        }
-    }, [activePayload, tile, alertData, isDismissed, dismissAlert]);
-
-    const handleMouseEnter = () => {
-        if (isDismissed) return;
-        if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
-        if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    /** Take a `board:tile_event_alert` payload and say it. */
+    const show = useCallback((p) => {
+        if (!p) return;
+        clearTimers();
+        setIsDismissed(false);
         setIsFading(false);
-        if (iconRef.current) {
-            setIconRect(iconRef.current.getBoundingClientRect());
-        }
+        setAlertData(prev => {
+            let startLevel = p.startLevel;
+            const newLevel = p.newLevel;
+            const isHeroLevelUp = p.type === 'hero_level_up' || p.severity === 'upgrade';
+            if (isHeroLevelUp && prev && (prev.type === 'hero_level_up' || prev.severity === 'upgrade') && prev.heroId === p.heroId && prev.skillId === p.skillId) {
+                startLevel = prev.startLevel ?? startLevel;
+            }
+            const message = isHeroLevelUp && p.heroName && p.skillName
+                ? `${p.heroName} leveled up ${p.skillName} ${startLevel}>${newLevel}!`
+                : (p.title || p.message);
+
+            return {
+                severity: p.severity || (p.type === 'token_exhausted' ? 'red' : p.type === 'drop_rejected' ? 'disallow' : isHeroLevelUp ? 'upgrade' : 'yellow'),
+                type: p.type,
+                name: p.name,
+                title: message,
+                rulesText: p.rulesText,
+                message,
+                heroId: p.heroId,
+                skillId: p.skillId,
+                heroName: p.heroName,
+                skillName: p.skillName,
+                startLevel,
+                newLevel,
+                iconSrc: p.iconSrc
+            };
+        });
+    }, []);
+
+    const onMouseEnter = () => {
+        if (isDismissed) return;
+        clearTimers();
+        setIsFading(false);
+        if (iconRef.current) setIconRect(iconRef.current.getBoundingClientRect());
         setIsHovered(true);
     };
 
-    const handleMouseLeave = () => {
+    const onMouseLeave = () => {
         setIsHovered(false);
         if (!alertData || isDismissed) return;
-
-        // 5s wait before starting fadeout
+        // 5s wait, then a 3s fade.
         delayTimerRef.current = setTimeout(() => {
             setIsFading(true);
-            // 3s smooth fadeout duration
             fadeTimerRef.current = setTimeout(() => {
                 setAlertData(null);
                 setIsFading(false);
+                goneRef.current?.();
             }, 3000);
         }, 5000);
     };
 
-    const handleClick = (e) => {
-        e.stopPropagation();
-        dismissAlert();
-    };
+    return { alertData, isHovered, isFading, isDismissed, iconRect, iconRef, show, dismiss, onMouseEnter, onMouseLeave };
+}
 
+/** The icon itself, and its hover bubble. `alert` is a {@link useEventAlert}. */
+export const EventAlertMark = ({ alert }) => {
+    const { alertData, isHovered, isFading, isDismissed, iconRect, iconRef, dismiss, onMouseEnter, onMouseLeave } = alert;
     if (!alertData) return null;
 
     const isUpgrade = alertData.severity === 'upgrade' || alertData.type === 'hero_level_up';
@@ -217,7 +192,7 @@ export const TileEventAlert = ({ tile }) => {
     return (
         <div
             ref={iconRef}
-            onClick={handleClick}
+            onClick={(e) => { e.stopPropagation(); dismiss(); }}
             className={cn(
                 "absolute top-1.5 left-[2px] z-[100]",
                 isDismissed ? "pointer-events-none" : "pointer-events-auto"
@@ -230,8 +205,8 @@ export const TileEventAlert = ({ tile }) => {
                         ? 'opacity 3000ms cubic-bezier(0.4, 0, 0.2, 1)'
                         : 'none'
             }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
         >
             {/* Floating glowing alert icon (32px, upright) */}
             <div className="relative group cursor-pointer w-8 h-8 flex items-center justify-center">
@@ -266,3 +241,27 @@ export const TileEventAlert = ({ tile }) => {
         </div>
     );
 };
+
+/**
+ * The alert drawn on one Token, by instance id (slice 1.6c-2). Anything
+ * happening to that Token — it moves, it is replaced, it is picked up —
+ * dismisses it, because the news is about the Token as it was.
+ */
+export const TokenEventAlert = ({ instanceId }) => {
+    const alert = useEventAlert();
+    const { activePayload } = useActiveDrag();
+    const { alertData, isDismissed, show, dismiss } = alert;
+
+    useTokenEvent(BOARD_EVENTS.TILE_EVENT_ALERT, instanceId, show);
+    useTokenEvent(BOARD_EVENTS.TILE_CHANGED, instanceId, dismiss);
+
+    // Picked up: the alert goes with the Token leaving the spot.
+    useEffect(() => {
+        const dragged = activePayload?.from?.instanceId ?? null;
+        if (dragged && dragged === instanceId && alertData && !isDismissed) dismiss();
+    }, [activePayload, instanceId, alertData, isDismissed, dismiss]);
+
+    return <EventAlertMark alert={alert} />;
+};
+
+export default TokenEventAlert;

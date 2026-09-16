@@ -61,6 +61,22 @@ export const MIN_BOARD_SCALE = 0.1;
  *   is the factor to transform by; `size` is the footprint to reserve, so
  *   surrounding layout sees the board's real on-screen size.
  */
+/**
+ * How much a `natW × natH` board must shrink to fit `w × h` of space.
+ *
+ * **Shrink-only** (never past 1: the art is authored for 2×, and blowing it up
+ * would only blur it) and **two-axis** — the free playmat is 1760 × 1126, so the
+ * height is as likely to be the binding constraint as the width. Rounded to
+ * whole percent so a one-pixel resize does not re-render the whole board.
+ *
+ * Pure, so the fit can be tested without a DOM.
+ */
+export function fitScale(w, h, natW, natH = natW) {
+    if (!w || !h || !natW || !natH) return null;
+    const next = Math.max(MIN_BOARD_SCALE, Math.min(1, w / natW, h / natH));
+    return Math.round(next * 100) / 100;
+}
+
 export function useBoardScale(naturalPx = BOARD_PX, naturalH = naturalPx) {
     const [scale, setScale] = useState(1);
     const nodeRef = useRef(null);
@@ -70,16 +86,8 @@ export function useBoardScale(naturalPx = BOARD_PX, naturalH = naturalPx) {
         if (!el) return;
         // `clientWidth/Height` excludes the element's own border and
         // scrollbars, which is the space the board actually gets.
-        const w = el.clientWidth;
-        const h = el.clientHeight;
-        if (!w || !h) return;
-        const next = Math.max(
-            MIN_BOARD_SCALE,
-            Math.min(1, w / naturalPx, h / naturalH)
-        );
-        // Round to whole percent so a one-pixel resize does not re-render the
-        // whole board, and so the value is stable enough to compare.
-        const rounded = Math.round(next * 100) / 100;
+        const rounded = fitScale(el.clientWidth, el.clientHeight, naturalPx, naturalH);
+        if (rounded == null) return;
         setScale(prev => (prev === rounded ? prev : rounded));
     }, [naturalPx, naturalH]);
 

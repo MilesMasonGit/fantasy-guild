@@ -105,7 +105,7 @@ describe('the worker seam answers from flags and claims', () => {
     it('recall clears all three answers', () => {
         Placement.placeToken(9, BoardState.createTokenInstance('fixture_seam_small', 10));
         Placement.placeHero('hero_1', 9);
-        Placement.recallHero(9);
+        Placement.recallHeroById('hero_1');
 
         expect(BoardState.workerOf(idAt(9))).toBeNull();
         expect(BoardState.workTileOf('hero_1')).toBeNull();

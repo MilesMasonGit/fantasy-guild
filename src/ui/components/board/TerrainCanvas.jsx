@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { BOARD_PX } from '../../../config/boardGeometry.js';
+import { BOARD_PX, OLD_AREA_ORIGIN } from '../../../config/boardGeometry.js';
+import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
 import {
     LATTICE_SIZE, subtileArtPx, resolveLattice, resolveArtPixels
 } from '../../../systems/board/TerrainLattice.js';
@@ -127,7 +128,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
 
         const draw = () => {
             ctx.imageSmoothingEnabled = false;
-            ctx.clearRect(0, 0, BOARD_PX, BOARD_PX);
+            ctx.clearRect(0, 0, MAT_W, MAT_H);
 
             const grid = resolveLattice(terrain || {}, seed || 0);
             const pixels = resolveArtPixels(grid, seed || 0);
@@ -203,7 +204,11 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             }
 
             buffer.ctx.putImageData(buffer.image, 0, 0);
-            ctx.drawImage(buffer.canvas, 0, 0, size, size, 0, 0, BOARD_PX, BOARD_PX);
+            // ⚠️ The canvas is the whole mat, but the lattice is still the old
+            // landing area's 6×6 (terrain is dormant, FP-10), so the finished
+            // picture is blitted where that area sits on the mat (FP-92).
+            // STOPGAP: slice 1.6d re-lattices terrain over the mat itself.
+            ctx.drawImage(buffer.canvas, 0, 0, size, size, OLD_AREA_ORIGIN.x, OLD_AREA_ORIGIN.y, BOARD_PX, BOARD_PX);
 
             // --- Props, back to front ---------------------------------------
             //
@@ -213,7 +218,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             for (const prop of propsForBoard(grid, seed || 0, pixels)) {
                 const img = propImage(prop.propId);
                 if (!img) continue;
-                ctx.drawImage(img, prop.x, prop.y, prop.size, prop.size);
+                ctx.drawImage(img, OLD_AREA_ORIGIN.x + prop.x, OLD_AREA_ORIGIN.y + prop.y, prop.size, prop.size);
             }
         };
 
@@ -237,11 +242,11 @@ export const TerrainCanvas = ({ terrain, seed }) => {
     return (
         <canvas
             ref={canvasRef}
-            width={BOARD_PX}
-            height={BOARD_PX}
+            width={MAT_W}
+            height={MAT_H}
             aria-hidden="true"
             className="absolute inset-0 pointer-events-none"
-            style={{ width: BOARD_PX, height: BOARD_PX, imageRendering: 'pixelated' }}
+            style={{ width: MAT_W, height: MAT_H, imageRendering: 'pixelated' }}
         />
     );
 };

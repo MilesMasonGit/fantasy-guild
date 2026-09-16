@@ -16,22 +16,21 @@ import { FLAG_COLOURS, flagColourOf } from '../systems/board/FlagColours.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { tileCentre, TILE_PX, TILE_STEP_PX, colOf, rowOf } from '../config/boardGeometry.js';
+import { tileCentre } from '../config/boardGeometry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
-import { BoardTile } from '../ui/components/board/BoardTile.jsx';
+import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
+import { matAccepts } from '../ui/components/board/Board.jsx';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { FlagGhost } from '../ui/dnd/DragGhost.jsx';
 import { FlagRulesPanel } from '../ui/components/drawer/FlagRulesPanel.jsx';
 import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
 import { useUIModals } from '../ui/hooks/useUIModals.js';
 import { isRecallDrop, recallFromDrop } from '../ui/components/dock/dockRecall.js';
-import {
-    flagOrigin, POLE_BASE, POLE_GAP_PUSH_PX, FLAG_PX, FLAG_FAN_PX
-} from '../ui/components/board/flagGeometry.js';
+import { flagOrigin, POLE_BASE, FLAG_PX } from '../ui/components/board/flagGeometry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -43,8 +42,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * Records every drag and drop hook the board mounts, so a test can read the
- * payload a hero starts and hand it to the tile's own drop handler — the same
- * two calls the dnd provider makes (`accepts`, then `onDrop`).
+ * payload a hero starts and hand it to the mat's own drop function — the same
+ * two calls the dnd provider makes (`accepts`, then the drop).
  */
 const dnd = vi.hoisted(() => ({ drags: [], drops: [], pointerDowns: [] }));
 vi.mock('../ui/dnd/DndKit.jsx', async (importOriginal) => {
@@ -75,11 +74,13 @@ vi.mock('../ui/utils/alphaHitTest.js', async (importOriginal) => {
  * ⭐ Free Playmat slice 1.5b-ii — **dragging a hero moves the flag, the owner's
  * flag sprites and colours, the gear badge and the rules panel** (FP-73,
  * FP-76, FP-77, FP-81, FP-82, FPP-20, FPP-21).
+ *
+ * Since slice 1.6c-2 the board is `MatBoard`, drawing each Token and hero at
+ * its mat point by instance id, and every drop goes through `dropOnMat` at the
+ * point the player let go — so the drops here are made the same way.
  */
 
 const C = (tile) => tileCentre(tile);
-/** A grid tile's drop handler, as `Board` wires it: the drop lands at the point (slice 1.6c). */
-const dropOnTile = (index, payload) => dropOnMat(payload, C(index));
 const h = React.createElement;
 const FOREST = 'fixture_producer';        // logging
 
@@ -129,23 +130,15 @@ beforeEach(() => {
     ];
 });
 
-/** A tile with a working hero on it, as `Board` projects it. */
-const workingTile = (index, heroId, props = {}) => h(BoardTile, {
-    index,
-    token: {
-        typeId: FOREST, usesRemaining: 10, alert: null, size: 1,
-        isAnchor: true, anchorTile: index, heroId, heroName: heroId, heroIdle: false
-    },
-    heroName: heroId,
-    ...props
-});
-
 // ---------------------------------------------------------------------------
 
 describe('FP-76 — the player never moves a hero: dragging one drags their flag', () => {
     it('a hero on a Token starts a FLAG drag, not a HERO drag', () => {
-        mount(workingTile(15, 'h1'));
-        const heroDrag = dnd.drags.find(d => d.id === 'tile-hero-15');
+        put(15, FOREST);
+        Placement.placeHero('h1', 15);
+        mount(h(MatBoard));
+
+        const heroDrag = dnd.drags.find(d => d.id === 'hero-h1');
         expect(heroDrag.kind).toBe(DRAG_KIND.FLAG);
         expect(heroDrag.payload.heroId).toBe('h1');
     });
@@ -156,44 +149,40 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         expect(dnd.drags.find(d => d.id === 'flag-hero-h1').kind).toBe(DRAG_KIND.FLAG);
     });
 
-    it('a board hero dropped on another tile moves the flag — one hero_deployed — and the hero goes to their job', () => {
+    it('a board hero dropped elsewhere moves the flag — one hero_deployed — and the hero goes to their job', () => {
         // 13 is out of tile 21's reach (164 u); 22 is its side neighbour.
         put(13, FOREST);
         put(22, FOREST);
         Placement.placeHero('h1', 13);
         expect(BoardState.workTileOf('h1')).toBe(13);
 
-        mount(h(React.Fragment, null,
-            workingTile(13, 'h1'),
-            h(BoardTile, { index: 21, token: null, onMoveFlag: dropOnTile, onPlaceHero: dropOnTile })));
-        const heroDrag = dnd.drags.find(d => d.id === 'tile-hero-13');
-        const drop = dnd.drops.find(d => d.id === 'tile-21');
+        mount(h(MatBoard));
+        const heroDrag = dnd.drags.find(d => d.id === 'hero-h1');
         const payload = { kind: heroDrag.kind, ...heroDrag.payload };
 
-        expect(drop.accepts(payload)).toBe(true);
-        const deployed = counting('hero_deployed', () => drop.onDrop(payload, {}));
+        expect(matAccepts(payload)).toBe(true);
+        const deployed = counting('hero_deployed', () => dropOnMat(payload, C(21)));
 
         expect(deployed).toBe(1);
+        // The flag stands exactly where it was let go (FP-94).
         expect(BoardState.flagOf('h1')).toMatchObject(C(21));
-        // Bare tile 21: the hero appears at the nearest job in reach, the Forest on 22.
+        // Bare ground at 21: the hero appears at the nearest job in reach, the Forest on 22.
         expect(BoardState.workTileOf('h1')).toBe(22);
     });
 
     it('a hero dragged from the Dock still plants their flag where dropped', () => {
         put(15, FOREST);
-        mount(h(BoardTile, { index: 15, token: { typeId: FOREST, size: 1, isAnchor: true, anchorTile: 15 }, onMoveFlag: dropOnTile, onPlaceHero: dropOnTile }));
-        const drop = dnd.drops.find(d => d.id === 'tile-15');
         const payload = { kind: DRAG_KIND.HERO, heroId: 'h1', from: { dock: true } };
-        expect(drop.accepts(payload)).toBe(true);
-        expect(counting('hero_deployed', () => drop.onDrop(payload, {}))).toBe(1);
+        expect(matAccepts(payload)).toBe(true);
+        expect(counting('hero_deployed', () => dropOnMat(payload, C(15)))).toBe(1);
         expect(BoardState.workTileOf('h1')).toBe(15);
     });
 
     it('the payload a board hero starts recalls when dropped on the Dock or a hero tab', () => {
         put(15, FOREST);
         Placement.placeHero('h1', 15);
-        mount(workingTile(15, 'h1'));
-        const heroDrag = dnd.drags.find(d => d.id === 'tile-hero-15');
+        mount(h(MatBoard));
+        const heroDrag = dnd.drags.find(d => d.id === 'hero-h1');
         const payload = { kind: heroDrag.kind, ...heroDrag.payload };
 
         expect(isRecallDrop(payload)).toBe(true);
@@ -206,16 +195,14 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         Placement.placeHero('h1', 15);
         const inspected = [];
         const unsub = EventBus.subscribe('inspect_hero', (p) => inspected.push(p.heroId));
-        const onPickUp = vi.fn((tile) => Placement.recallHero(tile));
-        const { container } = mount(workingTile(15, 'h1', { onPickUp }));
-        const badge = container.querySelector('[data-board-hero="h1"]');
+        const { container } = mount(h(MatBoard));
+        const drawn = container.querySelector('[data-board-hero="h1"]');
 
-        fireEvent.click(badge);
-        fireEvent.contextMenu(badge);
+        fireEvent.click(drawn);
+        fireEvent.contextMenu(drawn);
         unsub();
 
         expect(inspected).toEqual(['h1']);
-        expect(onPickUp).toHaveBeenCalledWith(15);
         expect(BoardState.flagOf('h1')).toBeNull();
     });
 });
@@ -313,12 +300,12 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 });
 
-describe('FPP-20 — where the flag stands on today’s grid', () => {
-    it('flagOrigin puts the pole base at the tile’s bottom-left corner, pushed into the gap', () => {
-        for (const tile of [0, 14, 35]) {
-            const { left, top } = flagOrigin(C(tile), tile);
-            expect(left + POLE_BASE.x).toBe(C(tile).x - TILE_PX / 2 - POLE_GAP_PUSH_PX);
-            expect(top + POLE_BASE.y).toBe(C(tile).y + TILE_PX / 2 + POLE_GAP_PUSH_PX);
+describe('FP-83 — a flag stands exactly where it was dropped', () => {
+    it('flagOrigin puts the pole base on the flag’s own point', () => {
+        for (const point of [{ x: 0, y: 0 }, { x: 733, y: 412 }, C(14), C(35)]) {
+            const { left, top } = flagOrigin(point);
+            expect(left + POLE_BASE.x).toBe(point.x);
+            expect(top + POLE_BASE.y).toBe(point.y);
         }
     });
 
@@ -326,9 +313,18 @@ describe('FPP-20 — where the flag stands on today’s grid', () => {
         Flags.plant('h1', C(14));
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
-        const { left, top } = flagOrigin(C(14), 14);
+        const { left, top } = flagOrigin(C(14));
         expect(parseFloat(flag.style.left)).toBe(left);
         expect(parseFloat(flag.style.top)).toBe(top);
+    });
+
+    it('a flag planted off the old grid stands there too — no snapping', () => {
+        const odd = { x: 137, y: 909 };
+        Flags.plant('h1', odd);
+        const { container } = mount(h(FlagLayer));
+        const flag = container.querySelector('[data-flag="h1"]');
+        expect(parseFloat(flag.style.left) + POLE_BASE.x).toBe(odd.x);
+        expect(parseFloat(flag.style.top) + POLE_BASE.y).toBe(odd.y);
     });
 });
 
@@ -492,27 +488,24 @@ describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
     });
 });
 
-describe('several flags on one tile', () => {
-    it('fan out 20 px right each, earlier in front; from the 4th a "+N" chip counts the rest', () => {
-        for (const id of ['h1', 'h2', 'h3', 'h4', 'fighter']) Flags.plant(id, C(20));
+describe('several flags on one point (FP-83)', () => {
+    it('⭐ all five are drawn, in the same place, with no "+N" chip', () => {
+        const ids = ['h1', 'h2', 'h3', 'h4', 'fighter'];
+        for (const id of ids) Flags.plant(id, C(20));
         const { container } = mount(h(FlagLayer));
 
-        const drawn = ['h1', 'h2', 'h3'].map(id => container.querySelector(`[data-flag="${id}"]`));
+        const drawn = ids.map(id => container.querySelector(`[data-flag="${id}"]`));
         expect(drawn.every(Boolean)).toBe(true);
-        expect(container.querySelector('[data-flag="h4"]')).toBeNull();
-        expect(container.querySelector('[data-flag="fighter"]')).toBeNull();
 
-        const { left } = flagOrigin(C(20), 20);
-        drawn.forEach((el, i) => expect(parseFloat(el.style.left)).toBe(left + i * FLAG_FAN_PX));
-        expect(Number(drawn[0].style.zIndex)).toBeGreaterThan(Number(drawn[1].style.zIndex));
-        expect(Number(drawn[1].style.zIndex)).toBeGreaterThan(Number(drawn[2].style.zIndex));
+        // ⛔ The grid's fan-out and its three-flag cap are gone: flags overlap.
+        const { left, top } = flagOrigin(C(20));
+        drawn.forEach(el => {
+            expect(parseFloat(el.style.left)).toBe(left);
+            expect(parseFloat(el.style.top)).toBe(top);
+        });
 
-        expect(container.querySelector('[data-flag-more]').textContent).toBe('+2');
-    });
-
-    it('three or fewer show no chip', () => {
-        for (const id of ['h1', 'h2', 'h3']) Flags.plant(id, C(20));
-        const { container } = mount(h(FlagLayer));
+        // Planting order decides who is in front; nobody is hidden.
+        expect(Number(drawn[4].style.zIndex)).toBeGreaterThan(Number(drawn[0].style.zIndex));
         expect(container.querySelector('[data-flag-more]')).toBeNull();
         expect(FLAG_PX).toBe(128);
     });
