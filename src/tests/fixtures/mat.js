@@ -8,16 +8,19 @@
  * These helpers put them there with **no rules applied** — no spacing, no
  * `Cannot`, no events — so a test can build exactly the layout it means.
  *
- * `SPACING` and `tileCentre` are **test layout**, not a game concept: the game
- * has no tiles. They exist so a test can lay Tokens out at today's familiar
- * step while the tile-shaped readers are still being moved (slices 1.6b–1.6d).
+ * `SPACING` is **test layout**, not a game concept: the game has no tiles. It
+ * exists so a test can lay Tokens out at a familiar, readable step.
+ *
+ * ⭐ The tile-shaped helpers here — `tileCentre`, `idAt`, `pointAt` and
+ * `anchorOf` — were deleted with the grid in slice 1.6d-2. A test that wants a
+ * lattice declares its own, which keeps the layout it means visible in the file
+ * that depends on it.
  */
 
 import * as BoardState from '../../systems/board/BoardState.js';
-import { tokenStartingUses, getTokenType } from '../../config/registries/tokenRegistry.js';
-import { tileCentre as geometryTileCentre, footprintCentre } from '../../config/boardGeometry.js';
+import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 
-/** One layout step, in mat units — today's tile step (128 art + 32 gap). Test layout only. */
+/** One layout step, in mat units — the old tile step (128 art + 32 gap). Test layout only. */
 export const SPACING = 160;
 
 /**
@@ -46,39 +49,7 @@ export function beside(instance, dx = SPACING, dy = 0) {
 /** Take every Token and vacancy off the mat. */
 export function clearMat() {
     for (const token of BoardState.tokens()) BoardState.removeToken(token.id);
-    for (const [tile] of BoardState.vacancies()) BoardState.setVacancy(tile, null);
-}
-
-/**
- * Where tile `i` of the old 6×6 layout had its centre. **Test layout only** —
- * a convenience for tests that still speak in the tile readers' terms.
- */
-export function tileCentre(i) {
-    return geometryTileCentre(i);
-}
-
-/**
- * The instance id of the Token covering tile `i` of the old layout, or null.
- * **Test layout only** — the engine readers take ids since slice 1.6b, and this
- * lets a test that laid its board out by tile ask them.
- */
-export function idAt(i) {
-    return BoardState.getOccupyingToken(i)?.instance?.id ?? null;
-}
-
-/**
- * Where a Token of `typeId` anchored at tile `i` of the old layout has its
- * centre (a 2×2's footprint centre). **Test layout only.**
- */
-export function pointAt(i, typeId) {
-    return footprintCentre(i, getTokenType(typeId)?.size || 1);
-}
-
-/**
- * The old spot (anchor tile) Token `id` stands on, or null. **Test layout
- * only** — replaces `BoardState.tileOfToken`, deleted in slice 1.6c, for tests
- * that still read their answers as tiles. Deleted with the grid in 1.6d.
- */
-export function anchorOf(id) {
-    return BoardState.findTokenById(id)?.anchor ?? null;
+    for (const [, vacancy] of BoardState.spotVacancies()) {
+        BoardState.setVacancyAt({ x: vacancy.x, y: vacancy.y }, null);
+    }
 }

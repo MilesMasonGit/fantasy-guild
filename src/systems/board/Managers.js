@@ -43,17 +43,17 @@ import { logger } from '../../utils/Logger.js';
  * 3. **Restocks under a working hero, who resumes automatically** (D-151).
  *    ⚠️ **This is the whole point.** A hero whose Forest ran dry does not need
  *    re-placing, because a fresh Forest arrives under their feet and they carry
- *    on. Without it Managers would restock tiles nobody was working while
+ *    on. Without it Managers would restock spots nobody was working while
  *    leaving idle heroes idle — the opposite of the mitigation they exist to
  *    provide. It is buildable at all only because Phase 7 moved hero position
- *    off the Token instance (see `BoardState.workTileOf`).
+ *    off the Token instance (see `BoardState.workTokenOf`).
  * 4. **An empty Bank fails silently** (D-133). A Manager cannot conjure a
- *    Token, only move one from storage. The tile stays depleted and the hero
+ *    Token, only move one from storage. The spot stays depleted and the hero
  *    idles.
  *
- * ## Only tiles that ran dry (owner decision 2026-08-06)
- * A Manager refills a **vacancy** — a tile remembering what depleted on it —
- * never a tile that was simply always empty. Placing a Lumber Camp therefore
+ * ## Only spots that ran dry (owner decision 2026-08-06)
+ * A Manager refills a **vacancy** — a spot remembering what depleted on it —
+ * never ground that was simply always empty. Placing a Lumber Camp therefore
  * cannot carpet the ground you were saving for something else. The vacancy is
  * cleared the moment anything lands on the tile, including by hand.
  *

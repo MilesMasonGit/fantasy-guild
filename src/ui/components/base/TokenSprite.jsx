@@ -29,8 +29,8 @@ import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
  *   weight on every surface — that is what makes it the same object even when
  *   it is not the same number of pixels.
  * - **Every size is `ART_PX × scale`** and every scale is a whole number, or an
- *   exact halving. `boardGeometry.js` requires that nothing hardcode a pixel
- *   size so small mode stays a config change (roadmap G-20).
+ *   exact halving. `ART_PX` lives in `matGeometry.js`, and nothing may hardcode
+ *   a pixel size, so small mode stays a config change (roadmap G-20).
  */
 
 /**

@@ -2,9 +2,7 @@
 
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
-import { BOARD_SIZE, TILE_STEP_PX, OLD_AREA_ORIGIN, isTileIndex } from '../../config/boardGeometry.js';
 import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
-import * as Shim from './gridShim.js';   // STOPGAP — deleted in slice 1.6d
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -47,10 +45,10 @@ function announceTray(reason) {
  * ## Where a Token is (Free Playmat slice 1.6a)
  * `board.tokens[id]` holds every Token on the mat, keyed by its instance id,
  * and the instance itself carries its point: `x`, `y` in mat units (1 u = one
- * natural board pixel; a tile step is 160 u) and `placedAt`, from
- * `board.nextTokenOrder`, the order it arrived on the mat in. There are no
- * tiles in this storage. The tile-index functions further down are a labelled
- * STOPGAP view over it (`gridShim.js`), deleted in slice 1.6d.
+ * natural board pixel) and `placedAt`, from `board.nextTokenOrder`, the order
+ * it arrived on the mat in. There are no tiles in this storage, and since slice
+ * 1.6d-2 there is no tile-index view over it either: a Token is addressed by
+ * its instance id or by a point, and by nothing else.
  *
  * ⚠️ **`heroId` is NOT on the instance.** A hero's flag is their own state
  * (`board.flags`), and which Token they work is a runtime claim keyed by the
@@ -66,8 +64,6 @@ function announceTray(reason) {
  * may be unlimited and a Mythic may be charged. `null` and `0` are opposites
  * here: one never depletes, the other is spent. Anything comparing charges must
  * check `== null` first.
- *
- * ⚠️ Tile 0 is a valid index and is falsy. Use `isTileIndex()` / `== null`.
  */
 
 /**
@@ -151,7 +147,6 @@ export function layoutVersion() {
 
 /** After a Token's point changes: a claimed Token keeps its hero (FP-68), and the claim's last-known point follows. */
 function afterPointChange(b, instance) {
-    Shim.pin(b, instance);   // STOPGAP — deleted in slice 1.6d
     bumpLayout(b);
     for (const claim of runtimeOf(b).claims.values()) {
         if (claim.instanceId === instance.id) {
@@ -200,7 +195,6 @@ export function removeToken(id) {
     const instance = id ? b?.tokens?.[id] : null;
     if (!instance) return null;
     delete b.tokens[id];
-    Shim.unpin(b, id);   // STOPGAP — deleted in slice 1.6d
     bumpLayout(b);
     return instance;
 }
@@ -235,75 +229,6 @@ export function tokens() {
 export function tokensAtPoint(x, y) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return [];
     return tokens().filter(t => t.x === x && t.y === y);
-}
-
-// ---------------------------------------------------------------------------
-// ⚠️ STOPGAP — the tile-index API, answered by `gridShim.js`. Deleted in slice 1.6d.
-// ---------------------------------------------------------------------------
-//
-// Every function in this section is the old tile API kept alive over free
-// positions, so the readers written against it keep working unchanged while
-// slices 1.6b and 1.6c move them off it. None of it stores a tile.
-
-/** STOPGAP (deleted in 1.6d): the Token anchored at a tile, or null. */
-export function getToken(index) {
-    return Shim.getToken(board(), index);
-}
-
-/**
- * STOPGAP (deleted in 1.6d): the Token covering a tile — its anchor or any tile
- * of a 2×2 footprint.
- *
- * @returns {{ anchorIndex: number, instance: object, isAnchor: boolean, footprint: number[] } | null}
- */
-export function getOccupyingToken(tileIndex) {
-    return Shim.getOccupyingToken(board(), tileIndex);
-}
-
-/** STOPGAP (deleted in 1.6d): whether a tile currently holds or is covered by a Token. */
-export function hasToken(index) {
-    return getOccupyingToken(index) !== null;
-}
-
-/**
- * STOPGAP (deleted in 1.6d): put a Token on a tile — at that tile's centre, or a
- * 2×2's footprint centre — or clear the tile with `null`.
- * No rules applied — callers go through `Placement.js`.
- */
-export function setToken(index, instance) {
-    const b = board();
-    if (!b || !isTileIndex(index)) return;
-    if (instance) {
-        if (!instance.id) instance.id = newTokenId();
-        // The old tile map was last-write-wins: whatever was anchored here is gone.
-        const other = Shim.getToken(b, index);
-        if (other && other.id !== instance.id) removeToken(other.id);
-        const at = Shim.anchorPoint(index, instance.typeId);
-        addToken(instance, at.x, at.y);
-        // Anything arriving satisfies the tile's restock, whatever its shape.
-        const entry = Shim.vacancyEntryAt(b, index);
-        if (entry) delete b.vacancies[entry[0]];
-    } else {
-        const here = Shim.getToken(b, index);
-        if (here) removeToken(here.id);
-    }
-}
-
-/** STOPGAP (deleted in 1.6d): remove and return the Token anchored at a tile (or null). */
-export function takeToken(index) {
-    const instance = getToken(index);
-    if (instance) setToken(index, null);
-    return instance;
-}
-
-/** STOPGAP (deleted in 1.6d): every occupied anchor tile as `[index, instance]`, index ascending. */
-export function occupiedTiles() {
-    return Shim.occupiedTiles(board());
-}
-
-/** STOPGAP (deleted in 1.6d): tiles with no Token on them. */
-export function emptyTiles() {
-    return Shim.emptyTiles(board());
 }
 
 // ---------------------------------------------------------------------------
@@ -445,33 +370,6 @@ export function heroOfInstance(instanceId) {
     return null;
 }
 
-/**
- * Where Token instance `instanceId` is on the mat, as `{ anchor, instance }`,
- * or null if it is not on the mat. A direct lookup by id (slice 1.6a).
- *
- * `anchor` is the STOPGAP tile the Token stands on (deleted in slice 1.6d);
- * `hint` is accepted and ignored, for the callers that still pass one.
- * Id-keyed readers use `getTokenById` instead.
- */
-export function findTokenById(instanceId, hint = null) { // eslint-disable-line no-unused-vars
-    const b = board();
-    const instance = instanceId ? b?.tokens?.[instanceId] : null;
-    if (!instance) return null;
-    return { anchor: Shim.anchorOfId(b, instanceId), instance };
-}
-
-/**
- * STOPGAP (deleted in slice 1.6d): the tile whose step cell holds a mat point
- * (a tile plus the gap after it), measured from the old landing area's corner
- * (`OLD_AREA_ORIGIN`, FP-92) and clamped onto the 6×6.
- */
-export function tileAtPoint(point) {
-    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
-    const col = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor((point.x - OLD_AREA_ORIGIN.x) / TILE_STEP_PX)));
-    const row = Math.max(0, Math.min(BOARD_SIZE - 1, Math.floor((point.y - OLD_AREA_ORIGIN.y) / TILE_STEP_PX)));
-    return row * BOARD_SIZE + col;
-}
-
 // ---------------------------------------------------------------------------
 // The worker seam (Free Playmat slices 1.4a, 1.4b)
 // ---------------------------------------------------------------------------
@@ -497,8 +395,8 @@ export function tileAtPoint(point) {
  * * `displayPointOf(heroId)` is the claimed Token's centre, else the spot they
  *   wait on, else their flag's point, else null (in the Dock).
  *
- * The tile forms below them (`workerOfTile`, `workTileOf`) are STOPGAP
- * adapters for the tile placement code, deleted with it in slice 1.6d.
+ * ⭐ The tile forms that stood beside them — `workerOfTile` and `workTileOf` —
+ * were deleted with the grid in slice 1.6d-2.
  */
 export function workerOf(instanceId) {
     if (typeof instanceId !== 'string' || !instanceId) return null;
@@ -527,21 +425,6 @@ export function displayPointOf(heroId) {
     if (wait && Number.isFinite(wait.x) && Number.isFinite(wait.y)) return { x: wait.x, y: wait.y };
     const flag = flagOf(heroId);
     return flag ? { x: flag.x, y: flag.y } : null;
-}
-
-/**
- * STOPGAP (deleted in 1.6d): who works the Token covering a tile — any tile of
- * its footprint. For `Placement`, which still places by tile. Tile 0 is a valid
- * index.
- */
-export function workerOfTile(tile) {
-    if (!isTileIndex(tile)) return null;
-    return workerOf(getOccupyingToken(tile)?.instance?.id ?? null);
-}
-
-/** STOPGAP (deleted in 1.6d): the anchor tile of the Token `heroId` works, or null. For `Placement`'s results. */
-export function workTileOf(heroId) {
-    return findTokenById(workTokenOf(heroId))?.anchor ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -577,10 +460,6 @@ export function setVacancyAt(point, typeId) {
         delete b.vacancies[spotId];
         return;
     }
-    // STOPGAP (deleted in 1.6d): one vacancy per tile, as the tile map had.
-    const anchor = Shim.anchorOfPoint(point.x, point.y, typeId);
-    const clash = anchor == null ? null : Shim.vacancyEntryAt(b, anchor);
-    if (clash) delete b.vacancies[clash[0]];
     b.vacancies[spotId] = { typeId, x: point.x, y: point.y, unstocked: false };
 }
 
@@ -602,28 +481,6 @@ export function vacancyAt(spotId) {
 export function spotVacancies() {
     const map = board()?.vacancies || {};
     return Object.keys(map).map(spotId => [spotId, map[spotId]]).filter(([, v]) => v?.typeId);
-}
-
-/** STOPGAP (deleted in slice 1.6d): record a vacancy for a tile — at the owed Token's point there. */
-export function setVacancy(index, typeId) {
-    const b = board();
-    if (!b || !isTileIndex(index)) return;
-    if (typeId) {
-        setVacancyAt(Shim.anchorPoint(index, typeId), typeId);
-    } else {
-        const entry = Shim.vacancyEntryAt(b, index);
-        if (entry) delete b.vacancies[entry[0]];
-    }
-}
-
-/** STOPGAP (deleted in slice 1.6d): what ran dry on a tile, or null. */
-export function getVacancy(index) {
-    return Shim.vacancyEntryAt(board(), index)?.[1] || null;
-}
-
-/** STOPGAP (deleted in slice 1.6d): every vacancy as `[anchorTile, vacancy]`, tile ascending. Sparse — usually empty. */
-export function vacancies() {
-    return Shim.vacancyTiles(board());
 }
 
 // ---------------------------------------------------------------------------
@@ -712,9 +569,8 @@ export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
     }
 
     // A Token entering the Tray gives up its place in the mat's arrival order.
-    // Its caller still takes it off the mat just after this (slice 1.6a), and
-    // `gridShim` pins its tile, so the Tray fractions written below cannot
-    // hide it from the tile view in between.
+    // ⚠️ The Tray stores fractions in the same `x`/`y` the mat stores points in,
+    // so its caller must take it off the mat straight after this.
     delete instance.placedAt;
 
     const at = position || scatterIntoTray(b.tray, { biasTop: isMap });
