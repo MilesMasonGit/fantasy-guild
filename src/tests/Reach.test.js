@@ -16,7 +16,19 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import {
     REACH, REACHES, DEFAULT_REACH, reachOf, reachCovers, RELATION, getReach
 } from '../config/registries/reachRegistry.js';
-import { anchorOf } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * spots 15 and 16 are 160 u apart and spot 33 is near neither.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** Which spot a Token stands on, by instance id. */
+const spotOf = (id) => {
+    const instance = BoardState.getTokenById(id);
+    if (!instance) return null;
+    return Math.round((instance.y - 200) / 160) * 6 + Math.round((instance.x - 400) / 160);
+};
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -30,12 +42,12 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * **How far a rule reaches** (Effects Robustness P2, ER-1).
  *
  * ## The gap this closes
- * Reach was `neighboursOf(index)` written into three readers and choosable by
- * nobody, and `neighboursOf` **never contains the tile it was asked about** —
- * `areAdjacent` says outright that a tile is not adjacent to itself. So a Token
- * could not buff its own yield, put a status on the hero working *it*, or grant
- * an item to itself, at any strength, however it was authored. That was the
- * owner's own example when this project started.
+ * Reach was the neighbour set written into three readers and choosable by
+ * nobody, and that set **never contained the Token it was asked about** — a
+ * Token was never its own neighbour. So a Token could not buff its own yield,
+ * put a status on the hero working *it*, or grant an item to itself, at any
+ * strength, however it was authored. That was the owner's own example when this
+ * project started.
  *
  * ## The two invariants that matter most
  * 1. **Absence means `adjacent`** (ER-5). Every rule authored before this phase
@@ -47,7 +59,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  *    substitutes for the other.
  */
 
-// 15 and 16 are adjacent. 33 is adjacent to neither.
+// 15 and 16 are neighbours. 33 is near neither.
 const A = 15, NEIGHBOUR = 16, FAR = 33;
 
 function makeHero(id) {
@@ -58,10 +70,10 @@ function makeHero(id) {
 
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -261,7 +273,7 @@ describe('a firing rule reaches as far as it says (the outbound side)', () => {
         const addressed = addSprite.mock.calls
             .filter(([kind, refId]) => kind === 'item' && refId === 'fixture_charcoal')
             // A sprite's source is a Token instance id since Free Playmat 1.6b.
-            .map(([, , , source]) => anchorOf(source));
+            .map(([, , , source]) => spotOf(source));
         expect(addressed).toEqual([NEIGHBOUR]);   // the granter itself
         addSprite.mockRestore();
     });

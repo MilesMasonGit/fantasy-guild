@@ -18,7 +18,17 @@ import {
 } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { tickUpkeep, isStatementPaid } from '../systems/board/BlockUpkeep.js';
-import { tileCentre, idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * spots 15 and 16 are 160 u apart, inside the shipped 164 u Near, which is what
+ * lets the Manager below reach the vacancy beside it.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /**
  * The statement grammar — the shape that replaced effect blocks.
@@ -234,14 +244,14 @@ describe('Restocks — the field that never had a box (owner Q6)', () => {
 
     it('actually restocks a vacancy from the Bank', () => {
         const TILE = 15, MANAGER_TILE = 16;
-        Placement.placeToken(MANAGER_TILE, BoardState.createTokenInstance(
+        Placement.placeTokenAt(BoardState.createTokenInstance(
             'fixture_restocker', tokenStartingUses('fixture_restocker')
-        ));
+        ), C(MANAGER_TILE));
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5));
-        BoardState.setVacancy(TILE, 'fixture_producer');
+        BoardState.setVacancyAt(C(TILE), 'fixture_producer');
 
         expect(Managers.sweep()).toBe(1);
-        expect(BoardState.getToken(TILE)?.typeId).toBe('fixture_producer');
+        expect(tokenAt(TILE)?.typeId).toBe('fixture_producer');
     });
 });
 
@@ -344,8 +354,8 @@ describe('Old-shape content breaks visibly, never silently', () => {
 
     it('contributes nothing from an old-shape Token rather than half-reading it', () => {
         const TILE = 15, NEIGHBOUR = 16;
-        Placement.placeToken(NEIGHBOUR, BoardState.createTokenInstance('fixture_buff_hero', null));
-        TileModifiers.rebuildAround([tileCentre(NEIGHBOUR)]);
+        Placement.placeTokenAt(BoardState.createTokenInstance('fixture_buff_hero', null), C(NEIGHBOUR));
+        TileModifiers.rebuildAround([C(NEIGHBOUR)]);
         expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.HP_REGEN, 10)).toBe(10);
     });
 });
