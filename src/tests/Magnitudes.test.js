@@ -37,7 +37,13 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * as one honest sentence and still audits.
  */
 
-const BUSH = 15;
+/**
+ * The bush and a spot either side of it, 160 u away — inside the live Near
+ * radius (164 u), so both count as adjacent to the bush.
+ */
+const BUSH = { x: 400, y: 300 };
+const LEFT = { x: 240, y: 300 };
+const RIGHT = { x: 560, y: 300 };
 
 function makeHero(id, hp = 100) {
     const skills = {};
@@ -49,14 +55,14 @@ function makeHero(id, hp = 100) {
     };
 }
 
-function place(tile, typeId, heroId = null, uses = undefined) {
+function place(point, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, point);
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, point);
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -170,8 +176,8 @@ describe('⭐ a count of a second selector (G-14)', () => {
             { mode: 'tag', value: 'seafood' });
 
         place(BUSH, 'fixture_count_thorns', 'hero_1');
-        place(16, 'fixture_seafood_producer');
-        place(14, 'fixture_seafood_producer');
+        place(RIGHT, 'fixture_seafood_producer');
+        place(LEFT, 'fixture_seafood_producer');
 
         run(13000);
 
@@ -184,7 +190,7 @@ describe('⭐ a count of a second selector (G-14)', () => {
             { mode: 'tag', value: 'nothing_has_this' });
 
         place(BUSH, 'fixture_count_none', 'hero_1');
-        place(16, 'fixture_seafood_producer');
+        place(RIGHT, 'fixture_seafood_producer');
 
         run(13000);
 

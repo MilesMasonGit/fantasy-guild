@@ -50,11 +50,17 @@ function makeHero(id) {
     return { id, name: id, status: 'idle', level: 50, skills, hp: { current: 100, max: 100 } };
 }
 
-function place(tile, typeId, heroId = null) {
-    Placement.placeToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+/** Put a Token down at a mat point, optionally with a hero's flag on it. */
+function place(point, typeId, heroId = null) {
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    Placement.placeTokenAt(instance, point);
+    if (heroId) Placement.plantFlagAt(heroId, point);
+    return instance;
 }
+
+/** Two spots far enough apart that neither consumer's neighbourhood touches the other. */
+const SPOT_A = { x: 400, y: 300 };
+const SPOT_B = { x: 1400, y: 900 };
 
 const SHALLOW = 'fixture_consumer';        // needs 2 oak wood → 1 glowcap
 const DEEP = 'fixture_deep_consumer';      // needs 5 oak wood → 1 spider silk
@@ -75,8 +81,8 @@ beforeEach(() => {
  * @param {number} durationMs how long to run
  */
 function runShortage(woodPerTick, durationMs) {
-    place(10, SHALLOW, 'hero_1');
-    place(30, DEEP, 'hero_2');
+    place(SPOT_A, SHALLOW, 'hero_1');
+    place(SPOT_B, DEEP, 'hero_2');
 
     for (let elapsed = 0; elapsed < durationMs; elapsed += 100) {
         InventoryManager.addItem('fixture_oak_wood', woodPerTick);
@@ -179,8 +185,8 @@ describe('⚠️ Risk 13 — does first-come allocation starve deep chains?', ()
 
 describe('Shortfall is per ITEM, so throttling cascades without cascade logic', () => {
     it('a wood shortage never stalls a producer that needs nothing', () => {
-        place(10, SHALLOW, 'hero_1');                 // starved of wood
-        place(30, 'fixture_producer_alt', 'hero_2');  // needs nothing
+        place(SPOT_A, SHALLOW, 'hero_1');                 // starved of wood
+        place(SPOT_B, 'fixture_producer_alt', 'hero_2');  // needs nothing
 
         for (let t = 0; t < 20000; t += 100) BoardRunner.tick(100);
 

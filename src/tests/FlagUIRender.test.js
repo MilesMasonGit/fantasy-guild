@@ -12,7 +12,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { tileCentre } from '../config/boardGeometry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
@@ -41,7 +40,17 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * real board state.
  */
 
-const C = (tile) => tileCentre(tile);
+/**
+ * The scene, in mat units. `BESIDE` and `SECOND` sit 160 u either side of
+ * `TOKEN` — inside the live Near radius (164 u) — so a flag planted at `BESIDE`
+ * can claim the Token at `TOKEN`. `BARE` is open ground with nothing in range.
+ */
+const TOKEN = { x: 400, y: 300 };
+const BESIDE = { x: 240, y: 300 };
+const SECOND = { x: 560, y: 300 };
+const BARE = { x: 1200, y: 800 };
+const ELSEWHERE = { x: 1400, y: 900 };
+
 const h = React.createElement;
 
 function hero(id, skills) {
@@ -50,9 +59,10 @@ function hero(id, skills) {
     return { id, name: id, status: 'idle', level: 50, skills: out, hp: { current: 100, max: 100 } };
 }
 
-function put(tile, typeId) {
-    Placement.placeToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
-    return BoardState.getToken(tile);
+function put(point, typeId) {
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    Placement.placeTokenAt(instance, point);
+    return instance;
 }
 
 /** Render inside the two providers every board component expects. */
@@ -80,8 +90,8 @@ beforeEach(() => {
 
 describe('the idle mark (FP-29)', () => {
     it('draws no idle glow on a board hero whose Token is stuck', () => {
-        const forest = put(15, 'fixture_producer');
-        Flags.plant('h1', C(15));
+        const forest = put(TOKEN,'fixture_producer');
+        Flags.plant('h1', TOKEN);
         expect(Flags.statusOf('h1').state).toBe('working');
 
         // A hero on a Token that cannot run gets no glow: the Token's own red
@@ -96,8 +106,8 @@ describe('the idle mark (FP-29)', () => {
     });
 
     it('keeps the working glow', () => {
-        put(15, 'fixture_producer');
-        Flags.plant('h1', C(15));
+        put(TOKEN,'fixture_producer');
+        Flags.plant('h1', TOKEN);
 
         const { container } = mount(h(MatBoard));
         expect(container.querySelector('[data-board-hero="h1"]').className).toContain('gi-glow-active');
@@ -105,7 +115,7 @@ describe('the idle mark (FP-29)', () => {
 
     it('an idle flag keeps its colour, has a "…" chip, and its hero stands beside it at 128 px with no glow', () => {
         GameState.state.heroes[0].spriteId = 'hero_recruit_0';   // rehydration's default portrait
-        Flags.plant('h1', C(20));                             // bare ground, nothing in range
+        Flags.plant('h1', BARE);                             // bare ground, nothing in range
         expect(Flags.statusOf('h1').state).toBe('idle');
 
         const { container } = mount(h(FlagLayer));
@@ -123,8 +133,8 @@ describe('the idle mark (FP-29)', () => {
     });
 
     it('a working flag shows no chip and leaves its hero to the Token', () => {
-        put(15, 'fixture_producer');
-        Flags.plant('h1', C(14));
+        put(TOKEN,'fixture_producer');
+        Flags.plant('h1', BESIDE);
         expect(Flags.statusOf('h1').state).toBe('working');
 
         const { container } = mount(h(FlagLayer));
@@ -135,8 +145,8 @@ describe('the idle mark (FP-29)', () => {
     });
 
     it('⭐ two flags planted on one point simply overlap — no fan-out (FP-83)', () => {
-        Flags.plant('h1', C(20));
-        Flags.plant('fighter', C(20));
+        Flags.plant('h1', BARE);
+        Flags.plant('fighter', BARE);
         const { container } = mount(h(FlagLayer));
         const a = container.querySelector('[data-flag="h1"]');
         const b = container.querySelector('[data-flag="fighter"]');
@@ -150,7 +160,7 @@ describe('the idle mark (FP-29)', () => {
 });
 
 describe('the reach ring (FP-64, A-4)', () => {
-    beforeEach(() => { Flags.plant('h1', C(14)); });
+    beforeEach(() => { Flags.plant('h1', BESIDE); });
 
     const ring = (container) => container.querySelector('[data-flag-ring="h1"]');
 
@@ -163,7 +173,7 @@ describe('the reach ring (FP-64, A-4)', () => {
         setMatTuning('flagRadius', 450);
         const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1' }));
         expect(ring(container).getAttribute('r')).toBe('450');
-        expect(ring(container).getAttribute('cx')).toBe(String(C(14).x));
+        expect(ring(container).getAttribute('cx')).toBe(String(BESIDE.x));
     });
 
     it('is drawn while the hero is inspected', () => {
@@ -172,8 +182,8 @@ describe('the reach ring (FP-64, A-4)', () => {
     });
 
     it('follows a drag to where the flag would land', () => {
-        const { container } = mount(h(FlagLayer, { dragRing: { heroId: 'h1', ...C(30) } }));
-        expect(ring(container).getAttribute('cy')).toBe(String(C(30).y));
+        const { container } = mount(h(FlagLayer, { dragRing: { heroId: 'h1', ...ELSEWHERE } }));
+        expect(ring(container).getAttribute('cy')).toBe(String(ELSEWHERE.y));
     });
 
     it('hovering the flag itself draws it', () => {
@@ -189,7 +199,7 @@ describe('the reach ring (FP-64, A-4)', () => {
 
 describe('the flag has no skill since slice 1.5b (FP-71)', () => {
     it('draws no skill disc, clicking it opens nothing, and its tooltip title is the hero name', () => {
-        Flags.plant('h1', C(20));
+        Flags.plant('h1', BARE);
         const opened = [];
         const unsub = EventBus.subscribe('ui:open_flag_rules', (p) => opened.push(p));
         const { container } = mount(h(FlagLayer));
@@ -210,8 +220,8 @@ describe('"Heroes may work this" (FP-35, FPP-8)', () => {
     const toggle = (container) => container.querySelector('[data-heroes-may-work]');
 
     it('unticking marks the Token disallowed and the hero working it leaves', async () => {
-        const forest = put(15, 'fixture_producer');
-        Flags.plant('h1', C(15));
+        const forest = put(TOKEN,'fixture_producer');
+        Flags.plant('h1', TOKEN);
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
 
         const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
@@ -226,8 +236,8 @@ describe('"Heroes may work this" (FP-35, FPP-8)', () => {
     });
 
     it('is offered only for a board Token a hero could work', () => {
-        const passive = put(15, 'fixture_passive');
-        const enemy = put(16, 'fixture_enemy');
+        const passive = put(TOKEN,'fixture_passive');
+        const enemy = put(SECOND,'fixture_enemy');
         expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_passive', instanceId: passive.id })).container)).toBeNull();
         cleanup();
         expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_enemy', instanceId: enemy.id })).container)).toBeTruthy();
@@ -237,7 +247,7 @@ describe('"Heroes may work this" (FP-35, FPP-8)', () => {
     });
 
     it('a disallowed Token shows a dim ⊘ on the mat', () => {
-        const forest = put(15, 'fixture_producer');
+        const forest = put(TOKEN,'fixture_producer');
         Flags.setDisallowed(forest.id, true);
 
         const { container } = mount(h(MatBoard));

@@ -43,15 +43,17 @@ function makeHero(id) {
     return { id, name: id, status: 'idle', level: 50, skills, hp: { current: 100, max: 100 } };
 }
 
-function place(tile, typeId, heroId = null) {
-    Placement.placeToken(tile, BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)));
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+function place(point, typeId, heroId = null) {
+    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    Placement.placeTokenAt(instance, point);
+    if (heroId) Placement.plantFlagAt(heroId, point);
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 
 const MARKET = 'fixture_market';
+const SPOT = { x: 400, y: 300 };
 
 beforeEach(() => {
     GameState.initNew();
@@ -86,17 +88,17 @@ describe('A Market is an ordinary Token whose output is gold', () => {
 
     it('waits when it cannot afford its inputs, exactly like any other Token', () => {
         InventoryManager.addItem('item_market_goods', 3);      // needs 10
-        place(10, MARKET, 'hero_1');
+        const market = place(SPOT, MARKET, 'hero_1');
 
         run(16000);
 
         expect(GameState.state.currency.gold).toBe(0);
-        expect(BoardState.getToken(10).alert).toBe(BoardRunner.ALERT.INPUTS);
+        expect(BoardState.getTokenById(market.id).alert).toBe(BoardRunner.ALERT.INPUTS);
     });
 
     it('needs a hero — gold income is not a passive trickle', () => {
         InventoryManager.addItem('item_market_goods', 50);
-        place(10, MARKET);                                  // unstaffed
+        place(SPOT, MARKET);                                // unstaffed
 
         run(30000);
 
@@ -130,7 +132,7 @@ describe('⚠️ Items are worth more used than sold (D-128)', () => {
 
         GameState.state.currency.gold = 0;
         InventoryManager.addItem(input.itemId, input.quantity);
-        place(10, MARKET, 'hero_1');
+        place(SPOT, MARKET, 'hero_1');
         run(16000);
         const marketGold = GameState.state.currency.gold;
 
@@ -138,9 +140,9 @@ describe('⚠️ Items are worth more used than sold (D-128)', () => {
         expect(marketGold).toBe(Math.round(rawGold * MARKET_PREMIUM));
     });
 
-    it('costs a whole tile and a whole hero for its income', () => {
+    it('costs a whole spot and a whole hero for its income', () => {
         // The design's actual constraint (D-141): serious gold income costs
-        // several tiles and several heroes. One Market occupies one of each.
+        // several spots and several heroes. One Market occupies one of each.
         const def = getTokenType(MARKET);
         expect(def.requiresHero).not.toBe(false);
         expect(def.config.inputs.length).toBeGreaterThan(0);
