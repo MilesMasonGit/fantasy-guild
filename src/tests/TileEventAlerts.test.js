@@ -3,13 +3,26 @@ import './fixtures/testTokens.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
-import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
+ * A lattice of mat points 160 u apart, so spots 3, 8 and 10 are each a side
+ * neighbour of spot 9 — which is what puts three Coasts within the shipped
+ * 164 u Near of it below.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+
+/** Put a Token on spot `i`, and plant a hero's flag there. */
+const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
 
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 
@@ -48,21 +61,21 @@ describe('On-Board Tile Event Alerts', () => {
 
         // Create token with 1 charge
         const tok = BoardState.createTokenInstance('fixture_producer', 1);
-        Placement.placeToken(8, tok);
-        Placement.placeHero('hero_1', 8);
+        put(8, tok);
+        plant('hero_1', 8);
 
         // Run cycle to completion (fixture_producer cycleTime is 12s)
         for (let t = 0; t < 13000; t += 100) BoardRunner.tick(100);
 
         // Token should have depleted and emitted TILE_EVENT_ALERT
-        expect(BoardState.getToken(8)).toBeNull();
+        expect(tokenAt(8)).toBeNull();
         expect(events.length).toBeGreaterThanOrEqual(1);
 
         const exhaustEvent = events.find(e => e.type === 'token_exhausted');
         expect(exhaustEvent).toBeDefined();
         expect(exhaustEvent).toMatchObject({
             instanceId: tok.id,
-            ...tileCentre(8),
+            ...C(8),
             severity: 'red',
             type: 'token_exhausted'
         });
@@ -80,8 +93,8 @@ describe('On-Board Tile Event Alerts', () => {
      * chooser — is what each test below exercises.
      */
     function staff(tile, heroId) {
-        const instance = BoardState.getToken(tile);
-        Flags.plant(heroId, positionOf(tile));
+        const instance = tokenAt(tile);
+        Flags.plant(heroId, C(tile));
         BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId });
     }
 
@@ -91,7 +104,7 @@ describe('On-Board Tile Event Alerts', () => {
 
         // Place a consumer without providing its inputs in inventory
         const consumer = BoardState.createTokenInstance('fixture_consumer');
-        Placement.placeToken(8, consumer);
+        put(8, consumer);
         staff(8, 'hero_1');
 
         // Tick runner
@@ -113,7 +126,7 @@ describe('On-Board Tile Event Alerts', () => {
 
         // Place station with no context beside it
         const station = BoardState.createTokenInstance('fixture_station');
-        Placement.placeToken(8, station);
+        put(8, station);
         staff(8, 'hero_1');
 
         // Tick runner
@@ -135,7 +148,7 @@ describe('On-Board Tile Event Alerts', () => {
 
         // Place token_oak_tree (requires axe) without an adjacent axe
         const tree = BoardState.createTokenInstance('token_oak_tree');
-        Placement.placeToken(8, tree);
+        put(8, tree);
         staff(8, 'hero_1');
 
         // Tick runner
@@ -161,24 +174,24 @@ describe('On-Board Tile Event Alerts', () => {
 
         // Place station with recipe context
         const station = BoardState.createTokenInstance('fixture_station');
-        Placement.placeToken(8, station);
-        Placement.placeHero('hero_1', 8);
+        put(8, station);
+        plant('hero_1', 8);
 
         // Place tool/context token with 1 charge adjacent at tile 9
         const contextA = BoardState.createTokenInstance('fixture_context_a', 1);
-        Placement.placeToken(9, contextA);
+        put(9, contextA);
 
         // Run cycle to completion (fixture_station cycleTime is 16s)
         for (let t = 0; t < 17000; t += 100) BoardRunner.tick(100);
 
         // The unworked tool on tile 9 should have depleted and emitted Red alert
-        expect(BoardState.getToken(9)).toBeNull();
+        expect(tokenAt(9)).toBeNull();
 
         const toolExhaustEvent = events.find(e => e.type === 'token_exhausted' && e.instanceId === contextA.id);
         expect(toolExhaustEvent).toBeDefined();
         expect(toolExhaustEvent).toMatchObject({
             instanceId: contextA.id,
-            ...tileCentre(9),
+            ...C(9),
             severity: 'red',
             type: 'token_exhausted'
         });
@@ -192,9 +205,9 @@ describe('On-Board Tile Event Alerts', () => {
 
         // Place 3 plain coasts beside tile 9 (tiles 8, 10, 3). Side neighbours
         // only: Near has reached no diagonal since FP-75 (164 u).
-        Placement.placeToken(8, BoardState.createTokenInstance('fixture_plain_coast'));
-        Placement.placeToken(10, BoardState.createTokenInstance('fixture_plain_coast'));
-        Placement.placeToken(3, BoardState.createTokenInstance('fixture_plain_coast'));
+        put(8, BoardState.createTokenInstance('fixture_plain_coast'));
+        put(10, BoardState.createTokenInstance('fixture_plain_coast'));
+        put(3, BoardState.createTokenInstance('fixture_plain_coast'));
 
         // ⚠️ Since FP-88 a drop that would break a rule is NUDGED to the nearest
         // spot that obeys it, and flies back only when there is nowhere within
@@ -203,12 +216,12 @@ describe('On-Board Tile Event Alerts', () => {
         setMatTuning('nudgeReach', 0);
 
         // Attempt to drop fixture_coast on tile 9 (it allows at most 2 adjacent Coasts)
-        const rejectResult = Placement.placeToken(9, BoardState.createTokenInstance('fixture_coast'));
+        const rejectResult = put(9, BoardState.createTokenInstance('fixture_coast'));
         expect(rejectResult.success).toBe(false);
 
         // A refused drop has no Token on the mat to name: the alert names the
         // point it was refused at (tile 9's centre).
-        const at = tileCentre(9);
+        const at = C(9);
         const rejectAlert = events.find(e => e.type === 'drop_rejected' && e.x === at.x && e.y === at.y);
         expect(rejectAlert).toBeDefined();
         expect(rejectAlert).toMatchObject({
@@ -227,11 +240,11 @@ describe('On-Board Tile Event Alerts', () => {
 
         // Place a fixture_producer on tile 8 with 20 uses remaining (max cap is 5000)
         const onBoardToken = BoardState.createTokenInstance('fixture_producer', 20);
-        Placement.placeToken(8, onBoardToken);
+        put(8, onBoardToken);
 
         // Drop another fixture_producer with 100 uses onto tile 8
         const incomingToken = BoardState.createTokenInstance('fixture_producer', 100);
-        const result = Placement.placeToken(8, incomingToken);
+        const result = put(8, incomingToken);
         expect(result.restocked).toBe(true);
 
         // Verify Green alert was emitted on the Token that took the charges
@@ -255,8 +268,8 @@ describe('On-Board Tile Event Alerts', () => {
 
         // Place hero on tile 8 with a token
         const tok = BoardState.createTokenInstance('fixture_producer');
-        Placement.placeToken(8, tok);
-        Placement.placeHero('hero_1', 8);
+        put(8, tok);
+        plant('hero_1', 8);
 
         // Set Ryan / hero_1's mining skill to level 3 with 0 XP
         const hero = GameState.state.heroes.find(h => h.id === 'hero_1');
@@ -272,7 +285,7 @@ describe('On-Board Tile Event Alerts', () => {
         const firstAlert = levelUpAlerts[0];
         expect(firstAlert).toMatchObject({
             instanceId: tok.id,
-            ...tileCentre(8),
+            ...C(8),
             severity: 'upgrade',
             type: 'hero_level_up',
             heroName: 'Ryan',
