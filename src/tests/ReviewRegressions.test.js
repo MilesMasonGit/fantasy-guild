@@ -19,7 +19,17 @@ import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { slotsOf } from '../systems/effects/statementSlots.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * `A` and `NEIGHBOUR` are 160 u apart, so the buff beside the producer is a
+ * neighbour at the shipped 164 u Near.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -58,10 +68,10 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -136,8 +146,8 @@ describe('⭐ a Token that replaced itself does not pay a charge', () => {
         place(A, 'fixture_sapling_2use', 'hero_1');
         run(13000);
 
-        const after = BoardState.getToken(A);
-        expect(after, 'the tile was emptied').not.toBeNull();
+        const after = tokenAt(A);
+        expect(after, 'the spot was emptied').not.toBeNull();
         expect(after.typeId).toBe('fixture_passive');
     });
 
@@ -148,7 +158,7 @@ describe('⭐ a Token that replaced itself does not pay a charge', () => {
         place(A, 'fixture_sapling_3use', 'hero_1');
         run(13000);
 
-        expect(BoardState.getToken(A).usesRemaining)
+        expect(tokenAt(A).usesRemaining)
             .toBe(tokenStartingUses('fixture_enemy'));
     });
 });
@@ -250,7 +260,7 @@ describe('⭐ an unstaffed Token can still act on itself', () => {
         place(A, 'fixture_lonely_sapling');
         run(13000);
 
-        expect(BoardState.getToken(A).typeId).toBe('fixture_passive');
+        expect(tokenAt(A).typeId).toBe('fixture_passive');
     });
 });
 
@@ -289,9 +299,9 @@ describe('⭐ a hero leaving switches a state filter back off', () => {
 describe('⭐ a distant duplicate cannot suppress an adjacent one', () => {
     it('keeps the buff that actually reaches this tile', () => {
         /**
-         * The source set widened to every occupied tile, scanned in ascending
+         * The source set widened to every Token on the mat, scanned in arrival
          * order, but the `noStackDuplicates` guard still ran BEFORE the reach
-         * test. A far copy at a low tile index claimed the slot and the adjacent
+         * test. A far copy that arrived first claimed the slot and the adjacent
          * copy — whose rule genuinely reached here — was skipped.
          */
         registerTokenTypes({
@@ -307,7 +317,7 @@ describe('⭐ a distant duplicate cannot suppress an adjacent one', () => {
             }
         });
 
-        place(0, 'fixture_unique_buff');          // far, and lowest tile index
+        place(0, 'fixture_unique_buff');          // far away, and placed first
         place(NEIGHBOUR, 'fixture_unique_buff');  // adjacent to A
         place(A, 'fixture_producer', 'hero_1');
 
