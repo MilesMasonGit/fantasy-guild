@@ -19,7 +19,6 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { tileCentre, idAt } from './fixtures/mat.js';
 
 /**
  * Adjacency — the spatial half of the game.
@@ -58,16 +57,20 @@ function makeHero(id, level = 50) {
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 
-/** Place a Token, rebuilding the modifier scope exactly as the engine does. */
-function place(tile, typeId, heroId = null, uses = undefined) {
+/** Place a Token at a mat point, rebuilding the modifier scope as the engine does. */
+function place(point, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, point);
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, point);
+    return instance;
 }
+
+/** The Token standing exactly at a point, and its instance id. */
+const tokenAt = (point) => BoardState.tokensAtPoint(point.x, point.y)[0] ?? null;
+const idAt = (point) => tokenAt(point)?.id ?? null;
 
 function run(ms) {
     for (let t = 0; t < ms; t += 100) BoardRunner.tick(100);
@@ -88,8 +91,27 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-// tiles 17 and 18 are adjacent; 17 and 45 are not.
-const A = 15, NEIGHBOUR = 16, FAR = 33;
+/**
+ * The scene, in mat units (Free Playmat slice 1.6d-2). Spots are 160 u apart —
+ * the step the old board had — so `A` and `NEIGHBOUR` are neighbours at the
+ * 272 u Near pinned below, and `FAR` is nowhere near either.
+ */
+const P = (row, col) => ({ x: 400 + col * 160, y: 300 + row * 160 });
+
+// ⚠️ Rows stop at 4: the mat is 1126 u tall and a 1×1 Token's art circle must
+// sit fully inside it, so nothing may stand below y = 1062.
+const A = P(2, 3);
+const NEIGHBOUR = P(2, 4);
+const FAR = P(4, 3);            // 320 u from A — outside the 272 u Near below
+const SECOND_FAR = P(4, 2);     // beside FAR
+
+/** A spot with all eight of its neighbours free — the stacking case. */
+const CENTRE = P(1, 3);
+const RING = [
+    P(0, 2), P(0, 3), P(0, 4),
+    P(1, 2), /* CENTRE */ P(1, 4),
+    P(2, 2), P(2, 3), P(2, 4)
+];
 
 describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)', () => {
     it('a Sawmill beside a Forest raises its output', () => {
@@ -119,8 +141,8 @@ describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)
     it('resolves back to base once the neighbour is removed', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
-        Placement.returnTokenToTray(NEIGHBOUR);
-        TileModifiers.rebuildAround([tileCentre(NEIGHBOUR)]);
+        Placement.returnTokenToTrayById(idAt(NEIGHBOUR));
+        TileModifiers.rebuildAround([NEIGHBOUR]);
 
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
     });
@@ -130,7 +152,7 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
     it('two Sawmills give twice one Sawmill, never the square of it', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
-        place(16, 'fixture_buff_yield');
+        place(NEIGHBOUR, 'fixture_buff_yield');
         TileModifiers.rebuildToken(idAt(A));
 
         // +5% and +5% = +10%. Compounding would give 1.1025 — the bug the
@@ -143,12 +165,9 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
         // The design's own argument for leaving stacking uncapped. If this ever
         // reads as large, the buff numbers have drifted, not the rule.
         //
-        // Centred on tile 9, whose 8 neighbours are all placeable and none
-        // of which is the Guild Hall tile itself — that one refuses everything
-        // (D-106), so a centre whose ring touched it would only fit 7.
-        const CENTRE = 9;
+        // Centred on a spot with all eight of its 160/226 u neighbours free.
         place(CENTRE, 'fixture_producer', 'hero_1');
-        for (const n of [2, 3, 4, 8, 10, 14, 15, 16]) place(n, 'fixture_buff_yield');
+        for (const n of RING) place(n, 'fixture_buff_yield');
         TileModifiers.rebuildToken(idAt(CENTRE));
 
         const resolved = TileModifiers.resolveAxis(idAt(CENTRE), EFFECT_TYPES.YIELD, 100);
@@ -159,7 +178,7 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
     it('honours a "does not stack with duplicates" flag (D-82)', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_unique');
-        place(16, 'fixture_buff_unique');
+        place(NEIGHBOUR, 'fixture_buff_unique');
         TileModifiers.rebuildToken(idAt(A));
 
         // Two Shrines, one effect — the Token opted out of repetition.
@@ -198,7 +217,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         run(17000);
 
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
-        expect(BoardState.getToken(A).alert).toBeFalsy();
+        expect(tokenAt(A).alert).toBeFalsy();
     });
 
     it('⚠️ swapping the schematic alone does NOT change what it makes any more', () => {
@@ -212,8 +231,8 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         run(17000);
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
 
-        Placement.returnTokenToTray(NEIGHBOUR);
-        TileModifiers.rebuildAround([tileCentre(NEIGHBOUR)]);
+        Placement.returnTokenToTrayById(idAt(NEIGHBOUR));
+        TileModifiers.rebuildAround([NEIGHBOUR]);
         place(NEIGHBOUR, 'fixture_context_b');
         run(17000);
 
@@ -239,7 +258,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         InventoryManager.addItem('fixture_oak_wood', 10);
         const forge = place(A, 'fixture_station', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
-        place(16, 'fixture_context_b');
+        place(NEIGHBOUR, 'fixture_context_b');
 
         run(20000);
 
@@ -251,9 +270,9 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
     it('a context Token serves EVERY adjacent station (D-113)', () => {
         // One schematic between two Forges drives both.
         InventoryManager.addItem('item_coal', 20);
-        place(14, 'fixture_station', 'hero_1');
-        place(16, 'fixture_station', 'hero_2');
-        place(15, 'fixture_context_a');
+        place(P(2, 2), 'fixture_station', 'hero_1');
+        place(P(2, 4), 'fixture_station', 'hero_2');
+        place(P(2, 3), 'fixture_context_a');
 
         run(17000);
 
@@ -268,7 +287,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
 
         // The Forest works normally; the schematic simply does nothing.
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBeGreaterThan(0);
-        expect(RecipeResolver.servesFrom(A)).toEqual([]);
+        expect(RecipeResolver.servesFrom(idAt(A))).toEqual([]);
     });
 });
 
@@ -294,7 +313,7 @@ describe('Effect blocks (CMS-58, CMS-59, CMS-65)', () => {
 
     it('applies the other block to the Token IT names', () => {
         place(FAR, 'fixture_producer', 'hero_2');
-        place(FAR - 1, 'fixture_two_blocks');
+        place(SECOND_FAR, 'fixture_two_blocks');
         expect(TileModifiers.resolveAxis(idAt(FAR), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
     });
 
@@ -380,7 +399,7 @@ describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)'
     it('grants nothing on a FAILED cycle', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_bonus_drop');
-        place(16, 'fixture_buff_always_fails');
+        place(NEIGHBOUR, 'fixture_buff_always_fails');
 
         run(13000);
 
@@ -499,7 +518,7 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
 
         place(FAR, 'fixture_producer_alt', 'hero_2');
-        place(FAR - 1, 'fixture_buff_id');
+        place(SECOND_FAR, 'fixture_buff_id');
         expect(TileModifiers.resolveAxis(idAt(FAR), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
     });
 
@@ -509,7 +528,7 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
 
         place(FAR, 'fixture_producer', 'hero_2');         // tokenType: resource
-        place(FAR - 1, 'fixture_buff_type');
+        place(SECOND_FAR, 'fixture_buff_type');
         expect(TileModifiers.resolveAxis(idAt(FAR), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
     });
 
@@ -538,8 +557,8 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
         place(A, 'fixture_producer', 'hero_1');
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
 
-        Placement.returnTokenToTray(A);
-        TileModifiers.rebuildAround([tileCentre(A)]);
+        Placement.returnTokenToTrayById(idAt(A));
+        TileModifiers.rebuildAround([A]);
         place(A, 'fixture_seafood_producer', 'hero_1');
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
     });
@@ -682,7 +701,7 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
         const kitchen = place(A, 'fixture_kitchen', 'hero_1');
         StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
         place(NEIGHBOUR, 'fixture_pie_tin');
-        place(16, 'fixture_cookbook');
+        place(NEIGHBOUR, 'fixture_cookbook');
 
         run(21000);
 
@@ -697,7 +716,7 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
         // One of the two: still gated.
         expect(RecipeResolver.resolveRecipe(idAt(A), kitchen).status).toBe(RECIPE.NONE);
 
-        place(16, 'fixture_cookbook');
+        place(NEIGHBOUR, 'fixture_cookbook');
         const resolved = RecipeResolver.resolveRecipe(idAt(A), kitchen);
         expect(resolved.status).toBe(RECIPE.OK);
         expect(resolved.recipe.id).toBe('pooled_pie');
@@ -721,9 +740,9 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
         // faster and wearing out three times sooner. Clustering buys throughput
         // now at the cost of restocking sooner. It is not strictly better.
         InventoryManager.addItem('item_coal', 40);
-        place(14, 'fixture_station', 'hero_1');
-        place(16, 'fixture_station', 'hero_2');
-        const schematic = place(15, 'fixture_context_a', null, 10);
+        place(P(2, 2), 'fixture_station', 'hero_1');
+        place(P(2, 4), 'fixture_station', 'hero_2');
+        const schematic = place(P(2, 3), 'fixture_context_a', null, 10);
 
         run(17000);
 
@@ -743,7 +762,7 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
         place(NEIGHBOUR, 'fixture_context_a', null, 1);
 
         run(17000);
-        expect(BoardState.getToken(NEIGHBOUR)).toBeNull();
+        expect(tokenAt(NEIGHBOUR)).toBeNull();
 
         run(20000);
         // With its context gone the Forge is back to making nothing at all.

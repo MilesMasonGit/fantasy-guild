@@ -79,7 +79,7 @@ const S16 = P(2, 4);
 const S17 = P(2, 5);
 const S22 = P(3, 4);
 const S27 = P(4, 3);
-const S35 = P(5, 5);
+const S35 = P(4, 5);            // the far corner; row 5 would fall off the mat
 
 registerTokenTypes({
     /** The fixture tool, two spots square. */

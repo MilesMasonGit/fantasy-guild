@@ -75,7 +75,11 @@ function run(ms) {
 const SPOT = P(1, 3);
 const NEIGHBOUR = P(1, 4);
 const EARLIER = P(1, 2);        // 160 u on SPOT's other side
-const DISTANT = P(5, 5);
+// ⚠️ Not row 5: the mat is 1126 u tall and a 1×1 Token's art circle must sit
+// fully inside it, so a spot below y = 1062 would be nudged somewhere else and
+// this test would pass because the Token never arrived, not because no Manager
+// reached it.
+const DISTANT = P(4, 5);
 
 beforeEach(() => {
     GameState.initNew();
