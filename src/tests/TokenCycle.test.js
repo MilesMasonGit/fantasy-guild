@@ -3,7 +3,6 @@ import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
-import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -12,7 +11,23 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
-import { tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * these are named spots on a 160 u lattice, far enough apart that the Tokens in
+ * each scene do not reach one another.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+
+/** What ran dry on spot `i`, or null. */
+const vacancyAt = (i) => BoardState.vacancyAt(BoardState.spotIdAt(C(i).x, C(i).y));
+
+/** Put a Token on spot `i`, and plant a hero's flag there. */
+const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
 
 /**
  * The board's cycle engine — Tokens working, and what stops them.
@@ -57,9 +72,9 @@ function makeHero(id, level = 50) {
 /** Place a Token of `typeId` on `tile`, optionally staffed. */
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    put(tile, instance);
+    if (heroId) plant(heroId, tile);
+    return tokenAt(tile);
 }
 
 /** Run the engine for `ms`, in realistic 100ms engine ticks. */
@@ -186,7 +201,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
     it('starts working the moment a hero arrives', () => {
         place(10, 'fixture_producer');
         run(30000);
-        Placement.placeHero('hero_1', 10);
+        plant('hero_1', 10);
         run(13000);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
@@ -196,7 +211,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
         run(8000);
         Placement.recallHeroById('hero_1');
 
-        expect(BoardState.getToken(10).cycleElapsedMs).toBe(0);
+        expect(tokenAt(10).cycleElapsedMs).toBe(0);
         run(30000);
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
     });
@@ -334,8 +349,8 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
         // Token is staffed by a claim made directly — the runner's tally of a
         // STAFFED Token going hungry is what this pins (Free Playmat 1.4b).
         const deep = place(20, 'fixture_deep_consumer');
-        Flags.plant('hero_2', positionOf(20), { skill: 'smithing' });
-        BoardState.setClaim('hero_2', { instanceId: deep.id, tile: 20, typeId: deep.typeId });
+        Flags.plant('hero_2', C(20), { skill: 'smithing' });
+        BoardState.setClaim('hero_2', { instanceId: deep.id, typeId: deep.typeId });
         run(5000);
 
         const stats = InputAllocator.getStarvationStats();
@@ -358,32 +373,32 @@ describe('Charges and depletion (D-176, D-118)', () => {
         const token = place(10, 'fixture_producer', 'hero_1');
         const before = token.usesRemaining;
         run(13000);
-        expect(BoardState.getToken(10).usesRemaining).toBe(before - 1);
+        expect(tokenAt(10).usesRemaining).toBe(before - 1);
     });
 
     it('never decrements an unlimited-use Token — null is not a big number', () => {
         const token = BoardState.createTokenInstance('fixture_passive', null);
-        Placement.placeToken(10, token);
+        put(10, token);
         run(31000 * 2);
-        expect(BoardState.getToken(10).usesRemaining).toBeNull();
+        expect(tokenAt(10).usesRemaining).toBeNull();
     });
 
-    it('the Token DISAPPEARS when its last charge is spent, leaving the tile empty', () => {
+    it('the Token DISAPPEARS when its last charge is spent, leaving the spot empty', () => {
         const token = BoardState.createTokenInstance('fixture_producer', 1);
-        Placement.placeToken(10, token);
-        Placement.placeHero('hero_1', 10);
+        put(10, token);
+        plant('hero_1', 10);
 
         run(13000);
 
-        expect(BoardState.getToken(10)).toBeNull();
+        expect(tokenAt(10)).toBeNull();
         // Token depletion is the ONLY wear mechanic in the game (D-118).
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);   // last cycle still paid out
     });
 
-    it('leaves the hero standing ON the empty tile, idle (D-60)', () => {
+    it('leaves the hero standing ON the empty spot, idle (D-60)', () => {
         const token = BoardState.createTokenInstance('fixture_producer', 1);
-        Placement.placeToken(10, token);
-        Placement.placeHero('hero_1', 10);
+        put(10, token);
+        plant('hero_1', 10);
         run(13000);
 
         // Heroes never move themselves (D-59), and since Phase 7 they do not
@@ -392,18 +407,18 @@ describe('Charges and depletion (D-176, D-118)', () => {
         // (D-172). This is also what D-151 restocks underneath.
         // Under flags (1.4b) the flag stays planted there; with nothing to work
         // and no Manager to wait for, the hero idles at it.
-        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(10));
+        expect(BoardState.displayPointOf('hero_1')).toEqual(C(10));
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
     });
 
-    it('records what ran dry, so a Manager knows what the tile is owed', () => {
+    it('records what ran dry, so a Manager knows what the spot is owed', () => {
         const token = BoardState.createTokenInstance('fixture_producer', 1);
-        Placement.placeToken(10, token);
-        Placement.placeHero('hero_1', 10);
+        put(10, token);
+        plant('hero_1', 10);
         run(13000);
 
-        expect(BoardState.getVacancy(10)?.typeId).toBe('fixture_producer');
+        expect(vacancyAt(10)?.typeId).toBe('fixture_producer');
     });
 });
 
