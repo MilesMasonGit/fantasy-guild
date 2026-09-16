@@ -196,9 +196,7 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
             // Off the board and into the Tray, landing where it was dropped
             // (D-227). A null `at` scatters instead, which is the right
             // fallback rather than a failure.
-            // STOPGAP (deleted in 1.6d): by the Token's old spot.
-            const found = BoardState.findTokenById(p.from.instanceId);
-            if (found?.anchor != null) Placement.returnTokenToTray(found.anchor, at);
+            Placement.returnTokenToTrayById(p.from.instanceId, at);
         }
     });
 
@@ -354,7 +352,9 @@ function burstFromTray(slot) {
  * container (D-138), and that includes this path.
  */
 function withdrawToTray(typeId, at) {
-    const res = VaultTransfer.withdrawTo(typeId, { at });
+    // ⚠️ `trayAt`, not `at`: `at` is a MAT POINT since slice 1.6d, and this is a
+    // fraction of the Tray surface (D-227). See `VaultTransfer.withdrawTo`.
+    const res = VaultTransfer.withdrawTo(typeId, { trayAt: at });
     if (!res.success && res.reason) NotificationSystem.warning(res.reason);
 }
 

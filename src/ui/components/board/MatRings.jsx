@@ -2,14 +2,12 @@ import React from 'react';
 import { MAT_W, MAT_H, clampToMat } from '../../../config/matGeometry.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { nearRadius } from '../../../systems/board/nearby.js';
+import * as MatPlacement from '../../../systems/board/MatPlacement.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import { pointerToMat } from './matPoint.js';
 import { MAT_Z } from './matLayers.js';
-// ⚠️ STOPGAP (deleted in 1.6d): the ring must show where the drop will really
-// land, and until free placement that is the nearest old spot, not the cursor.
-import { oldSpotAt, oldSpotPoint, isFarOutsideArea } from './oldSpotStopgap.js';
 
 /**
  * The Near ring (FP-64) — **hitboxes are never drawn**, so a Token at rest is
@@ -17,9 +15,12 @@ import { oldSpotAt, oldSpotPoint, isFarOutsideArea } from './oldSpotStopgap.js';
  * a Token:
  *
  * * **hovering** one — the ring sits on that Token's centre;
- * * **dragging** one — the ring sits where it would actually land, which until
- *   slice 1.6d is the nearest old spot (the snapping stopgap). A drop well
- *   outside the play area flies back (FP-93), so there is no ring to draw.
+ * * **dragging** one — the ring sits ⭐ **where the Token would really land**.
+ *   Since free placement (slice 1.6d) that is the cursor itself when there is
+ *   room, and the nudged spot when there is not — so the ring is an honest
+ *   preview of the drop rather than a copy of the pointer. When there is no room
+ *   within nudge reach the drop would fly back (FP-46), and there is no ring to
+ *   draw.
  *
  * Flag radius rings are `FlagLayer`'s: they belong to the flag, not to the mat.
  */
@@ -50,8 +51,13 @@ export const MatRings = ({ hoveredCentre = null, matRef = null }) => {
                 if (def?.mapId) {
                     // A Map lies loose wherever it is dropped.
                     centre = clampToMat(point);
-                } else if (!isFarOutsideArea(point)) {
-                    centre = oldSpotPoint(oldSpotAt(point, def?.size || 1));
+                } else {
+                    // Where this very Token would land, itself excluded so a
+                    // Token being moved does not block its own preview.
+                    const spot = MatPlacement.findSpot(activePayload.typeId, clampToMat(point), {
+                        excludeId: activePayload.from?.instanceId || null
+                    });
+                    centre = spot ? { x: spot.x, y: spot.y } : null;
                 }
             }
         }

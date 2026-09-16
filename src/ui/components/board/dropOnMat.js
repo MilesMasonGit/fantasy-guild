@@ -1,7 +1,5 @@
-// Fantasy Guild — the one drop function for the playmat (Free Playmat slice 1.6c)
+// Fantasy Guild — the one drop function for the playmat (Free Playmat slice 1.6d)
 
-import { TILE_PX } from '../../../config/boardGeometry.js';
-import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Placement from '../../../systems/board/Placement.js';
@@ -10,41 +8,35 @@ import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
-import { oldSpotAt, isFarOutsideArea } from './oldSpotStopgap.js';
 
 /**
  * ⭐ **Everything dropped on the playmat lands through `dropOnMat(payload, point)`**
- * — a drag payload and a mat point (mat units). It replaced
- * `placeTokenFromDrag(index, …)` in slice 1.6c: there are no tiles, so a drop
- * is a point. The playmat's own drop target, today's grid tiles and the Tray's
- * mini-board all call it, so no surface can drift from another (CR2-160).
+ * — a drag payload and a mat point (mat units). The playmat's own drop target
+ * and the Tray's mini mat both call it, so no surface can drift from another
+ * (CR2-160).
  *
- * ## What lands where
- * * **A hero or a flag** (`DRAG_KIND.HERO` from the Dock, `DRAG_KIND.FLAG` for
- *   the flag or a hero picked up on the board, FP-76) — the flag stands
- *   **exactly where it was let go**, clamped to the mat (FP-94,
- *   `Placement.plantFlagAt`).
- * * **A Map** — lies loose on the mat, its box centred on the point (clamped).
- * * **Any other Token** — ⚠️ STOPGAP (deleted in 1.6d): snaps to the nearest of
- *   today's old spots (`oldSpotStopgap.js`), occupied or not, then goes through
- *   the tile placement rules exactly as before. A drop **well outside** the old
- *   landing area flies back with a note (FP-93) instead.
+ * ## What lands where (free placement, slice 1.6d)
+ * * **A hero or a flag** — the flag stands **exactly where it was let go**,
+ *   clamped to the mat (FP-94, `Placement.plantFlagAt`).
+ * * **A Map** — lies loose on the mat, its box centred on the point.
+ * * **Any other Token** — stands **exactly where it was let go**, or at the
+ *   nearest legal point when that spot is crowded or would break a `Cannot`
+ *   rule (FP-88). ⭐ Nothing snaps: the old spot-snapping stopgap and the
+ *   practice outline it needed both went with this slice.
  *
  * A Token can come from six places, told apart by its payload's `from`:
  * `boardMapId` (a Map lying on the mat), `instanceId` (a Token on the mat),
  * `spriteId` (loot on the floor), `traySlot`, `vaultTypeId`, or none (a bare
  * `typeId`: make one).
  *
- * ⚠️ **Nothing here decides whether a spot will take the Token.** Every rule
- * lives in `Placement.js` and `VaultTransfer.js`. This function works out what
- * the player meant and puts the Token back where it came from if the answer is
- * no (D-138).
+ * ## ⚠️ Nothing here decides whether a Token may land
+ * Every rule lives in `MatPlacement.js`, `Placement.js` and `VaultTransfer.js`.
+ * This function works out what the player meant, and puts the Token back exactly
+ * where it came from if the answer is no (D-138) — the Tray slot, the Vault, the
+ * floor it was lifted from, the spot it was moved off.
  *
  * @returns the placement result (`{ success, reason?, flyBack? }`) or null
  */
-
-/** The note for a Token dropped well outside today's landing area (FP-93). STOPGAP wording until 1.10. */
-export const PLAY_AREA_NOTE = 'Place inside the play area for now.';
 
 /** Report a refusal rather than swallowing it — the player needs the reason. */
 export const announce = (result) => {
@@ -58,13 +50,15 @@ const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
 
 const isHeroDrop = (payload) => payload?.kind === DRAG_KIND.HERO || payload?.kind === DRAG_KIND.FLAG;
 
-/** Where a Map box (128 u) sits when dropped at `point`: centred on it, kept on the mat. */
-function mapBoxAt(point) {
-    return {
-        x: Math.max(0, Math.min(MAT_W - TILE_PX, Math.round(point.x - TILE_PX / 2))),
-        y: Math.max(0, Math.min(MAT_H - TILE_PX, Math.round(point.y - TILE_PX / 2)))
-    };
-}
+/**
+ * A drop with nowhere to go flies back (FP-46).
+ *
+ * `full` is `MatPlacement`'s "no legal spot within nudge reach" — the one
+ * refusal the drag system animates rather than merely reporting, because the
+ * Token is still in the player's hand and has to visibly return to where it came
+ * from. Every other refusal has already put the Token back itself.
+ */
+const flownBack = (result) => (result?.full ? { ...result, flyBack: true } : result);
 
 export function dropOnMat(payload, point) {
     if (!payload) return null;
@@ -81,83 +75,68 @@ export function dropOnMat(payload, point) {
     const def = getTokenType(payload.typeId);
     const from = payload.from || {};
 
-    // A Map lies freely on the mat.
-    if (def?.mapId) {
-        const { x, y } = mapBoxAt(point);
-        if (from.boardMapId != null) {
-            BoardState.setBoardMapPosition(from.boardMapId, x, y);
-            EventBus.publish('state_changed', {});
-            return { success: true };
-        }
-        let instance;
-        if (from.traySlot != null) instance = BoardState.takeFromTray(from.traySlot);
-        else if (from.instanceId != null) {
-            // STOPGAP (deleted in 1.6d): lifted off the mat by its old spot.
-            const found = BoardState.findTokenById(from.instanceId);
-            instance = found?.anchor != null ? BoardState.takeToken(found.anchor) : null;
-        } else instance = { typeId: payload.typeId, usesRemaining: payload.usesRemaining || 1 };
-        if (!instance) return null;
-        BoardState.addBoardMap(instance.typeId, x, y, instance.usesRemaining);
+    // A Map already lying on the mat is simply repositioned.
+    if (def?.mapId && from.boardMapId != null) {
+        const map = BoardState.removeBoardMap(from.boardMapId);
+        if (!map) return null;
+        const result = Placement.placeTokenAt(
+            { typeId: map.typeId, usesRemaining: map.usesRemaining }, point
+        );
+        if (!result.success) BoardState.addBoardMap(map.typeId, map.x, map.y, map.usesRemaining);
         EventBus.publish('state_changed', {});
-        return { success: true };
+        return announce(result);
     }
-
-    // STOPGAP (FP-93, deleted in 1.6d): well outside today's landing area, a Token
-    // flies back. Checked before anything is lifted, so nothing is ever lost.
-    if (isFarOutsideArea(point)) {
-        return announce(refuse(PLAY_AREA_NOTE, { flyBack: true }));
-    }
-
-    // STOPGAP (deleted in 1.6d): the nearest old spot, occupied or not.
-    const index = oldSpotAt(point, def?.size || 1);
 
     if (from.boardMapId != null) {
-        const instance = BoardState.removeBoardMap(from.boardMapId);
-        if (!instance) return null;
-        const result = announce(Placement.placeToken(index, instance));
+        const map = BoardState.removeBoardMap(from.boardMapId);
+        if (!map) return null;
+        const instance = BoardState.createTokenInstance(map.typeId, map.usesRemaining);
+        const result = announce(flownBack(Placement.placeTokenAt(instance, point)));
         // Refused: back where it lay.
-        if (!result.success) BoardState.addBoardMap(instance.typeId, instance.x, instance.y, instance.usesRemaining);
+        if (!result.success) BoardState.addBoardMap(map.typeId, map.x, map.y, map.usesRemaining);
         return result;
     }
+
     if (from.spriteId != null) {
         const instance = SpriteLayer.takeTokenSprite(from.spriteId);
         if (!instance) return null;
-        const result = announce(Placement.placeToken(index, instance));
+        const result = announce(flownBack(Placement.placeTokenAt(instance, point)));
         if (!result.success) {
             // Refused: back onto the floor where it was dropped.
             SpriteLayer.addSprite('token', instance.typeId, 1, { centre: { x: point.x, y: point.y } }, instance.usesRemaining);
         } else {
-            // By instance id since slice 1.6b.
             EventBus.publish('loot_token_placed', { instanceId: instance.id, typeId: instance.typeId });
         }
         return result;
     }
+
     if (from.traySlot != null) {
         const instance = BoardState.takeFromTray(from.traySlot);
         if (!instance) return null;
-        const result = announce(Placement.placeToken(index, instance));
-        // Put it back exactly where it came from if the spot refused it.
+        const result = announce(flownBack(Placement.placeTokenAt(instance, point)));
+        // Put it back exactly where it came from if the mat refused it.
         if (!result.success) BoardState.addToTray(instance);
         return result;
     }
+
     // ⚠️ No `vault_withdrawn` / `token_bank_updated` publish on this route.
     // `TokenBank.withdraw` already made both, and republishing them counted one
     // withdrawal twice on every quest that watches for it (CR2-146).
     if (from.vaultTypeId != null) {
-        return announce(VaultTransfer.withdrawTo(from.vaultTypeId, { tile: index }));
+        return announce(flownBack(VaultTransfer.withdrawTo(from.vaultTypeId, { at: point })));
     }
+
     // ⚠️ Checked LAST of the origins: a Tray Token's payload carries its
     // `instanceId` beside `traySlot`, so `instanceId` alone means "a Token on
     // the mat" only when no other origin is named.
     if (from.instanceId != null) {
-        // STOPGAP (deleted in 1.6d): moved by its old spot.
-        const found = BoardState.findTokenById(from.instanceId);
-        if (found?.anchor == null) return announce(refuse('No Token there'));
-        return announce(Placement.moveToken(found.anchor, index));
+        if (!BoardState.getTokenById(from.instanceId)) return announce(refuse('No Token there'));
+        return announce(flownBack(Placement.moveTokenTo(from.instanceId, point)));
     }
+
     if (payload.typeId) {
         const instance = BoardState.createTokenInstance(payload.typeId, payload.usesRemaining);
-        return announce(Placement.placeToken(index, instance));
+        return announce(flownBack(Placement.placeTokenAt(instance, point)));
     }
     return null;
 }
