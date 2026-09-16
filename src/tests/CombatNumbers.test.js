@@ -22,7 +22,15 @@ import { auditContent } from '../systems/core/ContentAudit.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
-import { tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the enemy to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -214,9 +222,9 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         expect(hero.aggregator.query('ARMOR')).toBe(3);
 
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
-        Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround([tileCentre(TILE)]);
-        Placement.placeHero('hero_1', TILE);
+        Placement.placeTokenAt(instance, C(TILE));
+        TileModifiers.rebuildAround([C(TILE)]);
+        Placement.plantFlagAt('hero_1', C(TILE));
         BoardRunner.tick(100);
 
         // The enemy's -2 stacks with the hero's own +3.
@@ -230,13 +238,13 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         GameState.state.heroes = [hero];
 
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
-        Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround([tileCentre(TILE)]);
-        Placement.placeHero('hero_1', TILE);
+        Placement.placeTokenAt(instance, C(TILE));
+        TileModifiers.rebuildAround([C(TILE)]);
+        Placement.plantFlagAt('hero_1', C(TILE));
         BoardRunner.tick(100);
         expect(hero.aggregator.query('ARMOR')).toBe(1);
 
-        BoardCombat.endFight(BoardState.getToken(TILE).id);
+        BoardCombat.endFight(tokenAt(TILE).id);
         expect(hero.aggregator.query('ARMOR')).toBe(3);
     });
 
@@ -245,9 +253,9 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         GameState.state.heroes = [hero];
 
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
-        Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround([tileCentre(TILE)]);
-        Placement.placeHero('hero_1', TILE);
+        Placement.placeTokenAt(instance, C(TILE));
+        TileModifiers.rebuildAround([C(TILE)]);
+        Placement.plantFlagAt('hero_1', C(TILE));
         BoardRunner.tick(100);
         expect(hero.aggregator.query('ARMOR')).toBe(-2);
 
