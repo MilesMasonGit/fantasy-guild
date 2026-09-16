@@ -31,7 +31,7 @@ import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
 import { TokenEventAlert } from '../ui/components/board/TokenEventAlert.jsx';
 import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
-import { placeAt, clearMat, tileCentre } from './fixtures/mat.js';
+import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -52,7 +52,16 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const C = (i) => tileCentre(i);
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this lays the scenes below out on a plain 160 u lattice so that neighbouring
+ * numbers are neighbours on the mat.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
 function fighter(id) {
     const hero = generateHero({ name: id });
@@ -188,8 +197,6 @@ describe('⭐ spawns land by point (stopgaps owned by slice 1.8)', () => {
 
         expect(result).toMatchObject({ ...at, replacedBearer: true });
         expect(BoardState.tokensAtPoint(at.x, at.y).map(t => t.typeId)).toEqual(['fixture_passive']);
-        // STOPGAP until slice 1.6d: still on a tile centre, so the grid draws it.
-        expect(BoardState.getToken(14)?.typeId).toBe('fixture_passive');
     });
 
     it('here: a living bearer is replaced where it stands', () => {
@@ -217,14 +224,14 @@ describe('⭐ spawns land by point (stopgaps owned by slice 1.8)', () => {
         expect(result.replacedBearer).toBe(false);
         const away = Math.hypot(result.x - bearer.x, result.y - bearer.y);
         expect(away).toBeGreaterThanOrEqual(61.2 - 1e-6);   // clear of the bearer
-        expect(away).toBeLessThan(160);                     // but nearer than a tile step
+        expect(away).toBeLessThan(160);                     // but nearer than a whole step
         expect(BoardState.getTokenById(bearer.id)).not.toBeNull();
     });
 
     it('no room for the spawn skips it, and nothing is lost (FP-46)', () => {
         // ⚠️ Packed at exactly the minimum gap, which leaves NO legal point
         // inside the block: the hole between any four is only 43 u across. A mat
-        // merely full of Tokens on tile centres has room everywhere now.
+        // merely full of Tokens a whole step apart has room everywhere now.
         const P = (c, r) => ({ x: 600 + c * 61.2, y: 380 + r * 61.2 });
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
@@ -280,7 +287,7 @@ describe('⭐ quest events carry instanceId, and still count', () => {
         const progress = vi.spyOn(QuestManager, 'reportProgress');
         const tool = BoardState.createTokenInstance('fixture_context_a', 40);
         try {
-            expect(Placement.placeToken(14, tool).success).toBe(true);
+            expect(Placement.placeTokenAt(tool, C(14)).success).toBe(true);
         } finally {
             off?.();
         }
@@ -312,12 +319,12 @@ describe('⭐ quest events carry instanceId, and still count', () => {
         const off = EventBus.subscribe('loot_token_placed', (p) => seen.push(p));
         const progress = vi.spyOn(QuestManager, 'reportProgress');
         try {
-            dropOnMat({ typeId: 'fixture_passive', from: { spriteId: sprite.id } }, tileCentre(14));
+            dropOnMat({ typeId: 'fixture_passive', from: { spriteId: sprite.id } }, C(14));
         } finally {
             off?.();
         }
 
-        const placed = BoardState.getToken(14);
+        const placed = tokenAt(14);
         expect(placed?.typeId).toBe('fixture_passive');
         expect(seen).toEqual([{ instanceId: placed.id, typeId: 'fixture_passive' }]);
         expect(progress.mock.calls.map(c => c[0])).toContain('loot_token_placed');

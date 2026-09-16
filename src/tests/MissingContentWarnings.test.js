@@ -103,11 +103,18 @@ describe('Loot with no artwork (SpriteLayer.addSprite)', () => {
     });
 });
 
-describe('A Token that will never do anything (Placement.placeToken)', () => {
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * these are just two spots far enough apart for both drops to be allowed.
+ */
+const C = (i) => ({ x: 400 + i * 160, y: 200 });
+
+describe('A Token that will never do anything (Placement.placeTokenAt)', () => {
     it('names it once, however many times it is placed', () => {
-        Placement.placeToken(0, { typeId: 'ghost_token' });
-        Placement.returnTokenToTray(0);
-        Placement.placeToken(1, { typeId: 'ghost_token' });
+        const ghost = { typeId: 'ghost_token' };
+        Placement.placeTokenAt(ghost, C(0));
+        Placement.returnTokenToTrayById(BoardState.tokensAtPoint(C(0).x, C(0).y)[0].id);
+        Placement.placeTokenAt({ typeId: 'ghost_token' }, C(1));
 
         const lines = missingContentWarnings();
         expect(lines).toHaveLength(1);
@@ -116,12 +123,12 @@ describe('A Token that will never do anything (Placement.placeToken)', () => {
     });
 
     it('says nothing for a Token that exists', () => {
-        Placement.placeToken(0, BoardState.createTokenInstance('fixture_producer', 100));
+        Placement.placeTokenAt(BoardState.createTokenInstance('fixture_producer', 100), C(0));
         expect(missingContentWarnings()).toHaveLength(0);
     });
 
     it('still places it — warn-only changes nothing about the move', () => {
-        expect(Placement.placeToken(0, { typeId: 'ghost_token' }).success).toBe(true);
+        expect(Placement.placeTokenAt({ typeId: 'ghost_token' }, C(0)).success).toBe(true);
     });
 });
 

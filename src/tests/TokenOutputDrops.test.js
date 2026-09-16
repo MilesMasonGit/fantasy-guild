@@ -11,7 +11,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
-import { colOf, rowOf, TILE_PX, TILE_STEP_PX, tileCentre } from '../config/boardGeometry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
@@ -25,8 +24,8 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
  * These tests pin the drop itself: that it goes through the same
  * `SpriteLayer.addSprite('token', …)` call a Map burst uses, that it carries
  * `tokenStartingUses` as its charges (with `null` meaning unlimited, R-4), and
- * that `chance` / `minQty` / `maxQty` / the source tile behave as they already
- * do for item outputs.
+ * that `chance` / `minQty` / `maxQty` / the point it flies from behave as they
+ * already do for item outputs.
  *
  * ⚠️ **Fixture-proven only.** No shipped recipe declares a Token output.
  */
@@ -39,6 +38,12 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names the one spot on the mat the bench stands on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
 const STATION = 17;
 
@@ -113,11 +118,10 @@ function bench(recipeId) {
     const instance = BoardState.createTokenInstance(
         'fixture_drop_bench', tokenStartingUses('fixture_drop_bench')
     );
-    Placement.placeToken(STATION, instance);
-    const placed = BoardState.getToken(STATION);
-    placed.selectedRecipeId = recipeId;
-    Placement.placeHero('hero_1', STATION);
-    return placed;
+    Placement.placeTokenAt(instance, C(STATION));
+    instance.selectedRecipeId = recipeId;
+    Placement.plantFlagAt('hero_1', C(STATION));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -199,11 +203,11 @@ describe('It obeys the drop mechanics item outputs already use', () => {
         expect(tokenSprites()).toHaveLength(0);
     });
 
-    it('flies from the station tile, like an item output from the same cycle', () => {
+    it('flies from the station’s own point, like an item output from the same cycle', () => {
         bench('drop_tool_and_item');
         run(11000);
 
-        const { x: expectedX, y: expectedY } = tileCentre(STATION);
+        const { x: expectedX, y: expectedY } = C(STATION);
 
         const token = tokenSprites()[0];
         expect(token.fromX).toBeCloseTo(expectedX);
