@@ -16,7 +16,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MAT_W, MAT_H } from '../config/matGeometry.js';
-import { OLD_AREA_ORIGIN, BOARD_PX, UPGRADE_BOARD_PX, tileCentre } from '../config/boardGeometry.js';
+import { UPGRADE_BOARD_PX, tileCentre } from '../config/boardGeometry.js';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TrayMiniBoard } from '../ui/components/board/TrayMiniBoard.jsx';

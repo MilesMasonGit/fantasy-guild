@@ -6,7 +6,6 @@ import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Restrictions from '../systems/board/Restrictions.js';
 import * as Flags from '../systems/board/Flags.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { MAT_W, MAT_H } from '../config/matGeometry.js';
