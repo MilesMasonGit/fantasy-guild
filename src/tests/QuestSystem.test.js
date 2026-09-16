@@ -6,11 +6,24 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { InventoryStore } from '../systems/inventory/InventoryStore.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import { OLD_AREA_ORIGIN } from '../config/boardGeometry.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Cartographer from '../systems/board/Cartographer.js';
 import './fixtures/fixtureItems.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * these name spots on the mat to place a Token on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Put a Token on spot `i`, and plant a hero's flag there. */
+const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
 
 describe('Quest System & Multi-Tutorial Chain', () => {
     beforeEach(() => {
@@ -49,10 +62,12 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         const boardMaps = BoardState.getBoardMaps();
         expect(boardMaps.length).toBe(initialMaps + 1);
         const lastMap = boardMaps[boardMaps.length - 1];
-        // Inside the old landing area, whose corner is at OLD_AREA_ORIGIN on the mat (FP-92).
-        expect(lastMap.x).toBeGreaterThanOrEqual(OLD_AREA_ORIGIN.x + 10);
-        expect(lastMap.x).toBeLessThanOrEqual(OLD_AREA_ORIGIN.x + 450);
-        expect(lastMap.y).toBeGreaterThanOrEqual(OLD_AREA_ORIGIN.y + 250);
+        // The band a reward Map is tossed into, in plain mat units since slice
+        // 1.6d-2: x lands in 466–786 and y in 359–509. The bounds below are the
+        // old area-relative numbers, unchanged — only their spelling moved.
+        expect(lastMap.x).toBeGreaterThanOrEqual(426);
+        expect(lastMap.x).toBeLessThanOrEqual(866);
+        expect(lastMap.y).toBeGreaterThanOrEqual(349);
 
         const active = QuestManager.getActiveQuests();
         expect(active.length).toBe(3);
@@ -336,8 +351,8 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(QuestManager.isTokenVaultSendUnlocked()).toBe(false);
 
         // Attempting to return a placed token to vault should fail
-        Placement.placeToken(10, BoardState.createTokenInstance('token_oak_forest'));
-        const refuseRes = Placement.returnTokenToVault(10);
+        put(10, BoardState.createTokenInstance('token_oak_forest'));
+        const refuseRes = Placement.returnTokenToVaultById(idAt(10));
         expect(refuseRes.success).toBe(false);
         expect(refuseRes.reason).toContain('Token Vault storage unlocks after completing');
 
@@ -351,7 +366,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(QuestManager.isTokenVaultSendUnlocked()).toBe(true);
 
         // Now returning placed token to vault succeeds
-        const successRes = Placement.returnTokenToVault(10);
+        const successRes = Placement.returnTokenToVaultById(idAt(10));
         expect(successRes.success).toBe(true);
 
         // Sending floor token sprite to vault succeeds
@@ -377,16 +392,16 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         quest.requiredCount = 10;
         quest.currentCount = 0;
 
-        const res = Placement.placeToken(10, BoardState.createTokenInstance('token_oak_forest'));
+        const res = put(10, BoardState.createTokenInstance('token_oak_forest'));
         expect(res.success).toBe(true);
 
         expect(quest.currentCount).toBe(1);
     });
 
     it('counts one deployed hero exactly once, not twice', () => {
-        // A hero landing on a tile that holds a Token used to raise both
+        // A hero landing on a Token used to raise both
         // `hero_deployed` and `HERO_MOVED`, and both were counted.
-        Placement.placeToken(10, BoardState.createTokenInstance('token_oak_forest'));
+        put(10, BoardState.createTokenInstance('token_oak_forest'));
 
         const quest = QuestManager.getActiveQuests().find(q => q.targetType === 'token_placed');
         quest.targetType = 'hero_deployed';
@@ -394,7 +409,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         quest.currentCount = 0;
 
         GameState.state.heroes = [{ id: 'hero_1', name: 'Tester', status: 'idle' }];
-        const res = Placement.placeHero('hero_1', 10);
+        const res = plant('hero_1', 10);
         expect(res.success).toBe(true);
 
         expect(quest.currentCount).toBe(1);
@@ -407,15 +422,15 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         placedQuest.requiredCount = 10;
         placedQuest.currentCount = 0;
 
-        Placement.placeToken(11, BoardState.createTokenInstance('token_oak_forest'));
+        put(11, BoardState.createTokenInstance('token_oak_forest'));
         EventBus.publish('loot_token_placed', { instanceId: 'tok_11', typeId: 'token_oak_forest' });
 
         expect(placedQuest.currentCount).toBe(1);
     });
 
-    it('does not count a tile redraw as a placement', () => {
-        // `TILE_CHANGED` fires for clearing, depletion, pushes, restocks and
-        // vault moves. None of those is the player placing a Token.
+    it('does not count a Token redraw as a placement', () => {
+        // `TILE_CHANGED` fires for clearing, depletion, restocks and vault
+        // moves. None of those is the player placing a Token.
         const quest = QuestManager.getActiveQuests().find(q => q.targetType === 'token_placed');
         quest.requiredCount = 10;
         quest.currentCount = 0;
