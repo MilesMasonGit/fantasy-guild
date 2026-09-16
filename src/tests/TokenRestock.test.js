@@ -13,6 +13,18 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 const token = (typeId, uses = 100) => BoardState.createTokenInstance(typeId, uses);
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * these name two spots on the mat to drop onto.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+
+/** Drop a Token on spot `i`, through the real placement rules. */
+const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+
 describe('Token Restocking on Same-Type Drop', () => {
     beforeEach(() => {
         GameState.initNew();
@@ -26,20 +38,20 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_producer', 40);
         const incoming = token('fixture_producer', 50);
 
-        Placement.placeToken(7, onBoard);
-        expect(BoardState.getToken(7).usesRemaining).toBe(40);
+        put(7, onBoard);
+        expect(tokenAt(7).usesRemaining).toBe(40);
 
         const restockEvents = [];
         EventBus.subscribe('token_restocked', e => restockEvents.push(e));
 
-        const res = Placement.placeToken(7, incoming);
+        const res = put(7, incoming);
         expect(res.success).toBe(true);
         expect(res.restocked).toBe(true);
         expect(res.absorbed).toBe(true);
         expect(res.addedCharges).toBe(50);
 
         // On-board token now has 40 + 50 = 90 uses
-        expect(BoardState.getToken(7).usesRemaining).toBe(90);
+        expect(tokenAt(7).usesRemaining).toBe(90);
         // Event was emitted
         expect(restockEvents).toHaveLength(1);
         expect(restockEvents[0]).toMatchObject({
@@ -49,8 +61,9 @@ describe('Token Restocking on Same-Type Drop', () => {
             currentCharges: 90
         });
 
-        // No token was pushed or sent to Tray
-        expect(BoardState.getToken(1)).toBeNull();
+        // Nothing was pushed aside or sent to the Tray: the incoming Token was
+        // absorbed whole, so only the one copy stands on the mat.
+        expect(BoardState.tokens()).toHaveLength(1);
         expect(BoardState.getTray()).toHaveLength(0);
     });
 
@@ -63,9 +76,9 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_producer', 4980);
         const incoming = token('fixture_producer', 50);
 
-        Placement.placeToken(7, onBoard);
+        put(7, onBoard);
 
-        const res = Placement.placeToken(7, incoming);
+        const res = put(7, incoming);
         expect(res.success).toBe(true);
         expect(res.restocked).toBe(true);
         expect(res.nudgedLeftover).toBe(true);
@@ -86,14 +99,14 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_producer', 4970);
         const incoming = token('fixture_producer', 60);
 
-        Placement.placeToken(0, onBoard);
+        put(0, onBoard);
         // No room to nudge into anywhere: the Tray is the fallback, as before.
         setMatTuning('nudgeReach', 0);
 
         const collectedEvents = [];
         EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collectedEvents.push(e));
 
-        const res = Placement.placeToken(0, incoming);
+        const res = put(0, incoming);
         expect(res.success).toBe(true);
         expect(res.restocked).toBe(true);
         expect(res.trayLeftover).toBe(true);
@@ -113,10 +126,10 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_producer', 5000);
         const incoming = token('fixture_producer', 5000);
 
-        Placement.placeToken(7, onBoard);
+        put(7, onBoard);
         const where = { x: onBoard.x, y: onBoard.y };
 
-        const res = Placement.placeToken(7, incoming);
+        const res = put(7, incoming);
         expect(res.success).toBe(true);
         expect(res.restocked).toBeUndefined();
         expect({ x: BoardState.getTokenById(onBoard.id).x, y: BoardState.getTokenById(onBoard.id).y }).toEqual(where);
@@ -127,10 +140,10 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_buff_unique', null);
         const incoming = token('fixture_buff_unique', null);
 
-        Placement.placeToken(7, onBoard);
+        put(7, onBoard);
         const where = { x: onBoard.x, y: onBoard.y };
 
-        const res = Placement.placeToken(7, incoming);
+        const res = put(7, incoming);
         expect(res.success).toBe(true);
         expect({ x: BoardState.getTokenById(onBoard.id).x, y: BoardState.getTokenById(onBoard.id).y }).toEqual(where);
     });
