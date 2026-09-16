@@ -21,7 +21,16 @@ import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
-import { idAt, tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * spots 0 and 1 are 160 u apart, inside the shipped 164 u Near, so a Manager
+ * on one reaches a vacancy on the other.
+ */
+const C = (i) => ({ x: 400 + i * 160, y: 200 });
+
+/** The instance id of the Token standing on spot `i`, or null. */
+const idAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0]?.id ?? null;
 
 /**
  * One rule, one place.
@@ -137,7 +146,7 @@ describe('CR2-060: every alert value comes from one enum', () => {
     });
 
     it('Managers publishes the alert once, on the transition into unstocked', () => {
-        // A tile with a Manager beside it that manages a type the Vault has no
+        // A spot with a Manager beside it that manages a type the Vault has no
         // copy of: `restockSpot` takes the unstocked branch every sweep.
         const managed = aPlainTokenId();
         const MANAGER = 'fixture_one_rule_manager';
@@ -146,9 +155,10 @@ describe('CR2-060: every alert value comes from one enum', () => {
             manages: [managed], requiresHero: false
         };
 
-        BoardState.setToken(1, BoardState.createTokenInstance(MANAGER, null));
-        // The spot tile 0's Token stood on; Near (164 u) reaches the Manager on tile 1, 160 u away.
-        const at = tileCentre(0);
+        BoardState.addToken(BoardState.createTokenInstance(MANAGER, null), C(1).x, C(1).y);
+        // The spot the managed Token stood on; Near (164 u) reaches the Manager
+        // on the next spot, 160 u away.
+        const at = C(0);
         BoardState.setVacancyAt(at, managed);
         const spotId = BoardState.spotIdAt(at.x, at.y);
         const vacancy = BoardState.vacancyAt(spotId);
@@ -183,7 +193,7 @@ describe('CR2-059: an alert only re-publishes on a real change', () => {
         // Token whose alert never existed, on every such Token, every time.
         const instance = BoardState.createTokenInstance('fixture_passive', null);
         expect(instance.alert).toBeUndefined();
-        Placement.placeToken(0, instance);
+        Placement.placeTokenAt(instance, C(0));
         BoardRunner.tick(100);
 
         const spurious = seen.filter(p => p.instanceId === idAt(0) && !p.alert);

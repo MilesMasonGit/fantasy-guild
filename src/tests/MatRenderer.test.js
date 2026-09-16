@@ -6,7 +6,6 @@ import './fixtures/testTokens.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Placement from '../systems/board/Placement.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -17,7 +16,6 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MAT_W, MAT_H } from '../config/matGeometry.js';
 import { UPGRADE_BOARD_PX } from '../config/upgradeBoardGeometry.js';
-import { tileCentre } from '../config/boardGeometry.js';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TrayMiniBoard } from '../ui/components/board/TrayMiniBoard.jsx';
@@ -43,11 +41,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * it — every Token, hero and flag drawn **at its own mat point, keyed by Token
  * instance id**, with nothing on screen measured in tiles.
  *
- * The one tile-shaped thing left is the faint outline of where a Token may
- * still land (FP-93), which slice 1.6d deletes along with the snapping.
+ * The faint outline of where a Token could still land (FP-93) went with the
+ * snapping in slice 1.6d-1, and the grid itself in slice 1.6d-2.
  */
 
-/** A Token two tiles square, for the large-art geometry. */
+/** A Token two steps square, for the large-art geometry. */
 registerTokenTypes({
     mat_large: {
         id: 'mat_large', name: 'Mat Large', tokenType: 'resource',
@@ -57,7 +55,12 @@ registerTokenTypes({
 });
 
 const h = React.createElement;
-const C = (tile) => tileCentre(tile);
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat with room around it for a hero to stand.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
 const mount = (el) => render(
     h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
@@ -206,8 +209,7 @@ describe('where a hero stands (D-266, FP-77, FP-84)', () => {
     });
 
     it('the drawn hero stands where the rule says, and their Token has slid aside', () => {
-        Placement.placeToken(15, BoardState.createTokenInstance('fixture_producer', 100));
-        const tok = BoardState.getToken(15);
+        const tok = placeAt('fixture_producer', C(15).x, C(15).y);
         Flags.plant('h1', C(15));
         expect(Flags.statusOf('h1').state).toBe('working');
 
@@ -233,8 +235,8 @@ describe('where a hero stands (D-266, FP-77, FP-84)', () => {
         expect(parseFloat(idle.style.top)).toBe(top + IDLE_HERO_OFFSET.top);
     });
 
-    it('several heroes may stand on one Token — the one-per-tile rule went with the grid', () => {
-        Placement.placeToken(15, BoardState.createTokenInstance('fixture_producer', 100));
+    it('several heroes may stand on one Token — the one-per-spot rule went with the grid', () => {
+        placeAt('fixture_producer', C(15).x, C(15).y);
         Flags.plant('h1', C(15));
         Flags.plant('h2', C(15));
 

@@ -3,7 +3,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
-import { positionOf } from '../systems/board/nearby.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -63,11 +62,17 @@ function makeHero(id, held, level = 50) {
 /** A Recruit: the Foundation six and nothing else. */
 const makeRecruit = (id, level = 50) => makeHero(id, FOUNDATION_SKILL_IDS, level);
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the Token under test to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    Placement.placeToken(tile, instance);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 function run(ms) {
@@ -115,7 +120,7 @@ describe('The gate is possession first, then level', () => {
      * with the Token's skill directly — a drop would keep the hero's own skill
      * (FPP-3) and the Token would not even be a candidate.
      */
-    const plantFor = (heroId, tile, skill) => Flags.plant(heroId, positionOf(tile), { skill });
+    const plantFor = (heroId, tile, skill) => Flags.plant(heroId, C(tile), { skill });
     const skipReasons = (token) => Flags.skipsOf(token.id).map(s => s.reason);
 
     it('refuses a hero whose level is too low, and calls it ACCESS', () => {
