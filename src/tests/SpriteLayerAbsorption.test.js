@@ -4,16 +4,22 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import './fixtures/fixtureItems.js';
-import { tileCentre } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * these are spots on a 160 u lattice, which is the step loot stacking was tuned
+ * against — sprites merge within ~2 steps (360 u) and stack separately beyond.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
 describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
     beforeEach(() => {
         GameState.initNew();
-        GameState.state.board = { tiles: {}, tokenBank: {}, tray: [], sprites: [] };
+        GameState.state.board = { tokens: {}, nextTokenOrder: 0, tokenBank: {}, tray: [], sprites: [] };
     });
 
     it('spawns the first item as a standalone stack', () => {
-        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(10) });
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(10) });
         expect(first).not.toBeNull();
         expect(first.targetStackId).toBeNull();
         expect(first.quantity).toBe(1);
@@ -21,8 +27,8 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
     });
 
     it('spawns a subsequent item near the existing stack with targetStackId', () => {
-        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(10) });
-        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(10) });
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(10) });
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(10) });
 
         expect(second).not.toBeNull();
         expect(second.targetStackId).toBe(first.id);
@@ -39,8 +45,8 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
         const absorbedEvents = [];
         EventBus.subscribe(BOARD_EVENTS.SPRITE_ABSORBED, (e) => absorbedEvents.push(e));
 
-        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(10) });
-        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(10) });
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(10) });
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(10) });
 
         expect(first.quantity).toBe(1);
         expect(SpriteLayer.getSprites().length).toBe(2);
@@ -59,8 +65,8 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
     });
 
     it('allows collecting the lingering sprite independently without taking parent stack', () => {
-        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(10) });
-        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(10) });
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(10) });
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(10) });
 
         // Collect second sprite only
         const collected = SpriteLayer.collectSprite(second.id);
@@ -72,24 +78,24 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
         expect(remaining[0].quantity).toBe(1);
     });
 
-    it('merges tokens within 2 tiles into the same stack', () => {
-        // Tile 10 and Tile 11 (adjacent tiles, 1 tile apart)
-        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(10) });
-        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(11) });
+    it('merges tokens within 2 steps into the same stack', () => {
+        // Spots 10 and 11 — one 160 u step apart
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(10) });
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(11) });
 
         expect(second.targetStackId).toBe(first.id);
     });
 
-    it('creates separate stacks for tokens farther than 2 tiles apart', () => {
-        // Tile 0 (top-left) and Tile 35 (bottom-right)
-        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(0) });
-        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(35) });
+    it('creates separate stacks for tokens farther than 2 steps apart', () => {
+        // Spot 0 (top-left) and spot 35 (bottom-right)
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(0) });
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(35) });
 
         expect(second.targetStackId).toBeNull();
         expect(SpriteLayer.getSprites().length).toBe(2);
 
-        // A third drop near tile 35 merges into the second stack
-        const third = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: tileCentre(34) });
+        // A third drop near spot 35 merges into the second stack
+        const third = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, { centre: C(34) });
         expect(third.targetStackId).toBe(second.id);
     });
 });
