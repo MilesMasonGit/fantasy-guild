@@ -13,9 +13,14 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { GUILD_HALL_TILE, footprintCentre } from '../config/boardGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { placeAt, tileCentre } from './fixtures/mat.js';
+import { placeAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names spots on a 160 u lattice for laying a board out.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
 /**
  * Free Playmat slice 1.6a — Tokens stored by instance id at a mat point, and
@@ -98,20 +103,19 @@ describe('⭐ a new game opens with the Guild Hall on the mat (FP-44)', () => {
 
         const onMat = BoardState.tokens();
         expect(onMat.map(t => t.typeId)).toEqual(['token_guild_hall']);
-        // STOPGAP point: the old Hall tile's centre until slice 1.6d.
-        expect({ x: onMat[0].x, y: onMat[0].y }).toEqual(tileCentre(GUILD_HALL_TILE));
+        // The historical opening spot, kept to the mat unit (slice 1.6d-2):
+        // half a step down and right of the mat's centre.
+        expect({ x: onMat[0].x, y: onMat[0].y }).toEqual({ x: 960, y: 643 });
         expect(Object.keys(GameState.state.board.tokens)).toEqual([onMat[0].id]);
         expect(BoardState.getTray()).toEqual([]);
-        // Every current reader still finds it on its tile.
-        expect(BoardState.getToken(GUILD_HALL_TILE)?.id).toBe(onMat[0].id);
     });
 });
 
 describe('⭐ a save round trip keeps where every Token is', () => {
-    it('keeps ids, x, y and placedAt, and the tile view still answers', () => {
-        const a = placeAt('fixture_producer', ...Object.values(tileCentre(0)));
-        const big = placeAt('fixture_spot_big', ...Object.values(footprintCentre(8, 2)));
-        const c = placeAt('fixture_manager', ...Object.values(tileCentre(35)));
+    it('keeps ids, x, y and placedAt', () => {
+        const a = placeAt('fixture_producer', C(0).x, C(0).y);
+        const big = placeAt('fixture_spot_big', 500, 420);
+        const c = placeAt('fixture_manager', C(35).x, C(35).y);
         const before = BoardState.tokens().map(t => ({ id: t.id, x: t.x, y: t.y, placedAt: t.placedAt }));
         expect(before.map(t => t.placedAt)).toEqual([0, 1, 2]);
 
@@ -122,29 +126,26 @@ describe('⭐ a save round trip keeps where every Token is', () => {
         const after = BoardState.tokens().map(t => ({ id: t.id, x: t.x, y: t.y, placedAt: t.placedAt }));
         expect(after).toEqual(before);
         expect(GameState.state.board.nextTokenOrder).toBe(3);
-        expect(BoardState.getToken(0)?.id).toBe(a.id);
-        expect(BoardState.getOccupyingToken(15)?.instance.id).toBe(big.id);
-        expect(BoardState.getToken(35)?.id).toBe(c.id);
+        // Every Token is still found by its id, which is the only way it is
+        // named now that the tile view has gone (slice 1.6d-2).
+        expect(BoardState.getTokenById(a.id).typeId).toBe('fixture_producer');
+        expect(BoardState.getTokenById(big.id).typeId).toBe('fixture_spot_big');
+        expect(BoardState.getTokenById(c.id).typeId).toBe('fixture_manager');
     });
 });
 
 describe('⭐ looking a Token up by id is a lookup, not a scan', () => {
-    it('getTokenById and findTokenById never enumerate the Token map', () => {
-        const target = placeAt('fixture_producer', ...Object.values(tileCentre(9)));
-        placeAt('fixture_producer', ...Object.values(tileCentre(10)));
-        placeAt('fixture_manager', ...Object.values(tileCentre(11)));
+    it('getTokenById never enumerates the Token map', () => {
+        const target = placeAt('fixture_producer', C(9).x, C(9).y);
+        placeAt('fixture_producer', C(10).x, C(10).y);
+        placeAt('fixture_manager', C(11).x, C(11).y);
 
         const board = GameState.state.board;
         let enumerations = 0;
         board.tokens = new Proxy(board.tokens, {
             ownKeys(t) { enumerations++; return Reflect.ownKeys(t); }
         });
-        BoardState.occupiedTiles();          // build the tile view for the new object once
-        enumerations = 0;
-
         expect(BoardState.getTokenById(target.id)).toBe(target);
-        expect(BoardState.findTokenById(target.id)?.instance).toBe(target);
-        expect(BoardState.findTokenById(target.id)?.anchor).toBe(9);
         expect(BoardState.getTokenById('tok_nobody')).toBeNull();
         expect(enumerations).toBe(0);
     });
@@ -153,15 +154,15 @@ describe('⭐ looking a Token up by id is a lookup, not a scan', () => {
 describe('⭐ vacancies are spots, and a restock lands exactly there (FP-19)', () => {
     it('a spent 2×2 leaves a vacancy at its own point, and the Manager refills that point', () => {
         setMatTuning('nearRadius', 400);
-        const spot = footprintCentre(8, 2);            // (464, 304) — not any tile's centre
+        const spot = { x: 500, y: 420 };               // deliberately not on any lattice step
         const spent = placeAt(BoardState.createTokenInstance('fixture_spot_big', 1), spot.x, spot.y);
-        placeAt('fixture_spot_camp', ...Object.values(tileCentre(10)));
+        placeAt('fixture_spot_camp', 820, 420);        // 320 u away, inside the 400 u Near set above
 
         Charges.destroyToken(spent);
 
         const vacancy = Object.values(GameState.state.board.vacancies);
         expect(vacancy).toEqual([{ typeId: 'fixture_spot_big', x: spot.x, y: spot.y, unstocked: false }]);
-        expect(BoardState.getVacancy(8)?.typeId).toBe('fixture_spot_big');   // STOPGAP tile view
+        expect(BoardState.vacancyAt(BoardState.spotIdAt(spot.x, spot.y))?.typeId).toBe('fixture_spot_big');
 
         TokenBank.deposit(BoardState.createTokenInstance('fixture_spot_big', 5));
         expect(Managers.sweep()).toBe(1);
