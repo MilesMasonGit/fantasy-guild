@@ -7,13 +7,13 @@ import { useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
-import { BOARD_PX } from '../../../config/boardGeometry.js';
+import { SIDE_COLUMN_PX } from '../board/boardConstants.js';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 
 /**
  * RightmostHeroDock — vertical sliding tabs dock on the far right edge of the screen.
- * - Sized to BOARD_PX height so top hero lines up with playmat & tray, but
+ * - Sized to SIDE_COLUMN_PX height so top hero lines up with playmat & tray, but
  *   capped to the window: the playmat scales down on short windows (CR2-179).
  * - Hero Dock tabs sit above the inspection sheet (z-30 vs z-20).
  * - Full hero inspection sheet renders tucked behind the dock at a fixed position covering the Tray.
@@ -107,7 +107,7 @@ export const RightmostHeroDock = ({
         <aside
             ref={mergeRefs(recall.setNodeRef, asideRef)}
             data-dnd-region={DND_SURFACE.DRAWER}
-            style={{ height: BOARD_PX, maxHeight: '100%' }}
+            style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             className={cn(
                 'w-20 shrink-0 flex flex-col justify-start gap-2 pointer-events-auto select-none relative z-40 pr-0 overflow-visible',
                 recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5 rounded-l-xl'
@@ -116,7 +116,7 @@ export const RightmostHeroDock = ({
         >
             {/* Full-width Hero Inspection Sheet underlapping the hero dock tabs with smooth slide in/out */}
             <div
-                style={{ height: BOARD_PX, maxHeight: '100%', top: 0 }}
+                style={{ height: SIDE_COLUMN_PX, maxHeight: '100%', top: 0 }}
                 className={cn(
                     "absolute right-0 w-[368px] md:w-[400px] xl:w-[400px] 2xl:w-[420px] z-30 transition-all duration-200 ease-out",
                     isOpen

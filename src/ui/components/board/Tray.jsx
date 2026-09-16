@@ -13,7 +13,7 @@ import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { TrayMiniBoard } from './TrayMiniBoard.jsx';
-import { BOARD_PX } from '../../../config/boardGeometry.js';
+import { SIDE_COLUMN_PX } from './boardConstants.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { QuestManager } from '../../../systems/quests/QuestManager.js';
@@ -240,15 +240,15 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
                 isBankOpen ? "pointer-events-none" : "pointer-events-auto"
             )}
         >
-            {/* Inner Wrapper matched to BOARD_PX (Playmat Height), but never
+            {/* Inner Wrapper matched to SIDE_COLUMN_PX (Playmat Height), but never
                 taller than the window — the playmat itself now scales down to
                 fit (CR2-179), and a Tray that kept its full 944px would hang off
                 the bottom of a short window and stop lining up with it. */}
             <div
                 className="w-full relative shrink-0 flex flex-col"
-                style={{ height: BOARD_PX, maxHeight: '100%' }}
+                style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             >
-                {/* Wooden Tray Box matching the exact height of the playmat (BOARD_PX) */}
+                {/* Wooden Tray Box matching the exact height of the playmat (SIDE_COLUMN_PX) */}
                 <div
                     className={cn(
                         "w-full h-full relative rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-visible flex flex-col transition-all",

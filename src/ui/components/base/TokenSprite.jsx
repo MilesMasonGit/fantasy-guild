@@ -1,5 +1,5 @@
 import { cn } from '../../utils/cn.js';
-import { ART_PX } from '../../../config/boardGeometry.js';
+import { ART_PX } from '../../../config/matGeometry.js';
 import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
 

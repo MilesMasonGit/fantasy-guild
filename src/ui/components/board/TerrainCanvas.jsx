@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { BOARD_PX, OLD_AREA_ORIGIN } from '../../../config/boardGeometry.js';
 import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
 import {
-    LATTICE_SIZE, subtileArtPx, resolveLattice, resolveArtPixels
+    LATTICE_SIZE, subtileArtPx, resolveLattice, resolveArtPixels,
+    LEGACY_BOARD_PX as BOARD_PX, LEGACY_AREA_ORIGIN as OLD_AREA_ORIGIN
 } from '../../../systems/board/TerrainLattice.js';
 import { buildSurface } from '../../../systems/board/TerrainSurface.js';
 import { propsForBoard } from '../../../systems/board/TerrainProps.js';

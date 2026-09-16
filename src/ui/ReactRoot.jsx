@@ -25,7 +25,7 @@ import VerticalHeroDock from './components/dock/VerticalHeroDock.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
-import { BOARD_PX } from '../config/boardGeometry.js';
+import { SIDE_COLUMN_PX } from './components/board/boardConstants.js';
 import { getUpgradeDef, getUpgradeDefByTile } from '../config/guildUpgrades.js';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
@@ -90,7 +90,7 @@ const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
         >
             <div
                 className="w-full relative shrink-0 flex flex-col justify-between"
-                style={{ height: BOARD_PX, maxHeight: '100%' }}
+                style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             >
                 {/* A hero's flag rules (Free Playmat 1.5b-ii, FP-81): a narrow
                     panel over this column, so the board stays in view. A
@@ -280,7 +280,7 @@ export const ReactRoot = ({ engine }) => {
                                 <aside className="w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10">
                                     <div
                                         className="w-full relative shrink-0 flex flex-col gap-2.5"
-                                        style={{ height: BOARD_PX, maxHeight: '100%' }}
+                                        style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
                                     >
                                         <button
                                             onClick={() => {
@@ -388,7 +388,7 @@ export const ReactRoot = ({ engine }) => {
                                 <aside className="w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10">
                                     <div
                                         className="w-full relative shrink-0 flex flex-col gap-2.5"
-                                        style={{ height: BOARD_PX, maxHeight: '100%' }}
+                                        style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
                                     >
                                         <button
                                             onClick={() => {

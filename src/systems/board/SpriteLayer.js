@@ -6,7 +6,7 @@ import { EventBus } from '../core/EventBus.js';
 import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { TILE_PX, TILE_STEP_PX } from '../../config/boardGeometry.js';
+import { TOKEN_PX, MAT_STEP_U } from '../../config/matGeometry.js';
 import { MAT_W, MAT_H } from '../../config/matGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
@@ -135,8 +135,8 @@ export function getSprites() {
 }
 
 /** Clamp a position to the mat so nothing lands off the edge (the mat's own size since slice 1.6c). */
-const clampX = (v) => Math.max(TILE_PX * 0.25, Math.min(MAT_W - TILE_PX * 0.25, v));
-const clampY = (v) => Math.max(TILE_PX * 0.25, Math.min(MAT_H - TILE_PX * 0.25, v));
+const clampX = (v) => Math.max(TOKEN_PX * 0.25, Math.min(MAT_W - TOKEN_PX * 0.25, v));
+const clampY = (v) => Math.max(TOKEN_PX * 0.25, Math.min(MAT_H - TOKEN_PX * 0.25, v));
 
 /**
  * Where a sprite lands: 1–2 tiles from its source, in a random direction
@@ -153,7 +153,7 @@ const clampY = (v) => Math.max(TILE_PX * 0.25, Math.min(MAT_H - TILE_PX * 0.25, 
  * landing are the same point and the sprite appears in place.
  */
 /** Max distance (in px) between source token and an existing stack for them to merge (~2 tiles). */
-const MAX_STACK_MERGE_DISTANCE_PX = 2.25 * TILE_STEP_PX;
+const MAX_STACK_MERGE_DISTANCE_PX = 2.25 * MAT_STEP_U;
 
 /**
  * Where a sprite comes from, as a mat point (Free Playmat slice 1.6b — there
@@ -184,8 +184,8 @@ function getSourcePosition(source) {
     }
     if (typeof source.x === 'number' && typeof source.y === 'number') {
         return {
-            x: source.x + (source.width != null ? source.width / 2 : TILE_PX / 2),
-            y: source.y + (source.height != null ? source.height / 2 : TILE_PX / 2)
+            x: source.x + (source.width != null ? source.width / 2 : TOKEN_PX / 2),
+            y: source.y + (source.height != null ? source.height / 2 : TOKEN_PX / 2)
         };
     }
     return null;
@@ -222,7 +222,7 @@ function scatterFrom(source, kind = 'item', existingTarget = null) {
     if (typeof source === 'object' && source !== null && source.inTray) {
         const fromX = sourcePos.x;
         const fromY = sourcePos.y;
-        const distance = TILE_PX * (kind === 'item' ? (0.4 + 0.3 * Math.random()) : (0.5 + 0.3 * Math.random()));
+        const distance = TOKEN_PX * (kind === 'item' ? (0.4 + 0.3 * Math.random()) : (0.5 + 0.3 * Math.random()));
         const angle = Math.PI + (Math.random() - 0.5) * 1.1; // westward onto the board
         return {
             x: clampX(fromX + Math.cos(angle) * distance),
@@ -233,10 +233,10 @@ function scatterFrom(source, kind = 'item', existingTarget = null) {
     }
 
     const angle = Math.random() * Math.PI * 2;
-    // Items land within a tile's distance of the output token (0.4 - 0.85 TILE_PX)
+    // Items land within a tile's distance of the output token (0.4 - 0.85 TOKEN_PX)
     const distance = kind === 'token'
-        ? TILE_PX * (0.5 + 0.3 * Math.random())
-        : TILE_PX * (0.4 + 0.45 * Math.random());
+        ? TOKEN_PX * (0.5 + 0.3 * Math.random())
+        : TOKEN_PX * (0.4 + 0.45 * Math.random());
 
     return {
         x: clampX(sourcePos.x + Math.cos(angle) * distance),
