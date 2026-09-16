@@ -12,7 +12,7 @@ import * as BoardCombat from './BoardCombat.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { centreOf, distanceSq } from './nearby.js';
-import { artRadiusOf, MAT_W, MAT_H } from '../../config/matGeometry.js';
+import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
 import * as MatPlacement from './MatPlacement.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { PLACEMENT, RANDOM_FREE_DARTS, placementOf } from '../../config/registries/placementRegistry.js';
@@ -192,8 +192,8 @@ function spawnPoint(typeId, placement, from, random) {
         let bestScore = -Infinity;
         for (let i = 0; i < RANDOM_FREE_DARTS; i++) {
             const dart = {
-                x: r + random() * Math.max(0, MAT_W - 2 * r),
-                y: r + random() * Math.max(0, MAT_H - 2 * r)
+                x: r + random() * Math.max(0, matW() - 2 * r),
+                y: r + random() * Math.max(0, matH() - 2 * r)
             };
             if (!MatPlacement.isLegal(typeId, dart)) continue;
             const score = openness(dart);

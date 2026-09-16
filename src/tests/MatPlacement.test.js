@@ -8,7 +8,7 @@ import * as Restrictions from '../systems/board/Restrictions.js';
 import * as Flags from '../systems/board/Flags.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
-import { MAT_W, MAT_H } from '../config/matGeometry.js';
+import { matW, matH } from '../config/matGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -141,10 +141,10 @@ describe('a Token stays fully on the mat', () => {
     it('the ART circle must fit, not merely the centre', () => {
         expect(MatPlacement.isLegal('mp_small', { x: 64, y: 400 })).toBe(true);
         expect(MatPlacement.isLegal('mp_small', { x: 63.9, y: 400 })).toBe(false);
-        expect(MatPlacement.isLegal('mp_small', { x: MAT_W - 64, y: 400 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_small', { x: MAT_W - 63, y: 400 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: matW() - 64, y: 400 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_small', { x: matW() - 63, y: 400 })).toBe(false);
         expect(MatPlacement.isLegal('mp_small', { x: 400, y: 63.9 })).toBe(false);
-        expect(MatPlacement.isLegal('mp_small', { x: 400, y: MAT_H - 63 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: 400, y: matH() - 63 })).toBe(false);
     });
 
     it('a large Token needs its bigger circle to fit', () => {

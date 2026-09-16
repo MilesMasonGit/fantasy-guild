@@ -7,7 +7,7 @@ import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { TOKEN_PX, MAT_STEP_U } from '../../config/matGeometry.js';
-import { MAT_W, MAT_H } from '../../config/matGeometry.js';
+import { matW, matH } from '../../config/matGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
@@ -134,9 +134,13 @@ export function getSprites() {
     return sprites() || [];
 }
 
-/** Clamp a position to the mat so nothing lands off the edge (the mat's own size since slice 1.6c). */
-const clampX = (v) => Math.max(TOKEN_PX * 0.25, Math.min(MAT_W - TOKEN_PX * 0.25, v));
-const clampY = (v) => Math.max(TOKEN_PX * 0.25, Math.min(MAT_H - TOKEN_PX * 0.25, v));
+/**
+ * Clamp a position to the mat so nothing lands off the edge (the mat's own size
+ * since slice 1.6c). The size is read per call, because the mat can be resized
+ * while the game runs (slice 1.6d-3).
+ */
+const clampX = (v) => Math.max(TOKEN_PX * 0.25, Math.min(matW() - TOKEN_PX * 0.25, v));
+const clampY = (v) => Math.max(TOKEN_PX * 0.25, Math.min(matH() - TOKEN_PX * 0.25, v));
 
 /**
  * Where a sprite lands: 1–2 tiles from its source, in a random direction
@@ -175,8 +179,8 @@ function getSourcePosition(source) {
     if (typeof source !== 'object') return null;
     if (source.inTray) {
         return {
-            x: MAT_W + 30,
-            y: clampY((source.y != null ? source.y : 0.5) * MAT_H)
+            x: matW() + 30,
+            y: clampY((source.y != null ? source.y : 0.5) * matH())
         };
     }
     if (source.centre && Number.isFinite(source.centre.x) && Number.isFinite(source.centre.y)) {
@@ -214,8 +218,8 @@ function scatterFrom(source, kind = 'item', existingTarget = null) {
     }
 
     if (!sourcePos) {
-        const x = clampX(Math.random() * MAT_W);
-        const y = clampY(Math.random() * MAT_H);
+        const x = clampX(Math.random() * matW());
+        const y = clampY(Math.random() * matH());
         return { x, y, fromX: x, fromY: y };
     }
 

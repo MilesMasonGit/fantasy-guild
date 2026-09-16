@@ -5,6 +5,23 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The playmat can change size while you play** (Free Playmat slice 1.6d, third part). The
+  developer Mat Tuner has a new **Mat size** slider — 6 to 20 steps, shipping at 11, which is
+  exactly the mat you have now (1760 × 1126). The mat keeps its shape as it grows and shrinks.
+  What happens when you move it:
+  - **Growing the mat moves nothing.** Everything stays exactly where you put it, with more
+    bare mat around it.
+  - **Shrinking it pulls stranded Tokens back inside**, and spaces them apart from their new
+    neighbours by the same rule a hand-placed Token follows — so they come back in tidy rather
+    than in a heap on the edge.
+  - **Flags are pulled in but never shuffled sideways**, so a hero keeps working what they were
+    working. A spot a Manager owes a Token is pulled in too.
+  - **Nothing is ever lost.** A Token with nowhere clear to go stays on the mat, visible,
+    overlapping a neighbour, and you are told how many ended up crowded.
+  - **New games now stand the Guild Hall in the middle of the mat.** It used to start half a
+    step down and to the right of centre — a leftover from the old grid, which had no true
+    middle square. Existing saves are untouched; only a brand-new game looks different.
+
 - **The old grid is gone from the code** (Free Playmat slice 1.6d, second part). Nothing looks or
   behaves differently — this slice only deletes things. Underneath the playmat the game still kept a
   hidden grid of 36 numbered squares, and a lot of the engine still asked its questions in terms of

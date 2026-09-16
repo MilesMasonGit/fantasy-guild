@@ -69,8 +69,8 @@ describe('The content-integrity audit', () => {
     });
 
     it('says nothing about the opening Tokens the game actually ships', async () => {
-        const { OPENING_MAT } = await import('../systems/core/EngineBootstrap.js');
-        const findings = auditContent({ openingTray: OPENING_MAT.map(t => t.typeId) });
+        const { openingMat } = await import('../systems/core/EngineBootstrap.js');
+        const findings = auditContent({ openingTray: openingMat().map(t => t.typeId) });
         const openingProblems = findings.filter(
             f => f.where === 'The Tokens a new game starts with'
         );

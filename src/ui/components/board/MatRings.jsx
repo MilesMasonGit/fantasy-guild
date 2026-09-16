@@ -1,5 +1,6 @@
 import React from 'react';
-import { MAT_W, MAT_H, clampToMat } from '../../../config/matGeometry.js';
+import { clampToMat } from '../../../config/matGeometry.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { nearRadius } from '../../../systems/board/nearby.js';
 import * as MatPlacement from '../../../systems/board/MatPlacement.js';
@@ -38,6 +39,7 @@ function useNearRadius() {
  */
 export const MatRings = ({ hoveredCentre = null, matRef = null }) => {
     const radius = useNearRadius();
+    const mat = useMatSize();
     const { activePayload, isDragging } = useActiveDrag();
     const pointer = useDragPointer();
 
@@ -71,8 +73,8 @@ export const MatRings = ({ hoveredCentre = null, matRef = null }) => {
         <svg
             data-mat-rings
             className="absolute left-0 top-0 overflow-visible pointer-events-none"
-            width={MAT_W}
-            height={MAT_H}
+            width={mat.w}
+            height={mat.h}
             style={{ zIndex: MAT_Z.RINGS }}
         >
             <circle

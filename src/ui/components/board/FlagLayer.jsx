@@ -5,7 +5,8 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag, useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { MAT_W, MAT_H, clampToMat } from '../../../config/matGeometry.js';
+import { matW, matH, clampToMat } from '../../../config/matGeometry.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z } from './matLayers.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -99,7 +100,7 @@ function useFlagDragPoint(matRef) {
     const point = pointerToMat(pointer, matRef.current.getBoundingClientRect());
     if (!point) return null;
     // Off the mat entirely (over the Tray, the Dock): nothing to preview.
-    if (point.x < 0 || point.y < 0 || point.x > MAT_W || point.y > MAT_H) return null;
+    if (point.x < 0 || point.y < 0 || point.x > matW() || point.y > matH()) return null;
     return { heroId: activePayload.heroId, ...clampToMat(point) };
 }
 
@@ -117,6 +118,7 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, 'heroes_updated', 'state_changed']
     ) || [];
     const radius = useFlagRadius();
+    const mat = useMatSize();
     const liveDragRing = useFlagDragPoint(matRef);
     const ring = dragRing || liveDragRing;
 
@@ -138,13 +140,13 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         <div
             data-flag-layer
             className="absolute left-0 top-0 pointer-events-none"
-            style={{ width: MAT_W, height: MAT_H, zIndex: MAT_Z.RINGS }}
+            style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.RINGS }}
         >
             {rings.size > 0 && (
                 <svg
                     className="absolute left-0 top-0 overflow-visible pointer-events-none"
-                    width={MAT_W}
-                    height={MAT_H}
+                    width={mat.w}
+                    height={mat.h}
                 >
                     {[...rings].map(([heroId, p]) => (
                         <circle
@@ -167,7 +169,7 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         <div
             data-flag-pennants
             className="absolute left-0 top-0 pointer-events-none"
-            style={{ width: MAT_W, height: MAT_H, zIndex: MAT_Z.FLAGS }}
+            style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.FLAGS }}
         >
             {flags.map((f, i) => (
                 <Flag

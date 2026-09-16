@@ -10,6 +10,7 @@ import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getMap, listMaps } from '../../config/registries/mapRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { matW, matH } from '../../config/matGeometry.js';
 import { tokenForMap, getPurchasedMaps } from '../board/Cartographer.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from '../board/BoardState.js';
@@ -466,11 +467,14 @@ export const QuestManager = {
         }
 
         // Toss Map Token sideways onto the playmat with natural spread across the left/mid playmat.
-        // Plain mat units (Free Playmat slice 1.6d-2): the band the Map lands in
-        // is stated straight in mat coordinates now that the old landing area
-        // and its corner offset are gone. The numbers are unchanged.
-        const clampX = Math.round(466 + Math.random() * 320);
-        let clampY = Math.round(359 + Math.random() * 150);
+        // ⭐ The band is stated as **fractions of the mat** (slice 1.6d-3), so a
+        // reward Map lands in the same part of the mat whatever size the mat
+        // currently is. The fractions are the old fixed numbers over the mat's
+        // shipped 1760 × 1126, so at 11 steps every number is unchanged.
+        const w = matW();
+        const h = matH();
+        const clampX = Math.round(w * (466 / 1760) + Math.random() * w * (320 / 1760));
+        let clampY = Math.round(h * (359 / 1126) + Math.random() * h * (150 / 1126));
 
         // If triggered from a specific quest card in the UI, match the flight Y height to the card!
         if (sourceRect && typeof document !== 'undefined') {
@@ -482,8 +486,8 @@ export const QuestManager = {
                 const scale = natural > 0 && boardRect.width > 0 ? boardRect.width / natural : 1;
                 const questCenterY = sourceRect.top + (sourceRect.height || 0) / 2;
                 const relativeY = Math.round((questCenterY - boardRect.top) / scale - 64);
-                // Clamp within valid playmat area, in mat units.
-                clampY = Math.max(219, Math.min(819, relativeY));
+                // Clamp within valid playmat area, as a fraction of the mat.
+                clampY = Math.max(Math.round(h * (219 / 1126)), Math.min(Math.round(h * (819 / 1126)), relativeY));
             }
         }
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useEngine } from '../hooks/useEngine.js';
 import { listTokenTypeIds, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { matW, matH } from '../../config/matGeometry.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { Bug, Plus, X } from 'lucide-react';
 import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
@@ -161,9 +162,18 @@ export const TestDashboard = React.memo(() => {
                 const tokens = listTokenTypeIds();
                 const count = 3 + Math.floor(Math.random() * 4);
                 for (let i = 0; i < count; i++) {
-                    // A random point on the mat, in mat units (sprite sources are
-                    // points since slice 1.6b; the old landing area went in 1.6d-2).
-                    const from = { centre: { x: 480 + Math.random() * 800, y: 163 + Math.random() * 800 } };
+                    // A random point on the mat, as a fraction of it, so the
+                    // scatter follows the mat's live size (slice 1.6d-3). The
+                    // fractions are the old fixed numbers over the shipped
+                    // 1760 × 1126, so at 11 steps nothing has moved.
+                    const w = matW();
+                    const hh = matH();
+                    const from = {
+                        centre: {
+                            x: w * (480 / 1760) + Math.random() * w * (800 / 1760),
+                            y: hh * (163 / 1126) + Math.random() * hh * (800 / 1126)
+                        }
+                    };
                     if (Math.random() < 0.6) {
                         engine.SpriteLayer.addSprite(
                             'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), from

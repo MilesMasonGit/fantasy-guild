@@ -103,9 +103,9 @@ describe('⭐ a new game opens with the Guild Hall on the mat (FP-44)', () => {
 
         const onMat = BoardState.tokens();
         expect(onMat.map(t => t.typeId)).toEqual(['token_guild_hall']);
-        // The historical opening spot, kept to the mat unit (slice 1.6d-2):
-        // half a step down and right of the mat's centre.
-        expect({ x: onMat[0].x, y: onMat[0].y }).toEqual({ x: 960, y: 643 });
+        // ⭐ The middle of the mat (slice 1.6d-3). It used to be (960, 643) —
+        // half a step off centre, inherited from the deleted grid's Hall tile.
+        expect({ x: onMat[0].x, y: onMat[0].y }).toEqual({ x: 880, y: 563 });
         expect(Object.keys(GameState.state.board.tokens)).toEqual([onMat[0].id]);
         expect(BoardState.getTray()).toEqual([]);
     });

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { MAT_W, MAT_H, artRadius, TOKEN_PX } from '../../../config/matGeometry.js';
+import { artRadius, TOKEN_PX } from '../../../config/matGeometry.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, tokenZ } from './matLayers.js';
 import { PAIR_OFFSET_PX, HERO_HIT_PX, ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -60,6 +61,10 @@ export const MatBoard = ({
 }) => {
     const { EventBus } = useEngine();
     const rootRef = useRef(null);
+
+    // How big the mat is right now (slice 1.6d-3). Read through the hook so the
+    // whole board redraws when the Mat Tuner resizes it.
+    const mat = useMatSize();
 
     /** The Token the pointer is on, and the hero it is on — both by id. */
     const [hoveredId, setHoveredId] = useState(null);
@@ -244,7 +249,7 @@ export const MatBoard = ({
             ref={rootRef}
             data-mat-board
             className="absolute left-0 top-0"
-            style={{ width: MAT_W, height: MAT_H }}
+            style={{ width: mat.w, height: mat.h }}
             onPointerMove={handlePointerMove}
             onPointerLeave={clearHover}
         >
@@ -257,8 +262,8 @@ export const MatBoard = ({
                 data-mat-surface
                 className="absolute left-0 top-0 pointer-events-auto"
                 style={{
-                    width: MAT_W,
-                    height: MAT_H,
+                    width: mat.w,
+                    height: mat.h,
                     zIndex: MAT_Z.SURFACE,
                     borderRadius: 28,
                     backgroundColor: 'rgba(0, 0, 0, 0.22)',

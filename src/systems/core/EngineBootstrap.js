@@ -33,13 +33,14 @@ import * as RecipeResolver from '../board/RecipeResolver.js';
 import * as BoardCombat from '../board/BoardCombat.js';
 import * as BoardPromotion from '../board/BoardPromotion.js';
 import * as Managers from '../board/Managers.js';
+import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
 import * as FlagRules from '../board/FlagRules.js';
 import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { MAT_W, MAT_H, MAT_STEP_U } from '../../config/matGeometry.js';
+import { matW, matH } from '../../config/matGeometry.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 
 /**
@@ -48,25 +49,30 @@ import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
  *
  * Each entry is a Token type and the mat point it starts at.
  *
- * ## Where the Hall stands: (960, 643)
- * Half a step down and right of the mat's centre — **the historical opening
- * spot**, kept to the mat unit (Free Playmat slice 1.6d-2). It used to be
- * written as the centre of the old Guild Hall tile, and it reads oddly for a
- * reason: the deleted 6×6 grid had no true centre square, so the Hall sat half a
- * tile off centre. The grid is gone and this is now stated in mat units, but the
- * number is deliberately unchanged — 1.6d-2 is a deletion slice and moves
- * nothing a player would see.
+ * ## ⭐ Where the Hall stands: the middle of the mat (slice 1.6d-3)
+ * Dead centre of whatever size the mat currently is — (880, 563) at the shipped
+ * 11 steps. **This is a visible change to new games.** Until now it stood at
+ * (960, 643): half a step down and right of centre, which was the centre of the
+ * old Guild Hall *tile* on a 6×6 grid with no true middle square. The grid went
+ * in 1.6d-2 and the mat became resizable here, so the off-by-half has nothing
+ * left to preserve and the Hall simply starts in the middle.
  *
- * Slice 1.6d-3 makes the mat resizable, and is what should make this follow the
- * mat's centre properly rather than preserving the old grid's off-by-half.
+ * ## ⚠️ A function, not a constant
+ * The mat's size is live (`matGeometry.js`), so a module-level array would pin
+ * the opening spot to whatever size the mat happened to be when this file was
+ * first imported. Call it when a new game is being built.
+ *
+ * @returns {Array<{typeId: string, x: number, y: number}>}
  */
-export const OPENING_MAT = [
-    {
-        typeId: 'token_guild_hall',
-        x: MAT_W / 2 + MAT_STEP_U / 2,
-        y: MAT_H / 2 + MAT_STEP_U / 2
-    }
-];
+export function openingMat() {
+    return [
+        {
+            typeId: 'token_guild_hall',
+            x: Math.round(matW() / 2),
+            y: Math.round(matH() / 2)
+        }
+    ];
+}
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -133,6 +139,9 @@ export const EngineBootstrap = {
         // A hero arriving changes which Tokens a `being worked` filter reaches,
         // so the tile caches follow hero movement as well as board changes (V4).
         TileModifiers.init();
+        // ⭐ The mat can be resized while the game runs (slice 1.6d-3). Shrinking
+        // it pulls what no longer fits back inside (FP-98); this is what listens.
+        MatResize.init();
         BoardRunner.init();
         BoardCombat.init();
         BoardPromotion.init();
@@ -145,7 +154,7 @@ export const EngineBootstrap = {
         this._registerTickHandlers();
 
         // `openingTray` is the audit's name for "the Tokens a new game starts with".
-        reportContentIntegrity({ openingTray: OPENING_MAT.map(t => t.typeId) });
+        reportContentIntegrity({ openingTray: openingMat().map(t => t.typeId) });
 
         // The same question asked of the loaded SAVE, every time one is loaded
         // (CR2-120). The audit above sees only the authored content set, so a
@@ -231,7 +240,7 @@ export const EngineBootstrap = {
         if (state.board) {
             state.board.tray = [];
         }
-        for (const { typeId, x, y } of OPENING_MAT) {
+        for (const { typeId, x, y } of openingMat()) {
             BoardState.addToken(
                 BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)), x, y
             );

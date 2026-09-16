@@ -11,7 +11,7 @@ import { getItem } from '../config/registries/itemRegistry.js';
 import { FOUNDATION_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.js';
 import { isTempo, bandFor, isInBand } from '../config/registries/tempoBands.js';
-import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
+import { openingMat } from '../systems/core/EngineBootstrap.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import {
@@ -675,7 +675,7 @@ describe("A Map's pool is a complete kit (D-139)", () => {
         // new player tried and the first thing that refused them.
         const foundation = new Set(FOUNDATION_SKILL_IDS);
 
-        for (const { typeId } of OPENING_MAT) {
+        for (const { typeId } of openingMat()) {
             const skill = TOKENS[typeId]?.config?.skill;
             if (!skill) continue;
             expect(foundation.has(skill),

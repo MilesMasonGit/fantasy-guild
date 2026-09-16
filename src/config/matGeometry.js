@@ -1,6 +1,7 @@
 // Fantasy Guild — Token geometry on the free playmat (Free Playmat slice 1.6b)
 
 import { getTokenType } from './registries/tokenRegistry.js';
+import { matTuning } from './matTuning.js';
 
 /**
  * A Token on the free playmat is a **circle at a point** (plan §A, §C). This
@@ -16,23 +17,52 @@ import { getTokenType } from './registries/tokenRegistry.js';
  */
 
 /**
- * ## The mat's own size (Free Playmat slice 1.6c, FP-92)
+ * ## ⭐ The mat's own size — **live** (Free Playmat slice 1.6d-3, FP-92)
  *
- * The mat is `MAT_STEPS` of today's 160 u steps wide, at a 0.64 aspect:
- * **1760 × 1126 u**. Its top-left is (0, 0). The Mat Tuner's mat-size row
- * (slice 1.6d) changes `MAT_STEPS`.
+ * The mat is `matSteps()` of today's 160 u steps wide, at a fixed 0.64 aspect.
+ * At the shipped 11 steps that is **1760 × 1126 u**; its top-left is always
+ * (0, 0). The Mat Tuner's **Mat size** row moves it between 6 and 20 steps while
+ * the game runs.
+ *
+ * ## ⚠️ Functions, not constants — and nothing may cache them
+ * These used to be the module constants `MAT_STEPS`, `MAT_W` and `MAT_H`, read
+ * by about fifteen files. A constant is captured at import, so a file holding one
+ * would go on measuring a mat that no longer exists the moment the owner moved
+ * the slider — the mat would resize and that file's edge, clamp or canvas would
+ * not. So: **call `matW()` / `matH()` at the point of use, every time.** Never
+ * lift one into a module constant, a default argument, a frozen object or a
+ * `useMemo` with no dependency on the size.
+ *
+ * On screen the size reaches React through `useMatSize()`, which re-renders the
+ * mat and every layer on it when the tuner changes (`onMatTuningChanged`).
+ *
+ * ⚠️ This is the mat's size in **mat units**, not on screen. How much the mat is
+ * then shrunk to fit the window is `useBoardScale`'s, and is a separate question
+ * (slice 1.7 makes the mat grow to fill the window instead).
  */
-export const MAT_STEPS = 11;
 export const MAT_STEP_U = 160;
 export const MAT_ASPECT = 0.64;
-export const MAT_W = MAT_STEPS * MAT_STEP_U;
-export const MAT_H = Math.round(MAT_W * MAT_ASPECT);
 
-/** A point clamped onto the mat. */
+/** How many 160 u steps wide the mat currently is (Mat Tuner, 6–20). */
+export function matSteps() {
+    return matTuning('matSteps');
+}
+
+/** The mat's width in mat units, right now. */
+export function matW() {
+    return matSteps() * MAT_STEP_U;
+}
+
+/** The mat's height in mat units, right now — the width at the 0.64 aspect. */
+export function matH() {
+    return Math.round(matW() * MAT_ASPECT);
+}
+
+/** A point clamped onto the mat as it is now. */
 export function clampToMat(point) {
     return {
-        x: Math.max(0, Math.min(MAT_W, point.x)),
-        y: Math.max(0, Math.min(MAT_H, point.y))
+        x: Math.max(0, Math.min(matW(), point.x)),
+        y: Math.max(0, Math.min(matH(), point.y))
     };
 }
 
