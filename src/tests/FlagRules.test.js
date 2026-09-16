@@ -18,11 +18,9 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import { tileCentre } from '../config/boardGeometry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getJobSkills, getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 import { resetMatTuning, matTuning } from '../config/matTuning.js';
-import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -62,7 +60,27 @@ registerTokenTypes({
     }
 });
 
-const C = (tile) => tileCentre(tile);
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
+ * This is a lattice of mat points 160 u apart — the step the old board had — so
+ * a side neighbour is 160 u and a diagonal 226 u, which is exactly what the
+ * shipped 164 u reach above turns on. The numbers are shorthand for spots.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** Which spot the Token a hero works stands on, or null. */
+function workTileOf(heroId) {
+    const instance = BoardState.getTokenById(BoardState.workTokenOf(heroId));
+    if (!instance) return null;
+    const col = Math.round((instance.x - 400) / 160);
+    const row = Math.round((instance.y - 200) / 160);
+    return row * 6 + col;
+}
+
 const FOREST = 'fixture_producer';        // logging
 const MINE = 'fixture_producer_alt';      // mining
 
@@ -74,8 +92,8 @@ function hero(id, skills = { logging: 50, mining: 50 }) {
 
 function put(tile, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
-    Placement.placeToken(tile, instance);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    return instance;
 }
 
 const plant = (heroId, tile) => Flags.plant(heroId, C(tile));
@@ -121,7 +139,7 @@ describe('the shipped reach (FP-75)', () => {
 
         plant('h1', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
         expect(reasons(rock)).toEqual([]);            // out of reach: not even looked at
     });
 
@@ -135,7 +153,7 @@ describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-
         put(15, FOREST);                              // logging, 160 u
         put(14, MINE);                                // mining, under the flag
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(14);
+        expect(workTileOf('h1')).toBe(14);
     });
 
     it('a priority-1 Token farther away beats a priority-3 Token nearer', () => {
@@ -145,7 +163,7 @@ describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-
 
         plant('h1', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
     });
 
     it('a priority-1 Token stuck on inputs → the priority-3 one, the skip recorded, one notice', () => {
@@ -155,13 +173,13 @@ describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-
 
         plant('h1', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(13);
+        expect(workTileOf('h1')).toBe(13);
         expect(reasons(hungry)).toEqual([ALERT.INPUTS]);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
 
         run(30000);                                   // several cycles, each one looking again (FP-80)
 
-        expect(BoardState.workTileOf('h1')).toBe(13);
+        expect(workTileOf('h1')).toBe(13);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
     });
 });
@@ -174,7 +192,7 @@ describe('rules switched off (FPP-18)', () => {
 
         plant('h1', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
         expect(reasons(forest)).toEqual([Flags.SKIP.RULE_OFF]);
     });
 
@@ -182,7 +200,7 @@ describe('rules switched off (FPP-18)', () => {
         const forest = put(15, FOREST);
         put(20, MINE);                                // just as near; the lower anchor 15 wins
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
         run(3000);
         expect(forest.cycleElapsedMs).toBeGreaterThan(0);
         const plantedAt = BoardState.flagOf('h1').plantedAt;
@@ -191,13 +209,13 @@ describe('rules switched off (FPP-18)', () => {
             expect(Flags.setRule('h1', 'logging', { allowed: false }).success).toBe(true);
         });
 
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
         expect(forest.cycleElapsedMs).toBe(0);
         expect(deployed).toBe(0);
         expect(BoardState.flagOf('h1').plantedAt).toBe(plantedAt);
 
         Flags.assign(0);
-        expect(BoardState.workTileOf('h1')).toBe(20);
+        expect(workTileOf('h1')).toBe(20);
     });
 
     it('Fight is allowed by default (FP-74); switching it off lets go of the enemy and skips enemies', () => {
@@ -206,14 +224,14 @@ describe('rules switched off (FPP-18)', () => {
 
         expect(FlagRules.ruleOf('f1', FlagRules.FIGHT)).toEqual({ allowed: true, priority: 3 });
         plant('f1', 14);
-        expect(BoardState.workTileOf('f1')).toBe(15);
+        expect(workTileOf('f1')).toBe(15);
 
         Flags.setRule('f1', FlagRules.FIGHT, { allowed: false });
-        expect(BoardState.workTileOf('f1')).toBeNull();
+        expect(workTileOf('f1')).toBeNull();
         expect(BoardCombat.fightOfHero('f1')).toBeNull();
 
         Flags.assign(0);
-        expect(BoardState.workTileOf('f1')).toBeNull();
+        expect(workTileOf('f1')).toBeNull();
         expect(reasons(bear)).toEqual([Flags.SKIP.RULE_OFF]);
     });
 });
@@ -253,7 +271,7 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         const first = put(13, FOREST);
         put(15, FOREST);
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(13);
+        expect(workTileOf('h1')).toBe(13);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
 
         run(3000);
@@ -278,7 +296,7 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         // The notice about the stuck mill is still spent: passing it again says nothing.
         Charges.destroyToken(first, { heroId: 'h1' });
         Flags.assign(0);
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
     });
 
@@ -366,7 +384,7 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
     it('stays through the current cycle, and switches on the next pass after it completes', () => {
         const forest = put(15, FOREST);
         plant('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
         run(2000);
 
         put(13, MINE);
@@ -379,7 +397,7 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
             for (let i = 0; i < 600 && !completed; i++) {
                 BoardRunner.tick(100);
                 if (!completed) {
-                    expect(BoardState.workTileOf('h1'), `tick ${i}, mid-cycle`).toBe(15);
+                    expect(workTileOf('h1'), `tick ${i}, mid-cycle`).toBe(15);
                     if (forest.cycleElapsedMs > 0) sawProgress = true;
                 }
             }
@@ -388,10 +406,10 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
         }
         expect(completed).toBe(true);
         expect(sawProgress).toBe(true);
-        expect(BoardState.workTileOf('h1')).toBe(15);  // the completing tick itself does not switch
+        expect(workTileOf('h1')).toBe(15);  // the completing tick itself does not switch
 
         BoardRunner.tick(100);
-        expect(BoardState.workTileOf('h1')).toBe(13);
+        expect(workTileOf('h1')).toBe(13);
         expect(forest.cycleElapsedMs).toBe(0);
     });
 
@@ -406,7 +424,7 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
 
         put(15, 'fixture_enemy');
         plant('f1', 14);
-        expect(BoardState.workTileOf('f1')).toBe(15);
+        expect(workTileOf('f1')).toBe(15);
         run(200);
 
         put(13, FOREST);
@@ -417,7 +435,7 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
         try {
             for (let i = 0; i < 600 && !won; i++) {
                 BoardRunner.tick(100);
-                if (!won) expect(BoardState.workTileOf('f1'), `tick ${i}, mid-fight`).toBe(15);
+                if (!won) expect(workTileOf('f1'), `tick ${i}, mid-fight`).toBe(15);
             }
         } finally {
             off?.();
@@ -425,7 +443,7 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
         expect(won).toBe(true);
 
         BoardRunner.tick(100);
-        expect(BoardState.workTileOf('f1')).toBe(13);
+        expect(workTileOf('f1')).toBe(13);
         expect(BoardCombat.fightOfHero('f1')).toBeNull();
     });
 
@@ -441,9 +459,9 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
         plant('h1', 14);
         plant('h2', 14);
         plant('h3', 14);
-        expect(BoardState.workTileOf('h1')).toBe(15);
-        expect(BoardState.workTileOf('h2')).toBe(8);
-        expect(BoardState.workTileOf('h3')).toBe(13);
+        expect(workTileOf('h1')).toBe(15);
+        expect(workTileOf('h2')).toBe(8);
+        expect(workTileOf('h3')).toBe(13);
 
         let moved = 0;
         let cycles = 0;
