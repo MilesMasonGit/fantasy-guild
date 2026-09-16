@@ -5,6 +5,14 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The old grid is gone from the code** (Free Playmat slice 1.6d, second part). Nothing looks or
+  behaves differently — this slice only deletes things. Underneath the playmat the game still kept a
+  hidden grid of 36 numbered squares, and a lot of the engine still asked its questions in terms of
+  it: which square is this Token on, which squares are empty, who is working square 14. All of that
+  has been deleted. A Token is now known only by its own identity and by where it stands on the mat,
+  which is how the playmat has actually worked since the previous slice. The Guild Hall upgrade board
+  is a separate diagram, still has its own squares, and is untouched.
+
 - **Tokens now sit anywhere on the playmat** (Free Playmat slice 1.6d, first part). The board
   has no squares left: a Token stays exactly where you let go of it, and you can group things
   as closely or as loosely as you like. What you might notice:
