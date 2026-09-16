@@ -69,7 +69,7 @@ describe('A Market is an ordinary Token whose output is gold', () => {
     it('consumes its inputs and credits currency', () => {
         const def = getTokenType(MARKET);
         InventoryManager.addItem('item_market_goods', 10);
-        place(10, MARKET, 'hero_1');
+        place(SPOT, MARKET, 'hero_1');
 
         run(16000);   // one 15s cycle
 
@@ -79,7 +79,7 @@ describe('A Market is an ordinary Token whose output is gold', () => {
 
     it('drops no sprite — gold is not an item and has nowhere to land', () => {
         InventoryManager.addItem('item_market_goods', 10);
-        place(10, MARKET, 'hero_1');
+        place(SPOT, MARKET, 'hero_1');
 
         run(16000);
 
