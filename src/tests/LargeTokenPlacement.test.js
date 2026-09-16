@@ -131,42 +131,30 @@ describe('2x2 Large Token Mechanics', () => {
             expect(empty).toContain(2);
         });
 
-        it('displaces existing small tokens across all 4 covered tiles into the Tray', () => {
+        /**
+         * ⭐ Free placement (slice 1.6d-1) deleted the 2×2 cascade: a large
+         * Token dropped over small ones no longer shoves them sideways or into
+         * the Tray. It moves ITSELF to the nearest spot that clears them, so the
+         * arrangement the player built is never rearranged behind their back.
+         */
+        it('⭐ never displaces the small Tokens it is dropped over — it moves itself', () => {
             const s1 = BoardState.createTokenInstance('fixture_small_mine', 10);
             const s2 = BoardState.createTokenInstance('fixture_small_mine', 10);
             Placement.placeToken(0, s1);
             Placement.placeToken(7, s2);
 
-            expect(BoardState.getTray().length).toBe(0);
-
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
             const res = Placement.placeToken(0, large);
 
             expect(res.success).toBe(true);
-            // Corner tile 0 has no valid cascade direction and is displaced to Tray
-            expect(BoardState.getTray()).toContain(s1);
-            // Tile 7 cascades/shifts down to tile 13
-            expect(BoardState.getToken(13)).toBe(s2);
-            expect(BoardState.getOccupyingToken(0).instance.typeId).toBe('fixture_large_fortress');
-            expect(BoardState.getOccupyingToken(7).instance.typeId).toBe('fixture_large_fortress');
-        });
-
-        it('refuses placement if Tray has insufficient space for all displaced tokens', () => {
-            // Fill tray to 18 items (TRAY_CAPACITY is 18)
-            for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
-                BoardState.addToTray(BoardState.createTokenInstance('fixture_small_mine'));
-            }
-
-            // Place small token at corner 0 (cannot cascade anywhere, must displace to Tray)
-            Placement.placeToken(0, BoardState.createTokenInstance('fixture_small_mine'));
-
-            // Tray is full, 1 token needs to be displaced to Tray
-            const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
-            const res = Placement.placeToken(0, large);
-
-            expect(res.success).toBe(false);
-            expect(res.reason).toContain('No room in the Tray');
-            expect(BoardState.getToken(0).typeId).toBe('fixture_small_mine');
+            // Both small Tokens are exactly where they were, and none went to the Tray.
+            expect(BoardState.getTokenById(s1.id)).not.toBeNull();
+            expect(BoardState.getTokenById(s2.id)).not.toBeNull();
+            expect(BoardState.getTray()).toHaveLength(0);
+            // The large Token stands clear of both.
+            const placed = BoardState.getTokenById(large.id);
+            expect(Math.hypot(placed.x - s1.x, placed.y - s1.y)).toBeGreaterThanOrEqual(99.6 - 1e-6);
+            expect(Math.hypot(placed.x - s2.x, placed.y - s2.y)).toBeGreaterThanOrEqual(99.6 - 1e-6);
         });
     });
 

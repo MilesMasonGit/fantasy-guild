@@ -19,6 +19,7 @@ import { MAT_W, MAT_H } from '../config/matGeometry.js';
 import { OLD_AREA_ORIGIN, BOARD_PX, UPGRADE_BOARD_PX, tileCentre } from '../config/boardGeometry.js';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
+import { TrayMiniBoard } from '../ui/components/board/TrayMiniBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { flagOrigin, IDLE_HERO_OFFSET, FLAG_PX } from '../ui/components/board/flagGeometry.js';
 import { HERO_HIT_PX, PAIR_OFFSET_PX, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
@@ -339,8 +340,8 @@ describe('the Token sheet follows its Token (slice 1.6c-2)', () => {
     });
 });
 
-describe('the mat itself (FP-93)', () => {
-    it('draws a darker playmat and a faint outline of where Tokens may land', () => {
+describe('the mat itself (FP-96)', () => {
+    it('⭐ is a plain darker surface with a soft rounded border, and no play-area outline', () => {
         const { container } = mount(h(MatBoard));
 
         const surface = container.querySelector('[data-mat-surface]');
@@ -348,13 +349,37 @@ describe('the mat itself (FP-93)', () => {
         expect(parseFloat(surface.style.width)).toBe(MAT_W);
         expect(parseFloat(surface.style.height)).toBe(MAT_H);
 
-        // ⚠️ STOPGAP: the outline is the play area a drop must land in until
-        // slice 1.6d lets Tokens stand anywhere.
-        const outline = container.querySelector('[data-play-area-outline]');
-        expect(parseFloat(outline.style.left)).toBe(OLD_AREA_ORIGIN.x);
-        expect(parseFloat(outline.style.top)).toBe(OLD_AREA_ORIGIN.y);
-        expect(parseFloat(outline.style.width)).toBe(BOARD_PX);
-        expect(parseFloat(outline.style.height)).toBe(BOARD_PX);
+        // FP-96: the rounded border is the mat's only edge now — a placeholder
+        // until it gets real art.
+        expect(parseFloat(surface.style.borderRadius)).toBeGreaterThan(0);
+        expect(surface.style.border).toBeTruthy();
+
+        // ⭐ The practice outline went with the snapping it existed to explain
+        // (slice 1.6d-1): a Token may stand anywhere on the mat.
+        expect(container.querySelector('[data-play-area-outline]')).toBeNull();
+    });
+
+    /**
+     * ⭐ FP-97 — the Tray's mini board is now a scaled picture of the mat, not a
+     * grid of cells. It keeps working while a drawer covers the real board, and
+     * it is retired entirely in slice 1.9.
+     */
+    it('⭐ the Tray mini mat draws the mat’s Tokens scaled down, with no grid cells', () => {
+        const drawn = placeAt('fixture_producer', 880, 563);
+
+        const { container } = mount(h(TrayMiniBoard));
+
+        expect(container.querySelector('[data-mini-mat]')).not.toBeNull();
+        const art = container.querySelector(`[data-mini-token="${drawn.id}"]`);
+        expect(art).not.toBeNull();
+
+        // Placed as a PERCENTAGE of the mat, so it scales with whatever box the
+        // Tray gives it — nothing here measures pixels.
+        expect(parseFloat(art.style.left)).toBeCloseTo(((880 - 64) / MAT_W) * 100, 4);
+        expect(parseFloat(art.style.top)).toBeCloseTo(((563 - 64) / MAT_H) * 100, 4);
+
+        // Not one tile cell survives.
+        expect(container.querySelectorAll('[id^="miniboard-tile-"]')).toHaveLength(0);
     });
 
     it('a spot awaiting a restock shows a ghost of what it is owed', () => {

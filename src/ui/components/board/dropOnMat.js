@@ -1,6 +1,8 @@
 // Fantasy Guild — the one drop function for the playmat (Free Playmat slice 1.6d)
 
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { TILE_PX } from '../../../config/boardGeometry.js';
+import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -50,6 +52,14 @@ const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
 
 const isHeroDrop = (payload) => payload?.kind === DRAG_KIND.HERO || payload?.kind === DRAG_KIND.FLAG;
 
+/** Where a Map's 128 u box sits when dropped at `point`: centred on it, kept on the mat. */
+function mapBoxAt(point) {
+    return {
+        x: Math.max(0, Math.min(MAT_W - TILE_PX, Math.round(point.x - TILE_PX / 2))),
+        y: Math.max(0, Math.min(MAT_H - TILE_PX, Math.round(point.y - TILE_PX / 2)))
+    };
+}
+
 /**
  * A drop with nowhere to go flies back (FP-46).
  *
@@ -75,16 +85,15 @@ export function dropOnMat(payload, point) {
     const def = getTokenType(payload.typeId);
     const from = payload.from || {};
 
-    // A Map already lying on the mat is simply repositioned.
+    // ⚠️ A Map already lying on the mat is MOVED, never re-made. Lifting it and
+    // putting down a fresh one would give it a new id, and the drag that is
+    // still holding it — along with its burst animation's `bornAt` — refers to
+    // the old one.
     if (def?.mapId && from.boardMapId != null) {
-        const map = BoardState.removeBoardMap(from.boardMapId);
-        if (!map) return null;
-        const result = Placement.placeTokenAt(
-            { typeId: map.typeId, usesRemaining: map.usesRemaining }, point
-        );
-        if (!result.success) BoardState.addBoardMap(map.typeId, map.x, map.y, map.usesRemaining);
+        const box = mapBoxAt(point);
+        BoardState.setBoardMapPosition(from.boardMapId, box.x, box.y);
         EventBus.publish('state_changed', {});
-        return announce(result);
+        return { success: true };
     }
 
     if (from.boardMapId != null) {

@@ -5,6 +5,31 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Tokens now sit anywhere on the playmat** (Free Playmat slice 1.6d, first part). The board
+  has no squares left: a Token stays exactly where you let go of it, and you can group things
+  as closely or as loosely as you like. What you might notice:
+  - **A Token lands where you drop it.** No more jumping to the nearest square — two Tokens can
+    sit almost touching (about a third of the old square's spacing apart).
+  - **A drop with no room shuffles aside** to the nearest free spot instead of shoving whatever
+    was already there. **Nothing on the board is ever rearranged behind your back any more** —
+    dropping a Token onto another no longer pushes it away or bumps it to the Tray.
+  - **A drop with nowhere at all to go flies back** to where it came from with a short note.
+    Nothing is ever lost.
+  - **A drop that would break a "Cannot" rule slides to the nearest spot that obeys it**, and
+    only flies back if there is no such spot nearby — it tells you which rule refused it.
+  - **Dropping a Token on a matching copy still restocks it**, and any charges left over stay
+    on the board right beside the copy rather than going to the Tray.
+  - **The practice outline is gone.** The mat is now a plain darker surface with a soft rounded
+    edge — a placeholder until it gets its proper artwork.
+  - **The Tray's mini board is now a small picture of the whole mat**, so placing a Token while
+    a drawer covers the board puts it exactly where you point, just as on the real board.
+  - **The drag preview ring shows where the Token will really land**, including the shuffle, and
+    disappears when there is no room.
+  - **A Manager restocking a spot you have since built on** now puts the Token beside it rather
+    than on top.
+  - New developer Mat Tuner sliders: **Token hitbox**, **Overlap allowed** and **Nudge reach**,
+    which change how close the next drop can land.
+
 - **The playmat now draws everything where it actually stands** (Free Playmat slice 1.6c,
   second part). The board is no longer a grid of squares on screen: each Token, hero and flag
   is drawn at its own place on the mat. Dropping, working, fighting and restocking all behave

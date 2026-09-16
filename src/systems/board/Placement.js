@@ -185,7 +185,7 @@ export function placeTokenAt(instance, point, options = {}) {
     });
 
     if (decision.status === 'full') return refuseWithAlert(at, instance.typeId, decision);
-    if (decision.status === 'restocked') return restock(instance, decision, options);
+    if (decision.status === 'restocked') return restock(instance, decision);
 
     const from = pointOf(BoardState.getTokenById(instance.id));
     if (!options.keepCycle) forfeitCycle(instance);
@@ -213,7 +213,7 @@ export function placeTokenAt(instance, point, options = {}) {
  * The Tray is the fallback when even that has nowhere to go, exactly as before;
  * only if the Tray is full too does the drop fly back, so nothing is lost.
  */
-function restock(instance, decision, options = {}) {
+function restock(instance, decision) {
     const target = BoardState.getTokenById(decision.targetId);
     if (!target) return refuse('No Token there');
 

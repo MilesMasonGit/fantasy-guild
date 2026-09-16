@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
 import { MAT_W, MAT_H, artRadius } from '../../../config/matGeometry.js';
 import { useGameState } from '../../hooks/useGameState.js';

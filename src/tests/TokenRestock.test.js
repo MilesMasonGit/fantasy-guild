@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn()
@@ -15,7 +16,10 @@ const token = (typeId, uses = 100) => BoardState.createTokenInstance(typeId, use
 describe('Token Restocking on Same-Type Drop', () => {
     beforeEach(() => {
         GameState.initNew();
+        resetMatTuning();
     });
+
+    afterEach(() => resetMatTuning());
 
     it('tops up a partial token and absorbs incoming token completely when no excess charges remain', () => {
         // fixture_producer has default uses = 100
@@ -50,43 +54,41 @@ describe('Token Restocking on Same-Type Drop', () => {
         expect(BoardState.getTray()).toHaveLength(0);
     });
 
-    it('fills on-board token to max cap (5000) and pushes leftover token to adjacent cell', () => {
-        // fixture_producer has default uses = 5000
-        // on-board has 4980 uses, incoming has 50 uses (total 5030 -> 5000 on-board, 30 leftover)
+    /**
+     * ⭐ FP-87 (slice 1.6d-1): the leftover charges **stay on the mat**, nudged
+     * beside the copy they just filled. They used to be pushed onto the next
+     * tile along, which is the same idea without the tile.
+     */
+    it('fills the on-board Token to its cap and leaves the leftover beside it (FP-87)', () => {
         const onBoard = token('fixture_producer', 4980);
         const incoming = token('fixture_producer', 50);
 
         Placement.placeToken(7, onBoard);
 
-        const pushedEvents = [];
-        EventBus.subscribe(BOARD_EVENTS.TILE_PUSHED, e => pushedEvents.push(e));
-
         const res = Placement.placeToken(7, incoming);
         expect(res.success).toBe(true);
         expect(res.restocked).toBe(true);
-        expect(res.pushedLeftover).toBe(true);
+        expect(res.nudgedLeftover).toBe(true);
         expect(res.addedCharges).toBe(20);
 
-        // On-board token capped at 5000
-        expect(BoardState.getToken(7).usesRemaining).toBe(5000);
+        expect(BoardState.getTokenById(onBoard.id).usesRemaining).toBe(5000);
 
-        // Leftover token pushed to primary adjacent cell (tile 1) with 30 charges
-        expect(BoardState.getToken(1)?.id).toBe(incoming.id);
-        expect(BoardState.getToken(1)?.usesRemaining).toBe(30);
-
-        // Slide animation event emitted
-        expect(pushedEvents.some(e => e.fromTile === 7 && e.toTile === 1)).toBe(true);
+        // The leftover is on the mat, right next to the copy — not in the Tray.
+        const leftover = BoardState.getTokenById(incoming.id);
+        expect(leftover.usesRemaining).toBe(30);
+        const apart = Math.hypot(leftover.x - onBoard.x, leftover.y - onBoard.y);
+        expect(apart).toBeGreaterThanOrEqual(61.2 - 1e-6);
+        expect(apart).toBeLessThan(120);
+        expect(BoardState.getTray()).toHaveLength(0);
     });
 
-    it('fills on-board token and sends leftover token to Tray when all adjacent cells are blocked', () => {
-        // Tile 0 (corner): block tiles 1 and 6
-        Placement.placeToken(1, token('fixture_blocker'));
-        Placement.placeToken(6, token('fixture_blocker'));
-
+    it('sends the leftover to the Tray only when it has nowhere at all to stand', () => {
         const onBoard = token('fixture_producer', 4970);
         const incoming = token('fixture_producer', 60);
 
         Placement.placeToken(0, onBoard);
+        // No room to nudge into anywhere: the Tray is the fallback, as before.
+        setMatTuning('nudgeReach', 0);
 
         const collectedEvents = [];
         EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collectedEvents.push(e));
@@ -97,40 +99,39 @@ describe('Token Restocking on Same-Type Drop', () => {
         expect(res.trayLeftover).toBe(true);
         expect(res.addedCharges).toBe(30);
 
-        // On-board token capped at 5000
-        expect(BoardState.getToken(0).usesRemaining).toBe(5000);
-
-        // Leftover token is in Tray with 30 charges
-        const tray = BoardState.getTray();
-        expect(tray.some(t => t.id === incoming.id && t.usesRemaining === 30)).toBe(true);
-
-        // Particle fly event published for Tray
+        expect(BoardState.getTokenById(onBoard.id).usesRemaining).toBe(5000);
+        expect(BoardState.getTray().some(t => t.id === incoming.id && t.usesRemaining === 30)).toBe(true);
         expect(collectedEvents.some(e => e.kind === 'token' && e.destination === 'tray' && e.instanceId === incoming.id)).toBe(true);
     });
 
-    it('performs standard displacement when the on-board token is already at max charges', () => {
+    /**
+     * ⭐ With no charges to give, there is nothing to restock — and since slice
+     * 1.6d-1 nothing is displaced either. The newcomer moves itself clear and
+     * the Token already down does not budge.
+     */
+    it('nudges clear of a copy that is already full, moving nobody', () => {
         const onBoard = token('fixture_producer', 5000);
         const incoming = token('fixture_producer', 5000);
 
         Placement.placeToken(7, onBoard);
+        const where = { x: onBoard.x, y: onBoard.y };
 
         const res = Placement.placeToken(7, incoming);
         expect(res.success).toBe(true);
-        // Regular displacement pushed onBoard to tile 1, placed incoming on tile 7
-        expect(BoardState.getToken(7).id).toBe(incoming.id);
-        expect(BoardState.getToken(1).id).toBe(onBoard.id);
+        expect(res.restocked).toBeUndefined();
+        expect({ x: BoardState.getTokenById(onBoard.id).x, y: BoardState.getTokenById(onBoard.id).y }).toEqual(where);
+        expect(BoardState.getTokenById(incoming.id)).not.toBeNull();
     });
 
-    it('performs standard displacement when tokens have unlimited uses (uses == null)', () => {
+    it('nudges clear of an unlimited-use Token too (uses == null)', () => {
         const onBoard = token('fixture_buff_unique', null);
         const incoming = token('fixture_buff_unique', null);
 
         Placement.placeToken(7, onBoard);
+        const where = { x: onBoard.x, y: onBoard.y };
 
         const res = Placement.placeToken(7, incoming);
         expect(res.success).toBe(true);
-        // Displaced to tile 1
-        expect(BoardState.getToken(7).id).toBe(incoming.id);
-        expect(BoardState.getToken(1).id).toBe(onBoard.id);
+        expect({ x: BoardState.getTokenById(onBoard.id).x, y: BoardState.getTokenById(onBoard.id).y }).toEqual(where);
     });
 });

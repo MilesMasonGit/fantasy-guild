@@ -46,20 +46,24 @@ describe('⚠️ gridShim is a stopgap (deleted in slice 1.6d)', () => {
 });
 
 /**
- * ⚠️ STOPGAP allowlist — `oldSpotStopgap.js` and all three importers are
- * deleted in slice 1.6d. `MatRings` is on the list because the Near ring has to
- * show where a dragged Token will really land, and until free placement that is
- * the nearest old spot rather than the cursor (slice 1.6c-2).
+ * ⭐ **The snapping stopgap is GONE** (slice 1.6d-1). `oldSpotStopgap.js` and
+ * every import of it went with free placement: a Token now lands exactly where
+ * it was let go, so there is no "nearest old spot" left to snap to. The list is
+ * empty and must stay empty.
  */
-const OLD_SPOT_IMPORTERS = [
-    'ui/components/board/MatRings.jsx',
-    'ui/components/board/TrayMiniBoard.jsx',
-    'ui/components/board/dropOnMat.js'
-];
+const OLD_SPOT_IMPORTERS = [];
 
-describe('⚠️ oldSpotStopgap is a stopgap (deleted in slice 1.6d) — slice 1.6c', () => {
-    it('is imported only by the snapping stopgap’s three callers', () => {
+describe('⭐ the snapping stopgap is gone (slice 1.6d-1)', () => {
+    it('nothing imports oldSpotStopgap, and the file itself is deleted', () => {
         expect(importsOf('oldSpotStopgap')).toEqual(OLD_SPOT_IMPORTERS);
+        expect(FILES.some(f => f.path === 'ui/components/board/oldSpotStopgap.js')).toBe(false);
+    });
+
+    it('nothing snaps a drop to a spot, and no play-area refusal survives', () => {
+        const leftovers = FILES
+            .filter(f => /\b(oldSpotAt|oldSpotPoint|isFarOutsideArea|PLAY_AREA_NOTE|planCascadeFor2x2)\b/.test(f.text))
+            .map(f => f.path);
+        expect(leftovers).toEqual([]);
     });
 
     it('nothing imports the deleted placeTokenFromDrag, and the tile readers it leaned on are gone', () => {

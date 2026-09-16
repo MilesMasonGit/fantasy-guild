@@ -208,8 +208,12 @@ function legalIn(typeId, point, ctx) {
  */
 export function findSpot(typeId, point, options = {}) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
-    if (!getTokenType(typeId)) return null;
 
+    // ⚠️ A Token whose type has no definition is placed anyway, at a 1×1's size
+    // — warn-only, per the owner's ruling (CR2-108c / CR2-044). Refusing it here
+    // would turn a renamed CMS id from "a Token that sits there doing nothing"
+    // into "a Token that cannot be put down at all", which is a far harder
+    // failure to recognise and is not this file's call to make.
     const ctx = contextFor(typeId, point, options);
     if (legalIn(typeId, point, ctx)) return { x: point.x, y: point.y, nudge: 0 };
 

@@ -5,6 +5,8 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Flags from '../systems/board/Flags.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GUILD_HALL_TILE, TILE_COUNT } from '../config/boardGeometry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { idAt, pointAt, tileCentre } from './fixtures/mat.js';
@@ -70,107 +72,96 @@ describe('Placing a Token', () => {
     });
 });
 
-describe('Displacement — the incoming thing wins (D-134)', () => {
-    it('pushes the old Token to an adjacent free cell when available', () => {
-        Placement.placeToken(9, token('fixture_producer', 42));
-        const result = Placement.placeToken(9, token('fixture_buff_yield'));
+/**
+ * ⭐ **Nothing is displaced any more** (Free Playmat slice 1.6d-1).
+ *
+ * D-134's "the incoming thing wins" was an answer to "two Tokens cannot share a
+ * tile". There are no tiles, so the question is gone with them: a Token dropped
+ * where there is no room moves **itself** to the nearest spot that fits. The
+ * arrangement the player built is never rearranged behind their back, nothing is
+ * bumped to the Tray, and no hero is parted from their work by someone else's
+ * drop.
+ */
+describe('⭐ Nothing is displaced any more (slice 1.6d-1)', () => {
+    it('a Token dropped on an occupied spot moves ITSELF clear', () => {
+        const sitting = token('fixture_producer', 42);
+        Placement.placeToken(9, sitting);
+        const where = { x: sitting.x, y: sitting.y };
+
+        const incoming = token('fixture_buff_yield');
+        const result = Placement.placeToken(9, incoming);
 
         expect(result.success).toBe(true);
-        expect(BoardState.getToken(9).typeId).toBe('fixture_buff_yield');
-        // Pushed to primary quadrant cell (tile 3)
-        expect(BoardState.getToken(3).typeId).toBe('fixture_producer');
-        expect(BoardState.getToken(3).usesRemaining).toBe(42);
+        // The Token already down has not moved and has not lost a charge.
+        expect({ x: BoardState.getTokenById(sitting.id).x, y: BoardState.getTokenById(sitting.id).y }).toEqual(where);
+        expect(BoardState.getTokenById(sitting.id).usesRemaining).toBe(42);
+        // The newcomer is on the mat, standing clear.
+        const landed = BoardState.getTokenById(incoming.id);
+        expect(landed).not.toBeNull();
+        expect(Math.hypot(landed.x - where.x, landed.y - where.y)).toBeGreaterThanOrEqual(61.2 - 1e-6);
     });
 
-    it('shoves the old Token to the Tray when all adjacent push directions are blocked', () => {
-        // Tile 0 (corner): block remaining in-bounds directions (tiles 1 and 6)
+    it('nothing is ever bumped to the Tray by a drop', () => {
         Placement.placeToken(1, token('fixture_blocker'));
         Placement.placeToken(6, token('fixture_blocker'));
         Placement.placeToken(0, token('fixture_producer', 42));
+
         const result = Placement.placeToken(0, token('fixture_buff_yield'));
 
         expect(result.success).toBe(true);
-        expect(BoardState.getToken(0).typeId).toBe('fixture_buff_yield');
-        expect(result.displacedToken.typeId).toBe('fixture_producer');
-
-        // Nothing is ever lost to displacement — it is in the Tray, intact.
-        const tray = BoardState.getTray();
-        expect(tray).toHaveLength(1);
-        expect(tray[0].typeId).toBe('fixture_producer');
-        expect(tray[0].usesRemaining).toBe(42);
+        expect(result.displacedToken).toBeNull();
+        expect(BoardState.getTray()).toHaveLength(0);
     });
 
-    it('moves a working hero along with the pushed Token', () => {
-        Placement.placeToken(9, token('fixture_producer'));
+    it('a working hero keeps the Token they were on when something lands beside it', () => {
+        const worked = token('fixture_producer');
+        Placement.placeToken(9, worked);
         Placement.placeHero('hero_1', 9);
-        expect(BoardState.workTileOf('hero_1')).toBe(9);
+        expect(BoardState.workerOf(worked.id)).toBe('hero_1');
 
         const result = Placement.placeToken(9, token('fixture_buff_yield'));
 
         expect(result.success).toBe(true);
-        // Hero stayed with pushed token at tile 3 — the claim follows the instance
-        expect(BoardState.workTileOf('hero_1')).toBe(3);
-        expect(BoardState.workerOf(idAt(9))).toBeNull();
-    });
-
-    it('a working hero keeps their flag when their Token goes to the Tray, and stops working it', () => {
-        // Corner tile 0: block remaining in-bounds directions (tiles 1 and 6)
-        Placement.placeToken(1, token('fixture_blocker'));
-        Placement.placeToken(6, token('fixture_blocker'));
-        Placement.placeToken(0, token('fixture_producer'));
-        Placement.placeHero('hero_1', 0);
-        expect(BoardState.workTileOf('hero_1')).toBe(0);
-
-        const result = Placement.placeToken(0, token('fixture_buff_yield'));
-        Flags.assign(0);
-
-        // Nobody is sent to the Dock any more (1.4b): the flag stays, and with
-        // nothing workable in range the hero idles at it.
-        expect(result.displacedHeroId).toBeUndefined();
+        // Their Token never moved, so neither did they.
+        expect(BoardState.workerOf(worked.id)).toBe('hero_1');
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
-        expect(BoardState.workTileOf('hero_1')).toBeNull();
-        expect(BoardState.displayPointOf('hero_1')).toEqual(tileCentre(0));
     });
 
-    it('does NOT hand the displaced hero to the arriving Token', () => {
-        // The player chose where that person works. Silently reassigning them
-        // to whatever landed would take the choice away (grid concept §3.6).
-        Placement.placeToken(9, token('fixture_producer'));
-        Placement.placeHero('hero_1', 9);
-
-        Placement.placeToken(9, token('fixture_buff_yield'));
-
-        expect(BoardState.workerOf(idAt(9))).toBeNull();
-    });
-
-    it('refuses the placement outright when no cell is free and the Tray is full, losing nothing', () => {
+    it('a full Tray can no longer refuse a drop, because no drop needs the Tray', () => {
         for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
             BoardState.addToTray(token('filler'));
         }
-        // Corner tile 0: block remaining in-bounds directions (tiles 1 and 6)
-        Placement.placeToken(1, token('fixture_blocker'));
-        Placement.placeToken(6, token('fixture_blocker'));
-        Placement.placeToken(0, token('fixture_producer'));
+        const sitting = token('fixture_producer');
+        Placement.placeToken(0, sitting);
         Placement.placeHero('hero_1', 0);
 
         const result = Placement.placeToken(0, token('fixture_buff_yield'));
 
-        expect(result.success).toBe(false);
-        // The board is exactly as it was — Token and hero both still there.
-        expect(BoardState.getToken(0).typeId).toBe('fixture_producer');
-        expect(BoardState.workerOf(idAt(0))).toBe('hero_1');
+        expect(result.success).toBe(true);
+        expect(BoardState.getTokenById(sitting.id)).not.toBeNull();
+        expect(BoardState.workerOf(sitting.id)).toBe('hero_1');
     });
 });
 
 describe('Forfeited cycles (D-54, D-131)', () => {
-    it('a displaced Token loses its in-flight cycle', () => {
+    it('a Token already down keeps its cycle when something lands beside it', () => {
         const forest = token('fixture_producer');
         Placement.placeToken(9, forest);
         forest.cycleElapsedMs = 5000;
 
         Placement.placeToken(9, token('fixture_buff_yield'));
 
-        expect(BoardState.getToken(3).cycleElapsedMs).toBe(0);
+        // It was not touched, so there was nothing to forfeit.
+        expect(BoardState.getTokenById(forest.id).cycleElapsedMs).toBe(5000);
+    });
+
+    it('a Token arriving on the mat starts with no cycle progress', () => {
+        const arriving = token('fixture_producer');
+        arriving.cycleElapsedMs = 5000;
+
+        Placement.placeToken(9, arriving);
+
+        expect(BoardState.getTokenById(arriving.id).cycleElapsedMs).toBe(0);
     });
 
     it('⭐ a moved Token KEEPS its in-flight cycle (FP-68)', () => {
@@ -364,6 +355,23 @@ describe('Recalling a hero', () => {
         // Defeat calls this without knowing where the hero is; making the
         // no-op case an error would push that check outward.
         expect(Placement.recallHeroById('hero_nobody').success).toBe(true);
+    });
+
+    /** Moved here from `TokenHeroDisplacement.test.js`, deleted with the push in 1.6d-1. */
+    it('flies them to the Dock as a particle on a direct recall (right click)', () => {
+        Placement.placeToken(7, token('fixture_producer'));
+        Placement.placeHero('hero_1', 7);
+
+        const collected = [];
+        const unsub = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collected.push(e));
+
+        const res = Placement.recallHeroById('hero_1');
+
+        expect(res.success).toBe(true);
+        expect(BoardState.flagOf('hero_1')).toBeNull();
+        expect(BoardState.displayPointOf('hero_1')).toBeNull();
+        expect(collected.some(e => e.kind === 'hero' && e.destination === 'dock' && e.heroId === 'hero_1')).toBe(true);
+        unsub();
     });
 });
 
