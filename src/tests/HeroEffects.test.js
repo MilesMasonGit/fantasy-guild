@@ -13,9 +13,17 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { tileCentre, idAt } from './fixtures/mat.js';
 
-/** A tile well away from the Guild Hall's reserved square. */
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the Token to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
 const TILE = 10;
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -212,8 +220,8 @@ describe('the legacy gear pipeline is gone (UE-16)', () => {
     });
 });
 
-describe('a carried rule reaches the tile its hero is working', () => {
-    it('adds the loadout’s Provides into resolveAxis, alongside tile and guild', () => {
+describe('a carried rule reaches the Token its hero is working', () => {
+    it('adds the loadout’s Provides into resolveAxis, alongside the Token and guild', () => {
         GameState.state.heroes = [{
             id: 'hero_1', name: 'hero_1', status: 'idle',
             equipment: ['fixture_sword', null, null, null, null, null, null, null, null],
@@ -222,16 +230,16 @@ describe('a carried rule reaches the tile its hero is working', () => {
         }];
 
         const instance = BoardState.createTokenInstance('fixture_producer', 100);
-        Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround([tileCentre(TILE)]);
+        Placement.placeTokenAt(instance, C(TILE));
+        TileModifiers.rebuildAround([C(TILE)]);
 
-        // Nobody standing here: the tile resolves its own base.
+        // Nobody standing here: the Token resolves its own base.
         expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(10);
 
         // The hero arrives carrying a +5% Yield effect at scale 2 — the number
-        // travels with the person, not the square, which is the whole reason
-        // the hero is a third scope rather than a cached tile modifier.
-        Placement.placeHero('hero_1', TILE);
+        // travels with the person, not the ground, which is the whole reason
+        // the hero is a third scope rather than a cached Token modifier.
+        Placement.plantFlagAt('hero_1', C(TILE));
         expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(11);
     });
 
@@ -244,9 +252,9 @@ describe('a carried rule reaches the tile its hero is working', () => {
         }];
 
         const instance = BoardState.createTokenInstance('fixture_producer', 100);
-        Placement.placeToken(TILE, instance);
-        TileModifiers.rebuildAround([tileCentre(TILE)]);
-        Placement.placeHero('hero_1', TILE);
+        Placement.placeTokenAt(instance, C(TILE));
+        TileModifiers.rebuildAround([C(TILE)]);
+        Placement.plantFlagAt('hero_1', C(TILE));
 
         expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 10)).toBeCloseTo(11);
 
