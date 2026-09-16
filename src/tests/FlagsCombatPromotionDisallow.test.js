@@ -283,17 +283,23 @@ describe('⭐ a moved enemy keeps its HP (FPP-4)', () => {
         expect(BoardState.workTileOf('h1')).toBe(17);
     });
 
-    it('shoved aside by a Token dropped on it, the fight goes too', () => {
+    /**
+     * ⭐ Free placement (slice 1.6d-1) deleted the push: a Token dropped on an
+     * enemy no longer shoves it aside, so the fight cannot be disturbed by
+     * somebody else's drop at all. The newcomer is what moves.
+     */
+    it('a Token dropped on it cannot shove it — the newcomer moves instead', () => {
         const bear = put(14, 'fixture_enemy');
         fightAt('h1', 14);
         const fight = untilDamaged('h1');
         const hp = fight.combat.enemyHp.current;
+        const where = { x: bear.x, y: bear.y };
 
         Placement.placeToken(14, BoardState.createTokenInstance('fixture_producer', 5000));
-        const landed = BoardState.findTokenById(bear.id);
 
+        const landed = BoardState.getTokenById(bear.id);
         expect(landed).not.toBeNull();
-        expect(landed.anchor).not.toBe(14);
+        expect({ x: landed.x, y: landed.y }).toEqual(where);
         expect(BoardCombat.getFight(bear.id)).toBe(fight);
         expect(fight.combat.enemyHp.current).toBe(hp);
         expect(BoardCombat.fightOfHero('h1')).toBe(fight);

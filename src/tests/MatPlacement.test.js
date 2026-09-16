@@ -126,10 +126,11 @@ describe('how close two Tokens may sit (FP-63)', () => {
         expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(30.6, 6);
         expect(MatPlacement.isLegal('mp_small', { x: 800 + 61.0, y: 600 })).toBe(true);
 
-        // A smaller hitbox shrinks it again.
+        // A smaller hitbox shrinks it again: 40% of a 64 u art radius is 26 u
+        // (rounded), so two of them at 40% overlap need 31.2 u.
         setMatTuning('overlapPct', 40);
         setMatTuning('hitboxPct', 40);
-        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(30.6, 6);
+        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(31.2, 6);
     });
 });
 
@@ -232,7 +233,7 @@ describe('a Cannot rule is obeyed by the nudge, not just by the refusal (FP-88)'
         setMatTuning('nudgeReach', 400);
         const first = placeAt('mp_coast', 800, 600);
 
-        const res = Placement.placeTokenAt(instance('mp_coast'), { x: 810, y: 600 });
+        const res = Placement.placeTokenAt(instance('mp_coast'), { x: 800, y: 600 });
 
         expect(res.success).toBe(true);
         expect(res.nudged).toBe(true);
@@ -243,11 +244,14 @@ describe('a Cannot rule is obeyed by the nudge, not just by the refusal (FP-88)'
     });
 
     it('flies back — naming the rule — when no spot within reach obeys it', () => {
-        // The default 160 u reach cannot escape the 164 u Near radius.
+        // ⚠️ Dropped exactly ON the Coast, so the whole 160 u reach stays inside
+        // the 164 u Near radius and every candidate breaks the rule. (Dropped
+        // even 10 u to one side, reach 160 would carry it 170 u away — outside
+        // Near, and legal.)
         const first = placeAt('mp_coast', 800, 600);
         const homeless = instance('mp_coast');
 
-        const res = Placement.placeTokenAt(homeless, { x: 810, y: 600 });
+        const res = Placement.placeTokenAt(homeless, { x: 800, y: 600 });
 
         expect(res.success).toBe(false);
         expect(res.full).toBe(true);
@@ -363,7 +367,7 @@ describe('flags and the Guild Hall', () => {
         expect(Placement.returnTokenToVaultById(hall.id).success).toBe(false);
         expect(BoardState.getTokenById(hall.id)).not.toBeNull();
         expect(BoardState.getTray()).toHaveLength(0);
-        expect(TokenBank.count('token_guild_hall')).toBeFalsy();
+        expect(BoardState.tokenBankCopies('token_guild_hall')).toHaveLength(0);
     });
 });
 
@@ -373,14 +377,18 @@ describe('flags and the Guild Hall', () => {
 
 describe('⚠️ the cost of a crowded drop', () => {
     it('⭐ a 60-Token mat with no Cannot rules never builds a projected view', () => {
-        // Sixty Tokens, packed tight enough that the drop below has to search.
+        // Sixty Tokens at 70 u — legal, but tight enough that the drop below
+        // has to walk a good many rings before it finds room.
         for (let i = 0; i < 60; i++) {
             placeAt('mp_small', 500 + (i % 10) * 70, 400 + Math.floor(i / 10) * 70);
         }
         Restrictions.project.mockClear();
         Restrictions.checkPlacement.mockClear();
 
-        const res = Placement.placeTokenAt(instance('mp_small'), { x: 500 + 4 * 70, y: 400 + 2 * 70 });
+        // ⚠️ On the far CORNER of the block: deep inside it there is no legal
+        // point at all within reach (the gaps between four Tokens are only 49 u
+        // across), and that would fly back rather than exercise a long search.
+        const res = Placement.placeTokenAt(instance('mp_small'), { x: 500 + 9 * 70, y: 400 + 5 * 70 });
 
         expect(res.success).toBe(true);
         expect(res.nudged).toBe(true);

@@ -100,53 +100,59 @@ describe('A `Cannot` refuses the placement, and says why', () => {
         expect(place(9, 'fixture_coast').result.success).toBe(true);
     });
 
-    it('refuses the one that would exceed it, in words a player can act on', () => {
+    /**
+     * ⭐ **FP-88 changed what a broken rule does to a drop** (slice 1.6d-1).
+     * It used to refuse and fly the Token back. The owner's ruling is that the
+     * drop is **nudged to the nearest spot that obeys the rule**, and flies back
+     * only when no such spot is within nudge reach. The rule itself is unchanged
+     * — what changed is that obeying it is now the engine's job rather than the
+     * player's. The board is never left illegal either way.
+     */
+    it('nudges the drop clear of the rule instead of refusing it (FP-88)', () => {
         place(8, 'fixture_plain_coast');
         place(10, 'fixture_plain_coast');
         place(16, 'fixture_plain_coast');       // also touches 9
 
-        const { result } = place(9, 'fixture_coast');
+        const { result, instance } = place(9, 'fixture_coast');
 
-        expect(result.success).toBe(false);
-        expect(result.reason).toContain('Fixture Coast');
-        expect(result.reason).toContain('more than 2');
-        expect(result.reason).toContain('Coast');
-        // Not a stack trace, not an error code.
-        expect(result.reason).not.toContain('undefined');
+        expect(result.success).toBe(true);
+        expect(result.nudged).toBe(true);
+        expect(BoardState.getTokenById(instance.id)).not.toBeNull();
+        expect(Restrictions.violations()).toEqual([]);
     });
 
-    it('leaves the tile empty when it refuses — a refusal is not a half-placement', () => {
+    it('never leaves the Token standing on the spot that would break the rule', () => {
         place(8, 'fixture_plain_coast');
         place(10, 'fixture_plain_coast');
         place(16, 'fixture_plain_coast');
 
         place(9, 'fixture_coast');
 
+        // It moved off the offending spot, and the board is legal.
         expect(BoardState.getToken(9)).toBeFalsy();
+        expect(Restrictions.violations()).toEqual([]);
     });
 
-    it('is symmetric — the newcomer can break somebody ELSE’s rule', () => {
+    it('is symmetric — the newcomer can break somebody ELSE’s rule, and is moved for it', () => {
         // ⚠️ The trap in the whole feature. Only the Token on 9 carries the
-        // rule; the third plain Coast carries none at all. Dropping it must
-        // still be refused, because it is 9's neighbourhood that goes over.
+        // rule; the third plain Coast carries none at all. It must still be
+        // moved, because it is 9's neighbourhood that would go over.
         place(9, 'fixture_coast');
         place(8, 'fixture_plain_coast');
         place(10, 'fixture_plain_coast');
 
         const { result } = place(16, 'fixture_plain_coast');
 
-        expect(result.success).toBe(false);
-        expect(result.reason).toContain('Fixture Coast');
+        expect(result.success).toBe(true);
+        expect(result.nudged).toBe(true);
         expect(BoardState.getToken(16)).toBeFalsy();
+        expect(Restrictions.violations()).toEqual([]);
     });
 
-    it('does not count a Token that this very drop is displacing', () => {
+    it('does not count a Token this drop lands on top of and restocks', () => {
         // 17 touches 10 and 16, so its two-Coast limit is exactly met. Dropping
-        // a fresh Coast onto 16 covers the one already there and sends it to
-        // the Tray, so the count is unchanged and the drop is legal.
-        //
-        // Counting the Token on its way off the board would refuse a placement
-        // that breaks nothing — the quiet, maddening kind of false refusal.
+        // a matching Coast onto 16 tops the one already there up rather than
+        // adding a fourth, so the count is unchanged and the drop is legal.
         place(10, 'fixture_plain_coast');
         place(16, 'fixture_plain_coast');
         place(17, 'fixture_coast');
@@ -155,6 +161,7 @@ describe('A `Cannot` refuses the placement, and says why', () => {
 
         expect(result.success).toBe(true);
         expect(BoardState.getToken(16)?.typeId).toBe('fixture_plain_coast');
+        expect(Restrictions.violations()).toEqual([]);
     });
 
     it('ignores a restriction kind the engine does not know', () => {
@@ -174,33 +181,44 @@ describe('A `Cannot` refuses the placement, and says why', () => {
     });
 });
 
-describe('The Token goes back where it came from', () => {
-    it('a refused move leaves it on the tile it started on', () => {
+describe('A move that would break the rule is moved aside, not sent back (FP-88)', () => {
+    it('lands the moved Token somewhere legal rather than leaving it behind', () => {
         place(9, 'fixture_coast');
         place(8, 'fixture_plain_coast');
         place(10, 'fixture_plain_coast');
-        place(30, 'fixture_plain_coast');        // far away, legal
+        const { instance } = place(30, 'fixture_plain_coast');   // far away, legal
 
         const result = Placement.moveToken(30, 16);
 
-        expect(result.success).toBe(false);
-        expect(BoardState.getToken(30)?.typeId).toBe('fixture_plain_coast');
+        expect(result.success).toBe(true);
+        // It left tile 30 and is not standing on the spot that breaks the rule.
+        expect(BoardState.getToken(30)).toBeFalsy();
         expect(BoardState.getToken(16)).toBeFalsy();
+        expect(BoardState.getTokenById(instance.id)).not.toBeNull();
+        expect(Restrictions.violations()).toEqual([]);
     });
 });
 
-describe('A 2×2 cascade is refused rather than allowed to shove somebody into an illegal spot', () => {
+/**
+ * ⭐ **A 2×2 can no longer shove anybody anywhere** (slice 1.6d-1).
+ *
+ * This suite used to describe the cascade: a large Token dropped over smaller
+ * ones pushed them sideways, which could carry a Coast into reach of another
+ * Coast nobody had touched — so the whole placement was refused. Free placement
+ * deleted the cascade outright. The large Token now moves **itself** to the
+ * nearest spot that fits, so the shove that created the illegal board cannot
+ * happen, and there is nothing to refuse.
+ */
+describe('A 2×2 can no longer shove anybody into an illegal spot (slice 1.6d-1)', () => {
     /**
-     * The board this sets up, on the 6×6 grid:
+     * The board this sets up, on the old 6×6 layout:
      *
      * * the restricted Coast sits on **6**, with plain Coasts on **7** and
      *   **13** — two neighbours, exactly at its limit, perfectly legal;
      * * a third plain Coast sits on **18**, out of reach of 6 entirely.
      *
-     * Dropping a 2×2 on anchor **0** covers 0, 1, 6 and 7, so it shoves both
-     * the restricted Coast and one of its neighbours sideways — and where they
-     * land, 18 is suddenly in reach. Nobody dropped anything next to anything;
-     * the cascade did it.
+     * A 2×2 dropped on anchor **0** covers 0, 1, 6 and 7. It used to shove the
+     * restricted Coast and one of its neighbours sideways, into reach of 18.
      */
     const setUpTheShove = () => {
         place(6, 'fixture_coast');
@@ -214,30 +232,32 @@ describe('A 2×2 cascade is refused rather than allowed to shove somebody into a
         expect(Restrictions.violations()).toEqual([]);
     });
 
-    it('refuses the placement, naming the rule the shove would break', () => {
+    it('moves itself instead of shoving, and the board stays legal', () => {
         setUpTheShove();
-        const { result } = place(0, 'fixture_big_slab');
+        const { result, instance } = place(0, 'fixture_big_slab');
 
-        expect(result.success).toBe(false);
-        expect(result.reason).toContain('Fixture Coast');
-        expect(result.reason).toContain('more than 2');
+        expect(result.success).toBe(true);
+        expect(BoardState.getTokenById(instance.id)).not.toBeNull();
+        expect(Restrictions.violations()).toEqual([]);
     });
 
-    it('⭐ moves nothing at all — a refused cascade is a no-op', () => {
-        // The design's alternative was to let the shove happen and then mark or
-        // rescue whatever it broke. This is the assertion that says we did not
-        // do that: no Token is left standing where the cascade put it.
+    it('⭐ leaves every Token that was already down exactly where it was', () => {
+        // The old assertion said a refused cascade moved nothing. This is the
+        // stronger version: an ACCEPTED drop moves nothing either, because
+        // nothing is ever displaced any more.
         setUpTheShove();
-        const before = [...BoardState.occupiedTiles()].map(([t, i]) => `${t}:${i.typeId}`).sort();
+        const before = BoardState.tokens().map(t => `${t.id}:${t.x},${t.y}`).sort();
 
         place(0, 'fixture_big_slab');
 
-        const after = [...BoardState.occupiedTiles()].map(([t, i]) => `${t}:${i.typeId}`).sort();
+        const after = BoardState.tokens()
+            .filter(t => t.typeId !== 'fixture_big_slab')
+            .map(t => `${t.id}:${t.x},${t.y}`).sort();
         expect(after).toEqual(before);
         expect(BoardState.getTray()).toEqual([]);
     });
 
-    it('still allows a cascade that breaks nothing', () => {
+    it('still allows a 2×2 that breaks nothing', () => {
         // The refusal must be about the rule, not about 2×2 Tokens.
         place(6, 'fixture_coast');
         place(7, 'fixture_plain_coast');

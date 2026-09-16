@@ -168,28 +168,21 @@ export function minCentreGap(typeA, typeB) {
 }
 
 /**
- * How far a spawn looks for room, in mat units — four old tile steps.
- *
- * ⚠️ Deliberately further than a player's nudge reach (160 u). A hand-drop that
- * finds no room flies back to a player who can see the board and try again; a
- * spawn has nobody to re-aim it, and `nearest_free` used to mean "anywhere on
- * the board". Searching a generous neighbourhood keeps that promise roughly
- * intact without walking the whole mat on every failed spawn.
- */
-const SPAWN_REACH_U = 640;
-
-/**
  * Where a spawned Token of `typeId` lands, or null when there is nowhere
  * (FP-46 — the spawn is simply skipped).
  *
  * * `here` — the bearer's own point, exactly.
- * * `nearest_free` — the nearest legal point to the bearer (`findSpot`).
+ * * `nearest_free` — the nearest legal point to the bearer (`findSpot`), within
+ *   the **same nudge reach a hand-placed Token gets**. One reach number for the
+ *   whole game rather than a second one invented for spawns: a spawn that has to
+ *   travel further than a player's own drop would is not "nearest" in any sense
+ *   the player could predict. (Spawn behaviour on a crowded mat is slice 1.8's.)
  * * `random_free` — up to 40 random darts across the mat, the roomiest legal
  *   one kept, so a spawn spreads out rather than crowding.
  */
 function spawnPoint(typeId, placement, from, random) {
     if (placement === PLACEMENT.NEAREST_FREE) {
-        const spot = MatPlacement.findSpot(typeId, from, { reach: SPAWN_REACH_U });
+        const spot = MatPlacement.findSpot(typeId, from);
         return spot ? { x: spot.x, y: spot.y } : null;
     }
 

@@ -167,10 +167,12 @@ describe('⭐ Spawns — putting a Token on the board', () => {
 
         run(13000);
 
-        // The bearer is untouched, and something new is adjacent to it.
+        // The bearer is untouched, and something new stands beside it.
+        // ⚠️ Asked of the mat, not of the tiles: since free placement (1.6d-1)
+        // a spawn lands at the nearest legal POINT, which is usually not a tile
+        // centre at all, so `occupiedTiles` cannot see it.
         expect(BoardState.getToken(A).typeId).toBe('fixture_seeder');
-        const spawned = [...BoardState.occupiedTiles()]
-            .filter(([, inst]) => inst.typeId === 'fixture_passive');
+        const spawned = BoardState.tokens().filter(t => t.typeId === 'fixture_passive');
         expect(spawned.length).toBeGreaterThan(0);
     });
 

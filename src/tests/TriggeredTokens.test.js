@@ -114,9 +114,15 @@ describe('The Wheelbarrow — reacting to a NEIGHBOUR\'s cycle (CMS-29, CMS-30)'
     it('⚠️ does NOT fire on a failed cycle (CMS-34)', () => {
         // A chain reaction should cascade because something actually happened.
         // Reacting to a stuck neighbour would trigger off nothing being made.
+        //
+        // ⚠️ The failing buff needs a spot of its OWN beside the producer. It
+        // used to be dropped onto the wheelbarrow's tile and take it by pushing
+        // the wheelbarrow off; free placement (slice 1.6d-1) deleted the push,
+        // so a drop on an occupied spot now moves ITSELF aside — far enough that
+        // the buff no longer reached the producer, and the cycle stopped failing.
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_wheelbarrow');
-        place(16, 'fixture_buff_always_fails');
+        place(A - 1, 'fixture_buff_always_fails');   // 14: the producer's other side neighbour
 
         run(13000);
 

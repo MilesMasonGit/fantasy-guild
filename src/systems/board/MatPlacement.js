@@ -215,17 +215,30 @@ export function findSpot(typeId, point, options = {}) {
     // into "a Token that cannot be put down at all", which is a far harder
     // failure to recognise and is not this file's call to make.
     const ctx = contextFor(typeId, point, options);
-    if (legalIn(typeId, point, ctx)) return { x: point.x, y: point.y, nudge: 0 };
-
-    for (let d = RING_STEP; d <= ctx.reach; d += RING_STEP) {
-        const count = Math.ceil(2 * Math.PI * d / RING_ARC);
-        for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            const candidate = { x: point.x + Math.cos(angle) * d, y: point.y + Math.sin(angle) * d };
-            if (legalIn(typeId, candidate, ctx)) return { x: candidate.x, y: candidate.y, nudge: d };
+    for (const candidate of candidatesAround(point, ctx.reach)) {
+        if (legalIn(typeId, candidate, ctx)) {
+            return { x: candidate.x, y: candidate.y, nudge: candidate.nudge };
         }
     }
     return null;
+}
+
+/**
+ * The points a drop is willing to consider, nearest first: the drop point
+ * itself, then rings outward to `reach`.
+ *
+ * One walk, shared by the search and by the diagnosis below, so the two can
+ * never disagree about which spots were even on offer.
+ */
+function* candidatesAround(point, reach) {
+    yield { x: point.x, y: point.y, nudge: 0 };
+    for (let d = RING_STEP; d <= reach; d += RING_STEP) {
+        const count = Math.ceil(2 * Math.PI * d / RING_ARC);
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * Math.PI * 2;
+            yield { x: point.x + Math.cos(angle) * d, y: point.y + Math.sin(angle) * d, nudge: d };
+        }
+    }
 }
 
 /**
@@ -306,19 +319,36 @@ export const NO_ROOM = 'No room there.';
  * message `TILE_EVENT_ALERT`'s refused-drop mark was built to carry.
  */
 function whyRefused(typeId, point, options = {}) {
-    const ctx = contextFor(typeId, point, { ...options, reach: 0 });
-    if (!insideMat(typeId, point) || !clearOf(point, ctx)) return { reason: NO_ROOM };
+    const ctx = contextFor(typeId, point, options);
+
+    // No restriction anywhere in range, so crowding is the only thing it can
+    // have been — and this never costs an ordinary drop anything.
+    if (!ctx.cannotMatters) return { reason: NO_ROOM };
 
     const plan = { ...(options.plan || {}) };
     if (options.excludeId && plan.id == null) plan.id = options.excludeId;
-    const verdict = Restrictions.checkPlacement(point, typeId, plan);
-    if (verdict.ok) return { reason: NO_ROOM };
 
-    return {
-        reason: verdict.reason,
-        violatingTypeId: verdict.violatingTypeId,
-        rulesText: verdict.rulesText
-    };
+    /**
+     * ⚠️ The first spot that was **physically fine and refused only by a rule**
+     * is the honest answer, not merely the drop point.
+     *
+     * A player aiming at a Token they are not allowed to sit beside hits a spot
+     * that is both occupied AND against the rule. Reporting on that one point
+     * alone would say "No room there." and hide the rule entirely — when the
+     * rule is precisely what stopped the Token finding a home nearby.
+     */
+    for (const candidate of candidatesAround(point, ctx.reach)) {
+        if (!insideMat(typeId, candidate) || !clearOf(candidate, ctx)) continue;
+        const verdict = Restrictions.checkPlacement(candidate, typeId, plan);
+        if (!verdict.ok) {
+            return {
+                reason: verdict.reason,
+                violatingTypeId: verdict.violatingTypeId,
+                rulesText: verdict.rulesText
+            };
+        }
+    }
+    return { reason: NO_ROOM };
 }
 
 /**

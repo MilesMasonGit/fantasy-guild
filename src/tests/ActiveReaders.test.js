@@ -461,13 +461,23 @@ describe('Restrictions: "Cannot be adjacent to more than 2 Coast" counts within 
         expect(side.violatingTypeId).toBe('fixture_coast');
     });
 
-    it('⭐ through Placement: the corner 2×2 lands, the side one is refused and moves nothing', () => {
+    it('⭐ through Placement: the corner 2×2 lands, and the side one is nudged clear (FP-88)', () => {
         atLimit();
-        const big = BoardState.createTokenInstance('fixture_large_coast', 500);
-        expect(Placement.placeToken(8, big).success).toBe(false);
-        expect(BoardState.getToken(8)).toBeFalsy();
 
-        expect(Placement.placeToken(BIG, big).success).toBe(true);
+        // The side anchor would break the rule, so since FP-88 the drop is moved
+        // to the nearest spot that obeys it rather than being refused.
+        const side = BoardState.createTokenInstance('fixture_large_coast', 500);
+        const sideRes = Placement.placeToken(8, side);
+        expect(sideRes.success).toBe(true);
+        expect(sideRes.nudged).toBe(true);
+        expect(Restrictions.violations()).toEqual([]);
+        BoardState.removeToken(side.id);
+
+        // The corner anchor breaks nothing, so it lands exactly where it was put.
+        const corner = BoardState.createTokenInstance('fixture_large_coast', 500);
+        const cornerRes = Placement.placeToken(BIG, corner);
+        expect(cornerRes.success).toBe(true);
+        expect(cornerRes.nudged).toBe(false);
         expect(Restrictions.violations()).toEqual([]);
     });
 

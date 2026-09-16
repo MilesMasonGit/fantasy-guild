@@ -228,14 +228,20 @@ describe('⭐ Restrictions on a projected view (place / remove / move) give toda
         return { coast, left, right };
     }
 
-    it('a third Coast beside it is refused, naming the rule it breaks — on the view and through Placement', () => {
+    it('a third Coast beside it is refused on the view, and nudged clear through Placement (FP-88)', () => {
         atLimit();
         const refusal = Restrictions.checkPlacement(P(2, 1), 'fixture_plain_coast');
         expect(refusal.ok).toBe(false);
         expect(refusal.violatingTypeId).toBe('fixture_coast');
 
-        // Today's engine path refuses the same drop (P(2,1) is tile 8 in today's layout).
-        expect(Placement.placeToken(8, BoardState.createTokenInstance('fixture_plain_coast', 500)).success).toBe(false);
+        // ⭐ The VIEW still says no to that exact point — but since FP-88 the
+        // engine does not refuse the drop, it moves it to the nearest point that
+        // obeys the rule. Either way the board is never left illegal.
+        const res = Placement.placeToken(8, BoardState.createTokenInstance('fixture_plain_coast', 500));
+        expect(res.success).toBe(true);
+        expect(res.nudged).toBe(true);
+        expect(Restrictions.violations()).toEqual([]);
+
         // A diagonal (226 u) is not near at the shipped 164 u.
         expect(Restrictions.checkPlacement(P(3, 3), 'fixture_plain_coast').ok).toBe(true);
     });
