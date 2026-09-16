@@ -1,4 +1,3 @@
-import { idAt, anchorOf } from './fixtures/mat.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -51,14 +50,38 @@ function makeHero(id, level = 50) {
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
+ * A lattice of mat points 160 u apart — the step the old board had — so the
+ * station and the context Token beside it are neighbours at the shipped 164 u
+ * Near, and one context Token reaches both stations.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** What ran dry on spot `i`, or null. */
+const vacancyAt = (i) => BoardState.vacancyAt(BoardState.spotIdAt(C(i).x, C(i).y));
+
+/** Which spot a Token stands on, by instance id. */
+function spotOf(id) {
+    const instance = BoardState.getTokenById(id);
+    if (!instance) return null;
+    const col = Math.round((instance.x - 400) / 160);
+    const row = Math.round((instance.y - 200) / 160);
+    return row * 6 + col;
+}
+
 function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 function run(ms) {
@@ -88,7 +111,7 @@ describe('A charge delta moves the pool', () => {
         const instance = place(STATION, 'fixture_charged_context');   // uses: 6
         Charges.applyDelta(instance, -2);
         expect(instance.usesRemaining).toBe(4);
-        expect(BoardState.getToken(STATION)).toBe(instance);
+        expect(tokenAt(STATION)).toBe(instance);
     });
 
     it('changes nothing at all on a zero delta', () => {
@@ -125,7 +148,7 @@ describe('An unlimited Token ignores charge deltas in both directions (R-4)', ()
         const instance = place(STATION, 'fixture_charged_context_unlimited');
         Charges.applyDelta(instance, -5);
         expect(instance.usesRemaining).toBeNull();
-        expect(BoardState.getToken(STATION)).toBe(instance);
+        expect(tokenAt(STATION)).toBe(instance);
     });
 
     it('is not filled by a positive delta', () => {
@@ -141,7 +164,7 @@ describe('An unlimited Token ignores charge deltas in both directions (R-4)', ()
     it('is never destroyed by a delta', () => {
         const instance = place(STATION, 'fixture_charged_context_unlimited');
         for (let i = 0; i < 20; i++) Charges.applyDelta(instance, -3);
-        expect(BoardState.getToken(STATION)).toBe(instance);
+        expect(tokenAt(STATION)).toBe(instance);
         expect(instance.usesRemaining).toBeNull();
     });
 
@@ -152,12 +175,12 @@ describe('An unlimited Token ignores charge deltas in both directions (R-4)', ()
 });
 
 describe('Reaching zero destroys the Token', () => {
-    it('empties the tile and leaves a vacancy behind it', () => {
+    it('empties the spot and leaves a vacancy behind it', () => {
         const instance = place(STATION, 'fixture_charged_context', null, 2);
         const result = Charges.applyDelta(instance, -2);
         expect(result.depleted).toBe(true);
-        expect(BoardState.getToken(STATION)).toBeNull();
-        expect(BoardState.getVacancy(STATION)?.typeId).toBe('fixture_charged_context');
+        expect(tokenAt(STATION)).toBeNull();
+        expect(vacancyAt(STATION)?.typeId).toBe('fixture_charged_context');
     });
 });
 
@@ -175,10 +198,10 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
         run(cycleMs(10000) + 2000);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(5);
-        expect(BoardState.getToken(STATION).usesRemaining).toBe(2);
+        expect(tokenAt(STATION).usesRemaining).toBe(2);
         expect(context.usesRemaining).toBe(6);
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
-        expect(BoardState.getToken(STATION).alert).toBe(ALERT.CHARGES);
+        expect(tokenAt(STATION).alert).toBe(ALERT.CHARGES);
     });
 
     /** Context short: 1 charge left, the recipe wants 2 off it. */
@@ -190,8 +213,8 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
         run(cycleMs(10000) + 2000);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(5);
-        expect(BoardState.getToken(STATION).usesRemaining).toBe(10);
-        expect(BoardState.getToken(CONTEXT)).toBe(context);
+        expect(tokenAt(STATION).usesRemaining).toBe(10);
+        expect(tokenAt(CONTEXT)).toBe(context);
         expect(context.usesRemaining).toBe(1);
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
     });
@@ -203,9 +226,9 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
 
         run(cycleMs(10000) + 2000);
 
-        expect(BoardState.getToken(STATION).usesRemaining).toBe(10);
+        expect(tokenAt(STATION).usesRemaining).toBe(10);
         expect(context.usesRemaining).toBe(6);
-        expect(BoardState.getToken(STATION).alert).toBe(ALERT.INPUTS);
+        expect(tokenAt(STATION).alert).toBe(ALERT.INPUTS);
     });
 
     it('pays everything at once on a cycle it can afford', () => {
@@ -216,7 +239,7 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
         run(cycleMs(10000) + 300);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(4);
-        expect(BoardState.getToken(STATION).usesRemaining).toBe(7);   // 10 − 3
+        expect(tokenAt(STATION).usesRemaining).toBe(7);   // 10 − 3
         expect(context.usesRemaining).toBe(4);                        // 6 − 2
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
@@ -259,7 +282,7 @@ describe('Adjacent context Tokens are chosen and shared', () => {
         );
 
         expect(plan.ok).toBe(true);
-        expect(plan.debits.map(d => [anchorOf(d.id), d.amount]).sort())
+        expect(plan.debits.map(d => [spotOf(d.id), d.amount]).sort())
             .toEqual([[CONTEXT, 1], [CONTEXT_2, 2]].sort());
     });
 
@@ -298,7 +321,7 @@ describe('Adjacent context Tokens are chosen and shared', () => {
 
         // The second round could only afford one of them; the Token is gone and
         // the tile it stood on is empty.
-        expect(BoardState.getToken(CONTEXT)).toBeNull();
+        expect(tokenAt(CONTEXT)).toBeNull();
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(3);
     });
 });
@@ -318,7 +341,7 @@ describe('An effect block spends its own charge delta', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_free');
         run(cycleMs(12000) * 2 + 600);
         expect(buff.usesRemaining).toBe(3);
-        expect(BoardState.getToken(STATION + 1)).toBe(buff);
+        expect(tokenAt(STATION + 1)).toBe(buff);
     });
 
     it('spends the authored amount on a negative delta', () => {
@@ -336,7 +359,7 @@ describe('An effect block spends its own charge delta', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_costly');
         run(cycleMs(12000) * 4 + 600);
         expect(buff.usesRemaining).toBe(1);
-        expect(BoardState.getToken(STATION + 1)).toBe(buff);
+        expect(tokenAt(STATION + 1)).toBe(buff);
     });
 
     it('restores on a positive delta, ceilinged at the starting charges', () => {
@@ -351,7 +374,7 @@ describe('An effect block spends its own charge delta', () => {
         const buff = producerBeside(STATION, 'fixture_trigger_unlimited');
         run(cycleMs(12000) * 3 + 600);
         expect(buff.usesRemaining).toBeNull();
-        expect(BoardState.getToken(STATION + 1)).toBe(buff);
+        expect(tokenAt(STATION + 1)).toBe(buff);
     });
 
     /** No `chargeDelta` authored means one charge, as every statement did before. */
