@@ -21,12 +21,10 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import { tileCentre } from '../config/boardGeometry.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { isCombatSkill } from '../config/registries/skillRegistry.js';
-import { idAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -60,7 +58,29 @@ registerTokenTypes({
     }
 });
 
-const C = (tile) => tileCentre(tile);
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
+ * This is a lattice of mat points 160 u apart — the step the old board had — so
+ * every distance this file turns on is unchanged: from spot 14, spot 15 is
+ * 160 u, 16 is 320, 17 is 480, 21 is 226 (a diagonal) and spot 0 is 452.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
+
+/** What ran dry on spot `i`, or null. */
+const vacancyAt = (i) => BoardState.vacancyAt(BoardState.spotIdAt(C(i).x, C(i).y));
+
+/** Which spot the Token a hero works stands on, or null. */
+function workTileOf(heroId) {
+    const instance = BoardState.getTokenById(BoardState.workTokenOf(heroId));
+    if (!instance) return null;
+    const col = Math.round((instance.x - 400) / 160);
+    const row = Math.round((instance.y - 200) / 160);
+    return row * 6 + col;
+}
 
 /** A hero who holds a combat skill, and so can fight. */
 function fighter(id, { level = 50, hp = 100 } = {}) {
@@ -103,8 +123,8 @@ function logger(id) {
 
 function put(tile, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
-    Placement.placeToken(tile, instance);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    return instance;
 }
 
 const fightAt = (heroId, tile) => Flags.plant(heroId, C(tile));
@@ -163,13 +183,13 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         const near = put(15, 'fixture_enemy', 1); // 160 u, one kill and it is gone
 
         fightAt('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
 
-        for (let i = 0; i < 600 && BoardState.findTokenById(near.id); i++) run(100);
-        expect(BoardState.getToken(15)).toBeNull();
+        for (let i = 0; i < 600 && BoardState.getTokenById(near.id); i++) run(100);
+        expect(tokenAt(15)).toBeNull();
         run(1000);
 
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(idAt(16));
     });
 
@@ -177,7 +197,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         put(3, 'fixture_enemy');                  // 480 u from tile 0
         fightAt('h1', 0);
         run(1000);
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
     });
 
     it('skips a disallowed enemy as disallowed (FP-35)', () => {
@@ -187,7 +207,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
 
         fightAt('h1', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(reasons(near)).toEqual([Flags.SKIP.DISALLOWED]);
     });
 
@@ -196,8 +216,8 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         fightAt('h1', 14);
         fightAt('h2', 14);
 
-        expect(BoardState.workTileOf('h1')).toBe(15);
-        expect(BoardState.workTileOf('h2')).toBeNull();
+        expect(workTileOf('h1')).toBe(15);
+        expect(workTileOf('h2')).toBeNull();
         expect(Flags.skipsOf(bear.id)).toEqual([{ heroId: 'h2', reason: Flags.SKIP.CLAIMED }]);
     });
 
@@ -209,7 +229,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         fightAt('r1', 14);
         run(2000);
 
-        expect(BoardState.workTileOf('r1')).toBeNull();
+        expect(workTileOf('r1')).toBeNull();
         expect(reasons(a)).toEqual([ALERT.UNSKILLED]);
         expect(reasons(b)).toEqual([ALERT.UNSKILLED]);
         expect(a.alert ?? null).toBeNull();
@@ -220,7 +240,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
     it('keeps its enemy through the rest after a kill, even when a nearer one appears (FP-57)', () => {
         put(16, 'fixture_enemy');
         fightAt('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         const nearer = put(15, 'fixture_enemy');
 
         const kills = [];
@@ -233,7 +253,7 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         }
 
         expect(kills.length).toBeGreaterThan(0);
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(BoardState.heroOfInstance(nearer.id)).toBeNull();
     });
 
@@ -242,10 +262,10 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         const camp = put(14, 'fixture_enemy', 1);
         TokenBank.deposit(BoardState.createTokenInstance('fixture_enemy', 20));
         fightAt('h1', 14);
-        expect(BoardState.workTileOf('h1')).toBe(14);
+        expect(workTileOf('h1')).toBe(14);
 
-        for (let i = 0; i < 600 && BoardState.getToken(14); i++) run(100);
-        expect(BoardState.getToken(14)).toBeNull();
+        for (let i = 0; i < 600 && tokenAt(14); i++) run(100);
+        expect(tokenAt(14)).toBeNull();
         Flags.assign(0);
 
         expect(BoardState.waitOfHero('h1')).toEqual({ spotId: BoardState.spotIdAt(C(14).x, C(14).y), typeId: 'fixture_enemy', ...C(14) });
@@ -254,8 +274,8 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         Managers.sweep();
         Flags.assign(0);
 
-        expect(BoardState.workTileOf('h1')).toBe(14);
-        expect(BoardState.getToken(14).id).not.toBe(camp.id);
+        expect(workTileOf('h1')).toBe(14);
+        expect(tokenAt(14).id).not.toBe(camp.id);
     });
 });
 
@@ -270,7 +290,7 @@ describe('⭐ a moved enemy keeps its HP (FPP-4)', () => {
         const fight = untilDamaged('h1');
         const hp = fight.combat.enemyHp.current;
 
-        expect(Placement.moveToken(14, 17).success).toBe(true);
+        expect(Placement.moveTokenTo(bear.id, C(17)).success).toBe(true);
 
         expect(idAt(17)).toBe(bear.id);
         expect(BoardCombat.getFight(bear.id)).toBe(fight);
@@ -280,7 +300,7 @@ describe('⭐ a moved enemy keeps its HP (FPP-4)', () => {
 
         run(100);
         expect(BoardCombat.getFight(bear.id)).toBe(fight);
-        expect(BoardState.workTileOf('h1')).toBe(17);
+        expect(workTileOf('h1')).toBe(17);
     });
 
     /**
@@ -295,7 +315,7 @@ describe('⭐ a moved enemy keeps its HP (FPP-4)', () => {
         const hp = fight.combat.enemyHp.current;
         const where = { x: bear.x, y: bear.y };
 
-        Placement.placeToken(14, BoardState.createTokenInstance('fixture_producer', 5000));
+        Placement.placeTokenAt(BoardState.createTokenInstance('fixture_producer', 5000), C(14));
 
         const landed = BoardState.getTokenById(bear.id);
         expect(landed).not.toBeNull();
@@ -321,7 +341,7 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
         expect(BoardCombat.getFight(idAt(14))).toBeNull();
 
-        Placement.placeHero('h1', 14);
+        Placement.plantFlagAt('h1', C(14));
         run(100);
         const fresh = BoardCombat.getFight(idAt(14)).combat.enemyHp;
         expect(fresh.current).toBe(fresh.max);
@@ -334,7 +354,7 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
 
         fightAt('h1', 0);                          // 452 u away
 
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
         expect(BoardCombat.getFight(idAt(14))).toBeNull();
 
@@ -379,7 +399,7 @@ describe('⭐ defeat furls the flag, with one notification (FP-42)', () => {
 describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
     function declined(heroId = 'h1', uses = 2) {
         const academy = put(14, 'fixture_promotion', uses);
-        Placement.placeHero(heroId, 14);
+        Placement.plantFlagAt(heroId, C(14));
         expect(train()).toHaveLength(1);
         BoardPromotion.decline(idAt(14));
         return academy;
@@ -400,14 +420,14 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         expect(BoardPromotion.isDeclined(academy)).toBe(true);
 
         expect(train(60000)).toHaveLength(0);
-        expect(BoardState.workTileOf('h1')).toBe(14);
+        expect(workTileOf('h1')).toBe(14);
         expect(BoardPromotion.isDeclined(academy)).toBe(true);
     });
 
     it('a flag planted on it asks again — even on the spot it already stands on', () => {
         const academy = declined();
 
-        Placement.placeHero('h1', 14);
+        Placement.plantFlagAt('h1', C(14));
 
         expect(BoardPromotion.isPaused(academy)).toBe(false);
         expect(train()).toHaveLength(1);
@@ -422,13 +442,13 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         Flags.markDirty();
         Flags.assign(0);
 
-        expect(BoardState.workTileOf('h2')).toBe(14);
+        expect(workTileOf('h2')).toBe(14);
         expect(BoardPromotion.isPaused(academy)).toBe(false);
     });
 
     it('after accepting, the hero skips the Token and works normally (PR-8)', () => {
         const academy = put(14, 'fixture_promotion', 2);
-        Placement.placeHero('h1', 14);
+        Placement.plantFlagAt('h1', C(14));
         expect(train()).toHaveLength(1);
         expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
 
@@ -446,7 +466,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         Flags.markDirty();
         Flags.assign(0);
 
-        expect(BoardState.workTileOf('h1')).toBe(15);
+        expect(workTileOf('h1')).toBe(15);
         expect(reasons(academy)).toContain(Flags.SKIP.SAME_JOB);
     });
 
@@ -454,20 +474,20 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         put(21, 'ft_academy_manager');
         put(14, 'fixture_promotion', 1);
         TokenBank.deposit(BoardState.createTokenInstance('fixture_promotion', 1));
-        Placement.placeHero('h1', 14);
+        Placement.plantFlagAt('h1', C(14));
         expect(train()).toHaveLength(1);
 
         expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
-        expect(BoardState.getToken(14)).toBeNull();
+        expect(tokenAt(14)).toBeNull();
         // Everything FP-70 asks for is there — only the hero has no use for it.
-        expect(BoardState.getVacancy(14)?.typeId).toBe('fixture_promotion');
+        expect(vacancyAt(14)?.typeId).toBe('fixture_promotion');
         expect(Managers.managerFor(C(14), 'fixture_promotion')).not.toBeNull();
         expect(BoardState.tokenBankCopies('fixture_promotion').length).toBe(1);
 
         Flags.assign(0);
 
         expect(BoardState.waitOfHero('h1')).toBeNull();
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
     });
 });
 
@@ -498,13 +518,13 @@ describe('⭐ disallow (FP-35)', () => {
 
         expect(result.success).toBe(true);
         expect(forest.disallowed).toBe(true);
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
         expect(forest.cycleElapsedMs).toBe(0);
         expect(changed).toContainEqual({ instanceId: idAt(14), typeId: 'fixture_producer' });
         expect(stateChanges).toBeGreaterThan(0);
 
         run(100);
-        expect(BoardState.workTileOf('h1')).toBe(16);
+        expect(workTileOf('h1')).toBe(16);
         expect(reasons(forest)).toEqual([Flags.SKIP.DISALLOWED]);
 
         Flags.setDisallowed(idAt(14), false);
@@ -516,21 +536,21 @@ describe('⭐ disallow (FP-35)', () => {
         const academy = put(14, 'fixture_promotion', 2);
         Flags.setDisallowed(idAt(14), true);
 
-        Placement.placeHero('h1', 14);
+        Placement.plantFlagAt('h1', C(14));
 
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
         expect(reasons(academy)).toEqual([Flags.SKIP.DISALLOWED]);
     });
 
     it('does not stop the Token’s own Provides', () => {
         put(14, 'fixture_producer');
         put(15, 'fixture_buff_yield');
-        TileModifiers.rebuildAround([tileCentre(15)]);
+        TileModifiers.rebuildAround([C(15)]);
         const allowed = TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'logging');
         expect(allowed).toBeGreaterThan(100);
 
         Flags.setDisallowed(idAt(15), true);
-        TileModifiers.rebuildAround([tileCentre(15)]);
+        TileModifiers.rebuildAround([C(15)]);
 
         expect(TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'logging')).toBe(allowed);
     });
@@ -545,7 +565,7 @@ describe('⭐ disallow (FP-35)', () => {
         Charges.destroyToken(forest);
         expect(Managers.sweep()).toBe(1);
 
-        expect(BoardState.getToken(14)?.typeId).toBe('fixture_producer');
+        expect(tokenAt(14)?.typeId).toBe('fixture_producer');
     });
 
     it('survives a save and reload, and a trip through the Vault drops it', async () => {
@@ -555,13 +575,13 @@ describe('⭐ disallow (FP-35)', () => {
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         await GameState.initFromSave(migrateState(saved.state, saved.version));
 
-        const reloaded = BoardState.getToken(14);
+        const reloaded = tokenAt(14);
         expect(reloaded.disallowed).toBe(true);
         Flags.plant('h1', C(14));
-        expect(BoardState.workTileOf('h1')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
         expect(reasons(reloaded)).toEqual([Flags.SKIP.DISALLOWED]);
 
-        BoardState.setToken(14, null);
+        BoardState.removeToken(idAt(14));
         TokenBank.deposit(reloaded);
         const back = BoardState.takeFromTokenBank('fixture_producer');
         expect(back).not.toBeNull();
