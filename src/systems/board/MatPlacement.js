@@ -1,7 +1,7 @@
 // Fantasy Guild — Where a Token may stand on the free playmat (Free Playmat slice 1.6d)
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { artRadiusOf, MAT_W, MAT_H, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
+import { artRadiusOf, matW, matH, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { distanceSq, nearRadius } from './nearby.js';
@@ -89,7 +89,31 @@ export function nudgeReach() {
 export function insideMat(typeId, point) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return false;
     const r = artRadiusOf(typeId);
-    return point.x >= r && point.y >= r && point.x <= MAT_W - r && point.y <= MAT_H - r;
+    // ⚠️ The mat's size is read LIVE (slice 1.6d-3): the owner can resize the mat
+    // while the game runs, and a spot that fitted a moment ago may not now.
+    return point.x >= r && point.y >= r && point.x <= matW() - r && point.y <= matH() - r;
+}
+
+/**
+ * The nearest point to `point` at which a Token of `typeId` sits **fully on the
+ * mat** — its art circle inside every edge. Says nothing about neighbours.
+ *
+ * This is the first half of what a shrinking mat does to a stranded Token
+ * (FP-98, `MatResize`): pull it back inside the edge, then ask {@link findSpot}
+ * from there where it can actually stand. Whole mat units, because Token centres
+ * are whole numbers everywhere else.
+ */
+export function clampInside(typeId, point) {
+    const r = artRadiusOf(typeId);
+    const w = matW();
+    const h = matH();
+    // A Token wider than the mat cannot be fully inside it at all; the middle is
+    // the least wrong place for it. Defensive — the smallest mat (6 steps,
+    // 960 × 614 u) still swallows the largest art (288 u across) easily.
+    return {
+        x: Math.round(w >= 2 * r ? Math.max(r, Math.min(w - r, point.x)) : w / 2),
+        y: Math.round(h >= 2 * r ? Math.max(r, Math.min(h - r, point.y)) : h / 2)
+    };
 }
 
 /** Whether a Token type carries any `Cannot` rule at all. */

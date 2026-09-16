@@ -52,8 +52,14 @@ export const MIN_BOARD_SCALE = 0.1;
  * ## Two boards, two natural sizes
  * The Guild Hall upgrade board is its own 7×7 surface and is a different number
  * of pixels wide from the playmat, so every caller passes its own `naturalPx` —
- * the mat passes `MAT_W, MAT_H`, the upgrade board `UPGRADE_BOARD_PX`. There is
- * no default: the old one was the deleted grid's `BOARD_PX` (slice 1.6d-2).
+ * the mat passes its live size (`useMatSize`, slice 1.6d-3), the upgrade board
+ * `UPGRADE_BOARD_PX`. There is no default: the old one was the deleted grid's
+ * `BOARD_PX` (slice 1.6d-2).
+ *
+ * ⚠️ The mat's natural size is no longer fixed — the Mat Tuner can change it
+ * while the game runs — so this hook re-measures when `naturalPx` changes. How
+ * big the mat is in mat units and how much it is shrunk on screen stay two
+ * separate questions.
  *
  * @param {number} [naturalPx] The board's untransformed size in pixels.
  * @returns {{ ref: Function, scale: number, size: number }}

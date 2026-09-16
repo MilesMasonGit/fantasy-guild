@@ -26,7 +26,7 @@ import { getPromotionCost, getPromotionGateSkills } from '../config/registries/j
 import { ROLE } from '../config/registries/roleRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
-import { MAT_W, MAT_H } from '../config/matGeometry.js';
+import { matW, matH } from '../config/matGeometry.js';
 import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
 import { TokenEventAlert } from '../ui/components/board/TokenEventAlert.jsx';
 import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
@@ -261,7 +261,7 @@ describe('⭐ Map bursts throw from a real point', () => {
         expect(Cartographer.centreOfBoard()).toEqual(C(35));
 
         BoardState.removeToken(hall.id);
-        expect(Cartographer.centreOfBoard()).toEqual({ x: MAT_W / 2, y: MAT_H / 2 });
+        expect(Cartographer.centreOfBoard()).toEqual({ x: matW() / 2, y: matH() / 2 });
     });
 
     it('a burst with no origin flies its loot out of the Guild Hall', () => {

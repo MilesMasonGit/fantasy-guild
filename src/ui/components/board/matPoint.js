@@ -1,13 +1,17 @@
 // Fantasy Guild — screen pointer → mat point (Free Playmat slice 1.6c)
 
-import { MAT_W } from '../../../config/matGeometry.js';
+import { matW } from '../../../config/matGeometry.js';
 
 /**
  * Where a screen pointer is on the mat, in mat units.
  *
- * The mat is drawn at its natural size (`MAT_W` wide) and CSS-scaled to fit, so
+ * The mat is drawn at its natural size (`matW()` wide) and CSS-scaled to fit, so
  * `rect` — the mat's `getBoundingClientRect()` — is the SCALED box. The scale is
- * `rect.width / MAT_W`; a screen offset from the rect's corner divides by it.
+ * `rect.width / matW()`; a screen offset from the rect's corner divides by it.
+ *
+ * ⚠️ The width is read on every call (slice 1.6d-3): the mat can be resized while
+ * the game runs, and a pointer converted with yesterday's width would land
+ * somewhere the player never pointed.
  *
  * `grab` is where inside the dragged thing the player took hold of it, in mat
  * units, added back so a Token lands where its centre was rather than where the
@@ -22,7 +26,7 @@ import { MAT_W } from '../../../config/matGeometry.js';
  */
 export function pointerToMat(pointer, rect, grab = { x: 0, y: 0 }) {
     if (!pointer || !rect || !(rect.width > 0)) return null;
-    const s = rect.width / MAT_W;
+    const s = rect.width / matW();
     return {
         x: (pointer.x - rect.left) / s + (grab?.x || 0),
         y: (pointer.y - rect.top) / s + (grab?.y || 0)

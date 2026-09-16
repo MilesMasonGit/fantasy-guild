@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -7,9 +7,9 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { MAT_W, MAT_H, MAT_STEPS } from '../config/matGeometry.js';
-import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { matW, matH, matSteps } from '../config/matGeometry.js';
+import { openingMat } from '../systems/core/EngineBootstrap.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { pointerToMat } from '../ui/components/board/matPoint.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { boardPointToScreen } from '../ui/components/base/ParticleOverlay.jsx';
@@ -40,34 +40,60 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 const big = (i) => ({ x: C(i).x + 80, y: C(i).y + 80 });
 
 describe('the mat frame (FP-92)', () => {
+    afterEach(() => resetMatTuning());
+
     it('is 11 steps of 160 u at a 0.64 aspect: 1760 × 1126 u', () => {
-        expect(MAT_STEPS).toBe(11);
-        expect(MAT_W).toBe(1760);
-        expect(MAT_H).toBe(1126);
+        expect(matSteps()).toBe(11);
+        expect(matW()).toBe(1760);
+        expect(matH()).toBe(1126);
     });
 
-    it('a new game stands the Guild Hall at (960, 643) — its historical opening spot', () => {
-        // Half a step down and right of the mat's centre. The assertions about
-        // the old landing area's corner, and `tileAtPoint` taking it back off,
-        // went with the grid in slice 1.6d-2.
-        const hall = OPENING_MAT.find(t => t.typeId === 'token_guild_hall');
-        expect({ x: hall.x, y: hall.y }).toEqual({ x: 960, y: 643 });
+    /**
+     * ⭐ Slice 1.6d-3 — the mat's size is the Mat Tuner's **Mat size** row, read
+     * live. Nothing may hold it in a constant.
+     */
+    it('follows the Mat size row at the 0.64 aspect, in both directions', () => {
+        setMatTuning('matSteps', 6);
+        expect(matSteps()).toBe(6);
+        expect(matW()).toBe(960);
+        expect(matH()).toBe(Math.round(960 * 0.64));   // 614
+
+        setMatTuning('matSteps', 20);
+        expect(matW()).toBe(3200);
+        expect(matH()).toBe(2048);
+
+        resetMatTuning();
+        expect(matW()).toBe(1760);
+    });
+
+    it('⭐ a new game stands the Guild Hall in the MIDDLE of the mat, at any size', () => {
+        // Slice 1.6d-3: it used to stand at (960, 643) — half a step off centre,
+        // which was the centre of the old Guild Hall tile on the deleted grid.
+        const hallAt = () => {
+            const hall = openingMat().find(t => t.typeId === 'token_guild_hall');
+            return { x: hall.x, y: hall.y };
+        };
+
+        expect(hallAt()).toEqual({ x: 880, y: 563 });
+
+        setMatTuning('matSteps', 6);
+        expect(hallAt()).toEqual({ x: 480, y: 307 });
     });
 });
 
 describe('pointerToMat — screen pointer → mat point', () => {
     it('at scale 1 it is the offset from the mat’s corner', () => {
-        const rect = { left: 40, top: 25, width: MAT_W, height: MAT_H };
+        const rect = { left: 40, top: 25, width: matW(), height: matH() };
         expect(pointerToMat({ x: 1000, y: 668 }, rect)).toEqual({ x: 960, y: 643 });
     });
 
     it('at scale 0.5 the offset is doubled, from an offset rect', () => {
-        const rect = { left: 120, top: 80, width: MAT_W / 2, height: MAT_H / 2 };
+        const rect = { left: 120, top: 80, width: matW() / 2, height: matH() / 2 };
         expect(pointerToMat({ x: 120 + 480, y: 80 + 321.5 }, rect)).toEqual({ x: 960, y: 643 });
     });
 
     it('adds the grab offset, and refuses a missing pointer or rect', () => {
-        const rect = { left: 0, top: 0, width: MAT_W };
+        const rect = { left: 0, top: 0, width: matW() };
         expect(pointerToMat({ x: 10, y: 20 }, rect, { x: 5, y: -5 })).toEqual({ x: 15, y: 15 });
         expect(pointerToMat(null, rect)).toBeNull();
         expect(pointerToMat({ x: 1, y: 1 }, null)).toBeNull();
@@ -81,7 +107,7 @@ describe('ParticleOverlay scales board coordinates', () => {
     });
 
     it('multiplies a board point by the on-screen scale before adding the rect corner', () => {
-        const el = boardEl({ left: 100, top: 50, width: MAT_W / 2, height: MAT_H / 2 }, MAT_W);
+        const el = boardEl({ left: 100, top: 50, width: matW() / 2, height: matH() / 2 }, matW());
         expect(boardPointToScreen(el, 960, 643)).toEqual({ x: 100 + 480, y: 50 + 321.5 });
     });
 
@@ -231,10 +257,10 @@ describe('dropOnMat — one drop function for the playmat', () => {
         const target = { x: 1320, y: 844.5 };   // three quarters across the mat
 
         // The mini mat is ~300 px wide; the playmat, here, its natural 1760.
-        const mini = { left: 12, top: 30, width: 300, height: 300 * (MAT_H / MAT_W) };
+        const mini = { left: 12, top: 30, width: 300, height: 300 * (matH() / matW()) };
         const pointer = {
-            x: mini.left + (target.x / MAT_W) * mini.width,
-            y: mini.top + (target.y / MAT_H) * (mini.width * (MAT_H / MAT_W))
+            x: mini.left + (target.x / matW()) * mini.width,
+            y: mini.top + (target.y / matH()) * (mini.width * (matH() / matW()))
         };
 
         const point = pointerToMat(pointer, mini);
@@ -256,7 +282,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
 
         // Well off the mat is fine for a Map; it is clamped back onto it.
         dropOnMat({ typeId: 'fixture_map', from: { boardMapId: map.id } }, { x: 5000, y: -40 });
-        expect(GameState.state.board.maps[0]).toMatchObject({ id: map.id, x: MAT_W - 128, y: 0 });
+        expect(GameState.state.board.maps[0]).toMatchObject({ id: map.id, x: matW() - 128, y: 0 });
     });
 
     it('⭐ a hero from the Dock plants their flag exactly at the drop point (FP-94)', () => {
@@ -271,7 +297,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 1234.5, y: 77 });
 
         dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, { x: -30, y: 9999 });
-        expect(BoardState.flagOf('h1')).toMatchObject({ x: 0, y: MAT_H });
+        expect(BoardState.flagOf('h1')).toMatchObject({ x: 0, y: matH() });
     });
 
     it('a flag drag for a hero with no flag is refused', () => {

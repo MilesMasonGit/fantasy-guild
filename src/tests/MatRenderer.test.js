@@ -14,7 +14,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
-import { MAT_W, MAT_H } from '../config/matGeometry.js';
+import { matW, matH } from '../config/matGeometry.js';
 import { UPGRADE_BOARD_PX } from '../config/upgradeBoardGeometry.js';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
@@ -97,12 +97,12 @@ describe('fitting the mat into the window (CR2-179, FP-86)', () => {
     it('shrinks on whichever axis binds, and never grows past 1:1', () => {
         // Twice the room it needs: the art is authored for 2× and blowing it up
         // would only blur it.
-        expect(fitScale(MAT_W * 2, MAT_H * 2, MAT_W, MAT_H)).toBe(1);
+        expect(fitScale(matW() * 2, matH() * 2, matW(), matH())).toBe(1);
         // Width binds.
-        expect(fitScale(MAT_W / 2, MAT_H * 2, MAT_W, MAT_H)).toBe(0.5);
+        expect(fitScale(matW() / 2, matH() * 2, matW(), matH())).toBe(0.5);
         // ⭐ Height binds — the case a one-axis fit missed entirely, and the mat
         // is a wide shape in a short column, so this is the common one.
-        expect(fitScale(MAT_W * 2, MAT_H / 2, MAT_W, MAT_H)).toBe(0.5);
+        expect(fitScale(matW() * 2, matH() / 2, matW(), matH())).toBe(0.5);
     });
 
     it('the square form is exactly the two-axis form with equal sides', () => {
@@ -124,17 +124,17 @@ describe('fitting the mat into the window (CR2-179, FP-86)', () => {
     });
 
     it('the mat reports its two different sides', () => {
-        const { result } = renderHook(() => useBoardScale(MAT_W, MAT_H));
+        const { result } = renderHook(() => useBoardScale(matW(), matH()));
         const el = document.createElement('div');
-        Object.defineProperty(el, 'clientWidth', { value: MAT_W });
-        Object.defineProperty(el, 'clientHeight', { value: MAT_H / 2 });
+        Object.defineProperty(el, 'clientWidth', { value: matW() });
+        Object.defineProperty(el, 'clientHeight', { value: matH() / 2 });
 
         act(() => { result.current.ref(el); });
         act(() => { window.dispatchEvent(new Event('resize')); });
 
         expect(result.current.scale).toBe(0.5);
-        expect(result.current.size).toBe(Math.round(MAT_W * 0.5));
-        expect(result.current.height).toBe(Math.round(MAT_H * 0.5));
+        expect(result.current.size).toBe(Math.round(matW() * 0.5));
+        expect(result.current.height).toBe(Math.round(matH() * 0.5));
     });
 });
 
@@ -282,8 +282,8 @@ describe('⭐ which Token the pointer is on (overlapping art)', () => {
     /** The mat measured as its natural size, so a client point IS a mat point. */
     const unscaled = (root) => {
         root.getBoundingClientRect = () => ({
-            left: 0, top: 0, width: MAT_W, height: MAT_H,
-            right: MAT_W, bottom: MAT_H, x: 0, y: 0
+            left: 0, top: 0, width: matW(), height: matH(),
+            right: matW(), bottom: matH(), x: 0, y: 0
         });
     };
 
@@ -349,8 +349,8 @@ describe('the mat itself (FP-96)', () => {
 
         const surface = container.querySelector('[data-mat-surface]');
         expect(surface).not.toBeNull();
-        expect(parseFloat(surface.style.width)).toBe(MAT_W);
-        expect(parseFloat(surface.style.height)).toBe(MAT_H);
+        expect(parseFloat(surface.style.width)).toBe(matW());
+        expect(parseFloat(surface.style.height)).toBe(matH());
 
         // FP-96: the rounded border is the mat's only edge now — a placeholder
         // until it gets real art.
@@ -378,8 +378,8 @@ describe('the mat itself (FP-96)', () => {
 
         // Placed as a PERCENTAGE of the mat, so it scales with whatever box the
         // Tray gives it — nothing here measures pixels.
-        expect(parseFloat(art.style.left)).toBeCloseTo(((880 - 64) / MAT_W) * 100, 4);
-        expect(parseFloat(art.style.top)).toBeCloseTo(((563 - 64) / MAT_H) * 100, 4);
+        expect(parseFloat(art.style.left)).toBeCloseTo(((880 - 64) / matW()) * 100, 4);
+        expect(parseFloat(art.style.top)).toBeCloseTo(((563 - 64) / matH()) * 100, 4);
 
         // Not one tile cell survives.
         expect(container.querySelectorAll('[id^="miniboard-tile-"]')).toHaveLength(0);

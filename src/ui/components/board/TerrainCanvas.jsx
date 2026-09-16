@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import {
     LATTICE_SIZE, subtileArtPx, resolveLattice, resolveArtPixels,
-    LEGACY_BOARD_PX as BOARD_PX, LEGACY_AREA_ORIGIN as OLD_AREA_ORIGIN
+    LEGACY_BOARD_PX as BOARD_PX
 } from '../../../systems/board/TerrainLattice.js';
 import { buildSurface } from '../../../systems/board/TerrainSurface.js';
 import { propsForBoard } from '../../../systems/board/TerrainProps.js';
@@ -119,6 +119,7 @@ function propImage(propId) {
 export const TerrainCanvas = ({ terrain, seed }) => {
     const canvasRef = useRef(null);
     const bufferRef = useRef(null);
+    const mat = useMatSize();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -128,7 +129,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
 
         const draw = () => {
             ctx.imageSmoothingEnabled = false;
-            ctx.clearRect(0, 0, MAT_W, MAT_H);
+            ctx.clearRect(0, 0, mat.w, mat.h);
 
             const grid = resolveLattice(terrain || {}, seed || 0);
             const pixels = resolveArtPixels(grid, seed || 0);
@@ -204,11 +205,15 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             }
 
             buffer.ctx.putImageData(buffer.image, 0, 0);
-            // ⚠️ The canvas is the whole mat, but the lattice is still the old
-            // landing area's 6×6 (terrain is dormant, FP-10), so the finished
-            // picture is blitted where that area sits on the mat (FP-92).
-            // STOPGAP: slice 1.6d re-lattices terrain over the mat itself.
-            ctx.drawImage(buffer.canvas, 0, 0, size, size, OLD_AREA_ORIGIN.x, OLD_AREA_ORIGIN.y, BOARD_PX, BOARD_PX);
+            // ⚠️ The canvas is the whole mat, but the lattice is still a fixed
+            // 928 u square (terrain is dormant, FP-10), so the finished picture
+            // is blitted **centred on the mat** — which follows the mat's live
+            // size rather than the old landing area's corner (slice 1.6d-3). At
+            // the shipped 11 steps that is the same (416, 99) it always was.
+            // STOPGAP: terrain is re-latticed over the mat when it is revived.
+            const originX = Math.round((mat.w - BOARD_PX) / 2);
+            const originY = Math.round((mat.h - BOARD_PX) / 2);
+            ctx.drawImage(buffer.canvas, 0, 0, size, size, originX, originY, BOARD_PX, BOARD_PX);
 
             // --- Props, back to front ---------------------------------------
             //
@@ -218,7 +223,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             for (const prop of propsForBoard(grid, seed || 0, pixels)) {
                 const img = propImage(prop.propId);
                 if (!img) continue;
-                ctx.drawImage(img, OLD_AREA_ORIGIN.x + prop.x, OLD_AREA_ORIGIN.y + prop.y, prop.size, prop.size);
+                ctx.drawImage(img, originX + prop.x, originY + prop.y, prop.size, prop.size);
             }
         };
 
@@ -237,16 +242,16 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             unsubscribe?.();
             if (pendingRedraw === draw) pendingRedraw = null;
         };
-    }, [terrain, seed]);
+    }, [terrain, seed, mat.w, mat.h]);
 
     return (
         <canvas
             ref={canvasRef}
-            width={MAT_W}
-            height={MAT_H}
+            width={mat.w}
+            height={mat.h}
             aria-hidden="true"
             className="absolute inset-0 pointer-events-none"
-            style={{ width: MAT_W, height: MAT_H, imageRendering: 'pixelated' }}
+            style={{ width: mat.w, height: mat.h, imageRendering: 'pixelated' }}
         />
     );
 };

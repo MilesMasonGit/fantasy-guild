@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z } from './matLayers.js';
 import { PixelArt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
@@ -49,6 +49,7 @@ import { QuestManager } from '../../../systems/quests/QuestManager.js';
  * through to the Tray on its own.
  */
 export const SpriteLayerView = () => {
+    const mat = useMatSize();
     const sprites = useGameState(
         state => (state.board?.sprites || []).map(s => ({
             id: s.id, kind: s.kind, refId: s.refId,
@@ -68,7 +69,7 @@ export const SpriteLayerView = () => {
     return (
         <div
             className="absolute top-0 left-0 pointer-events-none"
-            style={{ width: MAT_W, height: MAT_H, zIndex: MAT_Z.LOOT }}
+            style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.LOOT }}
         >
             {sprites.map(sprite => (
                 <LootSprite key={sprite.id} sprite={sprite} allSprites={sprites} onCollect={collect} />

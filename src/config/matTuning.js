@@ -27,6 +27,13 @@
 const STEP_U = 160;
 
 /**
+ * The mat's fixed width-to-height ratio, repeated here for the same reason.
+ * Kept in step with `MAT_ASPECT` in `matGeometry.js` — which imports THIS file,
+ * so the dependency may not run the other way.
+ */
+const ASPECT = 0.64;
+
+/**
  * A small Token's art radius, repeated here for the same reason — this file
  * imports nothing, so the hints below can quote real numbers without dragging
  * `matGeometry` (and the Token registry behind it) into the config layer.
@@ -74,6 +81,14 @@ export const MAT_TUNABLES = Object.freeze([
         hint: 'How far a drop with no room may be shifted to find a legal spot before it flies back instead (FP-46, FP-88). 0 makes every crowded drop fly back; 160 is one old tile step.',
         min: 0, max: 400, step: 1, def: 160,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
+    },
+    {
+        key: 'matSteps',
+        group: 'The mat',
+        label: 'Mat size',
+        hint: 'How big the playmat itself is, in 160 u steps, at a fixed 0.64 aspect (FP-92). ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart (FP-98); flags are only pulled in. Growing it moves nothing.',
+        min: 6, max: 20, step: 1, def: 11,
+        format: (v) => `${Math.round(v)} steps · ${Math.round(v) * STEP_U} × ${Math.round(Math.round(v) * STEP_U * ASPECT)} u`
     }
 ]);
 

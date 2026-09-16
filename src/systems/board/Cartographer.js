@@ -10,7 +10,7 @@ import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { MAT_W, MAT_H } from '../../config/matGeometry.js';
+import { matW, matH } from '../../config/matGeometry.js';
 import { terrainForMap } from '../../config/registries/terrainAssignments.js';
 import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
@@ -446,12 +446,13 @@ export function openMap(instance, origin = null) {
  * ⚠️ This used to return `24`, a tile index left over from the 7×7 board — on
  * the 6×6 board that was a tile in the bottom-right corner, not the Hall.
  *
- * The mat's centre is (MAT_W / 2, MAT_H / 2) since slice 1.6c.
+ * The mat's centre is (matW() / 2, matH() / 2) since slice 1.6c — read live, as
+ * the mat can be resized while the game runs (slice 1.6d-3).
  */
 export function centreOfBoard() {
     const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
     if (hall && Number.isFinite(hall.x) && Number.isFinite(hall.y)) return { x: hall.x, y: hall.y };
-    return { x: MAT_W / 2, y: MAT_H / 2 };
+    return { x: matW() / 2, y: matH() / 2 };
 }
 
 /** Whether a Token instance is a Map. */

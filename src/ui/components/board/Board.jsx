@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
-import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { dropOnMat } from './dropOnMat.js';
 import { pointerToMat } from './matPoint.js';
 import { MatBoard } from './MatBoard.jsx';
@@ -34,8 +34,10 @@ export function matAccepts(p) {
 export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }) => {
     const { EventBus } = useEngine();
 
-    // How much the 1760 × 1126 u mat is shrunk to fit this window (CR2-179).
-    const fit = useBoardScale(MAT_W, MAT_H);
+    // How big the mat is (slice 1.6d-3 — the Mat Tuner can change it live), and
+    // how much it is then shrunk to fit this window (CR2-179).
+    const mat = useMatSize();
+    const fit = useBoardScale(mat.w, mat.h);
 
     // The mat's own element: every screen pointer is measured against it.
     const matRef = useRef(null);
@@ -102,11 +104,11 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
                     ref={setMatRef}
                     {...matDrop.droppableProps}
                     data-board-origin
-                    data-natural-width={MAT_W}
+                    data-natural-width={mat.w}
                     className="relative shrink-0"
                     style={{
-                        width: MAT_W,
-                        height: MAT_H,
+                        width: mat.w,
+                        height: mat.h,
                         transform: `scale(${fit.scale})`,
                         transformOrigin: 'top left'
                     }}

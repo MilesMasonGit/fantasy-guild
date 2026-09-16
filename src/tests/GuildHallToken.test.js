@@ -8,7 +8,7 @@ import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.
 import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { OPENING_MAT } from '../systems/core/EngineBootstrap.js';
+import { openingMat } from '../systems/core/EngineBootstrap.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 
 /**
@@ -34,7 +34,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
     });
 
     it('starts with the Guild Hall token on the mat for new games (FP-44)', () => {
-        expect(OPENING_MAT.map(t => t.typeId)).toContain('token_guild_hall');
+        expect(openingMat().map(t => t.typeId)).toContain('token_guild_hall');
     });
 
     it('can be placed anywhere on the mat, and moved anywhere else', () => {

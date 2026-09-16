@@ -3,7 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import * as Flags from './Flags.js';
-import { clampToMat, MAT_W, MAT_H, TOKEN_PX } from '../../config/matGeometry.js';
+import { clampToMat, matW, matH, TOKEN_PX } from '../../config/matGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
@@ -102,8 +102,8 @@ export function isPermanentToken(typeId, instance) {
 /** Where a Map's 128 u box sits when its centre lands on `point`, kept on the mat. */
 function mapBoxAt(point) {
     return {
-        x: Math.max(0, Math.min(MAT_W - TOKEN_PX, Math.round(point.x - TOKEN_PX / 2))),
-        y: Math.max(0, Math.min(MAT_H - TOKEN_PX, Math.round(point.y - TOKEN_PX / 2)))
+        x: Math.max(0, Math.min(matW() - TOKEN_PX, Math.round(point.x - TOKEN_PX / 2))),
+        y: Math.max(0, Math.min(matH() - TOKEN_PX, Math.round(point.y - TOKEN_PX / 2)))
     };
 }
 

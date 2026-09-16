@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import { MAT_W, MAT_H } from '../../../config/matGeometry.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z } from './matLayers.js';
 import { useEventAlert, EventAlertMark } from './TokenEventAlert.jsx';
 
@@ -40,6 +40,7 @@ export function isPointAlert(payload) {
 
 export const MatPointAlerts = () => {
     const [alerts, setAlerts] = useState([]);
+    const mat = useMatSize();
 
     useEffect(() => {
         const unsub = EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => {
@@ -63,7 +64,7 @@ export const MatPointAlerts = () => {
         <div
             data-mat-point-alerts
             className="absolute left-0 top-0 pointer-events-none"
-            style={{ width: MAT_W, height: MAT_H, zIndex: MAT_Z.POINT_ALERT }}
+            style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.POINT_ALERT }}
         >
             {alerts.map(a => (
                 <PointAlert key={`${a.key}:${a.seq}`} alert={a} onGone={forget} />

@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
-import { MAT_W, MAT_H, artRadius } from '../../../config/matGeometry.js';
+import { artRadius } from '../../../config/matGeometry.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
@@ -24,9 +25,9 @@ import { dropOnMat } from './dropOnMat.js';
  * there cannot drift apart, because there is only one of each.
  *
  * ## The scale takes care of itself
- * The mini mat is laid out in **percentages of `MAT_W` × `MAT_H`**, so nothing
+ * The mini mat is laid out in **percentages of the mat's live size**, so nothing
  * measures anything to draw. For the drop, `pointerToMat` already divides the
- * pointer's offset by `rect.width / MAT_W` — the same maths the full-size mat
+ * pointer's offset by `rect.width / matW()` — the same maths the full-size mat
  * uses, which at this size simply happens to be a much smaller number. So a
  * pointer 30% across this board and a pointer 30% across the playmat produce the
  * very same mat point.
@@ -40,6 +41,9 @@ const accepts = (p) => p?.kind === DRAG_KIND.TOKEN;
 
 export const TrayMiniBoard = ({ className }) => {
     const matRef = useRef(null);
+
+    // The mini mat is the same shape as the real one, whatever size that is now.
+    const mat = useMatSize();
 
     const tokens = useGameState(
         () => BoardState.tokens().map(t => ({
@@ -91,7 +95,7 @@ export const TrayMiniBoard = ({ className }) => {
                     drop.valid && '!border-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.9)]',
                     drop.invalid && '!border-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.9)]'
                 )}
-                style={{ aspectRatio: `${MAT_W} / ${MAT_H}` }}
+                style={{ aspectRatio: `${mat.w} / ${mat.h}` }}
             >
                 {tokens.map(t => {
                     const r = artRadius(t.size);
@@ -101,10 +105,10 @@ export const TrayMiniBoard = ({ className }) => {
                             data-mini-token={t.id}
                             className="absolute pointer-events-none"
                             style={{
-                                left: `${((t.x - r) / MAT_W) * 100}%`,
-                                top: `${((t.y - r) / MAT_H) * 100}%`,
-                                width: `${((r * 2) / MAT_W) * 100}%`,
-                                height: `${((r * 2) / MAT_H) * 100}%`
+                                left: `${((t.x - r) / mat.w) * 100}%`,
+                                top: `${((t.y - r) / mat.h) * 100}%`,
+                                width: `${((r * 2) / mat.w) * 100}%`,
+                                height: `${((r * 2) / mat.h) * 100}%`
                             }}
                         >
                             <TokenSprite
