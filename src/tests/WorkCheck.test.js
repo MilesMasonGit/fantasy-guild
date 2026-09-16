@@ -13,8 +13,17 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { tileCentre } from '../config/boardGeometry.js';
-import { idAt } from './fixtures/mat.js';
+
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * the station and the charged context beside it are 160 u apart, inside the
+ * shipped 164 u Near.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`, and its instance id. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+const idAt = (i) => tokenAt(i)?.id ?? null;
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -43,15 +52,15 @@ function hero(id, skills) {
 
 function put(tile, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
-    Placement.placeToken(tile, instance);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    return instance;
 }
 
 /** A hero already working the Token on TILE, set up directly. */
 function staff(instance) {
     const skill = getTokenType(instance.typeId).config.skill;
-    Flags.plant('h1', tileCentre(TILE), { skill });
-    BoardState.setClaim('h1', { instanceId: instance.id, tile: TILE, typeId: instance.typeId });
+    Flags.plant('h1', C(TILE), { skill });
+    BoardState.setClaim('h1', { instanceId: instance.id, typeId: instance.typeId });
 }
 
 beforeEach(() => {
