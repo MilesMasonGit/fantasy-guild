@@ -51,6 +51,15 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * the moment would be refused for being unable to afford itself.
  */
 
+/**
+ * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
+ * this names one spot on the mat for the Sapling to stand on.
+ */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+/** The Token standing exactly on spot `i`. */
+const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
+
 const TILE = 15;
 
 function makeHero(id) {
@@ -67,10 +76,10 @@ function place(tile, typeId, heroId = null, uses = undefined) {
     const instance = BoardState.createTokenInstance(
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
-    Placement.placeToken(tile, instance);
-    TileModifiers.rebuildAround([BoardState.getToken(tile)]);
-    if (heroId) Placement.placeHero(heroId, tile);
-    return BoardState.getToken(tile);
+    Placement.placeTokenAt(instance, C(tile));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Placement.plantFlagAt(heroId, C(tile));
+    return instance;
 }
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
@@ -180,8 +189,8 @@ describe('* a one-charge Token leaves something behind', () => {
         place(TILE, sapling, 'hero_1');
         run(3000);
 
-        const left = BoardState.getToken(TILE);
-        expect(left, 'the tile is empty - nothing took the Sapling place').toBeTruthy();
+        const left = tokenAt(TILE);
+        expect(left, 'the spot is empty - nothing took the Sapling place').toBeTruthy();
         expect(left.typeId).toBe('fixture_producer');
     });
 
@@ -200,7 +209,7 @@ describe('* a one-charge Token leaves something behind', () => {
         place(TILE, sapling, 'hero_1');
         run(3000);
 
-        const left = BoardState.getToken(TILE);
+        const left = tokenAt(TILE);
         expect(left).toBeTruthy();
         expect(left.usesRemaining).toBe(tokenStartingUses('fixture_producer'));
     });
@@ -223,7 +232,7 @@ describe('* a one-charge Token leaves something behind', () => {
         place(TILE, sapling, 'hero_1');
         run(3000);
 
-        expect(BoardState.getToken(TILE)?.typeId).toBe('fixture_producer');
+        expect(tokenAt(TILE)?.typeId).toBe('fixture_producer');
     });
 });
 
@@ -236,14 +245,14 @@ describe('the departing Token is findable at all', () => {
         Charges.applyDelta(instance, -1);
         unsub();
 
-        expect(BoardState.getToken(TILE), 'the tile should be empty').toBeNull();
+        expect(tokenAt(TILE), 'the spot should be empty').toBeNull();
         expect(seen?.instance?.typeId).toBe('fixture_producer');
     });
 
     it('and the square really is free, which is what a Spawns here needs', () => {
         const instance = place(TILE, 'fixture_producer', null, 1);
         Charges.applyDelta(instance, -1);
-        expect(BoardState.getToken(TILE)).toBeNull();
+        expect(tokenAt(TILE)).toBeNull();
     });
 });
 
@@ -281,7 +290,7 @@ describe('ordinary Tokens are unaffected', () => {
     it('a Token with no depletion rule still just leaves', () => {
         const instance = place(TILE, 'fixture_producer', null, 1);
         Charges.applyDelta(instance, -1);
-        expect(BoardState.getToken(TILE)).toBeNull();
+        expect(tokenAt(TILE)).toBeNull();
     });
 
     it('a Token with charges to spare does not fire the moment', () => {
@@ -294,6 +303,6 @@ describe('ordinary Tokens are unaffected', () => {
         const instance = place(TILE, sapling, null, 5);
         Charges.applyDelta(instance, -1);
 
-        expect(BoardState.getToken(TILE)?.typeId).toBe(sapling);
+        expect(tokenAt(TILE)?.typeId).toBe(sapling);
     });
 });
