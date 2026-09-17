@@ -13,7 +13,7 @@ import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { TrayMiniBoard } from './TrayMiniBoard.jsx';
-import { SIDE_COLUMN_PX } from './boardConstants.js';
+import { SIDE_COLUMN_PX, TRAY_COLUMN, columnWidthCss } from './boardConstants.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { QuestManager } from '../../../systems/quests/QuestManager.js';
@@ -234,8 +234,11 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
             ref={drop.setNodeRef}
             {...drop.droppableProps}
             data-dnd-region="drawer"
+            // FP-100: gives way on a narrow window so the mat keeps a readable
+            // size. Floored well clear of the 128px Vault chest inside it.
+            style={{ width: columnWidthCss(TRAY_COLUMN) }}
             className={cn(
-                "w-72 md:w-80 xl:w-[320px] 2xl:w-[340px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent relative z-10 select-none",
+                "shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent relative z-10 select-none",
                 menuRight ? "pl-8 pr-0" : "pr-8 pl-0",
                 isBankOpen ? "pointer-events-none" : "pointer-events-auto"
             )}

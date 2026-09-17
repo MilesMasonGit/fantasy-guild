@@ -55,7 +55,14 @@ export const TOKEN_SURFACE = {
     CATALOGUE: 'catalogue'    // dense listings — Cartographer pool chips only
 };
 
-/** Scale against `ART_PX`. Whole numbers, or an exact halving. */
+/**
+ * Scale against `ART_PX`. Whole numbers, or an exact halving.
+ *
+ * `BOARD`'s 2 is the surface's **natural** scale — what it draws at when the mat
+ * is drawn 1:1. The mat is rarely drawn 1:1, so what the board actually uses is
+ * `boardScaleAt(fit)` below; this stays the number that answer is derived from,
+ * and the one every board caller outside the mat's own transform still gets.
+ */
 export const TOKEN_SCALE = {
     [TOKEN_SURFACE.BOARD]: 2,
     [TOKEN_SURFACE.CARRY]: 2,
@@ -66,15 +73,66 @@ export const TOKEN_SCALE = {
     [TOKEN_SURFACE.CATALOGUE]: 0.5
 };
 
-/** Displayed pixel size for a surface, accounting for 1x1 vs 2x2 large tokens. */
-export const tokenSizeFor = (surface, typeIdOrSize = 1) => {
+/**
+ * ## ⭐ Stepped art, smooth spacing — the board surface only (FP-99)
+ *
+ * The mat is drawn at its natural size and then fitted into the window with one
+ * CSS transform (`useBoardScale`). Everything on it therefore scales *smoothly*:
+ * positions, the surface, rings, flags and the drop target all glide, which is
+ * what keeps the mat filling the space it is given.
+ *
+ * A **sprite** must not glide with them. At a fit of 0.21 a 128 u Token lands on
+ * screen as 26.88 px — a fractional sample of 64 px art, which is exactly the
+ * blur this file exists to prevent. So the board's scale is not a constant: it
+ * is chosen from the live fit, so that what the player actually sees is always a
+ * whole multiple of `ART_PX`.
+ *
+ * **How the whole number is chosen.** `boardArtSteps` takes what the smooth
+ * scale *would* have produced — the natural 2×, multiplied by the fit — and
+ * rounds it to the nearest whole number, never below 1. `boardScaleAt` then
+ * divides that back out by the fit, giving the size in **mat units** that the
+ * transform will land on exactly `steps × ART_PX` screen pixels.
+ *
+ * ⚠️ **The mat-unit scale is deliberately fractional, and this does not break
+ * the contract above.** The contract is about what is *rendered*: under the
+ * mat's transform the mat-unit number is not the pixel number, and it is the
+ * pixel number that has to be whole. `boardScaleAt(0.21)` is ~4.76 in mat units
+ * and exactly 64 px on screen. At a fit of 1 it is 2, the natural scale, so
+ * every caller outside the mat's transform is unchanged.
+ *
+ * ⚠️ **Below 1× the art is bigger than the Token's circle, and that is
+ * intended** (FPR-6, accepted by the owner): the art steps while spacing glides,
+ * so sprites spill over their neighbours on a small mat. This is a drawing rule
+ * only — collision, `hitRadiusOf` and `minGap` are untouched, so what is drawn
+ * can disagree with what the engine allows. FP-100 is what keeps that
+ * disagreement small.
+ */
+export const boardArtSteps = (fit = 1) => {
+    if (!Number.isFinite(fit) || fit <= 0) return TOKEN_SCALE[TOKEN_SURFACE.BOARD];
+    return Math.max(1, Math.round(TOKEN_SCALE[TOKEN_SURFACE.BOARD] * fit));
+};
+
+/** The BOARD surface's scale in MAT UNITS at a given mat fit (see above). */
+export const boardScaleAt = (fit = 1) => {
+    if (!Number.isFinite(fit) || fit <= 0) return TOKEN_SCALE[TOKEN_SURFACE.BOARD];
+    return boardArtSteps(fit) / fit;
+};
+
+/**
+ * Displayed size for a surface, accounting for 1x1 vs 2x2 large tokens.
+ *
+ * `scale` defaults to the surface's own entry in `TOKEN_SCALE`; the board passes
+ * `boardScaleAt(fit)` instead, so its sprites land on whole pixels through the
+ * mat's transform. Every other surface leaves it alone.
+ */
+export const tokenSizeFor = (surface, typeIdOrSize = 1, scale = TOKEN_SCALE[surface] ?? 1) => {
     let sizeMultiplier = 1;
     if (typeof typeIdOrSize === 'number') {
         sizeMultiplier = typeIdOrSize;
     } else if (typeof typeIdOrSize === 'string') {
         sizeMultiplier = getTokenType(typeIdOrSize)?.size || 1;
     }
-    return ART_PX * sizeMultiplier * (TOKEN_SCALE[surface] ?? 1);
+    return ART_PX * sizeMultiplier * scale;
 };
 
 /**
@@ -151,8 +209,10 @@ export const PixelArt = ({ src, alt, size, lifted = false, hovering = false, cla
  *                            offset up. The size does **not** change (D-220).
  * @param {string}  alt       Overrides the registry name, for callers that
  *                            already have a label.
+ * @param {number}  scale     Overrides the surface's own scale. The board passes
+ *                            `boardScaleAt(fit)` (FP-99); nothing else sets it.
  */
-export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, size, lifted = false, alt, className, style }) => {
+export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, size, scale, lifted = false, alt, className, style }) => {
     const src = tokenSpritePath(typeId);
     if (!src) return null;
 
@@ -160,7 +220,7 @@ export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, size, lifte
         <PixelArt
             src={src}
             alt={alt ?? tokenName(typeId)}
-            size={size ?? tokenSizeFor(surface, typeId)}
+            size={size ?? tokenSizeFor(surface, typeId, scale)}
             lifted={lifted}
             className={className}
             style={style}
