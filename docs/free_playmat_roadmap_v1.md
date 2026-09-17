@@ -354,11 +354,21 @@ nudge, refuse and restock by drag.
 ### 1.7 — The mat UI
 
 * One scaling mat that grows and shrinks (FP-4), Token art at whole-number scales
-  (FP-5), a single drop target converting the pointer to mat units, range rings,
-  flags drawn on the mat.
+  (FP-5, now **FP-99**), a single drop target converting the pointer to mat units,
+  range rings, flags drawn on the mat.
+* **FP-100:** the flanking columns give way on a narrow window so the mat keeps a
+  readable size.
 
 **Verified when** it looks right and stays crisp at three window sizes, with
 screenshots.
+
+**Owner's rulings, 2026-09-16** (put to them as the slice's one real fork —
+FP-5 as locked vs. the FPR-6 overlap it causes):
+
+| # | Decision | Why / cost |
+|---|---|---|
+| **FP-99** | ⭐ **Stepped art, smooth spacing.** Positions scale smoothly so the mat always fills the space it is given, but a Token sprite is only ever drawn at a **whole multiple of its 64 px art** (1×, 2×, 3×…), so it never blurs. | Owner, over scaling art smoothly (soft off-step, which FP-5 exists to prevent) and over stepping the whole mat (crisp and consistent, but the mat jumps and wastes up to a third of the space as margin). **Accepts FPR-6:** art steps while spacing glides, so the same two Tokens look slightly more or less crowded at different window sizes, and below 1× the art is larger than its circle and spills over neighbours. ⚠️ Collision is unchanged — this is a drawing rule only, so what the player sees can disagree with what the engine allows. FP-100 is what keeps that disagreement small. |
+| **FP-100** | ⭐ **The columns give way before the mat does.** On a narrow window the Tray, hero dock and notification column shrink (the "small mode" `useBoardScale` already anticipates) so the mat keeps a readable size, rather than the mat shrinking to 0.1 beside full-width columns. | Owner, over only uncapping growth (helps a big monitor, does nothing for the narrow window that actually shows the problem) and over doing both jobs at once. ⚠️ Touches app layout outside the board — the one part of this slice that is not board-local. Slice 1.9 retires the Tray and hands most of this space back permanently. |
 
 ### 1.8 — Arrivals land on the mat
 
