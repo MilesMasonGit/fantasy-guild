@@ -27,6 +27,58 @@
  */
 export const SIDE_COLUMN_PX = 928;
 
+/**
+ * ## ⭐ The flanking columns give way before the mat does (FP-100)
+ *
+ * The three columns beside the mat — notifications, the Tray, the hero dock —
+ * used to take a **fixed** width at each breakpoint (356 / 320 / 80 px at `xl`)
+ * and were `shrink-0` besides. The mat is their flex sibling with `flex-1
+ * min-w-0`, so it absorbed every pixel of a narrow window on its own: at 1280 it
+ * was left a few hundred pixels for a 1760 u mat and fitted at about 0.21, and
+ * in a narrow pane it hit the 0.1 floor entirely. `useBoardScale`'s own comment
+ * already named the intended answer — *"win the board more room by shrinking the
+ * columns beside it rather than by refusing to shrink the board"*.
+ *
+ * So each column's width is now a `clamp()`: its full width on a wide window,
+ * shrinking with the viewport, and stopping at a floor set by **what is actually
+ * inside it**, not by taste:
+ *
+ * * **Notifications** — `Toast` carries `min-w-[220px]`, and the column's `pl-8`
+ *   gutter is inside its border-box, so below ~252px the toasts overflow their
+ *   own column. 256 leaves a little air.
+ * * **Tray** — the gold Vault chest is a fixed 128px and tray sprites are a
+ *   fixed 128/64 (`trayTokenPx`), so its hard floor is ~180px once the border
+ *   and gutter are counted. 244 keeps a comfortable margin around the chest.
+ * * **The hero dock** is already only `w-20` (80px) and its inspection sheet is
+ *   absolutely positioned, so it costs the mat nothing worth reclaiming and is
+ *   left alone.
+ *
+ * ⚠️ **This never lets the mat reach under a column.** It cannot: the mat is
+ * fitted to its own cell's measured `clientWidth/Height` and the cell is
+ * `overflow-hidden`, so the columns' width is an input to the fit, not something
+ * the mat can overrun. Widening the mat's share only ever *raises* the fit. That
+ * matters because the Tray's drop surface outranks the board's where the two
+ * overlap, so a mat wider than its box would silently feed drops to the Vault
+ * chest (CR2-179).
+ *
+ * Slice 1.9 retires the Tray and hands most of this space back for good, which
+ * is why this is a pair of numbers rather than a layout system.
+ */
+export const NOTIFICATION_COLUMN = Object.freeze({ min: 256, vw: 20, max: 356 });
+export const TRAY_COLUMN = Object.freeze({ min: 244, vw: 19, max: 340 });
+
+/**
+ * What a column spec is worth at a given viewport width, in pixels.
+ *
+ * The pure form of the `clamp()` below, so the rule can be tested without a
+ * layout engine. Both are built from the same spec, so they cannot drift.
+ */
+export const columnWidthAt = (viewportPx, spec) =>
+    Math.max(spec.min, Math.min(spec.max, Math.round((viewportPx * spec.vw) / 100)));
+
+/** The same spec as the CSS the column is actually given. */
+export const columnWidthCss = (spec) => `clamp(${spec.min}px, ${spec.vw}vw, ${spec.max}px)`;
+
 import { ALERT } from '../../../systems/board/boardEvents.js';
 
 /**

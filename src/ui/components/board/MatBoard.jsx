@@ -26,7 +26,8 @@ import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { GameState } from '../../../state/GameState.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { TokenSprite, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
+import { useMatFit } from './MatFitContext.jsx';
 import { cn } from '../../utils/cn.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { playLootArc } from '../../utils/lootArc.js';
@@ -373,7 +374,12 @@ export function heroPlacement({ state, size, x, y }) {
  * is the one alert with no Token left to draw it on.
  */
 const UnstockedGhost = ({ ghost }) => {
-    const r = artRadius(getTokenType(ghost.typeId)?.size || 1);
+    const size = getTokenType(ghost.typeId)?.size || 1;
+    const r = artRadius(size);
+    // The same stepped art as a real Token (FP-99) — a ghost drawn at the smooth
+    // scale beside stepped neighbours would be the one blurry thing on the mat.
+    const fit = useMatFit();
+    const artScale = boardScaleAt(fit);
     return (
         <div
             data-unstocked-spot={ghost.spotId}
@@ -394,6 +400,7 @@ const UnstockedGhost = ({ ghost }) => {
                 <TokenSprite
                     typeId={ghost.typeId}
                     surface={TOKEN_SURFACE.BOARD}
+                    scale={artScale}
                     alt={`${tokenName(ghost.typeId) || 'Token'} — awaiting restock`}
                     className="absolute inset-0 m-auto"
                 />

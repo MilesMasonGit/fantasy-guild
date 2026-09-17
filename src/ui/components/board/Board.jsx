@@ -4,6 +4,7 @@ import { useMatSize } from '../../hooks/useMatSize.js';
 import { dropOnMat } from './dropOnMat.js';
 import { pointerToMat } from './matPoint.js';
 import { MatBoard } from './MatBoard.jsx';
+import { MatFitProvider } from './MatFitContext.jsx';
 import { useEngine } from '../../hooks/useEngine.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { GameState } from '../../../state/GameState.js';
@@ -113,12 +114,18 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
                         transformOrigin: 'top left'
                     }}
                 >
-                    <MatBoard
-                        inspectedHeroId={inspectedHeroId}
-                        onInspectToken={onInspectToken}
-                        onClearInspect={onClearInspect}
-                        onOpenRecipes={handleOpenRecipes}
-                    />
+                    {/* ⭐ FP-99: the sprites on the mat need to know what this
+                        transform is about to do to them, so they can step to a
+                        whole multiple of ART_PX through it. Nothing else on the
+                        mat cares — the transform handles the rest. */}
+                    <MatFitProvider value={fit.scale}>
+                        <MatBoard
+                            inspectedHeroId={inspectedHeroId}
+                            onInspectToken={onInspectToken}
+                            onClearInspect={onClearInspect}
+                            onOpenRecipes={handleOpenRecipes}
+                        />
+                    </MatFitProvider>
                 </div>
             </div>
 

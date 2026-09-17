@@ -94,10 +94,11 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('fitting the mat into the window (CR2-179, FP-86)', () => {
-    it('shrinks on whichever axis binds, and never grows past 1:1', () => {
-        // Twice the room it needs: the art is authored for 2× and blowing it up
-        // would only blur it.
-        expect(fitScale(matW() * 2, matH() * 2, matW(), matH())).toBe(1);
+    it('shrinks on whichever axis binds, and now grows past 1:1 too (FP-99)', () => {
+        // ⭐ Twice the room it needs is now taken. This used to be capped at 1,
+        // because blowing the art up would blur it — the art is stepped to a
+        // whole multiple of ART_PX instead now, so the mat fills the space.
+        expect(fitScale(matW() * 2, matH() * 2, matW(), matH())).toBe(2);
         // Width binds.
         expect(fitScale(matW() / 2, matH() * 2, matW(), matH())).toBe(0.5);
         // ⭐ Height binds — the case a one-axis fit missed entirely, and the mat

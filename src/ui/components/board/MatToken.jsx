@@ -7,7 +7,8 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { TokenSprite, TOKEN_SURFACE, boardScaleAt, tokenSizeFor } from '../base/TokenSprite.jsx';
+import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -63,6 +64,29 @@ export const MatToken = React.memo(function MatToken({
     onRecallHero
 }) {
     const r = artRadius(size);
+
+    /**
+     * ⭐ FP-99 — how big this Token's art is drawn, in mat units.
+     *
+     * The mat's transform turns `artPx` mat units into exactly
+     * `boardArtSteps(fit) × ART_PX` screen pixels, so the sprite is always a
+     * whole multiple of its 64px art and never resampled.
+     *
+     * ⚠️ The **box** grows to hold the art when the art is the larger of the two,
+     * which below 1× it is: the box is `clip-path`ed to a circle, so a box left
+     * at the Token's own radius would crop the very spill FPR-6 accepts. A 2×2's
+     * 288 u circle is already wider than its 256 u art, and `max` leaves that —
+     * and every 1:1 case — exactly as it was.
+     *
+     * ⚠️ This moves nothing in the engine. `x`/`y`, `hitRadiusOf` and `minGap`
+     * are untouched; this is only how much art is painted at the same point.
+     */
+    const fit = useMatFit();
+    const artScale = boardScaleAt(fit);
+    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, size, artScale);
+    const boxPx = Math.max(r * 2, artPx);
+    const boxHalf = boxPx / 2;
+
     const def = getTokenType(typeId);
     const label = tokenName(typeId);
     const isGuildHallToken = typeId === 'token_guild_hall';
@@ -163,13 +187,13 @@ export const MatToken = React.memo(function MatToken({
     // A hero and their Token slide apart on a staffed spot (D-266): hero left,
     // Token right. A 2×2 is big enough to stand on, so only a 1×1 shifts.
     const shift = (staffed && size === 1) ? PAIR_OFFSET_PX : 0;
-    const left = x - r + shift;
-    const top = y - r;
+    const left = x - boxHalf + shift;
+    const top = y - boxHalf;
     const boxStyle = {
         left,
         top,
-        width: r * 2,
-        height: r * 2,
+        width: boxPx,
+        height: boxPx,
         transition: 'left 220ms cubic-bezier(0.2, 0.8, 0.2, 1), top 220ms cubic-bezier(0.2, 0.8, 0.2, 1)'
     };
     const hidden = drag.isDragging;
@@ -229,6 +253,7 @@ export const MatToken = React.memo(function MatToken({
                     <TokenSprite
                         typeId={typeId}
                         surface={TOKEN_SURFACE.BOARD}
+                        scale={artScale}
                         alt={label}
                         className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
                     />

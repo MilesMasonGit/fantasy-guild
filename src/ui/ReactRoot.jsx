@@ -25,7 +25,7 @@ import VerticalHeroDock from './components/dock/VerticalHeroDock.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
-import { SIDE_COLUMN_PX } from './components/board/boardConstants.js';
+import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
 import { getUpgradeDef, getUpgradeDefByTile } from '../config/guildUpgrades.js';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
@@ -83,8 +83,11 @@ const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
 
     return (
         <aside
+            // FP-100: gives way on a narrow window so the mat keeps a readable
+            // size. Floored at the width `Toast`'s own min-width needs.
+            style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
             className={cn(
-                "w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto transition-[width] duration-150 relative z-10 select-none",
+                "shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto transition-[width] duration-150 relative z-10 select-none",
                 menuRight ? "pr-8 pl-0" : "pl-8 pr-0"
             )}
         >
@@ -277,7 +280,10 @@ export const ReactRoot = ({ engine }) => {
                         {!menuRight && <BubbleMenu ui={ui} side="left" />}
                         {!menuRight && (
                             isGuildView ? (
-                                <aside className="w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10">
+                                <aside
+                                    style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
+                                >
                                     <div
                                         className="w-full relative shrink-0 flex flex-col gap-2.5"
                                         style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
@@ -385,7 +391,10 @@ export const ReactRoot = ({ engine }) => {
                         </div>
                         {menuRight && (
                             isGuildView ? (
-                                <aside className="w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10">
+                                <aside
+                                    style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10"
+                                >
                                     <div
                                         className="w-full relative shrink-0 flex flex-col gap-2.5"
                                         style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}

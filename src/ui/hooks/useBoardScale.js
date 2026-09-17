@@ -70,17 +70,38 @@ export const MIN_BOARD_SCALE = 0.1;
 /**
  * How much a `natW × natH` board must shrink to fit `w × h` of space.
  *
- * **Shrink-only** (never past 1: the art is authored for 2×, and blowing it up
- * would only blur it) and **two-axis** — the free playmat is 1760 × 1126, so the
- * height is as likely to be the binding constraint as the width. Rounded to
- * whole percent so a one-pixel resize does not re-render the whole board.
+ * **Two-axis** — the free playmat is 1760 × 1126, so the height is as likely to
+ * be the binding constraint as the width. Rounded to whole percent so a
+ * one-pixel resize does not re-render the whole board.
+ *
+ * ## ⭐ It grows as well as shrinks (FP-99)
+ * This used to be capped at 1, on the reasoning that the art is authored for 2×
+ * and blowing it up would only blur it. That cost the mat every pixel of a large
+ * monitor beyond its natural size, and the premise no longer holds: the sprites
+ * are now drawn at a whole multiple of `ART_PX` chosen from this very number
+ * (`boardScaleAt`, `TokenSprite`), so growing the mat steps the art up to 3× and
+ * 4× rather than blurring it. The mat now always fills the space it is given.
+ *
+ * The 0.1 floor below is a different thing entirely and stays.
  *
  * Pure, so the fit can be tested without a DOM.
  */
 export function fitScale(w, h, natW, natH = natW) {
     if (!w || !h || !natW || !natH) return null;
-    const next = Math.max(MIN_BOARD_SCALE, Math.min(1, w / natW, h / natH));
-    return Math.round(next * 100) / 100;
+    /**
+     * ⚠️ **Rounded DOWN to whole percent, never to nearest.**
+     *
+     * Rounding to nearest could round *up*, and a fit that rounds up makes the
+     * mat wider than the box it was measured against — a 400px box fits at
+     * 0.2272…, rounds to 0.23, and draws 404.8px of mat. Those 4.8px land under
+     * the Tray, whose drop surface outranks the board's, so a Token let go there
+     * is silently deposited in the Vault chest instead (CR2-179, and the reason
+     * the floor below may not be raised). Flooring costs at most 1% of the fit
+     * and makes "the mat never reaches under a column" true by construction
+     * rather than by luck (FP-100).
+     */
+    const stepped = Math.floor(Math.min(w / natW, h / natH) * 100) / 100;
+    return Math.max(MIN_BOARD_SCALE, stepped);
 }
 
 export function useBoardScale(naturalPx, naturalH = naturalPx) {
