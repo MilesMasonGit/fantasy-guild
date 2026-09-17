@@ -255,7 +255,7 @@ describe('a Cannot rule is obeyed by the nudge, not just by the refusal (FP-88)'
         expect(res.success).toBe(false);
         expect(res.full).toBe(true);
         // ⭐ Not the generic "No room there." — the rule that actually refused.
-        expect(res.reason).toMatch(/adjacent/i);
+        expect(res.reason).toMatch(/nearby/i);
         expect(BoardState.tokens()).toHaveLength(1);
         expect(BoardState.tokens()[0].id).toBe(first.id);
     });

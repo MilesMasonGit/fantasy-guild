@@ -114,7 +114,7 @@ describe('a decision is one clean span', () => {
     });
 
     it('never puts two spans of the same kind side by side', () => {
-        // Two adjacent literals, or two adjacent spans for one slot, are one run
+        // Two nearby literals, or two nearby spans for one slot, are one run
         // that got split — which would render as two separate click targets.
         const bad = [];
         for (const { key, statement, names } of cases) {
@@ -138,14 +138,14 @@ describe('⭐ the two shapes P0 was judged on, pinned exactly', () => {
         ]);
     });
 
-    it('Makes adjacent Coast Tokens work 5% faster.', () => {
+    it('Makes nearby Coast Tokens work 5% faster.', () => {
         const st = {
             ...makeStatement(KEYWORD.PROVIDES),
             payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.05 },
             to: { mode: 'tag', value: 'Coast' }
         };
         expect(shape(renderSegments(st))).toEqual([
-            'Makes|keyword', ' ', 'adjacent|reach', ' ', 'Coast|filterValue', ' ', 'Tokens|filterMode',
+            'Makes|keyword', ' ', 'nearby|reach', ' ', 'Coast|filterValue', ' ', 'Tokens|filterMode',
             ' ', 'work|type', ' ', '5%|value', ' ', 'faster|type', '.'
         ]);
     });

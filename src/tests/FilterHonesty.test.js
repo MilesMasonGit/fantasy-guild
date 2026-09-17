@@ -42,7 +42,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  *
  * ## The bug this pins
  * `Grants` declares `filter: true`, so the editor let an author write *"when a
- * neighbour completes a cycle, grant 1 Copper to any adjacent Forge"* and
+ * neighbour completes a cycle, grant 1 Copper to any nearby Forge"* and
  * generated exactly that sentence. `TriggerSystem` then dropped the item on the
  * Token that fired, reading the filter never.
  *
@@ -117,7 +117,7 @@ function grantTokenAimedAt(id, to) {
             uses: null, sprite: 'skill_industry',
             statements: [{
                 id: `stm_${id}`, keyword: 'grants', to,
-                when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+                when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
                 payload: { type: 'BONUS_DROP', itemId: 'fixture_charcoal', chance: 100, quantity: 1 }
             }]
         }
@@ -212,7 +212,7 @@ describe('a triggered Grants reaches the neighbour its filter names', () => {
                 statements: [{
                     id: 'stm_wearing_unmatched', keyword: 'grants',
                     to: { mode: 'id', value: 'fixture_gated' },
-                    when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+                    when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
                     payload: { type: 'BONUS_DROP', itemId: 'fixture_charcoal', chance: 100, quantity: 1 }
                 }]
             }
@@ -228,7 +228,7 @@ describe('a triggered Grants reaches the neighbour its filter names', () => {
     });
 
     it('reaches every match when the filter is "all"', () => {
-        // "To every adjacent Token" means all of them, which is what the
+        // "To every nearby Token" means all of them, which is what the
         // sentence says — and what the ambient path has always done.
         grantTokenAimedAt('fixture_grant_at_all', { mode: 'all', value: '' });
 
@@ -259,7 +259,7 @@ describe('a triggered Grants reaches the neighbour its filter names', () => {
         expect(addressedTiles(addSprite, 'fixture_charcoal')).toEqual([NEIGHBOUR]);
     });
 
-    it('does not reach a matching Token that is not adjacent', () => {
+    it('does not reach a matching Token that is not nearby', () => {
         grantTokenAimedAt('fixture_grant_far', { mode: 'id', value: 'fixture_passive' });
 
         place(SOURCE, 'fixture_producer', 'hero_1');
@@ -328,7 +328,7 @@ describe('Converts aims at ONE destination (ER-14)', () => {
          *
          * This was the live bug. `all` is truthy, so the runtime went looking
          * for a neighbour and put the output on whichever Token sat at the
-         * lowest adjacent index — while the sentence named no destination and
+         * lowest nearby index — while the sentence named no destination and
          * the CMS hint said the output "lands on this Token itself". Every
          * conversion authored after the sentence editor landed was affected.
          *
@@ -394,10 +394,10 @@ describe('the grammar and the sentence agree', () => {
         };
         const [line] = rulesLinesOf({ statements: [statement] });
 
-        expect(line).toContain('onto the nearest adjacent Coast Token');
+        expect(line).toContain('onto the nearest nearby Coast Token');
         // ⚠️ Never the plural broadcast phrasing the other keywords use — the
         // runtime picks one destination and the sentence must not promise more.
-        expect(line).not.toContain('every adjacent Token');
+        expect(line).not.toContain('every nearby Token');
     });
 
     it('says nothing about a destination when there is no filter', () => {

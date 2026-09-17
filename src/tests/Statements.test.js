@@ -62,7 +62,7 @@ describe('The rules text is the rule, rendered', () => {
             payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.05 }
         };
         expect(renderStatement(statement, names))
-            .toBe('Makes adjacent Coast Tokens work 5% faster.');
+            .toBe('Makes nearby Coast Tokens work 5% faster.');
     });
 
     it('says the opposite when the sign is the wrong way round', () => {
@@ -75,25 +75,25 @@ describe('The rules text is the rule, rendered', () => {
             payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: 0.2 }
         };
         expect(renderStatement(statement, names))
-            .toBe('Makes any adjacent Forge work 20% slower.');
+            .toBe('Makes any nearby Forge work 20% slower.');
     });
 
     it('renders every other keyword too', () => {
         const say = (keyword, extra) => renderStatement({ id: 'x', keyword, ...extra }, names);
 
         expect(say(KEYWORD.ACTS_AS, { payload: { tag: 'pickaxe', tier: 2 } }))
-            .toBe('Acts as a Tier 2 pickaxe for adjacent stations.');
+            .toBe('Acts as a Tier 2 pickaxe for nearby stations.');
 
         expect(say(KEYWORD.REQUIRES, { payload: { tag: 'pickaxe', minTier: 1 } }))
-            .toBe('Requires an adjacent Tier 1 pickaxe.');
+            .toBe('Requires an nearby Tier 1 pickaxe.');
 
         expect(say(KEYWORD.RESTOCKS, { payload: { tokenIds: ['fixture_producer'] } }))
-            .toBe('Restocks adjacent Fixture Producer from the Guild Bank.');
+            .toBe('Restocks nearby Fixture Producer from the Guild Bank.');
 
         expect(say(KEYWORD.GRANTS, {
             to: { mode: 'all' },
             payload: { type: EFFECT_TYPES.BONUS_DROP, itemId: 'item_copper_ore', quantity: 2, chance: 25 }
-        })).toBe('Grants 2 Copper Ore to every adjacent Token when they finish work, 25% of the time.');
+        })).toBe('Grants 2 Copper Ore to every nearby Token when they finish work, 25% of the time.');
     });
 
     it('leads with the trigger, and ends with the cost', () => {
@@ -119,14 +119,14 @@ describe('The rules text is the rule, rendered', () => {
          * Bank at the tail of a yield buff.
          */
         expect(renderStatement(costed, names)).toBe(
-            'Provides 10% more yield to every adjacent Token.'
+            'Provides 10% more yield to every nearby Token.'
         );
         expect(upkeepLine(costed, names)).toBe('Consumes 1 Coal every 30 seconds.');
     });
 
     it('shows a blank as a blank rather than hiding it', () => {
         const half = makeStatement(KEYWORD.ACTS_AS);
-        expect(renderStatement(half)).toBe('Acts as … for adjacent stations.');
+        expect(renderStatement(half)).toBe('Acts as … for nearby stations.');
     });
 
     it('renders acceptedTokens alongside the statements, as one list', () => {
@@ -140,8 +140,8 @@ describe('The rules text is the rule, rendered', () => {
             }]
         };
         expect(rulesLinesOf(def, names)).toEqual([
-            'Requires an adjacent Tier 1 pickaxe.',
-            'Provides 10% more yield to every adjacent Token.'
+            'Requires an nearby Tier 1 pickaxe.',
+            'Provides 10% more yield to every nearby Token.'
         ]);
     });
 });

@@ -90,7 +90,7 @@ describe('Ownership', () => {
         }
     });
 
-    it('never reaches further than an adjacent tile', () => {
+    it('never reaches further than an nearby tile', () => {
         // One painted tile in the middle of an empty board. Its terrain may
         // spill into the gap and a little way into its neighbours, but it must
         // not appear on the far side of them.
@@ -292,7 +292,7 @@ describe('⚠️ Edge strips — the geometry the renderer draws', () => {
      *
      * The renderer clipped each strip to a rectangle in the *loser's* subtile
      * and then drew the texture positioned over the *winner's* subtile. Those
-     * two are adjacent and never overlap, so the clip threw away every draw and
+     * two are nearby and never overlap, so the clip threw away every draw and
      * the blending did nothing at all — through three commits and two rounds of
      * "verified in the running game", because the ownership model produces
      * raggedness at subtile resolution that looks like blending at a glance.

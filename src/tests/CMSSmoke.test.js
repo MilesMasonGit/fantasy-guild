@@ -259,13 +259,13 @@ describe('CMS smoke — the screens mount without throwing', () => {
         }));
         const text = container.textContent;
 
-        expect(text).toContain('Makes adjacent Coast Tokens work 5% faster.');
-        expect(text).toContain('Acts as a Tier 1 net for adjacent stations.');
+        expect(text).toContain('Makes nearby Coast Tokens work 5% faster.');
+        expect(text).toContain('Acts as a Tier 1 net for nearby stations.');
 
         // ⚠️ Once, not three times. Before the Rules Line (P2) a rule's sentence
         // sat in the chip editor's quote AND the row's footer; the line is the
         // sentence now, and a second copy would be the duplication it removed.
-        expect(text.split('Makes adjacent Coast Tokens work 5% faster.').length - 1).toBe(1);
+        expect(text.split('Makes nearby Coast Tokens work 5% faster.').length - 1).toBe(1);
         cleanup();
 
         // The Token's panel repeats the entry's sentences read-only, under the
@@ -274,8 +274,8 @@ describe('CMS smoke — the screens mount without throwing', () => {
         const token = useEntityStore.getState().tokens[tokenId];
         const { container: tokenRules } = render(React.createElement(Statements, { token }));
         expect(tokenRules.textContent).toContain('Shrimp Trawler');
-        expect(tokenRules.textContent).toContain('Makes adjacent Coast Tokens work 5% faster.');
-        expect(tokenRules.textContent).toContain('Requires an adjacent Tier 1 net.');
+        expect(tokenRules.textContent).toContain('Makes nearby Coast Tokens work 5% faster.');
+        expect(tokenRules.textContent).toContain('Requires an nearby Tier 1 net.');
     });
 
     it('warns when a targeted tag matches no Token, and offers the right case', () => {

@@ -4,7 +4,7 @@
  * **Which** of the things in range a rule actually picks.
  *
  * ## Filter, not guard (G-8)
- * A filter narrows **who** a rule hits: *"every adjacent Token with fewer than
+ * A filter narrows **who** a rule hits: *"every nearby Token with fewer than
  * three charges"*. A **guard** would decide **whether** the rule fires at all:
  * *"only if the hero is below half health"*. The first renders as one honest
  * sentence and is what this file is; the second wants AND/OR/NOT trees and has
@@ -99,7 +99,7 @@ export const FILTER_KINDS = Object.freeze([
          *
          * ⚠️ Reads the **hero standing there**, not the Token. Live instances
          * sit on people; a Token cannot yet carry one (roadmap Q3). So *"every
-         * adjacent Token not already poisoned"* is really "…whose hero is not
+         * nearby Token not already poisoned"* is really "…whose hero is not
          * poisoned", and the sentence says the honest version.
          */
         id: 'carrying',
@@ -187,10 +187,10 @@ export function filterPhrase(entry, names = {}) {
  *
  * ## ⚠️ Why these are modifiers and not a relative clause
  * The first version wrote "that is …", which forced a number agreement the
- * renderer cannot win: the frame in front may be singular (*"every adjacent
- * Token"*, *"this Token"*) or plural (*"adjacent Coast Tokens"*), so it produced
- * "Tokens that is being worked". Phrases that attach directly — *"adjacent Coast
- * Tokens tagged Wet"*, *"every adjacent Token being worked"* — read correctly
+ * renderer cannot win: the frame in front may be singular (*"every nearby
+ * Token"*, *"this Token"*) or plural (*"nearby Coast Tokens"*), so it produced
+ * "Tokens that is being worked". Phrases that attach directly — *"nearby Coast
+ * Tokens tagged Wet"*, *"every nearby Token being worked"* — read correctly
  * after either, and need no agreement at all.
  *
  * Returns an empty string when there is nothing to say, so a caller concatenates

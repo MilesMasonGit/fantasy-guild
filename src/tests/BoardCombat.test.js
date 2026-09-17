@@ -19,7 +19,7 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
  * A lattice of mat points 160 u apart — the step the old board had — so spots
  * 10 and 11 are 160 u apart and therefore neighbours at the shipped 164 u Near,
- * which is what the adjacent-support case below depends on.
+ * which is what the nearby-support case below depends on.
  */
 const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
@@ -232,7 +232,7 @@ describe('A kill', () => {
         expect(seen[0].instanceId).toBe(idAt(10));
     });
 
-    it('wears adjacent support per kill, exactly as a craft would (D-126)', () => {
+    it('wears nearby support per kill, exactly as a craft would (D-126)', () => {
         // A Weapon Rack burns down as it is used. Combat is not exempt from the
         // economy just because it runs on a different engine.
         place(10, 'fixture_enemy', 'hero_1');

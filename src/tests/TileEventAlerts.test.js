@@ -120,7 +120,7 @@ describe('On-Board Tile Event Alerts', () => {
         expect(itemAlert.message).toContain('Out of item:');
     });
 
-    it('emits Yellow alert when a station lacks adjacent token recipe', () => {
+    it('emits Yellow alert when a station lacks nearby token recipe', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
@@ -146,7 +146,7 @@ describe('On-Board Tile Event Alerts', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
-        // Place token_oak_tree (requires axe) without an adjacent axe
+        // Place token_oak_tree (requires axe) without an nearby axe
         const tree = BoardState.createTokenInstance('token_oak_tree');
         put(8, tree);
         staff(8, 'hero_1');
@@ -165,7 +165,7 @@ describe('On-Board Tile Event Alerts', () => {
         });
     });
 
-    it('emits Red alert when an unworked adjacent tool/context token depletes its charges', () => {
+    it('emits Red alert when an unworked nearby tool/context token depletes its charges', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
@@ -177,7 +177,7 @@ describe('On-Board Tile Event Alerts', () => {
         put(8, station);
         plant('hero_1', 8);
 
-        // Place tool/context token with 1 charge adjacent at tile 9
+        // Place tool/context token with 1 charge nearby at tile 9
         const contextA = BoardState.createTokenInstance('fixture_context_a', 1);
         put(9, contextA);
 
@@ -215,7 +215,7 @@ describe('On-Board Tile Event Alerts', () => {
         // which is the refusal path, and the only one that raises this mark.
         setMatTuning('nudgeReach', 0);
 
-        // Attempt to drop fixture_coast on tile 9 (it allows at most 2 adjacent Coasts)
+        // Attempt to drop fixture_coast on tile 9 (it allows at most 2 nearby Coasts)
         const rejectResult = put(9, BoardState.createTokenInstance('fixture_coast'));
         expect(rejectResult.success).toBe(false);
 
@@ -231,7 +231,7 @@ describe('On-Board Tile Event Alerts', () => {
             name: 'Fixture Coast',
             title: 'Drop Rejected: Fixture Coast'
         });
-        expect(rejectAlert.rulesText).toBe('Cannot be adjacent to more than 2 Coast Tokens.');
+        expect(rejectAlert.rulesText).toBe('Cannot be nearby to more than 2 Coast Tokens.');
     });
 
     it('emits Green alert when a token is restocked with text "Restocked from [Token Name]"', () => {

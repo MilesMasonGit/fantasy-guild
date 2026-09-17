@@ -197,7 +197,7 @@ describe('an item’s rules read truthfully (UE-24)', () => {
 
     it('leaves a Token’s reading alone when no target is named', () => {
         const onToken = statementFor(KEYWORD.APPLIES, { statusId: 'well_fed', stacks: 1, chance: 100 });
-        expect(renderStatement(onToken, {})).toContain('heroes on adjacent');
+        expect(renderStatement(onToken, {})).toContain('heroes on nearby');
     });
 });
 

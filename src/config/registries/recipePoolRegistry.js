@@ -63,7 +63,7 @@
  * content to be re-authored — so a short pool here is the plan, not a bug.
  *
  * `requiresContext` entries are objects, not bare tag strings, so a recipe can
- * state a minimum tool tier and a per-cycle charge cost against the adjacent
+ * state a minimum tool tier and a per-cycle charge cost against the nearby
  * Token. The entry is deliberately shaped like an `acceptedTokens` entry plus
  * `chargeCost`, so `checkAcceptedTokens` in `RecipeResolver.js` compares both
  * with the same code. `minTier` and `chargeCost` are authored data at P0;

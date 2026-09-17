@@ -78,7 +78,7 @@ registerTokenTypes({
             keyword: KEYWORD.APPLIES,
             payload: { statusId: 'well_fed', stacks: 2, chance: 100 },
             to: { mode: 'tag', value: 'Coast' },
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             upkeep: null
         }]
     },
@@ -223,7 +223,7 @@ describe('The chance roll', () => {
 describe('The sentence is literally true', () => {
     it('names the heroes, not the Tokens, because that is where the status lands', () => {
         expect(renderStatement(AMBIENT))
-            .toBe('Applies Cookout to heroes on adjacent Coast Tokens when they finish work.');
+            .toBe('Applies Cookout to heroes on nearby Coast Tokens when they finish work.');
     });
 
     it('counts stacks in the sentence', () => {
@@ -231,7 +231,7 @@ describe('The sentence is literally true', () => {
             keyword: KEYWORD.APPLIES,
             payload: { statusId: 'well_fed', stacks: 2, chance: 100 },
             to: { mode: 'all', value: '' }
-        })).toBe('Applies 2 stacks of Well Fed to heroes on adjacent Tokens when they finish work.');
+        })).toBe('Applies 2 stacks of Well Fed to heroes on nearby Tokens when they finish work.');
     });
 
     it('drops "when they finish work" once it has a trigger of its own', () => {
@@ -239,14 +239,14 @@ describe('The sentence is literally true', () => {
             keyword: KEYWORD.APPLIES,
             payload: { statusId: 'poison', stacks: 1, chance: 50 },
             to: { mode: 'tag', value: 'Coast' },
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent' }
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby' }
         })).toBe(
-            'On Neighbour\'s Cycle: applies Poison to heroes on adjacent Coast Tokens, 50% of the time.'
+            'On Neighbour\'s Cycle: applies Poison to heroes on nearby Coast Tokens, 50% of the time.'
         );
     });
 
     it('shows an unfinished rule as unfinished', () => {
         expect(renderStatement({ keyword: KEYWORD.APPLIES, payload: {}, to: { mode: 'all' } }))
-            .toBe('Applies … to heroes on adjacent Tokens.');
+            .toBe('Applies … to heroes on nearby Tokens.');
     });
 });

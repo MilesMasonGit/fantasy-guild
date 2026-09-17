@@ -124,7 +124,7 @@ describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)
         expect(resolved).toBeCloseTo(105);          // +5%
     });
 
-    it('does nothing from a NON-adjacent tile — reach is exactly 8 (D-81)', () => {
+    it('does nothing from a NON-nearby tile — reach is exactly 8 (D-81)', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(FAR, 'fixture_buff_yield');
 
@@ -188,7 +188,7 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
 
 describe('Hero buffs are NOT tile modifiers (D-112, D-152)', () => {
     it('a Campfire does not touch the Token beside it', () => {
-        // A Buff Token targets EITHER the adjacent Token or the adjacent hero.
+        // A Buff Token targets EITHER the nearby Token or the nearby hero.
         // A Campfire heals the person; it must not quietly become a yield buff.
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_hero');
@@ -267,7 +267,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
     });
 
-    it('a context Token serves EVERY adjacent station (D-113)', () => {
+    it('a context Token serves EVERY nearby station (D-113)', () => {
         // One schematic between two Forges drives both.
         InventoryManager.addItem('item_coal', 20);
         place(P(2, 2), 'fixture_station', 'hero_1');
@@ -279,7 +279,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(2);
     });
 
-    it('a context Token with nothing relevant adjacent is inert (D-19)', () => {
+    it('a context Token with nothing relevant nearby is inert (D-19)', () => {
         place(A, 'fixture_context_a');
         place(NEIGHBOUR, 'fixture_producer', 'hero_1');   // not a context-driven station
 
@@ -406,7 +406,7 @@ describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)'
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
     });
 
-    it('is not granted by a non-adjacent Token', () => {
+    it('is not granted by a non-nearby Token', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(FAR, 'fixture_bonus_drop');
 
@@ -696,7 +696,7 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
         expect(kitchen.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
     });
 
-    it('makes the pie only when BOTH are adjacent', () => {
+    it('makes the pie only when BOTH are nearby', () => {
         InventoryManager.addItem('item_blueberry', 10);
         const kitchen = place(A, 'fixture_kitchen', 'hero_1');
         StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');

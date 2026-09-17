@@ -81,7 +81,7 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
     // Positive Work Time is MORE milliseconds per cycle — slower. The old
     // generator called this "+20% Speed".
     expect(composeTokenDescription(token, items))
-      .toBe('Makes every adjacent Token work 20% slower.');
+      .toBe('Makes every nearby Token work 20% slower.');
   });
 
   it('6. leads a triggered rule with its trigger', () => {
@@ -89,12 +89,12 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
       id: 'token_wheelbarrow',
       statements: [{
         id: 'stm_1', keyword: 'grants', to: { mode: 'all' },
-        when: { event: 'CYCLE_COMPLETE', scope: 'adjacent' },
+        when: { event: 'CYCLE_COMPLETE', scope: 'nearby' },
         payload: { type: 'BONUS_DROP', itemId: 'item_stone', quantity: 1, chance: 10 },
       }],
     };
     expect(composeTokenDescription(token, items))
-      .toBe('On Neighbour\'s Cycle: grants 1 Stone to every adjacent Token, 10% of the time.');
+      .toBe('On Neighbour\'s Cycle: grants 1 Stone to every nearby Token, 10% of the time.');
   });
 
   /**

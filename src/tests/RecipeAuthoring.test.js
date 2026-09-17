@@ -281,7 +281,7 @@ describe('Charge delta authoring — P6b', () => {
                 // No `chargeDelta` — a statement authored before the field existed.
                 id: 'stm_a', keyword: 'grants',
                 to: { mode: 'all' },
-                when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 5000 },
+                when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 5000 },
                 payload: { type: 'BONUS_DROP', itemId, chance: 100, quantity: 1 }
             }],
         });

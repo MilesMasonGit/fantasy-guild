@@ -38,14 +38,14 @@ import { ROLE } from '../../config/registries/roleRegistry.js';
  * The owner ruled that `Applies` uses the same filter as every other keyword,
  * so the grammar has one targeting concept rather than two. That is the right
  * call for authoring and it leaves exactly one thing to resolve honestly: what
- * does *"adjacent Coast Tokens"* mean when the thing being applied cannot land
+ * does *"nearby Coast Tokens"* mean when the thing being applied cannot land
  * on a Token at all?
  *
  * **The only reading that is true of something real: the people working them.**
  * A Token holds at most one hero, and an enemy Token holds at most one live
  * fight. So a filter selecting Tokens resolves to that set of occupants, and
  * `statementText.js` renders the sentence as *"Applies Well Fed to heroes on
- * adjacent Coast Tokens"* — which is literally what happens, rather than a
+ * nearby Coast Tokens"* — which is literally what happens, rather than a
  * shorter sentence that would leave the reader guessing.
  *
  * A filter that selects a Token nobody is working reaches nobody. That is not a

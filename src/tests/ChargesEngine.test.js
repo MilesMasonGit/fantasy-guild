@@ -249,7 +249,7 @@ describe('A cycle it cannot pay for in full deducts nothing', () => {
 // Sharing and prioritisation
 // ---------------------------------------------------------------------------
 
-describe('Adjacent context Tokens are chosen and shared', () => {
+describe('Nearby context Tokens are chosen and shared', () => {
     /**
      * Concept §3.3: the near-depleted tile clears first, so the board tidies
      * itself rather than leaving every provider at a fraction.

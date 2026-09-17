@@ -181,8 +181,8 @@ export function getCardinalNeighbors(tileIndex) {
 /**
  * Check if a tile is accessible for upgrading based on cardinal adjacency.
  * A tile is accessible if:
- * 1. It is directly adjacent to the Center Guild Hall (Tile 24), OR
- * 2. It is directly adjacent to a tile that has rank >= 1.
+ * 1. It is directly nearby to the Center Guild Hall (Tile 24), OR
+ * 2. It is directly nearby to a tile that has rank >= 1.
  */
 export function isTileAccessible(tileIndex, ranks = {}) {
     if (tileIndex === UPGRADE_BOARD_GUILD_HALL_TILE) return true;
@@ -225,7 +225,7 @@ export function getLockDetail(tileIndex, ranks = {}) {
     if (requiredUpgrades.length > 0) {
         return {
             kind: LOCK_KIND.ADJACENCY,
-            text: `Requires adjacent upgrade (${requiredUpgrades.join(' or ')}) at Level 1+`
+            text: `Requires nearby upgrade (${requiredUpgrades.join(' or ')}) at Level 1+`
         };
     }
     return { kind: LOCK_KIND.ADJACENCY, text: 'Path to this upgrade is locked' };

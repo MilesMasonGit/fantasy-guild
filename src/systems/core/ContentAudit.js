@@ -322,7 +322,7 @@ function auditRetiredEffectShape(out, where, def) {
  * 2. **An `Applies` with a role AND a filter or reach.** A role replaces the
  *    filter and the reach (G-42), so an authored Coast filter or a board-wide
  *    reach beside it is silently ignored. The blank defaults every new
- *    statement is born with (`mode: 'all'`, adjacent) say nothing and are not
+ *    statement is born with (`mode: 'all'`, nearby) say nothing and are not
  *    reported.
  */
 function auditAppliesTargetShape(out, where, def) {
@@ -492,13 +492,13 @@ function auditStatements(out, where, def) {
                 `Apply the effect to a hero for it to tick, or pick a moment this Token has.`));
         }
 
-        // A reach the vocabulary does not have resolves to "adjacent" rather
+        // A reach the vocabulary does not have resolves to "nearby" rather
         // than to nothing, so a typo does not switch a rule off — but it does
         // mean the rule is not doing what its author typed.
         if (statement?.reach && !getReach(statement.reach)) {
             out.push(finding(where,
                 `one of its rules asks to reach "${statement.reach}", which is not a reach the game has — ` +
-                `it falls back to adjacent Tokens. Pick one from the list in the CMS.`));
+                `it falls back to nearby Tokens. Pick one from the list in the CMS.`));
         }
     }
 }
@@ -548,7 +548,7 @@ function auditCapabilityTags(out) {
             if (!tag) continue;
             if (!provided.has(tag)) {
                 out.push(finding(`Token "${tokenId}"`,
-                    `needs an adjacent "${tag}", and no Token provides that capability — so it can never work`));
+                    `needs an nearby "${tag}", and no Token provides that capability — so it can never work`));
             }
         }
     }

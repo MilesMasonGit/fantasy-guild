@@ -109,7 +109,7 @@ describe('a slot writes itself back into the statement', () => {
     it('changes the moment and keeps its scope legal', () => {
         const s = applySlot(makeStatement(KEYWORD.DEALS), 'moment', 'CYCLE_COMPLETE');
         expect(s.when.event).toBe('CYCLE_COMPLETE');
-        expect(s.when.scope).toBe('adjacent');
+        expect(s.when.scope).toBe('nearby');
     });
 
     it('changes a number without losing the rest of the payload', () => {

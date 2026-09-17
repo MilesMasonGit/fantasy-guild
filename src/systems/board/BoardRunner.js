@@ -177,7 +177,7 @@ function completeCycle(instance, def, io, heroId) {
      * The atomic requirement check (concept §3.3), in the order that makes it
      * atomic: **plan every charge debit first, then spend the items, then
      * commit the charges.** A cycle needs 100% of its inputs — bank items,
-     * station charges, and charges on the adjacent context Tokens its recipe
+     * station charges, and charges on the nearby context Tokens its recipe
      * draws on — before any of them is touched, and a short cycle deducts
      * nothing of any kind.
      *
@@ -208,8 +208,8 @@ function completeCycle(instance, def, io, heroId) {
      * FAIL_CHANCE — a probability axis, resolved through the same three-bucket
      * formula as everything else and then rolled once (CMS-25's proc shape).
      *
-     * Base 0: nothing fails unless something adjacent says so. A failed cycle
-     * still **consumes its inputs, wears adjacent support and burns a charge**
+     * Base 0: nothing fails unless something nearby says so. A failed cycle
+     * still **consumes its inputs, wears nearby support and burns a charge**
      * — failure costs the cycle, it does not rewind it — but produces no output
      * and grants no XP. That is also what makes `failed: true` real for the
      * triggers Phase 6 adds, which fire on success only (CMS-34).
@@ -300,7 +300,7 @@ function completeCycle(instance, def, io, heroId) {
     }
 
     /**
-     * BONUS_DROP — an adjacent block granting something the Token does not make
+     * BONUS_DROP — an nearby block granting something the Token does not make
      * itself (CMS-27/72). Rolled per entry, after the Token's own outputs, and
      * skipped entirely on a failed cycle: nothing happened, so nothing drops.
      *
@@ -367,7 +367,7 @@ function completeCycle(instance, def, io, heroId) {
 
     /**
      * Pay the plan built at the top of this function: the station's own
-     * operational cost, and any charges the recipe draws off adjacent context
+     * operational cost, and any charges the recipe draws off nearby context
      * Tokens. Anything that hits 0 is destroyed by `commitPlan` (D-118), which
      * is also where `null`-means-unlimited is honoured (R-4, D-176) — `null` is
      * the opposite of 0, not a large version of it.
@@ -382,7 +382,7 @@ function completeCycle(instance, def, io, heroId) {
     // Tokens the plan above already charged are excluded: a context Token whose
     // charges the recipe names as an input has been billed once for this cycle
     // already, and D-126's flat wear on top of it would bill it twice.
-    RecipeResolver.wearAdjacentSupport(id, (supportId, supportInstance) => {
+    RecipeResolver.wearNearbySupport(id, (supportId, supportInstance) => {
         const support = supportInstance || BoardState.getTokenById(supportId);
         const spot = centreOf(support);
         Charges.destroyToken(support);

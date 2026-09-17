@@ -442,7 +442,7 @@ describe('⭐ what the forms held, edited in the line (P4)', () => {
         expect(boxes).toHaveLength(2);
         fireEvent.click(boxes[0]);
         expect(latest().payload.tokenIds).toEqual(['tok_oak']);
-        expect(line().textContent).toContain('Restocks adjacent Oak Tree from the Guild Bank');
+        expect(line().textContent).toContain('Restocks nearby Oak Tree from the Guild Bank');
     });
 
     it('Provides: scopes to a skill from the row beneath the line', () => {

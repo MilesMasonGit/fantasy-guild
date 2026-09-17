@@ -274,7 +274,7 @@ export function ownerOf(sx, sy, terrain, seed = 0) {
  *
  * Derived from the subtile's own position rather than from its tile, so the
  * noise carries across a tile boundary instead of restarting at it — two
- * adjacent grass tiles read as one field, not as two squares of grass.
+ * nearby grass tiles read as one field, not as two squares of grass.
  */
 export function variantAt(sx, sy, variants, seed = 0) {
     if (!variants || variants <= 1) return 0;
@@ -461,7 +461,7 @@ export function edgeProfile(sx, sy, axis, seed) {
  * canvas — which is not incidental. The first version of this lived inside the
  * renderer and drew each strip's texture at the **winner's** subtile origin
  * while clipping to a rectangle in the **loser's** subtile. Those two regions
- * are adjacent and never overlap, so every draw was clipped away entirely and
+ * are nearby and never overlap, so every draw was clipped away entirely and
  * the blending silently did nothing for three commits. Nothing about the data
  * was wrong; only the drawing, which is the part nothing could assert on.
  *

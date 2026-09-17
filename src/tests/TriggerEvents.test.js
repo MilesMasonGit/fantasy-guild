@@ -69,7 +69,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
         requiresHero: false,
         statements: [grantOf('item_bones', {
-            event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.ADJACENT,
+            event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.NEARBY,
             watchItemId: 'item_coal', cooldownMs: 0
         })]
     },
@@ -80,7 +80,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
         requiresHero: false,
         statements: [grantOf('item_bones', {
-            event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.ADJACENT, cooldownMs: 0
+            event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.NEARBY, cooldownMs: 0
         })]
     },
 
@@ -213,7 +213,7 @@ describe('A neighbour produces a specific item', () => {
                 rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_industry',
                 requiresHero: false,
                 statements: [grantOf('item_bones', {
-                    event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.ADJACENT,
+                    event: 'ITEM_PRODUCED', scope: TRIGGER_SCOPES.NEARBY,
                     watchItemId: 'item_coal', cooldownMs: 0,
                     source: { mode: 'id', value: 'fixture_wood_lot' }
                 })]
@@ -231,7 +231,7 @@ describe('A neighbour produces a specific item', () => {
         expect(renderStatement(
             grantOf('item_bones', { event: 'ITEM_PRODUCED', watchItemId: 'item_coal' }),
             { item: id => ({ item_bones: 'Bones', item_coal: 'Coal' }[id] || id) }
-        )).toBe('On Neighbour Produces Coal: grants 1 Bones to every adjacent Token.');
+        )).toBe('On Neighbour Produces Coal: grants 1 Bones to every nearby Token.');
     });
 });
 
@@ -239,7 +239,7 @@ describe("On Cycle", () => {
     it('fires on its own completion, not on a neighbour’s', () => {
         place(9, 'fixture_self_reactor', 'hero_1');
         // ⚠️ The receiver is required, and was not here before Effects
-        // Robustness P1. `grantOf` aims at "every adjacent Token", and until P1
+        // Robustness P1. `grantOf` aims at "every nearby Token", and until P1
         // a triggered grant ignored its filter and dropped on the firing tile —
         // so this Token used to appear to grant to itself while standing alone.
         // Honouring the filter means an outward grant needs something to reach,
@@ -295,7 +295,7 @@ describe('⚠️ The loop guard', () => {
                 rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_industry',
                 requiresHero: false,
                 statements: [grantOf('item_bones', {
-                    event: 'TOKEN_DEPLETED', scope: TRIGGER_SCOPES.ADJACENT, cooldownMs: 0
+                    event: 'TOKEN_DEPLETED', scope: TRIGGER_SCOPES.NEARBY, cooldownMs: 0
                 })]
             }
         });
@@ -313,7 +313,7 @@ describe('⚠️ The loop guard', () => {
         // doing it, not the board running out of Tokens.
         //
         // ⚠️ **Bones per level is no longer exactly one** (Effects Robustness
-        // P1). `grantOf` aims at "every adjacent Token" and a triggered grant
+        // P1). `grantOf` aims at "every nearby Token" and a triggered grant
         // now honours that, so a domino mid-line reaches BOTH its neighbours
         // rather than dropping a single item on itself. A line gives each one at
         // most two, which is where the bound below comes from.

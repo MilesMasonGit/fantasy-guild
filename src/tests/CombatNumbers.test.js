@@ -265,9 +265,9 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
 });
 
 describe('a combat rule tells the truth about who it reaches', () => {
-    it('never claims to reach adjacent Tokens', () => {
+    it('never claims to reach nearby Tokens', () => {
         const sentence = renderStatement(provides(EFFECT_TYPES.ARMOR, 3), {});
-        expect(sentence).not.toContain('adjacent');
+        expect(sentence).not.toContain('nearby');
         expect(sentence).toContain('in combat');
         expect(sentence).toContain('hero carrying this item');
         expect(sentence).toContain('hero fighting it');
@@ -275,7 +275,7 @@ describe('a combat rule tells the truth about who it reaches', () => {
 
     it('leaves a non-combat effect’s sentence exactly as it was', () => {
         const sentence = renderStatement(provides('YIELD', 0.05, 'percentage'), {});
-        expect(sentence).toContain('adjacent');
+        expect(sentence).toContain('nearby');
     });
 });
 

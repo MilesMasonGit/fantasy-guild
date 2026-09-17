@@ -42,7 +42,7 @@ describe('Guild Hall 7x7 Upgrade Board', () => {
         expect(getUpgradeDefByTile(FAR_RIGHT)?.id).toBe('token_bank_tabs');
     });
 
-    it('makes the 4 cardinal tiles directly adjacent to center accessible by default', () => {
+    it('makes the 4 cardinal tiles directly nearby to center accessible by default', () => {
         const ranks = {};
         expect(isTileAccessible(TOP, ranks)).toBe(true);
         expect(isTileAccessible(LEFT, ranks)).toBe(true);
@@ -66,7 +66,7 @@ describe('Guild Hall 7x7 Upgrade Board', () => {
     it('refuses purchase of locked tile', () => {
         const res = GuildUpgradeManager.purchase('bank_tabs');
         expect(res.success).toBe(false);
-        expect(res.error).toContain('Requires adjacent upgrade');
+        expect(res.error).toContain('Requires nearby upgrade');
     });
 
     it('allows purchasing roster_size rank 0 for free and recruits initial starter hero', () => {

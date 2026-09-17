@@ -9,8 +9,8 @@
  * and choosable by nobody. That made two whole classes of rule unauthorable:
  *
  * * **A Token cannot affect itself.** `neighboursOf` never contains the tile it
- *   was asked about — `areAdjacent` says so in as many words: *"a tile is never
- *   adjacent to itself"*. So a Token could not buff its own yield, put a status
+ *   was asked about — `areNearby` says so in as many words: *"a tile is never
+ *   nearby to itself"*. So a Token could not buff its own yield, put a status
  *   on the hero working *it*, or grant an item to itself. This was the owner's
  *   own example when the project started.
  * * **Nothing could reach further than one tile.** The only scope wider than
@@ -42,11 +42,11 @@
 
 export const REACH = Object.freeze({
     /** The 8 surrounding tiles. What every rule written before P2 means. */
-    ADJACENT: 'adjacent',
+    NEARBY: 'nearby',
     /** The Token carrying the rule, and nothing else. */
     SELF: 'self',
     /** Both — the Token and its neighbours. */
-    SELF_AND_ADJACENT: 'self_and_adjacent',
+    SELF_AND_NEARBY: 'self_and_nearby',
     /** Every Token on the board, however far away. */
     BOARD: 'board'
 });
@@ -55,20 +55,20 @@ export const REACH = Object.freeze({
  * ⚠️ **The default, and it is load-bearing** (ER-5).
  *
  * Every statement authored before this phase carries no `reach` field. Treating
- * its absence as `adjacent` is what lets 20 Tokens and 17 library entries keep
+ * its absence as `nearby` is what lets 20 Tokens and 17 library entries keep
  * behaving exactly as they did, with no migration writing a field into content
  * the owner did not touch. The same trick `chargeMomentOf` uses for the charge
  * moment, for the same reason.
  */
-export const DEFAULT_REACH = REACH.ADJACENT;
+export const DEFAULT_REACH = REACH.NEARBY;
 
 /**
  * @type {ReadonlyArray<{id: string, label: string, hint: string}>}
  */
 export const REACHES = Object.freeze([
     {
-        id: REACH.ADJACENT,
-        label: 'Adjacent Tokens',
+        id: REACH.NEARBY,
+        label: 'Nearby Tokens',
         hint: 'The 8 surrounding tiles, and not this Token itself. This is what every rule means unless you change it.'
     },
     {
@@ -77,7 +77,7 @@ export const REACHES = Object.freeze([
         hint: 'The Token carrying the rule, and nothing around it. How a Token improves its own work, or puts something on the hero working it.'
     },
     {
-        id: REACH.SELF_AND_ADJACENT,
+        id: REACH.SELF_AND_NEARBY,
         label: 'This Token and its neighbours',
         hint: 'Both at once — the surrounding tiles and this Token as well.'
     },
@@ -107,7 +107,7 @@ export function getReach(id) {
 /**
  * The reach a statement uses.
  *
- * An unauthored or unrecognised value resolves to `adjacent` (ER-5) rather than
+ * An unauthored or unrecognised value resolves to `nearby` (ER-5) rather than
  * to nothing, because "reaches nowhere" is never what an absent field meant and
  * a typo should not silently switch a rule off.
  */
@@ -123,7 +123,7 @@ export function reachOf(statement) {
  */
 export const RELATION = Object.freeze({
     SELF: 'self',
-    ADJACENT: 'adjacent',
+    NEARBY: 'nearby',
     DISTANT: 'distant'
 });
 
@@ -138,13 +138,13 @@ export function reachCovers(reachId, relation) {
     switch (reachId) {
         case REACH.SELF:
             return relation === RELATION.SELF;
-        case REACH.SELF_AND_ADJACENT:
-            return relation === RELATION.SELF || relation === RELATION.ADJACENT;
+        case REACH.SELF_AND_NEARBY:
+            return relation === RELATION.SELF || relation === RELATION.NEARBY;
         case REACH.BOARD:
             return true;
-        case REACH.ADJACENT:
+        case REACH.NEARBY:
         default:
-            return relation === RELATION.ADJACENT;
+            return relation === RELATION.NEARBY;
     }
 }
 

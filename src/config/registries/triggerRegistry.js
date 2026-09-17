@@ -33,7 +33,7 @@ import { ROLE, AMBIENT_ROLES } from './roleRegistry.js';
 /** How far a trigger listens (CMS-30). Chosen per Token, not fixed once. */
 export const TRIGGER_SCOPES = {
     /** React only to the 8 neighbouring tiles — the Wheelbarrow's Ore Vein. */
-    ADJACENT: 'adjacent',
+    NEARBY: 'nearby',
     /** React to a condition anywhere, consistent with D-83's global supply. */
     GLOBAL: 'global',
     /**
@@ -92,23 +92,23 @@ export const TRIGGER_EVENTS = [
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
         label: "On Neighbour's Cycle",
-        scopes: [TRIGGER_SCOPES.ADJACENT],
-        hint: 'Fires when an adjacent Token finishes work — or wins a fight, since one kill is one cycle (D-129).'
+        scopes: [TRIGGER_SCOPES.NEARBY],
+        hint: 'Fires when an nearby Token finishes work — or wins a fight, since one kill is one cycle (D-129).'
     },
     {
         id: 'TOKEN_DEPLETED',
         roles: [ROLE.SELF, ROLE.SOURCE],
         event: BOARD_EVENTS.TOKEN_DEPLETED,
         label: 'On Neighbour Depleted',
-        scopes: [TRIGGER_SCOPES.ADJACENT],
-        hint: 'Fires when an adjacent Token spends its last charge and leaves the board.'
+        scopes: [TRIGGER_SCOPES.NEARBY],
+        hint: 'Fires when an nearby Token spends its last charge and leaves the board.'
     },
     {
         /**
          * ⭐ **"Leave a Stump behind when this depletes."**
          *
          * The motivating case for `Spawns`/`Transforms`, and it was unauthorable
-         * in its natural form: `TOKEN_DEPLETED` existed with an ADJACENT scope
+         * in its natural form: `TOKEN_DEPLETED` existed with an NEARBY scope
          * only, so a Token could hear a *neighbour* run out and never itself.
          *
          * ⚠️ **The charge ledger is already closed when this fires.**
@@ -140,8 +140,8 @@ export const TRIGGER_EVENTS = [
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.COMBAT_RESOLVED,
         label: "On Neighbour's Kill",
-        scopes: [TRIGGER_SCOPES.ADJACENT],
-        hint: 'Fires when combat on an adjacent enemy Token ends in victory.'
+        scopes: [TRIGGER_SCOPES.NEARBY],
+        hint: 'Fires when combat on an nearby enemy Token ends in victory.'
     },
     {
         /**
@@ -157,8 +157,8 @@ export const TRIGGER_EVENTS = [
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
         label: "On Neighbour's Fight",
-        scopes: [TRIGGER_SCOPES.ADJACENT],
-        hint: 'Fires each time a hero engages an adjacent enemy — including every fresh enemy after a kill, not just the first.'
+        scopes: [TRIGGER_SCOPES.NEARBY],
+        hint: 'Fires each time a hero engages an nearby enemy — including every fresh enemy after a kill, not just the first.'
     },
     {
         /**
@@ -190,9 +190,9 @@ export const TRIGGER_EVENTS = [
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_COMPLETE,
         label: 'On Neighbour Produces',
-        scopes: [TRIGGER_SCOPES.ADJACENT],
+        scopes: [TRIGGER_SCOPES.NEARBY],
         needsItem: true,
-        hint: 'Fires only when the adjacent Token really produced the named item that cycle. A chance-based output that missed does not count.'
+        hint: 'Fires only when the nearby Token really produced the named item that cycle. A chance-based output that missed does not count.'
     },
     {
         /**
@@ -229,8 +229,8 @@ export const TRIGGER_EVENTS = [
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         event: BOARD_EVENTS.CYCLE_START,
         label: "On Neighbour's Start",
-        scopes: [TRIGGER_SCOPES.ADJACENT],
-        hint: 'Fires as an adjacent Token starts work — not when it finishes. A Token waiting for inputs has not started, so it does not fire until it genuinely resumes.'
+        scopes: [TRIGGER_SCOPES.NEARBY],
+        hint: 'Fires as an nearby Token starts work — not when it finishes. A Token waiting for inputs has not started, so it does not fire until it genuinely resumes.'
     },
     {
         /**
