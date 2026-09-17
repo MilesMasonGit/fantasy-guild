@@ -276,8 +276,8 @@ describe('5. G-2: the enemy is offered only where a fight is', () => {
     it('the picker offers it on a combat moment and not on a cycle moment', () => {
         const roleIds = (when) => slotsOf({ ...makeStatement(KEYWORD.DEALS), when }).find(s => s.id === 'role').options.map(o => o.id);
         expect(roleIds(onEngaged)).toContain(ROLE.OPPONENT);
-        expect(roleIds({ event: 'CYCLE_START', scope: 'adjacent' })).not.toContain(ROLE.OPPONENT);
-        expect(roleIds({ event: 'COMBAT_RESOLVED', scope: 'adjacent' })).not.toContain(ROLE.OPPONENT);
+        expect(roleIds({ event: 'CYCLE_START', scope: 'nearby' })).not.toContain(ROLE.OPPONENT);
+        expect(roleIds({ event: 'COMBAT_RESOLVED', scope: 'nearby' })).not.toContain(ROLE.OPPONENT);
     });
 
     it('a rule aimed at the enemy on a cycle moment reaches nobody at runtime, even mid-fight', () => {
@@ -293,7 +293,7 @@ describe('5. G-2: the enemy is offered only where a fight is', () => {
             fixture_v10a_misplaced: {
                 id: 'fixture_v10a_misplaced', name: 'Misplaced Thorn', tokenType: 'resource',
                 rarity: 'common', theme: 'fixture', uses: 10,
-                statements: [dealsToEnemy(1, { id: 'stm_v10a_misplaced', when: { event: 'CYCLE_START', scope: 'adjacent' } })],
+                statements: [dealsToEnemy(1, { id: 'stm_v10a_misplaced', when: { event: 'CYCLE_START', scope: 'nearby' } })],
                 config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
             },
             fixture_v10a_restores_enemy: {
@@ -369,7 +369,7 @@ describe('7. G-42: Restores and Transforms cannot aim at the enemy', () => {
 
     it('Applies: the role slot appears only on a combat moment, and hides filter and reach once chosen', () => {
         const ids = (st) => slotsOf(st).map(s => s.id);
-        const plain = { ...makeStatement(KEYWORD.APPLIES), when: { event: 'CYCLE_START', scope: 'adjacent' } };
+        const plain = { ...makeStatement(KEYWORD.APPLIES), when: { event: 'CYCLE_START', scope: 'nearby' } };
         expect(ids(plain)).not.toContain('role');
         expect(ids(plain)).toEqual(expect.arrayContaining(['reach', 'filterMode', 'filters']));
 

@@ -444,8 +444,8 @@ export function isAuthorableModifier(type) {
  * different precision — see `TileModifiers.matchesTokenTarget`.
  */
 export const TARGET_MODES = [
-    { mode: 'all', label: 'Every adjacent Token', hint: 'No filter at all — everything on the 8 surrounding tiles.' },
-    { mode: 'tag', label: 'Tokens tagged', hint: 'Every Token carrying this tag — "all adjacent Coast tokens".' },
+    { mode: 'all', label: 'Every nearby Token', hint: 'No filter at all — everything on the 8 surrounding tiles.' },
+    { mode: 'tag', label: 'Tokens tagged', hint: 'Every Token carrying this tag — "all nearby Coast tokens".' },
     { mode: 'id', label: 'One exact Token', hint: 'One specific Token type — "Shrimp Beds only".' }
 ];
 
@@ -457,8 +457,8 @@ export const TARGET_MODES = [
  * computed. Tags are explicit and the author controls them, which is the whole
  * reason the owner wanted them front and centre.
  *
- * ⚠️ **`all` is not the same reach.** The category filter meant "all adjacent
- * **resources**"; `all` means "all adjacent **Tokens**" — broader in one
+ * ⚠️ **`all` is not the same reach.** The category filter meant "all nearby
+ * **resources**"; `all` means "all nearby **Tokens**" — broader in one
  * direction, narrower in the other. Aiming at a *kind* of Token now means
  * tagging those Tokens. `matchesTokenTarget` still understands `tokenType` so
  * that nothing already authored changes behaviour; it is simply not offered.

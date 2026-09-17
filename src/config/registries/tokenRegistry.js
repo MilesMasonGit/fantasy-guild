@@ -306,7 +306,7 @@ import {
 /**
  * Whether a Token affects its neighbours **by sitting beside them**.
  *
- * Used to decide whether a Token is "support" — something that serves adjacent
+ * Used to decide whether a Token is "support" — something that serves nearby
  * work and therefore wears one charge per cycle served (D-126).
  *
  * ⚠️ **Triggered blocks do not count.** A Triggered Token is not ambient

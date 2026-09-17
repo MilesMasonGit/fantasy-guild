@@ -112,7 +112,7 @@ describe('the event fires when work actually begins', () => {
 
 describe('the trigger vocabulary', () => {
     it('offers the moment to a neighbour and to the Token itself', () => {
-        expect(getTriggerEvent('CYCLE_START')?.scopes).toEqual(['adjacent']);
+        expect(getTriggerEvent('CYCLE_START')?.scopes).toEqual(['nearby']);
         expect(getTriggerEvent('SELF_CYCLE_START')?.scopes).toEqual(['self']);
     });
 

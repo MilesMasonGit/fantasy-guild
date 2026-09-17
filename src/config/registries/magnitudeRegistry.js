@@ -7,7 +7,7 @@ import { ROLE, getRole } from './roleRegistry.js';
  *
  * ## Why this is a closed list and not arithmetic
  * The owner asked for scaling effects — *"damage equal to 10% of the target's
- * max HP"*, *"+1% per adjacent Coast Token"* — and explicitly declined a formula
+ * max HP"*, *"+1% per nearby Coast Token"* — and explicitly declined a formula
  * box. The difference matters: a closed list still **renders as one honest
  * sentence** and still audits, where an expression tree does neither. So a
  * magnitude is one of exactly three shapes, and adding a fourth is a row here
@@ -16,11 +16,11 @@ import { ROLE, getRole } from './roleRegistry.js';
  * ```
  * flat      5                          a number, typed
  * stat      10% of the target's max HP  a percentage of one named stat on one role
- * count     1% per adjacent Coast Token a per-match amount over a counted selector
+ * count     1% per nearby Coast Token a per-match amount over a counted selector
  * ```
  *
  * ## ⚠️ `count` reads a SECOND selector, and that is the whole point (G-14)
- * *"+1% yield to every adjacent Token, per adjacent Coast Token"* counts one set
+ * *"+1% yield to every nearby Token, per nearby Coast Token"* counts one set
  * and affects another. They are genuinely different sets, and conflating them
  * would make the commonest shape of this effect unsayable — so a statement
  * carries a separate `counted` selector used only to produce the number.

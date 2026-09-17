@@ -77,7 +77,7 @@ function ringOf(i) {
 
 const LARGE_BUFF = 'fixture_nearby_large_buff';
 const SMALL = 'fixture_producer';
-const BUFF = 'fixture_buff_yield';     // +5% YIELD, default (adjacent) reach
+const BUFF = 'fixture_buff_yield';     // +5% YIELD, default (nearby) reach
 
 registerTokenTypes({
     [LARGE_BUFF]: {
@@ -213,10 +213,10 @@ describe('⭐ at 272 u Near is exactly the old 8-spot ring for every 1×1 Token'
         expect(sorted(counts)).toEqual([3, 5, 8]);
     });
 
-    it('self, self_and_adjacent and board are unchanged', () => {
+    it('self, self_and_nearby and board are unchanged', () => {
         fillAround();
         expect(near(14, REACH.SELF)).toEqual([14]);
-        expect(near(14, REACH.SELF_AND_ADJACENT)).toEqual([14, ...sorted(ringOf(14))]);
+        expect(near(14, REACH.SELF_AND_NEARBY)).toEqual([14, ...sorted(ringOf(14))]);
         expect(nearby(idAt(14), REACH.BOARD)).toHaveLength(SPOTS);
     });
 
@@ -261,7 +261,7 @@ describe('⚠️ a 2×2 Token reaches less, measured from its centre (FP-41)', (
 describe('a larger radius widens the set', () => {
     it('400 u adds the straight and knight\'s-move spots two steps out', () => {
         fillAround();
-        const wide = near(14, REACH.ADJACENT, 400);
+        const wide = near(14, REACH.NEARBY, 400);
         expect(wide).toHaveLength(20);
         for (const n of ringOf(14)) expect(wide).toContain(n);
         expect(wide).toContain(12);             // 320 u

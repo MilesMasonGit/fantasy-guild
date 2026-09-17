@@ -50,7 +50,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * project started.
  *
  * ## The two invariants that matter most
- * 1. **Absence means `adjacent`** (ER-5). Every rule authored before this phase
+ * 1. **Absence means `nearby`** (ER-5). Every rule authored before this phase
  *    carries no `reach` field, and must behave exactly as it always did. Half
  *    these tests exist to pin that, because a migration that silently changed 20
  *    Tokens would be far worse than the gap it closed.
@@ -134,8 +134,8 @@ describe('⭐ a Token can finally affect itself', () => {
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 
-    it('reaches both at self_and_adjacent', () => {
-        selfBuffingProducer('fixture_both', REACH.SELF_AND_ADJACENT);
+    it('reaches both at self_and_nearby', () => {
+        selfBuffingProducer('fixture_both', REACH.SELF_AND_NEARBY);
         place(A, 'fixture_both', 'hero_1');
         place(NEIGHBOUR, 'fixture_producer', 'hero_2');
 
@@ -171,7 +171,7 @@ describe('⚠️ nothing authored before P2 moved (ER-5)', () => {
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(4);   // 2 × (1 + 1)
     });
 
-    it('and does not reach itself, which is what "adjacent" has always meant', () => {
+    it('and does not reach itself, which is what "nearby" has always meant', () => {
         selfBuffingProducer('fixture_no_reach_field', undefined);
         place(A, 'fixture_no_reach_field', 'hero_1');
 
@@ -180,16 +180,16 @@ describe('⚠️ nothing authored before P2 moved (ER-5)', () => {
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);   // unbuffed
     });
 
-    it('resolves an absent reach to adjacent rather than to nothing', () => {
-        expect(reachOf({})).toBe(REACH.ADJACENT);
-        expect(reachOf(null)).toBe(REACH.ADJACENT);
-        expect(DEFAULT_REACH).toBe(REACH.ADJACENT);
+    it('resolves an absent reach to nearby rather than to nothing', () => {
+        expect(reachOf({})).toBe(REACH.NEARBY);
+        expect(reachOf(null)).toBe(REACH.NEARBY);
+        expect(DEFAULT_REACH).toBe(REACH.NEARBY);
     });
 
-    it('resolves a REACH THAT DOES NOT EXIST to adjacent, not to silence', () => {
+    it('resolves a REACH THAT DOES NOT EXIST to nearby, not to silence', () => {
         // A typo must leave the rule doing something explicable, not switch it
         // off — `ContentAudit` is what tells the author, not the runtime.
-        expect(reachOf({ reach: 'the_whole_kingdom' })).toBe(REACH.ADJACENT);
+        expect(reachOf({ reach: 'the_whole_kingdom' })).toBe(REACH.NEARBY);
     });
 });
 
@@ -257,7 +257,7 @@ describe('a firing rule reaches as far as it says (the outbound side)', () => {
                 statements: [{
                     id: 'stm_self_grant', keyword: 'grants', reach: REACH.SELF,
                     to: { mode: 'all', value: '' },
-                    when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+                    when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
                     payload: { type: 'BONUS_DROP', itemId: 'fixture_charcoal', chance: 100, quantity: 1 }
                 }]
             }
@@ -282,7 +282,7 @@ describe('a firing rule reaches as far as it says (the outbound side)', () => {
 describe('the vocabulary is declared, and legality with it', () => {
     it('offers exactly the four rows ER-1 named, each with a hint', () => {
         expect(REACHES.map(r => r.id)).toEqual([
-            REACH.ADJACENT, REACH.SELF, REACH.SELF_AND_ADJACENT, REACH.BOARD
+            REACH.NEARBY, REACH.SELF, REACH.SELF_AND_NEARBY, REACH.BOARD
         ]);
         for (const row of REACHES) {
             expect(row.label).toBeTruthy();
@@ -304,22 +304,22 @@ describe('the vocabulary is declared, and legality with it', () => {
         }
     });
 
-    it('starts a new statement at adjacent, and only where reach is legal', () => {
-        expect(makeStatement(KEYWORD.PROVIDES).reach).toBe(REACH.ADJACENT);
-        expect(makeStatement(KEYWORD.APPLIES).reach).toBe(REACH.ADJACENT);
+    it('starts a new statement at nearby, and only where reach is legal', () => {
+        expect(makeStatement(KEYWORD.PROVIDES).reach).toBe(REACH.NEARBY);
+        expect(makeStatement(KEYWORD.APPLIES).reach).toBe(REACH.NEARBY);
         expect(makeStatement(KEYWORD.CONVERTS).reach).toBeNull();
         expect(makeStatement(KEYWORD.REQUIRES).reach).toBeNull();
     });
 
     it('turns a reach and a relation into one yes-or-no, in one place', () => {
         expect(reachCovers(REACH.SELF, RELATION.SELF)).toBe(true);
-        expect(reachCovers(REACH.SELF, RELATION.ADJACENT)).toBe(false);
-        expect(reachCovers(REACH.ADJACENT, RELATION.SELF)).toBe(false);
-        expect(reachCovers(REACH.ADJACENT, RELATION.ADJACENT)).toBe(true);
-        expect(reachCovers(REACH.ADJACENT, RELATION.DISTANT)).toBe(false);
-        expect(reachCovers(REACH.SELF_AND_ADJACENT, RELATION.SELF)).toBe(true);
-        expect(reachCovers(REACH.SELF_AND_ADJACENT, RELATION.ADJACENT)).toBe(true);
-        expect(reachCovers(REACH.SELF_AND_ADJACENT, RELATION.DISTANT)).toBe(false);
+        expect(reachCovers(REACH.SELF, RELATION.NEARBY)).toBe(false);
+        expect(reachCovers(REACH.NEARBY, RELATION.SELF)).toBe(false);
+        expect(reachCovers(REACH.NEARBY, RELATION.NEARBY)).toBe(true);
+        expect(reachCovers(REACH.NEARBY, RELATION.DISTANT)).toBe(false);
+        expect(reachCovers(REACH.SELF_AND_NEARBY, RELATION.SELF)).toBe(true);
+        expect(reachCovers(REACH.SELF_AND_NEARBY, RELATION.NEARBY)).toBe(true);
+        expect(reachCovers(REACH.SELF_AND_NEARBY, RELATION.DISTANT)).toBe(false);
         for (const relation of Object.values(RELATION)) {
             expect(reachCovers(REACH.BOARD, relation)).toBe(true);
         }
@@ -334,13 +334,13 @@ describe('the sentence says how far', () => {
     const all = { mode: 'all', value: '' };
     const coast = { mode: 'tag', value: 'Coast' };
 
-    it('reads unchanged for adjacent, so no shipped rules text moved', () => {
-        expect(renderStatement(provides(REACH.ADJACENT, all)))
-            .toBe('Provides 10% more yield to every adjacent Token.');
+    it('reads unchanged for nearby, so no shipped rules text moved', () => {
+        expect(renderStatement(provides(REACH.NEARBY, all)))
+            .toBe('Provides 10% more yield to every nearby Token.');
         expect(renderStatement(provides(undefined, all)))
-            .toBe('Provides 10% more yield to every adjacent Token.');
-        expect(renderStatement(provides(REACH.ADJACENT, coast)))
-            .toBe('Provides 10% more yield to adjacent Coast Tokens.');
+            .toBe('Provides 10% more yield to every nearby Token.');
+        expect(renderStatement(provides(REACH.NEARBY, coast)))
+            .toBe('Provides 10% more yield to nearby Coast Tokens.');
     });
 
     it('names this Token, and drops the filter that would mean nothing', () => {
@@ -356,10 +356,10 @@ describe('the sentence says how far', () => {
             .toBe('Provides 10% more yield to every Token on the board.');
         expect(renderStatement(provides(REACH.BOARD, coast)))
             .toBe('Provides 10% more yield to every Coast Token on the board.');
-        expect(renderStatement(provides(REACH.SELF_AND_ADJACENT, all)))
-            .toBe('Provides 10% more yield to this Token and every adjacent Token.');
-        expect(renderStatement(provides(REACH.SELF_AND_ADJACENT, coast)))
-            .toBe('Provides 10% more yield to this Token and adjacent Coast Tokens.');
+        expect(renderStatement(provides(REACH.SELF_AND_NEARBY, all)))
+            .toBe('Provides 10% more yield to this Token and every nearby Token.');
+        expect(renderStatement(provides(REACH.SELF_AND_NEARBY, coast)))
+            .toBe('Provides 10% more yield to this Token and nearby Coast Tokens.');
     });
 
     it('says who a status lands on, in the person the reach implies', () => {
@@ -368,8 +368,8 @@ describe('the sentence says how far', () => {
             payload: { statusId: 'well_fed', stacks: 1, chance: 100 }
         });
 
-        expect(renderStatement(applies(REACH.ADJACENT)))
-            .toBe('Applies Well Fed to heroes on adjacent Coast Tokens when they finish work.');
+        expect(renderStatement(applies(REACH.NEARBY)))
+            .toBe('Applies Well Fed to heroes on nearby Coast Tokens when they finish work.');
         // Singular: one Token holds at most one hero.
         expect(renderStatement(applies(REACH.SELF)))
             .toBe('Applies Well Fed to the hero working this Token when they finish work.');

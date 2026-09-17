@@ -31,15 +31,15 @@ import { BOARD_EVENTS } from './boardEvents.js';
  *    input, and an unmet one is a missing input like any other.
  *
  * ## What survived unchanged
- *  - **A context Token with nothing relevant adjacent is inert** (D-19). It
+ *  - **A context Token with nothing relevant nearby is inert** (D-19). It
  *    costs a tile and does nothing until something it can use arrives.
- *  - **A context Token serves EVERY adjacent station** (D-113). One rack
+ *  - **A context Token serves EVERY nearby station** (D-113). One rack
  *    between two Forges serves both — and wears twice as fast for it (D-157).
  *  - Numerical buffs (D-119/D-120) remain a light layer on top, deliberately
  *    small.
  *
  * ## "Beside" means Near (Free Playmat 1.3, FP-41; by instance id since 1.6b)
- * Every "adjacent" question here — the context around a station, the tools it
+ * Every "nearby" question here — the context around a station, the tools it
  * accepts, which stations a context Token serves, and whom it wears for — is
  * `nearby.neighbourIds()`: Tokens whose centres are within the Near radius,
  * measured centre to centre, named by **instance id**. "Acts as" and recipe
@@ -104,14 +104,14 @@ function typesNear(instanceId) {
 export function checkAcceptedTokens(instanceId, def) {
     if (!def?.acceptedTokens || def.acceptedTokens.length === 0) return true;
     const tiers = contextTiersAround(instanceId);
-    const adjacentTokens = typesNear(instanceId);
+    const nearbyTokens = typesNear(instanceId);
 
     for (const req of def.acceptedTokens) {
         if (req.tag) {
             const minTier = req.minTier || 1;
             if ((tiers[req.tag] || 0) < minTier) return false;
         } else if (req.tokenIds?.length) {
-            const hasAny = req.tokenIds.some(id => adjacentTokens.has(id));
+            const hasAny = req.tokenIds.some(id => nearbyTokens.has(id));
             if (!hasAny) return false;
         }
     }
@@ -186,7 +186,7 @@ export function resolveRecipe(instanceId, instance) {
  * What a Token is actually running with right now — inputs, outputs, and how
  * long the cycle takes.
  *
- * Collapses "authored on the Token" and "decided by adjacent context" into one
+ * Collapses "authored on the Token" and "decided by nearby context" into one
  * answer, so callers never have to know which kind of Token they hold.
  *
  * ## Cycle time and XP come from the recipe when it defines them (CMS-70)
@@ -218,7 +218,7 @@ export function effectiveIO(instanceId, instance) {
  * context Token serves.
  *
  * This is what D-126 charges wear against: a Context Token loses one use per
- * cycle **each adjacent station completes**, so one Tool Rack serving three
+ * cycle **each nearby station completes**, so one Tool Rack serving three
  * Forges wears three times as fast (D-157).
  *
  * > Sharing is a **rate trade, not free value**. One Token serving three
@@ -286,7 +286,7 @@ export function servesFrom(contextId) {
  * enemy Token burns down as it is used, exactly like a Tool Rack beside a Forge.
  *
  * ## `exclude` — the Tokens this cycle has already billed (P1)
- * A recipe can name an adjacent context Token's charges as an explicit input
+ * A recipe can name an nearby context Token's charges as an explicit input
  * and pay them through `Charges.planCycle`. Their ids are passed in here so
  * D-126's flat per-cycle wear does not bill them a second time for the same
  * cycle. A Token nobody's recipe named still wears exactly as it always did.
@@ -296,7 +296,7 @@ export function servesFrom(contextId) {
  * @param {Set<string>} [exclude] instance ids already charged for this cycle
  * @returns {string[]} instance ids of the support Tokens that wore out
  */
-export function wearAdjacentSupport(instanceId, onDeplete, exclude = null) {
+export function wearNearbySupport(instanceId, onDeplete, exclude = null) {
     const depleted = [];
 
     // Still −1 per station per cycle (D-113/D-157); only "beside" became Near.
@@ -342,7 +342,7 @@ export function getMissingRequirements(instanceId, instance) {
     // 1. Check Accepted Tokens / Tools on the Token definition itself (e.g. tag 'anvil' or 'pickaxe')
     if (def.acceptedTokens?.length) {
         const tiers = contextTiersAround(instanceId);
-        const adjacentTokens = typesNear(instanceId);
+        const nearbyTokens = typesNear(instanceId);
 
         const missingTools = [];
         for (const req of def.acceptedTokens) {
@@ -355,7 +355,7 @@ export function getMissingRequirements(instanceId, instance) {
                     missingTools.push(formatted);
                 }
             } else if (req.tokenIds?.length) {
-                const hasAny = req.tokenIds.some(id => adjacentTokens.has(id));
+                const hasAny = req.tokenIds.some(id => nearbyTokens.has(id));
                 if (!hasAny) {
                     missingTools.push(tokenName(req.tokenIds[0]) || req.tokenIds[0]);
                 }

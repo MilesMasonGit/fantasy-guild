@@ -25,7 +25,7 @@ import { renderStatement } from '../effects/statementText.js';
  * beside it would have been the wrong shape.
  *
  * ## ⚠️ A restriction is symmetric — the trap
- * If a Coast says *"no more than 2 adjacent Coasts"*, then dropping a **third**
+ * If a Coast says *"no more than 2 nearby Coasts"*, then dropping a **third**
  * Coast beside it breaks **the existing Coast's** rule, not the newcomer's. So
  * every check considers the board as it *would* be and asks the question of
  * every Token in the affected neighbourhood, not only of the one being placed.

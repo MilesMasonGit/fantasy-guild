@@ -5,6 +5,7 @@ import TokenEditor from './components/editors/TokenEditor';
 import RecipeEditor from './components/editors/RecipeEditor';
 import MapEditor from './components/editors/MapEditor';
 import RecolorEditor from './components/editors/RecolorEditor';
+import AnimationEditor from './components/editors/AnimationEditor';
 import EffectEditor from './components/editors/EffectEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
@@ -33,6 +34,7 @@ function App() {
         // by skill and level (docs/progression_screen_plan_v1.md).
         if (currentView === 'progression') return <ProgressionPanel />;
         if (currentView === 'recolor') return <RecolorEditor />;
+        if (currentView === 'animation') return <AnimationEditor />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
         // ⚠️ `AuditPanel` had no route at all until P6 — it was written for
         // CMS-74 and then never mounted, so the economy audit and the churn

@@ -161,7 +161,7 @@ export function buildCorpus() {
         addS(`role:removes:${role}`, S(KEYWORD.REMOVES, { payload: { effectId: FIX.effect }, target }), { effect: () => 'Thorns' });
         addS(`role:removes-all:${role}`, S(KEYWORD.REMOVES, { payload: {}, target }));
         // V10a (G-42): `Applies` with an optional role target, on a moment that supplies the enemy.
-        const fight = { event: 'COMBAT_ENGAGED', scope: 'adjacent' };
+        const fight = { event: 'COMBAT_ENGAGED', scope: 'nearby' };
         addS(`role:applies:${role}`, S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, durationMs: 30000 }, target, when: fight }), { effect: () => 'Thorns' });
         addS(`role:applies-status:${role}`, S(KEYWORD.APPLIES, { payload: { statusId: 'poison', stacks: 2 }, target, when: fight }));
     }
@@ -198,7 +198,7 @@ export function buildCorpus() {
                 const st = S(KEYWORD.APPLIES, { payload: { statusId, stacks, chance } });
                 addS(`applies:status:${statusId}:${stacks}:undefined:${chance}`, st);
                 addS(`applies:status:${statusId}:${stacks}:undefined:${chance}:triggered`,
-                    { ...st, when: { event: 'CYCLE_COMPLETE', scope: 'adjacent' } });
+                    { ...st, when: { event: 'CYCLE_COMPLETE', scope: 'nearby' } });
             }
         }
     }
@@ -255,7 +255,7 @@ export function buildCorpus() {
         acceptedTokens: [{ tag: 'net', minTier: 2 }, { tokenIds: [FIX.token] }],
         statements: [
             { ...S(KEYWORD.PROVIDES, { payload: { type: 'YIELD', bucket: 'percentage', value: 0.1 } }), upkeep: { items: [{ itemId: FIX.item, quantity: 1 }], cadenceMs: 30000 } },
-            S(KEYWORD.DEALS, { payload: { amount: 2 }, when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 4000 } })
+            S(KEYWORD.DEALS, { payload: { amount: 2 }, when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 4000 } })
         ]
     }, shippedNames)));
 

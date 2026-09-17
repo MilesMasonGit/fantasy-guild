@@ -376,7 +376,7 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "adjacent",
+        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null

@@ -68,12 +68,12 @@ describe('⭐ an effect only this Token uses is edited in place', () => {
         const { container } = mountToken(tokenId);
         const block = container.querySelector(`[data-editable-effect="${effectId}"]`);
         expect(block).not.toBeNull();
-        expect(block.querySelector('[data-rules-line]').textContent).toBe('Acts as a Tier 1 net for adjacent stations.');
+        expect(block.querySelector('[data-rules-line]').textContent).toBe('Acts as a Tier 1 net for nearby stations.');
         expect(block.querySelector('[data-cost-strip]')).not.toBeNull();
 
         retype(container, block, 'tier', '3');
         expect(store().effects[effectId].statements[0].payload.tier).toBe(3);
-        expect(container.querySelector('[data-rules-line]').textContent).toBe('Acts as a Tier 3 net for adjacent stations.');
+        expect(container.querySelector('[data-rules-line]').textContent).toBe('Acts as a Tier 3 net for nearby stations.');
     });
 
     it('offers no "Add rule" inside the effect — "New rule" beside it makes a new one', () => {
@@ -107,7 +107,7 @@ describe('⚠️ a shared effect stays read-only', () => {
 
         const { container } = mountToken(a);
         const block = container.querySelector(`[data-shared-effect="${effectId}"]`);
-        expect(block.textContent).toContain('Acts as a Tier 1 net for adjacent stations.');
+        expect(block.textContent).toContain('Acts as a Tier 1 net for nearby stations.');
         expect(container.querySelector('[data-rules-line]')).toBeNull();
         expect(container.textContent).toContain('shared x2');
         expect([...container.querySelectorAll('button')].some((btn) => btn.textContent.includes('Edit'))).toBe(true);
@@ -168,7 +168,7 @@ describe('⭐ Requires on the Rules Line', () => {
     it('reads as its sentence, with who satisfies it', () => {
         const tokenId = seeded();
         const { container } = mountToken(tokenId);
-        expect(requiresLine(container).textContent).toBe('Requires an adjacent Tier 1 net.');
+        expect(requiresLine(container).textContent).toBe('Requires an nearby Tier 1 net.');
         expect(container.querySelector('[data-satisfied-by]').textContent).toContain('Net Shed');
     });
 

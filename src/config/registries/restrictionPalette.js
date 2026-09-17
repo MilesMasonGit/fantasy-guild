@@ -25,7 +25,7 @@
  * palette.
  *
  * ## ⚠️ A restriction is symmetric, and that is the whole difficulty
- * If a Coast says *"no more than 2 adjacent Coasts"*, then dropping a **third**
+ * If a Coast says *"no more than 2 nearby Coasts"*, then dropping a **third**
  * Coast beside it breaks **the existing Coast's** rule, not the newcomer's. So
  * enforcement checks both directions — see `Restrictions.checkPlacement`.
  *
@@ -37,19 +37,19 @@
  * }>}
  */
 /**
- * "be adjacent to more than 2 Coast Tokens", as a template of its two decisions.
+ * "be nearby to more than 2 Coast Tokens", as a template of its two decisions.
  *
  * ⚠️ One definition of the wording. `sentence` fills it for the string; the
  * renderer fills it with markers so the LIMIT can be its own clickable word
  * (Rules Line P4) — without a second copy of the phrase living there.
  */
-const adjacencySentence = (limit, subject) => `be adjacent to more than ${limit} ${subject}`;
+const adjacencySentence = (limit, subject) => `be nearby to more than ${limit} ${subject}`;
 
 export const RESTRICTION_KINDS = Object.freeze([
     {
         id: 'adjacency_limit',
         label: 'be next to too many of something',
-        blurb: 'No more than N adjacent Tokens matching the filter. Checked when a Token is put down.',
+        blurb: 'No more than N nearby Tokens matching the filter. Checked when a Token is put down.',
 
         blank: () => ({ kind: 'adjacency_limit', max: 2 }),
 
@@ -63,7 +63,7 @@ export const RESTRICTION_KINDS = Object.freeze([
 
         /** What the player is told when the board refuses the drop. */
         refusal: (payload, subject, tokenName) =>
-            `${tokenName} cannot be adjacent to more than ${limitOf(payload)} ${subject}`
+            `${tokenName} cannot be nearby to more than ${limitOf(payload)} ${subject}`
     }
 ]);
 

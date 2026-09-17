@@ -286,17 +286,17 @@ export function contextProvidersAround(instanceId) {
 }
 
 /**
- * Which adjacent Tokens would pay a recipe's context charge costs, and how much
+ * Which nearby Tokens would pay a recipe's context charge costs, and how much
  * each would pay — without touching anything.
  *
  * ## Lowest remaining first (concept §3.3)
- * When several adjacent Tokens satisfy the same requirement, the one with the
+ * When several nearby Tokens satisfy the same requirement, the one with the
  * fewest charges left pays first, so near-depleted tiles clear rather than
  * every provider sitting at a fraction forever. A cost larger than any single
  * provider holds spreads across them in that same order.
  *
  * ## Unlimited providers pay nothing (R-4)
- * An unlimited Token adjacent to the station satisfies the requirement for
+ * An unlimited Token nearby to the station satisfies the requirement for
  * free, and no finite neighbour is charged for it either — there is no reason
  * to wear a Token down when something beside it supplies the same tag forever.
  *

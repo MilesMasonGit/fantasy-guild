@@ -54,7 +54,7 @@ import * as BoardCombat from './BoardCombat.js';
 /**
  * How many things the statement's second, `counted` selector matched (G-14).
  *
- * ⚠️ Counted from the **bearer**, not the target. *"1 damage per adjacent
+ * ⚠️ Counted from the **bearer**, not the target. *"1 damage per nearby
  * Coast Token"* on a monster means the Tokens beside the monster; it would be a
  * different rule, and a much stranger one, if it counted what happened to be
  * beside whoever it hit.
@@ -67,7 +67,7 @@ function countMatches(statement, roles) {
     if (!usesCountedSelector(statement?.payload)) return 0;
     if (roles?.self == null) return 0;
     // The counted selector carries its own reach, so "per Coast Token on the
-    // board" is as sayable as "per adjacent Coast Token".
+    // board" is as sayable as "per nearby Coast Token".
     return TileModifiers.filterTargets(roles.self, {
         to: statement.counted, reach: statement.counted?.reach
     }, roles.selfPoint || null).length;

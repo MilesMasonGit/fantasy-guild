@@ -22,7 +22,7 @@ import * as BoardState from './BoardState.js';
  * ascending), which replaced "lower anchor tile" as every tie-break (plan §A).
  *
  * ## Reach ids are unchanged
- * `adjacent` stays the stored id and means **Near**; `self_and_adjacent`
+ * `nearby` stays the stored id and means **Near**; `self_and_nearby`
  * likewise; `self` and `board` are unchanged. No Close/Far rows (FP-53).
  *
  * ## Tokens that are not (or no longer) on the mat
@@ -87,12 +87,12 @@ export function tokensWithin(point, radius = nearRadius(), excludeId = null) {
  * The Tokens a rule at `reach` carries to, measured from a point (with an
  * optional id standing there as "self"). The shared core of {@link nearby}.
  */
-export function reachFrom(point, selfId, reach = REACH.ADJACENT, radius = nearRadius()) {
+export function reachFrom(point, selfId, reach = REACH.NEARBY, radius = nearRadius()) {
     if (reach === REACH.SELF) return selfId ? [selfId] : [];
     if (reach === REACH.BOARD) return BoardState.tokens().map(t => t.id);
     if (!point) return [];
     const others = tokensWithin(point, radius, selfId);
-    return reach === REACH.SELF_AND_ADJACENT && selfId ? [selfId, ...others] : others;
+    return reach === REACH.SELF_AND_NEARBY && selfId ? [selfId, ...others] : others;
 }
 
 /**
@@ -100,19 +100,19 @@ export function reachFrom(point, selfId, reach = REACH.ADJACENT, radius = nearRa
  *
  * Returns **instance ids**:
  * * `self`              — the Token itself
- * * `adjacent`          — every other Token whose centre is within Near
- * * `self_and_adjacent` — both, the Token itself first
+ * * `nearby`          — every other Token whose centre is within Near
+ * * `self_and_nearby` — both, the Token itself first
  * * `board`             — every Token on the mat, in arrival order
  *
  * A Token that is not on the mat reaches nothing. An unknown reach id is
- * treated as `adjacent`, as `reachCovers` does.
+ * treated as `nearby`, as `reachCovers` does.
  *
  * @param {string} instanceId
  * @param {string} [reach]
  * @param {number} [radius] override, mainly for tests; defaults to the live Near
  * @returns {string[]}
  */
-export function nearby(instanceId, reach = REACH.ADJACENT, radius = nearRadius()) {
+export function nearby(instanceId, reach = REACH.NEARBY, radius = nearRadius()) {
     const self = BoardState.getTokenById(instanceId);
     if (!self) return [];
     return reachFrom(centreOf(self), self.id, reach, radius);
@@ -173,7 +173,7 @@ export function neighbourIds(instanceId) {
     }
     let ids = neighbourCache.byId.get(instanceId);
     if (!ids) {
-        ids = nearby(instanceId, REACH.ADJACENT, radius);
+        ids = nearby(instanceId, REACH.NEARBY, radius);
         neighbourCache.byId.set(instanceId, ids);
     }
     return ids;

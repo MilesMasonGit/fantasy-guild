@@ -251,7 +251,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_occult',
         statements: [{
             id: 'stm_free', keyword: 'grants', chargeDelta: 0,
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
@@ -260,7 +260,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_occult',
         statements: [{
             id: 'stm_costly', keyword: 'grants', chargeDelta: -2,
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
@@ -269,7 +269,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'rare', theme: 'fixture', uses: 4, sprite: 'skill_occult',
         statements: [{
             id: 'stm_restoring', keyword: 'grants', chargeDelta: 2,
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
@@ -279,7 +279,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'mythic', theme: 'fixture', uses: null, sprite: 'skill_occult',
         statements: [{
             id: 'stm_endless', keyword: 'grants', chargeDelta: -2,
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
@@ -334,7 +334,7 @@ export const FIXTURE_TOKENS = {
     // cannot be stacked onto everything indiscriminately, so it can afford real
     // weight — unlike the deliberately tiny untargeted buffs above.
 
-    /** "Double all adjacent seafood" — targets by TAG. */
+    /** "Double all nearby seafood" — targets by TAG. */
     fixture_buff_tag: {
         id: 'fixture_buff_tag', name: 'Fixture Tag Buff', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
@@ -353,7 +353,7 @@ export const FIXTURE_TOKENS = {
         ]
     },
     /**
-     * "Boost all adjacent stations" — the RETIRED `tokenType` mode.
+     * "Boost all nearby stations" — the RETIRED `tokenType` mode.
      *
      * Not offered in the editor any more (owner decision Q2 replaced it with an
      * `all` tag), but still understood by `matchesTokenTarget` so that nothing
@@ -458,7 +458,7 @@ export const FIXTURE_TOKENS = {
     /**
      * **Masonry Wheelbarrow.** Reacts to a NEIGHBOUR completing a cycle and
      * grants an item — scoped to one specific neighbour type, so it does not
-     * fire off just anything adjacent.
+     * fire off just anything nearby.
      */
     fixture_wheelbarrow: {
         id: 'fixture_wheelbarrow', name: 'Fixture Wheelbarrow', tokenType: 'buff',
@@ -467,7 +467,7 @@ export const FIXTURE_TOKENS = {
             id: 'stm_wheelbarrow', keyword: 'grants',
             when: {
                 event: 'CYCLE_COMPLETE',
-                scope: 'adjacent',
+                scope: 'nearby',
                 source: { mode: 'id', value: 'fixture_producer' },
                 cooldownMs: 0
             },
@@ -481,7 +481,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
         statements: [{
             id: 'stm_trigger_any', keyword: 'grants',
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
@@ -492,7 +492,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
         statements: [{
             id: 'stm_depleted', keyword: 'grants',
-            when: { event: 'TOKEN_DEPLETED', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'TOKEN_DEPLETED', scope: 'nearby', cooldownMs: 0 },
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
@@ -525,7 +525,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_industry',
         statements: [{
             id: 'stm_wearing', keyword: 'grants',
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             // 0% chance: it serves but never hits, which is exactly the case
             // CMS-26 pins — the charge burns on service, not on luck.
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 0, quantity: 1 }
@@ -810,7 +810,7 @@ export const FIXTURE_RECIPE_POOLS = {
     /**
      * The charges-engine pool (rework P1). One recipe, costing on **both** axes
      * R-8 keeps separate: 3 charges off the station itself, and 2 more off an
-     * adjacent context Token named as an input.
+     * nearby context Token named as an input.
      */
     smithing: [
         {

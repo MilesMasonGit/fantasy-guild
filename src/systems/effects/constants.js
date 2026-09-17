@@ -140,7 +140,7 @@ export const TARGET_CATEGORIES = {
 
 export const SCOPES = {
     SELF: 'SELF',
-    ADJACENT: 'ADJACENT',
+    NEARBY: 'NEARBY',
     GLOBAL: 'GLOBAL'
 };
 

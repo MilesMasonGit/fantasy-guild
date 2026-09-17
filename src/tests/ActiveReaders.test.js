@@ -126,7 +126,7 @@ registerTokenTypes({
         requiresHero: false,
         statements: [{
             id: 'stm_large_trigger_any', keyword: 'grants',
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
@@ -265,18 +265,18 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
         put(S15, 'fixture_tool_gated');
         put(S16, 'fixture_tool_gated');                 // 320 u from the tool
 
-        RecipeResolver.wearAdjacentSupport(idAt(S13));
-        RecipeResolver.wearAdjacentSupport(idAt(S15));
+        RecipeResolver.wearNearbySupport(idAt(S13));
+        RecipeResolver.wearNearbySupport(idAt(S15));
         expect(tool.usesRemaining).toBe(78);            // two stations served, one cycle each
 
-        RecipeResolver.wearAdjacentSupport(idAt(S16));
+        RecipeResolver.wearNearbySupport(idAt(S16));
         expect(tool.usesRemaining).toBe(78);
     });
 
     it('a null-charge tool never wears', () => {
         const tool = put(S14, 'fixture_tool', null);
         put(S13, 'fixture_tool_gated');
-        RecipeResolver.wearAdjacentSupport(idAt(S13));
+        RecipeResolver.wearNearbySupport(idAt(S13));
         expect(tool.usesRemaining).toBeNull();
     });
 
@@ -285,8 +285,8 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
         put(SIDE, 'fixture_tool_gated');
         put(CORNER, 'fixture_tool_gated');
 
-        RecipeResolver.wearAdjacentSupport(idAt(SIDE));
-        RecipeResolver.wearAdjacentSupport(idAt(CORNER));
+        RecipeResolver.wearNearbySupport(idAt(SIDE));
+        RecipeResolver.wearNearbySupport(idAt(CORNER));
         expect(tool.usesRemaining).toBe(79);
     });
 
@@ -304,7 +304,7 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
         put(S16, 'fixture_tool_gated');
         setMatTuning('nearRadius', 400);
 
-        RecipeResolver.wearAdjacentSupport(idAt(S16));
+        RecipeResolver.wearNearbySupport(idAt(S16));
         expect(tool.usesRemaining).toBe(79);
         expect(Charges.contextProvidersAround(idAt(S16)).map(p => p.id)).toEqual([idAt(S14)]);
     });
@@ -443,7 +443,7 @@ describe('TriggerSystem: neighbour triggers listen within Near', () => {
 // Restrictions — `Cannot` is a count within Near, on the board as it WOULD be
 // ---------------------------------------------------------------------------
 
-describe('Restrictions: "Cannot be adjacent to more than 2 Coast" counts within Near', () => {
+describe('Restrictions: "Cannot be nearby to more than 2 Coast" counts within Near', () => {
     /** The restricted Coast at CORNER, exactly at its limit: plain Coasts either side. */
     const atLimit = () => {
         put(CORNER, 'fixture_coast');

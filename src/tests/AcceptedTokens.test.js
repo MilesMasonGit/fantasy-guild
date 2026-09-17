@@ -63,7 +63,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         GameState.state.inventory.maxSlots = 50;
     });
 
-    it('a node requiring a tool produces NOTHING when no tool is adjacent', () => {
+    it('a node requiring a tool produces NOTHING when no tool is nearby', () => {
         place(TILE_NODE, 'fixture_copper_vein', 'miner');
 
         run(15000);
@@ -72,7 +72,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
     });
 
-    it('a Tier 1 node runs and completes cycles when a Tier 1 tool is placed adjacent', () => {
+    it('a Tier 1 node runs and completes cycles when a Tier 1 tool is placed nearby', () => {
         place(TILE_NODE, 'fixture_copper_vein', 'miner');
         place(TILE_TOOL, 'fixture_pickaxe_t1');
 

@@ -322,7 +322,7 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
          *
          * Both payloads below used to drop on the Token that fired no matter
          * what filter the author wrote. `Grants` declares
-         * `filter: true`, so *"grant 1 Copper to any adjacent Forge"* was a
+         * `filter: true`, so *"grant 1 Copper to any nearby Forge"* was a
          * sentence the editor generated, the CMS saved, the game loaded, and
          * the runtime then ignored. That is the exact failure the statement
          * grammar exists to make impossible, and the ambient path never had it:
@@ -334,7 +334,7 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
             // An unfiltered grant is about the Token that fired, which is what
             // an author with no filter means and what this always did.
             const targets = statement.to ? targetsOf(instance, statement) : [bearerSource(instance)];
-            // ⚠️ A filter naming nothing grants nothing. "To any adjacent Forge"
+            // ⚠️ A filter naming nothing grants nothing. "To any nearby Forge"
             // with no Forge beside it must reach nobody — falling back to the
             // firing Token would make an unmatched filter silently universal,
             // which is the failure `matchesTokenTarget` refuses for the same
@@ -371,7 +371,7 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
              *
              * So the filter picks a **destination**, and the owner's own example
              * is singular: *a Sigil that turns Stone into Bricks and puts them
-             * on the adjacent Kiln.* ⭐ **The nearest matching Token wins, then
+             * on the nearby Kiln.* ⭐ **The nearest matching Token wins, then
              * the earliest placed** (FP-89) — deterministic rather than
              * arbitrary, the same tie-break Managers and flags use when they
              * have to choose one Token. It used to be the lowest tile index,
@@ -385,7 +385,7 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
              * can aim, so a conversion authored in the CMS and otherwise
              * untouched arrives with one. Treating that as "pick a neighbour"
              * made the commonest possible conversion produce onto whichever
-             * Token happened to sit at the lowest adjacent index — while its
+             * Token happened to sit at the lowest nearby index — while its
              * sentence named no destination at all, and the CMS hint said the
              * output "lands on this Token itself".
              *
@@ -519,7 +519,7 @@ function producedMatches(definition, when, payload) {
  * off the mat. It is then heard from the point its departing instance still
  * carries, or the point the event names (`x`, `y`).
  */
-function handleAdjacent(triggerId, payload) {
+function handleNearby(triggerId, payload) {
     const sourceId = payload?.instanceId ?? null;
     const source = BoardState.getTokenById(sourceId);
     const origin = centreOf(source)
@@ -535,7 +535,7 @@ function handleAdjacent(triggerId, payload) {
 
         const def = getTokenType(instance.typeId);
         for (const statement of triggeredStatements(def, triggerId)) {
-            if ((statement.when.scope || TRIGGER_SCOPES.ADJACENT) !== TRIGGER_SCOPES.ADJACENT) continue;
+            if ((statement.when.scope || TRIGGER_SCOPES.NEARBY) !== TRIGGER_SCOPES.NEARBY) continue;
             if (!sourceMatches(statement.when, payload.typeId)) continue;
             if (!producedMatches(definition, statement.when, payload)) continue;
             fireStatement(instance, statement, payload);
@@ -547,7 +547,7 @@ function handleAdjacent(triggerId, payload) {
  * Handle a **self**-scoped board event: the Token that fired it is the Token
  * that reacts.
  *
- * Deliberately its own function rather than a flag inside `handleAdjacent`.
+ * Deliberately its own function rather than a flag inside `handleNearby`.
  * The two differ in the thing that matters most — *which Token the statement
  * runs on* — and a self-scoped statement has no "from which neighbour" filter
  * to apply, because there is no neighbour involved in the firing at all. Its
@@ -622,7 +622,7 @@ export function init() {
             // cascading from — a lost fight is the same "nothing happened".
             if (id === 'COMBAT_RESOLVED' && payload?.outcome !== 'victory') return;
             if (isSelf) handleSelf(id, payload, { settled: !!settled });
-            else handleAdjacent(id, payload);
+            else handleNearby(id, payload);
         }));
     }
 }

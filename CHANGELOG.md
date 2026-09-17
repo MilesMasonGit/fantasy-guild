@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Free Playmat (Slice 1.10):** Renamed "adjacent" to "nearby" throughout the game interface and rules to match the new playmat mechanics.
+- **Free Playmat (Slice 1.11):** Finalized tuning defaults and bumped versions for the v0.8.0 release.
 
 - **The playmat can change size while you play** (Free Playmat slice 1.6d, third part). The
   developer Mat Tuner has a new **Mat size** slider — 6 to 20 steps, shipping at 11, which is

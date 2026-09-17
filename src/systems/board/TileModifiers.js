@@ -96,7 +96,7 @@ let unsubscribers = [];
  * matches or not depending on whether anybody is standing there, and hero
  * movement is the game's most frequent action.
  *
- * Without this, a rule reading *"to every adjacent Token being worked"* would be
+ * Without this, a rule reading *"to every nearby Token being worked"* would be
  * evaluated once, at placement, and then never again — silently wrong for the
  * whole session. Hero movement is cheap and rare enough compared to a frame that
  * rebuilding the neighbourhood on it costs nothing measurable.
@@ -165,10 +165,10 @@ const sourceIdFor = (instanceId, typeId) => `token:${instanceId}:${typeId}`;
  *
  * ## Targeted vs untargeted
  * A buff with **no** `targetToken` is untargeted and applies to everything
- * adjacent — the existing D-119/D-120 behaviour, whose effects are deliberately
+ * nearby — the existing D-119/D-120 behaviour, whose effects are deliberately
  * tiny precisely *because* they touch everything nearby.
  *
- * A buff **with** one is narrow: "double all adjacent Shrimp output" needs the
+ * A buff **with** one is narrow: "double all nearby Shrimp output" needs the
  * specific target beside it to matter at all, so it can afford real weight
  * without letting power come from stacking modifiers (CMS-17).
  *
@@ -176,9 +176,9 @@ const sourceIdFor = (instanceId, typeId) => `token:${instanceId}:${typeId}`;
  * Different buffs want different precision, so this is a per-buff choice rather
  * than one fixed method:
  *
- * * `tag`       — "boost all adjacent seafood"       (a Token's `tags`)
+ * * `tag`       — "boost all nearby seafood"       (a Token's `tags`)
  * * `id`        — "boost specifically Shrimp Beds"   (exact `typeId`)
- * * `tokenType` — "boost all adjacent resources"     (the coarse category)
+ * * `tokenType` — "boost all nearby resources"     (the coarse category)
  *
  * ⚠️ An unknown mode matches **nothing**. A typo in a target spec should make a
  * buff visibly inert, not silently universal — the failure that would otherwise
@@ -220,7 +220,7 @@ export function matchesTokenTarget(spec, def, ctx = null) {
 /** The single primary mode — tag, id, or everything. Unchanged since CMS-18. */
 function modeMatches(spec, def) {
     if (!spec || !spec.mode) return true;   // untargeted
-    if (spec.mode === 'all') return !!def;  // every adjacent Token (owner Q2)
+    if (spec.mode === 'all') return !!def;  // every nearby Token (owner Q2)
     if (!def) return false;
 
     switch (spec.mode) {
@@ -281,7 +281,7 @@ export function filterTargets(sourceId, statement, fallbackPoint = null) {
 
         // ⚠️ `board` includes the Token carrying the rule, and that is right:
         // "every Token on the board" is not "every Token except me". A rule that
-        // means to skip itself is `adjacent`, which is the default.
+        // means to skip itself is `nearby`, which is the default.
         if (!matchesTokenTarget(statement?.to, getTokenType(instance.typeId),
             { instance, tokenId: id })) continue;
         targets.push(id);
@@ -297,7 +297,7 @@ export function filterTargets(sourceId, statement, fallbackPoint = null) {
  * the Tokens within Near of the change are rebuilt (`nearby.tokensAround`).
  *
  * ## Two rules land here
- * - **A Buff Token affects every adjacent Token** — the same scarce Sawmill
+ * - **A Buff Token affects every nearby Token** — the same scarce Sawmill
  *   nudges each Forge beside it (D-113's logic applied to buffs).
  * - **Duplicates stack, uncapped** (D-23). Eight Sawmills genuinely give eight
  *   times a very small number, which is still a small number. That is safe
@@ -324,7 +324,7 @@ export function filterTargets(sourceId, statement, fallbackPoint = null) {
  *
  * ## ⚠️ This used to say "from neighbouring Tokens", and that was the bug
  * The source set was `neighboursOf(index)`, which **never contains `index`** —
- * `areAdjacent` states outright that a tile is not adjacent to itself. So a
+ * `areNearby` states outright that a tile is not nearby to itself. So a
  * Token could not reach itself with any rule, at any strength, however it was
  * authored. The source set is now every occupied Token, and each statement's
  * `reach` decides whether it carries from there to here (`reachCovers`).
@@ -344,9 +344,9 @@ function* applicableStatements(selfId) {
     const selfDef = getTokenType(self.typeId);
     const seenTypes = new Set();
 
-    // `adjacent` means Near: every other Token whose centre is within the Near
+    // `nearby` means Near: every other Token whose centre is within the Near
     // radius of this Token's centre (Free Playmat 1.2, FP-41; by id since 1.6b).
-    const adjacentIds = new Set(nearby(self.id, REACH.ADJACENT));
+    const nearbyIds = new Set(nearby(self.id, REACH.NEARBY));
 
     // Every Token on the mat, once each, in arrival order.
     for (const instance of BoardState.tokens()) {
@@ -354,7 +354,7 @@ function* applicableStatements(selfId) {
         // once per source rather than per statement, because it is a fact about
         // the board and every statement on the Token shares it.
         const relation = instance.id === self.id ? RELATION.SELF
-            : adjacentIds.has(instance.id) ? RELATION.ADJACENT
+            : nearbyIds.has(instance.id) ? RELATION.NEARBY
                 : RELATION.DISTANT;
 
         const def = getTokenType(instance.typeId);
@@ -371,7 +371,7 @@ function* applicableStatements(selfId) {
          * (P2), and the scan runs in ascending tile order. Claiming the
          * `seenTypes` slot before checking reach meant a **distant** copy of a
          * `noStackDuplicates` Token could take the slot and suppress an
-         * **adjacent** one whose rule actually reached here — the tile lost a
+         * **nearby** one whose rule actually reached here — the tile lost a
          * buff it should have had, depending only on tile numbering.
          */
         const duplicate = def.noStackDuplicates && seenTypes.has(instance.typeId);
@@ -381,7 +381,7 @@ function* applicableStatements(selfId) {
             if (statement?.when?.event) continue;
             if (!AMBIENT_KEYWORDS.has(statement?.keyword)) continue;
             // ER-1: does this rule carry from where its Token sits to here? An
-            // unauthored reach resolves to `adjacent`, which is what every rule
+            // unauthored reach resolves to `nearby`, which is what every rule
             // written before P2 meant — so nothing shipped changed.
             if (!reachCovers(reachOf(statement), relation)) continue;
             if (duplicate) continue;

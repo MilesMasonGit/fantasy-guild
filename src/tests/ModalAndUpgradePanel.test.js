@@ -87,7 +87,7 @@ describe('GuildUpgradeInspection', () => {
         );
         // It says the upgrade is locked, but does not spell out the adjacency rule.
         expect(container.textContent).toContain('Upgrade Locked');
-        expect(container.textContent).not.toContain('Requires adjacent upgrade');
+        expect(container.textContent).not.toContain('Requires nearby upgrade');
         expect(container.textContent).not.toContain('Path to this upgrade is locked');
     });
 });

@@ -136,7 +136,7 @@ export const TUTORIAL_QUESTS = [
         id: 'tutorial_14',
         step: 13,
         title: 'Add a Context Token',
-        instruction: 'Place a Tool (like a Pickaxe or an Axe) adjacent to a relevant Token on the Playmat.',
+        instruction: 'Place a Tool (like a Pickaxe or an Axe) nearby to a relevant Token on the Playmat.',
         targetType: 'context_token_placed',
         requiredCount: 1,
         rewardMapId: 'map_guild_hall',

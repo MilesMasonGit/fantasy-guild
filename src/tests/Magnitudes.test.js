@@ -39,7 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * The bush and a spot either side of it, 160 u away — inside the live Near
- * radius (164 u), so both count as adjacent to the bush.
+ * radius (164 u), so both count as nearby to the bush.
  */
 const BUSH = { x: 400, y: 300 };
 const LEFT = { x: 240, y: 300 };
@@ -169,7 +169,7 @@ describe('⭐ a percentage of a named stat', () => {
 
 describe('⭐ a count of a second selector (G-14)', () => {
     it('counts one set while affecting another', () => {
-        // "+1 damage per adjacent seafood Token" — the count is taken around the
+        // "+1 damage per nearby seafood Token" — the count is taken around the
         // BEARER, and the damage lands on the actor.
         thornedProducer('fixture_count_thorns',
             { amount: 1, magnitude: MAGNITUDE_KIND.COUNT },
@@ -264,9 +264,9 @@ describe('the sentence says where the number came from (G-10)', () => {
 
     it('⚠️ keeps the number in front for a count — it is per-match, not "equal to"', () => {
         // The first version rendered a count as "equal to" and dropped the
-        // number entirely: "damage equal to per adjacent Coast Token".
+        // number entirely: "damage equal to per nearby Coast Token".
         expect(renderStatement(deals({ amount: 1, magnitude: 'count' }, { mode: 'tag', value: 'Coast' })))
-            .toBe("On Cycle: deals 1 damage per adjacent Coast Token to the hero.");
+            .toBe("On Cycle: deals 1 damage per nearby Coast Token to the hero.");
     });
 
     it('says the counted set in the singular, because it follows "per"', () => {

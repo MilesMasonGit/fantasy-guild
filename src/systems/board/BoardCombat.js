@@ -467,7 +467,7 @@ const pointOf = (instance) => ({ x: instance.x, y: instance.y });
  *
  * **One kill counts as one cycle** for every board system outside the combat
  * engine (D-129). That single unit is what connects combat to the rest of the
- * board: adjacent Context and Buff Tokens wear per kill exactly as they wear per
+ * board: nearby Context and Buff Tokens wear per kill exactly as they wear per
  * craft, so a Weapon Rack burns down as it is used.
  *
  * The post-kill rest (D-103) is already handled inside the ported engine —
@@ -491,7 +491,7 @@ function resolveVictory(instance, fight, enemy, heroId) {
     }
 
     // Support Tokens beside the enemy wear per kill (D-129), by instance id.
-    RecipeResolver.wearAdjacentSupport(id, (supportId, supportInstance) => {
+    RecipeResolver.wearNearbySupport(id, (supportId, supportInstance) => {
         const support = supportInstance || BoardState.getTokenById(supportId);
         const sTypeId = support?.typeId;
         const sName = getTokenType(sTypeId)?.name || sTypeId || 'Support';

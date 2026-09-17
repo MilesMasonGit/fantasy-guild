@@ -110,7 +110,7 @@ beforeEach(() => {
 
 describe('A `Cannot` refuses the placement, and says why', () => {
     it('lets the limit be reached', () => {
-        // 8, 9, 10 are a row; 9 is adjacent to both 8 and 10.
+        // 8, 9, 10 are a row; 9 is nearby to both 8 and 10.
         expect(place(8, 'fixture_plain_coast').result.success).toBe(true);
         expect(place(10, 'fixture_plain_coast').result.success).toBe(true);
         expect(place(9, 'fixture_coast').result.success).toBe(true);
@@ -340,7 +340,7 @@ describe('A saved board that already breaks a rule is repaired, never destroyed'
 describe('The rule reads back as the sentence you wrote', () => {
     it('renders the owner’s own example, word for word', () => {
         expect(renderStatement(LIMIT_STATEMENT))
-            .toBe('Cannot be adjacent to more than 2 Coast Tokens.');
+            .toBe('Cannot be nearby to more than 2 Coast Tokens.');
     });
 
     it('says "Tokens" with no filter, rather than going blank', () => {
@@ -348,7 +348,7 @@ describe('The rule reads back as the sentence you wrote', () => {
             keyword: KEYWORD.CANNOT,
             payload: { kind: 'adjacency_limit', max: 4 },
             to: { mode: 'all', value: '' }
-        })).toBe('Cannot be adjacent to more than 4 Tokens.');
+        })).toBe('Cannot be nearby to more than 4 Tokens.');
     });
 
     it('shows an unfinished restriction as unfinished', () => {

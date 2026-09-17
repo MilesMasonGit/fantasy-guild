@@ -211,17 +211,17 @@ describe('the sentence says what was filtered (G-10)', () => {
 
     it('reads unchanged when nothing is filtered', () => {
         expect(renderStatement(provides([])))
-            .toBe('Provides 10% more yield to every adjacent Token.');
+            .toBe('Provides 10% more yield to every nearby Token.');
     });
 
     it('attaches one filter as a modifier', () => {
         expect(renderStatement(provides([{ kind: 'worked' }])))
-            .toBe('Provides 10% more yield to every adjacent Token being worked.');
+            .toBe('Provides 10% more yield to every nearby Token being worked.');
     });
 
     it('joins a stack with "and"', () => {
         expect(renderStatement(provides([{ kind: 'tagged', value: 'Coast' }, { kind: 'worked' }])))
-            .toBe('Provides 10% more yield to every adjacent Token tagged Coast and being worked.');
+            .toBe('Provides 10% more yield to every nearby Token tagged Coast and being worked.');
     });
 
     it('⚠️ says a negation as its positive opposite, not as "not with fewer than"', () => {
@@ -240,7 +240,7 @@ describe('the sentence says what was filtered (G-10)', () => {
             ...provides([{ kind: 'worked' }]),
             to: { mode: 'tag', value: 'Coast', filters: [{ kind: 'worked' }] }
         });
-        expect(plural).toBe('Provides 10% more yield to adjacent Coast Tokens being worked.');
+        expect(plural).toBe('Provides 10% more yield to nearby Coast Tokens being worked.');
 
         const singular = renderStatement(provides([{ kind: 'worked' }], { reach: 'self' }));
         expect(singular).toBe('Provides 10% more yield to this Token being worked.');

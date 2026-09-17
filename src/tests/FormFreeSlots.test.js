@@ -154,7 +154,7 @@ describe('Requires (Rules Line P6)', () => {
     it('⚠️ makes the minimum tier a word — the retired Min Tool Tier box was its only control', () => {
         const st = { keyword: KEYWORD.REQUIRES, payload: { tag: 'net', minTier: 2 } };
         expect(wordFor(st, 'minTier')).toEqual(['2']);
-        expect(renderStatement(st)).toBe('Requires an adjacent Tier 2 net.');
+        expect(renderStatement(st)).toBe('Requires an nearby Tier 2 net.');
         expect(after(st, 'minTier', '3').payload).toEqual({ tag: 'net', minTier: 3 });
         expect(after(st, 'minTier', '0').payload.minTier).toBe(1);
     });
@@ -176,7 +176,7 @@ describe('Cannot', () => {
     it('makes the limit its own word, and the sentence is unchanged', () => {
         const st = { ...makeStatement(KEYWORD.CANNOT), payload: { kind: 'adjacency_limit', max: 2 }, to: { mode: 'tag', value: 'Coast' } };
         expect(wordFor(st, 'max')).toEqual(['2']);
-        expect(renderStatement(st)).toBe('Cannot be adjacent to more than 2 Coast Tokens.');
+        expect(renderStatement(st)).toBe('Cannot be nearby to more than 2 Coast Tokens.');
     });
 });
 

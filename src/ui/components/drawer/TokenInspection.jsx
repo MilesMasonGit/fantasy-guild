@@ -297,7 +297,7 @@ export const TokenInspection = ({
             {/* Buffs describe themselves */}
             {def.buff && (
                 <div className="rounded border border-gi-border/40 bg-gi-base/40 p-2.5">
-                    <Label>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'adjacent Tokens'}</Label>
+                    <Label>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'nearby Tokens'}</Label>
                     <ul className="mt-1 flex flex-col gap-0.5">
                         {def.buff.modifiers.map((m, i) => (
                             <li key={i} className="text-[10px] text-gi-text">
@@ -516,7 +516,7 @@ const DrivesBlock = ({ def }) => {
             </p>
             <p className="mt-1 text-[9px] text-gi-muted">
                 {/* D-113 + D-157: sharing is a rate trade, not free value. */}
-                Serves every adjacent station, and wears once per cycle it serves.
+                Serves every nearby station, and wears once per cycle it serves.
             </p>
         </div>
     );

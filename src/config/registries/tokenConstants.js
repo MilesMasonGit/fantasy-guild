@@ -59,7 +59,7 @@ export const TOKEN_TYPES = Object.freeze([
     'resource',   // creates from nothing (D-51)
     'station',    // transforms, so it costs (D-97)
     'passive',    // Passive Generator — unstaffed, strictly worse (D-116)
-    'context',    // defines what an adjacent station makes (D-18), or gates it (D-213)
+    'context',    // defines what an nearby station makes (D-18), or gates it (D-213)
     'buff',       // adjacency modifiers, deliberately tiny (D-119/D-120)
     'manager',    // restocks its neighbours, never depletes (D-140)
     'market',     // output is currency (D-141)

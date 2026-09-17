@@ -135,7 +135,7 @@ describe('Type-specific restocking (D-35)', () => {
 
 describe('Eight neighbouring spots, and never depleting (D-140)', () => {
     /**
-     * ⚠️ D-140's "eight adjacent tiles" is amended by FP-75: Near starts at
+     * ⚠️ D-140's "eight nearby tiles" is amended by FP-75: Near starts at
      * 164 u, so a Manager reaches its four side neighbours and no diagonal.
      * The same layout restocks again once Near is widened back to 272 u.
      */

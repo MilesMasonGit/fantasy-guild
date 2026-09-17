@@ -46,7 +46,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'nearRadius',
         group: 'Reach',
         label: 'Near radius',
-        hint: 'How far an "adjacent" rule reaches, centre to centre. 164 reaches the four side neighbours (160 u) but not the diagonals (226 u) — FP-75; a 2×2 Token reaches nothing below 253 u. 272 was the old 8-tile ring.',
+        hint: 'How far an "nearby" rule reaches, centre to centre. 164 reaches the four side neighbours (160 u) but not the diagonals (226 u) — FP-75; a 2×2 Token reaches nothing below 253 u. 272 was the old 8-tile ring.',
         min: 100, max: 600, step: 1, def: 164,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },

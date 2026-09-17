@@ -207,7 +207,7 @@ describe('⭐ a Token-borne Applies reaches somebody', () => {
                 rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
                 statements: [{
                     ...makeStatement(KEYWORD.APPLIES), id: 'stm_curse_trap',
-                    when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+                    when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
                     payload: { effectId: 'fixture_lingering', scale: 1, durationMs: 60000, chance: 100 }
                 }]
             }
@@ -296,12 +296,12 @@ describe('⭐ a hero leaving switches a state filter back off', () => {
     });
 });
 
-describe('⭐ a distant duplicate cannot suppress an adjacent one', () => {
+describe('⭐ a distant duplicate cannot suppress an nearby one', () => {
     it('keeps the buff that actually reaches this tile', () => {
         /**
          * The source set widened to every Token on the mat, scanned in arrival
          * order, but the `noStackDuplicates` guard still ran BEFORE the reach
-         * test. A far copy that arrived first claimed the slot and the adjacent
+         * test. A far copy that arrived first claimed the slot and the nearby
          * copy — whose rule genuinely reached here — was skipped.
          */
         registerTokenTypes({
@@ -318,7 +318,7 @@ describe('⭐ a distant duplicate cannot suppress an adjacent one', () => {
         });
 
         place(0, 'fixture_unique_buff');          // far away, and placed first
-        place(NEIGHBOUR, 'fixture_unique_buff');  // adjacent to A
+        place(NEIGHBOUR, 'fixture_unique_buff');  // nearby to A
         place(A, 'fixture_producer', 'hero_1');
 
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(4);

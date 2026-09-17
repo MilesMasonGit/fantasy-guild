@@ -36,7 +36,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * review left open. It was unauthorable in its natural form for two separate
  * reasons, and both had to go:
  *
- * 1. `TOKEN_DEPLETED` existed with an **ADJACENT scope only**, so a Token could
+ * 1. `TOKEN_DEPLETED` existed with an **NEARBY scope only**, so a Token could
  *    hear a neighbour run out of charges and never itself.
  * 2. `destroyToken` empties the tile *before* publishing, so even with the
  *    scope, a self-scoped handler asking the board what is standing there gets
@@ -148,12 +148,12 @@ describe('the moment exists and declares itself', () => {
         expect(trigger.roles).toContain(ROLE.SELF);
     });
 
-    it('leaves the adjacent moment alone', () => {
+    it('leaves the nearby moment alone', () => {
         // A Token hearing a NEIGHBOUR run out is a different rule and still
         // exists. Widening the old entry's scopes instead of adding this one
         // would have silently retargeted every rule already authored on it.
-        const adjacent = getTriggerEvent('TOKEN_DEPLETED');
-        expect(adjacent.scopes).toEqual(['adjacent']);
+        const nearby = getTriggerEvent('TOKEN_DEPLETED');
+        expect(nearby.scopes).toEqual(['nearby']);
     });
 
     it('says the charge ledger is already closed', () => {

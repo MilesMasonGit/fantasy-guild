@@ -123,7 +123,7 @@ describe('the engagement moment', () => {
 
 describe('the trigger vocabulary', () => {
     it('offers the moment to a neighbour and to the enemy itself', () => {
-        expect(getTriggerEvent('COMBAT_ENGAGED')?.scopes).toEqual(['adjacent']);
+        expect(getTriggerEvent('COMBAT_ENGAGED')?.scopes).toEqual(['nearby']);
         expect(getTriggerEvent('SELF_COMBAT_ENGAGED')?.scopes).toEqual(['self']);
     });
 

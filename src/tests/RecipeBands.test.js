@@ -17,7 +17,7 @@ import { StationGearBadge } from '../ui/components/board/TokenBadges.jsx';
  * exercise the general case the modal is built for.
  *
  * **Bands key on skill level only (R-12).** Nothing here asserts anything about
- * inputs or adjacent context Tokens, because the modal computes neither.
+ * inputs or nearby context Tokens, because the modal computes neither.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

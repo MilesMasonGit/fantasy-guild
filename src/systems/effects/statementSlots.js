@@ -538,7 +538,7 @@ export function slotsOf(statement, ctx = {}) {
                     when: {
                         ...(statement.when || {}),
                         event: v,
-                        scope: definition?.scopes?.[0] || 'adjacent'
+                        scope: definition?.scopes?.[0] || 'nearby'
                     }
                 };
             }

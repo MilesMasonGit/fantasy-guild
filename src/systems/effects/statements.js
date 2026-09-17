@@ -133,7 +133,7 @@ export const KEYWORDS = Object.freeze([
          */
         id: KEYWORD.ACTS_AS,
         label: 'Acts as',
-        blurb: 'Hands a capability — a pickaxe, an anvil — to every adjacent station.',
+        blurb: 'Hands a capability — a pickaxe, an anvil — to every nearby station.',
         filter: false,
         when: WHEN.NEVER,
         upkeep: true
@@ -167,7 +167,7 @@ export const KEYWORDS = Object.freeze([
          * So `TriggerSystem` takes the lowest-indexed match and the sentence
          * says *"onto the nearest"* in as many words. The owner's own example is
          * singular: a Sigil turning Stone into Bricks and putting them on the
-         * adjacent Kiln.
+         * nearby Kiln.
          *
          * An absent filter still means the firing tile (D-40), so nothing
          * authored before this changed behaviour.
@@ -590,7 +590,7 @@ export function makeStatement(keywordId, data = {}) {
          * Written out on the keywords that can carry one, the same way `to` is,
          * so the editor shows a real value rather than a blank.
          *
-         * ⚠️ Its **absence** still means `adjacent` (ER-5) — that is what makes
+         * ⚠️ Its **absence** still means `nearby` (ER-5) — that is what makes
          * every statement authored before P2 keep its behaviour without a
          * migration touching a single file. `reachOf` owns that default; this
          * only decides what a *new* statement starts as.
