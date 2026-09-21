@@ -23,7 +23,7 @@ import { logger } from '../../utils/Logger.js';
  *   bank_slots       -> inventory.maxSlots     (64 + 32·rank)
  *   token_bank_slots -> board.tokenBankSlots   (BASE + SLOTS_PER_RANK·rank)
  *   token_bank_tabs  -> board.tokenTabsUnlocked (1 + rank)
- *   roster_size      -> progress.rosterLimit   (rosterLimitForRank(rank), 12 by D-251)
+ *   roster_size      -> progress.rosterLimit   (rosterLimitForRank(rank), at most ROSTER_MAX = 8)
  *
  * (The five figures above were all wrong until 2026-08-25 — they described an
  * older cost curve. Read `recompute()` below, not this list.)
@@ -123,8 +123,8 @@ export const GuildUpgradeManager = {
         if (state.progress) {
             // One definition, in `guildUpgrades.js` (CR2-193) — `HeroLifecycle`
             // falls back to the same function when a save has no rosterLimit
-            // written yet. D-251 pins the cap at twelve: ROSTER_BASE (0) plus
-            // the roster_size track's 12 ranks.
+            // written yet. The cap is ROSTER_MAX (8, owner 2026-09-21; D-251's
+            // twelve before that): ROSTER_BASE (0) plus the track's 8 ranks.
             state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
             state.progress.flagRadiusBonus = (ranks.flag_radius || 0) * 40;
         }

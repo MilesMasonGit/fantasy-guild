@@ -16,7 +16,7 @@ import { rosterLimitForRank } from '../../../config/guildUpgrades.js';
  */
 
 /**
- * The roster cap, raised one per `roster_size` Guild Hall rank (0 to 12).
+ * The roster cap, raised one per `roster_size` Guild Hall rank (0 to 8).
  *
  * `GuildUpgradeManager.recompute` normally writes `progress.rosterLimit`; the
  * fallback covers a save written before it ran, or a state shape caught
