@@ -2,7 +2,7 @@
 
 import { MODIFIER_PALETTE, getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { blankRestriction } from '../../config/registries/restrictionPalette.js';
-import { DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
+import { DEFAULT_REACH, REACH, reachOf } from '../../config/registries/reachRegistry.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 
 /**
@@ -638,6 +638,36 @@ export function statementsOf(def) {
 /** Statements of one keyword. */
 export function statementsWith(def, keywordId) {
     return statementsOf(def).filter(s => s?.keyword === keywordId);
+}
+
+/** Keywords that are about neighbours by definition — no reach field to read. */
+const NEIGHBOUR_KEYWORDS = new Set([KEYWORD.ACTS_AS, KEYWORD.REQUIRES, KEYWORD.RESTOCKS, KEYWORD.CANNOT]);
+
+/**
+ * ⭐ Whether any of a Token's rules act on, or depend on, what is **near** it —
+ * the rule for showing its Near ring (owner, 2026-09-21: "only Tokens that care
+ * about reach should show their reach").
+ *
+ * Yes for: `Acts as`, `Requires`, `Restocks` and `Cannot` (neighbours are the
+ * whole point of each); `Provides`, `Grants` and `Applies` reaching past the
+ * Token itself; a "when a nearby Token…" moment; and a "for each nearby…" count.
+ *
+ * ⚠️ Not for a `board` reach: it covers the whole mat, so a Near-sized ring
+ * would misstate it. Not for an `Applies` aimed at a role (G-42): the role
+ * replaces the reach. Spawns land by their own placement rule, not by reach.
+ */
+export function caresAboutNeighbours(def) {
+    const near = (reachId) => reachId !== REACH.SELF && reachId !== REACH.BOARD;
+    return statementsOf(def).some(statement => {
+        if (!statement) return false;
+        if (NEIGHBOUR_KEYWORDS.has(statement.keyword)) return true;
+        if (statement.when?.scope === 'nearby') return true;
+        if (statement.counted && near(reachOf(statement.counted))) return true;
+        const keyword = KEYWORDS.find(k => k.id === statement.keyword);
+        if (!keyword?.reach) return false;
+        if (statement.keyword === KEYWORD.APPLIES && statement.target?.role) return false;
+        return near(reachOf(statement));
+    });
 }
 
 /**

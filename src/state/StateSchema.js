@@ -170,7 +170,7 @@ export const INITIAL_STATE = {
     // completedProjects/projects/chainProgress/modifiers; they load as
     // ignored extra fields.
     progress: {
-        rosterLimit: 0, // Active roster capacity (matches roster_size rank, starts at 0, max 12)
+        rosterLimit: 0, // Active roster capacity (matches roster_size rank, starts at 0, max 8 — ROSTER_MAX)
         // Extra flag radius, in mat units, from the Scouting Flags upgrade
         // (FP-23): 40 per rank. Derived by GuildUpgradeManager on every load.
         flagRadiusBonus: 0,

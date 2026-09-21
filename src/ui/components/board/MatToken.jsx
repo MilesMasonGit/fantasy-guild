@@ -23,16 +23,20 @@ import {
     TokenChargeBadge, TokenChargeDeltaFloater, TokenNameBadge, AddHeroBadge, StationGearBadge
 } from './TokenBadges.jsx';
 
+
+/** How long a Token takes to slide to a point the game moved it to (a push). */
+const SLIDE_MS = 220;
+const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+
 /**
  * ⭐ **One Token on the free playmat** (slice 1.6c-2) — a circle of art at a
  * point, drawn by its **instance id**. It replaced `BoardTile`, which drew a
  * square of the grid and asked a stopgap adapter which tile each event meant.
  *
  * * **A box at `(x − r, y − r)`, `2r` across**, where `r` is the art radius for
- *   its size (1×1: 64 u, 2×2: 144 u — `matGeometry`). Moving is a CSS
- *   `left`/`top` transition, which is also what a 2×2 cascade's push now looks
- *   like: the Token simply slides to its new point (the old `TILE_PUSHED`
- *   animation went with the grid).
+ *   its size (1×1: 64 u, 2×2: 144 u — `matGeometry`). A move the game makes (a
+ *   push) is a CSS `left`/`top` slide; a move the player makes is not — the
+ *   Token is simply where it was let go.
  * * **A drag source and nothing else.** The whole mat is the one drop target
  *   (`dropOnMat`), so a Token no longer accepts drops on itself; dropping a
  *   copy "on" it still restocks it, because the drop point lands on its spot.
@@ -157,6 +161,21 @@ export const MatToken = React.memo(function MatToken({
         if (drag.isDragging) onClearInspect?.();
     }, [drag.isDragging, onClearInspect]);
 
+    // ⭐ A Token the player moved simply IS where they let it go (owner,
+    // 2026-09-21). The `left`/`top` slide exists for moves the game makes — a
+    // push — and used to play on a drop too, so the Token visibly bounced over
+    // from its old spot. It is switched off from the moment a drag starts until
+    // just after it ends, which covers the drop's own re-render.
+    const [skipSlide, setSkipSlide] = React.useState(false);
+    React.useEffect(() => {
+        if (drag.isDragging) {
+            setSkipSlide(true);
+            return undefined;
+        }
+        const timer = setTimeout(() => setSkipSlide(false), SLIDE_MS + 80);
+        return () => clearTimeout(timer);
+    }, [drag.isDragging]);
+
     // The landing beat: something arrived here (D-230).
     const [landing, setLanding] = React.useState(false);
     const landingTimer = React.useRef(null);
@@ -196,7 +215,9 @@ export const MatToken = React.memo(function MatToken({
         top,
         width: boxPx,
         height: boxPx,
-        transition: 'left 220ms cubic-bezier(0.2, 0.8, 0.2, 1), top 220ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+        transition: skipSlide
+            ? 'none'
+            : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
     const hidden = drag.isDragging;
 

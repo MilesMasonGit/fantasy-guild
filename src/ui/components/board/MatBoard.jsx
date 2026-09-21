@@ -23,6 +23,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
+import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { GameState } from '../../../state/GameState.js';
@@ -237,9 +238,11 @@ export const MatBoard = ({
         EventBus?.publish('state_changed', {});
     }, [EventBus]);
 
+    // Only a Token that acts on or depends on its neighbours shows a ring
+    // (owner, 2026-09-21) — `showsNearRing`.
     const hoveredCentre = useMemo(() => {
         const t = hoveredId ? tokens.find(k => k.id === hoveredId) : null;
-        return t ? { x: t.x, y: t.y } : null;
+        return t && showsNearRing(t.typeId) ? { x: t.x, y: t.y } : null;
     }, [hoveredId, tokens]);
 
     const workedBy = useMemo(() => {

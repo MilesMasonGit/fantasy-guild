@@ -10,10 +10,17 @@ import {
  * Heroes a guild starts with, before any Roster Size rank is bought.
  *
  * Lives here rather than only in `StateSchema`'s `rosterLimit` default because
- * the upgrade track's top rank must agree with it: D-251 pins the roster at
- * twelve, so ROSTER_BASE + `roster_size`.maxRank must equal 12.
+ * the upgrade track's top rank must agree with it: ROSTER_BASE +
+ * `roster_size`.maxRank must equal {@link ROSTER_MAX}.
  */
 export const ROSTER_BASE = 0;
+
+/**
+ * ⭐ The most heroes a guild can have: **8** (owner, 2026-09-21 — replaces
+ * D-251's twelve). Matches the eight flag colours (FP-82). A save that already
+ * holds more keeps every one of them; it just cannot recruit (owner).
+ */
+export const ROSTER_MAX = 8;
 
 /**
  * The roster cap for a given `roster_size` rank — the ONE definition (CR2-193).
@@ -26,7 +33,9 @@ export const ROSTER_BASE = 0;
  * has already paid for. Both now call this.
  */
 export function rosterLimitForRank(rank) {
-    return ROSTER_BASE + (rank || 0);
+    // Clamped: a save that bought ranks 9–12 under the old twelve-hero track
+    // still caps at ROSTER_MAX.
+    return Math.min(ROSTER_MAX, ROSTER_BASE + (rank || 0));
 }
 
 export const UPGRADE_SPRITES = {
@@ -116,8 +125,8 @@ export const GUILD_UPGRADES = [
         name: 'Bunk Beds',
         description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
         tileIndex: 17,
-        // The roster runs from 0 to 12. Rank is directly proportional to heroes (0 to 12).
-        maxRank: 12,
+        // One hero per rank, 0 to ROSTER_MAX (8 since 2026-09-21; was 12).
+        maxRank: ROSTER_MAX - ROSTER_BASE,
         costBase: 500,
         costGrowth: 1.8,
         statLabel: rank => rank === 1 ? '1 hero' : `${rank} heroes`,

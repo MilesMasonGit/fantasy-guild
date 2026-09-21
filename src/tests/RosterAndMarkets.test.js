@@ -67,31 +67,43 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-describe('The roster runs to twelve (D-251)', () => {
-    it('the Roster Size track tops out at 12 heroes', () => {
+describe('The roster runs to eight (owner, 2026-09-21; D-251 had twelve)', () => {
+    it('the Roster Size track tops out at 8 heroes', () => {
         const def = getUpgradeDef('roster_size');
-        expect(def.maxRank).toBe(12);
-        expect(def.statLabel(def.maxRank)).toContain('12');
+        expect(def.maxRank).toBe(8);
+        expect(def.statLabel(def.maxRank)).toContain('8');
     });
 
-    it('buying every rank actually raises the cap to 12', () => {
+    it('buying every rank actually raises the cap to 8', () => {
         // The number in the definition and the number the game enforces are
         // written in different files; this is the join between them.
         const def = getUpgradeDef('roster_size');
         GameState.state.progress.guildUpgrades = { roster_size: def.maxRank };
         GuildUpgradeManager.recompute();
 
-        expect(GameState.state.progress.rosterLimit).toBe(12);
-        expect(HeroManager.getRosterLimit()).toBe(12);
+        expect(GameState.state.progress.rosterLimit).toBe(8);
+        expect(HeroManager.getRosterLimit()).toBe(8);
     });
 
-    it('a twelfth hero can be fielded, and a thirteenth cannot', () => {
-        GameState.state.progress.rosterLimit = 12;
+    it('an eighth hero can be fielded, and a ninth cannot', () => {
+        GameState.state.progress.rosterLimit = 8;
         GameState.state.heroes = [];
 
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < 8; i++) {
             expect(HeroManager.addHero(generateHero()), `hero ${i + 1}`).not.toBeNull();
         }
+        expect(HeroManager.isRosterFull()).toBe(true);
+        expect(HeroManager.addHero(generateHero())).toBeNull();
+    });
+
+    it('a save from the twelve-hero days keeps every hero, but cannot recruit', () => {
+        // Bought ranks 9–12 under the old track, and holds ten heroes.
+        GameState.state.progress.guildUpgrades = { roster_size: 12 };
+        GuildUpgradeManager.recompute();
+        GameState.state.heroes = Array.from({ length: 10 }, () => generateHero());
+
+        expect(GameState.state.progress.rosterLimit).toBe(8);
+        expect(GameState.state.heroes).toHaveLength(10);
         expect(HeroManager.isRosterFull()).toBe(true);
         expect(HeroManager.addHero(generateHero())).toBeNull();
     });

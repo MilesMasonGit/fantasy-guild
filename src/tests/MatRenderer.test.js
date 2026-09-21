@@ -304,6 +304,22 @@ describe('⭐ which Token the pointer is on (overlapping art)', () => {
         expect(zOf(container, a.id)).toBeGreaterThan(zOf(container, b.id));
     });
 
+    it('⭐ only a Token whose rules involve its neighbours shows a reach ring (owner, 2026-09-21)', () => {
+        const plain = placeAt('fixture_producer', 500, 500);
+        const tool = placeAt('fixture_tool', 900, 500);
+        const { container } = mount(h(MatBoard));
+        const root = container.querySelector('[data-mat-board]');
+        unscaled(root);
+
+        fireEvent.pointerMove(root, { clientX: plain.x, clientY: plain.y });
+        expect(container.querySelector('[data-near-ring]')).toBeNull();
+
+        fireEvent.pointerMove(root, { clientX: tool.x, clientY: tool.y });
+        const ring = container.querySelector('[data-near-ring]');
+        expect(ring).not.toBeNull();
+        expect(Number(ring.getAttribute('cx'))).toBe(tool.x);
+    });
+
     it('nothing is hovered out on the bare mat', () => {
         const a = placeAt('fixture_producer', 500, 500);
         const { container } = mount(h(MatBoard));

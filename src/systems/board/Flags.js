@@ -129,6 +129,17 @@ export function flagRadius() {
     return matTuning('flagRadius') + bonus;
 }
 
+/**
+ * Whether a Token centred at `point` is within a flag's reach — its centre
+ * inside the radius. The ONE test: heroes use it to find work, and the reach
+ * ring uses it to decide whether to show while a Token is dragged.
+ */
+export function flagReaches(flag, point) {
+    if (!flag || !point) return false;
+    const radius = flagRadius();
+    return distanceSq({ x: flag.x, y: flag.y }, point) <= radius * radius;
+}
+
 const rt = () => BoardState.flagRuntime();
 
 /** Something changed that could make a skipped Token workable: look again next tick. */
@@ -419,8 +430,6 @@ function forgetNotices(r, heroId, instanceId = null) {
  */
 function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) {
     const point = { x: flag.x, y: flag.y };
-    const radius = flagRadius();
-    const radiusSq = radius * radius;
     const underPoint = [];
     const inRange = [];
     const under = tokenAtPoint(point);
@@ -438,9 +447,8 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
 
         // Work and enemies alike: no split between combat and work (FP-71, FP-74).
         const centre = centreOf(instance);
-        if (!centre) continue;
+        if (!centre || !flagReaches(flag, centre)) continue;
         const d = distanceSq(point, centre);
-        if (d > radiusSq) continue;
         const ruleId = ruleIdOf(kind, def);
         const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
         inRange.push({ instance, def, kind, d, ruleId, rank });

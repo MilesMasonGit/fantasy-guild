@@ -23,6 +23,7 @@ import { FlagMark } from './FlagMark.jsx';
 import { flagTooltip } from './flagText.js';
 import { pointerToMat } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
+import { useTokenDragLanding } from './MatRings.jsx';
 import { announce } from './dropOnMat.js';
 import {
     GEAR_PX, GEAR_OFFSET,
@@ -54,7 +55,8 @@ import {
  * * **The player never moves a hero** (FP-76) — dragging the idle hero, like
  *   dragging a working hero on a Token, drags their FLAG.
  * * **Reach ring** (FP-64, A-4) — a dashed gold circle of the live flag radius,
- *   only while that flag or its hero is hovered, dragged or inspected.
+ *   only while that flag or its hero is hovered, dragged or inspected, or while
+ *   a dragged Token would land inside it.
  */
 
 /** The live flag radius, following the Mat Tuner and the Scouting Flags upgrade. */
@@ -137,6 +139,17 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         if (flag) rings.set(id, { x: flag.x, y: flag.y });
     }
     if (ring?.heroId) rings.set(ring.heroId, { x: ring.x, y: ring.y });
+
+    // While a Token is dragged, every flag it would land inside shows its reach
+    // — whatever the Token is (owner, 2026-09-21).
+    const landing = useTokenDragLanding(matRef);
+    if (landing) {
+        for (const flag of flags) {
+            if (!rings.has(flag.heroId) && Flags.flagReaches(flag, landing)) {
+                rings.set(flag.heroId, { x: flag.x, y: flag.y });
+            }
+        }
+    }
 
     /**
      * ⚠️ Two layers. Rings sit above the Tokens; **flags and idle heroes sit

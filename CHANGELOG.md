@@ -4,6 +4,15 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A Token you drop simply stays where you let go.** It used to replay a slide from its old
+  spot, so it looked like it bounced over. Tokens the game moves (a push) still glide.
+- **Only Tokens that care about their neighbours show a reach ring.** Tools, Tokens that need a
+  tool nearby, buffs, Managers and "Cannot sit beside…" Tokens show one when hovered or dragged;
+  plain resources, Maps and the Guild Hall no longer do.
+- **Dragging a Token shows the reach of every flag it would land inside**, so you can see which
+  heroes could pick it up before you let go.
+- **The guild holds at most 8 heroes** (was 12). Bunk Beds now has 8 ranks at the same prices.
+  A save that already has more heroes keeps every one of them, but can't recruit more.
 - **Tokens no longer vanish into the retired Tray** (Free Playmat cleanup, 2026-09-21). The Tray
   was taken off the screen, but five things still quietly put Tokens into it, where nobody could
   see or reach them. Each now does what the playmat plan says:

@@ -63,9 +63,9 @@ describe('Roster cap has one definition', () => {
     });
 });
 
-describe('Roster cap arithmetic (D-251: the cap is 12)', () => {
-    it('ROSTER_BASE plus the roster_size track maxRank is 12', () => {
-        expect(ROSTER_BASE + getUpgradeDef('roster_size').maxRank).toBe(12);
+describe('Roster cap arithmetic (the cap is 8, owner 2026-09-21)', () => {
+    it('ROSTER_BASE plus the roster_size track maxRank is 8', () => {
+        expect(ROSTER_BASE + getUpgradeDef('roster_size').maxRank).toBe(8);
     });
 
     it('the real shared function is base + rank', async () => {
@@ -73,6 +73,8 @@ describe('Roster cap arithmetic (D-251: the cap is 12)', () => {
         expect(real.rosterLimitForRank(0)).toBe(real.ROSTER_BASE);
         expect(real.rosterLimitForRank(7)).toBe(real.ROSTER_BASE + 7);
         expect(real.rosterLimitForRank(undefined)).toBe(real.ROSTER_BASE);
+        // A rank bought under the old twelve-hero track still caps at 8.
+        expect(real.rosterLimitForRank(12)).toBe(8);
         // The mock above must actually be a mock, or the sentinel tests are vacuous.
         expect(rosterLimitForRank(1)).toBe(SENTINEL);
     });
