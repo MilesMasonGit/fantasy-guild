@@ -36,7 +36,8 @@ export const UPGRADE_SPRITES = {
     token_bank_slots: '/assets/tokens/token_chest_gold.png',
     token_bank_tabs: '/assets/tokens/token_chest_myth.png',
     guild_hall: '/assets/tokens/token_guildhall.png',
-    wishing_well: '/assets/tokens/token_well_wishing.png'
+    wishing_well: '/assets/tokens/token_well_wishing.png',
+    flag_radius: '/assets/tokens/token_banner_wood.png'
 };
 
 /**
@@ -52,6 +53,7 @@ export const UPGRADE_SPRITES = {
  * board means recomputing all six by hand.
  */
 export const UPGRADE_TILES = {
+    16: 'flag_radius',
     17: 'roster_size',
     23: 'bank_slots',
     22: 'bank_tabs',
@@ -121,6 +123,18 @@ export const GUILD_UPGRADES = [
         statLabel: rank => rank === 1 ? '1 hero' : `${rank} heroes`,
         nextStatLabel: rank => `${rank + 1} heroes`,
         sprite: UPGRADE_SPRITES.roster_size
+    },
+    {
+        id: 'flag_radius',
+        name: 'Scouting Flags',
+        description: 'Increases the radius heroes look for work from their flags.',
+        tileIndex: 16,
+        maxRank: 5,
+        costBase: 350,
+        costGrowth: 1.5,
+        statLabel: rank => `+${rank * 40}u reach`,
+        nextStatLabel: rank => `+${(rank + 1) * 40}u reach`,
+        sprite: UPGRADE_SPRITES.flag_radius
     },
     {
         id: 'wishing_well',

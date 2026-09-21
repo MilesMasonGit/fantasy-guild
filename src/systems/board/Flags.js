@@ -120,8 +120,11 @@ export function isDisallowed(instance) {
 export const FIXABLE = WorkCheck.FIXABLE;
 
 /** The live flag radius, in mat units (Mat Tuner, FP-65/66). */
+import { GameState } from '../../state/GameState.js';
+
 export function flagRadius() {
-    return matTuning('flagRadius');
+    const bonus = GameState.state?.progress?.flagRadiusBonus || 0;
+    return matTuning('flagRadius') + bonus;
 }
 
 const rt = () => BoardState.flagRuntime();

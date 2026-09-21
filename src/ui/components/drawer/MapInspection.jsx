@@ -28,7 +28,7 @@ export const MapInspection = ({ mapId, onInspect }) => {
         <div className="flex flex-col gap-4 p-4 text-xs text-gi-text">
             {/* Header with Map Token */}
             <div className="flex items-center gap-3 pb-3 border-b border-gi-border/40">
-                <div className="w-14 h-14 rounded-lg bg-black/40 border border-gi-border/40 flex items-center justify-center shrink-0">
+                <div className="w-16 h-16 rounded-lg bg-black/40 border border-gi-border/40 flex items-center justify-center shrink-0 overflow-hidden">
                     <TokenSprite
                         typeId={mapTokenId}
                         surface={TOKEN_SURFACE.INSPECT}

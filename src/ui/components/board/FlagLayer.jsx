@@ -16,16 +16,17 @@ import { flagColourOf } from '../../../systems/board/FlagColours.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
-import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
-import { PixelArt } from '../base/TokenSprite.jsx';
+import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
+import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/TokenSprite.jsx';
+import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
 import { flagTooltip } from './flagText.js';
 import { pointerToMat } from './matPoint.js';
+import { useMatFit } from './MatFitContext.jsx';
 import { announce } from './dropOnMat.js';
 import {
     FLAG_PX, IDLE_HERO_PX, GEAR_PX, GEAR_OFFSET,
-    IDLE_CHIP_OFFSET, IDLE_HERO_OFFSET, flagOrigin
+    IDLE_CHIP_OFFSET, IDLE_HERO_OFFSET, flagOrigin, POLE_BASE
 } from './flagGeometry.js';
 
 /**
@@ -119,6 +120,9 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     ) || [];
     const radius = useFlagRadius();
     const mat = useMatSize();
+    const fit = useMatFit();
+    const artScale = boardScaleAt(fit);
+    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artScale);
     const liveDragRing = useFlagDragPoint(matRef);
     const ring = dragRing || liveDragRing;
 
@@ -176,13 +180,14 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
                     key={`flag-${f.heroId}`}
                     flag={f}
                     z={i * 3}
+                    artPx={artPx}
                     onHover={onHoverHero}
                     boardHovered={hoverHeroId === f.heroId}
                     inspected={inspectedHeroId === f.heroId}
                 />
             ))}
             {flags.map((f, i) => (f.state === 'idle'
-                ? <IdleHero key={`idle-${f.heroId}`} flag={f} z={i * 3 + 1} onHover={onHoverHero} />
+                ? <IdleHero key={`idle-${f.heroId}`} flag={f} z={i * 3 + 1} artPx={artPx} onHover={onHoverHero} />
                 : null
             ))}
         </div>
@@ -208,7 +213,7 @@ function useLingering(wanted) {
 }
 
 /** One hero's flag: drag to move it, hover for why, gear for the rules. */
-const Flag = ({ flag, z = 0, onHover, boardHovered = false, inspected = false }) => {
+const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false }) => {
     const ref = useRef(null);
     const [hovered, setHovered] = useState(false);
     const [gearHovered, setGearHovered] = useState(false);
@@ -237,12 +242,11 @@ const Flag = ({ flag, z = 0, onHover, boardHovered = false, inspected = false })
         drag.setNodeRef(node);
     };
 
-    const { left, top } = flagOrigin(flag);
+    const scaleFactor = artPx / 128;
+    const originLeft = (flag.x ?? 0) - POLE_BASE.x * scaleFactor;
+    const originTop = (flag.y ?? 0) - POLE_BASE.y * scaleFactor;
 
-    // Only opaque pixels are the flag (FP-64). The global alpha manager already
-    // passes pointer events through transparent pixels; this is the backstop.
     const handleClick = (e) => {
-        if (e.currentTarget && !isElementOpaqueAtPoint(e.currentTarget, e.clientX, e.clientY)) return;
         e.stopPropagation();
     };
 
@@ -252,7 +256,6 @@ const Flag = ({ flag, z = 0, onHover, boardHovered = false, inspected = false })
                 ref={setRefs}
                 {...drag.handleProps}
                 type="button"
-                data-alpha-test="true"
                 data-flag={flag.heroId}
                 data-flag-state={flag.state}
                 data-flag-colour={flag.colour || 'base'}
@@ -265,14 +268,21 @@ const Flag = ({ flag, z = 0, onHover, boardHovered = false, inspected = false })
                     'cursor-grab active:cursor-grabbing',
                     carried && 'opacity-30'
                 )}
-                style={{ left, top, width: FLAG_PX, height: FLAG_PX, zIndex: z }}
+                style={{
+                    left: originLeft,
+                    top: originTop,
+                    width: artPx,
+                    height: artPx,
+                    borderRadius: '50%',
+                    zIndex: z
+                }}
             >
-                <FlagMark colour={flag.colour} size={FLAG_PX} alt={`${flag.name}’s flag`} className="absolute left-0 top-0" />
+                <FlagMark colour={flag.colour} size={artPx} alt={`${flag.name}’s flag`} className="absolute left-0 top-0" />
                 {idle && (
                     <span
                         data-flag-idle-chip
                         className="absolute px-1 rounded bg-black/85 border border-white/20 text-[11px] leading-[11px] font-bold text-stone-300 pointer-events-none"
-                        style={{ left: IDLE_CHIP_OFFSET.left, top: IDLE_CHIP_OFFSET.top }}
+                        style={{ left: IDLE_CHIP_OFFSET.left * scaleFactor, top: IDLE_CHIP_OFFSET.top * scaleFactor }}
                     >
                         …
                     </span>
@@ -298,10 +308,10 @@ const Flag = ({ flag, z = 0, onHover, boardHovered = false, inspected = false })
                     gearShown ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'
                 )}
                 style={{
-                    left: left + GEAR_OFFSET.left,
-                    top: top + GEAR_OFFSET.top,
-                    width: GEAR_PX,
-                    height: GEAR_PX,
+                    left: originLeft + GEAR_OFFSET.left * scaleFactor,
+                    top: originTop + GEAR_OFFSET.top * scaleFactor,
+                    width: GEAR_PX * scaleFactor,
+                    height: GEAR_PX * scaleFactor,
                     zIndex: z + 2
                 }}
             >
@@ -318,7 +328,7 @@ const Flag = ({ flag, z = 0, onHover, boardHovered = false, inspected = false })
  * FP-84). Dragging them drags their flag (FP-76); click for the hero sheet;
  * right-click recalls. Opaque pixels only, like every hero on the board.
  */
-const IdleHero = ({ flag, z = 0, onHover }) => {
+const IdleHero = ({ flag, z = 0, artPx, onHover }) => {
     const drag = useEntityDrag({
         id: `flag-hero-${flag.heroId}`,
         kind: DRAG_KIND.FLAG,
@@ -326,42 +336,48 @@ const IdleHero = ({ flag, z = 0, onHover }) => {
         sourceSurface: DND_SURFACE.BOARD
     });
 
-    const art = flag.sprite ? resolveSpritePath(flag.sprite) : null;
-    const { left, top } = flagOrigin(flag);
-    const opaque = (e) => !e.currentTarget || isElementOpaqueAtPoint(e.currentTarget, e.clientX, e.clientY);
+    const animArt = flag.sprite ? resolveAnimationPath(flag.sprite) : null;
+    const staticArt = flag.sprite ? resolveSpritePath(flag.sprite) : null;
+    const scaleFactor = artPx / 128;
+    const originLeft = (flag.x ?? 0) - POLE_BASE.x * scaleFactor;
+    const originTop = (flag.y ?? 0) - POLE_BASE.y * scaleFactor;
 
     return (
         <button
             ref={drag.setNodeRef}
             {...drag.handleProps}
             type="button"
-            data-alpha-test="true"
             data-flag-idle-hero={flag.heroId}
             aria-label={`${flag.name}, idle`}
             onMouseEnter={() => onHover?.(flag.heroId)}
             onMouseLeave={() => onHover?.(null)}
             onClick={(e) => {
-                if (!opaque(e)) return;
                 e.stopPropagation();
                 EventBus.publish('inspect_hero', { heroId: flag.heroId });
             }}
             onContextMenu={(e) => {
-                if (!opaque(e)) return;
                 e.preventDefault();
                 e.stopPropagation();
                 announce(Placement.recallHeroById(flag.heroId));
             }}
             className="absolute pointer-events-auto p-0 m-0 bg-transparent border-0 outline-none cursor-grab active:cursor-grabbing"
             style={{
-                left: left + IDLE_HERO_OFFSET.left,
-                top: top + IDLE_HERO_OFFSET.top,
-                width: IDLE_HERO_PX,
-                height: IDLE_HERO_PX,
+                left: originLeft + IDLE_HERO_OFFSET.left * scaleFactor,
+                top: originTop + IDLE_HERO_OFFSET.top * scaleFactor,
+                width: artPx,
+                height: artPx,
+                borderRadius: '50%',
                 // In front of its own flag's pole, behind the gear.
                 zIndex: z
             }}
         >
-            {art && <PixelArt src={art} alt={flag.name} size={IDLE_HERO_PX} className="absolute left-0 top-0" />}
+            {(animArt || staticArt) && (
+                animArt ? (
+                    <AnimatedHeroSprite src={animArt} alt={flag.name} size={artPx} animationState="idle" facingLeft={false} className="absolute left-0 top-0" />
+                ) : (
+                    <PixelArt src={staticArt} alt={flag.name} size={artPx} className="absolute left-0 top-0" />
+                )
+            )}
         </button>
     );
 };

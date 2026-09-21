@@ -5,7 +5,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { getBannerCardWidth } from '../dev/cardSizeStore.js';
 import { DRAG_KIND } from './dragConstants.js';
-import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt } from '../components/base/TokenSprite.jsx';
+import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardScaleAt, boardArtSteps } from '../components/base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { GameState } from '../../state/GameState.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
@@ -39,6 +39,12 @@ function bannerCardSize() {
         : { size: 'md', width: getBannerCardWidth(), height: 256, sprite: 128 };
 }
 
+function liveBoardFit() {
+    if (typeof document === 'undefined') return 1;
+    const el = document.querySelector('[data-board-scale]');
+    return el ? parseFloat(el.getAttribute('data-board-scale')) || 1 : 1;
+}
+
 export const DragGhost = ({ payload, bold }) => {
     const { over } = useDndContext();
     const isOverMiniBoard = over && String(over.id).startsWith('miniboard-tile-');
@@ -60,7 +66,7 @@ export const DragGhost = ({ payload, bold }) => {
         case DRAG_KIND.TOKEN:
             return (
                 <div style={opacityStyle} className="relative transition-opacity duration-150">
-                    <TokenGhost payload={payload} />
+                    <TokenGhost payload={payload} bold={bold} />
                     {isGuildHallOffBoard && (
                         <div className="absolute top-1.5 left-[2px] z-50 pointer-events-none w-8 h-8 flex items-center justify-center">
                             <img
@@ -78,9 +84,9 @@ export const DragGhost = ({ payload, bold }) => {
                     )}
                 </div>
             );
-        case DRAG_KIND.HERO: return <div style={opacityStyle} className="transition-opacity duration-150"><HeroGhost payload={payload} /></div>;
+        case DRAG_KIND.HERO: return <div style={opacityStyle} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
         case DRAG_KIND.ITEM: return <div style={opacityStyle} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
-        case DRAG_KIND.FLAG: return <FlagGhost payload={payload} />;
+        case DRAG_KIND.FLAG: return <FlagGhost payload={payload} bold={bold} />;
         default: return null;
     }
 };
@@ -90,11 +96,15 @@ export const DragGhost = ({ payload, bold }) => {
  * 128 px, lifted, with no hero drawn: a flag drag moves only the flag, and so
  * does dragging a hero on the board (FP-76).
  */
-export const FlagGhost = ({ payload }) => (
-    <div data-flag-ghost={payload?.heroId || ''} className="flex items-center justify-center" style={{ width: 128, height: 128 }}>
-        <FlagMark colour={flagColourOf(payload?.heroId)} size={128} lifted />
-    </div>
-);
+export const FlagGhost = ({ payload, bold }) => {
+    const artScale = boardArtSteps(liveBoardFit());
+    const size = 64 * artScale;
+    return (
+        <div data-flag-ghost={payload?.heroId || ''} className="flex items-center justify-center" style={{ width: size, height: size }}>
+            <FlagMark colour={flagColourOf(payload?.heroId)} size={size} lifted />
+        </div>
+    );
+};
 
 /**
  * A Token in flight — one size, no frame, all the way (D-219, D-220).
@@ -110,8 +120,9 @@ export const FlagGhost = ({ payload }) => (
  * is nothing between 128 and 192, and anything between them lands off the pixel
  * grid (D-220).
  */
-const TokenGhost = ({ payload }) => {
-    const size = tokenSizeFor(TOKEN_SURFACE.CARRY, payload.typeId);
+const TokenGhost = ({ payload, bold }) => {
+    const artScale = boardArtSteps(liveBoardFit());
+    const size = tokenSizeFor(TOKEN_SURFACE.CARRY, payload.typeId, artScale);
     return (
         // ⚠️ The explicit box is load-bearing, not tidiness. dnd-kit sizes its
         // DragOverlay to the node the drag STARTED from — a 74px Tray slot, a
@@ -119,7 +130,7 @@ const TokenGhost = ({ payload }) => {
         // that was and the carried Token changes size depending on where it was
         // picked up. Which is bloom, reintroduced by accident (D-220).
         <div className="flex items-center justify-center" style={{ width: size, height: size }}>
-            <TokenSprite typeId={payload.typeId} surface={TOKEN_SURFACE.CARRY} lifted />
+            <TokenSprite typeId={payload.typeId} surface={TOKEN_SURFACE.CARRY} scale={artScale} lifted />
         </div>
     );
 };
@@ -127,8 +138,9 @@ const TokenGhost = ({ payload }) => {
 /**
  * A Hero in flight — one size (128px), no card frame, sprite-only (same style as Tokens).
  */
-const HeroGhost = ({ payload }) => {
-    const size = tokenSizeFor(TOKEN_SURFACE.CARRY);
+const HeroGhost = ({ payload, bold }) => {
+    const artScale = boardArtSteps(liveBoardFit());
+    const size = tokenSizeFor(TOKEN_SURFACE.CARRY, 1, artScale);
     const hero = payload.heroId ? (GameState.heroes || []).find(h => h.id === payload.heroId) : null;
     const spriteRef = payload.spriteId || payload.heroSprite || payload.classId || hero?.spriteId || hero?.icon || hero?.heroSprite || hero?.classId || payload;
     const src = resolveSpritePath(spriteRef);

@@ -54,7 +54,8 @@ const defaultSettings = {
         itemParticles: true,
         instantPackReveal: false,
         allCaps: true,
-        backgroundTile: 'pm_table_wood_spruce'
+        backgroundTile: 'pm_table_wood_spruce',
+        bubbleMenuRight: false
     },
     audio: {
         // Silent by default while the game is in development (owner request

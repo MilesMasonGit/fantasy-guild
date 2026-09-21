@@ -17,6 +17,8 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
+import * as MatPlacement from './MatPlacement.js';
+import * as TileModifiers from './TileModifiers.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -170,17 +172,8 @@ export function canBuy(mapId) {
         return refuse(`Short on materials — need ${names}`);
     }
 
-    // **A purchased Map goes straight to the Tray** (D-156): Maps cannot be
-    // stored, never occupy Vault slots, and there is no Map inventory. So a
-    // full Tray refuses the purchase rather than leaving it nowhere to go.
-    //
-    // `hasTraySpace` is the one capacity rule (CR2-054). This used to count raw
-    // `getTray().length`, which includes the Maps already sitting there — and
-    // Maps do not occupy Tray capacity, so this route refused a purchase that
-    // `addToTray` would have accepted. The 50-Map cap is the check above.
-    if (!BoardState.hasTraySpace()) {
-        return refuse('No room in the Tray — place or open something first');
-    }
+    // Maps are placed on the board directly beside the Guild Hall, so they don't
+    // require Tray space anymore. The 50-Map cap above is the only limit.
 
     return { success: true };
 }
@@ -207,29 +200,16 @@ export function buyMap(mapId, options = {}) {
         return refuse(`Not enough gold — ${def.price}g needed`);
     }
 
-    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    let initialPos = undefined;
-    if (options.sourceRect && typeof document !== 'undefined') {
-        const trayEl = document.querySelector('[data-tray-surface]');
-        const trayRect = trayEl?.getBoundingClientRect();
-        if (trayRect && trayRect.height > 0) {
-            const spriteCenterY = options.sourceRect.top + (options.sourceRect.height || 0) / 2;
-            const targetFractionY = Math.max(0.08, Math.min(0.92, (spriteCenterY - trayRect.top) / trayRect.height));
-            initialPos = { x: 0.5, y: targetFractionY };
-        }
-    }
-    BoardState.addToTray(instance, undefined, initialPos);
-    instance.bornAt = Date.now();
+    // Maps are dropped onto the playmat (beside the Guild Hall).
+    const center = centreOfBoard();
+    const mapX = center.x + (Math.random() - 0.5) * 100;
+    const mapY = center.y + (Math.random() - 0.5) * 100;
 
-    if (options.sourceRect) {
-        instance.sourceRect = options.sourceRect;
-        instance.fromX = -1;
-        instance.fromY = instance.y;
-    } else {
-        // Sideways fallback (from the left instead of top)
-        instance.fromX = -1;
-        instance.fromY = instance.y;
-    }
+    const instance = BoardState.addBoardMap(typeId, mapX, mapY, tokenStartingUses(typeId), {
+        bornAt: Date.now(),
+        fromX: -1,
+        fromY: mapY
+    });
 
     // Track purchased map for bounty unlocking
     if (!GameState.state.cartographer) GameState.state.cartographer = { purchasedMaps: [] };
@@ -392,26 +372,40 @@ export function openMap(instance, origin = null) {
         if (entry.refId && markDiscovered(entry.refId)) firstSeen.push(entry.refId);
 
         if (entry.kind === 'token') {
-            if (isTray && BoardState.hasTraySpace()) {
+            // Map bursts scatter their contents directly onto the mat as fully functioning Tokens.
+            const spawnPoint = scatterFrom.centre || { x: scatterFrom.x || matW()/2, y: scatterFrom.y || matH()/2 };
+            // Add a little randomness so multiple tokens don't land exactly on each other before pushing
+            const landingX = spawnPoint.x + (Math.random() - 0.5) * 40;
+            const landingY = spawnPoint.y + (Math.random() - 0.5) * 40;
+            
+            // Use forceSpot to resolve placement, cascading push neighbors
+            const where = MatPlacement.forceSpot(entry.refId, { x: landingX, y: landingY });
+            
+            if (where) {
+                // Apply pushes
+                const dirty = [];
+                if (where.pushed && where.pushed.length > 0) {
+                    for (const p of where.pushed) {
+                        const tok = BoardState.getTokenById(p.id);
+                        if (tok) {
+                            dirty.push({ x: tok.x, y: tok.y });
+                            BoardState.setTokenPoint(p.id, p.x, p.y);
+                            dirty.push({ x: p.x, y: p.y });
+                        }
+                    }
+                }
+
                 const tokInstance = BoardState.createTokenInstance(entry.refId, tokenStartingUses(entry.refId), stamp);
-                // Scatter close to the Map in the Tray (fly less far in the tray)
-                const mapX = originObj?.x ?? 0.5;
-                const mapY = originObj?.y ?? 0.5;
-                const angle = Math.random() * Math.PI * 2;
-                const dist = 0.12 + Math.random() * 0.12;
-                const tx = clamp01(mapX + Math.cos(angle) * dist);
-                const ty = clamp01(mapY + Math.sin(angle) * dist);
-                tokInstance.fromX = mapX;
-                tokInstance.fromY = mapY;
                 tokInstance.bornAt = Date.now();
-                BoardState.addToTray(tokInstance, undefined, { x: tx, y: ty });
-                tokInstance.fromX = mapX;
-                tokInstance.fromY = mapY;
-                tokInstance.bornAt = Date.now();
-            } else {
-                SpriteLayer.addSprite(
-                    'token', entry.refId, 1, scatterFrom, tokenStartingUses(entry.refId), stamp
-                );
+                tokInstance.fromX = spawnPoint.x;
+                tokInstance.fromY = spawnPoint.y;
+                
+                BoardState.addToken(tokInstance, where.x, where.y);
+                EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: tokInstance.id, typeId: entry.refId });
+                EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: tokInstance.id, typeId: entry.refId });
+                
+                dirty.push({ x: where.x, y: where.y });
+                TileModifiers.rebuildAround(dirty);
             }
         } else if (entry.kind === 'gold' || entry.kind === 'currency') {
             const amount = entry.amount || entry.quantity || 2000;

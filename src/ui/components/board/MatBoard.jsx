@@ -26,7 +26,7 @@ import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { GameState } from '../../../state/GameState.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { TokenSprite, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
+import { TokenSprite, TOKEN_SURFACE, boardScaleAt, tokenSizeFor } from '../base/TokenSprite.jsx';
 import { useMatFit } from './MatFitContext.jsx';
 import { cn } from '../../utils/cn.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
@@ -123,9 +123,9 @@ export const MatBoard = ({
             const out = [];
             for (const [heroId, point] of BoardState.heroesOnBoard()) {
                 const status = Flags.statusOf(heroId);
-                if (status.state !== 'working' && status.state !== 'waiting') continue;
+                if (status.state !== 'working' && status.state !== 'waiting' && status.state !== 'walking') continue;
                 if (!point) continue;
-                const workId = status.state === 'working' ? BoardState.workTokenOf(heroId) : null;
+                const workId = (status.state === 'working' || status.state === 'walking') ? BoardState.workTokenOf(heroId) : null;
                 const worked = workId ? BoardState.getTokenById(workId) : null;
                 const hero = roster.find(h => h?.id === heroId);
                 out.push({
@@ -301,6 +301,10 @@ export const MatBoard = ({
 
             {heroes.map(h => {
                 const place = heroPlacement(h);
+                let animState = 'idle';
+                if (h.state === 'working') animState = 'attack';
+                else if (h.state === 'walking') animState = 'walk';
+
                 return (
                     <MatHero
                         key={h.heroId}
@@ -314,6 +318,7 @@ export const MatBoard = ({
                         hovered={hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId)}
                         onHover={setHoverHeroId}
                         onRecall={handleRecallHero}
+                        animationState={animState}
                     />
                 );
             })}
@@ -433,6 +438,11 @@ const BoardMapToken = ({ map, onBurst }) => {
         sourceSurface: DND_SURFACE.BOARD
     });
 
+    const fit = useMatFit();
+    const artScale = boardScaleAt(fit);
+    // Properly use TOKEN_SURFACE.BOARD to compute size so it matches standard tokens
+    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, map.typeId, artScale);
+
     const isThisDragging = drag.isDragging || (activePayload?.from?.boardMapId === map.id);
 
     React.useEffect(() => {
@@ -474,6 +484,9 @@ const BoardMapToken = ({ map, onBurst }) => {
         onBurst?.(map.id);
     };
 
+    // Note: map.x/y define the top-left of a logical 128px bounding box (set by mapBoxAt),
+    // so the logical center is always at map.x + 64. We must then offset by artPx / 2
+    // to keep the visual art perfectly centered on the coordinate where it was dropped.
     return (
         <div
             ref={setNodeRef}
@@ -490,10 +503,10 @@ const BoardMapToken = ({ map, onBurst }) => {
                 isThisDragging && 'opacity-0 pointer-events-none'
             )}
             style={{
-                left: map.x,
-                top: map.y,
-                width: TOKEN_PX,
-                height: TOKEN_PX,
+                left: map.x + 64 - artPx / 2,
+                top: map.y + 64 - artPx / 2,
+                width: artPx,
+                height: artPx,
                 zIndex: MAT_Z.MAP,
                 opacity: isThisDragging ? 0 : 1,
                 visibility: isThisDragging ? 'hidden' : 'visible'
@@ -501,13 +514,14 @@ const BoardMapToken = ({ map, onBurst }) => {
         >
             <div
                 className={cn(
-                    'w-full h-full flex items-center justify-center transition-[filter] duration-150',
+                    'w-full h-full flex items-center justify-center transition-[filter] duration-150 rounded-full',
                     isHovered && !isAnyDragging && !isThisDragging && 'gi-token-hover-pulse'
                 )}
             >
                 <TokenSprite
                     typeId={map.typeId}
                     surface={TOKEN_SURFACE.BOARD}
+                    scale={artScale}
                     alt={label}
                     className="w-full h-full"
                 />

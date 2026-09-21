@@ -106,6 +106,7 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
                     {...matDrop.droppableProps}
                     data-board-origin
                     data-natural-width={mat.w}
+                    data-board-scale={fit.scale}
                     className="relative shrink-0"
                     style={{
                         width: mat.w,

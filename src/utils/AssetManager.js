@@ -222,6 +222,39 @@ export function resolveSpritePath(entity) {
     return spritePath;
 }
 
+export function resolveAnimationPath(entity) {
+    let id = null;
+    if (typeof entity === 'object') {
+        id = entity.spriteId || entity.sprite || entity.classId || entity.templateId || entity.id;
+    } else {
+        id = entity;
+    }
+
+    const ANIMATION_MAP = {
+        'hero_recruit_0': 'ani_recruit_0', 'hero_adventure': 'ani_adventure1', 'hn_adventure1': 'ani_adventure1', 'adventure': 'ani_adventure1',
+        'icon_recruit_0': 'ani_recruit_0',
+        'recruit': 'ani_recruit_0',
+        'hm_fighter': 'ani_fighter_0',
+        'hero_knight': 'ani_fighter_0',
+        'fighter': 'ani_fighter_0',
+        'hn_sneak': 'ani_rogue_0',
+        'hero_rogue': 'ani_rogue_0',
+        'rogue': 'ani_rogue_0',
+        'hm_wizard': 'ani_wizard_0',
+        'hero_wizard': 'ani_wizard_0',
+        'wizard': 'ani_wizard_0',
+        'hero_wizard_arcane': 'ani_wizard_0',
+        'hn_range': 'ani_ranger_0',
+        'ranger': 'ani_ranger_0'
+    };
+
+    if (id && ANIMATION_MAP[id]) {
+        return `assets/heroes/animations/${ANIMATION_MAP[id]}.png`;
+    }
+    
+    return null;
+}
+
 // `renderIcon` was deleted on 2026-08-24 (CR2-103). It built an icon by
 // returning a raw HTML string with inline styles and an `onerror` attribute —
 // pre-React machinery that `ItemIcon.jsx` replaced — and had no callers in

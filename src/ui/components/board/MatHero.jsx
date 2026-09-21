@@ -1,12 +1,15 @@
+import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
 import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { PixelArt } from '../base/TokenSprite.jsx';
-import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/TokenSprite.jsx';
+import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
+import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { useMatFit } from './MatFitContext.jsx';
 
 /**
  * A hero standing on the mat: working a Token, waiting on a spot for a restock,
@@ -17,16 +20,6 @@ import { EventBus } from '../../../systems/core/EventBus.js';
  * picked up: dropped on the mat it moves the flag and the hero goes to their
  * next job; dropped on the Dock it recalls. The hero stays drawn where they are
  * while the flag is in the hand.
- *
- * Left-click opens the hero sheet, right-click recalls them. Both answer **only
- * on opaque pixels** (`data-alpha-test`), so a click on the empty air around the
- * sprite reaches the Token underneath.
- *
- * ## Where it is drawn
- * `left`/`top` are mat units, given by whoever draws it — the hero's box is
- * `HERO_HIT_PX` wide (the clickable part) and one sprite tall, with the 128 px
- * art (FP-77) centred on it. Several heroes may overlap freely: the grid's
- * one-hero-per-tile rule (FPP-6) went with the grid.
  */
 export const MatHero = ({
     heroId,
@@ -38,7 +31,8 @@ export const MatHero = ({
     glow = null,
     hovered = false,
     onHover,
-    onRecall
+    onRecall,
+    animationState = 'idle'
 }) => {
     const drag = useEntityDrag({
         id: `hero-${heroId}`,
@@ -47,12 +41,46 @@ export const MatHero = ({
         sourceSurface: DND_SURFACE.BOARD
     });
 
-    // Only a hero carried out of the Dock is ever in the hand (FP-76).
     const { activePayload, isDragging } = useActiveDrag();
     const isThisHeroDragging = isDragging && activePayload?.kind === DRAG_KIND.HERO && activePayload?.heroId === heroId;
 
-    const art = sprite ? resolveSpritePath(sprite) : null;
+    const animArt = sprite ? resolveAnimationPath(sprite) : null;
+    const staticArt = sprite ? resolveSpritePath(sprite) : null;
     const opaque = (e) => !e.currentTarget || isElementOpaqueAtPoint(e.currentTarget, e.clientX, e.clientY);
+    
+    const fit = useMatFit();
+    const artScale = boardScaleAt(fit);
+    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artScale);
+
+    const prevLeftRef = React.useRef(left);
+    const prevTopRef = React.useRef(top);
+    const [facingLeft, setFacingLeft] = React.useState(false);
+    const [isWalking, setIsWalking] = React.useState(false);
+    const [walkDuration, setWalkDuration] = React.useState(220);
+
+    React.useEffect(() => {
+        const dx = left - prevLeftRef.current;
+        const dy = top - prevTopRef.current;
+        
+        if (dx < 0) setFacingLeft(true);
+        else if (dx > 0) setFacingLeft(false);
+
+        if (dx !== 0 || dy !== 0) {
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const walkMs = Math.max(220, (dist / 100) * 1000);
+            
+            setWalkDuration(walkMs);
+            setIsWalking(true);
+            const timer = setTimeout(() => setIsWalking(false), walkMs);
+            
+            prevLeftRef.current = left;
+            prevTopRef.current = top;
+            
+            return () => clearTimeout(timer);
+        }
+    }, [left, top]);
+
+    const activeAnimation = isWalking ? 'walk' : animationState;
 
     return (
         <button
@@ -63,7 +91,7 @@ export const MatHero = ({
             data-board-hero={heroId}
             aria-label={name || 'Hero'}
             onClick={(e) => {
-                if (!opaque(e)) return;   // Transparent pixel: let it reach the Token underneath
+                if (!opaque(e)) return;
                 e.stopPropagation();
                 EventBus.publish('inspect_hero', { heroId });
             }}
@@ -81,8 +109,9 @@ export const MatHero = ({
                 width: HERO_HIT_PX,
                 height: FLAG_PX,
                 zIndex: z,
-                // A hero follows their Token when it is moved or pushed (FP-68).
-                transition: 'left 220ms cubic-bezier(0.2, 0.8, 0.2, 1), top 220ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+                transition: isWalking 
+                    ? `left ${walkDuration}ms linear, top ${walkDuration}ms linear`
+                    : 'left 220ms cubic-bezier(0.2, 0.8, 0.2, 1), top 220ms cubic-bezier(0.2, 0.8, 0.2, 1)'
             }}
             className={cn(
                 'absolute p-0 m-0 bg-transparent border-0 outline-none',
@@ -91,19 +120,31 @@ export const MatHero = ({
                 isThisHeroDragging && 'opacity-0 pointer-events-none'
             )}
         >
-            {art && (
+            {(animArt || staticArt) && (
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         hovered && !drag.isDragging && 'gi-token-hover-pulse'
                     )}
                 >
-                    <PixelArt
-                        src={art}
-                        alt={name || 'Hero'}
-                        size={FLAG_PX}
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                    />
+                    {animArt ? (
+                        <AnimatedHeroSprite
+                            src={animArt}
+                            alt={name || 'Hero'}
+                            size={artPx}
+                            animationState={activeAnimation}
+                            facingLeft={facingLeft}
+                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                        />
+                    ) : (
+                        <PixelArt
+                            src={staticArt}
+                            alt={name || 'Hero'}
+                            size={artPx}
+                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-transform duration-200"
+                            style={{ transform: facingLeft ? 'scaleX(-1)' : 'none' }}
+                        />
+                    )}
                 </div>
             )}
         </button>

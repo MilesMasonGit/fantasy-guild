@@ -4,7 +4,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z } from './matLayers.js';
-import { PixelArt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { PixelArt, tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
@@ -12,8 +12,8 @@ import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
-import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { useMatFit } from './MatFitContext.jsx';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { QuestManager } from '../../../systems/quests/QuestManager.js';
 
@@ -117,6 +117,8 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
     const [isHovered, setIsHovered] = React.useState(false);
     const [isAbsorbingPulse, setIsAbsorbingPulse] = React.useState(false);
     const elementRef = React.useRef(null);
+    const fit = useMatFit();
+    const artScale = boardScaleAt(fit);
 
     const drag = useEntityDrag({
         id: `sprite-${sprite.id}`,
@@ -180,23 +182,17 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
         : resolveSpritePath(getItem(sprite.refId) || sprite.refId);
 
     const label = isToken ? tokenName(sprite.refId) : (getItem(sprite.refId)?.name || sprite.refId);
-    const spriteSize = isToken ? tokenSizeFor(TOKEN_SURFACE.FLOOR, sprite.refId) : FLOOR_ITEM_PX;
+    const spriteSize = isToken ? tokenSizeFor(TOKEN_SURFACE.FLOOR, sprite.refId, artScale) : FLOOR_ITEM_PX * (artScale / 2);
 
     const handlePointerMove = (e) => {
         if (!elementRef.current) return;
-        const isOpaque = isElementOpaqueAtPoint(elementRef.current, e.clientX, e.clientY);
-        if (!isOpaque && isHovered) {
-            setIsHovered(false);
-        } else if (isOpaque && !isHovered) {
+        if (!isHovered) {
             setIsHovered(true);
             if (!isToken && !isAnyDragging) onCollect(sprite.id);
         }
     };
 
     const handleClick = (e) => {
-        if (elementRef.current && !isElementOpaqueAtPoint(elementRef.current, e.clientX, e.clientY)) {
-            return;
-        }
         if (isToken) {
             e.stopPropagation();
         } else {
@@ -206,9 +202,6 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
     };
 
     const handleContextMenu = (e) => {
-        if (elementRef.current && !isElementOpaqueAtPoint(elementRef.current, e.clientX, e.clientY)) {
-            return;
-        }
         e.preventDefault();
         e.stopPropagation();
         if (isToken) {
@@ -226,7 +219,6 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
             {...(isToken ? drag.handleProps : {})}
             data-item-sprite={!isToken ? "true" : undefined}
             data-token-sprite={isToken ? "true" : undefined}
-            data-alpha-test="true"
             type="button"
             onClick={handleClick}
             onContextMenu={handleContextMenu}
@@ -247,6 +239,7 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
                 top: sprite.y,
                 width: spriteSize,
                 height: spriteSize,
+                borderRadius: '50%',
                 zIndex: 50,
                 opacity: isThisDragging ? 0 : 1,
                 visibility: isThisDragging ? 'hidden' : 'visible',

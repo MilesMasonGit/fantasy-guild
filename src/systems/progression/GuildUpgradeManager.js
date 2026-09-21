@@ -126,6 +126,7 @@ export const GuildUpgradeManager = {
             // written yet. D-251 pins the cap at twelve: ROSTER_BASE (0) plus
             // the roster_size track's 12 ranks.
             state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
+            state.progress.flagRadiusBonus = (ranks.flag_radius || 0) * 40;
         }
         if (state.board) {
             state.board.tokenBankSlots =

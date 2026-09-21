@@ -7,18 +7,10 @@ import { useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
-import { SIDE_COLUMN_PX } from '../board/boardConstants.js';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 
-/**
- * RightmostHeroDock — vertical sliding tabs dock on the far right edge of the screen.
- * - Sized to SIDE_COLUMN_PX height so top hero lines up with playmat & tray, but
- *   capped to the window: the playmat scales down on short windows (CR2-179).
- * - Hero Dock tabs sit above the inspection sheet (z-30 vs z-20).
- * - Full hero inspection sheet renders tucked behind the dock at a fixed position covering the Tray.
- */
-export const RightmostHeroDock = ({
+export const BottomHeroDock = ({
     isBankOpen = false,
     selectedHeroId,
     onSelectHero,
@@ -59,8 +51,6 @@ export const RightmostHeroDock = ({
 
         const handlePointerDown = (e) => {
             if (asideRef.current && asideRef.current.contains(e.target)) return;
-
-            // When clicking or dragging inside a drawer (e.g. Item Bank) or on items, do not close hero inspection
             if (
                 e.target.closest('[data-dnd-surface="drawer"]') ||
                 e.target.closest('[data-dnd-region="drawer"]') ||
@@ -69,7 +59,6 @@ export const RightmostHeroDock = ({
             ) {
                 return;
             }
-
             onCloseHero?.();
         };
 
@@ -88,14 +77,11 @@ export const RightmostHeroDock = ({
     }, [selectedHeroId, onCloseHero]);
 
     const recall = useEntityDrop({
-        id: 'rightmost-dock-recall',
+        id: 'bottom-dock-recall',
         surface: DND_SURFACE.DRAWER,
         accepts: p => isRecallDrop(p) || (p.kind === DRAG_KIND.HERO && !!p.from?.areaId),
         onDrop: p => {
             if (isRecallDrop(p)) {
-                // A hero off the board or a flag's pennant (Free Playmat 1.5),
-                // recalled by hero, not by tile. ⚠️ The engine exposes
-                // Placement as `BoardPlacement`; `engine.Placement` is undefined.
                 recallFromDrop(engine.BoardPlacement, p);
             } else if (p.from?.areaId) {
                 engine.HeroAssignmentManager?.unassignHero(p.from.areaId);
@@ -107,21 +93,19 @@ export const RightmostHeroDock = ({
         <aside
             ref={mergeRefs(recall.setNodeRef, asideRef)}
             data-dnd-region={DND_SURFACE.DRAWER}
-            style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             className={cn(
-                'w-20 shrink-0 flex flex-col justify-start gap-2 pointer-events-auto select-none relative z-40 pr-0 overflow-visible',
-                recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5 rounded-l-xl'
+                'w-full shrink-0 flex flex-row items-end justify-center gap-2 pointer-events-auto select-none relative z-40 pb-4 pt-0 overflow-visible min-h-[88px]',
+                recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5 rounded-t-xl'
             )}
             {...recall.droppableProps}
         >
-            {/* Full-width Hero Inspection Sheet underlapping the hero dock tabs with smooth slide in/out */}
+            {/* Full-width Hero Inspection Sheet sliding UP from the dock */}
             <div
-                style={{ height: SIDE_COLUMN_PX, maxHeight: '100%', top: 0 }}
                 className={cn(
-                    "absolute right-0 w-[368px] md:w-[400px] xl:w-[400px] 2xl:w-[420px] z-30 transition-all duration-200 ease-out",
+                    "absolute bottom-[80px] left-1/2 -translate-x-1/2 w-[368px] md:w-[400px] xl:w-[400px] 2xl:w-[420px] h-[700px] max-h-[75vh] z-30 transition-all duration-200 ease-out",
                     isOpen
-                        ? "translate-x-0 opacity-100 pointer-events-auto"
-                        : "translate-x-full opacity-0 pointer-events-none"
+                        ? "translate-y-0 opacity-100 pointer-events-auto"
+                        : "translate-y-8 opacity-0 pointer-events-none"
                 )}
             >
                 {displayedHeroId && (
@@ -133,29 +117,31 @@ export const RightmostHeroDock = ({
                 )}
             </div>
 
-            {/* Hero Dock Tabs (sitting above the inspection sheet with layout motion) */}
-            {heroIds.map((heroId, index) => (
-                <motion.div
-                    key={heroId}
-                    layout="position"
-                    transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-                    className="w-full flex justify-end overflow-visible relative"
-                >
-                    <HeroDockTab
-                        heroId={heroId}
-                        index={index}
-                        heroIds={heroIds}
-                        forceExpanded={forceExpandTabs}
-                        isSelected={selectedHeroId === heroId}
-                        onSelect={onSelectHero}
-                        onDoubleClick={onDoubleClickHero}
-                        onEdit={onEditHero}
-                        onReorder={handleReorderHero}
-                    />
-                </motion.div>
-            ))}
+            {/* Hero Dock Tabs (sitting below the inspection sheet) */}
+            <div className="flex flex-row justify-center gap-2 relative z-40">
+                {heroIds.map((heroId, index) => (
+                    <motion.div
+                        key={heroId}
+                        layout="position"
+                        transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                        className="h-[72px] flex flex-col justify-end overflow-visible relative"
+                    >
+                        <HeroDockTab
+                            heroId={heroId}
+                            index={index}
+                            heroIds={heroIds}
+                            forceExpanded={forceExpandTabs}
+                            isSelected={selectedHeroId === heroId}
+                            onSelect={onSelectHero}
+                            onDoubleClick={onDoubleClickHero}
+                            onEdit={onEditHero}
+                            onReorder={handleReorderHero}
+                        />
+                    </motion.div>
+                ))}
+            </div>
         </aside>
     );
 };
 
-export default RightmostHeroDock;
+export default BottomHeroDock;

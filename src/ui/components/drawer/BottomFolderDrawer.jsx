@@ -7,6 +7,7 @@ import BankTab from './BankTab.jsx';
 import TokenVaultTab from './TokenVaultTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import CartographerTab from './CartographerTab.jsx';
+import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
 
 /**
  * BottomFolderDrawer — the bank drawer.
@@ -115,11 +116,15 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
                     className={cn(
                         'pointer-events-auto flex bg-gi-surface overflow-hidden',
                         'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',
-                        // Nav side → drawer starts at edge 0 underneath the nav bar with padding to sit flush beside the 152px Nav Bar. Tray side → stops in the middle between the playmat and the Tray.
+                        // Nav side → drawer starts at edge 0 underneath the nav bar with padding to sit flush beside the 152px Nav Bar.
+                        // Notification side → stops right before the notifications column, leaving it fully exposed.
                         menuRight
-                            ? 'right-0 left-[384px] md:left-[416px] xl:left-[420px] 2xl:left-[440px] pr-[84px] md:pr-[152px] border-l border-gi-primary/30'
-                            : 'left-0 right-[384px] md:right-[416px] xl:right-[420px] 2xl:right-[440px] pl-[84px] md:pl-[152px] border-r border-gi-primary/30'
+                            ? 'right-0 pr-[84px] md:pr-[152px] border-l border-gi-primary/30'
+                            : 'left-0 pl-[84px] md:pl-[152px] border-r border-gi-primary/30'
                     )}
+                    style={{
+                        ...(menuRight ? { left: columnWidthCss(NOTIFICATION_COLUMN) } : { right: columnWidthCss(NOTIFICATION_COLUMN) })
+                    }}
                 >
                     <InspectionPanel
                         selection={sidebarSelection}

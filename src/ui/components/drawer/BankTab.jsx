@@ -12,6 +12,7 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
 import { SellControls } from './SellControls.jsx';
+import { HeroDockTab } from '../dock/HeroDockTab.jsx';
 
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -73,6 +74,11 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
         },
         ['inventory_updated']
     );
+
+    const heroIds = useGameState(
+        state => (state.heroes || []).map(h => h.id),
+        ['heroes_updated', 'state_changed']
+    ) || [];
 
     const stocked = useMemo(() => {
         return bank.stocked
@@ -206,8 +212,9 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
     };
 
     return (
-        <div className="h-full min-h-0 flex flex-col">
-            {/* Header: tabs + search + totals */}
+        <div className="h-full min-h-0 flex flex-row">
+            <div className="flex-1 flex flex-col min-w-0">
+                {/* Header: tabs + search + totals */}
             <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-gi-border/40 bg-gi-base/30 flex-wrap">
                 <BankTabStrip
                     tabs={tabs}
@@ -320,6 +327,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                     onConfirm={confirmSell}
                 />
             )}
+            </div>
         </div>
     );
 };

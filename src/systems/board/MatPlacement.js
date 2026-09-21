@@ -216,18 +216,6 @@ function legalIn(typeId, point, ctx) {
 }
 
 /**
- * ⭐ The nearest point to `point` where a Token of `typeId` may legally stand,
- * or **null** when there is none within nudge reach (FP-46 — it flies back).
- *
- * The drop point itself is tried first, so a drop with room lands exactly where
- * it was let go and reports a nudge of 0. Otherwise the search walks outward in
- * rings 4 u apart, ~6 u between candidates around each ring — close enough that
- * the spot it finds is the nearest one to within a few mat units, and about a
- * tenth of the candidates a 2 u search would need.
- *
- * Reused by slice 1.6d-3, which pulls Tokens in when the mat shrinks (FP-98):
- * clamp the point onto the smaller mat, then ask this where it can actually go.
- *
  * @returns {{x: number, y: number, nudge: number}|null}
  */
 export function findSpot(typeId, point, options = {}) {
@@ -245,6 +233,145 @@ export function findSpot(typeId, point, options = {}) {
         }
     }
     return null;
+}
+
+/**
+ * ⭐ The cascading push algorithm (Slice 1.8).
+ * Resolves overlaps by pushing tokens radially outward from a central point.
+ * Used for forced placements: Spawns, Map bursts, and Mat resizing.
+ *
+ * @param {string} typeId The type of token being placed.
+ * @param {{x: number, y: number}} point The exact point it wants to land on.
+ * @param {object} [options]
+ * @returns {{x: number, y: number, pushed: {id: string, x: number, y: number}[]}|null}
+ */
+export function forceSpot(typeId, point, options = {}) {
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+
+    // The point must be on the mat, or we clamp it.
+    let at = clampInside(typeId, point);
+
+    // If it's already perfectly clear and legal, just return it. No pushing needed.
+    if (isLegal(typeId, at, options)) {
+        return { x: at.x, y: at.y, pushed: [] };
+    }
+
+    // We simulate a physics relaxation.
+    // 1. Gather all tokens.
+    const tokens = BoardState.tokens().filter(t => t.id !== options.excludeId).map(t => ({
+        id: t.id, typeId: t.typeId, x: t.x, y: t.y, fixed: false
+    }));
+
+    // Add our new token as fixed so it doesn't move during relaxation, unless it was just pulled by a resize.
+    const newcomer = { id: 'NEW', typeId, x: at.x, y: at.y, fixed: true };
+    tokens.push(newcomer);
+
+    let changed = true;
+    let iterations = 0;
+    const MAX_ITER = 30; // Prevent infinite loops
+
+    while (changed && iterations < MAX_ITER) {
+        changed = false;
+        iterations++;
+
+        for (let i = 0; i < tokens.length; i++) {
+            for (let j = i + 1; j < tokens.length; j++) {
+                const a = tokens[i];
+                const b = tokens[j];
+
+                const gap = minGap(a.typeId, b.typeId);
+                const gapSq = gap * gap;
+
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                let d2 = dx * dx + dy * dy;
+
+                if (d2 < gapSq - EPS) {
+                    // Overlap detected!
+                    changed = true;
+                    const d = Math.sqrt(d2);
+                    // Prevent division by zero if perfectly stacked
+                    const pushDist = gap - d + 0.1; 
+                    const nx = d === 0 ? 1 : dx / d;
+                    const ny = d === 0 ? 0 : dy / d;
+
+                    if (a.fixed && !b.fixed) {
+                        b.x += nx * pushDist;
+                        b.y += ny * pushDist;
+                    } else if (!a.fixed && b.fixed) {
+                        a.x -= nx * pushDist;
+                        a.y -= ny * pushDist;
+                    } else if (!a.fixed && !b.fixed) {
+                        const half = pushDist / 2;
+                        a.x -= nx * half;
+                        a.y -= ny * half;
+                        b.x += nx * half;
+                        b.y += ny * half;
+                    }
+                }
+            }
+        }
+
+        // Clamp to mat and check rules
+        for (const t of tokens) {
+            if (t.fixed) continue;
+            const clamped = clampInside(t.typeId, t);
+            t.x = clamped.x;
+            t.y = clamped.y;
+        }
+    }
+
+    // After relaxation, verify if all tokens are in legal spots!
+    // We check every pushed token. If any are breaking Cannot rules or still overlapping, the push failed.
+    const plan = { id: options.excludeId };
+    
+    // We must check if the final state is valid.
+    const finalTokens = tokens.filter(t => t.id !== 'NEW');
+    
+    for (const t of finalTokens) {
+        // Did it move?
+        const original = BoardState.getTokenById(t.id);
+        if (Math.abs(t.x - original.x) < 0.5 && Math.abs(t.y - original.y) < 0.5) continue;
+        
+        // We only check against Cannot rules, because physical overlap is what we just solved.
+        // Wait, what if the relaxation couldn't solve the overlap?
+        // We do a quick pass to ensure no overlapping remains.
+        let clear = true;
+        for (const other of tokens) {
+            if (other.id === t.id) continue;
+            const gap = minGap(t.typeId, other.typeId);
+            const d2 = distanceSq(t, other);
+            if (d2 < gap * gap - EPS) {
+                clear = false;
+                break;
+            }
+        }
+        if (!clear) return null; // Overlap remains, mat is truly full.
+
+        // Check Cannot
+        if (hasCannot(t.typeId)) {
+            // Re-check Restrictions on the projected new position
+            const verdict = Restrictions.checkPlacement({x: t.x, y: t.y}, t.typeId, plan);
+            if (!verdict.ok) return null;
+        }
+    }
+
+    // Now check the newcomer
+    if (hasCannot(newcomer.typeId)) {
+        const verdict = Restrictions.checkPlacement({x: newcomer.x, y: newcomer.y}, newcomer.typeId, plan);
+        if (!verdict.ok) return null;
+    }
+
+    // Push succeeded! Return the pushed tokens
+    const pushed = [];
+    for (const t of finalTokens) {
+        const original = BoardState.getTokenById(t.id);
+        if (Math.abs(t.x - original.x) > 0.5 || Math.abs(t.y - original.y) > 0.5) {
+            pushed.push({ id: t.id, x: Math.round(t.x), y: Math.round(t.y) });
+        }
+    }
+
+    return { x: Math.round(newcomer.x), y: Math.round(newcomer.y), pushed };
 }
 
 /**

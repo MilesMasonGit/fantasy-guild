@@ -16,12 +16,11 @@ import { useUIModals } from './hooks/useUIModals.js';
 
 // Components
 import Board from './components/board/Board.jsx';
-import Tray from './components/board/Tray.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
-import RightmostHeroDock from './components/dock/RightmostHeroDock.jsx';
-import VerticalHeroDock from './components/dock/VerticalHeroDock.jsx';
+import BottomHeroDock from './components/dock/BottomHeroDock.jsx';
+import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
@@ -278,11 +277,11 @@ export const ReactRoot = ({ engine }) => {
                         />
 
                         {!menuRight && <BubbleMenu ui={ui} side="left" />}
-                        {!menuRight && (
+                        {menuRight && (
                             isGuildView ? (
                                 <aside
                                     style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
+                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10"
                                 >
                                     <div
                                         className="w-full relative shrink-0 flex flex-col gap-2.5"
@@ -308,23 +307,29 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </aside>
                             ) : (
-                                <NotificationColumn flagRules={ui.flagRules} />
+                                isBankOpen ? (
+                                    <aside
+                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                        className="shrink-0 h-full flex flex-col pointer-events-none relative z-[100]"
+                                    >
+                                        <BankHeroPanel
+                                            menuRight={menuRight}
+                                            selectedHeroId={inspectHeroId}
+                                            onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                            onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                            onCloseHero={() => setInspectHeroId(null)}
+                                            onEditHero={(id) => ui.dock.openEdit(id)}
+                                        />
+                                    </aside>
+                                ) : (
+                                    <NotificationColumn menuRight flagRules={ui.flagRules} />
+                                )
                             )
                         )}
                         <div className="flex-1 relative flex flex-col overflow-hidden z-10">
                             <div className="flex-1 flex min-h-0 relative">
-                            {menuRight && (
-                                isGuildView ? (
-                                    <GuildHallEffectsPanel menuRight={true} />
-                                ) : (
-                                    <Tray 
-                                        menuRight={true}
-                                        isBankOpen={isBankOpen}
-                                        isVaultOpen={ui.drawer.panes.includes('vault')}
-                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
-                                        onClearInspect={() => ui.inspect.clear()} 
-                                    />
-                                )
+                            {menuRight && isGuildView && (
+                                <GuildHallEffectsPanel menuRight={true} />
                             )}
                             <div
                                 data-dnd-surface="board"
@@ -359,41 +364,27 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </div>
                             </div>
-                            {/* The Tray / Guild Hall Effects Panel */}
-                            {!menuRight && (
-                                isGuildView ? (
-                                    <GuildHallEffectsPanel menuRight={false} />
-                                ) : (
-                                    <Tray 
-                                        menuRight={false}
-                                        isBankOpen={isBankOpen}
-                                        isVaultOpen={ui.drawer.panes.includes('vault')}
-                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
-                                        onClearInspect={() => ui.inspect.clear()} 
-                                    />
-                                )
-                            )}
-
-                            {/* Rightmost Hero Dock: vertical sliding tabs */}
-                            {!menuRight && (
-                                <div className="shrink-0 h-full flex flex-col items-center justify-center py-8 pr-0 relative z-30 pointer-events-auto">
-                                    <RightmostHeroDock
-                                        isBankOpen={ui.drawer.panes.includes('bank')}
-                                        selectedHeroId={inspectHeroId}
-                                        onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                        onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                        onCloseHero={() => setInspectHeroId(null)}
-                                        onEditHero={(id) => ui.dock.openEdit(id)}
-                                    />
-                                </div>
+                            {/* Guild Hall Effects Panel */}
+                            {!menuRight && isGuildView && (
+                                <GuildHallEffectsPanel menuRight={false} />
                             )}
                             </div>
+
+                            {/* Bottom Hero Dock: horizontal sliding tabs */}
+                            <BottomHeroDock
+                                isBankOpen={isBankOpen}
+                                selectedHeroId={inspectHeroId}
+                                onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                onCloseHero={() => setInspectHeroId(null)}
+                                onEditHero={(id) => ui.dock.openEdit(id)}
+                            />
                         </div>
-                        {menuRight && (
+                        {!menuRight && (
                             isGuildView ? (
                                 <aside
                                     style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10"
+                                    className="shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10"
                                 >
                                     <div
                                         className="w-full relative shrink-0 flex flex-col gap-2.5"
@@ -419,7 +410,23 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </aside>
                             ) : (
-                                <NotificationColumn menuRight flagRules={ui.flagRules} />
+                                isBankOpen ? (
+                                    <aside
+                                        style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
+                                        className="shrink-0 h-full flex flex-col pointer-events-none relative z-[100]"
+                                    >
+                                        <BankHeroPanel
+                                            menuRight={menuRight}
+                                            selectedHeroId={inspectHeroId}
+                                            onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                            onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                            onCloseHero={() => setInspectHeroId(null)}
+                                            onEditHero={(id) => ui.dock.openEdit(id)}
+                                        />
+                                    </aside>
+                                ) : (
+                                    <NotificationColumn flagRules={ui.flagRules} />
+                                )
                             )
                         )}
                         {menuRight && <BubbleMenu ui={ui} side="right" />}

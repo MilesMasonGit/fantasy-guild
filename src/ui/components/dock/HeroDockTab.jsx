@@ -47,7 +47,9 @@ export const HeroDockTab = ({
     // header from the body sitting under it.
     pinned = false,
     small = false,
-    lift = true
+    lift = true,
+    vertical = false,
+    isDockLeft = false
 }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isDragSettling, setIsDragSettling] = useState(false);
@@ -99,8 +101,10 @@ export const HeroDockTab = ({
 
     const justDroppedRef = useRef(false);
 
+    const dragIdPrefix = vertical ? 'bank-hero' : 'dock-hero';
+
     const drag = useEntityDrag({
-        id: `rightmost-dock-${heroId}`,
+        id: `${dragIdPrefix}-${heroId}`,
         sourceSurface: DND_SURFACE.DRAWER,
         kind: DRAG_KIND.HERO,
         payload: {
@@ -113,7 +117,7 @@ export const HeroDockTab = ({
     });
 
     const drop = useEntityDrop({
-        id: `rightmost-dock-drop-${heroId}`,
+        id: `${dragIdPrefix}-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
         // A hero off the board or a pennant dropped on any tab recalls (slice
         // 1.5) — the tab is the smaller target, so it must say yes itself or
@@ -183,14 +187,155 @@ export const HeroDockTab = ({
     const targetIndex = index ?? (heroIds ? heroIds.indexOf(heroId) : -1);
     const isInsertionBelow = sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex;
 
+    if (vertical) {
+        return (
+            <div
+                data-hero-dock-tab="true"
+                data-dock-hero-id={heroId}
+                className={cn(
+                    'relative h-[72px] select-none shrink-0 w-full pointer-events-none',
+                    isHovered ? 'z-50' : 'z-40'
+                )}
+            >
+                {/* Insertion Line Highlight Indicator between Hero Dock Tabs */}
+                {isHeroDropValid && (
+                    <div
+                        className={cn(
+                            "absolute -left-4 -right-1 h-1 z-50 pointer-events-none flex items-center justify-between",
+                            isInsertionBelow ? "-bottom-1.5" : "-top-1.5"
+                        )}
+                    >
+                        <div className="w-2 h-2 rotate-45 bg-gi-gold shadow-[0_0_8px_#f59e0b] border border-amber-300 shrink-0" />
+                        <div className="flex-1 h-0.5 bg-gradient-to-r from-gi-gold via-amber-200 to-gi-gold shadow-[0_0_10px_#f59e0b]" />
+                        <div className="w-2 h-2 rotate-45 bg-gi-gold shadow-[0_0_8px_#f59e0b] border border-amber-300 shrink-0" />
+                    </div>
+                )}
+                <div
+                    ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
+                    {...drag.handleProps}
+                    {...drop.droppableProps}
+                    onClick={() => {
+                        if (justDroppedRef.current) return;
+                        onSelect?.(heroId);
+                        onClick?.(heroId);
+                    }}
+                    onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        onDoubleClick?.(heroId);
+                    }}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    className={cn(
+                        'absolute top-0 h-[72px] border-2 border-[#3a271d] pointer-events-auto',
+                        isDockLeft ? 'left-0 rounded-r-xl border-l-0' : 'right-0 rounded-l-xl border-r-0',
+                        'bg-[#140e0b]/95 shadow-2xl transition-all duration-200 ease-out select-none flex flex-col justify-between pt-1 pb-1.5 px-1.5',
+                        pinned
+                            ? 'w-full z-40 ring-2 ring-gi-primary/70 border-gi-primary/70 bg-[#1e1511] cursor-grab active:cursor-grabbing ' + (isDockLeft ? 'rounded-r-xl' : 'rounded-l-xl')
+                            : expanded
+                            ? 'w-full z-50 bg-[#1e1511] border-[#8a5d45] shadow-[0_4px_24px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing ' + (isSelected ? 'ring-2 ring-gi-gold border-gi-gold' : '')
+                            : isSelected
+                            ? (small ? 'w-12' : 'w-20') + ' z-40 ring-2 ring-gi-gold border-gi-gold bg-[#1e1511]'
+                            : isDraggingHover
+                            ? 'w-24 z-50 ring-2 ring-gi-primary/80 border-gi-primary/80 bg-[#1e1511] shadow-[0_4px_20px_rgba(0,0,0,0.8)] cursor-grab active:cursor-grabbing'
+                            : (small ? 'w-12' : 'w-20') + ' z-40 hover:border-[#6a4431] cursor-grab active:cursor-grabbing',
+                        drop.valid && isDraggingItem && 'ring-2 ring-gi-primary/80 border-gi-primary/80 bg-[#1e1511]',
+                        drag.isDragging && 'opacity-30'
+                    )}
+                >
+                    {/* Top: Hero Name sits above the headshot, sliding out with it */}
+                    <div className={cn("absolute -top-3.5 flex items-center gap-1 pointer-events-none z-20", isDockLeft ? "left-2" : "right-2")}>
+                        <span
+                            className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,1)] tracking-wide leading-none"
+                            style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
+                        >
+                            {titleText}
+                        </span>
+                        {expanded && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEdit?.(heroId);
+                                }}
+                                className="p-0.5 rounded hover:bg-white/10 text-gi-muted hover:text-gi-gold transition-colors pointer-events-auto drop-shadow"
+                            >
+                                <Pencil size={10} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Main Content Area */}
+                    <div className={cn("flex-1 flex items-center gap-1.5 min-h-0 overflow-hidden pt-0.5", isDockLeft ? "flex-row pr-1 pl-2" : "flex-row-reverse pl-1 pr-2")}>
+                        {/* Left/Right: 56px Headshot Portrait with Activity Pip */}
+                        <div className="w-14 h-14 rounded-lg bg-black/60 border border-white/15 flex items-center justify-center overflow-hidden shrink-0 relative shadow-inner">
+                            <div
+                                className={cn("absolute top-1 right-1 w-2 h-2 rounded-full z-10", pipColor)}
+                            />
+                            {headshotPath ? (
+                                <img
+                                    src={headshotPath.startsWith('/') ? headshotPath : `/${headshotPath}`}
+                                    alt={hero.name}
+                                    className="w-14 h-14 object-contain"
+                                    style={{ imageRendering: 'pixelated' }}
+                                />
+                            ) : (
+                                <span className="text-xl">{hero.icon || '🧑'}</span>
+                            )}
+                        </div>
+
+                        {/* Vertical Health Bar directly to the right of the portrait */}
+                        <div
+                            className="w-1.5 h-14 bg-black/80 rounded-full overflow-hidden border border-white/10 shrink-0 flex flex-col justify-end p-px shadow-inner"
+                        >
+                            <div
+                                className={cn(
+                                    "w-full rounded-full transition-all duration-300",
+                                    hpPercent > 50 ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.7)]" : hpPercent > 20 ? "bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.7)]" : "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.8)] animate-pulse"
+                                )}
+                                style={{ height: `${hpPercent}%` }}
+                            />
+                        </div>
+
+                        {/* Right: Expanded Info when Hovered */}
+                        {expanded && (
+                            <div className="flex-1 flex items-center justify-between h-full py-0.5 px-2 min-w-0 pointer-events-auto animate-in fade-in duration-150">
+                                <div className="flex flex-col justify-center space-y-1 min-w-0 flex-1 pr-2">
+                                    <div className="text-[11px] truncate font-medium">
+                                        {isWounded ? (
+                                            <span className="text-red-400 font-bold">Wounded</span>
+                                        ) : (
+                                            <span data-dock-status={status?.state || 'docked'} className={cn('truncate', STATUS_TONE[status?.state] || 'text-blue-300')}>
+                                                {dockStatusLine(status)}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 text-[10px] text-gi-muted">
+                                        <div className="flex items-center gap-1">
+                                            <Heart size={10} className="text-red-400 shrink-0" />
+                                            <span className="text-white/90">{hp} / {hpMax} HP</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Backpack size={11} className="text-amber-400 shrink-0" />
+                                            <span className="text-gi-gold font-medium">{equippedCount}/9 Items</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             data-hero-dock-tab="true"
             data-dock-hero-id={heroId}
             className={cn(
-                'relative h-[72px] select-none shrink-0',
+                'relative w-[72px] select-none shrink-0 flex flex-col justify-end',
                 isHovered ? 'z-50' : 'z-40',
-                pinned ? 'w-full' : small ? 'w-12' : 'w-20'
+                pinned ? 'h-full' : small ? 'h-12' : 'h-20'
             )}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -199,12 +344,12 @@ export const HeroDockTab = ({
             {isHeroDropValid && (
                 <div
                     className={cn(
-                        "absolute -left-4 -right-1 h-1 z-50 pointer-events-none flex items-center justify-between",
-                        isInsertionBelow ? "-bottom-1.5" : "-top-1.5"
+                        "absolute -top-4 -bottom-1 w-1 z-50 pointer-events-none flex flex-col items-center justify-between",
+                        isInsertionBelow ? "-right-1.5" : "-left-1.5"
                     )}
                 >
                     <div className="w-2 h-2 rotate-45 bg-gi-gold shadow-[0_0_8px_#f59e0b] border border-amber-300 shrink-0" />
-                    <div className="flex-1 h-0.5 bg-gradient-to-r from-gi-gold via-amber-200 to-gi-gold shadow-[0_0_10px_#f59e0b]" />
+                    <div className="w-0.5 flex-1 bg-gradient-to-b from-gi-gold via-amber-200 to-gi-gold shadow-[0_0_10px_#f59e0b]" />
                     <div className="w-2 h-2 rotate-45 bg-gi-gold shadow-[0_0_8px_#f59e0b] border border-amber-300 shrink-0" />
                 </div>
             )}
@@ -222,23 +367,23 @@ export const HeroDockTab = ({
                     onDoubleClick?.(heroId);
                 }}
                 className={cn(
-                    'absolute right-0 top-0 h-[72px] rounded-l-xl border-2 border-r-0 border-[#3a271d]',
-                    'bg-[#140e0b]/95 shadow-2xl transition-all duration-200 ease-out select-none flex flex-col justify-between pt-1 pb-1.5 px-1.5',
+                    'absolute bottom-0 left-0 w-[72px] rounded-t-xl border-2 border-b-0 border-[#3a271d]',
+                    'bg-[#140e0b]/95 shadow-[0_-4px_15px_rgba(0,0,0,0.5)] transition-all duration-200 ease-out select-none flex flex-col justify-end p-1.5',
                     pinned
-                        ? 'w-full z-40 ring-2 ring-gi-primary/70 border-gi-primary/70 bg-[#1e1511] rounded-l-xl cursor-grab active:cursor-grabbing'
+                        ? 'h-full z-40 ring-2 ring-gi-primary/70 border-gi-primary/70 bg-[#1e1511] cursor-grab active:cursor-grabbing'
                         : isSelected
-                        ? (small ? 'w-12' : 'w-20') + ' z-40 ring-2 ring-gi-gold border-gi-gold bg-[#1e1511]'
+                        ? (small ? 'h-12' : 'h-20') + ' z-40 ring-2 ring-gi-gold border-gi-gold bg-[#1e1511]'
                         : expanded
-                        ? 'w-[368px] md:w-[400px] xl:w-[400px] 2xl:w-[420px] z-50 bg-[#1e1511] border-[#8a5d45] shadow-[0_4px_24px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing'
+                        ? 'h-[160px] z-50 bg-[#1e1511] border-[#8a5d45] shadow-[0_-8px_24px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing'
                         : isDraggingHover
-                        ? 'w-24 z-50 ring-2 ring-gi-primary/80 border-gi-primary/80 bg-[#1e1511] shadow-[0_4px_20px_rgba(0,0,0,0.8)] cursor-grab active:cursor-grabbing'
-                        : (small ? 'w-12' : 'w-20') + ' z-40 hover:border-[#6a4431] cursor-grab active:cursor-grabbing',
+                        ? 'h-24 z-50 ring-2 ring-gi-primary/80 border-gi-primary/80 bg-[#1e1511] shadow-[0_-4px_20px_rgba(0,0,0,0.8)] cursor-grab active:cursor-grabbing'
+                        : (small ? 'h-12' : 'h-20') + ' z-40 hover:border-[#6a4431] cursor-grab active:cursor-grabbing',
                     drop.valid && isDraggingItem && 'ring-2 ring-gi-primary/80 border-gi-primary/80 bg-[#1e1511]',
                     drag.isDragging && 'opacity-30'
                 )}
             >
-                {/* Top: Hero Name sits above the headshot, sliding out with it */}
-                <div className="absolute -top-3.5 left-2 flex items-center gap-1 pointer-events-none z-20">
+                {/* Top: Hero Name sits above the dock tab */}
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 pointer-events-none z-20">
                     <span
                         className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,1)] tracking-wide leading-none"
                         style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
@@ -258,9 +403,50 @@ export const HeroDockTab = ({
                     )}
                 </div>
 
-                {/* Main Content Area */}
-                <div className="flex-1 flex items-center gap-1.5 min-h-0 overflow-hidden pt-0.5">
-                    {/* Left: 56px Headshot Portrait with Activity Pip */}
+                {/* Expanded Content Area (Top) */}
+                {expanded && (
+                    <div className="flex-1 flex flex-col justify-start w-full px-1 pt-1 min-h-0 pointer-events-auto animate-in fade-in duration-150">
+                        <div className="flex flex-col space-y-1 mb-2">
+                            <div className="text-[10px] text-center leading-tight">
+                                {isWounded ? (
+                                    <span className="text-red-400 font-bold">Wounded</span>
+                                ) : (
+                                    <span data-dock-status={status?.state || 'docked'} className={cn('block line-clamp-2', STATUS_TONE[status?.state] || 'text-blue-300')}>
+                                        {dockStatusLine(status)}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col items-center gap-1.5 text-[10px] text-gi-muted border-t border-white/10 pt-1.5">
+                                <div className="flex items-center gap-1 w-full justify-between">
+                                    <Heart size={10} className="text-red-400 shrink-0" />
+                                    <span className="text-white/90">{hp} / {hpMax}</span>
+                                </div>
+                                <div className="flex items-center gap-1 w-full justify-between">
+                                    <Backpack size={11} className="text-amber-400 shrink-0" />
+                                    <span className="text-gi-gold font-medium">{equippedCount}/9</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Base Portrait Area (Bottom) */}
+                <div className="flex items-center gap-1 w-full shrink-0">
+                    {/* Vertical Health Bar to the left */}
+                    <div
+                        className="w-1.5 h-14 bg-black/80 rounded-full overflow-hidden border border-white/10 shrink-0 flex flex-col justify-end p-px shadow-inner"
+                    >
+                        <div
+                            className={cn(
+                                "w-full rounded-full transition-all duration-300",
+                                hpPercent > 50 ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.7)]" : hpPercent > 20 ? "bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.7)]" : "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.8)] animate-pulse"
+                            )}
+                            style={{ height: `${hpPercent}%` }}
+                        />
+                    </div>
+
+                    {/* 56px Headshot Portrait */}
                     <div className="w-14 h-14 rounded-lg bg-black/60 border border-white/15 flex items-center justify-center overflow-hidden shrink-0 relative shadow-inner">
                         <div
                             className={cn("absolute top-1 right-1 w-2 h-2 rounded-full z-10", pipColor)}
@@ -276,47 +462,6 @@ export const HeroDockTab = ({
                             <span className="text-xl">{hero.icon || '🧑'}</span>
                         )}
                     </div>
-
-                    {/* Vertical Health Bar directly to the right of the portrait */}
-                    <div
-                        className="w-1.5 h-14 bg-black/80 rounded-full overflow-hidden border border-white/10 shrink-0 flex flex-col justify-end p-px shadow-inner"
-                    >
-                        <div
-                            className={cn(
-                                "w-full rounded-full transition-all duration-300",
-                                hpPercent > 50 ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.7)]" : hpPercent > 20 ? "bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.7)]" : "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.8)] animate-pulse"
-                            )}
-                            style={{ height: `${hpPercent}%` }}
-                        />
-                    </div>
-
-                    {/* Right: Expanded Info when Hovered */}
-                    {expanded && (
-                        <div className="flex-1 flex items-center justify-between h-full py-0.5 px-2 min-w-0 pointer-events-auto animate-in fade-in duration-150">
-                            <div className="flex flex-col justify-center space-y-1 min-w-0 flex-1 pr-2">
-                                <div className="text-[11px] truncate font-medium">
-                                    {isWounded ? (
-                                        <span className="text-red-400 font-bold">Wounded</span>
-                                    ) : (
-                                        <span data-dock-status={status?.state || 'docked'} className={cn('truncate', STATUS_TONE[status?.state] || 'text-blue-300')}>
-                                            {dockStatusLine(status)}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div className="flex items-center gap-3 text-[10px] text-gi-muted">
-                                    <div className="flex items-center gap-1">
-                                        <Heart size={10} className="text-red-400 shrink-0" />
-                                        <span className="text-white/90">{hp} / {hpMax} HP</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Backpack size={11} className="text-amber-400 shrink-0" />
-                                        <span className="text-gi-gold font-medium">{equippedCount}/9 Items</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>

@@ -234,9 +234,9 @@ export const MatToken = React.memo(function MatToken({
                 style={{
                     ...boxStyle,
                     zIndex: z,
-                    // Only the art circle is the Token (FP-64 in spirit): the
-                    // corners of the box belong to whatever lies under them.
-                    clipPath: 'circle(50%)',
+                    // Remove clip-path so art isn't cropped (FP-64/user feedback),
+                    // but add border-radius so the click hitbox remains roughly circular.
+                    borderRadius: '50%',
                     visibility: hidden ? 'hidden' : 'visible'
                 }}
                 className={cn(
