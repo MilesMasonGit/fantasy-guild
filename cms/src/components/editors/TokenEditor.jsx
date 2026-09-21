@@ -399,7 +399,7 @@ export default function TokenEditor() {
             </button>
           </div>
           <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-            Targeting labels — a rule can say “to adjacent Coast Tokens”. They
+            Targeting labels — a rule can say “to nearby Coast Tokens”. They
             match <strong>exactly</strong>, including case.
           </p>
         </Field>

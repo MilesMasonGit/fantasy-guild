@@ -562,7 +562,7 @@ describe('Placement publishes one dirty event per change, covering the Near radi
         Placement.placeTokenAt(BoardState.createTokenInstance('fixture_buff_yield', 800), S14);
         expect(yieldAt(S12)).toBeCloseTo(105);
 
-        Placement.returnTokenToTrayById(idAt(S14));
+        Placement.returnTokenToVaultById(idAt(S14));
         expect(yieldAt(S12)).toBeCloseTo(100);
     });
 
@@ -630,7 +630,7 @@ describe('⭐ a board-reach rule refreshes distant Tokens (pre-existing bug)', (
         Placement.placeTokenAt(BoardState.createTokenInstance('fixture_board_buff', null), S0);
         expect(yieldAt(S35)).toBeCloseTo(105);
 
-        Placement.returnTokenToTrayById(idAt(S0));
+        Placement.returnTokenToVaultById(idAt(S0));
         expect(yieldAt(S35)).toBeCloseTo(100);
     });
 });

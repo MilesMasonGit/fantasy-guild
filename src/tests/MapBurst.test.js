@@ -115,33 +115,19 @@ beforeEach(() => {
     GameState.state.settings = { ...(GameState.state.settings || {}), autoCollect: false };
 });
 
-describe('Opening from the Tray (D-155)', () => {
-    it('populates the Tray directly with tokens when opened in the Tray', () => {
-        const result = Cartographer.openMap(aMap(), 'tray');
+describe('A burst lands its Tokens on the mat (FP-16)', () => {
+    it('Tokens stand on the mat and only items fly out as sprites', () => {
+        const before = BoardState.tokens().length;
+        const result = Cartographer.openMap(aMap(), null);
 
         expect(result.success).toBe(true);
         const tokenEntries = result.contents.filter(e => e.kind === 'token');
         const itemEntries = result.contents.filter(e => e.kind === 'item');
 
-        // Tokens that fit into Tray are in the Tray
-        expect(BoardState.getTray().length).toBe(tokenEntries.length);
-        // Items scatter onto the board as sprites
+        expect(BoardState.tokens().length).toBe(before + tokenEntries.length);
+        expect(SpriteLayer.getSprites().filter(s => s.kind === 'token')).toHaveLength(0);
         expect(SpriteLayer.getSprites().length).toBe(itemEntries.length);
     });
-
-    it('scatters excess tokens onto the board as sprites when the Tray is full', () => {
-        // Fill Tray to max capacity
-        while (BoardState.getTray().length < BoardState.TRAY_CAPACITY) {
-            BoardState.addToTray(BoardState.createTokenInstance('token_forest', 100));
-        }
-        expect(BoardState.hasTraySpace()).toBe(false);
-
-        const result = Cartographer.openMap(aMap(), 'tray');
-        expect(result.success).toBe(true);
-        // All burst contents land as sprites because Tray has no room
-        expect(SpriteLayer.getSprites().length).toBe(result.contents.length);
-    });
-
 });
 
 describe('Maps freely sit overtop of the playmat (D-155)', () => {
@@ -150,12 +136,13 @@ describe('Maps freely sit overtop of the playmat (D-155)', () => {
         const result = Cartographer.openMap(aMap(), pixelOrigin);
 
         expect(result.success).toBe(true);
+        // Everything it throws — Tokens onto the mat, items as sprites — comes
+        // from the Map box's centre: 300 + 128 / 2, 400 + 128 / 2.
+        const landed = BoardState.tokens().filter(t => t.fromX != null);
         const sprites = SpriteLayer.getSprites();
-        expect(sprites.length).toBeGreaterThan(0);
-        for (const s of sprites) {
-            expect(s.fromX).toBe(364); // 300 + 128 / 2
-            expect(s.fromY).toBe(464); // 400 + 128 / 2
-        }
+        expect(landed.length + sprites.length).toBeGreaterThan(0);
+        for (const t of landed) expect({ x: t.fromX, y: t.fromY }).toEqual({ x: 364, y: 464 });
+        for (const s of sprites) expect({ x: s.fromX, y: s.fromY }).toEqual({ x: 364, y: 464 });
     });
 
 });

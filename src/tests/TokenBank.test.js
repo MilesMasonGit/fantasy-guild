@@ -391,7 +391,7 @@ describe('Mythics are unique on the BOARD, not to own (D-177)', () => {
     it('frees the board once the placed copy is lifted off', () => {
         const mythic = token('fixture_mythic', 8000);
         put(10, mythic);
-        Placement.returnTokenToTrayById(mythic.id);
+        Placement.returnTokenToVaultById(mythic.id);
 
         expect(put(20, token('fixture_mythic', 8000)).success).toBe(true);
     });

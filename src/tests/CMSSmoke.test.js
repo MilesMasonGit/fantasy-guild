@@ -275,7 +275,7 @@ describe('CMS smoke — the screens mount without throwing', () => {
         const { container: tokenRules } = render(React.createElement(Statements, { token }));
         expect(tokenRules.textContent).toContain('Shrimp Trawler');
         expect(tokenRules.textContent).toContain('Makes nearby Coast Tokens work 5% faster.');
-        expect(tokenRules.textContent).toContain('Requires an nearby Tier 1 net.');
+        expect(tokenRules.textContent).toContain('Requires a nearby Tier 1 net.');
     });
 
     it('warns when a targeted tag matches no Token, and offers the right case', () => {

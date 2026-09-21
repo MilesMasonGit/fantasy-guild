@@ -392,15 +392,16 @@ describe('Recalling a hero', () => {
     });
 });
 
-describe('Returning a Token to the Tray', () => {
+describe('Returning a Token to the Vault (right-click, FP-45)', () => {
     it('lifts it off the mat and leaves the ground clear', () => {
         const forest = place('fixture_producer', A);
 
-        expect(Placement.returnTokenToTrayById(forest.id).success).toBe(true);
+        expect(Placement.returnTokenToVaultById(forest.id).success).toBe(true);
 
         expect(BoardState.getTokenById(forest.id)).toBeNull();
         expect(BoardState.tokensAtPoint(A.x, A.y)).toHaveLength(0);
-        expect(BoardState.getTray()[0].typeId).toBe('fixture_producer');
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
+        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('leaves the hero’s flag standing there, idle', () => {
@@ -411,7 +412,7 @@ describe('Returning a Token to the Tray', () => {
         const forest = place('fixture_producer', A);
         Placement.plantFlagAt('hero_1', A);
 
-        const result = Placement.returnTokenToTrayById(forest.id);
+        const result = Placement.returnTokenToVaultById(forest.id);
         Flags.assign(0);
 
         expect(result.idledHeroId).toBe('hero_1');
@@ -421,11 +422,11 @@ describe('Returning a Token to the Tray', () => {
 
     it('refuses to remove the Guild Hall token from the playmat', () => {
         const hall = place('token_guild_hall', A);
-        expect(Placement.returnTokenToTrayById(hall.id).success).toBe(false);
+        expect(Placement.returnTokenToVaultById(hall.id).success).toBe(false);
     });
 
     it('refuses a Token that is not on the mat', () => {
-        expect(Placement.returnTokenToTrayById('tok_nobody').success).toBe(false);
+        expect(Placement.returnTokenToVaultById('tok_nobody').success).toBe(false);
     });
 });
 

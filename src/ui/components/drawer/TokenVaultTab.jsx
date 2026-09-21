@@ -33,9 +33,9 @@ import { Lock, Vault as VaultIcon, BoxSelect, Coins, Check, AlertTriangle } from
  * to file it.
  *
  * ## Two gestures out, one in
- * Drag a cell to the **Tray** to withdraw (D-244), or click to inspect where
- * Add to Tray and Sell controls live. Drag a Token from the Tray onto this pane
- * to **store** it (D-247) — except a Map, which must be opened.
+ * Drag a cell onto the **playmat** to withdraw (FP-45), or click to inspect
+ * where the Place and Sell controls live. Drag a Token from the mat onto this
+ * pane to **store** it (D-247) — except a Map, which must be opened.
  */
 export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' }) => {
     const { tabs, used, cap, unlocked } = useGameState(
@@ -114,11 +114,10 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
             if (p.kind !== DRAG_KIND.TOKEN) return false;
             const def = getTokenType(p.typeId);
             if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
-            // The same four origins the Tray's gold chest takes (owner ruling
-            // 2026-08-25): every Vault control accepts whatever any of them
-            // accepts. `depositFrom` handles all four — including naming the
-            // Map refusal instead of silently ignoring the drop.
-            return (p.from?.traySlot != null || p.from?.instanceId != null || p.from?.spriteId != null || p.from?.boardMapId != null);
+            // Every Vault control accepts the same origins (owner ruling
+            // 2026-08-25). `depositFrom` handles them all — including naming
+            // the Map refusal instead of silently ignoring the drop.
+            return (p.from?.instanceId != null || p.from?.spriteId != null || p.from?.boardMapId != null);
         },
         onDrop: (p) => {
             const res = VaultTransfer.depositFrom(p.from);
@@ -214,7 +213,7 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
                                         if (res.reason) NotificationSystem.warning(res.reason);
                                         return;
                                     }
-                                    NotificationSystem.success(`Added ${row.name} to Tray`);
+                                    NotificationSystem.success(`Placed ${row.name} beside the Guild Hall`);
                                 }}
                             />
                         ))}
@@ -319,7 +318,7 @@ const TokenCell = ({
 }) => {
     /**
      * One cell does double duty as a drag source (D-244, D-242):
-     * drop it on the **Tray** to withdraw, or on a **tab** to file it.
+     * drop it on the **playmat** to withdraw, or on a **tab** to file it.
      * In select mode, a checked cell drags the entire selection.
      */
     const drag = useEntityDrag({
@@ -361,8 +360,8 @@ const TokenCell = ({
                 selectMode
                     ? `${row.name} ×${row.count} — click to ${checked ? 'deselect' : 'select'}`
                     : isPartialOnly
-                        ? `${row.name} (${pct}% charges remaining) — drag to tray, right-click to add to tray, or click to inspect`
-                        : `${row.name} ×${row.count} — drag to tray, right-click to add to tray, or click to inspect`
+                        ? `${row.name} (${pct}% charges remaining) — drag onto the mat, right-click to place it beside the Guild Hall, or click to inspect`
+                        : `${row.name} ×${row.count} — drag onto the mat, right-click to place it beside the Guild Hall, or click to inspect`
             }
             className={cn(
                 'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square select-none',

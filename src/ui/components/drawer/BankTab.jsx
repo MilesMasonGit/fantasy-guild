@@ -12,7 +12,6 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
 import { SellControls } from './SellControls.jsx';
-import { HeroDockTab } from '../dock/HeroDockTab.jsx';
 
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -74,11 +73,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
         },
         ['inventory_updated']
     );
-
-    const heroIds = useGameState(
-        state => (state.heroes || []).map(h => h.id),
-        ['heroes_updated', 'state_changed']
-    ) || [];
 
     const stocked = useMemo(() => {
         return bank.stocked

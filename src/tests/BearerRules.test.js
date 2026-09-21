@@ -168,7 +168,7 @@ describe('⭐ Requires on the Rules Line', () => {
     it('reads as its sentence, with who satisfies it', () => {
         const tokenId = seeded();
         const { container } = mountToken(tokenId);
-        expect(requiresLine(container).textContent).toBe('Requires an nearby Tier 1 net.');
+        expect(requiresLine(container).textContent).toBe('Requires a nearby Tier 1 net.');
         expect(container.querySelector('[data-satisfied-by]').textContent).toContain('Net Shed');
     });
 

@@ -14,8 +14,6 @@ import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { QuestManager } from '../../../systems/quests/QuestManager.js';
 
 /**
  * SpriteLayerView — loot floating **above** the grid (D-40).
@@ -184,7 +182,7 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
     const label = isToken ? tokenName(sprite.refId) : (getItem(sprite.refId)?.name || sprite.refId);
     const spriteSize = isToken ? tokenSizeFor(TOKEN_SURFACE.FLOOR, sprite.refId, artScale) : FLOOR_ITEM_PX * (artScale / 2);
 
-    const handlePointerMove = (e) => {
+    const handlePointerMove = () => {
         if (!elementRef.current) return;
         if (!isHovered) {
             setIsHovered(true);
@@ -204,13 +202,7 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (isToken) {
-            if (!QuestManager.isTokenVaultSendUnlocked()) {
-                NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
-                return;
-            }
-            SpriteLayer.sendTokenToVault(sprite.id);
-        }
+        if (isToken) SpriteLayer.sendTokenToVault(sprite.id);
     };
 
     return (

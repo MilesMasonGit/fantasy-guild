@@ -135,14 +135,11 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             if (p.kind !== DRAG_KIND.TOKEN) return false;
             const def = getTokenType(p.typeId);
             if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
-            // The same four origins the Tray's gold chest takes (owner ruling
-            // 2026-08-25): every Vault control accepts whatever any of them
-            // accepts. `depositFrom` handles all four — including naming the
-            // Map refusal instead of silently ignoring the drop.
-            return (p.from?.traySlot != null || p.from?.instanceId != null || p.from?.spriteId != null || p.from?.boardMapId != null);
+            // Every Vault control accepts the same origins (owner ruling
+            // 2026-08-25). `depositFrom` handles them all — including naming
+            // the Map refusal instead of silently ignoring the drop.
+            return (p.from?.instanceId != null || p.from?.spriteId != null || p.from?.boardMapId != null);
         },
-        // This route used to deposit without announcing anything at all, so the
-        // Tray could keep showing a Token that was already in the Vault.
         // `depositFrom` publishes the repaint for every route (CR2-134).
         onDrop: (p) => {
             const res = VaultTransfer.depositFrom(p.from);

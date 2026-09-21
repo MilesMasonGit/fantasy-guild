@@ -300,7 +300,7 @@ function completeCycle(instance, def, io, heroId) {
     }
 
     /**
-     * BONUS_DROP — an nearby block granting something the Token does not make
+     * BONUS_DROP — a nearby block granting something the Token does not make
      * itself (CMS-27/72). Rolled per entry, after the Token's own outputs, and
      * skipped entirely on a failed cycle: nothing happened, so nothing drops.
      *

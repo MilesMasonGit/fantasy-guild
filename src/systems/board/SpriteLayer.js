@@ -165,10 +165,9 @@ const MAX_STACK_MERGE_DISTANCE_PX = 2.25 * MAT_STEP_U;
  *
  * * a Token **instance id** (string) — that Token's centre, while it is on the mat;
  * * `{ centre: { x, y } }` — a mat point, e.g. where a Token that has just left stood;
- * * `{ inTray: true, y }` — thrown onto the mat from the Tray;
  * * `{ x, y, width?, height? }` — a box's top-left corner (a Map on the mat).
  */
-function getSourcePosition(source) {
+export function sourcePoint(source) {
     if (source == null) return null;
     if (typeof source === 'string') {
         const instance = BoardState.getTokenById(source);
@@ -177,12 +176,6 @@ function getSourcePosition(source) {
             : null;
     }
     if (typeof source !== 'object') return null;
-    if (source.inTray) {
-        return {
-            x: matW() + 30,
-            y: clampY((source.y != null ? source.y : 0.5) * matH())
-        };
-    }
     if (source.centre && Number.isFinite(source.centre.x) && Number.isFinite(source.centre.y)) {
         return { x: source.centre.x, y: source.centre.y };
     }
@@ -202,7 +195,7 @@ function getSourcePosition(source) {
  * If `existingTarget` is provided, lands in close proximity (~24-48px) to that stack.
  */
 function scatterFrom(source, kind = 'item', existingTarget = null) {
-    const sourcePos = getSourcePosition(source);
+    const sourcePos = sourcePoint(source);
 
     if (existingTarget) {
         const fx = sourcePos ? sourcePos.x : existingTarget.x;
@@ -221,19 +214,6 @@ function scatterFrom(source, kind = 'item', existingTarget = null) {
         const x = clampX(Math.random() * matW());
         const y = clampY(Math.random() * matH());
         return { x, y, fromX: x, fromY: y };
-    }
-
-    if (typeof source === 'object' && source !== null && source.inTray) {
-        const fromX = sourcePos.x;
-        const fromY = sourcePos.y;
-        const distance = TOKEN_PX * (kind === 'item' ? (0.4 + 0.3 * Math.random()) : (0.5 + 0.3 * Math.random()));
-        const angle = Math.PI + (Math.random() - 0.5) * 1.1; // westward onto the board
-        return {
-            x: clampX(fromX + Math.cos(angle) * distance),
-            y: clampY(fromY + Math.sin(angle) * distance),
-            fromX,
-            fromY
-        };
     }
 
     const angle = Math.random() * Math.PI * 2;
@@ -307,7 +287,7 @@ function scheduleAbsorption(spriteId, delayMs) {
  * @param {string} refId       item id or Token type id
  * @param {number} quantity
  * @param {string|object|null} source  where it came from — a Token instance id,
- *        `{ centre: {x, y} }`, a Tray origin or a Map box (see `getSourcePosition`),
+ *        `{ centre: {x, y} }`, a Tray origin or a Map box (see `sourcePoint`),
  *        or null for overflow
  * @param {number|null} usesRemaining  Tokens only; null means unlimited (D-176)
  */
@@ -330,7 +310,7 @@ export function addSprite(kind, refId, quantity = 1, source = null, usesRemainin
     let targetExisting = null;
     if (kind === 'item') {
         ItemRateTracker.recordGain(refId, quantity);
-        const sourcePos = getSourcePosition(source);
+        const sourcePos = sourcePoint(source);
 
         // Find primary stacks of the same item
         const candidates = list.filter(s =>
@@ -430,7 +410,8 @@ function announceCollected(sprite, destination = null, extra = {}) {
 
 /**
  * Collect one sprite into storage, routing **by kind**: items go to the Bank,
- * Tokens to the Tray first (for immediate play) and then the Token Vault.
+ * Tokens to the Token Vault (the Tray they used to try first was retired in
+ * slice 1.9).
  *
  * ⚠️ **Collection can fail, and failing is not an error.** Auto-collect cannot
  * collect into a full Bank, so a player running at zero visible stacks will
@@ -474,28 +455,16 @@ export function collectSprite(id) {
             return true;
         }
 
-        // Tokens cascade: **Tray → Token Vault → stay on the board**.
-        // Sending to Tray first allows newly collected tokens to be played immediately.
-        // If Tray is full, falls through to TokenBank (Vault).
+        // Tokens go **to the Token Vault, or stay on the floor** when it is full.
         const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining, sprite.terrain || null);
         instance.isLanding = true;
-        if (BoardState.addToTray(instance)) {
-            takeSprite(id);
-            announceCollected(sprite, 'tray', {
-                trayX: instance.x,
-                trayY: instance.y,
-                instanceId: instance.id
-            });
-            changed = true;
-            return true;
-        }
         if (TokenBank.deposit(instance)) {
             takeSprite(id);
             announceCollected(sprite, 'vault');
             changed = true;
             return true;
         }
-        return false;   // both full — nothing is lost, it waits
+        return false;   // Vault full — nothing is lost, it waits
     } finally {
         collecting = false;
         if (changed) announceSpriteChange();

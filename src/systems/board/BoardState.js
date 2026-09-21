@@ -211,6 +211,25 @@ export function setTokenPoint(id, x, y) {
     return true;
 }
 
+/**
+ * Carry out a push that `MatPlacement.forceSpot` decided (slice 1.8): move each
+ * pushed Token to its new point. No rules — the push was already checked.
+ *
+ * @param {{id: string, x: number, y: number}[]} pushed
+ * @returns {{x: number, y: number}[]} every point touched, old and new, for the
+ *          caller's `TileModifiers.rebuildAround`
+ */
+export function applyPushes(pushed = []) {
+    const touched = [];
+    for (const p of pushed) {
+        const instance = getTokenById(p.id);
+        if (!instance) continue;
+        touched.push({ x: instance.x, y: instance.y });
+        if (setTokenPoint(p.id, p.x, p.y)) touched.push({ x: p.x, y: p.y });
+    }
+    return touched;
+}
+
 /** The Token on the mat with instance id `id`, or null. A direct lookup, never a scan. */
 export function getTokenById(id) {
     if (!id) return null;

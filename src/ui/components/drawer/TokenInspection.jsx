@@ -28,14 +28,14 @@ import { SellControls } from './SellControls.jsx';
  * ## Why this is load-bearing rather than a nicety (D-145)
  * Hero-time is the scarce resource. A player must never have to spend a
  * tile and a hero to discover what something does — planning happens before
- * placement, so the same sheet has to be reachable from the Vault, the Tray,
+ * placement, so the same sheet has to be reachable from the Vault,
  * the Cartographer's pool and the board alike.
  */
 export const TokenInspection = ({
     typeId,
     hideSprite = false,
     showSell = true,
-    showAddToTray = true,
+    showPlaceOnMat = true,
     showViewInVault = false,
     // The board Token this panel was opened from, by instance id (slice
     // 1.6c-2). Only a Token on the board can be marked "heroes may not work
@@ -51,13 +51,6 @@ export const TokenInspection = ({
         { deps: [typeId] }
     ) || [];
     const inVaultCount = inVaultCopies.length;
-
-    const trayFull = useGameState(
-        // One capacity rule, in BoardState (CR2-054) — raw tray length counted
-        // Maps, which do not occupy Tray capacity.
-        () => !BoardState.hasTraySpace(),
-        ['token_bank_updated', 'board:tile_changed', 'state_changed']
-    );
 
     if (!def) return null;
 
@@ -133,13 +126,13 @@ export const TokenInspection = ({
     const xpAmount = def.config?.xp ?? 0;
     const cycleSec = def.config?.cycleTimeMs ? (def.config.cycleTimeMs / 1000).toFixed(0) : null;
 
-    const handleAddToTray = () => {
+    const handlePlaceOnMat = () => {
         const res = VaultTransfer.withdrawTo(typeId);
         if (!res.success) {
             if (res.reason) NotificationSystem.warning(res.reason);
             return;
         }
-        NotificationSystem.success(`Moved ${tokenName(typeId)} to Tray`);
+        NotificationSystem.success(`Placed ${tokenName(typeId)} beside the Guild Hall`);
     };
 
     // One call, one announcement (CR2-168 item 5). This used to loop
@@ -155,29 +148,27 @@ export const TokenInspection = ({
 
     return (
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
-            {/* Header: Centered 128px sprite with hover Add to Tray, name, found in/rarity, tags */}
+            {/* Header: Centered 128px sprite with hover Place on Mat, name, found in/rarity, tags */}
             <div className="flex flex-col items-center text-center">
                 {!hideSprite && (
                     <div className="relative group flex items-center justify-center w-32 h-32 mb-1 rounded-lg overflow-hidden">
                         <TokenSprite typeId={typeId} surface={TOKEN_SURFACE.INSPECT} size={128} alt={def.name} />
 
-                        {/* Add to Tray button on sprite hover */}
-                        {showAddToTray && inVaultCount > 0 && (
+                        {/* Place on Mat button on sprite hover */}
+                        {showPlaceOnMat && inVaultCount > 0 && (
                             <button
-                                onClick={handleAddToTray}
-                                disabled={trayFull}
-                                title={trayFull ? 'The Tray is full' : 'Move one copy to the Tray'}
+                                onClick={handlePlaceOnMat}
+                                title="Place one copy on the mat, beside the Guild Hall"
                                 className={cn(
                                     'absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 p-2 bg-black/75 backdrop-blur-[2px] transition-opacity duration-150',
-                                    'opacity-0 group-hover:opacity-100 cursor-pointer active:scale-[0.98]',
-                                    trayFull && 'cursor-not-allowed opacity-0 group-hover:opacity-80'
+                                    'opacity-0 group-hover:opacity-100 cursor-pointer active:scale-[0.98]'
                                 )}
                             >
                                 <div className="p-1.5 rounded-full bg-gi-primary/20 border border-gi-primary/60 text-gi-primary shadow">
                                     <ArrowRight size={18} />
                                 </div>
                                 <span className="text-[11px] font-bold uppercase tracking-wider text-gi-text text-center leading-tight drop-shadow">
-                                    {trayFull ? 'Tray Full' : 'Add to Tray'}
+                                    Place on Mat
                                 </span>
                             </button>
                         )}

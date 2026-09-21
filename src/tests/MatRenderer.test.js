@@ -18,7 +18,6 @@ import { matW, matH } from '../config/matGeometry.js';
 import { UPGRADE_BOARD_PX } from '../config/upgradeBoardGeometry.js';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
-import { TrayMiniBoard } from '../ui/components/board/TrayMiniBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { flagOrigin, IDLE_HERO_OFFSET, FLAG_PX } from '../ui/components/board/flagGeometry.js';
 import { HERO_HIT_PX, PAIR_OFFSET_PX, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
@@ -165,7 +164,9 @@ describe('a Token is a circle of art at a point', () => {
     it('⭐ only the art circle answers the pointer, not the corners of its box', () => {
         const tok = placeAt('fixture_producer', 600, 400);
         const { container } = mount(h(MatBoard));
-        expect(artOf(container, tok.id).style.clipPath).toBe('circle(50%)');
+        // Rounded rather than clipped, so spilling art is drawn, not cropped.
+        expect(artOf(container, tok.id).style.borderRadius).toBe('50%');
+        expect(artOf(container, tok.id).style.clipPath).toBe('');
     });
 
     it('moves to its new point when the Token moves — the same element, slid across', async () => {
@@ -361,29 +362,6 @@ describe('the mat itself (FP-96)', () => {
         // ⭐ The practice outline went with the snapping it existed to explain
         // (slice 1.6d-1): a Token may stand anywhere on the mat.
         expect(container.querySelector('[data-play-area-outline]')).toBeNull();
-    });
-
-    /**
-     * ⭐ FP-97 — the Tray's mini board is now a scaled picture of the mat, not a
-     * grid of cells. It keeps working while a drawer covers the real board, and
-     * it is retired entirely in slice 1.9.
-     */
-    it('⭐ the Tray mini mat draws the mat’s Tokens scaled down, with no grid cells', () => {
-        const drawn = placeAt('fixture_producer', 880, 563);
-
-        const { container } = mount(h(TrayMiniBoard));
-
-        expect(container.querySelector('[data-mini-mat]')).not.toBeNull();
-        const art = container.querySelector(`[data-mini-token="${drawn.id}"]`);
-        expect(art).not.toBeNull();
-
-        // Placed as a PERCENTAGE of the mat, so it scales with whatever box the
-        // Tray gives it — nothing here measures pixels.
-        expect(parseFloat(art.style.left)).toBeCloseTo(((880 - 64) / matW()) * 100, 4);
-        expect(parseFloat(art.style.top)).toBeCloseTo(((563 - 64) / matH()) * 100, 4);
-
-        // Not one tile cell survives.
-        expect(container.querySelectorAll('[id^="miniboard-tile-"]')).toHaveLength(0);
     });
 
     it('a spot awaiting a restock shows a ghost of what it is owed', () => {

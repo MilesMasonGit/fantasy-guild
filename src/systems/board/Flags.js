@@ -1,6 +1,7 @@
 // Fantasy Guild — Flags: heroes choose their own work (Free Playmat slice 1.4b)
 
 import { EventBus } from '../core/EventBus.js';
+import { GameState } from '../../state/GameState.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
@@ -119,9 +120,10 @@ export function isDisallowed(instance) {
 /** Fixable reasons — the ones that keep a red badge and earn a notice (FP-69). */
 export const FIXABLE = WorkCheck.FIXABLE;
 
-/** The live flag radius, in mat units (Mat Tuner, FP-65/66). */
-import { GameState } from '../../state/GameState.js';
-
+/**
+ * The live flag radius, in mat units: the Mat Tuner's base (FP-65/66) plus the
+ * Guild Hall's Scouting Flags upgrade (FP-23, `progress.flagRadiusBonus`).
+ */
 export function flagRadius() {
     const bonus = GameState.state?.progress?.flagRadiusBonus || 0;
     return matTuning('flagRadius') + bonus;
@@ -1007,6 +1009,10 @@ export function init() {
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (payload = {}) => cycleCompleted(payload.heroId)));
     unsubscribers.push(onMatTuningChanged((key) => {
         if (key == null || key === 'flagRadius') markDirty();
+    }));
+    // The Scouting Flags upgrade widens the radius too (FP-23).
+    unsubscribers.push(EventBus.subscribe('guild_upgrades_updated', ({ upgradeId } = {}) => {
+        if (upgradeId === 'flag_radius') markDirty();
     }));
     unsubscribers.push(EventBus.subscribe('game_loaded', () => reset()));
 }

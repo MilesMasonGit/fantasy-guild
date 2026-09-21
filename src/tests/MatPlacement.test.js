@@ -293,16 +293,19 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
         expect(BoardState.getTray()).toHaveLength(0);
     });
 
-    it('falls back to the Tray only when the leftover has nowhere to stand', () => {
+    it('a leftover with nowhere to stand is refused and flies back — never to the Tray (FP-46)', () => {
         const copy = placeAt(instance('mp_small', 80), 800, 600);
         setMatTuning('nudgeReach', 0);
         const incoming = instance('mp_small', 50);
 
         const res = Placement.placeTokenAt(incoming, { x: 800, y: 600 });
 
-        expect(res).toMatchObject({ success: true, restocked: true, trayLeftover: true });
+        // The charges it gave stay given; the rest goes back to its source.
+        expect(res).toMatchObject({ success: false, restocked: true, full: true, addedCharges: 20 });
         expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(100);
-        expect(BoardState.getTray().some(t => t.id === incoming.id && t.usesRemaining === 30)).toBe(true);
+        expect(BoardState.getTokenById(incoming.id)).toBeNull();
+        expect(incoming.usesRemaining).toBe(30);
+        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('a copy already full is not a restock target — the newcomer nudges clear', () => {
@@ -317,6 +320,75 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
         expect({ x: BoardState.getTokenById(copy.id).x, y: BoardState.getTokenById(copy.id).y })
             .toEqual({ x: 800, y: 600 });
         expect(gap(BoardState.getTokenById(incoming.id), copy)).toBeGreaterThanOrEqual(61.2 - 1e-6);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Arrivals push (FP-17, slice 1.8)
+// ---------------------------------------------------------------------------
+
+describe('an arrival pushes instead of falling back (FP-17)', () => {
+    /** Every pair on the mat is at least its minimum gap apart. */
+    const noOverlaps = () => {
+        const all = BoardState.tokens();
+        for (let i = 0; i < all.length; i++) {
+            for (let j = i + 1; j < all.length; j++) {
+                if (gap(all[i], all[j]) < MatPlacement.minGap(all[i].typeId, all[j].typeId) - 1e-6) return false;
+            }
+        }
+        return true;
+    };
+
+    it('stands where it aimed and shoves the one Token it overlaps', () => {
+        const lone = placeAt('mp_small', 1400, 300);
+        const where = MatPlacement.forceSpot('mp_small', { x: 1420, y: 300 });
+
+        // ⚠️ Asserting the AIMED point is what proves a push happened: the
+        // nearest-free fallback would also give a legal, overlap-free answer.
+        expect(where).toMatchObject({ x: 1420, y: 300 });
+        expect(where.pushed).toEqual([{ id: lone.id, x: expect.any(Number), y: 300 }]);
+        expect(1420 - where.pushed[0].x).toBeGreaterThanOrEqual(61.2);
+    });
+
+    it('settles a packed block at fractional points (rounding each pass never settled)', () => {
+        const ids = [];
+        for (let r = -1; r <= 1; r++) {
+            for (let c = -3; c <= 3; c++) ids.push(placeAt('mp_small', 500 + c * 61.2, 800 + r * 61.2).id);
+        }
+
+        const where = MatPlacement.forceSpot('mp_small', { x: 505, y: 790 });
+
+        expect(where).toMatchObject({ x: 505, y: 790 });
+        expect(where.pushed.length).toBeGreaterThan(0);
+        BoardState.applyPushes(where.pushed);
+        placeAt('mp_small', where.x, where.y);
+        expect(noOverlaps()).toBe(true);
+        for (const t of BoardState.tokens()) expect(MatPlacement.insideMat(t.typeId, t)).toBe(true);
+    });
+
+    it('a fixed Token is never shoved — the arrival lands beside it instead', () => {
+        const hall = placeAt('mp_small', 800, 600);
+        const where = MatPlacement.forceSpot('mp_small', { x: 810, y: 600 }, { fixedIds: [hall.id] });
+
+        expect(where.pushed).toEqual([]);
+        expect(gap(where, hall)).toBeGreaterThanOrEqual(61.2 - 1e-6);
+        expect(BoardState.getTokenById(hall.id)).toMatchObject({ x: 800, y: 600 });
+    });
+
+    it('never pushes a Token over a Cannot line — it falls back to free space', () => {
+        // Two Coasts may never be Near; the only push that clears the newcomer
+        // would carry this one next to the other.
+        placeAt('mp_coast', 300, 300);
+        const pushedOne = placeAt('mp_small', 470, 300);
+        const where = MatPlacement.forceSpot('mp_coast', { x: 480, y: 300 });
+
+        if (where.pushed.length) {
+            // Whatever it moved, the board it leaves behind breaks no rule.
+            const plan = { move: where.pushed };
+            expect(Restrictions.checkPlacement(where, 'mp_coast', plan).ok).toBe(true);
+        } else {
+            expect(BoardState.getTokenById(pushedOne.id)).toMatchObject({ x: 470, y: 300 });
+        }
     });
 });
 
@@ -358,11 +430,10 @@ describe('flags and the Guild Hall', () => {
         expect(moved.y).toBeGreaterThanOrEqual(0);
     });
 
-    it('and still refuses to be sent to the Tray or the Vault', () => {
+    it('and still refuses to be sent to the Vault', () => {
         const hall = placeAt('token_guild_hall', 900, 700);
         GameState.state.quests.completedTutorials = ['tutorial_5'];
 
-        expect(Placement.returnTokenToTrayById(hall.id).success).toBe(false);
         expect(Placement.returnTokenToVaultById(hall.id).success).toBe(false);
         expect(BoardState.getTokenById(hall.id)).not.toBeNull();
         expect(BoardState.getTray()).toHaveLength(0);

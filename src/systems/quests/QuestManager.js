@@ -50,6 +50,7 @@ export const QuestManager = {
     init() {
         if (initialized) return;
         this.ensureState();
+        this.refreshTutorialCopies();
         this.setupListeners();
         this.ensureQuests();
         initialized = true;
@@ -83,6 +84,25 @@ export const QuestManager = {
         q.tutorialStep = q.completedTutorials.length;
     },
 
+    /**
+     * An active tutorial quest carries a COPY of its template, so a saved game
+     * would keep a step's old wording and target forever. Re-read them from the
+     * template when a game starts or loads (tutorial 5 was re-pointed on
+     * 2026-09-21; a save holding the old "loot_token_placed" copy could never
+     * finish it).
+     */
+    refreshTutorialCopies() {
+        this.ensureState();
+        for (const quest of GameState.state?.quests?.active || []) {
+            if (!quest?.isTutorial) continue;
+            const template = TUTORIAL_QUESTS.find(t => t.id === quest.id);
+            if (!template) continue;
+            quest.title = template.title;
+            quest.instruction = template.instruction;
+            quest.targetType = template.targetType;
+        }
+    },
+
     getActiveQuests() {
         this.ensureState();
         return GameState.state?.quests?.active || [];
@@ -93,17 +113,15 @@ export const QuestManager = {
         return GameState.state?.quests?.tutorialStep || 0;
     },
 
+    /**
+     * Whether Tokens may be sent to the Vault. **Always, for now** (FP-62): the
+     * Vault is unlocked from the start until the tutorial pass (FP-39). It used
+     * to wait for "Place a Dropped Token", which Map bursts can no longer
+     * trigger (FP-16), so a fresh save would have been locked out for good.
+     * Kept as a function so the tutorial pass has one place to gate it again.
+     */
     isTokenVaultSendUnlocked() {
-        this.ensureState();
-        const qState = GameState.state?.quests;
-        if (!qState) return true;
-        if (qState.completedTutorials?.includes('tutorial_5')) return true;
-        const tDrop = qState.active?.find(q => q.targetType === 'loot_token_placed' || q.id === 'tutorial_5');
-        if (tDrop && (tDrop.currentCount || 0) >= (tDrop.requiredCount || 1)) return true;
-        if (typeof qState.tutorialStep === 'number' && qState.tutorialStep >= 5) return true;
-        const hasTutorials = qState.active?.some(q => q.isTutorial) || (qState.completedTutorials && qState.completedTutorials.length > 0);
-        if (!hasTutorials) return true;
-        return false;
+        return true;
     },
 
     ensureQuests() {
@@ -173,6 +191,7 @@ export const QuestManager = {
     setupListeners() {
         unsubs.push(
             EventBus.subscribe('react:slot_selected', () => this.ensureQuests()),
+            EventBus.subscribe('game_loaded', () => this.refreshTutorialCopies()),
             EventBus.subscribe('map_burst', () => this.reportProgress('map_burst')),
             EventBus.subscribe('map_opened', () => this.reportProgress('map_burst')),
             // ⚠️ **One event per player action, and only one** (CR2-085, tidied

@@ -54,7 +54,7 @@ export const InspectionPanel = ({
             <TokenInspection
                 typeId={selection.id}
                 showSell={!isCartographer}
-                showAddToTray={!isCartographer}
+                showPlaceOnMat={!isCartographer}
                 showViewInVault={isCartographer}
             />
         );

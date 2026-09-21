@@ -85,7 +85,7 @@ describe('The rules text is the rule, rendered', () => {
             .toBe('Acts as a Tier 2 pickaxe for nearby stations.');
 
         expect(say(KEYWORD.REQUIRES, { payload: { tag: 'pickaxe', minTier: 1 } }))
-            .toBe('Requires an nearby Tier 1 pickaxe.');
+            .toBe('Requires a nearby Tier 1 pickaxe.');
 
         expect(say(KEYWORD.RESTOCKS, { payload: { tokenIds: ['fixture_producer'] } }))
             .toBe('Restocks nearby Fixture Producer from the Guild Bank.');
@@ -140,7 +140,7 @@ describe('The rules text is the rule, rendered', () => {
             }]
         };
         expect(rulesLinesOf(def, names)).toEqual([
-            'Requires an nearby Tier 1 pickaxe.',
+            'Requires a nearby Tier 1 pickaxe.',
             'Provides 10% more yield to every nearby Token.'
         ]);
     });

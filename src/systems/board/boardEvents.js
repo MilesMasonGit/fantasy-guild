@@ -215,7 +215,7 @@ export const ALERT = {
     NO_RECIPE: 'no_recipe',
     /**
      * The cycle is affordable in items but not in charges — the station itself,
-     * or an nearby context Token the recipe draws on, holds fewer charges than
+     * or a nearby context Token the recipe draws on, holds fewer charges than
      * one cycle costs. Nothing is deducted while this is showing (concept §3.3).
      */
     CHARGES: 'charges',

@@ -13,13 +13,12 @@ describe('Tutorial Aide Target Resolution & Events', () => {
             <div id="bank-bubble-target">Bank</div>
             <div id="vault-bubble-target">Vault</div>
             <div id="cartographer-bubble-target">Cartographer</div>
-            <div id="tray-bubble-target" data-tray-container>
-                <div data-alpha-test="true">Guild Hall Token</div>
-            </div>
             <div id="rightmost-hero-dock">
                 <div data-hero-dock-tab="true">Hero Arthur</div>
             </div>
             <div id="board-container">
+                <div data-token-art="true" data-guild-hall="true">Guild Hall Token</div>
+                <div data-token-art="true">Oak Forest Token</div>
                 <div id="tile-24" data-tile-staffed="true" data-tile-has-token="true">Guild Hall with Hero</div>
                 <div data-board-map-id="map-instance-1">Map</div>
             </div>
@@ -52,7 +51,7 @@ describe('Tutorial Aide Target Resolution & Events', () => {
     });
 
     it('resolves the correct DOM targets for all 16 tutorial quests', () => {
-        // tutorial_1: Place Guild Hall Token from Tray
+        // tutorial_1: Drag the Guild Hall on the mat
         const t1 = resolveTutorialTargetElement('tutorial_1');
         expect(t1).not.toBeNull();
         expect(t1.textContent).toBe('Guild Hall Token');
@@ -72,10 +71,10 @@ describe('Tutorial Aide Target Resolution & Events', () => {
         expect(t4).not.toBeNull();
         expect(t4.getAttribute('data-board-map-id')).toBe('map-instance-1');
 
-        // tutorial_5: Place another Token (floating token on playmat)
+        // tutorial_5: Move a New Token (a Token on the mat, not the Hall)
         const t5 = resolveTutorialTargetElement('tutorial_5');
         expect(t5).not.toBeNull();
-        expect(t5.getAttribute('data-token-sprite')).toBe('true');
+        expect(t5.textContent).toBe('Oak Forest Token');
 
         // tutorial_6: Deploy a Hero
         const t6 = resolveTutorialTargetElement('tutorial_6');

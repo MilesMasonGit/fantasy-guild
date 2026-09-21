@@ -296,7 +296,7 @@ describe('⭐ a hero leaving switches a state filter back off', () => {
     });
 });
 
-describe('⭐ a distant duplicate cannot suppress an nearby one', () => {
+describe('⭐ a distant duplicate cannot suppress a nearby one', () => {
     it('keeps the buff that actually reaches this tile', () => {
         /**
          * The source set widened to every Token on the mat, scanned in arrival

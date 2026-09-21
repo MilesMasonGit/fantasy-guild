@@ -98,7 +98,7 @@ describe('CR2-054: Tray capacity is one rule', () => {
         expect(added).toBe(true);
     });
 
-    it('the Cartographer agrees with addToTray about a full Tray', () => {
+    it('a Map purchase never waits on the Tray (slice 1.9: bought Maps land beside the Hall)', () => {
         const map = listMaps().find(m => m.price === 0) || listMaps()[0];
         GameState.state.board.tray.push(
             BoardState.createTokenInstance(mapId, tokenStartingUses(mapId))
@@ -106,15 +106,10 @@ describe('CR2-054: Tray capacity is one rule', () => {
         fillWithPlain(BoardState.TRAY_CAPACITY - 1);
         GameState.state.currency = { gold: 1_000_000 };
 
-        // Not full by the one rule, so the purchase must not be refused for room.
-        expect(BoardState.hasTraySpace()).toBe(true);
-        const reason = Cartographer.canBuy(map.id).reason || '';
-        expect(reason).not.toMatch(/No room in the Tray/);
-
-        // Now genuinely full by the one rule, and it must refuse.
+        // Even a Tray stuffed past capacity refuses nothing: the Tray is retired.
         fillWithPlain(1);
         expect(BoardState.hasTraySpace()).toBe(false);
-        expect(Cartographer.canBuy(map.id).reason).toMatch(/No room in the Tray/);
+        expect(Cartographer.canBuy(map.id).reason || '').not.toMatch(/Tray/);
     });
 
     it('hasTraySpaceFor counts the whole batch a cascade would displace', () => {
