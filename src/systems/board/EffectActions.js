@@ -176,15 +176,22 @@ export function minCentreGap(typeA, typeB) {
  *   the **same nudge reach a hand-placed Token gets**. One reach number for the
  *   whole game rather than a second one invented for spawns: a spawn that has to
  *   travel further than a player's own drop would is not "nearest" in any sense
- *   the player could predict. (Spawn behaviour on a crowded mat is slice 1.8's.)
+ *   the player could predict. Only when that finds nothing does the spawn push
+ *   (FP-17), from just beside the bearer — the bearer itself is never shoved
+ *   off its own spot by what it made.
  * * `random_free` — up to 40 random darts across the mat, the roomiest legal
- *   one kept, so a spawn spreads out rather than crowding.
+ *   one kept, so a spawn spreads out rather than crowding. If no dart is legal,
+ *   the roomiest one pushes.
+ *
+ * Returns `{ x, y, pushed }` — `pushed` is for `BoardState.applyPushes`.
  */
-function spawnPoint(typeId, placement, from, random, excludeId = null) {
+function spawnPoint(typeId, placement, from, random, bearerId) {
     if (placement === PLACEMENT.NEAREST_FREE) {
-        // Instead of finding a perfectly clear spot, we FORCE a spot at 'from', which will
-        // cascade-push neighbors out of the way.
-        return MatPlacement.forceSpot(typeId, from, { excludeId });
+        const spot = MatPlacement.findSpot(typeId, from);
+        if (spot) return { x: spot.x, y: spot.y, pushed: [] };
+        const bearer = BoardState.getTokenById(bearerId);
+        const beside = bearer ? besideBearer(typeId, bearer) : from;
+        return MatPlacement.forceSpot(typeId, beside, { fixedIds: bearer ? [bearer.id] : [] });
     }
 
     if (placement === PLACEMENT.RANDOM_FREE) {
@@ -196,27 +203,54 @@ function spawnPoint(typeId, placement, from, random, excludeId = null) {
                 x: r + random() * Math.max(0, matW() - 2 * r),
                 y: r + random() * Math.max(0, matH() - 2 * r)
             };
-            // Fast check: if dart itself is far from things, great.
-            // If it overlaps, forceSpot will compute the push.
-            // We just pick the dart that has the best "openness".
-            const score = openness(dart);
+            const legal = MatPlacement.isLegal(typeId, dart);
+            // A legal dart always beats an illegal one; among equals, the roomiest.
+            const score = openness(dart) + (legal ? LEGAL_BONUS : 0);
             if (score > bestScore) {
-                best = dart;
+                best = { ...dart, legal };
                 bestScore = score;
             }
         }
-        if (best) return MatPlacement.forceSpot(typeId, best, { excludeId });
-        return null;
+        if (!best) return null;
+        if (best.legal) return { x: best.x, y: best.y, pushed: [] };
+        return MatPlacement.forceSpot(typeId, best);
     }
 
-    // HERE placement (replaces bearer) doesn't push, it just replaces.
+    // `here` replaces the bearer: nothing is pushed.
     return from ? { x: from.x, y: from.y, pushed: [] } : null;
 }
 
+/** Outranks any squared distance on the mat, so a legal dart always wins. */
+const LEGAL_BONUS = 1e12;
+
+/**
+ * The point one gap from the bearer in its roomiest direction (of eight) — where
+ * a crowded `nearest_free` spawn starts its push.
+ */
+function besideBearer(typeId, bearer) {
+    const gap = MatPlacement.minGap(typeId, bearer.typeId);
+    let best = null;
+    let bestScore = -Infinity;
+    for (let k = 0; k < 8; k++) {
+        const angle = (k / 8) * Math.PI * 2;
+        const point = MatPlacement.clampInside(typeId, {
+            x: bearer.x + Math.cos(angle) * gap,
+            y: bearer.y + Math.sin(angle) * gap
+        });
+        const score = openness(point, bearer.id);
+        if (score > bestScore) {
+            best = point;
+            bestScore = score;
+        }
+    }
+    return best;
+}
+
 /** How open a spot is: the squared distance to the nearest Token (bigger is roomier). */
-function openness(point) {
+function openness(point, ignoreId = null) {
     let nearest = Infinity;
     for (const other of BoardState.tokens()) {
+        if (other.id === ignoreId) continue;
         const centre = centreOf(other);
         if (centre) nearest = Math.min(nearest, distanceSq(point, centre));
     }
@@ -228,17 +262,18 @@ function openness(point) {
  *
  * ⚠️ **Never onto another Token.** `here` replaces the bearer, which is what
  * "leave a Stump behind" means and is the only case where destroying something
- * is the intent. Every other placement looks for a free spot and does nothing
- * when there is none (FP-46) — a full mat is an ordinary state, and shoving a
- * Token onto another would silently destroy whatever was there.
+ * is the intent. Every other placement looks for a free spot, pushes when there
+ * is none nearby (FP-17), and does nothing when the mat is full (FP-46) — a
+ * full mat is an ordinary state, and stacking a Token onto another would
+ * silently destroy whatever was there.
  *
- * ## Where (Free Playmat slice 1.6b; stopgaps owned by slice 1.8)
+ * ## Where (Free Playmat slices 1.6b and 1.8)
  * * `here` — the bearer's point. A death drop (the bearer already left) lands
  *   where it stood.
- * * `nearest_free` — the free spot nearest the bearer's point.
- * * `random_free` — the roomiest of up to 40 random free spots.
+ * * `nearest_free` — the free spot nearest the bearer's point, else a push.
+ * * `random_free` — the roomiest of up to 40 random free spots, else a push.
  *
- * No pushing and no `Cannot` check, as before.
+ * A push never breaks a `Cannot` rule (`MatPlacement.forceSpot`).
  *
  * @returns {{instanceId: string, x: number, y: number, replacedBearer: boolean}|null}
  */
@@ -255,8 +290,8 @@ export function spawn(statement, roles, random = Math.random) {
 
     const placement = placementOf(statement.payload);
     const replacesBearer = placement === PLACEMENT.HERE;
-    const where = spawnPoint(typeId, placement, from, random, replacesBearer ? bearerId : null);
-    if (!where) return null; // FP-46: Mat is truly full (pushing failed/CanNot rule violated)
+    const where = spawnPoint(typeId, placement, from, random, bearerId);
+    if (!where) return null;   // FP-46: the mat is full, so the spawn is skipped
 
     if (replacesBearer) {
         // The bearer (if it is still there) and anything else standing on the
@@ -265,27 +300,14 @@ export function spawn(statement, roles, random = Math.random) {
         for (const other of BoardState.tokensAtPoint(where.x, where.y)) BoardState.removeToken(other.id);
     }
 
-    // Apply the pushes from forceSpot
-    const dirty = [];
-    if (where.pushed && where.pushed.length > 0) {
-        for (const p of where.pushed) {
-            const tok = BoardState.getTokenById(p.id);
-            if (tok) {
-                dirty.push({ x: tok.x, y: tok.y });
-                BoardState.setTokenPoint(p.id, p.x, p.y);
-                dirty.push({ x: p.x, y: p.y });
-            }
-        }
-    }
+    const touched = BoardState.applyPushes(where.pushed);
 
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     BoardState.addToken(instance, where.x, where.y);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
-    
-    dirty.push(from, { x: where.x, y: where.y });
-    TileModifiers.rebuildAround(dirty);
-    EventBus.publish('state_changed');
-    
+    TileModifiers.rebuildAround([from, { x: where.x, y: where.y }, ...touched]);
+    if (touched.length) EventBus.publish('state_changed');
+
     logger.debug('EffectActions', `Spawned ${typeId} at (${where.x}, ${where.y})`);
     return { instanceId: instance.id, x: where.x, y: where.y, replacedBearer: replacesBearer };
 }
@@ -311,34 +333,23 @@ export function transform(statement, roles) {
     if (!old) return false;
 
     const from = centreOf(old);
-    
-    // Use forceSpot to resolve any overlap/Cannot rules the NEW token might have at this spot.
+
+    // The new Token may be bigger, or carry a `Cannot` the old one did not:
+    // it pushes like any arrival (slice 1.8), and a transform with nowhere
+    // legal to stand does not happen.
     const where = MatPlacement.forceSpot(typeId, from, { excludeId: old.id });
-    if (!where) return false; // Placement rule prevents transformation
+    if (!where) return false;
 
     const at = { x: where.x, y: where.y };
     BoardState.removeToken(old.id);
-    
-    const dirty = [];
-    if (where.pushed && where.pushed.length > 0) {
-        for (const p of where.pushed) {
-            const tok = BoardState.getTokenById(p.id);
-            if (tok) {
-                dirty.push({ x: tok.x, y: tok.y });
-                BoardState.setTokenPoint(p.id, p.x, p.y);
-                dirty.push({ x: p.x, y: p.y });
-            }
-        }
-    }
+    const touched = BoardState.applyPushes(where.pushed);
 
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     BoardState.addToken(instance, at.x, at.y);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
-    
-    dirty.push(from, at);
-    TileModifiers.rebuildAround(dirty);
-    EventBus.publish('state_changed');
-    
+    TileModifiers.rebuildAround([from, at, ...touched]);
+    if (touched.length) EventBus.publish('state_changed');
+
     logger.debug('EffectActions', `Transformed ${old.id} into ${typeId} at (${at.x}, ${at.y})`);
     return true;
 }

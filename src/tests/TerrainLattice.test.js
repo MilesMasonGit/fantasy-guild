@@ -90,7 +90,7 @@ describe('Ownership', () => {
         }
     });
 
-    it('never reaches further than an nearby tile', () => {
+    it('never reaches further than a nearby tile', () => {
         // One painted tile in the middle of an empty board. Its terrain may
         // spill into the gap and a little way into its neighbours, but it must
         // not appear on the far side of them.

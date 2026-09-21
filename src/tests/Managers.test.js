@@ -308,7 +308,7 @@ describe('Only spots that ran dry', () => {
         place(NEIGHBOUR, 'fixture_manager');
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         place(SPOT, 'fixture_producer', 5000);
-        Placement.returnTokenToTrayById(idAt(SPOT));
+        Placement.returnTokenToVaultById(idAt(SPOT));
 
         run(5000);
 

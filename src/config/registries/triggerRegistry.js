@@ -93,7 +93,7 @@ export const TRIGGER_EVENTS = [
         event: BOARD_EVENTS.CYCLE_COMPLETE,
         label: "On Neighbour's Cycle",
         scopes: [TRIGGER_SCOPES.NEARBY],
-        hint: 'Fires when an nearby Token finishes work — or wins a fight, since one kill is one cycle (D-129).'
+        hint: 'Fires when a nearby Token finishes work — or wins a fight, since one kill is one cycle (D-129).'
     },
     {
         id: 'TOKEN_DEPLETED',
@@ -101,14 +101,14 @@ export const TRIGGER_EVENTS = [
         event: BOARD_EVENTS.TOKEN_DEPLETED,
         label: 'On Neighbour Depleted',
         scopes: [TRIGGER_SCOPES.NEARBY],
-        hint: 'Fires when an nearby Token spends its last charge and leaves the board.'
+        hint: 'Fires when a nearby Token spends its last charge and leaves the board.'
     },
     {
         /**
          * ⭐ **"Leave a Stump behind when this depletes."**
          *
          * The motivating case for `Spawns`/`Transforms`, and it was unauthorable
-         * in its natural form: `TOKEN_DEPLETED` existed with an NEARBY scope
+         * in its natural form: `TOKEN_DEPLETED` existed with a NEARBY scope
          * only, so a Token could hear a *neighbour* run out and never itself.
          *
          * ⚠️ **The charge ledger is already closed when this fires.**
@@ -141,7 +141,7 @@ export const TRIGGER_EVENTS = [
         event: BOARD_EVENTS.COMBAT_RESOLVED,
         label: "On Neighbour's Kill",
         scopes: [TRIGGER_SCOPES.NEARBY],
-        hint: 'Fires when combat on an nearby enemy Token ends in victory.'
+        hint: 'Fires when combat on a nearby enemy Token ends in victory.'
     },
     {
         /**
@@ -158,7 +158,7 @@ export const TRIGGER_EVENTS = [
         event: BOARD_EVENTS.COMBAT_ENGAGED,
         label: "On Neighbour's Fight",
         scopes: [TRIGGER_SCOPES.NEARBY],
-        hint: 'Fires each time a hero engages an nearby enemy — including every fresh enemy after a kill, not just the first.'
+        hint: 'Fires each time a hero engages a nearby enemy — including every fresh enemy after a kill, not just the first.'
     },
     {
         /**
@@ -230,7 +230,7 @@ export const TRIGGER_EVENTS = [
         event: BOARD_EVENTS.CYCLE_START,
         label: "On Neighbour's Start",
         scopes: [TRIGGER_SCOPES.NEARBY],
-        hint: 'Fires as an nearby Token starts work — not when it finishes. A Token waiting for inputs has not started, so it does not fire until it genuinely resumes.'
+        hint: 'Fires as a nearby Token starts work — not when it finishes. A Token waiting for inputs has not started, so it does not fire until it genuinely resumes.'
     },
     {
         /**

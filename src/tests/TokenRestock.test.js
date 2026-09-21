@@ -3,7 +3,6 @@ import './fixtures/testTokens.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
@@ -95,26 +94,24 @@ describe('Token Restocking on Same-Type Drop', () => {
         expect(BoardState.getTray()).toHaveLength(0);
     });
 
-    it('sends the leftover to the Tray only when it has nowhere at all to stand', () => {
+    it('refuses the leftover when it has nowhere at all to stand, so it flies back (FP-46)', () => {
         const onBoard = token('fixture_producer', 4970);
         const incoming = token('fixture_producer', 60);
 
         put(0, onBoard);
-        // No room to nudge into anywhere: the Tray is the fallback, as before.
+        // No room to nudge into anywhere. The Tray used to be the fallback;
+        // slice 1.9 retired it, so the leftover goes back to where it came from.
         setMatTuning('nudgeReach', 0);
 
-        const collectedEvents = [];
-        EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, e => collectedEvents.push(e));
-
         const res = put(0, incoming);
-        expect(res.success).toBe(true);
+        expect(res.success).toBe(false);
         expect(res.restocked).toBe(true);
-        expect(res.trayLeftover).toBe(true);
         expect(res.addedCharges).toBe(30);
 
         expect(BoardState.getTokenById(onBoard.id).usesRemaining).toBe(5000);
-        expect(BoardState.getTray().some(t => t.id === incoming.id && t.usesRemaining === 30)).toBe(true);
-        expect(collectedEvents.some(e => e.kind === 'token' && e.destination === 'tray' && e.instanceId === incoming.id)).toBe(true);
+        expect(incoming.usesRemaining).toBe(30);
+        expect(BoardState.getTokenById(incoming.id)).toBeNull();
+        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     /**

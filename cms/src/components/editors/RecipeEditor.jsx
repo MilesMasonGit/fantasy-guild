@@ -444,7 +444,7 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
         )}
         {context.length > 1 && (
           <p className="text-[10px] text-gray-600 mt-1.5">
-            All {context.length} must be adjacent at once for this recipe to run.
+            All {context.length} must be nearby at once for this recipe to run.
           </p>
         )}
       </div>

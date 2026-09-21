@@ -136,17 +136,6 @@ describe('Persistence — until it reaches the Vault', () => {
         expect(tokenAt(30).selectedRecipeId).toBe('recipe_b');
     });
 
-    it('keeps its recipe through the Tray', () => {
-        const forge = place(A, 'fixture_station');
-        StationRecipe.setSelectedRecipe(forge, 'recipe_b');
-
-        Placement.returnTokenToTrayById(idAt(A));
-        const fromTray = BoardState.takeFromTray(0);
-        Placement.placeTokenAt(fromTray, C(A));
-
-        expect(tokenAt(A).selectedRecipeId).toBe('recipe_b');
-    });
-
     it('forgets it in the Vault, and re-defaults when placed again', () => {
         vi.spyOn(QuestManager, 'isTokenVaultSendUnlocked').mockReturnValue(true);
         const forge = place(A, 'fixture_station');

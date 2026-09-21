@@ -344,38 +344,32 @@ describe('FP-83 — a flag stands exactly where it was dropped', () => {
     });
 });
 
-describe('FP-64 — the flag answers only on opaque pixels', () => {
+describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => {
     /**
-     * ⚠️ jsdom draws no images, so the pixel mask itself can't be read here
-     * (`AlphaHitTest.test.js` covers the mask maths). What is pinned: the flag
-     * opts into the global alpha pass-through (`data-alpha-test`, first image =
-     * its sprite), and a click the hit-test calls transparent is not swallowed —
-     * it carries on to whatever is underneath.
+     * The flag used to answer only on its opaque pixels (alpha hit-testing).
+     * The slice 1.9 work swapped that for a round hit area the size of the
+     * drawn art, and the owner kept it: easier to grab a thin flag, at the cost
+     * of its circle catching clicks meant for a Token just behind it.
      */
-    it('opts into alpha hit-testing with its sprite as the tested image', () => {
+    it('is round, the size of its art, and no longer opts into alpha hit-testing', () => {
         Flags.plant('h1', C(20));
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
-        expect(flag.getAttribute('data-alpha-test')).toBe('true');
+        expect(flag.getAttribute('data-alpha-test')).toBeNull();
+        expect(flag.style.borderRadius).toBe('50%');
+        expect(flag.style.width).toBe('128px');
         expect(flag.querySelector('img').getAttribute('src')).toContain('/assets/ui/flag/hero_flag_');
     });
 
-    it('a click on a transparent pixel passes through; an opaque one is kept', () => {
+    it('a click on the flag is kept, never passed to what is underneath', () => {
         Flags.plant('h1', C(20));
         const beneath = vi.fn();
         const { container } = render(
             h(EngineContext.Provider, { value: engine },
                 h(DndContext, null, h('div', { onClick: beneath }, h(FlagLayer))))
         );
-        const flag = container.querySelector('[data-flag="h1"]');
-
-        alpha.opaque = false;
-        fireEvent.click(flag);
-        expect(beneath).toHaveBeenCalledTimes(1);
-
-        alpha.opaque = true;
-        fireEvent.click(flag);
-        expect(beneath).toHaveBeenCalledTimes(1);
+        fireEvent.click(container.querySelector('[data-flag="h1"]'));
+        expect(beneath).not.toHaveBeenCalled();
     });
 });
 

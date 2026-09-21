@@ -121,7 +121,7 @@ export function getEffectBlockClauses(token, items = {}) {
 }
 
 /**
- * Generates accepted tokens / tool requirements clause (e.g. "Requires an adjacent Pickaxe (Tier 1+).").
+ * Generates accepted tokens / tool requirements clause (e.g. "Requires a nearby Pickaxe (Tier 1+).").
  * @param {object} token
  * @returns {string|null}
  */
@@ -135,9 +135,9 @@ export function getAcceptedTokensClause(token) {
     return `${capitalTag}${tierStr}`;
   });
   if (parts.length === 1) {
-    return `Requires an adjacent ${parts[0]}.`;
+    return `Requires a nearby ${parts[0]}.`;
   }
-  return `Requires an adjacent ${parts.join(' and ')}.`;
+  return `Requires a nearby ${parts.join(' and ')}.`;
 }
 
 /**
@@ -170,7 +170,7 @@ export function getTraitClauses(token) {
   const clauses = [];
 
   // ⚠️ There used to be a clause here promising that any Token typed
-  // `manager` "automatically restocks adjacent stations from the Guild Bank".
+  // `manager` "automatically restocks nearby stations from the Guild Bank".
   // Nothing made that true — a Manager is decided by what it restocks, and no
   // field wrote it. A **Restocks** statement now says so, and says which
   // Tokens, so the sentence comes from the rule rather than from the label.

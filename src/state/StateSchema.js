@@ -171,6 +171,9 @@ export const INITIAL_STATE = {
     // ignored extra fields.
     progress: {
         rosterLimit: 0, // Active roster capacity (matches roster_size rank, starts at 0, max 12)
+        // Extra flag radius, in mat units, from the Scouting Flags upgrade
+        // (FP-23): 40 per rank. Derived by GuildUpgradeManager on every load.
+        flagRadiusBonus: 0,
         unlockedRarities: ['common', 'uncommon'],
         // Per-biome task discovery: { biomeId: ['task1', 'task2', ...] }
         discoveredTasksByBiome: {},

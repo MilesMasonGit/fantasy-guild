@@ -4,6 +4,30 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Tokens no longer vanish into the retired Tray** (Free Playmat cleanup, 2026-09-21). The Tray
+  was taken off the screen, but five things still quietly put Tokens into it, where nobody could
+  see or reach them. Each now does what the playmat plan says:
+  - **Right-clicking a Token on the mat sends it to the Vault.**
+  - **The Vault's right-click, and the inspection panel's button (now "Place on Mat"), put the
+    Token on the mat beside the Guild Hall.** No room there? It stays in the Vault.
+  - **Dropping a copy on a matching Token to restock it**, when the leftover has nowhere to stand,
+    sends the leftover back where it came from.
+  - **Picking up a loose Token goes straight to the Vault.**
+  - The QA panel's fill button fills the Vault.
+- **Map bursts push their neighbours aside properly.** Tokens from a Map land on the mat and shove
+  crowding Tokens outward — never into a spot a "Cannot" rule forbids, and never the Guild Hall a
+  burst comes out of. If a push can't be done, the Token lands in the nearest free space instead;
+  with no room anywhere it drops to the floor as loot rather than being lost. (The pushing that
+  arrived with this work never actually succeeded — every burst fell back to "nearest free space".)
+- **The Vault is open from the start** (FP-62). It used to wait for the tutorial step "Place a
+  Dropped Token", which can no longer happen now that Map Tokens land on the mat.
+- **Tutorial 5 is now "Move a New Token"** — drag one of the Tokens your Map just produced. Saves
+  already on the old step pick up the new one when loaded.
+- **"Requires an nearby Pickaxe" reads "Requires a nearby Pickaxe"** again, and the CMS writes
+  "nearby" too — its description writer still said "adjacent", so the next Sync to Game would
+  have put the old word back in every Token's description.
+- **The Scouting Flags upgrade takes effect at once**: flags re-check for work and the reach ring
+  redraws the moment a rank is bought, and the bonus is part of the save.
 - **Free Playmat (Slice 1.10):** Renamed "adjacent" to "nearby" throughout the game interface and rules to match the new playmat mechanics.
 - **Free Playmat (Slice 1.11):** Finalized tuning defaults and bumped versions for the v0.8.0 release.
 

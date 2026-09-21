@@ -12,9 +12,8 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
 
 /**
  * ⭐ **Everything dropped on the playmat lands through `dropOnMat(payload, point)`**
- * — a drag payload and a mat point (mat units). The playmat's own drop target
- * and the Tray's mini mat both call it, so no surface can drift from another
- * (CR2-160).
+ * — a drag payload and a mat point (mat units). Every surface that places on
+ * the mat calls it, so no surface can drift from another (CR2-160).
  *
  * ## What lands where (free placement, slice 1.6d)
  * * **A hero or a flag** — the flag stands **exactly where it was let go**,
@@ -27,13 +26,13 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  *
  * A Token can come from six places, told apart by its payload's `from`:
  * `boardMapId` (a Map lying on the mat), `instanceId` (a Token on the mat),
- * `spriteId` (loot on the floor), `traySlot`, `vaultTypeId`, or none (a bare
+ * `spriteId` (loot on the floor), `vaultTypeId`, or none (a bare
  * `typeId`: make one).
  *
  * ## ⚠️ Nothing here decides whether a Token may land
  * Every rule lives in `MatPlacement.js`, `Placement.js` and `VaultTransfer.js`.
  * This function works out what the player meant, and puts the Token back exactly
- * where it came from if the answer is no (D-138) — the Tray slot, the Vault, the
+ * where it came from if the answer is no (D-138) — the Vault, the
  * floor it was lifted from, the spot it was moved off.
  *
  * @returns the placement result (`{ success, reason?, flyBack? }`) or null
@@ -118,15 +117,6 @@ export function dropOnMat(payload, point) {
         return result;
     }
 
-    if (from.traySlot != null) {
-        const instance = BoardState.takeFromTray(from.traySlot);
-        if (!instance) return null;
-        const result = announce(flownBack(Placement.placeTokenAt(instance, point)));
-        // Put it back exactly where it came from if the mat refused it.
-        if (!result.success) BoardState.addToTray(instance);
-        return result;
-    }
-
     // ⚠️ No `vault_withdrawn` / `token_bank_updated` publish on this route.
     // `TokenBank.withdraw` already made both, and republishing them counted one
     // withdrawal twice on every quest that watches for it (CR2-146).
@@ -134,9 +124,8 @@ export function dropOnMat(payload, point) {
         return announce(flownBack(VaultTransfer.withdrawTo(from.vaultTypeId, { at: point })));
     }
 
-    // ⚠️ Checked LAST of the origins: a Tray Token's payload carries its
-    // `instanceId` beside `traySlot`, so `instanceId` alone means "a Token on
-    // the mat" only when no other origin is named.
+    // ⚠️ Checked LAST of the origins: `instanceId` means "a Token on the mat"
+    // only when no other origin is named.
     if (from.instanceId != null) {
         if (!BoardState.getTokenById(from.instanceId)) return announce(refuse('No Token there'));
         return announce(flownBack(Placement.moveTokenTo(from.instanceId, point)));

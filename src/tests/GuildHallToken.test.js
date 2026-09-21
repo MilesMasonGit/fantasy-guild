@@ -50,17 +50,17 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(tokenAt(10).typeId).toBe('token_guild_hall');
     });
 
-    it('cannot be removed from the playmat back to Tray or Vault once placed, and emits a disallow alert', () => {
+    it('cannot be removed from the playmat to the Vault once placed, and emits a disallow alert', () => {
         const gh = BoardState.createTokenInstance('token_guild_hall');
         put(15, gh);
 
         const alerts = [];
         const unsub = EventBus.subscribe('board:tile_event_alert', (e) => alerts.push(e));
 
-        // Attempt return to Tray
-        const trayRes = Placement.returnTokenToTrayById(idAt(15));
-        expect(trayRes.success).toBe(false);
-        expect(trayRes.reason).toMatch(/cannot be removed from the playmat/i);
+        // Right-click and drag-to-chest both land here (slice 1.9).
+        const vaultRes = Placement.returnTokenToVaultById(idAt(15));
+        expect(vaultRes.success).toBe(false);
+        expect(vaultRes.reason).toMatch(/cannot be removed from the playmat/i);
         expect(tokenAt(15)).not.toBeNull();
 
         expect(alerts).toHaveLength(1);
@@ -68,17 +68,6 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(alerts[0].severity).toBe('disallow');
         expect(alerts[0].type).toBe('drop_rejected');
         expect(alerts[0].title).toBe('Guild Hall cannot be removed from the playmat.');
-
-        // Attempt deposit to Vault
-        const vaultRes = Placement.returnTokenToVaultById(idAt(15));
-        expect(vaultRes.success).toBe(false);
-        expect(vaultRes.reason).toMatch(/cannot be removed from the playmat/i);
-        expect(tokenAt(15)).not.toBeNull();
-
-        expect(alerts).toHaveLength(2);
-        expect(alerts[1].instanceId).toBe(idAt(15));
-        expect(alerts[1].severity).toBe('disallow');
-        expect(alerts[1].title).toBe('Guild Hall cannot be removed from the playmat.');
 
         unsub();
     });
@@ -114,7 +103,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             expect(BoardState.getTray().some(t => t.typeId === 'token_guild_hall')).toBe(false);
         });
 
-        it('a large Token dropped over it cannot send it to the Tray', () => {
+        it('a large Token dropped over it does not move it', () => {
             const gh = BoardState.createTokenInstance('token_guild_hall');
             put(8, gh);
             const where = { x: gh.x, y: gh.y };

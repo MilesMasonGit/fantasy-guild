@@ -23,13 +23,8 @@ export function resolveTutorialTargetElement(questId) {
     if (typeof document === 'undefined' || !questId) return null;
 
     switch (questId) {
-        case 'tutorial_1': // Place Guild Hall Token from Tray
-            return (
-                document.querySelector('[data-tray-container] [data-alpha-test]') ||
-                document.querySelector('#tray-bubble-target') ||
-                document.querySelector('[data-tray-container]') ||
-                document.querySelector('#tray')
-            );
+        case 'tutorial_1': // Drag the Guild Hall to a new spot on the mat
+            return document.querySelector('[data-token-art="true"][data-guild-hall="true"]');
 
         case 'tutorial_2': // Recruit a Hero from Guild Hall
             return (
@@ -48,11 +43,8 @@ export function resolveTutorialTargetElement(questId) {
         case 'tutorial_4': // Explore one Map (strictly on-board map, no tray fallback)
             return document.querySelector('[data-board-map-id]');
 
-        case 'tutorial_5': // Place a Dropped Token (any floating token sprite on the playmat)
-            return (
-                document.querySelector('#sprite-layer [data-token-sprite="true"]') ||
-                document.querySelector('[data-token-sprite="true"]')
-            );
+        case 'tutorial_5': // Move a New Token (any Token on the mat but the Guild Hall)
+            return document.querySelector('[data-token-art="true"]:not([data-guild-hall])');
 
         case 'tutorial_6': // Deploy a Hero from Hero Dock
             return (
@@ -91,18 +83,14 @@ export function resolveTutorialTargetElement(questId) {
         case 'tutorial_12': // Token Vault
             return document.querySelector('#vault-bubble-target');
 
-        case 'tutorial_13': // Stage a Token from Vault to Tray
+        case 'tutorial_13': // Stage a Token from the Vault onto the mat
             return (
                 document.querySelector('[data-vault-first-token]') ||
-                document.querySelector('#vault-bubble-target') ||
-                document.querySelector('#tray-bubble-target')
+                document.querySelector('#vault-bubble-target')
             );
 
-        case 'tutorial_14': // Add a Context Token
-            return (
-                document.querySelector('[data-tray-container] [data-alpha-test]') ||
-                document.querySelector('#tray-bubble-target')
-            );
+        case 'tutorial_14': // Add a Context Token — tools come out of the Vault
+            return document.querySelector('#vault-bubble-target');
 
         case 'tutorial_15': // Cartographer's Shop
             return document.querySelector('#cartographer-bubble-target');

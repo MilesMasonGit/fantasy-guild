@@ -25,8 +25,8 @@ import { pointerToMat } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { announce } from './dropOnMat.js';
 import {
-    FLAG_PX, IDLE_HERO_PX, GEAR_PX, GEAR_OFFSET,
-    IDLE_CHIP_OFFSET, IDLE_HERO_OFFSET, flagOrigin, POLE_BASE
+    GEAR_PX, GEAR_OFFSET,
+    IDLE_CHIP_OFFSET, IDLE_HERO_OFFSET, POLE_BASE
 } from './flagGeometry.js';
 
 /**
@@ -57,10 +57,15 @@ import {
  *   only while that flag or its hero is hovered, dragged or inspected.
  */
 
-/** The live flag radius, following the Mat Tuner. */
+/** The live flag radius, following the Mat Tuner and the Scouting Flags upgrade. */
 function useFlagRadius() {
     const [radius, setRadius] = useState(() => Flags.flagRadius());
-    useEffect(() => onMatTuningChanged(() => setRadius(Flags.flagRadius())), []);
+    useEffect(() => {
+        const refresh = () => setRadius(Flags.flagRadius());
+        const offTuning = onMatTuningChanged(refresh);
+        const offUpgrade = EventBus.subscribe('guild_upgrades_updated', refresh);
+        return () => { offTuning?.(); offUpgrade?.(); };
+    }, []);
     return radius;
 }
 

@@ -104,6 +104,12 @@ export function insideMat(typeId, point) {
  * are whole numbers everywhere else.
  */
 export function clampInside(typeId, point) {
+    const at = clampOnto(typeId, point);
+    return { x: Math.round(at.x), y: Math.round(at.y) };
+}
+
+/** {@link clampInside} without the rounding — for the push's inner loop. */
+function clampOnto(typeId, point) {
     const r = artRadiusOf(typeId);
     const w = matW();
     const h = matH();
@@ -111,8 +117,8 @@ export function clampInside(typeId, point) {
     // the least wrong place for it. Defensive — the smallest mat (6 steps,
     // 960 × 614 u) still swallows the largest art (288 u across) easily.
     return {
-        x: Math.round(w >= 2 * r ? Math.max(r, Math.min(w - r, point.x)) : w / 2),
-        y: Math.round(h >= 2 * r ? Math.max(r, Math.min(h - r, point.y)) : h / 2)
+        x: w >= 2 * r ? Math.max(r, Math.min(w - r, point.x)) : w / 2,
+        y: h >= 2 * r ? Math.max(r, Math.min(h - r, point.y)) : h / 2
     };
 }
 
@@ -216,6 +222,18 @@ function legalIn(typeId, point, ctx) {
 }
 
 /**
+ * ⭐ The nearest point to `point` where a Token of `typeId` may legally stand,
+ * or **null** when there is none within nudge reach (FP-46 — it flies back).
+ *
+ * The drop point itself is tried first, so a drop with room lands exactly where
+ * it was let go and reports a nudge of 0. Otherwise the search walks outward in
+ * rings 4 u apart, ~6 u between candidates around each ring — close enough that
+ * the spot it finds is the nearest one to within a few mat units, and about a
+ * tenth of the candidates a 2 u search would need.
+ *
+ * Reused by slice 1.6d-3, which pulls Tokens in when the mat shrinks (FP-98):
+ * clamp the point onto the smaller mat, then ask this where it can actually go.
+ *
  * @returns {{x: number, y: number, nudge: number}|null}
  */
 export function findSpot(typeId, point, options = {}) {
@@ -236,142 +254,140 @@ export function findSpot(typeId, point, options = {}) {
 }
 
 /**
- * ⭐ The cascading push algorithm (Slice 1.8).
- * Resolves overlaps by pushing tokens radially outward from a central point.
- * Used for forced placements: Spawns, Map bursts, and Mat resizing.
+ * How far an arrival that cannot push looks for free space instead (FP-17), in
+ * mat units. Director's pick: wider than a player's nudge reach, because an
+ * arrival has no hand to fly back to, but bounded — an unbounded ring search on
+ * a nearly full mat is ~half a million candidates.
+ */
+const ARRIVAL_FALLBACK_REACH = 640;
+
+/** Relaxation passes before a push is given up as unsolvable. */
+const PUSH_PASSES = 30;
+
+/** How far past the gap a push shoves — float slack, so a pair just pushed apart is not read as overlapping again. */
+const PUSH_MARGIN = 0.5;
+
+/**
+ * ⭐ Where an **arrival** lands — a Map burst, a spawn, a transform (FP-16,
+ * FP-17). Unlike a player's drop, an arrival **may push**: it stands at `point`
+ * and shoves the Tokens it overlaps outward, and they shove theirs.
  *
- * @param {string} typeId The type of token being placed.
- * @param {{x: number, y: number}} point The exact point it wants to land on.
+ * FP-17's guard rails:
+ * * a pushed Token **stays on the mat** (clamped to the edge);
+ * * nothing is pushed into a spot that breaks a `Cannot` rule;
+ * * when the push cannot be solved, the arrival lands in the **nearest free
+ *   space** instead, and nothing is pushed.
+ *
+ * Returns null only when there is no free space within
+ * {@link ARRIVAL_FALLBACK_REACH} either — the mat is full (FP-46).
+ *
+ * Decides only: `BoardState.applyPushes` moves the pushed Tokens.
+ *
  * @param {object} [options]
+ * @param {string} [options.excludeId] a Token to ignore — the one being replaced
+ * @param {string[]} [options.fixedIds] Tokens that must not be pushed
  * @returns {{x: number, y: number, pushed: {id: string, x: number, y: number}[]}|null}
  */
 export function forceSpot(typeId, point, options = {}) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+    const { excludeId = null, fixedIds = [] } = options;
 
-    // The point must be on the mat, or we clamp it.
-    let at = clampInside(typeId, point);
+    const at = clampInside(typeId, point);
+    if (isLegal(typeId, at, { excludeId })) return { x: at.x, y: at.y, pushed: [] };
 
-    // If it's already perfectly clear and legal, just return it. No pushing needed.
-    if (isLegal(typeId, at, options)) {
-        return { x: at.x, y: at.y, pushed: [] };
-    }
+    const pushed = relax(typeId, at, excludeId, new Set(fixedIds));
+    if (pushed) return { x: at.x, y: at.y, pushed };
 
-    // We simulate a physics relaxation.
-    // 1. Gather all tokens.
-    const tokens = BoardState.tokens().filter(t => t.id !== options.excludeId).map(t => ({
-        id: t.id, typeId: t.typeId, x: t.x, y: t.y, fixed: false
-    }));
+    const spot = findSpot(typeId, at, { excludeId, reach: ARRIVAL_FALLBACK_REACH });
+    return spot ? { x: spot.x, y: spot.y, pushed: [] } : null;
+}
 
-    // Add our new token as fixed so it doesn't move during relaxation, unless it was just pulled by a resize.
-    const newcomer = { id: 'NEW', typeId, x: at.x, y: at.y, fixed: true };
-    tokens.push(newcomer);
+/**
+ * Push everything overlapping a newcomer at `at` outward until nothing
+ * overlaps, or null when that cannot be done legally.
+ *
+ * Pairwise relaxation: each overlapping pair is pushed apart along the line
+ * between their centres — all of it onto the free one when the other is fixed
+ * (the newcomer always is), half each otherwise — then pushed Tokens are
+ * clamped back onto the mat. Positions are not rounded (see the loop).
+ */
+function relax(typeId, at, excludeId, fixedIds) {
+    const bodies = BoardState.tokens()
+        .filter(t => t.id !== excludeId && Number.isFinite(t.x) && Number.isFinite(t.y))
+        .map(t => ({ id: t.id, typeId: t.typeId, x: t.x, y: t.y, x0: t.x, y0: t.y, fixed: fixedIds.has(t.id) }));
+    const newcomer = { id: null, typeId, x: at.x, y: at.y, fixed: true };
+    bodies.push(newcomer);
 
-    let changed = true;
-    let iterations = 0;
-    const MAX_ITER = 30; // Prevent infinite loops
-
-    while (changed && iterations < MAX_ITER) {
-        changed = false;
-        iterations++;
-
-        for (let i = 0; i < tokens.length; i++) {
-            for (let j = i + 1; j < tokens.length; j++) {
-                const a = tokens[i];
-                const b = tokens[j];
-
+    for (let pass = 0; pass < PUSH_PASSES; pass++) {
+        let moved = false;
+        for (let i = 0; i < bodies.length; i++) {
+            for (let j = i + 1; j < bodies.length; j++) {
+                const a = bodies[i];
+                const b = bodies[j];
+                if (a.fixed && b.fixed) continue;
                 const gap = minGap(a.typeId, b.typeId);
-                const gapSq = gap * gap;
-
                 const dx = b.x - a.x;
                 const dy = b.y - a.y;
-                let d2 = dx * dx + dy * dy;
+                const d = Math.hypot(dx, dy);
+                if (d * d >= gap * gap - EPS) continue;
 
-                if (d2 < gapSq - EPS) {
-                    // Overlap detected!
-                    changed = true;
-                    const d = Math.sqrt(d2);
-                    // Prevent division by zero if perfectly stacked
-                    const pushDist = gap - d + 0.1; 
-                    const nx = d === 0 ? 1 : dx / d;
-                    const ny = d === 0 ? 0 : dy / d;
-
-                    if (a.fixed && !b.fixed) {
-                        b.x += nx * pushDist;
-                        b.y += ny * pushDist;
-                    } else if (!a.fixed && b.fixed) {
-                        a.x -= nx * pushDist;
-                        a.y -= ny * pushDist;
-                    } else if (!a.fixed && !b.fixed) {
-                        const half = pushDist / 2;
-                        a.x -= nx * half;
-                        a.y -= ny * half;
-                        b.x += nx * half;
-                        b.y += ny * half;
-                    }
-                }
+                moved = true;
+                const push = gap - d + PUSH_MARGIN;
+                const nx = d === 0 ? 1 : dx / d;
+                const ny = d === 0 ? 0 : dy / d;
+                const shareA = a.fixed ? 0 : (b.fixed ? 1 : 0.5);
+                const shareB = 1 - shareA;
+                a.x -= nx * push * shareA;
+                a.y -= ny * push * shareA;
+                b.x += nx * push * shareB;
+                b.y += ny * push * shareB;
+                if (shareA) a.pushed = true;
+                if (shareB) b.pushed = true;
             }
         }
+        // ⚠️ Only Tokens this push has touched, and WITHOUT rounding.
+        // Rounding made pushed Tokens jitter by half a unit every pass, so a
+        // packed block never settled (measured: 11 overlaps left after 300
+        // passes, against 0 after 10 unrounded); rounding once at the end
+        // turned a 61.25 u gap into 61.13. Points stay fractional, as the ones
+        // `findSpot` returns already are.
+        for (const t of bodies) {
+            if (t.fixed || !t.pushed) continue;
+            const c = clampOnto(t.typeId, t);
+            t.x = c.x;
+            t.y = c.y;
+        }
+        if (!moved) break;
+    }
 
-        // Clamp to mat and check rules
-        for (const t of tokens) {
-            if (t.fixed) continue;
-            const clamped = clampInside(t.typeId, t);
-            t.x = clamped.x;
-            t.y = clamped.y;
+    // Every pair the push is answerable for must now be clear: the newcomer's,
+    // and every moved Token's. Two Tokens that were already overlapping before
+    // (a mat shrink can leave them so, FP-98) are not this push's business —
+    // counting them would make every push on that mat fail.
+    const answerable = (t) => t === newcomer || t.pushed;
+    for (let i = 0; i < bodies.length; i++) {
+        for (let j = i + 1; j < bodies.length; j++) {
+            const a = bodies[i];
+            const b = bodies[j];
+            if (!answerable(a) && !answerable(b)) continue;
+            const gap = minGap(a.typeId, b.typeId);
+            if (distanceSq(a, b) < gap * gap - EPS) return null;
         }
     }
 
-    // After relaxation, verify if all tokens are in legal spots!
-    // We check every pushed token. If any are breaking Cannot rules or still overlapping, the push failed.
-    const plan = { id: options.excludeId };
-    
-    // We must check if the final state is valid.
-    const finalTokens = tokens.filter(t => t.id !== 'NEW');
-    
-    for (const t of finalTokens) {
-        // Did it move?
-        const original = BoardState.getTokenById(t.id);
-        if (Math.abs(t.x - original.x) < 0.5 && Math.abs(t.y - original.y) < 0.5) continue;
-        
-        // We only check against Cannot rules, because physical overlap is what we just solved.
-        // Wait, what if the relaxation couldn't solve the overlap?
-        // We do a quick pass to ensure no overlapping remains.
-        let clear = true;
-        for (const other of tokens) {
-            if (other.id === t.id) continue;
-            const gap = minGap(t.typeId, other.typeId);
-            const d2 = distanceSq(t, other);
-            if (d2 < gap * gap - EPS) {
-                clear = false;
-                break;
-            }
-        }
-        if (!clear) return null; // Overlap remains, mat is truly full.
+    const moved = bodies
+        .filter(t => t.id != null && t.pushed && (t.x !== t.x0 || t.y !== t.y0))
+        .map(t => ({ id: t.id, x: t.x, y: t.y }));
 
-        // Check Cannot
-        if (hasCannot(t.typeId)) {
-            // Re-check Restrictions on the projected new position
-            const verdict = Restrictions.checkPlacement({x: t.x, y: t.y}, t.typeId, plan);
-            if (!verdict.ok) return null;
-        }
-    }
+    // One check on the board as it would be — the newcomer down and every
+    // pushed Token at its new point — so a push that carries a Token next to
+    // something it Cannot be near is caught wherever that happens. A push is
+    // rare (bursts and spawns), so the projected board is affordable here.
+    const plan = { move: moved };
+    if (excludeId) plan.id = excludeId;
+    if (!Restrictions.checkPlacement(at, typeId, plan).ok) return null;
 
-    // Now check the newcomer
-    if (hasCannot(newcomer.typeId)) {
-        const verdict = Restrictions.checkPlacement({x: newcomer.x, y: newcomer.y}, newcomer.typeId, plan);
-        if (!verdict.ok) return null;
-    }
-
-    // Push succeeded! Return the pushed tokens
-    const pushed = [];
-    for (const t of finalTokens) {
-        const original = BoardState.getTokenById(t.id);
-        if (Math.abs(t.x - original.x) > 0.5 || Math.abs(t.y - original.y) > 0.5) {
-            pushed.push({ id: t.id, x: Math.round(t.x), y: Math.round(t.y) });
-        }
-    }
-
-    return { x: Math.round(newcomer.x), y: Math.round(newcomer.y), pushed };
+    return moved;
 }
 
 /**

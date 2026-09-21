@@ -97,21 +97,10 @@ export function fitToMat() {
 
         const from = { x: token.x, y: token.y };
         const clamped = MatPlacement.clampInside(token.typeId, from);
-        const spot = MatPlacement.forceSpot(token.typeId, clamped, {
-            excludeId: token.id
+        const spot = MatPlacement.findSpot(token.typeId, clamped, {
+            excludeId: token.id,
+            reach: PULL_REACH
         });
-        
-        if (spot && spot.pushed && spot.pushed.length > 0) {
-            for (const p of spot.pushed) {
-                const tok = BoardState.getTokenById(p.id);
-                if (tok) {
-                    dirty.push({ x: tok.x, y: tok.y });
-                    BoardState.setTokenPoint(p.id, p.x, p.y);
-                    dirty.push({ x: p.x, y: p.y });
-                }
-            }
-        }
-
         const to = spot ? { x: Math.round(spot.x), y: Math.round(spot.y) } : clamped;
 
         BoardState.setTokenPoint(token.id, to.x, to.y);

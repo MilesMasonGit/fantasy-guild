@@ -5,6 +5,9 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as VaultTransfer from '../systems/board/VaultTransfer.js';
+import * as Cartographer from '../systems/board/Cartographer.js';
+import * as MatPlacement from '../systems/board/MatPlacement.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
@@ -33,9 +36,6 @@ const token = (typeId, uses = null) => BoardState.createTokenInstance(typeId, us
 beforeEach(() => {
     GameState.initNew();
     SpriteLayer.init();
-    // The Vault-storage gate opens at tutorial step 5; every test here is about
-    // what happens *after* it is open, except the one that is about the gate.
-    GameState.state.quests.completedTutorials = ['tutorial_5'];
     registerTokenTypes({
         fixture_map: {
             id: 'fixture_map', name: 'Fixture Map', tokenType: 'map',
@@ -43,6 +43,12 @@ beforeEach(() => {
         }
     });
 });
+
+/** Stand a Token on the mat, away from the Guild Hall. */
+function onMat(instance, x = 300, y = 300) {
+    BoardState.addToken(instance, x, y);
+    return instance;
+}
 
 /** Count how many times each event fires while `fn` runs. */
 function countEvents(names, fn) {
@@ -53,14 +59,20 @@ function countEvents(names, fn) {
 }
 
 describe('depositFrom — one rule, whatever the Token is sitting on', () => {
-    it('stores a Token that is loose on the Tray, and takes it out of the Tray', () => {
-        BoardState.addToTray(token('fixture_producer', 100));
+    it('stores a Token standing on the mat, and takes it off the mat', () => {
+        const t = onMat(token('fixture_producer', 100));
 
-        const res = VaultTransfer.depositFrom({ traySlot: 0 });
+        const res = VaultTransfer.depositFrom({ instanceId: t.id });
 
         expect(res.success).toBe(true);
-        expect(BoardState.getTray()).toHaveLength(0);
+        expect(BoardState.getTokenById(t.id)).toBeNull();
         expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
+    });
+
+    it('ignores a Tray slot — the Tray was retired in slice 1.9', () => {
+        BoardState.addToTray(token('fixture_producer', 100));
+        expect(VaultTransfer.depositFrom({ traySlot: 0 }).success).toBe(false);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(0);
     });
 
     it('stores a loose loot Token floating over the grid', () => {
@@ -75,26 +87,26 @@ describe('depositFrom — one rule, whatever the Token is sitting on', () => {
     });
 
     it('refuses a Map with the same words wherever it is dragged from (D-156)', () => {
-        BoardState.addToTray(token('fixture_map'));
+        const map = onMat(token('fixture_map'));
 
-        const fromTray = VaultTransfer.depositFrom({ traySlot: 0 });
+        const fromToken = VaultTransfer.depositFrom({ instanceId: map.id });
         const fromPlaymat = VaultTransfer.depositFrom({ boardMapId: 'anything' });
 
-        expect(fromTray).toEqual({ success: false, reason: 'Maps cannot be stored — open it.' });
+        expect(fromToken).toMatchObject({ success: false, reason: 'Maps cannot be stored — open it.' });
         expect(fromPlaymat).toEqual({ success: false, reason: 'Maps cannot be stored — open it.' });
         // Refused, not eaten.
-        expect(BoardState.getTray()).toHaveLength(1);
+        expect(BoardState.getTokenById(map.id)).not.toBeNull();
     });
 
     it('refuses a new type when the Vault is full, and leaves the Token where it was (D-138)', () => {
         GameState.state.board.tokenBankSlots = 1;
         TokenBank.deposit(token('fixture_producer'));
-        BoardState.addToTray(token('fixture_buff_yield'));
+        const t = onMat(token('fixture_buff_yield'));
 
-        const res = VaultTransfer.depositFrom({ traySlot: 0 });
+        const res = VaultTransfer.depositFrom({ instanceId: t.id });
 
-        expect(res).toEqual({ success: false, reason: 'No room in the Vault' });
-        expect(BoardState.getTray()).toHaveLength(1);
+        expect(res).toMatchObject({ success: false, reason: 'No room in the Vault' });
+        expect(BoardState.getTokenById(t.id)).not.toBeNull();
     });
 
     it('puts a loose loot Token back on the floor when the Vault refuses it', () => {
@@ -109,38 +121,31 @@ describe('depositFrom — one rule, whatever the Token is sitting on', () => {
         expect(SpriteLayer.getSprites()).toHaveLength(1);
     });
 
-    it('refuses everything while Vault storage is still locked', () => {
+    it('accepts a deposit on a brand-new save — the Vault is unlocked from the start (FP-62)', () => {
         GameState.state.quests.completedTutorials = [];
         GameState.state.quests.tutorialStep = 0;
-        GameState.state.quests.active = [
-            { id: 'tutorial_5', targetType: 'loot_token_placed', isTutorial: true, currentCount: 0, requiredCount: 1 }
-        ];
-        BoardState.addToTray(token('fixture_producer'));
+        const t = onMat(token('fixture_producer'));
 
-        const res = VaultTransfer.depositFrom({ traySlot: 0 });
-
-        expect(res.success).toBe(false);
-        expect(res.reason).toContain('Token Vault storage unlocks');
-        expect(BoardState.getTray()).toHaveLength(1);
+        expect(VaultTransfer.depositFrom({ instanceId: t.id }).success).toBe(true);
     });
 
     it('announces a successful deposit exactly once (CR2-033, CR2-146)', () => {
-        BoardState.addToTray(token('fixture_producer', 100));
+        const t = onMat(token('fixture_producer', 100));
 
         const counts = countEvents(
             ['vault_deposited', 'token_bank_updated'],
-            () => VaultTransfer.depositFrom({ traySlot: 0 })
+            () => VaultTransfer.depositFrom({ instanceId: t.id })
         );
 
         expect(counts).toEqual({ vault_deposited: 1, token_bank_updated: 1 });
     });
 
     it('says nothing about a deposit that was refused', () => {
-        BoardState.addToTray(token('fixture_map'));
+        const map = onMat(token('fixture_map'));
 
         const counts = countEvents(
             ['vault_deposited', 'token_bank_updated'],
-            () => VaultTransfer.depositFrom({ traySlot: 0 })
+            () => VaultTransfer.depositFrom({ instanceId: map.id })
         );
 
         expect(counts).toEqual({ vault_deposited: 0, token_bank_updated: 0 });
@@ -148,7 +153,7 @@ describe('depositFrom — one rule, whatever the Token is sitting on', () => {
 });
 
 describe('withdrawTo — and the double-count that used to come with it (CR2-146)', () => {
-    it('moves the fullest copy onto the Tray (D-77)', () => {
+    it('with no point, puts the fullest copy on the mat beside the Guild Hall (D-77, FP-18)', () => {
         // `fixture_producer` holds 5,000 charges, so these two stay two copies
         // after consolidation — one full, one part-used — rather than merging.
         TokenBank.deposit(token('fixture_producer', 5000));
@@ -157,8 +162,11 @@ describe('withdrawTo — and the double-count that used to come with it (CR2-146
         const res = VaultTransfer.withdrawTo('fixture_producer');
 
         expect(res.success).toBe(true);
-        expect(BoardState.getTray()).toHaveLength(1);
-        expect(BoardState.getTray()[0].usesRemaining).toBe(5000);
+        expect(BoardState.getTray()).toHaveLength(0);
+        const [placed] = BoardState.tokens().filter(t => t.typeId === 'fixture_producer');
+        expect(placed.usesRemaining).toBe(5000);
+        const hall = Cartographer.centreOfBoard();
+        expect(Math.hypot(placed.x - hall.x, placed.y - hall.y)).toBeLessThanOrEqual(MatPlacement.nudgeReach() + 1e-6);
         expect(BoardState.tokenBankCopies('fixture_producer')[0].usesRemaining).toBe(800);
     });
 
@@ -173,16 +181,19 @@ describe('withdrawTo — and the double-count that used to come with it (CR2-146
         expect(counts).toEqual({ vault_withdrawn: 1, token_bank_updated: 1 });
     });
 
-    it('puts the copy straight back when the Tray has no room (D-138)', () => {
+    it('puts the copy straight back when the mat has no room for it (D-138, FP-46)', () => {
         TokenBank.deposit(token('fixture_producer', 100));
-        for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
-            BoardState.addToTray(token('fixture_buff_unique'));
+        setMatTuning('nudgeReach', 0);
+        try {
+            // Aimed at a point already taken, with no nudge allowed.
+            onMat(token('fixture_buff_unique'), 600, 600);
+            const res = VaultTransfer.withdrawTo('fixture_producer', { at: { x: 600, y: 600 } });
+
+            expect(res.success).toBe(false);
+            expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
+        } finally {
+            resetMatTuning();
         }
-
-        const res = VaultTransfer.withdrawTo('fixture_producer');
-
-        expect(res).toEqual({ success: false, reason: 'No room in the Tray' });
-        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
     });
 
     it('refuses when the Vault holds no copy of that type', () => {
@@ -195,8 +206,7 @@ describe('withdrawTo — and the double-count that used to come with it (CR2-146
     it('can place the withdrawn copy straight onto a mat point', () => {
         TokenBank.deposit(token('fixture_producer', 100));
 
-        // ⚠️ `at` is a MAT POINT since slice 1.6d — the Tray's own fraction is
-        // `trayAt`, so the two destinations can never be confused for each other.
+        // `at` is a MAT POINT (slice 1.6d).
         const res = VaultTransfer.withdrawTo('fixture_producer', { at: { x: 900, y: 700 } });
 
         expect(res.success).toBe(true);

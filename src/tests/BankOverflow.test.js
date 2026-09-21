@@ -127,53 +127,40 @@ describe('D-138 — a full Bank never destroys anything', () => {
  * **D-138's guarantee is untouched and is what the last case still pins:**
  * nothing is ever destroyed by a full anything.
  */
-describe('Tokens cascade Tray → Token Bank → the board', () => {
-    it('a Token sprite collects into the Tray first for immediate play', () => {
+describe('Tokens collect into the Token Vault, or wait on the floor', () => {
+    // Slice 1.9 retired the Tray, which used to be tried first. A Token put in
+    // it now would be invisible and unreachable, so no collection may go there.
+    it('a Token sprite collects straight into the Vault, charges intact', () => {
         SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
         const sprite = SpriteLayer.getSprites()[0];
 
         expect(SpriteLayer.collectSprite(sprite.id)).toBe(true);
-        expect(BoardState.getTray()).toHaveLength(1);
-        expect(BoardState.getTray()[0].typeId).toBe('token_forest');
-        expect(BoardState.getTray()[0].usesRemaining).toBe(500);
-        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(0);
-    });
-
-    it('falls through to the Token Bank when the Tray is full', () => {
-        for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
-            BoardState.addToTray(BoardState.createTokenInstance('filler', 1));
-        }
-        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
-
-        expect(SpriteLayer.collectSprite(SpriteLayer.getSprites()[0].id)).toBe(true);
+        expect(BoardState.getTray()).toHaveLength(0);
         expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
         expect(BoardState.tokenBankCopies('token_forest')[0].usesRemaining).toBe(500);
     });
 
     it('a Mythic with nowhere to go WAITS on the board rather than being lost', () => {
         // One-copy-ever. This is the case D-138 exists for.
-        for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
-            BoardState.addToTray(BoardState.createTokenInstance('filler', 1));
-        }
         SpriteLayer.addSprite('token', 'token_deck_of_many_things', 1, 10, null);
 
         const sprite = SpriteLayer.getSprites().find(s => s.refId === 'token_deck_of_many_things');
         SpriteLayer.collectSprite(sprite.id);
 
-        // Wherever it ends up — Tray, Token Bank or still on the floor — there is
+        // Wherever it ends up — Token Bank or still on the floor — there is
         // exactly one of it, and it was never destroyed. That is the whole
         // guarantee for a one-copy-ever drop.
         expect(
             BoardState.tokenBankCopies('token_deck_of_many_things').length +
-            BoardState.getTray().filter(t => t.typeId === 'token_deck_of_many_things').length +
             SpriteLayer.getSprites().filter(s => s.refId === 'token_deck_of_many_things').length
         ).toBe(1);
+        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('preserves an unlimited-use Token’s null charges through the round trip', () => {
         SpriteLayer.addSprite('token', 'token_campfire', 1, 10, null);
         SpriteLayer.collectSprite(SpriteLayer.getSprites()[0].id);
-        expect(BoardState.getTray()[0].usesRemaining).toBeNull();
+        expect(BoardState.tokenBankCopies('token_campfire')[0].usesRemaining).toBeNull();
     });
 });
 
@@ -230,24 +217,11 @@ describe('Sprite behaviour', () => {
         expect(SpriteLayer.getSprites()).toHaveLength(2);
     });
 
-    it('collecting a floating Token routes to the Tray first, then Token Vault', () => {
-        // Tray has room -> token enters Tray
-        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 100);
+    it('collecting a floating Token routes to the Token Vault, never the Tray', () => {
+        SpriteLayer.addSprite('token', 'token_yew_stand', 1, 10, 500);
         const spriteId = SpriteLayer.getSprites()[0].id;
         expect(SpriteLayer.collectSprite(spriteId)).toBe(true);
-        expect(BoardState.getTray()).toHaveLength(1);
-        expect(BoardState.getTray()[0].typeId).toBe('token_forest');
-
-        // Fill Tray to max capacity (18)
-        while (BoardState.getTray().length < BoardState.TRAY_CAPACITY) {
-            BoardState.addToTray(BoardState.createTokenInstance('token_forest', 100));
-        }
-        expect(BoardState.hasTraySpace()).toBe(false);
-
-        // Next token collection falls through to Token Vault (Bank)
-        SpriteLayer.addSprite('token', 'token_yew_stand', 1, 10, 500);
-        const nextSpriteId = SpriteLayer.getSprites()[0].id;
-        expect(SpriteLayer.collectSprite(nextSpriteId)).toBe(true);
         expect(BoardState.tokenBankCopies('token_yew_stand')).toHaveLength(1);
+        expect(BoardState.getTray()).toHaveLength(0);
     });
 });

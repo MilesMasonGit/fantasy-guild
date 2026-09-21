@@ -27,6 +27,8 @@ import { ROLE } from '../config/registries/roleRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { matW, matH } from '../config/matGeometry.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import * as MatPlacement from '../systems/board/MatPlacement.js';
 import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
 import { TokenEventAlert } from '../ui/components/board/TokenEventAlert.jsx';
 import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
@@ -183,7 +185,7 @@ describe('⭐ statement roles name Tokens by instance id', () => {
     });
 });
 
-describe('⭐ spawns land by point (stopgaps owned by slice 1.8)', () => {
+describe('⭐ spawns land by point (slices 1.6b and 1.8)', () => {
     const spawnOf = (placement) => ({ payload: { typeId: 'fixture_passive', placement } });
 
     beforeEach(() => clearMat());
@@ -228,10 +230,10 @@ describe('⭐ spawns land by point (stopgaps owned by slice 1.8)', () => {
         expect(BoardState.getTokenById(bearer.id)).not.toBeNull();
     });
 
-    it('no room for the spawn skips it, and nothing is lost (FP-46)', () => {
+    it('a crowded spawn pushes its neighbours aside, never its bearer (FP-17, slice 1.8)', () => {
         // ⚠️ Packed at exactly the minimum gap, which leaves NO legal point
-        // inside the block: the hole between any four is only 43 u across. A mat
-        // merely full of Tokens a whole step apart has room everywhere now.
+        // inside the block: the hole between any four is only 43 u across. So
+        // `findSpot` finds nothing and the spawn has to push.
         const P = (c, r) => ({ x: 600 + c * 61.2, y: 380 + r * 61.2 });
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
@@ -242,8 +244,48 @@ describe('⭐ spawns land by point (stopgaps owned by slice 1.8)', () => {
         const bearer = placeAt('fixture_producer', P(4, 4).x, P(4, 4).y);
         const before = BoardState.tokens().length;
 
-        expect(EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id })).toBeNull();
-        expect(BoardState.tokens()).toHaveLength(before);
+        const result = EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id });
+
+        expect(result).not.toBeNull();
+        expect(BoardState.tokens()).toHaveLength(before + 1);
+        expect(BoardState.getTokenById(bearer.id)).toMatchObject({ x: bearer.x, y: bearer.y });
+        const all = BoardState.tokens();
+        for (let i = 0; i < all.length; i++) {
+            for (let j = i + 1; j < all.length; j++) {
+                const gap = MatPlacement.minGap(all[i].typeId, all[j].typeId);
+                expect(Math.hypot(all[i].x - all[j].x, all[i].y - all[j].y)).toBeGreaterThanOrEqual(gap - 1e-6);
+            }
+        }
+        for (const t of all) expect(MatPlacement.insideMat(t.typeId, t)).toBe(true);
+    });
+
+    it('a spawn on a truly full mat is skipped, and nothing is lost (FP-46)', () => {
+        // The smallest mat, packed edge to edge at the minimum gap: no free
+        // point anywhere and nowhere for a push to go.
+        setMatTuning('matSteps', 6);
+        try {
+            // A grid at the minimum gap, plus a last row and column flush with
+            // the far edges so no sliver of room is left there. (Those two
+            // overlap their neighbours slightly, which a push must tolerate.)
+            const r = 64;
+            const line = (max) => {
+                const out = [];
+                for (let v = r; v <= max - r + 1e-6; v += 61.2) out.push(v);
+                if (max - r - out[out.length - 1] > 1e-6) out.push(max - r);
+                return out;
+            };
+            const points = [];
+            for (const y of line(matH())) for (const x of line(matW())) points.push({ x, y });
+            const [first, ...rest] = points;
+            const bearer = placeAt('fixture_producer', first.x, first.y);
+            for (const p of rest) placeAt('fixture_passive', p.x, p.y);
+            const before = BoardState.tokens().map(t => ({ id: t.id, x: t.x, y: t.y }));
+
+            expect(EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id })).toBeNull();
+            expect(BoardState.tokens().map(t => ({ id: t.id, x: t.x, y: t.y }))).toEqual(before);
+        } finally {
+            resetMatTuning();
+        }
     });
 });
 
@@ -264,12 +306,16 @@ describe('⭐ Map bursts throw from a real point', () => {
         expect(Cartographer.centreOfBoard()).toEqual({ x: matW() / 2, y: matH() / 2 });
     });
 
-    it('a burst with no origin flies its loot out of the Guild Hall', () => {
+    it('a burst with no origin throws its Tokens and loot out of the Guild Hall', () => {
+        const before = new Set(BoardState.tokens().map(t => t.id));
         const result = Cartographer.openMap({ typeId: 'token_guild_hall_map', usesRemaining: 1 }, null);
         expect(result.success).toBe(true);
 
+        // FP-16: Tokens land on the mat, flying in from the Hall.
+        const landed = BoardState.tokens().filter(t => !before.has(t.id));
         const sprites = SpriteLayer.getSprites();
-        expect(sprites.length).toBeGreaterThan(0);
+        expect(landed.length + sprites.length).toBeGreaterThan(0);
+        for (const t of landed) expect({ x: t.fromX, y: t.fromY }).toEqual({ x: hall.x, y: hall.y });
         for (const s of sprites) expect({ x: s.fromX, y: s.fromY }).toEqual({ x: hall.x, y: hall.y });
     });
 });

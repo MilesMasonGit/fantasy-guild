@@ -223,12 +223,9 @@ export function resolveSpritePath(entity) {
 }
 
 export function resolveAnimationPath(entity) {
-    let id = null;
-    if (typeof entity === 'object') {
-        id = entity.spriteId || entity.sprite || entity.classId || entity.templateId || entity.id;
-    } else {
-        id = entity;
-    }
+    const id = typeof entity === 'object' && entity !== null
+        ? (entity.spriteId || entity.sprite || entity.classId || entity.templateId || entity.id)
+        : entity;
 
     const ANIMATION_MAP = {
         'hero_recruit_0': 'ani_recruit_0', 'hero_adventure': 'ani_adventure1', 'hn_adventure1': 'ani_adventure1', 'adventure': 'ani_adventure1',

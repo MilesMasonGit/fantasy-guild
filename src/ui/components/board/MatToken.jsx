@@ -36,8 +36,9 @@ import {
  * * **A drag source and nothing else.** The whole mat is the one drop target
  *   (`dropOnMat`), so a Token no longer accepts drops on itself; dropping a
  *   copy "on" it still restocks it, because the drop point lands on its spot.
- * * **Hit-tested as a circle** (`clip-path`), so the corners of the box belong
- *   to whatever is underneath. Which Token the pointer is on is decided once by
+ * * **Hit-tested as a circle** (`border-radius`, not `clip-path`, so art that
+ *   spills past the circle is drawn rather than cropped), so the corners of the
+ *   box belong to whatever is underneath. Which Token the pointer is on is decided once by
  *   `MatBoard` (nearest centre, `Flags.tokenAtPoint`) — this just draws.
  *
  * ## Two boxes, not one
@@ -60,7 +61,7 @@ export const MatToken = React.memo(function MatToken({
     onClearInspect,
     onAutoAssignHero,
     onOpenRecipes,
-    onReturnToTray,
+    onReturnToVault,
     onRecallHero
 }) {
     const r = artRadius(size);
@@ -73,8 +74,9 @@ export const MatToken = React.memo(function MatToken({
      * whole multiple of its 64px art and never resampled.
      *
      * ⚠️ The **box** grows to hold the art when the art is the larger of the two,
-     * which below 1× it is: the box is `clip-path`ed to a circle, so a box left
-     * at the Token's own radius would crop the very spill FPR-6 accepts. A 2×2's
+     * which below 1× it is: the box is the Token's round hit area, and it was
+     * once `clip-path`ed, so a box left at the Token's own radius cropped the
+     * very spill FPR-6 accepts. A 2×2's
      * 288 u circle is already wider than its 256 u art, and `max` leaves that —
      * and every 1:1 case — exactly as it was.
      *
@@ -207,7 +209,7 @@ export const MatToken = React.memo(function MatToken({
         e.preventDefault();
         e.stopPropagation();
         if (heroId) onRecallHero?.(heroId);
-        else if (!isGuildHallToken) onReturnToTray?.(id);
+        else if (!isGuildHallToken) onReturnToVault?.(id);
     };
 
     const glow = staffed && !alert ? 'gi-glow-active' : null;
@@ -220,6 +222,7 @@ export const MatToken = React.memo(function MatToken({
                 {...drag.handleProps}
                 data-token-id={id}
                 data-token-art="true"
+                data-guild-hall={isGuildHallToken ? 'true' : undefined}
                 title={hoverTitle}
                 data-tile-alert={alert || undefined}
                 data-tile-staffed={staffed ? 'true' : undefined}
@@ -234,8 +237,9 @@ export const MatToken = React.memo(function MatToken({
                 style={{
                     ...boxStyle,
                     zIndex: z,
-                    // Remove clip-path so art isn't cropped (FP-64/user feedback),
-                    // but add border-radius so the click hitbox remains roughly circular.
+                    // Rounded, not clipped: the corners of the box do not catch
+                    // the pointer, and art that spills past the circle is not
+                    // cropped (owner feedback, slice 1.9 work).
                     borderRadius: '50%',
                     visibility: hidden ? 'hidden' : 'visible'
                 }}

@@ -113,7 +113,7 @@ describe('A Token that will never do anything (Placement.placeTokenAt)', () => {
     it('names it once, however many times it is placed', () => {
         const ghost = { typeId: 'ghost_token' };
         Placement.placeTokenAt(ghost, C(0));
-        Placement.returnTokenToTrayById(BoardState.tokensAtPoint(C(0).x, C(0).y)[0].id);
+        BoardState.removeToken(BoardState.tokensAtPoint(C(0).x, C(0).y)[0].id);
         Placement.placeTokenAt({ typeId: 'ghost_token' }, C(1));
 
         const lines = missingContentWarnings();

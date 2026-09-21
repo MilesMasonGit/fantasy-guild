@@ -286,7 +286,7 @@ export function servesFrom(contextId) {
  * enemy Token burns down as it is used, exactly like a Tool Rack beside a Forge.
  *
  * ## `exclude` — the Tokens this cycle has already billed (P1)
- * A recipe can name an nearby context Token's charges as an explicit input
+ * A recipe can name a nearby context Token's charges as an explicit input
  * and pay them through `Charges.planCycle`. Their ids are passed in here so
  * D-126's flat per-cycle wear does not bill them a second time for the same
  * cycle. A Token nobody's recipe named still wears exactly as it always did.

@@ -337,8 +337,18 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(BoardState.getBoardMaps().length).toBe(initialMapCount + 1);
     });
 
-    it('locks sending tokens to vault until Place a Dropped Token (tutorial_5) completes (even before claiming)', () => {
-        // Fast forward 1 and 2 so tutorial_4 and tutorial_5 enter active quests
+    it('the Vault is open from the start — no tutorial gates it (FP-62)', () => {
+        expect(QuestManager.isTokenVaultSendUnlocked()).toBe(true);
+
+        put(10, BoardState.createTokenInstance('token_oak_forest'));
+        expect(Placement.returnTokenToVaultById(idAt(10)).success).toBe(true);
+
+        SpriteLayer.addSprite('token', 'token_charcoal_kiln', 1, { centre: { x: 64, y: 64 } }, 10);
+        const spriteId = SpriteLayer.getSprites().find(s => s.refId === 'token_charcoal_kiln')?.id;
+        expect(SpriteLayer.sendTokenToVault(spriteId)).toBe(true);
+    });
+
+    it('tutorial 5 is finished by moving a Token, and an old save’s copy is re-pointed on load', () => {
         const completeAndClaim = (id) => {
             const q = QuestManager.getActiveQuests().find(x => x.id === id);
             if (q) q.currentCount = q.requiredCount;
@@ -346,31 +356,16 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         };
         completeAndClaim('tutorial_1');
         completeAndClaim('tutorial_2');
+        const t5 = QuestManager.getActiveQuests().find(q => q.id === 'tutorial_5');
+        expect(t5).toBeDefined();
 
-        // Starts locked with 0 progress on tutorial_5
-        expect(QuestManager.isTokenVaultSendUnlocked()).toBe(false);
+        // A save written before 2026-09-21 holds the old, impossible target.
+        t5.targetType = 'loot_token_placed';
+        EventBus.publish('game_loaded', { slot: 0 });
+        expect(t5.targetType).toBe('token_placed');
 
-        // Attempting to return a placed token to vault should fail
-        put(10, BoardState.createTokenInstance('token_oak_forest'));
-        const refuseRes = Placement.returnTokenToVaultById(idAt(10));
-        expect(refuseRes.success).toBe(false);
-        expect(refuseRes.reason).toContain('Token Vault storage unlocks after completing');
-
-        // Attempting to send a floor token sprite to vault should fail
-        SpriteLayer.addSprite('token', 'token_charcoal_kiln', 1, { centre: { x: 64, y: 64 } }, 10);
-        const spriteId = SpriteLayer.getSprites().find(s => s.refId === 'token_charcoal_kiln')?.id;
-        expect(SpriteLayer.sendTokenToVault(spriteId)).toBe(false);
-
-        // Progress tutorial_5 to complete (without claiming)
-        EventBus.publish('loot_token_placed', { instanceId: 'tok_12', typeId: 'token_oak_forest' });
-        expect(QuestManager.isTokenVaultSendUnlocked()).toBe(true);
-
-        // Now returning placed token to vault succeeds
-        const successRes = Placement.returnTokenToVaultById(idAt(10));
-        expect(successRes.success).toBe(true);
-
-        // Sending floor token sprite to vault succeeds
-        expect(SpriteLayer.sendTokenToVault(spriteId)).toBe(true);
+        put(12, BoardState.createTokenInstance('token_oak_forest'));
+        expect(t5.currentCount).toBe(1);
     });
     // ------------------------------------------------------------------
     // One player action = one count (CR2-085, CR2-055/CR2-177). Pinned

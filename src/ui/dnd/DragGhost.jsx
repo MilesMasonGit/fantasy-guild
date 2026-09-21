@@ -5,7 +5,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { getBannerCardWidth } from '../dev/cardSizeStore.js';
 import { DRAG_KIND } from './dragConstants.js';
-import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardScaleAt, boardArtSteps } from '../components/base/TokenSprite.jsx';
+import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardArtSteps } from '../components/base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { GameState } from '../../state/GameState.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
@@ -96,7 +96,7 @@ export const DragGhost = ({ payload, bold }) => {
  * 128 px, lifted, with no hero drawn: a flag drag moves only the flag, and so
  * does dragging a hero on the board (FP-76).
  */
-export const FlagGhost = ({ payload, bold }) => {
+export const FlagGhost = ({ payload }) => {
     const artScale = boardArtSteps(liveBoardFit());
     const size = 64 * artScale;
     return (
@@ -120,7 +120,7 @@ export const FlagGhost = ({ payload, bold }) => {
  * is nothing between 128 and 192, and anything between them lands off the pixel
  * grid (D-220).
  */
-const TokenGhost = ({ payload, bold }) => {
+const TokenGhost = ({ payload }) => {
     const artScale = boardArtSteps(liveBoardFit());
     const size = tokenSizeFor(TOKEN_SURFACE.CARRY, payload.typeId, artScale);
     return (
@@ -138,7 +138,7 @@ const TokenGhost = ({ payload, bold }) => {
 /**
  * A Hero in flight — one size (128px), no card frame, sprite-only (same style as Tokens).
  */
-const HeroGhost = ({ payload, bold }) => {
+const HeroGhost = ({ payload }) => {
     const artScale = boardArtSteps(liveBoardFit());
     const size = tokenSizeFor(TOKEN_SURFACE.CARRY, 1, artScale);
     const hero = payload.heroId ? (GameState.heroes || []).find(h => h.id === payload.heroId) : null;

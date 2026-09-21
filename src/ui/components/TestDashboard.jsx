@@ -137,20 +137,21 @@ export const TestDashboard = React.memo(() => {
         // rainfall, chaos, invasions) are deleted with the systems they drove.
         // Board tools replace them, phase by phase; spawn-loot lands in Phase 3.
         {
-            label: "🎁 Fill Tray with Tokens",
+            label: "🎁 Fill Vault with Tokens",
             onClick: () => {
-                // Until the Cartographer exists (Phase 8) there is no legitimate
-                // way to obtain a Token, so placement would be untestable.
+                // One of every Token type, into the Vault to drag onto the mat.
+                // It filled the Tray until slice 1.9 retired it.
                 const ids = listTokenTypeIds();
                 let added = 0;
                 for (const typeId of ids) {
                     const instance = engine.BoardState.createTokenInstance(
                         typeId, tokenStartingUses(typeId)
                     );
-                    if (engine.BoardState.addToTray(instance)) added++;
+                    if (engine.TokenBank.deposit(instance)) added++;
                 }
+                engine.EventBus.publish('token_bank_updated');
                 engine.EventBus.publish('state_changed');
-                console.log(`[Dev] Added ${added} Tokens to the Tray`);
+                console.log(`[Dev] Added ${added} Tokens to the Vault`);
             }
         },
         {
@@ -195,7 +196,7 @@ export const TestDashboard = React.memo(() => {
                 state.board.tray = [];
                 state.board.sprites = [];
                 engine.EventBus.publish('state_changed');
-                console.log('[Dev] Board and Tray cleared');
+                console.log('[Dev] Board cleared');
             }
         },
         {

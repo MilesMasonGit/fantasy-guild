@@ -6,6 +6,7 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import * as BoardState from './BoardState.js';
+import * as Cartographer from './Cartographer.js';
 import * as Placement from './Placement.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as TokenBank from './TokenBank.js';
@@ -17,7 +18,7 @@ import * as TokenBank from './TokenBank.js';
  * ## Why this is not inside `TokenBank.js`
  * `TokenBank` is the rules over the Bank's *own* storage: slot caps, D-156's Map
  * refusal, consolidation, selling. It answers "may this Token live here?".
- * Moving a Token means also touching the Tray, a tile, or the floor sprite
+ * Moving a Token means also touching the mat or the floor sprite
  * layer — and both `Placement.js` and `SpriteLayer.js` already import
  * `TokenBank`. Putting the dispatcher in `TokenBank` would have made two new
  * static import cycles, the kind `npm run cycles` calls dangerous. So the
@@ -42,7 +43,6 @@ import * as TokenBank from './TokenBank.js';
 
 const MAP_REFUSAL = 'Maps cannot be stored — open it.';
 const VAULT_FULL = 'No room in the Vault';
-const TRAY_FULL = 'No room in the Tray';
 const VAULT_LOCKED = 'Token Vault storage unlocks after completing "Place a Dropped Token".';
 
 const refuse = (reason) => ({ success: false, reason });
@@ -62,14 +62,12 @@ function announceMoved() {
  * `source` is a drag payload's `from` descriptor, so a drop handler can pass its
  * payload straight through:
  *
- * - `{ traySlot }`  — a Token loose on the Tray surface
  * - `{ instanceId }` — a Token standing on the playmat (by id since slice 1.6c)
  * - `{ spriteId }`  — a loose loot Token floating over the grid
  * - `{ boardMapId }`— a Map lying on the playmat (always refused, D-156)
  *
  * On failure **nothing is lost** (D-138): a Token lifted off the sprite layer is
- * put back exactly where it was, and a Tray Token is only removed from the Tray
- * after the Vault has accepted it.
+ * put back exactly where it was.
  *
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */
@@ -81,7 +79,6 @@ export function depositFrom(source) {
     // drop targets checks it too, but that only greys the target out.
     if (!QuestManager.isTokenVaultSendUnlocked()) return refuse(VAULT_LOCKED);
 
-    if (source.traySlot != null) return depositFromTray(source.traySlot);
     if (source.instanceId != null) return depositFromMat(source.instanceId);
     if (source.spriteId != null) return depositFromSprite(source.spriteId);
 
@@ -90,18 +87,6 @@ export function depositFrom(source) {
     if (source.boardMapId != null) return refuse(MAP_REFUSAL);
 
     return NOTHING;
-}
-
-function depositFromTray(slot) {
-    const instance = BoardState.getTray()[slot];
-    if (!instance) return NOTHING;
-
-    if (getTokenType(instance.typeId)?.mapId) return refuse(MAP_REFUSAL);
-    if (!TokenBank.deposit(instance)) return refuse(VAULT_FULL);
-
-    BoardState.takeFromTray(slot);
-    announceMoved();
-    return { success: true, instance };
 }
 
 /**
@@ -142,24 +127,16 @@ function depositFromSprite(spriteId) {
 }
 
 /**
- * Take one copy of `typeId` out of the Vault and put it somewhere.
+ * Take one copy of `typeId` out of the Vault and put it on the playmat.
  *
- * `target` is `{ at }` — a **mat point** — to put it straight on the playmat, or
- * `{ trayAt }` (or nothing at all) to land it on the Tray, `trayAt` being the
- * `{x, y}` *fraction* the player dropped it at (D-227), omitted for the
- * click-driven routes that just scatter it.
+ * `target.at` is the **mat point** the player dropped it at. The click-driven
+ * routes (the Vault tab's quick add, the inspection panel's button) pass no
+ * point, and the Token lands beside the Guild Hall — where bought Maps land
+ * (FP-18). Before slice 1.9 those routes filled the Tray.
  *
- * ## ⚠️ Why `trayAt` rather than reusing `at` (slice 1.6d)
- * The two are different coordinate systems that look identical: a mat point is
- * `{x: 960, y: 643}` in mat units, a Tray position is `{x: 0.4, y: 0.7}` as
- * fractions of a surface whose size changes with the window. One key meaning
- * both would be read as a mat point by one branch and a fraction by the other,
- * and a Vault withdrawal onto the Tray would have landed in the mat's top-left
- * corner. The board route took the name `at` because it is the one every drop
- * handler already speaks; the Tray's kept its own.
- *
- * `TokenBank.withdraw` picks the **fullest copy** (D-77). If the destination
- * refuses the Token it goes straight back into the Vault (D-138).
+ * `TokenBank.withdraw` picks the **fullest copy** (D-77). If the mat refuses the
+ * Token — no legal spot within nudge reach — it goes straight back into the
+ * Vault (D-138, FP-46).
  *
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */
@@ -167,25 +144,16 @@ export function withdrawTo(typeId, target = {}) {
     const instance = TokenBank.withdraw(typeId);
     if (!instance) return refuse('Could not withdraw from Vault');
 
-    // Stale from a previous life on the sprite layer; left set, the Tray hides
-    // the Token until a particle that is never coming lands on it.
+    // Stale from a previous life on the sprite layer; left set, the renderer
+    // hides the Token until a particle that is never coming lands on it.
     delete instance.isLanding;
 
-    if (target.at != null) {
-        const res = Placement.placeTokenAt(instance, target.at);
-        if (!res?.success) {
-            TokenBank.deposit(instance);
-            return res;
-        }
-        EventBus.publish('state_changed', {});
-        return { success: true, instance };
-    }
-
-    if (!BoardState.addToTray(instance, undefined, target.trayAt)) {
+    const at = target.at ?? Cartographer.centreOfBoard();
+    const res = Placement.placeTokenAt(instance, at);
+    if (!res?.success) {
         TokenBank.deposit(instance);
-        return refuse(TRAY_FULL);
+        return res;
     }
-
-    announceMoved();
+    EventBus.publish('state_changed', {});
     return { success: true, instance };
 }

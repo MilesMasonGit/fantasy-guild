@@ -359,7 +359,7 @@ describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
         dryForest({ other: true });
         expect(BoardState.waitOfHero('h1')).not.toBeNull();
 
-        Placement.returnTokenToTrayById(idAt(15));
+        Placement.returnTokenToVaultById(idAt(15));
         Flags.assign(0);
 
         expect(BoardState.waitOfHero('h1')).toBeNull();

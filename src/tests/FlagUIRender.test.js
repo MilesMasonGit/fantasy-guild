@@ -127,7 +127,10 @@ describe('the idle mark (FP-29)', () => {
 
         const idle = container.querySelector('[data-flag-idle-hero="h1"]');
         expect(idle.style.width).toBe('128px');
-        expect(idle.querySelector('img').style.width).toBe('128px');
+        // The drawn frame, animated sheet or still portrait alike, is 128 px —
+        // an animated sheet's <img> is the whole 8-frame strip, so it is the
+        // frame box that is measured, not the image.
+        expect(idle.firstElementChild.style.width).toBe('128px');
         expect(container.querySelector('.gi-glow-idle')).toBeNull();
         expect(container.querySelector('.gi-glow-active')).toBeNull();
     });
@@ -225,8 +228,8 @@ describe('"Heroes may work this" (FP-35, FPP-8)', () => {
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
 
         const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
-        const box = toggle(container).querySelector('input[type="checkbox"]');
-        expect(box.checked).toBe(true);
+        const box = toggle(container).querySelector('[role="switch"]');
+        expect(box.getAttribute('aria-checked')).toBe('true');
 
         await act(async () => { fireEvent.click(box); });
 

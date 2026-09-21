@@ -185,7 +185,10 @@ export function canBuy(mapId) {
  * same reason `completeCycle` decides the whole exchange before any of it
  * happens: a half-paid purchase destroys items for nothing.
  */
-export function buyMap(mapId, options = {}) {
+// `_options.sourceRect` (the shop card a purchase was dragged from) is still
+// passed by the shop but no longer read: a bought Map lands beside the Hall
+// and flies in from the left edge (slice 1.9 work).
+export function buyMap(mapId, _options = {}) {
     const allowed = canBuy(mapId);
     if (!allowed.success) return allowed;
 
@@ -325,15 +328,13 @@ export function rollBurst(mapId) {
 /**
  * Open a Map and scatter its contents across the board.
  *
- * **A Map is a single burst and is consumed** (D-155). It can be opened from
- * the Tray or from a tile: opening it on the board scatters the contents around
- * where it sat, opening it in the Tray throws them onto the grid. Either way it
- * is spent.
+ * **A Map is a single burst and is consumed** (D-155): the contents land around
+ * where it sat, and it is spent.
  *
- * Contents land **as sprites** rather than in storage, which is what makes the
- * burst physical — things fly out and you scramble to see what you got — and it
- * is also what lets a player grab the two Tokens they want and put them
- * straight down, with the rest tidying itself away (UI §6).
+ * **Tokens land straight on the mat** (FP-16), pushing their neighbours aside
+ * if they must (FP-17); **items fly out as sprites** (D-40), which is what
+ * keeps the burst physical — things fly out and you scramble to see what you
+ * got.
  *
  * ⚠️ **The spectacle rests on presentation, not volume** (D-167). Three things
  * cannot carry the game's headline reward beat on quantity; it has to come from
@@ -343,10 +344,9 @@ export function rollBurst(mapId) {
  * not, and stands.
  *
  * @param {object} instance the Map Token being spent
- * @param {string|object|null} origin where it burst from — `'tray'` or a Tray
- *        origin, a Map box on the mat, a Token instance id, or null (the Guild Hall)
+ * @param {string|object|null} origin where it burst from — a Map box on the
+ *        mat, a Token instance id, or null (the Guild Hall)
  */
-const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
 export function openMap(instance, origin = null) {
     const mapId = instance?.mapId || getTokenType(instance?.typeId)?.mapId || (instance?.typeId === 'token_guild_hall_map' ? 'map_guild_hall' : null) || (instance?.typeId?.startsWith('token_map') ? instance.typeId.replace('token_', '') : null) || 'map_test_map';
@@ -361,51 +361,29 @@ export function openMap(instance, origin = null) {
     // the Token exists. See `terrainAssignments.js`.
     // Dormant while terrain is off (FP-10): nothing is stamped.
     const stamp = TERRAIN_ENABLED ? terrainForMap(def.id) : null;
-    const isTray = origin === 'tray' || (typeof origin === 'object' && origin?.inTray);
-    const originObj = typeof origin === 'object' && origin !== null ? origin : (origin === 'tray' ? { inTray: true, x: 0.5, y: 0.5 } : null);
     // A Map on the mat bursts from its box, a Map Token by its instance id from
     // its centre (slice 1.6b), and one with no origin from the Guild Hall.
-    const scatterFrom = isTray ? (originObj || { inTray: true, x: 0.5, y: 0.5 }) : (origin == null ? { centre: centreOfBoard() } : origin);
+    const scatterFrom = origin == null ? { centre: centreOfBoard() } : origin;
+    // The same origin as a mat point — the one rule `SpriteLayer` throws loot by.
+    const burstPoint = SpriteLayer.sourcePoint(scatterFrom) || centreOfBoard();
+    // What the burst comes OUT of holds its ground — the burst lands around it,
+    // not on it: the Guild Hall for a Map with no origin, or the Token it
+    // burst from. A Map lying on the mat has already been lifted off.
+    const sourceIds = origin == null ? guildHallIds() : (typeof origin === 'string' ? [origin] : []);
     const firstSeen = [];
 
     for (const entry of contents) {
         if (entry.refId && markDiscovered(entry.refId)) firstSeen.push(entry.refId);
 
         if (entry.kind === 'token') {
-            // Map bursts scatter their contents directly onto the mat as fully functioning Tokens.
-            const spawnPoint = scatterFrom.centre || { x: scatterFrom.x || matW()/2, y: scatterFrom.y || matH()/2 };
-            // Add a little randomness so multiple tokens don't land exactly on each other before pushing
-            const landingX = spawnPoint.x + (Math.random() - 0.5) * 40;
-            const landingY = spawnPoint.y + (Math.random() - 0.5) * 40;
-            
-            // Use forceSpot to resolve placement, cascading push neighbors
-            const where = MatPlacement.forceSpot(entry.refId, { x: landingX, y: landingY });
-            
-            if (where) {
-                // Apply pushes
-                const dirty = [];
-                if (where.pushed && where.pushed.length > 0) {
-                    for (const p of where.pushed) {
-                        const tok = BoardState.getTokenById(p.id);
-                        if (tok) {
-                            dirty.push({ x: tok.x, y: tok.y });
-                            BoardState.setTokenPoint(p.id, p.x, p.y);
-                            dirty.push({ x: p.x, y: p.y });
-                        }
-                    }
-                }
-
-                const tokInstance = BoardState.createTokenInstance(entry.refId, tokenStartingUses(entry.refId), stamp);
-                tokInstance.bornAt = Date.now();
-                tokInstance.fromX = spawnPoint.x;
-                tokInstance.fromY = spawnPoint.y;
-                
-                BoardState.addToken(tokInstance, where.x, where.y);
-                EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: tokInstance.id, typeId: entry.refId });
-                EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { instanceId: tokInstance.id, typeId: entry.refId });
-                
-                dirty.push({ x: where.x, y: where.y });
-                TileModifiers.rebuildAround(dirty);
+            // FP-16: a burst's Tokens land straight on the mat, and may push (FP-17).
+            const tok = BoardState.createTokenInstance(entry.refId, tokenStartingUses(entry.refId), stamp);
+            if (!landFromBurst(tok, burstPoint, sourceIds)) {
+                // ⚠️ FP-46 says a Map that cannot fit its burst stays unopened;
+                // that check is not built yet (slice 1.8). Until it is, a Token
+                // with nowhere to land drops to the floor as loot rather than
+                // vanishing — collecting it puts it in the Vault.
+                SpriteLayer.addSprite('token', entry.refId, 1, scatterFrom, tok.usesRemaining, stamp);
             }
         } else if (entry.kind === 'gold' || entry.kind === 'currency') {
             const amount = entry.amount || entry.quantity || 2000;
@@ -417,16 +395,45 @@ export function openMap(instance, origin = null) {
     }
 
     EventBus.publish('map_opened', {
-        mapId: def.id, origin: scatterFrom, count: contents.length, firstSeen, inTray: isTray
+        mapId: def.id, origin: scatterFrom, count: contents.length, firstSeen
     });
     EventBus.publish('map_burst', {
-        mapId: def.id, origin: scatterFrom, count: contents.length, firstSeen, inTray: isTray
+        mapId: def.id, origin: scatterFrom, count: contents.length, firstSeen
     });
     EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
     EventBus.publish('state_changed');
     logger.info('Cartographer', `${def.name} burst: ${contents.length} things`);
 
     return { success: true, contents, firstSeen };
+}
+
+/**
+ * Put one burst Token on the mat near `point` (FP-16, FP-17): a small random
+ * offset so three Tokens from one Map do not all aim at the same spot, then
+ * `forceSpot` decides where it stands and who is pushed.
+ *
+ * @returns {boolean} false when the mat has no room for it (FP-46)
+ */
+function landFromBurst(instance, point, fixedIds = []) {
+    const aim = {
+        x: point.x + (Math.random() - 0.5) * 40,
+        y: point.y + (Math.random() - 0.5) * 40
+    };
+    const where = MatPlacement.forceSpot(instance.typeId, aim, { fixedIds });
+    if (!where) return false;
+
+    const touched = BoardState.applyPushes(where.pushed);
+    // Where the landing animation flies it in from.
+    instance.bornAt = Date.now();
+    instance.fromX = point.x;
+    instance.fromY = point.y;
+    BoardState.addToken(instance, where.x, where.y);
+    // ⚠️ `TILE_CHANGED` only, never `TOKEN_PLACED`: that one means the PLAYER
+    // placed a Token, and quests count it ("Place a Token", "Add a Context
+    // Token"). A spawn does not raise it either.
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
+    TileModifiers.rebuildAround([{ x: where.x, y: where.y }, ...touched]);
+    return true;
 }
 
 /**
@@ -443,8 +450,17 @@ export function openMap(instance, origin = null) {
  * The mat's centre is (matW() / 2, matH() / 2) since slice 1.6c — read live, as
  * the mat can be resized while the game runs (slice 1.6d-3).
  */
+/** The Guild Hall's instance id(s) on the mat — none on a hand-built test board. */
+function guildHallIds() {
+    return BoardState.tokens().filter(isGuildHall).map(t => t.id);
+}
+
+function isGuildHall(t) {
+    return t.typeId === 'token_guild_hall' || !!getTokenType(t.typeId)?.isGuildHall;
+}
+
 export function centreOfBoard() {
-    const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || getTokenType(t.typeId)?.isGuildHall);
+    const hall = BoardState.tokens().find(isGuildHall);
     if (hall && Number.isFinite(hall.x) && Number.isFinite(hall.y)) return { x: hall.x, y: hall.y };
     return { x: matW() / 2, y: matH() / 2 };
 }

@@ -83,22 +83,14 @@ describe('Terrain is switched off (FP-10)', () => {
     });
 
     it('bursting a Map stamps nothing on the Tokens it produces', () => {
-        // Fill the Tray so every Token lands as a board sprite, then burst a
-        // second Map into an empty Tray: both routes a stamp can take.
-        while (BoardState.getTray().length < BoardState.TRAY_CAPACITY) {
-            BoardState.addToTray(BoardState.createTokenInstance('token_forest', 100));
-        }
+        // Burst Tokens land on the mat (FP-16); none may carry a stamp.
         const mapToken = () => BoardState.createTokenInstance('token_test_map', tokenStartingUses('token_test_map'));
+        const before = new Set(BoardState.tokens().map(t => t.id));
 
-        expect(Cartographer.openMap(mapToken(), 'tray').success).toBe(true);
-        const tokenSprites = SpriteLayer.getSprites().filter(s => s.kind === 'token');
-        expect(tokenSprites.length).toBeGreaterThan(0);
-        for (const s of tokenSprites) expect(s.terrain).toBeUndefined();
-
-        GameState.state.board.tray = [];
-        expect(Cartographer.openMap(mapToken(), 'tray').success).toBe(true);
-        const trayed = BoardState.getTray();
-        expect(trayed.length).toBeGreaterThan(0);
-        for (const inst of trayed) expect(inst.terrain).toBeUndefined();
+        expect(Cartographer.openMap(mapToken(), null).success).toBe(true);
+        const landed = BoardState.tokens().filter(t => !before.has(t.id));
+        expect(landed.length).toBeGreaterThan(0);
+        for (const inst of landed) expect(inst.terrain).toBeUndefined();
+        for (const s of SpriteLayer.getSprites()) expect(s.terrain).toBeUndefined();
     });
 });

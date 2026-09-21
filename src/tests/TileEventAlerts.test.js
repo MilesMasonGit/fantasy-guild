@@ -146,7 +146,7 @@ describe('On-Board Tile Event Alerts', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
-        // Place token_oak_tree (requires axe) without an nearby axe
+        // Place token_oak_tree (requires axe) without a nearby axe
         const tree = BoardState.createTokenInstance('token_oak_tree');
         put(8, tree);
         staff(8, 'hero_1');

@@ -203,8 +203,9 @@ export function placeTokenAt(instance, point, options = {}) {
  * Carry out a restock-on-copy (FP-50): the charges move, and whatever is left
  * over stands beside the copy it just filled (FP-87).
  *
- * The Tray is the fallback when even that has nowhere to go, exactly as before;
- * only if the Tray is full too does the drop fly back, so nothing is lost.
+ * When even that has nowhere to go, the leftover is refused and flies back to
+ * wherever it came from (FP-46) — the charges it gave stay given, and nothing
+ * is lost. It used to fall back to the Tray, which slice 1.9 retired.
  */
 function restock(instance, decision) {
     const target = BoardState.getTokenById(decision.targetId);
@@ -256,28 +257,10 @@ function restock(instance, decision) {
         };
     }
 
-    // Nowhere beside it either: the Tray, as before.
-    if (!BoardState.hasTraySpace()) {
-        return refuse('No room in the Tray for the leftover Token', { full: true });
-    }
-    const landedOn = pointOf(target) || { x: 0, y: 0 };
-    forfeitCycle(instance);
-    instance.isLanding = true;
-    BoardState.removeToken(instance.id);
-    BoardState.addToTray(instance);
-    EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
-        kind: 'token',
-        refId: instance.typeId,
-        quantity: 1,
-        x: landedOn.x,
-        y: landedOn.y,
-        destination: 'tray',
-        trayX: instance.x,
-        trayY: instance.y,
-        instanceId: instance.id
+    // Nowhere beside it either: the leftover flies back to its source (FP-46).
+    return refuse('Restocked, but there is no room beside it — the leftover went back', {
+        full: true, restocked: true, addedCharges: decision.transferred
     });
-    EventBus.publish('state_changed');
-    return { success: true, restocked: true, trayLeftover: true, addedCharges: decision.transferred };
 }
 
 /**
@@ -301,46 +284,6 @@ export function moveTokenTo(id, point) {
     if (from) EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(from));
     announceHeroMoved(heroId);
     return result;
-}
-
-/** Lift the Token with id `id` off the mat and back into the Tray. */
-export function returnTokenToTrayById(id, position = null) {
-    const instance = BoardState.getTokenById(id);
-    if (!instance) return refuse('No Token there');
-    if (isPermanentToken(instance.typeId, instance)) return refusePermanent(instance);
-
-    const at = pointOf(instance);
-    forfeitCycle(instance);
-    if (position == null) instance.isLanding = true;
-
-    // Asked before the Token leaves: afterwards nobody works it.
-    const heroId = BoardState.workerOf(id);
-
-    if (!BoardState.addToTray(instance, undefined, position)) {
-        return refuse('No room in the Tray');
-    }
-    BoardState.removeToken(id);
-
-    if (position == null && at) {
-        EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
-            kind: 'token',
-            refId: instance.typeId,
-            quantity: 1,
-            x: at.x,
-            y: at.y,
-            destination: 'tray',
-            trayX: instance.x,
-            trayY: instance.y,
-            instanceId: instance.id
-        });
-    }
-
-    if (at) EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(at));
-    if (heroId && at) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
-    markAdjacencyDirty([at]);
-    EventBus.publish('state_changed');
-
-    return { success: true, idledHeroId: heroId };
 }
 
 /** Lift the Token with id `id` off the mat and deposit it straight into the Vault. */

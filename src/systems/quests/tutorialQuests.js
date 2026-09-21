@@ -45,9 +45,12 @@ export const TUTORIAL_QUESTS = [
     {
         id: 'tutorial_5',
         step: 4,
-        title: 'Place a Dropped Token',
-        instruction: 'Drag and drop a loot token from the Playmat onto an empty tile.',
-        targetType: 'loot_token_placed',
+        title: 'Move a New Token',
+        instruction: 'Drag one of the Tokens your Map just produced to a new spot on the Playmat.',
+        // Re-pointed 2026-09-21 (owner): Map bursts put Tokens straight on the
+        // mat (FP-16), so the old "place a dropped loot Token" could never
+        // complete. Any placement counts.
+        targetType: 'token_placed',
         requiredCount: 1,
         rewardMapId: 'map_guild_hall',
         rewardMapName: 'Guild Hall Map'

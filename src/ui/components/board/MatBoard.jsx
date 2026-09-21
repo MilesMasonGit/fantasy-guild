@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { artRadius, TOKEN_PX } from '../../../config/matGeometry.js';
+import { artRadius } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, tokenZ } from './matLayers.js';
 import { PAIR_OFFSET_PX, HERO_HIT_PX, ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
@@ -22,6 +22,7 @@ import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as Placement from '../../../systems/board/Placement.js';
+import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { GameState } from '../../../state/GameState.js';
@@ -203,8 +204,10 @@ export const MatBoard = ({
         announce(Placement.recallHeroById(heroId));
     }, []);
 
-    const handleReturnToTray = useCallback((instanceId) => {
-        announce(Placement.returnTokenToTrayById(instanceId));
+    // Right-click deposits a Token in the Vault (FP-45); the Tray it used to
+    // go to was retired in slice 1.9.
+    const handleReturnToVault = useCallback((instanceId) => {
+        announce(VaultTransfer.depositFrom({ instanceId }));
     }, []);
 
     const handleAutoAssignHero = useCallback((instanceId) => {
@@ -294,7 +297,7 @@ export const MatBoard = ({
                     onClearInspect={onClearInspect}
                     onAutoAssignHero={handleAutoAssignHero}
                     onOpenRecipes={onOpenRecipes}
-                    onReturnToTray={handleReturnToTray}
+                    onReturnToVault={handleReturnToVault}
                     onRecallHero={handleRecallHero}
                 />
             ))}

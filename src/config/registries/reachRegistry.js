@@ -105,6 +105,17 @@ export function getReach(id) {
 }
 
 /**
+ * The reach ids before the Free Playmat's wording slice (1.10) renamed
+ * "adjacent" to "nearby". The CMS keeps its own copy of the content and can
+ * sync the old ids back into `data/`; without this, `self_and_adjacent` would
+ * fall through to plain `nearby` and quietly lose its "self" half.
+ */
+const LEGACY_REACH = Object.freeze({
+    adjacent: REACH.NEARBY,
+    self_and_adjacent: REACH.SELF_AND_NEARBY
+});
+
+/**
  * The reach a statement uses.
  *
  * An unauthored or unrecognised value resolves to `nearby` (ER-5) rather than
@@ -112,7 +123,8 @@ export function getReach(id) {
  * a typo should not silently switch a rule off.
  */
 export function reachOf(statement) {
-    return getReach(statement?.reach) ? statement.reach : DEFAULT_REACH;
+    const id = LEGACY_REACH[statement?.reach] || statement?.reach;
+    return getReach(id) ? id : DEFAULT_REACH;
 }
 
 /**

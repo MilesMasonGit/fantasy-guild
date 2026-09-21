@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { composeTokenDescription } from '../../cms/src/engine/descriptionDictionary';
+import { composeTokenDescription, getAcceptedTokensClause } from '../../cms/src/engine/descriptionDictionary';
 
 describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', () => {
   const items = {
@@ -11,6 +11,15 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
     item_bones: { id: 'item_bones', name: 'Bones' },
     item_beef: { id: 'item_beef', name: 'Raw Beef' },
   };
+
+  it('0. a tool requirement reads "a nearby" — the Free Playmat has no adjacency (slice 1.10)', () => {
+    // ⚠️ Sync to Game rewrites every Token's description from this, so a stale
+    // "an adjacent" here silently undoes the wording in data/tokens.json.
+    expect(getAcceptedTokensClause({ acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }] }))
+      .toBe('Requires a nearby Pickaxe.');
+    expect(getAcceptedTokensClause({ acceptedTokens: [{ tag: 'pickaxe', minTier: 3 }, { tag: 'fishing_net' }] }))
+      .toBe('Requires a nearby Pickaxe (Tier 3+) and Fishing net.');
+  });
 
   it('1. composes description for gathering resource token', () => {
     const token = {

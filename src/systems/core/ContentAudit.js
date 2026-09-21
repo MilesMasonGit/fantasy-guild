@@ -548,7 +548,7 @@ function auditCapabilityTags(out) {
             if (!tag) continue;
             if (!provided.has(tag)) {
                 out.push(finding(`Token "${tokenId}"`,
-                    `needs an nearby "${tag}", and no Token provides that capability — so it can never work`));
+                    `needs a nearby "${tag}", and no Token provides that capability — so it can never work`));
             }
         }
     }
