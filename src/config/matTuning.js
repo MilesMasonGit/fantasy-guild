@@ -75,6 +75,22 @@ export const MAT_TUNABLES = Object.freeze([
         format: (v) => (Math.round(v) === 0 ? 'off' : `${Math.round(v)} u`)
     },
     {
+        key: 'enemyTravelRadius',
+        group: 'Enemies',
+        label: 'Enemy travel area',
+        hint: 'How far an enemy strolls from where it stands, in mat units (Enemy Wandering EW-4). The same "invisible flag" shape as a hero’s flag radius, but its own number. 0 keeps enemies standing still.',
+        min: 0, max: 600, step: 1, def: 200,
+        format: (v) => (Math.round(v) === 0 ? 'off' : `${Math.round(v)} u`)
+    },
+    {
+        key: 'enemyWanderSpeed',
+        group: 'Enemies',
+        label: 'Enemy wander speed',
+        hint: 'How fast a wandering enemy strolls, in mat units a second (Enemy Wandering EWP-2). Its own speed, independent of hero walk speed.',
+        min: 10, max: 300, step: 1, def: 60,
+        format: (v) => `${Math.round(v)} u/s`
+    },
+    {
         key: 'hitboxPct',
         group: 'Crowding',
         label: 'Token hitbox',

@@ -22,6 +22,7 @@ import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
+import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
@@ -95,6 +96,36 @@ export const MatBoard = ({
         null
     );
     const tokens = useMemo(() => tokensRaw || [], [tokensRaw]);
+
+    /**
+     * ⭐ **Where each wandering enemy is actually drawn** (Enemy Wandering
+     * EW-A), overlaid onto its Token's rendered `x`/`y` below. A separate,
+     * narrowly-subscribed selector — like `heroesRaw` — so a wander step
+     * (`ENEMIES_WALKED`) redraws only this list, not `tokens`/`ordered`
+     * (EWP-7: an enemy's front-to-back layering does not chase its wander).
+     *
+     * ⚠️ The selector returns a plain array, never a `Map` — `useGameState`'s
+     * clone/equality path assumes plain objects and silently produces a
+     * slot-less non-`Map` for one (`Map.prototype.get` then throws
+     * "incompatible receiver"). The `Map` used for lookup below is built
+     * afterward, outside that path, exactly like `zById`.
+     */
+    const enemyPositionsRaw = useGameState(
+        () => {
+            const out = [];
+            for (const [instanceId] of BoardState.enemyBodies()) {
+                const body = EnemyMotion.bodyView(instanceId);
+                if (body) out.push({ instanceId, x: body.x, y: body.y });
+            }
+            return out;
+        },
+        [BOARD_EVENTS.ENEMIES_WALKED, BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
+        null
+    );
+    const enemyPositions = useMemo(
+        () => new Map((enemyPositionsRaw || []).map(e => [e.instanceId, e])),
+        [enemyPositionsRaw]
+    );
 
     /**
      * Back to front: lower on the mat draws in front, then the earlier-placed
@@ -295,25 +326,28 @@ export const MatBoard = ({
             {ghosts.map(g => <UnstockedGhost key={g.spotId} ghost={g} />)}
 
             {/* 10+ — Tokens, the heroes on them, and what is written on them. */}
-            {ordered.map(t => (
-                <MatToken
-                    key={t.id}
-                    id={t.id}
-                    typeId={t.typeId}
-                    x={t.x}
-                    y={t.y}
-                    size={t.size}
-                    z={zById.get(t.id)}
-                    isHovered={hoveredId === t.id}
-                    hasHero={workedBy.has(t.id)}
-                    onInspectToken={onInspectToken}
-                    onClearInspect={onClearInspect}
-                    onAutoAssignHero={handleAutoAssignHero}
-                    onOpenRecipes={onOpenRecipes}
-                    onReturnToVault={handleReturnToVault}
-                    onRecallHero={handleRecallHero}
-                />
-            ))}
+            {ordered.map(t => {
+                const wandered = enemyPositions.get(t.id);
+                return (
+                    <MatToken
+                        key={t.id}
+                        id={t.id}
+                        typeId={t.typeId}
+                        x={wandered ? wandered.x : t.x}
+                        y={wandered ? wandered.y : t.y}
+                        size={t.size}
+                        z={zById.get(t.id)}
+                        isHovered={hoveredId === t.id}
+                        hasHero={workedBy.has(t.id)}
+                        onInspectToken={onInspectToken}
+                        onClearInspect={onClearInspect}
+                        onAutoAssignHero={handleAutoAssignHero}
+                        onOpenRecipes={onOpenRecipes}
+                        onReturnToVault={handleReturnToVault}
+                        onRecallHero={handleRecallHero}
+                    />
+                );
+            })}
 
             {heroes.map(h => {
                 const place = heroPlacement(h);

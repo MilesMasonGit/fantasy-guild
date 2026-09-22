@@ -105,6 +105,15 @@ export const BOARD_EVENTS = {
      */
     HEROES_WALKED: 'board:heroes_walked',
 
+    /**
+     * Wandering enemies took a step (Enemy Wandering EW-A). No payload — read
+     * positions from `EnemyMotion.bodyView`. Published at most once per engine
+     * tick, and only when somebody moved. Deliberately NOT `TILE_CHANGED`, for
+     * the same reason `HEROES_WALKED` is not `HERO_MOVED`: a wander step must
+     * never trigger `TileModifiers`' neighbourhood rebuild.
+     */
+    ENEMIES_WALKED: 'board:enemies_walked',
+
     /** A Token ran out of charges and left the board (D-176). Payload: `{ instanceId, x, y, typeId, instance?, heroId? }` */
     TOKEN_DEPLETED: 'board:token_depleted',
 
