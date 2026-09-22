@@ -88,6 +88,15 @@ import { ALERT } from '../../../systems/board/boardEvents.js';
 export const HERO_HIT_PX = 64;
 
 /**
+ * The gap, in mat units, between a Token's own edge and its progress bar
+ * (TPP-3, Token work presentation). The bar used to hug the Token's bottom
+ * edge — a leftover from the grid, where nothing was drawn below a tile. Since
+ * Hero Movement (HM-2) that space is empty, so the bar hangs just under the
+ * Token instead, at the Token's own width (TP-4).
+ */
+export const TOKEN_BAR_GAP_U = 8;
+
+/**
  * What the red mark means, in the player's words (D-114).
  *
  * Hovering a tile whose Token cannot work states exactly what is wrong. There

@@ -2,11 +2,12 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { cn } from '../../utils/cn.js';
-import { ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
+import { ALERT_HINT, ALERT_LABEL, alertFillClass, TOKEN_BAR_GAP_U } from './boardConstants.js';
 import { subscribeToken } from './tokenEvents.js';
 
 /**
- * TokenProgressBar — zero-re-render cycle progress bar across the bottom of a Token.
+ * TokenProgressBar — zero-re-render cycle progress bar in the gap below a
+ * Token (TP-2, TP-4, Token work presentation), at the Token's own width.
  *
  * Uses requestAnimationFrame continuous interpolation to guarantee 60fps buttery-smooth
  * filling between engine ticks, with instantaneous zero-reset on cycle completion.
@@ -262,11 +263,11 @@ export const TokenProgressBar = ({ instanceId = null, token = null, isHovered = 
         <div
             ref={containerRef}
             className={cn(
-                "absolute bottom-0 translate-y-[3px] left-2 right-2 z-20 pointer-events-none",
+                "absolute left-0 right-0 top-full z-20 pointer-events-none",
                 "h-3 transition-opacity duration-200",
                 className
             )}
-            style={{ opacity: 0 }}
+            style={{ opacity: 0, marginTop: TOKEN_BAR_GAP_U }}
         >
             {/* Track + Swirling Chroma Fill */}
             <div className="relative w-full h-full overflow-hidden rounded-full border border-white/30 bg-black/85 shadow-[inset_0_1px_4px_rgba(0,0,0,0.9)] flex items-center justify-center">

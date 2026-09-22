@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A worked Token's progress bar hangs in the space below it**, wider than before and always
+  visible while a hero works it — no need to hover. It used to hug the Token's bottom edge, a
+  leftover from when a hero stood stacked on top; since heroes work from beside a Token, that
+  space was sitting empty. The charge count and "assign a hero" badges (still hover-only) now sit
+  right at the Token's own edge instead of shifting up to clear the old bar.
 - **Saves remember what each hero was working on.** Load a game and every hero who was busy is
   standing back at their Token, carrying on, with its progress bar exactly where it was, which
   matters for Tokens with very long cycles. Heroes who weren't working yet start beside their flag.

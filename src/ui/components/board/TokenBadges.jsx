@@ -19,11 +19,15 @@ import { inputSummary, outputSummary, contextSummary } from './StationRecipeModa
  */
 
 /**
- * TokenChargeBadge — remaining charges at the bottom-right of a Token on hover.
- * Shows the full number (or an infinity icon for an unlimited Token), and
- * shifts up above the progress bar while the Token is cycling or blocked.
+ * TokenChargeBadge — remaining charges at the bottom-right of a Token on
+ * hover. Shows the full number (or an infinity icon for an unlimited Token).
+ *
+ * ⚠️ Used to shift up above the progress bar while the Token was cycling or
+ * blocked, because the bar used to hug this same bottom-right corner. The bar
+ * moved into the gap below the Token (TP-2), so this corner is free at rest
+ * now — the shift is retired (TPP-2).
  */
-export const TokenChargeBadge = ({ usesRemaining, isDragging, isHovered, hasHero = false, alert = null }) => {
+export const TokenChargeBadge = ({ usesRemaining, isDragging, isHovered }) => {
     const [localHover, setLocalHover] = useState(false);
 
     if (isDragging) return null;
@@ -32,7 +36,6 @@ export const TokenChargeBadge = ({ usesRemaining, isDragging, isHovered, hasHero
     const isUnlimited = usesRemaining == null;
     const displayVal = isUnlimited ? null : Number(usesRemaining).toLocaleString();
     const titleText = isUnlimited ? 'Unlimited charges' : `${displayVal} charges remaining`;
-    const hasProgress = hasHero || !!alert;
 
     return (
         <div
@@ -40,8 +43,7 @@ export const TokenChargeBadge = ({ usesRemaining, isDragging, isHovered, hasHero
             onMouseLeave={() => setLocalHover(false)}
             aria-label={titleText}
             className={cn(
-                "absolute right-1.5 z-30 pointer-events-auto",
-                hasProgress ? "bottom-5" : "bottom-1.5",
+                "absolute right-1.5 bottom-1.5 z-30 pointer-events-auto",
                 "flex items-center justify-center px-1.5 py-0.5 rounded",
                 "bg-black/95 backdrop-blur-sm border border-gi-gold/50 shadow-[0_0_8px_rgba(251,191,36,0.25)]",
                 "text-gi-gold font-mono text-[10px] font-bold tabular-nums leading-none tracking-tight",
@@ -62,7 +64,7 @@ export const TokenChargeBadge = ({ usesRemaining, isDragging, isHovered, hasHero
  * TokenChargeDeltaFloater — floating numbers (-1, +50) when this Token's charges
  * change. Sits just above where the charge badge is drawn.
  */
-export const TokenChargeDeltaFloater = ({ instanceId, hasHero = false, alert = null }) => {
+export const TokenChargeDeltaFloater = ({ instanceId }) => {
     const [deltas, setDeltas] = useState([]);
     const timers = React.useRef(new Set());
 
@@ -86,13 +88,11 @@ export const TokenChargeDeltaFloater = ({ instanceId, hasHero = false, alert = n
     }, []);
 
     if (!deltas.length) return null;
-    const hasProgress = hasHero || !!alert;
 
     return (
         <div
             className={cn(
-                "absolute right-1.5 z-40 pointer-events-none",
-                hasProgress ? "bottom-7" : "bottom-3.5",
+                "absolute right-1.5 bottom-3.5 z-40 pointer-events-none",
                 "transition-all duration-150 ease-out"
             )}
         >

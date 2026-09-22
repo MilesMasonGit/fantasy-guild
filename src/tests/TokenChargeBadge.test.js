@@ -57,12 +57,12 @@ describe('TokenChargeBadge', () => {
         expect(container.firstChild.className).toContain('opacity-0');
     });
 
-    it('sits higher up when there is a progress bar under it', () => {
-        const low = render(React.createElement(TokenChargeBadge, { usesRemaining: 5, isHovered: true }));
-        expect(low.container.firstChild.className).toContain('bottom-1.5');
+    it('stays at the Token\'s own bottom edge regardless of staffing (TPP-2: the bar moved below the Token)', () => {
+        const idle = render(React.createElement(TokenChargeBadge, { usesRemaining: 5, isHovered: true }));
+        expect(idle.container.firstChild.className).toContain('bottom-1.5');
 
-        const high = render(React.createElement(TokenChargeBadge, { usesRemaining: 5, isHovered: true, hasHero: true }));
-        expect(high.container.firstChild.className).toContain('bottom-5');
+        const worked = render(React.createElement(TokenChargeBadge, { usesRemaining: 5, isHovered: true, hasHero: true }));
+        expect(worked.container.firstChild.className).toContain('bottom-1.5');
     });
 });
 
