@@ -298,11 +298,9 @@ export const MatToken = React.memo(function MatToken({
                     usesRemaining={usesRemaining}
                     isDragging={hidden}
                     isHovered={isHovered}
-                    hasHero={staffed}
-                    alert={alert}
                 />
 
-                <TokenChargeDeltaFloater instanceId={id} hasHero={staffed} alert={alert} />
+                <TokenChargeDeltaFloater instanceId={id} />
 
                 {detail?.stationSkill && (
                     <StationGearBadge

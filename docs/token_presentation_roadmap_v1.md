@@ -70,5 +70,5 @@ equipment.
 
 | Slice | Status | Notes |
 | :-- | :-- | :-- |
-| TP-A | Not started | |
+| TP-A | ✅ **DONE** 2026-09-22 | `TokenProgressBar`'s container now sits `top-full` of its Token's badge box, offset by `TOKEN_BAR_GAP_U` (8 u, `boardConstants.js`), full width instead of `left-2 right-2`. No change to the fill/label/alert logic — only where and how big it draws. `TokenChargeBadge` / `TokenChargeDeltaFloater` lost the `hasProgress` shift-up (TPP-2); one test rewritten to check the fixed position. 179 test files, 11 pre-existing TerrainRegistry failures only (matches the handoff's known baseline). In game: hired a hero, force-staffed a Birch Forest by hand (its normal skill-gate made a quick manual check slower than publishing the board events directly), and drove both states — a plain `board:progress` tick showed the white bar in the gap under the Token at its width; a `board:alert_changed` (`inputs`) turned it yellow with "Need Items", also without hovering. |
 | TP-B | Not started | |
