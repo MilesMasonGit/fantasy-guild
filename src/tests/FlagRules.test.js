@@ -268,10 +268,16 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
     it('a priority change is not a re-plant: claim, plantedAt, progress and notices stay; no hero_deployed', () => {
         GameState.state.heroes = [hero('h1', { logging: 50 })];
         put(14, 'fr_hungry');                          // under the flag, stuck: passed over with a notice
-        const first = put(13, FOREST);
-        put(15, FOREST);
+        const west = put(13, FOREST);
+        const east = put(15, FOREST);
         plant('h1', 14);
-        expect(workTileOf('h1')).toBe(13);
+        // Both Forests are one step from the flag; "nearest" is measured from
+        // the hero (HM-4), who walks out of the Guild Hall — so which one they
+        // take depends on where the Hall stands. This test is about the rule
+        // change, not the tie, so it follows whichever they chose.
+        const first = BoardState.getTokenById(BoardState.workTokenOf('h1'));
+        const other = first === west ? east : west;
+        expect([west.id, east.id]).toContain(first.id);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
 
         run(3000);
@@ -296,7 +302,7 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         // The notice about the stuck mill is still spent: passing it again says nothing.
         Charges.destroyToken(first, { heroId: 'h1' });
         Flags.assign(0);
-        expect(workTileOf('h1')).toBe(15);
+        expect(BoardState.workTokenOf('h1')).toBe(other.id);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
     });
 

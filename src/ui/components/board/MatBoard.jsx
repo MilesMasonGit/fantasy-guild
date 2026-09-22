@@ -126,7 +126,11 @@ export const MatBoard = ({
         (state) => {
             const roster = state.heroes || [];
             const out = [];
-            for (const [heroId] of BoardState.heroesOnBoard()) {
+            // Flag holders in planting order, then heroes with no flag whose
+            // figure is still walking home (M3) — they have a body but no flag.
+            const ids = BoardState.heroesOnBoard().map(([heroId]) => heroId);
+            for (const [heroId] of BoardState.heroBodies()) if (!ids.includes(heroId)) ids.push(heroId);
+            for (const heroId of ids) {
                 const status = Flags.statusOf(heroId);
                 if (status.state === 'docked') continue;
                 const body = HeroMotion.bodyView(heroId);
@@ -141,6 +145,7 @@ export const MatBoard = ({
                     y: body.y,
                     moving: body.moving,
                     facing: body.facing,
+                    limp: body.limp,
                     name: hero?.name || 'Hero',
                     sprite: hero?.spriteId || hero?.classId || null,
                     // Not working productively: the Token it holds is stuck.
@@ -334,6 +339,7 @@ export const MatBoard = ({
                         animationState={animState}
                         moving={h.moving}
                         facing={h.facing}
+                        limp={h.limp}
                     />
                 );
             })}

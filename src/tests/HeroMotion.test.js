@@ -14,6 +14,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { dockStatusLine } from '../ui/components/board/flagText.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -236,5 +237,90 @@ describe('⚠️ no rebuild storms', () => {
         expect(walkedDuringWalk).toBeGreaterThan(10);
         // Standing still: no more steps announced.
         expect(walked).toBe(walkedDuringWalk);
+    });
+});
+
+describe('⭐ coming and going through the Guild Hall (M3)', () => {
+    const HALL = { x: 900, y: 600 };
+    let hall;
+    beforeEach(() => {
+        hall = BoardState.createTokenInstance('token_guild_hall', null);
+        BoardState.addToken(hall, HALL.x, HALL.y);
+    });
+
+    it('a hero sent out appears at the Hall and walks to their first job (HMP-1)', () => {
+        const tok = put({ x: 1300, y: 600 });
+        Flags.plant('h1', { x: 1300, y: 700 });
+        expect(HeroMotion.heroPointOf('h1')).toEqual(HALL);
+        expect(Flags.statusOf('h1')).toMatchObject({ state: 'walking', instanceId: tok.id });
+        run(5000);
+        expect(BoardState.workerOf(tok.id)).toBe('h1');
+        // They came from the Hall, on the left, so they stand on the left.
+        expect(body('h1').x).toBe(1300 - 80);
+    });
+
+    it('⭐ "nearest" for the first job is measured from the Hall they walk out of (HM-4)', () => {
+        const nearFlag = put({ x: 1450, y: 600 });     // 100 u from the flag
+        const nearHall = put({ x: 1250, y: 600 });     // 100 u from the flag too, 350 from the Hall
+        Flags.plant('h1', { x: 1350, y: 600 });
+        expect(BoardState.claimOfHero('h1')?.instanceId).toBe(nearHall.id);
+        expect(nearFlag.id).not.toBe(nearHall.id);
+    });
+
+    it('⭐ a recall: the flag is gone and the hero is in the Dock at once, but walks into the Hall (HM-5)', () => {
+        put({ x: 1300, y: 600 });
+        Flags.plant('h1', { x: 1300, y: 700 });
+        run(5000);
+        Flags.furl('h1');
+
+        expect(BoardState.flagOf('h1')).toBeNull();
+        const status = Flags.statusOf('h1');
+        expect(status.state).toBe('returning');
+        expect(dockStatusLine(status)).toBe('Returning to the Guild');
+        expect(BoardRunner.isHeroIdle('h1')).toBe(true);
+
+        run(1000);
+        expect(body('h1').x).toBeLessThan(1300 - 80);        // on the way
+        run(5000);
+        expect(body('h1')).toBeNull();                       // in through the door
+        expect(Flags.statusOf('h1').state).toBe('docked');
+    });
+
+    it('sent out again on the way home, they turn around — same figure, no jump (HM-5)', () => {
+        put({ x: 1300, y: 600 });
+        Flags.plant('h1', { x: 1300, y: 700 });
+        run(5000);
+        Flags.furl('h1');
+        run(1000);
+        const turning = { ...HeroMotion.heroPointOf('h1') };
+        Flags.plant('h1', { x: 1300, y: 700 });
+        expect(HeroMotion.heroPointOf('h1')).toEqual(turning);
+        expect(HeroMotion.isReturning('h1')).toBe(false);
+        run(5000);
+        expect(Flags.statusOf('h1').state).toBe('working');
+    });
+
+    it('⭐ a defeated hero limps home at half speed, looking wounded (HM-6)', () => {
+        Flags.plant('h1', { x: 1300, y: 600 });
+        run(5000);
+        const start = { ...HeroMotion.heroPointOf('h1') };
+        Flags.furl('h1', 'defeat');
+        expect(HeroMotion.isLimping('h1')).toBe(true);
+        expect(dockStatusLine(Flags.statusOf('h1'))).toBe('Limping home');
+        run(1000);
+        const now = HeroMotion.heroPointOf('h1');
+        expect(Math.hypot(now.x - start.x, now.y - start.y)).toBeCloseTo(SPEED * HeroMotion.LIMP_FACTOR, 6);
+    });
+
+    it('walks home to wherever the Hall now stands, and simply vanishes if it is gone', () => {
+        Flags.plant('h1', { x: 1300, y: 600 });
+        run(5000);
+        Flags.furl('h1');
+        BoardState.setTokenPoint(hall.id, 400, 300);
+        run(1000);
+        expect(body('h1').x).toBeLessThan(1300);
+        BoardState.removeToken(hall.id);
+        run(100);
+        expect(body('h1')).toBeNull();
     });
 });

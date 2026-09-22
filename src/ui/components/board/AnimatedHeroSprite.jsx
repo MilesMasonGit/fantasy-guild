@@ -14,17 +14,18 @@ export const AnimatedHeroSprite = ({
     size = 64,
     animationState = 'idle', // 'idle', 'walk', 'attack'
     facingLeft = false,
+    frameMs = 125,
     className
 }) => {
     const [frame, setFrame] = useState(0);
 
-    // 8 FPS animation loop
+    // 8 FPS by default (125 ms a frame); a limping hero plays slower.
     useEffect(() => {
         const interval = setInterval(() => {
             setFrame(f => (f + 1) % 8);
-        }, 125); // 1000ms / 8 frames = 125ms per frame
+        }, frameMs);
         return () => clearInterval(interval);
-    }, []);
+    }, [frameMs]);
 
     let rowOffset = 2; // Idle is row 3 (index 2)
     if (animationState === 'attack') rowOffset = 0;

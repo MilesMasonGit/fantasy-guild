@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Heroes come and go through the Guild Hall.** A hero you send out walks out of the Guild Hall
+  to their first job. Recall them and their flag disappears and they're back in the dock straight
+  away, but on the mat they walk back into the Hall; send them out again on the way and they just
+  turn around. A defeated hero limps home slowly, drained of colour.
 - **Heroes no longer jump when they get back to their flag.** Every hero, working, walking,
   waiting or idle, is now one continuous figure on the mat, so walking home ends smoothly
   beside the flag. Heroes standing beside a Token always turn to face it.

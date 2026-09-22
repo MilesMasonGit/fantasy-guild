@@ -5,6 +5,7 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { artRadiusOf, matW } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 
 /**
  * ⭐ **Heroes live on the mat** (`docs/hero_movement_roadmap_v1.md`). `Flags.js`
@@ -34,6 +35,16 @@ import * as BoardState from './BoardState.js';
  * ## ⚠️ Steps are not `HERO_MOVED`
  * `HERO_MOVED` rebuilds neighbourhoods. A step publishes only
  * `HEROES_WALKED`, once per tick, for the screen.
+ *
+ * ## Coming and going through the Guild Hall (slice M3)
+ * * A hero sent out **appears at the Guild Hall** and walks to their first job,
+ *   or beside their flag if there is none (HMP-1).
+ * * **Recall** (HM-5): the flag is gone at once and the hero is in the Dock at
+ *   once, but their figure walks back into the Hall and disappears there
+ *   (`sendHome`). Sent out again on the way, they simply turn around.
+ * * **Defeat** (HM-6): the same walk home, but a **limp** at half speed.
+ * * With no Guild Hall on the mat (a hand-built test board) they appear beside
+ *   the flag and vanish on recall, as before.
  *
  * ## Offline catch-up
  * One very long tick (the game was asleep) covers the whole walk in one step:
@@ -67,6 +78,15 @@ export function walkSpeed() {
     return matTuning('walkSpeed');
 }
 
+/** A defeated hero limps home at this fraction of walking speed (HM-6, HMP-4). */
+export const LIMP_FACTOR = 0.5;
+
+/** The Guild Hall's point, where heroes come from and go home to, or null. */
+export function guildHallPoint() {
+    const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || !!getTokenType(t.typeId)?.isGuildHall);
+    return hall ? { x: hall.x, y: hall.y } : null;
+}
+
 /** Where `heroId` is on the mat, or null (in the Dock). */
 export function heroPointOf(heroId) {
     const body = BoardState.heroBodyOf(heroId);
@@ -80,7 +100,20 @@ export function heroPointOf(heroId) {
 export function bodyView(heroId) {
     const body = BoardState.heroBodyOf(heroId);
     if (!body) return null;
-    return { x: body.x, y: body.y, moving: !!body.moving, facing: body.facing || 1 };
+    return {
+        x: body.x, y: body.y, moving: !!body.moving, facing: body.facing || 1,
+        homeward: !!body.homeward, limp: !!body.limp
+    };
+}
+
+/** Whether a hero with no flag is still on the mat, walking (or limping) home. */
+export function isReturning(heroId) {
+    return !!BoardState.heroBodyOf(heroId)?.homeward;
+}
+
+/** Whether a hero walking home is limping (defeated, HM-6). */
+export function isLimping(heroId) {
+    return !!BoardState.heroBodyOf(heroId)?.limp;
 }
 
 /** Whether the hero is on their way somewhere (not yet at their destination). */
@@ -110,6 +143,9 @@ function sideFor(body, centre) {
  * when the target changes. Null with no flag.
  */
 function destinationOf(heroId, body) {
+    // Walking home: to the Hall, wherever it stands now.
+    if (body.homeward) return guildHallPoint();
+
     const claim = BoardState.claimOfHero(heroId);
     if (claim) {
         const token = BoardState.getTokenById(claim.instanceId);
@@ -146,12 +182,20 @@ function destinationOf(heroId, body) {
  */
 function step(heroId, body, delta) {
     const dest = destinationOf(heroId, body);
-    if (!dest) return false;
+    if (!dest) {
+        // Walking home to a Hall that is no longer there: just gone.
+        if (body.homeward) {
+            BoardState.setHeroBody(heroId, null);
+            return true;
+        }
+        return false;
+    }
 
     const dx = dest.x - body.x;
     const dy = dest.y - body.y;
     const dist = Math.hypot(dx, dy);
-    const reach = BoardState.isInstantArrival() ? Infinity : walkSpeed() * Math.max(0, delta) / 1000;
+    const speed = walkSpeed() * (body.limp ? LIMP_FACTOR : 1);
+    const reach = BoardState.isInstantArrival() ? Infinity : speed * Math.max(0, delta) / 1000;
 
     let moved;
     if (dist <= Math.max(reach, ARRIVE_EPS)) {
@@ -166,6 +210,12 @@ function step(heroId, body, delta) {
         moved = reach > 0;
     }
     if (Math.abs(dx) > ARRIVE_EPS) body.facing = dx < 0 ? -1 : 1;
+
+    // Home: in through the Hall, and gone (HM-5, HM-6).
+    if (body.homeward) {
+        if (!body.moving) BoardState.setHeroBody(heroId, null);
+        return true;
+    }
 
     // Standing beside their Token (or restock spot): face it. Usually the way
     // they walked in anyway; not when the mat's edge sent them round to the far
@@ -201,18 +251,54 @@ function announceArrival(heroId) {
 }
 
 /**
- * A hero's body, made if they have a flag and none yet. A newly planted hero
- * appears at their flag (slice M3 makes them walk out of the Guild Hall).
+ * A hero's body, made if they have a flag and none yet: **at the Guild Hall**
+ * (HMP-1), or beside the flag when there is no Hall. A hero still walking home
+ * who is sent out again keeps their body and turns around (HM-5).
  */
 function ensureBody(heroId) {
-    let body = BoardState.heroBodyOf(heroId);
-    if (body) return body;
     const flag = BoardState.flagOf(heroId);
+    let body = BoardState.heroBodyOf(heroId);
+    if (body) {
+        if (flag && body.homeward) {
+            delete body.homeward;
+            delete body.limp;
+            body.targetId = null;
+        }
+        return body;
+    }
     if (!flag) return null;
-    const at = idleSpot(flag);
+    const at = guildHallPoint() || idleSpot(flag);
     body = { x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1 };
     BoardState.setHeroBody(heroId, body);
     return body;
+}
+
+/**
+ * A hero is being sent out: their body appears (at the Hall), or, still on
+ * their way home, turns around. `Flags.plant` calls this BEFORE choosing, so
+ * "nearest" is measured from where they really are (HM-4, HMP-1).
+ */
+export function enter(heroId) {
+    return ensureBody(heroId);
+}
+
+/**
+ * Their flag is down: recalled, or defeated (`limp`). Their figure walks back
+ * into the Guild Hall and disappears there (HM-5, HM-6). With no Hall on the
+ * mat, or instant arrival (tests), they are simply gone.
+ */
+export function sendHome(heroId, { limp = false } = {}) {
+    const body = BoardState.heroBodyOf(heroId);
+    if (!body) return;
+    if (BoardState.isInstantArrival() || !guildHallPoint()) {
+        BoardState.setHeroBody(heroId, null);
+        return;
+    }
+    body.homeward = true;
+    body.limp = !!limp;
+    body.targetId = null;
+    body.atWork = null;
+    body.moving = true;
 }
 
 /**
@@ -223,7 +309,8 @@ function ensureBody(heroId) {
  */
 export function settle(heroId) {
     if (!BoardState.flagOf(heroId)) {
-        BoardState.setHeroBody(heroId, null);
+        // No flag: only a hero on their way home keeps a body.
+        if (!isReturning(heroId)) BoardState.setHeroBody(heroId, null);
         return;
     }
     const body = ensureBody(heroId);
@@ -248,9 +335,15 @@ export function tick(delta = 0) {
         const body = ensureBody(heroId);
         if (body && step(heroId, body, delta)) anyMoved = true;
     }
-    // A body whose flag is gone (a recall the Flags code already handled).
-    for (const [heroId] of BoardState.heroBodies()) {
-        if (!flags[heroId]) BoardState.setHeroBody(heroId, null);
+    // Heroes with no flag: walking home, or a leftover to clear.
+    for (const [heroId, body] of BoardState.heroBodies()) {
+        if (flags[heroId]) continue;
+        if (body.homeward) {
+            if (step(heroId, body, delta)) anyMoved = true;
+        } else {
+            BoardState.setHeroBody(heroId, null);
+            anyMoved = true;
+        }
     }
 
     if (anyMoved) EventBus.publish(BOARD_EVENTS.HEROES_WALKED);
