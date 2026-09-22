@@ -413,6 +413,8 @@ diff contains only that wording change.
 
 ## 5. Stage 2 — Autonomous heroes *(outline; sliced after Stage 1)*
 
+> ⭐ **Superseded 2026-09-21 by `docs/hero_movement_roadmap_v1.md`** (walking and crew behaviour, owner decisions HM-1…HM-7). The outline below is kept for history.
+
 * **2.1 Walking** — straight lines over Tokens (A-1), costs a little work time
   (FP-26), regen continues (FP-51); hero position runtime-only (FP-58). ⚠️ Must not
   publish `HERO_MOVED` every frame (it rebuilds modifiers).

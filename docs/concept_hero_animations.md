@@ -1,6 +1,6 @@
 # Concept Document: Hero Movement & Animations
 
-**Status:** DRAFT concept.
+**Status:** DRAFT concept. ⭐ The owner's decisions of 2026-09-21 and the build plan are in `docs/hero_movement_roadmap_v1.md`, which wins where the two differ (heroes stand *beside* a Token, not on its centre; they look for better work when a cycle ends).
 
 ## 1. Overview
 The transition to a free playmat introduces autonomous hero movement. Heroes will no longer simply "stand" on the tokens they work. Instead, they will physically walk between tasks, their flag, and the guild hall, with proper animations indicating their current state (Idle, Walk, Attack/Work).
