@@ -712,7 +712,7 @@ export function isHeroIdle(heroId) {
     // nothing to work, or in the Dock. Waiting on a spot for a Manager's
     // restock is not idle (FP-70) — the work is coming.
     const status = Flags.statusOf(heroId);
-    if (status.state === 'docked' || status.state === 'idle') return true;
+    if (status.state === 'docked' || status.state === 'returning' || status.state === 'idle') return true;
     if (status.state === 'waiting') return false;
     // Walking back to the flag with nothing to do is idle; walking to work is not.
     if (status.state === 'walking') return !status.instanceId;

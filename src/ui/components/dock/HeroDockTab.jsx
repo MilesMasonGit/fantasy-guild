@@ -83,9 +83,10 @@ export const HeroDockTab = ({
     const status = useGameState(
         () => {
             const s = Flags.statusOf(heroId);
-            return { state: s.state, instanceId: s.instanceId, typeId: s.typeId };
+            return { state: s.state, instanceId: s.instanceId, typeId: s.typeId, limping: !!s.limping };
         },
-        [BOARD_EVENTS.HERO_MOVED, 'state_changed'],
+        // HEROES_WALKED: a hero walking home arrives without any other event.
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, 'state_changed'],
         null,
         { deps: [heroId] }
     );

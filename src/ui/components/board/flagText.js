@@ -31,6 +31,7 @@ export function flagStatusLine(heroId) {
         case 'walking': return s.instanceId ? `Walking to: ${tokenName(s.typeId) || 'a Token'}` : 'Heading back to the flag';
         case 'waiting': return `Waiting for restock: ${tokenName(s.typeId) || 'a Token'}`;
         case 'idle': return 'Nothing to do';
+        case 'returning': return s.limping ? 'Limping home' : 'Heading home';
         default: return 'In the Guild';
     }
 }
@@ -74,6 +75,7 @@ export function dockStatusLine(status) {
         case 'walking': return status.instanceId ? `Walking to: ${tokenName(status.typeId) || 'a Token'}` : 'Heading back to the flag';
         case 'waiting': return 'Waiting';
         case 'idle': return 'Idle at flag';
+        case 'returning': return status.limping ? 'Limping home' : 'Returning to the Guild';
         default: return 'Idle in Guild';
     }
 }

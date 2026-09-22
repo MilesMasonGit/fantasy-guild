@@ -230,6 +230,31 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
         expect(HeroMotion.idleSpot({ x: 500, y: 900 })).toEqual({ x: 572, y: 828 });
     });
 
+    it('⭐ a recalled hero is still drawn while walking home, and limps when defeated (M3)', () => {
+        BoardState.setInstantArrival(false);
+        try {
+            placeAt('token_guild_hall', 880, 563);             // heroes come and go through it
+            expect(HeroMotion.guildHallPoint()).toEqual({ x: 880, y: 563 });
+            Flags.plant('h1', { x: 1500, y: 900 });
+            HeroMotion.tick(60000);                              // out of the Hall, beside the flag
+            Flags.furl('h1');
+            HeroMotion.tick(100);
+            let { container } = mount(h(MatBoard));
+            expect(container.querySelector('[data-board-hero="h1"]')).not.toBeNull();
+            expect(container.querySelector('[data-hero-limp]')).toBeNull();
+            cleanup();
+
+            Flags.plant('h1', { x: 1500, y: 900 });              // turn round…
+            HeroMotion.tick(60000);
+            Flags.furl('h1', 'defeat');                          // …and fall
+            HeroMotion.tick(100);
+            ({ container } = mount(h(MatBoard)));
+            expect(container.querySelector('[data-board-hero="h1"][data-hero-limp]')).not.toBeNull();
+        } finally {
+            BoardState.setInstantArrival(true);
+        }
+    });
+
     it('several heroes may stand on one Token — the one-per-spot rule went with the grid', () => {
         placeAt('fixture_producer', C(15).x, C(15).y);
         Flags.plant('h1', C(15));

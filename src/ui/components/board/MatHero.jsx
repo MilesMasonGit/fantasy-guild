@@ -6,6 +6,10 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
+
+/** A limping hero (HM-6): drained of colour, a touch darker, and a slower walk cycle. */
+const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
+const LIMP_FRAME_MS = 250;
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -34,7 +38,8 @@ export const MatHero = ({
     onRecall,
     animationState = 'idle',
     moving = false,
-    facing = 1
+    facing = 1,
+    limp = false
 }) => {
     const drag = useEntityDrag({
         id: `hero-${heroId}`,
@@ -71,6 +76,7 @@ export const MatHero = ({
             type="button"
             data-alpha-test="true"
             data-board-hero={heroId}
+            data-hero-limp={limp ? 'true' : undefined}
             aria-label={name || 'Hero'}
             onClick={(e) => {
                 if (!opaque(e)) return;
@@ -108,6 +114,8 @@ export const MatHero = ({
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         hovered && !drag.isDragging && 'gi-token-hover-pulse'
                     )}
+                    // A defeated hero limping home looks wounded (HM-6).
+                    style={limp ? { filter: LIMP_FILTER } : undefined}
                 >
                     {animArt ? (
                         <AnimatedHeroSprite
@@ -116,6 +124,7 @@ export const MatHero = ({
                             size={artPx}
                             animationState={activeAnimation}
                             facingLeft={facingLeft}
+                            frameMs={limp ? LIMP_FRAME_MS : undefined}
                             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                         />
                     ) : (

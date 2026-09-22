@@ -746,6 +746,9 @@ export function plant(heroId, point) {
         r.cycleEnded.delete(heroId);
         BoardState.setFlag(heroId, { x: point.x, y: point.y, plantedAt: BoardState.takeFlagOrder() });
         r.dirty = true;
+        // Out of the Guild Hall (or turning round on the way home) BEFORE
+        // choosing, so "nearest" is measured from where they are (HMP-1, HM-4).
+        HeroMotion.enter(heroId);
         assignHero(heroId);
         HeroMotion.settle(heroId);
     } finally {
@@ -889,7 +892,8 @@ export function furl(heroId, reason = 'recall') {
         forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
         BoardState.setFlag(heroId, null);
-        HeroMotion.remove(heroId);
+        // The flag is gone at once; the hero walks, or limps, home (HM-5, HM-6).
+        HeroMotion.sendHome(heroId, { limp: reason === 'defeat' });
         r.dirty = true;
     } finally {
         quiet--;
@@ -939,7 +943,8 @@ export function setDisallowed(instanceId, on = true) {
 
 /**
  * What a hero is doing, for the dock and the idle mark:
- * `docked` (no flag) · `working` · `walking` (on the way — to a claimed Token,
+ * `docked` (no flag) · `returning` (no flag, still walking home, M3) ·
+ * `working` · `walking` (on the way — to a claimed Token,
  * `instanceId` set, or back to their flag, `instanceId` null; Hero Movement M1)
  * · `waiting` (for a restock) · `idle` (at their flag, nothing to do).
  * `instanceId` is the Token they work or walk to (or null), `point` where their
@@ -947,7 +952,11 @@ export function setDisallowed(instanceId, on = true) {
  */
 export function statusOf(heroId) {
     const flag = BoardState.flagOf(heroId);
-    if (!flag) return { state: 'docked', instanceId: null, point: null, typeId: null, flag: null };
+    if (!flag) {
+        // In the Dock already (HM-5), but their figure may still be walking home.
+        const state = HeroMotion.isReturning(heroId) ? 'returning' : 'docked';
+        return { state, instanceId: null, point: null, typeId: null, flag: null, limping: HeroMotion.isLimping(heroId) };
+    }
     const workId = BoardState.workTokenOf(heroId);
     if (workId) {
         return {
