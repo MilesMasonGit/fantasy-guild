@@ -51,10 +51,17 @@ export function createEmptyBoard() {
         // Counter behind each Token's `placedAt` — the order Tokens arrived in.
         nextTokenOrder: 0,
         // Each hero's flag, keyed by hero id (Free Playmat 1.4b). A hero with
-        // no flag is in the Dock. Which Token a flag works is runtime only.
+        // no flag is in the Dock. Which Token a flag works is runtime, except
+        // the note below of work a hero had reached (`workClaims`, HM-7).
         flags: {},
         // Counter behind each flag's `plantedAt` — the order flags choose in.
         nextFlagOrder: 0,
+        // Which Token each hero had REACHED and was working, and from which
+        // side: `{ heroId: { instanceId, side } }` (Hero Movement M5, HM-7,
+        // amending FP-58). On load a hero here stands back at that Token and
+        // carries on; everyone else starts beside their flag. Written by
+        // `BoardState` on arrival, erased when the hero lets go.
+        workClaims: {},
         vacancies: {},
         tokenBank: {},
         tray: [],
@@ -257,9 +264,10 @@ export const INITIAL_STATE = {
     //   tokenGroups { groupOrder, groupDefs, overrides }  the Vault's tabs
     //
     // ⚠️ **`flags` is a hero's place on the board, and it is the only copy.**
-    // Which Token a flag works is a
-    // runtime claim and is never saved (FP-58). A hero with no flag is in the
-    // Dock; the Dock is still not a data structure.
+    // Which Token a flag works is a runtime claim; the save keeps only
+    // `workClaims`, a note of work a hero had reached, so a reload can put them
+    // back at it (Hero Movement M5, HM-7, amending FP-58). A hero with no flag
+    // is in the Dock; the Dock is still not a data structure.
     board: createEmptyBoard(),
 
     // === Quests (Phase 8 Quests & Tutorial Chain) ===

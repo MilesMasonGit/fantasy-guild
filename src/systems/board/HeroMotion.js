@@ -301,10 +301,12 @@ function step(heroId, body, delta) {
         }
     }
 
-    // Arrived at a claimed Token: from now on they are working it (FP-26).
+    // Arrived at a claimed Token: from now on they are working it (FP-26),
+    // and the save remembers it (HM-7).
     if (!body.moving && claim && body.atWork !== claim.instanceId
         && body.targetId === claim.instanceId && BoardState.getTokenById(claim.instanceId)) {
         body.atWork = claim.instanceId;
+        BoardState.recordWorkClaim(heroId, claim.instanceId, body.side);
         announceArrival(heroId);
     }
     return moved;
@@ -344,6 +346,31 @@ function ensureBody(heroId) {
     body = { x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1 };
     BoardState.setHeroBody(heroId, body);
     return body;
+}
+
+/**
+ * After a load (HM-7): stand `heroId` back beside `token`, on `side`, already
+ * working it — no walk from the Guild Hall, no walk at all. `Flags` then
+ * restores the claim itself.
+ */
+export function restoreAtWork(heroId, token, side) {
+    const at = standingSpot(token.typeId, token, side);
+    BoardState.setHeroBody(heroId, {
+        x: at.x, y: at.y, targetId: token.id, side, atWork: token.id,
+        moving: false, facing: token.x < at.x ? -1 : 1
+    });
+}
+
+/**
+ * After a load (HM-7): a hero with a flag and no restored work starts beside
+ * their flag — not at the Guild Hall, which is for heroes newly sent out.
+ */
+export function placeAtFlag(heroId) {
+    if (BoardState.heroBodyOf(heroId)) return;
+    const flag = BoardState.flagOf(heroId);
+    if (!flag) return;
+    const at = idleSpot(flag);
+    BoardState.setHeroBody(heroId, { x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1 });
 }
 
 /**

@@ -88,6 +88,7 @@ function board() {
     if (!Array.isArray(state.board.maps)) state.board.maps = [];
     if (!state.board.flags || typeof state.board.flags !== 'object') state.board.flags = {};
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
+    if (!state.board.workClaims || typeof state.board.workClaims !== 'object') state.board.workClaims = {};
     if (!state.board.vacancies) state.board.vacancies = {};
     return state.board;
 }
@@ -308,8 +309,10 @@ export function heroesOnBoard() {
 // ---------------------------------------------------------------------------
 
 /**
- * **Which Token each flag is working right now. Never saved** (FP-58): on a
- * reload heroes start at their flag and choose again.
+ * **Which Token each flag is working right now** — the live record, never
+ * saved as such. Since Hero Movement M5 (HM-7, amending FP-58) the save keeps a
+ * separate note of the Tokens heroes had *reached* (`board.workClaims`, below
+ * "Saved work"), and `Flags.restoreWork` rebuilds claims from it on load.
  *
  * * `claims`   heroId → `{ instanceId, typeId, x, y }` — keyed by Token
  *   **instance id**, so a Token that moves carries its hero (FP-68). `x`, `y`
@@ -366,6 +369,36 @@ export function setClaim(heroId, claim) {
     if (!rt || !heroId) return;
     if (claim) rt.claims.set(heroId, claim);
     else rt.claims.delete(heroId);
+    // A saved note about different work is stale the moment the claim changes.
+    const saved = board()?.workClaims?.[heroId];
+    if (saved && saved.instanceId !== claim?.instanceId) delete board().workClaims[heroId];
+}
+
+// ---------------------------------------------------------------------------
+// Saved work — what each hero had reached (Hero Movement M5, HM-7)
+// ---------------------------------------------------------------------------
+
+/**
+ * Note in the save that `heroId` has **reached** Token `instanceId` and works
+ * it from `side` (−1 left, 1 right). Written when they arrive — never while
+ * they are still walking there — so a reload puts them back only at work they
+ * were really doing. `setClaim` erases it when the claim changes.
+ */
+export function recordWorkClaim(heroId, instanceId, side) {
+    const b = board();
+    if (!b || !heroId || !instanceId) return;
+    b.workClaims[heroId] = { instanceId, side: side === 1 ? 1 : -1 };
+}
+
+/** Drop `heroId`'s saved work note. */
+export function forgetWorkClaim(heroId) {
+    const b = board();
+    if (b?.workClaims) delete b.workClaims[heroId];
+}
+
+/** Every saved work note, as `[heroId, { instanceId, side }]`. */
+export function savedWorkClaims() {
+    return Object.entries(board()?.workClaims || {});
 }
 
 /** The wait `heroId` is on, or null. */
@@ -398,8 +431,8 @@ export function heroOfInstance(instanceId) {
 
 /**
  * **Where a hero on the mat actually is**, as they walk: `heroId → { x, y,
- * targetId, side, atWork, moving, facing }`. Never saved (FP-58; M5 saves the
- * claim, not the body). `HeroMotion.js` is the only writer; this file just
+ * targetId, side, atWork, moving, facing }`. Never saved: on load a hero is
+ * placed from the saved work note (`workClaims`) or beside their flag (M5). `HeroMotion.js` is the only writer; this file just
  * holds them and answers the seam's "has the hero arrived?".
  *
  * `atWork` is the instance id of the claimed Token the hero has **reached**.

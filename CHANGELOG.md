@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Saves remember what each hero was working on.** Load a game and every hero who was busy is
+  standing back at their Token, carrying on, with its progress bar exactly where it was, which
+  matters for Tokens with very long cycles. Heroes who weren't working yet start beside their flag.
 - **Idle heroes potter about near their flag.** Instead of standing frozen, a hero with nothing to
   do pauses for a few seconds, strolls to a spot close by, and pauses again, never straying far
   from the flag. Work that turns up comes first. A new **Idle wander** slider in the Mat Tuner sets
