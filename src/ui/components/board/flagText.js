@@ -23,11 +23,12 @@ function heroName(heroId) {
     return (GameState.state?.heroes || []).find(h => h?.id === heroId)?.name || 'A hero';
 }
 
-/** "Working: Oak Forest" · "Waiting for restock: Copper Vein" · "Nothing to do". */
+/** "Working: Oak Forest" · "Walking to: Oak Forest" · "Waiting for restock: Copper Vein" · "Nothing to do". */
 export function flagStatusLine(heroId) {
     const s = Flags.statusOf(heroId);
     switch (s.state) {
         case 'working': return `Working: ${tokenName(s.typeId) || 'a Token'}`;
+        case 'walking': return s.instanceId ? `Walking to: ${tokenName(s.typeId) || 'a Token'}` : 'Heading back to the flag';
         case 'waiting': return `Waiting for restock: ${tokenName(s.typeId) || 'a Token'}`;
         case 'idle': return 'Nothing to do';
         default: return 'In the Guild';
@@ -66,10 +67,11 @@ export function tokenSkipLines(instanceId) {
     });
 }
 
-/** The Dock tab's status line (FPP-15): Working: X · Waiting · Idle at flag · Idle in Guild. */
+/** The Dock tab's status line (FPP-15): Working: X · Walking to: X · Waiting · Idle at flag · Idle in Guild. */
 export function dockStatusLine(status) {
     switch (status?.state) {
         case 'working': return `Working: ${tokenName(status.typeId) || 'a Token'}`;
+        case 'walking': return status.instanceId ? `Walking to: ${tokenName(status.typeId) || 'a Token'}` : 'Heading back to the flag';
         case 'waiting': return 'Waiting';
         case 'idle': return 'Idle at flag';
         default: return 'Idle in Guild';

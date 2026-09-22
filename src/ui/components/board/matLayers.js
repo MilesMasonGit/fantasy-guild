@@ -24,6 +24,8 @@ export const MAT_Z = Object.freeze({
     TOKEN_BASE: 10,
     /** Heroes with no Token to stand on — waiting on an empty spot (FP-70). */
     WAITING_HERO: 690,
+    /** Heroes on the move — above every Token they walk over (HM-3). */
+    WALKING_HERO: 695,
     /** Maps lying loose on the mat. */
     MAP: 700,
     /** Alerts that belong to a point rather than to a Token. */

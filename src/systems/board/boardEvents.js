@@ -96,6 +96,15 @@ export const BOARD_EVENTS = {
     /** A hero's drawn place changed. Payload: `{ heroId, instanceId?, x?, y?, reason? }` — the Token they work and the point they are drawn at (neither in the Dock). */
     HERO_MOVED: 'board:hero_moved',
 
+    /**
+     * Heroes took a step (Hero Movement M1). No payload — read positions from
+     * `HeroMotion.heroPointOf`. Published at most once per engine tick, and only
+     * when somebody moved. ⚠️ Deliberately NOT `HERO_MOVED`: that one makes
+     * `TileModifiers` rebuild neighbourhoods, which must happen when a hero's
+     * job changes or they arrive — never on every step of a walk.
+     */
+    HEROES_WALKED: 'board:heroes_walked',
+
     /** A Token ran out of charges and left the board (D-176). Payload: `{ instanceId, x, y, typeId, instance?, heroId? }` */
     TOKEN_DEPLETED: 'board:token_depleted',
 

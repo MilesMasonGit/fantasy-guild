@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { artRadius } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, tokenZ } from './matLayers.js';
-import { PAIR_OFFSET_PX, HERO_HIT_PX, ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
+import { HERO_HIT_PX, ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
 import { pointerToMat } from './matPoint.js';
 import { MatToken } from './MatToken.jsx';
@@ -21,6 +21,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
+import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
@@ -114,29 +115,30 @@ export const MatBoard = ({
     }, [ordered, hoveredId]);
 
     /**
-     * Where each hero is DRAWN goes through the worker seam. A hero working a
-     * Token or waiting on a spot is drawn here; an **idle** hero is drawn beside
-     * their flag by `FlagLayer` (FP-29, FP-84). Several heroes may stand on one
-     * Token — the grid's one-per-tile rule (FPP-6) went with the grid.
+     * ⭐ **Heroes are drawn where they really are** (Hero Movement M1): their
+     * body's position from `HeroMotion`, walking, working beside a Token or
+     * waiting on a spot. An **idle** hero standing at their flag is drawn by
+     * `FlagLayer` (FP-29, FP-84). `HEROES_WALKED` redraws as they step.
      */
     const heroesRaw = useGameState(
         (state) => {
             const roster = state.heroes || [];
             const out = [];
-            for (const [heroId, point] of BoardState.heroesOnBoard()) {
+            for (const [heroId] of BoardState.heroesOnBoard()) {
                 const status = Flags.statusOf(heroId);
                 if (status.state !== 'working' && status.state !== 'waiting' && status.state !== 'walking') continue;
-                if (!point) continue;
-                const workId = (status.state === 'working' || status.state === 'walking') ? BoardState.workTokenOf(heroId) : null;
-                const worked = workId ? BoardState.getTokenById(workId) : null;
+                const body = HeroMotion.bodyView(heroId);
+                if (!body) continue;
+                const worked = status.state === 'working' ? BoardState.getTokenById(status.instanceId) : null;
                 const hero = roster.find(h => h?.id === heroId);
                 out.push({
                     heroId,
                     state: status.state,
                     tokenId: worked?.id || null,
-                    size: worked ? (getTokenType(worked.typeId)?.size || 1) : 1,
-                    x: point.x,
-                    y: point.y,
+                    x: body.x,
+                    y: body.y,
+                    moving: body.moving,
+                    facing: body.facing,
                     name: hero?.name || 'Hero',
                     sprite: hero?.spriteId || hero?.classId || null,
                     // Not working productively: the Token it holds is stuck.
@@ -148,6 +150,7 @@ export const MatBoard = ({
         },
         [
             BOARD_EVENTS.HERO_MOVED,
+            BOARD_EVENTS.HEROES_WALKED,
             BOARD_EVENTS.TILE_CHANGED,
             BOARD_EVENTS.ALERT_CHANGED,
             'heroes_updated',
@@ -308,8 +311,8 @@ export const MatBoard = ({
             {heroes.map(h => {
                 const place = heroPlacement(h);
                 let animState = 'idle';
-                if (h.state === 'working') animState = 'attack';
-                else if (h.state === 'walking') animState = 'walk';
+                if (h.moving) animState = 'walk';
+                else if (h.state === 'working') animState = 'attack';
 
                 return (
                     <MatHero
@@ -319,12 +322,15 @@ export const MatBoard = ({
                         sprite={h.sprite}
                         left={place.left}
                         top={place.top}
-                        z={h.tokenId && zById.has(h.tokenId) ? zById.get(h.tokenId) + 1 : MAT_Z.WAITING_HERO}
+                        z={h.moving ? MAT_Z.WALKING_HERO
+                            : (h.tokenId && zById.has(h.tokenId) ? zById.get(h.tokenId) + 1 : MAT_Z.WAITING_HERO)}
                         glow={h.state === 'working' && !h.stuck ? 'gi-glow-active' : null}
                         hovered={hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId)}
                         onHover={setHoverHeroId}
                         onRecall={handleRecallHero}
                         animationState={animState}
+                        moving={h.moving}
+                        facing={h.facing}
                     />
                 );
             })}
@@ -367,13 +373,10 @@ const NO_TERRAIN = Object.freeze({});
  * * **Waiting** on an empty spot (FP-70) — squarely on the spot, with nothing
  *   there to make room for.
  */
-export function heroPlacement({ state, size, x, y }) {
-    if (state === 'working' && size === 2) {
-        return { left: x - 80 - HERO_HIT_PX / 2, top: y + 80 - FLAG_PX / 2 };
-    }
-    if (state === 'working') {
-        return { left: x - PAIR_OFFSET_PX - HERO_HIT_PX / 2, top: y - FLAG_PX / 2 };
-    }
+export function heroPlacement({ x, y }) {
+    // Centred on the hero's own point (Hero Movement M1). A working hero's
+    // point is already beside their Token (`HeroMotion.standingSpot`, HM-2),
+    // so there is no per-state offset any more (D-266's pairing went).
     return { left: x - HERO_HIT_PX / 2, top: y - FLAG_PX / 2 };
 }
 

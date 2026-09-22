@@ -338,6 +338,9 @@ function runtimeOf(b) {
             notified: new Set(),
             // Heroes who just finished a cycle, to look for better work (FP-80).
             cycleEnded: new Set(),
+            // Where each hero on the mat actually is (Hero Movement M1) — see
+            // "Hero bodies" below. Owned by `HeroMotion.js`.
+            bodies: new Map(),
             clock: 0,
             dirty: true
         };
@@ -390,6 +393,62 @@ export function heroOfInstance(instanceId) {
 }
 
 // ---------------------------------------------------------------------------
+// Hero bodies — the runtime half of walking (Hero Movement M1)
+// ---------------------------------------------------------------------------
+
+/**
+ * **Where a hero on the mat actually is**, as they walk: `heroId → { x, y,
+ * targetId, side, atWork, moving, facing }`. Never saved (FP-58; M5 saves the
+ * claim, not the body). `HeroMotion.js` is the only writer; this file just
+ * holds them and answers the seam's "has the hero arrived?".
+ *
+ * `atWork` is the instance id of the claimed Token the hero has **reached**.
+ * Until then they are walking to it and do not count as working it (FP-26,
+ * HMP-2). Once reached it sticks for that claim, even if the Token is moved
+ * and they have to catch up — so a moved Token keeps its progress (FP-68) and a
+ * moved enemy keeps its fight (FPP-4).
+ */
+export function heroBodyOf(heroId) {
+    return flagRuntime()?.bodies.get(heroId) || null;
+}
+
+/** Record (or with `null`, drop) a hero's body. For `HeroMotion.js` only. */
+export function setHeroBody(heroId, body) {
+    const rt = flagRuntime();
+    if (!rt || !heroId) return;
+    if (body) rt.bodies.set(heroId, body);
+    else rt.bodies.delete(heroId);
+}
+
+/** Every hero body on the current board, as `[heroId, body]`. */
+export function heroBodies() {
+    const rt = flagRuntime();
+    return rt ? [...rt.bodies] : [];
+}
+
+/**
+ * ⚠️ **Test-only switch: heroes arrive the moment they claim.** Thousands of
+ * tests plant a flag and expect the hero to be working at once, as they were
+ * before walking existed. `src/tests/setup/instantArrival.js` turns this on for
+ * every test file; the walking tests turn it off. The game never sets it.
+ */
+let instantArrival = globalThis.__FG_INSTANT_ARRIVAL__ === true;
+
+export function setInstantArrival(on) {
+    instantArrival = !!on;
+}
+
+export function isInstantArrival() {
+    return instantArrival;
+}
+
+/** Whether `heroId` has reached the Token `instanceId` they claimed. */
+function arrivedAt(heroId, instanceId) {
+    if (instantArrival) return true;
+    return flagRuntime()?.bodies.get(heroId)?.atWork === instanceId;
+}
+
+// ---------------------------------------------------------------------------
 // The worker seam (Free Playmat slices 1.4a, 1.4b)
 // ---------------------------------------------------------------------------
 
@@ -407,10 +466,12 @@ export function heroOfInstance(instanceId) {
  *
  * ## Under flags (slice 1.4b, roadmap §2), by id and point (slice 1.6b)
  * * `workerOf(id)` is **the hero whose flag has claimed that Token**, while it
- *   is on the mat. ⚠️ A spot with no Token has no worker, ever: a hero waiting
- *   on an empty spot for a restock (FP-70) is not working it.
- * * `workTokenOf(heroId)` is the claimed Token's id while it is on the mat, or
- *   null.
+ *   is on the mat **and the hero has arrived** (Hero Movement M1 — walking to
+ *   it is not working it, FP-26). ⚠️ A spot with no Token has no worker, ever:
+ *   a hero waiting on an empty spot for a restock (FP-70) is not working it.
+ * * `workTokenOf(heroId)` is the claimed Token's id while it is on the mat and
+ *   the hero has arrived, or null. (Flags reads the claim itself through
+ *   `claimOfHero` — a claim is made when the hero sets off, HMP-2.)
  * * `displayPointOf(heroId)` is the claimed Token's centre, else the spot they
  *   wait on, else their flag's point, else null (in the Dock).
  *
@@ -420,7 +481,8 @@ export function heroOfInstance(instanceId) {
 export function workerOf(instanceId) {
     if (typeof instanceId !== 'string' || !instanceId) return null;
     if (!board()?.tokens?.[instanceId]) return null;
-    return heroOfInstance(instanceId);
+    const heroId = heroOfInstance(instanceId);
+    return heroId && arrivedAt(heroId, instanceId) ? heroId : null;
 }
 
 /** The instance id of the Token `heroId` works, or null. */
@@ -432,7 +494,7 @@ export function workTokenOf(heroId) {
     if (!instance) return null;
     claim.x = instance.x;
     claim.y = instance.y;
-    return instance.id;
+    return arrivedAt(heroId, instance.id) ? instance.id : null;
 }
 
 /** The mat point to draw `heroId` at: claimed Token > waiting spot > flag > null. */

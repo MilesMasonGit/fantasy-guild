@@ -81,15 +81,6 @@ export const columnWidthCss = (spec) => `clamp(${spec.min}px, ${spec.vw}vw, ${sp
 
 import { ALERT } from '../../../systems/board/boardEvents.js';
 
-/**
- * How far the hero and the Token slide apart on a staffed tile (D-266).
- *
- * A hero and the Token they work are **both drawn at full `TILE_PX`**, then
- * pushed in opposite directions — hero left, Token right — so each is 24px off
- * centre and 48px apart. They still overlap across 80 of their 128 pixels, which
- * is the point: two readable silhouettes that are plainly one stacked unit.
- */
-export const PAIR_OFFSET_PX = 24;
 
 /**
  * The hero's clickable box — narrower than the art it draws.

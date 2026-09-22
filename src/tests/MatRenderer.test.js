@@ -20,7 +20,8 @@ import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { flagOrigin, IDLE_HERO_OFFSET, FLAG_PX } from '../ui/components/board/flagGeometry.js';
-import { HERO_HIT_PX, PAIR_OFFSET_PX, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
+import { HERO_HIT_PX, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
+import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -188,41 +189,30 @@ describe('a Token is a circle of art at a point', () => {
     });
 });
 
-describe('where a hero stands (D-266, FP-77, FP-84)', () => {
-    it('working a 1×1 Token: half the pair offset to its left', () => {
-        expect(heroPlacement({ state: 'working', size: 1, x: 600, y: 400 })).toEqual({
-            left: 600 - PAIR_OFFSET_PX - HERO_HIT_PX / 2,
+describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
+    it('a hero is drawn centred on their own point — no per-state offset any more', () => {
+        expect(heroPlacement({ x: 600, y: 400 })).toEqual({
+            left: 600 - HERO_HIT_PX / 2,
             top: 400 - FLAG_PX / 2
         });
     });
 
-    it('working a 2×2 Token: down and to its left, standing in front of the art', () => {
-        expect(heroPlacement({ state: 'working', size: 2, x: 700, y: 500 })).toEqual({
-            left: 700 - 80 - HERO_HIT_PX / 2,
-            top: 500 + 80 - FLAG_PX / 2
-        });
-    });
-
-    it('waiting on an empty spot: squarely on the spot, nothing to make room for', () => {
-        expect(heroPlacement({ state: 'waiting', size: 1, x: 300, y: 300 })).toEqual({
-            left: 300 - HERO_HIT_PX / 2,
-            top: 300 - FLAG_PX / 2
-        });
-    });
-
-    it('the drawn hero stands where the rule says, and their Token has slid aside', () => {
+    it('⭐ a working hero stands beside their Token, and the Token stays exactly where it is', () => {
         const tok = placeAt('fixture_producer', C(15).x, C(15).y);
         Flags.plant('h1', C(15));
         expect(Flags.statusOf('h1').state).toBe('working');
 
         const { container } = mount(h(MatBoard));
         const drawn = container.querySelector('[data-board-hero="h1"]');
-        const place = heroPlacement({ state: 'working', size: 1, x: tok.x, y: tok.y });
+        // Planted on the Token's centre, so they arrive on the left (a tie).
+        const spot = HeroMotion.standingSpot(tok.typeId, tok, -1);
+        const place = heroPlacement(spot);
 
+        expect(spot.x).toBe(tok.x - 64 - HeroMotion.STAND_GAP);
         expect(parseFloat(drawn.style.left)).toBe(place.left);
         expect(parseFloat(drawn.style.top)).toBe(place.top);
-        // The Token slid the same distance the other way (D-266).
-        expect(parseFloat(artOf(container, tok.id).style.left)).toBe(tok.x - 64 + PAIR_OFFSET_PX);
+        // D-266's slide-apart is gone: the Token has not moved.
+        expect(parseFloat(artOf(container, tok.id).style.left)).toBe(tok.x - 64);
     });
 
     it('an idle hero stands beside their own flag (FP-84)', () => {
