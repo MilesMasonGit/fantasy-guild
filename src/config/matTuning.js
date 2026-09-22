@@ -67,6 +67,14 @@ export const MAT_TUNABLES = Object.freeze([
         format: (v) => `${Math.round(v)} u/s · ${(1760 / v).toFixed(1)} s across`
     },
     {
+        key: 'potterRadius',
+        group: 'Heroes',
+        label: 'Idle wander',
+        hint: 'How far an idle hero strolls from their spot beside the flag, in mat units (Hero Movement HM-1). They pause 2-6 s between strolls and stroll at half walking speed. 0 makes idle heroes stand still.',
+        min: 0, max: 240, step: 1, def: 80,
+        format: (v) => (Math.round(v) === 0 ? 'off' : `${Math.round(v)} u`)
+    },
+    {
         key: 'hitboxPct',
         group: 'Crowding',
         label: 'Token hitbox',

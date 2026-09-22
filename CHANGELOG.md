@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Idle heroes potter about near their flag.** Instead of standing frozen, a hero with nothing to
+  do pauses for a few seconds, strolls to a spot close by, and pauses again, never straying far
+  from the flag. Work that turns up comes first. A new **Idle wander** slider in the Mat Tuner sets
+  how far they stroll (0 keeps them standing still).
 - **Heroes come and go through the Guild Hall.** A hero you send out walks out of the Guild Hall
   to their first job. Recall them and their flag disappears and they're back in the dock straight
   away, but on the mat they walk back into the Hall; send them out again on the way and they just
