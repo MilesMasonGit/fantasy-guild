@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { artRadiusOf, matW } from '../../config/matGeometry.js';
+import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -16,8 +16,10 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
  * * holding a claim → **beside that Token**, on the side they approached from
  *   (HM-2), facing it; the Token itself never moves to make room;
  * * waiting on a spot for a restock (FP-70) → beside that spot, the same way;
- * * otherwise → **beside their flag** (`idleSpot`, FP-29, FP-84; pottering is
- *   slice M4).
+ * * otherwise → **beside their flag** (`idleSpot`, FP-29, FP-84), where they
+ *   **potter** (slice M4, HM-1): a pause of a few seconds, a short stroll to a
+ *   random spot close by, another pause. Strolls are measured from the flag's
+ *   idle spot, so they stay within easy sight of it and move with it.
  *
  * The destination is worked out afresh every tick, so a hero follows a Token
  * that is moved or pushed while they walk (HMP-3).
@@ -81,6 +83,25 @@ export function walkSpeed() {
 /** A defeated hero limps home at this fraction of walking speed (HM-6, HMP-4). */
 export const LIMP_FACTOR = 0.5;
 
+/** An idle hero strolls at this fraction of walking speed (HM-1). */
+export const STROLL_FACTOR = 0.5;
+
+/** An idle hero pauses between strolls for this long, in game ms (HM-1). */
+export const POTTER_PAUSE_MS = Object.freeze({ min: 2000, max: 6000 });
+
+/** How far from the idle spot a hero may stroll, in mat units (Mat Tuner "Idle wander"; 0 = stand still). */
+export function potterRadius() {
+    return matTuning('potterRadius');
+}
+
+/** Random source for pottering — replaceable so tests can be exact. */
+let random = Math.random;
+
+/** Tests only: make pottering predictable. Pass nothing to restore `Math.random`. */
+export function setRandomForTests(fn = Math.random) {
+    random = fn;
+}
+
 /** The Guild Hall's point, where heroes come from and go home to, or null. */
 export function guildHallPoint() {
     const hall = BoardState.tokens().find(t => t.typeId === 'token_guild_hall' || !!getTokenType(t.typeId)?.isGuildHall);
@@ -121,6 +142,37 @@ export function isWalking(heroId) {
     return !!BoardState.heroBodyOf(heroId)?.moving;
 }
 
+/** Whether an idle hero is out on a stroll near their flag (HM-1) — still idle. */
+export function isPottering(heroId) {
+    return !!BoardState.heroBodyOf(heroId)?.potter;
+}
+
+/** Forget any stroll in progress — work, a wait or the walk home comes first. */
+function stopPottering(body) {
+    body.potter = null;
+    body.pauseLeft = null;
+}
+
+/** A random stroll offset from the idle spot, uniform over a disc of `potterRadius`. */
+function strollOffset() {
+    const r = potterRadius() * Math.sqrt(random());
+    const angle = random() * Math.PI * 2;
+    return { dx: Math.cos(angle) * r, dy: Math.sin(angle) * r };
+}
+
+/** A pause between strolls, in game ms. */
+function pauseMs() {
+    return POTTER_PAUSE_MS.min + random() * (POTTER_PAUSE_MS.max - POTTER_PAUSE_MS.min);
+}
+
+/** Keep a point on the mat. */
+function onMat(point) {
+    return {
+        x: Math.max(0, Math.min(matW(), point.x)),
+        y: Math.max(0, Math.min(matH(), point.y))
+    };
+}
+
 /**
  * The point beside a Token (or spot) at `centre` where a hero stands to work it,
  * on `side` (−1 left, 1 right). If that side would put the hero off the mat,
@@ -144,10 +196,14 @@ function sideFor(body, centre) {
  */
 function destinationOf(heroId, body) {
     // Walking home: to the Hall, wherever it stands now.
-    if (body.homeward) return guildHallPoint();
+    if (body.homeward) {
+        stopPottering(body);
+        return guildHallPoint();
+    }
 
     const claim = BoardState.claimOfHero(heroId);
     if (claim) {
+        stopPottering(body);
         const token = BoardState.getTokenById(claim.instanceId);
         const centre = token ? { x: token.x, y: token.y } : { x: claim.x, y: claim.y };
         if (body.targetId !== claim.instanceId) {
@@ -160,6 +216,7 @@ function destinationOf(heroId, body) {
 
     const wait = BoardState.waitOfHero(heroId);
     if (wait && Number.isFinite(wait.x) && Number.isFinite(wait.y)) {
+        stopPottering(body);
         const key = `wait:${wait.spotId}`;
         const centre = { x: wait.x, y: wait.y };
         if (body.targetId !== key) {
@@ -170,10 +227,15 @@ function destinationOf(heroId, body) {
         return standingSpot(wait.typeId, centre, body.side);
     }
 
+    // Idle: beside the flag, or out on a stroll near it (HM-1).
+    if (body.targetId) stopPottering(body);      // just came off work or a wait
     body.targetId = null;
     body.atWork = null;
     const flag = BoardState.flagOf(heroId);
-    return flag ? idleSpot(flag) : null;
+    if (!flag) return null;
+    const home = idleSpot(flag);
+    if (!body.potter) return home;
+    return onMat({ x: home.x + body.potter.dx, y: home.y + body.potter.dy });
 }
 
 /**
@@ -194,7 +256,7 @@ function step(heroId, body, delta) {
     const dx = dest.x - body.x;
     const dy = dest.y - body.y;
     const dist = Math.hypot(dx, dy);
-    const speed = walkSpeed() * (body.limp ? LIMP_FACTOR : 1);
+    const speed = walkSpeed() * (body.limp ? LIMP_FACTOR : body.potter ? STROLL_FACTOR : 1);
     const reach = BoardState.isInstantArrival() ? Infinity : speed * Math.max(0, delta) / 1000;
 
     let moved;
@@ -226,6 +288,17 @@ function step(heroId, body, delta) {
         const wait = claim ? null : BoardState.waitOfHero(heroId);
         const target = token || wait;
         if (target && Math.abs(target.x - body.x) > ARRIVE_EPS) body.facing = target.x < body.x ? -1 : 1;
+    }
+
+    // Idle and standing still: count the pause down, then set off on a stroll
+    // (HM-1). Idle means no claim, no wait, not walking home.
+    if (!body.moving && !body.targetId && !claim && potterRadius() > 0) {
+        if (body.pauseLeft == null) body.pauseLeft = pauseMs();
+        body.pauseLeft -= Math.max(0, delta);
+        if (body.pauseLeft <= 0) {
+            body.potter = strollOffset();
+            body.pauseLeft = null;
+        }
     }
 
     // Arrived at a claimed Token: from now on they are working it (FP-26).

@@ -971,7 +971,8 @@ export function statusOf(heroId) {
             point: { x: claim.x, y: claim.y }, typeId: claim.typeId, flag
         };
     }
-    if (HeroMotion.isWalking(heroId) && !BoardState.waitOfHero(heroId)) {
+    // Walking back to the flag after work. A stroll near the flag is still idle (HM-1).
+    if (HeroMotion.isWalking(heroId) && !BoardState.waitOfHero(heroId) && !HeroMotion.isPottering(heroId)) {
         return { state: 'walking', instanceId: null, point: { x: flag.x, y: flag.y }, typeId: null, flag };
     }
     const wait = BoardState.waitOfHero(heroId);

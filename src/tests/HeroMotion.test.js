@@ -57,6 +57,9 @@ beforeEach(() => {
     resetMatTuning();
     setMatTuning('flagRadius', 400);
     setMatTuning('walkSpeed', SPEED);
+    // Pottering off unless a test is about it: a random stroll must never move
+    // a hero these scenarios expect to be standing still.
+    setMatTuning('potterRadius', 0);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -68,7 +71,10 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-afterEach(() => BoardState.setInstantArrival(true));
+afterEach(() => {
+    BoardState.setInstantArrival(true);
+    HeroMotion.setRandomForTests();
+});
 
 describe('⭐ walking costs work time (FP-26)', () => {
     it('claims the Token on setting off, but works it only on arrival', () => {
@@ -322,5 +328,110 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
         BoardState.removeToken(hall.id);
         run(100);
         expect(body('h1')).toBeNull();
+    });
+});
+
+describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
+    const FLAG = { x: 600, y: 600 };
+    const HOME = { x: 672, y: 528 };                   // idleSpot(FLAG)
+    const RADIUS = 80;
+    const gap = (heroId) => {
+        const p = HeroMotion.heroPointOf(heroId);
+        return Math.hypot(p.x - HOME.x, p.y - HOME.y);
+    };
+
+    beforeEach(() => setMatTuning('potterRadius', RADIUS));
+
+    it('pauses, then strolls to a spot within reach of the flag, then pauses again', () => {
+        // random() = 0.5 every time: a 4 s pause, a stroll of 80·√0.5 ≈ 57 u.
+        HeroMotion.setRandomForTests(() => 0.5);
+        Flags.plant('h1', FLAG);
+        expect(HeroMotion.heroPointOf('h1')).toEqual(HOME);
+
+        run(3900);
+        expect(HeroMotion.heroPointOf('h1')).toEqual(HOME);          // still pausing
+        run(300);
+        expect(HeroMotion.isPottering('h1')).toBe(true);             // set off
+
+        run(3000);                                                  // 57 u at 60 u/s
+        expect(body('h1').moving).toBe(false);
+        expect(gap('h1')).toBeCloseTo(RADIUS * Math.sqrt(0.5), 6);
+    });
+
+    it('a stroll is still idle: the dock, the idle count and the status all say so', () => {
+        HeroMotion.setRandomForTests(() => 0.5);
+        Flags.plant('h1', FLAG);
+        run(4500);
+        expect(body('h1').moving).toBe(true);
+        expect(Flags.statusOf('h1').state).toBe('idle');
+        expect(BoardRunner.isHeroIdle('h1')).toBe(true);
+    });
+
+    it('strolls at half walking speed', () => {
+        HeroMotion.setRandomForTests(() => 0.99);                    // a long stroll
+        Flags.plant('h1', FLAG);
+        run(6000);                                                  // pause ≈ 5.96 s, then off
+        const start = { ...HeroMotion.heroPointOf('h1') };
+        run(500);
+        const now = HeroMotion.heroPointOf('h1');
+        expect(Math.hypot(now.x - start.x, now.y - start.y)).toBeCloseTo(SPEED * HeroMotion.STROLL_FACTOR * 0.5, 6);
+    });
+
+    it('never wanders further than the tuned reach, over a long random watch', () => {
+        let seed = 7;
+        HeroMotion.setRandomForTests(() => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; });
+        Flags.plant('h1', FLAG);
+        let furthest = 0;
+        let movingTicks = 0;
+        for (let t = 0; t < 120000; t += 100) {
+            BoardRunner.tick(100);
+            furthest = Math.max(furthest, gap('h1'));
+            if (body('h1').moving) movingTicks++;
+        }
+        expect(furthest).toBeLessThanOrEqual(RADIUS + 1e-6);
+        expect(furthest).toBeGreaterThan(0);
+        // Calm, not busy: they spend most of their time standing still.
+        expect(movingTicks / 1200).toBeLessThan(0.5);
+    });
+
+    it('work appearing mid-stroll comes first: they go and do it', () => {
+        HeroMotion.setRandomForTests(() => 0.5);
+        Flags.plant('h1', FLAG);
+        run(4500);
+        expect(HeroMotion.isPottering('h1')).toBe(true);
+        const tok = put({ x: 800, y: 700 });
+        run(1500);
+        expect(HeroMotion.isPottering('h1')).toBe(false);
+        expect(BoardState.claimOfHero('h1')?.instanceId).toBe(tok.id);
+        run(5000);
+        expect(BoardState.workerOf(tok.id)).toBe('h1');
+    });
+
+    it('strolls go with the flag when it is moved', () => {
+        HeroMotion.setRandomForTests(() => 0.5);
+        Flags.plant('h1', FLAG);
+        run(8000);
+        Flags.plant('h1', { x: 1200, y: 800 });
+        run(15000);
+        const p = HeroMotion.heroPointOf('h1');
+        const newHome = HeroMotion.idleSpot({ x: 1200, y: 800 });
+        expect(Math.hypot(p.x - newHome.x, p.y - newHome.y)).toBeLessThanOrEqual(RADIUS + 1e-6);
+    });
+
+    it('Idle wander at 0 means they stand still beside the flag', () => {
+        setMatTuning('potterRadius', 0);
+        Flags.plant('h1', FLAG);
+        run(30000);
+        expect(HeroMotion.heroPointOf('h1')).toEqual(HOME);
+    });
+
+    it('pottering never announces HERO_MOVED (no rebuild storms)', () => {
+        HeroMotion.setRandomForTests(() => 0.5);
+        Flags.plant('h1', FLAG);
+        let moved = 0;
+        const off = EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, () => { moved++; });
+        run(30000);
+        off();
+        expect(moved).toBe(0);
     });
 });
