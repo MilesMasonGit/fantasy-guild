@@ -160,8 +160,10 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
 
     it('an idle hero beside their flag starts a FLAG drag too', () => {
         Flags.plant('h1', C(20));
-        mount(h(FlagLayer));
-        expect(dnd.drags.find(d => d.id === 'flag-hero-h1').kind).toBe(DRAG_KIND.FLAG);
+        expect(Flags.statusOf('h1').state).toBe('idle');
+        // Drawn by MatBoard like every hero since Hero Movement M2.
+        mount(h(MatBoard));
+        expect(dnd.drags.find(d => d.id === 'hero-h1').kind).toBe(DRAG_KIND.FLAG);
     });
 
     it('a board hero dropped elsewhere moves the flag — one hero_deployed — and the hero goes to their job', () => {

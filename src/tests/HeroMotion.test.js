@@ -96,8 +96,10 @@ describe('⭐ walking costs work time (FP-26)', () => {
     it('covers the distance at the tuned speed', () => {
         put({ x: 800, y: 500 });
         Flags.plant('h1', { x: 500, y: 500 });
+        const start = { ...HeroMotion.heroPointOf('h1') };
         run(1000);
-        expect(body('h1').x).toBeCloseTo(500 + SPEED, 6);
+        const now = HeroMotion.heroPointOf('h1');
+        expect(Math.hypot(now.x - start.x, now.y - start.y)).toBeCloseTo(SPEED, 6);
     });
 
     it('a very long tick (the game was asleep) arrives in one step, not in fast-forward', () => {
@@ -174,9 +176,9 @@ describe('claims, moves and choices while walking', () => {
         expect(nearFlag.id).not.toBe(nearHero.id);
     });
 
-    it('a new hero appears at their flag (slice M3 walks them out of the Guild Hall)', () => {
+    it('a new hero appears beside their flag (slice M3 walks them out of the Guild Hall)', () => {
         Flags.plant('h1', { x: 500, y: 500 });
-        expect(body('h1')).toMatchObject({ x: 500, y: 500 });
+        expect(body('h1')).toMatchObject(HeroMotion.idleSpot({ x: 500, y: 500 }));
     });
 
     it('a recall mid-walk takes them off the mat and lets go of the Token', () => {
@@ -199,7 +201,21 @@ describe('claims, moves and choices while walking', () => {
         expect(BoardRunner.isHeroIdle('h1')).toBe(true);
         run(3000);
         expect(Flags.statusOf('h1').state).toBe('idle');
-        expect(body('h1')).toMatchObject({ x: 500, y: 500 });
+        // Back beside the flag — the very spot the screen draws an idle hero,
+        // so reaching it is not a jump (M2).
+        expect(body('h1')).toMatchObject(HeroMotion.idleSpot({ x: 500, y: 500 }));
+    });
+
+    it('⭐ standing beside their Token, they turn to face it', () => {
+        const tok = put({ x: 800, y: 500 });
+        Flags.plant('h1', { x: 1100, y: 500 });
+        run(3000);
+        expect(body('h1').x).toBeGreaterThan(tok.x);
+        // Knocked the wrong way round (a mat edge sending them to the far side
+        // does this; so does already standing there): the next tick turns them.
+        body('h1').facing = 1;
+        run(100);
+        expect(body('h1').facing).toBe(-1);
     });
 });
 

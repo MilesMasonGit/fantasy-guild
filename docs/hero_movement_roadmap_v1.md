@@ -1,6 +1,6 @@
 # Hero Movement — roadmap v1
 
-**Written 2026-09-21. Approved by the owner 2026-09-22. Status: M1 done.**
+**Written 2026-09-21. Approved by the owner 2026-09-22. Status: M1–M2 done.**
 
 The first item of the owner's post-playmat list ("Hero NPC logic"): heroes stop
 being drawn at their job and start **living on the mat** — walking, pottering,
@@ -92,7 +92,7 @@ wander, flags placed onto Tokens, and walking around Tokens.
 | Slice | Status | Notes |
 | :-- | :-- | :-- |
 | M1 | ✅ **DONE** 2026-09-22 | `HeroMotion.js` owns each hero's body (position, target, side, `atWork`, facing) in `BoardState`'s per-board runtime; `workerOf` / `workTokenOf` answer only once the hero has arrived, and stay answered for that claim while they catch up to a moved Token (FP-68, FPP-4). Claim on departure, arrival publishes one `HERO_MOVED`, steps publish `HEROES_WALKED`. `Flags` calls `HeroMotion.settle` after every claim change; nearest measured from the hero (HM-4). New status `walking` (to a Token, or back to the flag — the latter counts as idle). Mat Tuner **Walk speed** (120 u/s). Pulled forward from M2: the Token no longer shifts for its hero (D-266's `PAIR_OFFSET_PX` deleted), heroes drawn at their body's point with a one-tick linear glide, walk / work animation rows and facing from the engine (the WIP's distance-guessed slide removed). Tests run with instant arrival (`src/tests/setup/instantArrival.js`, a global marker — importing game code there broke `vi.mock`); `HeroMotion.test.js` (14 tests) walks for real, two neuterings caught. In game: a 795 u walk took ~6.6 s, the Token's progress stayed 0 until arrival, the hero stood 80 u left of the Token, the Token did not move, 2 `HERO_MOVED` for the whole walk, walk row flipped left / work row on arrival. |
-| M2 | NOT STARTED | |
+| M2 | ✅ **DONE** 2026-09-22 | **One hero layer:** `MatBoard` draws every hero in every state, idle included; `FlagLayer`'s own idle hero is deleted, so a hero walking home is never handed between layers (M1's jump). Idle heroes stand at a real destination, `HeroMotion.idleSpot` = flag + (72, −72) — exactly where `FlagLayer` drew them (the retired `IDLE_HERO_OFFSET` / `IDLE_HERO_PX`), drawn at `MAT_Z.IDLE_HERO` just in front of the flags. Heroes standing beside their Token turn to face it (matters when the mat edge sends them to the far side). A new hero now appears at the idle spot, so one planted on a Token's centre approaches from the right. 15 walking tests, the facing rule proven by a neutering. In game: a hero walked home from a Token as the same element throughout, largest step 24 u (two ticks in one sample), final step 6 u onto the idle spot, no second copy in the flag layer. |
 | M3 | NOT STARTED | |
 | M4 | NOT STARTED | |
 | M5 | NOT STARTED | |

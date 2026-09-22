@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Heroes no longer jump when they get back to their flag.** Every hero, working, walking,
+  waiting or idle, is now one continuous figure on the mat, so walking home ends smoothly
+  beside the flag. Heroes standing beside a Token always turn to face it.
 - **Heroes walk** (Hero Movement, first slice). A hero now travels across the mat to the Token
   they're going to work, at a steady pace (a new **Walk speed** slider in the Mat Tuner — about
   15 seconds to cross the mat). The job's timer starts only when they arrive. They stop beside

@@ -125,14 +125,18 @@ describe('the idle mark (FP-29)', () => {
         expect(flag.querySelector('img').getAttribute('src')).toContain(`hero_flag_${flag.getAttribute('data-flag-colour')}.png`);
         expect(flag.querySelector('[data-flag-idle-chip]').textContent).toContain('…');
 
-        const idle = container.querySelector('[data-flag-idle-hero="h1"]');
-        expect(idle.style.width).toBe('128px');
+        // ⭐ The hero is drawn by MatBoard, like every hero in every state
+        // (Hero Movement M2) — never by the flag layer.
+        expect(container.querySelector('[data-board-hero="h1"]')).toBeNull();
+        const board = mount(h(MatBoard)).container;
+        const idle = board.querySelector('[data-board-hero="h1"]');
+        expect(idle).not.toBeNull();
         // The drawn frame, animated sheet or still portrait alike, is 128 px —
         // an animated sheet's <img> is the whole 8-frame strip, so it is the
         // frame box that is measured, not the image.
-        expect(idle.firstElementChild.style.width).toBe('128px');
-        expect(container.querySelector('.gi-glow-idle')).toBeNull();
-        expect(container.querySelector('.gi-glow-active')).toBeNull();
+        expect(idle.querySelector('div[style*="width: 128px"]')).not.toBeNull();
+        expect(idle.className).not.toContain('gi-glow-active');
+        expect(board.querySelector('.gi-glow-idle')).toBeNull();
     });
 
     it('a working flag shows no chip and leaves its hero to the Token', () => {
@@ -144,7 +148,6 @@ describe('the idle mark (FP-29)', () => {
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.getAttribute('data-flag-state')).toBe('working');
         expect(flag.querySelector('[data-flag-idle-chip]')).toBeNull();
-        expect(container.querySelector('[data-flag-idle-hero="h1"]')).toBeNull();
     });
 
     it('⭐ two flags planted on one point simply overlap — no fan-out (FP-83)', () => {
