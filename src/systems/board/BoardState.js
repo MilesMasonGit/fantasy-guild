@@ -344,6 +344,9 @@ function runtimeOf(b) {
             // Where each hero on the mat actually is (Hero Movement M1) — see
             // "Hero bodies" below. Owned by `HeroMotion.js`.
             bodies: new Map(),
+            // Where each wandering enemy actually is (Enemy Wandering EW-A) —
+            // see "Enemy bodies" below. Owned by `EnemyMotion.js`.
+            enemyBodies: new Map(),
             clock: 0,
             dirty: true
         };
@@ -457,6 +460,40 @@ export function setHeroBody(heroId, body) {
 export function heroBodies() {
     const rt = flagRuntime();
     return rt ? [...rt.bodies] : [];
+}
+
+// ---------------------------------------------------------------------------
+// Enemy bodies — the runtime half of wandering (Enemy Wandering EW-A)
+// ---------------------------------------------------------------------------
+
+/**
+ * **Where a wandering enemy Token actually is drawn**, as it strolls within
+ * its travel area: `instanceId → { x, y, anchorX, anchorY, target, pauseLeft,
+ * moving, facing }`. Never saved — an enemy simply re-centres on its real
+ * Token position (`anchorX`/`anchorY`, always read fresh) on load, the same
+ * as a freshly spawned one. `EnemyMotion.js` is the only writer.
+ *
+ * ⚠️ This is a **display** position only. It is never written into the
+ * Token's own `x`/`y` (`BoardState.tokens()`), so a wander step never
+ * triggers `TILE_CHANGED` or a `TileModifiers` neighbourhood rebuild — see
+ * `docs/enemy_wandering_roadmap_v1.md` EWP-6.
+ */
+export function enemyBodyOf(instanceId) {
+    return flagRuntime()?.enemyBodies.get(instanceId) || null;
+}
+
+/** Record (or with `null`, drop) an enemy's body. For `EnemyMotion.js` only. */
+export function setEnemyBody(instanceId, body) {
+    const rt = flagRuntime();
+    if (!rt || !instanceId) return;
+    if (body) rt.enemyBodies.set(instanceId, body);
+    else rt.enemyBodies.delete(instanceId);
+}
+
+/** Every enemy body on the current board, as `[instanceId, body]`. */
+export function enemyBodies() {
+    const rt = flagRuntime();
+    return rt ? [...rt.enemyBodies] : [];
 }
 
 /**

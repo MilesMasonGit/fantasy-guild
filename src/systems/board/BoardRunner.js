@@ -20,6 +20,7 @@ import * as BoardPromotion from './BoardPromotion.js';
 import * as Managers from './Managers.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
+import * as EnemyMotion from './EnemyMotion.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
@@ -431,6 +432,10 @@ export function tick(delta) {
     // them where, and before any Token ticks: a Token's cycle runs only once
     // its hero has arrived (FP-26), and one who arrives this tick starts now.
     HeroMotion.tick(delta);
+
+    // Enemies wander their travel area (Enemy Wandering EW-A) — display only,
+    // never who a hero works, so its order relative to the above is free.
+    EnemyMotion.tick(delta);
 
     // Every Token on the mat, by instance id, in arrival order (Free Playmat 1.6b).
     const onMat = BoardState.tokens();
