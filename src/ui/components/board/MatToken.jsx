@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { artRadius } from '../../../config/matGeometry.js';
-import { ALERT_HINT, PAIR_OFFSET_PX } from './boardConstants.js';
+import { ALERT_HINT } from './boardConstants.js';
 import { tokenSkipLines } from './flagText.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -205,10 +205,10 @@ export const MatToken = React.memo(function MatToken({
         ...(isHovered ? skipLines : [])
     ].filter(Boolean).join('\n') || undefined;
 
-    // A hero and their Token slide apart on a staffed spot (D-266): hero left,
-    // Token right. A 2×2 is big enough to stand on, so only a 1×1 shifts.
-    const shift = (staffed && size === 1) ? PAIR_OFFSET_PX : 0;
-    const left = x - boxHalf + shift;
+    // ⭐ The Token stays exactly where it is (HM-2): its hero walks up and
+    // stands beside it (`HeroMotion.standingSpot`). D-266's slide-apart went
+    // with Hero Movement M1.
+    const left = x - boxHalf;
     const top = y - boxHalf;
     const boxStyle = {
         left,

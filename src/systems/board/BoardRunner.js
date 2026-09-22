@@ -19,6 +19,7 @@ import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import * as Managers from './Managers.js';
 import * as Flags from './Flags.js';
+import * as HeroMotion from './HeroMotion.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
@@ -426,6 +427,11 @@ export function tick(delta) {
     // and before any Token ticks, so `workerOf` below is already settled.
     Flags.assign(delta);
 
+    // Heroes walk toward their work (Hero Movement M1) — after Flags has told
+    // them where, and before any Token ticks: a Token's cycle runs only once
+    // its hero has arrived (FP-26), and one who arrives this tick starts now.
+    HeroMotion.tick(delta);
+
     // Every Token on the mat, by instance id, in arrival order (Free Playmat 1.6b).
     const onMat = BoardState.tokens();
     if (!onMat.length) return;
@@ -708,5 +714,7 @@ export function isHeroIdle(heroId) {
     const status = Flags.statusOf(heroId);
     if (status.state === 'docked' || status.state === 'idle') return true;
     if (status.state === 'waiting') return false;
+    // Walking back to the flag with nothing to do is idle; walking to work is not.
+    if (status.state === 'walking') return !status.instanceId;
     return !!BoardState.getTokenById(status.instanceId)?.alert;   // working, but stuck
 }

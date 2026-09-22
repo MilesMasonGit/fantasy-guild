@@ -59,6 +59,14 @@ export const MAT_TUNABLES = Object.freeze([
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },
     {
+        key: 'walkSpeed',
+        group: 'Heroes',
+        label: 'Walk speed',
+        hint: 'How fast heroes walk, in mat units a second (Hero Movement HMP-4). The mat is 1760 u wide at 11 steps, so 120 crosses it in about 15 s. Walking costs work time (FP-26): a job starts when the hero arrives.',
+        min: 20, max: 600, step: 1, def: 120,
+        format: (v) => `${Math.round(v)} u/s · ${(1760 / v).toFixed(1)} s across`
+    },
+    {
         key: 'hitboxPct',
         group: 'Crowding',
         label: 'Token hitbox',

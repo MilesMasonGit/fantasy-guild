@@ -4,6 +4,13 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Heroes walk** (Hero Movement, first slice). A hero now travels across the mat to the Token
+  they're going to work, at a steady pace (a new **Walk speed** slider in the Mat Tuner — about
+  15 seconds to cross the mat). The job's timer starts only when they arrive. They stop beside
+  the Token on whichever side they came from and face it, and **the Token no longer shifts over
+  to make room**. With nothing left to do they walk back to their flag. They pick their next job
+  by what's nearest to where they're standing, not to the flag. Walking, working and facing use
+  the hero's animation where the art exists (Recruit, Fighter, Ranger, Rogue, Wizard).
 - **A Token you drop simply stays where you let go.** It used to replay a slide from its old
   spot, so it looked like it bounced over. Tokens the game moves (a push) still glide.
 - **Only Tokens that care about their neighbours show a reach ring.** Tools, Tokens that need a

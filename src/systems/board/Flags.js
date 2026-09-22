@@ -7,6 +7,7 @@ import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.j
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { artRadiusOf } from '../../config/matGeometry.js';
 import * as BoardState from './BoardState.js';
+import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -295,6 +296,7 @@ function release(heroId) {
     resetProgress(BoardState.getTokenById(claim.instanceId));
     BoardState.setClaim(heroId, null);
     BoardCombat.endFightOfHero(heroId);
+    HeroMotion.settle(heroId);
     return claim;
 }
 
@@ -319,6 +321,9 @@ function claimToken(heroId, instance) {
         instance.alert = null;
         EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: instance.id, alert: null });
     }
+    // The hero sets off toward it — or, already standing there, starts now
+    // (Hero Movement M1: work begins on arrival, FP-26).
+    HeroMotion.settle(heroId);
 }
 
 // ---------------------------------------------------------------------------
@@ -430,6 +435,7 @@ function forgetNotices(r, heroId, instanceId = null) {
  */
 function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) {
     const point = { x: flag.x, y: flag.y };
+    const from = HeroMotion.heroPointOf(heroId) || point;
     const underPoint = [];
     const inRange = [];
     const under = tokenAtPoint(point);
@@ -448,7 +454,8 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
         // Work and enemies alike: no split between combat and work (FP-71, FP-74).
         const centre = centreOf(instance);
         if (!centre || !flagReaches(flag, centre)) continue;
-        const d = distanceSq(point, centre);
+        // Reach is measured from the flag; "nearest" from the hero (HM-4).
+        const d = distanceSq(from, centre);
         const ruleId = ruleIdOf(kind, def);
         const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
         inRange.push({ instance, def, kind, d, ruleId, rank });
@@ -740,6 +747,7 @@ export function plant(heroId, point) {
         BoardState.setFlag(heroId, { x: point.x, y: point.y, plantedAt: BoardState.takeFlagOrder() });
         r.dirty = true;
         assignHero(heroId);
+        HeroMotion.settle(heroId);
     } finally {
         quiet--;
     }
@@ -881,6 +889,7 @@ export function furl(heroId, reason = 'recall') {
         forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
         BoardState.setFlag(heroId, null);
+        HeroMotion.remove(heroId);
         r.dirty = true;
     } finally {
         quiet--;
@@ -930,9 +939,11 @@ export function setDisallowed(instanceId, on = true) {
 
 /**
  * What a hero is doing, for the dock and the idle mark:
- * `docked` (no flag) · `working` · `waiting` (for a restock) · `idle` (a flag,
- * nothing to do). `instanceId` is the Token they work (or null), `point` where
- * they are drawn.
+ * `docked` (no flag) · `working` · `walking` (on the way — to a claimed Token,
+ * `instanceId` set, or back to their flag, `instanceId` null; Hero Movement M1)
+ * · `waiting` (for a restock) · `idle` (at their flag, nothing to do).
+ * `instanceId` is the Token they work or walk to (or null), `point` where their
+ * job is.
  */
 export function statusOf(heroId) {
     const flag = BoardState.flagOf(heroId);
@@ -943,6 +954,16 @@ export function statusOf(heroId) {
             state: 'working', instanceId: workId,
             point: BoardState.displayPointOf(heroId), typeId: BoardState.getTokenById(workId)?.typeId ?? null, flag
         };
+    }
+    const claim = BoardState.claimOfHero(heroId);
+    if (claim && BoardState.getTokenById(claim.instanceId)) {
+        return {
+            state: 'walking', instanceId: claim.instanceId,
+            point: { x: claim.x, y: claim.y }, typeId: claim.typeId, flag
+        };
+    }
+    if (HeroMotion.isWalking(heroId) && !BoardState.waitOfHero(heroId)) {
+        return { state: 'walking', instanceId: null, point: { x: flag.x, y: flag.y }, typeId: null, flag };
     }
     const wait = BoardState.waitOfHero(heroId);
     const common = { instanceId: null, point: BoardState.displayPointOf(heroId), flag };
@@ -994,6 +1015,7 @@ export function reset() {
     r.nextTryAt.clear();
     r.notified.clear();
     r.cycleEnded.clear();
+    r.bodies.clear();
     r.dirty = true;
 }
 

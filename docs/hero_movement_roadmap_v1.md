@@ -1,6 +1,6 @@
 # Hero Movement — roadmap v1
 
-**Written 2026-09-21. Status: awaiting owner approval, no code yet.**
+**Written 2026-09-21. Approved by the owner 2026-09-22. Status: M1 done.**
 
 The first item of the owner's post-playmat list ("Hero NPC logic"): heroes stop
 being drawn at their job and start **living on the mat** — walking, pottering,
@@ -78,7 +78,7 @@ Each slice: tests, run the game and exercise it, one commit, merge.
 | Slice | What | Verified when |
 | :-- | :-- | :-- |
 | **M1 — Heroes have a position** | Runtime position and state; walking at the tuned speed; claim on departure, work only on arrival (FP-26, HMP-2); follow a moved Token (HMP-3); nearest measured from the hero (HM-4); offline catch-up. Drawn at their true position (jumpy until M2). | A planted hero visibly travels to a Token, its timer starts only on arrival, and two heroes never take the same Token. |
-| **M2 — Walking looks right** | Smooth glide; walk / idle / work animations and facing; drawn above Tokens while walking; standing beside the Token on the arrival side, the Token staying put (HM-2, HM-3). | A hero walks, turns to face, and works from either side; Tokens never shift. |
+| **M2 — Walking looks right** | ⚠️ Much of this landed in M1 (glide, facing, animation rows, standing beside a still Token). What remains: an idle hero drawn by `FlagLayer` at an offset from the flag jumps when they arrive at it — one hero layer for every state; polish of the glide (a mid-tick re-target); the arrival/turn feel, judged in game by the owner. | A hero walks, turns to face, and works from either side with no jumps anywhere. |
 | **M3 — The Guild Hall** | Enter from the Hall (HMP-1); recall walk home with turn-around and a "returning" dock mark (HM-5); defeated heroes limp home (HM-6). | Plant, recall mid-walk, re-send, and a defeat all play out on the mat. |
 | **M4 — Pottering** | Idle heroes stroll near their flag (HM-1). | Eight idle heroes look alive but calm. |
 | **M5 — Saves remember work** | Save each hero's claim; on load a working hero resumes at their Token mid-cycle (HM-7). | Save mid-cycle on a long Token, reload, and the hero is there with the bar where it was. |
@@ -91,7 +91,7 @@ wander, flags placed onto Tokens, and walking around Tokens.
 
 | Slice | Status | Notes |
 | :-- | :-- | :-- |
-| M1 | NOT STARTED | |
+| M1 | ✅ **DONE** 2026-09-22 | `HeroMotion.js` owns each hero's body (position, target, side, `atWork`, facing) in `BoardState`'s per-board runtime; `workerOf` / `workTokenOf` answer only once the hero has arrived, and stay answered for that claim while they catch up to a moved Token (FP-68, FPP-4). Claim on departure, arrival publishes one `HERO_MOVED`, steps publish `HEROES_WALKED`. `Flags` calls `HeroMotion.settle` after every claim change; nearest measured from the hero (HM-4). New status `walking` (to a Token, or back to the flag — the latter counts as idle). Mat Tuner **Walk speed** (120 u/s). Pulled forward from M2: the Token no longer shifts for its hero (D-266's `PAIR_OFFSET_PX` deleted), heroes drawn at their body's point with a one-tick linear glide, walk / work animation rows and facing from the engine (the WIP's distance-guessed slide removed). Tests run with instant arrival (`src/tests/setup/instantArrival.js`, a global marker — importing game code there broke `vi.mock`); `HeroMotion.test.js` (14 tests) walks for real, two neuterings caught. In game: a 795 u walk took ~6.6 s, the Token's progress stayed 0 until arrival, the hero stood 80 u left of the Token, the Token did not move, 2 `HERO_MOVED` for the whole walk, walk row flipped left / work row on arrival. |
 | M2 | NOT STARTED | |
 | M3 | NOT STARTED | |
 | M4 | NOT STARTED | |

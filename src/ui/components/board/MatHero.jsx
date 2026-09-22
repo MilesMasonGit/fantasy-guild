@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -6,6 +5,7 @@ import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/TokenSprite.jsx';
 import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
+import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -32,7 +32,9 @@ export const MatHero = ({
     hovered = false,
     onHover,
     onRecall,
-    animationState = 'idle'
+    animationState = 'idle',
+    moving = false,
+    facing = 1
 }) => {
     const drag = useEntityDrag({
         id: `hero-${heroId}`,
@@ -52,33 +54,13 @@ export const MatHero = ({
     const artScale = boardScaleAt(fit);
     const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artScale);
 
-    const prevLeftRef = React.useRef(left);
-    const prevTopRef = React.useRef(top);
-    const [facingLeft, setFacingLeft] = React.useState(false);
-    const [isWalking, setIsWalking] = React.useState(false);
-    const [walkDuration, setWalkDuration] = React.useState(220);
-
-    React.useEffect(() => {
-        const dx = left - prevLeftRef.current;
-        const dy = top - prevTopRef.current;
-        
-        if (dx < 0) setFacingLeft(true);
-        else if (dx > 0) setFacingLeft(false);
-
-        if (dx !== 0 || dy !== 0) {
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const walkMs = Math.max(220, (dist / 100) * 1000);
-            
-            setWalkDuration(walkMs);
-            setIsWalking(true);
-            const timer = setTimeout(() => setIsWalking(false), walkMs);
-            
-            prevLeftRef.current = left;
-            prevTopRef.current = top;
-            
-            return () => clearTimeout(timer);
-        }
-    }, [left, top]);
+    // ⭐ Walking is the engine's (Hero Movement M1): `HeroMotion` moves the hero
+    // ten times a second and says whether they are moving and which way they
+    // face. The screen glides for exactly one tick between those steps, so the
+    // walk looks continuous. (A distance-guessed slide stood here before
+    // walking existed; it lagged and fought the real movement.)
+    const isWalking = moving;
+    const facingLeft = facing < 0;
 
     const activeAnimation = isWalking ? 'walk' : animationState;
 
@@ -109,9 +91,9 @@ export const MatHero = ({
                 width: HERO_HIT_PX,
                 height: FLAG_PX,
                 zIndex: z,
-                transition: isWalking 
-                    ? `left ${walkDuration}ms linear, top ${walkDuration}ms linear`
-                    : 'left 220ms cubic-bezier(0.2, 0.8, 0.2, 1), top 220ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+                transition: isWalking
+                    ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
+                    : 'none'
             }}
             className={cn(
                 'absolute p-0 m-0 bg-transparent border-0 outline-none',
