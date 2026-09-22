@@ -15,6 +15,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { dockStatusLine } from '../ui/components/board/flagText.js';
+import { migrateState } from '../systems/core/SaveMigration.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -433,5 +434,82 @@ describe('⭐ idle heroes potter near their flag (M4, HM-1)', () => {
         run(30000);
         off();
         expect(moved).toBe(0);
+    });
+});
+
+describe('⭐ saves remember what each hero is working (M5, HM-7)', () => {
+    /** Save, load it back, and announce the load — as `SaveManager.loadGame` does. */
+    async function saveAndReload() {
+        const saved = JSON.parse(JSON.stringify(GameState.serialize()));
+        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        EventBus.publish('game_loaded', { slot: 0 });
+    }
+
+    beforeEach(() => {
+        // A Guild Hall, so a hero who was NOT restored would visibly walk out of it.
+        BoardState.addToken(BoardState.createTokenInstance('token_guild_hall', null), 300, 300);
+    });
+
+    it('⭐ a hero mid-cycle is back at their Token after a reload, the bar where it was', async () => {
+        const tok = put({ x: 1300, y: 700 });
+        Flags.plant('h1', { x: 1100, y: 700 });
+        run(12000);                                   // out of the Hall, there, and working
+        expect(BoardState.workerOf(tok.id)).toBe('h1');
+        const side = body('h1').x > tok.x ? 1 : -1;
+        const progress = tok.cycleElapsedMs;
+        expect(progress).toBeGreaterThan(0);
+
+        await saveAndReload();
+
+        const again = BoardState.getTokenById(tok.id);
+        expect(again.cycleElapsedMs).toBe(progress);
+        expect(Flags.statusOf('h1')).toMatchObject({ state: 'working', instanceId: tok.id });
+        expect(BoardState.workerOf(tok.id)).toBe('h1');
+        // Standing where they stood — not walking out of the Hall.
+        expect(body('h1')).toMatchObject({ ...HeroMotion.standingSpot(tok.typeId, again, side), moving: false });
+
+        run(1000);
+        expect(again.cycleElapsedMs).toBeGreaterThan(progress);
+    });
+
+    it('a hero still walking to their Token when saved starts beside their flag instead', async () => {
+        const tok = put({ x: 1300, y: 700 });
+        Flags.plant('h1', { x: 1100, y: 700 });
+        run(1500);                                    // on the way, not there yet
+        expect(Flags.statusOf('h1').state).toBe('walking');
+
+        await saveAndReload();
+
+        expect(HeroMotion.heroPointOf('h1')).toEqual(HeroMotion.idleSpot({ x: 1100, y: 700 }));
+        expect(BoardState.workerOf(tok.id)).toBeNull();
+    });
+
+    it('an idle hero starts beside their flag, not at the Guild Hall', async () => {
+        Flags.plant('h1', { x: 1400, y: 900 });
+        run(20000);
+        await saveAndReload();
+        expect(HeroMotion.heroPointOf('h1')).toEqual(HeroMotion.idleSpot({ x: 1400, y: 900 }));
+    });
+
+    it('a saved note that no longer fits is dropped, and the hero chooses afresh', async () => {
+        const tok = put({ x: 1300, y: 700 });
+        Flags.plant('h1', { x: 1100, y: 700 });
+        run(12000);
+        const saved = JSON.parse(JSON.stringify(GameState.serialize()));
+        delete saved.state.board.tokens[tok.id];      // the Token is gone in the save
+        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        EventBus.publish('game_loaded', { slot: 0 });
+
+        expect(BoardState.savedWorkClaims()).toEqual([]);
+        expect(HeroMotion.heroPointOf('h1')).toEqual(HeroMotion.idleSpot({ x: 1100, y: 700 }));
+    });
+
+    it('letting go of the Token erases the note, so a reload does not put them back', async () => {
+        const tok = put({ x: 1300, y: 700 });
+        Flags.plant('h1', { x: 1100, y: 700 });
+        run(12000);
+        expect(BoardState.savedWorkClaims()).toEqual([['h1', expect.objectContaining({ instanceId: tok.id })]]);
+        Flags.furl('h1');
+        expect(BoardState.savedWorkClaims()).toEqual([]);
     });
 });

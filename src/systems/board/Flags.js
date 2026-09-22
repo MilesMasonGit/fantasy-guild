@@ -1029,6 +1029,37 @@ export function reset() {
     r.dirty = true;
 }
 
+/**
+ * ⭐ **After a load, heroes carry on where they were** (Hero Movement M5, HM-7,
+ * amending FP-58). Every hero the save says had reached a Token stands back
+ * beside it, on the same side, and works on — the Token's cycle progress is
+ * saved with the Token, so the bar continues from where it was (what matters
+ * on a Token with a very long cycle). A note that no longer fits (no flag, the
+ * Token gone, another hero on it) is dropped and that hero chooses afresh.
+ * Everyone else starts beside their flag. A fight in progress still restarts:
+ * the hero is back at the enemy, which is whole again.
+ *
+ * Runs on `game_loaded`, right after `reset()` has cleared the runtime.
+ */
+export function restoreWork() {
+    const r = rt();
+    if (!r) return;
+    const restored = [];
+    for (const [heroId, note] of BoardState.savedWorkClaims()) {
+        const token = BoardState.getTokenById(note?.instanceId);
+        if (!BoardState.flagOf(heroId) || !token || BoardState.heroOfInstance(token.id)) {
+            BoardState.forgetWorkClaim(heroId);
+            continue;
+        }
+        HeroMotion.restoreAtWork(heroId, token, note.side === 1 ? 1 : -1);
+        claimToken(heroId, token);
+        restored.push(heroId);
+    }
+    for (const heroId of plantingOrder()) HeroMotion.placeAtFlag(heroId);
+    r.dirty = true;
+    for (const heroId of restored) announceMoved(heroId);
+}
+
 let unsubscribers = [];
 
 export function teardown() {
@@ -1054,5 +1085,8 @@ export function init() {
     unsubscribers.push(EventBus.subscribe('guild_upgrades_updated', ({ upgradeId } = {}) => {
         if (upgradeId === 'flag_radius') markDirty();
     }));
-    unsubscribers.push(EventBus.subscribe('game_loaded', () => reset()));
+    unsubscribers.push(EventBus.subscribe('game_loaded', () => {
+        reset();
+        restoreWork();
+    }));
 }
