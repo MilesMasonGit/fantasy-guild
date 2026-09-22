@@ -34,8 +34,10 @@ export const MAT_Z = Object.freeze({
     RINGS: 760,
     /** Loot on the floor. */
     LOOT: 800,
-    /** Flags and the idle heroes beside them — always reachable (slice 1.5). */
-    FLAGS: 850
+    /** Flags — always reachable (slice 1.5). */
+    FLAGS: 850,
+    /** Idle heroes, just in front of the flag they stand beside (FP-84). */
+    IDLE_HERO: 851
 });
 
 /** How many Tokens can be sorted before the range would reach the layer above. */

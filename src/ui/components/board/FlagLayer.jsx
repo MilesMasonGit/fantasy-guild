@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
@@ -13,21 +13,17 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { flagColourOf } from '../../../systems/board/FlagColours.js';
-import * as Placement from '../../../systems/board/Placement.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
-import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
-import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/TokenSprite.jsx';
-import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
+import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
 import { flagTooltip } from './flagText.js';
 import { pointerToMat } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
-import { announce } from './dropOnMat.js';
 import {
     GEAR_PX, GEAR_OFFSET,
-    IDLE_CHIP_OFFSET, IDLE_HERO_OFFSET, POLE_BASE
+    IDLE_CHIP_OFFSET, POLE_BASE
 } from './flagGeometry.js';
 
 /**
@@ -48,12 +44,12 @@ import {
  *   hero is hovered or the hero is inspected. Opens that hero's rules panel
  *   (`ui:open_flag_rules`); it is not part of the drag handle, so a click on it
  *   never starts a drag. The only way into the rules (FPP-20).
- * * **Idle** (FP-29, FP-84) — the flag keeps its colour; the hero stands beside
- *   it at 128 px with **no glow**, and a "…" chip sits near the top of the pole.
- *   Working and waiting heroes are drawn by `MatBoard`, paired with their Token
- *   (D-266).
- * * **The player never moves a hero** (FP-76) — dragging the idle hero, like
- *   dragging a working hero on a Token, drags their FLAG.
+ * * **Idle** (FP-29, FP-84) — the flag keeps its colour and a "…" chip sits
+ *   near the top of the pole. The hero standing beside it — like every hero on
+ *   the mat, in every state — is drawn by `MatBoard` (Hero Movement M2), so a
+ *   hero walking back to their flag is never handed from one layer to another.
+ * * **The player never moves a hero** (FP-76) — dragging any hero drags their
+ *   FLAG.
  * * **Reach ring** (FP-64, A-4) — a dashed gold circle of the live flag radius,
  *   only while that flag or its hero is hovered, dragged or inspected, or while
  *   a dragged Token would land inside it.
@@ -152,8 +148,8 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     }
 
     /**
-     * ⚠️ Two layers. Rings sit above the Tokens; **flags and idle heroes sit
-     * above the loot sprites**. Loot lands beside the Token that dropped it —
+     * ⚠️ Two layers. Rings sit above the Tokens; **flags sit above the loot
+     * sprites** (and idle heroes just above the flags, in `MatBoard`). Loot lands beside the Token that dropped it —
      * often right where a flag stands — and a flag under a pile of Oak Wood
      * could not be clicked or dragged (found while verifying 1.5).
      */
@@ -203,10 +199,6 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
                     boardHovered={hoverHeroId === f.heroId}
                     inspected={inspectedHeroId === f.heroId}
                 />
-            ))}
-            {flags.map((f, i) => (f.state === 'idle'
-                ? <IdleHero key={`idle-${f.heroId}`} flag={f} z={i * 3 + 1} artPx={artPx} onHover={onHoverHero} />
-                : null
             ))}
         </div>
         </>
@@ -341,64 +333,6 @@ const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = f
     );
 };
 
-/**
- * An idle hero, standing beside their flag at 128 px, with no glow (FP-29,
- * FP-84). Dragging them drags their flag (FP-76); click for the hero sheet;
- * right-click recalls. Opaque pixels only, like every hero on the board.
- */
-const IdleHero = ({ flag, z = 0, artPx, onHover }) => {
-    const drag = useEntityDrag({
-        id: `flag-hero-${flag.heroId}`,
-        kind: DRAG_KIND.FLAG,
-        payload: { heroId: flag.heroId, name: flag.name, from: { flag: true, hero: true } },
-        sourceSurface: DND_SURFACE.BOARD
-    });
-
-    const animArt = flag.sprite ? resolveAnimationPath(flag.sprite) : null;
-    const staticArt = flag.sprite ? resolveSpritePath(flag.sprite) : null;
-    const scaleFactor = artPx / 128;
-    const originLeft = (flag.x ?? 0) - POLE_BASE.x * scaleFactor;
-    const originTop = (flag.y ?? 0) - POLE_BASE.y * scaleFactor;
-
-    return (
-        <button
-            ref={drag.setNodeRef}
-            {...drag.handleProps}
-            type="button"
-            data-flag-idle-hero={flag.heroId}
-            aria-label={`${flag.name}, idle`}
-            onMouseEnter={() => onHover?.(flag.heroId)}
-            onMouseLeave={() => onHover?.(null)}
-            onClick={(e) => {
-                e.stopPropagation();
-                EventBus.publish('inspect_hero', { heroId: flag.heroId });
-            }}
-            onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                announce(Placement.recallHeroById(flag.heroId));
-            }}
-            className="absolute pointer-events-auto p-0 m-0 bg-transparent border-0 outline-none cursor-grab active:cursor-grabbing"
-            style={{
-                left: originLeft + IDLE_HERO_OFFSET.left * scaleFactor,
-                top: originTop + IDLE_HERO_OFFSET.top * scaleFactor,
-                width: artPx,
-                height: artPx,
-                borderRadius: '50%',
-                // In front of its own flag's pole, behind the gear.
-                zIndex: z
-            }}
-        >
-            {(animArt || staticArt) && (
-                animArt ? (
-                    <AnimatedHeroSprite src={animArt} alt={flag.name} size={artPx} animationState="idle" facingLeft={false} className="absolute left-0 top-0" />
-                ) : (
-                    <PixelArt src={staticArt} alt={flag.name} size={artPx} className="absolute left-0 top-0" />
-                )
-            )}
-        </button>
-    );
-};
 
 /** Fixed-position place for a floating panel under an anchor, kept on screen. */
 function placeUnder(anchor, width, height = 180) {

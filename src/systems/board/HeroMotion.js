@@ -15,7 +15,8 @@ import * as BoardState from './BoardState.js';
  * * holding a claim → **beside that Token**, on the side they approached from
  *   (HM-2), facing it; the Token itself never moves to make room;
  * * waiting on a spot for a restock (FP-70) → beside that spot, the same way;
- * * otherwise → **their flag** (FP-29, FP-84; pottering is slice M4).
+ * * otherwise → **beside their flag** (`idleSpot`, FP-29, FP-84; pottering is
+ *   slice M4).
  *
  * The destination is worked out afresh every tick, so a hero follows a Token
  * that is moved or pushed while they walk (HMP-3).
@@ -44,6 +45,22 @@ export const STAND_GAP = 16;
 
 /** Closer than this to a destination counts as there, in mat units. */
 const ARRIVE_EPS = 0.5;
+
+/**
+ * Where an idle hero stands relative to their flag's pole base, in mat units:
+ * just right of the pole and up by half a hero, so they stand in front of the
+ * cloth rather than on the pole (FP-29, FP-84). The same place `FlagLayer` drew
+ * idle heroes before M2 — the retired `IDLE_HERO_OFFSET` (48, −20) from the
+ * 128 px flag box whose pole base is (40, 116), to the centre of a 128 px hero:
+ * 48 − 40 + 64 = 72 across, −20 − 116 + 64 = −72 up — so the look is unchanged,
+ * but it is now a real destination the hero walks to instead of jumping there.
+ */
+export const IDLE_SPOT = Object.freeze({ dx: 72, dy: -72 });
+
+/** The point an idle hero stands at beside `flag`. */
+export function idleSpot(flag) {
+    return { x: flag.x + IDLE_SPOT.dx, y: flag.y + IDLE_SPOT.dy };
+}
 
 /** Walking speed in mat units a second (Mat Tuner "Walk speed", HMP-4). */
 export function walkSpeed() {
@@ -120,7 +137,7 @@ function destinationOf(heroId, body) {
     body.targetId = null;
     body.atWork = null;
     const flag = BoardState.flagOf(heroId);
-    return flag ? { x: flag.x, y: flag.y } : null;
+    return flag ? idleSpot(flag) : null;
 }
 
 /**
@@ -150,8 +167,18 @@ function step(heroId, body, delta) {
     }
     if (Math.abs(dx) > ARRIVE_EPS) body.facing = dx < 0 ? -1 : 1;
 
-    // Arrived at a claimed Token: from now on they are working it (FP-26).
+    // Standing beside their Token (or restock spot): face it. Usually the way
+    // they walked in anyway; not when the mat's edge sent them round to the far
+    // side, or when they were already standing there.
     const claim = BoardState.claimOfHero(heroId);
+    if (!body.moving && body.targetId) {
+        const token = claim ? BoardState.getTokenById(claim.instanceId) : null;
+        const wait = claim ? null : BoardState.waitOfHero(heroId);
+        const target = token || wait;
+        if (target && Math.abs(target.x - body.x) > ARRIVE_EPS) body.facing = target.x < body.x ? -1 : 1;
+    }
+
+    // Arrived at a claimed Token: from now on they are working it (FP-26).
     if (!body.moving && claim && body.atWork !== claim.instanceId
         && body.targetId === claim.instanceId && BoardState.getTokenById(claim.instanceId)) {
         body.atWork = claim.instanceId;
@@ -182,7 +209,8 @@ function ensureBody(heroId) {
     if (body) return body;
     const flag = BoardState.flagOf(heroId);
     if (!flag) return null;
-    body = { x: flag.x, y: flag.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1 };
+    const at = idleSpot(flag);
+    body = { x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1 };
     BoardState.setHeroBody(heroId, body);
     return body;
 }

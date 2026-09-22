@@ -115,10 +115,12 @@ export const MatBoard = ({
     }, [ordered, hoveredId]);
 
     /**
-     * ⭐ **Heroes are drawn where they really are** (Hero Movement M1): their
-     * body's position from `HeroMotion`, walking, working beside a Token or
-     * waiting on a spot. An **idle** hero standing at their flag is drawn by
-     * `FlagLayer` (FP-29, FP-84). `HEROES_WALKED` redraws as they step.
+     * ⭐ **Every hero on the mat is drawn here, where they really are** (Hero
+     * Movement M1–M2): their body's position from `HeroMotion` — walking,
+     * working beside a Token, waiting on a spot, or idle beside their flag.
+     * One component per hero in every state, so a hero is never swapped
+     * between layers mid-walk (that swap was M1's jump on reaching the flag).
+     * `HEROES_WALKED` redraws as they step.
      */
     const heroesRaw = useGameState(
         (state) => {
@@ -126,7 +128,7 @@ export const MatBoard = ({
             const out = [];
             for (const [heroId] of BoardState.heroesOnBoard()) {
                 const status = Flags.statusOf(heroId);
-                if (status.state !== 'working' && status.state !== 'waiting' && status.state !== 'walking') continue;
+                if (status.state === 'docked') continue;
                 const body = HeroMotion.bodyView(heroId);
                 if (!body) continue;
                 const worked = status.state === 'working' ? BoardState.getTokenById(status.instanceId) : null;
@@ -322,7 +324,8 @@ export const MatBoard = ({
                         sprite={h.sprite}
                         left={place.left}
                         top={place.top}
-                        z={h.moving ? MAT_Z.WALKING_HERO
+                        z={h.state === 'idle' ? MAT_Z.IDLE_HERO
+                            : h.moving ? MAT_Z.WALKING_HERO
                             : (h.tokenId && zById.has(h.tokenId) ? zById.get(h.tokenId) + 1 : MAT_Z.WAITING_HERO)}
                         glow={h.state === 'working' && !h.stuck ? 'gi-glow-active' : null}
                         hovered={hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId)}

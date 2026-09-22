@@ -19,7 +19,7 @@ import { UPGRADE_BOARD_PX } from '../config/upgradeBoardGeometry.js';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
-import { flagOrigin, IDLE_HERO_OFFSET, FLAG_PX } from '../ui/components/board/flagGeometry.js';
+import { FLAG_PX } from '../ui/components/board/flagGeometry.js';
 import { HERO_HIT_PX, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { ALERT } from '../systems/board/boardEvents.js';
@@ -204,11 +204,12 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
 
         const { container } = mount(h(MatBoard));
         const drawn = container.querySelector('[data-board-hero="h1"]');
-        // Planted on the Token's centre, so they arrive on the left (a tie).
-        const spot = HeroMotion.standingSpot(tok.typeId, tok, -1);
+        // Planted on the Token's centre: the hero appears beside the flag, to its
+        // right (`idleSpot`), so they come at the Token from the right.
+        const spot = HeroMotion.standingSpot(tok.typeId, tok, 1);
         const place = heroPlacement(spot);
 
-        expect(spot.x).toBe(tok.x - 64 - HeroMotion.STAND_GAP);
+        expect(spot.x).toBe(tok.x + 64 + HeroMotion.STAND_GAP);
         expect(parseFloat(drawn.style.left)).toBe(place.left);
         expect(parseFloat(drawn.style.top)).toBe(place.top);
         // D-266's slide-apart is gone: the Token has not moved.
@@ -220,11 +221,13 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
         expect(Flags.statusOf('h1').state).toBe('idle');
 
         const { container } = mount(h(MatBoard));
-        const idle = container.querySelector('[data-flag-idle-hero="h1"]');
-        const { left, top } = flagOrigin({ x: 500, y: 900 });
+        // ⭐ Drawn by MatBoard like every other hero (M2), at the idle spot.
+        const idle = container.querySelector('[data-board-hero="h1"]');
+        const place = heroPlacement(HeroMotion.idleSpot({ x: 500, y: 900 }));
 
-        expect(parseFloat(idle.style.left)).toBe(left + IDLE_HERO_OFFSET.left);
-        expect(parseFloat(idle.style.top)).toBe(top + IDLE_HERO_OFFSET.top);
+        expect(parseFloat(idle.style.left)).toBe(place.left);
+        expect(parseFloat(idle.style.top)).toBe(place.top);
+        expect(HeroMotion.idleSpot({ x: 500, y: 900 })).toEqual({ x: 572, y: 828 });
     });
 
     it('several heroes may stand on one Token — the one-per-spot rule went with the grid', () => {
@@ -234,8 +237,8 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
 
         const { container } = mount(h(MatBoard));
         // h1 works it; h2 has nothing to do and stands at its flag. Both drawn.
-        expect(container.querySelector('[data-board-hero="h1"], [data-flag-idle-hero="h1"]')).toBeTruthy();
-        expect(container.querySelector('[data-board-hero="h2"], [data-flag-idle-hero="h2"]')).toBeTruthy();
+        expect(container.querySelector('[data-board-hero="h1"]')).toBeTruthy();
+        expect(container.querySelector('[data-board-hero="h2"]')).toBeTruthy();
     });
 });
 
