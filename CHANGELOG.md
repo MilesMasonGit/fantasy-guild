@@ -4,12 +4,6 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
-- **Enemies wander.** An enemy Token no longer just stands there — it strolls around within a
-  bounded travel area centred on where it was placed, pausing and moving on like an idle hero
-  does near their flag. A new **Enemy travel area** and **Enemy wander speed** pair of sliders in
-  the Mat Tuner set how far and how fast. An enemy holds still the instant a hero engages it and
-  resumes wandering the moment the fight ends — combat itself still starts the same way it always
-  has, by a hero's flag reaching it; enemies don't yet notice or approach heroes on their own.
 - **A worked Token's progress bar hangs in the space below it**, wider than before and always
   visible while a hero works it — no need to hover. It used to hug the Token's bottom edge, a
   leftover from when a hero stood stacked on top; since heroes work from beside a Token, that
