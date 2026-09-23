@@ -146,7 +146,7 @@ export const tokenSizeFor = (surface, typeIdOrSize = 1, scale = TOKEN_SCALE[surf
  * what replaces the retired "bloom on cross-over" — the Token itself never
  * changes size mid-drag.
  */
-const RESTING_SHADOW = 'drop-shadow(0 3px 2px rgba(0,0,0,0.80))';
+export const RESTING_SHADOW = 'drop-shadow(0 3px 2px rgba(0,0,0,0.80))';
 const LIFTED_SHADOW = 'drop-shadow(0 10px 7px rgba(0,0,0,0.55))';
 const LIFT_OFFSET_PX = 4;
 
