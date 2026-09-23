@@ -15,16 +15,17 @@ import * as BoardState from '../systems/board/BoardState.js';
  * entirely rather than booting a board just to read one hero's `side`.
  */
 
-const img = (container) => container.querySelector('img');
+const sprite = (container) => container.querySelector('[role="img"]');
 const rowOf = (el) => {
-    // transform: translate(-{col}px, -{row*size}px) — pull the y term back
-    // into a row index at the fixture's own size (64).
-    const m = el.style.transform.match(/-(\d+)px\)$/);
-    return Number(m[1]) / 64;
+    // backgroundPosition: "-{col*size}px -{row*size}px" — pull the y term
+    // back into a row index at the fixture's own size (64). A zero offset
+    // renders as "0px", not "-0px", so the minus sign is optional here.
+    const m = el.style.backgroundPosition.match(/(-?\d+)px (-?\d+)px/);
+    return Math.abs(Number(m[2])) / 64;
 };
 const colOf = (el) => {
-    const m = el.style.transform.match(/translate\(-(\d+)px/);
-    return Number(m[1]) / 64;
+    const m = el.style.backgroundPosition.match(/(-?\d+)px (-?\d+)px/);
+    return Math.abs(Number(m[1])) / 64;
 };
 
 beforeEach(() => {
@@ -42,7 +43,7 @@ describe('⭐ which cycle plays (EAP-2)', () => {
         const { container } = render(
             React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: null, size: 64 })
         );
-        expect(rowOf(img(container))).toBeLessThan(2);
+        expect(rowOf(sprite(container))).toBeLessThan(2);
     });
 
     it('plays the attack cycle (rows 2-3) while a hero works it', () => {
@@ -50,7 +51,7 @@ describe('⭐ which cycle plays (EAP-2)', () => {
         const { container } = render(
             React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: 'h1', size: 64 })
         );
-        expect(rowOf(img(container))).toBeGreaterThanOrEqual(2);
+        expect(rowOf(sprite(container))).toBeGreaterThanOrEqual(2);
     });
 
     it('drops back to idle the instant the worker is gone — no fight-ended event needed', () => {
@@ -58,10 +59,10 @@ describe('⭐ which cycle plays (EAP-2)', () => {
         const { container, rerender } = render(
             React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: 'h1', size: 64 })
         );
-        expect(rowOf(img(container))).toBeGreaterThanOrEqual(2);
+        expect(rowOf(sprite(container))).toBeGreaterThanOrEqual(2);
 
         rerender(React.createElement(AnimatedEnemySprite, { src: 'ani_cow.png', heroId: null, size: 64 }));
-        expect(rowOf(img(container))).toBeLessThan(2);
+        expect(rowOf(sprite(container))).toBeLessThan(2);
     });
 });
 
@@ -72,7 +73,7 @@ describe('⭐ frame advance', () => {
         );
         const seen = new Set();
         for (let i = 0; i < 8; i++) {
-            seen.add(`${rowOf(img(container))},${colOf(img(container))}`);
+            seen.add(`${rowOf(sprite(container))},${colOf(sprite(container))}`);
             act(() => { vi.advanceTimersByTime(100); });
         }
         expect(seen.size).toBe(8);

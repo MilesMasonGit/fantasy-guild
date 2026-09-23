@@ -39,19 +39,19 @@ import * as BoardState from '../../../systems/board/BoardState.js';
  * arrived). Otherwise it turns on its own now and then, unprompted — a
  * fixed 12–24s pause between turns, EA-4.
  *
- * WARNING: the facing wrapper gets its own explicit `size`, not `inset-0`.
- * The board scales a Token's art to a fractional pixel size on purpose
- * (matGeometry.js's boardScaleAt), so `size` is rarely a whole number.
- * `inset-0` would have the browser solve for the wrapper's width from the
- * OUTER box's padding edges, independently of the outer box's own explicit
- * width -- two separate roundings of the same fractional number that are
- * not guaranteed to agree. A scaleX(-1) mirrors around THIS element's own
- * centre, so if its resolved width is even a sub-pixel off from the outer
- * clip box, the flipped image lands partly or fully outside
- * `overflow: hidden` and the sprite reads as gone -- exactly the bug
- * reported after EA-A shipped, and only while flipped, never at the native
- * facing. Both boxes now read the same `size` number directly, so there is
- * nothing left for the two roundings to disagree about.
+ * WARNING: this is ONE element with a CSS `background-image`, not an
+ * absolutely-positioned `<img>` cropped by a clipped, transformed ancestor.
+ * Two earlier versions used that nested-`<img>` approach (an outer box that
+ * clipped, an inner box that flipped, a translated `<img>` picking the
+ * frame) and the sprite reliably vanished while flipped in the owner's own
+ * browser (reappeared at the native facing, drag/drop unaffected, so it
+ * was display-only) — reproducible for them, never for this session's own
+ * testing, which points at a real cross-browser rendering edge case in
+ * that structure rather than a logic bug. `background-position` picking
+ * the frame and `background-size` fixing the sheet's scale, both on the
+ * flipped element itself, is the standard way to do this and leaves no
+ * nested transform, no `overflow: hidden`, and no absolutely-positioned
+ * child for a browser to get wrong.
  */
 
 const COLS = 4;
@@ -109,34 +109,29 @@ export const AnimatedEnemySprite = ({
 
     return (
         <div
-            className={cn('relative overflow-hidden select-none', className)}
+            className={cn('pointer-events-none select-none', className)}
             style={{ width: size, height: size }}
             title={alt}
         >
+            {/* A separate element from the one `className` lands on: MatToken's
+                own landing-bounce animation (`gi-token-land`) sets `transform`
+                too, and a CSS animation on the same element would override this
+                inline flip for its 380ms, every time a fought or freshly-turned
+                enemy is re-placed. */}
             <div
-                className="absolute top-0 left-0"
+                className="w-full h-full"
                 style={{
-                    width: size,
-                    height: size,
+                    backgroundImage: `url(${src})`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: `${size * COLS}px ${size * COLS}px`,
+                    backgroundPosition: `-${col * size}px -${row * size}px`,
+                    imageRendering: 'pixelated',
+                    filter: RESTING_SHADOW,
                     transform: facing === FACING.RIGHT ? 'scaleX(-1)' : 'none'
                 }}
-            >
-                <img
-                    src={src}
-                    alt={alt}
-                    draggable={false}
-                    className="absolute pointer-events-none"
-                    style={{
-                        width: `${size * COLS}px`,
-                        height: `${size * COLS}px`,
-                        maxWidth: 'none',
-                        maxHeight: 'none',
-                        imageRendering: 'pixelated',
-                        filter: RESTING_SHADOW,
-                        transform: `translate(-${col * size}px, -${row * size}px)`
-                    }}
-                />
-            </div>
+                role="img"
+                aria-label={alt}
+            />
         </div>
     );
 };
