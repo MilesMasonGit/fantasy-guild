@@ -62,6 +62,46 @@ export const TestDashboard = React.memo(() => {
     };
 
     /**
+     * "Spawn Party" — a Fighter, Wizard, Ranger and Rogue, each already at
+     * level 50 in every skill their job holds. Unlike a Recruit (no combat
+     * skill at all — see `grantCombatSkill` below), each of these jobs
+     * already includes its own combat skill (melee, magic, ranged, ranged),
+     * so no separate "grant combat" step is needed to make them fight.
+     *
+     * Bumps the roster cap first if the incoming four would not fit — a dev
+     * convenience, not a purchase, so it writes the rank directly rather
+     * than spending gold through `GuildUpgradeManager.purchase`.
+     */
+    const spawnParty = () => {
+        const jobIds = ['fighter', 'wizard', 'ranger', 'rogue'];
+
+        const ranks = engine.GuildUpgradeManager.getRanks();
+        const neededRank = engine.GameState.state.heroes.length + jobIds.length;
+        if ((ranks.roster_size || 0) < neededRank) {
+            ranks.roster_size = neededRank;
+            engine.GuildUpgradeManager.recompute();
+        }
+
+        let added = 0;
+        jobIds.forEach(jobId => {
+            const hero = generateHero({ jobId, spriteId: jobId });
+            if (!engine.HeroManager.addHero(hero)) return;
+            added++;
+            Object.keys(hero.skills || {}).forEach(skillId => {
+                const skill = hero.skills[skillId];
+                const xpNeeded = xpForLevel(50) - skill.xp;
+                if (xpNeeded > 0) engine.SkillSystem.addXP(hero.id, skillId, xpNeeded);
+            });
+            // Leveling the combat skill raises max HP (it's derived from it);
+            // top current HP back up too, or a freshly "spawned" hero reads
+            // as already wounded.
+            if (hero.hp) hero.hp.current = hero.hp.max;
+        });
+        engine.EventBus.publish('heroes_updated', { source: 'dev_spawn_party' });
+        console.log(`[Dev] Spawned a party of ${added} hero(es) at level 50`);
+    };
+
+    /**
      * ⚠️ TEMPORARY SCAFFOLDING — remove when promotion lands (Phase 5).
      *
      * Every hero now generates as a Recruit, and a Recruit holds no combat
@@ -105,6 +145,10 @@ export const TestDashboard = React.memo(() => {
                 const hero = generateHero();
                 engine.HeroManager.addHero(hero);
             }
+        },
+        {
+            label: "🎉 Spawn Party",
+            onClick: spawnParty
         },
         {
             label: "⬆️ Level All Skills +1",
