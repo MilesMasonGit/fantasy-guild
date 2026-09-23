@@ -38,6 +38,20 @@ import * as BoardState from '../../../systems/board/BoardState.js';
  * own side (`HeroMotion`'s `side`, already settled the moment that hero
  * arrived). Otherwise it turns on its own now and then, unprompted — a
  * fixed 12–24s pause between turns, EA-4.
+ *
+ * WARNING: the facing wrapper gets its own explicit `size`, not `inset-0`.
+ * The board scales a Token's art to a fractional pixel size on purpose
+ * (matGeometry.js's boardScaleAt), so `size` is rarely a whole number.
+ * `inset-0` would have the browser solve for the wrapper's width from the
+ * OUTER box's padding edges, independently of the outer box's own explicit
+ * width -- two separate roundings of the same fractional number that are
+ * not guaranteed to agree. A scaleX(-1) mirrors around THIS element's own
+ * centre, so if its resolved width is even a sub-pixel off from the outer
+ * clip box, the flipped image lands partly or fully outside
+ * `overflow: hidden` and the sprite reads as gone -- exactly the bug
+ * reported after EA-A shipped, and only while flipped, never at the native
+ * facing. Both boxes now read the same `size` number directly, so there is
+ * nothing left for the two roundings to disagree about.
  */
 
 const COLS = 4;
@@ -100,8 +114,12 @@ export const AnimatedEnemySprite = ({
             title={alt}
         >
             <div
-                className="absolute inset-0"
-                style={{ transform: facing === FACING.RIGHT ? 'scaleX(-1)' : 'none' }}
+                className="absolute top-0 left-0"
+                style={{
+                    width: size,
+                    height: size,
+                    transform: facing === FACING.RIGHT ? 'scaleX(-1)' : 'none'
+                }}
             >
                 <img
                     src={src}
