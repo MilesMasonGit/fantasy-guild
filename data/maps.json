@@ -7,8 +7,8 @@
     "pool": [
       {
         "kind": "token",
-        "refId": "token_wishing_well",
-        "weight": 12
+        "refId": "token_cow",
+        "weight": 100
       }
     ],
     "autoSyncId": true,
