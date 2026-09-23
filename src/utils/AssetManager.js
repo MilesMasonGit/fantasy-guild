@@ -49,6 +49,31 @@ const HERO_MAP = {
     hero_wizard_arcane: 'hm_wizard',
 };
 
+/**
+ * Enemy Token sprite id → animation sheet path (Enemy Animations EA-A,
+ * EAP-4). A small explicit list, the same principle as `ANIMATION_MAP`
+ * below — only a Token whose sprite id is here animates; every other enemy
+ * keeps its static art until it gets a sheet and an entry. The full path is
+ * stored (not just a stem, as the hero map does) because enemy art is
+ * already split across category folders (`enemies/animal/`, and others to
+ * come) rather than one shared `heroes/animations/` directory.
+ *
+ * ⚠️ A different grid from a hero's sheet: 4 columns × 4 rows of 64px
+ * frames, not 8×3 — see `AnimatedEnemySprite.jsx`, which reads this file's
+ * shape, not `AnimatedHeroSprite.jsx`'s.
+ */
+const ENEMY_ANIMATION_MAP = {
+    e_cow: 'assets/enemies/animal/anim/ani_cow.png'
+};
+
+/**
+ * The animation sheet for an enemy Token's sprite id, or null if it has
+ * none yet (EAP-4). `spriteId` is the Token def's own `sprite` field.
+ */
+export function resolveEnemyAnimationPath(spriteId) {
+    return ENEMY_ANIMATION_MAP[spriteId] || null;
+}
+
 
 /**
  * Resolve a sprite path for a given ID using Manifest Lookups.

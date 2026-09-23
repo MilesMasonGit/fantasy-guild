@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The Cow animates.** It breathes and shifts in place at rest, turning to look the other way
+  every so often, and rears up in an attack pose for as long as a hero is fighting it — facing
+  whichever side that hero stands on. The first enemy with sprite-sheet animation; others get the
+  same treatment as their art arrives.
 - **A worked Token's progress bar hangs in the space below it**, wider than before and always
   visible while a hero works it — no need to hover. It used to hug the Token's bottom edge, a
   leftover from when a hero stood stacked on top; since heroes work from beside a Token, that

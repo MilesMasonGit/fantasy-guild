@@ -8,6 +8,8 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, boardScaleAt, tokenSizeFor } from '../base/TokenSprite.jsx';
+import { AnimatedEnemySprite } from './AnimatedEnemySprite.jsx';
+import { resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -97,6 +99,11 @@ export const MatToken = React.memo(function MatToken({
     const label = tokenName(typeId);
     const isGuildHallToken = typeId === 'token_guild_hall';
     const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || isGuildHallToken);
+
+    // ⭐ Enemy Animations EA-A: a Token with a registered sheet animates on
+    // the board only (EA-5); everything else, and every other surface,
+    // keeps the plain static sprite (EAP-4).
+    const enemyAnimSrc = def?.enemy ? resolveEnemyAnimationPath(def.sprite) : null;
 
     /**
      * This Token's own details, read by id and refreshed only on the events that
@@ -275,13 +282,23 @@ export const MatToken = React.memo(function MatToken({
                         isHovered && 'gi-token-hover-pulse'
                     )}
                 >
-                    <TokenSprite
-                        typeId={typeId}
-                        surface={TOKEN_SURFACE.BOARD}
-                        scale={artScale}
-                        alt={label}
-                        className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
-                    />
+                    {enemyAnimSrc ? (
+                        <AnimatedEnemySprite
+                            src={enemyAnimSrc}
+                            heroId={heroId}
+                            alt={label}
+                            size={artPx}
+                            className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
+                        />
+                    ) : (
+                        <TokenSprite
+                            typeId={typeId}
+                            surface={TOKEN_SURFACE.BOARD}
+                            scale={artScale}
+                            alt={label}
+                            className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
+                        />
+                    )}
                 </div>
             </div>
 
