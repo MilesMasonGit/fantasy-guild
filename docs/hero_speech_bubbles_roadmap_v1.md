@@ -73,6 +73,6 @@ Each slice: tests, run the game and exercise it, one commit, merge.
 | Slice | Status |
 | :-- | :-- |
 | SB-A | **Done 2026-09-23** — layer at `MAT_Z.HERO_BUBBLE` (860); `HeroBubbleLayer.jsx`; message source is a stub in `heroBubbles.js` for SB-B to replace. Checked in the game: tracks a walking hero's head exactly, pointer passes through. |
-| SB-B | Not started |
+| SB-B | **Done 2026-09-23** — `heroBubbles.js` (wording, pure) + layer reads the held Token's live alert; item shortage waits `INPUTS_DELAY_MS` = 3000 (provisional); `TokenEventAlert` ignores `out_of_item/token/charges` (engine events unchanged, `TileEventAlerts.test` still pins them). Checked in game: Pickaxe/Oak Wood lines, 3s delay, clears on fix. Text shows in capitals because the app has an all-caps setting. Promotion-Token blocks have no wording yet (say nothing). |
 | SB-C | Not started |
 | SB-D | Not started |
