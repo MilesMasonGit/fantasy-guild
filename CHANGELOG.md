@@ -10,7 +10,8 @@ project's first tagged baseline — everything before it was untagged developmen
   the pointer, and clears the moment the problem does. A shortage of items waits 3 seconds before
   speaking. The on-Token alert icon no longer repeats these. Heroes also speak at key moments — starting work
   at a Token, running out of work, levelling a skill — with up to three bubbles stacked over one
-  head; moments fade after 5 seconds. (`docs/hero_speech_bubbles_roadmap_v1.md`)
+  head; moments fade after 5 seconds. Bubbles from crowded heroes slide apart, or lift above one another,
+  and stay inside the mat. (`docs/hero_speech_bubbles_roadmap_v1.md`)
 - **The Cow animates.** It breathes and shifts in place at rest, turning to look the other way
   every so often, and rears up in an attack pose for as long as a hero is fighting it — facing
   whichever side that hero stands on. The first enemy with sprite-sheet animation; others get the
