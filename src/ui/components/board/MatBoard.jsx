@@ -9,6 +9,7 @@ import { MatToken } from './MatToken.jsx';
 import { MatHero } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
 import { MatPointAlerts } from './MatPointAlerts.jsx';
+import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { FlagLayer } from './FlagLayer.jsx';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
@@ -365,6 +366,9 @@ export const MatBoard = ({
                 onHoverHero={setHoverHeroId}
                 matRef={rootRef}
             />
+
+            {/* 860 — hero speech bubbles, above every hero. */}
+            <HeroBubbleLayer heroes={heroes} />
         </div>
     );
 };

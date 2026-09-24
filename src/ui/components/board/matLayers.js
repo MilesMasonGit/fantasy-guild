@@ -37,7 +37,9 @@ export const MAT_Z = Object.freeze({
     /** Flags — always reachable (slice 1.5). */
     FLAGS: 850,
     /** Idle heroes, just in front of the flag they stand beside (FP-84). */
-    IDLE_HERO: 851
+    IDLE_HERO: 851,
+    /** Hero speech bubbles — above every hero, never in the way of the pointer. */
+    HERO_BUBBLE: 860
 });
 
 /** How many Tokens can be sorted before the range would reach the layer above. */
