@@ -20,7 +20,7 @@ import { useTokenEvent } from './tokenEvents.js';
  */
 
 /** Alert types a hero's speech bubble now says instead (SB-2). */
-const HERO_SPOKEN_ALERTS = new Set(['out_of_item', 'out_of_token', 'out_of_charges']);
+const HERO_SPOKEN_ALERTS = new Set(['out_of_item', 'out_of_token', 'out_of_charges', 'hero_level_up']);
 
 /** The alert's life: what it says, whether it is fading, and how to end it. */
 export function useEventAlert(onGone = null) {
