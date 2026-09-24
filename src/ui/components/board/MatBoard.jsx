@@ -151,7 +151,9 @@ export const MatBoard = ({
                     sprite: hero?.spriteId || hero?.classId || null,
                     // Not working productively: the Token it holds is stuck.
                     // Such a hero gets no glow — the red badge says it alone.
-                    stuck: !!worked?.alert
+                    stuck: !!worked?.alert,
+                    // Which alert — the speech bubble says what is wrong (SB-B).
+                    alert: worked?.alert || null
                 });
             }
             return out;

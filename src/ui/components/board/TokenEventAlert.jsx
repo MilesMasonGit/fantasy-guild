@@ -19,6 +19,9 @@ import { useTokenEvent } from './tokenEvents.js';
  * shared between them so the two cannot drift.
  */
 
+/** Alert types a hero's speech bubble now says instead (SB-2). */
+const HERO_SPOKEN_ALERTS = new Set(['out_of_item', 'out_of_token', 'out_of_charges']);
+
 /** The alert's life: what it says, whether it is fading, and how to end it. */
 export function useEventAlert(onGone = null) {
     const [alertData, setAlertData] = useState(null);
@@ -252,7 +255,13 @@ export const TokenEventAlert = ({ instanceId }) => {
     const { activePayload } = useActiveDrag();
     const { alertData, isDismissed, show, dismiss } = alert;
 
-    useTokenEvent(BOARD_EVENTS.TILE_EVENT_ALERT, instanceId, show);
+    // A hero blocked at this Token says so in a speech bubble over their head
+    // (SB-2), so those alerts are not also drawn as an icon here.
+    const showUnlessSpoken = useCallback((p) => {
+        if (!HERO_SPOKEN_ALERTS.has(p?.type)) show(p);
+    }, [show]);
+
+    useTokenEvent(BOARD_EVENTS.TILE_EVENT_ALERT, instanceId, showUnlessSpoken);
     useTokenEvent(BOARD_EVENTS.TILE_CHANGED, instanceId, dismiss);
 
     // Picked up: the alert goes with the Token leaving the spot.

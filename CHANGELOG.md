@@ -4,9 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
-- **Hero speech bubbles, first step (SB-A).** A new layer above every hero carries a bubble that
-  follows the hero's head and never blocks the pointer. For now only one hero says one placeholder
-  line; the real messages come in the next slices (`docs/hero_speech_bubbles_roadmap_v1.md`).
+- **Hero speech bubbles.** A hero who cannot work their Token now says why in a bubble over their
+  head, naming the specific thing: "I need a Pickaxe nearby to work Copper Ore Vein.", "I need Oak
+  Wood to work Campfire.", too few charges, skill too low. The bubble follows the hero, never blocks
+  the pointer, and clears the moment the problem does. A shortage of items waits 3 seconds before
+  speaking. The on-Token alert icon no longer repeats these. (`docs/hero_speech_bubbles_roadmap_v1.md`)
 - **The Cow animates.** It breathes and shifts in place at rest, turning to look the other way
   every so often, and rears up in an attack pose for as long as a hero is fighting it — facing
   whichever side that hero stands on. The first enemy with sprite-sheet animation; others get the
