@@ -72,7 +72,7 @@ Each slice: tests, run the game and exercise it, one commit, merge.
 
 | Slice | Status |
 | :-- | :-- |
-| SB-A | Not started |
+| SB-A | **Done 2026-09-23** — layer at `MAT_Z.HERO_BUBBLE` (860); `HeroBubbleLayer.jsx`; message source is a stub in `heroBubbles.js` for SB-B to replace. Checked in the game: tracks a walking hero's head exactly, pointer passes through. |
 | SB-B | Not started |
 | SB-C | Not started |
 | SB-D | Not started |
