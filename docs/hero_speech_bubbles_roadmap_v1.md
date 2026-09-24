@@ -1,6 +1,6 @@
 # Hero Speech Bubbles — roadmap v1
 
-**Written 2026-09-23. Owner decisions taken 2026-09-23; slices not yet approved.**
+**Written 2026-09-23. Owner decisions taken 2026-09-23; slices and director's picks approved 2026-09-23.**
 
 The owner's brief: *"I want to give the heroes 'speech bubbles' to help guide
 the player and communicate key information, as well as give character to the
@@ -35,7 +35,6 @@ hero stands.
 | **SB-2** | **The bubble replaces the on-Token alert icon for hero-caused alerts.** The Token's red progress-bar badge stays. Point alerts (refused drop, ran-dry spot) keep today's icon — no hero is involved. |
 | **SB-3** | **Stack up to 2–3 bubbles above the head.** Several messages can be visible at once per hero. |
 | **SB-4** | **Nudge apart, stay on-screen.** Overlapping bubbles from different heroes shift sideways/up; bubbles are clamped to the visible mat. |
-
 | **SB-5** | **Wording is plain, factual and concise** — no character voice. |
 | **SB-6** | **A hero stuck for lack of item inputs speaks only after a delay** (avoids flicker on brief waits). Other blocks (tool, Token, skill, charges) speak at once. Delay length is provisional, set in SB-B. |
 
