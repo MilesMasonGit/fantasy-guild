@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FLAG_PX } from './flagGeometry.js';
 import { MAT_Z } from './matLayers.js';
 import { blockedLineFor, readyToSpeak } from './heroBubbles.js';
@@ -7,10 +7,22 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { layoutStacks } from './bubbleLayout.js';
+import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 
 /** How often lines are re-read and expired ones cleared. */
 const REFRESH_MS = 500;
+
+/** Before a stack has been measured: a guess from its text, in mat units. */
+const GUESS_CHAR_PX = 6.3;
+const GUESS_PAD_PX = 16;
+const GUESS_ROW_PX = 22;
+const ROW_GAP_PX = 4;
+const guessSize = (stack) => ({
+    w: Math.max(...stack.map(b => b.text.length)) * GUESS_CHAR_PX + GUESS_PAD_PX,
+    h: stack.length * GUESS_ROW_PX + (stack.length - 1) * ROW_GAP_PX
+});
 
 /**
  * ⭐ **Speech bubbles, above every hero's head.**
@@ -28,11 +40,18 @@ const REFRESH_MS = 500;
  *   is missing *now*; a shortage of items waits first (SB-6);
  * * **moments** — arriving at a job, going idle, a level-up — timed, and gone
  *   by themselves (`heroSpeech.js`).
+ *
+ * Stacks are kept off each other and inside the mat (SB-4, `bubbleLayout.js`);
+ * a nudged stack's little tail still points at its hero.
  */
 export const HeroBubbleLayer = ({ heroes }) => {
     const [now, setNow] = useState(() => Date.now());
     const sinceRef = useRef(new Map());     // blocked key → when first seen
     const momentsRef = useRef(new Map());   // heroId → moments, oldest first
+    const layerRef = useRef(null);
+    const sizesRef = useRef(new Map());     // heroId → measured {w, h} of its stack
+    const [, setSizeTick] = useState(0);
+    const mat = useMatSize();
     const wasIdleRef = useRef(null);        // heroId → was idle last render (null until the first look)
 
     const say = (heroId, moment) => {
@@ -106,35 +125,67 @@ export const HeroBubbleLayer = ({ heroes }) => {
         return () => clearInterval(timer);
     }, [busy]);
 
+    // What each hero says now, then where every stack goes so none crowd.
+    const anchored = [];
+    for (const h of heroes) {
+        const blocked = (h.alert && h.tokenId && readyToSpeak(h.alert, since.get(keyOf(h)) ?? t, t))
+            ? blockedLineFor(h.tokenId, h.alert)
+            : null;
+        const stack = stackOf(momentsRef.current.get(h.heroId) || [], blocked, t);
+        if (!stack.length) continue;
+        // The bottom of the stack sits on the top of the hero's box
+        // (`heroPlacement`'s top, without importing it back from MatBoard).
+        anchored.push({ h, stack, x: h.x, y: h.y - FLAG_PX / 2 + FLAG_PX * 0.2 });
+    }
+    const offsets = layoutStacks(
+        anchored.map(a => ({ id: a.h.heroId, x: a.x, y: a.y, ...(sizesRef.current.get(a.h.heroId) || guessSize(a.stack)) })),
+        mat
+    );
+
+    // Measure what was drawn, so the next pass spaces real sizes, not guesses.
+    useLayoutEffect(() => {
+        const root = layerRef.current;
+        if (!root) return;
+        let changed = false;
+        const seen = new Set();
+        for (const el of root.querySelectorAll('[data-hero-bubble-stack]')) {
+            const id = el.getAttribute('data-hero-bubble-stack');
+            seen.add(id);
+            const size = { w: el.offsetWidth, h: el.offsetHeight };
+            const old = sizesRef.current.get(id);
+            if (!old || Math.abs(old.w - size.w) > 1 || Math.abs(old.h - size.h) > 1) {
+                sizesRef.current.set(id, size);
+                changed = true;
+            }
+        }
+        for (const id of [...sizesRef.current.keys()]) if (!seen.has(id)) sizesRef.current.delete(id);
+        if (changed) setSizeTick(n => n + 1);
+    });
+
     return (
         <div
+            ref={layerRef}
             data-hero-bubbles
             className="absolute left-0 top-0 w-0 h-0 pointer-events-none"
             style={{ zIndex: MAT_Z.HERO_BUBBLE }}
         >
-            {heroes.map(h => {
-                const blocked = (h.alert && h.tokenId && readyToSpeak(h.alert, since.get(keyOf(h)) ?? t, t))
-                    ? blockedLineFor(h.tokenId, h.alert)
-                    : null;
-                const stack = stackOf(momentsRef.current.get(h.heroId) || [], blocked, t);
-                if (!stack.length) return null;
+            {anchored.map(({ h, stack, x, y }) => {
+                const { dx, dy } = offsets.get(h.heroId);
                 return (
                     <div
                         key={h.heroId}
                         data-hero-bubble-stack={h.heroId}
                         className="absolute flex flex-col items-center justify-end gap-1 pointer-events-none"
                         style={{
-                            left: h.x,
-                            // The bottom of the stack sits on the top of the hero's box
-                            // (`heroPlacement`'s top, without importing it back from MatBoard).
-                            top: h.y - FLAG_PX / 2 + FLAG_PX * 0.2,
+                            left: x + dx,
+                            top: y + dy,
                             transform: 'translate(-50%, -100%)',
                             transition: h.moving
                                 ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
                                 : 'none'
                         }}
                     >
-                        {stack.map(b => (
+                        {stack.map((b, i) => (
                             <div
                                 key={b.id}
                                 data-hero-bubble={b.id}
@@ -142,7 +193,14 @@ export const HeroBubbleLayer = ({ heroes }) => {
                                 className="relative whitespace-nowrap px-2 py-1 rounded-md border border-yellow-500/70 bg-yellow-950/95 text-yellow-100 text-[11px] font-bold shadow-lg"
                             >
                                 {b.text}
-                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-yellow-500/70 bg-yellow-950/95" />
+                                {/* The tail is on the bubble nearest the head, and points at the
+                                    hero even when the stack has been nudged aside. */}
+                                {i === stack.length - 1 && (
+                                    <div
+                                        className="absolute -bottom-1 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-yellow-500/70 bg-yellow-950/95"
+                                        style={{ left: `clamp(8px, calc(50% - ${dx}px), calc(100% - 8px))` }}
+                                    />
+                                )}
                             </div>
                         ))}
                     </div>
