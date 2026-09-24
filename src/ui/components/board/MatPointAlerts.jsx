@@ -33,6 +33,8 @@ const keyOf = (p) => `${Math.round(p.x)}_${Math.round(p.y)}`;
 export function isPointAlert(payload) {
     if (!payload) return false;
     if (!Number.isFinite(payload.x) || !Number.isFinite(payload.y)) return false;
+    // A hero's level-up is said by the hero, in a speech bubble (SB-2).
+    if (payload.type === 'hero_level_up') return false;
     // A Token still on the mat draws its own alert (`MatToken`).
     if (payload.instanceId && BoardState.getTokenById(payload.instanceId)) return false;
     return true;
