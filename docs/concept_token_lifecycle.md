@@ -518,7 +518,7 @@ owner interview. Every answer below is **leaning** unless it says **open**.
 |---|---|---|
 | R-1 | **Nobody could build.** Construction is a signature skill (second promotion, one job), so Recruits can't turn a Foundation into a Kitchen or Furnace. | **SP-59 Every Recruit gets Construction.** |
 | R-2 | **Nobody could farm.** There is no Farming skill; Nature ("herbs, crops and livestock") comes at first promotion. | **SP-60 Farming is a new starting skill.** |
-| R-3 | **Nobody could explore.** There is no Exploration skill; Survival replaced the old `explore` id and now means "forward camps and outposts". | **SP-61 A new Explore skill, if Maps are kept.** Whether Maps stay is **open**: "probably going to keep but rework". |
+| R-3 | **Nobody could explore.** There is no Exploration skill; Survival replaced the old `explore` id and now means "forward camps and outposts". | **SP-61 A new Explore skill, if Maps are kept.** Later the same day, **SP-74:** Explore is a **starting** skill, Maps are kept, and each cycle spends supplies (food, torches) for diverse themed loot. |
 | R-4 | **Nobody could be promoted.** The Fighter's and Wizard Academies come out of Map bursts (`map_cozy_hamlet` holds the Fighter's Academy), which v2 removes. No promotion means no combat and no advanced skills. | **SP-62 Academies are built on Foundations**, as a recipe like any station. |
 | R-5 | **The skill slots don't fit.** Adding two starting skills makes 8, but a hero holds exactly 6 (`HERO_SKILL_SLOTS`). | **SP-58 The skills list is an output of this design.** "We'll be overhauling the skills list once we know what skills we need, and which skills are needed at the Recruit level." §10.12 is the input to that. |
 | R-6 | **Recruits can't fight.** Recruits hold no combat skill, so a camp is useless until someone is promoted. | No change asked; recorded in §10.6. Camps are post-promotion content. |
@@ -606,7 +606,7 @@ Recorded for the roadmap; none needs an answer yet.
 ### 9.6 Still open after the review
 
 * **SP-63:** refund by charges left, or no refunds.
-* **Maps:** kept and reworked, or retired (SP-61).
+* ~~**Maps:** kept and reworked, or retired (SP-61).~~ **Kept** (SP-74).
 * **Fuel:** an ingredient, as the code does today, or station upkeep (SP-70).
 * **Bank slots.** The Bank has limited slots (64, +32 per rank). Seeds for
   every crop and tree, plus rare materials, add item kinds. What happens to an
@@ -792,17 +792,25 @@ Shop: Foundation (Wood / Stone / Bench qualities; tiered, SP-43)
 * **Promotion chain:** Stone Foundation → Fighter's Academy (10 charges) → each
   promotion uses one → the academy vanishes when used up → built again.
 
-### 10.11 Explore (if Maps are kept)
+### 10.11 Explore (a starting skill, SP-74)
 
 ```
 Shop: a Map (consumable, charges)
-  └─ an Explore hero works it → rare materials (Beeswax Comb✱, Ancient Seed✱),
-     sometimes a keystone
-       └─ Map vanishes at 0 charges → bought again
+  └─ an Explore hero works it; each cycle SPENDS supplies from the Bank
+     (food from Cooking, Torches✱ from Crafting …)
+       └─ → diverse loot themed to the Map (a coastal Map drops coastal things),
+            rare materials (Beeswax Comb✱, Ancient Seed✱), sometimes a keystone
+            └─ Map vanishes at 0 charges → bought again
 ```
 
-* **Feeds:** support-Token and keystone recipes. **Open:** the Map rework
-  itself (§9.6), and whether keystones can be aimed.
+* **Explore is the skill that spends.** The gathering skills make items from
+  nothing; Explore turns other skills' products (food, torches) into **variety**:
+  a wide, themed loot table instead of one output. It is the natural sink for
+  Cooking and Crafting before Combat exists.
+* **Feeds:** support-Token and keystone recipes, and any item the player can't
+  yet spawn themselves.
+* **Open:** the supplies each Map asks for (per Token, like upkeep); Map charges
+  and prices; whether keystones can be aimed by choosing the Map.
 
 ### 10.12 What skills the game needs (input to the skills overhaul)
 
@@ -817,15 +825,16 @@ The chains above call for these, **before** any promotion:
 | Smithing | Ingots gate higher prices; pickaxes |
 | Farming | Crops and fruit for Cooking; seeds |
 | Fishing | Cooking's first ingredient that needs no Foundation |
-| Cooking | Food sustains combat, so it must be ready **before** the first promotion |
+| Cooking | Food sustains combat, so it must be ready **before** the first promotion; it also supplies Explore |
+| Explore | Owner (SP-74): spends food, torches and the like on Maps for diverse themed loot |
 
-That is **8 at Recruit level**, against 6 slots today. Candidates to trim, if
+That is **9 at Recruit level**, against 6 slots today. Candidates to trim, if
 the overhaul wants fewer: Fishing (Cooking could start on crops) or folding
 Smithing's smelting into Crafting. Neither is recommended here; both are
 options for the overhaul.
 
 **Needed after the first promotion:** one combat style (Melee, Ranged, Magic);
-Explore, if Maps stay (SP-61); a magic-gear skill (SP-57).
+a magic-gear skill (SP-57).
 
 **No chain uses them yet** (the overhaul decides whether to cut, merge or give
 each a chain): Leadership, Faith, Nature (its crops moved to Farming), Crime,
@@ -906,7 +915,7 @@ All decisions are **leaning** unless marked otherwise.
 | SP-58 | The skills list is an output of this design; the registry will be overhauled (§10.12) | Leaning |
 | SP-59 | Every Recruit gets Construction | Leaning |
 | SP-60 | Farming is a new starting skill | Leaning |
-| SP-61 | A new Explore skill works Maps, if Maps are kept | Leaning; keeping Maps is **open** |
+| SP-61 | A new Explore skill works Maps, if Maps are kept | Settled by SP-74 (Maps kept) |
 | SP-62 | Academies (promotion Tokens) are built on Foundations | Leaning |
 | SP-63 | Refund by charges left, or no refunds at all | **Open** between the two |
 | SP-64 | The build-remove-rebuild XP loop is accepted | Leaning |
@@ -919,6 +928,7 @@ All decisions are **leaning** unless marked otherwise.
 | SP-71 | Seeds are separate items, except where the crop is the seed | Leaning |
 | SP-72 | Starter set and trickle contents decided after implementation | Leaning |
 | SP-73 | Fruit grows in Orchards planted on Farmland, worked by Farming | Leaning |
+| SP-74 | Explore is a starting skill; it spends supplies (food, torches) on Maps for diverse themed loot | Leaning |
 
 ## Appendix B: History, and ideas set aside
 
