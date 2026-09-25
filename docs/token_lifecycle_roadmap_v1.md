@@ -168,6 +168,7 @@ for testing; retiring the Vault, Managers and Map bursts.
 | **TL-4** | **Functional UI here; the Token UI rework later.** This roadmap builds what testing needs (an Upkeep Summary, inspection lines, alerts, the shop, recipe picking) and no restyling of Tokens on the mat. |
 | **TL-5** | **Prices are low and simple.** Exact items and quantities are refined through testing. |
 | **TL-6** | **Only the starting skills.** Promotion skills are left for later. |
+| **TL-7** | **Promotion keeps all nine starting skills** (owner, 2026-09-25, at the slice 1.1 checkpoint). Promotion never banks a foundation skill; it only adds (and, for advanced jobs, swaps) the non-foundation skills, so a promoted hero's sheet is wider (about 11). Chosen over leaving five skills banked, so promoted heroes can still build, farm and explore. Slice 1.2. |
 
 ---
 
@@ -406,6 +407,8 @@ starting points for the brief, not a complete list.
 |---|---|---|---|
 | **1.1 Nine starting skills** | Add `farming` and `explore` to the **foundation** layer; move `construction` from signature to foundation (and rewrite its description for building stations). Recruits hold all nine. `HERO_SKILL_SLOTS` currently asserts 6: let the Recruit hold the full foundation set and leave promoted jobs' lists as they are (TL-6). ⚠️ Promoting a Recruit will drop more skills than before; acceptable until the promotion overhaul, but **note it in the status table**. Villagers keep holding two foundation skills (the pool just grows). Placeholder icons for the new skills. | `src/config/registries/skillRegistry.js`, `jobRegistry.js`, `src/systems/hero/HeroGenerator.js`, skill-count tests | A new Recruit shows nine skills at level 1; the flag rules panel lists allow/priority rows for all nine; existing promotion tests pass or are updated with the reason written down. |
 
+| **1.2 Promotion keeps the starting skills** | TL-7: promotion never removes a foundation skill; base-class promotion adds its combat and shared skills; advanced-job promotion swaps only non-foundation skills. Banked foundation skills from older heroes come back. | `PromotionSystem.js`, `jobRegistry.js`, `skillRegistry.js`, promotion tests | A Recruit promoted to Fighter, then to an advanced job, still holds all nine starting skills at their levels. |
+
 ### Phase 2: Gold out, items in
 
 | Slice | What | Files | Done when |
@@ -545,6 +548,7 @@ panel is for speed, not for filling gaps.)
 | 0.1 Baseline | ✅ Done 2026-09-25 | 12 known failures in 6 files, listed in §0.4; game boots |
 | 0.2 Dev tools | ✅ Done 2026-09-25 | QA panel: Give item, Advance timers (1 s steps, max 2 h per click), Spawner kinds placeholder (`DevTools.getSpawnerKindCounts`, filled by 3.3). ⚠️ Wall-clock systems (LiveEffects expiry, quest cooldowns, sprite absorb, modifier expiry) do NOT fast-forward |
 | 1.1 Nine starting skills | ✅ Done 2026-09-25 (⭐ owner look pending) | Recruit holds 9 (`RECRUIT_SKILL_SLOTS`); promoted jobs still 6 (`HERO_SKILL_SLOTS`). ⚠️ **Known gaps until the promotion overhaul:** first promotion now banks FIVE skills (level + XP kept, D-71), always incl. Construction, Farming, Explore; no promoted job holds Farming or Explore; the Warlord (whose signature was Construction) has no signature skill. `explore` id reused safely (no alias to `survival` existed) |
+| 1.2 Promotion keeps the starting skills | ⬜ Not started | TL-7 |
 | 2.1 Hall upgrades in items | ✅ Done 2026-09-25 | Every track priced per rank as `[{itemId, quantity}]`, placeholder 10·n `item_oak_wood` (`placeholderPrices` in `guildUpgrades.js`, code not CMS data); rank 1 of Bunk Beds and Wishing Well free; all-or-nothing payment |
 | 2.2 Gold removed from play | ⬜ Not started | |
 | 3.0 Data shapes | ✅ Done 2026-09-25 | §3.1; adds `foundationKinds` on recipes and `foundation.skill`, spawner family = spawns + grow chain |
