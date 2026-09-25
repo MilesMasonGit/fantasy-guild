@@ -105,6 +105,14 @@ export const MAT_TUNABLES = Object.freeze([
         hint: 'How big the playmat itself is, in 160 u steps, at a fixed 0.64 aspect (FP-92). ⚠️ Shrinking it pulls Tokens that no longer fit back inside and spaces them apart (FP-98); flags are only pulled in. Growing it moves nothing.',
         min: 6, max: 20, step: 1, def: 11,
         format: (v) => `${Math.round(v)} steps · ${Math.round(v) * STEP_U} × ${Math.round(Math.round(v) * STEP_U * ASPECT)} u`
+    },
+    {
+        key: 'matCap',
+        group: 'The mat',
+        label: 'Token cap',
+        hint: 'The most Tokens the player may have placed on the mat (SP-10, SP-67). Counts only placed Tokens (spawners, stations, Foundations); spawned trees, veins and enemies are bounded by their own family caps instead. The Guild Hall never counts.',
+        min: 1, max: 200, step: 1, def: 40,
+        format: (v) => `${Math.round(v)} placed Tokens`
     }
 ]);
 
