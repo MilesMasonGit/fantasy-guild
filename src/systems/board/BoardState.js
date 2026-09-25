@@ -106,15 +106,49 @@ function newTokenId() {
     return `tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function createTokenInstance(typeId, uses = null, terrain = null) {
+/**
+ * ## Where a Token came from (Token Lifecycle DP-3, slice 3.1)
+ *
+ * * `placed`  — the player put it there, or the game did on the player's
+ *   behalf: the opening Guild Hall, a Token dragged from the Vault, Tray or a
+ *   dropped sprite, a crafted Token, anything bought or built.
+ * * `spawned` — the engine made it (`EffectActions.spawn`): a sapling from a
+ *   Forest, a goblin from a camp.
+ *
+ * Two rules read it: the mat cap counts `placed` only (SP-67, `MatCap.js`), and
+ * a spawn may push only `spawned` Tokens (SP-68). A `grows` or `turns` change
+ * (a transform) keeps it.
+ *
+ * Saved with the instance. ⚠️ An instance without it reads as `placed`
+ * ({@link originOf}), so a save from before the field existed loses nothing.
+ */
+export const ORIGIN = Object.freeze({ PLACED: 'placed', SPAWNED: 'spawned' });
+
+/** A Token instance's origin: `spawned` only when it says so, else `placed`. */
+export function originOf(instance) {
+    return instance?.origin === ORIGIN.SPAWNED ? ORIGIN.SPAWNED : ORIGIN.PLACED;
+}
+
+/**
+ * A fresh Token instance. `origin` defaults to `placed`: every route that makes
+ * a Token except a spawn is the player's (DP-3), so only `EffectActions.spawn`
+ * passes `spawned`.
+ */
+export function createTokenInstance(typeId, uses = null, terrain = null, origin = ORIGIN.PLACED) {
     const instance = {
         id: newTokenId(),
         typeId,
         usesRemaining: uses,
-        cycleElapsedMs: 0
+        cycleElapsedMs: 0,
+        origin: origin === ORIGIN.SPAWNED ? ORIGIN.SPAWNED : ORIGIN.PLACED
     };
     if (terrain) instance.terrain = terrain;
     return instance;
+}
+
+/** The ids of every `placed` Token on the mat — what a spawn may not push (SP-68). */
+export function placedTokenIds() {
+    return tokens().filter(t => originOf(t) === ORIGIN.PLACED).map(t => t.id);
 }
 
 // ---------------------------------------------------------------------------

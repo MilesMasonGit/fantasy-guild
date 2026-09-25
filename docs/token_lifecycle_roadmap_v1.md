@@ -548,8 +548,8 @@ panel is for speed, not for filling gaps.)
 | 2.1 Hall upgrades in items | ✅ Done 2026-09-25 | Every track priced per rank as `[{itemId, quantity}]`, placeholder 10·n `item_oak_wood` (`placeholderPrices` in `guildUpgrades.js`, code not CMS data); rank 1 of Bunk Beds and Wishing Well free; all-or-nothing payment |
 | 2.2 Gold removed from play | ⬜ Not started | |
 | 3.0 Data shapes | ✅ Done 2026-09-25 | §3.1; adds `foundationKinds` on recipes and `foundation.skill`, spawner family = spawns + grow chain |
-| 3.1 Origin, mat cap, fixed pushes | ⬜ Not started | |
-| 3.2 Timed changes | ⬜ Not started | |
+| 3.1 Origin, mat cap, fixed pushes | ✅ Done 2026-09-25 | `BoardState.originOf/placedTokenIds`, `MatCap.js` (Mat Tuner *Token cap*, default 40, Hall exempt). Every non-spawn route makes `placed` (incl. Map bursts; a Vault round trip makes `placed`). A `here` spawn is `spawned`. The `Transforms` statement keeps origin but still pushes placed Tokens (only timed changes fix them). ⚠️ Pre-existing: `nearest_free` spawns almost never push (`besideBearer` lands inside the min gap) — fix in 3.3 |
+| 3.2 Timed changes | ✅ Done 2026-09-25 | `TimedChanges.js`, handler table (turn_back, grows, turns), ticked in `BoardRunner.tick(delta)`; leftover time carries into the new Token (one big tick = many small); blocked change holds its clock full and retries; a turned Token only runs its turn-back clock. Verified live: sapling → tree at 30 s, Coast turns at 2 min and back at 3 min |
 | 3.3 Spawners | ⬜ Not started | |
 | 3.4 Guild Hall trickle | ⬜ Not started | |
 | 4.1 CMS Token blocks | ✅ Done 2026-09-25 | Token editor section *Spawning and Building* (all six blocks); recipe editor *Builds on Foundation* checkboxes (`foundationKinds`); `FOUNDATION_KINDS` lives in `tokenConstants.js`; renames repoint the blocks. Today's data round-trips byte-identical. ⚠️ For 4.3: renaming a Token still does NOT repoint `tokenId` outputs in recipes |

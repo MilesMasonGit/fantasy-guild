@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Tokens can grow and turn on a clock.** Engine support for a Token that becomes another after a
+  time (a sapling into a tree) and one that turns into something else for a while and back (a Coast
+  into a Shrimp Coast). Every Token now remembers whether the player placed it or it was spawned;
+  spawns no longer push placed Tokens, and a Token cap for placed Tokens is in the Mat Tuner. No
+  content uses it yet.
 - **CMS: Spawning and Building.** The Token editor can author spawners, growing, turning,
   Foundations, shop prices and the Guild Hall trickle, and recipes can be marked as buildable on
   Foundation kinds. Sync to Game now carries all of them.

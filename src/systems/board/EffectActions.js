@@ -186,12 +186,18 @@ export function minCentreGap(typeA, typeB) {
  * Returns `{ x, y, pushed }` — `pushed` is for `BoardState.applyPushes`.
  */
 function spawnPoint(typeId, placement, from, random, bearerId) {
+    // SP-68: a spawn pushes only other spawned Tokens. Everything the player
+    // placed holds its ground; a push that would need to move one fails, and
+    // `forceSpot` falls back to free space, or to null (FP-46: the spawn waits).
+    const fixedIds = BoardState.placedTokenIds();
+
     if (placement === PLACEMENT.NEAREST_FREE) {
         const spot = MatPlacement.findSpot(typeId, from);
         if (spot) return { x: spot.x, y: spot.y, pushed: [] };
         const bearer = BoardState.getTokenById(bearerId);
         const beside = bearer ? besideBearer(typeId, bearer) : from;
-        return MatPlacement.forceSpot(typeId, beside, { fixedIds: bearer ? [bearer.id] : [] });
+        // The bearer itself is never shoved off its own spot, whatever its origin.
+        return MatPlacement.forceSpot(typeId, beside, { fixedIds: bearer ? [...fixedIds, bearer.id] : fixedIds });
     }
 
     if (placement === PLACEMENT.RANDOM_FREE) {
@@ -213,7 +219,7 @@ function spawnPoint(typeId, placement, from, random, bearerId) {
         }
         if (!best) return null;
         if (best.legal) return { x: best.x, y: best.y, pushed: [] };
-        return MatPlacement.forceSpot(typeId, best);
+        return MatPlacement.forceSpot(typeId, best, { fixedIds });
     }
 
     // `here` replaces the bearer: nothing is pushed.
@@ -302,7 +308,11 @@ export function spawn(statement, roles, random = Math.random) {
 
     const touched = BoardState.applyPushes(where.pushed);
 
-    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    // DP-3: whatever a spawn makes is `spawned` — it does not count against the
+    // mat cap (SP-67), and a later spawn may push it (SP-68).
+    const instance = BoardState.createTokenInstance(
+        typeId, tokenStartingUses(typeId), null, BoardState.ORIGIN.SPAWNED
+    );
     BoardState.addToken(instance, where.x, where.y);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, { x: where.x, y: where.y }, ...touched]);
@@ -327,31 +337,57 @@ export function spawn(statement, roles, random = Math.random) {
  */
 export function transform(statement, roles) {
     const typeId = statement?.payload?.typeId;
-    if (!typeId || !getTokenType(typeId)) return false;
-
     const old = BoardState.getTokenById(tokenFor(statement?.target?.role || ROLE.SELF, roles));
-    if (!old) return false;
+    return transformInstance(old, typeId) != null;
+}
+
+/**
+ * The body of a transform, for callers that already hold the instance — the
+ * `Transforms` statement above and the timed changes (`TimedChanges.js`:
+ * `grows`, `turns`).
+ *
+ * ⚠️ **`origin` is the one thing carried across** (DP-3): a placed Coast that
+ * turns into a Shrimp Coast is still something the player placed, and a
+ * spawned Sapling that grows is still spawned. Everything else starts fresh.
+ *
+ * @param {object} old the instance on the mat that becomes something else
+ * @param {string} typeId what it becomes
+ * @param {object} [options]
+ * @param {boolean} [options.fixPlaced] placed Tokens may not be pushed out of
+ *        the way (SP-68's rule, applied to timed changes). Default false: a
+ *        `Transforms` statement pushes as it always has.
+ * @param {object} [options.extra] fields to set on the new instance
+ *        (`turnedFrom`, `clocks`)
+ * @returns {object|null} the new instance, or null when it did not happen
+ */
+export function transformInstance(old, typeId, options = {}) {
+    if (!typeId || !getTokenType(typeId)) return null;
+    if (!old || !BoardState.getTokenById(old.id)) return null;
 
     const from = centreOf(old);
 
     // The new Token may be bigger, or carry a `Cannot` the old one did not:
     // it pushes like any arrival (slice 1.8), and a transform with nowhere
     // legal to stand does not happen.
-    const where = MatPlacement.forceSpot(typeId, from, { excludeId: old.id });
-    if (!where) return false;
+    const fixedIds = options.fixPlaced ? BoardState.placedTokenIds().filter(id => id !== old.id) : [];
+    const where = MatPlacement.forceSpot(typeId, from, { excludeId: old.id, fixedIds });
+    if (!where) return null;
 
     const at = { x: where.x, y: where.y };
     BoardState.removeToken(old.id);
     const touched = BoardState.applyPushes(where.pushed);
 
-    const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
+    const instance = BoardState.createTokenInstance(
+        typeId, tokenStartingUses(typeId), null, BoardState.originOf(old)
+    );
+    if (options.extra) Object.assign(instance, options.extra);
     BoardState.addToken(instance, at.x, at.y);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, at, ...touched]);
     if (touched.length) EventBus.publish('state_changed');
 
     logger.debug('EffectActions', `Transformed ${old.id} into ${typeId} at (${at.x}, ${at.y})`);
-    return true;
+    return instance;
 }
 
 /**
