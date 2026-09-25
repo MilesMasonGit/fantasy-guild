@@ -1,7 +1,7 @@
 # Token Lifecycle — implementation roadmap v1
 
-**Written 2026-09-25. Approved by the owner 2026-09-25. Status: NOT STARTED. No code
-written.**
+**Written 2026-09-25. Approved by the owner 2026-09-25. Status: IN PROGRESS
+(director started 2026-09-25); see §8.**
 
 This roadmap builds the **first playable version** of the Spawner System
 described in [`concept_token_lifecycle.md`](concept_token_lifecycle.md) (v2.1,
@@ -86,9 +86,31 @@ write most of the code itself.
 
 ### 0.4 Test baseline
 
-On `main` at `6fd3967` (2026-09-25): **3063 tests; 3022 pass, 12 fail in 6 test
-files, 29 skipped.** The failures include `TerrainRegistry.test.js`; record the
-full list of failing files in Phase 0 before any change (§5, slice 0.1).
+Recorded by slice 0.1 on `main` at `42eef7b` (2026-09-25), in the real checkout:
+**3063 tests; 3022 pass, 12 fail in 6 test files, 29 skipped.** Every failure
+predates this roadmap. Compare failing test **names**, not counts:
+
+| File | Failing test |
+|---|---|
+| `ContentRules` | Rule 4: `token_redberry_bush` runs within the 10–30s band |
+| `EconSimRunner` | the runner honours an explicit anchor flag over the rule that would elect otherwise |
+| `EconSimTime` | the shipped corpus files no row for its 23 config-less Tokens |
+| `ItemSellValue` | every priced shipped item now fetches more than the old flat 1g |
+| `OneRuleOnePlace` | CR2-196: at least one authored Map still has materials to draw |
+| `OneRuleOnePlace` | CR2-196: the inspection panel names the material instead of drawing "Unknown" |
+| `TerrainRegistry` | covers every authored Map |
+| `TerrainRegistry` | every Token that no Map produces has its own terrain |
+| `TerrainRegistry` | overrides a Token a Map can produce only on purpose |
+| `TerrainRegistry` | accounts for all 75 Tokens between the two routes |
+| `TerrainRegistry` | does NOT guess for a Token that two Maps list |
+| `TerrainRegistry` | ignores a stamp naming a terrain that no longer exists |
+
+⚠️ **In a `git worktree`, `TerrainRegistry` fails two more** (untracked art is
+absent there). Subagents working in worktrees should expect 14.
+
+`npm run dev` starts and a new game loads on slot 1 (save version `0.8.0`, no
+heroes, as designed). The console shows one pre-existing React warning
+("Encountered two children with the same key"), not from this work.
 
 ---
 
@@ -218,6 +240,127 @@ out to change something the player sees.
 * **DP-11 A dev panel for testing** (in the existing `TestDashboard`): give any
   item, grant a combat skill (exists), jump every spawner and grow clock forward,
   show kind counts and caps.
+
+### 3.1 The data shapes (slice 3.0, director-approved 2026-09-25)
+
+**Final for this build. Everything from Phase 3 on reads from here.** These
+shapes replace DP-1's proposal where they differ. Every block is optional and
+lives on the Token type in `data/tokens.json` (authored through the CMS, Phase
+4). Item ids are always live `item_*` ids.
+
+#### Blocks on the Token type
+
+```js
+// A spawner (Oak Forest, Copper Mine, Goblin Camp, Wheat Field).
+spawner: {
+  spawns:     [{ typeId: 'token_oak_sapling', weight: 1 }], // ≥1 entry; weights are relative
+  allowance:  5,        // integer ≥1: what this spawner adds to its family's cap
+  intervalMs: 20000,    // ≥1000: one spawn attempt per interval
+  upkeep:     [{ itemId: 'item_oak_seed', quantity: 1 }]     // paid per spawn; [] = free
+}
+
+// Becomes another Token after a time (Sapling → Tree, patch → ripe patch).
+grows: { into: 'token_oak_tree', afterMs: 30000 }            // afterMs ≥1000
+
+// Turns into one of a list for a while, then back (Coast ↔ Shrimp Coast).
+turns: {
+  into:    [{ typeId: 'token_shrimp_coast', weight: 1 }],   // ≥1 entry
+  everyMs: 120000,     // ≥1000: time spent as itself before turning
+  lastsMs: 60000       // ≥1000: time spent turned before turning back
+}
+
+// A Foundation (bought at the shop, built on with a recipe).
+foundation: { kind: 'stone', skill: 'construction' }
+  // kind: one of FOUNDATION_KINDS = ['wood', 'stone', 'bench', 'farmland']
+  // skill: the skill that builds on it ('construction'; 'farming' for farmland)
+
+// Sold at the Shop.
+shop: {
+  price:   [{ itemId: 'item_oak_wood', quantity: 10 }],     // ≥1 entry (SP-65: items only)
+  section: 'logging'   // a skill id, or 'general'; the Shop groups by it
+}
+
+// Income on a clock, no hero needed (the Guild Hall only, for now).
+trickle: [{ itemId: 'item_oak_seed', quantity: 1, everyMs: 300000 }]  // everyMs ≥1000
+```
+
+**A recipe that builds (DP-6)** is an ordinary recipe in
+`data/tokenRecipes.json` whose `skill` is the Foundation's skill, whose single
+output is a `tokenId`, and which carries one new field:
+
+```js
+foundationKinds: ['stone']   // the Foundation kinds it can be built on
+```
+
+A Foundation's recipe pool is **the recipes of its `foundation.skill` whose
+`foundationKinds` include its `kind`**. Recipes without `foundationKinds` never
+appear on a Foundation, and recipes with it never appear on an ordinary station.
+The recipe's `levelRequirement`, `inputs` (the building's own cost, on top of
+the Foundation's shop price) and `durationMs` (the build time, one cycle) work
+as they do today. On completion the Foundation **becomes** the output Token in
+place (`EffectActions.transform`), not a dropped sprite.
+
+#### State on the Token instance (saved)
+
+```js
+origin: 'placed' | 'spawned'   // DP-3; absent on an old instance reads as 'placed'
+clocks: {                      // elapsed ms, advanced by the tick's delta (DP-2)
+  spawnMs: 0,                  // spawner only
+  growMs:  0,                  // grows only
+  turnMs:  0,                  // turns only (time spent in the current state)
+  trickle: [0]                 // trickle only, one entry per trickle line
+}
+turnedFrom: 'token_coast'      // on a turned instance only: what it turns back into
+```
+
+* A `grows` or `turns` change is a transform that **keeps `origin`** and starts
+  the new instance's clocks at 0. A turned instance carries `turnedFrom`; it
+  turns back after the original's `turns.lastsMs`, read from the `turnedFrom`
+  type (so the timing is authored in one place, on the Coast).
+* A **Foundation building** keeps `origin: 'placed'`.
+
+#### Rules the engine applies
+
+* **Family and cap (DP-4, SP-5).** A spawner's *family* is every type in its
+  `spawns` list **plus everything they grow into** (following `grows.into`
+  until it stops), so an Oak Forest's family is `{Oak Sapling, Oak Tree}` and a
+  Goblin Camp's is `{Goblin, Goblin Chief}`. The family's **count** is the live
+  Tokens on the mat of any type in it, whatever their origin. Its **cap** is the
+  sum of `allowance` over every live spawner whose family shares a type with
+  it. A spawner attempts a spawn only while count < cap.
+* **Upkeep (DP-5).** Checked and paid, all or nothing, at the moment of a spawn,
+  through `InventoryManager`. If the Bank can't pay, the clock stays full and
+  the spawner retries every tick, reporting `needs <item>`.
+* **Landing.** Through `EffectActions.spawn` with placement `nearest_free`
+  around the spawner; placed Tokens are fixed (SP-68). Nowhere to go means the
+  clock stays full and the spawner reports `no room` (FP-46).
+* **Reported state** (for the UI, Phase 8): one of `spawning` (with ms to the
+  next attempt), `at_cap`, `needs_item` (with the item ids), `no_room`.
+* **Mat cap (SP-67):** counts instances with `origin: 'placed'`, except the Guild
+  Hall. Its number is a Mat Tuner setting.
+
+#### Validation (for the content audit, slice 4.2)
+
+Errors:
+* every `typeId` / `into` / `tokenId` names an existing Token; every `itemId`
+  names an existing live `item_*` item;
+* a spawner's family does not contain the spawner itself;
+* a `grows` chain does not loop (A → B → A);
+* a `turns.into` entry is not the Token itself, and none of its entries has a
+  `turns` block of its own;
+* weights, quantities, `allowance` are positive integers; times are ≥1000 ms;
+* `foundation.kind` is one of `FOUNDATION_KINDS`; `foundation.skill` is a real
+  skill;
+* each Foundation kind that is sold has at least one recipe;
+* a recipe with `foundationKinds` outputs exactly one `tokenId` and its `skill`
+  matches that kind's Foundations;
+* a Token has at most one of `spawner`, `turns`, `foundation` (they would fight
+  over what the Token is).
+
+Warnings (allowed):
+* a spawner with empty `upkeep` (SP-70 is decided per Token);
+* a `trickle` on any Token other than `token_guild_hall`;
+* a Token with a `shop` block but no way to be worked or to spawn anything.
 
 ---
 
@@ -399,12 +542,12 @@ panel is for speed, not for filling gaps.)
 
 | Slice | Status | Notes |
 |---|---|---|
-| 0.1 Baseline | ⬜ Not started | |
+| 0.1 Baseline | ✅ Done 2026-09-25 | 12 known failures in 6 files, listed in §0.4; game boots |
 | 0.2 Dev tools | ⬜ Not started | |
 | 1.1 Nine starting skills | ⬜ Not started | |
 | 2.1 Hall upgrades in items | ⬜ Not started | |
 | 2.2 Gold removed from play | ⬜ Not started | |
-| 3.0 Data shapes | ⬜ Not started | |
+| 3.0 Data shapes | ✅ Done 2026-09-25 | §3.1; adds `foundationKinds` on recipes and `foundation.skill`, spawner family = spawns + grow chain |
 | 3.1 Origin, mat cap, fixed pushes | ⬜ Not started | |
 | 3.2 Timed changes | ⬜ Not started | |
 | 3.3 Spawners | ⬜ Not started | |
