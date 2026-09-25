@@ -20,6 +20,7 @@ import * as BoardPromotion from './BoardPromotion.js';
 import * as Managers from './Managers.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
+import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
@@ -421,6 +422,14 @@ export function tick(delta) {
     // the board to iterate. A board whose last Token just ran dry is exactly
     // when restocking matters most.
     Managers.tick();
+
+    // Timed changes (Token Lifecycle 3.2, DP-2): Saplings grow, Coasts turn
+    // and turn back, on clocks advanced by this tick's `delta` — so the time
+    // bank fast-forwards them with everything else. Before Flags, so a hero
+    // whose Token just changed under them lets go and chooses again this same
+    // tick (SP-51, SP-52), and before any Token ticks, so a cycle on a Token
+    // that has gone is never advanced or completed.
+    TimedChanges.tick(delta);
 
     // Flags keep, change or find their work (Free Playmat 1.4b) — after the
     // restocks above, so a hero waiting on a spot sees its new Token this tick,
