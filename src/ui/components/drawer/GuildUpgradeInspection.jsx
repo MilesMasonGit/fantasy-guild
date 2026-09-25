@@ -3,12 +3,23 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import {
-    getUpgradeCost, isTileAccessible, getLockDetail, LOCK_KIND, toRoman
+    getUpgradePrice, isTileAccessible, getLockDetail, LOCK_KIND, toRoman
 } from '../../../config/guildUpgrades.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import { ItemIcon } from '../base/ItemIcon.jsx';
 import {
-    Coins, CheckCircle, Lock, Zap, Check, ChevronUp, ChevronDown, X
+    CheckCircle, Lock, Zap, Check, ChevronUp, ChevronDown, X
 } from 'lucide-react';
+
+const itemName = (itemId) => getItem(itemId)?.name || itemId;
+
+/** A price as plain text: "20 Oak Wood", or "FREE". */
+const priceText = (price) =>
+    !price || price.length === 0
+        ? 'FREE'
+        : price.map(p => `${p.quantity.toLocaleString()} ${itemName(p.itemId)}`).join(' + ');
 
 /**
  * GuildUpgradeInspection — clean, focused upgrade inspection panel.
@@ -22,7 +33,23 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
 
-    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed', 'state_changed']);
+    // Hall upgrades are paid in Bank items (SP-65). The selector returns a flat
+    // signature string of "itemId:have" for the next rank's price, so the
+    // panel re-renders when any of those counts changes (CR-044 contract).
+    const haveSignature = useGameState(
+        () => {
+            if (!upgradeDef) return '';
+            const price = GuildUpgradeManager.getNextCost(upgradeDef.id) || [];
+            return price.map(p => `${p.itemId}:${InventoryManager.getItemCount(p.itemId)}`).join(',');
+        },
+        ['inventory_updated', 'guild_upgrades_updated', 'state_changed']
+    );
+    const haveCounts = Object.fromEntries(
+        (haveSignature || '').split(',').filter(Boolean).map(pair => {
+            const i = pair.lastIndexOf(':');
+            return [pair.slice(0, i), Number(pair.slice(i + 1))];
+        })
+    );
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
         ['guild_upgrades_updated', 'state_changed']
@@ -60,8 +87,9 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
     // `LOCK_KIND` and it appears here automatically.
     const lock = !accessible && tileIndex != null ? getLockDetail(tileIndex, ranks) : null;
     const lockReason = lock && lock.kind !== LOCK_KIND.ADJACENCY ? lock.text : null;
-    const cost = !isMax ? getUpgradeCost(upgradeDef, rank) : null;
-    const canAfford = cost != null && gold >= cost;
+    const price = !isMax ? getUpgradePrice(upgradeDef, rank) : null;
+    const canAfford = price != null
+        && price.every(p => (haveCounts[p.itemId] || 0) >= p.quantity);
 
     const handleUpgrade = () => {
         if (!accessible || isMax || !canAfford) return;
@@ -80,7 +108,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
     // Progression tiers for the roadmap
     const allRanks = Array.from({ length: upgradeDef.maxRank }, (_, i) => {
         const r = i + 1;
-        const tierCost = getUpgradeCost(upgradeDef, i);
+        const tierPrice = getUpgradePrice(upgradeDef, i);
         const isUnlocked = r <= rank;
         const isNext = r === rank + 1;
         const isFuture = r > rank + 1;
@@ -88,7 +116,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
         return {
             rankNumber: r,
             roman: toRoman(r),
-            cost: tierCost,
+            price: tierPrice,
             isUnlocked,
             isNext,
             isFuture,
@@ -205,16 +233,34 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
                                 "flex items-center gap-1.5 px-2.5 py-0.5 rounded text-sm font-bold tabular-nums",
                                 canAfford ? "bg-black/40 text-white border border-black/40 shadow-inner" : "text-red-400"
                             )}>
-                                {cost === 0 ? (
+                                {price.length === 0 ? (
                                     <span>FREE</span>
                                 ) : (
-                                    <>
-                                        <Coins size={14} className="text-amber-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]" />
-                                        <span>{cost.toLocaleString()}g</span>
-                                    </>
+                                    price.map(p => (
+                                        <span key={p.itemId} className="flex items-center gap-1" data-upgrade-price-item={p.itemId}>
+                                            <ItemIcon item={p.itemId} size={16} />
+                                            <span>{p.quantity.toLocaleString()}</span>
+                                        </span>
+                                    ))
                                 )}
                             </div>
                         </button>
+                    )}
+                    {/* What the Bank holds against the price, so a greyed-out
+                        button says what is missing. */}
+                    {!isMax && accessible && price && price.length > 0 && (
+                        <div className="mt-2 flex flex-col gap-0.5 text-[11px]" data-upgrade-bank-check>
+                            {price.map(p => {
+                                const have = haveCounts[p.itemId] || 0;
+                                const ok = have >= p.quantity;
+                                return (
+                                    <div key={p.itemId} className={cn('flex items-center justify-center gap-1.5', ok ? 'text-emerald-400' : 'text-red-300')}>
+                                        <ItemIcon item={p.itemId} size={16} />
+                                        <span>{itemName(p.itemId)}: {have.toLocaleString()} / {p.quantity.toLocaleString()} in Bank</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
                 </div>
             </div>
@@ -284,7 +330,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
                                             "font-bold flex items-center gap-1",
                                             isCurrent ? (canAfford ? "text-gi-gold" : "text-gi-danger") : "text-gi-muted"
                                         )}>
-                                            {tier.cost === 0 ? 'FREE' : `${tier.cost.toLocaleString()}g`}
+                                            {priceText(tier.price)}
                                         </span>
                                     )}
                                 </div>

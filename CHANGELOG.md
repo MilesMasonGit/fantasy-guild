@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Guild Hall upgrades cost items, not gold.** Each rank asks for Oak Wood (a placeholder: rank n
+  costs 10 x n). The first recruit and the first Wishing Well rank stay free. The upgrade panel shows
+  the price and how much the Bank holds.
 - **Dev panel: give item and advance time.** The QA panel can put any amount of any item in the
   Bank and fast-forward the whole game by up to two hours per click.
 - **Token lifecycle rework started.** Test baseline recorded and the final data shapes for

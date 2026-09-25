@@ -545,7 +545,7 @@ panel is for speed, not for filling gaps.)
 | 0.1 Baseline | ✅ Done 2026-09-25 | 12 known failures in 6 files, listed in §0.4; game boots |
 | 0.2 Dev tools | ✅ Done 2026-09-25 | QA panel: Give item, Advance timers (1 s steps, max 2 h per click), Spawner kinds placeholder (`DevTools.getSpawnerKindCounts`, filled by 3.3). ⚠️ Wall-clock systems (LiveEffects expiry, quest cooldowns, sprite absorb, modifier expiry) do NOT fast-forward |
 | 1.1 Nine starting skills | ⬜ Not started | |
-| 2.1 Hall upgrades in items | ⬜ Not started | |
+| 2.1 Hall upgrades in items | ✅ Done 2026-09-25 | Every track priced per rank as `[{itemId, quantity}]`, placeholder 10·n `item_oak_wood` (`placeholderPrices` in `guildUpgrades.js`, code not CMS data); rank 1 of Bunk Beds and Wishing Well free; all-or-nothing payment |
 | 2.2 Gold removed from play | ⬜ Not started | |
 | 3.0 Data shapes | ✅ Done 2026-09-25 | §3.1; adds `foundationKinds` on recipes and `foundation.skill`, spawner family = spawns + grow chain |
 | 3.1 Origin, mat cap, fixed pushes | ⬜ Not started | |

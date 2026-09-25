@@ -5,7 +5,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
-import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
+import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { openingMat } from '../systems/core/EngineBootstrap.js';
@@ -130,8 +130,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             const ghDef = getTokenType('token_guild_hall');
             expect(ghDef.config).toBeNull();
 
-            // Give gold and purchase rank 1
-            CurrencyManager.addGold(1000);
+            // Rank 1 is free (it is the tutorial's first upgrade)
             const p1 = GuildUpgradeManager.purchase('wishing_well');
             expect(p1.success).toBe(true);
             expect(GuildUpgradeManager.getRank('wishing_well')).toBe(1);
@@ -144,18 +143,20 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             expect(ghDef.config.outputs[0].minQty).toBe(1);
             expect(ghDef.config.outputs[0].maxQty).toBe(1);
 
-            // Upgrade to rank 3 (3 water)
-            CurrencyManager.addGold(5000);
-            GuildUpgradeManager.purchase('wishing_well');
-            GuildUpgradeManager.purchase('wishing_well');
+            // Upgrade to rank 3 (3 water). Paid in items since slice 2.1
+            // (SP-65); this used to add 5000 gold.
+            for (let i = 0; i < 2; i++) {
+                GuildUpgradeManager.getNextCost('wishing_well')
+                    .forEach(p => InventoryManager.addItem(p.itemId, p.quantity));
+                expect(GuildUpgradeManager.purchase('wishing_well').success).toBe(true);
+            }
             expect(GuildUpgradeManager.getRank('wishing_well')).toBe(3);
             expect(ghDef.config.outputs[0].minQty).toBe(3);
             expect(ghDef.config.outputs[0].maxQty).toBe(3);
         });
 
         it('operates on a 10s cycle and is unaffected by playmat buffs', () => {
-            CurrencyManager.addGold(1000);
-            GuildUpgradeManager.purchase('wishing_well'); // rank 1 = 1 water
+            GuildUpgradeManager.purchase('wishing_well'); // rank 1 = 1 water (free)
 
             const gh = BoardState.createTokenInstance('token_guild_hall');
             put(24, gh);

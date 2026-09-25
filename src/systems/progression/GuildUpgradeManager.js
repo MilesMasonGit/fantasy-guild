@@ -1,9 +1,10 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
-import { CurrencyManager } from '../economy/CurrencyManager.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
-    GUILD_UPGRADES, getUpgradeDef, getUpgradeCost, isTileAccessible, getLockReason,
+    GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isTileAccessible, getLockReason,
     rosterLimitForRank
 } from '../../config/guildUpgrades.js';
 import { BASE_TOKEN_BANK_SLOTS, SLOTS_PER_RANK } from '../board/TokenBank.js';
@@ -56,12 +57,59 @@ export const GuildUpgradeManager = {
         return isTileAccessible(def.tileIndex, this.getRanks());
     },
 
-    /** Gold cost of the next rank, or null when maxed. */
+    /**
+     * Item price of the next rank as `[{ itemId, quantity }]` (`[]` = free),
+     * or null when maxed. Hall upgrades cost items, never gold (SP-65).
+     */
     getNextCost(upgradeId) {
         const def = getUpgradeDef(upgradeId);
         if (!def) return null;
-        const rank = this.getRank(upgradeId);
-        return rank >= def.maxRank ? null : getUpgradeCost(def, rank);
+        return getUpgradePrice(def, this.getRank(upgradeId));
+    },
+
+    /**
+     * What the Bank is short of for a price: `[{ itemId, name, needed, have }]`,
+     * empty when it can pay in full.
+     */
+    getShortfall(price) {
+        return totalPrice(price)
+            .map(({ itemId, quantity }) => ({
+                itemId,
+                name: getItem(itemId)?.name || itemId,
+                needed: quantity,
+                have: InventoryManager.getItemCount(itemId)
+            }))
+            .filter(s => s.have < s.needed);
+    },
+
+    /** True when the next rank is buyable right now with what the Bank holds. */
+    canAfford(upgradeId) {
+        const price = this.getNextCost(upgradeId);
+        return price != null && this.getShortfall(price).length === 0;
+    },
+
+    /**
+     * Take a whole price out of the Bank, all or nothing. Checks every item
+     * first; if a removal still fails part-way, the items already taken are
+     * put back. Returns { success, error? }.
+     */
+    _payItems(price) {
+        const shortfall = this.getShortfall(price);
+        if (shortfall.length > 0) {
+            const list = shortfall
+                .map(s => `${s.needed} ${s.name} (have ${s.have})`)
+                .join(', ');
+            return { success: false, error: `Not enough items: need ${list}` };
+        }
+        const taken = [];
+        for (const { itemId, quantity } of totalPrice(price)) {
+            if (!InventoryManager.removeItem(itemId, quantity)) {
+                taken.forEach(t => InventoryManager.addItem(t.itemId, t.quantity));
+                return { success: false, error: `Could not take ${quantity} ${getItem(itemId)?.name || itemId} from the Bank` };
+            }
+            taken.push({ itemId, quantity });
+        }
+        return { success: true };
     },
 
     /** Buy the next rank of an upgrade. Returns { success, error? }. */
@@ -78,12 +126,9 @@ export const GuildUpgradeManager = {
         const rank = this.getRank(upgradeId);
         if (rank >= def.maxRank) return { success: false, error: 'Already at max rank' };
 
-        const cost = getUpgradeCost(def, rank);
-        if (cost > 0) {
-            if (!CurrencyManager.spendGold(cost, `Guild Upgrade: ${def.name}`)) {
-                return { success: false, error: `Not enough gold (${cost} needed)` };
-            }
-        }
+        const price = getUpgradePrice(def, rank) || [];
+        const paid = this._payItems(price);
+        if (!paid.success) return paid;
 
         const newRank = rank + 1;
         ranks[upgradeId] = newRank;
@@ -105,7 +150,7 @@ export const GuildUpgradeManager = {
 
         EventBus.publish('guild_upgrades_updated', { upgradeId, rank: newRank });
         EventBus.publish('state_changed');
-        logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${newRank} for ${cost}g`);
+        logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}`);
         return { success: true };
     },
 
@@ -204,7 +249,8 @@ export const GuildUpgradeManager = {
                 maxRank: def.maxRank,
                 maxed: rank >= def.maxRank,
                 accessible,
-                cost: rank >= def.maxRank ? null : getUpgradeCost(def, rank),
+                cost: getUpgradePrice(def, rank),
+                canAfford: this.canAfford(def.id),
                 statLabel: def.statLabel(rank),
                 sprite: def.sprite
             };

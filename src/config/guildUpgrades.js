@@ -71,6 +71,36 @@ export const UPGRADE_TILES = {
     31: 'wishing_well'
 };
 
+/**
+ * Guild Hall upgrades are paid in items, never gold (SP-65, slice 2.1).
+ *
+ * Each upgrade carries `prices`: one entry per rank, where `prices[n - 1]` is
+ * what rank n costs, as a list of `{ itemId, quantity }`. An empty list is
+ * free. Every track uses the same placeholder today (TL-5: low and simple,
+ * rank n costs 10·n Oak Wood), but the shape lets any track ask for its own
+ * items later.
+ */
+export const PLACEHOLDER_PRICE_ITEM = 'item_oak_wood';
+export const PLACEHOLDER_PRICE_PER_RANK = 10;
+
+/**
+ * Build a placeholder price list: rank n costs `perRank·n` of `itemId`.
+ * `freeFirstRank` makes rank 1 cost nothing — used by Bunk Beds (the first
+ * recruit is free; a new game has no heroes until it is bought) and the
+ * Wishing Well (the tutorial's first upgrade).
+ */
+export function placeholderPrices(maxRank, {
+    itemId = PLACEHOLDER_PRICE_ITEM,
+    perRank = PLACEHOLDER_PRICE_PER_RANK,
+    freeFirstRank = false
+} = {}) {
+    return Array.from({ length: maxRank }, (_, i) => {
+        const rank = i + 1;
+        if (freeFirstRank && rank === 1) return [];
+        return [{ itemId, quantity: perRank * rank }];
+    });
+}
+
 export const GUILD_UPGRADES = [
     {
         id: 'bank_tabs',
@@ -78,8 +108,7 @@ export const GUILD_UPGRADES = [
         description: 'Unlock another Bank tab for organizing items in storage.',
         tileIndex: 22,
         maxRank: 15,
-        costBase: 250,
-        costGrowth: 1.6,
+        prices: placeholderPrices(15),
         statLabel: rank => `${1 + rank} tabs`,
         nextStatLabel: rank => `${1 + rank + 1} tabs`,
         sprite: UPGRADE_SPRITES.bank_tabs
@@ -90,8 +119,7 @@ export const GUILD_UPGRADES = [
         description: 'Store 32 more kinds of items in the Bank.',
         tileIndex: 23,
         maxRank: 10,
-        costBase: 150,
-        costGrowth: 1.45,
+        prices: placeholderPrices(10),
         statLabel: rank => `${64 + rank * 32} slots`,
         nextStatLabel: rank => `${64 + (rank + 1) * 32} slots`,
         sprite: UPGRADE_SPRITES.bank_slots
@@ -102,8 +130,7 @@ export const GUILD_UPGRADES = [
         description: 'Unlock another Token Vault tab for organizing tokens.',
         tileIndex: 26,
         maxRank: 15,
-        costBase: 250,
-        costGrowth: 1.6,
+        prices: placeholderPrices(15),
         statLabel: rank => `${1 + rank} tabs`,
         nextStatLabel: rank => `${1 + rank + 1} tabs`,
         sprite: UPGRADE_SPRITES.token_bank_tabs
@@ -114,8 +141,7 @@ export const GUILD_UPGRADES = [
         description: 'Store 32 more kinds of Tokens in the Vault.',
         tileIndex: 25,
         maxRank: 10,
-        costBase: 200,
-        costGrowth: 1.5,
+        prices: placeholderPrices(10),
         statLabel: rank => `${64 + rank * 32} slots`,
         nextStatLabel: rank => `${64 + (rank + 1) * 32} slots`,
         sprite: UPGRADE_SPRITES.token_bank_slots
@@ -127,8 +153,7 @@ export const GUILD_UPGRADES = [
         tileIndex: 17,
         // One hero per rank, 0 to ROSTER_MAX (8 since 2026-09-21; was 12).
         maxRank: ROSTER_MAX - ROSTER_BASE,
-        costBase: 500,
-        costGrowth: 1.8,
+        prices: placeholderPrices(ROSTER_MAX - ROSTER_BASE, { freeFirstRank: true }),
         statLabel: rank => rank === 1 ? '1 hero' : `${rank} heroes`,
         nextStatLabel: rank => `${rank + 1} heroes`,
         sprite: UPGRADE_SPRITES.roster_size
@@ -139,8 +164,7 @@ export const GUILD_UPGRADES = [
         description: 'Increases the radius heroes look for work from their flags.',
         tileIndex: 16,
         maxRank: 5,
-        costBase: 350,
-        costGrowth: 1.5,
+        prices: placeholderPrices(5),
         statLabel: rank => `+${rank * 40}u reach`,
         nextStatLabel: rank => `+${(rank + 1) * 40}u reach`,
         sprite: UPGRADE_SPRITES.flag_radius
@@ -151,8 +175,7 @@ export const GUILD_UPGRADES = [
         description: 'The Guild Hall draws fresh water every cycle.',
         tileIndex: 31,
         maxRank: 10,
-        costBase: 300,
-        costGrowth: 1.5,
+        prices: placeholderPrices(10, { freeFirstRank: true }),
         statLabel: rank => rank === 0 ? 'No water generated' : `${rank} Water / 10s`,
         nextStatLabel: rank => `${rank + 1} Water / 10s`,
         sprite: UPGRADE_SPRITES.wishing_well
@@ -171,14 +194,28 @@ export function getUpgradeDefByTile(tileIndex) {
     return id ? getUpgradeDef(id) : null;
 }
 
-/** Gold cost of the NEXT rank (`rank` = ranks already owned). */
-export function getUpgradeCost(def, rank) {
-    if (!def) return 0;
-    if (def.id === 'roster_size' || def.id === 'wishing_well') {
-        if (rank === 0) return 0; // Rank 0 starter recruit / first well level is free
-        return Math.round(def.costBase * Math.pow(def.costGrowth, rank - 1));
+/**
+ * Item price of the NEXT rank (`rank` = ranks already owned), as a fresh list
+ * of `{ itemId, quantity }`. `[]` means free; `null` means there is no next
+ * rank (maxed, or no such upgrade).
+ */
+export function getUpgradePrice(def, rank) {
+    if (!def || rank >= def.maxRank) return null;
+    const price = def.prices?.[rank] || [];
+    return price.map(p => ({ itemId: p.itemId, quantity: p.quantity }));
+}
+
+/**
+ * Merge a price list so each item appears once (a price that named the same
+ * item twice must be checked against the combined amount).
+ */
+export function totalPrice(price) {
+    const totals = new Map();
+    for (const p of price || []) {
+        if (!p?.itemId || !(p.quantity > 0)) continue;
+        totals.set(p.itemId, (totals.get(p.itemId) || 0) + p.quantity);
     }
-    return Math.round(def.costBase * Math.pow(def.costGrowth, rank));
+    return [...totals].map(([itemId, quantity]) => ({ itemId, quantity }));
 }
 
 /**
