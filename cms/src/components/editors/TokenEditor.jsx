@@ -8,6 +8,7 @@ import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
+import LifecycleBlocks from './LifecycleBlocks';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
@@ -557,6 +558,10 @@ export default function TokenEditor() {
           </>
         )}
       </Section>
+
+      {/* Token Lifecycle blocks (roadmap v1 §3.1). Each is optional and added
+          or removed as a whole; an absent block stays absent in the file. */}
+      <LifecycleBlocks token={token} onChange={update} />
 
       <SpritePickerModal
         isOpen={isPickerOpen}

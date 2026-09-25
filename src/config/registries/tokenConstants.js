@@ -150,3 +150,19 @@ export function isTokenType(value) {
 export function isTokenRarity(value) {
     return TOKEN_RARITIES.includes(value);
 }
+
+/**
+ * The kinds of Foundation a Token can be (Token Lifecycle, roadmap v1 §3.1).
+ *
+ * A Token with `foundation: { kind, skill }` is bought at the Shop and built on
+ * with a recipe whose `foundationKinds` includes its `kind`. This is the one
+ * place the list lives: the CMS's Foundation dropdown and its recipe picker
+ * import it across the boundary (see the header note), and the engine and the
+ * content audit read the same list.
+ */
+export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmland']);
+
+/** Whether a value is a known Foundation kind. */
+export function isFoundationKind(value) {
+    return FOUNDATION_KINDS.includes(value);
+}

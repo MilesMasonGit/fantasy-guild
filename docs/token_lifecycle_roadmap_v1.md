@@ -552,7 +552,7 @@ panel is for speed, not for filling gaps.)
 | 3.2 Timed changes | ⬜ Not started | |
 | 3.3 Spawners | ⬜ Not started | |
 | 3.4 Guild Hall trickle | ⬜ Not started | |
-| 4.1 CMS Token blocks | ⬜ Not started | |
+| 4.1 CMS Token blocks | ✅ Done 2026-09-25 | Token editor section *Spawning and Building* (all six blocks); recipe editor *Builds on Foundation* checkboxes (`foundationKinds`); `FOUNDATION_KINDS` lives in `tokenConstants.js`; renames repoint the blocks. Today's data round-trips byte-identical. ⚠️ For 4.3: renaming a Token still does NOT repoint `tokenId` outputs in recipes |
 | 4.2 Content audit | ⬜ Not started | |
 | 4.3 Recipes that build | ⬜ Not started | |
 | 5.1 The Shop | ⬜ Not started | |

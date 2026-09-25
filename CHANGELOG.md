@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **CMS: Spawning and Building.** The Token editor can author spawners, growing, turning,
+  Foundations, shop prices and the Guild Hall trickle, and recipes can be marked as buildable on
+  Foundation kinds. Sync to Game now carries all of them.
 - **Recruits start with nine skills.** Construction (now a starting skill), and the new Farming and
   Explore join Mining, Logging, Fishing, Smithing, Crafting and Cooking. Promotion still narrows the
   sheet to six, so it banks five skills for now (their levels are kept).
