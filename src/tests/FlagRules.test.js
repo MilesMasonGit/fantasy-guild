@@ -384,6 +384,22 @@ describe('FlagRules.rowsFor — what a rules panel lists', () => {
         expect(FlagRules.rowsFor('f').map(r => r.ruleId)).toEqual(['mining', FlagRules.FIGHT]);
         expect(FlagRules.rowsFor('f')[1]).toMatchObject({ name: 'Fight', combat: true, level: null });
     });
+
+    it('a new Recruit gets an allow/priority row for each of its nine skills, and no Fight row (slice 1.1)', () => {
+        GameState.state.heroes = [];
+        const h = generateHero();
+        HeroManager.addHero(h);
+
+        const rows = FlagRules.rowsFor(h.id);
+        expect(rows.map(r => r.ruleId).sort()).toEqual([
+            'construction', 'cooking', 'crafting', 'explore', 'farming',
+            'fishing', 'logging', 'mining', 'smithing'
+        ]);
+        for (const row of rows) {
+            expect(row, row.ruleId).toMatchObject({ combat: false, level: 1, allowed: true, priority: 3 });
+            expect(row.name, `${row.ruleId} has a display name`).not.toBe(row.ruleId);
+        }
+    });
 });
 
 describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () => {

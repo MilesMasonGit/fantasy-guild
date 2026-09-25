@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Recruits start with nine skills.** Construction (now a starting skill), and the new Farming and
+  Explore join Mining, Logging, Fishing, Smithing, Crafting and Cooking. Promotion still narrows the
+  sheet to six, so it banks five skills for now (their levels are kept).
 - **Guild Hall upgrades cost items, not gold.** Each rank asks for Oak Wood (a placeholder: rank n
   costs 10 x n). The first recruit and the first Wishing Well rank stay free. The upgrade panel shows
   the price and how much the Bank holds.

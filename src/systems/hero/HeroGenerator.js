@@ -19,11 +19,11 @@ import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
  * Heroes are generated with:
  * - Random name
  * - Random icon from pool
- * - **The six Foundation skills, at level 1. Nothing else.**
+ * - **Every Foundation skill (nine), at level 1. Nothing else.**
  *
  * ## Every hero starts as a Recruit
  * A hero no longer holds every skill in the world — they hold the Foundation
- * six, which is the complete skill vocabulary of the opening game. The other 21
+ * skills, which are the complete skill vocabulary of the opening game. The rest
  * are work this person **cannot do**, and the only way to gain one is a
  * promotion.
  *
@@ -214,7 +214,7 @@ export function generateVillager() {
  * ⚠️ **The class/trait reveal is gone**, and so now are classes and traits
  * themselves. It used to show one rolled attribute per candidate and hide the
  * other, which made hiring a small gamble. There is nothing left to gamble on:
- * every recruit is a Recruit, holding the same six Foundation skills at level 1.
+ * every recruit is a Recruit, holding the same Foundation skills at level 1.
  *
  * **Candidates are therefore interchangeable, and that is the design** (D-73):
  * every difference between two heroes is *earned*, never rolled. Recruitment is

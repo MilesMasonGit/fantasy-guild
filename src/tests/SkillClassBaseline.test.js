@@ -231,7 +231,7 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
     });
 });
 
-describe('A hero holds six of twenty-seven', () => {
+describe('A hero holds some skills, not all of them', () => {
     it('a Recruit holds the Foundation skills and no others', () => {
         GameState.state.heroes = [makeRecruit('hero_1', 1)];
         const hero = GameState.state.heroes[0];
@@ -242,13 +242,24 @@ describe('A hero holds six of twenty-seven', () => {
         }
     });
 
-    it('the six deleted ids are gone from the registry', () => {
-        // labor, aquatic, forge, defense, explore, social. Content or a save
-        // still naming one of these must fail loudly, not resolve to something
+    it('the deleted ids are gone from the registry', () => {
+        // labor, aquatic, forge, defense, social. Content or a save still
+        // naming one of these must fail loudly, not resolve to something
         // approximate — which is why the sub-skill funnel went with them.
+        // `explore` was the sixth; Token Lifecycle slice 1.1 reuses the id for
+        // a NEW foundation skill (SP-74), asserted below.
         const { SKILLS } = require('../config/registries/skillRegistry.js');
-        for (const dead of ['labor', 'aquatic', 'forge', 'defense', 'explore', 'social']) {
+        for (const dead of ['labor', 'aquatic', 'forge', 'defense', 'social']) {
             expect(SKILLS[dead]).toBeUndefined();
         }
+    });
+
+    it('explore is the new foundation Explore skill, not an alias of survival (SP-74)', () => {
+        // Nothing ever remapped the old `explore` id to `survival` (no alias,
+        // no save migration), so the id was free to reuse.
+        const { SKILLS, SKILL_LAYERS } = require('../config/registries/skillRegistry.js');
+        expect(SKILLS.explore.layer).toBe(SKILL_LAYERS.FOUNDATION);
+        expect(SKILLS.explore.name).toBe('Explore');
+        expect(SKILLS.survival.layer).toBe(SKILL_LAYERS.SIGNATURE);
     });
 });
