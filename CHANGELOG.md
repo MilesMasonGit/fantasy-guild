@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Dev panel: give item and advance time.** The QA panel can put any amount of any item in the
+  Bank and fast-forward the whole game by up to two hours per click.
 - **Token lifecycle rework started.** Test baseline recorded and the final data shapes for
   spawners, growing, turning, Foundations, the Shop and the Guild Hall trickle written down
   (`docs/token_lifecycle_roadmap_v1.md` §0.4, §3.1). No gameplay change yet.

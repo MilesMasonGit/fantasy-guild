@@ -543,7 +543,7 @@ panel is for speed, not for filling gaps.)
 | Slice | Status | Notes |
 |---|---|---|
 | 0.1 Baseline | ✅ Done 2026-09-25 | 12 known failures in 6 files, listed in §0.4; game boots |
-| 0.2 Dev tools | ⬜ Not started | |
+| 0.2 Dev tools | ✅ Done 2026-09-25 | QA panel: Give item, Advance timers (1 s steps, max 2 h per click), Spawner kinds placeholder (`DevTools.getSpawnerKindCounts`, filled by 3.3). ⚠️ Wall-clock systems (LiveEffects expiry, quest cooldowns, sprite absorb, modifier expiry) do NOT fast-forward |
 | 1.1 Nine starting skills | ⬜ Not started | |
 | 2.1 Hall upgrades in items | ⬜ Not started | |
 | 2.2 Gold removed from play | ⬜ Not started | |
