@@ -1,5 +1,14 @@
 # Token Lifecycle — handoff to the next agent
 
+> ⚠️ **Superseded as the current state (2026-09-25, later the same day).** This
+> was the brief for the brainstorm session. That session produced a direction:
+> the **Spawner System with a Spawner Shop and Foundations**, recorded in
+> [`concept_token_lifecycle.md`](concept_token_lifecycle.md) (v2, decisions
+> SP-2…SP-57, all leaning). **Read the concept doc for where things stand.** This
+> file is still useful for the owner's goals (§3), how to work with the owner
+> (§2) and the traps (§8); its §4.2, §5 and §6 describe the old system and early
+> ideas, not the current direction.
+
 **Written 2026-09-25.** This is a **design-only** brainstorming project. No code is
 to be written. The aim of the next session is an **open-minded brainstorm about
 how best to rework the Token lifecycle**: how Tokens are *spawned*, how they
