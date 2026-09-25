@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Token lifecycle rework started.** Test baseline recorded and the final data shapes for
+  spawners, growing, turning, Foundations, the Shop and the Guild Hall trickle written down
+  (`docs/token_lifecycle_roadmap_v1.md` §0.4, §3.1). No gameplay change yet.
 - **Hero speech bubbles.** A hero who cannot work their Token now says why in a bubble over their
   head, naming the specific thing: "I need a Pickaxe nearby to work Copper Ore Vein.", "I need Oak
   Wood to work Campfire.", too few charges, skill too low. The bubble follows the hero, never blocks
