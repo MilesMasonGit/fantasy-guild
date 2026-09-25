@@ -1,6 +1,6 @@
 # Token Lifecycle — implementation roadmap v1
 
-**Written 2026-09-25. Status: DRAFT, awaiting the owner's approval. No code
+**Written 2026-09-25. Approved by the owner 2026-09-25. Status: NOT STARTED. No code
 written.**
 
 This roadmap builds the **first playable version** of the Spawner System
