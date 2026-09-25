@@ -19,7 +19,7 @@ import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
     migrateBearers, migratePromotionFields, migrateAppliesTargetsIn, expandBearer, expandAll, effectRefsOf, provisionalName,
-    normaliseScale,
+    normaliseScale, FOUNDATION_KINDS,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
 
@@ -203,6 +203,13 @@ function renameInTokenConfig(token, oldId, newId) {
     if (next.effectBlocks) next.effectBlocks = remapItemIdsDeep(next.effectBlocks, oldId, newId, mark);
     if (next.buff) next.buff = remapItemIdsDeep(next.buff, oldId, newId, mark);
 
+    // Token Lifecycle blocks that name items (§3.1): a spawner's upkeep, a
+    // shop price, a trickle line. All use `itemId`, so the deep walker covers
+    // them by field name.
+    for (const key of ['spawner', 'shop', 'trickle']) {
+        if (next[key]) next[key] = remapItemIdsDeep(next[key], oldId, newId, mark);
+    }
+
     return touched ? next : token;
 }
 
@@ -267,6 +274,39 @@ function renameInEffects(effects, oldId, newId, entityType) {
     );
 
     return touched ? next : effects;
+}
+
+/**
+ * Repoint the Token ids inside one Token's lifecycle blocks (§3.1).
+ *
+ * A spawner's `spawns[].typeId`, `grows.into` and `turns.into[].typeId` each
+ * name another Token. None of those field names is shared with an item slot, so
+ * they are named explicitly rather than walked. Returns the Token untouched when
+ * nothing referenced `oldId`.
+ */
+function renameTokenInLifecycleBlocks(token, oldId, newId) {
+    let touched = false;
+    const next = { ...token };
+    const remapWeighted = (list) => {
+        if (!Array.isArray(list) || !list.some((e) => e?.typeId === oldId)) return list;
+        touched = true;
+        return list.map((e) => (e?.typeId === oldId ? { ...e, typeId: newId } : e));
+    };
+
+    if (next.spawner && typeof next.spawner === 'object') {
+        const spawns = remapWeighted(next.spawner.spawns);
+        if (spawns !== next.spawner.spawns) next.spawner = { ...next.spawner, spawns };
+    }
+    if (next.grows && next.grows.into === oldId) {
+        next.grows = { ...next.grows, into: newId };
+        touched = true;
+    }
+    if (next.turns && typeof next.turns === 'object') {
+        const into = remapWeighted(next.turns.into);
+        if (into !== next.turns.into) next.turns = { ...next.turns, into };
+    }
+
+    return touched ? next : token;
 }
 
 function renameInRecipePools(pools, oldId, newId) {
@@ -346,6 +386,16 @@ function performRename(state, oldId, newId, entityType) {
                 ])
             );
             patch.recipePools = renameInRecipePools(state.recipePools, oldId, newId);
+        }
+        if (entityType === 'token') {
+            // Walks the RENAMED collection, so a Token whose spawner lists
+            // itself (an audit error, but authorable) is repointed too.
+            patch.tokens = Object.fromEntries(
+                Object.entries(renamed).map(([id, token]) => [
+                    id,
+                    renameTokenInLifecycleBlocks(token, oldId, newId),
+                ])
+            );
         }
         patch.maps = Object.fromEntries(
             Object.entries(state.maps || {}).map(([id, map]) => [
@@ -555,6 +605,58 @@ export function makeCurrencyOutputEntry(currency = 'gold') {
  */
 export function makeTokenOutputEntry(tokenId) {
     return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
+}
+
+// === Token Lifecycle blocks (roadmap v1 §3.1, slice 4.1) ====================
+//
+// Six optional blocks on a Token type: `spawner`, `grows`, `turns`,
+// `foundation`, `shop`, `trickle`. The shapes are the roadmap's §3.1, which is
+// authoritative; these factories only give the editor a sensible starting
+// value when an author ADDS a block.
+//
+// ⚠️ **Absent means absent.** `makeToken` deliberately does not create any of
+// them, and nothing on the load or sync path fills them in: a Token without a
+// block must come back out of a round trip without one, byte for byte. The
+// store carries the blocks the same way it carries `enemy` — by spreading the
+// record, never by rebuilding it field by field — so Sync writes whatever an
+// author put here and cannot drop it.
+
+/** The six block keys, in the order the editor shows them. */
+export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle']);
+
+/** A weighted Token entry, as `spawner.spawns` and `turns.into` hold them. */
+export function makeWeightedTokenEntry(typeId = '') {
+    return { typeId, weight: 1 };
+}
+
+/** One `trickle` line: an item paid into the Bank on its own clock. */
+export function makeTrickleEntry(itemId = '') {
+    return { itemId, quantity: 1, everyMs: 300000 };
+}
+
+/**
+ * A new block's starting value, when the author adds it in the Token editor.
+ *
+ * Token and item id slots start empty (`''`) rather than guessed — the content
+ * audit (slice 4.2) is what reports an unfinished one.
+ */
+export function makeLifecycleBlock(key) {
+    switch (key) {
+        case 'spawner':
+            return { spawns: [], allowance: 1, intervalMs: 20000, upkeep: [] };
+        case 'grows':
+            return { into: '', afterMs: 30000 };
+        case 'turns':
+            return { into: [], everyMs: 120000, lastsMs: 60000 };
+        case 'foundation':
+            return { kind: FOUNDATION_KINDS[0], skill: 'construction' };
+        case 'shop':
+            return { price: [], section: 'general' };
+        case 'trickle':
+            return [];
+        default:
+            return undefined;
+    }
 }
 
 /** An input entry. Always an exact item — never tag-matched (CMS-43). */

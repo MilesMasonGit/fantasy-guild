@@ -841,7 +841,7 @@ function PayloadFields({ statement, items, canCreate, onChange }) {
  * same `toLowerCase().includes()` filter written out again, and the create-item
  * modal wired up twice. One control, used everywhere.
  */
-function ItemPicker({ label, value, items, onPick, className, canCreate = true }) {
+export function ItemPicker({ label, value, items, onPick, className, canCreate = true }) {
   const [query, setQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -914,7 +914,7 @@ function ItemPicker({ label, value, items, onPick, className, canCreate = true }
 }
 
 /** A list of `{itemId, quantity}` entries — upkeep, and both sides of Converts. */
-function ItemList({ label, entries, items, onChange, canCreate = true }) {
+export function ItemList({ label, entries, items, onChange, canCreate = true }) {
   return (
     <div>
       {label && (

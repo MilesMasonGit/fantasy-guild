@@ -126,6 +126,11 @@ export {
   chargeMomentOf,
 } from '../../../src/config/registries/chargeMomentRegistry.js';
 
+// Token Lifecycle (roadmap v1 §3.1): the kinds of Foundation. Game-defined,
+// like every other vocabulary here, so the dropdown, the engine and the content
+// audit can never disagree about what a kind is.
+export { FOUNDATION_KINDS } from '../../../src/config/registries/tokenConstants.js';
+
 // An enemy is a Token (D-104), and as of 2026-09-06 that is true of the data
 // too: `data/enemies.json` and `enemyRegistry.js` are gone, and a Token is an
 // enemy because it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the

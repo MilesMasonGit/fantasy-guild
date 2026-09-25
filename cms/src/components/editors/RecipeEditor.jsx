@@ -3,7 +3,7 @@ import { BookOpen, Plus, Trash2, X, AlertTriangle, Boxes } from 'lucide-react';
 import {
   useEntityStore, makeInputEntry, makeOutputEntry, makeTokenOutputEntry,
 } from '../../stores/useEntityStore';
-import { SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer } from '../../utils/constants';
+import { SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer, FOUNDATION_KINDS } from '../../utils/constants';
 import { NumberCell } from '../shared/IOEntryList';
 import SupplyChainColumn from '../layout/SupplyChainColumn';
 import { Field } from '../shared/EditorLayout';
@@ -500,6 +500,36 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
             className="w-full"
           />
         </Field>
+      </div>
+
+      {/* Token Lifecycle (roadmap v1 §3.1): the Foundation kinds this recipe
+          can be built on. None ticked removes the field, so an ordinary recipe
+          syncs exactly as before. The full "recipes that build" authoring is
+          slice 4.3. */}
+      <div>
+        <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+          Builds on Foundation
+        </label>
+        <div className="flex flex-wrap gap-3">
+          {FOUNDATION_KINDS.map((kind) => {
+            const kinds = Array.isArray(recipe.foundationKinds) ? recipe.foundationKinds : [];
+            return (
+              <label key={kind} className="flex items-center gap-1.5 text-[11px] text-gray-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={kinds.includes(kind)}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...kinds, kind]
+                      : kinds.filter((k) => k !== kind);
+                    onChange({ foundationKinds: next.length > 0 ? next : undefined });
+                  }}
+                />
+                {kind.charAt(0).toUpperCase() + kind.slice(1)}
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       {/*
