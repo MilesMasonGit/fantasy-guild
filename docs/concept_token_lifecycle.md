@@ -1,6 +1,8 @@
 # Concept Document: The Token Lifecycle
 
-**Status:** DRAFT concept **v2**, 2026-09-25. Design only; no code written.
+**Status:** DRAFT concept **v2**, 2026-09-25 (support Tokens, Foundations and a
+final round of owner answers added the same day, ready for a fresh review by
+another agent). Design only; no code written.
 The working direction is the **Spawner System with a Spawner Shop**, proposed by
 the owner and tested against every foundational skill. **Every decision here is
 leaning**: the owner chose it within this direction, but nothing is locked.
@@ -21,11 +23,13 @@ for this work is [`HANDOFF_token_lifecycle.md`](HANDOFF_token_lifecycle.md).
 **Spawner Tokens** sit on the playmat and slowly produce workable Tokens up to a
 cap: an Oak Forest grows Oak Trees, a Goblin Camp produces goblins. Heroes work
 what appears, the output goes to the Bank, and a used-up Token vanishes so the
-spawner can replace it. The player gets spawners and stations from a **shop**,
-paying in **items**, so the skills gate one another: a Mythril Mineshaft needs
-Willow Wood. There is no Vault, no bar and no point pool. A spawner lives only on
-the mat, and removing one returns its price. Gathering skills stay simple;
-processing skills and Combat each have their own mechanical twist.
+spawner can replace it. The player buys spawners, camps and **Foundations**
+from a **shop**, paying in **items**, so the skills gate one another: a Mythril
+Mineshaft needs Willow Wood. Stations, support Tokens and crop fields are
+**built on Foundations** by choosing a recipe. There is no Vault, no bar and no
+point pool. Everything lives only on the mat, and removing something refunds all
+it cost. Gathering skills stay simple; processing skills and Combat each have
+their own mechanical twist.
 
 ## 2. Goals
 
@@ -51,8 +55,8 @@ ingredients.
 **Still standing from earlier work:**
 
 * Tokens that leave the loop **vanish cleanly**, with no husk to clear.
-* **Nothing is ever destroyed by crowding.** An arrival that has no room is
-  refused or waits (FP-46; SP-7).
+* **Nothing is ever destroyed by crowding.** Arrivals push neighbours where
+  legal and are otherwise refused (FP-17, FP-46; SP-46).
 * **Energy is no longer a mechanic** (owner, 2026-09-24). ⚠️ The code still has
   a lot of energy logic (hero consumption, regen, combat), so check it before
   building on this.
@@ -73,8 +77,12 @@ ingredients.
 * **SP-6 Over the cap after a removal, nothing is removed.** The extra Tokens
   stay and are worked out normally; spawning waits until the count is below the
   cap.
-* **SP-7 No room, no spawn.** If there is no space, spawning pauses until space
-  frees up. Nothing is pushed or destroyed, and the spawner shows it is blocked.
+* **SP-46 Spawns push; they only wait at a cap.** The free-playmat rule stands
+  (FP-17: bursts and spawns push neighbours). A spawner stops only when a cap is
+  reached: its kind's cap (SP-5) or the mat's Token cap (SP-10). If the mat is so
+  full that nothing can be pushed, FP-46 applies and the arrival is refused, so
+  the spawn waits. *(Replaces SP-7, "no room, no spawn", which had spawns wait
+  instead of pushing.)*
 
 ### 3.2 The Spawner Shop
 
@@ -97,8 +105,9 @@ ingredients.
   unnecessary systems." Their jobs are covered elsewhere: floods by the live cap
   (SP-5), scale by the shop's prices (SP-13).
 * **SP-10 A mat-wide Token cap:** a maximum number of Tokens allowed on the
-  playmat, which the owner expects to need for performance anyway. It is the
-  limit on how many spawners a player runs.
+  playmat, which the owner expects to need for performance anyway. **Everything
+  on the mat counts**: spawned trees, veins and enemies as well as spawners,
+  stations and support Tokens. It is the limit on how far a player can scale.
 * **SP-11 Spawners live only on the mat.** There is no bar, catalogue or
   storage for them. **Removing a spawner returns the items it cost** to the Bank,
   so it can be bought again later.
@@ -109,6 +118,68 @@ A hero works **every** task in their flag's radius, shaped by per-skill allow,
 disallow and priority rules (FP-71). **The player cannot direct a hero to one
 task over another within the same skill**, so no design here may depend on that.
 (This ruled out a Mining design in which a hero digs a shaft to expose veins.)
+
+* **SP-52 When a hero's target vanishes** (used up, faded, or a Coast turning
+  back), the hero **moves to the next thing in range** by their rules, or idles if
+  there is none. This is the natural reading of FP-71; no new rule.
+
+### 3.5 Foundations and Construction
+
+* **SP-42 Foundations.** The shop sells **Foundations**, and a hero works a
+  Foundation with **Construction** to turn it into a specific Token (a Kitchen, a
+  Furnace, a Tree Nursery). **Scope: stations, support Tokens and Farmland.**
+  Spawners and camps are still bought directly at the shop (SP-12).
+  The owner's framing: this matches the crafting skills (constructing the Kitchen
+  or Furnace), and Farming uses the same pattern (buy Farmland, then turn it into
+  an Onion Crop).
+* **SP-43 A few kinds of Foundation, tiered:** Stone Foundations, Wood
+  Foundations, types of Farmland, and qualities of Bench for Crafting. The kind
+  decides what can be built on it.
+* **SP-49 What a Foundation becomes is a recipe.** The player **picks the recipe
+  on the Foundation**, the same way as on Farmland, a crafting station or any
+  other recipe-based Token. **Better stations are simply higher-level recipes:**
+  Construction level 1 can only build a Cooking Pot; Construction level 20 can
+  build a Kitchen. This settles SP-25 (station tiers).
+* **Farmland is planted by Farming, not Construction** (SP-47, §5.5). The owner:
+  this isn't an exception, because the finished Field is not worked; it only
+  spawns crops.
+* **SP-44 Removing is a full refund.** Removing a built Token returns everything
+  spent on it: a 25-wood Foundation with a 25-wood Kitchen on it gives back 50
+  wood. **Why (owner):** returning everything means a player can never softlock
+  themselves. **Alternative backstop (owner):** the Guild Hall's passive
+  generation gives a small, constant trickle, so the player can never run out
+  completely. Both are recorded; the full refund is the owner's first answer.
+
+This is also how the **shop stays short**: stations and support Tokens don't each
+need a shop entry, only the few Foundation kinds do.
+
+### 3.6 Support Tokens
+
+Tokens that improve a setup. Early ones already exist: the **Forge Altar** makes a
+nearby Forge faster and adds bonus copper, and the **Windmill** gives nearby
+fields a 5% chance of double loot.
+
+* **SP-39 Support Tokens take several forms**, all acceptable to the owner:
+  * **boosters** that improve a neighbour's numbers (spawn speed, charges, drops),
+  * **changers** that change what a neighbour produces (a Beehive beside Farmland
+    sometimes makes a Honey Patch),
+  * **links** between two skills' setups (a Sawmill makes logging also drop
+    firewood for Cooking's fuel),
+  * **helpers** that do a small job without a hero (a Farmhand sows slowly).
+* **SP-40 Keystones are a rare tier** above everyday support Tokens: a few big
+  landmark pieces that reshape the area around them (a Great Oak makes every
+  Forest nearby grow faster and spawn rare trees).
+* **SP-41 Support Tokens come from the recipe system, not the shop list.** The
+  owner: "Cluttering up the shop with too many tokens is just cumbersome." They
+  are **built on Foundations with Construction** (SP-42, SP-49). A few upgradable
+  ones might also be sold at the shop.
+
+* **SP-55 Managers are retired.** Spawners now replace used-up Tokens
+  themselves, which was the Managers' job (FP-19).
+
+*Open:* the actual list of support Tokens per skill; their ranges (Close / Near /
+Far) and whether several stack; how helpers relate to heroes; which support
+Tokens, if any, are sold at the shop.
 
 ## 4. Walkthrough: the life of an Oak
 
@@ -130,16 +201,18 @@ task over another within the same skill**, so no design here may depend on that.
 
 ### 5.1 Summary
 
-| Skill | Bought at the shop | Its mechanic |
+| Skill | Where its Token comes from | Its mechanic |
 |---|---|---|
-| **Logging** | A Forest (Oak Forest) | Spawns saplings that grow into trees; rewards letting it regrow |
-| **Mining** | A Mineshaft | Spawns veins; reliable, can be left alone |
-| **Fishing** | A Coast | **Transforms** into a Shrimp Coast for a while; fish while it lasts |
-| **Farming** | Farmland (one for every crop) | Heroes sow seeds; it can run dry |
-| **Combat** | A camp | Spawns enemies from a weighted list; they fight back |
-| **Cooking** | A Kitchen | Burns fuel; recipe chosen in the Kitchen |
-| **Crafting** | Its station | No fuel; makes parts for every skill, plus Ranged gear and tools |
-| **Smithing** | A Furnace, plus tiered Anvils | Smelt, then smith; Anvils wear out; climbs using its own bars |
+| **Logging** | Shop: a Forest (Oak Forest) | Spawns saplings that grow into trees; rewards letting it regrow |
+| **Mining** | Shop: a Mineshaft | Spawns veins; reliable, can be left alone |
+| **Fishing** | Shop: a Coast | **Transforms** into a Shrimp Coast for a while; fish while it lasts |
+| **Farming** | Farmland, planted into a crop Field | The Field spawns patches, one seed each; it can run dry |
+| **Combat** | Shop: a camp | Spawns enemies from a weighted list; they fight back |
+| **Cooking** | A Kitchen built on a Foundation | Burns fuel; recipe chosen in the Kitchen |
+| **Crafting** | Its Bench, built on a Foundation | No fuel; makes parts for every skill, plus Ranged gear and tools |
+| **Smithing** | A Furnace built on a Foundation, plus tiered Anvils from the shop | Smelt, then smith; Anvils wear out; climbs using its own bars |
+| **Construction** *(new)* | Works Foundations | Builds stations and support Tokens **in place** from a recipe picked on the Foundation |
+| **Exploration** *(new)* | Shop: a Map | Works a Map until its charges run out; rare materials and keystones |
 
 * **SP-33 The gathering skills stay simple.** The owner is content for Mining,
   Logging, Fishing and Farming to be "simpler, resource generating activities.
@@ -172,34 +245,41 @@ as it is worked) was called interesting.
 * **Fishing is outside the spawner pattern**: nothing spawns, so it needs no cap.
   More fishing means buying more Coasts, each changing on its own.
 
-*Open:* whether a Coast always becomes the same thing (SP-16 had "one kind of
-fish per spot") or one of several (Shrimp Coast, Crab Coast); how long each state
-lasts; whether anything can be fished in the plain state; whether a cycle in
-progress when the state ends still pays out.
+* **SP-50 A Coast turns into one of several, from its list** (a Shrimp Coast or
+  a Crab Coast, weighted), like a camp's list. *(Replaces SP-16, "one kind of fish
+  per spot".)*
+* **SP-51 A cycle in progress when the Coast turns back is lost.** Strict timing.
+
+*Open:* how long each state lasts; whether anything can be fished in the plain
+state.
 
 ### 5.5 Farming
 
-The chain: buy **Farmland** → **choose a crop** → a Farming hero in range
-**sows**, each cycle using one seed from the Bank and placing a **patch** beside
-the Farmland, up to its cap → the patch grows to ripe → any Farming hero in range
-**harvests** it → the used-up patch vanishes → sowing continues while there are
-seeds.
+The chain: buy **Farmland** (a Foundation kind) → pick a crop recipe on it → a
+Farming hero **plants** it, turning it into an **Onion Field** → the Field
+**passively spawns Onion Patches**, each using one Onion Seed from the Bank, up to
+its cap → a patch grows to ripe → any Farming hero in range **harvests** it → the
+used-up patch vanishes → the Field spawns another while there are seeds.
 
 * **SP-19 Seeds come from harvests and from other skills.** A patch sometimes
   returns seeds; seeds also turn up while working other skills, which is where a
   player's **first** seeds come from.
-* **SP-20 Sowing is hero work**, which is what "assigning a hero" means on a
-  flag-based mat. No hero, no farm.
-* **SP-21 The crop is a setting on the Farmland.** One Farmland grows any crop
-  the player has seeds for; the seed is the gate, and the shop needs only one
-  Farmland entry.
+* **SP-47 A Farming hero plants the Field.** Farmland is turned into a crop
+  Field (Onion Field) by Farming work, from a recipe picked on the Farmland
+  (SP-49). The finished Field is not worked.
+* **SP-48 The Field spawns patches passively, one seed per patch.** It spawns
+  only if the seed is in the Bank. Heroes work the patches, not the Field.
+  *(Replaces SP-20, sowing as repeated hero work, and SP-21, the crop as a
+  setting.)*
 * **SP-22 A ripe patch gives several harvests** (charges).
 
 Farming is **the one gathering skill that can stop on its own** (no seeds), and
 every patch costs a seed, so re-placing a Farmland is not an exploit.
 
-*Open:* which skills drop which seeds; the seed return rate; the Farmland's cap;
-harvests per patch; what the Farmland does when its crop's seeds run out.
+*Open:* which skills drop which seeds; the seed return rate; a Field's cap;
+harvests per patch; how a player switches crop (presumably removing the Field for
+a full refund, SP-44, and planting again); whether planting the Field itself
+costs seeds.
 
 ### 5.6 Combat
 
@@ -228,7 +308,8 @@ style (Melee, Ranged, Magic).
 
 ### 5.7 Cooking
 
-The chain: buy a **Kitchen** → **choose a recipe inside it** → a Cooking hero in
+The chain: buy a **Foundation** and build a **Kitchen** on it (SP-42) → **choose
+a recipe inside it** → a Cooking hero in
 range works it, each cycle taking ingredients (and fuel) from the Bank and
 putting the dish in the Bank → with nothing to cook, it waits.
 
@@ -236,16 +317,14 @@ putting the dish in the Bank → with nothing to cook, it waits.
   Tokens carry charges: the Cooking Pot 1,000 uses, Grandma's Kitchen 5,000.)
 * **SP-26 Fuel is a per-skill trait: Cooking and Smithing burn fuel; Crafting
   does not.** Logging feeds both fire-based skills.
-* **SP-25 (open) Station tiers.** Either **one Kitchen only**, or an
-  **upgradeable blueprint**: the shop's Kitchen blueprint is upgraded from
-  **Cooking Pot → Range → Kitchen**, each step **lowering the failure chance**. A
-  per-Token failure chance already exists as an effect axis (`FAIL_CHANCE`, read
-  in `BoardRunner.js`).
+* **Station tiers are recipes (SP-49).** **Cooking Pot → Range → Kitchen** are
+  higher-level Construction recipes on a Foundation, and each step **lowers the
+  failure chance**. A per-Token failure chance already exists as an effect axis
+  (`FAIL_CHANCE`, read in `BoardRunner.js`). Upgrading presumably means removing
+  the Pot (full refund, SP-44) and building a Range.
 
-*Open:* SP-25, and if blueprints upgrade, whether Kitchens already on the mat
-upgrade too, what the upgrade costs, and whether other stations get ladders;
-what food is *for* now that energy is gone (outside this concept, but it decides
-how much Cooking matters).
+*Open:* whether other stations get the same ladder; what food is *for* now that
+energy is gone (outside this concept, but it decides how much Cooking matters).
 
 ### 5.8 Crafting
 
@@ -253,19 +332,23 @@ how much Cooking matters).
   recipes pull from many skills, and its outputs are what the shop and other
   stations ask for. It ties the economy together.
 * **SP-28 Crafting makes things for heroes:** tools and equipment.
+* **SP-53 Tools are carried by heroes.** A pickaxe is equipment a hero carries,
+  not a Token sitting near a vein. Context Tokens remain only for station helpers
+  such as the Anvil (SP-29).
 * No fuel (SP-26).
 
 ### 5.9 Smithing
 
-The chain: buy a **Furnace** → a Smithing hero smelts ore into **bars** (no Anvil
-needed) → spend bars on a **Copper Anvil** at the shop → place it near the
+The chain: build a **Furnace** on a Foundation (SP-42) → a Smithing hero smelts ore into **bars** (no Anvil
+needed) → spend bars on a **Copper Anvil** at the shop (SP-56) → place it near the
 Furnace → copper weapons, armour and tools can now be smithed → the Anvil **wears
 out** and is bought again → **bronze bars buy a Bronze Anvil**, and so on.
 
 * **SP-29 Smithing keeps context Tokens.** A context Token works by sitting near
-  the Token it helps (as the Copper Pickaxe does today). The **Anvil is a context
-  Token**: a Furnace can be built without limit and smelts on its own, but needs
-  an Anvil nearby to smith gear.
+  the Token it helps (as the Copper Pickaxe does today; tools themselves move to
+  heroes, SP-53). The **Anvil is a context Token**: a Furnace can be built without
+  limit and smelts on its own, but needs an Anvil nearby to smith gear.
+* **SP-56 Anvils are bought at the shop**, not built on Foundations.
 * **SP-30 Anvils are tiered and wear out.** An Anvil's metal decides the tier it
   can smith, and Anvils have charges. **Smithing climbs using its own output.**
   An exception to SP-23, for the Anvil only.
@@ -280,41 +363,84 @@ out** and is bought again → **bronze bars buy a Bronze Anvil**, and so on.
 *Open:* Anvil charges, and whether higher metals wear it faster; whether one
 Anvil can serve several Furnaces, and what "nearby" means (Close / Near / Far).
 
+### 5.10 Construction (new skill)
+
+Works **Foundations** into stations and support Tokens (SP-42), from a recipe
+picked on the Foundation (SP-49). Its mechanical identity: its work happens **at
+the destination**. The player places the Foundation where the building should
+stand, and a Construction hero builds it there, so placement is chosen first and
+nothing is stored. **Construction level gates the recipes** (a Kitchen needs
+level 20). Each building has its own cost on top of the Foundation (the owner's
+example: a 25-wood Foundation plus a 25-wood Kitchen).
+
+*Open:* build time; the build list for each Foundation kind and tier.
+
+### 5.11 Exploration (new skill)
+
+* **SP-45 Exploration gathers rare materials and finds keystones.** It is worked
+  like a gathering skill, but yields rare materials (e.g. a Beeswax Comb or an
+  Ancient Seed) that support-Token and keystone recipes need, which keeps
+  everything gated by items (SP-13). It is the only way to find **keystones**
+  (SP-40).
+
+* **SP-54 Maps are kept, for Exploration.** A Map is bought at the shop,
+  placed, and worked by an Exploration hero; it **has charges and vanishes when
+  they run out**, so it is bought again. Each Map (the 8 authored today: Oak
+  Forest, Bronze Hills, Volcanic Island, …) yields its own rare materials and a
+  chance of keystones. Maps no longer burst into random Tokens. Maps are the one
+  source Token that is used up.
+
+*Not taken up:* Exploration growing the mat (edges or Token cap); Exploration
+discovering recipes (it would go against SP-13); Maps that last forever;
+retiring the Maps.
+
+*Open:* each Map's yields; whether keystone finds can be aimed (by choosing the
+Map) or are pure chance; Map charges and prices.
+
+⚠️ **Exploration, Construction and Farming are not in the skill registry**
+(`src/config/registries/skillRegistry.js`); each would be added as its own piece
+of work.
+
 ## 6. Open questions
 
-**Next topic: support Tokens.** Tokens that improve a setup (the owner's example:
-a Tree Nursery that gives Oak Trees more charges or speeds up Oak Forests). Their
-source changed during this session: Crafting was going to build them and no
-longer does. The shop is the obvious candidate. Still to decide: what they can
-do, whether they work by range, what they cost, and how they fit the shop.
+**Support Tokens** (§3.6): the list per skill, ranges and stacking, helpers
+versus heroes.
+
+**Foundations** (§3.5): the build list for each Foundation kind and tier.
+
+**Skill-level gates versus SP-13.** SP-13 says progression is gated by items with
+no recipe unlocks, while SP-49 gates Foundation recipes by Construction level
+(a Kitchen at level 20). Recipes already carry a skill requirement today
+(`skillRequired`), so this is probably consistent, but a reviewer should check
+the two read together.
 
 **The shop:**
 
-* **The length of the list.** With several spawners per skill, the shop is long,
-  and the owner has turned down catalogues, bars and build menus for spawners.
-  How the shop is laid out needs a pass.
-* **Whether milestones, quests or Guild Hall upgrades still give spawners** as
-  rewards alongside the shop.
+* **The length of the list.** Foundations (SP-42) keep stations and support
+  Tokens off it, but spawners and camps are still listed one by one. How the
+  shop is laid out needs a pass.
+* **Whether milestones, quests or Guild Hall upgrades still give spawners or
+  Foundations** as rewards alongside the shop (**left open by the owner**). A
+  free one would still refund its full price when removed (SP-44), which is a
+  loophole to watch.
 * **Prices:** which items each spawner and station costs, which is where the
   skills' gating (SP-13) is actually authored.
 
 **The mat:**
 
-* **The mat Token cap (SP-10):** its size, whether it rises with progression, and
-  whether spawned Tokens count as well as spawners (performance suggests
-  everything counts).
-* **Heroes when a target vanishes mid-work.** Moving to the next target in range
-  is the natural reading of FP-71, but it has not been confirmed.
-* **Spatial consequences** of Tokens vanishing and reappearing: neighbouring
-  buffs, Managers and "Cannot" rules.
+* **The mat Token cap (SP-10):** its size, and whether it rises with
+  progression. Spawners near the cap stop refilling, which the player must be
+  able to see.
+* **Spatial consequences** of Tokens vanishing, reappearing and pushing:
+  neighbouring buffs and "Cannot" rules (spawns and transforms do not check
+  "Cannot" rules today).
 
 **Hero gear and tools:**
 
-* **Tools: carried or context?** SP-28 has Crafting making tools for heroes,
-  while SP-29 keeps context Tokens for Smithing. Whether a pickaxe is carried by a
-  hero or sits near a vein as today is unresolved, and it touches every Token
-  whose work needs a tool nearby.
-* **Magic equipment:** which skill makes it.
+* **SP-57 Magic equipment is made by a future skill** (e.g. Enchanting or
+  Alchemy), not by Crafting or Smithing.
+* **Moving tools onto heroes (SP-53)** touches every Token whose work needs a tool
+  nearby (`acceptedTokens` today) and the hero equipment slots.
 
 **Economy:**
 
@@ -329,22 +455,24 @@ None of these has been edited; each needs the owner's decision first.
 
 | Existing item | Effect |
 |---|---|
-| **Map purchase and burst** (`Cartographer.js`, `data/maps.json`) | Replaced by the Spawner Shop (SP-12). What happens to the 8 authored Maps is open |
+| **Map purchase and burst** (`Cartographer.js`, `data/maps.json`) | Bursting is replaced by the Spawner Shop (SP-12). The 8 Maps stay as Exploration Tokens with charges (SP-54) |
 | **The Vault; FP-37** (the Vault is decided at stage 3) | The Vault goes (goal 1) |
 | **Slice 1.9 / FP-45** (Tray retired; Vault ↔ mat by drag) | The Vault half is no longer needed |
-| **Slice 1.8 / FP-16–18** (arrivals land on the mat and push; bought Maps burst beside the Hall) | Shop purchases and spawns are the new arrivals. SP-7 has spawns **wait** rather than push, which differs from FP-17 ("bursts and spawns push") |
-| **FP-19** (Managers restock in the exact spot) | Spawners now replace used-up Tokens themselves; what Managers are for needs a look |
+| **Slice 1.8 / FP-16–18** (arrivals land on the mat and push; bought Maps burst beside the Hall) | Shop purchases and spawns are the new arrivals and **push, as FP-17 says** (SP-46); spawners stop only at a cap. Bought Maps no longer burst |
+| **FP-19** (Managers restock in the exact spot) | **Managers are retired** (SP-55) |
 | **`tokens.json` charges (`uses`)** | Veins at 500–1000 uses and stations with charges don't match SP-2 / SP-23; numbers change through the CMS, never by hand |
-| **Tool Tokens** (e.g. the Copper Pickaxe) | Depends on "carried or context" (§6) |
+| **Tool Tokens** (e.g. the Copper Pickaxe) | Tools become hero equipment (SP-53); context Tokens stay only for station helpers like the Anvil |
 
 ⚠️ **Do not start slices 1.8 or 1.9 as written** until the owner decides how far
 this concept replaces them.
 
 ## 8. Next steps
 
-1. **Support Tokens** (§6), starting with where they come from.
-2. Then the open questions in §6 and §5, in the owner's order.
-3. When the direction is settled, a roadmap with slices.
+1. **A fresh review by another agent** (the owner's request): poke holes in the
+   direction and identify issues, before any more detail is added.
+2. **Foundations and support Tokens in detail** (§3.5, §3.6).
+3. The open questions in §6 and §5, in the owner's order.
+4. When the direction is settled, a roadmap with slices.
 
 ---
 
@@ -359,25 +487,25 @@ All decisions are **leaning** unless marked otherwise.
 | SP-3, SP-4 | Themed point pools, and what costs points | Replaced by SP-9 |
 | SP-5 | Cap shared across the mat per kind, counting live Tokens | Leaning |
 | SP-6 | Over the cap after a removal, nothing is removed | Leaning |
-| SP-7 | No room, no spawn | Leaning |
+| SP-7 | No room, no spawn (spawns wait instead of pushing) | Replaced by SP-46 |
 | SP-8 | Earn the first spawner, craft the rest (recipe unlocks) | Replaced by SP-12/SP-13 |
 | SP-9 | No point pools | Leaning |
-| SP-10 | A mat-wide Token cap | Leaning |
+| SP-10 | A mat-wide Token cap; everything on the mat counts | Leaning |
 | SP-11 | Spawners live only on the mat; removal returns their price | Leaning |
 | SP-12 | The Spawner Shop (the Cartographer's shop, paid in items) | Leaning |
 | SP-13 | No recipe unlocks; progression gated by items | Leaning |
 | SP-14 | Starter spawners already on the mat | Leaning |
 | SP-15 | Shoals around the edge of a Pond | Replaced by SP-18 |
-| SP-16 | One kind of fish per spot | Open again under SP-18 |
+| SP-16 | One kind of fish per spot | Replaced by SP-50 |
 | SP-17 | Fishing runs on a timer, not charges | Leaning (now the transformed state's timer) |
 | SP-18 | Fishing spots transform (Coast ↔ Shrimp Coast) | Leaning |
 | SP-19 | Seeds from harvests and other skills | Leaning |
-| SP-20 | Sowing is hero work | Leaning |
-| SP-21 | The crop is a setting on the Farmland | Leaning |
+| SP-20 | Sowing is hero work | Replaced by SP-47/SP-48 |
+| SP-21 | The crop is a setting on the Farmland | Replaced by SP-47/SP-49 |
 | SP-22 | Patches give several harvests | Leaning |
 | SP-23 | Stations are permanent | Leaning |
 | SP-24 | No fuel | Replaced by SP-26 |
-| SP-25 | Station tiers: one Kitchen, or an upgradeable blueprint | **Open** |
+| SP-25 | Station tiers: one Kitchen, or an upgradeable blueprint | Settled by SP-49 (tiers are recipes) |
 | SP-26 | Cooking and Smithing burn fuel; Crafting does not | Leaning |
 | SP-27 | Crafting makes parts for other skills | Leaning |
 | SP-28 | Crafting makes things for heroes | Leaning |
@@ -391,6 +519,25 @@ All decisions are **leaning** unless marked otherwise.
 | SP-36 | Camps spawn forever | Leaning |
 | SP-37 | Weighted spawning with rare leaders | Leaning |
 | SP-38 | A leader is a tougher enemy with better loot | Leaning |
+| SP-39 | Support Tokens: boosters, changers, links, helpers | Leaning |
+| SP-40 | Keystones as a rare tier | Leaning |
+| SP-41 | Support Tokens come from recipes, not the shop list | Leaning |
+| SP-42 | Foundations bought at the shop, built with Construction (stations, support Tokens, Farmland) | Leaning |
+| SP-43 | A few kinds of Foundation, tiered | Leaning |
+| SP-44 | Removing is a full refund (Foundation + building); Guild Hall trickle as backstop | Leaning |
+| SP-45 | Exploration gathers rare materials and finds keystones | Leaning |
+| SP-46 | Spawns push (FP-17); they only wait at a cap | Leaning |
+| SP-47 | A Farming hero plants Farmland into a crop Field | Leaning |
+| SP-48 | The Field spawns patches passively, one seed per patch | Leaning |
+| SP-49 | What a Foundation becomes is a recipe; station tiers are higher-level recipes | Leaning |
+| SP-50 | A Coast turns into one of several, from its list | Leaning |
+| SP-51 | A cycle in progress when the Coast turns back is lost | Leaning |
+| SP-52 | A hero whose target vanishes moves to the next thing in range | Leaning |
+| SP-53 | Tools are carried by heroes | Leaning |
+| SP-54 | Maps kept for Exploration: bought, worked, charges, then vanish | Leaning |
+| SP-55 | Managers retired | Leaning |
+| SP-56 | Anvils are bought at the shop | Leaning |
+| SP-57 | Magic equipment comes from a future skill | Leaning |
 
 ## Appendix B: History, and ideas set aside
 
