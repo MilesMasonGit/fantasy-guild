@@ -81,6 +81,19 @@ class GameLoopClass {
             EventBus.publish('time_overflow', { overflowMs: overflow });
         }
 
+        this.runHandlers(delta);
+    }
+
+    /**
+     * Run every registered tick handler once with an explicit `delta`, and
+     * count it as a tick. This is the body of `tick()` minus the wall clock:
+     * `tick()` measures the delta, this delivers it. Exposed so a dev tool
+     * (`DevTools.advanceTime`) can fast-forward the whole game by feeding the
+     * same handlers synthetic deltas — anything that advances by `delta`
+     * moves with it.
+     * @param {number} delta - Milliseconds of game time this step represents
+     */
+    runHandlers(delta) {
         this.tickCount++;
 
         // Call all tick handlers in priority order

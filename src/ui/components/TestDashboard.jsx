@@ -9,6 +9,15 @@ import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
 import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
 import { TypographyScaleModal } from '../modals/TypographyScaleModal.jsx';
 import { xpForLevel } from '../../utils/XPCurve.js';
+import {
+    giveItem, listGivableItemIds, advanceTime, getSpawnerKindCounts,
+    DEV_ADVANCE_STEP_MS, DEV_ADVANCE_MAX_STEPS
+} from '../../systems/core/DevTools.js';
+
+const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
+const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
+const devButtonClass = 'shrink-0 px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
+const devLabelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
 
 /**
  * TestDashboard: A temporary developer QA tool for spawning test data
@@ -21,6 +30,12 @@ export const TestDashboard = React.memo(() => {
     const [showSpawnItem, setShowSpawnItem] = useState(false);
     const [showAnimationStudio, setShowAnimationStudio] = useState(false);
     const cardWidth = useBannerCardWidth();
+    const [giveId, setGiveId] = useState('');
+    const [giveAmount, setGiveAmount] = useState(1);
+    const [advanceMinutes, setAdvanceMinutes] = useState(10);
+    const [devStatus, setDevStatus] = useState('');
+    const itemIds = React.useMemo(() => (isOpen ? listGivableItemIds() : []), [isOpen]);
+    const kindCounts = isOpen ? getSpawnerKindCounts() : [];
 
     React.useEffect(() => {
         if (!engine) return;
@@ -119,6 +134,28 @@ export const TestDashboard = React.memo(() => {
         });
         engine.EventBus.publish('heroes_updated', { source: 'dev_grant_combat' });
         console.log(`[Dev] Granted ${skillId} to ${heroes.length} hero(es)`);
+    };
+
+    const onGiveItem = () => {
+        const r = giveItem(giveId, giveAmount);
+        if (!r.ok) { setDevStatus(r.error); return; }
+        const msg = r.overflow > 0
+            ? `Gave ${r.added}x ${giveId.trim()} to the Bank; ${r.overflow} overflowed onto the mat`
+            : `Gave ${r.added}x ${giveId.trim()} to the Bank`;
+        setDevStatus(msg);
+        console.log(`[Dev] ${msg}`);
+    };
+
+    const onAdvanceTime = () => {
+        const started = performance.now();
+        const r = advanceTime(advanceMinutes);
+        if (!r.ok) { setDevStatus(r.error); return; }
+        const mins = +(r.advancedMs / 60_000).toFixed(2);
+        const took = Math.round(performance.now() - started);
+        const msg = `Advanced ${mins} min in ${r.steps} steps (${took} ms)` +
+            (r.capped ? ` - capped at ${DEV_ADVANCE_MAX_MINUTES} min` : '');
+        setDevStatus(msg);
+        console.log(`[Dev] ${msg}`);
     };
 
     const testActions = [
@@ -308,6 +345,73 @@ export const TestDashboard = React.memo(() => {
                             onChange={(e) => setBannerCardWidth(Number(e.target.value))}
                             className="w-full accent-gi-primary cursor-pointer"
                         />
+                    </div>
+
+                    {/* Token Lifecycle dev tools (slice 0.2, DP-11) */}
+                    <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
+                        <div>
+                            <div className={devLabelClass}>Give item</div>
+                            <div className="flex gap-1">
+                                <input
+                                    type="text"
+                                    list="dev-item-ids"
+                                    value={giveId}
+                                    onChange={(e) => setGiveId(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') onGiveItem(); }}
+                                    placeholder="item_..."
+                                    aria-label="Item id"
+                                    className={`${devInputClass} flex-1`}
+                                />
+                                <datalist id="dev-item-ids">
+                                    {itemIds.map(id => <option key={id} value={id} />)}
+                                </datalist>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={giveAmount}
+                                    onChange={(e) => setGiveAmount(e.target.value)}
+                                    aria-label="Amount"
+                                    className={`${devInputClass} w-14`}
+                                />
+                                <button onClick={onGiveItem} className={devButtonClass}>Give</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className={devLabelClass}>Advance timers (minutes)</div>
+                            <div className="flex gap-1">
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={DEV_ADVANCE_MAX_MINUTES}
+                                    value={advanceMinutes}
+                                    onChange={(e) => setAdvanceMinutes(e.target.value)}
+                                    aria-label="Minutes to advance"
+                                    className={`${devInputClass} flex-1`}
+                                />
+                                <button onClick={onAdvanceTime} className={devButtonClass}>Advance</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className={devLabelClass}>Spawner kinds</div>
+                            {kindCounts.length === 0 ? (
+                                <div className="text-xs text-gi-muted">No spawners yet</div>
+                            ) : (
+                                <ul className="text-xs space-y-0.5">
+                                    {kindCounts.map(({ kind, count, cap }) => (
+                                        <li key={kind} className="flex justify-between">
+                                            <span>{kind}</span>
+                                            <span className="tabular-nums text-gi-primary">{count} / {cap}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        {devStatus && (
+                            <div className="text-[10px] text-gi-muted break-words" role="status">{devStatus}</div>
+                        )}
                     </div>
 
                     <div className="space-y-2 overflow-y-auto max-h-[50vh] custom-scrollbar pr-1">
