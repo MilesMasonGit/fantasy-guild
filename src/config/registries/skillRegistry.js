@@ -14,13 +14,21 @@
  *
  * | Layer | Count | Who holds it | Granted by |
  * | :-- | :-- | :-- | :-- |
- * | `foundation` | 6 | Every Recruit | The starting state |
+ * | `foundation` | 9 | Every Recruit | The starting state |
  * | `combat`     | 3 | Exactly one per promoted hero | First promotion |
  * | `shared`     | 6 | One per base class, plus T2 grants | Promotion |
- * | `signature`  | 12 | Exactly one job each, exclusively | Second promotion |
+ * | `signature`  | 11 | Exactly one job each, exclusively | Second promotion |
  *
- * A hero holds **exactly 6** at all times (`HERO_SKILL_SLOTS`). Promotion
- * removes two and adds two; it never widens the sheet.
+ * A Recruit holds **every foundation skill** (`RECRUIT_SKILL_SLOTS`, nine). A
+ * promoted job holds **exactly 6** (`HERO_SKILL_SLOTS`).
+ *
+ * ⚠️ *Token Lifecycle slice 1.1 (2026-09-25).* The foundation layer grew from six
+ * to nine: `farming` (SP-60) and `explore` (SP-74) are new, and `construction`
+ * moved here from the signature layer (SP-59). The promoted jobs' sheets were
+ * deliberately left as they were (TL-6), so the first promotion now drops
+ * **five** foundation skills instead of two (they are banked at their level,
+ * not lost), and the Warlord, whose signature was Construction, has no
+ * signature skill until the promotion overhaul (SP-58).
  *
  * ## ⚠️ This list is a first draft and is expected to change
  * *(Owner, 2026-08-12.)* Which skills exist, and which layer each sits in, will
@@ -36,6 +44,10 @@
  * `occult` and `science` **keep their id but change meaning** — both are now
  * job-exclusive signatures. That is safe only because saves are wiped.
  *
+ * **`explore` is back, as a different skill** (SP-74): the new foundation
+ * Explore works Maps. Nothing remaps the old id to `survival` (there was never
+ * an alias or a save migration for it), so reusing it collides with nothing.
+ *
  * **`SUB_SKILL_TO_PARENT` is gone.** Sub-skills were tags whose XP funnelled
  * into a parent; the split they simulated (mining vs quarrying) is now either a
  * real skill or nothing at all.
@@ -50,7 +62,7 @@ export const SKILL_LAYERS = {
 };
 
 export const SKILLS = {
-    // === Foundation (6) — every Recruit holds all of these ================
+    // === Foundation (9) — every Recruit holds all of these ================
     mining: {
         id: 'mining', name: 'Mining', layer: SKILL_LAYERS.FOUNDATION,
         description: 'Extracting ore, stone and gems from veins and quarries.',
@@ -86,6 +98,21 @@ export const SKILLS = {
         description: 'Preparing meals and curative broths that keep heroes working.',
         icon: '🍳',
         sprite: 'assets/skills/skill_cooking.png'
+    },
+    construction: {
+        id: 'construction', name: 'Construction', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Building stations on Foundations.',
+        icon: '🧱'
+    },
+    farming: {
+        id: 'farming', name: 'Farming', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Planting and harvesting crops and fruit.',
+        icon: '🌾'
+    },
+    explore: {
+        id: 'explore', name: 'Explore', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Working Maps, spending supplies for themed finds.',
+        icon: '🧭'
     },
 
     // === Combat (3) — exactly one per promoted hero =======================
@@ -144,16 +171,11 @@ export const SKILLS = {
         icon: '🧪'
     },
 
-    // === Signature (12) — exclusive to one advanced job each ==============
+    // === Signature (11) — exclusive to one advanced job each ==============
     armory: {
         id: 'armory', name: 'Armory', layer: SKILL_LAYERS.SIGNATURE,
         description: 'Masterwork plate, and tempering outgrown gear into something better.',
         icon: '🛡️'
-    },
-    construction: {
-        id: 'construction', name: 'Construction', layer: SKILL_LAYERS.SIGNATURE,
-        description: 'Permanent stone: vaults, paving and hall expansions.',
-        icon: '🧱'
     },
     occult: {
         id: 'occult', name: 'Occult', layer: SKILL_LAYERS.SIGNATURE,
@@ -247,10 +269,17 @@ export const SKILL_CATEGORIES = {
 export const SKILL_COUNT = Object.keys(SKILLS).length;
 
 /**
- * How many a single hero holds, at every tier. Promotion swaps contents, never
- * width — so a full roster's information cost is fixed at `roster × 6`.
+ * How many skills a **promoted** hero holds (base class and advanced job).
+ * Promotion between those tiers swaps contents, never width.
  */
 export const HERO_SKILL_SLOTS = 6;
+
+/**
+ * How many skills a **Recruit** holds: the whole foundation layer (SP-59,
+ * SP-60, SP-74). Wider than `HERO_SKILL_SLOTS` until the skills overhaul
+ * (SP-58) decides the final shape, so the first promotion narrows the sheet.
+ */
+export const RECRUIT_SKILL_SLOTS = FOUNDATION_SKILL_IDS.length;
 
 /** Whether `skillId` names a real skill. */
 export function isSkillId(skillId) {

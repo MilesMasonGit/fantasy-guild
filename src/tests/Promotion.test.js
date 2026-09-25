@@ -320,7 +320,10 @@ describe('The UI is told, so the Dock actually redraws', () => {
         expect(seen[0]).toMatchObject({
             heroId: hero.id, fromJobId: STARTING_JOB_ID, toJobId: 'fighter'
         });
-        expect(seen[0].banked).toHaveLength(2);
+        // Slice 1.1: a Recruit holds nine and a Fighter keeps four, so five are
+        // banked (it was two when the Recruit held six). TL-6 leaves the Fighter
+        // sheet alone until the promotion overhaul.
+        expect(seen[0].banked).toHaveLength(5);
         expect(seen[0].gained).toHaveLength(2);
     });
 
@@ -345,7 +348,9 @@ describe('Preview shows the trade before the player commits', () => {
         const hero = makeQualified('fighter');
         const preview = PromotionSystem.previewPromotion(hero.id, 'fighter');
 
-        expect(preview.losing.length).toBe(2);      // promotion removes exactly two
+        // Slice 1.1: nine held, four kept, so five are lost (banked). It was two
+        // when the Recruit held six; TL-6 leaves the Fighter sheet alone.
+        expect(preview.losing.length).toBe(5);
         expect(preview.arriving.length).toBe(2);    // and adds exactly two
         expect(preview.keeping.length).toBe(4);
         expect(preview.ok).toBe(true);

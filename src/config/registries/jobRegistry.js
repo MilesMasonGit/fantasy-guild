@@ -17,14 +17,27 @@ import {
  * rather than filling in a bigger sheet.
  *
  * ```
- * RECRUIT            6 foundation · no combat skill · cannot fight
- *    │  promote        −2 foundation  +1 combat  +1 shared
+ * RECRUIT            9 foundation · no combat skill · cannot fight
+ *    │  promote        −5 foundation  +1 combat  +1 shared
  *    ▼
  * BASE CLASS         4 foundation · 1 combat · 1 shared
  *    │  promote        −2 foundation  +1 shared  +1 signature
  *    ▼
  * ADVANCED JOB       2 foundation · 1 combat · 2 shared · 1 signature
  * ```
+ *
+ * ⚠️ *Token Lifecycle slice 1.1 (2026-09-25).* The Recruit grew from six skills
+ * to nine (Construction, Farming and Explore joined the foundation layer:
+ * SP-59, SP-60, SP-74), but the promoted sheets below were left exactly as
+ * they were (TL-6). So:
+ * * the first promotion banks **five** foundation skills, not two (banked at
+ *   their level, never lost — D-71), and no base class holds Construction,
+ *   Farming or Explore;
+ * * the **Warlord** still lists `construction`, which is now a foundation
+ *   skill rather than its signature, so it has three foundation skills, no
+ *   signature, and restores Construction from the bank on promotion.
+ * Both are accepted until the promotion overhaul (SP-58); `JobTree.test.js`
+ * names them as the known exceptions.
  *
  * ## Each job declares its SHEET, not its deltas
  * A job lists the complete set of six skills a hero holds on reaching it. What
@@ -233,7 +246,7 @@ export function getPromotionsFrom(jobId) {
     return getAllJobIds().filter(id => JOBS[id].parent === jobId);
 }
 
-/** The six skills a hero holds on this job. */
+/** The skills a hero holds on this job (nine for a Recruit, six once promoted). */
 export function getJobSkills(jobId) {
     return JOBS[jobId]?.skills ? [...JOBS[jobId].skills] : [];
 }
