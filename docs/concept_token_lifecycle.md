@@ -1,8 +1,10 @@
 # Concept Document: The Token Lifecycle
 
-**Status:** DRAFT concept **v2**, 2026-09-25 (support Tokens, Foundations and a
-final round of owner answers added the same day, ready for a fresh review by
-another agent). Design only; no code written.
+**Status:** DRAFT concept **v2.1**, 2026-09-25. v2 was reviewed the same day by
+a second agent against the code and the free-playmat roadmap; the findings and
+the owner's answers are in **§9**, and each skill's full lifecycle chain is in
+**§10**. Where §9 amends an earlier rule, the earlier rule carries a note.
+Design only; no code written.
 The working direction is the **Spawner System with a Spawner Shop**, proposed by
 the owner and tested against every foundational skill. **Every decision here is
 leaning**: the owner chose it within this direction, but nothing is locked.
@@ -82,7 +84,10 @@ ingredients.
   reached: its kind's cap (SP-5) or the mat's Token cap (SP-10). If the mat is so
   full that nothing can be pushed, FP-46 applies and the arrival is refused, so
   the spawn waits. *(Replaces SP-7, "no room, no spawn", which had spawns wait
-  instead of pushing.)*
+  instead of pushing.)* **Amended by SP-68:** spawns push only other spawned
+  Tokens, never anything the player placed.
+* **SP-70 Spawners generally have upkeep** (§9.3): an item paid per spawn, such
+  as one Oak Seed per sapling, which the spawned Tokens themselves drop.
 
 ### 3.2 The Spawner Shop
 
@@ -96,7 +101,10 @@ ingredients.
 * **SP-14 A new save starts with a starter set of spawners already on the mat**
   (e.g. an Oak Forest and a Copper Mine). Everything after that is bought with
   what they produce. This breaks the circle in which every price is another
-  skill's items.
+  skill's items. **The contents are decided after implementation (SP-72):**
+  "we'll give the player whatever they need to get started."
+* **SP-65 Gold is probably retired; items are the only price** (§9.2). This
+  covers the Guild Hall's upgrades too.
 
 ### 3.3 Limits and removal
 
@@ -105,12 +113,16 @@ ingredients.
   unnecessary systems." Their jobs are covered elsewhere: floods by the live cap
   (SP-5), scale by the shop's prices (SP-13).
 * **SP-10 A mat-wide Token cap:** a maximum number of Tokens allowed on the
-  playmat, which the owner expects to need for performance anyway. **Everything
-  on the mat counts**: spawned trees, veins and enemies as well as spawners,
-  stations and support Tokens. It is the limit on how far a player can scale.
+  playmat, which the owner expects to need for performance anyway. It is the
+  limit on how far a player can scale. **Amended by SP-67:** only Tokens the
+  player **places** count (spawners, stations, Foundations, support Tokens).
+  Spawned trees, veins and enemies are already bounded by their kind's cap
+  (SP-5), so the total stays bounded, and an idle mat full of trees never blocks
+  a purchase.
 * **SP-11 Spawners live only on the mat.** There is no bar, catalogue or
   storage for them. **Removing a spawner returns the items it cost** to the Bank,
-  so it can be bought again later.
+  so it can be bought again later. *(The refund half is reopened with SP-44; see
+  SP-63.)*
 
 ### 3.4 A constraint from how heroes work
 
@@ -149,6 +161,11 @@ task over another within the same skill**, so no design here may depend on that.
   themselves. **Alternative backstop (owner):** the Guild Hall's passive
   generation gives a small, constant trickle, so the player can never run out
   completely. Both are recorded; the full refund is the owner's first answer.
+  **⚠️ Reopened by the review (SP-63, SP-66):** a full refund on something that
+  wears out made wearing out meaningless. The refund is now either **by charges
+  left** or **gone entirely** ("Tokens that are disposed of are just gone,
+  making the cost of building one a real choice"), and the **Guild Hall
+  trickle** becomes the softlock backstop either way.
 
 This is also how the **shop stays short**: stations and support Tokens don't each
 need a shop entry, only the few Foundation kinds do.
@@ -397,9 +414,12 @@ retiring the Maps.
 *Open:* each Map's yields; whether keystone finds can be aimed (by choosing the
 Map) or are pure chance; Map charges and prices.
 
-⚠️ **Exploration, Construction and Farming are not in the skill registry**
-(`src/config/registries/skillRegistry.js`); each would be added as its own piece
-of work.
+⚠️ **Corrected by the review (§9.1):** Construction *is* in the skill registry
+(`src/config/registries/skillRegistry.js`), but as a **signature** skill: second
+promotion, one job only. Farming and Exploration are not. Recruits hold exactly
+6 skills (Mining, Logging, Fishing, Smithing, Crafting, Cooking) and **no combat
+skill**. The owner will **overhaul the skills list once this design says which
+skills the game needs** (SP-58); §10.12 is that list.
 
 ## 6. Open questions
 
@@ -466,13 +486,358 @@ None of these has been edited; each needs the owner's decision first.
 ⚠️ **Do not start slices 1.8 or 1.9 as written** until the owner decides how far
 this concept replaces them.
 
+⚠️ **Out of date (review, §9.5):** slices 1.8 and 1.9 are not "unstarted". The
+roadmap marks both **PARTIAL** (reconciled 2026-09-21, `v0.8.0` tagged): bursts
+and spawns already land on the mat and push, bought Maps land beside the Hall,
+the Tray UI is gone, and the **Vault is live**, since loot pickup and
+right-click send Tokens to it. The question is what to *undo*, not what to skip.
+**FP-70** (a hero waits on an empty spot for its Manager) also goes with SP-55.
+
 ## 8. Next steps
 
-1. **A fresh review by another agent** (the owner's request): poke holes in the
-   direction and identify issues, before any more detail is added.
-2. **Foundations and support Tokens in detail** (§3.5, §3.6).
-3. The open questions in §6 and §5, in the owner's order.
-4. When the direction is settled, a roadmap with slices.
+1. ~~**A fresh review by another agent**~~ **Done 2026-09-25** (§9).
+2. **The skills overhaul** (SP-58), using the list in §10.12.
+3. **Decide the refund rule** (SP-63: by charges left, or no refund).
+4. **Foundations and support Tokens in detail** (§3.5, §3.6), including
+   which skill makes each support Token once the skills list settles.
+5. The open questions in §6, §5 and §9.6, in the owner's order.
+6. When the direction is settled, a roadmap with slices. Rebuild the starter
+   set and the Guild Hall trickle **after** implementation (SP-72).
+
+---
+
+## 9. Review (2026-09-25, second agent)
+
+A design-only review of v2 against the code on `main` (`ab9487b`) and
+[`free_playmat_roadmap_v1.md`](free_playmat_roadmap_v1.md), followed by an
+owner interview. Every answer below is **leaning** unless it says **open**.
+
+### 9.1 Blockers: a new save could not progress
+
+| # | Found | Owner's answer |
+|---|---|---|
+| R-1 | **Nobody could build.** Construction is a signature skill (second promotion, one job), so Recruits can't turn a Foundation into a Kitchen or Furnace. | **SP-59 Every Recruit gets Construction.** |
+| R-2 | **Nobody could farm.** There is no Farming skill; Nature ("herbs, crops and livestock") comes at first promotion. | **SP-60 Farming is a new starting skill.** |
+| R-3 | **Nobody could explore.** There is no Exploration skill; Survival replaced the old `explore` id and now means "forward camps and outposts". | **SP-61 A new Explore skill, if Maps are kept.** Whether Maps stay is **open**: "probably going to keep but rework". |
+| R-4 | **Nobody could be promoted.** The Fighter's and Wizard Academies come out of Map bursts (`map_cozy_hamlet` holds the Fighter's Academy), which v2 removes. No promotion means no combat and no advanced skills. | **SP-62 Academies are built on Foundations**, as a recipe like any station. |
+| R-5 | **The skill slots don't fit.** Adding two starting skills makes 8, but a hero holds exactly 6 (`HERO_SKILL_SLOTS`). | **SP-58 The skills list is an output of this design.** "We'll be overhauling the skills list once we know what skills we need, and which skills are needed at the Recruit level." §10.12 is the input to that. |
+| R-6 | **Recruits can't fight.** Recruits hold no combat skill, so a camp is useless until someone is promoted. | No change asked; recorded in §10.6. Camps are post-promotion content. |
+
+### 9.2 Exploits, softlocks and the economy
+
+| # | Found | Owner's answer |
+|---|---|---|
+| R-7 | **A full refund cancels wearing out.** Use an Anvil (or an academy) down to one charge, remove it for a full refund, buy a fresh one. | **SP-63 (open between two):** refund **by charges left**, *or* **no refunds at all**, "making the cost of building one a real choice". Either closes the exploit. The second also closes R-9's free-Token loophole. |
+| R-8 | **Build, remove, rebuild farms Construction XP for free.** | **SP-64 Accept it.** It is a manual loop, not idle. |
+| R-9 | A spawner given free (by a quest or milestone) would refund a price it never cost (already noted in §6). | Closed by either form of SP-63 if "refund" means *what was paid*. |
+| R-10 | **Without refunds, a player can spend their last Oak on a bad building** and have nothing left to buy with. | **SP-66 The Guild Hall trickle is the backstop**, including (probably) one kind of seed. Its contents are tuned after implementation. ⚠️ The Hall produces nothing today (`token_guild_hall` has no config); this is new work. |
+| R-11 | **Gold has no clear source.** Guild Hall upgrades (Bunk Beds 500 g, rising ×1.8) cost gold; gold came from Map rewards, loot and selling. | **SP-65 Gold is probably retired; items are the main gate.** "I would rather have a Token cost 1000 wood instead of 900 GP and 100 Wood." Guild Hall upgrades get item prices. ⚠️ **Commerce** (markets that turn goods into gold) loses its purpose; see §10.12. |
+
+### 9.3 Idle play
+
+| # | Found | Owner's answer |
+|---|---|---|
+| R-12 | **The mat cap would stay full.** Spawners fill up to SP-10's cap on their own, so an idle player would return to a shop that refuses every purchase. | **SP-67 The cap counts only placed Tokens.** Spawned Tokens are bounded by per-kind caps × spawners. |
+| R-13 | **Spawns slowly wreck the layout.** Pushing (SP-46) shoves support Tokens and stations out of Close/Near range over hours. | **SP-68 Spawns push only other spawned Tokens.** A spawner boxed in by placed Tokens waits (FP-46) and should say so. |
+| R-14 | **An unwatched leader stops a flag.** A rare Goblin Chief kills a gatherer overnight and FP-42 furls the flag. | **SP-69 Intended.** "This is what makes combat dangerous and needs supervision." FP-74 stands; the player keeps camps away from weak heroes or watches them. |
+| R-15 | **Upkeep can die out.** (Raised by the new upkeep rule, SP-70.) A tree with 10 charges and a 20% seed drop gives **2 seeds on average** for the 1 it cost, so a Forest's seed stock grows. But **~11% of trees drop none** (0.8¹⁰), so a first Forest started from one seed stalls about one time in nine. | **Caught by SP-66's trickle** (one seed kind). |
+
+**SP-70 Upkeep (owner's idea, new).** "Generally spawners come with an upkeep
+cost", decided **per Token** (in the spirit of *guidelines, not laws*): an Oak
+Forest pays one Oak Seed per sapling; its trees drop Oak Seeds, so it sustains
+itself. **The code already has this:** a rule can carry an item upkeep on its
+own clock, and when the Bank can't pay, the rule switches **off** until stock
+returns (`BlockUpkeep.js`, CMS-60 and CMS-97). A spawn rule with a per-spawn
+upkeep is that mechanism with the clock set to the spawn. Upkeep also makes
+Logging and Farming the same shape, which §10 uses. **Open:** whether stations'
+fuel (SP-26) becomes upkeep too; the owner raised upkeep in answer to the fuel
+question.
+
+**SP-71 Seeds are separate items,** except where the crop *is* the seed
+(Coconuts plant Coconut Trees). **SP-73 Fruit goes into Orchards:** planted on
+Farmland like a crop Field, spawning fruit trees and bushes, harvested by
+Farming. The 17 authored fruit Tokens become Orchard spawns.
+
+**Food** is already implemented as eaten to regain health and sustain long
+fights (owner). This is recorded here because it is Cooking's reason to exist
+on the skills list.
+
+### 9.4 Contradictions resolved on reading
+
+* **SP-13 versus level gates (§6).** Consistent. SP-13 forbids *unlock events*
+  (a recipe that must be discovered or bought). A Construction level
+  requirement is the existing `skillRequired` on a recipe, visible from the
+  start. Both gates apply: the items **and** the level.
+* **SP-46's "the spawn waits" versus FP-46's "a spawn is skipped".** The same
+  outcome: nothing is lost and the spawner tries again next time.
+* **Kind caps with two spawners of the same kind.** SP-5 says 5 × Oak Forests;
+  a keystone that also grows Oak Trees needs a rule. *Proposed, open:* a kind's
+  cap is the **sum of the allowances of every spawner that makes it**.
+
+### 9.5 Conflicts with the code and the free-playmat roadmap
+
+Recorded for the roadmap; none needs an answer yet.
+
+* **Slices 1.8 and 1.9 are partly built** (see the note under §7), and the
+  **Vault is live**. Retiring it means re-homing loot pickup, right-click
+  deposit, and FP-46's "a burst that doesn't fit drops as loot".
+* **FP-70** (a hero waits on an empty spot for its Manager) goes with SP-55.
+* **Tutorial quests** reward Guild Hall Maps (all 13 in
+  `tutorialQuests.js`) and count `token_placed` and `token_exhausted`. They need
+  item rewards and new triggers.
+* **Today's Forests are workable Tokens.** `token_oak_forest` is logged directly
+  (100 uses, gives Oak Wood). As a spawner it changes meaning, and so do the
+  Birch, Fir, Maple and Mahogany Forests. **All reauthoring goes through the
+  CMS**, which must learn spawner caps and per-spawn upkeep before any content
+  moves.
+* **Tools on Token recipes.** Recipes already output Tokens (the Copper Pickaxe
+  recipe makes `token_copper_pickaxe`), and workable Tokens require nearby tools
+  (`acceptedTokens`, e.g. the Oak Forest needs an axe). SP-53 moves both onto
+  hero equipment.
+* **Transforms and spawns ignore "Cannot" rules** (§6). The Coast already has
+  one (no more than 2 Coasts together), and Coasts transform.
+* **Energy code remains** in hero consumption, regen and combat (goal list, §2).
+* **Names:** the items are **ingots**, not bars (`item_copper_ingot`).
+* **Registry overlaps** worth knowing for the overhaul: Engineering is
+  "Managers, drones and clockwork" (Managers are retired, SP-55); Survival's
+  "outposts that supercharge a neighbour" are boosters (SP-39); Nature's crops
+  are now Farming.
+
+### 9.6 Still open after the review
+
+* **SP-63:** refund by charges left, or no refunds.
+* **Maps:** kept and reworked, or retired (SP-61).
+* **Fuel:** an ingredient, as the code does today, or station upkeep (SP-70).
+* **Bank slots.** The Bank has limited slots (64, +32 per rank). Seeds for
+  every crop and tree, plus rare materials, add item kinds. What happens to an
+  output when the Bank is full decides whether an idle mat stalls.
+* **The kind-cap sum rule** (§9.4).
+* **Which items each spawner pays as upkeep**, and whether camps have any.
+
+---
+
+## 10. Skill lifecycles and chains
+
+Where every Token comes from and what happens to it, skill by skill. The chains
+use today's item names where they exist; **items that don't exist yet are
+marked ✱**. Tiers follow the items already authored. Nothing in this section
+adds a decision beyond §9: it is the owner's rules laid out end to end, with
+**suggested** details marked as such.
+
+### 10.1 The shared shapes
+
+Every Token on the mat follows one of five shapes.
+
+| Shape | Obtained | On the mat | Worked by | Ends |
+|---|---|---|---|---|
+| **Spawner** | Bought at the shop | Spawns workable Tokens up to its kind's cap, paying upkeep per spawn | Nobody (heroes work what it spawns) | Removed by the player (SP-63) |
+| **Spawned Token** | Made by a spawner | May grow first (sapling → tree), then waits to be worked | Its gathering skill | **Vanishes** when its charges run out; the spawner replaces it |
+| **Transformer** | Bought at the shop | Changes into a workable state for a while, then turns back | Its skill, while transformed | Permanent; removed by the player |
+| **Built Token** | A Foundation (shop) plus a recipe picked on it | Built in place by Construction (or planted by Farming), then works as a station, support Token or academy | Its skill (stations) or nobody (support) | Permanent, except Tokens with charges (academies), which vanish when used up |
+| **Consumable Token** | Bought at the shop | Worked until its charges run out | Its skill | **Vanishes**; bought again (Anvils, Maps) |
+
+And one special Token: the **Guild Hall**, on the mat from the start, the
+upgrade board, and (SP-66) a slow trickle of basic items and one seed kind.
+
+### 10.2 Logging
+
+```
+Shop: Oak Forest (paid in items)
+  └─ spawns an Oak Sapling  ── upkeep: 1 Oak Seed✱ per spawn
+       └─ matures into an Oak Tree (10 charges)
+            └─ Logging: each cycle → Oak Wood, 20% → Oak Seed✱
+                 └─ tree vanishes at 0 charges → Forest spawns again
+```
+
+* **Self-sustaining:** 2 seeds per tree on average, against 1 spent (§9.3).
+* **Feeds:** Construction (Wood Foundations, buildings), Crafting (planks✱,
+  Charcoal for fuel), shop prices (SP-13's Mythril Mineshaft needs a higher
+  wood).
+* **Tiers from existing items:** Oak → Birch → Fir → Maple → Cedar → Mahogany →
+  Ebony (the order is a suggestion). Each Forest is priced in the wood below it
+  plus another skill's items.
+* **Stalls when:** no seeds (the trickle restarts it), or cap reached.
+
+### 10.3 Mining
+
+```
+Shop: Copper Mine (paid in items)
+  └─ spawns a Copper Vein  ── upkeep: decided per Token (suggested: none early,
+  │                            Timber Supports✱ from Crafting later)
+       └─ Mining: each cycle → Copper Ore
+            └─ vein vanishes at 0 charges → Mine spawns again
+```
+
+* **The plain, reliable skill** (SP-33). No growth stage.
+* **Feeds:** Smithing (ore → ingots), Crafting (Quartz → glass✱, Clay →
+  ceramics), Construction (**Stone✱**, which Stone Foundations need but no item
+  provides today), fuel (Coal).
+* **Tiers from existing items:** Copper → Iron → Silver / Gold → Mythril →
+  Adamantine → Darkmetal, with side mines for Coal, Clay and Quartz.
+* **Gap:** a Stone item, and whether it comes from a Quarry spawner.
+
+### 10.4 Fishing
+
+```
+Shop: Coast (permanent)
+  └─ on a timer, turns into one of its list (Shrimp Coast, weighted; Crab Coast✱)
+       └─ Fishing: each cycle → Raw Shrimp, until the timer ends
+            └─ turns back into a Coast; a cycle in progress is lost (SP-51)
+```
+
+* **No spawns, so no cap and no seed upkeep.** More fishing = more Coasts.
+  *Suggested, open:* upkeep in the form of **Bait✱** per transformation.
+* **Feeds:** Cooking (Raw Shrimp → Shrimp).
+* **Tiers:** only Raw Shrimp exists today. Higher Coasts (Reef, Deep Water)
+  need new fish items.
+
+### 10.5 Farming (crops and fruit)
+
+```
+Shop: Farmland (a Foundation kind)
+  └─ pick a recipe on it: Wheat Field, Onion Field✱, Apple Orchard✱ …
+       └─ a Farming hero PLANTS it → the Field (permanent, not worked)
+            └─ spawns a patch or fruit tree  ── upkeep: 1 seed per spawn
+                 (Wheat Seed✱; Coconut plants Coconut, SP-71)
+                 └─ grows to ripe (several charges, SP-22)
+                      └─ Farming: each cycle → the crop, sometimes its seed
+                           └─ patch vanishes → the Field spawns again
+```
+
+* **The same shape as Logging** once upkeep exists; the differences are that
+  the spawner is *planted* rather than bought, and one Farmland can grow many
+  kinds.
+* **First seeds** come from other skills' work (SP-19) and the trickle.
+* **Feeds:** Cooking (Wheat → Flour → Dough; fruit → pies and juices),
+  support Tokens (Windmill already boosts Fields).
+* **Existing Tokens that fit:** Wheat Field, 11 fruit trees, 6 berry bushes and
+  vines, Watermelon Patch (SP-73).
+* **Switching crops:** remove the Field and plant again (subject to SP-63).
+
+### 10.6 Combat
+
+```
+Shop: Goblin Camp (paid in items)
+  └─ spawns from its weighted list: Goblin (common), Goblin Chief (rare)
+     ── upkeep: decided per Token (open whether camps have any)
+       └─ a PROMOTED hero in range fights it (Recruits hold no combat skill)
+            ├─ win → enemy vanishes, loot to the Bank, camp spawns again
+            └─ lose → hero goes home wounded, flag comes down (FP-42)
+```
+
+* **Dangerous by design** (SP-69): leaders need watching.
+* **Needs:** promotion (academies, §10.9), Cooking's food to sustain long
+  fights, Smithing and Crafting gear.
+* **Feeds:** shop prices (loot as a gate), Cooking (Raw Beef from the Cow),
+  Bones.
+* **Styles:** whether a camp leans Melee, Ranged or Magic is open.
+
+### 10.7 Cooking
+
+```
+Shop: Foundation → pick Cooking Pot / Range / Kitchen (Construction level-gated)
+  └─ Construction builds it in place (permanent)
+       └─ pick a recipe in the station
+            └─ Cooking: each cycle takes ingredients (+ fuel, SP-26) → a dish
+                 └─ waits when an input is missing
+```
+
+* **Station tiers lower the failure chance** (§5.7).
+* **Inputs:** Fishing, Farming, Combat (beef), Water (the Wishing Well, a Guild
+  Hall upgrade today).
+* **Output's purpose:** food restores health in combat (already implemented).
+* **Drinks** (Beer, Lemonade) exist as items; which skill makes them is open.
+
+### 10.8 Crafting
+
+```
+Shop: Foundation (Bench quality) → Construction builds a Workbench / Kiln
+  └─ pick a recipe → Crafting: inputs → parts, tools, Ranged gear (no fuel)
+```
+
+* **The connector skill** (SP-27): Oak Wood → Charcoal (fuel for Smithing and
+  Cooking; the Campfire does this today), Clay → ceramics (Ceramics Kiln),
+  Quartz → glass✱, planks✱, rope✱, Timber Supports✱, Bait✱.
+* **Feeds:** almost every price, Smithing and Cooking (fuel), Fishing and Ranged
+  (nets, bows), Mining (supports, if used as upkeep).
+
+### 10.9 Smithing
+
+```
+Shop: Foundation → Construction builds a Furnace (permanent)
+  └─ Smithing SMELTS: Copper Ore ×4 + Coal (fuel) → Copper Ingot  (no Anvil)
+       └─ Copper Ingots buy a Copper Anvil at the shop (consumable, charges)
+            └─ placed near the Furnace → Smithing SMITHS melee gear and tools
+                 └─ Anvil vanishes at 0 charges → bought again
+                      └─ higher ingots buy higher Anvils (climbs on its own output)
+```
+
+* **Feeds:** Mining (pickaxes), Melee (weapons, armour), Construction (ingots
+  in higher building prices).
+* **Refunds matter most here:** the Anvil is the Token that forced SP-63.
+
+### 10.10 Construction
+
+```
+Shop: Foundation (Wood / Stone / Bench qualities; tiered, SP-43)
+  └─ placed where the building should stand
+       └─ pick a recipe on it (Construction level-gated, SP-49)
+            └─ Construction builds it in place → a station, support Token or academy
+```
+
+* **Builds:** every station (§10.7–10.9), support Tokens (SP-41), and
+  **academies** (SP-62).
+* **Inputs:** Logging (wood), Mining (Stone✱, ingots via Smithing), Crafting
+  (parts), and rare materials for support Tokens and keystones.
+* **Promotion chain:** Stone Foundation → Fighter's Academy (10 charges) → each
+  promotion uses one → the academy vanishes when used up → built again.
+
+### 10.11 Explore (if Maps are kept)
+
+```
+Shop: a Map (consumable, charges)
+  └─ an Explore hero works it → rare materials (Beeswax Comb✱, Ancient Seed✱),
+     sometimes a keystone
+       └─ Map vanishes at 0 charges → bought again
+```
+
+* **Feeds:** support-Token and keystone recipes. **Open:** the Map rework
+  itself (§9.6), and whether keystones can be aimed.
+
+### 10.12 What skills the game needs (input to the skills overhaul)
+
+The chains above call for these, **before** any promotion:
+
+| Needed at Recruit level | Why a Recruit needs it |
+|---|---|
+| Logging | Wood is in nearly every early price, and the first fuel |
+| Mining | Ore, Coal, Clay, Quartz, Stone✱ |
+| Construction | Nothing past the starter set exists without it |
+| Crafting | Charcoal (fuel) and parts; the connector |
+| Smithing | Ingots gate higher prices; pickaxes |
+| Farming | Crops and fruit for Cooking; seeds |
+| Fishing | Cooking's first ingredient that needs no Foundation |
+| Cooking | Food sustains combat, so it must be ready **before** the first promotion |
+
+That is **8 at Recruit level**, against 6 slots today. Candidates to trim, if
+the overhaul wants fewer: Fishing (Cooking could start on crops) or folding
+Smithing's smelting into Crafting. Neither is recommended here; both are
+options for the overhaul.
+
+**Needed after the first promotion:** one combat style (Melee, Ranged, Magic);
+Explore, if Maps stay (SP-61); a magic-gear skill (SP-57).
+
+**No chain uses them yet** (the overhaul decides whether to cut, merge or give
+each a chain): Leadership, Faith, Nature (its crops moved to Farming), Crime,
+Alchemy, Armory, Occult, Inscription, Beastmaster, Survival, Commerce (no gold
+to make, SP-65), Brewing, Summoning, Astrology, Science, Engineering.
+
+**An observation for the overhaul, not a proposal:** several of those
+descriptions already read as **support Tokens** (SP-39). Survival's outposts
+"supercharge a neighbour" (boosters), Engineering's clockwork works "the board
+unattended" (helpers), and Astrology's lenses "bend what the world drops"
+(changers). If promoted heroes need a job, *making support Tokens* is one that
+the chains leave open. SP-41 currently has Construction build them all.
 
 ---
 
@@ -490,11 +855,11 @@ All decisions are **leaning** unless marked otherwise.
 | SP-7 | No room, no spawn (spawns wait instead of pushing) | Replaced by SP-46 |
 | SP-8 | Earn the first spawner, craft the rest (recipe unlocks) | Replaced by SP-12/SP-13 |
 | SP-9 | No point pools | Leaning |
-| SP-10 | A mat-wide Token cap; everything on the mat counts | Leaning |
-| SP-11 | Spawners live only on the mat; removal returns their price | Leaning |
+| SP-10 | A mat-wide Token cap | Leaning, amended by SP-67 (placed Tokens only) |
+| SP-11 | Spawners live only on the mat; removal returns their price | Leaning; the refund is reopened by SP-63 |
 | SP-12 | The Spawner Shop (the Cartographer's shop, paid in items) | Leaning |
 | SP-13 | No recipe unlocks; progression gated by items | Leaning |
-| SP-14 | Starter spawners already on the mat | Leaning |
+| SP-14 | Starter spawners already on the mat | Leaning; contents decided after implementation (SP-72) |
 | SP-15 | Shoals around the edge of a Pond | Replaced by SP-18 |
 | SP-16 | One kind of fish per spot | Replaced by SP-50 |
 | SP-17 | Fishing runs on a timer, not charges | Leaning (now the transformed state's timer) |
@@ -524,9 +889,9 @@ All decisions are **leaning** unless marked otherwise.
 | SP-41 | Support Tokens come from recipes, not the shop list | Leaning |
 | SP-42 | Foundations bought at the shop, built with Construction (stations, support Tokens, Farmland) | Leaning |
 | SP-43 | A few kinds of Foundation, tiered | Leaning |
-| SP-44 | Removing is a full refund (Foundation + building); Guild Hall trickle as backstop | Leaning |
+| SP-44 | Removing is a full refund (Foundation + building); Guild Hall trickle as backstop | **Reopened** by SP-63 / SP-66 |
 | SP-45 | Exploration gathers rare materials and finds keystones | Leaning |
-| SP-46 | Spawns push (FP-17); they only wait at a cap | Leaning |
+| SP-46 | Spawns push (FP-17); they only wait at a cap | Leaning, amended by SP-68 (push only spawned Tokens) |
 | SP-47 | A Farming hero plants Farmland into a crop Field | Leaning |
 | SP-48 | The Field spawns patches passively, one seed per patch | Leaning |
 | SP-49 | What a Foundation becomes is a recipe; station tiers are higher-level recipes | Leaning |
@@ -538,6 +903,22 @@ All decisions are **leaning** unless marked otherwise.
 | SP-55 | Managers retired | Leaning |
 | SP-56 | Anvils are bought at the shop | Leaning |
 | SP-57 | Magic equipment comes from a future skill | Leaning |
+| SP-58 | The skills list is an output of this design; the registry will be overhauled (§10.12) | Leaning |
+| SP-59 | Every Recruit gets Construction | Leaning |
+| SP-60 | Farming is a new starting skill | Leaning |
+| SP-61 | A new Explore skill works Maps, if Maps are kept | Leaning; keeping Maps is **open** |
+| SP-62 | Academies (promotion Tokens) are built on Foundations | Leaning |
+| SP-63 | Refund by charges left, or no refunds at all | **Open** between the two |
+| SP-64 | The build-remove-rebuild XP loop is accepted | Leaning |
+| SP-65 | Gold retired; items are the only price, Guild Hall upgrades included | Leaning ("may be retired") |
+| SP-66 | The Guild Hall trickle is the softlock backstop, including one seed kind | Leaning; contents tuned after implementation |
+| SP-67 | The mat cap counts only placed Tokens | Leaning |
+| SP-68 | Spawns push only other spawned Tokens | Leaning |
+| SP-69 | Leaders are dangerous by design; combat needs supervision | Leaning |
+| SP-70 | Spawners generally have upkeep (an item per spawn), decided per Token | Leaning |
+| SP-71 | Seeds are separate items, except where the crop is the seed | Leaning |
+| SP-72 | Starter set and trickle contents decided after implementation | Leaning |
+| SP-73 | Fruit grows in Orchards planted on Farmland, worked by Farming | Leaning |
 
 ## Appendix B: History, and ideas set aside
 
