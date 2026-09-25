@@ -10,8 +10,9 @@ import {
     UPGRADE_BOARD_GUILD_HALL_TILE
 } from '../../../config/upgradeBoardGeometry.js';
 import {
-    getUpgradeDefByTile, isTileAccessible, toRoman, getUpgradeCost
+    getUpgradeDefByTile, isTileAccessible, toRoman, GUILD_UPGRADES
 } from '../../../config/guildUpgrades.js';
+import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 
 const FLOOR = [
@@ -39,10 +40,13 @@ export const GuildHallBoard = ({
         state => state.progress?.guildUpgrades || {},
         ['guild_upgrades_updated', 'state_changed']
     );
-    const gold = useGameState(
-        state => state.currency?.gold || 0,
-        ['currency_changed', 'state_changed']
+    // Which upgrades the Bank can pay for right now (Hall upgrades cost items,
+    // SP-65). A flat id list as a string, per the useGameState selector contract.
+    const affordableSignature = useGameState(
+        () => GUILD_UPGRADES.filter(u => GuildUpgradeManager.canAfford(u.id)).map(u => u.id).join(','),
+        ['inventory_updated', 'guild_upgrades_updated', 'state_changed']
     );
+    const affordable = new Set((affordableSignature || '').split(',').filter(Boolean));
 
     const fit = useBoardScale(UPGRADE_BOARD_PX);
 
@@ -83,8 +87,7 @@ export const GuildHallBoard = ({
                         const rank = def ? (ranks[def.id] || 0) : 0;
                         const accessible = def ? isTileAccessible(index, ranks) : false;
                         const isMax = def ? rank >= def.maxRank : false;
-                        const cost = def && !isMax ? getUpgradeCost(def, rank) : null;
-                        const canAfford = def && accessible && !isMax && cost != null && gold >= cost;
+                        const canAfford = def && accessible && !isMax && affordable.has(def.id);
 
                         return (
                             <div

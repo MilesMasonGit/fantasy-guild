@@ -70,7 +70,7 @@ export const TestDashboard = React.memo(() => {
      *
      * Bumps the roster cap first if the incoming four would not fit — a dev
      * convenience, not a purchase, so it writes the rank directly rather
-     * than spending gold through `GuildUpgradeManager.purchase`.
+     * than paying items through `GuildUpgradeManager.purchase`.
      */
     const spawnParty = () => {
         const jobIds = ['fighter', 'wizard', 'ranger', 'rogue'];

@@ -214,12 +214,11 @@ describe('Selling is an escape valve, not a strategy (D-146)', () => {
         expect(TokenBank.sellValue('fixture_odd_rarity')).toBe(TokenBank.SELL_VALUE.common);
     });
 
-    it('⚠️ pays badly enough that liquidating is never a plan', () => {
-        // The constraint, pinned as a number: one Rare sells for less than the
-        // cheapest Guild Upgrade rank. If this ever inverts, selling has become
-        // income and the rate has drifted.
-        expect(TokenBank.SELL_VALUE.rare).toBeLessThan(GuildUpgradeManager.getNextCost('bank_slots'));
-    });
+    // '⚠️ pays badly enough that liquidating is never a plan' compared a Rare's
+    // sell price in gold against the cheapest Guild Upgrade rank in gold. Since
+    // slice 2.1 (2026-09-25, SP-65) Hall upgrades cost items, not gold, so there
+    // is no gold price to compare against and the test was removed. Selling
+    // Tokens for gold itself goes in slice 2.2.
 });
 
 /**
