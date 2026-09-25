@@ -495,6 +495,9 @@ right-click send Tokens to it. The question is what to *undo*, not what to skip.
 
 ## 8. Next steps
 
+0. **The first build is planned in
+   [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md)**
+   (2026-09-25), which settles SP-63 for that build as **no refunds** (TL-1).
 1. ~~**A fresh review by another agent**~~ **Done 2026-09-25** (§9).
 2. **The skills overhaul** (SP-58), using the list in §10.12.
 3. **Decide the refund rule** (SP-63: by charges left, or no refund).
