@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The Oak Forest is a spawner.** Buy it at the Shop for 10 Oak Wood; it plants Oak Saplings that
+  grow into Oak Trees (up to 5), paying one Oak Seed each. Oak Trees need no axe, last 10 logging
+  cycles and sometimes drop an Oak Seed. The Guild Hall gives an Oak Seed every 5 minutes, so a
+  Forest never stalls for good.
 - **Inspection shows lifecycle state.** Clicking a Token now shows its spawner count and cap, when it
   spawns next or what it is waiting for, how long until it grows or turns, a Foundation's build
   progress, and a trickle's pay.
