@@ -2,7 +2,7 @@
 
 import { neighbourIds } from './nearby.js';
 import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
-import { recipesForToken, contextTagsOf } from '../../config/registries/recipePoolRegistry.js';
+import { recipesForToken, contextTagsOf, contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as StationRecipe from './StationRecipe.js';
@@ -129,10 +129,10 @@ export function checkAcceptedTokens(instanceId, def) {
  * requirement for Tier 1 and a Tier 1 does not satisfy Tier 2 (concept §2.4).
  */
 export function unmetContext(instanceId, recipe) {
-    const required = recipe?.requiresContext || [];
+    const required = contextRequirementsOf(recipe);
     if (!required.length) return [];
     const tiers = contextTiersAround(instanceId);
-    return required.filter(req => (tiers[req.tag] || 0) < (req.minTier || 1));
+    return required.filter(req => (tiers[req.tag] || 0) < req.minTier);
 }
 
 /**

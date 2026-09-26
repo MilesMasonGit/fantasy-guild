@@ -10,6 +10,7 @@ import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
 import { ITEMS as ITEMS_LIVE } from '../config/registries/itemRegistry.js';
 import { listRecipes } from '../config/registries/recipePoolRegistry.js';
 import { SKILLS as GAME_SKILLS } from '../config/registries/skillRegistry.js';
+import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 /**
  * Token Lifecycle slice 4.2 — the content audit for the new Token blocks.
@@ -317,6 +318,21 @@ describe('Lifecycle audit — warnings (allowed)', () => {
         expect(errors(w)).toEqual([]);
     });
 
+    it('a sold context provider (an Acts as rule) is useful (slice 7.5a, the Anvil)', () => {
+        const w = clean();
+        w.tokens.token_furnace.shop = { price: [{ itemId: 'item_oak_wood', quantity: 1 }], section: 'general' };
+        w.tokens.token_furnace.statements = [{ id: 's', keyword: 'acts_as', payload: { tag: 'anvil', tier: 1 } }];
+        expect(warnings(w)).toEqual([]);
+        expect(errors(w)).toEqual([]);
+    });
+
+    it('a sold Token with a legacy provides list is useful too', () => {
+        const w = clean();
+        w.tokens.token_furnace.shop = { price: [{ itemId: 'item_oak_wood', quantity: 1 }], section: 'general' };
+        w.tokens.token_furnace.provides = ['anvil'];
+        expect(warnings(w)).toEqual([]);
+    });
+
     it('a sold Token that only turns into something unworkable still warns', () => {
         expectOne((w) => { w.tokens.token_coast.shop = { price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'fishing' }; },
             { severity: 'warning', id: 'token_coast', field: 'shop', includes: 'no way to be worked or to spawn anything' });
@@ -325,14 +341,12 @@ describe('Lifecycle audit — warnings (allowed)', () => {
 
 // Shipped data may carry only ALLOWED findings: slice 7.2's three mines spawn
 // for free (director's call for the first build; SP-70 is decided per Token).
-// Slice 7.5's Copper Anvil is sold at the Shop and is a context provider (an
-// `Acts as` Token), which the "no way to be worked or to spawn anything" rule
-// does not count as useful, so it warns; allowed, and reported to the director.
+// Slice 7.5's Copper Anvil is sold at the Shop and is a context provider; since
+// slice 7.5a the audit counts that as useful, so it is not on this list.
 // Any error, or any other warning, still fails.
 const summarise = (findings) => findings.map((f) => [f.severity, f.entityId, f.field]).sort();
 const SHIPPED_ALLOWED = [
     ...['token_coal_mine', 'token_copper_mine', 'token_quarry'].map((id) => ['warning', id, 'spawner.upkeep']),
-    ['warning', 'token_copper_anvil', 'shop'],
 ].sort();
 
 describe('Lifecycle audit — reaches both audits', () => {
@@ -348,7 +362,7 @@ describe('Lifecycle audit — reaches both audits', () => {
         expect(warn).toMatchObject({ severity: 'Warning' });
     });
 
-    it('the game registries (what the boot audit reads) give the checker nothing to report but the free mines and the Anvil', () => {
+    it('the game registries (what the boot audit reads) give the checker nothing to report but the free mines', () => {
         expect(summarise(auditLifecycleBlocks({ tokens: TOKENS, items: ITEMS_LIVE, recipes: listRecipes(), skills: GAME_SKILLS })))
             .toEqual(SHIPPED_ALLOWED);
     });
@@ -372,7 +386,11 @@ describe('Lifecycle audit — reaches both audits', () => {
     it('the shared checker finds nothing in the shipped data files', () => {
         const DATA = path.resolve(__dirname, '../../data');
         const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
-        const tokens = read('tokens.json');
+        // Expanded first, exactly as the CMS Economy Audit does: the audit's
+        // contract is expanded Tokens (a station's Station rule and a context
+        // provider's Acts as rule live in the effect library).
+        const effects = read('effects.json');
+        const tokens = Object.fromEntries(Object.entries(read('tokens.json')).map(([id, t]) => [id, expandBearer(t, effects)]));
         const items = read('items.json');
         const recipes = read('tokenRecipes.json');
         expect(summarise(auditLifecycleBlocks({ tokens, items, recipes, skills: GAME_SKILLS }))).toEqual(SHIPPED_ALLOWED);

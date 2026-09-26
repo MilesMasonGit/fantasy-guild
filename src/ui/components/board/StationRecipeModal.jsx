@@ -6,6 +6,7 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
+import { contextRequirementsOf } from '../../../config/registries/recipePoolRegistry.js';
 import { BAND } from '../../../systems/board/RecipeBands.js';
 
 /** An item's display name, falling back to its id so an unauthored item still reads. */
@@ -22,7 +23,7 @@ export function inputSummary(recipe) {
 
 /** "Anvil (tier 1)" — the context Tokens a recipe needs beside it, or null. */
 export function contextSummary(recipe) {
-    const parts = (recipe?.requiresContext || []).map(c => (
+    const parts = contextRequirementsOf(recipe).map(c => (
         c.minTier ? `${c.tag} (tier ${c.minTier})` : c.tag
     ));
     return parts.length ? parts.join(', ') : null;

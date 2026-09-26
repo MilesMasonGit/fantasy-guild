@@ -699,6 +699,51 @@ export function stationSkillOf(def) {
 }
 
 /**
+ * The capabilities a Token hands its neighbours, as `{ [tag]: highestTier }`.
+ *
+ * ## One channel now, not two (bug B2)
+ * There used to be `def.provides` — read by the board's connection lines and
+ * the inspection drawer, but with **no CMS field to write it** — and
+ * `block.provides`, which the CMS could write but those five UI readers ignored.
+ * So a Copper Pickaxe worked mechanically (the Ore Vein found it, wore its
+ * charges, produced ore) while the board drew no line between them and the
+ * drawer showed no tool panel. The relationship was real and invisible.
+ *
+ * The authored channel is now the **`Acts as` statement**, and everything —
+ * engine, board UI, drawer — reads this one helper. `def.provides` survives as a
+ * read-only fallback for fixtures and any Token not yet re-authored, so nothing
+ * that worked stops working.
+ *
+ * Tier comes from the statement's own **Tool Tier**, falling back to the
+ * Token's `tier`, then 1.
+ *
+ * @param {object} def
+ * @returns {Record<string, number>}
+ */
+export function getProvidedTagsWithTiers(def) {
+    if (!def) return {};
+    const map = {};
+    const defaultTier = def.tier || 1;
+    const offer = (tag, tier) => {
+        if (!tag) return;
+        map[tag] = Math.max(map[tag] || 0, tier || defaultTier);
+    };
+
+    // 1. The authored channel: `Acts as` statements.
+    for (const statement of statementsWith(def, KEYWORD.ACTS_AS)) {
+        offer(statement?.payload?.tag, statement?.payload?.tier);
+    }
+
+    // 2. Legacy: a top-level `provides` list, as strings or `{tag, tier}`.
+    for (const entry of def.provides || []) {
+        if (typeof entry === 'string') offer(entry, defaultTier);
+        else if (entry && typeof entry === 'object') offer(entry.tag, entry.tier);
+    }
+
+    return map;
+}
+
+/**
  * Whether a Token still carries the retired shape and therefore does nothing.
  *
  * Both the old container names count: `effectBlocks` was the array, and `buff`

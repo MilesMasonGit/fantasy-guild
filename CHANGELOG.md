@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Fixed: an unfinished recipe requirement could blank the game screen.** A recipe whose nearby
+  requirement had no tier yet crashed the display; it is now read as tier 1 everywhere.
 - **Processing and academies.** Wood and Stone Foundations in the Shop are built by Construction
   into a Workbench (Charcoal, Torches), Cooking Pot, Furnace (Copper Ingots) or a Fighter's Academy.
   A Copper Anvil bought with ingots lets the Furnace smith Copper Nails and wears out as it is used.
