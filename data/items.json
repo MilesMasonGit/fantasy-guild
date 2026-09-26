@@ -94,10 +94,10 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 4,
+    "value": null,
     "autoSyncId": true,
     "id": "item_shrimp",
-    "valueSource": "recipe_shrimp"
+    "valueSource": null
   },
   "item_wheat": {
     "name": "Wheat",
@@ -666,8 +666,8 @@
     "stackable": true,
     "restoreAmount": 20,
     "equipSlot": "drink",
-    "value": 8,
-    "valueSource": "recipe_mtp8qjj6",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_apple_juice"
   },
@@ -800,5 +800,31 @@
     "valueSource": "token_apple_tree",
     "autoSyncId": true,
     "id": "item_apple_seed"
+  },
+  "item_torch": {
+    "name": "Torch",
+    "description": "",
+    "type": "material",
+    "sprite": "Item_torch",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_torch"
+  },
+  "item_copper_nails": {
+    "name": "Copper Nails",
+    "description": "",
+    "type": "material",
+    "sprite": "t_chisel_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_copper_nails"
   }
 }

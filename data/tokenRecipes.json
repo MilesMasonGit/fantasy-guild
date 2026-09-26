@@ -331,6 +331,45 @@
     }
   },
   {
+    "id": "recipe_muily2ph",
+    "name": "Copper Nails",
+    "skill": "smithing",
+    "levelRequirement": 1,
+    "requiresContext": [
+      {
+        "tag": "anvil",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_nails",
+        "chance": 100,
+        "minQty": 2,
+        "maxQty": 2,
+        "baseQty": {
+          "min": 2,
+          "max": 2
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 16000,
+    "stationChargeCost": 1,
+    "xp": 2
+  },
+  {
     "name": "Dough",
     "requiresContext": [],
     "inputs": [
@@ -375,6 +414,10 @@
       {
         "itemId": "item_raw_shrimp",
         "quantity": 1
+      },
+      {
+        "itemId": "item_charcoal",
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -406,12 +449,16 @@
     "id": "recipe_mtp8qjj6",
     "name": "Apple Juice",
     "skill": "cooking",
-    "levelRequirement": 10,
+    "levelRequirement": 1,
     "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_apple",
         "quantity": 4
+      },
+      {
+        "itemId": "item_charcoal",
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -428,9 +475,9 @@
         "anchor": true
       }
     ],
-    "durationMs": 18000,
+    "durationMs": 16000,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 2,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
@@ -590,6 +637,68 @@
     "skill": "crafting"
   },
   {
+    "id": "recipe_muily2pf",
+    "name": "Charcoal",
+    "skill": "crafting",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_charcoal",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 12000,
+    "stationChargeCost": 1,
+    "xp": 2
+  },
+  {
+    "id": "recipe_muily2pg",
+    "name": "Torch",
+    "skill": "crafting",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_charcoal",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_torch",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 12000,
+    "stationChargeCost": 1,
+    "xp": 2
+  },
+  {
     "id": "recipe_muil1w5z",
     "name": "Plant Wheat Field",
     "skill": "farming",
@@ -651,6 +760,138 @@
     "xp": 5,
     "foundationKinds": [
       "farmland"
+    ]
+  },
+  {
+    "id": "recipe_muily2pb",
+    "name": "Build Workbench",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_workbench",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 15000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ]
+  },
+  {
+    "id": "recipe_muily2pc",
+    "name": "Build Cooking Pot",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_cooking_pot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 15000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "wood"
+    ]
+  },
+  {
+    "id": "recipe_muily2pd",
+    "name": "Build Furnace",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_furnace",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 15000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "stone"
+    ]
+  },
+  {
+    "id": "recipe_muily2pe",
+    "name": "Build Fighter's Academy",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_stone",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_fighter_s_academy",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 15000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "foundationKinds": [
+      "stone"
     ]
   }
 ]
