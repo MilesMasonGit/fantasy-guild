@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Farming.** Buy Farmland at the Shop and have a Farming hero plant it as a Wheat Field or an Apple
+  Orchard. Fields grow Wheat that ripens and is harvested three times; Orchards grow Apple Trees.
+  Each new plant costs one seed, and harvests sometimes return seeds. The Guild Hall also trickles
+  Wheat and Apple Seeds.
 - **Managers and the gold code are gone.** Spawners replace used-up Tokens, so Managers, their
   restock spots and the "waiting for a Manager" state are removed; a hero whose Token runs out
   moves on. The retired currency, selling and transaction code is deleted, and saves no longer
