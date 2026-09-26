@@ -1,7 +1,7 @@
 // Fantasy Guild — content audit for the Token Lifecycle blocks (slice 4.2)
 
 import { FOUNDATION_KINDS } from '../../config/registries/tokenConstants.js';
-import { stationSkillOf } from '../effects/statements.js';
+import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 
 /**
  * The one checker for the six Token Lifecycle blocks (`spawner`, `grows`,
@@ -264,7 +264,12 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             const worksDirectly = (d) => !!d?.config || !!stationSkillOf(d);
             const turnsWorkable = Array.isArray(def.turns?.into)
                 && def.turns.into.some((entry) => worksDirectly(tokens[entry?.typeId]));
-            const workable = worksDirectly(def) || !!def.foundation || !!def.spawner || turnsWorkable;
+            // A context provider (the Copper Anvil, slice 7.5: an `Acts as`
+            // rule or a legacy `provides` list) is used by sitting beside a
+            // station, so it counts too (slice 7.5a). Read through the same
+            // helper the engine gates recipes with.
+            const providesContext = Object.keys(getProvidedTagsWithTiers(def)).length > 0;
+            const workable = worksDirectly(def) || !!def.foundation || !!def.spawner || turnsWorkable || providesContext;
             if (!workable) {
                 warn('shop', 'is sold at the Shop but has no way to be worked or to spawn anything.');
             }

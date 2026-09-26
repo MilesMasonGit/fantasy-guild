@@ -177,14 +177,37 @@ export function recipesForToken(def) {
 }
 
 /**
+ * A recipe's `requiresContext`, every entry as `{ tag, minTier, chargeCost }`.
+ *
+ * ⚠️ **The one reader of `requiresContext`.** The CMS writes a bare tag string
+ * (`["anvil"]`) until the author picks a tier, and a reader that reached for
+ * `.tag` / `.tag.split` on that crashed the whole game screen (slice 7.5a). A
+ * bare string is read as that tag at tier 1 costing no charges; an entry with
+ * no tag at all (null, `{}`, `""`) is dropped. Every engine and UI reader goes
+ * through here rather than touching the raw list.
+ */
+export function contextRequirementsOf(recipe) {
+    const raw = recipe?.requiresContext;
+    if (!Array.isArray(raw)) return [];
+    const out = [];
+    for (const entry of raw) {
+        if (typeof entry === 'string') {
+            if (entry) out.push({ tag: entry, minTier: 1, chargeCost: 0 });
+        } else if (entry && typeof entry === 'object' && typeof entry.tag === 'string' && entry.tag) {
+            out.push({ ...entry, minTier: entry.minTier || 1, chargeCost: entry.chargeCost || 0 });
+        }
+    }
+    return out;
+}
+
+/**
  * The context tags a recipe needs beside it, as plain strings.
  *
- * `requiresContext` entries carry a tier and a charge cost as well as a tag;
- * callers that only ask "is this tag present?" go through here rather than
+ * Callers that only ask "is this tag present?" go through here rather than
  * reaching for `.tag` in six places.
  */
 export function contextTagsOf(recipe) {
-    return (recipe?.requiresContext || []).map(c => c.tag);
+    return contextRequirementsOf(recipe).map(c => c.tag);
 }
 
 /**

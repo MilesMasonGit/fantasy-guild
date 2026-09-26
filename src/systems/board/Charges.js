@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { neighbourIds } from './nearby.js';
+import { contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
 import { DEFAULT_STATEMENT_CHARGE_DELTA, statementsOf } from '../effects/statements.js';
 import {
     CHARGE_MOMENT, chargeDeltaOf,
@@ -306,10 +307,11 @@ export function planContextCharges(instanceId, requirements) {
 
     const claimed = id => planned.get(id) || 0;
 
-    for (const req of requirements || []) {
-        if (!req?.tag) continue;
-        const minTier = req.minTier || 1;
-        const cost = req.chargeCost || 0;
+    // Normalised through the one reader, so a bare-string entry (what the CMS
+    // writes before a tier is picked) is a tier-1 tag rather than skipped.
+    for (const req of contextRequirementsOf({ requiresContext: requirements })) {
+        const minTier = req.minTier;
+        const cost = req.chargeCost;
 
         const eligible = providers.filter(p => (p.tiers[req.tag] || 0) >= minTier);
         if (!eligible.length) {

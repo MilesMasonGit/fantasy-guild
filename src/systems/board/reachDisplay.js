@@ -1,7 +1,7 @@
 // Fantasy Guild — which Tokens show a reach ring (owner ruling, 2026-09-21)
 
 import { getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
+import { recipesForToken, contextTagsOf } from '../../config/registries/recipePoolRegistry.js';
 import { caresAboutNeighbours } from '../effects/statements.js';
 
 /**
@@ -26,5 +26,5 @@ export function showsNearRing(typeId) {
     if (caresAboutNeighbours(def)) return true;
     if (Object.keys(getProvidedTagsWithTiers(def)).length > 0) return true;
     if (def.acceptedTokens?.length) return true;
-    return recipesForToken(def).some(recipe => recipe?.requiresContext?.length > 0);
+    return recipesForToken(def).some(recipe => contextTagsOf(recipe).length > 0);
 }

@@ -277,19 +277,17 @@ describe("Academies (6.2, SP-62)", () => {
 });
 
 describe('The lifecycle audit on the Processing chain', () => {
-    it('has no errors, and only the Anvil\'s known shop warning', () => {
+    it('has no errors and no warnings, the Anvil included (slice 7.5a)', () => {
         const ids = new Set([
             'token_wood_foundation', 'token_stone_foundation', 'token_workbench', 'token_cooking_pot',
             'token_furnace', 'token_fighter_s_academy', 'token_copper_anvil',
             ...recipes.filter((r) => ['construction', 'crafting', 'smithing', 'cooking'].includes(r.skill)).map((r) => r.id),
         ]);
-        const findings = auditLifecycleBlocks({ tokens, items, recipes, skills: SKILLS })
+        // The audit reads Tokens EXPANDED (its contract): the Anvil's `Acts as`
+        // rule lives in the effect library, so the registry's copy is used.
+        const expanded = Object.fromEntries(Object.keys(tokens).map((id) => [id, getTokenType(id) || tokens[id]]));
+        const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
             .filter((f) => f.severity === 'error' || ids.has(f.entityId));
-        // The audit's "sold but cannot be worked or spawn anything" rule does not
-        // count a context provider (an `Acts as` Token) as useful, so the Anvil
-        // warns. Warnings are allowed content; reported to the director.
-        expect(findings.map((f) => [f.severity, f.entityId, f.field])).toEqual([
-            ['warning', 'token_copper_anvil', 'shop'],
-        ]);
+        expect(findings.map((f) => [f.severity, f.entityId, f.field])).toEqual([]);
     });
 });
