@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks } from '../utils/constants';
 
 /**
  * Connectivity & Graph Auditor — Audits the Token, Recipe, and Item graph
@@ -145,6 +145,25 @@ export function auditConnectivity(entities, solverRefusals = []) {
       issueType: 'Data Integrity',
       severity: 'Warning',
       details: `Worked by a hero but names no skill. ${WORK_SKILL_WHY}`,
+    });
+  }
+
+  // Token Lifecycle slice 4.2: spawner / grows / turns / foundation / shop /
+  // trickle, and recipes that build on a Foundation. The game's own checker, so
+  // this tab and the boot audit report the same problems. Expanded first: the
+  // shop warning recognises a station by its Station rule.
+  const expandedTokens = {};
+  for (const [id, token] of Object.entries(tokens || {})) {
+    expandedTokens[id] = expandBearer(token, effects);
+  }
+  for (const f of auditLifecycleBlocks({ tokens: expandedTokens, items, recipes, skills: SKILLS })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: f.severity === 'warning' ? 'Warning' : 'Critical',
+      details: f.message,
     });
   }
 

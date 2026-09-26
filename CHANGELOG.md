@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Content audit checks spawners, Foundations and the Shop.** Broken references, bad numbers
+  and conflicting blocks are reported in plain English in the game's boot audit and in the CMS
+  Economy Audit.
 - **Tokens can grow and turn on a clock.** Engine support for a Token that becomes another after a
   time (a sapling into a tree) and one that turns into something else for a while and back (a Coast
   into a Shrimp Coast). Every Token now remembers whether the player placed it or it was spawned;

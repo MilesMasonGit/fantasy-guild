@@ -21,6 +21,9 @@ import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { RANDOM_HUNTS } from '../quests/QuestManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
+import { auditLifecycleBlocks } from './lifecycleAudit.js';
+import { SKILLS } from '../../config/registries/skillRegistry.js';
+import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -648,12 +651,31 @@ function auditHardcodedLists(out, openingTray) {
 }
 
 /**
+ * Token Lifecycle blocks (slice 4.2): spawner, grows, turns, foundation, shop,
+ * trickle, and recipes that build on a Foundation. The rules live in
+ * `lifecycleAudit.js`, shared with the CMS Economy Audit so both name the same
+ * problems in the same words. A warning is allowed content and says so.
+ */
+function auditLifecycle(out) {
+    const findings = auditLifecycleBlocks({
+        tokens: TOKENS,
+        items: ITEMS,
+        recipes: listRecipes(),
+        skills: SKILLS,
+    });
+    for (const f of findings) {
+        const where = `${f.entityType} "${f.entityId}"`;
+        out.push(finding(where, f.severity === 'warning' ? `(allowed) ${f.message}` : f.message));
+    }
+}
+
+/**
  * Walk everything and return the findings, newest content problems first.
  * Exported separately from the reporting so a test can assert on the list.
  */
 export function auditContent({ openingTray = [] } = {}) {
     const out = [];
-    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditMaps, auditHardcodedLists];
+    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditMaps, auditHardcodedLists];
     for (const step of steps) {
         try {
             step(out, openingTray);

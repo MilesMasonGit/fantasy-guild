@@ -431,6 +431,7 @@ starting points for the brief, not a complete list.
 |---|---|---|---|
 | **4.1 Token blocks** | The Token editor models `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`, so Sync to Game carries them instead of destroying them. Pickers for Token and item ids. | `cms/src/components/editors/TokenEditor.jsx`, `cms/src/stores/useEntityStore.js`, sync code | On the sandbox route, a Token with every block survives an edit → sync → reload round trip unchanged. |
 | **4.2 Content audit** | `ContentAudit` checks the new blocks: spawned and grown types exist; a spawner does not list itself; shop prices name real items; a Foundation kind has at least one recipe; warnings for a spawner with no upkeep (allowed, SP-70 "per Token"). | `src/systems/core/ContentAudit.js`, `cms/src/engine/connectivityAuditor.js` | A deliberately broken fixture produces one clear message per problem. |
+| **4.4 Derived type knows the new blocks** | `deriveTokenType` (game and CMS) recognises `spawner`, `turns` and `foundation` Tokens, so the boot audit stops calling them buffs that do nothing and Recalculate writes a sensible `tokenType`. | `deriveTokenType`, `ContentAudit.js` | A spawner-only fixture produces no "does nothing" finding. |
 | **4.3 Recipes that build** | The Recipe editor can author a recipe whose output is a Token, with a skill (Construction or Farming) and level gate, attached to a Foundation kind's pool. | `cms/src/components/editors/RecipeEditor.jsx`, `recipeSync.js`, `recipePoolRegistry.js` | A "Build Furnace" recipe authored in the CMS appears in the game's recipe pool for Stone Foundations. |
 
 ### Phase 5: The shop and removal
@@ -556,7 +557,8 @@ panel is for speed, not for filling gaps.)
 | 3.3 Spawners | ⬜ Not started | |
 | 3.4 Guild Hall trickle | ⬜ Not started | |
 | 4.1 CMS Token blocks | ✅ Done 2026-09-25 | Token editor section *Spawning and Building* (all six blocks); recipe editor *Builds on Foundation* checkboxes (`foundationKinds`); `FOUNDATION_KINDS` lives in `tokenConstants.js`; renames repoint the blocks. Today's data round-trips byte-identical. ⚠️ For 4.3: renaming a Token still does NOT repoint `tokenId` outputs in recipes |
-| 4.2 Content audit | ⬜ Not started | |
+| 4.2 Content audit | ✅ Done 2026-09-25 | One shared checker `src/systems/core/lifecycleAudit.js`, reached by the boot `ContentAudit` and the CMS Economy Audit (Data Integrity rows). Verified live: a broken spawner gives one message per problem; shipped data gives none |
+| 4.4 Derived type knows the new blocks | ⬜ Not started | Found by 4.2: `deriveTokenType` calls a spawner-only Token a buff that does nothing, and CMS Recalculate would write `tokenType: 'buff'`. **Must land before Phase 7** |
 | 4.3 Recipes that build | ⬜ Not started | |
 | 5.1 The Shop | ⬜ Not started | |
 | 5.2 Dispose | ⬜ Not started | |
