@@ -188,9 +188,7 @@ export function deposit(instance) {
  * Take one copy out, **fullest first** (D-77).
  *
  * Drawing the full Token before partials means a player can never be handed a
- * nearly-spent Token while a fresh one sits in storage — which matters most for
- * Managers, since a restock that quietly installed the worst copy available
- * would make automation feel like a downgrade.
+ * nearly-spent Token while a fresh one sits in storage.
  *
  * ⚠️ **This is the only place a withdrawal is announced** — the mirror of
  * `deposit` above (CR2-033). `TokenVaultTab` and `TrayMiniBoard` used to publish

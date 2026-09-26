@@ -15,7 +15,6 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
  * ## Where a hero is heading
  * * holding a claim → **beside that Token**, on the side they approached from
  *   (HM-2), facing it; the Token itself never moves to make room;
- * * waiting on a spot for a restock (FP-70) → beside that spot, the same way;
  * * otherwise → **beside their flag** (`idleSpot`, FP-29, FP-84), where they
  *   **potter** (slice M4, HM-1): a pause of a few seconds, a short stroll to a
  *   random spot close by, another pause. Strolls are measured from the flag's
@@ -147,7 +146,7 @@ export function isPottering(heroId) {
     return !!BoardState.heroBodyOf(heroId)?.potter;
 }
 
-/** Forget any stroll in progress — work, a wait or the walk home comes first. */
+/** Forget any stroll in progress — work or the walk home comes first. */
 function stopPottering(body) {
     body.potter = null;
     body.pauseLeft = null;
@@ -214,21 +213,8 @@ function destinationOf(heroId, body) {
         return standingSpot(claim.typeId, centre, body.side);
     }
 
-    const wait = BoardState.waitOfHero(heroId);
-    if (wait && Number.isFinite(wait.x) && Number.isFinite(wait.y)) {
-        stopPottering(body);
-        const key = `wait:${wait.spotId}`;
-        const centre = { x: wait.x, y: wait.y };
-        if (body.targetId !== key) {
-            body.targetId = key;
-            body.side = sideFor(body, centre);
-            body.atWork = null;
-        }
-        return standingSpot(wait.typeId, centre, body.side);
-    }
-
     // Idle: beside the flag, or out on a stroll near it (HM-1).
-    if (body.targetId) stopPottering(body);      // just came off work or a wait
+    if (body.targetId) stopPottering(body);      // just came off work
     body.targetId = null;
     body.atWork = null;
     const flag = BoardState.flagOf(heroId);
@@ -279,19 +265,17 @@ function step(heroId, body, delta) {
         return true;
     }
 
-    // Standing beside their Token (or restock spot): face it. Usually the way
+    // Standing beside their Token: face it. Usually the way
     // they walked in anyway; not when the mat's edge sent them round to the far
     // side, or when they were already standing there.
     const claim = BoardState.claimOfHero(heroId);
     if (!body.moving && body.targetId) {
-        const token = claim ? BoardState.getTokenById(claim.instanceId) : null;
-        const wait = claim ? null : BoardState.waitOfHero(heroId);
-        const target = token || wait;
+        const target = claim ? BoardState.getTokenById(claim.instanceId) : null;
         if (target && Math.abs(target.x - body.x) > ARRIVE_EPS) body.facing = target.x < body.x ? -1 : 1;
     }
 
     // Idle and standing still: count the pause down, then set off on a stroll
-    // (HM-1). Idle means no claim, no wait, not walking home.
+    // (HM-1). Idle means no claim, not walking home.
     if (!body.moving && !body.targetId && !claim && potterRadius() > 0) {
         if (body.pauseLeft == null) body.pauseLeft = pauseMs();
         body.pauseLeft -= Math.max(0, delta);

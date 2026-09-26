@@ -8,9 +8,11 @@ import { isEnemyDef } from './enemyProfile.js';
  *
  * ## Why the picker went
  * It offered nine values, the engine read three of them, and one — `manager` —
- * was a promise the data could not keep: `Managers.js` decides a Manager by
+ * was a promise the data could not keep: `Managers.js` decided a Manager by
  * `def.manages`, no CMS field ever wrote that, so a Token typed `manager` and
- * described as restocking its neighbours did nothing at all. A classification
+ * described as restocking its neighbours did nothing at all. (Managers are
+ * retired altogether since Token Lifecycle 9.2, SP-55: a Restocks rule is
+ * still read here for the label, but nothing in the engine acts on it.) A classification
  * you choose can disagree with the thing it classifies. A classification you
  * *read off* the rules cannot.
  *

@@ -14,7 +14,7 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
  *
  * The Mat Tuner's **Mat size** row changes how big the mat is while the game
  * runs. Growing it is free — everything already on the mat is still on it, and
- * **nothing moves**. Shrinking it can leave a Token, a flag or an owed spot
+ * **nothing moves**. Shrinking it can leave a Token or a flag
  * outside the new edge, and this is what happens to each of them:
  *
  * * **A Token** is clamped so its **art circle** is fully inside the new edge,
@@ -24,8 +24,6 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
  * * **A flag** is clamped and nothing more (FP-83): flags never collide, several
  *   may stand at one point, and nudging one would silently change which Token its
  *   hero is working.
- * * **An owed spot** (a vacancy a Manager is going to restock, FP-19) is clamped
- *   too, so a Manager cannot be left owing a Token to a point off the mat.
  *
  * ## ⚠️ Nothing is ever lost
  * A Token that finds no clear spot within {@link PULL_REACH} of its clamped point
@@ -81,11 +79,11 @@ export function teardown() {
  * Safe to call at any size: on a mat that has grown, or not changed, nothing is
  * outside the edge, so this finds nothing to do and announces nothing.
  *
- * @returns {{tokensPulled: number, flagsPulled: number, spotsPulled: number, crowded: number}}
+ * @returns {{tokensPulled: number, flagsPulled: number, crowded: number}}
  */
 export function fitToMat() {
     const dirty = [];
-    const summary = { tokensPulled: 0, flagsPulled: 0, spotsPulled: 0, crowded: 0 };
+    const summary = { tokensPulled: 0, flagsPulled: 0, crowded: 0 };
 
     // --- Tokens: clamp, then find a spot clear of the neighbours -------------
     //
@@ -120,24 +118,6 @@ export function fitToMat() {
         summary.flagsPulled++;
         // The hero is drawn from their flag, so the board has to hear about it.
         EventBus.publish(BOARD_EVENTS.HERO_MOVED, Flags.heroMovedPayload(heroId));
-    }
-
-    // --- Owed spots: clamped, keeping whatever they were owed ----------------
-    for (const [, vacancy] of BoardState.spotVacancies()) {
-        if (!Number.isFinite(vacancy.x) || !Number.isFinite(vacancy.y)) continue;
-        const at = clampToMat(vacancy);
-        if (at.x === vacancy.x && at.y === vacancy.y) continue;
-
-        const was = { x: vacancy.x, y: vacancy.y };
-        const unstocked = !!vacancy.unstocked;
-        BoardState.setVacancyAt(was, null);
-        BoardState.setVacancyAt({ x: Math.round(at.x), y: Math.round(at.y) }, vacancy.typeId);
-        const moved = BoardState.vacancyAt(BoardState.spotIdAt(Math.round(at.x), Math.round(at.y)));
-        // ⚠️ `setVacancyAt` makes a fresh, stocked vacancy; a spot the player was
-        // already being warned about must keep its red mark across a resize.
-        if (moved) moved.unstocked = unstocked;
-        dirty.push(was, { x: at.x, y: at.y });
-        summary.spotsPulled++;
     }
 
     if (!dirty.length) return summary;

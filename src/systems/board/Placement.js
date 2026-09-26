@@ -318,10 +318,9 @@ export function returnTokenToVaultById(id) {
 /**
  * ⭐ **Remove** a placed Token for good (Token Lifecycle slice 5.2).
  *
- * * **TL-1, no refunds.** Nothing is credited, and no vacancy is left for a
- *   Manager to restock — the Token is simply gone. That is why this is not
- *   `Charges.destroyToken`: that path is *depletion*, which sets a vacancy and
- *   publishes `TOKEN_DEPLETED` (so "when depleted" rules would fire and could
+ * * **TL-1, no refunds.** Nothing is credited — the Token is simply gone.
+ *   That is why this is not `Charges.destroyToken`: that path is *depletion*,
+ *   which publishes `TOKEN_DEPLETED` (so "when depleted" rules would fire and could
  *   pay out or spawn).
  * * **SP-6.** Spawned Tokens it leaves behind stay where they are; only this
  *   instance leaves the mat.

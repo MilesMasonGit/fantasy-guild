@@ -27,7 +27,9 @@
  *           skill_class_rework_roadmap_v1.md Phase 0.
  * '0.8.0' — Free Playmat slice 1.6a (FP-85). Tokens are stored by instance id
  *           at a point on the mat (`board.tokens`), not by tile, vacancies by
- *           the spot that ran dry, and the terrain fields leave the board. Old
+ *           the spot that ran dry, and the terrain fields leave the board.
+ *           (Vacancies went again with the Managers, Token Lifecycle 9.2: an
+ *           older save's `board.vacancies` is dropped on load, no bump.) Old
  *           saves are refused through the existing version check — no message
  *           of their own, no export, no conversion.
  */
@@ -62,7 +64,6 @@ export function createEmptyBoard() {
         // carries on; everyone else starts beside their flag. Written by
         // `BoardState` on arrival, erased when the hero lets go.
         workClaims: {},
-        vacancies: {},
         tokenBank: {},
         tray: [],
         maps: [],
@@ -256,7 +257,6 @@ export const INITIAL_STATE = {
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero)
     //   nextFlagOrder number                the next flag's plantedAt
-    //   vacancies   { [spotId]: { typeId, x, y, unstocked } }   spots that ran dry, at the spent Token's point
     //   tokenBank   { [typeId]: [{ usesRemaining }, ...] }  capped by DISTINCT types (D-137)
     //   tokenBankSlots  number              derived from the Storage upgrade track
     //   tray        [ { typeId, usesRemaining }, ... ]   ~15-20 slots (D-168)

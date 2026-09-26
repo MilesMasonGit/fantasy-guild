@@ -111,7 +111,7 @@ export const BOARD_EVENTS = {
     /** A neighbourhood changed, so modifiers need recomputing. Payload: `{ points }` — the mat points the change touched. */
     ADJACENCY_DIRTY: 'board:adjacency_dirty',
 
-    /** A Token's alert state changed — staffed-but-stuck, or resolved (D-114, D-149). Payload: `{ instanceId, alert }`, or `{ spotId, x, y, alert }` for an unstocked spot. */
+    /** A Token's alert state changed — staffed-but-stuck, or resolved (D-114, D-149). Payload: `{ instanceId, alert }`. */
     ALERT_CHANGED: 'board:alert_changed',
 
     /**
@@ -210,10 +210,10 @@ export const BOARD_EVENTS = {
  * and what drives a tile's single alert mark (D-85).
  *
  * Lives beside `BOARD_EVENTS` rather than in `BoardRunner` because it is not
- * only the runner's (CR2-060): `Managers` publishes `UNSTOCKED` too, and
- * `BoardRunner` already imports `Managers`, so the enum could not live in the
- * runner without either a cycle or a second hardcoded copy of the string. Every
- * publisher and every reader now names the same constant.
+ * only the runner's (CR2-060): other board systems publish it too, and the
+ * enum could not live in the runner without either a cycle or a second
+ * hardcoded copy of the string. Every publisher and every reader names the
+ * same constant.
  */
 export const ALERT = {
     INPUTS: 'inputs',
@@ -242,13 +242,6 @@ export const ALERT = {
      * one cycle costs. Nothing is deducted while this is showing (concept §3.3).
      */
     CHARGES: 'charges',
-    /**
-     * The tile ran dry and its Manager found nothing in the Vault to restock it
-     * with — D-133's silent failure. Published by `Managers.restockSpot`, not by
-     * the runner, and carried on the vacancy rather than on a Token instance:
-     * there is no Token left on the tile to hang it from.
-     */
-    UNSTOCKED: 'unstocked',
     /**
      * A Foundation with no recipe picked (Token Lifecycle 6.1). A Foundation is
      * never given a default: the player chooses what it becomes, and until

@@ -20,7 +20,7 @@ import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
 import { FLAG_PX } from '../ui/components/board/flagGeometry.js';
-import { HERO_HIT_PX, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
+import { HERO_HIT_PX } from '../ui/components/board/boardConstants.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
@@ -398,16 +398,4 @@ describe('the mat itself (FP-96)', () => {
         expect(container.querySelector('[data-play-area-outline]')).toBeNull();
     });
 
-    it('a spot awaiting a restock shows a ghost of what it is owed', () => {
-        BoardState.setVacancyAt({ x: 800, y: 600 }, 'fixture_producer');
-        BoardState.vacancyAt(BoardState.spotIdAt(800, 600)).unstocked = true;
-
-        const { container } = mount(h(MatBoard));
-        const ghost = container.querySelector('[data-unstocked-spot]');
-
-        expect(ghost).not.toBeNull();
-        expect(parseFloat(ghost.style.left)).toBe(800 - 64);
-        expect(parseFloat(ghost.style.top)).toBe(600 - 64);
-        expect(ghost.textContent).toContain(ALERT_LABEL[ALERT.UNSTOCKED]);
-    });
 });

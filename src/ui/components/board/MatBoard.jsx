@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { artRadius } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, tokenZ } from './matLayers.js';
-import { HERO_HIT_PX, ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
+import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
 import { pointerToMat } from './matPoint.js';
 import { MatToken } from './MatToken.jsx';
@@ -19,7 +18,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useActiveDrag, useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
@@ -118,7 +117,7 @@ export const MatBoard = ({
     /**
      * ⭐ **Every hero on the mat is drawn here, where they really are** (Hero
      * Movement M1–M2): their body's position from `HeroMotion` — walking,
-     * working beside a Token, waiting on a spot, or idle beside their flag.
+     * working beside a Token, or idle beside their flag.
      * One component per hero in every state, so a hero is never swapped
      * between layers mid-walk (that swap was M1's jump on reaching the flag).
      * `HEROES_WALKED` redraws as they step.
@@ -169,15 +168,6 @@ export const MatBoard = ({
         null
     );
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
-
-    /** Spots a Manager owes a Token it cannot supply (FP-19, ALERT.UNSTOCKED). */
-    const ghosts = useGameState(
-        () => BoardState.spotVacancies()
-            .filter(([, v]) => v?.unstocked)
-            .map(([spotId, v]) => ({ spotId, typeId: v.typeId, x: v.x, y: v.y })),
-        [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.ALERT_CHANGED, 'state_changed'],
-        null
-    ) || [];
 
     const boardMaps = useGameState(
         state => state.board?.maps || [],
@@ -294,9 +284,6 @@ export const MatBoard = ({
 
             {TERRAIN_ENABLED && <TerrainCanvas terrain={terrain} seed={0} />}
 
-            {/* 5 — the ghost of a Token this spot is owed. */}
-            {ghosts.map(g => <UnstockedGhost key={g.spotId} ghost={g} />)}
-
             {/* 10+ — Tokens, the heroes on them, and what is written on them. */}
             {ordered.map(t => (
                 <MatToken
@@ -385,8 +372,6 @@ const NO_TERRAIN = Object.freeze({});
  *   the Token slides the same distance right, so the two stand 48 u apart.
  * * **Working a 2×2 Token** — down and left, standing in front of the art
  *   rather than beside it; a 2×2 is big enough to stand on.
- * * **Waiting** on an empty spot (FP-70) — squarely on the spot, with nothing
- *   there to make room for.
  */
 export function heroPlacement({ x, y }) {
     // Centred on the hero's own point (Hero Movement M1). A working hero's
@@ -394,57 +379,6 @@ export function heroPlacement({ x, y }) {
     // so there is no per-state offset any more (D-266's pairing went).
     return { left: x - HERO_HIT_PX / 2, top: y - FLAG_PX / 2 };
 }
-
-/**
- * The ghost of a Token a Manager owes this spot but cannot supply (FP-19).
- *
- * Greyed and faint, so it reads as a memory of what stood here rather than as
- * something in play, with the same red "Restock" bar a stuck Token wears — this
- * is the one alert with no Token left to draw it on.
- */
-const UnstockedGhost = ({ ghost }) => {
-    const size = getTokenType(ghost.typeId)?.size || 1;
-    const r = artRadius(size);
-    // The same stepped art as a real Token (FP-99) — a ghost drawn at the smooth
-    // scale beside stepped neighbours would be the one blurry thing on the mat.
-    const fit = useMatFit();
-    const artScale = boardScaleAt(fit);
-    return (
-        <div
-            data-unstocked-spot={ghost.spotId}
-            title={ALERT_HINT[ALERT.UNSTOCKED]}
-            className="absolute pointer-events-auto"
-            style={{
-                left: ghost.x - r,
-                top: ghost.y - r,
-                width: r * 2,
-                height: r * 2,
-                zIndex: MAT_Z.GHOST
-            }}
-        >
-            <div
-                className="w-full h-full flex items-center justify-center"
-                style={{ opacity: 0.35, filter: 'grayscale(1)' }}
-            >
-                <TokenSprite
-                    typeId={ghost.typeId}
-                    surface={TOKEN_SURFACE.BOARD}
-                    scale={artScale}
-                    alt={`${tokenName(ghost.typeId) || 'Token'} — awaiting restock`}
-                    className="absolute inset-0 m-auto"
-                />
-            </div>
-            <div className="absolute bottom-0 translate-y-[3px] left-2 right-2 h-3 pointer-events-none">
-                <div className="relative w-full h-full overflow-hidden rounded-full border border-white/30 bg-black/85 flex items-center justify-center">
-                    <div className={cn('absolute left-0 top-0 bottom-0 right-0 rounded-full', alertFillClass(ALERT.UNSTOCKED))} />
-                    <span className="relative text-[8px] font-bold font-mono text-white gi-text-outline tracking-wider select-none leading-none">
-                        {ALERT_LABEL[ALERT.UNSTOCKED]}
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 /** A Map lying loose on the mat: drag it anywhere, click it to burst it. */
 const BoardMapToken = ({ map, onBurst }) => {

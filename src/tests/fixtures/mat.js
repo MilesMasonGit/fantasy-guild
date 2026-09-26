@@ -46,10 +46,7 @@ export function beside(instance, dx = SPACING, dy = 0) {
     return { x: instance.x + dx, y: instance.y + dy };
 }
 
-/** Take every Token and vacancy off the mat. */
+/** Take every Token off the mat. */
 export function clearMat() {
     for (const token of BoardState.tokens()) BoardState.removeToken(token.id);
-    for (const [, vacancy] of BoardState.spotVacancies()) {
-        BoardState.setVacancyAt({ x: vacancy.x, y: vacancy.y }, null);
-    }
 }

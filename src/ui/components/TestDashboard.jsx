@@ -283,7 +283,6 @@ export const TestDashboard = React.memo(() => {
             onClick: () => {
                 const state = engine.GameState.state;
                 state.board.tokens = {};
-                state.board.vacancies = {};
                 state.board.tray = [];
                 state.board.sprites = [];
                 engine.EventBus.publish('state_changed');

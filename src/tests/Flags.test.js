@@ -9,7 +9,6 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
-import * as Managers from '../systems/board/Managers.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
@@ -321,67 +320,32 @@ describe('fixable problems (FP-69, FPP-1, FPP-2, FPP-5)', () => {
     });
 });
 
-describe('⭐ waiting for a Manager (FP-70, FPP-9)', () => {
-    function dryForest({ copy = true, other = false } = {}) {
-        put(15, 'fixture_manager');
+describe('⭐ a hero whose Token runs dry moves on — no Manager wait (SP-55, 9.2)', () => {
+    it('takes other work in range at once, even with a copy in the Vault', () => {
         const first = put(14, 'fixture_producer', 1);
-        if (copy) TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
-        if (other) put(20, 'fixture_producer');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        put(20, 'fixture_producer');
         plant('h1', 14);
         expect(workTileOf('h1')).toBe(14);
+
         Charges.destroyToken(first, { heroId: 'h1' });
         Flags.assign(0);
-        return first;
-    }
 
-    it('waits on the spot, then claims the restocked Token — a different instance, from zero', () => {
-        const first = dryForest();
-
-        expect(BoardState.waitOfHero('h1')).toEqual({ spotId: BoardState.spotIdAt(C(14).x, C(14).y), typeId: 'fixture_producer', ...C(14) });
-        expect(BoardRunner.isHeroIdle('h1')).toBe(false);
-
-        Managers.sweep();
-        Flags.assign(0);
-
-        const restocked = tokenAt(14);
-        expect(workTileOf('h1')).toBe(14);
-        expect(restocked.id).not.toBe(first.id);
-        expect(restocked.cycleElapsedMs).toBe(0);
-    });
-
-    it('moves on when the Vault has no copy', () => {
-        dryForest({ copy: false, other: true });
-        expect(BoardState.waitOfHero('h1')).toBeNull();
         expect(workTileOf('h1')).toBe(20);
+        expect(Flags.statusOf('h1').state).not.toBe('waiting');
     });
 
-    it('moves on when the Manager is taken away', () => {
-        dryForest({ other: true });
-        expect(BoardState.waitOfHero('h1')).not.toBeNull();
-
-        Placement.returnTokenToVaultById(idAt(15));
-        Flags.assign(0);
-
-        expect(BoardState.waitOfHero('h1')).toBeNull();
-        expect(workTileOf('h1')).toBe(20);
-    });
-
-    it('a waiting hero gets the restock before an earlier-planted hero looking for work', () => {
-        put(15, 'fixture_manager');
+    it('with nothing else in range is idle, not waiting', () => {
         const first = put(14, 'fixture_producer', 1);
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         plant('h1', 14);
-        BoardState.setFlag('h2', { ...C(14), plantedAt: -1 });
 
         Charges.destroyToken(first, { heroId: 'h1' });
-        Flags.markDirty();
-        Flags.assign(0);
-        Managers.sweep();
-        Flags.markDirty();
         Flags.assign(0);
 
-        expect(workTileOf('h1')).toBe(14);
-        expect(workTileOf('h2')).toBeNull();
+        expect(workTileOf('h1')).toBeNull();
+        expect(Flags.statusOf('h1').state).toBe('idle');
+        expect(BoardRunner.isHeroIdle('h1')).toBe(true);
     });
 });
 

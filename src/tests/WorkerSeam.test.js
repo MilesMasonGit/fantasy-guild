@@ -42,7 +42,7 @@ describe('the worker seam answers from flags and claims', () => {
         GameState.state = {
             board: {
                 tokens: {}, nextTokenOrder: 0, flags: {}, nextFlagOrder: 0,
-                vacancies: {}, tray: [], tokenBank: {}, maps: []
+                tray: [], tokenBank: {}, maps: []
             },
             heroes: [
                 { id: 'hero_1', name: 'Althea', skills: { logging: { level: 5, xp: 0 } }, level: 1 },

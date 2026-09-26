@@ -32,7 +32,6 @@ import * as TriggerSystem from '../board/TriggerSystem.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 import * as BoardCombat from '../board/BoardCombat.js';
 import * as BoardPromotion from '../board/BoardPromotion.js';
-import * as Managers from '../board/Managers.js';
 import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
 import * as FlagRules from '../board/FlagRules.js';
@@ -107,7 +106,6 @@ export const EngineBootstrap = {
             BoardPromotion,
             Flags,
             FlagRules,
-            Managers,
             TokenBank,
             Cartographer,
             QuestManager,
@@ -145,7 +143,6 @@ export const EngineBootstrap = {
         BoardRunner.init();
         BoardCombat.init();
         BoardPromotion.init();
-        Managers.init();
         Flags.init();
         Cartographer.init();
         QuestManager.init();

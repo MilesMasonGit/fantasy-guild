@@ -264,7 +264,6 @@ describe('"Heroes may work this" (FP-35, FPP-8)', () => {
 describe('the Dock tab status line (FPP-15)', () => {
     it('says what the hero is doing', () => {
         expect(dockStatusLine({ state: 'working', typeId: 'fixture_producer' })).toBe('Working: Fixture Producer');
-        expect(dockStatusLine({ state: 'waiting' })).toBe('Waiting');
         expect(dockStatusLine({ state: 'idle' })).toBe('Idle at flag');
         expect(dockStatusLine({ state: 'docked' })).toBe('Idle in Guild');
     });

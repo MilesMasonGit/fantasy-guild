@@ -771,9 +771,6 @@ function collectSaveRefs(state, note) {
     for (const token of Object.values(board.tokens || {})) {
         note('Token', token?.typeId, 'on the playmat');
     }
-    for (const vacancy of Object.values(board.vacancies || {})) {
-        note('Token', vacancy?.typeId, 'on the playmat, on a spot that has run dry');
-    }
     for (const entry of board.tray || []) {
         note('Token', entry?.typeId, 'in the Token tray');
     }

@@ -7,7 +7,6 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Cartographer from '../systems/board/Cartographer.js';
-import * as Managers from '../systems/board/Managers.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { ALERT_HINT, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
@@ -24,8 +23,7 @@ import { resetMissingContentWarnings } from '../utils/missingContent.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
- * spots 0 and 1 are 160 u apart, inside the shipped 164 u Near, so a Manager
- * on one reaches a vacancy on the other.
+ * spots 0 and 1 are 160 u apart, inside the shipped 164 u Near.
  */
 const C = (i) => ({ x: 400 + i * 160, y: 200 });
 
@@ -129,8 +127,9 @@ describe('CR2-054: Tray capacity is one rule', () => {
 // ---------------------------------------------------------------------------
 
 describe('CR2-060: every alert value comes from one enum', () => {
-    it('unstocked is an ALERT value, not a hand-written string', () => {
-        expect(ALERT.UNSTOCKED).toBe('unstocked');
+    it('unstocked went with the Managers (SP-55, 9.2)', () => {
+        expect(ALERT.UNSTOCKED).toBeUndefined();
+        expect(Object.values(ALERT)).not.toContain('unstocked');
     });
 
     it('every ALERT value has a hint and a label', () => {
@@ -140,41 +139,6 @@ describe('CR2-060: every alert value comes from one enum', () => {
         }
     });
 
-    it('Managers publishes the alert once, on the transition into unstocked', () => {
-        // A spot with a Manager beside it that manages a type the Vault has no
-        // copy of: `restockSpot` takes the unstocked branch every sweep.
-        const managed = aPlainTokenId();
-        const MANAGER = 'fixture_one_rule_manager';
-        getAllTokenTypes()[MANAGER] = {
-            id: MANAGER, name: 'Fixture Manager', tokenType: 'manager',
-            manages: [managed], requiresHero: false
-        };
-
-        BoardState.addToken(BoardState.createTokenInstance(MANAGER, null), C(1).x, C(1).y);
-        // The spot the managed Token stood on; Near (164 u) reaches the Manager
-        // on the next spot, 160 u away.
-        const at = C(0);
-        BoardState.setVacancyAt(at, managed);
-        const spotId = BoardState.spotIdAt(at.x, at.y);
-        const vacancy = BoardState.vacancyAt(spotId);
-
-        const seen = [];
-        const unsub = EventBus.subscribe(BOARD_EVENTS.ALERT_CHANGED, p => seen.push(p));
-
-        expect(Managers.restockSpot(spotId)).toBe('unstocked');
-        expect(vacancy.unstocked).toBe(true);
-        expect(seen).toHaveLength(1);
-        expect(seen[0].alert).toBe(ALERT.UNSTOCKED);
-
-        // The sweep retries on a throttle. The mark is already showing, so
-        // nothing has changed and nothing more may be published (CR2-060).
-        expect(Managers.restockSpot(spotId)).toBe('unstocked');
-        expect(Managers.restockSpot(spotId)).toBe('unstocked');
-        expect(seen).toHaveLength(1);
-
-        unsub?.();
-        delete getAllTokenTypes()[MANAGER];
-    });
 });
 
 describe('CR2-059: an alert only re-publishes on a real change', () => {

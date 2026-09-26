@@ -89,7 +89,9 @@ function board() {
     if (!state.board.flags || typeof state.board.flags !== 'object') state.board.flags = {};
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.workClaims || typeof state.board.workClaims !== 'object') state.board.workClaims = {};
-    if (!state.board.vacancies) state.board.vacancies = {};
+    // Spot vacancies went with the Managers (Token Lifecycle 9.2, SP-55); an
+    // older save's leftover map is simply dropped.
+    if ('vacancies' in state.board) delete state.board.vacancies;
     return state.board;
 }
 
@@ -196,8 +198,6 @@ function afterPointChange(b, instance) {
  *
  * The instance itself is stored (not a copy) and gains `x`, `y` and, if it has
  * none, `placedAt`. A Token that is already on the mat is simply moved.
- * Anything landing exactly on a spot vacancy satisfies it, whether it came from
- * a Manager or from the player's hand.
  *
  * @returns the instance, or null
  */
@@ -213,7 +213,6 @@ export function addToken(instance, x, y) {
     instance.y = y;
     stampOrder(b, instance);
     b.tokens[instance.id] = instance;
-    clearVacancyAt(b, x, y);
     afterPointChange(b, instance);
     return instance;
 }
@@ -241,7 +240,6 @@ export function setTokenPoint(id, x, y) {
     if (!instance || !Number.isFinite(x) || !Number.isFinite(y)) return false;
     instance.x = x;
     instance.y = y;
-    clearVacancyAt(b, x, y);
     afterPointChange(b, instance);
     return true;
 }
@@ -352,8 +350,6 @@ export function heroesOnBoard() {
  *   **instance id**, so a Token that moves carries its hero (FP-68). `x`, `y`
  *   is the Token's last-known point, refreshed whenever it moves, so a hero
  *   whose Token has left can still find the spot it stood on (slice 1.6b).
- * * `waits`    heroId → `{ spotId, typeId, x, y }` — waiting on a spot for a
- *   Manager's restock (FP-70); `x`, `y` is the spot's point.
  * * the rest (`skips`, retry times, notices, cycle ends, clock) belong to `Flags.js`.
  *
  * ## ⚠️ Kept per board object, not per module
@@ -368,7 +364,6 @@ function runtimeOf(b) {
     if (!rt) {
         rt = {
             claims: new Map(),
-            waits: new Map(),
             skips: new Map(),
             skipsByHero: new Map(),
             nextTryAt: new Map(),
@@ -433,19 +428,6 @@ export function forgetWorkClaim(heroId) {
 /** Every saved work note, as `[heroId, { instanceId, side }]`. */
 export function savedWorkClaims() {
     return Object.entries(board()?.workClaims || {});
-}
-
-/** The wait `heroId` is on, or null. */
-export function waitOfHero(heroId) {
-    return flagRuntime()?.waits.get(heroId) || null;
-}
-
-/** Record (or with `null`, drop) `heroId`'s wait. */
-export function setWait(heroId, wait) {
-    const rt = flagRuntime();
-    if (!rt || !heroId) return;
-    if (wait) rt.waits.set(heroId, wait);
-    else rt.waits.delete(heroId);
 }
 
 /** The hero whose flag has claimed Token instance `instanceId`, or null. */
@@ -534,13 +516,12 @@ function arrivedAt(heroId, instanceId) {
  * ## Under flags (slice 1.4b, roadmap §2), by id and point (slice 1.6b)
  * * `workerOf(id)` is **the hero whose flag has claimed that Token**, while it
  *   is on the mat **and the hero has arrived** (Hero Movement M1 — walking to
- *   it is not working it, FP-26). ⚠️ A spot with no Token has no worker, ever:
- *   a hero waiting on an empty spot for a restock (FP-70) is not working it.
+ *   it is not working it, FP-26). ⚠️ A spot with no Token has no worker, ever.
  * * `workTokenOf(heroId)` is the claimed Token's id while it is on the mat and
  *   the hero has arrived, or null. (Flags reads the claim itself through
  *   `claimOfHero` — a claim is made when the hero sets off, HMP-2.)
- * * `displayPointOf(heroId)` is the claimed Token's centre, else the spot they
- *   wait on, else their flag's point, else null (in the Dock).
+ * * `displayPointOf(heroId)` is the claimed Token's centre, else their flag's
+ *   point, else null (in the Dock).
  *
  * ⭐ The tile forms that stood beside them — `workerOfTile` and `workTileOf` —
  * were deleted with the grid in slice 1.6d-2.
@@ -564,71 +545,13 @@ export function workTokenOf(heroId) {
     return arrivedAt(heroId, instance.id) ? instance.id : null;
 }
 
-/** The mat point to draw `heroId` at: claimed Token > waiting spot > flag > null. */
+/** The mat point to draw `heroId` at: claimed Token > flag > null. */
 export function displayPointOf(heroId) {
     if (!heroId) return null;
     const work = getTokenById(workTokenOf(heroId));
     if (work) return { x: work.x, y: work.y };
-    const wait = waitOfHero(heroId);
-    if (wait && Number.isFinite(wait.x) && Number.isFinite(wait.y)) return { x: wait.x, y: wait.y };
     const flag = flagOf(heroId);
     return flag ? { x: flag.x, y: flag.y } : null;
-}
-
-// ---------------------------------------------------------------------------
-// Vacancies — the spot a spent Token stood on (Phase 7, D-35; by spot since 1.6a)
-// ---------------------------------------------------------------------------
-
-/**
- * A **spot that ran dry**, remembering what depleted on it.
- *
- * `board.vacancies[spotId] = { typeId, x, y, unstocked }`, where `x`, `y` is
- * the spent Token's own point — exactly where a Manager's restock lands
- * (FP-19). The spot id is derived from that point, so a second Token running
- * dry on the same point replaces the first record rather than adding one.
- *
- * This is what makes a Manager type-specific without making it invasive. A
- * Lumber Camp refills a spot where a *Forest* wore out; it never colonises
- * ground that was simply always empty, so placing a Manager cannot carpet the
- * ground you were saving for something else (owner decision 2026-08-06).
- *
- * Set only by depletion. Cleared the moment anything lands on the spot —
- * including by hand, which is the player overriding the Manager's claim.
- */
-export function spotIdAt(x, y) {
-    return `spot_${x}_${y}`;
-}
-
-/** Record (or with a null `typeId`, clear) the vacancy at a mat point. */
-export function setVacancyAt(point, typeId) {
-    const b = board();
-    if (!b || !Number.isFinite(point?.x) || !Number.isFinite(point?.y)) return;
-    const spotId = spotIdAt(point.x, point.y);
-    if (!typeId) {
-        delete b.vacancies[spotId];
-        return;
-    }
-    b.vacancies[spotId] = { typeId, x: point.x, y: point.y, unstocked: false };
-}
-
-/** Clear any vacancy standing exactly at `(x, y)`. */
-function clearVacancyAt(b, x, y) {
-    delete b.vacancies[spotIdAt(x, y)];
-}
-
-/** The vacancy recorded for `spotId`, or null. */
-export function vacancyAt(spotId) {
-    if (!spotId) return null;
-    return board()?.vacancies?.[spotId] || null;
-}
-
-/**
- * Every spot vacancy as `[spotId, vacancy]`, in the order the spots ran dry.
- * Sparse — usually empty.
- */
-export function spotVacancies() {
-    const map = board()?.vacancies || {};
-    return Object.keys(map).map(spotId => [spotId, map[spotId]]).filter(([, v]) => v?.typeId);
 }
 
 // ---------------------------------------------------------------------------

@@ -49,7 +49,6 @@ describe('2×2 Large Token Mechanics', () => {
                 nextTokenOrder: 0,
                 flags: {},
                 nextFlagOrder: 0,
-                vacancies: {},
                 tray: [],
                 tokenBank: {},
                 maps: []

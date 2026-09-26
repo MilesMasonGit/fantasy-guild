@@ -17,7 +17,6 @@ import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
-import * as Managers from './Managers.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as TimedChanges from './TimedChanges.js';
@@ -37,9 +36,8 @@ import { logger } from '../../utils/Logger.js';
 
 /**
  * Re-exported so `BoardRunner.ALERT` keeps working for the engine suites that
- * read it that way. The definition itself moved to `boardEvents.js` (CR2-060)
- * so that `Managers` — which `BoardRunner` imports, and which publishes
- * `ALERT.UNSTOCKED` — can name the same constant without an import cycle.
+ * read it that way. The definition itself lives in `boardEvents.js` (CR2-060)
+ * so every publisher and reader can name it without an import cycle.
  */
 export { ALERT };
 
@@ -442,12 +440,6 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
  * @param {number} delta milliseconds since the last tick, already time-scaled
  */
 export function tick(delta) {
-    // Managers run FIRST and outside the tile guard below: a restock happens on
-    // an *empty* tile, so it must not be conditional on there being anything on
-    // the board to iterate. A board whose last Token just ran dry is exactly
-    // when restocking matters most.
-    Managers.tick();
-
     // Timed changes (Token Lifecycle 3.2, DP-2): Saplings grow, Coasts turn
     // and turn back, on clocks advanced by this tick's `delta` — so the time
     // bank fast-forwards them with everything else. Before Flags, so a hero
@@ -457,8 +449,7 @@ export function tick(delta) {
     TimedChanges.tick(delta);
 
     // Flags keep, change or find their work (Free Playmat 1.4b) — after the
-    // restocks above, so a hero waiting on a spot sees its new Token this tick,
-    // and before any Token ticks, so `workerOf` below is already settled.
+    // timed changes above, so a hero sees any new Token this tick, and before any Token ticks, so `workerOf` below is already settled.
     Flags.assign(delta);
 
     // Heroes walk toward their work (Hero Movement M1) — after Flags has told
@@ -762,11 +753,9 @@ export function isHeroIdle(heroId) {
     if (!hero || hero.status === 'wounded') return false;
 
     // Under flags (Free Playmat 1.4b): a hero is idle when their flag found
-    // nothing to work, or in the Dock. Waiting on a spot for a Manager's
-    // restock is not idle (FP-70) — the work is coming.
+    // nothing to work, or in the Dock.
     const status = Flags.statusOf(heroId);
     if (status.state === 'docked' || status.state === 'returning' || status.state === 'idle') return true;
-    if (status.state === 'waiting') return false;
     // Walking back to the flag with nothing to do is idle; walking to work is not.
     if (status.state === 'walking') return !status.instanceId;
     return !!BoardState.getTokenById(status.instanceId)?.alert;   // working, but stuck

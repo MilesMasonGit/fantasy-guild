@@ -17,13 +17,7 @@ import { EventBus } from '../systems/core/EventBus.js';
  * the engine can set is pinned here to the sentence the player is shown for it.
  */
 
-/**
- * Every alert value that can reach a Token.
- *
- * `UNSTOCKED` is published by `Managers`, not the runner, but it is in the same
- * enum now (CR2-060), so this list no longer has to append a hand-written
- * string that could drift from the one the publisher uses.
- */
+/** Every alert value that can reach a Token (one enum since CR2-060). */
 const ALERT_VALUES = Object.values(ALERT);
 
 const renderBar = (alert) => render(
@@ -58,8 +52,8 @@ describe('Token alert hints (D-114)', () => {
             .toBe('This hero doesn’t have the skill for this work — levelling won’t help');
         expect(ALERT_HINT[ALERT.NO_RECIPE])
             .toBe('This station is missing a Token its recipe needs beside it');
-        expect(ALERT_HINT.unstocked)
-            .toBe('This tile ran dry and the Vault has no replacement — restock it');
+        // `unstocked` went with the Managers (SP-55, 9.2).
+        expect(ALERT_HINT.unstocked).toBeUndefined();
     });
 
     it.each(ALERT_VALUES)('shows the hint on hover for "%s"', (alert) => {

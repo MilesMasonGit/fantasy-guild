@@ -63,7 +63,6 @@ const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /** What ran dry on spot `i`, or null. */
-const vacancyAt = (i) => BoardState.vacancyAt(BoardState.spotIdAt(C(i).x, C(i).y));
 
 /** Which spot a Token stands on, by instance id. */
 function spotOf(id) {
@@ -175,12 +174,12 @@ describe('An unlimited Token ignores charge deltas in both directions (R-4)', ()
 });
 
 describe('Reaching zero destroys the Token', () => {
-    it('empties the spot and leaves a vacancy behind it', () => {
+    it('empties the spot, and nothing is owed it (Managers retired, 9.2)', () => {
         const instance = place(STATION, 'fixture_charged_context', null, 2);
         const result = Charges.applyDelta(instance, -2);
         expect(result.depleted).toBe(true);
         expect(tokenAt(STATION)).toBeNull();
-        expect(vacancyAt(STATION)?.typeId).toBe('fixture_charged_context');
+        expect(GameState.state.board.vacancies).toBeUndefined();
     });
 });
 

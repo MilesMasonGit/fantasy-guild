@@ -5,7 +5,6 @@ import {
     getTokenType, getAllTokenTypes, tokenName, productionRoutes, getProvidedTagsWithTiers,
     outputRange
 } from '../../../config/registries/tokenRegistry.js';
-import { managedTypes } from '../../../systems/board/Managers.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { listMaps } from '../../../config/registries/mapRegistry.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
@@ -309,17 +308,6 @@ export const TokenInspection = ({
             )}
 
             {Object.keys(getProvidedTagsWithTiers(def)).length > 0 && <DrivesBlock def={def} />}
-            {managedTypes(typeId)?.length > 0 && (
-                <div className="rounded border border-gi-border/40 bg-gi-base/40 p-2.5">
-                    <Label>Restocks from the Vault</Label>
-                    <p className="mt-1 text-[10px] text-gi-text">
-                        {managedTypes(typeId).map(id => tokenName(id)).join(', ')}
-                    </p>
-                    <p className="mt-1 text-[9px] text-gi-muted">
-                        Covers the 8 surrounding tiles, and never wears out.
-                    </p>
-                </div>
-            )}
 
             {/* The Vault count. Its Value badge and the Sell controls went with
                 gold (SP-65, slice 2.2). */}

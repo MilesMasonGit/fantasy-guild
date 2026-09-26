@@ -6,7 +6,6 @@ import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
-import * as Managers from '../systems/board/Managers.js';
 import * as Restrictions from '../systems/board/Restrictions.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Charges from '../systems/board/Charges.js';
@@ -145,38 +144,6 @@ describe('⭐ a moved buff Token: its old neighbours lose it AND its new neighbo
 // `nearby` answers is pinned on its own terms in `Nearby.test.js`.
 
 // ---------------------------------------------------------------------------
-// Managers — by spot point
-// ---------------------------------------------------------------------------
-
-describe('⭐ Managers restock the exact spot, nearest first, then the earlier-placed Manager', () => {
-    it('lands at the exact spot point — even one that is no tile centre', () => {
-        const spot = { x: 450, y: 333 };
-        at('fixture_manager', { x: 600, y: 333 });          // 150 u
-        BoardState.setVacancyAt(spot, 'fixture_producer');
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
-        const spotId = BoardState.spotIdAt(spot.x, spot.y);
-
-        expect(Managers.restockSpot(spotId)).toBe('restocked');
-        expect(BoardState.tokensAtPoint(spot.x, spot.y).map(t => t.typeId)).toEqual(['fixture_producer']);
-        expect(BoardState.vacancyAt(spotId)).toBeNull();
-    });
-
-    it('the nearest Manager wins; on equal distance, the one placed first', () => {
-        const spot = { x: 800, y: 800 };
-        const east = at('fixture_manager', { x: 950, y: 800 });   // 150 u, placed first
-        const west = at('fixture_manager', { x: 650, y: 800 });   // 150 u, placed second
-        expect(Managers.managerFor(spot, 'fixture_producer')).toEqual([east.id, 'fixture_manager']);
-
-        const nearer = at('fixture_manager', { x: 800, y: 900 }); // 100 u, placed last
-        expect(Managers.managerFor(spot, 'fixture_producer')[0]).toBe(nearer.id);
-
-        BoardState.removeToken(nearer.id);
-        BoardState.removeToken(east.id);
-        expect(Managers.managerFor(spot, 'fixture_producer')[0]).toBe(west.id);
-    });
-});
-
-// ---------------------------------------------------------------------------
 // Restrictions — the projected view
 // ---------------------------------------------------------------------------
 
@@ -292,9 +259,8 @@ describe('⭐ flags claim by instance id and wait by spot id', () => {
         expect(BoardState.displayPointOf('h1')).toEqual(P(4, 4));
     });
 
-    it('a hero whose Token ran dry waits on its spot by id, then claims the restock there (FP-70)', () => {
+    it('a hero whose Token ran dry lets go of it by id — no wait for a restock (SP-55, 9.2)', () => {
         const spot = P(2, 2);
-        at('fixture_manager', P(3, 2));
         const forest = at(BoardState.createTokenInstance('fixture_producer', 1), spot);
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         Flags.plant('h1', spot);
@@ -303,16 +269,11 @@ describe('⭐ flags claim by instance id and wait by spot id', () => {
         Charges.destroyToken(forest, { heroId: 'h1' });
         Flags.assign(0);
 
-        const spotId = BoardState.spotIdAt(spot.x, spot.y);
-        expect(BoardState.waitOfHero('h1')).toEqual({ spotId, typeId: 'fixture_producer', ...spot });
+        expect(BoardState.claimOfHero('h1')).toBeNull();
         expect(BoardState.workerOf(forest.id)).toBeNull();
-        expect(BoardState.displayPointOf('h1')).toEqual(spot);
-
-        Managers.sweep();
-        Flags.assign(0);
-        const restocked = BoardState.tokensAtPoint(spot.x, spot.y)[0];
-        expect(restocked.id).not.toBe(forest.id);
-        expect(BoardState.workTokenOf('h1')).toBe(restocked.id);
+        expect(BoardState.workTokenOf('h1')).toBeNull();
+        expect(BoardState.displayPointOf('h1')).toEqual(spot);   // the flag's point
+        expect(BoardState.tokensAtPoint(spot.x, spot.y)).toEqual([]);
     });
 
     it('setDisallowed takes an instance id', () => {

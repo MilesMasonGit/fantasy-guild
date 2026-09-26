@@ -9,7 +9,6 @@ import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
-import * as Managers from '../systems/board/Managers.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
@@ -44,19 +43,11 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
  * Geometry: 6×6, one tile step is 160 u. From tile 14, tile 15 is 160 u away,
  * 16 is 320, 17 is 480; tile 0 is 452 away.
  *
- * ⚠️ Laid out on the old reaches — flag radius 400 u, Near 272 u (a Manager on a
+ * ⚠️ Laid out on the old reaches — flag radius 400 u, Near 272 u (a Token on a
  * diagonal) — so `beforeEach` sets both. Both ship at 164 u since FP-75.
  * Since FP-71 a flag has no skill: "fighting" is just planting a hero who can
  * fight near an enemy, with nothing better in range.
  */
-
-registerTokenTypes({
-    /** A Manager for the Promotion fixture, for the last-charge case. */
-    ft_academy_manager: {
-        id: 'ft_academy_manager', name: 'Academy Steward', tokenType: 'manager',
-        uses: null, manages: ['fixture_promotion']
-    }
-});
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
@@ -69,9 +60,6 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 /** The Token standing exactly on spot `i`, and its instance id. */
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 const idAt = (i) => tokenAt(i)?.id ?? null;
-
-/** What ran dry on spot `i`, or null. */
-const vacancyAt = (i) => BoardState.vacancyAt(BoardState.spotIdAt(C(i).x, C(i).y));
 
 /** Which spot the Token a hero works stands on, or null. */
 function workTileOf(heroId) {
@@ -257,9 +245,8 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         expect(BoardState.heroOfInstance(nearer.id)).toBeNull();
     });
 
-    it('a cleared-out camp waits for its Manager, then fights the restock (FP-70)', () => {
-        put(21, 'fixture_enemy_manager');          // 226 u from the camp
-        const camp = put(14, 'fixture_enemy', 1);
+    it('a cleared-out camp lets its hero go: no fight, no wait for a restock (SP-55, 9.2)', () => {
+        put(14, 'fixture_enemy', 1);
         TokenBank.deposit(BoardState.createTokenInstance('fixture_enemy', 20));
         fightAt('h1', 14);
         expect(workTileOf('h1')).toBe(14);
@@ -268,14 +255,9 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
         expect(tokenAt(14)).toBeNull();
         Flags.assign(0);
 
-        expect(BoardState.waitOfHero('h1')).toEqual({ spotId: BoardState.spotIdAt(C(14).x, C(14).y), typeId: 'fixture_enemy', ...C(14) });
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
-
-        Managers.sweep();
-        Flags.assign(0);
-
-        expect(workTileOf('h1')).toBe(14);
-        expect(tokenAt(14).id).not.toBe(camp.id);
+        expect(workTileOf('h1')).toBeNull();
+        expect(Flags.statusOf('h1').state).toBe('idle');
     });
 });
 
@@ -470,8 +452,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         expect(reasons(academy)).toContain(Flags.SKIP.SAME_JOB);
     });
 
-    it('accepting with the last charge does not wait for a restock that would not train them (FP-70)', () => {
-        put(21, 'ft_academy_manager');
+    it('accepting with the last charge leaves the hero free for other work (FPP-12)', () => {
         put(14, 'fixture_promotion', 1);
         TokenBank.deposit(BoardState.createTokenInstance('fixture_promotion', 1));
         Placement.plantFlagAt('h1', C(14));
@@ -479,14 +460,11 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
 
         expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
         expect(tokenAt(14)).toBeNull();
-        // Everything FP-70 asks for is there — only the hero has no use for it.
-        expect(vacancyAt(14)?.typeId).toBe('fixture_promotion');
-        expect(Managers.managerFor(C(14), 'fixture_promotion')).not.toBeNull();
         expect(BoardState.tokenBankCopies('fixture_promotion').length).toBe(1);
 
         Flags.assign(0);
 
-        expect(BoardState.waitOfHero('h1')).toBeNull();
+        expect(Flags.statusOf('h1').state).toBe('idle');
         expect(workTileOf('h1')).toBeNull();
     });
 });
@@ -553,19 +531,6 @@ describe('⭐ disallow (FP-35)', () => {
         TileModifiers.rebuildAround([C(15)]);
 
         expect(TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'logging')).toBe(allowed);
-    });
-
-    it('does not stop a Manager restocking — a disallowed Manager, onto a disallowed Token’s spot', () => {
-        put(15, 'fixture_manager');
-        const forest = put(14, 'fixture_producer', 1);
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
-        Flags.setDisallowed(idAt(15), true);
-        Flags.setDisallowed(idAt(14), true);
-
-        Charges.destroyToken(forest);
-        expect(Managers.sweep()).toBe(1);
-
-        expect(tokenAt(14)?.typeId).toBe('fixture_producer');
     });
 
     it('survives a save and reload, and a trip through the Vault drops it', async () => {

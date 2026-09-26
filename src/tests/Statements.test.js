@@ -4,8 +4,6 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
-import * as Managers from '../systems/board/Managers.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses, getTokenType, getProvidedTagsWithTiers } from '../config/registries/tokenRegistry.js';
@@ -21,8 +19,7 @@ import { tickUpkeep, isStatementPaid } from '../systems/board/BlockUpkeep.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
- * spots 15 and 16 are 160 u apart, inside the shipped 164 u Near, which is what
- * lets the Manager below reach the vacancy beside it.
+ * spots are 160 u apart, inside the shipped 164 u Near.
  */
 const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
@@ -222,36 +219,6 @@ describe('⚠️ Reordering rules must not move a save\'s state onto a different
         tickUpkeep(instance, def, 1);
         expect(instance.blockUpkeep['0']).toBeUndefined();
         expect(isStatementPaid(instance, 'stm_only')).toBe(true);
-    });
-});
-
-describe('Restocks — the field that never had a box (owner Q6)', () => {
-    beforeEach(() => {
-        GameState.initNew();
-        BoardState.init?.();
-        SpriteLayer.init();
-        TileModifiers.clearAll();
-    });
-
-    it('makes a Manager out of a Restocks statement', () => {
-        expect(Managers.isManager('fixture_restocker')).toBe(true);
-        expect(Managers.managedTypes('fixture_restocker')).toEqual(['fixture_producer']);
-    });
-
-    it('still understands the legacy `manages` list', () => {
-        expect(Managers.managedTypes('fixture_manager')).toEqual(['fixture_producer']);
-    });
-
-    it('actually restocks a vacancy from the Bank', () => {
-        const TILE = 15, MANAGER_TILE = 16;
-        Placement.placeTokenAt(BoardState.createTokenInstance(
-            'fixture_restocker', tokenStartingUses('fixture_restocker')
-        ), C(MANAGER_TILE));
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5));
-        BoardState.setVacancyAt(C(TILE), 'fixture_producer');
-
-        expect(Managers.sweep()).toBe(1);
-        expect(tokenAt(TILE)?.typeId).toBe('fixture_producer');
     });
 });
 

@@ -158,15 +158,13 @@ export function canFireStatement(instance, statement) {
  * Remove a depleted Token from the board.
  *
  * **Token depletion is the only wear mechanic in the game** (D-118). The tile
- * empties and any hero standing on it stays there, idle, until the player
- * returns or a Manager restocks underneath them (D-60, D-151) — the hero is not
- * touched here, only re-announced so the UI redraws them on a bare tile.
- *
- * The vacancy is set AFTER the Token is taken off, which clears vacancies, so
- * that a type-specific Manager knows what this spot is owed (D-35).
+ * empties; the hero is not touched here, only re-announced, and their flag
+ * chooses again on its next pass. Nothing is owed the spot: Managers and their
+ * vacancies are retired (Token Lifecycle 9.2, SP-55) — spawners replace
+ * used-up Tokens.
  *
  * ## By instance (slice 1.6b)
- * The Token removed is `instance`, by its id; the vacancy is its own point.
+ * The Token removed is `instance`, by its id.
  * Every event names it by `instanceId` and, because it has just left the mat,
  * by the point `x`, `y` it stood on.
  */
@@ -175,14 +173,12 @@ export function destroyToken(instance, { heroId = null } = {}) {
     const name = getTokenType(typeId)?.name || tokenName(typeId) || typeId || 'Token';
     const instanceId = instance?.id ?? null;
 
-    // The vacancy is the SPOT the spent Token stood on (slice 1.6a), which is
-    // exactly where a Manager's restock lands (FP-19). Read before removing.
+    // The spot the spent Token stood on, read before removing.
     const spent = BoardState.getTokenById(instanceId);
     const spot = spent ? { x: spent.x, y: spent.y } : null;
     const at = spot || (Number.isFinite(instance?.x) && Number.isFinite(instance?.y) ? { x: instance.x, y: instance.y } : {});
 
     if (spent) BoardState.removeToken(spent.id);
-    if (typeId && spot) BoardState.setVacancyAt(spot, typeId);
 
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
         instanceId,
