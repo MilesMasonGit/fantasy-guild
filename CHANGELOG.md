@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Goblin Camps.** Buy a Goblin Camp at the Shop (10 Stone, 10 Oak Wood); it keeps up to 3 Goblins on
+  the mat and now and then a tougher Goblin Chief. Heroes with a combat skill fight them for Bones,
+  Copper Ore and, from Chiefs, Copper Ingots and Beeswax Combs.
 - **Explore a Map; Map bursts are gone.** The Oak Forest Map is sold at the Shop and worked by an
   Explore hero: each trip spends a cooked Shrimp and a Torch for mixed loot (wood, seeds, ore, rarely a
   Beeswax Comb), and the Map is used up after five trips. Buying Maps to burst them open is removed.
