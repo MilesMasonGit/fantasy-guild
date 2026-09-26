@@ -826,5 +826,18 @@
     "valueSource": null,
     "autoSyncId": true,
     "id": "item_copper_nails"
+  },
+  "item_beeswax_comb": {
+    "name": "Beeswax Comb",
+    "description": "",
+    "type": "material",
+    "sprite": "f_honey",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_beeswax_comb"
   }
 }
