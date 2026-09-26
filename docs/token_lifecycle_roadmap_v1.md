@@ -238,6 +238,12 @@ out to change something the player sees.
   save is not supported in this build (the project has wiped saves at every
   rework). Check `SaveManager` for how a version mismatch is handled today, and
   make it clear rather than crash.
+* **DP-12 Content lanes run one at a time** (director, 2026-09-26). Every content slice
+  rewrites `data/tokens.json` and `data/items.json` through the CMS Sync, so two content lanes in
+  parallel would conflict inside those files, and resolving that by hand is hand-editing `data/`.
+  Phase 7 chains therefore run in sequence; code-only slices (Phase 9) may run beside them. A
+  content branch merges in two steps (its `CMS sync:` commit, then its code commit) because the
+  repo's commit hook refuses a commit mixing `data/` and code.
 * **DP-11 A dev panel for testing** (in the existing `TestDashboard`): give any
   item, grant a combat skill (exists), jump every spawner and grow clock forward,
   show kind counts and caps.
@@ -536,7 +542,8 @@ panel is for speed, not for filling gaps.)
 * ⭐ **After slice 1.1:** the nine skills on a Recruit (quick look).
 * ⭐ **After Phases 3 and 5:** buy a Forest, watch it spawn, grow, be logged
   and respawn. **The first "does it feel right" moment**; worth doing before
-  Phase 7 builds on it.
+  Phase 7 builds on it. ✅ **Held 2026-09-26 on the real Oak chain (7.1): owner, "this works
+  exactly as I envisioned it"; proceed with the other six chains.**
 * ⭐ **After Phase 8.2:** the Upkeep Summary's layout.
 * ⭐ **Phase 10.2:** the full playtest.
 * Any time the brief for a slice needs a decision this document does not make.
