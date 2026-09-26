@@ -124,11 +124,17 @@ describe('Renaming a Token repoints tokenId outputs', () => {
     });
 });
 
+/** Empty the store's Construction pool (the shipped 7.5 building recipes); the store is this test's own. */
+const clearConstructionPool = () =>
+    useEntityStore.setState((s) => ({ recipePools: { ...s.recipePools, construction: [] } }));
+
 describe('The Recipe editor’s building flow', () => {
     it('ticking a Foundation kind swaps Outputs for a single Token picker', () => {
         const store = useEntityStore.getState();
         const furnace = store.addToken({ name: 'Fixture Editor Furnace' });
-        // Construction has no shipped recipes, so the new one is the active one.
+        // Construction ships building recipes since slice 7.5; empty this
+        // store's copy of the pool so the new recipe is the active one.
+        clearConstructionPool();
         expect(useEntityStore.getState().recipePools.construction || []).toHaveLength(0);
         useEntityStore.getState().addRecipe('construction', { name: 'Build It' });
 
@@ -159,6 +165,7 @@ describe('The Recipe editor’s building flow', () => {
         const store = useEntityStore.getState();
         const farmland = store.addToken({ name: 'Fixture Editor Farmland' });
         useEntityStore.getState().updateToken(farmland, { foundation: { kind: 'farmland', skill: 'farming' } });
+        clearConstructionPool();
         useEntityStore.getState().addRecipe('construction', { name: 'Wrong Skill', foundationKinds: ['farmland'] });
 
         render(React.createElement(RecipeEditor));

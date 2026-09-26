@@ -1,4 +1,8 @@
 export const SPRITE_MANIFEST = {
+    't_chisel_copper': 'assets/items/tool/chisel/t_chisel_copper.png',
+    'token_anvil_copper': 'assets/tokens/smith/token_anvil_copper.png',
+    'Item_torch': 'assets/items/Item_torch.png',
+    'token_lumberpile': 'assets/tokens/nature/token_lumberpile.png',
     'i_seeds_apple': 'assets/items/seeds/i_seeds_apple.png',
     'i_seeds': 'assets/items/seeds/i_seeds.png',
     'prop_tree_maple': 'assets/playmat/props/prop_tree_maple.png',

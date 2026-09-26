@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-    getAllTokenTypes, getTokenType, productionRoutes, toolContextTags, tokenName,
+    getAllTokenTypes, getTokenType, getProvidedTagsWithTiers, productionRoutes, toolContextTags, tokenName,
     expectedOutputQuantity
 } from '../config/registries/tokenRegistry.js';
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
@@ -488,11 +488,17 @@ describe('Registry integrity', () => {
      * migrated card-era recipes and nothing provided them. P2.6 pruned those
      * recipes (R-16), so the allowance is gone and this is a plain assertion
      * again — every context tag a recipe names has a Token that provides it.
+     *
+     * Providers are read through `getProvidedTagsWithTiers`, the reader the
+     * engine itself uses: an `Acts as` statement (the only channel the CMS
+     * writes; it deletes a top-level `provides`) plus the legacy `provides`
+     * list. Reading `provides` alone could never see a CMS-authored provider,
+     * which the first one, the Copper Anvil (Token Lifecycle 7.5), exposed.
      */
     it('points every recipe at a context Token that actually exists', () => {
         const provided = new Set();
         for (const def of Object.values(TOKENS)) {
-            for (const tag of def.provides || []) provided.add(tag);
+            for (const tag of Object.keys(getProvidedTagsWithTiers(def))) provided.add(tag);
         }
 
         for (const id of ALL_IDS) {
