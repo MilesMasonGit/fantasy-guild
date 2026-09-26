@@ -748,5 +748,18 @@
     "valueSource": null,
     "autoSyncId": true,
     "id": "item_bones"
+  },
+  "item_oak_seed": {
+    "name": "Oak Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pit",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 8,
+    "valueSource": "token_oak_tree",
+    "autoSyncId": true,
+    "id": "item_oak_seed"
   }
 }
