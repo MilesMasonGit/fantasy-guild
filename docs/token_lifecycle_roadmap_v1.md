@@ -567,7 +567,7 @@ panel is for speed, not for filling gaps.)
 | 7.0 Tool requirements off | ⬜ Not started | |
 | 7.1–7.7 Chains | ⬜ Not started | |
 | 8.1 Inspection lines | ⬜ Not started | |
-| 8.2 Upkeep Summary | ⬜ Not started | |
+| 8.2 Upkeep Summary | ✅ Done 2026-09-25 (⭐ layout look pending: needs real content) | Bank drawer → **Upkeep** button (hourglass) swaps the item list for: Ongoing costs (per item per minute, Bank, runs out in, used by, waiting unpaid), Trickle income, Idle spawners. Maths in `UpkeepSummary.js` (includes `BlockUpkeep` statement upkeep; copies its private `costedStatements` filter, keep in step). Runs-out = Bank ÷ (cost − trickle income). Verified live: two Forests + no seeds = 6/min needed, empty now, both waiting; +30 = ~5 min |
 | 8.3 Alerts and mat cap | ⬜ Not started | |
 | 9.1–9.6 Retirements | ⬜ Not started | |
 | 10.1 Opening | ⬜ Not started | |

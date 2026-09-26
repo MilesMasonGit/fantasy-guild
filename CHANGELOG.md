@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Upkeep Summary.** An Upkeep button in the Item Bank shows every ongoing cost per minute, how
+  long the Bank's stock will last, which Tokens are waiting for an item, trickle income, and which
+  spawners are idle at their cap.
 - **Building on Foundations.** A Foundation asks you to choose what to build; a hero with the right
   skill and level then works it, and when the build finishes the Foundation becomes that Token on
   the same spot. Recipes above the hero's level show as locked.
