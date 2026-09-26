@@ -55,7 +55,13 @@ const LootSystem = {
             return;
         }
 
-        const generatedDrops = this.generateDrops(sourceData, areaId);
+        // Every drop line rolls on its own `chance` (TL-10, 2026-09-26), exactly
+        // as a station's outputs do in `BoardRunner`: a Goblin with Bones 100%
+        // and Copper Ore 30% drops Bones every kill AND Ore 30% of the time.
+        // It used to be ONE weighted pick over the whole list (`generateDrops`
+        // → `_processCluster`), so it dropped Bones OR Ore, never both —
+        // contradicting the per-line descriptions the CMS generates.
+        const generatedDrops = this.rollEachLine(sourceData.drops, areaId);
 
         if (generatedDrops.length > 0) {
             if (instanceId != null) {
@@ -115,7 +121,31 @@ const LootSystem = {
     },
 
     /**
-     * Polymorphic Drop Generator
+     * Roll every line independently (TL-10): each entry lands when its own
+     * `chance` (default 100) hits, with its quantity rolled over its authored
+     * min–max. The chance test is the one `BoardRunner` uses for outputs.
+     *
+     * @param {Array} entries - `{ itemId, chance, minQty, maxQty }` lines
+     * @returns {Array} the drops that landed, possibly empty
+     */
+    rollEachLine(entries, areaId) {
+        const results = [];
+        for (const entry of (Array.isArray(entries) ? entries : [])) {
+            if (!entry) continue;
+            const chance = entry.chance ?? 100;
+            if (chance < 100 && Math.random() * 100 > chance) continue;
+            const drop = this._rollEntryDetails(entry, areaId);
+            if (drop && (drop.type === 'combat_trigger' || drop.quantity > 0)) results.push(drop);
+        }
+        return results;
+    },
+
+    /**
+     * Polymorphic Drop Generator — ONE weighted pick per group.
+     *
+     * ⚠️ Not the enemy-kill path any more: kills use `rollEachLine` (TL-10).
+     * Kept for `handleTaskReward`, which wants pick-one — though nothing in
+     * `src/` calls that today.
      * Handles New Architecture (clusters) and Legacy Architecture (flat drops)
      */
     generateDrops(source, areaId) {
