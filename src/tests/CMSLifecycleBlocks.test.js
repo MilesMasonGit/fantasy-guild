@@ -102,11 +102,12 @@ afterEach(() => {
 });
 
 describe('Today’s data round-trips unchanged', () => {
-    it('the shipped content uses none of the new blocks yet (so the fixture below is the only proof they survive)', () => {
+    it('the shipped content now uses the new blocks (Logging chain, slice 7.1), so the byte-identical round trips below cover them too', () => {
+        const used = new Set();
         for (const token of Object.values(shippedTokens)) {
-            for (const key of TOKEN_LIFECYCLE_BLOCKS) expect(token).not.toHaveProperty(key);
+            for (const key of TOKEN_LIFECYCLE_BLOCKS) if (token[key] !== undefined) used.add(key);
         }
-        for (const recipe of shippedRecipes) expect(recipe).not.toHaveProperty('foundationKinds');
+        for (const key of ['spawner', 'grows', 'shop', 'trickle']) expect(used).toContain(key);
     });
 
     it('load → export writes all five files back byte-identical', () => {

@@ -1,4 +1,6 @@
 export const SPRITE_MANIFEST = {
+    'prop_tree_oak': 'assets/playmat/props/prop_tree_oak.png',
+    'i_seed_pit': 'assets/items/seeds/i_seed_pit.png',
     'map_archipeligo': 'assets/tokens/map/map_archipeligo.png',
     'token_school_fighter': 'assets/tokens/promote/token_school_fighter.png',
     'd_beer': 'assets/items/drink/d_beer.png',
