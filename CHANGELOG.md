@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Spawners and the trickle work.** A spawner Token grows new Tokens around itself on a clock, up to
+  a cap shared by every spawner of that kind, paying an item from the Bank per spawn and waiting
+  when it can't. A Token can also pay items into the Bank on a clock with no hero (for the Guild
+  Hall). The QA panel lists each spawner kind's count and cap. No content uses them yet.
 - **Gold is gone from play.** Nothing shows, earns or spends gold: selling is removed, coin loot
   and Markets pay nothing, and quests reward 10 Oak Wood instead of Maps. Maps are bought with Oak
   Wood until the Shop replaces them.

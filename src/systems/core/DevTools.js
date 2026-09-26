@@ -9,6 +9,7 @@ import { EventBus } from './EventBus.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
 import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
+import * as SpawnerSystem from '../board/SpawnerSystem.js';
 
 // ---------------------------------------------------------------------------
 // Give item
@@ -119,16 +120,16 @@ export function advanceTime(minutes, {
 }
 
 // ---------------------------------------------------------------------------
-// Spawner kind counts (placeholder)
+// Spawner kind counts (Token Lifecycle slice 3.3)
 // ---------------------------------------------------------------------------
 
 /**
- * Live Spawner kind counts for the QA panel, as `[{ kind, count, cap }]`.
- * There are no Spawners yet: this returns `[]` and the panel shows
- * "No spawners yet". The Spawner slice replaces the body; the panel already
- * renders any rows this returns.
+ * Live Spawner family counts for the QA panel, as `[{ kind, count, cap }]` —
+ * one row per family with a live spawner on the mat (`kind` is the family's
+ * readable name, its first spawned type). Empty when there are no spawners,
+ * and the panel shows "No spawners yet".
  * @returns {Array<{ kind: string, count: number, cap: number }>}
  */
 export function getSpawnerKindCounts() {
-    return [];
+    return SpawnerSystem.familyCounts().map(({ kind, count, cap }) => ({ kind, count, cap }));
 }

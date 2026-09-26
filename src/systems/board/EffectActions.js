@@ -230,11 +230,21 @@ function spawnPoint(typeId, placement, from, random, bearerId) {
 const LEGAL_BONUS = 1e12;
 
 /**
+ * How far past the minimum gap `besideBearer` aims, in mat units. `clampInside`
+ * rounds the point to whole units, which moves it by up to √0.5 ≈ 0.71 u — and
+ * without this margin that rounding could land the newcomer a fraction INSIDE
+ * the bearer's gap. Both are fixed in the push, so the overlap could never be
+ * solved and every crowded `nearest_free` spawn fell back to free space up to
+ * 640 u away instead of pushing (found in Token Lifecycle 3.1, fixed in 3.3).
+ */
+const BESIDE_MARGIN = 1;
+
+/**
  * The point one gap from the bearer in its roomiest direction (of eight) — where
  * a crowded `nearest_free` spawn starts its push.
  */
 function besideBearer(typeId, bearer) {
-    const gap = MatPlacement.minGap(typeId, bearer.typeId);
+    const gap = MatPlacement.minGap(typeId, bearer.typeId) + BESIDE_MARGIN;
     let best = null;
     let bestScore = -Infinity;
     for (let k = 0; k < 8; k++) {

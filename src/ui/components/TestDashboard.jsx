@@ -13,6 +13,7 @@ import {
     giveItem, listGivableItemIds, advanceTime, getSpawnerKindCounts,
     DEV_ADVANCE_STEP_MS, DEV_ADVANCE_MAX_STEPS
 } from '../../systems/core/DevTools.js';
+import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
@@ -36,6 +37,20 @@ export const TestDashboard = React.memo(() => {
     const [devStatus, setDevStatus] = useState('');
     const itemIds = React.useMemo(() => (isOpen ? listGivableItemIds() : []), [isOpen]);
     const kindCounts = isOpen ? getSpawnerKindCounts() : [];
+
+    // Spawner kinds refresh (Token Lifecycle 3.3): a spawn, a grow, a removal
+    // and a Token running out each change a family's count or cap, and each
+    // publishes one of these. Only while the panel is open.
+    const [, setKindTick] = useState(0);
+    React.useEffect(() => {
+        if (!engine || !isOpen) return;
+        const bump = () => setKindTick(n => n + 1);
+        const offs = [
+            engine.EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, bump),
+            engine.EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, bump)
+        ];
+        return () => offs.forEach(off => off?.());
+    }, [engine, isOpen]);
 
     React.useEffect(() => {
         if (!engine) return;
