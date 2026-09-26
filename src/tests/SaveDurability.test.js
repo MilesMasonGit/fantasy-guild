@@ -27,17 +27,17 @@ describe('Save durability (CR-008 / CR-054)', () => {
     });
 
     it('writes a save and keeps the previous one as a backup', () => {
-        GameState.state.progress.guildHallMapOpens = 100;
+        GameState.state.time.gameTimeMs = 100;
         expect(SaveManager.save(false)).toBe(true);
         expect(localStorage.getItem(SlotHelper.getBackupKey(SLOT))).toBeNull();
 
-        GameState.state.progress.guildHallMapOpens = 200;
+        GameState.state.time.gameTimeMs = 200;
         expect(SaveManager.save(false)).toBe(true);
 
         const backup = JSON.parse(localStorage.getItem(SlotHelper.getBackupKey(SLOT)));
         const current = JSON.parse(localStorage.getItem(SlotHelper.getSlotKey(SLOT)));
-        expect(backup.state.progress.guildHallMapOpens).toBe(100);
-        expect(current.state.progress.guildHallMapOpens).toBe(200);
+        expect(backup.state.time.gameTimeMs).toBe(100);
+        expect(current.state.time.gameTimeMs).toBe(200);
     });
 
     it('refuses to load a structurally invalid save', async () => {
@@ -50,9 +50,9 @@ describe('Save durability (CR-008 / CR-054)', () => {
     });
 
     it('recovers from the backup when the current save is damaged', async () => {
-        GameState.state.progress.guildHallMapOpens = 777;
+        GameState.state.time.gameTimeMs = 777;
         SaveManager.save(false);          // good save
-        GameState.state.progress.guildHallMapOpens = 999;
+        GameState.state.time.gameTimeMs = 999;
         SaveManager.save(false);          // rolls 777 into backup
 
         const stored = JSON.parse(localStorage.getItem(SlotHelper.getSlotKey(SLOT)));
@@ -60,7 +60,7 @@ describe('Save durability (CR-008 / CR-054)', () => {
         localStorage.setItem(SlotHelper.getSlotKey(SLOT), JSON.stringify(stored));
 
         expect(await SaveManager.loadSlot(SLOT)).toBe(true);
-        expect(GameState.state.progress.guildHallMapOpens).toBe(777);   // came from the backup
+        expect(GameState.state.time.gameTimeMs).toBe(777);   // came from the backup
     });
 
     it('deleting a slot clears its backup too', () => {
@@ -72,7 +72,7 @@ describe('Save durability (CR-008 / CR-054)', () => {
     });
 
     it('exports a save and imports it back into another slot', async () => {
-        GameState.state.progress.guildHallMapOpens = 4242;
+        GameState.state.time.gameTimeMs = 4242;
         const exported = SaveManager.exportSave();
         expect(typeof exported).toBe('string');
 
@@ -80,7 +80,7 @@ describe('Save durability (CR-008 / CR-054)', () => {
         expect(result.success).toBe(true);
 
         const stored = JSON.parse(localStorage.getItem(SlotHelper.getSlotKey(1)));
-        expect(stored.state.progress.guildHallMapOpens).toBe(4242);
+        expect(stored.state.time.gameTimeMs).toBe(4242);
         expect(stored.version).toBe(GAME_VERSION);
     });
 

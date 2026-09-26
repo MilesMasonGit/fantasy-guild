@@ -231,13 +231,15 @@ describe('A successful deposit announces itself to the rest of the game (CR2-033
         expect(seen).toEqual([]);
     });
 
-    it('stays silent when a Map is refused (D-156)', () => {
+    // D-156 (the Vault refuses Maps) retired with the Map bursts (Token
+    // Lifecycle 9.1): a Map Token is stored like any other, and says so once.
+    it('stores a Map Token like any other, announcing it once (D-156 retired, 9.1)', () => {
         const seen = [];
         const off = EventBus.subscribe('vault_deposited', d => seen.push(d));
 
-        expect(TokenBank.deposit(token('fixture_map'))).toBe(false);
+        expect(TokenBank.deposit(token('fixture_map'))).toBe(true);
 
         off();
-        expect(seen).toEqual([]);
+        expect(seen).toEqual([{ typeId: 'fixture_map' }]);
     });
 });

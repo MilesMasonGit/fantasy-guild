@@ -3,10 +3,8 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import * as BoardState from './BoardState.js';
-import * as Cartographer from './Cartographer.js';
 import * as Placement from './Placement.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as TokenBank from './TokenBank.js';
@@ -16,8 +14,8 @@ import * as TokenBank from './TokenBank.js';
  * back out, wherever it is coming from or going to.
  *
  * ## Why this is not inside `TokenBank.js`
- * `TokenBank` is the rules over the Bank's *own* storage: slot caps, D-156's Map
- * refusal, consolidation, selling. It answers "may this Token live here?".
+ * `TokenBank` is the rules over the Bank's *own* storage: slot caps,
+ * consolidation, selling. It answers "may this Token live here?".
  * Moving a Token means also touching the mat or the floor sprite
  * layer — and both `Placement.js` and `SpriteLayer.js` already import
  * `TokenBank`. Putting the dispatcher in `TokenBank` would have made two new
@@ -27,7 +25,7 @@ import * as TokenBank from './TokenBank.js';
  *
  * ## What a call site is allowed to do
  * Call one of these two functions and show `result.reason` if there is one.
- * Nothing else. Every check ("Maps cannot be stored", "No room in the Vault",
+ * Nothing else. Every check ("No room in the Vault",
  * the Vault-unlock gate), the actual movement, and the repaint announcement live
  * here. The four components that used to carry their own copy had already
  * drifted apart on all three (CR2-134), which is exactly the failure this
@@ -41,7 +39,6 @@ import * as TokenBank from './TokenBank.js';
  * / `board:tile_changed` repaint pair.
  */
 
-const MAP_REFUSAL = 'Maps cannot be stored — open it.';
 const VAULT_FULL = 'No room in the Vault';
 const VAULT_LOCKED = 'Token Vault storage unlocks after completing "Place a Dropped Token".';
 
@@ -64,7 +61,6 @@ function announceMoved() {
  *
  * - `{ instanceId }` — a Token standing on the playmat (by id since slice 1.6c)
  * - `{ spriteId }`  — a loose loot Token floating over the grid
- * - `{ boardMapId }`— a Map lying on the playmat (always refused, D-156)
  *
  * On failure **nothing is lost** (D-138): a Token lifted off the sprite layer is
  * put back exactly where it was.
@@ -81,10 +77,6 @@ export function depositFrom(source) {
 
     if (source.instanceId != null) return depositFromMat(source.instanceId);
     if (source.spriteId != null) return depositFromSprite(source.spriteId);
-
-    // A Map on the playmat. Refused for the same reason as everywhere else, and
-    // named rather than silently ignored so the player learns the rule.
-    if (source.boardMapId != null) return refuse(MAP_REFUSAL);
 
     return NOTHING;
 }
@@ -109,14 +101,6 @@ function depositFromSprite(spriteId) {
     const putItBack = () =>
         SpriteLayer.addSprite('token', instance.typeId, 1, null, instance.usesRemaining);
 
-    // ⚠️ Checked explicitly rather than left to `TokenBank.deposit`'s own D-156
-    // refusal. Both refuse it, but only this one can say *why*: the old code
-    // here fell through to the generic "No room in the Vault", which is not the
-    // reason and sends the player looking for a Vault upgrade they do not need.
-    if (getTokenType(instance.typeId)?.mapId) {
-        putItBack();
-        return refuse(MAP_REFUSAL);
-    }
     if (!TokenBank.deposit(instance)) {
         putItBack();
         return refuse(VAULT_FULL);
@@ -131,8 +115,8 @@ function depositFromSprite(spriteId) {
  *
  * `target.at` is the **mat point** the player dropped it at. The click-driven
  * routes (the Vault tab's quick add, the inspection panel's button) pass no
- * point, and the Token lands beside the Guild Hall — where bought Maps land
- * (FP-18). Before slice 1.9 those routes filled the Tray.
+ * point, and the Token lands beside the Guild Hall, where the Shop lands what it
+ * sells (FP-18). Before slice 1.9 those routes filled the Tray.
  *
  * `TokenBank.withdraw` picks the **fullest copy** (D-77). If the mat refuses the
  * Token — no legal spot within nudge reach — it goes straight back into the
@@ -148,7 +132,7 @@ export function withdrawTo(typeId, target = {}) {
     // hides the Token until a particle that is never coming lands on it.
     delete instance.isLanding;
 
-    const at = target.at ?? Cartographer.centreOfBoard();
+    const at = target.at ?? Placement.centreOfBoard();
     const res = Placement.placeTokenAt(instance, at);
     if (!res?.success) {
         TokenBank.deposit(instance);

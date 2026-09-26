@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 import { GameState } from '../state/GameState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Cartographer from '../systems/board/Cartographer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 
@@ -16,7 +16,12 @@ import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
  *
  * Every action that used to earn or spend gold is exercised here and gold must
  * stay at 0. The Market Token's currency output is covered in `Market.test.js`
- * and `RosterAndMarkets.test.js`; coin loot in `MapBurst.test.js`.
+ * and `RosterAndMarkets.test.js`; coin loot below (it moved here from
+ * `MapBurst.test.js` when the Map bursts were deleted, Token Lifecycle 9.1).
+ *
+ * Two cases went with the Map code in 9.1: the Oak-Wood-priced Map purchase
+ * (there is no Map purchase now) and a gold entry in a burst (there are no
+ * bursts).
  */
 
 beforeEach(() => {
@@ -47,32 +52,27 @@ describe('No action earns or spends gold (SP-65)', () => {
             expect(QuestManager.claimQuest(t.id).success, t.id).toBe(true);
         }
         expect(GameState.state.currency).toBeUndefined();
-        expect(BoardState.getTotalMapCount()).toBe(0);
+        expect(BoardState.tokens().some(t => getTokenType(t.typeId)?.mapId)).toBe(false);
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10 * TUTORIAL_QUESTS.length);
     });
 
-    it('a Map is bought with Oak Wood, not gold', () => {
-        const map = Cartographer.catalogue().find(m => m.priceItems.length > 0);
-        expect(map, 'a priced Map').toBeDefined();
-        const [price] = map.priceItems;
-        expect(price.itemId).toBe('item_oak_wood');
+});
 
-        // With no Oak Wood, nothing buys it.
-        expect(Cartographer.canBuy(map.id).success).toBe(false);
+describe('Coins floor loot collection', () => {
+    // ⚠️ Changed in slice 2.2 (SP-65). This used to assert the pile credited
+    // 2000 gold. Gold is retired: the coins are swept off the floor and pay
+    // nothing, and they are not banked as an item either.
+    it('sweeps coins off the floor without crediting gold or banking them (SP-65)', () => {
+        const sprite = SpriteLayer.addSprite('item', 'item_coins', 2000, { x: 0.5, y: 0.5 });
+        expect(sprite).toBeDefined();
+        expect(sprite.refId).toBe('item_coins');
+        expect(sprite.quantity).toBe(2000);
 
-        InventoryManager.addItem(price.itemId, price.quantity);
-        expect(Cartographer.buyMap(map.id).success).toBe(true);
-        expect(InventoryManager.getItemCount(price.itemId)).toBe(0);
-        expect(GameState.state.currency).toBeUndefined();
-    });
-
-    it('a gold entry in a Map burst pays nothing', () => {
-        // Open the scripted Guild Hall Map through its whole sequence.
-        for (let i = 0; i < 12; i++) {
-            Cartographer.openMap({ typeId: 'token_guild_hall_map', mapId: 'map_guild_hall' });
-        }
-        for (const s of SpriteLayer.getSprites()) SpriteLayer.collectSprite(s.id);
-        expect(GameState.state.currency).toBeUndefined();
+        const collected = SpriteLayer.collectSprite(sprite.id);
+        expect(collected).toBe(true);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
+        expect(InventoryManager.getItemCount('item_coins')).toBe(0);
+        expect(SpriteLayer.getSprites().some(s => s.id === sprite.id)).toBe(false);
     });
 });
 

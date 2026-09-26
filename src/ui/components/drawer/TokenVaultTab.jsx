@@ -76,9 +76,7 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
     /**
      * The Vault takes Tokens back (D-247).
      *
-     * ⚠️ **Maps are refused, and that is the rule rather than a limitation.**
-     * A purchased Map must be opened (D-156). That refusal — and every other one
-     * — now comes out of `VaultTransfer.depositFrom` as a `reason` string; this
+     * Every refusal comes out of `VaultTransfer.depositFrom` as a `reason` string; this
      * pane no longer carries its own copy of the rule (CR2-134).
      */
     const isVaultSendUnlocked = useGameState(
@@ -97,7 +95,7 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
             // Every Vault control accepts the same origins (owner ruling
             // 2026-08-25). `depositFrom` handles them all — including naming
             // the Map refusal instead of silently ignoring the drop.
-            return (p.from?.instanceId != null || p.from?.spriteId != null || p.from?.boardMapId != null);
+            return (p.from?.instanceId != null || p.from?.spriteId != null);
         },
         onDrop: (p) => {
             const res = VaultTransfer.depositFrom(p.from);

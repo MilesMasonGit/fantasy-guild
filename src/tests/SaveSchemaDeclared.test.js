@@ -7,8 +7,6 @@ import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TokenGroups from '../systems/board/TokenGroups.js';
-import * as Cartographer from '../systems/board/Cartographer.js';
-import { getMap } from '../config/registries/mapRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
 
@@ -55,22 +53,9 @@ function playALittle() {
     QuestManager.ensureState();
     TokenGroups.ensure();
 
-    // The Cartographer's three fields: a purchase, a discovery, and the index
-    // into the scripted Guild Hall drop sequence. The cheapest catalogue entry
-    // is used rather than a named Map, because Maps are authored content and
-    // any given id can be renamed out from under this test.
-    const def = Cartographer.catalogue()[0];
-    if (def) {
-        // Maps cost items since slice 2.2 (SP-65), not gold.
-        for (const p of def.priceItems) InventoryManager.addItem(p.itemId, p.quantity);
-        for (const m of getMap(def.id).materials || []) {
-            InventoryManager.addItem(m.itemId, m.quantity);
-        }
-        const bought = Cartographer.buyMap(def.id);
-        expect(bought.success).toBe(true);
-        Cartographer.markDiscovered(def.id);
-    }
-    Cartographer.rollBurst('map_guild_hall');
+    // The Cartographer's three fields (a purchase, a discovery and the Guild
+    // Hall drop index) were written here until the Map bursts and the Map
+    // purchase were deleted (Token Lifecycle 9.1).
 }
 
 describe('The declared schema matches the save (CR2-042, CR2-069)', () => {
@@ -113,10 +98,16 @@ describe('The declared schema matches the save (CR2-042, CR2-069)', () => {
             expect.arrayContaining(['maxTabs', 'maxSlots'])
         );
         expect(Object.keys(INITIAL_STATE.progress)).toEqual(
-            expect.arrayContaining(['guildUpgrades', 'mapDiscoveries', 'guildHallMapOpens'])
+            expect.arrayContaining(['guildUpgrades'])
         );
         expect(INITIAL_STATE.quests).toHaveProperty('completedTutorials');
-        expect(INITIAL_STATE.cartographer).toHaveProperty('purchasedMaps');
+        // Deleted on purpose with the Map bursts (Token Lifecycle 9.1): the
+        // Map discoveries, the Guild Hall drop index and the Cartographer's
+        // purchase list.
+        expect(INITIAL_STATE.progress).not.toHaveProperty('mapDiscoveries');
+        expect(INITIAL_STATE.progress).not.toHaveProperty('guildHallMapOpens');
+        expect(INITIAL_STATE.cartographer).toBeUndefined();
+        expect(INITIAL_STATE.board).not.toHaveProperty('maps');
     });
 
     it('still passes its own validator after a real play session', () => {
@@ -168,12 +159,12 @@ describe('Migration repairs a partially-present section (CR2-042)', () => {
 
     it('never overwrites a field the save already stores, including 0 and null', () => {
         const state = GameState.serialize().state;
-        state.progress.guildHallMapOpens = 0;
+        state.time.gameTimeMs = 0;   // was progress.guildHallMapOpens, deleted in 9.1
         state.board.tokenGroups = { groupOrder: ['mine'], groupDefs: {}, overrides: {} };
         state.meta.createdAt = null;
 
         const migrated = migrateState(state, GAME_VERSION);
-        expect(migrated.progress.guildHallMapOpens).toBe(0);
+        expect(migrated.time.gameTimeMs).toBe(0);
         expect(migrated.board.tokenGroups.groupOrder).toEqual(['mine']);
         expect(migrated.meta.createdAt).toBeNull();
     });
@@ -242,6 +233,26 @@ describe('The validator guards the sections this game is made of (CR2-043)', () 
         expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
         const migrated = migrateState(state, GAME_VERSION);
         expect(migrated.currency).toBeUndefined();
+        expect(validateSaveData({ version: GAME_VERSION, state: migrated }).valid).toBe(true);
+    });
+
+    // The Map bursts and the Map purchase left the save with their code
+    // (Token Lifecycle 9.1).
+    it('an older save with unopened Maps on the mat loads, and the Maps and their bookkeeping are dropped', () => {
+        const state = GameState.serialize().state;
+        state.board.maps = [{ id: 'map_abc', typeId: 'token_oak_forest_map', x: 100, y: 100, usesRemaining: 1 }];
+        state.cartographer = { purchasedMaps: ['map_oak_forest'] };
+        state.progress.mapDiscoveries = { token_oak_tree: true };
+        state.progress.guildHallMapOpens = 3;
+        expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
+
+        const migrated = migrateState(state, GAME_VERSION);
+        expect(migrated.board.maps).toBeUndefined();
+        expect(migrated.cartographer).toBeUndefined();
+        expect(migrated.progress.mapDiscoveries).toBeUndefined();
+        expect(migrated.progress.guildHallMapOpens).toBeUndefined();
+        // Everything else on the board is kept.
+        expect(migrated.board.tokens).toEqual(state.board.tokens);
         expect(validateSaveData({ version: GAME_VERSION, state: migrated }).valid).toBe(true);
     });
 });

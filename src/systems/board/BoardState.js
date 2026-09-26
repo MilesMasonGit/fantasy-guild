@@ -3,7 +3,6 @@
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
 import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 
@@ -85,7 +84,6 @@ function board() {
     if (typeof state.board.nextTokenOrder !== 'number') state.board.nextTokenOrder = 0;
     if (!state.board.tokenBank) state.board.tokenBank = {};
     if (!Array.isArray(state.board.tray)) state.board.tray = [];
-    if (!Array.isArray(state.board.maps)) state.board.maps = [];
     if (!state.board.flags || typeof state.board.flags !== 'object') state.board.flags = {};
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.workClaims || typeof state.board.workClaims !== 'object') state.board.workClaims = {};
@@ -566,9 +564,7 @@ export function displayPointOf(heroId) {
  * directly. The flow is **Bank → Tray → Board**. Remove the Tray and placement
  * stops working entirely.
  *
- * It is also where purchased Maps land (D-156) and where displaced Tokens go,
- * which is why it is roomy from the start — ~15–20 slots, so a full Map burst
- * always fits (D-168).
+ * It is also where displaced Tokens go, which is why it is roomy from the start.
  */
 export function getTray() {
     const b = board();
@@ -577,46 +573,15 @@ export function getTray() {
     return b.tray;
 }
 
-/** Maximum unburst maps allowed across Playmat + Tray to prevent lagging */
-export const MAX_MAP_LIMIT = 50;
-
-/** All map tokens sitting in the tray. */
-export function getTrayMaps() {
-    const b = board();
-    if (!b) return [];
-    return b.tray.filter(t => !!getTokenType(t.typeId)?.mapId);
-}
-
-/** Count non-map playable tokens in the Tray. */
-export function nonMapTrayTokensCount() {
-    const b = board();
-    if (!b) return 0;
-    return b.tray.filter(t => !getTokenType(t.typeId)?.mapId).length;
-}
-
-/** Total unburst maps across Playmat + Tray. */
-export function getTotalMapCount() {
-    return (getBoardMaps().length + getTrayMaps().length);
-}
-
-/** Whether a new map can be spawned/purchased without exceeding the 50-map cap. */
-export function hasMapSpace() {
-    return getTotalMapCount() < MAX_MAP_LIMIT;
-}
-
 /**
- * Whether the Tray has room for `count` more standard Tokens.
+ * Whether the Tray has room for `count` more Tokens.
  *
- * **The one definition of Tray capacity (CR2-054.)** Maps do not occupy Tray
- * capacity — `MAX_MAP_LIMIT` caps them instead — so only non-map Tokens are
- * counted, which is what `addToTray` has always actually enforced. Placement
- * and the Cartographer used to check raw `getTray().length` against
- * `TRAY_CAPACITY` instead, so with a Map sitting in the Tray those routes
- * refused a move that `addToTray` would have accepted, and the same Tray
- * reported "full" on one route and "not full" on another.
+ * **The one definition of Tray capacity (CR2-054.)** `addToTray` enforces the
+ * same rule. (Maps used to be exempt; that went with the Map bursts, Token
+ * Lifecycle 9.1.)
  */
 export function hasTraySpaceFor(count = 1, capacity = TRAY_CAPACITY) {
-    return nonMapTrayTokensCount() + count <= capacity;
+    return getTray().length + count <= capacity;
 }
 
 /** Whether the Tray has room for at least one more standard Token. */
@@ -626,25 +591,19 @@ export function hasTraySpace(capacity = TRAY_CAPACITY) {
 
 /**
  * Append to the Tray. Returns false when full.
- * Maps do not count towards Tray capacity (capped only by MAX_MAP_LIMIT).
  */
 export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
     const b = board();
     if (!b || !instance) return false;
 
-    const isMap = !!getTokenType(instance.typeId)?.mapId;
-    if (isMap) {
-        if (!hasMapSpace()) return false;
-    } else {
-        if (!hasTraySpaceFor(1, capacity)) return false;
-    }
+    if (!hasTraySpaceFor(1, capacity)) return false;
 
     // A Token entering the Tray gives up its place in the mat's arrival order.
     // ⚠️ The Tray stores fractions in the same `x`/`y` the mat stores points in,
     // so its caller must take it off the mat straight after this.
     delete instance.placedAt;
 
-    const at = position || scatterIntoTray(b.tray, { biasTop: isMap });
+    const at = position || scatterIntoTray(b.tray);
     instance.x = clamp01(at.x);
     instance.y = clamp01(at.y);
     instance.z = nextTrayZ();
@@ -719,7 +678,7 @@ export const TRAY_CAPACITY = 48;
  * so the renderer computes `fraction × (surface − sprite)`. The Tray body is
  * `flex-1` — its height changes with the window and collapses when a bottom
  * drawer opens — and absolute pixels would leave Tokens below the fold, on the
- * one surface D-156 makes the only home for an unopened Map. Fractions squash
+ * one surface that holds them. Fractions squash
  * and stretch instead: nothing ever leaves the surface, nothing needs scrolling,
  * and all 18 stay visible so the `n / 18` count keeps describing what you see.
  * *Accepted cost:* spacing is not preserved, only rough layout — a deliberate
@@ -882,51 +841,4 @@ export function takeFromTokenBank(typeId) {
     const [copy] = copies.splice(best, 1);
     if (!copies.length) delete bank[typeId];
     return createTokenInstance(typeId, copy.usesRemaining ?? null, copy.terrain || null);
-}
-
-// ---------------------------------------------------------------------------
-// Board Maps (freely placed overtop the playmat)
-// ---------------------------------------------------------------------------
-
-/** All maps freely sitting on the playmat. */
-export function getBoardMaps() {
-    return board()?.maps || [];
-}
-
-/** Add a map token instance at (x, y) coordinates on the playmat. */
-export function addBoardMap(typeId, x, y, usesRemaining = 1, options = {}) {
-    const b = board();
-    if (!b || !typeId) return null;
-    const instance = {
-        id: 'map_' + Math.random().toString(36).slice(2, 9),
-        typeId,
-        x: Math.round(x),
-        y: Math.round(y),
-        usesRemaining: usesRemaining ?? 1,
-        bornAt: options.bornAt ?? Date.now(),
-        fromX: options.fromX ?? null,
-        fromY: options.fromY ?? null
-    };
-    b.maps.push(instance);
-    return instance;
-}
-
-/** Remove and return a board map by id (or null). */
-export function removeBoardMap(id) {
-    const b = board();
-    if (!b) return null;
-    const idx = b.maps.findIndex(m => m.id === id);
-    if (idx === -1) return null;
-    return b.maps.splice(idx, 1)[0] || null;
-}
-
-/** Update the (x, y) coordinates of a board map. */
-/** Update the (x, y) coordinates of a board map. */
-export function setBoardMapPosition(id, x, y) {
-    const b = board();
-    const map = b?.maps?.find(m => m.id === id);
-    if (!map) return false;
-    map.x = Math.round(x);
-    map.y = Math.round(y);
-    return true;
 }

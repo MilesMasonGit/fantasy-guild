@@ -128,7 +128,6 @@ describe('dropOnMat — one drop function for the playmat', () => {
         Flags.teardown();
         Flags.init();
         GameState.state.board.tokens = {};
-        GameState.state.board.maps = [];
         GameState.state.board.tray = [];
         GameState.state.board.tokenBank = {};
         GameState.state.board.flags = {};
@@ -253,15 +252,13 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(only().y).toBeCloseTo(target.y, 6);
     });
 
-    it('a Map lands free, its box centred on the point — made fresh and moved on the mat', () => {
-        dropOnMat({ typeId: 'fixture_map', usesRemaining: 1 }, { x: 1500, y: 1000 });
-        const [map] = GameState.state.board.maps;
-        expect({ x: map.x, y: map.y }).toEqual({ x: 1436, y: 936 });
-        expect(BoardState.tokens()).toHaveLength(0);
-
-        // Well off the mat is fine for a Map; it is clamped back onto it.
-        dropOnMat({ typeId: 'fixture_map', from: { boardMapId: map.id } }, { x: 5000, y: -40 });
-        expect(GameState.state.board.maps[0]).toMatchObject({ id: map.id, x: matW() - 128, y: 0 });
+    // Maps used to lie loose on the mat in a box of their own (D-155) until
+    // the Map bursts retired (Token Lifecycle 9.1). A Map is an ordinary Token.
+    it('a Map Token stands on the mat like any other Token (9.1)', () => {
+        expect(dropOnMat({ typeId: 'fixture_map', usesRemaining: 1 }, { x: 1500, y: 1000 }).success).toBe(true);
+        expect(BoardState.tokens().map(t => t.typeId)).toEqual(['fixture_map']);
+        expect(only()).toMatchObject({ x: 1500, y: 1000 });
+        expect(GameState.state.board.maps).toBeUndefined();
     });
 
     it('⭐ a hero from the Dock plants their flag exactly at the drop point (FP-94)', () => {

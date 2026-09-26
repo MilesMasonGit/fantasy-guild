@@ -485,11 +485,6 @@ export function sendTokenToVault(id) {
         return false;
     }
 
-    if (getTokenType(sprite.refId)?.mapId) {
-        NotificationSystem.warning('Maps cannot be stored — open it.');
-        return false;
-    }
-
     const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining, sprite.terrain || null);
     if (!TokenBank.deposit(instance)) {
         NotificationSystem.warning('No room in the Vault');

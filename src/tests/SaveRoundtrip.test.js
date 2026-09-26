@@ -31,7 +31,7 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
     });
 
     it('survives a JSON write/read cycle with gameplay values intact', () => {
-        GameState.state.progress.guildHallMapOpens = 1234;   // a plain number to round-trip (gold left the save in 9.4)
+        GameState.state.time.gameTimeMs = 1234;   // a plain number to round-trip (gold left the save in 9.4, the Guild Hall Map counter in 9.1)
         GameState.state.collection.cardUseCounts = { token_forest: 17 };
 
         // Board state is the thing a lost save would cost the player now: the
@@ -50,7 +50,7 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         const revived = JSON.parse(JSON.stringify(GameState.serialize()));
         const migrated = migrateState(revived.state, revived.version);
 
-        expect(migrated.progress.guildHallMapOpens).toBe(1234);
+        expect(migrated.time.gameTimeMs).toBe(1234);
         expect(migrated.collection.cardUseCounts).toEqual({ token_forest: 17 });
 
         // A coordinate of 0 is a real point — a save that dropped it because

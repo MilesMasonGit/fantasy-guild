@@ -66,7 +66,6 @@ export function createEmptyBoard() {
         workClaims: {},
         tokenBank: {},
         tray: [],
-        maps: [],
         sprites: [],
         // Monotonic z-index handed out by `BoardState.nextTrayZ()` so the Token
         // picked up last sits on top of the Tray pile. Persisted, so the pile
@@ -180,14 +179,9 @@ export const INITIAL_STATE = {
         // Guild Hall upgrade ranks: { upgradeId: rank }. Owned by
         // GuildUpgradeManager, which derives rosterLimit, the bank caps and the
         // Token Vault caps from it on every load.
-        guildUpgrades: {},
-        // Which Maps the player has seen drop from a burst (Cartographer's
-        // silhouettes): { mapId: true }.
-        mapDiscoveries: {},
-        // How many Maps have been opened at the Guild Hall. It is the index into
-        // GUILD_HALL_DROP_SEQUENCE, so losing it restarts the scripted opening
-        // drops from the beginning.
-        guildHallMapOpens: 0
+        guildUpgrades: {}
+        // `mapDiscoveries` and `guildHallMapOpens` went with the Map bursts
+        // (Token Lifecycle 9.1); `migrateState` drops them from an older save.
     },
 
     // === Time ===
@@ -275,12 +269,8 @@ export const INITIAL_STATE = {
     },
 
     // === Cartographer (Maps) ===
-    // Which Maps have been bought, which unlocks their bounties. Written by
-    // `Cartographer.buyMap`; the discovery half lives in
-    // `progress.mapDiscoveries`.
-    cartographer: {
-        purchasedMaps: []
-    }
+    // Deleted with the Map bursts and the Map purchase (Token Lifecycle 9.1).
+    // An older save's `cartographer` section is dropped by `migrateState`.
 };
 
 /**

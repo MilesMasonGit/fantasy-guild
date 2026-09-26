@@ -36,7 +36,6 @@ import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
 import * as FlagRules from '../board/FlagRules.js';
 import * as TokenBank from '../board/TokenBank.js';
-import * as Cartographer from '../board/Cartographer.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { matW, matH } from '../../config/matGeometry.js';
@@ -107,7 +106,6 @@ export const EngineBootstrap = {
             Flags,
             FlagRules,
             TokenBank,
-            Cartographer,
             QuestManager,
             TimeManager,
             TimeBankManager,
@@ -144,7 +142,6 @@ export const EngineBootstrap = {
         BoardCombat.init();
         BoardPromotion.init();
         Flags.init();
-        Cartographer.init();
         QuestManager.init();
 
         // 2. Register Game Loop Intervals

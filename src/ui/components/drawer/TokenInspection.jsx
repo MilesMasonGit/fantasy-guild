@@ -6,7 +6,6 @@ import {
     outputRange
 } from '../../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
-import { listMaps } from '../../../config/registries/mapRegistry.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
@@ -71,9 +70,8 @@ export const TokenInspection = ({
     );
     const partialCharges = partialCopy?.usesRemaining;
 
-    // Map source discovery
-    const sources = listMaps().filter(m => m.pool?.some(e => e.kind === 'token' && e.refId === typeId));
-    const foundInText = sources.map(m => m.name).join(', ');
+    // (The line naming the Maps that burst into this Token went with the Map
+    // bursts, Token Lifecycle 9.1.)
 
     // Tags extraction
     const rawTags = Array.isArray(def.tags)
@@ -176,7 +174,6 @@ export const TokenInspection = ({
                     {tokenName(typeId)}
                 </h3>
                 <div className="flex items-center justify-center gap-1.5 text-xs text-gi-muted uppercase tracking-wider mt-1 select-text">
-                    {foundInText && <span>{foundInText}</span>}
                     {def.rarity && (
                         <span className={cn('capitalize font-semibold', RARITY_TONE[def.rarity] || 'text-gi-muted')}>
                             {def.rarity}

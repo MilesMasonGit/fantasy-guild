@@ -28,13 +28,12 @@ import { describe, it, expect } from 'vitest';
 
 import {
     runMapPass, allocateByRarity, burstExpectation, derivedWeight,
-    enemyLootValue, mapCost, isGuildHallMap,
+    enemyLootValue, mapCost, isGuildHallMap, BURST_SIZE,
 } from '../../cms/src/engine/sim/mapPass.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import { applyMapResults } from '../../cms/src/engine/sim/writeBack.js';
 import { normaliseDials, RARITY_WEIGHTS } from '../../cms/src/engine/sim/dials.js';
 import { adaptCorpus } from '../../cms/src/engine/sim/fieldAdapter.js';
-import { BURST_SIZE } from '../../src/systems/board/Cartographer.js';
 
 import tokenData from '../../data/tokens.json';
 import recipeData from '../../data/tokenRecipes.json';

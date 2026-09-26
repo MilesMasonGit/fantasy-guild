@@ -1,7 +1,6 @@
 import React from 'react';
 import { clampToMat } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { nearRadius } from '../../../systems/board/nearby.js';
 import * as MatPlacement from '../../../systems/board/MatPlacement.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
@@ -55,7 +54,6 @@ export function useTokenDragLanding(matRef) {
 
     const point = pointerToMat(pointer, matRef.current.getBoundingClientRect());
     if (!point) return null;
-    if (getTokenType(activePayload.typeId)?.mapId) return clampToMat(point);
 
     // Where this very Token would land, itself excluded so a Token being
     // moved does not block its own preview.

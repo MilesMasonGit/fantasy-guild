@@ -3,7 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import * as Flags from './Flags.js';
-import { clampToMat, matW, matH, TOKEN_PX } from '../../config/matGeometry.js';
+import { clampToMat, matW, matH } from '../../config/matGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
@@ -99,12 +99,22 @@ export function isPermanentToken(typeId, instance) {
     return !!(def?.cannotLeaveBoard || def?.isGuildHall);
 }
 
-/** Where a Map's 128 u box sits when its centre lands on `point`, kept on the mat. */
-function mapBoxAt(point) {
-    return {
-        x: Math.max(0, Math.min(matW() - TOKEN_PX, Math.round(point.x - TOKEN_PX / 2))),
-        y: Math.max(0, Math.min(matH() - TOKEN_PX, Math.round(point.y - TOKEN_PX / 2)))
-    };
+function isGuildHall(t) {
+    return t.typeId === 'token_guild_hall' || !!getTokenType(t.typeId)?.isGuildHall;
+}
+
+/**
+ * Where a bought or withdrawn Token is aimed: the **Guild Hall's point**, the
+ * one Token guaranteed to be on the mat. With no Hall (a hand-built test board)
+ * it is the mat's centre, read live since the mat can be resized.
+ *
+ * Moved here from `Cartographer.js` when the Map bursts retired (Token
+ * Lifecycle 9.1); the Shop and the Vault still land Tokens beside the Hall.
+ */
+export function centreOfBoard() {
+    const hall = BoardState.tokens().find(isGuildHall);
+    if (hall && Number.isFinite(hall.x) && Number.isFinite(hall.y)) return { x: hall.x, y: hall.y };
+    return { x: matW() / 2, y: matH() / 2 };
 }
 
 /** Flash the refused-drop mark at a point, and refuse (UI §3). */
@@ -156,14 +166,6 @@ export function placeTokenAt(instance, point, options = {}) {
     // A station arrives set to something (R-5) — the lowest-level recipe of its
     // pool. A Token that already carries a valid selection keeps it.
     StationRecipe.ensureSelection(instance, def);
-
-    // Freely positioned Map Tokens lie overtop the playmat (D-155).
-    if (def?.mapId) {
-        const box = mapBoxAt(point);
-        BoardState.addBoardMap(instance.typeId, box.x, box.y, instance.usesRemaining);
-        EventBus.publish('state_changed');
-        return { success: true, displacedToken: null };
-    }
 
     const excludeId = options.excludeId || instance.id || null;
     const at = clampToMat(point);
@@ -295,7 +297,6 @@ export function returnTokenToVaultById(id) {
     if (!QuestManager.isTokenVaultSendUnlocked()) {
         return refuse('Token Vault storage unlocks after completing "Place a Dropped Token".');
     }
-    if (getTokenType(instance.typeId)?.mapId) return refuse('Maps cannot be stored — open it.');
 
     const at = pointOf(instance);
 

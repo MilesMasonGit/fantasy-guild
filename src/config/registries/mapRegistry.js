@@ -1,8 +1,11 @@
 // Fantasy Guild — Map registry (loader)
 
 /**
- * The Cartographer's catalogue — the game's progression system (D-99) and its
- * primary gold sink (D-96), which are deliberately the same thing.
+ * The Map catalogue, authored in the CMS. ⚠️ Since Token Lifecycle 9.1 no Map
+ * bursts and none is sold: a Map Token that is still in the game is an ordinary
+ * Explore producer (slice 7.6). What still reads this file: the terrain
+ * assignment (`terrainAssignments.js`), the boot content audit, and the random
+ * quest bounties. It was the Cartographer's catalogue (D-99).
  *
  * ## Definitions live in `data/`, not here (CMS rework Phase 0, CMS-82)
  * Map definitions used to be a hand-authored object literal in this file. They
@@ -25,7 +28,6 @@
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
-import { GUILD_HALL_MAPS } from './guildHallMaps.js';
 
 /** Merge every Map JSON source into one keyed object. Mirrors the Token loader. */
 function loadJsonMaps() {
@@ -44,9 +46,6 @@ function loadJsonMaps() {
             }
         }
     }
-
-    // Merge exclusive Guild Hall tutorial maps
-    Object.assign(maps, GUILD_HALL_MAPS);
 
     return maps;
 }
@@ -74,19 +73,18 @@ export function getMap(mapId) {
  * Every purchasable Map in price order (D-101).
  *
  * Excludes the Guild Hall tutorial Maps by **id**, which is what the exclusion
- * is actually about. It used to read `m.theme !== 'guild_hall'`; `theme` was a
- * retired concept (`concept_audit.md` §A) and that test was in any case already
- * covered by `price > 0`, since every Guild Hall Map alias shares one
- * definition priced at 0. Checking the ids says what is meant and does not
- * depend on a Map staying free. Changed 2026-08-24 (CR2-125).
+ * is actually about (CR2-125). The code-side Guild Hall Map aliases
+ * (`guildHallMaps.js`) were deleted with the Map bursts (Token Lifecycle 9.1),
+ * so the test is the id prefix, the same one the CMS simulator uses
+ * (`mapPass.isGuildHallMap`).
+ *
+ * ⚠️ Since 9.1 nothing sells or bursts a Map. This list is still read by the
+ * random quest bounties (to size a target, until slice 9.5) and by the content
+ * audit.
  */
 export function listMaps() {
     return Object.values(MAPS)
-        .filter(m => !GUILD_HALL_MAPS[m.id] && m.price > 0)
+        .filter(m => !String(m.id).startsWith('map_guild_hall') && m.price > 0)
         .sort((a, b) => a.price - b.price);
 }
 
-/** Total weight of a Map's pool, for the roll. */
-export function poolWeight(mapId) {
-    return (getMap(mapId)?.pool || []).reduce((sum, entry) => sum + (entry.weight || 0), 0);
-}

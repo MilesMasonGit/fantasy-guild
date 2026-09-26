@@ -1,7 +1,5 @@
 // Fantasy Guild — the one drop function for the playmat (Free Playmat slice 1.6d)
 
-import { getTokenType } from '../../../config/registries/tokenRegistry.js';
-import { matW, matH, TOKEN_PX } from '../../../config/matGeometry.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -18,14 +16,13 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  * ## What lands where (free placement, slice 1.6d)
  * * **A hero or a flag** — the flag stands **exactly where it was let go**,
  *   clamped to the mat (FP-94, `Placement.plantFlagAt`).
- * * **A Map** — lies loose on the mat, its box centred on the point.
- * * **Any other Token** — stands **exactly where it was let go**, or at the
+ * * **Any Token** (a Map is an ordinary Token since Token Lifecycle 9.1) — stands **exactly where it was let go**, or at the
  *   nearest legal point when that spot is crowded or would break a `Cannot`
  *   rule (FP-88). ⭐ Nothing snaps: the old spot-snapping stopgap and the
  *   practice outline it needed both went with this slice.
  *
- * A Token can come from six places, told apart by its payload's `from`:
- * `boardMapId` (a Map lying on the mat), `instanceId` (a Token on the mat),
+ * A Token can come from these places, told apart by its payload's `from`:
+ * `instanceId` (a Token on the mat),
  * `spriteId` (loot on the floor), `vaultTypeId`, or none (a bare
  * `typeId`: make one).
  *
@@ -50,14 +47,6 @@ const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
 
 const isHeroDrop = (payload) => payload?.kind === DRAG_KIND.HERO || payload?.kind === DRAG_KIND.FLAG;
 
-/** Where a Map's 128 u box sits when dropped at `point`: centred on it, kept on the mat. */
-function mapBoxAt(point) {
-    return {
-        x: Math.max(0, Math.min(matW() - TOKEN_PX, Math.round(point.x - TOKEN_PX / 2))),
-        y: Math.max(0, Math.min(matH() - TOKEN_PX, Math.round(point.y - TOKEN_PX / 2)))
-    };
-}
-
 /**
  * A drop with nowhere to go flies back (FP-46).
  *
@@ -80,29 +69,7 @@ export function dropOnMat(payload, point) {
         return announce(Placement.plantFlagAt(payload.heroId, point));
     }
 
-    const def = getTokenType(payload.typeId);
     const from = payload.from || {};
-
-    // ⚠️ A Map already lying on the mat is MOVED, never re-made. Lifting it and
-    // putting down a fresh one would give it a new id, and the drag that is
-    // still holding it — along with its burst animation's `bornAt` — refers to
-    // the old one.
-    if (def?.mapId && from.boardMapId != null) {
-        const box = mapBoxAt(point);
-        BoardState.setBoardMapPosition(from.boardMapId, box.x, box.y);
-        EventBus.publish('state_changed', {});
-        return { success: true };
-    }
-
-    if (from.boardMapId != null) {
-        const map = BoardState.removeBoardMap(from.boardMapId);
-        if (!map) return null;
-        const instance = BoardState.createTokenInstance(map.typeId, map.usesRemaining);
-        const result = announce(flownBack(Placement.placeTokenAt(instance, point)));
-        // Refused: back where it lay.
-        if (!result.success) BoardState.addBoardMap(map.typeId, map.x, map.y, map.usesRemaining);
-        return result;
-    }
 
     if (from.spriteId != null) {
         const instance = SpriteLayer.takeTokenSprite(from.spriteId);

@@ -14,9 +14,8 @@ import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
-import { listMaps, getMap } from '../../config/registries/mapRegistry.js';
+import { allMaps, getMap } from '../../config/registries/mapRegistry.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
-import { GUILD_HALL_DROP_SEQUENCE, GUILD_HALL_MAPS } from '../../config/registries/guildHallMaps.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { RANDOM_HUNTS } from '../quests/QuestManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
@@ -596,15 +595,9 @@ function auditItems(out) {
 
 /** Maps: everything in their loot pools. */
 function auditMaps(out) {
-    // `listMaps()` deliberately hides the tutorial Maps (they are not
-    // purchasable), so they are added back by name — a broken reference in the
-    // Guild Hall Map is exactly the kind a new player would hit first.
-    const mapIds = new Set([
-        ...listMaps().map(m => m.id || m),
-        ...Object.keys(GUILD_HALL_MAPS || {})
-    ]);
-    for (const mapId of mapIds) {
-        const def = getMap(mapId);
+    // Every authored Map, the Guild Hall ones included. (Its code-side aliases
+    // and scripted drop list went with the Map bursts, Token Lifecycle 9.1.)
+    for (const [mapId, def] of Object.entries(allMaps())) {
         const where = `Map "${mapId}"`;
         if (!def) {
             out.push(finding(where, 'has no definition behind it'));
@@ -634,14 +627,6 @@ function auditHardcodedLists(out, openingTray) {
     opening.forEach((typeId, i) => {
         checkRef(out, 'The Tokens a new game starts with', 'Token', typeId,
             `Opening Token ${i + 1} of ${opening.length}`);
-    });
-
-    GUILD_HALL_DROP_SEQUENCE.forEach((drop, i) => {
-        for (const entry of drop || []) {
-            if (entry?.kind === 'gold' || entry?.kind === 'currency') continue;
-            const kind = entry?.kind === 'item' ? 'item' : 'Token';
-            checkRef(out, 'The Guild Hall tutorial Map', kind, entry?.refId, `Drop ${i + 1}`);
-        }
     });
 
     for (const hunt of RANDOM_HUNTS || []) {
@@ -776,10 +761,6 @@ function collectSaveRefs(state, note) {
     }
     for (const typeId of Object.keys(board.tokenBank || {})) {
         note('Token', typeId, 'in the Token Vault');
-    }
-    // Maps sitting loose on the mat are Token instances too (`addBoardMap`).
-    for (const map of board.maps || []) {
-        note('Token', map?.typeId, 'as a Map lying on the playmat');
     }
 
     for (const itemId of Object.keys(state?.inventory?.items || {})) {
