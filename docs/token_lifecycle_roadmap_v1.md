@@ -569,7 +569,7 @@ panel is for speed, not for filling gaps.)
 | 7.2–7.7 Chains | ⬜ Not started | |
 | 8.1 Inspection lines | ✅ Done 2026-09-25 | `lifecycleLines.js` (pure) + a section in `TokenInspection.jsx`, refreshed every second: spawner family N / cap, next spawn or why it waits, upkeep paid or short; grows / turns / turns back with time left; Foundation build and progress (vs the recipe's nominal time); trickle; origin in dev mode. Verified live with a fixture Forest: Waiting for Apple / in 20 s / 2 / 2 at cap; sapling Grows into Oak Tree in 26 s. Known: an open popup loses its lines when the Token grows or turns (new instance id), as the popup already behaved |
 | 8.2 Upkeep Summary | ✅ Done 2026-09-25 (⭐ layout look pending: needs real content) | Bank drawer → **Upkeep** button (hourglass) swaps the item list for: Ongoing costs (per item per minute, Bank, runs out in, used by, waiting unpaid), Trickle income, Idle spawners. Maths in `UpkeepSummary.js` (includes `BlockUpkeep` statement upkeep; copies its private `costedStatements` filter, keep in step). Runs-out = Bank ÷ (cost − trickle income). Verified live: two Forests + no seeds = 6/min needed, empty now, both waiting; +30 = ~5 min |
-| 8.3 Alerts and mat cap | ⬜ Not started | |
+| 8.3 Alerts and mat cap | ✅ Done 2026-09-25 | Persistent on-mat icon from the engine (`SpawnerSystem.syncAlerts`, event `SPAWNER_ALERT_CHANGED`, not `instance.alert`): yellow *needs item* (names it), red *no room*, nothing at cap (normal idle). Shop header repaints on any Mat Tuner change. Verified live on the real Oak Forest: no seeds = icon, seeds added = icon gone |
 | 9.1–9.6 Retirements | ⬜ Not started | |
 | 10.1 Opening | ⬜ Not started | |
 | 10.2 Playtest pack | ⬜ Not started | |

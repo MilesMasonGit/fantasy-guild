@@ -18,6 +18,9 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
+import { spawnerAlertData } from '../ui/components/board/TokenEventAlert.jsx';
 
 /**
  * Token Lifecycle slice 3.3 — **spawners** (roadmap §3.1, DP-4, DP-5, SP-5,
@@ -114,6 +117,7 @@ beforeEach(() => {
     GameState.state.heroes = [];
     GameState.state.inventory.maxSlots = 50;
     clearMat();
+    SpawnerSystem.resetAlerts();
 });
 
 afterEach(() => {
@@ -420,5 +424,104 @@ describe('⭐ the spawn clock is saved and runs on delta', () => {
         const snap = snapshot();
         expect(snap.seeds).toBe(0);
         expect(snap.byType.fixture_sp_tree).toBe(7);
+    });
+});
+
+// --- On-mat alerts (slice 8.3) ----------------------------------------------
+
+describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed (8.3)', () => {
+    /** Every `SPAWNER_ALERT_CHANGED` for one spawner, in order. */
+    const watch = (instanceId) => {
+        const seen = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, (p) => {
+            if (p?.instanceId === instanceId) seen.push(p.alert);
+        });
+        return { seen, off };
+    };
+
+    it('needs_item: up while the Bank is short, down the tick a seed arrives — published once each way', () => {
+        const forest = placeAt('fixture_sp_forest', 800, 500);
+        const { seen, off } = watch(forest.id);
+
+        run(1000);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NEEDS_ITEM, needs: [SEED] });
+        run(25000);
+        expect(seen).toEqual([ALERT.SPAWN_NEEDS_ITEM]);          // not re-published every tick
+
+        give(SEED, 1);
+        run(100);
+        expect(family()).toHaveLength(1);
+        // The seed was spent on the spawn, so the Bank is short again.
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)?.alert).toBe(ALERT.SPAWN_NEEDS_ITEM);
+
+        give(SEED, 5);
+        run(100);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+        expect(seen).toEqual([ALERT.SPAWN_NEEDS_ITEM, null]);
+        off();
+    });
+
+    it('needs_item names what is missing, and changes when that changes', () => {
+        const orchard = placeAt('fixture_sp_orchard', 800, 500);
+        run(100);
+        expect(SpawnerSystem.spawnerAlertOf(orchard.id)).toEqual({ alert: ALERT.SPAWN_NEEDS_ITEM, needs: [SEED, TWINE] });
+        give(SEED, 1);
+        run(100);
+        expect(SpawnerSystem.spawnerAlertOf(orchard.id)).toEqual({ alert: ALERT.SPAWN_NEEDS_ITEM, needs: [TWINE] });
+        expect(spawnerAlertData(SpawnerSystem.spawnerAlertOf(orchard.id)))
+            .toMatchObject({ severity: 'yellow', title: 'Needs Fixture Twine to spawn' });
+    });
+
+    it('no_room: up once an attempt finds nowhere to land, down the tick room appears', () => {
+        setMatTuning('matSteps', 6);
+        give(SEED, 10);
+        const forest = placeAt('fixture_sp_forest', 200, 200);
+        const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
+        const blockers = [];
+        for (let x = 64; x <= matW() - 64; x += gap) {
+            for (let y = 64; y <= matH() - 64; y += gap) {
+                if (Math.hypot(x - 200, y - 200) < gap) continue;
+                blockers.push(placeAt('fixture_kitchen', x, y));
+            }
+        }
+        const { seen, off } = watch(forest.id);
+
+        TimedChanges.tick(10000);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();   // not due yet: no attempt, no alert
+        TimedChanges.tick(15000);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NO_ROOM, needs: [] });
+        expect(spawnerAlertData(SpawnerSystem.spawnerAlertOf(forest.id)))
+            .toMatchObject({ severity: 'red', title: 'No room to spawn' });
+
+        for (const b of blockers) {
+            if (Math.hypot(b.x - 200, b.y - 200) < 400) BoardState.removeToken(b.id);
+        }
+        TimedChanges.tick(100);
+        expect(family()).toHaveLength(1);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+        expect(seen).toEqual([ALERT.SPAWN_NO_ROOM, null]);
+        off();
+    });
+
+    it('at_cap raises nothing — it is a spawner at rest', () => {
+        const grove = placeAt('fixture_sp_grove', 800, 500);   // free upkeep, cap 2
+        const { seen, off } = watch(grove.id);
+        run(30000);
+        expect(SpawnerSystem.spawnerStatus(grove.id).state).toBe('at_cap');
+        expect(SpawnerSystem.spawnerAlertOf(grove.id)).toBeNull();
+        expect(seen).toEqual([]);
+        off();
+    });
+
+    it('a spawner that leaves the mat drops its alert', () => {
+        const forest = placeAt('fixture_sp_forest', 800, 500);
+        run(100);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).not.toBeNull();
+        const { seen, off } = watch(forest.id);
+        BoardState.removeToken(forest.id);
+        run(100);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+        expect(seen).toEqual([null]);
+        off();
     });
 });

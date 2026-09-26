@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Waiting spawners show it on the mat.** A spawner that can't pay its upkeep shows a yellow icon
+  naming the missing item; one with no room shows a red icon. Both clear the moment the cause is fixed.
 - **The Oak Forest is a spawner.** Buy it at the Shop for 10 Oak Wood; it plants Oak Saplings that
   grow into Oak Trees (up to 5), paying one Oak Seed each. Oak Trees need no axe, last 10 logging
   cycles and sometimes drop an Oak Seed. The Guild Hall gives an Oak Seed every 5 minutes, so a

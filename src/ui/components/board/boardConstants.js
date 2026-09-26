@@ -116,7 +116,9 @@ export const ALERT_HINT = {
     [ALERT.CHARGES]: 'Not enough charges left here to run a full cycle',
     [ALERT.UNSTOCKED]: 'This tile ran dry and the Vault has no replacement — restock it',
     [ALERT.CHOOSE_BUILD]: 'Choose what to build on this Foundation',
-    [ALERT.NO_ROOM]: 'No room for what this Foundation builds — clear some space around it'
+    [ALERT.NO_ROOM]: 'No room for what this Foundation builds — clear some space around it',
+    [ALERT.SPAWN_NEEDS_ITEM]: 'This spawner can’t pay its upkeep — put the item in the Bank',
+    [ALERT.SPAWN_NO_ROOM]: 'Nowhere free for this spawner’s next Token — clear some space around it'
 };
 
 /**
@@ -138,6 +140,8 @@ export const SKIP_HINT = {
     [ALERT.UNSTOCKED]: 'ran dry, nothing in the Vault',
     [ALERT.CHOOSE_BUILD]: 'nothing chosen to build',
     [ALERT.NO_ROOM]: 'no room to build',
+    [ALERT.SPAWN_NEEDS_ITEM]: 'can’t pay its upkeep',
+    [ALERT.SPAWN_NO_ROOM]: 'no room to spawn',
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',
@@ -164,11 +168,13 @@ export const ALERT_LABEL = {
     [ALERT.CHARGES]: 'Need Charges',
     [ALERT.UNSTOCKED]: 'Restock',
     [ALERT.CHOOSE_BUILD]: 'Choose Build',
-    [ALERT.NO_ROOM]: 'No Room'
+    [ALERT.NO_ROOM]: 'No Room',
+    [ALERT.SPAWN_NEEDS_ITEM]: 'Need Items',
+    [ALERT.SPAWN_NO_ROOM]: 'No Room'
 };
 
 /** Alerts drawn in warning yellow; every other alert is drawn in red. */
-const YELLOW_ALERTS = [ALERT.INPUTS];
+const YELLOW_ALERTS = [ALERT.INPUTS, ALERT.SPAWN_NEEDS_ITEM];
 
 /** The bar's fill class for an alert value. */
 export const alertFillClass = (alert) =>

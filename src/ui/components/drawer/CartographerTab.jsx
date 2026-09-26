@@ -6,6 +6,7 @@ import { useEntityDrag, useActiveDrag, useEntityDrop } from '../../dnd/DndKit.js
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as Shop from '../../../systems/board/Shop.js';
+import { onMatTuningChanged } from '../../../config/matTuning.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
@@ -33,6 +34,11 @@ export const CartographerTab = ({ onInspect }) => {
     // (Maps cost items since slice 2.2, SP-65), so `inventory_updated` has to
     // re-run the catalogue or the Buy buttons keep stale affordability.
     // `currency_changed` is kept only so an old save's load repaints the same.
+    // The cap is a Mat Tuner setting, and a tuner change publishes no game
+    // event of its own (slice 8.3): re-read the header when it moves.
+    const [tuningRev, setTuningRev] = useState(0);
+    useEffect(() => onMatTuningChanged(() => setTuningRev(n => n + 1)), []);
+
     const { maps, shop, cap } = useGameState(
         () => ({
             maps: Cartographer.catalogue(),
@@ -40,7 +46,8 @@ export const CartographerTab = ({ onInspect }) => {
             cap: Shop.capStatus()
         }),
         ['map_purchased', 'map_opened', 'token_purchased', 'currency_changed', 'inventory_updated', 'state_changed'],
-        null
+        null,
+        { deps: [tuningRev] }
     );
 
     const checkScroll = useCallback(() => {

@@ -114,6 +114,20 @@ export const BOARD_EVENTS = {
     /** A Token's alert state changed — staffed-but-stuck, or resolved (D-114, D-149). Payload: `{ instanceId, alert }`, or `{ spotId, x, y, alert }` for an unstocked spot. */
     ALERT_CHANGED: 'board:alert_changed',
 
+    /**
+     * A spawner's waiting alert changed (Token Lifecycle 8.3) — `{ instanceId,
+     * alert, needs }`, where `alert` is `ALERT.SPAWN_NEEDS_ITEM`,
+     * `ALERT.SPAWN_NO_ROOM` or null, and `needs` lists the item ids the Bank
+     * is short of. Published by `SpawnerSystem.syncAlerts` on a change only.
+     *
+     * ⚠️ Deliberately NOT `ALERT_CHANGED`: that one carries a hero-worked
+     * Token's `instance.alert`, which the runner rewrites every tick, and its
+     * progress-bar subscriber draws a red bar for any value it is given. A
+     * spawner has no hero, and a spawner a hero also works would have the two
+     * marks fighting over one field.
+     */
+    SPAWNER_ALERT_CHANGED: 'board:spawner_alert_changed',
+
     /** Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat', heroId, typeId }` */
     COMBAT_RESOLVED: 'board:combat_resolved',
 
@@ -246,5 +260,18 @@ export const ALERT = {
      * stand. It stays a Foundation, keeps its full progress and nothing is
      * spent; it tries again every tick (Token Lifecycle 6.1).
      */
-    NO_ROOM: 'no_room'
+    NO_ROOM: 'no_room',
+    /**
+     * A spawner cannot pay one spawn's upkeep from the Bank (Token Lifecycle
+     * 8.3). Carried by `SPAWNER_ALERT_CHANGED`, never by `instance.alert`: no
+     * hero is involved, so it is an on-Token icon and never a speech bubble.
+     */
+    SPAWN_NEEDS_ITEM: 'spawn_needs_item',
+    /**
+     * A spawner's last attempt found nowhere free to land, and it is waiting
+     * with its clock full (Token Lifecycle 8.3). Same channel as
+     * `SPAWN_NEEDS_ITEM`. A spawner at its cap raises nothing: that is its
+     * normal resting state, not a problem.
+     */
+    SPAWN_NO_ROOM: 'spawn_no_room'
 };
