@@ -424,5 +424,26 @@
       }
     ],
     "autoSyncId": true
+  },
+  "effect_anvil": {
+    "name": "Anvil",
+    "statements": [
+      {
+        "id": "stm_wr8rixjat",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "anvil",
+          "tier": 1
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_anvil"
   }
 }
