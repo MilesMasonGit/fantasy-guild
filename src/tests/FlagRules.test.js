@@ -337,32 +337,43 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
                 h.skills[s].level = cost.skillLevel;
             }
         };
+        // ⚠️ Rewritten for TL-7 (slice 1.2). This used to bank a foundation skill
+        // on Recruit → Fighter; promotion keeps every foundation skill now, so
+        // the bank-and-restore round trip runs on a re-training across
+        // branches instead: Fighter → Cleric banks Leadership, Cleric → Fighter
+        // restores it.
         qualify('fighter');
-        const dropped = Object.keys(h.skills).filter(id => !getJobSkills('fighter').includes(id));
-        const revived = dropped.find(id => getJobSkills('cleric').includes(id));
-        expect(revived).toBeTruthy();
-        h.skills[revived].level = 40;                  // clears Cleric's gate from the bank later
-
-        expect(Flags.setRule(h.id, revived, { priority: 1 }).success).toBe(true);
-
         const toFighter = PromotionSystem.promote(h.id, 'fighter');
         expect(toFighter.success).toBe(true);
-        expect(toFighter.banked).toContain(revived);
-        // Banked: no longer settable, not listed, but the rule is kept.
-        expect(Flags.setRule(h.id, revived, { priority: 2 }).success).toBe(false);
-        expect(FlagRules.rowsFor(h.id).map(r => r.ruleId)).not.toContain(revived);
-        expect(h.flagRules[revived]).toEqual({ allowed: true, priority: 1 });
+        expect(toFighter.banked).toEqual([]);
         for (const gained of toFighter.gained) {
             expect(FlagRules.ruleOf(h.id, gained)).toEqual({ allowed: true, priority: 3 });
         }
         expect(FlagRules.rowsFor(h.id).at(-1)).toMatchObject({ ruleId: FlagRules.FIGHT, allowed: true, priority: 3 });
 
-        for (const s of getPromotionGateSkills('cleric')) {
-            if (h.skills[s]) h.skills[s].level = getPromotionCost('cleric').skillLevel;
-        }
+        const revived = getJobSkills('fighter').find(id => !getJobSkills('cleric').includes(id)
+            && toFighter.gained.includes(id));
+        expect(revived).toBeTruthy();
+        h.skills[revived].level = 40;
+        expect(Flags.setRule(h.id, revived, { priority: 1 }).success).toBe(true);
+
+        qualify('cleric');
         const toCleric = PromotionSystem.promote(h.id, 'cleric');
         expect(toCleric.success).toBe(true);
-        expect(toCleric.restored).toContain(revived);
+        expect(toCleric.banked).toContain(revived);
+        // Banked: no longer settable, not listed, but the rule is kept.
+        expect(Flags.setRule(h.id, revived, { priority: 2 }).success).toBe(false);
+        expect(FlagRules.rowsFor(h.id).map(r => r.ruleId)).not.toContain(revived);
+        expect(h.flagRules[revived]).toEqual({ allowed: true, priority: 1 });
+        for (const gained of toCleric.gained) {
+            expect(FlagRules.ruleOf(h.id, gained)).toEqual({ allowed: true, priority: 3 });
+        }
+
+        qualify('fighter');
+        const back = PromotionSystem.promote(h.id, 'fighter');
+        expect(back.success).toBe(true);
+        expect(back.restored).toContain(revived);
+        expect(h.skills[revived].level).toBe(40);
         expect(FlagRules.ruleOf(h.id, revived)).toEqual({ allowed: true, priority: 1 });
         expect(FlagRules.rowsFor(h.id).find(r => r.ruleId === revived)).toMatchObject({ priority: 1 });
     });

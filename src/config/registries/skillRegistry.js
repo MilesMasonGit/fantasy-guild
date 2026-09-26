@@ -14,21 +14,22 @@
  *
  * | Layer | Count | Who holds it | Granted by |
  * | :-- | :-- | :-- | :-- |
- * | `foundation` | 9 | Every Recruit | The starting state |
+ * | `foundation` | 9 | Every hero, on every job (TL-7) | The starting state |
  * | `combat`     | 3 | Exactly one per promoted hero | First promotion |
  * | `shared`     | 6 | One per base class, plus T2 grants | Promotion |
  * | `signature`  | 11 | Exactly one job each, exclusively | Second promotion |
  *
- * A Recruit holds **every foundation skill** (`RECRUIT_SKILL_SLOTS`, nine). A
- * promoted job holds **exactly 6** (`HERO_SKILL_SLOTS`).
+ * A Recruit holds **every foundation skill** (`RECRUIT_SKILL_SLOTS`, nine), and
+ * since TL-7 (owner, 2026-09-25) **promotion never takes one away**: a base
+ * class holds 11, an advanced job 13 (`jobRegistry.getJobSheet`). A promoted
+ * job still LISTS exactly 6 (`HERO_SKILL_SLOTS`) — the list the promotion gate
+ * reads — but that is no longer the width of a hero's sheet.
  *
  * ⚠️ *Token Lifecycle slice 1.1 (2026-09-25).* The foundation layer grew from six
  * to nine: `farming` (SP-60) and `explore` (SP-74) are new, and `construction`
- * moved here from the signature layer (SP-59). The promoted jobs' sheets were
- * deliberately left as they were (TL-6), so the first promotion now drops
- * **five** foundation skills instead of two (they are banked at their level,
- * not lost), and the Warlord, whose signature was Construction, has no
- * signature skill until the promotion overhaul (SP-58).
+ * moved here from the signature layer (SP-59). The Warlord, whose signature
+ * was Construction, has no signature skill until the promotion overhaul
+ * (SP-58).
  *
  * ## ⚠️ This list is a first draft and is expected to change
  * *(Owner, 2026-08-12.)* Which skills exist, and which layer each sits in, will
@@ -269,15 +270,22 @@ export const SKILL_CATEGORIES = {
 export const SKILL_COUNT = Object.keys(SKILLS).length;
 
 /**
- * How many skills a **promoted** hero holds (base class and advanced job).
- * Promotion between those tiers swaps contents, never width.
+ * How many skills a **promoted job lists** (base class and advanced job): its
+ * authored `skills` array in `jobRegistry.js`, whose foundation picks are what
+ * the promotion gate asks for (D-262).
+ *
+ * ⚠️ Since TL-7 this is NOT how many skills a promoted hero holds. A hero keeps
+ * all the foundation skills through every promotion, so the held sheet is the
+ * foundation layer plus the job's non-foundation skills (11 on a base class,
+ * 13 on an advanced job; `jobRegistry.getJobSheet`). Kept because the list
+ * shape is still what `JobTree.test.js` checks; the promotion overhaul (SP-58)
+ * decides whether it survives.
  */
 export const HERO_SKILL_SLOTS = 6;
 
 /**
  * How many skills a **Recruit** holds: the whole foundation layer (SP-59,
- * SP-60, SP-74). Wider than `HERO_SKILL_SLOTS` until the skills overhaul
- * (SP-58) decides the final shape, so the first promotion narrows the sheet.
+ * SP-60, SP-74). Every promoted hero holds these too (TL-7).
  */
 export const RECRUIT_SKILL_SLOTS = FOUNDATION_SKILL_IDS.length;
 

@@ -5,10 +5,35 @@ import { calculateHeroLevel } from '../HeroGenerator.js';
 import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
 import { createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
+import { FOUNDATION_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 
 /**
  * Hero Rehydration: Restores Logic (Aggregator) and Display data.
  */
+
+/**
+ * Move every banked FOUNDATION skill back onto the hero's sheet, at its stored
+ * level and XP (TL-7, owner 2026-09-25: promotion keeps all nine starting
+ * skills). Only saves from before TL-7 can hold one. Villagers never promote,
+ * so they have no bank and are left alone. A held copy wins over a banked one.
+ *
+ * @returns {string[]} the skill ids restored
+ */
+export function restoreBankedFoundation(hero) {
+    if (!hero || hero.isVillager || !hero.bankedSkills) return [];
+    if (!hero.skills) hero.skills = {};
+    const restored = [];
+    for (const skillId of FOUNDATION_SKILL_IDS) {
+        const banked = hero.bankedSkills[skillId];
+        if (!banked) continue;
+        if (!hero.skills[skillId]) {
+            hero.skills[skillId] = { ...banked };
+            restored.push(skillId);
+        }
+        delete hero.bankedSkills[skillId];
+    }
+    return restored;
+}
 
 export function rehydrateHero(hero) {
     if (!hero) return;
@@ -26,6 +51,11 @@ export function rehydrateHero(hero) {
     hero.traitName = '';
     if (!hero.spriteId) hero.spriteId = 'hero_recruit_0';
     if (!hero.icon) hero.icon = 'icon_recruit_0';
+
+    // 3. TL-7: promotion no longer banks foundation skills. A hero saved
+    //    before that rule may hold some in the bank; put them back on the
+    //    sheet at their stored level and XP. Runs before the derived stats.
+    restoreBankedFoundation(hero);
 
     // 4. Skill-based Speed Modifiers (Dynamic)
     updateHeroSkillModifiers(hero);

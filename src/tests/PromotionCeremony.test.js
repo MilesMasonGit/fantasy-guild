@@ -144,7 +144,13 @@ describe('accepting', () => {
 
         expect(document.body.querySelector('[data-from-job]').textContent).toBe('Recruit');
         expect(document.body.querySelector('[data-promotion-trade]').textContent).toBe(aside);
-        expect(document.body.textContent).not.toContain('nothing — this hero keeps everything');
+        // ⚠️ TL-7 (slice 1.2): a Recruit → Fighter promotion now sets nothing
+        // aside, so "keeps everything" is the correct text and can no longer
+        // be the blank-window tell. A re-read AFTER the promotion would say
+        // "nothing new" in the Takes up column; the snapshot still lists the
+        // two skills that arrived.
+        expect(document.body.textContent).toContain('nothing — this hero keeps everything');
+        expect(document.body.textContent).not.toContain('nothing new');
     });
 
     it('explains a refusal in words, beside the button, and leaves the offer standing', () => {

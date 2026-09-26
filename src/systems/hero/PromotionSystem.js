@@ -5,7 +5,7 @@ import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import {
-    getJob, getAllJobIds, getJobSkills, getPromotionCost,
+    getJob, getAllJobIds, getJobSheet, getPromotionCost,
     getPromotionGateSkills, STARTING_JOB_ID
 } from '../../config/registries/jobRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
@@ -13,9 +13,18 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
 /**
  * PromotionSystem — **the only way a hero's skills ever change shape.**
  *
- * A hero holds 6 of 27 skills and their job decides which 6. There is no free
+ * A hero holds every foundation skill plus their job's own non-foundation
+ * skills (`getJobSheet`), and their job decides the latter. There is no free
  * re-slotting and no partial respec (D-248): changing what a hero can do means
  * moving them to a different job.
+ *
+ * ## ⭐ Foundation skills are never banked (TL-7, owner 2026-09-25)
+ * Every job's sheet contains all nine foundation skills, so the bank step below
+ * can only ever take combat, shared or signature skills — and only when
+ * re-training across branches, since every job down the tree keeps its
+ * parent's. A hero who banked foundation skills under the old rule gets them
+ * back from the bank on their next promotion (the fill step restores anything
+ * the target sheet wants), and on load (`HeroRehydration.restoreBankedFoundation`).
  *
  * ## ⚠️ This module charges nothing (Promotes rule P3, PR-6)
  * Promotion used to take gold and materials. It is paid for now with a charge
@@ -171,7 +180,7 @@ export function promote(heroId, jobId) {
     const job = getJob(jobId);
     const fromJob = getJob(hero.jobId);
 
-    const target = new Set(getJobSkills(jobId));
+    const target = new Set(getJobSheet(jobId));
     const bank = bankOf(hero);
     const banked = [];
     const restored = [];
@@ -227,7 +236,7 @@ export function previewPromotion(heroId, jobId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || !getJob(jobId)) return null;
 
-    const target = new Set(getJobSkills(jobId));
+    const target = new Set(getJobSheet(jobId));
     const held = Object.keys(hero.skills || {});
 
     const losing = held.filter(id => !target.has(id)).map(id => ({
