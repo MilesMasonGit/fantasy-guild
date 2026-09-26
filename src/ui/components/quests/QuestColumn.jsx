@@ -5,13 +5,18 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
-import { QuestManager } from '../../../systems/quests/QuestManager.js';
+import { QuestManager, questReward } from '../../../systems/quests/QuestManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import * as BoardState from '../../../systems/board/BoardState.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { cn } from '../../utils/cn.js';
-import { Sparkles, Clock, Scroll, X, Ban, Map } from 'lucide-react';
+import { Sparkles, Clock, Scroll, X, Ban, Gift } from 'lucide-react';
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
+
+/** A quest's item reward as one line, e.g. "10× Oak Wood". */
+function rewardText(quest) {
+    const items = questReward(quest);
+    return items.length ? items.map(r => `${r.quantity}× ${r.name}`).join(', ') : 'No reward';
+}
 
 const AbandonedQuestCard = ({ quest }) => {
     const [timeLeft, setTimeLeft] = useState('');
@@ -80,18 +85,11 @@ export const QuestColumn = () => {
         { deepClone: true }
     );
 
-    const totalMaps = useGameState(
-        () => BoardState.getTotalMapCount(),
-        ['state_changed', 'map_purchased', 'map_reward_spawned']
-    );
-
-    const isMapCapReached = totalMaps >= BoardState.MAX_MAP_LIMIT;
-
     const handleClaim = (questId, targetEl = null) => {
         setTutorialAideTarget(null);
         const rect = targetEl ? targetEl.getBoundingClientRect() : null;
-        // The engine composes the refusal text ("Need 4x Copper Ore", the map
-        // cap, "requirements not met yet"). Show it, or the button looks dead.
+        // The engine composes the refusal text ("Need 4x Copper Ore",
+        // "requirements not met yet"). Show it, or the button looks dead.
         const result = QuestManager.claimQuest(questId, rect);
         if (result && result.success === false && result.reason) {
             NotificationSystem.warning(result.reason);
@@ -251,24 +249,25 @@ export const QuestColumn = () => {
                                         />
                                     </div>
 
-                                    {/* Footer: Map Reward Thumbnail with Tooltip & Claim Action */}
+                                    {/* Footer: the item reward with a tooltip, and the Claim action.
+                                        Quests pay items, not Maps (slice 2.2, SP-65). */}
                                     <div className="flex items-center justify-between pt-1 border-t border-white/5 gap-2">
                                         <div className="relative group/reward flex items-center gap-1.5 cursor-help min-w-0 flex-1">
                                             <div className="w-4 h-4 rounded bg-amber-950/80 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-[0_0_5px_rgba(245,158,11,0.2)]">
-                                                <Map size={10} className="text-amber-400" />
+                                                <Gift size={10} className="text-amber-400" />
                                             </div>
                                             <span className="truncate text-amber-300/90 font-medium text-[10px] leading-tight">
-                                                {quest.rewardMapName || 'Map'}
+                                                {rewardText(quest)}
                                             </span>
 
                                             {/* Hover Tooltip */}
                                             <div className="absolute bottom-full left-0 mb-1.5 hidden group-hover/reward:flex flex-col gap-0.5 z-50 bg-[#0d0f18]/95 border border-amber-500/40 rounded px-2 py-1 shadow-2xl pointer-events-none min-w-[140px] backdrop-blur-md">
                                                 <div className="flex items-center gap-1 text-[10px] font-bold text-amber-300">
-                                                    <Map size={10} className="text-amber-400" />
-                                                    <span>{quest.rewardMapName || 'Map Token'}</span>
+                                                    <Gift size={10} className="text-amber-400" />
+                                                    <span>{rewardText(quest)}</span>
                                                 </div>
                                                 <p className="text-[9px] text-gray-300 leading-tight">
-                                                    Bursts on the playmat to reveal tokens & items.
+                                                    Goes straight into your Item Bank.
                                                 </p>
                                             </div>
                                         </div>
@@ -281,17 +280,14 @@ export const QuestColumn = () => {
                                             {isComplete && (
                                                 <button
                                                     type="button"
-                                                    disabled={isMapCapReached}
                                                     onClick={(e) => handleClaim(quest.id, e.currentTarget.closest('[data-quest-id]') || e.currentTarget)}
-                                                    title={isMapCapReached ? "Map limit reached (50/50) — burst existing maps to claim" : "Claim Map"}
+                                                    title="Claim reward"
                                                     className={cn(
                                                         "flex items-center gap-1 px-2.5 py-0.5 rounded font-bold font-mono text-[10px] uppercase transition-all shadow-[0_0_8px_rgba(234,179,8,0.4)] active:scale-95",
-                                                        isMapCapReached
-                                                            ? "bg-gray-700 text-gray-400 cursor-not-allowed opacity-60"
-                                                            : "bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-300 hover:to-amber-300 text-black animate-pulse cursor-pointer"
+                                                        "bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-300 hover:to-amber-300 text-black animate-pulse cursor-pointer"
                                                     )}
                                                 >
-                                                    <Sparkles size={11} className={isMapCapReached ? "text-gray-400" : "text-black"} />
+                                                    <Sparkles size={11} className="text-black" />
                                                     <span>Claim</span>
                                                 </button>
                                             )}

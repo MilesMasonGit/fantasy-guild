@@ -14,13 +14,10 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { ArrowRight, Vault } from 'lucide-react';
-
-import { SellControls } from './SellControls.jsx';
 
 /**
  * TokenInspection — a Token's full detail, styled consistently with ItemInspection.
@@ -34,6 +31,9 @@ import { SellControls } from './SellControls.jsx';
 export const TokenInspection = ({
     typeId,
     hideSprite = false,
+    // Still accepted, now ignored: nothing sells since gold was retired
+    // (SP-65, slice 2.2).
+    // eslint-disable-next-line no-unused-vars
     showSell = true,
     showPlaceOnMat = true,
     showViewInVault = false,
@@ -56,7 +56,6 @@ export const TokenInspection = ({
 
     const routes = productionRoutes(typeId);
     const enemy = enemyProfileOf(def);
-    const value = TokenBank.sellValue(typeId);
 
     const partialCopy = inVaultCopies.find(
         c => c.usesRemaining != null && def.uses != null && c.usesRemaining < def.uses
@@ -133,17 +132,6 @@ export const TokenInspection = ({
             return;
         }
         NotificationSystem.success(`Placed ${tokenName(typeId)} beside the Guild Hall`);
-    };
-
-    // One call, one announcement (CR2-168 item 5). This used to loop
-    // `TokenBank.sell()` once per copy, so selling a stack of 100 fired 100
-    // gold credits and 100 rounds of events for one click. `sell` clamps the
-    // quantity to what is actually in the Bank and reports what went.
-    const handleSell = (quantity) => {
-        const res = TokenBank.sell(typeId, quantity);
-        if (res.success && res.count > 0) {
-            NotificationSystem.success(`Sold ${res.count}× ${tokenName(typeId)} for ${res.gold}g`);
-        }
     };
 
     return (
@@ -320,20 +308,13 @@ export const TokenInspection = ({
                 </div>
             )}
 
-            {/* Split Vault and Value badges if SellControls is not shown */}
-            {(!showSell || inVaultCount === 0) && !def.cannotLeaveBoard && !def.isGuildHall && inVaultCount > 0 && (
+            {/* The Vault count. Its Value badge and the Sell controls went with
+                gold (SP-65, slice 2.2). */}
+            {!def.cannotLeaveBoard && !def.isGuildHall && inVaultCount > 0 && (
                 <div className="flex items-center gap-2 text-xs pt-1">
                     <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
                         <span className="text-gi-muted">Vault</span>
                         <span className="font-bold text-gi-text tabular-nums">{inVaultCount}</span>
-                    </div>
-                    <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                        <span className="text-gi-muted">Value</span>
-                        <span className="font-bold text-gi-gold tabular-nums">
-                            {partialCharges != null && inVaultCount === 1
-                                ? `${TokenBank.totalSellValue(typeId, 1)} (${value} full)`
-                                : value}
-                        </span>
                     </div>
                 </div>
             )}
@@ -350,35 +331,6 @@ export const TokenInspection = ({
                 </div>
             )}
 
-            {/* Sell controls — shared SellControls component with Vault/Value badges above quantity */}
-            {showSell && inVaultCount > 0 && (
-                <SellControls
-                    title="Sell Tokens"
-                    count={inVaultCount}
-                    unitPrice={value}
-                    getTotalPrice={(qty) => TokenBank.totalSellValue(typeId, qty)}
-                    onSell={handleSell}
-                    entityName="Token"
-                    topContent={
-                        !def.cannotLeaveBoard && !def.isGuildHall && (
-                            <div className="flex items-center gap-2 text-xs">
-                                <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                                    <span className="text-gi-muted">Vault</span>
-                                    <span className="font-bold text-gi-text tabular-nums">{inVaultCount}</span>
-                                </div>
-                                <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                                    <span className="text-gi-muted">Value</span>
-                                    <span className="font-bold text-gi-gold tabular-nums">
-                                        {partialCharges != null && inVaultCount === 1
-                                            ? `${TokenBank.totalSellValue(typeId, 1)} (${value} full)`
-                                            : value}
-                                    </span>
-                                </div>
-                            </div>
-                        )
-                    }
-                />
-            )}
         </div>
     );
 };
@@ -480,17 +432,18 @@ const RouteBlock = ({ route }) => {
                 </div>
             )}
 
-            {route.outputs.length > 0 && (
+            {/* A currency output pays nothing since gold was retired (SP-65,
+                slice 2.2), so it is not listed. */}
+            {route.outputs.some(o => !o.currency) && (
                 <div className="flex flex-col gap-1">
                     <span className="text-[9px] font-bold gi-caps tracking-wider text-gi-success/80">
                         Outputs:
                     </span>
-                    {route.outputs.map((o, idx) => (
+                    {route.outputs.filter(o => !o.currency).map((o, idx) => (
                         <EntityRibbon
-                            key={`${o.itemId || o.currency}-${idx}`}
-                            kind={o.currency ? 'gold' : 'item'}
-                            id={o.currency ? 'gold' : o.itemId}
-                            name={o.currency ? o.currency : undefined}
+                            key={`${o.itemId}-${idx}`}
+                            kind="item"
+                            id={o.itemId}
                             quantity={quantityText(o)}
                             chance={o.chance !== undefined ? `${o.chance}%` : '100%'}
                             size="sm"
@@ -525,7 +478,7 @@ const DrivesBlock = ({ def }) => {
     );
 };
 
-/** An output's quantity, as "2" or as "2–4". Works for items and currency alike. */
+/** An output's quantity, as "2" or as "2–4". Items only; currency outputs are not shown. */
 function quantityText(output) {
     const { min, max } = outputRange(output);
     return min === max ? `${min}` : `${min}–${max}`;

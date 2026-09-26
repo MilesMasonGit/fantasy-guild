@@ -281,7 +281,10 @@ describe('A burst is exactly 3, and slot one is a Token (CMS-129)', () => {
 });
 
 describe('Coins floor loot collection', () => {
-    it('credits gold directly to player currency balance and does not consume inventory slots', () => {
+    // ⚠️ Changed in slice 2.2 (SP-65). This used to assert the pile credited
+    // 2000 gold. Gold is retired: the coins are swept off the floor and pay
+    // nothing, and they are not banked as an item either.
+    it('sweeps coins off the floor without crediting gold or banking them (SP-65)', () => {
         const initialGold = GameState.state.currency.gold || 0;
 
         const sprite = SpriteLayer.addSprite('item', 'item_coins', 2000, { x: 0.5, y: 0.5 });
@@ -291,7 +294,8 @@ describe('Coins floor loot collection', () => {
 
         const collected = SpriteLayer.collectSprite(sprite.id);
         expect(collected).toBe(true);
-        expect(GameState.state.currency.gold).toBe(initialGold + 2000);
+        expect(GameState.state.currency.gold).toBe(initialGold);
         expect(InventoryManager.getItemCount('item_coins')).toBe(0);
+        expect(SpriteLayer.getSprites().some(s => s.id === sprite.id)).toBe(false);
     });
 });

@@ -8,7 +8,7 @@ import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
-import { Coins, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { ShoppingCart, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
 
 /**
  * CartographerTab — the Map shop.
@@ -22,11 +22,10 @@ export const CartographerTab = ({ onInspect }) => {
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
 
-    // The player's gold is NOT fetched here — it lives on the shared drawer pane
-    // header (CR2-163). ⚠️ `currency_changed` still belongs in this list even so:
-    // `Cartographer.catalogue()` runs `canBuy()` per Map, which reads gold, so a
-    // purchase elsewhere has to re-run the catalogue or the Buy buttons keep
-    // stale affordability.
+    // `Cartographer.catalogue()` runs `canBuy()` per Map, which reads the Bank
+    // (Maps cost items since slice 2.2, SP-65), so `inventory_updated` has to
+    // re-run the catalogue or the Buy buttons keep stale affordability.
+    // `currency_changed` is kept only so an old save's load repaints the same.
     const { maps } = useGameState(
         () => ({
             maps: Cartographer.catalogue()
@@ -193,7 +192,7 @@ const MapCard = ({ map, onBuy, onInspect }) => {
                             : 'border-gi-border/40 bg-black/20 text-gi-muted/50 cursor-not-allowed'
                     )}
                 >
-                    <Coins size={12} /> Buy
+                    <ShoppingCart size={12} /> Buy
                 </button>
 
                 {/* Costs Section starting below the Buy button */}
@@ -201,13 +200,19 @@ const MapCard = ({ map, onBuy, onInspect }) => {
                     <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
                         Costs
                     </span>
-                    <EntityRibbon
-                        kind="gold"
-                        quantity={map.price}
-                        size="sm"
-                        variant="cost"
-                        className="w-full"
-                    />
+                    {/* The price is items, not gold (SP-65, slice 2.2). */}
+                    {map.priceItems.map(p => (
+                        <EntityRibbon
+                            key={`price-${p.itemId}`}
+                            kind="item"
+                            id={p.itemId}
+                            name={p.name}
+                            quantity={p.quantity}
+                            size="sm"
+                            variant="cost"
+                            className="w-full"
+                        />
+                    ))}
 
                     {/* `itemId` is the field the catalogue projection carries;
                         `m.id` has never existed on it, so the ribbon got no id

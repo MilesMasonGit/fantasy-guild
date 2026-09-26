@@ -168,7 +168,10 @@ describe('A Market demands Commerce (D-259)', () => {
         expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore);
     });
 
-    it('runs for a hero who holds Commerce, and pays out in gold', () => {
+    // ⚠️ Changed in slice 2.2 (SP-65). This used to assert the Market paid
+    // out gold. Gold is retired, so it now proves the Market still RUNS for a
+    // Commerce hero (it eats its goods) while crediting no gold.
+    it('runs for a hero who holds Commerce, and pays no gold (SP-65)', () => {
         GameState.state.heroes = [makeHero('hero_1', ['commerce'], 50)];
         place(10, 'fixture_market', 'hero_1');
         InventoryManager.addItem('item_market_goods', 100);
@@ -176,7 +179,8 @@ describe('A Market demands Commerce (D-259)', () => {
 
         run(20000);
 
-        expect(CurrencyManager.getCurrency('gold')).toBeGreaterThan(goldBefore);
+        expect(InventoryManager.getItemCount('item_market_goods')).toBeLessThan(100);
+        expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore);
     });
 
     it('a Merchant is the only job that brings Commerce', () => {

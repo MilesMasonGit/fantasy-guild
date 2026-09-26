@@ -61,7 +61,8 @@ function playALittle() {
     // any given id can be renamed out from under this test.
     const def = Cartographer.catalogue()[0];
     if (def) {
-        GameState.state.currency.gold = def.price;
+        // Maps cost items since slice 2.2 (SP-65), not gold.
+        for (const p of def.priceItems) InventoryManager.addItem(p.itemId, p.quantity);
         for (const m of getMap(def.id).materials || []) {
             InventoryManager.addItem(m.itemId, m.quantity);
         }

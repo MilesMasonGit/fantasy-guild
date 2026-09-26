@@ -79,15 +79,19 @@ describe('dead event wiring stays dead', () => {
      * success announcement moved to `BoardPromotion`, which is what promotes.
      * A refused acceptance returns its reason to the ceremony (P4), which shows
      * it beside the button that was pressed.
+     *
+     * ⚠️ **Repointed in slice 2.2 (SP-65).** The Bank sale half is gone: gold
+     * is retired and the Bank has no sell controls, so there is no refused sale
+     * to announce. What is checked instead is that the Bank no longer sells.
      */
-    it('the Bank sale and the job change reach the player through NotificationSystem (CR2-130)', () => {
+    it('the job change reaches the player through NotificationSystem, and the Bank no longer sells (CR2-130, SP-65)', () => {
         const bank = CODE.find(f => f.path === 'ui/components/drawer/BankTab.jsx');
         const promo = CODE.find(f => f.path === 'systems/board/BoardPromotion.js');
         expect(bank, 'BankTab.jsx').toBeDefined();
         expect(promo, 'BoardPromotion.js').toBeDefined();
 
-        // A refused sale says why.
-        expect(bank.text).toMatch(/NotificationSystem\.error\(/);
+        // Nothing sells to the merchant any more (slice 2.2).
+        expect(bank.text).not.toMatch(/CommerceSystem|sellItem/);
         // A completed promotion says so.
         expect(promo.text).toMatch(/NotificationSystem\.success\(/);
     });

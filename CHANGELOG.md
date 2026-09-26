@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Gold is gone from play.** Nothing shows, earns or spends gold: selling is removed, coin loot
+  and Markets pay nothing, and quests reward 10 Oak Wood instead of Maps. Maps are bought with Oak
+  Wood until the Shop replaces them.
 - **CMS: recipes that build.** A Construction or Farming recipe can be marked as built on a
   Foundation kind; its card then asks for the Token it builds, the building cost and the build time.
   Renaming a Token now also updates recipes that output it.

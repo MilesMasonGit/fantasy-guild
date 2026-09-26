@@ -28,7 +28,6 @@ import * as EffectFeedback from './EffectFeedback.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as TokenBank from './TokenBank.js';
-import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { centreOf } from './nearby.js';
@@ -265,13 +264,12 @@ function completeCycle(instance, def, io, heroId) {
         const quantity = doubled ? rolled * 2 : rolled;
         if (quantity <= 0) continue;
 
-        // A Market is simply a Token whose output is currency (D-141). Gold is
-        // credited rather than dropped: it is not an item, has no sprite and no
-        // Bank slot, so there is nothing for the floor to hold. Everything else
-        // about the Token — inputs, cycle time, adjacency, charges, needing a
-        // hero — is completely ordinary, which is the point.
+        // A Market is a Token whose output is currency (D-141). Gold is retired
+        // (SP-65, slice 2.2), so a currency output credits nothing: the cycle
+        // still runs and still takes its inputs, it just pays no gold. No
+        // shipped Token carries a currency output; the data is left alone.
         if (output.currency) {
-            CurrencyManager.addCurrency(output.currency, quantity, `Market: ${def.name}`);
+            logger.debug('BoardRunner', `${def.name}: ${quantity} ${output.currency} not credited (gold is retired)`);
         } else if (output.tokenId) {
             /**
              * A recipe that outputs a Token drops it on the floor, through the
