@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Mines and the Coast in the Shop.** A Copper Mine, Coal Mine and Quarry (15 Oak Wood each) grow
+  up to 3 veins or Stone Outcrops each, mined without a pickaxe; Stone is a new material. The Coast
+  (10 Oak Wood) turns into a Shrimp Coast for a minute every few minutes, fished without a net.
 - **Waiting spawners show it on the mat.** A spawner that can't pay its upkeep shows a yellow icon
   naming the missing item; one with no room shows a red icon. Both clear the moment the cause is fixed.
 - **The Oak Forest is a spawner.** Buy it at the Shop for 10 Oak Wood; it plants Oak Saplings that
