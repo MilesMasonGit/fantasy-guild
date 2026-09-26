@@ -343,10 +343,13 @@ describe('Lifecycle audit — warnings (allowed)', () => {
 // for free (director's call for the first build; SP-70 is decided per Token).
 // Slice 7.5's Copper Anvil is sold at the Shop and is a context provider; since
 // slice 7.5a the audit counts that as useful, so it is not on this list.
+// Slice 7.7's Goblin Camp also spawns for free (director's call: no upkeep for
+// camps in this build).
 // Any error, or any other warning, still fails.
 const summarise = (findings) => findings.map((f) => [f.severity, f.entityId, f.field]).sort();
 const SHIPPED_ALLOWED = [
-    ...['token_coal_mine', 'token_copper_mine', 'token_quarry'].map((id) => ['warning', id, 'spawner.upkeep']),
+    ...['token_coal_mine', 'token_copper_mine', 'token_quarry', 'token_goblin_camp']
+        .map((id) => ['warning', id, 'spawner.upkeep']),
 ].sort();
 
 describe('Lifecycle audit — reaches both audits', () => {
@@ -362,7 +365,7 @@ describe('Lifecycle audit — reaches both audits', () => {
         expect(warn).toMatchObject({ severity: 'Warning' });
     });
 
-    it('the game registries (what the boot audit reads) give the checker nothing to report but the free mines', () => {
+    it('the game registries (what the boot audit reads) give the checker nothing to report but the free mines and camp', () => {
         expect(summarise(auditLifecycleBlocks({ tokens: TOKENS, items: ITEMS_LIVE, recipes: listRecipes(), skills: GAME_SKILLS })))
             .toEqual(SHIPPED_ALLOWED);
     });
