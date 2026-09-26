@@ -325,10 +325,15 @@ describe('Lifecycle audit — warnings (allowed)', () => {
 
 // Shipped data may carry only ALLOWED findings: slice 7.2's three mines spawn
 // for free (director's call for the first build; SP-70 is decided per Token).
+// Slice 7.5's Copper Anvil is sold at the Shop and is a context provider (an
+// `Acts as` Token), which the "no way to be worked or to spawn anything" rule
+// does not count as useful, so it warns; allowed, and reported to the director.
 // Any error, or any other warning, still fails.
 const summarise = (findings) => findings.map((f) => [f.severity, f.entityId, f.field]).sort();
-const SHIPPED_ALLOWED = ['token_coal_mine', 'token_copper_mine', 'token_quarry']
-    .map((id) => ['warning', id, 'spawner.upkeep']);
+const SHIPPED_ALLOWED = [
+    ...['token_coal_mine', 'token_copper_mine', 'token_quarry'].map((id) => ['warning', id, 'spawner.upkeep']),
+    ['warning', 'token_copper_anvil', 'shop'],
+].sort();
 
 describe('Lifecycle audit — reaches both audits', () => {
     it('the CMS Economy Audit shows each finding as a row, errors Critical and warnings Warning', () => {
@@ -343,7 +348,7 @@ describe('Lifecycle audit — reaches both audits', () => {
         expect(warn).toMatchObject({ severity: 'Warning' });
     });
 
-    it('the game registries (what the boot audit reads) give the checker nothing to report but the free mines', () => {
+    it('the game registries (what the boot audit reads) give the checker nothing to report but the free mines and the Anvil', () => {
         expect(summarise(auditLifecycleBlocks({ tokens: TOKENS, items: ITEMS_LIVE, recipes: listRecipes(), skills: GAME_SKILLS })))
             .toEqual(SHIPPED_ALLOWED);
     });
