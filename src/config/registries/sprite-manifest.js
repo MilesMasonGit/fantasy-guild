@@ -1,4 +1,7 @@
 export const SPRITE_MANIFEST = {
+    'token_ore_loose': 'assets/tokens/ore/token_ore_loose.png',
+    'token_minecart_base': 'assets/tokens/mine/token_minecart_base.png',
+    'token_minecart_coal': 'assets/tokens/mine/token_minecart_coal.png',
     'prop_tree_oak': 'assets/playmat/props/prop_tree_oak.png',
     'i_seed_pit': 'assets/items/seeds/i_seed_pit.png',
     'map_archipeligo': 'assets/tokens/map/map_archipeligo.png',
