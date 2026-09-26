@@ -5,13 +5,11 @@ import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import * as Shop from '../systems/board/Shop.js';
-import * as Cartographer from '../systems/board/Cartographer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { listMaps } from '../config/registries/mapRegistry.js';
 import { placeAt } from './fixtures/mat.js';
 
 /**
@@ -147,8 +145,3 @@ describe('buying', () => {
     });
 });
 
-describe('Map buying still works beside the Shop (until 9.1)', () => {
-    it('the Map catalogue is still there', () => {
-        expect(Cartographer.catalogue().length).toBe(listMaps().length);
-    });
-});

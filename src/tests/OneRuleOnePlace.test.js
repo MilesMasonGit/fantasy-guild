@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
-import { MapInspection } from '../ui/components/drawer/MapInspection.jsx';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import * as Cartographer from '../systems/board/Cartographer.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { ALERT_HINT, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
@@ -18,7 +16,7 @@ import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { getMap, listMaps } from '../config/registries/mapRegistry.js';
+import { listMaps } from '../config/registries/mapRegistry.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
 
 /**
@@ -44,12 +42,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     getQueue: vi.fn(() => [])
 }));
 
-/** The id of any authored Map Token, so a Map can be put in the Tray. */
-function aMapTokenId() {
-    const types = getAllTokenTypes();
-    return Object.keys(types).find(id => types[id].mapId);
-}
-
 /** The id of any authored Token that is NOT a Map. */
 function aPlainTokenId() {
     const types = getAllTokenTypes();
@@ -66,7 +58,6 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('CR2-054: Tray capacity is one rule', () => {
-    const mapId = aMapTokenId();
     const plainId = aPlainTokenId();
 
     /** Fill the Tray with `n` non-map Tokens, bypassing the capacity check. */
@@ -76,38 +67,6 @@ describe('CR2-054: Tray capacity is one rule', () => {
             tray.push(BoardState.createTokenInstance(plainId, tokenStartingUses(plainId)));
         }
     }
-
-    it('a Map in the Tray does not consume Tray capacity', () => {
-        GameState.state.board.tray.push(
-            BoardState.createTokenInstance(mapId, tokenStartingUses(mapId))
-        );
-        fillWithPlain(BoardState.TRAY_CAPACITY - 1);
-
-        // Raw length is now at capacity, but one non-map slot is genuinely free.
-        expect(BoardState.getTray().length).toBe(BoardState.TRAY_CAPACITY);
-        expect(BoardState.nonMapTrayTokensCount()).toBe(BoardState.TRAY_CAPACITY - 1);
-        expect(BoardState.hasTraySpace()).toBe(true);
-
-        // The thing that actually decides — `addToTray` — accepts it. Any route
-        // that refuses here is using a second, disagreeing rule.
-        const added = BoardState.addToTray(
-            BoardState.createTokenInstance(plainId, tokenStartingUses(plainId))
-        );
-        expect(added).toBe(true);
-    });
-
-    it('a Map purchase never waits on the Tray (slice 1.9: bought Maps land beside the Hall)', () => {
-        const map = listMaps().find(m => m.price === 0) || listMaps()[0];
-        GameState.state.board.tray.push(
-            BoardState.createTokenInstance(mapId, tokenStartingUses(mapId))
-        );
-        fillWithPlain(BoardState.TRAY_CAPACITY - 1);
-
-        // Even a Tray stuffed past capacity refuses nothing: the Tray is retired.
-        fillWithPlain(1);
-        expect(BoardState.hasTraySpace()).toBe(false);
-        expect(Cartographer.canBuy(map.id).reason || '').not.toMatch(/Tray/);
-    });
 
     it('hasTraySpaceFor counts the whole batch a cascade would displace', () => {
         fillWithPlain(BoardState.TRAY_CAPACITY - 2);
@@ -223,50 +182,6 @@ describe('CR2-196: Map materials have one display shape', () => {
 
     it('at least one authored Map still has materials to draw', () => {
         expect(withMaterials.length).toBeGreaterThan(0);
-    });
-
-    it('mapMaterials resolves an itemId and a name for every entry', () => {
-        for (const def of withMaterials) {
-            for (const m of Cartographer.mapMaterials(def.id)) {
-                expect(m.itemId, `${def.id} material itemId`).toBeTruthy();
-                expect(m.name, `${def.id} material name`).toBeTruthy();
-                expect(typeof m.quantity).toBe('number');
-            }
-        }
-    });
-
-    it('the keys the panels render with are present and unique', () => {
-        for (const def of withMaterials) {
-            const keys = Cartographer.mapMaterials(def.id).map(m => m.itemId);
-            expect(keys.every(Boolean), `${def.id} has a keyless material`).toBe(true);
-            expect(new Set(keys).size, `${def.id} has duplicate keys`).toBe(keys.length);
-        }
-    });
-
-    it('the catalogue and the inspection panel read the same projection', () => {
-        for (const entry of Cartographer.catalogue()) {
-            expect(entry.materials).toEqual(Cartographer.mapMaterials(getMap(entry.id)));
-        }
-    });
-
-    it('the inspection panel names the material instead of drawing "Unknown"', () => {
-        const def = withMaterials[0];
-        const expected = Cartographer.mapMaterials(def.id);
-        const { container } = render(
-            React.createElement(MapInspection, { mapId: def.id })
-        );
-        const text = container.textContent;
-        expect(text).toContain('Required Materials');
-        for (const m of expected) {
-            expect(text, `${def.id} should name ${m.itemId}`).toContain(m.name);
-        }
-        expect(text).not.toContain('Unknown');
-
-        // And the panel must be reading the shared projection, not the raw
-        // registry: the raw entries carry no `name`, so a panel that reads them
-        // has nothing to render but "Unknown" (CR2-196).
-        for (const raw of def.materials) expect(raw.name).toBeUndefined();
-        cleanup();
     });
 
     it('the raw registry shape has no `id` — which is why `m.id` drew Unknown', () => {

@@ -5,8 +5,8 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as VaultTransfer from '../systems/board/VaultTransfer.js';
-import * as Cartographer from '../systems/board/Cartographer.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
+import * as Placement from '../systems/board/Placement.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -86,16 +86,15 @@ describe('depositFrom — one rule, whatever the Token is sitting on', () => {
         expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
     });
 
-    it('refuses a Map with the same words wherever it is dragged from (D-156)', () => {
+    // D-156 (Maps cannot be stored, open it) retired with the Map bursts in
+    // Token Lifecycle 9.1: nothing opens a Map now, so a Map Token is stored
+    // like any other, and a Map lying loose on the mat (`boardMapId`) no
+    // longer exists.
+    it('stores a Map Token like any other Token (D-156 retired, 9.1)', () => {
         const map = onMat(token('fixture_map'));
-
-        const fromToken = VaultTransfer.depositFrom({ instanceId: map.id });
-        const fromPlaymat = VaultTransfer.depositFrom({ boardMapId: 'anything' });
-
-        expect(fromToken).toMatchObject({ success: false, reason: 'Maps cannot be stored — open it.' });
-        expect(fromPlaymat).toEqual({ success: false, reason: 'Maps cannot be stored — open it.' });
-        // Refused, not eaten.
-        expect(BoardState.getTokenById(map.id)).not.toBeNull();
+        expect(VaultTransfer.depositFrom({ instanceId: map.id }).success).toBe(true);
+        expect(BoardState.getTokenById(map.id)).toBeNull();
+        expect(VaultTransfer.depositFrom({ boardMapId: 'anything' }).success).toBe(false);
     });
 
     it('refuses a new type when the Vault is full, and leaves the Token where it was (D-138)', () => {
@@ -141,11 +140,13 @@ describe('depositFrom — one rule, whatever the Token is sitting on', () => {
     });
 
     it('says nothing about a deposit that was refused', () => {
-        const map = onMat(token('fixture_map'));
+        // The Guild Hall never leaves the mat. (This used a Map until Maps
+        // stopped being refused, 9.1.)
+        const hall = onMat(token('token_guild_hall'));
 
         const counts = countEvents(
             ['vault_deposited', 'token_bank_updated'],
-            () => VaultTransfer.depositFrom({ instanceId: map.id })
+            () => VaultTransfer.depositFrom({ instanceId: hall.id })
         );
 
         expect(counts).toEqual({ vault_deposited: 0, token_bank_updated: 0 });
@@ -165,7 +166,7 @@ describe('withdrawTo — and the double-count that used to come with it (CR2-146
         expect(BoardState.getTray()).toHaveLength(0);
         const [placed] = BoardState.tokens().filter(t => t.typeId === 'fixture_producer');
         expect(placed.usesRemaining).toBe(5000);
-        const hall = Cartographer.centreOfBoard();
+        const hall = Placement.centreOfBoard();
         expect(Math.hypot(placed.x - hall.x, placed.y - hall.y)).toBeLessThanOrEqual(MatPlacement.nudgeReach() + 1e-6);
         expect(BoardState.tokenBankCopies('fixture_producer')[0].usesRemaining).toBe(800);
     });

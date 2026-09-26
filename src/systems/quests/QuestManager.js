@@ -10,7 +10,6 @@ import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getMap, listMaps } from '../../config/registries/mapRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { getPurchasedMaps } from '../board/Cartographer.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 
@@ -395,9 +394,10 @@ export const QuestManager = {
     createRandomQuest() {
         // The Map is picked only to size the bounty (its price sets the
         // collection target); the reward is items, not the Map (slice 2.2).
-        // Pick from player's purchased maps, falling back to catalog maps
-        const purchased = getPurchasedMaps();
-        let mapPool = purchased.length > 0 ? purchased : listMaps().map(m => m.id);
+        // Picked from the catalogue: the Map purchase that used to narrow this
+        // to the player's bought Maps retired with the bursts (Token Lifecycle
+        // 9.1); slice 9.5 re-points the quests.
+        let mapPool = listMaps().map(m => m.id);
         if (!mapPool || mapPool.length === 0) mapPool = ['map_test_map'];
 
         const pickedMapId = mapPool[Math.floor(Math.random() * mapPool.length)];

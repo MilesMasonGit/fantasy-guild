@@ -3,7 +3,6 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemInspection } from './BankTab.jsx';
 import TokenInspection from './TokenInspection.jsx';
-import MapInspection from './MapInspection.jsx';
 import GuildUpgradeInspection from './GuildUpgradeInspection.jsx';
 import { getUpgradeDef } from '../../../config/guildUpgrades.js';
 import { SearchCheck, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
@@ -16,7 +15,7 @@ import { cn } from '../../utils/cn.js';
  */
 export const InspectionPanel = ({
     selection,
-    onInspect,
+    onInspect: _onInspect,
     onClear,
     className,
     searchQuery = '',
@@ -58,8 +57,6 @@ export const InspectionPanel = ({
                 showViewInVault={isCartographer}
             />
         );
-    } else if (selection?.type === 'map') {
-        body = <MapInspection mapId={selection.id} onInspect={onInspect} />;
     } else if (selection?.type === 'item') {
         const template = getItem(selection.id);
         if (template && (itemCount > 0 || isCartographer)) {

@@ -8,7 +8,6 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as Cartographer from '../systems/board/Cartographer.js';
 import './fixtures/fixtureItems.js';
 
 /**
@@ -55,14 +54,13 @@ describe('Quest System & Multi-Tutorial Chain', () => {
     it('immediately replenishes an opened slot with the next tutorial quest when claimed, paying items', () => {
         // Claim Step 0 (Place a Token)
         EventBus.publish('token_placed', { instanceId: 'tok_24', typeId: 'token_guild_hall' });
-        const initialMaps = BoardState.getBoardMaps().length;
 
         const res = QuestManager.claimQuest('tutorial_1');
         expect(res.success).toBe(true);
         expect(res.rewardItems.map(r => [r.itemId, r.quantity])).toEqual([['item_oak_wood', 10]]);
 
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
-        expect(BoardState.getBoardMaps().length).toBe(initialMaps);
+        expect(GameState.state.board.maps).toBeUndefined();   // no Map box anywhere (9.1)
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
 
         const active = QuestManager.getActiveQuests();
@@ -86,72 +84,8 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(step3.currentCount).toBe(1);
     });
 
-    it('opens Guild Hall Maps in strict scripted sequence regardless of open order', () => {
-        // 1st open yields Drop 1 (Campfire)
-        const burst1 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst1.length).toBe(1);
-        expect(burst1[0].refId).toBe('token_campfire');
-
-        // 2nd open yields Drop 2 (Redberry Bush)
-        const burst2 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst2.length).toBe(1);
-        expect(burst2[0].refId).toBe('token_redberry_bush');
-
-        // 3rd open yields Drop 3 (Oak Tree)
-        const burst3 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst3.length).toBe(1);
-        expect(burst3[0].refId).toBe('token_oak_tree');
-
-        // 4th open yields Drop 4 (Rusty Woodaxe)
-        const burst4 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst4.length).toBe(1);
-        expect(burst4[0].refId).toBe('token_rusty_woodaxe');
-
-        // 5th open yields Drop 5 (200 Shrimp Trawler Potions)
-        const burst5 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst5.length).toBe(1);
-        expect(burst5[0].kind).toBe('item');
-        expect(burst5[0].refId).toBe('item_shrimp_trawler_potion');
-        expect(burst5[0].quantity).toBe(200);
-
-        // 6th open yields Drop 6 (Copper Rubble)
-        const burst6 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst6.length).toBe(1);
-        expect(burst6[0].refId).toBe('token_copper_rubble');
-
-        // 7th open yields Drop 7 (Rusty Pickaxe)
-        const burst7 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst7.length).toBe(1);
-        expect(burst7[0].refId).toBe('token_rusty_pickaxe');
-
-        // 8th open yields Drop 8 (Furnace)
-        const burst8 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst8.length).toBe(1);
-        expect(burst8[0].refId).toBe('token_furnace');
-
-        // 9th open yields Drop 9 (Shrimp Coast)
-        const burst9 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst9.length).toBe(1);
-        expect(burst9[0].refId).toBe('token_shrimp_coast');
-
-        // 10th open yields Drop 10 (Fishing Net)
-        const burst10 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst10.length).toBe(1);
-        expect(burst10[0].refId).toBe('token_fishing_net');
-
-        // 11th open yields Drop 11 (Cooking Pot)
-        const burst11 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst11.length).toBe(1);
-        expect(burst11[0].refId).toBe('token_cooking_pot');
-
-        // 12th open yields Drop 12 (Oak Wood). ⚠️ Changed in slice 2.2
-        // (SP-65): this drop was 2000 coins, i.e. gold, which is retired.
-        const burst12 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst12.length).toBe(1);
-        expect(burst12[0].kind).toBe('item');
-        expect(burst12[0].refId).toBe('item_oak_wood');
-        expect(burst12[0].quantity).toBe(20);
-    });
+    // 'opens Guild Hall Maps in strict scripted sequence' went with the Map
+    // bursts and the Guild Hall drop sequence (Token Lifecycle 9.1).
 
     it('completes item collection with a single stack of 10 items', () => {
         const completeAndClaim = (id) => {
@@ -279,29 +213,8 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(replenishedActive.some(q => q.id === 'bounty_abandon_test')).toBe(false);
     });
 
-    // ⚠️ Changed in slice 2.2 (SP-65): a quest reward is items now, so the Map
-    // cap no longer blocks a claim — only a Cartographer purchase.
-    it('enforces the 50-map cap on purchases, and no longer on quest claims', () => {
-        // Fill playmat with 50 maps
-        for (let i = 0; i < BoardState.MAX_MAP_LIMIT; i++) {
-            BoardState.addBoardMap('token_map', 50, 50);
-        }
-
-        expect(BoardState.getTotalMapCount()).toBe(BoardState.MAX_MAP_LIMIT);
-        expect(BoardState.hasMapSpace()).toBe(false);
-
-        // A claim still succeeds: it puts no Map on the mat.
-        const active = QuestManager.getActiveQuests();
-        active[0].currentCount = active[0].requiredCount;
-        const claimRes = QuestManager.claimQuest(active[0].id);
-        expect(claimRes.success).toBe(true);
-        expect(BoardState.getTotalMapCount()).toBe(BoardState.MAX_MAP_LIMIT);
-
-        // Cartographer purchase should also refuse
-        const buyRes = Cartographer.buyMap('map_test_map');
-        expect(buyRes.success).toBe(false);
-        expect(buyRes.reason).toContain('Map limit reached');
-    });
+    // 'enforces the 50-map cap on purchases' went with the Map purchase and the
+    // Map cap (Token Lifecycle 9.1).
 
     it('handles collection quests with item deductions on claim', () => {
         const q = GameState.state.quests;
@@ -329,14 +242,13 @@ describe('Quest System & Multi-Tutorial Chain', () => {
 
         expect(collectionQuest.currentCount).toBe(10);
 
-        const initialMapCount = BoardState.getBoardMaps().length;
         const res = QuestManager.claimQuest('test_collection_1');
         expect(res.success).toBe(true);
 
         // Items deducted (15 - 10 = 5)
         expect(InventoryStore.getItems()['fixture_oak_wood'].quantity).toBe(5);
         // ⚠️ Changed in slice 2.2 (SP-65): the reward is items, not a Map.
-        expect(BoardState.getBoardMaps().length).toBe(initialMapCount);
+        expect(GameState.state.board.maps).toBeUndefined();
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
     });
 

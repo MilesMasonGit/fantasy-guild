@@ -49,11 +49,21 @@
  * here should grow a second decimal place.
  */
 
-import { BURST_SIZE } from '../../../../src/systems/board/Cartographer.js';
 import {
     DEFAULT_DIALS, RARITY_WEIGHTS, scrapRatioAt, productiveReturnAt,
 } from './dials.js';
 import { isDeferredKind, isInert, liveCharges } from './fieldAdapter.js';
+
+/**
+ * How many things a Map burst dealt (CMS-129).
+ *
+ * ⚠️ The game no longer bursts Maps (Token Lifecycle 9.1): `Cartographer.js`,
+ * where this constant used to live, was deleted, and a Map Token that is still
+ * used is an ordinary Explore producer. The CMS still models Maps and this
+ * pass still prices them, so the number is kept here, frozen at the last value
+ * the game dealt, until the CMS's Map model is retired.
+ */
+export const BURST_SIZE = 3;
 import { cyclesPerHour, earningsPerHour, CORRECTION_CAP } from './tuningPass.js';
 import { makeRefusal } from './refusals.js';
 
@@ -164,10 +174,8 @@ export function allocateByRarity(total, weights, premium = 0.8) {
  * roughly doubles how often the Tokens turn up, which is exactly what the rule
  * was written to guarantee.
  *
- * The burst length is read **live** from `Cartographer.BURST_SIZE`. It is not a
- * literal here on purpose: the constant moved once already (D-167's random
- * range became CMS-129's fixed three), and a second copy of it in the CMS would
- * mean the check silently describing a burst the game stopped dealing.
+ * The burst length is {@link BURST_SIZE}, which used to be read live from the
+ * game's `Cartographer.BURST_SIZE` (deleted in Token Lifecycle 9.1).
  */
 export function burstExpectation(shares, isToken, burstSize = BURST_SIZE) {
     const n = shares.length;

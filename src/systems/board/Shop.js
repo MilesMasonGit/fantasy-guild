@@ -11,7 +11,6 @@ import * as BoardState from './BoardState.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
 import * as Placement from './Placement.js';
-import { centreOfBoard } from './Cartographer.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -23,12 +22,11 @@ import { logger } from '../../utils/Logger.js';
  * * **No unlocks** (SP-13): everything with a `shop` block is listed from the
  *   start; the price is the only gate.
  * * **Items are the only price** (SP-65). Payment is all or nothing through
- *   `InputAllocator` (Bank first, then loot on the floor), the same path Map
- *   purchases use.
+ *   `InputAllocator` (Bank first, then loot on the floor).
  * * **The mat cap** (SP-67): a purchase is refused once the placed Tokens
  *   reach `MatCap.matCap()`.
  * * A bought Token lands **beside the Guild Hall** (FP-18), through
- *   `Placement.placeTokenAt` at `Cartographer.centreOfBoard()` — the route the
+ *   `Placement.placeTokenAt` at `Placement.centreOfBoard()` — the route the
  *   Vault's click-to-place uses — created with `origin: 'placed'`.
  */
 
@@ -112,7 +110,7 @@ export function buy(typeId) {
     );
     instance.bornAt = Date.now();
 
-    const placed = Placement.placeTokenAt(instance, centreOfBoard());
+    const placed = Placement.placeTokenAt(instance, Placement.centreOfBoard());
     if (!placed?.success) return refuse(placed?.reason || 'No room on the mat');
 
     if (!InputAllocator.consumeInputs(price)) {

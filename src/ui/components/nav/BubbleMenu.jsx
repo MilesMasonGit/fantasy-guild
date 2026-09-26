@@ -128,7 +128,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             // Every Vault control accepts the same origins (owner ruling
             // 2026-08-25). `depositFrom` handles them all — including naming
             // the Map refusal instead of silently ignoring the drop.
-            return (p.from?.instanceId != null || p.from?.spriteId != null || p.from?.boardMapId != null);
+            return (p.from?.instanceId != null || p.from?.spriteId != null);
         },
         // `depositFrom` publishes the repaint for every route (CR2-134).
         onDrop: (p) => {

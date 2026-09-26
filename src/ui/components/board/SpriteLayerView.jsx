@@ -42,9 +42,8 @@ import { useMatFit } from './MatFitContext.jsx';
  *
  * ⚠️ **Tokens go to the Vault, not the Tray** (D-232, reversing D-158). Sending
  * them to the Tray filled the rack with things the player never chose; the Tray
- * now holds only what was put there deliberately. A **Map** is the exception and
- * needs no code here — `TokenBank.deposit` refuses it (D-156), so it falls
- * through to the Tray on its own.
+ * now holds only what was put there deliberately. (Maps were once refused by the
+ * Vault, D-156; that rule retired with the Map bursts, Token Lifecycle 9.1.)
  */
 export const SpriteLayerView = () => {
     const mat = useMatSize();

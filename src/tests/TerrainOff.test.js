@@ -6,9 +6,8 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as Cartographer from '../systems/board/Cartographer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { TERRAIN_ENABLED } from '../config/registries/terrainRegistry.js';
 
 /**
@@ -82,15 +81,6 @@ describe('Terrain is switched off (FP-10)', () => {
         expect(BoardState.takeFromTokenBank('fixture_off_mine').terrain).toBeUndefined();
     });
 
-    it('bursting a Map stamps nothing on the Tokens it produces', () => {
-        // Burst Tokens land on the mat (FP-16); none may carry a stamp.
-        const mapToken = () => BoardState.createTokenInstance('token_test_map', tokenStartingUses('token_test_map'));
-        const before = new Set(BoardState.tokens().map(t => t.id));
-
-        expect(Cartographer.openMap(mapToken(), null).success).toBe(true);
-        const landed = BoardState.tokens().filter(t => !before.has(t.id));
-        expect(landed.length).toBeGreaterThan(0);
-        for (const inst of landed) expect(inst.terrain).toBeUndefined();
-        for (const s of SpriteLayer.getSprites()) expect(s.terrain).toBeUndefined();
-    });
+    // 'bursting a Map stamps nothing on the Tokens it produces' went with the
+    // Map bursts (Token Lifecycle 9.1).
 });

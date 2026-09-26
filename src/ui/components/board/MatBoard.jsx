@@ -15,9 +15,7 @@ import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { TERRAIN_ENABLED } from '../../../config/registries/terrainRegistry.js';
 import { announce } from './dropOnMat.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { useEngine } from '../../hooks/useEngine.js';
-import { useActiveDrag, useEntityDrag } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
@@ -25,15 +23,9 @@ import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
-import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { GameState } from '../../../state/GameState.js';
-import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { TokenSprite, TOKEN_SURFACE, boardScaleAt, tokenSizeFor } from '../base/TokenSprite.jsx';
-import { useMatFit } from './MatFitContext.jsx';
-import { cn } from '../../utils/cn.js';
-import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
-import { playLootArc } from '../../utils/lootArc.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 
 /**
  * ⭐ **The playmat as it is actually drawn** (Free Playmat slice 1.6c-2).
@@ -63,7 +55,6 @@ export const MatBoard = ({
     onOpenRecipes,
     inspectedHeroId = null
 }) => {
-    const { EventBus } = useEngine();
     const rootRef = useRef(null);
 
     // How big the mat is right now (slice 1.6d-3). Read through the hook so the
@@ -169,11 +160,6 @@ export const MatBoard = ({
     );
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
 
-    const boardMaps = useGameState(
-        state => state.board?.maps || [],
-        ['state_changed', BOARD_EVENTS.TILE_CHANGED]
-    ) || [];
-
     // The painted ground. Dormant while terrain is off (FP-10).
     const terrain = useGameState(
         state => (TERRAIN_ENABLED ? state.board?.terrain || NO_TERRAIN : NO_TERRAIN),
@@ -227,19 +213,6 @@ export const MatBoard = ({
             NotificationSystem.info('All heroes are working elsewhere — drag a hero to reassign');
         }
     }, []);
-
-    const handleBurstMap = useCallback((mapId) => {
-        const map = BoardState.removeBoardMap(mapId);
-        if (!map) return;
-        const origin = { x: map.x, y: map.y };
-        // Same announcer every other board outcome uses, so a refused burst
-        // tells the player why instead of the Map just reappearing (CR2-170.1).
-        const result = announce(Cartographer.openMap({ typeId: map.typeId, usesRemaining: map.usesRemaining }, origin));
-        if (!result.success) {
-            BoardState.addBoardMap(map.typeId, map.x, map.y, map.usesRemaining);
-        }
-        EventBus?.publish('state_changed', {});
-    }, [EventBus]);
 
     // Only a Token that acts on or depends on its neighbours shows a ring
     // (owner, 2026-09-21) — `showsNearRing`.
@@ -334,11 +307,6 @@ export const MatBoard = ({
                 );
             })}
 
-            {/* 700 — Maps lying loose on the mat. */}
-            {boardMaps.map(map => (
-                <BoardMapToken key={map.id} map={map} onBurst={handleBurstMap} />
-            ))}
-
             {/* 750 — news with no Token left to sit on. */}
             <MatPointAlerts />
 
@@ -379,113 +347,5 @@ export function heroPlacement({ x, y }) {
     // so there is no per-state offset any more (D-266's pairing went).
     return { left: x - HERO_HIT_PX / 2, top: y - FLAG_PX / 2 };
 }
-
-/** A Map lying loose on the mat: drag it anywhere, click it to burst it. */
-const BoardMapToken = ({ map, onBurst }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    const elementRef = useRef(null);
-    const { activePayload, isDragging: isAnyDragging } = useActiveDrag();
-    const drag = useEntityDrag({
-        id: `board-map-${map.id}`,
-        kind: DRAG_KIND.TOKEN,
-        payload: {
-            typeId: map.typeId,
-            from: { boardMapId: map.id },
-            usesRemaining: map.usesRemaining
-        },
-        sourceSurface: DND_SURFACE.BOARD
-    });
-
-    const fit = useMatFit();
-    const artScale = boardScaleAt(fit);
-    // Properly use TOKEN_SURFACE.BOARD to compute size so it matches standard tokens
-    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, map.typeId, artScale);
-
-    const isThisDragging = drag.isDragging || (activePayload?.from?.boardMapId === map.id);
-
-    React.useEffect(() => {
-        if (Date.now() - (map.bornAt ?? 0) >= 1500 || map.fromX == null) return;
-        const fx = map.fromX;
-        const fy = map.fromY ?? 0;
-        if (elementRef.current && (fx !== 0 || fy !== 0)) {
-            playLootArc(elementRef.current, fx, fy, { centered: false, duration: 480 });
-        }
-    }, [map.bornAt, map.fromX, map.fromY, map.x, map.y]);
-
-    const setNodeRef = (node) => {
-        elementRef.current = node;
-        drag.setNodeRef(node);
-    };
-
-    const label = tokenName(map.typeId);
-
-    const handlePointerMove = (e) => {
-        const el = e.currentTarget;
-        if (!el) return;
-        const isOpaque = isElementOpaqueAtPoint(el, e.clientX, e.clientY);
-        if (!isOpaque && isHovered) setIsHovered(false);
-        else if (isOpaque && !isHovered) setIsHovered(true);
-    };
-
-    /**
-     * ⚠️ **A Map bursts on a SINGLE click here too** — owner ruling 2026-08-24
-     * (CR2-158): one click, Tray and board alike. `onDoubleClick` is wired to
-     * the same function only so a double-click is not swallowed; its first
-     * click has already burst the Map.
-     */
-    const handleClick = (e) => {
-        const el = e.currentTarget;
-        if (el && !isElementOpaqueAtPoint(el, e.clientX, e.clientY)) {
-            return; // Transparent pixel: pass the click to whatever is underneath
-        }
-        e.stopPropagation();
-        onBurst?.(map.id);
-    };
-
-    // Note: map.x/y define the top-left of a logical 128px bounding box (set by mapBoxAt),
-    // so the logical center is always at map.x + 64. We must then offset by artPx / 2
-    // to keep the visual art perfectly centered on the coordinate where it was dropped.
-    return (
-        <div
-            ref={setNodeRef}
-            {...drag.handleProps}
-            data-board-map-id={map.id}
-            data-alpha-test="true"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseMove={handlePointerMove}
-            onMouseLeave={() => setIsHovered(false)}
-            onClick={handleClick}
-            onDoubleClick={handleClick}
-            className={cn(
-                'absolute pointer-events-auto cursor-grab active:cursor-grabbing select-none',
-                isThisDragging && 'opacity-0 pointer-events-none'
-            )}
-            style={{
-                left: map.x + 64 - artPx / 2,
-                top: map.y + 64 - artPx / 2,
-                width: artPx,
-                height: artPx,
-                zIndex: MAT_Z.MAP,
-                opacity: isThisDragging ? 0 : 1,
-                visibility: isThisDragging ? 'hidden' : 'visible'
-            }}
-        >
-            <div
-                className={cn(
-                    'w-full h-full flex items-center justify-center transition-[filter] duration-150 rounded-full',
-                    isHovered && !isAnyDragging && !isThisDragging && 'gi-token-hover-pulse'
-                )}
-            >
-                <TokenSprite
-                    typeId={map.typeId}
-                    surface={TOKEN_SURFACE.BOARD}
-                    scale={artScale}
-                    alt={label}
-                    className="w-full h-full"
-                />
-            </div>
-        </div>
-    );
-};
 
 export default MatBoard;

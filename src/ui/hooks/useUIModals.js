@@ -300,7 +300,6 @@ export const useUIModals = (engine) => {
             set: useCallback((type, id, source = null, pane = null) => {
                 const effectivePane = pane || (
                     type === 'guild_upgrade' ? 'guild' :
-                    type === 'map' ? 'cartographer' :
                     type === 'token' ? 'vault' :
                     type === 'item' ? 'bank' : null
                 );

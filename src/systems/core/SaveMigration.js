@@ -75,6 +75,21 @@ export function migrateState(state, savedVersion) {
     // `currency` section an older save still carries is dropped, not kept.
     if ('currency' in migrated) delete migrated.currency;
 
+    // The Map bursts and the Map purchase are retired (Token Lifecycle 9.1):
+    // an older save's unopened Maps lying on the mat, its purchase list and
+    // its burst bookkeeping are dropped, not kept. Nothing can open a Map now,
+    // so a Map box left on the mat would be a thing nothing can use.
+    if ('cartographer' in migrated) delete migrated.cartographer;
+    if (isPlainObject(migrated.board) && 'maps' in migrated.board) {
+        migrated.board = { ...migrated.board };
+        delete migrated.board.maps;
+    }
+    if (isPlainObject(migrated.progress) && ('mapDiscoveries' in migrated.progress || 'guildHallMapOpens' in migrated.progress)) {
+        migrated.progress = { ...migrated.progress };
+        delete migrated.progress.mapDiscoveries;
+        delete migrated.progress.guildHallMapOpens;
+    }
+
     // The station recipe backfill (Recipe & Charges P2) and the hero-tiles →
     // flags conversion (Free Playmat 1.4b) were deleted in slice 1.6a. Both
     // only carried pre-0.8.0 boards forward, and those saves are now refused

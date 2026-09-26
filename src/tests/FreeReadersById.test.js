@@ -10,7 +10,6 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as EffectActions from '../systems/board/EffectActions.js';
-import * as Cartographer from '../systems/board/Cartographer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -289,34 +288,24 @@ describe('⭐ spawns land by point (slices 1.6b and 1.8)', () => {
     });
 });
 
-describe('⭐ Map bursts throw from a real point', () => {
+// The Map bursts that used to throw from this point were deleted in Token
+// Lifecycle 9.1 (their test went with them); the point itself moved to
+// `Placement`, where the Shop and the Vault still aim what they land.
+describe('⭐ Tokens land beside a real point', () => {
     let hall;
     beforeEach(() => {
         clearMat();
         hall = placeAt('token_guild_hall', C(21).x, C(21).y);
     });
 
-    it('Cartographer.centreOfBoard is the Guild Hall’s point, follows it, and is the mat centre with no Hall', () => {
-        expect(Cartographer.centreOfBoard()).toEqual({ x: hall.x, y: hall.y });
-        expect(Cartographer.centreOfBoard()).not.toBe(24);
+    it('Placement.centreOfBoard is the Guild Hall’s point, follows it, and is the mat centre with no Hall', () => {
+        expect(Placement.centreOfBoard()).toEqual({ x: hall.x, y: hall.y });
+        expect(Placement.centreOfBoard()).not.toBe(24);
         BoardState.setTokenPoint(hall.id, C(35).x, C(35).y);
-        expect(Cartographer.centreOfBoard()).toEqual(C(35));
+        expect(Placement.centreOfBoard()).toEqual(C(35));
 
         BoardState.removeToken(hall.id);
-        expect(Cartographer.centreOfBoard()).toEqual({ x: matW() / 2, y: matH() / 2 });
-    });
-
-    it('a burst with no origin throws its Tokens and loot out of the Guild Hall', () => {
-        const before = new Set(BoardState.tokens().map(t => t.id));
-        const result = Cartographer.openMap({ typeId: 'token_guild_hall_map', usesRemaining: 1 }, null);
-        expect(result.success).toBe(true);
-
-        // FP-16: Tokens land on the mat, flying in from the Hall.
-        const landed = BoardState.tokens().filter(t => !before.has(t.id));
-        const sprites = SpriteLayer.getSprites();
-        expect(landed.length + sprites.length).toBeGreaterThan(0);
-        for (const t of landed) expect({ x: t.fromX, y: t.fromY }).toEqual({ x: hall.x, y: hall.y });
-        for (const s of sprites) expect({ x: s.fromX, y: s.fromY }).toEqual({ x: hall.x, y: hall.y });
+        expect(Placement.centreOfBoard()).toEqual({ x: matW() / 2, y: matH() / 2 });
     });
 });
 

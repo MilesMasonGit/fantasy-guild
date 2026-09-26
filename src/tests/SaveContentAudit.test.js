@@ -79,13 +79,14 @@ describe('Finding what a save is still holding', () => {
         const ghosts = auditSaveContent(saveWith({
             tokens: { tok_a: { id: 'tok_a', typeId: 'token_sawmill', x: 544, y: 64 } },
             tray: [{ typeId: 'token_forest' }],
-            tokenBank: { token_oakwood_grove: [{ usesRemaining: 5 }] },
-            maps: [{ id: 'map_x', typeId: 'token_stew_pot' }]
+            tokenBank: { token_oakwood_grove: [{ usesRemaining: 5 }] }
         }));
 
+        // A Map lying loose on the mat (`board.maps`) was a fourth place until
+        // the Map bursts retired (Token Lifecycle 9.1); a save's `board.maps`
+        // is dropped on load now.
         expect(ghosts.map(g => g.id).sort()).toEqual([
-            'token_forest', 'token_oakwood_grove', 'token_sawmill',
-            'token_stew_pot'
+            'token_forest', 'token_oakwood_grove', 'token_sawmill'
         ]);
     });
 
