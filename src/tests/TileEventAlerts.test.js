@@ -8,6 +8,25 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+
+/**
+ * A gatherer that still needs an axe nearby. The shipped Oak Tree used to be
+ * this case, but tool requirements were dropped from content (Token Lifecycle
+ * TL-2, slice 7.0) while the engine path they exercise stays, so the test
+ * keeps its own copy of the old requirement.
+ */
+registerTokenTypes({
+    fixture_axe_tree: {
+        id: 'fixture_axe_tree', name: 'Fixture Axe Tree', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 25, sprite: 'token_tree_oak',
+        acceptedTokens: [{ tag: 'axe', minTier: 1 }],
+        config: {
+            skill: 'logging', skillRequired: 1, cycleTimeMs: 16000, xp: 2, inputs: [],
+            outputs: [{ itemId: 'item_oak_wood', chance: 100, minQty: 1, maxQty: 2 }]
+        }
+    }
+});
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
@@ -142,12 +161,12 @@ describe('On-Board Tile Event Alerts', () => {
         expect(tokenAlert.message).toMatch(/(Out of|Missing) token:/);
     });
 
-    it('emits Yellow alert for Oak Tree missing Woodaxe tool', () => {
+    it('emits Yellow alert for a tree missing its Woodaxe tool', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
-        // Place token_oak_tree (requires axe) without a nearby axe
-        const tree = BoardState.createTokenInstance('token_oak_tree');
+        // Place a tree that requires an axe, without a nearby axe
+        const tree = BoardState.createTokenInstance('fixture_axe_tree');
         put(8, tree);
         staff(8, 'hero_1');
 
