@@ -79,6 +79,11 @@ describe('The Logging chain in shipped data (7.0, 7.1)', () => {
     });
 
     it('the lifecycle audit has nothing to say about the chain', () => {
-        expect(auditLifecycleBlocks({ tokens, items, recipes, skills: SKILLS })).toEqual([]);
+        // Scoped to this chain: other chains carry allowed warnings (7.2's
+        // free mines, SP-70). Errors anywhere still fail.
+        const ids = new Set(['token_oak_forest', 'token_oak_sapling', 'token_oak_tree', 'token_guild_hall']);
+        const findings = auditLifecycleBlocks({ tokens, items, recipes, skills: SKILLS })
+            .filter((f) => f.severity === 'error' || ids.has(f.entityId));
+        expect(findings).toEqual([]);
     });
 });

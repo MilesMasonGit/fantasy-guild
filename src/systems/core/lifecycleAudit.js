@@ -259,7 +259,12 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 }
             }
 
-            const workable = !!def.config || !!stationSkillOf(def) || !!def.foundation || !!def.spawner;
+            // A Token that `turns` into a workable Token (the Coast → Shrimp
+            // Coast, slice 7.3) is worked while it is turned, so it counts.
+            const worksDirectly = (d) => !!d?.config || !!stationSkillOf(d);
+            const turnsWorkable = Array.isArray(def.turns?.into)
+                && def.turns.into.some((entry) => worksDirectly(tokens[entry?.typeId]));
+            const workable = worksDirectly(def) || !!def.foundation || !!def.spawner || turnsWorkable;
             if (!workable) {
                 warn('shop', 'is sold at the Shop but has no way to be worked or to spawn anything.');
             }
