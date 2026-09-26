@@ -7,8 +7,10 @@ import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import {
-    getJobSkills, getPromotionCost, getPromotionGateSkills, STARTING_JOB_ID
+    getJobSkills, getJobSheet, getPromotionCost, getPromotionGateSkills, STARTING_JOB_ID
 } from '../config/registries/jobRegistry.js';
+import { FOUNDATION_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { restoreBankedFoundation } from '../systems/hero/logic/HeroRehydration.js';
 import { canHeroFight } from '../utils/CombatFormulas.js';
 
 /**
@@ -83,8 +85,9 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
     });
 
     it('gates only on carried-forward skills, not on everything the hero holds', () => {
-        // A Fighter drops Fishing and Cooking. Being terrible at them must not
-        // block the promotion that removes them anyway.
+        // A Fighter's list does not name Fishing or Cooking (it keeps them
+        // since TL-7, but does not gate on them). Being terrible at them must
+        // not block the promotion.
         const hero = makeQualified('fighter');
         const dropped = Object.keys(hero.skills)
             .filter(id => !getJobSkills('fighter').includes(id));
@@ -129,7 +132,8 @@ describe('A promotion swaps the sheet', () => {
         PromotionSystem.promote(hero.id, 'fighter');
 
         expect(hero.jobId).toBe('fighter');
-        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSkills('fighter')].sort());
+        // TL-7: the held sheet is every foundation skill plus the Fighter's own.
+        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('fighter')].sort());
     });
 
     /** ⚠️ Replaces 'takes the gold and the materials' (PR-6). */
@@ -168,50 +172,44 @@ describe('A promotion swaps the sheet', () => {
     });
 });
 
-describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
-    it('banks a removed skill AT ITS LEVEL, not at zero', () => {
-        const hero = makeQualified('fighter');
-        const dropped = Object.keys(hero.skills)
-            .filter(id => !getJobSkills('fighter').includes(id));
-        for (const id of dropped) hero.skills[id].level = 17;
+describe('⭐ Promotion keeps all nine starting skills (TL-7)', () => {
+    /** Levels 30, 31, … on each foundation skill, so each is distinguishable. */
+    function stampFoundation(hero) {
+        const stamped = {};
+        FOUNDATION_SKILL_IDS.forEach((id, i) => {
+            hero.skills[id].level = 30 + i;
+            hero.skills[id].xp = 1000 + i;
+            stamped[id] = { level: 30 + i, xp: 1000 + i };
+        });
+        return stamped;
+    }
 
-        PromotionSystem.promote(hero.id, 'fighter');
+    it('a Recruit promoted to Fighter, then Knight, holds all nine at their levels plus the class skills', () => {
+        const hero = generateHero();
+        HeroManager.addHero(hero);
+        // Every foundation skill at 30+ clears both the Fighter (10) and the
+        // Knight (25) gates for their foundation picks.
+        const stamped = stampFoundation(hero);
 
-        for (const id of dropped) {
-            expect(hero.skills[id], `${id} should be gone from the sheet`).toBeUndefined();
-            expect(hero.bankedSkills[id].level, `${id} banked level`).toBe(17);
+        const toFighter = PromotionSystem.promote(hero.id, 'fighter');
+        expect(toFighter.success).toBe(true);
+        expect(toFighter.banked).toEqual([]);
+
+        qualify(hero, 'knight');   // raises the Fighter's melee/leadership
+        // qualify() also writes the gate's foundation picks to 25; put the
+        // stamped levels back so the check below is about promotion alone.
+        for (const [id, s] of Object.entries(stamped)) hero.skills[id].level = s.level;
+        const toKnight = PromotionSystem.promote(hero.id, 'knight');
+        expect(toKnight.success).toBe(true);
+        expect(toKnight.banked).toEqual([]);
+
+        for (const [id, s] of Object.entries(stamped)) {
+            expect(hero.skills[id], `${id} held`).toEqual(s);
         }
-    });
-
-    it('restores a banked skill intact when a later job wants it again', () => {
-        // The load-bearing case. Recruit → Fighter drops Cooking; Fighter →
-        // Cleric... is a re-training that wants it back.
-        const hero = makeQualified('fighter');
-        const dropped = Object.keys(hero.skills)
-            .filter(id => !getJobSkills('fighter').includes(id));
-        const revived = dropped.find(id => getJobSkills('cleric').includes(id));
-        expect(revived, 'expected Cleric to want something Fighter drops').toBeTruthy();
-
-        hero.skills[revived].level = 22;
-        PromotionSystem.promote(hero.id, 'fighter');
-        expect(hero.bankedSkills[revived].level).toBe(22);
-
-        // Re-train into Cleric, which wants that skill back.
-        //
-        // ⚠️ Only raise the gate skills the hero still HOLDS. The banked one is
-        // deliberately left alone: at 22 it already clears the threshold, which
-        // is exactly the "a hero has not forgotten" rule doing its job. Writing
-        // it back into the held sheet here would fake the very thing under test.
-        for (const skillId of getPromotionGateSkills('cleric')) {
-            const cost = getPromotionCost('cleric');
-            if (hero.skills[skillId]) hero.skills[skillId].level = cost.skillLevel;
-        }
-        const result = PromotionSystem.promote(hero.id, 'cleric');
-
-        expect(result.success).toBe(true);
-        expect(result.restored).toContain(revived);
-        expect(hero.skills[revived].level, 'restored at its banked level, not 1').toBe(22);
-        expect(hero.bankedSkills[revived], 'and taken back out of the bank').toBeUndefined();
+        for (const id of getJobSkills('knight')) expect(hero.skills[id], id).toBeDefined();
+        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('knight')].sort());
+        expect(Object.keys(hero.skills)).toHaveLength(13);
+        expect(hero.bankedSkills || {}).toEqual({});
     });
 
     it('a never-held skill arrives at level 1, not from the bank', () => {
@@ -219,36 +217,99 @@ describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
         const result = PromotionSystem.promote(hero.id, 'fighter');
 
         // Combat and the shared specialist are both new to a Recruit.
-        expect(result.gained.length).toBeGreaterThan(0);
+        expect(result.gained).toHaveLength(2);
         for (const id of result.gained) expect(hero.skills[id].level).toBe(1);
     });
 
-    it('banked skills count toward a later gate — the hero has not forgotten', () => {
+    it('restores foundation skills an older save had banked, on the next promotion', () => {
+        // Before TL-7 the first promotion banked five foundation skills. A hero
+        // like that gets them back, at their stored level, when promoted again.
         const hero = makeQualified('fighter');
-        const dropped = Object.keys(hero.skills)
-            .filter(id => !getJobSkills('fighter').includes(id));
-        for (const id of dropped) hero.skills[id].level = 40;
-
         PromotionSystem.promote(hero.id, 'fighter');
+        hero.bankedSkills = { fishing: { level: 19, xp: 777 } };
+        delete hero.skills.fishing;
 
-        for (const id of dropped) {
-            expect(PromotionSystem.knownLevel(hero, id), `${id} still known`).toBe(40);
-        }
+        qualify(hero, 'knight');
+        const result = PromotionSystem.promote(hero.id, 'knight');
+
+        expect(result.restored).toContain('fishing');
+        expect(hero.skills.fishing).toEqual({ level: 19, xp: 777 });
+        expect(hero.bankedSkills.fishing).toBeUndefined();
+    });
+
+    it('restores them on load too (rehydration), and leaves banked non-foundation skills alone', () => {
+        const hero = generateHero({ jobId: 'fighter' });
+        delete hero.skills.farming;
+        hero.skills.cooking = { level: 5, xp: 50 };
+        hero.bankedSkills = {
+            farming: { level: 14, xp: 400 },
+            cooking: { level: 99, xp: 9 },     // a held copy wins
+            armory: { level: 8, xp: 80 }
+        };
+
+        const restored = restoreBankedFoundation(hero);
+
+        expect(restored).toEqual(['farming']);
+        expect(hero.skills.farming).toEqual({ level: 14, xp: 400 });
+        expect(hero.skills.cooking.level).toBe(5);
+        expect(hero.bankedSkills).toEqual({ armory: { level: 8, xp: 80 } });
+    });
+});
+
+describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
+    // ⚠️ Rewritten for TL-7 (slice 1.2). These used to bank the foundation
+    // skills Recruit → Fighter dropped; promotion no longer drops any. Banking
+    // now only happens when re-training ACROSS branches, which swaps
+    // non-foundation skills — so that is what these exercise.
+
+    /** A Fighter, re-trained to Cleric: banks Leadership, gains Faith. */
+    function fighterThenCleric({ leadership = 17 } = {}) {
+        const hero = makeQualified('fighter');
+        PromotionSystem.promote(hero.id, 'fighter');
+        hero.skills.leadership.level = leadership;
+        qualify(hero, 'cleric');
+        const result = PromotionSystem.promote(hero.id, 'cleric');
+        return { hero, result };
+    }
+
+    it('banks a removed skill AT ITS LEVEL, not at zero', () => {
+        const { hero, result } = fighterThenCleric({ leadership: 17 });
+
+        expect(result.success).toBe(true);
+        expect(result.banked).toEqual(['leadership']);
+        expect(hero.skills.leadership).toBeUndefined();
+        expect(hero.bankedSkills.leadership.level).toBe(17);
+        // And every foundation skill is still held.
+        for (const id of FOUNDATION_SKILL_IDS) expect(hero.skills[id], id).toBeDefined();
+    });
+
+    it('restores a banked skill intact when a later job wants it again', () => {
+        const { hero } = fighterThenCleric({ leadership: 22 });
+
+        // Back to Fighter, which wants Leadership again.
+        qualify(hero, 'fighter');
+        const result = PromotionSystem.promote(hero.id, 'fighter');
+
+        expect(result.success).toBe(true);
+        expect(result.restored).toContain('leadership');
+        expect(hero.skills.leadership.level, 'restored at its banked level, not 1').toBe(22);
+        expect(hero.bankedSkills.leadership, 'and taken back out of the bank').toBeUndefined();
+    });
+
+    it('banked skills count toward a later gate — the hero has not forgotten', () => {
+        const { hero } = fighterThenCleric({ leadership: 40 });
+        expect(PromotionSystem.knownLevel(hero, 'leadership')).toBe(40);
     });
 
     it('survives a save/load round trip', () => {
-        const hero = makeQualified('fighter');
-        const dropped = Object.keys(hero.skills)
-            .filter(id => !getJobSkills('fighter').includes(id));
-        for (const id of dropped) hero.skills[id].level = 13;
-        PromotionSystem.promote(hero.id, 'fighter');
+        const { hero } = fighterThenCleric({ leadership: 13 });
 
         // The bank is ordinary hero state, so it rides along with the save.
         const revived = JSON.parse(JSON.stringify(GameState.state.heroes));
         const reloaded = revived.find(h => h.id === hero.id);
 
-        expect(reloaded.jobId).toBe('fighter');
-        for (const id of dropped) expect(reloaded.bankedSkills[id].level).toBe(13);
+        expect(reloaded.jobId).toBe('cleric');
+        expect(reloaded.bankedSkills.leadership.level).toBe(13);
     });
 });
 
@@ -270,7 +331,7 @@ describe('Re-training is the same act as promoting (D-248)', () => {
 
         expect(result.success).toBe(true);
         expect(hero.jobId).toBe('warlord');
-        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSkills('warlord')].sort());
+        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('warlord')].sort());
         expect(hero.skills.armory, 'the old signature is gone').toBeUndefined();
         expect(hero.bankedSkills.armory, 'but banked, not destroyed').toBeDefined();
     });
@@ -286,7 +347,7 @@ describe('Re-training is the same act as promoting (D-248)', () => {
         PromotionSystem.promote(hero.id, 'knight');
 
         expect(hero.jobId).toBe('knight');
-        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSkills('knight')].sort());
+        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('knight')].sort());
     });
 });
 
@@ -320,10 +381,10 @@ describe('The UI is told, so the Dock actually redraws', () => {
         expect(seen[0]).toMatchObject({
             heroId: hero.id, fromJobId: STARTING_JOB_ID, toJobId: 'fighter'
         });
-        // Slice 1.1: a Recruit holds nine and a Fighter keeps four, so five are
-        // banked (it was two when the Recruit held six). TL-6 leaves the Fighter
-        // sheet alone until the promotion overhaul.
-        expect(seen[0].banked).toHaveLength(5);
+        // ⚠️ TL-7 (slice 1.2): nothing is banked any more — a Fighter keeps all
+        // nine foundation skills and gains its combat and shared skill. (Slice
+        // 1.1 asserted five banked here.)
+        expect(seen[0].banked).toEqual([]);
         expect(seen[0].gained).toHaveLength(2);
     });
 
@@ -338,8 +399,9 @@ describe('The UI is told, so the Dock actually redraws', () => {
         const after = project();
 
         expect(after).not.toBe(before);
-        expect(after.split(',')).toHaveLength(6);
-        for (const id of getJobSkills('fighter')) expect(after).toContain(`${id}:`);
+        // TL-7: nine foundation + combat + shared.
+        expect(after.split(',')).toHaveLength(11);
+        for (const id of getJobSheet('fighter')) expect(after).toContain(`${id}:`);
     });
 });
 
@@ -348,25 +410,34 @@ describe('Preview shows the trade before the player commits', () => {
         const hero = makeQualified('fighter');
         const preview = PromotionSystem.previewPromotion(hero.id, 'fighter');
 
-        // Slice 1.1: nine held, four kept, so five are lost (banked). It was two
-        // when the Recruit held six; TL-6 leaves the Fighter sheet alone.
-        expect(preview.losing.length).toBe(5);
-        expect(preview.arriving.length).toBe(2);    // and adds exactly two
-        expect(preview.keeping.length).toBe(4);
+        // ⚠️ TL-7 (slice 1.2): nothing lost, all nine kept, two arriving.
+        // (Slice 1.1 asserted five lost and four kept.)
+        expect(preview.losing).toEqual([]);
+        expect(preview.arriving.length).toBe(2);
+        expect(preview.keeping.length).toBe(FOUNDATION_SKILL_IDS.length);
         expect(preview.ok).toBe(true);
-        for (const l of preview.losing) expect(l.level).toBeGreaterThan(0);
+    });
+
+    it('names a re-training swap: the old branch skill is lost (banked)', () => {
+        const hero = makeQualified('fighter');
+        PromotionSystem.promote(hero.id, 'fighter');
+        hero.skills.leadership.level = 12;
+
+        const preview = PromotionSystem.previewPromotion(hero.id, 'cleric');
+
+        expect(preview.losing).toEqual([{ skillId: 'leadership', name: expect.any(String), level: 12 }]);
+        expect(preview.arriving.map(a => a.skillId)).toEqual(['faith']);
     });
 
     it('marks an arriving skill as restored, with its real level', () => {
         const hero = makeQualified('fighter');
-        const dropped = Object.keys(hero.skills)
-            .filter(id => !getJobSkills('fighter').includes(id));
-        const revived = dropped.find(id => getJobSkills('cleric').includes(id));
-        hero.skills[revived].level = 31;
         PromotionSystem.promote(hero.id, 'fighter');
+        hero.skills.leadership.level = 31;
+        qualify(hero, 'cleric');
+        PromotionSystem.promote(hero.id, 'cleric');   // banks Leadership at 31
 
-        const preview = PromotionSystem.previewPromotion(hero.id, 'cleric');
-        const entry = preview.arriving.find(a => a.skillId === revived);
+        const preview = PromotionSystem.previewPromotion(hero.id, 'fighter');
+        const entry = preview.arriving.find(a => a.skillId === 'leadership');
 
         expect(entry.restored).toBe(true);
         expect(entry.level).toBe(31);

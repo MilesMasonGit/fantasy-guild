@@ -3,7 +3,7 @@
 
 import { nanoid } from 'nanoid';
 import { FOUNDATION_SKILL_IDS } from '../../config/registries/skillRegistry.js';
-import { STARTING_JOB_ID, getJobSkills } from '../../config/registries/jobRegistry.js';
+import { STARTING_JOB_ID, getJobSheet } from '../../config/registries/jobRegistry.js';
 // ⚠️ `nameRegistry` reaches the game only through this import and the one in
 // `getRandomName`'s other call site below. It looks like an orphan and has been
 // misjudged as dead before — it names every hero and villager in the game.
@@ -74,7 +74,7 @@ export function generateHero(options = {}) {
     // changing what a Recruit holds is a `jobRegistry.js` edit and nothing else.
     const jobId = options.jobId || STARTING_JOB_ID;
     const skills = {};
-    for (const skillId of getJobSkills(jobId)) {
+    for (const skillId of getJobSheet(jobId)) {
         skills[skillId] = {
             xp: xpForLevel(1),
             level: 1

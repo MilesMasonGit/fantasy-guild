@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     JOB_TIERS, STARTING_JOB_ID,
     getAllJobIds, getJob, getJobsByTier, getPromotionsFrom,
-    getJobSkills, getJobSkillsByLayer, getJobCombatSkill, getJobSignatureSkill,
+    getJobSkills, getJobSheet, getJobSkillsByLayer, getJobCombatSkill, getJobSignatureSkill,
     jobCanFight, grantsOf, removesOf, getPromotionGateSkills, getJobLineage,
     getPromotionCost
 } from '../config/registries/jobRegistry.js';
@@ -59,10 +59,10 @@ function advancedHolding(skillId) {
 }
 
 describe('Every job sheet is well-formed', () => {
-    it.each([...BASE, ...ADVANCED])('%s holds exactly HERO_SKILL_SLOTS skills', (jobId) => {
-        // Width never changes between promoted tiers. Promotion swaps contents —
-        // that is the whole reason a promotion reads as becoming someone else
-        // rather than accumulating a bigger sheet.
+    it.each([...BASE, ...ADVANCED])('%s lists exactly HERO_SKILL_SLOTS skills', (jobId) => {
+        // ⚠️ TL-7: this is the width of the authored LIST (what the gate and
+        // the layer-shape rules read), not of the held sheet — a promoted hero
+        // also keeps every foundation skill (`getJobSheet`, tested below).
         expect(getJobSkills(jobId)).toHaveLength(HERO_SKILL_SLOTS);
     });
 
@@ -122,18 +122,37 @@ describe('Each tier has the shape the design specifies', () => {
     });
 });
 
-describe('A promotion narrows — it never hands back what a tier dropped', () => {
-    it.each(BASE)('%s removes every foundation skill but four, and adds exactly 2', (jobId) => {
-        // Slice 1.1: the Recruit holds nine and a base class keeps four, so the
-        // first promotion banks five (it banked two when the Recruit held six).
-        // TL-6 leaves the promoted sheets alone until the promotion overhaul.
-        expect(removesOf(jobId), `${jobId} removals`).toHaveLength(RECRUIT_SKILL_SLOTS - 4);
+describe('A promotion adds — it never removes a starting skill (TL-7)', () => {
+    // ⚠️ Updated for Token Lifecycle slice 1.2 (TL-7, owner 2026-09-25). These
+    // used to assert that promotion NARROWS the sheet (base class: remove five
+    // foundation skills; advanced: remove two). The owner reversed that:
+    // promotion keeps every foundation skill, so down the tree nothing is
+    // removed and each promotion only adds its two new skills.
+    it.each(BASE)('%s removes nothing and adds exactly 2 (its combat and shared skill)', (jobId) => {
+        expect(removesOf(jobId), `${jobId} removals`).toEqual([]);
         expect(grantsOf(jobId), `${jobId} grants`).toHaveLength(2);
+        expect(grantsOf(jobId)).toContain(getJobCombatSkill(jobId));
     });
 
-    it.each(ADVANCED)('%s removes exactly 2 and adds exactly 2', (jobId) => {
-        expect(removesOf(jobId), `${jobId} removals`).toHaveLength(2);
-        expect(grantsOf(jobId), `${jobId} grants`).toHaveLength(2);
+    it.each(ADVANCED)('%s removes nothing and adds exactly 2 non-foundation skills', (jobId) => {
+        // The Warlord adds only one: its listed `construction` is a foundation
+        // skill since slice 1.1, so it is already held (FORMER_SIGNATURE).
+        expect(removesOf(jobId), `${jobId} removals`).toEqual([]);
+        expect(grantsOf(jobId), `${jobId} grants`).toHaveLength(FORMER_SIGNATURE[jobId] ? 1 : 2);
+        for (const id of grantsOf(jobId)) {
+            expect(SKILLS[id].layer, `${jobId} grants foundation "${id}"`).not.toBe(SKILL_LAYERS.FOUNDATION);
+        }
+    });
+
+    it.each(getAllJobIds())('%s holds every foundation skill (getJobSheet)', (jobId) => {
+        const sheet = getJobSheet(jobId);
+        for (const id of FOUNDATION_SKILL_IDS) expect(sheet, `${jobId} lacks ${id}`).toContain(id);
+        expect(new Set(sheet).size, `${jobId} sheet has a duplicate`).toBe(sheet.length);
+        // 9 on the Recruit, 11 on a base class, 13 on an advanced job (the
+        // Warlord 12, see FORMER_SIGNATURE).
+        const expected = RECRUIT_SKILL_SLOTS + getJobSkills(jobId).filter(
+            id => SKILLS[id].layer !== SKILL_LAYERS.FOUNDATION).length;
+        expect(sheet).toHaveLength(expected);
     });
 
     it.each(ADVANCED)("%s's foundation pair is a subset of its parent's four", (jobId) => {
@@ -312,14 +331,13 @@ describe('Hero generation reads the tree, rather than repeating it', () => {
     it.each(getAllJobIds())('generating straight into %s produces that sheet', (jobId) => {
         // Phase 5 promotes heroes properly; this proves the data is right and
         // the wiring honours it, without waiting for that machinery.
+        // ⚠️ TL-7: the held sheet is `getJobSheet` (every foundation skill plus
+        // the job's own), no longer the six-wide listed `skills`.
         const hero = generateHero({ jobId });
 
         expect(hero.jobId).toBe(jobId);
-        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSkills(jobId)].sort());
-        // A Recruit is wider than a promoted sheet since slice 1.1.
-        expect(Object.keys(hero.skills)).toHaveLength(
-            jobId === STARTING_JOB_ID ? RECRUIT_SKILL_SLOTS : HERO_SKILL_SLOTS
-        );
+        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet(jobId)].sort());
+        expect(Object.keys(hero.skills).length).toBeGreaterThanOrEqual(RECRUIT_SKILL_SLOTS);
     });
 
     it('a new Recruit holds all nine foundation skills at level 1 (slice 1.1)', () => {

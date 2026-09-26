@@ -11,7 +11,7 @@ import * as PromotionSystem from '../systems/hero/PromotionSystem.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
-import { getPromotionCost, getPromotionGateSkills, getJobSkills } from '../config/registries/jobRegistry.js';
+import { getPromotionCost, getPromotionGateSkills, getJobSkills, getJobSheet } from '../config/registries/jobRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { chargeDeltaOf } from '../config/registries/chargeMomentRegistry.js';
 
@@ -292,7 +292,8 @@ describe('Accepting is the only thing that costs anything', () => {
 
         expect(result.success).toBe(true);
         expect(hero.jobId).toBe('fighter');
-        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSkills('fighter')].sort());
+        // TL-7: the held sheet is every foundation skill plus the Fighter's own.
+        expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('fighter')].sort());
     });
 
     it('spends the Token — that is the whole price', () => {

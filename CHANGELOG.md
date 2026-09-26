@@ -22,8 +22,9 @@ project's first tagged baseline — everything before it was untagged developmen
   Foundations, shop prices and the Guild Hall trickle, and recipes can be marked as buildable on
   Foundation kinds. Sync to Game now carries all of them.
 - **Recruits start with nine skills.** Construction (now a starting skill), and the new Farming and
-  Explore join Mining, Logging, Fishing, Smithing, Crafting and Cooking. Promotion still narrows the
-  sheet to six, so it banks five skills for now (their levels are kept).
+  Explore join Mining, Logging, Fishing, Smithing, Crafting and Cooking. 
+- **Promotion keeps every starting skill.** A promoted hero keeps all nine starting skills and adds
+  the class's skills on top: 11 after the first promotion, 13 after the second.
 - **Guild Hall upgrades cost items, not gold.** Each rank asks for Oak Wood (a placeholder: rank n
   costs 10 x n). The first recruit and the first Wishing Well rank stay free. The upgrade panel shows
   the price and how much the Bank holds.
