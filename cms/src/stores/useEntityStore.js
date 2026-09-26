@@ -69,7 +69,8 @@ import { seedSimIntent } from './simIntentNormaliser';
 //
 // An item id can appear in: a Token's production inputs/outputs, a Token's
 // pooled recipes, a Map's material cost, and a Map's pool (as an `item` entry).
-// A token id can appear in: a Map's pool (as a `token` entry).
+// A token id can appear in: a Map's pool (as a `token` entry), a `tokenId`
+// output on a recipe or a Token's config, and a Token's lifecycle blocks.
 // A map id can appear in: a Token's `mapId` (Map Tokens point at the catalogue).
 
 /**
@@ -309,6 +310,53 @@ function renameTokenInLifecycleBlocks(token, oldId, newId) {
     return touched ? next : token;
 }
 
+/** Rewrite every `tokenId` in a list of output entries (a Token output, P5). */
+function remapTokenOutputs(list, oldId, newId, mark) {
+    if (!Array.isArray(list) || !list.some((e) => e?.tokenId === oldId)) return list;
+    mark();
+    return list.map((e) => (e?.tokenId === oldId ? { ...e, tokenId: newId } : e));
+}
+
+/**
+ * Repoint `tokenId` outputs after a Token rename (Token Lifecycle slice 4.3).
+ *
+ * ⚠️ A recipe that builds (§3.1) outputs a Token by `tokenId`, and so can a
+ * Token's own config and a Token's legacy private recipes. Before 4.3 a Token
+ * rename walked none of them, so renaming the Furnace left "Build Furnace"
+ * pointing at a dead id. Returns the inputs untouched when nothing matched.
+ */
+function renameTokenInRecipePools(pools, oldId, newId) {
+    let touched = false;
+    const mark = () => { touched = true; };
+    const next = Object.fromEntries(
+        Object.entries(pools || {}).map(([skillId, recipes]) => [
+            skillId,
+            (recipes || []).map((recipe) => {
+                const outputs = remapTokenOutputs(recipe?.outputs, oldId, newId, mark);
+                return outputs === recipe?.outputs ? recipe : { ...recipe, outputs };
+            }),
+        ])
+    );
+    return touched ? next : pools;
+}
+
+function renameTokenInOutputs(token, oldId, newId) {
+    let touched = false;
+    const mark = () => { touched = true; };
+    const next = { ...token };
+    if (next.config) {
+        const outputs = remapTokenOutputs(next.config.outputs, oldId, newId, mark);
+        if (outputs !== next.config.outputs) next.config = { ...next.config, outputs };
+    }
+    if (Array.isArray(next.recipes)) {
+        next.recipes = next.recipes.map((recipe) => {
+            const outputs = remapTokenOutputs(recipe?.outputs, oldId, newId, mark);
+            return outputs === recipe?.outputs ? recipe : { ...recipe, outputs };
+        });
+    }
+    return touched ? next : token;
+}
+
 function renameInRecipePools(pools, oldId, newId) {
     let touched = false;
     const mark = () => { touched = true; };
@@ -393,9 +441,10 @@ function performRename(state, oldId, newId, entityType) {
             patch.tokens = Object.fromEntries(
                 Object.entries(renamed).map(([id, token]) => [
                     id,
-                    renameTokenInLifecycleBlocks(token, oldId, newId),
+                    renameTokenInOutputs(renameTokenInLifecycleBlocks(token, oldId, newId), oldId, newId),
                 ])
             );
+            patch.recipePools = renameTokenInRecipePools(state.recipePools, oldId, newId);
         }
         patch.maps = Object.fromEntries(
             Object.entries(state.maps || {}).map(([id, map]) => [

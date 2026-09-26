@@ -123,9 +123,38 @@ export function listRecipes() {
  * authored yet behaves like a station with no valid context: it makes nothing.
  */
 export function getSkillRecipePool(skillId) {
+    return skillRecipes(skillId).filter(r => !buildsOnFoundation(r));
+}
+
+/**
+ * Every recipe of a skill, ordinary and building alike, honouring the fixture
+ * takeover below. The two public pools are filters over this.
+ */
+function skillRecipes(skillId) {
     const pool = RECIPES.filter(r => r.skill === skillId);
     if (!FIXTURE_SKILLS.has(skillId)) return pool;
     return pool.filter(r => FIXTURE_RECIPE_IDS.has(r.id));
+}
+
+/**
+ * Whether a recipe builds on a Foundation (Token Lifecycle roadmap v1 §3.1,
+ * DP-6): it carries a non-empty `foundationKinds`. Such a recipe belongs to the
+ * Foundation pool only and never appears on an ordinary station.
+ */
+export function buildsOnFoundation(recipe) {
+    return Array.isArray(recipe?.foundationKinds) && recipe.foundationKinds.length > 0;
+}
+
+/**
+ * A Foundation's recipe pool (§3.1): the recipes of its `foundation.skill`
+ * whose `foundationKinds` include its `foundation.kind`. A Token without a
+ * `foundation` block has none. Building in place (the Foundation becoming the
+ * output Token) is slice 6.1, not here.
+ */
+export function recipesForFoundation(def) {
+    const { kind, skill } = def?.foundation || {};
+    if (!kind || !skill) return [];
+    return skillRecipes(skill).filter(r => buildsOnFoundation(r) && r.foundationKinds.includes(kind));
 }
 
 /** Every skill that has at least one recipe. */
@@ -134,11 +163,15 @@ export function listPooledSkillIds() {
 }
 
 /**
- * The recipes a Token can actually attempt: its `Works as` skill's pool.
+ * The recipes a Token can actually attempt: its `Works as` skill's pool, or,
+ * for a Token with a `foundation` block, its Foundation pool (§3.1). The
+ * Foundation block wins: a Foundation's pool is the building recipes of its
+ * skill, never that skill's ordinary ones.
  *
- * A Token with no Station statement has no recipes — a Forest is not a station.
+ * A Token with neither has no recipes — a Forest is not a station.
  */
 export function recipesForToken(def) {
+    if (def?.foundation) return recipesForFoundation(def);
     const skill = stationSkillOf(def);
     return skill ? getSkillRecipePool(skill) : [];
 }
