@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Processing and academies.** Wood and Stone Foundations in the Shop are built by Construction
+  into a Workbench (Charcoal, Torches), Cooking Pot, Furnace (Copper Ingots) or a Fighter's Academy.
+  A Copper Anvil bought with ingots lets the Furnace smith Copper Nails and wears out as it is used.
+  Cooking burns Charcoal as fuel.
 - **Farming.** Buy Farmland at the Shop and have a Farming hero plant it as a Wheat Field or an Apple
   Orchard. Fields grow Wheat that ripens and is harvested three times; Orchards grow Apple Trees.
   Each new plant costs one seed, and harvests sometimes return seeds. The Guild Hall also trickles
