@@ -171,7 +171,8 @@ describe('advanceTime', () => {
 });
 
 describe('getSpawnerKindCounts', () => {
-    it('is an empty list until the Spawner slice fills it', () => {
+    // Rows with spawners on the mat are pinned in SpawnerSystem.test.js.
+    it('is an empty list when no spawner is on the mat', () => {
         expect(getSpawnerKindCounts()).toEqual([]);
     });
 });

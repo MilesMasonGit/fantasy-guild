@@ -3,6 +3,9 @@
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
+// ⚠️ A cycle: SpawnerSystem imports this module for `pickWeighted`. Both sides
+// touch the other only inside functions, so either may load first.
+import * as SpawnerSystem from './SpawnerSystem.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -17,8 +20,8 @@ import { logger } from '../../utils/Logger.js';
  *   (a Coast becomes a Shrimp Coast for a while). The timing is read from the
  *   `turnedFrom` type, so it is authored in one place.
  *
- * Spawner intervals (slice 3.3) and the Guild Hall trickle (3.4) plug into the
- * same {@link HANDLERS} table.
+ * Spawner intervals (slice 3.3) are one more row of the {@link HANDLERS}
+ * table; the attempt itself lives in `SpawnerSystem.js`.
  *
  * ## State (saved, on the instance)
  * `instance.clocks = { growMs, turnMs, … }` — elapsed ms, created only on a
@@ -80,7 +83,9 @@ function turnBackAfter(instance) {
  * * `clock` — the key in `instance.clocks` it counts on;
  * * `applies(instance, def)` — whether this Token runs it;
  * * `dueMs(instance, def)` — when it fires;
- * * `fire(instance, def, random)` — what happens. Returns the instance that
+ * * `fire(instance, def, random, ctx)` — what happens. `ctx` is
+ *   `{ overMs, advance }`: how long ago it fell due, and {@link advance}, so a
+ *   Token a handler creates can live the rest of the tick. Returns the instance that
  *   now stands there (a new one after a transform, or the same one for a
  *   handler that acts without replacing), or null when it could not happen
  *   (the clock is held full and retried next tick).
@@ -116,6 +121,15 @@ export const HANDLERS = [
                 extra: { turnedFrom: instance.typeId }
             });
         }
+    },
+    {
+        // A spawner's interval (slice 3.3). Acts without replacing the Token:
+        // a spawn returns the spawner itself; a blocked attempt returns null.
+        id: 'spawner',
+        clock: 'spawnMs',
+        applies: (instance, def) => !instance.turnedFrom && SpawnerSystem.isSpawner(def),
+        dueMs: (instance, def) => SpawnerSystem.intervalOf(def),
+        fire: (instance, def, random, ctx) => SpawnerSystem.attemptSpawn(instance, def, random, ctx)
     }
 ];
 
@@ -155,7 +169,7 @@ export function advance(instance, delta, random = Math.random) {
         }
         if (!due) return;
 
-        const next = due.h.fire(current, def, random);
+        const next = due.h.fire(current, def, random, { overMs: due.over, advance });
         if (!next) {
             // Nowhere to stand (or nothing to become): held full, retried next tick.
             clocks[due.h.clock] = due.at;

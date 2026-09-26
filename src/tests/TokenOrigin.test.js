@@ -205,11 +205,9 @@ describe('⭐ a spawn pushes spawned Tokens, never placed ones (SP-68)', () => {
      * `nearest_free` with no nudge: the free-spot search fails on the bearer's
      * own point, so the spawn pushes from just beside the bearer, into a ring.
      *
-     * ⚠️ The bearer stands at (400.4, 400.4) on purpose. `besideBearer` rounds its
-     * point, and from a whole-number bearer that rounding lands the newcomer a
-     * fraction INSIDE the bearer's gap — two fixed bodies overlapping, so the
-     * push can never solve and always falls back to free space. From 400.4 it
-     * rounds outward and the push path really runs. (Pre-existing; reported.)
+     * The bearer stands at (400.4, 400.4) in two of these and on whole numbers
+     * in the third: `besideBearer` used to round its point a fraction INSIDE a
+     * whole-number bearer's gap, so the push never ran (fixed in slice 3.3).
      */
     function ringAround(bearer, make) {
         const ring = [];
@@ -231,6 +229,25 @@ describe('⭐ a spawn pushes spawned Tokens, never placed ones (SP-68)', () => {
         expect(result).not.toBeNull();
         expect(ring.map(t => ({ x: t.x, y: t.y }))).not.toEqual(before);
         expect({ x: bearer.x, y: bearer.y }).toEqual({ x: 400.4, y: 400.4 });
+    });
+
+    it('⭐ from a bearer on whole-number coordinates it still pushes, landing just beside the bearer', () => {
+        setMatTuning('nudgeReach', 0);
+        const bearer = placeAt('fixture_producer', 400, 400);
+        const ring = ringAround(bearer, placeSpawned);
+        const before = ring.map(t => ({ x: t.x, y: t.y }));
+
+        const result = EffectActions.spawn(spawnStatement('fixture_passive', PLACEMENT.NEAREST_FREE), { self: bearer.id });
+
+        expect(result).not.toBeNull();
+        const gap = MatPlacement.minGap('fixture_passive', 'fixture_producer');
+        const d = Math.hypot(result.x - 400, result.y - 400);
+        // Beside the bearer — not the free-space fallback up to 640 u away...
+        expect(d).toBeGreaterThanOrEqual(gap - 1e-3);
+        expect(d).toBeLessThanOrEqual(gap + 2);
+        // ...because the ring was pushed, and the bearer was not.
+        expect(ring.map(t => ({ x: t.x, y: t.y }))).not.toEqual(before);
+        expect({ x: bearer.x, y: bearer.y }).toEqual({ x: 400, y: 400 });
     });
 
     it('nearest_free never pushes a ring of placed Tokens', () => {
