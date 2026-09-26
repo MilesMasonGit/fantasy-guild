@@ -22,6 +22,8 @@ import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
+import * as Foundations from './Foundations.js';
+import { workConfigOf } from './StationRecipe.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
@@ -160,9 +162,21 @@ function setAlert(instance, reason) {
  * Every reader is asked by the Token's instance id, and every event names it by
  * `instanceId` (Free Playmat 1.6b). There are no tiles.
  */
-function completeCycle(instance, def, io, heroId) {
-    const config = def.config;
+function completeCycle(instance, def, io, heroId, config = def.config) {
     const id = instance.id;
+
+    /**
+     * Building in place (Token Lifecycle 6.1, DP-6): a Foundation's cycle ends
+     * with it BECOMING the Token its recipe outputs. Room is checked before
+     * anything is paid: with nowhere legal to stand, the Foundation stays, its
+     * progress stays full and nothing is spent, so the retry on the next tick
+     * cannot charge twice.
+     */
+    const buildTypeId = Foundations.isFoundation(def) ? Foundations.buildTargetOf(io) : null;
+    if (buildTypeId && !Foundations.hasRoomToBuild(instance, buildTypeId)) {
+        setAlert(instance, ALERT.NO_ROOM);
+        return;
+    }
 
     // INPUT_COST, widened to read the Token's neighbours (G-5). A Tool Rack
     // beside a Forge makes it cheaper to run; before this, only the Token's own
@@ -246,7 +260,8 @@ function completeCycle(instance, def, io, heroId) {
     // listener that says it did.
     const produced = [];
 
-    for (const output of failed ? [] : (io.outputs || [])) {
+    // A build makes its Token by becoming it (below), never as a sprite.
+    for (const output of (failed || buildTypeId) ? [] : (io.outputs || [])) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
@@ -407,6 +422,18 @@ function completeCycle(instance, def, io, heroId) {
     // Cheap tally, used by the Token-type statistics surface.
     const counts = GameState.state?.collection?.cardUseCounts;
     if (counts) counts[instance.typeId] = (counts[instance.typeId] || 0) + 1;
+
+    // Last, so every reader above saw the Foundation that did the work. Its
+    // hero lets go on the next pass and moves on (SP-52). A failed build has
+    // spent its inputs and stays a Foundation, like any failed cycle.
+    if (buildTypeId && !failed) {
+        const built = Foundations.buildInPlace(instance, buildTypeId);
+        if (built) {
+            EventBus.publish('state_changed');
+        } else {
+            logger.warn('BoardRunner', `${def.name}: had room to build ${buildTypeId}, then did not`);
+        }
+    }
 }
 
 /**
@@ -498,7 +525,9 @@ export function tick(delta) {
             continue;
         }
 
-        const config = def?.config;
+        // A Foundation authors no `config`; its skill and the selected
+        // recipe's level stand in for one (Token Lifecycle 6.1).
+        const config = workConfigOf(def, instance);
 
         // Inert by design — nothing to advance.
         if (!config) continue;
@@ -558,6 +587,14 @@ export function tick(delta) {
             continue;
         }
 
+        if (check.reason === ALERT.CHOOSE_BUILD) {
+            // A Foundation with nothing picked (Token Lifecycle 6.1). Flags do
+            // not claim one, so this is only reached by a hero already on it
+            // when the pick was cleared. It waits, saying so.
+            setAlert(instance, ALERT.CHOOSE_BUILD);
+            continue;
+        }
+
         if (check.reason === ALERT.INPUTS) {
             // Waits, keeping whatever progress it had. There are no partial
             // cycles (D-127) — it does not run slower, it runs later.
@@ -594,6 +631,15 @@ export function tick(delta) {
                 name: def?.name || tokenName(instance.typeId) || instance.typeId,
                 message: `Out of charges: ${def?.name || tokenName(instance.typeId) || instance.typeId}`
             });
+            continue;
+        }
+
+        // A finished build still waiting for room (Token Lifecycle 6.1) holds
+        // its full progress and its mark until the room appears, rather than
+        // clearing the mark and raising it again every tick.
+        if (instance.alert === ALERT.NO_ROOM && Foundations.isFoundation(def)
+            && Foundations.buildTargetOf(io)
+            && !Foundations.hasRoomToBuild(instance, Foundations.buildTargetOf(io))) {
             continue;
         }
 
@@ -639,7 +685,7 @@ export function tick(delta) {
             ) / heroSpeedFactor(heroId, config.skill));
 
         if (instance.cycleElapsedMs >= cycleTime) {
-            completeCycle(instance, def, io, heroId);
+            completeCycle(instance, def, io, heroId, config);
         } else if (publishProgress) {
             // Ref-based UI updates only — this bypasses React entirely, because
             // 48 tiles re-rendering three times a second is the cascade the

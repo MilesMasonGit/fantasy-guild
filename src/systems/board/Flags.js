@@ -10,6 +10,7 @@ import * as BoardState from './BoardState.js';
 import * as HeroMotion from './HeroMotion.js';
 import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
+import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import * as Managers from './Managers.js';
@@ -182,7 +183,9 @@ function announceMoved(heroId) {
  * out — which is why it can be this cheap on the chooser's hot path.
  */
 function hasWorkSkill(def) {
-    const skill = def?.config?.skill;
+    // `workConfigOf`: a Foundation is worked with its `foundation.skill`
+    // though it authors no `config` (Token Lifecycle 6.1).
+    const skill = workConfigOf(def)?.skill;
     return typeof skill === 'string' && skill.trim() !== '';
 }
 
@@ -198,7 +201,7 @@ function hasWorkSkill(def) {
 function kindOf(instance, def) {
     if (BoardCombat.isEnemyToken(instance)) return 'enemy';
     if (BoardPromotion.isPromotionToken(instance)) return 'promotion';
-    if (!def?.config || def.requiresHero === false) return null;
+    if (!workConfigOf(def) || def.requiresHero === false) return null;
     if (instance.typeId === 'token_guild_hall' || def.isGuildHall) return 'hall';
     return 'work';
 }
@@ -240,7 +243,7 @@ export function tokenAtPoint(point) {
  */
 function ruleIdOf(kind, def) {
     if (kind === 'enemy') return FlagRules.FIGHT;
-    if (kind === 'work' && hasWorkSkill(def)) return def.config.skill;
+    if (kind === 'work' && hasWorkSkill(def)) return workConfigOf(def).skill;
     return null;
 }
 
@@ -393,7 +396,8 @@ export function hasFixableSkip(instance) {
 const LEAVE_WHY = {
     [ALERT.INPUTS]: 'it is out of materials',
     [ALERT.CHARGES]: 'it has too few charges for a cycle',
-    [ALERT.NO_RECIPE]: 'its recipe is missing a Token beside it'
+    [ALERT.NO_RECIPE]: 'its recipe is missing a Token beside it',
+    [ALERT.CHOOSE_BUILD]: 'nothing has been chosen to build on it'
 };
 
 /**
@@ -482,7 +486,7 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
             if (reason) { skips.push({ instanceId, reason }); continue; }
         }
         if (c.kind === 'work') {
-            const reason = WorkCheck.whyCannotRun(c.instance.id, c.instance, heroId, c.def.config);
+            const reason = WorkCheck.whyCannotRun(c.instance.id, c.instance, heroId, workConfigOf(c.def, c.instance));
             if (reason) { skips.push({ instanceId, reason }); continue; }
         }
         return { pick: c, skips };
@@ -566,7 +570,7 @@ function keepOrRelease(r, heroId, dirty) {
             (kind === 'hall')
             || (kind === 'promotion' && !promotionRefusal(heroId, instance))
             || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
-            || (kind === 'work' && hasWorkSkill(def) && ruleAllows(heroId, def.config.skill))
+            || (kind === 'work' && hasWorkSkill(def) && ruleAllows(heroId, workConfigOf(def).skill))
         );
 
         if (!eligible) {

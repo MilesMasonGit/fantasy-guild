@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Building on Foundations.** A Foundation asks you to choose what to build; a hero with the right
+  skill and level then works it, and when the build finishes the Foundation becomes that Token on
+  the same spot. Recipes above the hero's level show as locked.
 - **The Shop.** The Cartographer is now the Shop: it sells Tokens for items, grouped by skill,
   shows what the Bank has against each price, and places a purchase beside the Guild Hall. It shows
   how many placed Tokens the mat holds against its cap. Maps are still sold below.

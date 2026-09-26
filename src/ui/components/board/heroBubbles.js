@@ -3,6 +3,7 @@
 import { ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as RecipeResolver from '../../../systems/board/RecipeResolver.js';
+import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 
@@ -46,6 +47,10 @@ export function blockedText(alert, { token, missing = null, skill = 'the right' 
             return items.length ? `I need ${joinNames(items.map(withArticle))} nearby to work ${token}.` : `${token} has nothing to make.`;
         case ALERT.CHARGES:
             return `${token} has too few charges left.`;
+        case ALERT.CHOOSE_BUILD:
+            return `Choose what to build on ${token}.`;
+        case ALERT.NO_ROOM:
+            return `There is no room to build on ${token}.`;
         case ALERT.ACCESS:
             return `My ${skill} level is too low to work ${token}.`;
         case ALERT.UNSKILLED:
@@ -67,7 +72,7 @@ export function blockedLineFor(tokenId, alert) {
     const missing = (alert === ALERT.INPUTS || alert === ALERT.NO_RECIPE)
         ? RecipeResolver.getMissingRequirements(token.id, token)
         : null;
-    const skillId = def?.config?.skill;
+    const skillId = workConfigOf(def)?.skill;
     return blockedText(alert, {
         token: def?.name || tokenName(token.typeId) || token.typeId,
         missing,

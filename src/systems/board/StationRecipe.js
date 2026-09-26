@@ -53,6 +53,10 @@ export function poolFor(def) {
  * recipes at all.
  */
 export function defaultRecipeFor(def) {
+    // A Foundation never picks for the player (Token Lifecycle 6.1, SP-49):
+    // what it becomes is the player's choice, and until they make it the
+    // Foundation says "Choose what to build" and nobody works it.
+    if (def?.foundation) return null;
     const pool = poolFor(def);
     if (!pool.length) return null;
     let best = pool[0];
@@ -138,3 +142,24 @@ export function ensureSelection(instance, def = null) {
 // `backfillBoardSelections` (the P2 save migration) was deleted in Free Playmat
 // slice 1.6a: it only carried pre-0.8.0 boards forward, and those saves are now
 // refused outright.
+
+/**
+ * The work config a hero is checked against on this Token: its own `config`,
+ * or, for a Foundation (Token Lifecycle 6.1, DP-6), one built from its
+ * `foundation` block. A Foundation authors no `config` of its own; the skill is
+ * `foundation.skill` (Construction, or Farming for farmland, SP-47) and the
+ * level is the **selected recipe's** `levelRequirement` (SP-49), so a hero
+ * below it cannot work it. With nothing selected the level is 0: the
+ * Foundation is stopped by "Choose what to build", not by a level.
+ *
+ * Returns null for a Token with neither, which is inert.
+ */
+export function workConfigOf(def, instance = null) {
+    if (!def?.foundation) return def?.config || null;
+    const recipe = instance ? selectedRecipe(instance, def) : null;
+    return {
+        ...(def.config || {}),
+        skill: def.foundation.skill,
+        skillRequired: Math.max(def.config?.skillRequired || 0, recipeLevel(recipe))
+    };
+}

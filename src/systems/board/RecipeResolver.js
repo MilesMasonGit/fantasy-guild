@@ -172,6 +172,9 @@ export function resolveRecipe(instanceId, instance) {
     // A station always has a selection (R-5). It can only be missing here on a
     // Token whose pool is empty, which the branch above has already returned on.
     const recipe = StationRecipe.ensureSelection(instance, def);
+    // A Foundation is never defaulted (Token Lifecycle 6.1): until the player
+    // picks what to build, it has nothing to run.
+    if (!recipe && def?.foundation) return { status: RECIPE.NONE, recipe: null, reason: 'choose_build' };
     if (!recipe) return { status: RECIPE.NONE, recipe: null, reason: 'no_pool' };
 
     const missing = unmetContext(instanceId, recipe);
@@ -199,13 +202,17 @@ export function resolveRecipe(instanceId, instance) {
  */
 export function effectiveIO(instanceId, instance) {
     const def = getTokenType(instance?.typeId);
-    const { status, recipe } = resolveRecipe(instanceId, instance);
+    const { status, recipe, reason } = resolveRecipe(instanceId, instance);
 
-    if (status !== RECIPE.OK) return { status, inputs: [], outputs: [] };
+    if (status !== RECIPE.OK) return { status, reason, inputs: [], outputs: [] };
 
     return {
         status,
-        recipe,
+        // A Foundation is not spent by building on it: it is replaced by what
+        // it builds (Token Lifecycle 6.1, DP-6). So its own per-cycle charge is
+        // zero, or a one-charge Foundation would be destroyed by the very cycle
+        // that builds on it.
+        recipe: def?.foundation && recipe ? { ...recipe, stationChargeCost: 0 } : recipe,
         inputs: recipe?.inputs ?? def?.config?.inputs ?? [],
         outputs: recipe?.outputs ?? def?.config?.outputs ?? [],
         cycleTimeMs: recipe?.durationMs ?? def?.config?.cycleTimeMs,
