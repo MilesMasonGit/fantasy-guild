@@ -21,7 +21,9 @@ import { logger } from '../../utils/Logger.js';
  *   `turnedFrom` type, so it is authored in one place.
  *
  * Spawner intervals (slice 3.3) are one more row of the {@link HANDLERS}
- * table; the attempt itself lives in `SpawnerSystem.js`.
+ * table; the attempt itself lives in `SpawnerSystem.js`. The trickle (3.4)
+ * keeps one clock per line, so {@link tick} runs it beside the table
+ * (`SpawnerSystem.advanceTrickle`).
  *
  * ## State (saved, on the instance)
  * `instance.clocks = { growMs, turnMs, … }` — elapsed ms, created only on a
@@ -201,6 +203,9 @@ export function tick(delta, random = Math.random) {
     for (const instance of BoardState.tokens()) {
         // A Token taken off the mat earlier in this same pass is skipped.
         if (!BoardState.getTokenById(instance.id)) continue;
+        // The trickle first (slice 3.4): it only grants items, and a Token
+        // that changes below starts its new self with fresh clocks.
+        SpawnerSystem.advanceTrickle(instance, delta);
         advance(instance, delta, random);
     }
 }
