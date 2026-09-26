@@ -1,20 +1,16 @@
 import { useMemo, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { CommerceSystem } from '../../../systems/economy/CommerceSystem.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
-import { SellControls } from './SellControls.jsx';
+import { Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
 
 import { EventBus } from '../../../systems/core/EventBus.js';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 
 /** Hard cap on bank tabs: 1 free + 15 via Guild Hall (max total 16). */
 const BANK_TAB_CAP = 16;
@@ -31,17 +27,16 @@ const BANK_TAB_CAP = 16;
  * An item with no override lives in the FIRST tab. Drag a tile onto a
  * tile to reorder, onto a tab to file it there, onto a hero to equip
  * (payload kind 'item' is unchanged). Search matches ALL tabs.
- * Item details + sell controls live in the shared InspectionPanel.
+ * Item details live in the shared InspectionPanel.
  */
 export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' }) => {
     const [activeTabId, setActiveTabId] = useState(null);
     const [typeFilter, setTypeFilter] = useState(null); // transient, from auto-open (§12.B)
     const [searchTerm, setSearchTerm] = useState('');
     // Select mode (owner design 2026-07-14): multi-select stacks to drag-move
-    // between tabs or bulk-sell behind a confirmation modal.
+    // between tabs.
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
-    const [sellModalOpen, setSellModalOpen] = useState(false);
 
     useEffect(() => {
         if (!filter) return;
@@ -187,7 +182,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
     const exitSelectMode = () => {
         setSelectMode(false);
         setSelectedIds(new Set());
-        setSellModalOpen(false);
     };
 
     // Live entries for the current selection (stale ids drop out naturally).
@@ -195,15 +189,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
         () => stocked.filter(e => selectedIds.has(e.id)),
         [stocked, selectedIds]
     );
-
-    const confirmSell = (quantities) => {
-        selectedEntries.forEach(e => {
-            const qty = quantities?.[e.id] ?? e.count;
-            CommerceSystem.sellItem(e.id, qty);
-        });
-        setSelectedIds(new Set());
-        setSellModalOpen(false);
-    };
 
     return (
         <div className="h-full min-h-0 flex flex-row">
@@ -219,7 +204,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 />
                 <button
                     onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
-                    title={selectMode ? 'Exit select mode' : 'Select multiple items to move or sell'}
+                    title={selectMode ? 'Exit select mode' : 'Select multiple items to move'}
                     className={cn(
                         'flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
                         selectMode
@@ -229,22 +214,10 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 >
                     <BoxSelect size={11} /> {selectMode ? 'Done' : 'Select'}
                 </button>
+                {/* No Sell button: gold is retired and nothing sells to the
+                    merchant (SP-65, slice 2.2). Select mode only moves stacks. */}
                 {selectMode && (
-                    <>
-                        <span className="text-[10px] text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
-                        <button
-                            onClick={() => setSellModalOpen(true)}
-                            disabled={selectedEntries.length === 0}
-                            className={cn(
-                                'flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
-                                selectedEntries.length > 0
-                                    ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text hover:bg-gi-gold/25'
-                                    : 'border-gi-border/40 text-gi-muted/40 cursor-not-allowed'
-                            )}
-                        >
-                            <Coins size={11} className="text-gi-gold" /> Sell…
-                        </button>
-                    </>
+                    <span className="text-[10px] text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
                 )}
                 {typeFilter && (
                     <button
@@ -282,7 +255,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 )}
                 {selectMode && (
                     <div className="mb-2 text-[9px] text-gi-muted italic">
-                        Click items to select them — drag any selected item onto a tab to move them all, or use Sell.
+                        Click items to select them — drag any selected item onto a tab to move them all.
                     </div>
                 )}
                 {visible.length > 0 ? (
@@ -314,13 +287,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 )}
             </DropTarget>
 
-            {sellModalOpen && selectedEntries.length > 0 && (
-                <SellConfirmModal
-                    entries={selectedEntries}
-                    onCancel={() => setSellModalOpen(false)}
-                    onConfirm={confirmSell}
-                />
-            )}
             </div>
         </div>
     );
@@ -439,157 +405,13 @@ const BankTabButton = ({ tab, index, first, active, onSelect, onDropToTab }) => 
 };
 
 /**
- * SellConfirmModal — bulk-sell modal with quantity sliders for each selected item.
- * Portaled to <body> so drawer transforms/stacking can't trap or cover it.
+ * Item details — rendered by the shared InspectionPanel. `showSell` is still
+ * accepted but ignored: selling to the merchant is gone, and with it the item's
+ * price (SP-65, slice 2.2).
  */
-const SellConfirmModal = ({ entries, onCancel, onConfirm }) => {
-    const [quantities, setQuantities] = useState(() => {
-        const initial = {};
-        entries.forEach(e => {
-            initial[e.id] = e.count;
-        });
-        return initial;
-    });
-
-    const setQty = (id, val, max) => {
-        setQuantities(prev => ({
-            ...prev,
-            [id]: Math.max(1, Math.min(max, parseInt(val, 10) || 1))
-        }));
-    };
-
-    const total = entries.reduce((sum, e) => {
-        const qty = quantities[e.id] ?? e.count;
-        return sum + CommerceSystem.getItemPrice(e.id) * qty;
-    }, 0);
-
-    const handleConfirm = () => {
-        onConfirm(quantities);
-    };
-
-    return createPortal(
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-[2px] p-4" onClick={onCancel}>
-            <div
-                className="w-[48rem] max-w-[96vw] max-h-[85vh] rounded-xl border border-yellow-500/40 bg-[#12141d] shadow-2xl p-4 flex flex-col gap-3"
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Header: Title */}
-                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
-                    <div className="flex items-center gap-2 text-gi-text font-bold uppercase tracking-wider text-xs">
-                        <Coins size={15} className="text-yellow-400" />
-                        <span>Bulk Sell Items</span>
-                        <span className="text-[10px] text-gi-muted font-normal">({entries.length} selected)</span>
-                    </div>
-                </div>
-
-                {/* Items List with Quantity Sliders formatted in aligned grid columns */}
-                <div className="max-h-[58vh] overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pr-1">
-                    {entries.map(e => {
-                        const maxCount = e.count;
-                        const currentQty = quantities[e.id] ?? maxCount;
-                        const unitPrice = CommerceSystem.getItemPrice(e.id);
-                        const itemTotal = unitPrice * currentQty;
-
-                        return (
-                            <div key={e.id} className="grid grid-cols-[1fr_180px_130px_110px] items-center gap-3 px-3.5 py-2 rounded-lg bg-black/40 border border-white/5 hover:border-white/10 transition-colors">
-                                {/* Item Identity */}
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                    <ItemIcon item={e.template} size={28} className="shrink-0" />
-                                    <span className="text-xs font-bold text-gi-text truncate" title={e.template.name}>
-                                        {e.template.name}
-                                    </span>
-                                </div>
-
-                                {/* Slider */}
-                                <div className="flex items-center">
-                                    <input
-                                        type="range"
-                                        min="1"
-                                        max={maxCount}
-                                        value={currentQty}
-                                        onChange={(ev) => setQty(e.id, ev.target.value, maxCount)}
-                                        className="w-full h-1.5 bg-black/60 rounded-lg appearance-none cursor-pointer accent-gi-primary focus:outline-none"
-                                    />
-                                </div>
-
-                                {/* Quantity Badge */}
-                                <div className="flex items-center justify-center gap-1 font-mono text-xs tabular-nums font-bold text-gi-text bg-black/60 px-2 py-1 rounded border border-white/10 text-center select-none">
-                                    <span>{currentQty.toLocaleString()}</span>
-                                    <span className="text-[10px] text-gi-muted font-normal">/ {maxCount.toLocaleString()}</span>
-                                </div>
-
-                                {/* Gold Yield */}
-                                <div className="flex items-center justify-end gap-1.5 text-xs md:text-sm font-bold text-yellow-300 font-mono tabular-nums text-right">
-                                    <Coins size={12} className="text-yellow-400 shrink-0" />
-                                    <span>{itemTotal.toLocaleString()}</span>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Footer Controls */}
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-3.5 py-2 rounded-lg border border-gi-border/60 text-xs font-bold uppercase tracking-wider text-gi-muted hover:text-gi-text hover:border-gi-border transition-colors cursor-pointer active:scale-[0.99]"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleConfirm}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg border border-yellow-500/60 bg-yellow-500/15 hover:bg-yellow-500/25 active:scale-[0.99] text-xs font-bold uppercase tracking-wider text-gi-text transition-all cursor-pointer shadow-sm"
-                    >
-                        <Coins size={14} className="text-yellow-400" />
-                        <span>Sell for {total.toLocaleString()} gold</span>
-                    </button>
-                </div>
-            </div>
-        </div>,
-        document.body
-    );
-};
-
-/** Item details + sell controls — rendered by the shared InspectionPanel. */
-// `engine` was a prop here purely to reach `engine.EventBus` for the dead
-// `ui:notify` publish (CR2-130). NotificationSystem is imported directly, so
-// the prop is gone.
+// eslint-disable-next-line no-unused-vars
 export const ItemInspection = ({ entry, showSell = true, showViewInBank = false }) => {
     const { template, count } = entry;
-    // The same price the sale will actually pay. Read through CommerceSystem
-    // rather than off the template, so the number on screen cannot disagree
-    // with the gold received — it did while this read a field no item has.
-    const value = CommerceSystem.getItemPrice(template.id);
-
-    /**
-     * `CommerceSystem.sellItem` answers with a code, not a sentence, so the
-     * codes are turned into something a player can read here.
-     *
-     * ⚠️ **The sell controls clamp the quantity to the stack**, so a refusal
-     * only happens when the count on screen has gone stale — the board consumed
-     * the items, or they were equipped, between the panel rendering and the
-     * click. Rare, and exactly why the guard exists.
-     *
-     * A SUCCESSFUL sale is deliberately silent here: `currency_changed` and
-     * `inventory_updated` already announce it (CR2-092), and a third message
-     * would be the double-announcement shape.
-     */
-    const handleSell = (quantity) => {
-        const result = CommerceSystem.sellItem(entry.id, quantity);
-        if (!result.success) {
-            // This used to publish `ui:notify`, which nothing has ever listened
-            // for (CR2-130), so the reason was dropped on the floor.
-            const reasons = {
-                INSUFFICIENT_STOCK: `You no longer have that many ${template.name}.`,
-                INVALID_QUANTITY: 'Choose how many to sell first.',
-                REMOVAL_FAILED: `Could not take the ${template.name} out of the Bank.`
-            };
-            NotificationSystem.error(reasons[result.error] || 'That sale did not go through.');
-        }
-    };
-
     return (
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
             {/* Header: Centered 128px sprite, name, and type */}
@@ -654,19 +476,14 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                 </div>
             )}
 
-            {/* Split Bank and Value badges if SellControls is not shown */}
-            {(!showSell || count === 0) && (
-                <div className="flex items-center gap-2 text-xs pt-1">
-                    <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                        <span className="text-gi-muted">Bank</span>
-                        <span className="font-bold text-gi-text tabular-nums">{count.toLocaleString()}</span>
-                    </div>
-                    <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                        <span className="text-gi-muted">Value</span>
-                        <span className="font-bold text-gi-gold tabular-nums">{value.toLocaleString()}</span>
-                    </div>
+            {/* Bank count only (SP-65, slice 2.2): nothing sells, so an item has
+                no Value to show. */}
+            <div className="flex items-center gap-2 text-xs pt-1">
+                <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
+                    <span className="text-gi-muted">Bank</span>
+                    <span className="font-bold text-gi-text tabular-nums">{count.toLocaleString()}</span>
                 </div>
-            )}
+            </div>
 
             {/* View in Bank action */}
             {showViewInBank && count > 0 && (
@@ -680,28 +497,6 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                 </div>
             )}
 
-            {/* Sell controls — shared SellControls component */}
-            {showSell && count > 0 && (
-                <SellControls
-                    title="Sell Items"
-                    count={count}
-                    unitPrice={value}
-                    onSell={handleSell}
-                    entityName="Item"
-                    topContent={
-                        <div className="flex items-center gap-2 text-xs">
-                            <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                                <span className="text-gi-muted">Bank</span>
-                                <span className="font-bold text-gi-text tabular-nums">{count.toLocaleString()}</span>
-                            </div>
-                            <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                                <span className="text-gi-muted">Value</span>
-                                <span className="font-bold text-gi-gold tabular-nums">{value.toLocaleString()}</span>
-                            </div>
-                        </div>
-                    }
-                />
-            )}
         </div>
     );
 };

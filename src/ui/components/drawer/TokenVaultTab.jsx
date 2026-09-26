@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
@@ -10,10 +9,9 @@ import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as TokenGroups from '../../../systems/board/TokenGroups.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
 import { QuestManager } from '../../../systems/quests/QuestManager.js';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Lock, Vault as VaultIcon, BoxSelect, Coins, Check, AlertTriangle } from 'lucide-react';
+import { Lock, Vault as VaultIcon, BoxSelect, Check, AlertTriangle } from 'lucide-react';
 
 /**
  * TokenVaultTab — the Token Bank, as a drawer pane.
@@ -34,7 +32,7 @@ import { Lock, Vault as VaultIcon, BoxSelect, Coins, Check, AlertTriangle } from
  *
  * ## Two gestures out, one in
  * Drag a cell onto the **playmat** to withdraw (FP-45), or click to inspect
- * where the Place and Sell controls live. Drag a Token from the mat onto this
+ * where the Place control lives (Sell went with gold, SP-65). Drag a Token from the mat onto this
  * pane to **store** it (D-247) — except a Map, which must be opened.
  */
 export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' }) => {
@@ -52,7 +50,6 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
     const [activeId, setActiveId] = useState(null);
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
-    const [sellModalOpen, setSellModalOpen] = useState(false);
 
     const currentId = tabs.some(t => t.id === activeId) ? activeId : tabs[0]?.id;
     const current = tabs.find(t => t.id === currentId);
@@ -74,23 +71,6 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
     const exitSelectMode = () => {
         setSelectMode(false);
         setSelectedIds(new Set());
-        setSellModalOpen(false);
-    };
-
-    // One call per selected type (CR2-168 item 5). This used to quote
-    // `totalSellValue` and then loop `sell` once per copy, so the total shown
-    // was a *prediction* rather than the gold actually credited. It now adds up
-    // what each sale returned, which cannot drift from what the player got.
-    const confirmSell = (quantities) => {
-        let totalG = 0;
-        selectedRows.forEach(row => {
-            const qty = quantities?.[row.typeId] ?? row.count;
-            const res = TokenBank.sell(row.typeId, qty);
-            if (res.success) totalG += res.gold;
-        });
-        EventBus.publish('state_changed', {});
-        NotificationSystem.success(`Sold selected token(s) for ${totalG}g`);
-        exitSelectMode();
     };
 
     /**
@@ -151,7 +131,7 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
                 />
                 <button
                     onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
-                    title={selectMode ? 'Exit select mode' : 'Select multiple tokens to move or sell'}
+                    title={selectMode ? 'Exit select mode' : 'Select multiple tokens to move'}
                     className={cn(
                         'flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
                         selectMode
@@ -161,22 +141,10 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
                 >
                     <BoxSelect size={11} /> {selectMode ? 'Done' : 'Select'}
                 </button>
+                {/* No Sell button: gold is retired and nothing sells (SP-65,
+                    slice 2.2). Select mode only moves Tokens between tabs. */}
                 {selectMode && (
-                    <>
-                        <span className="text-[10px] text-gi-muted tabular-nums">{selectedRows.length} selected</span>
-                        <button
-                            onClick={() => setSellModalOpen(true)}
-                            disabled={selectedRows.length === 0}
-                            className={cn(
-                                'flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
-                                selectedRows.length > 0
-                                    ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text hover:bg-gi-gold/25'
-                                    : 'border-gi-border/40 text-gi-muted/40 cursor-not-allowed'
-                            )}
-                        >
-                            <Coins size={11} className="text-gi-gold" /> Sell…
-                        </button>
-                    </>
+                    <span className="text-[10px] text-gi-muted tabular-nums">{selectedRows.length} selected</span>
                 )}
                 <span
                     title="Tokens in the vault / slot capacity"
@@ -231,13 +199,6 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
                 )}
             </div>
 
-            {sellModalOpen && (
-                <TokenSellConfirmModal
-                    entries={selectedRows}
-                    onCancel={() => setSellModalOpen(false)}
-                    onConfirm={confirmSell}
-                />
-            )}
         </div>
     );
 };
@@ -390,118 +351,6 @@ const TokenCell = ({
                 {displayLabel}
             </span>
         </button>
-    );
-};
-
-/**
- * TokenSellConfirmModal — bulk-sell modal for tokens with quantity sliders.
- */
-const TokenSellConfirmModal = ({ entries, onCancel, onConfirm }) => {
-    const [quantities, setQuantities] = useState(() => {
-        const initial = {};
-        entries.forEach(e => {
-            initial[e.typeId] = e.count;
-        });
-        return initial;
-    });
-
-    const setQty = (typeId, val, max) => {
-        setQuantities(prev => ({
-            ...prev,
-            [typeId]: Math.max(1, Math.min(max, parseInt(val, 10) || 1))
-        }));
-    };
-
-    const total = entries.reduce((sum, e) => {
-        const qty = quantities[e.typeId] ?? e.count;
-        return sum + TokenBank.totalSellValue(e.typeId, qty);
-    }, 0);
-
-    const handleConfirm = () => {
-        onConfirm(quantities);
-    };
-
-    return createPortal(
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-[2px] p-4" onClick={onCancel}>
-            <div
-                className="w-[48rem] max-w-[96vw] max-h-[85vh] rounded-xl border border-yellow-500/40 bg-[#12141d] shadow-2xl p-4 flex flex-col gap-3"
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Header: Title */}
-                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
-                    <div className="flex items-center gap-2 text-gi-text font-bold uppercase tracking-wider text-xs">
-                        <Coins size={15} className="text-yellow-400" />
-                        <span>Bulk Sell Tokens</span>
-                        <span className="text-[10px] text-gi-muted font-normal">({entries.length} selected)</span>
-                    </div>
-                </div>
-
-                {/* Tokens List with Quantity Sliders formatted in aligned grid columns */}
-                <div className="max-h-[58vh] overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pr-1">
-                    {entries.map(e => {
-                        const maxCount = e.count;
-                        const currentQty = quantities[e.typeId] ?? maxCount;
-                        const itemTotal = TokenBank.totalSellValue(e.typeId, currentQty);
-
-                        return (
-                            <div key={e.typeId} className="grid grid-cols-[1fr_180px_130px_110px] items-center gap-3 px-3.5 py-2 rounded-lg bg-black/40 border border-white/5 hover:border-white/10 transition-colors">
-                                {/* Token Identity */}
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                    <TokenSprite typeId={e.typeId} surface={TOKEN_SURFACE.VAULT} alt={e.name} className="w-7 h-7 shrink-0" />
-                                    <span className="text-xs font-bold text-gi-text truncate" title={e.name}>
-                                        {e.name}
-                                    </span>
-                                </div>
-
-                                {/* Slider */}
-                                <div className="flex items-center">
-                                    <input
-                                        type="range"
-                                        min="1"
-                                        max={maxCount}
-                                        value={currentQty}
-                                        onChange={(ev) => setQty(e.typeId, ev.target.value, maxCount)}
-                                        className="w-full h-1.5 bg-black/60 rounded-lg appearance-none cursor-pointer accent-gi-primary focus:outline-none"
-                                    />
-                                </div>
-
-                                {/* Quantity Badge */}
-                                <div className="flex items-center justify-center gap-1 font-mono text-xs tabular-nums font-bold text-gi-text bg-black/60 px-2 py-1 rounded border border-white/10 text-center select-none">
-                                    <span>{currentQty.toLocaleString()}</span>
-                                    <span className="text-[10px] text-gi-muted font-normal">/ {maxCount.toLocaleString()}</span>
-                                </div>
-
-                                {/* Gold Yield */}
-                                <div className="flex items-center justify-end gap-1.5 text-xs md:text-sm font-bold text-yellow-300 font-mono tabular-nums text-right">
-                                    <Coins size={12} className="text-yellow-400 shrink-0" />
-                                    <span>{itemTotal.toLocaleString()}</span>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Footer Controls */}
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-3.5 py-2 rounded-lg border border-gi-border/60 text-xs font-bold uppercase tracking-wider text-gi-muted hover:text-gi-text hover:border-gi-border transition-colors cursor-pointer active:scale-[0.99]"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleConfirm}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg border border-yellow-500/60 bg-yellow-500/15 hover:bg-yellow-500/25 active:scale-[0.99] text-xs font-bold uppercase tracking-wider text-gi-text transition-all cursor-pointer shadow-sm"
-                    >
-                        <Coins size={14} className="text-yellow-400" />
-                        <span>Sell for {total.toLocaleString()} gold</span>
-                    </button>
-                </div>
-            </div>
-        </div>,
-        document.body
     );
 };
 

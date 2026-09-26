@@ -46,9 +46,10 @@ export const GUILD_HALL_DROP_SEQUENCE = [
     [
         { kind: 'token', refId: 'token_cooking_pot', weight: 10 }
     ],
-    // Drop 12: Coins (2000 GP)
+    // Drop 12: Oak Wood. Was 2000 coins (gold); gold is retired (SP-65,
+    // slice 2.2) and Oak Wood is what Maps and Hall upgrades are paid in.
     [
-        { kind: 'item', refId: 'item_coins', quantity: 2000, weight: 10 }
+        { kind: 'item', refId: 'item_oak_wood', quantity: 20, weight: 10 }
     ]
 ];
 

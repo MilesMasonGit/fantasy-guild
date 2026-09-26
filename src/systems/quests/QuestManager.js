@@ -4,19 +4,46 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
-import { TUTORIAL_QUESTS } from './tutorialQuests.js';
+import { TUTORIAL_QUESTS, TUTORIAL_REWARD_ITEMS } from './tutorialQuests.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getMap, listMaps } from '../../config/registries/mapRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { matW, matH } from '../../config/matGeometry.js';
-import { tokenForMap, getPurchasedMaps } from '../board/Cartographer.js';
+import { getPurchasedMaps } from '../board/Cartographer.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import * as BoardState from '../board/BoardState.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 
 export const MAX_ACTIVE_QUESTS = 3;
+
+/**
+ * What a random bounty pays (slice 2.2, SP-65). Quests used to reward a Map;
+ * they pay items now. A placeholder amount (TL-5), in a live `item_*` id.
+ */
+export const BOUNTY_REWARD_ITEMS = Object.freeze([
+    Object.freeze({ itemId: 'item_oak_wood', quantity: 10 })
+]);
+
+/** A fresh, mutable copy of a reward list, safe to store on a quest. */
+function copyReward(list) {
+    return (list || []).map(r => ({ itemId: r.itemId, quantity: r.quantity }));
+}
+
+/**
+ * What claiming a quest pays, as `[{ itemId, quantity, name }]`.
+ *
+ * A quest from a save made before slice 2.2 carries `rewardMapId` and no
+ * `rewardItems`; it pays the default for its kind instead of a Map, so an old
+ * save cannot claim a Map (or the gold the last Guild Hall Map drop held).
+ */
+export function questReward(quest) {
+    const list = Array.isArray(quest?.rewardItems) && quest.rewardItems.length
+        ? quest.rewardItems
+        : (quest?.isTutorial ? TUTORIAL_REWARD_ITEMS : BOUNTY_REWARD_ITEMS);
+    return list
+        .filter(r => r?.itemId && r.quantity > 0)
+        .map(r => ({ itemId: r.itemId, quantity: r.quantity, name: getItem(r.itemId)?.name || r.itemId }));
+}
 export const ABANDON_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 // Content pools for random bounties
@@ -100,6 +127,10 @@ export const QuestManager = {
             quest.title = template.title;
             quest.instruction = template.instruction;
             quest.targetType = template.targetType;
+            // Slice 2.2: a saved copy may still name a reward Map.
+            quest.rewardItems = copyReward(template.rewardItems);
+            delete quest.rewardMapId;
+            delete quest.rewardMapName;
         }
     },
 
@@ -159,8 +190,7 @@ export const QuestManager = {
                     targetType: template.targetType,
                     requiredCount: template.requiredCount,
                     currentCount: 0,
-                    rewardMapId: template.rewardMapId,
-                    rewardMapName: template.rewardMapName,
+                    rewardItems: copyReward(template.rewardItems),
                     status: 'active',
                     createdAt: Date.now()
                 });
@@ -363,6 +393,8 @@ export const QuestManager = {
     },
 
     createRandomQuest() {
+        // The Map is picked only to size the bounty (its price sets the
+        // collection target); the reward is items, not the Map (slice 2.2).
         // Pick from player's purchased maps, falling back to catalog maps
         const purchased = getPurchasedMaps();
         let mapPool = purchased.length > 0 ? purchased : listMaps().map(m => m.id);
@@ -391,8 +423,7 @@ export const QuestManager = {
                 enemyId: hunt.id,
                 requiredCount: count,
                 currentCount: 0,
-                rewardMapId: pickedMapId,
-                rewardMapName: mapDef?.name || 'Map',
+                rewardItems: copyReward(BOUNTY_REWARD_ITEMS),
                 status: 'active',
                 createdAt: Date.now()
             };
@@ -409,8 +440,7 @@ export const QuestManager = {
                 itemId: item.id,
                 requiredCount: requiredCount,
                 currentCount: InventoryStore.getItems()?.[item.id]?.quantity || 0,
-                rewardMapId: pickedMapId,
-                rewardMapName: mapDef?.name || 'Map',
+                rewardItems: copyReward(BOUNTY_REWARD_ITEMS),
                 status: 'active',
                 createdAt: Date.now()
             };
@@ -458,6 +488,9 @@ export const QuestManager = {
         return { success: true };
     },
 
+    // `sourceRect` is still passed by the quest card; it placed the reward
+    // Map's flight and has nothing to place now that the reward is items.
+    // eslint-disable-next-line no-unused-vars
     claimQuest(questId, sourceRect = null) {
         this.ensureState();
         const q = GameState.state?.quests;
@@ -471,11 +504,6 @@ export const QuestManager = {
             return { success: false, reason: 'Quest requirements not met yet' };
         }
 
-        // Check 50-map total limit
-        if (!BoardState.hasMapSpace()) {
-            return { success: false, reason: 'Map limit reached (50/50) — burst existing maps to acquire more' };
-        }
-
         // If collection quest, deduct items
         if (quest.type === 'collection' && quest.itemId) {
             const held = InventoryStore.getItems()?.[quest.itemId]?.quantity || 0;
@@ -485,54 +513,14 @@ export const QuestManager = {
             InventoryManager.removeItem(quest.itemId, quest.requiredCount);
         }
 
-        // Toss Map Token sideways onto the playmat with natural spread across the left/mid playmat.
-        // ⭐ The band is stated as **fractions of the mat** (slice 1.6d-3), so a
-        // reward Map lands in the same part of the mat whatever size the mat
-        // currently is. The fractions are the old fixed numbers over the mat's
-        // shipped 1760 × 1126, so at 11 steps every number is unchanged.
-        const w = matW();
-        const h = matH();
-        const clampX = Math.round(w * (466 / 1760) + Math.random() * w * (320 / 1760));
-        let clampY = Math.round(h * (359 / 1126) + Math.random() * h * (150 / 1126));
+        // Pay the reward: items, into the Bank (slice 2.2, SP-65). It used to
+        // toss a Map Token onto the mat. `addItem` drops any overflow on the
+        // mat as loot, so nothing is lost to a full Bank (D-138), and its
+        // `inventory_updated` is the announcement (no second toast, CR2-092).
+        const rewardItems = questReward(quest);
+        for (const r of rewardItems) InventoryManager.addItem(r.itemId, r.quantity, 'quest_reward');
 
-        // If triggered from a specific quest card in the UI, match the flight Y height to the card!
-        if (sourceRect && typeof document !== 'undefined') {
-            const boardEl = document.querySelector('[data-board-origin]') || document.querySelector('[data-dnd-surface="board"]');
-            const boardRect = boardEl?.getBoundingClientRect();
-            if (boardRect) {
-                // The board is CSS-scaled to fit: screen pixels → board units (slice 1.6c).
-                const natural = Number(boardEl.getAttribute?.('data-natural-width'));
-                const scale = natural > 0 && boardRect.width > 0 ? boardRect.width / natural : 1;
-                const questCenterY = sourceRect.top + (sourceRect.height || 0) / 2;
-                const relativeY = Math.round((questCenterY - boardRect.top) / scale - 64);
-                // Clamp within valid playmat area, as a fraction of the mat.
-                clampY = Math.max(Math.round(h * (219 / 1126)), Math.min(Math.round(h * (819 / 1126)), relativeY));
-            }
-        }
-
-        // Fly straight sideways onto the playmat (pure horizontal movement: fromY = 0)
-        const fromX = -(clampX + 240);
-        const fromY = 0;
-
-        const rewardMapId = quest.rewardMapId || 'map_guild_hall';
-        const tokenTypeId = tokenForMap(rewardMapId) || 'token_guild_hall_map';
-        const spawnedMap = BoardState.addBoardMap(tokenTypeId, clampX, clampY, 1, {
-            bornAt: Date.now(),
-            fromX,
-            fromY
-        });
-
-        const mapDef = getMap(rewardMapId);
-        const mapDisplayName = mapDef?.name || quest.rewardMapName || 'Map';
-
-        EventBus.publish('map_reward_spawned', {
-            map: spawnedMap,
-            mapId: rewardMapId,
-            x: clampX,
-            y: clampY
-        });
-
-        EventBus.publish('quest_claimed', { questId, rewardMapId });
+        EventBus.publish('quest_claimed', { questId, rewardItems });
 
         // Record tutorial completion
         if (quest.isTutorial) {
@@ -550,6 +538,6 @@ export const QuestManager = {
 
         EventBus.publish('quests_updated', {});
         EventBus.publish('state_changed', {});
-        return { success: true, rewardMapId, map: spawnedMap };
+        return { success: true, rewardItems };
     }
 };

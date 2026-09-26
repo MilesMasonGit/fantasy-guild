@@ -3,17 +3,16 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { CurrencyManager } from '../economy/CurrencyManager.js';
 import { getMap, listMaps } from '../../config/registries/mapRegistry.js';
 import { GUILD_HALL_DROP_SEQUENCE } from '../../config/registries/guildHallMaps.js';
 import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { totalPrice } from '../../config/guildUpgrades.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { terrainForMap } from '../../config/registries/terrainAssignments.js';
 import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
@@ -138,6 +137,48 @@ export function markDiscovered(refId) {
 }
 
 // ---------------------------------------------------------------------------
+// Price — items, not gold (SP-65, slice 2.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * The item a Map is paid in. **A placeholder** (TL-5: prices are low and
+ * simple): the Map shop is the only way a new game gets Tokens onto the mat
+ * once quest rewards stopped being Maps (slice 2.2), so buying has to keep
+ * working until the Shop replaces it (Phase 5) and Map bursts retire (9.1).
+ */
+export const MAP_PRICE_ITEM = 'item_oak_wood';
+
+/**
+ * How many of the old gold units one {@link MAP_PRICE_ITEM} stands for. The
+ * authored `price` in `data/maps.json` is still a gold figure (data is only
+ * edited through the CMS), so it is converted here rather than rewritten:
+ * a 2000g Map costs 4 Oak Wood, a 10000g one 20.
+ */
+export const GOLD_PER_PRICE_ITEM = 500;
+
+/**
+ * A Map's item price, shaped for display: `[{ itemId, quantity, name }]`.
+ * Free (`[]`) when the authored price is 0.
+ */
+export function mapPrice(mapIdOrDef) {
+    const def = typeof mapIdOrDef === 'string' ? getMap(mapIdOrDef) : mapIdOrDef;
+    const gold = Number(def?.price) || 0;
+    if (gold <= 0) return [];
+    const quantity = Math.max(1, Math.round(gold / GOLD_PER_PRICE_ITEM));
+    return [{ itemId: MAP_PRICE_ITEM, quantity, name: getItem(MAP_PRICE_ITEM)?.name || MAP_PRICE_ITEM }];
+}
+
+/** Everything a purchase takes from the Bank: the price plus any materials, merged. */
+function mapCost(def) {
+    return totalPrice([...mapPrice(def), ...(def?.materials || [])]);
+}
+
+/** Whether a Map pool entry is gold, which no longer pays anything (SP-65). */
+function isGoldEntry(entry) {
+    return entry?.kind === 'gold' || entry?.kind === 'currency';
+}
+
+// ---------------------------------------------------------------------------
 // Buying
 // ---------------------------------------------------------------------------
 
@@ -156,20 +197,16 @@ export function canBuy(mapId) {
         return refuse('Map limit reached (50/50) — burst existing maps to acquire more');
     }
 
-    const gold = CurrencyManager.getCurrency('gold');
-    if (gold < def.price) {
-        return refuse(`Not enough gold — ${def.price}g needed`);
-    }
-
-    // Materials come from the Bank automatically (D-150), the same rule Tokens
-    // already use for their inputs (D-24). One consistent way the game consumes
-    // items, and no inventory management on a purchase.
-    const check = InputAllocator.checkInputs(def.materials);
+    // The price (items since slice 2.2, SP-65) and any materials both come
+    // from the Bank automatically (D-150), the same rule Tokens already use for
+    // their inputs (D-24). One consistent way the game consumes items, and no
+    // inventory management on a purchase.
+    const check = InputAllocator.checkInputs(mapCost(def));
     if (!check.ok) {
         const names = check.missing
             .map(m => `${m.needed - m.available}× ${getItem(m.itemId)?.name || m.itemId}`)
             .join(', ');
-        return refuse(`Short on materials — need ${names}`);
+        return refuse(`Not enough — need ${names}`);
     }
 
     // Maps are placed on the board directly beside the Guild Hall, so they don't
@@ -181,7 +218,7 @@ export function canBuy(mapId) {
 /**
  * Buy one Map. It lands in the Tray, never in the Vault (D-156).
  *
- * Gold and materials are both taken only after every check has passed, for the
+ * The price and materials are taken only after every check has passed, for the
  * same reason `completeCycle` decides the whole exchange before any of it
  * happens: a half-paid purchase destroys items for nothing.
  */
@@ -196,11 +233,8 @@ export function buyMap(mapId, _options = {}) {
     const typeId = tokenForMap(mapId);
     if (!typeId) return refuse('That Map has no Token');
 
-    if (!InputAllocator.consumeInputs(def.materials)) {
-        return refuse('Short on materials');
-    }
-    if (!CurrencyManager.spendGold(def.price, `Map: ${def.name}`)) {
-        return refuse(`Not enough gold — ${def.price}g needed`);
+    if (!InputAllocator.consumeInputs(mapCost(def))) {
+        return refuse('Not enough items');
     }
 
     // Maps are dropped onto the playmat (beside the Guild Hall).
@@ -225,7 +259,7 @@ export function buyMap(mapId, _options = {}) {
 
     EventBus.publish('map_purchased', { mapId, price: def.price });
     EventBus.publish('state_changed');
-    logger.info('Cartographer', `Bought ${def.name} for ${def.price}g`);
+    logger.info('Cartographer', `Bought ${def.name}`);
     return { success: true, instance };
 }
 
@@ -262,8 +296,8 @@ function rollOne(def, entries = def.pool) {
  * supersedes D-167's random range). Slot one draws over the pool's
  * `kind === 'token'` entries only, with their weights renormalised among
  * themselves; slots two and three are free weighted draws over the whole pool,
- * so they can be items or gold. A pool with no Token entries falls back to
- * three free draws — P7's CMS Map check will warn about such a pool; this
+ * so they can be items (or gold, which pays nothing since SP-65). A pool with
+ * no Token entries falls back to three free draws — P7's CMS Map check will warn about such a pool; this
  * does not, and no such check exists yet.
  *
  * **Still random, and still no reliability guarantee** (D-154). The guarantee
@@ -385,10 +419,11 @@ export function openMap(instance, origin = null) {
                 // vanishing — collecting it puts it in the Vault.
                 SpriteLayer.addSprite('token', entry.refId, 1, scatterFrom, tok.usesRemaining, stamp);
             }
-        } else if (entry.kind === 'gold' || entry.kind === 'currency') {
-            const amount = entry.amount || entry.quantity || 2000;
-            CurrencyManager.addGold(amount, 'map_reward');
-            NotificationSystem.success(`Gained ${amount.toLocaleString()} Gold!`);
+        } else if (isGoldEntry(entry)) {
+            // Gold is retired (SP-65, slice 2.2): a gold entry pays nothing.
+            // No shipped Map pool carries one; this keeps an old or hand-built
+            // pool from minting gold.
+            logger.debug('Cartographer', `${def.name}: a gold entry paid nothing (gold is retired)`);
         } else {
             SpriteLayer.addSprite('item', entry.refId, entry.quantity || 1, scatterFrom);
         }
@@ -504,22 +539,24 @@ export function catalogue() {
     return listMaps().map(def => ({
         id: def.id,
         name: def.name,
+        // The authored gold figure, kept only because the catalogue is
+        // ordered by it. Nothing shows it; `priceItems` is what a Map costs.
         price: def.price,
+        priceItems: mapPrice(def),
         materials: mapMaterials(def),
         // The Token this Map becomes, so a drag can show the right art while
         // it is being carried (D-244) — the ghost draws from a `typeId`.
         tokenId: tokenForMap(def.id),
         affordability: canBuy(def.id),
-        pool: def.pool.map(entry => ({
+        // Gold entries are left out: they pay nothing now (SP-65).
+        pool: def.pool.filter(entry => !isGoldEntry(entry)).map(entry => ({
             kind: entry.kind,
             refId: entry.refId,
             quantity: entry.quantity || entry.amount || 1,
             known: entry.refId ? isDiscovered(entry.refId) : true,
             name: entry.kind === 'token'
                 ? tokenName(entry.refId)
-                : (entry.kind === 'gold' || entry.kind === 'currency')
-                    ? `${(entry.amount || entry.quantity || 2000).toLocaleString()} Gold`
-                    : (getItem(entry.refId)?.name || entry.refId)
+                : (getItem(entry.refId)?.name || entry.refId)
         }))
     }));
 }

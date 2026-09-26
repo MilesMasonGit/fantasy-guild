@@ -1,9 +1,8 @@
 import React from 'react';
-import { formatCompact } from '../../../utils/Formatters.js';
 import { cn } from '../../utils/cn.js';
 import {
     Castle, Landmark, Vault, Map as MapIcon,
-    Settings, Coins
+    Settings
 } from 'lucide-react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
@@ -41,20 +40,15 @@ import { QuestManager } from '../../../systems/quests/QuestManager.js';
  * Deployment Panel ("Build at Outpost"). A proper in-banner card binder is
  * a later refinement.
  *
- * Gold lives on the Bank bubble as a chip (owner decision 2026-07-11 — the
- * top bar is retired in this mode). Influence has since been cut, so gold is
- * the only currency there is to show.
+ * No gold chip: the Bank bubble used to carry one (owner decision 2026-07-11),
+ * and it went when gold was retired (SP-65, slice 2.2). Items are the only
+ * price now, so there is no currency to show.
  *
  * The Bank bubble also carries `id="bank-bubble-target"` — the landing spot
  * `ParticleOverlay.jsx` flies gained-item particles toward on `loot_generated`
  * (owner design 2026-08-01, replacing the old per-item bank-tile targeting,
  * which no longer has anything in the current UI to land on).
  */
-
-// Gold uses the shared ladder (C-15). A local M/k helper stopped at millions
-// and rendered anything larger as "4200000000000.0M" — the suffix ladder has
-// to live in one place or every new rung has to be re-added per component.
-const formatGold = (g) => (g >= 1e4 ? formatCompact(g).toUpperCase() : g.toLocaleString());
 
 /** One circular menu button. `pip` reserves the spec's notification-pip slot. */
 const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = false, disabled = false, pip = false, id, children, droppableProps, isValidDrop }, ref) => {
@@ -105,10 +99,6 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
 });
 
 export const BubbleMenu = ({ ui, side = 'left' }) => {
-    // Gold chip on the Bank bubble. state_changed covers save loads (see
-    // the same subscription note in the retired TopBarView).
-    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed', 'state_changed']);
-
     const nav = ui.nav;
 
     // Settings/Collection Binder are GIModal dialogs whose backdrop (z-[300])
@@ -166,12 +156,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             <Bubble id="guild-bubble-target" icon={Castle} label="Guild Hall" color="purple" active={nav.isActive('guild')} onClick={() => nav.toggle('guild')} />
             {/* No Heroes bubble: the Hero Dock is always on screen, so there
                 is nothing to toggle (Hero Dock Phase 7). */}
-            <Bubble id="bank-bubble-target" icon={Landmark} label="Item Bank" color="yellow" active={nav.isActive('bank')} onClick={() => nav.toggle('bank')}>
-                <div className="absolute -bottom-2 md:bottom-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/80 border border-white/20 pointer-events-none shadow-[0_2px_4px_rgba(0,0,0,0.5)] z-10">
-                    <Coins size={10} className="text-yellow-400 shrink-0" />
-                    <span className="text-[10px] md:text-xs font-bold text-yellow-50 leading-none">{formatGold(gold)}</span>
-                </div>
-            </Bubble>
+            <Bubble id="bank-bubble-target" icon={Landmark} label="Item Bank" color="yellow" active={nav.isActive('bank')} onClick={() => nav.toggle('bank')} />
             {/* The Token Vault is a Bank of its own: Tokens are capped
                 separately from items (D-137) and are for placing rather than
                 storing (D-158), so they get their own door rather than a tab

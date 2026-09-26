@@ -61,10 +61,6 @@ const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token', cartographer: 'token
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
     const [searchQuery, setSearchQuery] = useState('');
-    const gold = useGameState(
-        state => state.currency?.gold || 0,
-        ['currency_changed', 'state_changed']
-    );
     // Canonical order regardless of the order panes were opened in.
     // One pane at a time (D-239) — `panes` never holds more than one, so this
     // is a lookup rather than a filter, and **maximise is gone**: a lone pane
@@ -146,16 +142,8 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
                                     <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
                                         <Icon size={18} className="text-gi-primary" /> {label}
                                     </span>
+                                    {/* No gold chip: gold was retired (SP-65, slice 2.2). */}
                                     <div className="flex items-center gap-2.5">
-                                        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-gi-gold/10 border border-gi-gold/30 text-xs font-mono font-bold text-gi-gold select-none shadow-sm">
-                                            <img
-                                                src="/assets/ui/ui_coin_med.png"
-                                                alt="GP"
-                                                className="w-8 h-8 object-contain shrink-0"
-                                                style={{ width: '32px', height: '32px', imageRendering: 'pixelated' }}
-                                            />
-                                            <span>{gold.toLocaleString()} GP</span>
-                                        </div>
                                         <button
                                             onClick={() => drawer.closePane(key)}
                                             title={`Close ${label}`}

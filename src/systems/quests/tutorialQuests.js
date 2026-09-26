@@ -1,5 +1,16 @@
 // Fantasy Guild - Tutorial Quests Specification
-// Rewards unified "Guild Hall Map" with scripted sequence drops
+//
+// Each step rewards a few items (slice 2.2, SP-65). They used to reward a
+// "Guild Hall Map" that burst into a scripted sequence of Tokens (and, on the
+// last step, 2000 gold). Quest rewards that gave Maps or gold give items
+// instead; the amounts are placeholders (TL-5) and use live `item_*` ids only.
+// Oak Wood is what the Map shop and the Guild Hall upgrades are priced in, so a
+// finished step can always be spent on something.
+
+/** A tutorial step's reward. Callers copy it; it is never handed out as-is. */
+export const TUTORIAL_REWARD_ITEMS = Object.freeze([
+    Object.freeze({ itemId: 'item_oak_wood', quantity: 10 })
+]);
 
 export const TUTORIAL_QUESTS = [
     {
@@ -9,8 +20,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Drag the Guild Hall to a new spot on the Playmat.',
         targetType: 'token_placed',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_2',
@@ -19,8 +29,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Recruit a Hero from the Guild Hall (Purple orb on the top left of the screen)',
         targetType: 'hero_recruited',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_3',
@@ -29,8 +38,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Purchase the Wishing Well upgrade in the Guild Hall to generate Water.',
         targetType: 'wishing_well_upgraded',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_4',
@@ -39,8 +47,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Explore one Map (Click to open)',
         targetType: 'map_burst',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_5',
@@ -52,8 +59,7 @@ export const TUTORIAL_QUESTS = [
         // complete. Any placement counts.
         targetType: 'token_placed',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_6',
@@ -62,8 +68,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Drag and drop a Hero from the Hero Dock at the bottom of the screen onto a Token.',
         targetType: 'hero_deployed',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_7',
@@ -72,8 +77,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Complete 10 Token work cycles.',
         targetType: 'cycle_completed',
         requiredCount: 10,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_8',
@@ -82,8 +86,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Collect 10 items off the playmat (Hover over to collect)',
         targetType: 'loot_collected',
         requiredCount: 10,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_9',
@@ -92,8 +95,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Work a Token until all its charges are exhausted.',
         targetType: 'token_exhausted',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_10',
@@ -102,8 +104,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Open your Item Bank (Yellow orb on the left of the screen)',
         targetType: 'open_bank',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_11',
@@ -112,8 +113,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Drag an item from your Item Bank onto a Hero in the Hero Dock.',
         targetType: 'hero_equipped',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_12',
@@ -122,8 +122,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Open your Token Vault (Light Blue orb on the left of the screen)',
         targetType: 'open_vault',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_13',
@@ -132,8 +131,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Drag and drop a Token from the Vault onto the Playmat.',
         targetType: 'vault_withdrawn',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_14',
@@ -142,8 +140,7 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Place a Tool (like a Pickaxe or an Axe) nearby to a relevant Token on the Playmat.',
         targetType: 'context_token_placed',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_15',
@@ -152,8 +149,7 @@ export const TUTORIAL_QUESTS = [
         instruction: "Open the Cartographer's Shop (Green orb on the left of the screen)",
         targetType: 'open_cartographer',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
         id: 'tutorial_16',
@@ -162,7 +158,6 @@ export const TUTORIAL_QUESTS = [
         instruction: 'Buy one map from the Cartographer (it will drop onto the Playmat).',
         targetType: 'map_purchased',
         requiredCount: 1,
-        rewardMapId: 'map_guild_hall',
-        rewardMapName: 'Guild Hall Map'
+        rewardItems: TUTORIAL_REWARD_ITEMS
     }
 ];

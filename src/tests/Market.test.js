@@ -66,14 +66,18 @@ beforeEach(() => {
 });
 
 describe('A Market is an ordinary Token whose output is gold', () => {
-    it('consumes its inputs and credits currency', () => {
+    // ⚠️ Changed in slice 2.2 (SP-65): gold is retired, so a Market's currency
+    // output credits nothing. It used to assert the gold matched the authored
+    // output. The cycle itself is unchanged: it still runs and takes its inputs.
+    it('consumes its inputs and credits no gold (SP-65)', () => {
         const def = getTokenType(MARKET);
+        expect(def.config.outputs[0].quantity).toBeGreaterThan(0);
         InventoryManager.addItem('item_market_goods', 10);
         place(SPOT, MARKET, 'hero_1');
 
         run(16000);   // one 15s cycle
 
-        expect(GameState.state.currency.gold).toBe(def.config.outputs[0].quantity);
+        expect(GameState.state.currency.gold).toBe(0);
         expect(InventoryManager.getItemCount('item_market_goods')).toBe(0);
     });
 
@@ -119,25 +123,19 @@ describe('⚠️ Items are worth more used than sold (D-128)', () => {
         expect(def.config.outputs[0].quantity).toBe(Math.round(raw * MARKET_PREMIUM));
     });
 
-    it('the premium is what the player actually banks, not just what is authored', () => {
-        // End to end: sell the goods raw, then earn the same goods through the
-        // Market, and compare the two piles of gold. This is the assertion that
-        // would catch the currency path breaking, which an arithmetic check on
-        // the authored numbers never could.
+    // ⚠️ Changed in slice 2.2 (SP-65). This used to sell the goods raw, run
+    // them through the Market, and check the Market paid the premium in gold.
+    // Gold is retired: nothing sells from the UI and a Market credits nothing,
+    // so the end-to-end check is now that a full Market cycle banks no gold.
+    it('a Market cycle banks no gold at all (SP-65)', () => {
         const input = getTokenType(MARKET).config.inputs[0];
 
         InventoryManager.addItem(input.itemId, input.quantity);
-        CommerceSystem.sellItem(input.itemId, input.quantity);
-        const rawGold = GameState.state.currency.gold;
-
-        GameState.state.currency.gold = 0;
-        InventoryManager.addItem(input.itemId, input.quantity);
         place(SPOT, MARKET, 'hero_1');
         run(16000);
-        const marketGold = GameState.state.currency.gold;
 
-        expect(rawGold).toBeGreaterThan(0);
-        expect(marketGold).toBe(Math.round(rawGold * MARKET_PREMIUM));
+        expect(InventoryManager.getItemCount(input.itemId)).toBe(0);   // the cycle did run
+        expect(GameState.state.currency.gold).toBe(0);
     });
 
     it('costs a whole spot and a whole hero for its income', () => {

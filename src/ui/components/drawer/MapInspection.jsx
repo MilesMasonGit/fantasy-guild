@@ -1,10 +1,9 @@
 import { cn } from '../../utils/cn.js';
 import { getMap } from '../../../config/registries/mapRegistry.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
-import { tokenForMap, isDiscovered, mapMaterials } from '../../../systems/board/Cartographer.js';
+import { tokenForMap, isDiscovered, mapMaterials, mapPrice } from '../../../systems/board/Cartographer.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
-import { Coins } from 'lucide-react';
 
 /**
  * MapInspection — displays Map details, full token/item pool, and exact drop chances.
@@ -18,7 +17,10 @@ export const MapInspection = ({ mapId, onInspect }) => {
     // shape is `{ itemId, quantity }` with no name and no `id`, so reading it
     // here drew every material as "Unknown" under a duplicate React key.
     const materials = mapMaterials(map);
-    const pool = map.pool || [];
+    const price = mapPrice(map);
+    // Gold entries pay nothing since gold was retired (SP-65), so they are
+    // not listed as drops.
+    const pool = (map.pool || []).filter(e => e.kind !== 'gold' && e.kind !== 'currency');
     const totalWeight = pool.reduce((sum, entry) => sum + (entry.weight || 0), 0);
 
     // Sort entries by drop chance (highest weight first)
@@ -37,8 +39,20 @@ export const MapInspection = ({ mapId, onInspect }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-bold text-gi-text truncate">{map.name}</h3>
-                    <div className="flex items-center gap-1.5 mt-1 text-gi-gold font-bold tabular-nums">
-                        <Coins size={13} /> {map.price.toLocaleString()} GP
+                    {/* The price is items, not gold (SP-65, slice 2.2). */}
+                    <div className="flex flex-col gap-1 mt-1">
+                        {price.length === 0 && <span className="text-gi-muted">Free</span>}
+                        {price.map(p => (
+                            <EntityRibbon
+                                key={`price-${p.itemId}`}
+                                kind="item"
+                                id={p.itemId}
+                                name={p.name}
+                                quantity={p.quantity}
+                                size="sm"
+                                variant="cost"
+                            />
+                        ))}
                     </div>
                 </div>
             </div>

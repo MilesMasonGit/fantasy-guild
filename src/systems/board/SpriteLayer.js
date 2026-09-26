@@ -11,7 +11,6 @@ import { matW, matH } from '../../config/matGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import { QuestManager } from '../quests/QuestManager.js';
@@ -434,10 +433,12 @@ export function collectSprite(id) {
     try {
         if (sprite.kind === 'item' || sprite.kind === 'gold' || sprite.kind === 'currency') {
             if (sprite.refId === 'item_coins' || sprite.refId === 'item_coin' || sprite.refId === 'coins' || sprite.refId === 'coin' || sprite.kind === 'gold' || sprite.kind === 'currency') {
-                CurrencyManager.addGold(sprite.quantity || 1, 'loot_collection');
+                // Gold is retired (SP-65, slice 2.2): a coin pile is swept off
+                // the floor and pays nothing. It is not banked either — coins
+                // as an item would be gold under another name.
+                logger.debug('SpriteLayer', `Collected ${sprite.quantity || 1} coins; gold is retired, nothing credited`);
                 takeSprite(id);
                 announceCollected(sprite, 'bank');
-                NotificationSystem.success(`Collected ${(sprite.quantity || 1).toLocaleString()} Gold!`);
                 changed = true;
                 return true;
             }

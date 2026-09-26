@@ -169,13 +169,8 @@ export const TestDashboard = React.memo(() => {
             label: "🧰 Spawn Items...",
             onClick: () => setShowSpawnItem(true)
         },
-        {
-            label: "Add 1k Gold",
-            onClick: () => {
-                engine.GameState.state.currency.gold += 1000;
-                engine.EventBus.publish('state_changed');
-            }
-        },
+        // No "Add 1k Gold": gold is retired (SP-65, slice 2.2). Use Spawn
+        // Items for the items that are the only price now.
         {
             label: "Hire Random Hero",
             onClick: () => {

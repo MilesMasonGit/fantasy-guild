@@ -36,45 +36,42 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         QuestManager.cleanup();
     });
 
-    it('initializes with 3 tutorial quests simultaneously rewarding Guild Hall Map', () => {
+    // ⚠️ Changed in slice 2.2 (SP-65): tutorial quests reward items, not a
+    // Guild Hall Map. This used to assert `rewardMapId: 'map_guild_hall'`.
+    it('initializes with 3 tutorial quests simultaneously, each rewarding items', () => {
         const active = QuestManager.getActiveQuests();
         expect(active.length).toBe(MAX_ACTIVE_QUESTS); // 3
 
-        expect(active[0].id).toBe('tutorial_1');
-        expect(active[0].rewardMapId).toBe('map_guild_hall');
-        expect(active[0].rewardMapName).toBe('Guild Hall Map');
-        expect(active[1].id).toBe('tutorial_2');
-        expect(active[1].rewardMapId).toBe('map_guild_hall');
-        expect(active[2].id).toBe('tutorial_3');
-        expect(active[2].rewardMapId).toBe('map_guild_hall');
+        expect(active.map(q => q.id)).toEqual(['tutorial_1', 'tutorial_2', 'tutorial_3']);
+        for (const q of active) {
+            expect(q.rewardMapId).toBeUndefined();
+            expect(q.rewardItems).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
+        }
     });
 
-    it('immediately replenishes an opened slot with the next tutorial quest when claimed, delivering a BoardMap', () => {
+    // ⚠️ Changed in slice 2.2 (SP-65): a claim pays items into the Bank and
+    // puts no Map on the mat. This used to assert a reward Map landed in a
+    // band of the mat.
+    it('immediately replenishes an opened slot with the next tutorial quest when claimed, paying items', () => {
         // Claim Step 0 (Place a Token)
         EventBus.publish('token_placed', { instanceId: 'tok_24', typeId: 'token_guild_hall' });
         const initialMaps = BoardState.getBoardMaps().length;
+        const goldBefore = GameState.state.currency.gold;
 
         const res = QuestManager.claimQuest('tutorial_1');
         expect(res.success).toBe(true);
-        expect(res.rewardMapId).toBe('map_guild_hall');
+        expect(res.rewardItems.map(r => [r.itemId, r.quantity])).toEqual([['item_oak_wood', 10]]);
 
-        // Spawns map on playmat in bottom-left coordinate quadrant
-        const boardMaps = BoardState.getBoardMaps();
-        expect(boardMaps.length).toBe(initialMaps + 1);
-        const lastMap = boardMaps[boardMaps.length - 1];
-        // The band a reward Map is tossed into, in plain mat units since slice
-        // 1.6d-2: x lands in 466–786 and y in 359–509. The bounds below are the
-        // old area-relative numbers, unchanged — only their spelling moved.
-        expect(lastMap.x).toBeGreaterThanOrEqual(426);
-        expect(lastMap.x).toBeLessThanOrEqual(866);
-        expect(lastMap.y).toBeGreaterThanOrEqual(349);
+        expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
+        expect(BoardState.getBoardMaps().length).toBe(initialMaps);
+        expect(GameState.state.currency.gold).toBe(goldBefore);
 
         const active = QuestManager.getActiveQuests();
         expect(active.length).toBe(3);
         // Step 3 (Explore one Map, id: 'tutorial_4') should now be in the 3 active slots!
         const step4 = active.find(q => q.id === 'tutorial_4');
         expect(step4).toBeDefined();
-        expect(step4.rewardMapId).toBe('map_guild_hall');
+        expect(step4.rewardItems).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);
 
         // Test tutorial_3 (Upgrade Guild Hall Production)
         const step3 = active.find(q => q.id === 'tutorial_3');
@@ -148,12 +145,13 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(burst11.length).toBe(1);
         expect(burst11[0].refId).toBe('token_cooking_pot');
 
-        // 12th open yields Drop 12 (Coins - 2000 GP)
+        // 12th open yields Drop 12 (Oak Wood). ⚠️ Changed in slice 2.2
+        // (SP-65): this drop was 2000 coins, i.e. gold, which is retired.
         const burst12 = Cartographer.rollBurst('map_guild_hall');
         expect(burst12.length).toBe(1);
         expect(burst12[0].kind).toBe('item');
-        expect(burst12[0].refId).toBe('item_coins');
-        expect(burst12[0].quantity).toBe(2000);
+        expect(burst12[0].refId).toBe('item_oak_wood');
+        expect(burst12[0].quantity).toBe(20);
     });
 
     it('completes item collection with a single stack of 10 items', () => {
@@ -282,7 +280,9 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(replenishedActive.some(q => q.id === 'bounty_abandon_test')).toBe(false);
     });
 
-    it('enforces 50-map cap blocking claims and purchases when full', () => {
+    // ⚠️ Changed in slice 2.2 (SP-65): a quest reward is items now, so the Map
+    // cap no longer blocks a claim — only a Cartographer purchase.
+    it('enforces the 50-map cap on purchases, and no longer on quest claims', () => {
         // Fill playmat with 50 maps
         for (let i = 0; i < BoardState.MAX_MAP_LIMIT; i++) {
             BoardState.addBoardMap('token_map', 50, 50);
@@ -291,12 +291,12 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(BoardState.getTotalMapCount()).toBe(BoardState.MAX_MAP_LIMIT);
         expect(BoardState.hasMapSpace()).toBe(false);
 
-        // Claiming quest should fail due to map cap
+        // A claim still succeeds: it puts no Map on the mat.
         const active = QuestManager.getActiveQuests();
         active[0].currentCount = active[0].requiredCount;
         const claimRes = QuestManager.claimQuest(active[0].id);
-        expect(claimRes.success).toBe(false);
-        expect(claimRes.reason).toContain('Map limit reached');
+        expect(claimRes.success).toBe(true);
+        expect(BoardState.getTotalMapCount()).toBe(BoardState.MAX_MAP_LIMIT);
 
         // Cartographer purchase should also refuse
         const buyRes = Cartographer.buyMap('map_test_map');
@@ -316,6 +316,8 @@ describe('Quest System & Multi-Tutorial Chain', () => {
             itemId: 'fixture_oak_wood',
             requiredCount: 10,
             currentCount: 0,
+            // A bounty from a save made before slice 2.2 still names a
+            // reward Map; it must pay the bounty's items instead.
             rewardMapId: 'map_test_map',
             rewardMapName: 'Test Map',
             status: 'active'
@@ -334,7 +336,9 @@ describe('Quest System & Multi-Tutorial Chain', () => {
 
         // Items deducted (15 - 10 = 5)
         expect(InventoryStore.getItems()['fixture_oak_wood'].quantity).toBe(5);
-        expect(BoardState.getBoardMaps().length).toBe(initialMapCount + 1);
+        // ⚠️ Changed in slice 2.2 (SP-65): the reward is items, not a Map.
+        expect(BoardState.getBoardMaps().length).toBe(initialMapCount);
+        expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
     });
 
     it('the Vault is open from the start — no tutorial gates it (FP-62)', () => {
