@@ -114,7 +114,9 @@ export const ALERT_HINT = {
     [ALERT.UNSKILLED]: 'This hero doesn’t have the skill for this work — levelling won’t help',
     [ALERT.NO_RECIPE]: 'This station is missing a Token its recipe needs beside it',
     [ALERT.CHARGES]: 'Not enough charges left here to run a full cycle',
-    [ALERT.UNSTOCKED]: 'This tile ran dry and the Vault has no replacement — restock it'
+    [ALERT.UNSTOCKED]: 'This tile ran dry and the Vault has no replacement — restock it',
+    [ALERT.CHOOSE_BUILD]: 'Choose what to build on this Foundation',
+    [ALERT.NO_ROOM]: 'No room for what this Foundation builds — clear some space around it'
 };
 
 /**
@@ -134,6 +136,8 @@ export const SKIP_HINT = {
     [ALERT.NO_RECIPE]: 'missing a Token its recipe needs beside it',
     [ALERT.CHARGES]: 'not enough charges for a cycle',
     [ALERT.UNSTOCKED]: 'ran dry, nothing in the Vault',
+    [ALERT.CHOOSE_BUILD]: 'nothing chosen to build',
+    [ALERT.NO_ROOM]: 'no room to build',
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',
@@ -158,7 +162,9 @@ export const ALERT_LABEL = {
     [ALERT.UNSKILLED]: 'Wrong Skill',
     [ALERT.NO_RECIPE]: 'Need Tokens',
     [ALERT.CHARGES]: 'Need Charges',
-    [ALERT.UNSTOCKED]: 'Restock'
+    [ALERT.UNSTOCKED]: 'Restock',
+    [ALERT.CHOOSE_BUILD]: 'Choose Build',
+    [ALERT.NO_ROOM]: 'No Room'
 };
 
 /** Alerts drawn in warning yellow; every other alert is drawn in red. */

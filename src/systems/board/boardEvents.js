@@ -234,5 +234,17 @@ export const ALERT = {
      * the runner, and carried on the vacancy rather than on a Token instance:
      * there is no Token left on the tile to hang it from.
      */
-    UNSTOCKED: 'unstocked'
+    UNSTOCKED: 'unstocked',
+    /**
+     * A Foundation with no recipe picked (Token Lifecycle 6.1). A Foundation is
+     * never given a default: the player chooses what it becomes, and until
+     * they do nobody works it.
+     */
+    CHOOSE_BUILD: 'choose_build',
+    /**
+     * A Foundation finished its build but what it becomes has nowhere legal to
+     * stand. It stays a Foundation, keeps its full progress and nothing is
+     * spent; it tries again every tick (Token Lifecycle 6.1).
+     */
+    NO_ROOM: 'no_room'
 };

@@ -64,7 +64,9 @@ export function bandForLevel(level, workerLevel, guildLevel) {
  * @returns {{skill: string|null, workerLevel: number, guildLevel: number, rows: object[]}}
  */
 export function bandStationRecipes(def, heroId, heroes) {
-    const skill = stationSkillOf(def);
+    // A Foundation's pool is its `foundation.skill` (Token Lifecycle 6.1):
+    // Construction, or Farming for farmland. It has no `Works as` statement.
+    const skill = def?.foundation?.skill || stationSkillOf(def);
     const workerLevel = workerLevelFor(heroId, skill);
     const guildLevel = Math.max(workerLevel, guildLevelFor(heroes, skill));
 

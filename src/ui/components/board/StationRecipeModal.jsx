@@ -5,6 +5,7 @@ import { GIModal } from '../base/GIModal.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
+import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { BAND } from '../../../systems/board/RecipeBands.js';
 
 /** An item's display name, falling back to its id so an unauthored item still reads. */
@@ -34,7 +35,9 @@ export function outputSummary(recipe) {
         const max = o.maxQty ?? min;
         const qty = min === max ? `${min}` : `${min}–${max}`;
         const chance = (o.chance == null || o.chance >= 100) ? '' : ` (${o.chance}%)`;
-        return `${qty}× ${itemLabel(o.itemId)}${chance}`;
+        // A building recipe outputs a Token (Token Lifecycle 6.1).
+        const label = o.tokenId ? (tokenName(o.tokenId) || o.tokenId) : itemLabel(o.itemId);
+        return `${qty}× ${label}${chance}`;
     });
     return parts.length ? parts.join(', ') : null;
 }
@@ -84,7 +87,7 @@ const RecipeRow = ({ row, isSelected, onSelect }) => {
                     {isSelected && <Check size={14} className="text-gi-primary shrink-0" />}
                 </div>
                 <div className="text-[11px] text-gi-muted truncate">
-                    {outputs ? `Makes ${outputs}` : 'Makes nothing'}
+                    {outputs ? `${recipe.foundationKinds?.length ? 'Builds' : 'Makes'} ${outputs}` : 'Makes nothing'}
                     {inputs ? ` · Needs ${inputs}` : ''}
                     {context ? ` · Beside ${context}` : ''}
                 </div>

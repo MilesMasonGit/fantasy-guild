@@ -114,7 +114,8 @@ export const MatToken = React.memo(function MatToken({
         () => {
             const instance = BoardState.getTokenById(id);
             if (!instance) return null;
-            const stationSkill = def ? stationSkillOf(def) : null;
+            // A Foundation picks its recipe like a station (Token Lifecycle 6.1).
+            const stationSkill = def ? (def.foundation?.skill || stationSkillOf(def)) : null;
             return {
                 usesRemaining: instance.usesRemaining ?? null,
                 alert: instance.alert || null,
@@ -122,6 +123,7 @@ export const MatToken = React.memo(function MatToken({
                 heroId: BoardState.workerOf(id),
                 stationSkill,
                 recipe: stationSkill ? StationRecipe.selectedRecipe(instance, def) : null,
+                isFoundation: !!def?.foundation,
                 requiresHero: def ? (def.requiresHero !== false) : true
             };
         },
@@ -326,6 +328,19 @@ export const MatToken = React.memo(function MatToken({
                         recipe={detail?.recipe}
                         onClick={() => onOpenRecipes?.(id)}
                     />
+                )}
+
+                {/* A Foundation with nothing picked says so, always (Token
+                    Lifecycle 6.1): nobody works it until the player chooses. */}
+                {detail?.isFoundation && !detail?.recipe && !hidden && (
+                    <button
+                        type="button"
+                        data-choose-build="true"
+                        onClick={(e) => { e.stopPropagation(); onOpenRecipes?.(id); }}
+                        className="absolute left-1/2 -translate-x-1/2 top-1 z-30 pointer-events-auto whitespace-nowrap px-1.5 py-0.5 rounded bg-black/85 border border-gi-gold/60 text-gi-gold text-[10px] font-bold cursor-pointer hover:scale-105 transition-transform"
+                    >
+                        Choose what to build
+                    </button>
                 )}
 
                 {/* Disallowed (FP-35): a dim ⊘ in the bottom-left, always shown (FPP-8) */}
