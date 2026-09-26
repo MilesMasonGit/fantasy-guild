@@ -31,7 +31,7 @@ import './fixtures/fixtureItems.js';
 /** A save shaped like the real thing, with only the fields this pass reads. */
 function saveWith(board = {}, rest = {}) {
     return {
-        board: { tokens: {}, vacancies: {}, tray: [], tokenBank: {}, maps: [], ...board },
+        board: { tokens: {}, tray: [], tokenBank: {}, maps: [], ...board },
         inventory: { items: {} },
         heroes: [],
         ...rest
@@ -78,7 +78,6 @@ describe('Finding what a save is still holding', () => {
     it('looks in every place a save can hold a Token', () => {
         const ghosts = auditSaveContent(saveWith({
             tokens: { tok_a: { id: 'tok_a', typeId: 'token_sawmill', x: 544, y: 64 } },
-            vacancies: { spot_224_224: { typeId: 'token_trout_stream', x: 224, y: 224 } },
             tray: [{ typeId: 'token_forest' }],
             tokenBank: { token_oakwood_grove: [{ usesRemaining: 5 }] },
             maps: [{ id: 'map_x', typeId: 'token_stew_pot' }]
@@ -86,7 +85,7 @@ describe('Finding what a save is still holding', () => {
 
         expect(ghosts.map(g => g.id).sort()).toEqual([
             'token_forest', 'token_oakwood_grove', 'token_sawmill',
-            'token_stew_pot', 'token_trout_stream'
+            'token_stew_pot'
         ]);
     });
 

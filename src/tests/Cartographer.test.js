@@ -25,10 +25,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const WOODLAND = 'map_woodland';
 
-/** Give the player enough gold and materials to buy `n` Woodland Maps. */
+/** Give the player the materials to buy `n` Woodland Maps. */
 function stockFor(n = 1, mapId = WOODLAND) {
     const def = getMap(mapId);
-    GameState.state.currency.gold = def.price * n;
     for (const m of def.materials) InventoryManager.addItem(m.itemId, m.quantity * n);
 }
 
@@ -46,7 +45,6 @@ describe('The catalogue (D-99, D-101)', () => {
     });
 
     it('shows an unaffordable Map at its real price rather than hiding it', () => {
-        GameState.state.currency.gold = 0;
         const rows = Cartographer.catalogue();
         const dearest = rows[rows.length - 1];
 

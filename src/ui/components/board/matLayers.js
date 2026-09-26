@@ -18,11 +18,9 @@
 export const MAT_Z = Object.freeze({
     /** The playmat surface itself, and the play-area outline on it (FP-93). */
     SURFACE: 0,
-    /** The ghost of a Token a Manager owes this spot. */
-    GHOST: 5,
     /** Tokens, their heroes and their badges: `TOKEN_BASE + rank * 3`. */
     TOKEN_BASE: 10,
-    /** Heroes with no Token to stand on — waiting on an empty spot (FP-70). */
+    /** Heroes with no Token to stand on — idle beside their flag. */
     WAITING_HERO: 690,
     /** Heroes on the move — above every Token they walk over (HM-3). */
     WALKING_HERO: 695,

@@ -212,22 +212,6 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 300, y: 200 });
     });
 
-    it('a spot a Manager owes a Token is clamped too, and keeps its red mark', () => {
-        BoardState.setVacancyAt({ x: 1700, y: 1050 }, 'rs_small');
-        BoardState.vacancyAt(BoardState.spotIdAt(1700, 1050)).unstocked = true;
-
-        setMatTuning('matSteps', 6);
-        MatResize.fitToMat();
-
-        const spots = BoardState.spotVacancies();
-        expect(spots).toHaveLength(1);
-        const [, vacancy] = spots[0];
-        expect({ x: vacancy.x, y: vacancy.y }).toEqual({ x: 960, y: 614 });
-        expect(vacancy.typeId).toBe('rs_small');
-        // A spot the player is being warned about must still be warning them.
-        expect(vacancy.unstocked).toBe(true);
-    });
-
     it('announces every changed point ONCE, not once per Token', () => {
         placeAt('rs_small', 1600, 400);
         placeAt('rs_small', 1600, 900);
@@ -249,12 +233,11 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
 // ---------------------------------------------------------------------------
 
 describe('⭐ growing the mat moves nothing', () => {
-    it('every Token, flag and spot stays exactly where it was', () => {
+    it('every Token and flag stays exactly where it was', () => {
         const a = placeAt('rs_small', 300, 300);
         const b = placeAt('rs_large', 900, 500);
         GameState.state.heroes = [{ id: 'h1', name: 'A' }];
         BoardState.setFlag('h1', { x: 700, y: 700, plantedAt: 1 });
-        BoardState.setVacancyAt({ x: 500, y: 500 }, 'rs_small');
 
         const events = [];
         const off = EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, (p) => events.push(p));
@@ -262,13 +245,12 @@ describe('⭐ growing the mat moves nothing', () => {
         const summary = MatResize.fitToMat();
         off();
 
-        expect(summary).toEqual({ tokensPulled: 0, flagsPulled: 0, spotsPulled: 0, crowded: 0 });
+        expect(summary).toEqual({ tokensPulled: 0, flagsPulled: 0, crowded: 0 });
         expect({ x: BoardState.getTokenById(a.id).x, y: BoardState.getTokenById(a.id).y })
             .toEqual({ x: 300, y: 300 });
         expect({ x: BoardState.getTokenById(b.id).x, y: BoardState.getTokenById(b.id).y })
             .toEqual({ x: 900, y: 500 });
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 700, y: 700 });
-        expect(BoardState.spotVacancies()[0][1]).toMatchObject({ x: 500, y: 500 });
         // Nothing changed, so nothing was announced and nothing was rebuilt.
         expect(events).toHaveLength(0);
     });

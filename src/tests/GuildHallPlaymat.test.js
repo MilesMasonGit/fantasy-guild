@@ -37,8 +37,6 @@ const nextPrice = (id) => GuildUpgradeManager.getNextCost(id);
 beforeEach(() => {
     GameState.initNew();
     GameState.state.heroes = [];
-    // Gold is deliberately plentiful: Hall upgrades must not touch it (SP-65).
-    GameState.state.currency = { gold: 10000 };
     GameState.state.progress.guildUpgrades = {};
     InventoryManager.init();
 });
@@ -112,7 +110,7 @@ describe('Guild Hall 7x7 Upgrade Board', () => {
         expect(GameState.heroes.length).toBe(2);
         expect(GameState.progress.rosterLimit).toBe(ROSTER_BASE + 2);
         price.forEach(p => expect(InventoryManager.getItemCount(p.itemId)).toBe(0));
-        expect(GameState.state.currency.gold).toBe(10000);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('unlocks dependent tracks upon upgrading predecessor', () => {
@@ -178,7 +176,7 @@ describe('Guild Hall upgrades are paid in items', () => {
         expect(res.success).toBe(true);
         expect(GuildUpgradeManager.getRank('bank_slots')).toBe(1);
         expect(InventoryManager.getItemCount(itemId)).toBe(7);
-        expect(GameState.state.currency.gold).toBe(10000);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('refuses when the Bank is short, names what is missing, and takes nothing', () => {
@@ -192,7 +190,7 @@ describe('Guild Hall upgrades are paid in items', () => {
         expect(res.error).toContain(`have ${quantity - 1}`);
         expect(GuildUpgradeManager.getRank('bank_slots')).toBe(0);
         expect(InventoryManager.getItemCount(itemId)).toBe(quantity - 1);
-        expect(GameState.state.currency.gold).toBe(10000);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('is all or nothing across a multi-item price', () => {

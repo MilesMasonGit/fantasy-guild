@@ -8,9 +8,11 @@ import { isEnemyDef } from './enemyProfile.js';
  *
  * ## Why the picker went
  * It offered nine values, the engine read three of them, and one — `manager` —
- * was a promise the data could not keep: `Managers.js` decides a Manager by
+ * was a promise the data could not keep: `Managers.js` decided a Manager by
  * `def.manages`, no CMS field ever wrote that, so a Token typed `manager` and
- * described as restocking its neighbours did nothing at all. A classification
+ * described as restocking its neighbours did nothing at all. (Managers are
+ * retired altogether since Token Lifecycle 9.2, SP-55: a Restocks rule is
+ * still read here for the label, but nothing in the engine acts on it.) A classification
  * you choose can disagree with the thing it classifies. A classification you
  * *read off* the rules cannot.
  *
@@ -22,8 +24,9 @@ import { isEnemyDef } from './enemyProfile.js';
  * it; everything downstream keeps working.
  *
  * ## `market` — now readable off the Token, as of Phase 2
- * `BoardRunner` credits gold when an output entry carries `currency` (D-141) —
- * the only thing in the running game that makes a Market a Market. Phase 1 left
+ * `BoardRunner` credited gold when an output entry carried `currency` (D-141).
+ * Gold is retired and that code deleted (Token Lifecycle 9.4), so today the
+ * label is all a currency output still produces. Phase 1 left
  * an authored `market` standing because **no CMS field wrote `output.currency`**;
  * the Outputs column now does (`OUTPUT_CURRENCIES` in `tokenConstants.js`), so
  * "consumes goods, produces currency" is a real signal and the rung derives like

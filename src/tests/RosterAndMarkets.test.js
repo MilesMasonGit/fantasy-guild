@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { MARKET_PREMIUM } from './fixtures/testTokens.js';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -9,8 +9,6 @@ import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { CommerceSystem } from '../systems/economy/CommerceSystem.js';
-import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { generateHero, generateCandidates } from '../systems/hero/HeroGenerator.js';
@@ -159,13 +157,11 @@ describe('A Market demands Commerce (D-259)', () => {
         // FP-48, FP-60).
         Flags.plant('hero_1', C(10), { skill: 'commerce' });
         InventoryManager.addItem('item_market_goods', 100);
-        const goldBefore = CurrencyManager.getCurrency('gold');
-
         run(20000);
 
         expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
         expect(token.alert).toBeFalsy();
-        expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     // ⚠️ Changed in slice 2.2 (SP-65). This used to assert the Market paid
@@ -175,12 +171,10 @@ describe('A Market demands Commerce (D-259)', () => {
         GameState.state.heroes = [makeHero('hero_1', ['commerce'], 50)];
         place(10, 'fixture_market', 'hero_1');
         InventoryManager.addItem('item_market_goods', 100);
-        const goldBefore = CurrencyManager.getCurrency('gold');
-
         run(20000);
 
         expect(InventoryManager.getItemCount('item_market_goods')).toBeLessThan(100);
-        expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('a Merchant is the only job that brings Commerce', () => {
@@ -192,40 +186,6 @@ describe('A Market demands Commerce (D-259)', () => {
     });
 });
 
-describe('Raw selling carries the opening economy (D-263)', () => {
-    it('sells from the Bank with no hero, no Token and no skill', () => {
-        // This is what makes gating Markets behind a Tier-2 job survivable: the
-        // player is never without a way to turn goods into gold, only without
-        // the premium one.
-        InventoryManager.addItem('item_market_goods', 10);
-        const goldBefore = CurrencyManager.getCurrency('gold');
-
-        const result = CommerceSystem.sellItem('item_market_goods', 10);
-
-        expect(result.success).toBe(true);
-        expect(result.totalGold).toBeGreaterThan(0);
-        expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore + result.totalGold);
-        expect(InventoryManager.getItemCount('item_market_goods')).toBe(0);
-    });
-
-    it('a Market beats it by roughly 20%, which is the whole reason to want one', () => {
-        // ⚠️ Two things changed here, both of them fixes.
-        //
-        // It used to find "the first Market in the content set", so it broke the
-        // moment the owner authored a Market that was not finished yet — an
-        // engine test failing over half-written content. It now reads the
-        // fixture, whose input has a fixed Bank price.
-        //
-        // And it used to assert only `payout > raw`, sitting under a comment
-        // claiming a "3× / limit of 30" rule. **The owner never set that rule.**
-        // The real one, stated 2026-08-20, is a ~20% premium over the Bank's
-        // sell price — `MARKET_PREMIUM`.
-        const market = getAllTokenTypes().fixture_market;
-        const input = market.config.inputs[0];
-        const payout = market.config.outputs.find(o => o.currency === 'gold').quantity;
-        const raw = CommerceSystem.getItemPrice(input.itemId) * input.quantity;
-
-        expect(payout, `${market.id} must beat selling its input raw`).toBeGreaterThan(raw);
-        expect(payout / raw).toBeCloseTo(MARKET_PREMIUM, 2);
-    });
-});
+// 'Raw selling carries the opening economy (D-263)' and the Market premium
+// over raw selling were deleted with `CommerceSystem` (Token Lifecycle 9.4):
+// there is no raw selling any more.

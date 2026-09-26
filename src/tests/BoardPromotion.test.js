@@ -306,15 +306,16 @@ describe('Accepting is the only thing that costs anything', () => {
         expect(tokenAt(TILE).usesRemaining).toBe(1);
     });
 
-    it('takes no gold and no materials', () => {
+    it('takes no materials (and there is no gold to take, 9.4)', () => {
         const hero = makeQualified();
-        GameState.state.currency.gold = 1000;
         setup(hero);
         trainToOffer(hero.id);
+        const before = JSON.stringify(GameState.state.inventory.items);
 
         BoardPromotion.accept(idAt(TILE));
 
-        expect(GameState.state.currency.gold).toBe(1000);
+        expect(JSON.stringify(GameState.state.inventory.items)).toBe(before);
+        expect(GameState.state.currency).toBeUndefined();
     });
 
     it('removes a Token whose last charge it just spent, and says so', () => {

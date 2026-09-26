@@ -35,8 +35,6 @@ import { applyMapResults } from '../../cms/src/engine/sim/writeBack.js';
 import { normaliseDials, RARITY_WEIGHTS } from '../../cms/src/engine/sim/dials.js';
 import { adaptCorpus } from '../../cms/src/engine/sim/fieldAdapter.js';
 import { BURST_SIZE } from '../../src/systems/board/Cartographer.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
-import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
 import tokenData from '../../data/tokens.json';
 import recipeData from '../../data/tokenRecipes.json';
@@ -553,34 +551,9 @@ describe('Map pass — guild-hall Maps are skipped (owner ruling 24)', () => {
 });
 
 // === The game half (S5) ======================================================
-
-describe('TokenBank.sellValue — the derived scrap value, with a fallback', () => {
-    it('prefers the simulator\'s per-Token scrap value over the rarity table', () => {
-        registerTokenTypes({
-            fx_sell_derived: {
-                id: 'fx_sell_derived', name: 'Fixture Derived', tokenType: 'resource',
-                rarity: 'common', scrapValue: 137,
-            },
-        });
-        expect(TokenBank.sellValue('fx_sell_derived')).toBe(137);
-        expect(TokenBank.sellValue('fx_sell_derived')).not.toBe(TokenBank.SELL_VALUE.common);
-    });
-
-    it('falls back to the rarity table for a Token no Map hands over', () => {
-        // The safety net through the re-authoring window: a Token in no pool
-        // carries no scrap value at all, and must still sell for something.
-        registerTokenTypes({
-            fx_sell_plain: {
-                id: 'fx_sell_plain', name: 'Fixture Plain', tokenType: 'resource', rarity: 'rare',
-            },
-        });
-        expect(TokenBank.sellValue('fx_sell_plain')).toBe(TokenBank.SELL_VALUE.rare);
-    });
-
-    it('still pays nothing for a Token that does not exist', () => {
-        expect(TokenBank.sellValue('fx_sell_ghost')).toBe(0);
-    });
-});
+// Removed in Token Lifecycle 9.4: `TokenBank.sellValue`, the game-side reader of
+// the simulator's `scrapValue`, was deleted with gold. The simulator still
+// derives and writes `scrapValue`; nothing in the game reads it now.
 
 // === Against the real corpus: rules only, no content named ===================
 

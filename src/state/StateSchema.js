@@ -27,7 +27,9 @@
  *           skill_class_rework_roadmap_v1.md Phase 0.
  * '0.8.0' — Free Playmat slice 1.6a (FP-85). Tokens are stored by instance id
  *           at a point on the mat (`board.tokens`), not by tile, vacancies by
- *           the spot that ran dry, and the terrain fields leave the board. Old
+ *           the spot that ran dry, and the terrain fields leave the board.
+ *           (Vacancies went again with the Managers, Token Lifecycle 9.2: an
+ *           older save's `board.vacancies` is dropped on load, no bump.) Old
  *           saves are refused through the existing version check — no message
  *           of their own, no export, no conversion.
  */
@@ -62,7 +64,6 @@ export function createEmptyBoard() {
         // carries on; everyone else starts beside their flag. Written by
         // `BoardState` on arrival, erased when the hero lets go.
         workClaims: {},
-        vacancies: {},
         tokenBank: {},
         tray: [],
         maps: [],
@@ -158,17 +159,9 @@ export const INITIAL_STATE = {
     },
 
     // === Currency ===
-    currency: {
-        gold: 0,        // Starting gold
-        // Inert. Influence was the recruitment currency; it could be earned but
-        // never spent, and was cut (owner decision 2026-08-19, CR2-093).
-        // Nothing reads or writes it; kept so existing saves load.
-        influence: 10,
-        // Inert. It fed the recruit-cost formula, which went with the
-        // retirement/recruit-purchasing retirement (owner decision 2026-08-19,
-        // CR2-086). Nothing reads or writes it; kept so existing saves load.
-        totalRecruits: 0
-    },
+    // Deleted with the gold code (Token Lifecycle 9.4, SP-65). Gold, and the
+    // inert `influence` and `totalRecruits` beside it, left the save; an older
+    // save's `currency` section is dropped by `migrateState`.
 
     // === Progress ===
     // The Projects system is retired (owner decision 2026-07-17, CR-038) —
@@ -212,8 +205,7 @@ export const INITIAL_STATE = {
     // The card-ownership half of this section is retired with the deck loop
     // (binders, universals, playsets, mastery, pack purchases). It is left in
     // place, empty, rather than removed, because **it is part of the shape a
-    // save is written in** — the same reason `totalRecruits`, `influence` and
-    // `dur` are still here. Inert fields stay; removing one changes what an
+    // save is written in** — the same reason `dur` is still here. Inert fields stay; removing one changes what an
     // existing save round-trips to, for no gain.
     //
     // ⚠️ Corrected 2026-08-26 (CR2-108 sweep). This note used to give two
@@ -256,7 +248,6 @@ export const INITIAL_STATE = {
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero)
     //   nextFlagOrder number                the next flag's plantedAt
-    //   vacancies   { [spotId]: { typeId, x, y, unstocked } }   spots that ran dry, at the spent Token's point
     //   tokenBank   { [typeId]: [{ usesRemaining }, ...] }  capped by DISTINCT types (D-137)
     //   tokenBankSlots  number              derived from the Storage upgrade track
     //   tray        [ { typeId, usesRemaining }, ... ]   ~15-20 slots (D-168)
@@ -306,7 +297,7 @@ export const INITIAL_STATE = {
  */
 const REQUIRED_KEYS = [
     'meta', 'heroes', 'cards',
-    'inventory', 'currency', 'progress', 'time',
+    'inventory', 'progress', 'time',
     'collection', 'board', 'quests'
 ];
 

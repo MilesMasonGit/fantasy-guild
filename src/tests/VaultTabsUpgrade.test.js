@@ -27,7 +27,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 beforeEach(() => {
     GameState.initNew();
-    GameState.state.board = { tiles: {}, tokenBank: {}, tray: [], flags: {}, vacancies: {} };
+    GameState.state.board = { tiles: {}, tokenBank: {}, tray: [], flags: {} };
 });
 
 const setRank = (rank) => {

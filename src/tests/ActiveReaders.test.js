@@ -7,7 +7,6 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import * as Charges from '../systems/board/Charges.js';
-import * as Managers from '../systems/board/Managers.js';
 import * as Restrictions from '../systems/board/Restrictions.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
@@ -32,7 +31,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * **The active reach readers measure like the buffs do** (Free Playmat slice 1.3).
  *
  * Slice 1.2 made reach a centre-to-centre distance for buffs. This pins the
- * rest — crafting context, tool wear, Manager reach, neighbour triggers and
+ * rest — crafting context, tool wear, neighbour triggers and
  * `Cannot` counts — to the same `nearby()` measurement:
  *
  * * 1×1 Tokens at 272 u: exactly the old 8-tile ring;
@@ -97,19 +96,6 @@ registerTokenTypes({
         statements: [
             { id: 'stm_fixture_large_gated', keyword: KEYWORD.STATION, payload: { skill: 'fixture_gated_skill' } }
         ]
-    },
-    /** A Manager two spots square, over the 1×1 producer and the 2×2 one. */
-    fixture_large_manager: {
-        id: 'fixture_large_manager', name: 'Fixture Large Manager', tokenType: 'manager',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social', size: 2,
-        requiresHero: false,
-        manages: ['fixture_producer', 'fixture_large_producer']
-    },
-    /** A 1×1 Manager over the 2×2 producer. */
-    fixture_small_large_manager: {
-        id: 'fixture_small_large_manager', name: 'Fixture Small Manager Of Large', tokenType: 'manager',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
-        manages: ['fixture_large_producer']
     },
     fixture_large_producer: {
         id: 'fixture_large_producer', name: 'Fixture Large Producer', tokenType: 'resource',
@@ -307,68 +293,6 @@ describe('Charges: a tool wears once per station it serves, per cycle (D-113/D-1
         RecipeResolver.wearNearbySupport(idAt(S16));
         expect(tool.usesRemaining).toBe(79);
         expect(Charges.contextProvidersAround(idAt(S16)).map(p => p.id)).toEqual([idAt(S14)]);
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Managers — Near reach from the spot; nearest, then the earlier-placed Manager
-// ---------------------------------------------------------------------------
-
-describe('Managers: reach is Near, measured from the spot that is owed', () => {
-    it('1×1 at 272 u: a diagonal Manager covers the vacancy, one two steps away does not', () => {
-        put(S16, 'fixture_manager');                    // diagonal to S9
-        expect(Managers.managerFor(S9, 'fixture_producer')).toEqual([idAt(S16), 'fixture_manager']);
-
-        lift(S16);
-        put(CORNER, 'fixture_manager');                 // 320 u below S9
-        expect(Managers.managerFor(S9, 'fixture_producer')).toBeNull();
-    });
-
-    it('⭐ tie-break: the nearest Manager first, then the earlier-placed one (slice 1.6b; was the lower anchor)', () => {
-        const diagonal = put(P(1, 2), 'fixture_manager');   // diagonal to S15: 226 u
-        const right = put(S16, 'fixture_manager');          // beside S15: 160 u, placed first
-        const left = put(S14, 'fixture_manager');           // beside S15: 160 u, placed second
-        expect(Managers.managerFor(S15, 'fixture_producer')[0]).toBe(right.id);
-
-        BoardState.removeToken(right.id);
-        expect(Managers.managerFor(S15, 'fixture_producer')[0]).toBe(left.id);
-
-        BoardState.removeToken(left.id);
-        expect(Managers.managerFor(S15, 'fixture_producer')[0]).toBe(diagonal.id);   // nearer beats earlier
-    });
-
-    it('⭐ a 2×2 Manager covers its side-touching spots and not its corner-diagonal ones (FP-41)', () => {
-        const bigManager = put(BIG, 'fixture_large_manager');
-        expect(Managers.managerFor(SIDE, 'fixture_producer')).toEqual([bigManager.id, 'fixture_large_manager']);
-        expect(Managers.managerFor(S15, 'fixture_producer')?.[0]).toBe(bigManager.id);
-        expect(Managers.managerFor(CORNER, 'fixture_producer')).toBeNull();
-        expect(Managers.managerFor(S0, 'fixture_producer')).toBeNull();   // in the anchor's old ring
-    });
-
-    it('⭐ a vacated 2×2 spot is measured from its own centre, not from a corner of it', () => {
-        const side = put(SIDE, 'fixture_small_large_manager');   // 253 u from the 2×2 centre
-        expect(Managers.managerFor(BIG, 'fixture_large_producer')?.[0]).toBe(side.id);
-
-        lift(SIDE);
-        put(CORNER, 'fixture_small_large_manager');     // 339 u
-        expect(Managers.managerFor(BIG, 'fixture_large_producer')).toBeNull();
-    });
-
-    it('restocks in the exact spot the vacancy names (FP-19)', () => {
-        put(BIG, 'fixture_large_manager');
-        const at = SIDE;
-        BoardState.setVacancyAt(at, 'fixture_producer');
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
-
-        expect(Managers.restockSpot(BoardState.spotIdAt(at.x, at.y))).toBe('restocked');
-        expect(tokenAt(SIDE)?.typeId).toBe('fixture_producer');
-        expect(BoardState.tokensAtPoint(at.x, at.y).map(t => t.typeId)).toEqual(['fixture_producer']);
-    });
-
-    it('a larger radius widens it: at 400 u the Manager two steps away covers the vacancy', () => {
-        const far = put(CORNER, 'fixture_manager');
-        setMatTuning('nearRadius', 400);
-        expect(Managers.managerFor(S9, 'fixture_producer')?.[0]).toBe(far.id);
     });
 });
 

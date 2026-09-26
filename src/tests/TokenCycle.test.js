@@ -23,7 +23,6 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
 /** What ran dry on spot `i`, or null. */
-const vacancyAt = (i) => BoardState.vacancyAt(BoardState.spotIdAt(C(i).x, C(i).y));
 
 /** Put a Token on spot `i`, and plant a hero's flag there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
@@ -412,13 +411,14 @@ describe('Charges and depletion (D-176, D-118)', () => {
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
     });
 
-    it('records what ran dry, so a Manager knows what the spot is owed', () => {
+    it('owes the spot nothing once it runs dry (Managers retired, 9.2)', () => {
         const token = BoardState.createTokenInstance('fixture_producer', 1);
         put(10, token);
         plant('hero_1', 10);
         run(13000);
 
-        expect(vacancyAt(10)?.typeId).toBe('fixture_producer');
+        expect(BoardState.tokensAtPoint(C(10).x, C(10).y)).toEqual([]);
+        expect(GameState.state.board.vacancies).toBeUndefined();
     });
 });
 

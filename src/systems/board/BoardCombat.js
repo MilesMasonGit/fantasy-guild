@@ -479,7 +479,7 @@ function resolveVictory(instance, fight, enemy, heroId) {
     const id = instance.id;
 
     // Enemy Tokens deplete like any other (D-104) — a Bear is not an infinite
-    // resource, and Managers are what refresh them (Phase 7).
+    // resource; spawners replace them (Token Lifecycle, SP-55).
     if (instance.usesRemaining != null) {
         instance.usesRemaining -= 1;
         EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
@@ -497,7 +497,6 @@ function resolveVictory(instance, fight, enemy, heroId) {
         const sName = getTokenType(sTypeId)?.name || sTypeId || 'Support';
         const spot = support ? pointOf(support) : null;
         BoardState.removeToken(supportId);
-        if (sTypeId && spot) BoardState.setVacancyAt(spot, sTypeId);
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
             instanceId: supportId,
             ...spot,
@@ -528,10 +527,6 @@ function resolveVictory(instance, fight, enemy, heroId) {
     if (instance.usesRemaining != null && instance.usesRemaining <= 0) {
         const spot = pointOf(instance);
         BoardState.removeToken(id);
-        // A cleared-out Goblin Camp is owed a restock exactly as a spent Forest
-        // is (D-104) — one economic model covers the whole board. The spot is
-        // the camp's own point (FP-19).
-        BoardState.setVacancyAt(spot, instance.typeId);
         endFight(id);
         const eName = getTokenType(instance.typeId)?.name || instance.typeId;
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
@@ -544,8 +539,7 @@ function resolveVictory(instance, fight, enemy, heroId) {
         });
         EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: id, ...spot, typeId: instance.typeId });
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...spot, typeId: null });
-        // The hero waits on the emptied spot (FP-70) for the player or a
-        // Manager's restock (D-151).
+        // The hero's flag chooses again on its next pass.
         if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...spot });
         EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [spot] });
         return;

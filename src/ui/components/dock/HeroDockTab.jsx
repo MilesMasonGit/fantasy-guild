@@ -15,10 +15,9 @@ import { Pencil, Backpack, Heart } from 'lucide-react';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { dockStatusLine } from '../board/flagText.js';
 
-/** The status line's colour: working green, waiting amber, idle at a flag stone, in the Guild blue. */
+/** The status line's colour: working green, idle at a flag stone, in the Guild blue. */
 const STATUS_TONE = {
     working: 'text-emerald-400',
-    waiting: 'text-amber-300',
     idle: 'text-stone-300'
 };
 
@@ -75,8 +74,8 @@ export const HeroDockTab = ({
         { deps: [heroId] }
     );
 
-    // What this hero is doing, from their flag's status: working, waiting for
-    // a restock, idle at their flag, or in the Guild (slice 1.5's status line).
+    // What this hero is doing, from their flag's status: working, walking,
+    // idle at their flag, or in the Guild (slice 1.5's status line).
     // ⚠️ It listened for `board:hero_placed` / `board:hero_recalled`, which
     // nothing has ever published; `HERO_MOVED` is what every plant, claim
     // change, recall and defeat actually announces.

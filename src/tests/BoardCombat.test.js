@@ -28,7 +28,6 @@ const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /** What ran dry on spot `i`, or null. */
-const vacancyAt = (i) => BoardState.vacancyAt(BoardState.spotIdAt(C(i).x, C(i).y));
 
 /**
  * Combat on the board — **ported, not rebuilt** (D-136).
@@ -253,7 +252,8 @@ describe('A kill', () => {
         // planted there (Free Playmat 1.4b).
         expect(BoardState.displayPointOf('hero_1')).toEqual(C(10));
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
-        expect(vacancyAt(10)?.typeId).toBe('fixture_enemy');
+        // Nothing is owed the spot: Managers and vacancies are retired (9.2).
+        expect(GameState.state.board.vacancies).toBeUndefined();
     });
 });
 

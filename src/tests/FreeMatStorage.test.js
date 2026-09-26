@@ -8,12 +8,10 @@ import * as SlotHelper from '../systems/core/SaveSlotHelper.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Charges from '../systems/board/Charges.js';
-import * as Managers from '../systems/board/Managers.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import { placeAt } from './fixtures/mat.js';
 
 /**
@@ -45,11 +43,6 @@ registerTokenTypes({
         id: 'fixture_spot_big', name: 'Fixture Big Spring', tokenType: 'resource',
         rarity: 'common', size: 2, uses: 5, requiresHero: false,
         config: { cycleTimeMs: 12000, inputs: [], outputs: [] }
-    },
-    fixture_spot_camp: {
-        id: 'fixture_spot_camp', name: 'Fixture Spring Camp', tokenType: 'manager',
-        rarity: 'common', uses: null, requiresHero: false, manages: ['fixture_spot_big'],
-        config: null
     }
 });
 
@@ -151,25 +144,19 @@ describe('⭐ looking a Token up by id is a lookup, not a scan', () => {
     });
 });
 
-describe('⭐ vacancies are spots, and a restock lands exactly there (FP-19)', () => {
-    it('a spent 2×2 leaves a vacancy at its own point, and the Manager refills that point', () => {
-        setMatTuning('nearRadius', 400);
-        const spot = { x: 500, y: 420 };               // deliberately not on any lattice step
-        const spent = placeAt(BoardState.createTokenInstance('fixture_spot_big', 1), spot.x, spot.y);
-        placeAt('fixture_spot_camp', 820, 420);        // 320 u away, inside the 400 u Near set above
-
+describe('spot vacancies are retired with the Managers (SP-55, 9.2)', () => {
+    it('a spent Token leaves nothing owed behind', () => {
+        const spent = placeAt(BoardState.createTokenInstance('fixture_spot_big', 1), 500, 420);
         Charges.destroyToken(spent);
+        expect(BoardState.tokens().some(t => t.typeId === 'fixture_spot_big')).toBe(false);
+        expect(GameState.state.board.vacancies).toBeUndefined();
+    });
 
-        const vacancy = Object.values(GameState.state.board.vacancies);
-        expect(vacancy).toEqual([{ typeId: 'fixture_spot_big', x: spot.x, y: spot.y, unstocked: false }]);
-        expect(BoardState.vacancyAt(BoardState.spotIdAt(spot.x, spot.y))?.typeId).toBe('fixture_spot_big');
-
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_spot_big', 5));
-        expect(Managers.sweep()).toBe(1);
-
-        const restocked = BoardState.tokens().find(t => t.typeId === 'fixture_spot_big');
-        expect({ x: restocked.x, y: restocked.y }).toEqual(spot);
-        expect(restocked.id).not.toBe(spent.id);
-        expect(GameState.state.board.vacancies).toEqual({});
+    it('an older save carrying board.vacancies still loads, and the field is dropped', async () => {
+        const saved = JSON.parse(JSON.stringify(GameState.serialize()));
+        saved.state.board.vacancies = { spot_500_420: { typeId: 'fixture_spot_big', x: 500, y: 420, unstocked: true } };
+        await GameState.initFromSave(migrateState(saved.state, saved.version));
+        BoardState.tokens();
+        expect(GameState.state.board.vacancies).toBeUndefined();
     });
 });

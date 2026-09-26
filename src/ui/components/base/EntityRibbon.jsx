@@ -5,10 +5,10 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { ItemIcon } from './ItemIcon.jsx';
 import { TokenSprite, TOKEN_SURFACE } from './TokenSprite.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Coins, Sparkles, HelpCircle } from 'lucide-react';
+import { Sparkles, HelpCircle } from 'lucide-react';
 
 /**
- * EntityRibbon — Standard minimalist ribbon row for items, tokens, currencies, and loot.
+ * EntityRibbon — Standard minimalist ribbon row for items, tokens and loot.
  *
  * Distinct from the square badges used in inventory/vault (which represent owned assets):
  * this row view represents what the player *needs*, what a station *outputs*, what a map *costs*,
@@ -46,9 +46,9 @@ export const EntityRibbon = ({
     // Detect kind if not explicitly passed
     let resolvedKind = kind;
     if (!resolvedKind) {
-        if (rawId === 'gold' || rawId === 'item_coins' || rawId === 'currency_gold') {
-            resolvedKind = 'gold';
-        } else if (rawId === 'xp') {
+        // No `gold` kind: gold is retired (SP-65) and its code deleted (Token
+        // Lifecycle 9.4); `item_coins` is an ordinary item now.
+        if (rawId === 'xp') {
             resolvedKind = 'xp';
         } else if (rawId && getTokenType(rawId)) {
             resolvedKind = 'token';
@@ -69,8 +69,6 @@ export const EntityRibbon = ({
     if (!displayName) {
         if (!isDiscovered) {
             displayName = '???';
-        } else if (resolvedKind === 'gold') {
-            displayName = 'Gold Coins';
         } else if (resolvedKind === 'xp') {
             displayName = 'Experience';
         } else if (resolvedKind === 'token') {
@@ -89,7 +87,7 @@ export const EntityRibbon = ({
         qtyDisplay = minQty === maxQty ? `×${minQty}` : `×${minQty}–${maxQty}`;
     } else if (quantity !== undefined && quantity !== null) {
         if (typeof quantity === 'number') {
-            qtyDisplay = resolvedKind === 'gold' ? `${quantity.toLocaleString()} GP` : `×${formatCompact(quantity, 1)}`;
+            qtyDisplay = `×${formatCompact(quantity, 1)}`;
         } else {
             qtyDisplay = String(quantity).startsWith('×') || String(quantity).startsWith('x') || String(quantity).startsWith('+')
                 ? quantity
@@ -174,8 +172,6 @@ export const EntityRibbon = ({
                 <div className="relative flex items-center justify-center w-8 h-8 transition-transform duration-200 ease-out group-hover:scale-[2] group-hover:z-50 group-hover:drop-shadow-[0_6px_14px_rgba(0,0,0,0.95)] pointer-events-none origin-center">
                     {!isDiscovered ? (
                         <HelpCircle size={18} className="text-gi-muted/50" />
-                    ) : resolvedKind === 'gold' ? (
-                        <Coins size={20} className="text-gi-gold" />
                     ) : resolvedKind === 'xp' ? (
                         <Sparkles size={20} className="text-amber-400" />
                     ) : resolvedKind === 'token' ? (
@@ -221,7 +217,7 @@ export const EntityRibbon = ({
                             className={cn(
                                 sizeConfig.text,
                                 'font-bold tracking-tight transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-1',
-                                resolvedKind === 'gold' ? 'text-gi-gold' : (isShort ? 'text-gi-danger font-semibold' : 'text-gi-text')
+                                isShort ? 'text-gi-danger font-semibold' : 'text-gi-text'
                             )}
                         >
                             {qtyDisplay}
@@ -244,7 +240,7 @@ export const EntityRibbon = ({
                                 className={cn(
                                     sizeConfig.text,
                                     'font-bold tracking-tight',
-                                    resolvedKind === 'gold' ? 'text-gi-gold' : (isShort ? 'text-gi-danger font-semibold' : 'text-gi-text')
+                                    isShort ? 'text-gi-danger font-semibold' : 'text-gi-text'
                                 )}
                             >
                                 {qtyDisplay}

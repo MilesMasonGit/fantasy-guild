@@ -285,8 +285,6 @@ describe('Coins floor loot collection', () => {
     // 2000 gold. Gold is retired: the coins are swept off the floor and pay
     // nothing, and they are not banked as an item either.
     it('sweeps coins off the floor without crediting gold or banking them (SP-65)', () => {
-        const initialGold = GameState.state.currency.gold || 0;
-
         const sprite = SpriteLayer.addSprite('item', 'item_coins', 2000, { x: 0.5, y: 0.5 });
         expect(sprite).toBeDefined();
         expect(sprite.refId).toBe('item_coins');
@@ -294,7 +292,7 @@ describe('Coins floor loot collection', () => {
 
         const collected = SpriteLayer.collectSprite(sprite.id);
         expect(collected).toBe(true);
-        expect(GameState.state.currency.gold).toBe(initialGold);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
         expect(InventoryManager.getItemCount('item_coins')).toBe(0);
         expect(SpriteLayer.getSprites().some(s => s.id === sprite.id)).toBe(false);
     });

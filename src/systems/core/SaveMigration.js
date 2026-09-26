@@ -71,6 +71,10 @@ export function migrateState(state, savedVersion) {
         migrated[key] = section;
     }
 
+    // Gold is retired and its code deleted (Token Lifecycle 9.4, SP-65): the
+    // `currency` section an older save still carries is dropped, not kept.
+    if ('currency' in migrated) delete migrated.currency;
+
     // The station recipe backfill (Recipe & Charges P2) and the hero-tiles →
     // flags conversion (Free Playmat 1.4b) were deleted in slice 1.6a. Both
     // only carried pre-0.8.0 boards forward, and those saves are now refused

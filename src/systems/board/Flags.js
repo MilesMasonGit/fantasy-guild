@@ -13,7 +13,6 @@ import * as WorkCheck from './WorkCheck.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
-import * as Managers from './Managers.js';
 import * as FlagRules from './FlagRules.js';
 import { ensureFlagColour } from './FlagColours.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -74,11 +73,9 @@ import * as PromotionSystem from '../hero/PromotionSystem.js';
  *
  * If the claimed Token is gone from the board:
  *  a. the same kind of Token stands at its last spot, unclaimed → claim that;
- *  b. a Manager in reach owes that spot and the Vault holds a copy → **wait**
- *     there (FP-70, FPP-9), re-checked every pass;
- *  c. otherwise let go, and choose again this very pass.
- * Phase 1 runs for every hero before phase 2, so a waiting hero gets the
- * restocked Token before an earlier-planted hero looking for work.
+ *  b. otherwise let go, and choose again this very pass.
+ * (FP-70's wait for a Manager's restock went with the Managers, Token
+ * Lifecycle 9.2, SP-55: spawners replace used-up Tokens now.)
  *
  * ## ⚠️ Leaving resets progress (FP-68, D-131)
  * Every release — moving on, a re-plant, a recall — zeroes the released Token's
@@ -111,7 +108,7 @@ export const SKIP = Object.freeze({
  * Whether the player has marked this Token disallowed (FP-35).
  *
  * ⚠️ **Stops hero work and nothing else.** The Token's own rules (Provides,
- * triggers), a Manager's service and restocks never read this. Saved on the
+ * triggers) never read this. Saved on the
  * instance, so it survives a reload and a move; a Vault copy is charges only,
  * so a Token that goes through the Vault comes back allowed.
  */
@@ -307,7 +304,6 @@ function claimToken(heroId, instance) {
     // ⚠️ A new claim starts with no cycle-end mark, or FP-80 could switch the
     // hero off it one tick into its first cycle.
     rt()?.cycleEnded.delete(heroId);
-    BoardState.setWait(heroId, null);
     BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId, x: instance.x, y: instance.y });
     // A different hero taking a Promotion Token is the gesture that asks again
     // (PR-7). The same hero coming back after a gap is not.
@@ -494,7 +490,7 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
     return { pick: null, skips };
 }
 
-/** Phase 2 for one hero with no claim and no wait. */
+/** Phase 2 for one hero with no claim. */
 function choose(r, heroId) {
     const flag = BoardState.flagOf(heroId);
     if (!flag) return false;
@@ -539,19 +535,6 @@ function switchTo(r, heroId, pick, skips) {
  */
 function sameKindAt(x, y, typeId) {
     return BoardState.tokensAtPoint(x, y).find(t => t.typeId === typeId) || null;
-}
-
-/** Whether a hero may wait on spot `spotId` for a restock of `typeId` (FP-70, FPP-9). */
-function canWait(spotId, typeId, heroId) {
-    const vacancy = BoardState.vacancyAt(spotId);
-    if (!vacancy || vacancy.typeId !== typeId || vacancy.unstocked) return false;
-    if (!Managers.managerFor(vacancy, typeId)) return false;
-    if (BoardState.tokenBankCopies(typeId).length === 0) return false;
-    // ⚠️ Never wait for a Promotion Token that would not train this hero — the
-    // usual case being the one they just accepted with its last charge. They
-    // would be skipped the moment it arrived (PR-8), so waiting only idles them.
-    if (BoardPromotion.jobFor({ typeId }) && promotionRefusal(heroId, { typeId })) return false;
-    return true;
 }
 
 /** Phase 1 for a hero holding a claim. */
@@ -635,30 +618,6 @@ function keepOrRelease(r, heroId, dirty) {
     }
 
     BoardState.setClaim(heroId, null);
-    const spotId = Number.isFinite(claim.x) && Number.isFinite(claim.y) ? BoardState.spotIdAt(claim.x, claim.y) : null;
-    if (spotId && canWait(spotId, claim.typeId, heroId)) {
-        BoardState.setWait(heroId, { spotId, typeId: claim.typeId, x: claim.x, y: claim.y });
-    } else {
-        r.nextTryAt.delete(heroId);
-    }
-    announceMoved(heroId);
-}
-
-/** Phase 1 for a hero waiting on a restock. */
-function checkWait(r, heroId) {
-    const wait = BoardState.waitOfHero(heroId);
-    const atSpot = BoardState.tokensAtPoint(wait.x, wait.y);
-    const here = atSpot.find(t => t.typeId === wait.typeId) || null;
-
-    if (here && !BoardState.heroOfInstance(here.id)) {
-        resetProgress(here);
-        claimToken(heroId, here);
-        announceMoved(heroId);
-        return;
-    }
-    if (!atSpot.length && canWait(wait.spotId, wait.typeId, heroId)) return;
-
-    BoardState.setWait(heroId, null);
     r.nextTryAt.delete(heroId);
     announceMoved(heroId);
 }
@@ -670,7 +629,7 @@ function plantingOrder() {
 
 /**
  * Every flag keeps, changes or finds its work. Run once per engine tick, right
- * after `Managers.tick()` and before any Token ticks.
+ * after the timed changes and before any Token ticks.
  *
  * @param {number} delta game ms since the last tick (the retry clock)
  */
@@ -687,11 +646,10 @@ export function assign(delta = 0) {
 
     for (const heroId of order) {
         if (BoardState.claimOfHero(heroId)) keepOrRelease(r, heroId, dirty);
-        else if (BoardState.waitOfHero(heroId)) checkWait(r, heroId);
     }
 
     for (const heroId of order) {
-        if (BoardState.claimOfHero(heroId) || BoardState.waitOfHero(heroId)) continue;
+        if (BoardState.claimOfHero(heroId)) continue;
         if (!dirty && r.clock < (r.nextTryAt.get(heroId) ?? 0)) continue;
         choose(r, heroId);
     }
@@ -702,8 +660,7 @@ export function assignHero(heroId) {
     const r = rt();
     if (!r || !BoardState.flagOf(heroId)) return;
     if (BoardState.claimOfHero(heroId)) keepOrRelease(r, heroId, true);
-    else if (BoardState.waitOfHero(heroId)) checkWait(r, heroId);
-    if (!BoardState.claimOfHero(heroId) && !BoardState.waitOfHero(heroId)) choose(r, heroId);
+    if (!BoardState.claimOfHero(heroId)) choose(r, heroId);
 }
 
 // ---------------------------------------------------------------------------
@@ -714,8 +671,8 @@ export function assignHero(heroId) {
  * Plant `heroId`'s flag at a mat point, and let it choose at once.
  *
  * Planting the same flag at the same point changes nothing. Anything else is a
- * re-plant: the old claim is let go (its Token's progress reset — FP-68), any
- * wait ends, the notices re-arm (FPP-5), and the flag goes to the back of the
+ * re-plant: the old claim is let go (its Token's progress reset — FP-68), the
+ * notices re-arm (FPP-5), and the flag goes to the back of the
  * planting order. A flag carries no skill (FP-71): what the hero works comes
  * from their rules, which a re-plant does not touch.
  */
@@ -743,7 +700,6 @@ export function plant(heroId, point) {
     quiet++;
     try {
         release(heroId);
-        BoardState.setWait(heroId, null);
         clearSkips(r, heroId);
         forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
@@ -891,7 +847,6 @@ export function furl(heroId, reason = 'recall') {
     try {
         release(heroId);
         BoardCombat.endFightOfHero(heroId);
-        BoardState.setWait(heroId, null);
         clearSkips(r, heroId);
         forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
@@ -913,8 +868,8 @@ export function furl(heroId, reason = 'recall') {
  * hero working it (their progress there is reset, FP-68; a fight ends, FP-43)
  * and their flag chooses again on the next tick; from then on every flag records
  * `disallowed` against it and never claims it — work, combat, promotion and the
- * Guild Hall alike. Nothing else about the Token changes: its rules, triggers,
- * Manager service and restocks carry on (see `isDisallowed`).
+ * Guild Hall alike. Nothing else about the Token changes: its rules and
+ * triggers carry on (see `isDisallowed`).
  *
  * The Token panel's "Heroes may work this" checkbox calls this (slice 1.5);
  * from the console: `Game.Flags.setDisallowed(instanceId, true)`.
@@ -950,7 +905,7 @@ export function setDisallowed(instanceId, on = true) {
  * `docked` (no flag) · `returning` (no flag, still walking home, M3) ·
  * `working` · `walking` (on the way — to a claimed Token,
  * `instanceId` set, or back to their flag, `instanceId` null; Hero Movement M1)
- * · `waiting` (for a restock) · `idle` (at their flag, nothing to do).
+ * · `idle` (at their flag, nothing to do).
  * `instanceId` is the Token they work or walk to (or null), `point` where their
  * job is.
  */
@@ -976,13 +931,10 @@ export function statusOf(heroId) {
         };
     }
     // Walking back to the flag after work. A stroll near the flag is still idle (HM-1).
-    if (HeroMotion.isWalking(heroId) && !BoardState.waitOfHero(heroId) && !HeroMotion.isPottering(heroId)) {
+    if (HeroMotion.isWalking(heroId) && !HeroMotion.isPottering(heroId)) {
         return { state: 'walking', instanceId: null, point: { x: flag.x, y: flag.y }, typeId: null, flag };
     }
-    const wait = BoardState.waitOfHero(heroId);
-    const common = { instanceId: null, point: BoardState.displayPointOf(heroId), flag };
-    if (wait) return { state: 'waiting', ...common, typeId: wait.typeId };
-    return { state: 'idle', ...common, typeId: null };
+    return { state: 'idle', instanceId: null, point: BoardState.displayPointOf(heroId), typeId: null, flag };
 }
 
 /**
@@ -1018,12 +970,11 @@ export function workingRuleOf(heroId) {
     return ruleIdOf(kindOf(instance, def), def);
 }
 
-/** Drop every runtime record (claims, waits, skips) for the current board. */
+/** Drop every runtime record (claims, skips) for the current board. */
 export function reset() {
     const r = rt();
     if (!r) return;
     r.claims.clear();
-    r.waits.clear();
     r.skips.clear();
     r.skipsByHero.clear();
     r.nextTryAt.clear();
@@ -1073,7 +1024,7 @@ export function teardown() {
 
 /**
  * The "dirty" triggers: anything that can make a skipped Token workable makes
- * waiting flags look again on the next tick instead of after their retry.
+ * idle flags look again on the next tick instead of after their retry.
  */
 export function init() {
     teardown();

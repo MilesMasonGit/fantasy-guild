@@ -105,6 +105,9 @@ predates this roadmap. Compare failing test **names**, not counts:
 | `TerrainRegistry` | does NOT guess for a Token that two Maps list |
 | `TerrainRegistry` | ignores a stamp naming a terrain that no longer exists |
 
+⚠️ **Since slice 9.4 (2026-09-26) the baseline is 11:** `ItemSellValue` was deleted with the
+sell code it tested.
+
 ⚠️ **In a `git worktree`, `TerrainRegistry` fails two more** (untracked art is
 absent there). Subagents working in worktrees should expect 14.
 
@@ -579,7 +582,11 @@ panel is for speed, not for filling gaps.)
 | 8.1 Inspection lines | ✅ Done 2026-09-25 | `lifecycleLines.js` (pure) + a section in `TokenInspection.jsx`, refreshed every second: spawner family N / cap, next spawn or why it waits, upkeep paid or short; grows / turns / turns back with time left; Foundation build and progress (vs the recipe's nominal time); trickle; origin in dev mode. Verified live with a fixture Forest: Waiting for Apple / in 20 s / 2 / 2 at cap; sapling Grows into Oak Tree in 26 s. Known: an open popup loses its lines when the Token grows or turns (new instance id), as the popup already behaved |
 | 8.2 Upkeep Summary | ✅ Done 2026-09-25 (⭐ layout look pending: needs real content) | Bank drawer → **Upkeep** button (hourglass) swaps the item list for: Ongoing costs (per item per minute, Bank, runs out in, used by, waiting unpaid), Trickle income, Idle spawners. Maths in `UpkeepSummary.js` (includes `BlockUpkeep` statement upkeep; copies its private `costedStatements` filter, keep in step). Runs-out = Bank ÷ (cost − trickle income). Verified live: two Forests + no seeds = 6/min needed, empty now, both waiting; +30 = ~5 min |
 | 8.3 Alerts and mat cap | ✅ Done 2026-09-25 | Persistent on-mat icon from the engine (`SpawnerSystem.syncAlerts`, event `SPAWNER_ALERT_CHANGED`, not `instance.alert`): yellow *needs item* (names it), red *no room*, nothing at cap (normal idle). Shop header repaints on any Mat Tuner change. Verified live on the real Oak Forest: no seeds = icon, seeds added = icon gone |
-| 9.1–9.6 Retirements | ⬜ Not started | |
+| 9.1 Map bursts | ⬜ Not started | after 7.6 |
+| 9.2 Managers | ✅ Done 2026-09-26 | `Managers.js`, FP-70 waits, spot vacancies, the *unstocked* alert and ghost all gone; a hero whose Token runs dry moves on or idles; old saves with `board.vacancies` load. ⚠️ Content left: `token_copper_ore_minecart` (type `manager`, `effect_restocks_neighbours`, in a Map pool) now does nothing; the `RESTOCKS` keyword stays until a CMS/content pass |
+| 9.3 Vault and Tray | ⬜ Not started | |
+| 9.4 Gold code | ✅ Done 2026-09-26 | `CurrencyManager`, `CommerceSystem`, `TransactionProcessor`, `SellControls`, TokenBank selling deleted; the save's `currency` section removed (old saves load, it is dropped). `ItemSellValue` test deleted. Kept on purpose: `OUTPUT_CURRENCIES`/`market` derivation (CMS still writes them), the coin sweep (9.3), Map pricing (9.1) |
+| 9.5–9.6 Quests, docs | ⬜ Not started | |
 | 10.1 Opening | ⬜ Not started | |
 | 10.2 Playtest pack | ⬜ Not started | |
 

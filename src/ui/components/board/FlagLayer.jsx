@@ -347,7 +347,6 @@ function placeUnder(anchor, width, height = 180) {
 
 export const STATE_TONE = {
     working: 'text-emerald-300',
-    waiting: 'text-amber-300',
     idle: 'text-stone-300'
 };
 

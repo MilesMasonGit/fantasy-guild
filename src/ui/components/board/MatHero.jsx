@@ -16,8 +16,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 
 /**
- * A hero standing on the mat: working a Token, waiting on a spot for a restock,
- * or idle beside their flag.
+ * A hero standing on the mat: working a Token, or idle beside their flag.
  *
  * ⭐ **Dragging the hero drags their FLAG** (FP-76) — the player never moves a
  * hero. The payload is `DRAG_KIND.FLAG`, exactly as if the flag itself were

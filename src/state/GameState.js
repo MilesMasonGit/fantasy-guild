@@ -92,7 +92,6 @@ class GameStateClass {
     get meta() { return this.state?.meta || {}; }
     get heroes() { return this.state?.heroes || []; }
     get inventory() { return this.state?.inventory || { items: {} }; }
-    get currency() { return this.state?.currency || { gold: 0 }; }
     get progress() { return this.state?.progress || {}; }
     get time() { return this.state?.time || { gameTimeMs: 0 }; }
     get collection() { return this.state?.collection || { playsets: {} }; }

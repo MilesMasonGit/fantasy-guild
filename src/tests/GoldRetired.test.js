@@ -29,8 +29,8 @@ beforeEach(() => {
 describe('No action earns or spends gold (SP-65)', () => {
     afterEach(() => QuestManager.cleanup());
 
-    it('a new game starts at 0 gold, and every tutorial quest pays items', () => {
-        expect(GameState.state.currency.gold).toBe(0);
+    it('a new game has no gold at all, and every tutorial quest pays items', () => {
+        expect(GameState.state.currency).toBeUndefined();
         for (const t of TUTORIAL_QUESTS) {
             expect(t.rewardMapId, t.id).toBeUndefined();
             expect(t.rewardItems.length, t.id).toBeGreaterThan(0);
@@ -46,7 +46,7 @@ describe('No action earns or spends gold (SP-65)', () => {
             q.currentCount = q.requiredCount;
             expect(QuestManager.claimQuest(t.id).success, t.id).toBe(true);
         }
-        expect(GameState.state.currency.gold).toBe(0);
+        expect(GameState.state.currency).toBeUndefined();
         expect(BoardState.getTotalMapCount()).toBe(0);
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10 * TUTORIAL_QUESTS.length);
     });
@@ -57,15 +57,13 @@ describe('No action earns or spends gold (SP-65)', () => {
         const [price] = map.priceItems;
         expect(price.itemId).toBe('item_oak_wood');
 
-        // Gold alone buys nothing.
-        GameState.state.currency.gold = 1e9;
+        // With no Oak Wood, nothing buys it.
         expect(Cartographer.canBuy(map.id).success).toBe(false);
-        GameState.state.currency.gold = 0;
 
         InventoryManager.addItem(price.itemId, price.quantity);
         expect(Cartographer.buyMap(map.id).success).toBe(true);
         expect(InventoryManager.getItemCount(price.itemId)).toBe(0);
-        expect(GameState.state.currency.gold).toBe(0);
+        expect(GameState.state.currency).toBeUndefined();
     });
 
     it('a gold entry in a Map burst pays nothing', () => {
@@ -74,7 +72,23 @@ describe('No action earns or spends gold (SP-65)', () => {
             Cartographer.openMap({ typeId: 'token_guild_hall_map', mapId: 'map_guild_hall' });
         }
         for (const s of SpriteLayer.getSprites()) SpriteLayer.collectSprite(s.id);
-        expect(GameState.state.currency.gold).toBe(0);
+        expect(GameState.state.currency).toBeUndefined();
+    });
+});
+
+describe('The gold code is deleted (Token Lifecycle 9.4)', () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const src = join(here, '..');
+
+    it('CurrencyManager, CommerceSystem, TransactionProcessor and SellControls are gone', () => {
+        for (const rel of [
+            'systems/economy/CurrencyManager.js',
+            'systems/economy/CommerceSystem.js',
+            'systems/economy/TransactionProcessor.js',
+            'ui/components/drawer/SellControls.jsx'
+        ]) {
+            expect(() => statSync(join(src, rel)), rel).toThrow();
+        }
     });
 });
 
@@ -98,9 +112,7 @@ describe('No screen renders gold (SP-65)', () => {
     it('no UI component writes a gold amount or a sale price', () => {
         const offenders = files.filter(f => {
             const text = readFileSync(f, 'utf8');
-            return /\} GP\b|GP<\/span>|\} gold\b|for \$\{[^}]+\}g`|SellControls|sellItem|TokenBank\.sell\(/.test(text)
-                && !f.endsWith('SellControls.jsx')
-                && !f.endsWith('EntityRibbon.jsx');
+            return /\} GP\b|GP<\/span>|\} gold\b|for \$\{[^}]+\}g`|SellControls|sellItem|TokenBank\.sell\(/.test(text);
         });
         expect(offenders).toEqual([]);
     });

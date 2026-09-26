@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Managers and the gold code are gone.** Spawners replace used-up Tokens, so Managers, their
+  restock spots and the "waiting for a Manager" state are removed; a hero whose Token runs out
+  moves on. The retired currency, selling and transaction code is deleted, and saves no longer
+  carry gold.
 - **Mines and the Coast in the Shop.** A Copper Mine, Coal Mine and Quarry (15 Oak Wood each) grow
   up to 3 veins or Stone Outcrops each, mined without a pickaxe; Stone is a new material. The Coast
   (10 Oak Wood) turns into a Shrimp Coast for a minute every few minutes, fished without a net.

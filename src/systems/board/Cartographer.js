@@ -173,9 +173,13 @@ function mapCost(def) {
     return totalPrice([...mapPrice(def), ...(def?.materials || [])]);
 }
 
-/** Whether a Map pool entry is gold, which no longer pays anything (SP-65). */
-function isGoldEntry(entry) {
-    return entry?.kind === 'gold' || entry?.kind === 'currency';
+/**
+ * Whether a Map pool entry is something a burst can land: a Token or an item.
+ * Anything else — an old gold entry — lands nothing (gold retired, SP-65; its
+ * code deleted in Token Lifecycle 9.4).
+ */
+function landsFromBurst(entry) {
+    return entry?.kind === 'token' || entry?.kind === 'item';
 }
 
 // ---------------------------------------------------------------------------
@@ -419,12 +423,7 @@ export function openMap(instance, origin = null) {
                 // vanishing — collecting it puts it in the Vault.
                 SpriteLayer.addSprite('token', entry.refId, 1, scatterFrom, tok.usesRemaining, stamp);
             }
-        } else if (isGoldEntry(entry)) {
-            // Gold is retired (SP-65, slice 2.2): a gold entry pays nothing.
-            // No shipped Map pool carries one; this keeps an old or hand-built
-            // pool from minting gold.
-            logger.debug('Cartographer', `${def.name}: a gold entry paid nothing (gold is retired)`);
-        } else {
+        } else if (landsFromBurst(entry)) {
             SpriteLayer.addSprite('item', entry.refId, entry.quantity || 1, scatterFrom);
         }
     }
@@ -548,8 +547,8 @@ export function catalogue() {
         // it is being carried (D-244) — the ghost draws from a `typeId`.
         tokenId: tokenForMap(def.id),
         affordability: canBuy(def.id),
-        // Gold entries are left out: they pay nothing now (SP-65).
-        pool: def.pool.filter(entry => !isGoldEntry(entry)).map(entry => ({
+        // Only what a burst can land is listed (see `landsFromBurst`).
+        pool: def.pool.filter(landsFromBurst).map(entry => ({
             kind: entry.kind,
             refId: entry.refId,
             quantity: entry.quantity || entry.amount || 1,
