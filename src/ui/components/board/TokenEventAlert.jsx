@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
+import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import { ALERT_HINT } from './boardConstants.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { cn } from '../../utils/cn.js';
 import { useTokenEvent } from './tokenEvents.js';
@@ -271,6 +274,69 @@ export const TokenEventAlert = ({ instanceId }) => {
     }, [activePayload, instanceId, alertData, isDismissed, dismiss]);
 
     return <EventAlertMark alert={alert} />;
+};
+
+/** "A", "A and B", "A, B and C". */
+const joinNames = (names) => names.length <= 1
+    ? (names[0] || '')
+    : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+
+/** The mark's own words for a spawner alert (`SpawnerSystem.spawnerAlertOf`). */
+export function spawnerAlertData(state) {
+    if (!state?.alert) return null;
+    const needs = (state.needs || []).map(id => getItem(id)?.name || id);
+    const title = state.alert === ALERT.SPAWN_NEEDS_ITEM
+        ? (needs.length ? `Needs ${joinNames(needs)} to spawn` : 'Needs items to spawn')
+        : 'No room to spawn';
+    return {
+        severity: state.alert === ALERT.SPAWN_NEEDS_ITEM ? 'yellow' : 'red',
+        type: state.alert,
+        title,
+        message: title,
+        rulesText: ALERT_HINT[state.alert] || null
+    };
+}
+
+/**
+ * A spawner's waiting alert (Token Lifecycle 8.3): the same icon and hover
+ * bubble as {@link TokenEventAlert}, but it is a live fact rather than news.
+ * It stays up, unhovered, for as long as the engine says the spawner is
+ * stuck, and goes the moment `SPAWNER_ALERT_CHANGED` says the cause is fixed.
+ * No fade, and clicking it does not hide it — the problem is still there.
+ */
+export const SpawnerAlertMark = ({ instanceId }) => {
+    const [state, setState] = useState(() => SpawnerSystem.spawnerAlertOf(instanceId));
+    const [isHovered, setIsHovered] = useState(false);
+    const [iconRect, setIconRect] = useState(null);
+    const iconRef = useRef(null);
+
+    useEffect(() => { setState(SpawnerSystem.spawnerAlertOf(instanceId)); }, [instanceId]);
+    useTokenEvent(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, instanceId, () => {
+        setState(SpawnerSystem.spawnerAlertOf(instanceId));
+    });
+
+    const alertData = spawnerAlertData(state);
+    if (!alertData) return null;
+
+    const alert = {
+        alertData,
+        isHovered,
+        isFading: false,
+        isDismissed: false,
+        iconRect,
+        iconRef,
+        dismiss: () => {},
+        onMouseEnter: () => {
+            if (iconRef.current) setIconRect(iconRef.current.getBoundingClientRect());
+            setIsHovered(true);
+        },
+        onMouseLeave: () => setIsHovered(false)
+    };
+    return (
+        <div data-spawner-alert={state.alert}>
+            <EventAlertMark alert={alert} />
+        </div>
+    );
 };
 
 export default TokenEventAlert;

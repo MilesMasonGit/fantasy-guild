@@ -208,4 +208,6 @@ export function tick(delta, random = Math.random) {
         SpawnerSystem.advanceTrickle(instance, delta);
         advance(instance, delta, random);
     }
+    // Spawners' on-mat alerts (slice 8.3), once this tick's attempts are done.
+    SpawnerSystem.syncAlerts();
 }

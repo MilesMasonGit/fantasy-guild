@@ -4,6 +4,8 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { logger } from '../../utils/Logger.js';
+import { EventBus } from '../core/EventBus.js';
+import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
 // ⚠️ A cycle: TimedChanges imports this module for its handler table. Both
@@ -265,6 +267,68 @@ export function familyCounts() {
         });
     }
     return [...byKey.values()];
+}
+
+// ---------------------------------------------------------------------------
+// The on-mat alert (slice 8.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Which waiting states raise an on-Token alert. Only the two the player can
+ * fix: an empty Bank and a crowded mat. `at_cap` is a spawner's normal resting
+ * state — every healthy spawner ends up there — so it raises nothing (the
+ * inspection lines and the Upkeep Summary still say so).
+ */
+const ALERT_FOR_STATE = Object.freeze({
+    [SPAWNER_STATE.NEEDS_ITEM]: ALERT.SPAWN_NEEDS_ITEM,
+    [SPAWNER_STATE.NO_ROOM]: ALERT.SPAWN_NO_ROOM
+});
+
+/** Spawner instance id → `{ alert, needs }`, for the spawners whose alert is up. */
+const alerts = new Map();
+
+/** A spawner's current alert, `{ alert, needs }`, or null when none is up. */
+export function spawnerAlertOf(instanceId) {
+    return alerts.get(instanceId) || null;
+}
+
+const sameList = (a = [], b = []) => a.length === b.length && a.every((v, i) => v === b[i]);
+
+/**
+ * Bring every spawner's alert in line with {@link spawnerStatus}, publishing
+ * `SPAWNER_ALERT_CHANGED` for each one that changed — and only those.
+ *
+ * Called at the end of `TimedChanges.tick`, after this tick's attempts, so an
+ * alert goes up the tick a spawner starts waiting and comes down the tick the
+ * cause is gone (a seed lands in the Bank, a tree is cut and frees room).
+ * Worked out from the engine's own state, never polled from React.
+ */
+export function syncAlerts() {
+    const live = new Set();
+    for (const s of liveSpawners()) {
+        live.add(s.id);
+        const status = spawnerStatus(s.id);
+        const alert = (status && ALERT_FOR_STATE[status.state]) || null;
+        const needs = alert === ALERT.SPAWN_NEEDS_ITEM ? (status.needs || []) : [];
+        const prev = alerts.get(s.id);
+        if ((prev?.alert || null) === alert && sameList(prev?.needs, needs)) continue;
+        if (alert) alerts.set(s.id, { alert, needs });
+        else alerts.delete(s.id);
+        EventBus.publish(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, { instanceId: s.id, alert, needs });
+    }
+    // A spawner that left the mat, or turned into something else, drops its alert.
+    for (const id of [...alerts.keys()]) {
+        if (live.has(id)) continue;
+        alerts.delete(id);
+        EventBus.publish(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, { instanceId: id, alert: null, needs: [] });
+    }
+    for (const id of [...noRoom]) if (!live.has(id)) noRoom.delete(id);
+}
+
+/** Forget every alert and "no room" note (a new game, a load, tests). */
+export function resetAlerts() {
+    alerts.clear();
+    noRoom.clear();
 }
 
 // ---------------------------------------------------------------------------

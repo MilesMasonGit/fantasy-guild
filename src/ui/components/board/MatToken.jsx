@@ -16,10 +16,11 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
+import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { TokenProgressBar } from './TokenProgressBar.jsx';
-import { TokenEventAlert } from './TokenEventAlert.jsx';
+import { TokenEventAlert, SpawnerAlertMark } from './TokenEventAlert.jsx';
 import { EffectProcText } from './EffectProcText.jsx';
 import {
     TokenChargeBadge, TokenChargeDeltaFloater, TokenNameBadge, AddHeroBadge, StationGearBadge
@@ -124,6 +125,7 @@ export const MatToken = React.memo(function MatToken({
                 stationSkill,
                 recipe: stationSkill ? StationRecipe.selectedRecipe(instance, def) : null,
                 isFoundation: !!def?.foundation,
+                isSpawner: !instance.turnedFrom && SpawnerSystem.isSpawner(def),
                 requiresHero: def ? (def.requiresHero !== false) : true
             };
         },
@@ -371,6 +373,8 @@ export const MatToken = React.memo(function MatToken({
                 />
 
                 <TokenEventAlert instanceId={id} />
+                {/* A spawner waiting on the Bank or on room (Token Lifecycle 8.3). */}
+                {detail?.isSpawner && !hidden && <SpawnerAlertMark instanceId={id} />}
                 <EffectProcText instanceId={id} />
             </div>
         </>
