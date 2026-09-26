@@ -1,4 +1,6 @@
 export const SPRITE_MANIFEST = {
+    'e_goblin_chief': 'assets/enemies/skeleton/enemy_skeleton_melee.png',
+    'e_goblin': 'assets/enemies/skeleton/e_skeleton_range.png',
     'f_honey': 'assets/items/food/f_honey.png',
     't_chisel_copper': 'assets/items/tool/chisel/t_chisel_copper.png',
     'token_anvil_copper': 'assets/tokens/smith/token_anvil_copper.png',
