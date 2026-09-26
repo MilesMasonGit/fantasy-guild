@@ -107,10 +107,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_wheat",
-    "valueSource": null
+    "valueSource": "token_ripe_wheat"
   },
   "item_flour": {
     "name": "Flour",
@@ -120,10 +120,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 8,
     "autoSyncId": true,
     "id": "item_flour",
-    "valueSource": null
+    "valueSource": "token_windmill"
   },
   "item_blueberry": {
     "name": "Blueberry",
@@ -159,10 +159,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 21,
     "autoSyncId": true,
     "id": "item_dough",
-    "valueSource": null
+    "valueSource": "recipe_dough"
   },
   "item_redberry": {
     "name": "Redberry",
@@ -705,8 +705,8 @@
     "stackable": true,
     "restoreAmount": 15,
     "equipSlot": "drink",
-    "value": null,
-    "valueSource": null,
+    "value": 10,
+    "valueSource": "recipe_mtp8qjj9",
     "autoSyncId": true,
     "id": "item_beer"
   },
@@ -774,5 +774,31 @@
     "valueSource": "token_stone_outcrop",
     "autoSyncId": true,
     "id": "item_stone"
+  },
+  "item_wheat_seed": {
+    "name": "Wheat Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seeds",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 4,
+    "valueSource": "token_ripe_wheat",
+    "autoSyncId": true,
+    "id": "item_wheat_seed"
+  },
+  "item_apple_seed": {
+    "name": "Apple Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seeds_apple",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 5,
+    "valueSource": "token_apple_tree",
+    "autoSyncId": true,
+    "id": "item_apple_seed"
   }
 }
