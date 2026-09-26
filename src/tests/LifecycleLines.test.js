@@ -1,0 +1,181 @@
+import { describe, it, expect } from 'vitest';
+import { lifecycleLines, formatDuration, TONE } from '../ui/components/drawer/lifecycleLines.js';
+
+/**
+ * Token Lifecycle slice 8.1 — the inspection panel's lifecycle lines (TL-4).
+ * The module is pure, so every engine read is a stub here.
+ */
+
+const TYPES = {
+    forest: {
+        name: 'Oak Forest',
+        spawner: {
+            spawns: [{ typeId: 'sapling', weight: 1 }], allowance: 5, intervalMs: 20000,
+            upkeep: [{ itemId: 'item_oak_seed', quantity: 1 }]
+        }
+    },
+    free_forest: {
+        name: 'Free Forest',
+        spawner: { spawns: [{ typeId: 'sapling', weight: 1 }], allowance: 5, intervalMs: 20000, upkeep: [] }
+    },
+    sapling: { name: 'Oak Sapling', grows: { into: 'tree', afterMs: 30000 } },
+    tree: { name: 'Oak Tree' },
+    coast: {
+        name: 'Coast',
+        turns: { into: [{ typeId: 'shrimp', weight: 1 }, { typeId: 'crab', weight: 1 }], everyMs: 120000, lastsMs: 60000 }
+    },
+    shrimp: { name: 'Shrimp Coast' },
+    crab: { name: 'Crab Coast' },
+    foundation: { name: 'Stone Foundation', foundation: { kind: 'stone', skill: 'construction' } },
+    furnace: { name: 'Furnace' },
+    hall: { name: 'Guild Hall', trickle: [{ itemId: 'item_oak_seed', quantity: 2, everyMs: 300000 }] }
+};
+
+const ITEMS = { item_oak_seed: 'Oak Seed' };
+const FURNACE_RECIPE = { id: 'build_furnace', durationMs: 30000, outputs: [{ tokenId: 'furnace', quantity: 1 }] };
+
+function src(overrides = {}) {
+    return {
+        typeOf: (id) => TYPES[id] || null,
+        tokenName: (id) => TYPES[id]?.name || id,
+        itemName: (id) => ITEMS[id] || id,
+        spawnerStatus: () => null,
+        selectedRecipe: () => null,
+        originOf: (i) => (i.origin === 'spawned' ? 'spawned' : 'placed'),
+        dev: false,
+        ...overrides
+    };
+}
+
+const byLabel = (lines, label) => lines.find(l => l.label === label);
+
+describe('formatDuration', () => {
+    it('reads seconds, minutes and hours, rounding up to the second', () => {
+        expect(formatDuration(0)).toBe('0 s');
+        expect(formatDuration(1)).toBe('1 s');
+        expect(formatDuration(12000)).toBe('12 s');
+        expect(formatDuration(90000)).toBe('1 min 30 s');
+        expect(formatDuration(300000)).toBe('5 min');
+        expect(formatDuration(7500000)).toBe('2 h 5 min');
+        expect(formatDuration(3600000)).toBe('1 h');
+        expect(formatDuration(-5)).toBe('0 s');
+    });
+});
+
+describe('lifecycleLines', () => {
+    it('shows nothing for a Token with no lifecycle block, or no instance', () => {
+        expect(lifecycleLines({ id: 't1', typeId: 'tree' }, src())).toEqual([]);
+        expect(lifecycleLines(null, src())).toEqual([]);
+        expect(lifecycleLines({ id: 'x', typeId: 'missing' }, src())).toEqual([]);
+    });
+
+    describe('a spawner', () => {
+        const forest = { id: 'f1', typeId: 'forest', clocks: { spawnMs: 8000 } };
+
+        it('spawning: family count and cap, next spawn, upkeep paid', () => {
+            const lines = lifecycleLines(forest, src({
+                spawnerStatus: () => ({ state: 'spawning', nextInMs: 12000, count: 4, cap: 5, familyLabel: 'Oak Sapling' })
+            }));
+            expect(byLabel(lines, 'Spawns').value).toBe('Oak Sapling');
+            expect(byLabel(lines, 'Family').value).toBe('Oak Sapling family 4 / 5');
+            expect(byLabel(lines, 'Family').tone).toBeUndefined();
+            expect(byLabel(lines, 'Next spawn').value).toBe('in 12 s');
+            expect(byLabel(lines, 'Upkeep per spawn')).toEqual({
+                label: 'Upkeep per spawn', value: '1 Oak Seed (paid from the Bank)', tone: TONE.GOOD
+            });
+        });
+
+        it('at_cap', () => {
+            const lines = lifecycleLines(forest, src({
+                spawnerStatus: () => ({ state: 'at_cap', count: 5, cap: 5, familyLabel: 'Oak Sapling' })
+            }));
+            expect(byLabel(lines, 'Family')).toMatchObject({ value: 'Oak Sapling family 5 / 5', tone: TONE.WARNING });
+            expect(byLabel(lines, 'Next spawn')).toMatchObject({ value: 'At cap: waits for room in the family', tone: TONE.WARNING });
+        });
+
+        it('needs_item names the item it waits for, and the upkeep is unpaid', () => {
+            const lines = lifecycleLines(forest, src({
+                spawnerStatus: () => ({ state: 'needs_item', needs: ['item_oak_seed'], count: 2, cap: 5, familyLabel: 'Oak Sapling' })
+            }));
+            expect(byLabel(lines, 'Next spawn')).toMatchObject({ value: 'Waiting for Oak Seed', tone: TONE.DANGER });
+            expect(byLabel(lines, 'Upkeep per spawn')).toMatchObject({ value: '1 Oak Seed (not paid: Bank short)', tone: TONE.DANGER });
+        });
+
+        it('no_room', () => {
+            const lines = lifecycleLines(forest, src({
+                spawnerStatus: () => ({ state: 'no_room', count: 2, cap: 5, familyLabel: 'Oak Sapling' })
+            }));
+            expect(byLabel(lines, 'Next spawn')).toMatchObject({ value: 'No room to spawn nearby', tone: TONE.WARNING });
+        });
+
+        it('free upkeep reads Free', () => {
+            const lines = lifecycleLines({ id: 'f2', typeId: 'free_forest' }, src({
+                spawnerStatus: () => ({ state: 'spawning', nextInMs: 1000, count: 0, cap: 5, familyLabel: 'Oak Sapling' })
+            }));
+            expect(byLabel(lines, 'Upkeep per spawn')).toMatchObject({ value: 'Free', tone: TONE.MUTED });
+        });
+
+        it('shows no spawner lines when the engine reports none (not a working spawner)', () => {
+            expect(lifecycleLines(forest, src())).toEqual([]);
+        });
+    });
+
+    it('a growing Token: time left and what it becomes', () => {
+        const lines = lifecycleLines({ id: 's1', typeId: 'sapling', clocks: { growMs: 18000 } }, src());
+        expect(lines).toEqual([{ label: 'Grows into Oak Tree', value: 'in 12 s' }]);
+        // No clock yet reads as the full time.
+        expect(lifecycleLines({ id: 's2', typeId: 'sapling' }, src())[0].value).toBe('in 30 s');
+    });
+
+    it('a turning Token: time until it turns, into what, and for how long', () => {
+        const lines = lifecycleLines({ id: 'c1', typeId: 'coast', clocks: { turnMs: 30000 } }, src());
+        expect(lines[0]).toEqual({ label: 'Turns into Shrimp Coast or Crab Coast', value: 'in 1 min 30 s' });
+        expect(byLabel(lines, 'Stays turned for')).toMatchObject({ value: '1 min' });
+    });
+
+    it('a turned Token: time until it turns back, read from the original type', () => {
+        const lines = lifecycleLines({ id: 'c2', typeId: 'shrimp', turnedFrom: 'coast', clocks: { turnMs: 20000 } }, src());
+        expect(lines).toEqual([{ label: 'Turns back into Coast', value: 'in 40 s' }]);
+    });
+
+    it('a turned Token shows only its turn back, not its own blocks', () => {
+        // A turned instance runs only its turn-back clock (TimedChanges).
+        const lines = lifecycleLines({ id: 'c3', typeId: 'sapling', turnedFrom: 'coast', clocks: { turnMs: 0 } }, src());
+        expect(lines.map(l => l.label)).toEqual(['Turns back into Coast']);
+    });
+
+    describe('a Foundation', () => {
+        it('with nothing chosen asks for a recipe', () => {
+            const lines = lifecycleLines({ id: 'fd', typeId: 'foundation' }, src());
+            expect(lines).toEqual([{ label: 'Building', value: 'Choose what to build', tone: TONE.WARNING }]);
+        });
+
+        it('chosen but not started', () => {
+            const lines = lifecycleLines({ id: 'fd', typeId: 'foundation' }, src({ selectedRecipe: () => FURNACE_RECIPE }));
+            expect(byLabel(lines, 'Building').value).toBe('Furnace');
+            expect(byLabel(lines, 'Build progress')).toMatchObject({ value: 'Not started (30 s of work)', tone: TONE.MUTED });
+        });
+
+        it('part-built shows its progress against the recipe time', () => {
+            const lines = lifecycleLines(
+                { id: 'fd', typeId: 'foundation', cycleElapsedMs: 12000 },
+                src({ selectedRecipe: () => FURNACE_RECIPE })
+            );
+            expect(byLabel(lines, 'Build progress').value).toBe('40% (12 s of 30 s)');
+        });
+    });
+
+    it('a trickle: what it pays, how often, and when next', () => {
+        const lines = lifecycleLines({ id: 'h', typeId: 'hall', clocks: { trickle: [60000] } }, src());
+        expect(lines).toEqual([{ label: 'Pays', value: '2 Oak Seed every 5 min (next in 4 min)', tone: TONE.GOOD }]);
+    });
+
+    it('origin shows in dev mode only', () => {
+        const spawned = { id: 't', typeId: 'tree', origin: 'spawned' };
+        expect(lifecycleLines(spawned, src())).toEqual([]);
+        expect(lifecycleLines(spawned, src({ dev: true }))).toEqual([
+            { label: 'Origin (dev)', value: 'spawned', tone: TONE.MUTED }
+        ]);
+        expect(lifecycleLines({ id: 'p', typeId: 'tree' }, src({ dev: true }))[0].value).toBe('placed');
+    });
+});

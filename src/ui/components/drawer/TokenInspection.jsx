@@ -1,5 +1,5 @@
 import { cn } from '../../utils/cn.js';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
     getTokenType, getAllTokenTypes, tokenName, productionRoutes, getProvidedTagsWithTiers,
@@ -19,6 +19,11 @@ import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import * as StationRecipe from '../../../systems/board/StationRecipe.js';
+import { SettingsManager } from '../../../systems/core/SettingsManager.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import { lifecycleLines } from './lifecycleLines.js';
 import { ArrowRight, Vault, Trash2 } from 'lucide-react';
 
 /**
@@ -264,6 +269,7 @@ export const TokenInspection = ({
                 )}
 
                 {instanceId != null && <HeroesMayWork instanceId={instanceId} />}
+                {instanceId != null && <LifecycleLines instanceId={instanceId} />}
             </div>
 
             {instanceId != null && <RemoveFromMat instanceId={instanceId} onRemoved={onRemoved} />}
@@ -459,6 +465,60 @@ const RemoveFromMat = ({ instanceId, onRemoved }) => {
                     <Trash2 size={14} /> Remove
                 </button>
             )}
+        </div>
+    );
+};
+
+/** How often the lifecycle lines re-read their clocks while the panel is open. */
+const LIFECYCLE_REFRESH_MS = 1000;
+
+const LIFECYCLE_TONE = {
+    good: 'text-gi-success',
+    warning: 'text-gi-warning',
+    danger: 'text-gi-danger',
+    muted: 'text-gi-muted'
+};
+
+/** The live readers `lifecycleLines` takes (it is pure; this is the wiring). */
+function liveLifecycleSources() {
+    return {
+        typeOf: getTokenType,
+        tokenName,
+        itemName: (itemId) => getItem(itemId)?.name || itemId,
+        spawnerStatus: SpawnerSystem.spawnerStatus,
+        selectedRecipe: StationRecipe.selectedRecipe,
+        originOf: BoardState.originOf,
+        dev: !!(import.meta.env?.DEV || SettingsManager.get('debugMode'))
+    };
+}
+
+/**
+ * ⭐ **Lifecycle lines** (Token Lifecycle slice 8.1, TL-4): a spawner's family,
+ * next spawn and upkeep; time to grow, turn or turn back; a Foundation's build;
+ * a trickle's pay; origin in dev mode. Plain rows; the wording lives in
+ * `lifecycleLines.js`. Clocks move without events, so it re-reads every second
+ * while open.
+ */
+const LifecycleLines = ({ instanceId }) => {
+    const [, setNow] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => setNow(n => n + 1), LIFECYCLE_REFRESH_MS);
+        return () => clearInterval(timer);
+    }, []);
+
+    const lines = lifecycleLines(BoardState.getTokenById(instanceId), liveLifecycleSources());
+    if (!lines.length) return null;
+
+    return (
+        <div data-lifecycle-lines className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
+            {lines.map((line, i) => (
+                <div key={i} className="flex items-start justify-between gap-2">
+                    <span className="text-gi-muted">{line.label}</span>
+                    <span className={cn('font-bold text-right tabular-nums', LIFECYCLE_TONE[line.tone] || 'text-gi-text')}>
+                        {line.value}
+                    </span>
+                </div>
+            ))}
         </div>
     );
 };
