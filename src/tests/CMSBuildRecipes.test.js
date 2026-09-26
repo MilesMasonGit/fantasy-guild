@@ -163,6 +163,7 @@ describe('The Recipe editor’s building flow', () => {
 
         render(React.createElement(RecipeEditor));
         fireEvent.click(screen.getByText('Construction'));
-        expect(screen.getByText(/is built with Farming, not Construction/)).toBeTruthy();
+        // The shipped Farmland (7.4) is named alongside the fixture one.
+        expect(screen.getByText(/Fixture Editor Farmland (is|are) built with Farming, not Construction/)).toBeTruthy();
     });
 });

@@ -1,4 +1,10 @@
 export const SPRITE_MANIFEST = {
+    'i_seeds_apple': 'assets/items/seeds/i_seeds_apple.png',
+    'i_seeds': 'assets/items/seeds/i_seeds.png',
+    'prop_tree_maple': 'assets/playmat/props/prop_tree_maple.png',
+    'token_orchard_red': 'assets/tokens/nature/token_orchard_red.png',
+    'token_garden': 'assets/tokens/nature/token_garden.png',
+    'token_farmland': 'assets/tokens/nature/token_farmland.png',
     'token_ore_loose': 'assets/tokens/ore/token_ore_loose.png',
     'token_minecart_base': 'assets/tokens/mine/token_minecart_base.png',
     'token_minecart_coal': 'assets/tokens/mine/token_minecart_coal.png',
