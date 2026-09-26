@@ -75,7 +75,9 @@ describe('The Logging chain in shipped data (7.0, 7.1)', () => {
     });
 
     it('the Guild Hall trickles an Oak Seed every 5 minutes (SP-66)', () => {
-        expect(hall.trickle).toEqual([{ itemId: 'item_oak_seed', quantity: 1, everyMs: 300000 }]);
+        // Other chains add their own seed lines (7.4: Wheat and Apple Seed).
+        expect(hall.trickle).toContainEqual({ itemId: 'item_oak_seed', quantity: 1, everyMs: 300000 });
+        expect(hall.trickle.filter((t) => t.itemId === 'item_oak_seed')).toHaveLength(1);
     });
 
     it('the lifecycle audit has nothing to say about the chain', () => {

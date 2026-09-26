@@ -230,8 +230,11 @@ describe('The recipe field foundationKinds', () => {
         const written = syncPayload()['tokenRecipes.json'];
         const recipe = written.find((r) => r.id === recipeId);
         expect(recipe.foundationKinds).toEqual(['stone', 'wood']);
+        // Every other recipe keeps exactly what it shipped with: absent stays
+        // absent, and the shipped building recipes (7.4's Farming) keep theirs.
+        const shipped = new Map(shippedRecipes.map((r) => [r.id, r]));
         for (const other of written.filter((r) => r.id !== recipeId)) {
-            expect(other).not.toHaveProperty('foundationKinds');
+            expect(other.foundationKinds).toEqual(shipped.get(other.id).foundationKinds);
         }
 
         useEntityStore.getState().updateRecipe(skill, 0, { foundationKinds: undefined });
