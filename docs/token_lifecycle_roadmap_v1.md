@@ -559,7 +559,7 @@ panel is for speed, not for filling gaps.)
 | 4.1 CMS Token blocks | ✅ Done 2026-09-25 | Token editor section *Spawning and Building* (all six blocks); recipe editor *Builds on Foundation* checkboxes (`foundationKinds`); `FOUNDATION_KINDS` lives in `tokenConstants.js`; renames repoint the blocks. Today's data round-trips byte-identical. ⚠️ For 4.3: renaming a Token still does NOT repoint `tokenId` outputs in recipes |
 | 4.2 Content audit | ✅ Done 2026-09-25 | One shared checker `src/systems/core/lifecycleAudit.js`, reached by the boot `ContentAudit` and the CMS Economy Audit (Data Integrity rows). Verified live: a broken spawner gives one message per problem; shipped data gives none |
 | 4.4 Derived type knows the new blocks | ⬜ Not started | Found by 4.2: `deriveTokenType` calls a spawner-only Token a buff that does nothing, and CMS Recalculate would write `tokenType: 'buff'`. **Must land before Phase 7** |
-| 4.3 Recipes that build | ⬜ Not started | |
+| 4.3 Recipes that build | ✅ Done 2026-09-25 | Game: `recipesForFoundation`, `buildsOnFoundation`; building recipes never reach an ordinary station; `recipesForToken` returns the Foundation pool. CMS: ticking a kind turns the recipe card into Builds / Building cost / Build Time; Token renames now repoint `tokenId` outputs. ⚠️ Until 6.1 a placed Foundation would run as a plain station and drop its output as a sprite (no shipped Foundation yet) |
 | 5.1 The Shop | ⬜ Not started | |
 | 5.2 Dispose | ⬜ Not started | |
 | 6.1 Build in place | ⬜ Not started | |

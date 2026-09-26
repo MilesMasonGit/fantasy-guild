@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, Plus, Trash2, X, AlertTriangle, Boxes } from 'lucide-react';
+import { BookOpen, Plus, Trash2, X, AlertTriangle, Boxes, Hammer } from 'lucide-react';
 import {
   useEntityStore, makeInputEntry, makeOutputEntry, makeTokenOutputEntry,
 } from '../../stores/useEntityStore';
@@ -40,11 +40,18 @@ export default function RecipeEditor() {
   // pool is an array and `updateRecipe` addresses it that way.
   const [activeIdx, setActiveIdx] = useState(0);
 
-  /** Which stations draw each pool — the review half of CMS-40. */
+  /**
+   * Which stations draw each pool — the review half of CMS-40.
+   *
+   * A Foundation counts as drawing its `foundation.skill` pool (Token Lifecycle
+   * §3.1): it is the station a building recipe runs on, even though it has no
+   * `Works as` statement. Without this the Construction pool would read
+   * "nothing can make these" while Stone Foundations exist.
+   */
   const poolConsumers = useMemo(() => {
     const map = {};
     for (const t of Object.values(tokens)) {
-      const skill = stationSkillOf(expandBearer(t, effects));
+      const skill = t.foundation?.skill || stationSkillOf(expandBearer(t, effects));
       if (!skill) continue;
       (map[skill] ||= []).push(t);
     }
@@ -75,6 +82,7 @@ export default function RecipeEditor() {
   // otherwise leave `activeIdx` pointing past its end for one render.
   const idx = Math.min(activeIdx, Math.max(0, pool.length - 1));
   const activeRecipe = pool[idx];
+  const building = buildsOnFoundation(activeRecipe);
 
   /** Edit one side of the selected recipe's production. */
   const editSide = (key, mutate) =>
@@ -161,10 +169,10 @@ export default function RecipeEditor() {
       {activeRecipe && (
         <SupplyChainColumn
           side="left"
-          title="Inputs"
+          title={building ? 'Building cost' : 'Inputs'}
           editable
           entries={activeRecipe.inputs || []}
-          emptyHint="No inputs."
+          emptyHint={building ? 'Free to build (beyond the Foundation’s shop price).' : 'No inputs.'}
           onAdd={(itemId) => editSide('inputs', (list) => [...list, makeInputEntry(itemId)])}
           onUpdate={(i, p) => editSide('inputs', (list) => list.map((e, n) => (n === i ? { ...e, ...p } : e)))}
           onRemove={(i) => editSide('inputs', (list) => list.filter((_, n) => n !== i))}
@@ -239,6 +247,8 @@ export default function RecipeEditor() {
               <RecipeCard
                 key={activeRecipe?.id || idx}
                 recipe={activeRecipe}
+                tokens={tokens}
+                skillName={skillName}
                 availableContext={availableContext}
                 onChange={(patch) => updateRecipe(activeSkill, idx, patch)}
                 onDelete={() => { deleteRecipe(activeSkill, idx); setActiveIdx(0); }}
@@ -248,7 +258,16 @@ export default function RecipeEditor() {
         </div>
       </main>
 
-      {activeRecipe && (
+      {activeRecipe && building && (
+        <BuildsColumn
+          recipe={activeRecipe}
+          tokens={tokens}
+          onPick={(tokenId) => updateRecipe(activeSkill, idx, { outputs: tokenId ? [makeTokenOutputEntry(tokenId)] : [] })}
+          onOpenToken={(id) => setActiveEntity(id, 'token')}
+        />
+      )}
+
+      {activeRecipe && !building && (
         <SupplyChainColumn
           side="right"
           title="Outputs"
@@ -261,6 +280,85 @@ export default function RecipeEditor() {
           onRemove={(i) => editSide('outputs', (list) => list.filter((_, n) => n !== i))}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * Whether a recipe builds on a Foundation: a non-empty `foundationKinds`.
+ * Mirrors `buildsOnFoundation` in the game's `recipePoolRegistry.js`, which the
+ * CMS cannot import (it loads the data files through Vite globs).
+ */
+function buildsOnFoundation(recipe) {
+  return Array.isArray(recipe?.foundationKinds) && recipe.foundationKinds.length > 0;
+}
+
+/**
+ * The right-hand column for a recipe that builds (Token Lifecycle §3.1, slice
+ * 4.3): one Token picker in place of the Outputs list, because a building
+ * recipe outputs exactly one Token — the thing the Foundation becomes.
+ *
+ * Picking writes `outputs: [makeTokenOutputEntry(id)]`, replacing whatever was
+ * there. Outputs that do not fit that shape (left over from before the recipe
+ * was ticked as a building) are shown, not silently dropped, until the author
+ * picks.
+ */
+function BuildsColumn({ recipe, tokens, onPick, onOpenToken }) {
+  const outputs = recipe.outputs || [];
+  const tokenOutputs = outputs.filter((o) => o?.tokenId);
+  const current = tokenOutputs[0]?.tokenId || '';
+  const wellFormed = outputs.length === 1 && tokenOutputs.length === 1;
+  // Foundations are not something one builds onto another Foundation.
+  const choices = Object.values(tokens)
+    .filter((t) => !t.foundation)
+    .sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+
+  return (
+    <div
+      className="flex flex-col h-full bg-[#16161a] border-x border-white/5 w-80 shrink-0 overflow-hidden"
+      data-testid="builds-column"
+    >
+      <div className="p-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
+          <Hammer size={12} /> Builds
+        </h3>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+        <p className="text-[11px] text-gray-500 leading-relaxed">
+          When a hero finishes one cycle, the Foundation <strong>becomes</strong> this Token
+          where it stands.
+        </p>
+        <select
+          aria-label="Builds Token"
+          value={current}
+          onChange={(e) => onPick(e.target.value)}
+          className="w-full"
+          style={{ fontSize: 12 }}
+        >
+          <option value="">— pick a Token —</option>
+          {current && !tokens[current] && <option value={current}>{current} (missing)</option>}
+          {choices.map((t) => (
+            <option key={t.id} value={t.id}>{t.name || t.id}</option>
+          ))}
+        </select>
+        {current && tokens[current] && (
+          <button
+            onClick={() => onOpenToken(current)}
+            className="flex items-center gap-1.5 text-[11px] text-gray-300 hover:text-white"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            <Boxes size={12} style={{ color: 'var(--color-accent)' }} /> Open {tokens[current].name || current}
+          </button>
+        )}
+        {!wellFormed && outputs.length > 0 && (
+          <Callout tone="warning">
+            <strong>A building recipe outputs exactly one Token.</strong> This one has{' '}
+            {outputs.length} output{outputs.length > 1 ? 's' : ''}
+            {outputs.length > tokenOutputs.length ? `, ${outputs.length - tokenOutputs.length} of them items` : ''}.
+            Picking a Token above replaces them.
+          </Callout>
+        )}
+      </div>
     </div>
   );
 }
@@ -321,7 +419,70 @@ function Callout({ tone, children }) {
   );
 }
 
-function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
+/**
+ * "Builds on Foundation" — the switch between an ordinary recipe and one that
+ * builds (Token Lifecycle §3.1, slices 4.1 and 4.3).
+ *
+ * Ticking any kind makes the recipe a building: it leaves every ordinary
+ * station's pool, joins the pool of each ticked kind's Foundations of this
+ * recipe's skill, and the editor swaps Outputs for a single Token picker.
+ * None ticked removes the field, so an ordinary recipe syncs exactly as before.
+ *
+ * A Foundation's pool is filtered by its `foundation.skill` as well as its
+ * kind, so a ticked kind whose Foundations are built with another skill would
+ * never show this recipe. That is said here, where it is authored.
+ */
+function FoundationKindsRow({ recipe, tokens, skillName, onChange }) {
+  const kinds = Array.isArray(recipe.foundationKinds) ? recipe.foundationKinds : [];
+  const foundations = Object.values(tokens).filter((t) => t.foundation && kinds.includes(t.foundation.kind));
+  const mismatched = foundations.filter((t) => t.foundation.skill !== recipe.skill);
+  const withoutFoundation = kinds.filter((k) => !foundations.some((t) => t.foundation.kind === k));
+
+  return (
+    <div data-testid="foundation-kinds">
+      <label className="text-[10px] font-bold uppercase tracking-wider block mb-1 text-gray-500">
+        Builds on Foundation
+      </label>
+      <p className="text-[10px] text-gray-600 mb-1.5 leading-relaxed">
+        Tick a kind to make this a building recipe: a {skillName(recipe.skill)} hero builds its one
+        Token output on that kind of Foundation, and ordinary stations no longer see it.
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {FOUNDATION_KINDS.map((kind) => (
+          <label key={kind} className="flex items-center gap-1.5 text-[11px] text-gray-300 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={kinds.includes(kind)}
+              onChange={(e) => {
+                const next = e.target.checked
+                  ? [...kinds, kind]
+                  : kinds.filter((k) => k !== kind);
+                onChange({ foundationKinds: next.length > 0 ? next : undefined });
+              }}
+            />
+            {kind.charAt(0).toUpperCase() + kind.slice(1)}
+          </label>
+        ))}
+      </div>
+      {mismatched.length > 0 && (
+        <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ {mismatched.map((t) => t.name || t.id).join(', ')}{' '}
+          {mismatched.length > 1 ? 'are' : 'is'} built with{' '}
+          {[...new Set(mismatched.map((t) => skillName(t.foundation.skill)))].join(' / ')}, not{' '}
+          {skillName(recipe.skill)}, so this recipe will not appear on {mismatched.length > 1 ? 'them' : 'it'}.
+        </p>
+      )}
+      {withoutFoundation.length > 0 && (
+        <p className="text-[10px] mt-1 text-gray-600 leading-relaxed">
+          No Token is a {withoutFoundation.join(' or ')} Foundation yet.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function RecipeCard({ recipe, tokens, skillName, availableContext, onChange, onDelete }) {
+  const building = buildsOnFoundation(recipe);
   const [tagDraft, setTagDraft] = useState('');
   // A context requirement is `{ tag, minTier, chargeCost }`, not a bare tag:
   // the minimum tool tier it needs, and what a cycle costs that adjacent Token.
@@ -371,6 +532,8 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
         an un-run recipe shows no panel at all.
       */}
       <SimAnswer entityId={recipe.id} record={recipe} />
+
+      <FoundationKindsRow recipe={recipe} tokens={tokens} skillName={skillName} onChange={onChange} />
 
       {/* CMS-6: N context requirements, ALL of which must be present. Each is
           `{ tag, minTier, chargeCost }` — the tag says what kind of Token, the
@@ -459,7 +622,7 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
       {/* CMS-70: timing belongs to the recipe, so a Feast can take longer than
           Bread on the same station. */}
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Cycle Time (ms)" derived>
+        <Field label={building ? 'Build Time (ms)' : 'Cycle Time (ms)'} derived>
           <input
             type="number"
             min={0}
@@ -500,36 +663,6 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
             className="w-full"
           />
         </Field>
-      </div>
-
-      {/* Token Lifecycle (roadmap v1 §3.1): the Foundation kinds this recipe
-          can be built on. None ticked removes the field, so an ordinary recipe
-          syncs exactly as before. The full "recipes that build" authoring is
-          slice 4.3. */}
-      <div>
-        <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-          Builds on Foundation
-        </label>
-        <div className="flex flex-wrap gap-3">
-          {FOUNDATION_KINDS.map((kind) => {
-            const kinds = Array.isArray(recipe.foundationKinds) ? recipe.foundationKinds : [];
-            return (
-              <label key={kind} className="flex items-center gap-1.5 text-[11px] text-gray-300 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={kinds.includes(kind)}
-                  onChange={(e) => {
-                    const next = e.target.checked
-                      ? [...kinds, kind]
-                      : kinds.filter((k) => k !== kind);
-                    onChange({ foundationKinds: next.length > 0 ? next : undefined });
-                  }}
-                />
-                {kind.charAt(0).toUpperCase() + kind.slice(1)}
-              </label>
-            );
-          })}
-        </div>
       </div>
 
       {/*

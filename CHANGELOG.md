@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **CMS: recipes that build.** A Construction or Farming recipe can be marked as built on a
+  Foundation kind; its card then asks for the Token it builds, the building cost and the build time.
+  Renaming a Token now also updates recipes that output it.
 - **Content audit checks spawners, Foundations and the Shop.** Broken references, bad numbers
   and conflicting blocks are reported in plain English in the game's boot audit and in the CMS
   Economy Audit.
