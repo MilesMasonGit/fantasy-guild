@@ -96,8 +96,11 @@ describe('The Combat chain in shipped data (7.7)', () => {
         }
     });
 
-    it('a Goblin is level 1 with one charge, so a kill clears it and the camp spawns again', () => {
-        expect(goblin.enemy).toEqual({ level: 1, style: 'melee' });
+    // budgetScale 0.3: at the full level-1 budget an unarmed Melee 1 hero (all
+    // this build can make) lost to a single Goblin in the game; at 0.3 it wins
+    // steadily. Placeholder numbers (TL-5).
+    it('a Goblin is a level 1 pushover with one charge, so a kill clears it and the camp spawns again', () => {
+        expect(goblin.enemy).toEqual({ level: 1, style: 'melee', budgetScale: 0.3 });
         expect(goblin.uses).toBe(1);
     });
 
@@ -108,8 +111,9 @@ describe('The Combat chain in shipped data (7.7)', () => {
         ]);
     });
 
-    it('a Chief is tougher: higher level, a heavier budget and two charges (SP-38)', () => {
-        expect(chief.enemy).toEqual({ level: 3, style: 'melee', budgetScale: 1.5 });
+    // Two charges are two fights back to back, with no rest for the hero between.
+    it('a Chief is tougher: higher level, twice the budget and two charges (SP-38)', () => {
+        expect(chief.enemy).toEqual({ level: 3, style: 'melee', budgetScale: 0.6 });
         expect(chief.uses).toBe(2);
         const g = enemyProfileOf(goblin);
         const c = enemyProfileOf(chief);
