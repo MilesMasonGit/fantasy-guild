@@ -8,7 +8,8 @@ import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/D
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
+import { Landmark, X, Lock, Check, AlertTriangle, BoxSelect, Hourglass } from 'lucide-react';
+import { UpkeepSummaryPanel } from './UpkeepSummaryPanel.jsx';
 
 import { EventBus } from '../../../systems/core/EventBus.js';
 
@@ -37,6 +38,8 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
     // between tabs.
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
+    // The Upkeep Summary (slice 8.2) replaces the item list while shown.
+    const [showUpkeep, setShowUpkeep] = useState(false);
 
     useEffect(() => {
         if (!filter) return;
@@ -214,6 +217,19 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 >
                     <BoxSelect size={11} /> {selectMode ? 'Done' : 'Select'}
                 </button>
+                <button
+                    onClick={() => setShowUpkeep(v => !v)}
+                    title={showUpkeep ? 'Back to the items' : 'Every ongoing cost: items used per minute, and who is waiting'}
+                    data-testid="upkeep-toggle"
+                    className={cn(
+                        'flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
+                        showUpkeep
+                            ? 'border-gi-primary bg-gi-primary/15 text-gi-text'
+                            : 'border-gi-border text-gi-muted hover:text-gi-text hover:border-gi-muted'
+                    )}
+                >
+                    <Hourglass size={11} /> Upkeep
+                </button>
                 {/* No Sell button: gold is retired and nothing sells to the
                     merchant (SP-65, slice 2.2). Select mode only moves stacks. */}
                 {selectMode && (
@@ -239,6 +255,9 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 </span>
             </div>
 
+            {showUpkeep ? (
+                <div className="flex-1 min-h-0"><UpkeepSummaryPanel /></div>
+            ) : (<>
             {/* Compact reorderable list — the list is the "append here" target;
                 tiles are reorder targets nested inside it. */}
             <DropTarget
@@ -286,6 +305,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                     </div>
                 )}
             </DropTarget>
+            </>)}
 
             </div>
         </div>
