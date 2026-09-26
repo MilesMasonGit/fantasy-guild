@@ -66,6 +66,7 @@ export const TOKEN_TYPES = Object.freeze([
     'enemy',      // runs the combat engine; still just a Token (D-104)
     'map',        // a consumable that bursts into a kit (D-155)
     'promotion',  // trains the hero on it into one job, and IS that job's price (PR-6)
+    'spawner',    // puts other Tokens on the mat on a clock (Token lifecycle §3.1)
 ]);
 
 /**

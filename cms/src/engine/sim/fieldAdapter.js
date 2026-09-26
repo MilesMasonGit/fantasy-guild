@@ -41,6 +41,7 @@ export const DEFERRED_TOKEN_TYPES = Object.freeze([
     'manager',
     'market',
     'enemy',
+    'spawner',
 ]);
 
 /**
