@@ -144,6 +144,11 @@ export { enemyCombatBudget } from '../../../src/config/FormulaRegistry.js';
 // game's own rule and wording, so the CMS and the boot audit name the same Tokens.
 export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/workSkillRule.js';
 
+// Token Lifecycle slice 4.2: the content checks for the six lifecycle blocks.
+// The game's own rules and wording, so the Economy Audit and the boot audit
+// report the same problems.
+export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.js';
+
 // `tokenType` is derived from what a Token has rather than picked (§1.2). The
 // CMS computes it and writes it into the file; the author never types it.
 export {
