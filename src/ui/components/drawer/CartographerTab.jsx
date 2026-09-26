@@ -33,7 +33,6 @@ export const CartographerTab = ({ onInspect }) => {
     // `Cartographer.catalogue()` runs `canBuy()` per Map, which reads the Bank
     // (Maps cost items since slice 2.2, SP-65), so `inventory_updated` has to
     // re-run the catalogue or the Buy buttons keep stale affordability.
-    // `currency_changed` is kept only so an old save's load repaints the same.
     // The cap is a Mat Tuner setting, and a tuner change publishes no game
     // event of its own (slice 8.3): re-read the header when it moves.
     const [tuningRev, setTuningRev] = useState(0);
@@ -45,7 +44,7 @@ export const CartographerTab = ({ onInspect }) => {
             shop: Shop.catalogue(),
             cap: Shop.capStatus()
         }),
-        ['map_purchased', 'map_opened', 'token_purchased', 'currency_changed', 'inventory_updated', 'state_changed'],
+        ['map_purchased', 'map_opened', 'token_purchased', 'inventory_updated', 'state_changed'],
         null,
         { deps: [tuningRev] }
     );

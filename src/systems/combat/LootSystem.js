@@ -6,7 +6,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { randomInt } from '../../utils/RNG.js';
-import * as TransactionProcessor from '../economy/TransactionProcessor.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
 import { resolveYield } from '../effects/EffectAxes.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
@@ -68,10 +68,11 @@ const LootSystem = {
                     SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId);
                 }
             } else {
-                TransactionProcessor.apply({
-                    entries: generatedDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: d.quantity })),
-                    source: `Loot (${enemyName})`
-                }, heroId, enemyId);
+                // Straight into the Bank (TransactionProcessor went with gold,
+                // Token Lifecycle 9.4; its item entry was exactly this call).
+                for (const d of generatedDrops) {
+                    InventoryManager.addItem(d.itemId, d.quantity || 1, enemyId);
+                }
             }
         }
 
@@ -99,14 +100,10 @@ const LootSystem = {
             // first, through the full Three-Bucket formula. resolveYield keeps
             // the fractional result so scaleYield's probabilistic rounding
             // applies once, at the end, over both sources combined.
-            TransactionProcessor.apply({
-                entries: itemDrops.map(d => ({
-                    type: 'ITEM',
-                    id: d.itemId,
-                    amount: scaleYield(resolveYield(card.aggregator, d.quantity), yieldMult)
-                })),
-                source: `Task (${card.name})`
-            }, null, card.templateId);
+            for (const d of itemDrops) {
+                const amount = scaleYield(resolveYield(card.aggregator, d.quantity), yieldMult);
+                InventoryManager.addItem(d.itemId, amount || 1, card.templateId);
+            }
         }
 
         EventBus.publish('loot_generated', { cardId: card.id, areaId, drops: generatedDrops });

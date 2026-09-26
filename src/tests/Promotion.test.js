@@ -3,7 +3,6 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as PromotionSystem from '../systems/hero/PromotionSystem.js';
-import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import {
@@ -104,9 +103,8 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
      * correctly described a rule the owner deliberately replaced (PR-6). This is
      * the assertion that keeps the old price from creeping back.
      */
-    it('does not care about gold or materials — the Token is the price', () => {
+    it('does not care about materials (or gold, which is gone) — the Token is the price', () => {
         const hero = makeQualified('fighter');
-        GameState.state.currency.gold = 0;
         GameState.state.inventory.items = {};
 
         expect(PromotionSystem.canPromote(hero.id, 'fighter').ok).toBe(true);
@@ -137,15 +135,12 @@ describe('A promotion swaps the sheet', () => {
     });
 
     /** ⚠️ Replaces 'takes the gold and the materials' (PR-6). */
-    it('leaves the guild gold and materials completely alone', () => {
+    it('leaves the guild materials completely alone (gold is gone, 9.4)', () => {
         const hero = makeQualified('fighter');
-        CurrencyManager.addGold(500, 'test');
         InventoryManager.addItem('item_copper_ingot', 10);
-        const goldBefore = CurrencyManager.getCurrency('gold');
 
         PromotionSystem.promote(hero.id, 'fighter');
 
-        expect(CurrencyManager.getCurrency('gold')).toBe(goldBefore);
         expect(InventoryManager.getItemCount('item_copper_ingot')).toBe(10);
     });
 

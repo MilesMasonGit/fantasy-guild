@@ -277,13 +277,11 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         const quantity = doubled ? rolled * 2 : rolled;
         if (quantity <= 0) continue;
 
-        // A Market is a Token whose output is currency (D-141). Gold is retired
-        // (SP-65, slice 2.2), so a currency output credits nothing: the cycle
-        // still runs and still takes its inputs, it just pays no gold. No
-        // shipped Token carries a currency output; the data is left alone.
-        if (output.currency) {
-            logger.debug('BoardRunner', `${def.name}: ${quantity} ${output.currency} not credited (gold is retired)`);
-        } else if (output.tokenId) {
+        // An output names a Token or an item. One that names neither — a
+        // Market's old currency output (D-141) — pays nothing: gold is retired
+        // (SP-65) and its code deleted (Token Lifecycle 9.4). The cycle still
+        // runs and still takes its inputs.
+        if (output.tokenId) {
             /**
              * A recipe that outputs a Token drops it on the floor, through the
              * same call a Map burst uses (`Cartographer.js:344`): one sprite
@@ -306,7 +304,7 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
                     'token', output.tokenId, 1, id, tokenStartingUses(output.tokenId)
                 );
             }
-        } else {
+        } else if (output.itemId) {
             SpriteLayer.addSprite('item', output.itemId, quantity, id);
             produced.push(output.itemId);
         }

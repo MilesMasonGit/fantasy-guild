@@ -56,7 +56,6 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         // Claim Step 0 (Place a Token)
         EventBus.publish('token_placed', { instanceId: 'tok_24', typeId: 'token_guild_hall' });
         const initialMaps = BoardState.getBoardMaps().length;
-        const goldBefore = GameState.state.currency.gold;
 
         const res = QuestManager.claimQuest('tutorial_1');
         expect(res.success).toBe(true);
@@ -64,7 +63,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
 
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
         expect(BoardState.getBoardMaps().length).toBe(initialMaps);
-        expect(GameState.state.currency.gold).toBe(goldBefore);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
 
         const active = QuestManager.getActiveQuests();
         expect(active.length).toBe(3);

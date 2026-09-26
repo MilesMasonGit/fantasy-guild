@@ -44,7 +44,7 @@ import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 
 /**
  * The opening state of a new game (FP-44): the Guild Hall already standing on
- * the mat, an empty Tray, no items, zero gold, and zero Heroes.
+ * the mat, an empty Tray, no items, and zero Heroes.
  *
  * Each entry is a Token type and the mat point it starts at.
  *
@@ -224,8 +224,7 @@ export const EngineBootstrap = {
         const state = GameState.state;
         if (!state) return;
 
-        // Start with zero gold and no items
-        if (state.currency) state.currency.gold = 0;
+        // Start with no items
         if (state.inventory) state.inventory.items = {};
 
         // Start with no Heroes (first hero recruited via Guild Hall upgrade)
@@ -251,7 +250,7 @@ export const EngineBootstrap = {
             GameState.exploration = { count: 0 };
         }
 
-        logger.info('Engine', 'New game: 0 heroes, the Guild Hall on the mat, an empty Tray, 0 items, 0 gold.');
+        logger.info('Engine', 'New game: 0 heroes, the Guild Hall on the mat, an empty Tray, 0 items.');
     },
 
     /**

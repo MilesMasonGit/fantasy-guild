@@ -102,7 +102,6 @@ describe('CR2-054: Tray capacity is one rule', () => {
             BoardState.createTokenInstance(mapId, tokenStartingUses(mapId))
         );
         fillWithPlain(BoardState.TRAY_CAPACITY - 1);
-        GameState.state.currency = { gold: 1_000_000 };
 
         // Even a Tray stuffed past capacity refuses nothing: the Tray is retired.
         fillWithPlain(1);

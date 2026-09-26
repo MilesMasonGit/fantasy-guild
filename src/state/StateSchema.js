@@ -159,17 +159,9 @@ export const INITIAL_STATE = {
     },
 
     // === Currency ===
-    currency: {
-        gold: 0,        // Starting gold
-        // Inert. Influence was the recruitment currency; it could be earned but
-        // never spent, and was cut (owner decision 2026-08-19, CR2-093).
-        // Nothing reads or writes it; kept so existing saves load.
-        influence: 10,
-        // Inert. It fed the recruit-cost formula, which went with the
-        // retirement/recruit-purchasing retirement (owner decision 2026-08-19,
-        // CR2-086). Nothing reads or writes it; kept so existing saves load.
-        totalRecruits: 0
-    },
+    // Deleted with the gold code (Token Lifecycle 9.4, SP-65). Gold, and the
+    // inert `influence` and `totalRecruits` beside it, left the save; an older
+    // save's `currency` section is dropped by `migrateState`.
 
     // === Progress ===
     // The Projects system is retired (owner decision 2026-07-17, CR-038) —
@@ -213,8 +205,7 @@ export const INITIAL_STATE = {
     // The card-ownership half of this section is retired with the deck loop
     // (binders, universals, playsets, mastery, pack purchases). It is left in
     // place, empty, rather than removed, because **it is part of the shape a
-    // save is written in** — the same reason `totalRecruits`, `influence` and
-    // `dur` are still here. Inert fields stay; removing one changes what an
+    // save is written in** — the same reason `dur` is still here. Inert fields stay; removing one changes what an
     // existing save round-trips to, for no gain.
     //
     // ⚠️ Corrected 2026-08-26 (CR2-108 sweep). This note used to give two
@@ -306,7 +297,7 @@ export const INITIAL_STATE = {
  */
 const REQUIRED_KEYS = [
     'meta', 'heroes', 'cards',
-    'inventory', 'currency', 'progress', 'time',
+    'inventory', 'progress', 'time',
     'collection', 'board', 'quests'
 ];
 

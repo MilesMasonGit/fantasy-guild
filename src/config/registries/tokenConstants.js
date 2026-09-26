@@ -78,7 +78,8 @@ export const TOKEN_TYPES = Object.freeze([
  * frequency and nothing more". That was false: nothing anywhere connects
  * rarity to drop chance. What it actually does, verified, is exactly two
  * things:
- *   - sets a Token's sell value — `SELL_VALUE` by rarity in `TokenBank.js`
+ *   - set a Token's sell value — `SELL_VALUE` by rarity in `TokenBank.js`,
+ *     deleted with gold (Token Lifecycle 9.4), so this is gone
  *   - gates the one-Mythic-placed-at-a-time rule in `Placement.js` (D-177)
  *
  * Rarity is still not a power tier: a Common producer may well outproduce a
@@ -120,12 +121,10 @@ export const TOKEN_RARITIES = Object.freeze([
 /**
  * What a production output may pay out **instead of an item** (D-141).
  *
- * `BoardRunner` credits an output entry carrying `currency` through
- * `CurrencyManager` rather than dropping a sprite: gold is not an item, has no
- * sprite and no Bank slot, so there is nothing for the floor to hold. That is
- * the *only* thing in the running game that makes a Market a Market — and until
- * now no CMS field wrote it, so `token_shrimp_market` ate Raw Shrimp and
- * produced nothing at all.
+ * ⚠️ Gold is retired (SP-65) and `CurrencyManager` deleted (Token Lifecycle
+ * 9.4): `BoardRunner` now pays nothing for an output carrying `currency`. The
+ * list stays because the CMS Outputs column, the content audit and the
+ * `market` type derivation still read it.
  *
  * Gold is the only entry because gold is the only currency the game has —
  * Influence was cut (owner decision 2026-08-19, CR2-093). Adding a currency

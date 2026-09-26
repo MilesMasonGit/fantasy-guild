@@ -18,9 +18,9 @@ export const MapInspection = ({ mapId, onInspect }) => {
     // here drew every material as "Unknown" under a duplicate React key.
     const materials = mapMaterials(map);
     const price = mapPrice(map);
-    // Gold entries pay nothing since gold was retired (SP-65), so they are
-    // not listed as drops.
-    const pool = (map.pool || []).filter(e => e.kind !== 'gold' && e.kind !== 'currency');
+    // Only Tokens and items land from a burst (gold is retired, SP-65), so
+    // nothing else is listed as a drop.
+    const pool = (map.pool || []).filter(e => e.kind === 'token' || e.kind === 'item');
     const totalWeight = pool.reduce((sum, entry) => sum + (entry.weight || 0), 0);
 
     // Sort entries by drop chance (highest weight first)

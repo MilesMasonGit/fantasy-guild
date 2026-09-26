@@ -24,8 +24,9 @@ import { isEnemyDef } from './enemyProfile.js';
  * it; everything downstream keeps working.
  *
  * ## `market` — now readable off the Token, as of Phase 2
- * `BoardRunner` credits gold when an output entry carries `currency` (D-141) —
- * the only thing in the running game that makes a Market a Market. Phase 1 left
+ * `BoardRunner` credited gold when an output entry carried `currency` (D-141).
+ * Gold is retired and that code deleted (Token Lifecycle 9.4), so today the
+ * label is all a currency output still produces. Phase 1 left
  * an authored `market` standing because **no CMS field wrote `output.currency`**;
  * the Outputs column now does (`OUTPUT_CURRENCIES` in `tokenConstants.js`), so
  * "consumes goods, produces currency" is a real signal and the rung derives like

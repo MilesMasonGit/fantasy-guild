@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { MARKET_PREMIUM } from './fixtures/testTokens.js';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -7,7 +7,6 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { CommerceSystem } from '../systems/economy/CommerceSystem.js';
 import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
@@ -62,7 +61,6 @@ beforeEach(() => {
     InputAllocator.resetStarvationStats();
     GameState.state.heroes = [makeHero('hero_1')];
     GameState.state.inventory.maxSlots = 50;
-    GameState.state.currency.gold = 0;
 });
 
 describe('A Market is an ordinary Token whose output is gold', () => {
@@ -77,7 +75,7 @@ describe('A Market is an ordinary Token whose output is gold', () => {
 
         run(16000);   // one 15s cycle
 
-        expect(GameState.state.currency.gold).toBe(0);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
         expect(InventoryManager.getItemCount('item_market_goods')).toBe(0);
     });
 
@@ -96,7 +94,7 @@ describe('A Market is an ordinary Token whose output is gold', () => {
 
         run(16000);
 
-        expect(GameState.state.currency.gold).toBe(0);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
         expect(BoardState.getTokenById(market.id).alert).toBe(BoardRunner.ALERT.INPUTS);
     });
 
@@ -106,22 +104,14 @@ describe('A Market is an ordinary Token whose output is gold', () => {
 
         run(30000);
 
-        expect(GameState.state.currency.gold).toBe(0);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 });
 
 describe('⚠️ Items are worth more used than sold (D-128)', () => {
-    it('pays roughly a 20% premium over dumping the same goods at the Bank', () => {
-        // The owner's rule (2026-08-20). The premium is what buys the tile and
-        // the hero: without it a Market is strictly worse than the sell button
-        // and nobody would ever place one.
-        const def = getTokenType(MARKET);
-        const input = def.config.inputs[0];
-        const raw = CommerceSystem.getItemPrice(input.itemId) * input.quantity;
-
-        expect(raw, 'the fixture input must have a real Bank price').toBeGreaterThan(0);
-        expect(def.config.outputs[0].quantity).toBe(Math.round(raw * MARKET_PREMIUM));
-    });
+    // The 20% premium over the Bank's sell price (D-128) is no longer
+    // testable: the Bank's item price (`CommerceSystem.getItemPrice`) was
+    // deleted with gold (Token Lifecycle 9.4).
 
     // ⚠️ Changed in slice 2.2 (SP-65). This used to sell the goods raw, run
     // them through the Market, and check the Market paid the premium in gold.
@@ -135,7 +125,7 @@ describe('⚠️ Items are worth more used than sold (D-128)', () => {
         run(16000);
 
         expect(InventoryManager.getItemCount(input.itemId)).toBe(0);   // the cycle did run
-        expect(GameState.state.currency.gold).toBe(0);
+        expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('costs a whole spot and a whole hero for its income', () => {

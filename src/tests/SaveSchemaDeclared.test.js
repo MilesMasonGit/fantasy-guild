@@ -168,13 +168,11 @@ describe('Migration repairs a partially-present section (CR2-042)', () => {
 
     it('never overwrites a field the save already stores, including 0 and null', () => {
         const state = GameState.serialize().state;
-        state.currency.gold = 0;
         state.progress.guildHallMapOpens = 0;
         state.board.tokenGroups = { groupOrder: ['mine'], groupDefs: {}, overrides: {} };
         state.meta.createdAt = null;
 
         const migrated = migrateState(state, GAME_VERSION);
-        expect(migrated.currency.gold).toBe(0);
         expect(migrated.progress.guildHallMapOpens).toBe(0);
         expect(migrated.board.tokenGroups.groupOrder).toEqual(['mine']);
         expect(migrated.meta.createdAt).toBeNull();
@@ -229,6 +227,22 @@ describe('The validator guards the sections this game is made of (CR2-043)', () 
         state.collection.playsets = { anything: 99 };
         state.collection.binders = 'not even an object';
         expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
+    });
+    // Gold left the save with its code (Token Lifecycle 9.4, SP-65).
+    it('a new save has no currency section, and validates without one', () => {
+        const state = GameState.serialize().state;
+        expect(state.currency).toBeUndefined();
+        expect(INITIAL_STATE.currency).toBeUndefined();
+        expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
+    });
+
+    it('an older save still carrying currency loads, and the section is dropped', () => {
+        const state = GameState.serialize().state;
+        state.currency = { gold: 1234, influence: 10, totalRecruits: 0 };
+        expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
+        const migrated = migrateState(state, GAME_VERSION);
+        expect(migrated.currency).toBeUndefined();
+        expect(validateSaveData({ version: GAME_VERSION, state: migrated }).valid).toBe(true);
     });
 });
 
