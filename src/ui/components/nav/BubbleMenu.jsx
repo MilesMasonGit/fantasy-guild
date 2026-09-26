@@ -167,7 +167,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             {/* The Cartographer: the one shop that is deliberately off-board
                 (D-98). A Cartographer Token would have permanently consumed a
                 tile AND a hero purely to keep progression ticking. */}
-            <Bubble id="cartographer-bubble-target" icon={MapIcon} label="Cartographer's Shop" color="green" active={nav.isActive('cartographer')} onClick={() => nav.toggle('cartographer')} />
+            <Bubble id="cartographer-bubble-target" icon={MapIcon} label="Shop" color="green" active={nav.isActive('cartographer')} onClick={() => nav.toggle('cartographer')} />
             {/* The Collection Binder and Area Manager bubbles are gone with
                 their screens — binders were per-area card ownership (D-41) and
                 the Area Manager managed areas, both deleted by the playmat

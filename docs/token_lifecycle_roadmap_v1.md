@@ -560,7 +560,7 @@ panel is for speed, not for filling gaps.)
 | 4.2 Content audit | ✅ Done 2026-09-25 | One shared checker `src/systems/core/lifecycleAudit.js`, reached by the boot `ContentAudit` and the CMS Economy Audit (Data Integrity rows). Verified live: a broken spawner gives one message per problem; shipped data gives none |
 | 4.4 Derived type knows the new blocks | ⬜ Not started | Found by 4.2: `deriveTokenType` calls a spawner-only Token a buff that does nothing, and CMS Recalculate would write `tokenType: 'buff'`. **Must land before Phase 7** |
 | 4.3 Recipes that build | ✅ Done 2026-09-25 | Game: `recipesForFoundation`, `buildsOnFoundation`; building recipes never reach an ordinary station; `recipesForToken` returns the Foundation pool. CMS: ticking a kind turns the recipe card into Builds / Building cost / Build Time; Token renames now repoint `tokenId` outputs. ⚠️ Until 6.1 a placed Foundation would run as a plain station and drop its output as a sprite (no shipped Foundation yet) |
-| 5.1 The Shop | ⬜ Not started | |
+| 5.1 The Shop | ✅ Done 2026-09-25 | `Shop.js` (catalogue by section, have/need, all-or-nothing via `InputAllocator`, places beside the Hall before paying, mat-cap refusal); the Cartographer tab is now *Shop* with Maps listed below. Verified live with a fixture Forest: refused at 7/10 wood, bought at 12 (2 left, placed, 1/40), then spawned and grew to 5 trees and respawned. Leftovers: panel doesn't repaint on a tuner-only cap change; Map success text still mentions the Tray; tutorial text says Cartographer's Shop |
 | 5.2 Dispose | ⬜ Not started | |
 | 6.1 Build in place | ⬜ Not started | |
 | 6.2 Academies | ⬜ Not started | |

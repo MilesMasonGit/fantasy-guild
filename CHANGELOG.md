@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The Shop.** The Cartographer is now the Shop: it sells Tokens for items, grouped by skill,
+  shows what the Bank has against each price, and places a purchase beside the Guild Hall. It shows
+  how many placed Tokens the mat holds against its cap. Maps are still sold below.
 - **Spawners and the trickle work.** A spawner Token grows new Tokens around itself on a clock, up to
   a cap shared by every spawner of that kind, paying an item from the Bank per spawn and waiting
   when it can't. A Token can also pay items into the Bank on a clock with no hero (for the Guild

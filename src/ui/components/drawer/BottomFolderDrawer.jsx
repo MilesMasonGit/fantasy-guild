@@ -50,7 +50,7 @@ const PANES = [
     // The one shop that is deliberately NOT on the board (D-98). The Map is
     // still a Token, so only the transaction leaves the grid.
     {
-        key: 'cartographer', label: "Cartographer's Shop", icon: MapIcon, Component: CartographerTab,
+        key: 'cartographer', label: 'Shop', icon: MapIcon, Component: CartographerTab,
         paneProps: ({ onInspect }) => ({ onInspect })
     }
 ];
