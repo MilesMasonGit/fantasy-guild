@@ -42,7 +42,7 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": 15,
+    "value": 14,
     "autoSyncId": true,
     "id": "item_copper_ingot",
     "valueSource": "recipe_copper_ingot"
@@ -224,7 +224,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 5,
+    "value": 4,
     "autoSyncId": true,
     "id": "item_coal",
     "valueSource": "token_coal_vein"
@@ -588,7 +588,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 40,
+    "value": 38,
     "valueSource": "recipe_mtp8qjj0",
     "autoSyncId": true,
     "id": "item_iron_ingot"
@@ -601,7 +601,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1449,
+    "value": 1444,
     "valueSource": "recipe_mtp8qjj3",
     "autoSyncId": true,
     "id": "item_mythril_ingot"
@@ -614,7 +614,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 418,
+    "value": 416,
     "valueSource": "recipe_mtp8qjj1",
     "autoSyncId": true,
     "id": "item_gold_ingot"
@@ -627,7 +627,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 133,
+    "value": 131,
     "valueSource": "recipe_mtp8qjj2",
     "autoSyncId": true,
     "id": "item_silver_ingot"
@@ -640,7 +640,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 6382,
+    "value": 6376,
     "valueSource": "recipe_mtp8qjj4",
     "autoSyncId": true,
     "id": "item_adamantine_ingot"
@@ -653,7 +653,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 7903,
+    "value": 7894,
     "valueSource": "recipe_mtp8qjj5",
     "autoSyncId": true,
     "id": "item_darkmetal_ingot"
@@ -761,5 +761,18 @@
     "valueSource": "token_oak_tree",
     "autoSyncId": true,
     "id": "item_oak_seed"
+  },
+  "item_stone": {
+    "name": "Stone",
+    "description": "",
+    "type": "material",
+    "sprite": "token_ore_loose",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "token_stone_outcrop",
+    "autoSyncId": true,
+    "id": "item_stone"
   }
 }
