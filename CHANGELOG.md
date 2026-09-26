@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Explore a Map; Map bursts are gone.** The Oak Forest Map is sold at the Shop and worked by an
+  Explore hero: each trip spends a cooked Shrimp and a Torch for mixed loot (wood, seeds, ore, rarely a
+  Beeswax Comb), and the Map is used up after five trips. Buying Maps to burst them open is removed.
 - **Fixed: an unfinished recipe requirement could blank the game screen.** A recipe whose nearby
   requirement had no tier yet crashed the display; it is now read as tier 1 everywhere.
 - **Processing and academies.** Wood and Stone Foundations in the Shop are built by Construction
