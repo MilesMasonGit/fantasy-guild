@@ -88,6 +88,12 @@ export function deriveTokenType(def) {
     // (Promotes rule, P1).
     if (has(KEYWORD.PROMOTES)) return { type: 'promotion', why: 'it promotes the hero standing on it to a job' };
 
+    // Token lifecycle blocks (roadmap §3.1, slice 4.4). A spawner is its own
+    // kind: what it does is put other Tokens on the mat, which no rung below
+    // describes. Above the currency and work-cycle rungs so a spawner that also
+    // has a cycle still files by the thing that makes it distinctive.
+    if (def.spawner) return { type: 'spawner', why: 'it spawns other Tokens around it' };
+
     if (outputs.some(o => o?.currency)) {
         return {
             type: 'market',
@@ -98,6 +104,9 @@ export function deriveTokenType(def) {
     }
 
     if (has(KEYWORD.STATION)) return { type: 'station', why: 'it says it works as a station' };
+    // A Foundation runs recipes (the ones that build on its kind), so it is a
+    // station — its pool comes from `foundation.skill`, not a Works as rule.
+    if (def.foundation) return { type: 'station', why: 'it is a Foundation that buildings are built on' };
 
     if (has(KEYWORD.RESTOCKS)) return { type: 'manager', why: 'it restocks its neighbours' };
     if (has(KEYWORD.ACTS_AS)) return { type: 'context', why: 'it acts as a tool for its neighbours' };
@@ -114,6 +123,12 @@ export function deriveTokenType(def) {
 
     if (hasCycle && def.requiresHero === false) return { type: 'passive', why: 'it works with no hero' };
     if (hasCycle && outputs.length) return { type: 'resource', why: `it produces ${outputs.length === 1 ? 'something' : 'things'} from nothing` };
+
+    // A Token that turns (Coast ↔ Shrimp Coast) is a feature of the land that
+    // is worth something while turned. With a work cycle of its own it already
+    // filed as a resource above; without one it still does something.
+    if (def.turns) return { type: 'resource', why: 'it turns into something else for a while' };
+    if (def.grows) return { type: 'resource', why: 'it grows into something else after a while' };
 
     if (has(KEYWORD.PROVIDES) || has(KEYWORD.GRANTS)) {
         return { type: 'buff', why: 'it changes what happens around it' };

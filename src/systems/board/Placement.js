@@ -315,6 +315,47 @@ export function returnTokenToVaultById(id) {
     return { success: true, idledHeroId: heroId };
 }
 
+/**
+ * ⭐ **Remove** a placed Token for good (Token Lifecycle slice 5.2).
+ *
+ * * **TL-1, no refunds.** Nothing is credited, and no vacancy is left for a
+ *   Manager to restock — the Token is simply gone. That is why this is not
+ *   `Charges.destroyToken`: that path is *depletion*, which sets a vacancy and
+ *   publishes `TOKEN_DEPLETED` (so "when depleted" rules would fire and could
+ *   pay out or spawn).
+ * * **SP-6.** Spawned Tokens it leaves behind stay where they are; only this
+ *   instance leaves the mat.
+ * * **SP-52.** A hero working it lets go: its claim names an instance that no
+ *   longer exists, so `Flags` releases it and finds other work on its next
+ *   assignment (`TILE_CHANGED` marks the flags dirty).
+ * * Only **placed** Tokens (DP-3). A spawned Token is worked out, not removed,
+ *   and the Guild Hall never leaves the mat.
+ *
+ * @returns {{success: boolean, reason?: string, idledHeroId?: string|null}}
+ */
+export function removePlacedToken(id) {
+    const instance = BoardState.getTokenById(id);
+    if (!instance) return refuse('No Token there');
+    if (isPermanentToken(instance.typeId, instance)) return refuse('Guild Hall cannot be removed from the playmat.');
+    if (BoardState.originOf(instance) !== BoardState.ORIGIN.PLACED) {
+        return refuse('Spawned Tokens are worked out, not removed.');
+    }
+
+    const at = pointOf(instance);
+    const heroId = BoardState.workerOf(id);
+
+    forfeitCycle(instance);
+    StationRecipe.clearSelection(instance);
+    BoardState.removeToken(id);
+
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...(at || {}), typeId: null });
+    if (heroId && at) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
+    markAdjacencyDirty([at]);
+    EventBus.publish('state_changed');
+
+    return { success: true, idledHeroId: heroId };
+}
+
 /** The Guild Hall's refusal, with the mark that says so. */
 function refusePermanent(instance) {
     const tName = tokenName(instance?.typeId) || 'Guild Hall';

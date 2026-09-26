@@ -262,3 +262,18 @@ describe('The Token editor’s Lifecycle section', () => {
         }
     });
 });
+
+describe('Recalculate files the lifecycle blocks under a sensible type (slice 4.4)', () => {
+    const cases = [
+        ['spawner', 'spawner'],
+        ['turns', 'resource'],
+        ['foundation', 'station'],
+    ];
+    for (const [block, type] of cases) {
+        it(`a ${block}-only Token is written as tokenType ${type}, not buff`, () => {
+            const id = useEntityStore.getState().addToken({ name: `Only ${block}` });
+            useEntityStore.getState().updateToken(id, { [block]: everyBlock()[block] });
+            expect(syncPayload()['tokens.json'][id].tokenType).toBe(type);
+        });
+    }
+});

@@ -6,6 +6,7 @@ import { auditLifecycleBlocks, spawnerFamily } from '../systems/core/lifecycleAu
 import { auditContent } from '../systems/core/ContentAudit.js';
 import { auditConnectivity } from '../../cms/src/engine/connectivityAuditor.js';
 import { TOKENS, registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
 import { ITEMS as ITEMS_LIVE } from '../config/registries/itemRegistry.js';
 import { listRecipes } from '../config/registries/recipePoolRegistry.js';
 import { SKILLS as GAME_SKILLS } from '../config/registries/skillRegistry.js';
@@ -333,9 +334,9 @@ describe('Lifecycle audit — reaches both audits', () => {
                 spawner: { spawns: [{ typeId: 'token_ghost', weight: 1 }], allowance: 1, intervalMs: 5000, upkeep: [] },
             },
         });
-        // Only the lifecycle lines: other passes (the derived-type check) may
-        // have their own things to say about a Token that only spawns.
-        const mine = auditContent().filter((f) => f.where === 'Token "fx_la_forest"' && f.what.includes('(fx_la_forest):'));
+        // Every line about this Token: since slice 4.4 the derived-type check
+        // no longer calls a spawner-only Token a buff that does nothing.
+        const mine = auditContent().filter((f) => f.where === 'Token "fx_la_forest"');
         expect(mine.map((f) => f.what)).toEqual([
             'Broken Forest (fx_la_forest): spawner lists token_ghost, which does not exist.',
             '(allowed) Broken Forest (fx_la_forest): spawner has no upkeep, so it spawns for free (allowed; SP-70 is decided per Token).',
@@ -349,5 +350,46 @@ describe('Lifecycle audit — reaches both audits', () => {
         const items = read('items.json');
         const recipes = read('tokenRecipes.json');
         expect(auditLifecycleBlocks({ tokens, items, recipes, skills: GAME_SKILLS })).toEqual([]);
+    });
+});
+
+describe('The derived type knows the lifecycle blocks (slice 4.4)', () => {
+    const fixtures = {
+        fx_la_only_spawner: {
+            id: 'fx_la_only_spawner', name: 'Only Spawner',
+            spawner: { spawns: [{ typeId: 'token_guild_hall', weight: 1 }], allowance: 1, intervalMs: 5000, upkeep: [{ itemId: 'item_oak_wood', quantity: 1 }] },
+        },
+        fx_la_only_turns: {
+            id: 'fx_la_only_turns', name: 'Only Turns',
+            turns: { into: [{ typeId: 'token_guild_hall', weight: 1 }], everyMs: 5000, lastsMs: 5000 },
+        },
+        fx_la_only_foundation: {
+            id: 'fx_la_only_foundation', name: 'Only Foundation',
+            foundation: { kind: 'stone', skill: 'construction' },
+        },
+    };
+
+    it('derives spawner, resource and station', () => {
+        expect(deriveTokenType(fixtures.fx_la_only_spawner)).toMatchObject({ type: 'spawner' });
+        expect(deriveTokenType(fixtures.fx_la_only_turns)).toMatchObject({ type: 'resource' });
+        expect(deriveTokenType(fixtures.fx_la_only_foundation)).toMatchObject({ type: 'station' });
+        for (const def of Object.values(fixtures)) expect(deriveTokenType(def).warn).toBeFalsy();
+        // A sapling: only a grows block, no work cycle of its own.
+        const sapling = { id: 'fx_la_only_grows', name: 'Only Grows', grows: { into: 'fx_la_only_turns', afterMs: 30000 } };
+        expect(deriveTokenType(sapling)).toMatchObject({ type: 'resource' });
+        expect(deriveTokenType(sapling).warn).toBeFalsy();
+    });
+
+    it('a Token that also has a work cycle keeps the spawner type; a turning Token with a cycle stays a resource', () => {
+        const cycle = { outputs: [{ itemId: 'item_oak_wood', quantity: 1 }] };
+        expect(deriveTokenType({ ...fixtures.fx_la_only_spawner, config: cycle }).type).toBe('spawner');
+        expect(deriveTokenType({ ...fixtures.fx_la_only_turns, config: cycle }).type).toBe('resource');
+    });
+
+    it('the boot audit has no does nothing finding for any of them', () => {
+        registerTokenTypes(fixtures);
+        const lines = auditContent().filter((f) => Object.keys(fixtures).some((id) => f.where === `Token "${id}"`));
+        expect(lines.filter((f) => f.what.includes('does nothing'))).toEqual([]);
+        expect(lines.filter((f) => f.what.includes('reads as'))).toEqual([]);
     });
 });

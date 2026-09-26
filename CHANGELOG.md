@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Remove a placed Token.** Tokens you placed (not the Guild Hall, not spawned ones) have a Remove
+  button with a confirm step. Removal is permanent and returns nothing; anything a spawner left
+  behind stays.
+- **Spawners, Foundations and growing Tokens get proper types**, so the content audit no longer
+  calls them Tokens that do nothing.
 - **Upkeep Summary.** An Upkeep button in the Item Bank shows every ongoing cost per minute, how
   long the Bank's stock will last, which Tokens are waiting for an item, trickle income, and which
   spawners are idle at their cap.
