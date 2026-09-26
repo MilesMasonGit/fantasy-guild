@@ -5,13 +5,20 @@ import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { useEntityDrag, useActiveDrag, useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
+import * as Shop from '../../../systems/board/Shop.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { ShoppingCart, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
 
 /**
- * CartographerTab — the Map shop.
+ * CartographerTab — the Shop (Token Lifecycle slice 5.1, SP-12).
+ *
+ * Top: every Token type with a `shop` block, grouped by section, with its item
+ * price, what the Bank holds against it, and a Buy button that names what is
+ * missing (`Shop.js`). Header: placed Tokens against the mat cap (SP-67).
+ *
+ * Below: the old Map shop, kept until Map bursts retire (slice 9.1).
  *
  * Each Map card displays its details, cost, and item pool on the left,
  * and a full 128px Map Token on the right which can be dragged directly
@@ -26,11 +33,13 @@ export const CartographerTab = ({ onInspect }) => {
     // (Maps cost items since slice 2.2, SP-65), so `inventory_updated` has to
     // re-run the catalogue or the Buy buttons keep stale affordability.
     // `currency_changed` is kept only so an old save's load repaints the same.
-    const { maps } = useGameState(
+    const { maps, shop, cap } = useGameState(
         () => ({
-            maps: Cartographer.catalogue()
+            maps: Cartographer.catalogue(),
+            shop: Shop.catalogue(),
+            cap: Shop.capStatus()
         }),
-        ['map_purchased', 'map_opened', 'currency_changed', 'inventory_updated', 'state_changed'],
+        ['map_purchased', 'map_opened', 'token_purchased', 'currency_changed', 'inventory_updated', 'state_changed'],
         null
     );
 
@@ -69,6 +78,12 @@ export const CartographerTab = ({ onInspect }) => {
         else NotificationSystem.warning(result.reason);
     }, []);
 
+    const buyToken = useCallback((typeId, name) => {
+        const result = Shop.buy(typeId);
+        if (result.success) NotificationSystem.success(`${name} placed beside the Guild Hall.`);
+        else NotificationSystem.warning(result.reason);
+    }, []);
+
     return (
         <div className="h-full flex flex-col min-h-0 relative">
             {/* Flat Scroll Arrow: Top */}
@@ -87,6 +102,31 @@ export const CartographerTab = ({ onInspect }) => {
                 ref={scrollRef}
                 className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             >
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-gi-text">Shop</h2>
+                    <span data-shop-cap className="text-xs font-semibold text-gi-muted tabular-nums">
+                        Placed Tokens {cap.placed} / {cap.cap}
+                    </span>
+                </div>
+
+                {shop.length === 0 && (
+                    <p className="text-xs text-gi-muted">Nothing is for sale yet.</p>
+                )}
+                {shop.map(group => (
+                    <section key={group.section} data-shop-section={group.section} className="flex flex-col gap-1.5">
+                        <h3 className="text-[11px] font-bold gi-caps tracking-wider text-gi-muted">{group.name}</h3>
+                        {group.items.map(item => (
+                            <ShopRow
+                                key={item.typeId}
+                                item={item}
+                                onBuy={() => buyToken(item.typeId, item.name)}
+                                onInspect={onInspect}
+                            />
+                        ))}
+                    </section>
+                ))}
+
+                <h2 className="text-lg font-bold text-gi-text mt-2">Maps</h2>
                 {maps.map(map => (
                     <MapCard
                         key={map.id}
@@ -107,6 +147,49 @@ export const CartographerTab = ({ onInspect }) => {
                     <ChevronDown size={14} />
                 </button>
             )}
+        </div>
+    );
+};
+
+/**
+ * One Token for sale: sprite, name, price lines (have / need) and a Buy button
+ * whose label says what is missing when it cannot be bought. Plain on purpose
+ * (TL-4).
+ */
+const ShopRow = ({ item, onBuy, onInspect }) => {
+    const ok = item.affordability.success;
+    return (
+        <div data-shop-item={item.typeId} className="rounded-lg border border-gi-border/50 bg-gi-base/50 p-2 flex items-center gap-3">
+            <button
+                onClick={() => onInspect?.('token', item.typeId)}
+                className="w-12 h-12 shrink-0 flex items-center justify-center cursor-pointer"
+                title={item.name}
+            >
+                <TokenSprite typeId={item.typeId} surface={TOKEN_SURFACE.CATALOGUE} alt={item.name} />
+            </button>
+            <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-gi-text">{item.name}</div>
+                <div className="flex flex-wrap gap-x-3 text-[11px] tabular-nums">
+                    {item.price.map(p => (
+                        <span key={p.itemId} className={p.enough ? 'text-gi-muted' : 'text-gi-danger'}>
+                            {p.name} {p.have}/{p.need}
+                        </span>
+                    ))}
+                </div>
+            </div>
+            <button
+                onClick={onBuy}
+                disabled={!ok}
+                title={ok ? 'Buy' : item.affordability.reason}
+                className={cn(
+                    'px-3 py-1 rounded-lg font-bold text-xs border shrink-0 max-w-[45%] text-right',
+                    ok
+                        ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-gold hover:bg-gi-gold/25 cursor-pointer'
+                        : 'border-gi-border/40 bg-black/20 text-gi-danger cursor-not-allowed'
+                )}
+            >
+                {ok ? 'Buy' : item.affordability.reason}
+            </button>
         </div>
     );
 };
