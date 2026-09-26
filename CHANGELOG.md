@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Inspection shows lifecycle state.** Clicking a Token now shows its spawner count and cap, when it
+  spawns next or what it is waiting for, how long until it grows or turns, a Foundation's build
+  progress, and a trickle's pay.
 - **Remove a placed Token.** Tokens you placed (not the Guild Hall, not spawned ones) have a Remove
   button with a confirm step. Removal is permanent and returns nothing; anything a spawner left
   behind stays.
