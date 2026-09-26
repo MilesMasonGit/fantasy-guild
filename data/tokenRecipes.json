@@ -623,20 +623,6 @@
     }
   },
   {
-    "name": "Pickaxe Mould",
-    "requiresContext": [
-      "Pickaxe Mould"
-    ],
-    "inputs": [],
-    "outputs": [],
-    "xp": 0,
-    "id": "recipe_pickaxe_mould",
-    "durationMs": 12000,
-    "levelRequirement": 1,
-    "stationChargeCost": 1,
-    "skill": "crafting"
-  },
-  {
     "id": "recipe_muily2pf",
     "name": "Charcoal",
     "skill": "crafting",
