@@ -180,6 +180,10 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | FB-18 small size | A **CMS size field** (standard / small); saplings and sprouts start small; small Tokens get a smaller hit area and spacing. → TL-19. |
 | FB-12 retest (after Q1) | "Probably just a misclick on my end, it seems to be working fine now." Q1's hold-while-carried fix stays. |
 | Unset station look (after Q1) | **Just the gear, no alert**: a station or Foundation with nothing chosen shows only the gear (FB-7), perhaps gently pulsing; it is waiting, not broken. Replaces Q1's red "Choose a recipe" and 6.1's red "Choose what to build" alerts. Done in Q2. |
+| Exhausted alert (after Q2) | The red alert left where a used-up Token stood **fades after 10 s** like a notice (it can't be fixed; the spawner's own alert covers real problems). Done with Q3. |
+| Notices during catch-up (after Q2) | **No notices while the game replays time away** (time bank): you come back to a calm mat. Done with Q3. |
+| Notice text (after Q2) | "New Oak Sapling", hover "Spawned by Oak Forest": **keep**. |
+| Test save slot (after Q2) | Slot 3 deleted with the owner's OK; agents use **slot 3** for fresh test games and never touch slots 1–2. |
 | FB-46 hero dock | The **owner describes the general idea first**, then the agent makes mockups. |
 | FB-39 Hall tree | **Mockups first**; the sprite bug (FB-40) is fixed earlier as a quick win. |
 
