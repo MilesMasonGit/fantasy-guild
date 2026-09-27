@@ -2,7 +2,6 @@
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
-import { InventoryManager } from '../inventory/InventoryManager.js';
 import { logger } from '../../utils/Logger.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
@@ -14,6 +13,7 @@ import * as EffectActions from './EffectActions.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as TokenNotices from './TokenNotices.js';
 import * as SpriteLayer from './SpriteLayer.js';
+import * as InputAllocator from './InputAllocator.js';
 import { TimeBankManager } from '../core/TimeBankManager.js';
 
 /**
@@ -37,12 +37,16 @@ import { TimeBankManager } from '../core/TimeBankManager.js';
  *
  * ## One attempt, in order
  * 1. **Cap** — the family's live count must be below its cap.
- * 2. **Upkeep** — the Bank must hold all of it (checked, not yet taken).
+ * 2. **Upkeep** — the Bank and the item loot lying on the mat must hold all of
+ *    it between them (checked, not yet taken; TL-20).
  * 3. **Pick** — a weighted pick from `spawns`.
  * 4. **Land** — `EffectActions.spawn` with `nearest_free` around the spawner;
  *    placed Tokens are fixed (SP-68).
  * 5. **Pay** — only once the Token has landed, so a spawn with no room costs
  *    nothing and there is never a refund to make (all or nothing, DP-5).
+ *    ⭐ **Bank first, then loot on the mat** (TL-20), through the same
+ *    `InputAllocator.consumeInputs` a Token's recipe inputs use (D-42): any
+ *    matching loot anywhere on the mat counts, as it does there.
  *
  * ## State
  * Clocks are saved on the instance. Nothing else is: the reported state is
@@ -160,10 +164,15 @@ function upkeepOf(def) {
     return [...total].map(([itemId, quantity]) => ({ itemId, quantity }));
 }
 
-/** The item ids the Bank is short of for one spawn, in upkeep order. */
+/**
+ * The item ids one spawn's upkeep is short of, in upkeep order — counting the
+ * Bank **and** matching loot on the mat (TL-20, `InputAllocator.availableOf`),
+ * so the status, the alert and the Upkeep Summary never say "needs Oak Seed"
+ * while seeds that would be paid lie on the floor.
+ */
 function missingUpkeep(def) {
     return upkeepOf(def)
-        .filter(({ itemId, quantity }) => !InventoryManager.hasItem(itemId, quantity))
+        .filter(({ itemId, quantity }) => InputAllocator.availableOf(itemId) < quantity)
         .map(({ itemId }) => itemId);
 }
 
@@ -207,8 +216,9 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     noRoom.delete(instance.id);
 
     // Paid only now that the Token is down — checked above, so this cannot fail
-    // part-way (the tick is single-threaded).
-    for (const { itemId, quantity } of upkeepOf(def)) InventoryManager.removeItem(itemId, quantity);
+    // part-way (the tick is single-threaded). Bank first, then loot on the mat
+    // (TL-20, D-42).
+    InputAllocator.consumeInputs(upkeepOf(def));
 
     const spawned = BoardState.getTokenById(landed.instanceId);
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
@@ -237,7 +247,8 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
  * A spawner's state, worked out live:
  *
  * * `at_cap` — its family is at or over its cap;
- * * `needs_item` — the Bank cannot pay one spawn's upkeep (`needs`: item ids);
+ * * `needs_item` — the Bank and the loot on the mat cannot pay one spawn's
+ *   upkeep between them (`needs`: item ids);
  * * `no_room` — its last attempt found nowhere to land, and it is waiting;
  * * `spawning` — otherwise, with `nextInMs` to the next attempt.
  *
@@ -328,7 +339,8 @@ const sameList = (a = [], b = []) => a.length === b.length && a.every((v, i) => 
  *
  * Called at the end of `TimedChanges.tick`, after this tick's attempts, so an
  * alert goes up the tick a spawner starts waiting and comes down the tick the
- * cause is gone (a seed lands in the Bank, a tree is cut and frees room).
+ * cause is gone (a seed lands in the Bank or on the mat, a tree is cut and
+ * frees room).
  * Worked out from the engine's own state, never polled from React.
  */
 export function syncAlerts() {

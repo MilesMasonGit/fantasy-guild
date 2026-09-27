@@ -87,7 +87,7 @@ function spawnerLines(instance, def, src) {
         const unpaid = status.state === 'needs_item';
         out.push({
             label: 'Upkeep per spawn',
-            value: `${upkeep} (${unpaid ? 'not paid: Bank short' : 'paid from the Bank'})`,
+            value: `${upkeep} (${unpaid ? 'not paid: Bank and mat short' : 'paid from the Bank, then loot on the mat'})`,
             tone: unpaid ? TONE.DANGER : TONE.GOOD
         });
     }

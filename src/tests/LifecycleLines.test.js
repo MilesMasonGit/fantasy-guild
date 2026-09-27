@@ -81,7 +81,7 @@ describe('lifecycleLines', () => {
             expect(byLabel(lines, 'Family').tone).toBeUndefined();
             expect(byLabel(lines, 'Next spawn').value).toBe('in 12 s');
             expect(byLabel(lines, 'Upkeep per spawn')).toEqual({
-                label: 'Upkeep per spawn', value: '1 Oak Seed (paid from the Bank)', tone: TONE.GOOD
+                label: 'Upkeep per spawn', value: '1 Oak Seed (paid from the Bank, then loot on the mat)', tone: TONE.GOOD
             });
         });
 
@@ -98,7 +98,7 @@ describe('lifecycleLines', () => {
                 spawnerStatus: () => ({ state: 'needs_item', needs: ['item_oak_seed'], count: 2, cap: 5, familyLabel: 'Oak Sapling' })
             }));
             expect(byLabel(lines, 'Next spawn')).toMatchObject({ value: 'Waiting for Oak Seed', tone: TONE.DANGER });
-            expect(byLabel(lines, 'Upkeep per spawn')).toMatchObject({ value: '1 Oak Seed (not paid: Bank short)', tone: TONE.DANGER });
+            expect(byLabel(lines, 'Upkeep per spawn')).toMatchObject({ value: '1 Oak Seed (not paid: Bank and mat short)', tone: TONE.DANGER });
         });
 
         it('no_room', () => {

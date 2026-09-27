@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Spawners pay their upkeep from loot on the mat too (TL-20).** A spawner's per-spawn upkeep (a
+  Forest's Oak Seed) is paid from the Bank first, then from matching loot lying anywhere on the mat,
+  the same way recipe inputs already are. A spawner no longer shows *needs Oak Seed* while seeds it
+  would use lie on the floor; the Upkeep Summary counts those seeds (*On the mat*) in its runs-out
+  estimate, and the inspection line says *paid from the Bank, then loot on the mat*.
 - **The Guild Hall has a proper hover tooltip (Q5b: FB-52).** Hovering the Hall now shows a
   game-styled panel, like the flag's, with its trickle income and a *next in* countdown that ticks
   every second, instead of the browser's plain hover text. It never gets in the way of dragging or

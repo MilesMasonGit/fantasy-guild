@@ -150,6 +150,27 @@ describe('statement upkeep (BlockUpkeep)', () => {
     });
 });
 
+describe('⭐ TL-20: loot on the mat counts toward a spawner upkeep', () => {
+    it('a seed pile on the floor keeps the Forest off the waiting list and into runs-out', () => {
+        SpriteLayer.addSprite('item', SEED, 6, { centre: { x: 200, y: 200 } });
+        placeAt('fixture_us_forest', 900, 500);
+        const row = rowOf(computeUpkeepSummary(), SEED);
+        // 3 a minute, 0 in the Bank, 6 on the mat → two minutes.
+        expect(row).toMatchObject({ bank: 0, onMat: 6, have: 6, waiting: [], runsOutMs: 2 * 60000 });
+    });
+
+    it('an item only a rule uses still counts the Bank alone (rules pay from the Bank)', () => {
+        const row = computeUpkeepSummary({
+            tokens: () => [{ id: 's', typeId: 'fixture_us_shrine' }],
+            statusOf: () => null,
+            isPaid: () => true,
+            bankCount: () => 4,
+            floorCount: () => 100
+        }).items[0];
+        expect(row).toMatchObject({ bank: 4, onMat: 100, have: 4 });
+    });
+});
+
 describe('trickle income', () => {
     it('shows income per item per minute and nets it against the cost', () => {
         placeAt('fixture_us_hall', 300, 300);

@@ -244,6 +244,61 @@ describe('⭐ removing a spawner lowers the cap and removes nothing (SP-6)', () 
 
 // --- Upkeep (DP-5) ----------------------------------------------------------
 
+describe('⭐ TL-20: upkeep is also paid from item loot lying on the mat', () => {
+    const onFloor = (id) => SpriteLayer.countOnBoard(id);
+
+    it('an empty Bank and a seed pile on the floor: it spawns and the pile shrinks', () => {
+        SpriteLayer.addSprite('item', SEED, 3, { centre: { x: 200, y: 200 } });   // far from the Forest: mat-wide
+        const forest = placeAt('fixture_sp_forest', 800, 500);
+        expect(SpawnerSystem.spawnerStatus(forest.id).state).toBe('spawning');
+
+        run(20000);
+        expect(family()).toHaveLength(1);
+        expect(onFloor(SEED)).toBe(2);
+        expect(seeds()).toBe(0);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+    });
+
+    it('with neither Bank nor floor it still raises needs_item', () => {
+        const forest = placeAt('fixture_sp_forest', 800, 500);
+        run(20000);
+        expect(family()).toHaveLength(0);
+        expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'needs_item', needs: [SEED] });
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NEEDS_ITEM, needs: [SEED] });
+
+        // Seeds dropping on the mat pay the waiting spawn and clear the alert the next tick.
+        SpriteLayer.addSprite('item', SEED, 2, forest.id);
+        run(100);
+        expect(family()).toHaveLength(1);
+        expect(onFloor(SEED)).toBe(1);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+    });
+
+    it('Bank first, then the floor (as recipe inputs, D-42)', () => {
+        give(SEED, 1);
+        SpriteLayer.addSprite('item', SEED, 1, { centre: { x: 200, y: 200 } });
+        placeAt('fixture_sp_forest', 800, 500);
+        run(20000);
+        expect(seeds()).toBe(0);
+        expect(onFloor(SEED)).toBe(1);
+        run(20000);
+        expect(onFloor(SEED)).toBe(0);
+        expect(family()).toHaveLength(2);
+    });
+
+    it('all or nothing across Bank and floor together', () => {
+        give(SEED, 1);
+        give(TWINE, 1);
+        SpriteLayer.addSprite('item', TWINE, 1, { centre: { x: 200, y: 200 } });   // 1 + 1 = the 2 needed
+        const orchard = placeAt('fixture_sp_orchard', 800, 500);
+        run(5000);
+        expect(family()).toHaveLength(1);
+        expect(InventoryManager.getItemCount(TWINE)).toBe(0);
+        expect(onFloor(TWINE)).toBe(0);
+        expect(SpawnerSystem.spawnerStatus(orchard.id)).toMatchObject({ state: 'needs_item', needs: [SEED, TWINE] });
+    });
+});
+
 describe('⭐ upkeep is paid per spawn, all or nothing (DP-5)', () => {
     it('with no seeds it waits and reports needs_item; a seed lets it spawn next tick', () => {
         const forest = placeAt('fixture_sp_forest', 800, 500);

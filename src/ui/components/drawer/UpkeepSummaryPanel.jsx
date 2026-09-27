@@ -54,6 +54,7 @@ export const UpkeepSummaryPanel = () => {
                             </div>
                             <div className="flex flex-wrap gap-x-4 text-gi-muted tabular-nums">
                                 <span>Bank: <b className="text-gi-text">{row.bank}</b></span>
+                                {row.onMat > 0 && <span>On the mat: <b className="text-gi-text">{row.onMat}</b></span>}
                                 {row.incomePerMinute > 0 && <span>Trickle: +{formatRate(row.incomePerMinute)} / min</span>}
                                 <span>Runs out: <b className="text-gi-text">{formatRunsOut(row.runsOutMs)}</b></span>
                             </div>

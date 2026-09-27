@@ -5,6 +5,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { statementsOf } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
+import * as SpriteLayer from './SpriteLayer.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
 import { isStatementPaid } from './BlockUpkeep.js';
 
@@ -27,8 +28,15 @@ import { isStatementPaid } from './BlockUpkeep.js';
  * `trickle` lines on live Tokens (§3.1, slice 3.4): `quantity × 60000 / everyMs`.
  *
  * ## "Runs out in"
- * Rough by design: Bank ÷ (cost − that item's trickle income) per minute. Net
- * income at or above the cost means it never runs out (`runsOutMs: null`).
+ * Rough by design: what is on hand ÷ (cost − that item's trickle income) per
+ * minute. Net income at or above the cost means it never runs out
+ * (`runsOutMs: null`).
+ *
+ * ⭐ **On hand** (TL-20): a spawner pays its upkeep from the Bank and then from
+ * matching loot on the mat, so an item any spawner uses counts both (`have` =
+ * `bank` + `onMat`). Statement upkeep (`BlockUpkeep`) is still paid from the
+ * Bank alone, so an item only rules use counts the Bank alone, and a rule's
+ * "short" check stays Bank-only.
  */
 
 const MINUTE = 60000;
@@ -40,6 +48,7 @@ function liveSources() {
         typeOf: (typeId) => getTokenType(typeId),
         statusOf: (instanceId) => SpawnerSystem.spawnerStatus(instanceId),
         bankCount: (itemId) => InventoryManager.getItemCount(itemId),
+        floorCount: (itemId) => SpriteLayer.countOnBoard(itemId),
         isPaid: (instance, statementId) => isStatementPaid(instance, statementId),
         itemName: (itemId) => getItem(itemId)?.name || itemId
     };
@@ -73,7 +82,7 @@ function costedStatements(def) {
  * @param {object} [sources] overrides for the live readers (tests)
  * @returns {{
  *   items: Array<{ itemId, name, perMinute, incomePerMinute, netPerMinute, bank,
- *                  runsOutMs: number|null, consumers: object[], waiting: object[] }>,
+ *                  onMat, have, runsOutMs: number|null, consumers: object[], waiting: object[] }>,
  *   idle: Array<{ instanceId, name, state, familyLabel, count, cap }>,
  *   income: Array<{ itemId, name, perMinute, sources: object[] }>
  * }}
@@ -154,13 +163,18 @@ export function computeUpkeepSummary(sources = {}) {
         const incomePerMinute = incomeByItem.get(row.itemId)?.perMinute || 0;
         const netPerMinute = row.perMinute - incomePerMinute;
         const bank = src.bankCount(row.itemId);
+        const onMat = src.floorCount ? (Number(src.floorCount(row.itemId)) || 0) : 0;
+        // Floor loot pays spawners only (TL-20), so it counts only where a spawner uses the item.
+        const have = bank + (row.consumers.some(c => c.source === 'spawner') ? onMat : 0);
         return {
             ...row,
             name: src.itemName(row.itemId),
             incomePerMinute,
             netPerMinute,
             bank,
-            runsOutMs: netPerMinute > 0 ? (bank / netPerMinute) * MINUTE : null
+            onMat,
+            have,
+            runsOutMs: netPerMinute > 0 ? (have / netPerMinute) * MINUTE : null
         };
     });
     itemRows.sort((a, b) =>
