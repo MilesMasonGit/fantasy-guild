@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Stations start with no recipe (TL-15, FB-13).** A station, however it arrives, is idle until
+  you pick a recipe; heroes don't work it until then, and it says *Choose a recipe*. A picked recipe
+  stays, including across saves; a saved recipe that no longer exists becomes no recipe.
 - **Handoff.** The token lifecycle first build is done; follow-up work starts from
   `docs/KICKOFF_token_lifecycle_feedback.md`. Versions stay in 0.8.x (TL-11).
 - **Shop purchases always find room.** When the area around the Guild Hall is crowded, a purchase (or

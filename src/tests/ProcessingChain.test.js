@@ -131,11 +131,13 @@ describe('The Processing chain in shipped data (7.5)', () => {
             }
         });
 
-        it('the Workbench offers exactly Charcoal and Torch, and a new one starts on Charcoal', () => {
+        it('the Workbench offers exactly Charcoal and Torch, and a new one starts on neither (TL-15)', () => {
             // The malformed, never-runnable Pickaxe Mould recipe was removed in
             // 7.5: as the Workbench's default it crashed the mat's progress bar.
             expect(poolNames('token_workbench')).toEqual(['Charcoal', 'Torch']);
-            expect(StationRecipe.defaultRecipeFor(getTokenType('token_workbench')).name).toBe('Charcoal');
+            const bench = BoardState.createTokenInstance('token_workbench');
+            expect(StationRecipe.validateSelection(bench, getTokenType('token_workbench'))).toBeNull();
+            expect(bench.selectedRecipeId).toBeUndefined();
         });
 
         it('no recipe names its context as a bare string', () => {

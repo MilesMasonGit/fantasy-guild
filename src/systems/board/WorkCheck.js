@@ -25,7 +25,7 @@ import * as SkillSystem from '../hero/SkillSystem.js';
  */
 
 /** Reasons a player can fix from the board (FP-69): these keep a red badge. */
-export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD]);
+export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE]);
 
 /**
  * Why `heroId` cannot work a Token with this `config` — or null if they can.
@@ -68,6 +68,8 @@ export function fixableReason(instanceId, instance) {
         // A Foundation with nothing picked (Token Lifecycle 6.1) says so in
         // its own words rather than as a missing Token.
         if (io.reason === 'choose_build') return { reason: ALERT.CHOOSE_BUILD, io };
+        // A station with nothing picked (TL-15) likewise.
+        if (io.reason === 'choose_recipe') return { reason: ALERT.CHOOSE_RECIPE, io };
         return { reason: ALERT.NO_RECIPE, io };
     }
 

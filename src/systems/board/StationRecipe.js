@@ -18,16 +18,15 @@ import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
  * silently repoint every saved station. P0 put an `id` on every recipe for this
  * field to hold.
  *
- * ## Default: the pool's lowest level, always (R-5)
- * Not "the best the assigned worker can run", and not "the best anyone in the
- * guild can run" — a freshly placed station takes the lowest-`levelRequirement`
- * recipe of its pool regardless of who is standing on it, or whether anyone is.
- * If that worker cannot run it, the existing skill-too-low alert fires; that is
- * the intended outcome, not a case to design around.
- *
- * Ties break on pool order, so the default is deterministic. It is not otherwise
- * meaningful — three cooking recipes share `levelRequirement: 1` today, and
- * which of them a new Kitchen starts on is arbitrary by design.
+ * ## No default: a station starts with nothing selected (TL-15)
+ * Every station, however it arrives (bought, built on a Foundation, made by a
+ * recipe, placed), is idle until the player picks a recipe; heroes do not work
+ * it until then, and a picked recipe stays. This replaced R-5, under which a
+ * freshly placed station took the lowest-level recipe of its pool, so a hero
+ * started working it the moment it landed (owner feedback FB-13). Foundations
+ * never had a default (Token Lifecycle 6.1, SP-49); stations now behave the
+ * same way. With nothing picked the resolver says `choose_recipe` (a
+ * Foundation says `choose_build`), and flags pass it over.
  *
  * ## Lifetime
  * The selection lives on the Token instance, so it travels with the Token: it
@@ -44,30 +43,6 @@ export function recipeLevel(recipe) {
 /** The recipes this Token may choose between: its `Works as` skill's pool. */
 export function poolFor(def) {
     return recipesForToken(def) || [];
-}
-
-/**
- * The recipe a freshly placed station starts on (R-5), or null when its pool is
- * empty. An empty pool is not an error: a Forest is not a station and has no
- * recipes at all.
- */
-export function defaultRecipeFor(def) {
-    // A Foundation never picks for the player (Token Lifecycle 6.1, SP-49):
-    // what it becomes is the player's choice, and until they make it the
-    // Foundation says "Choose what to build" and nobody works it.
-    if (def?.foundation) return null;
-    const pool = poolFor(def);
-    if (!pool.length) return null;
-    let best = pool[0];
-    for (const recipe of pool) {
-        if (recipeLevel(recipe) < recipeLevel(best)) best = recipe;
-    }
-    return best;
-}
-
-/** The id of that default, or null. */
-export function defaultRecipeIdFor(def) {
-    return defaultRecipeFor(def)?.id ?? null;
 }
 
 /** The Token type behind an instance, tolerating a def the caller already has. */
@@ -105,37 +80,30 @@ export function setSelectedRecipe(instance, recipeId, def = null) {
     return true;
 }
 
-/** Forget a station's selection. Placing it again re-defaults per R-5. */
+/** Forget a station's selection. It then waits for the player to pick again (TL-15). */
 export function clearSelection(instance) {
     if (instance) delete instance.selectedRecipeId;
 }
 
 /**
- * Give an instance a selection if it has no valid one, and return the recipe.
+ * The recipe this instance is set to, having first dropped a selection that is
+ * no longer valid. Returns null when nothing (valid) is selected.
  *
- * Called on placement, so a station is set the moment it lands, and again from
- * the resolver and the save backfill so no path can produce a station sitting
- * on nothing.
+ * **It never picks for the player** (TL-15): a station with nothing selected
+ * stays that way until the player chooses.
  *
- * **An id that is no longer in the pool re-defaults.** A recipe can be renamed
- * or deleted in the CMS under a save that references it; the alternative is a
- * station that is permanently idle for a reason nothing on screen can explain.
+ * **An id that is no longer in the pool becomes no recipe.** A recipe can be
+ * renamed or deleted in the CMS under a save that references it. Before TL-15
+ * such a station re-defaulted; it now waits for the player like a new one, and
+ * says so ("Choose a recipe"), so it is never idle for a reason nothing on
+ * screen explains.
  */
-export function ensureSelection(instance, def = null) {
+export function validateSelection(instance, def = null) {
     if (!instance) return null;
-    const resolvedDef = defOf(instance, def);
-    const current = selectedRecipe(instance, resolvedDef);
+    const current = selectedRecipe(instance, defOf(instance, def));
     if (current) return current;
-
-    const fallback = defaultRecipeFor(resolvedDef);
-    if (!fallback) {
-        // No pool at all — leave the field off rather than writing null onto
-        // every Forest and Campfire on the board.
-        if (instance.selectedRecipeId) delete instance.selectedRecipeId;
-        return null;
-    }
-    instance.selectedRecipeId = fallback.id;
-    return fallback;
+    if (instance.selectedRecipeId) delete instance.selectedRecipeId;
+    return null;
 }
 
 // `backfillBoardSelections` (the P2 save migration) was deleted in Free Playmat

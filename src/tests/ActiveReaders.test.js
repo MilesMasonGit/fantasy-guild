@@ -17,6 +17,7 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { pickRecipe } from './fixtures/stations.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -136,7 +137,8 @@ registerTokenTypes({
 function put(point, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
     BoardState.addToken(instance, point.x, point.y);
-    return instance;
+    // The player picks a station's recipe (TL-15); a non-station is untouched.
+    return pickRecipe(instance);
 }
 
 function clearBoard() {

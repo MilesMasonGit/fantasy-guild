@@ -226,8 +226,8 @@ export const ALERT = {
     UNSKILLED: 'unskilled',
     /**
      * The station cannot run the recipe it is set to, because the context
-     * Tokens that recipe names are not beside it — or, on a Token whose skill
-     * pool is empty, because there is nothing to set it to at all.
+     * Tokens that recipe names are not beside it. (A station with nothing
+     * picked says `CHOOSE_RECIPE` instead, TL-15.)
      *
      * ⚠️ Its meaning changed with the Recipe & Charges rework (P2). It used to
      * mean "nothing beside this station tells it what to make", which stopped
@@ -248,6 +248,12 @@ export const ALERT = {
      * they do nobody works it.
      */
     CHOOSE_BUILD: 'choose_build',
+    /**
+     * A station with no recipe picked (TL-15, owner feedback FB-13). Every
+     * station, however it arrives, waits for the player to choose; until
+     * they do nobody works it. The station twin of `CHOOSE_BUILD`.
+     */
+    CHOOSE_RECIPE: 'choose_recipe',
     /**
      * A finished cycle's Token has nowhere to go: a Foundation's build has
      * nowhere legal to stand (Token Lifecycle 6.1), or a station's recipe makes

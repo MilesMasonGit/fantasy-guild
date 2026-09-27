@@ -165,9 +165,9 @@ export function placeTokenAt(instance, point, options = {}) {
             'the Token being placed has no rules, no artwork and will never do anything');
     }
 
-    // A station arrives set to something (R-5) — the lowest-level recipe of its
-    // pool. A Token that already carries a valid selection keeps it.
-    StationRecipe.ensureSelection(instance, def);
+    // A station arrives with no recipe (TL-15): the player picks one. A Token
+    // that already carries a valid selection keeps it; a stale one is dropped.
+    StationRecipe.validateSelection(instance, def);
 
     const excludeId = options.excludeId || instance.id || null;
     const at = clampToMat(point);

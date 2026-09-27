@@ -11,6 +11,7 @@ import { contextSummary } from '../ui/components/board/StationRecipeModal.jsx';
 import { registerRecipePools, contextRequirementsOf, contextTagsOf } from '../config/registries/recipePoolRegistry.js';
 import { registerTokenTypes, tokenStartingUses, productionRoutes } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
+import { pickRecipe } from './fixtures/stations.js';
 
 /**
  * Slice 7.5a — a bare-string `requiresContext` must never crash the game.
@@ -55,7 +56,7 @@ const BESIDE = { x: 560, y: 300 };
 function place(point, typeId) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, point);
-    return instance;
+    return pickRecipe(instance);   // the player picks a station's recipe (TL-15)
 }
 
 beforeEach(() => {

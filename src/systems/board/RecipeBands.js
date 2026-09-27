@@ -59,7 +59,8 @@ export function bandForLevel(level, workerLevel, guildLevel) {
  * The banded, level-ordered rows the modal renders for one station instance.
  *
  * Ties on `levelRequirement` keep pool order, so the list is stable between
- * openings and matches the order `defaultRecipeFor` breaks its own ties in.
+ * openings. (It used to match `defaultRecipeFor`'s tie-break; that default
+ * went with TL-15, and a station now starts with no recipe.)
  *
  * @returns {{skill: string|null, workerLevel: number, guildLevel: number, rows: object[]}}
  */

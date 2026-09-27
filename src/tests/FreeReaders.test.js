@@ -16,6 +16,7 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { placeAt, clearMat, SPACING } from './fixtures/mat.js';
+import { pickRecipe } from './fixtures/stations.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -64,7 +65,8 @@ registerTokenTypes({
  */
 const ORIGIN = { x: 480, y: 163 };
 const P = (col, row) => ({ x: ORIGIN.x + col * SPACING, y: ORIGIN.y + row * SPACING });
-const at = (typeIdOrInstance, point) => placeAt(typeIdOrInstance, point.x, point.y);
+// The player picks a station's recipe (TL-15); a non-station is untouched.
+const at = (typeIdOrInstance, point) => pickRecipe(placeAt(typeIdOrInstance, point.x, point.y));
 const yieldOf = (instance) => TileModifiers.resolveAxis(instance.id, EFFECT_TYPES.YIELD, 100);
 const sortedIds = (ids) => [...ids].sort();
 

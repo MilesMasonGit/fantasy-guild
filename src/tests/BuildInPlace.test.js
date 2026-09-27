@@ -116,7 +116,8 @@ describe('a Foundation never picks for the player', () => {
         const f = put('fixture_bip_stone_foundation');
         expect(StationRecipe.poolFor(f && { foundation: { kind: 'stone', skill: 'construction' } }).length).toBe(1);
         expect(f.selectedRecipeId).toBeUndefined();
-        expect(StationRecipe.defaultRecipeFor({ foundation: { kind: 'stone', skill: 'construction' } })).toBeNull();
+        expect(StationRecipe.validateSelection(f)).toBeNull();
+        expect(f.selectedRecipeId).toBeUndefined();
     });
 
     it('with nothing picked, nobody works it and nothing happens', () => {

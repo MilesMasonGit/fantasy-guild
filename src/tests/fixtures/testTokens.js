@@ -163,7 +163,8 @@ export const FIXTURE_TOKENS = {
      * Its pool is `fixture_station_skill` — a skill id no shipped recipe uses,
      * so the two recipes below belong to this fixture alone. Sharing a real
      * skill with `fixture_charge_station` would put both stations' recipes in
-     * one pool and make the R-5 default depend on authoring order.
+     * one pool and make the test pick (`fixtures/stations.js`, which stands in
+     * for R-5's retired default) depend on authoring order.
      */
     fixture_station: {
         id: 'fixture_station', name: 'Fixture Station', tokenType: 'station',
@@ -744,11 +745,12 @@ export const FIXTURE_TOKENS = {
  * Cycle times differ per recipe (CMS-70): the pie takes longer than the stew,
  * even though both run on the same station.
  *
- * ⚠️ **The levels are instruments too, from P2 on.** A station defaults to the
- * lowest-level recipe of its pool (R-5), so `pooled_stew` at 5 is what a fresh
- * fixture Kitchen starts on and `pooled_pie` at 20 has to be selected
- * deliberately. They are spread rather than tied so a default that fell back to
- * "first authored" would be visible instead of accidentally right.
+ * ⚠️ **The levels are instruments too, from P2 on.** Since TL-15 a station
+ * starts with no recipe; tests that need one pick the lowest level of the pool
+ * (`fixtures/stations.js`), so `pooled_stew` at 5 is what that pick lands on and
+ * `pooled_pie` at 20 has to be selected deliberately. They are spread rather
+ * than tied so a pick that fell back to "first authored" would be visible
+ * instead of accidentally right.
  */
 export const FIXTURE_RECIPE_POOLS = {
     /**

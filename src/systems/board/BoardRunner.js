@@ -635,11 +635,12 @@ export function tick(delta) {
             continue;
         }
 
-        if (check.reason === ALERT.CHOOSE_BUILD) {
-            // A Foundation with nothing picked (Token Lifecycle 6.1). Flags do
-            // not claim one, so this is only reached by a hero already on it
-            // when the pick was cleared. It waits, saying so.
-            setAlert(instance, ALERT.CHOOSE_BUILD);
+        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE) {
+            // A Foundation (Token Lifecycle 6.1) or a station (TL-15) with
+            // nothing picked. Flags do not claim one, so this is only reached
+            // by a hero already on it when the pick was cleared. It waits,
+            // saying so.
+            setAlert(instance, check.reason);
             continue;
         }
 

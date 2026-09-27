@@ -19,6 +19,7 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import { pickRecipe } from './fixtures/stations.js';
 
 /**
  * Adjacency — the spatial half of the game.
@@ -63,6 +64,7 @@ function place(point, typeId, heroId = null, uses = undefined) {
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
     Placement.placeTokenAt(instance, point);
+    pickRecipe(instance);   // the player picks a station's recipe (TL-15)
     TileModifiers.rebuildAround([instance]);
     if (heroId) Placement.plantFlagAt(heroId, point);
     return instance;

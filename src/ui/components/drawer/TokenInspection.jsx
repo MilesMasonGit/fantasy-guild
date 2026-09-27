@@ -404,6 +404,7 @@ function liveLifecycleSources() {
         itemName: (itemId) => getItem(itemId)?.name || itemId,
         spawnerStatus: SpawnerSystem.spawnerStatus,
         selectedRecipe: StationRecipe.selectedRecipe,
+        poolFor: StationRecipe.poolFor,
         originOf: BoardState.originOf,
         dev: !!(import.meta.env?.DEV || SettingsManager.get('debugMode'))
     };

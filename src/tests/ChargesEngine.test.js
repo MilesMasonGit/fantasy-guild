@@ -14,6 +14,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
+import { pickRecipe } from './fixtures/stations.js';
 
 /**
  * The charges engine (Recipe & Charges rework, P1).
@@ -78,6 +79,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
     Placement.placeTokenAt(instance, C(tile));
+    pickRecipe(instance);   // the player picks a station's recipe (TL-15)
     TileModifiers.rebuildAround([instance]);
     if (heroId) Placement.plantFlagAt(heroId, C(tile));
     return instance;

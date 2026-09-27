@@ -20,8 +20,9 @@ import { BOARD_EVENTS } from './boardEvents.js';
  * reverses that deliberately (roadmap §2). **Do not restore it.** What replaced
  * it:
  *
- *  - A station carries `selectedRecipeId` and defaults to its pool's
- *    lowest-level recipe on placement (R-5). `StationRecipe.js` owns that field.
+ *  - A station carries `selectedRecipeId`, which the player sets. A new
+ *    station has none and waits, saying "Choose a recipe" (TL-15; R-5's
+ *    lowest-level default is gone). `StationRecipe.js` owns that field.
  *  - This module **validates** that selection rather than discovering one: are
  *    its context requirements met? (Items are `InputAllocator`'s answer and
  *    charges are `Charges`'; `BoardRunner` asks all three in turn.)
@@ -139,8 +140,8 @@ export function unmetContext(instanceId, recipe) {
  * Whether a station can run the recipe it is set to.
  *
  * **Validation, not discovery.** The recipe is whatever `selectedRecipeId` says
- * (defaulted on placement per R-5); this only answers whether the board around
- * it currently satisfies it.
+ * (the player's pick; nothing is picked for them, TL-15); this only answers
+ * whether the board around it currently satisfies it.
  *
  * A Token with no recipes at all is not a station — a Forest makes Wood
  * regardless of its neighbours — so it resolves `OK` with a null recipe and its
@@ -169,13 +170,13 @@ export function resolveRecipe(instanceId, instance) {
     // Not a station: its config's own inputs/outputs apply.
     if (!recipes.length) return { status: RECIPE.OK, recipe: null };
 
-    // A station always has a selection (R-5). It can only be missing here on a
-    // Token whose pool is empty, which the branch above has already returned on.
-    const recipe = StationRecipe.ensureSelection(instance, def);
-    // A Foundation is never defaulted (Token Lifecycle 6.1): until the player
-    // picks what to build, it has nothing to run.
-    if (!recipe && def?.foundation) return { status: RECIPE.NONE, recipe: null, reason: 'choose_build' };
-    if (!recipe) return { status: RECIPE.NONE, recipe: null, reason: 'no_pool' };
+    // Nothing is ever picked for the player (TL-15; for a Foundation, Token
+    // Lifecycle 6.1): until they choose, a station has nothing to run. A
+    // selection no longer in the pool is dropped here and reads the same way.
+    const recipe = StationRecipe.validateSelection(instance, def);
+    if (!recipe) {
+        return { status: RECIPE.NONE, recipe: null, reason: def?.foundation ? 'choose_build' : 'choose_recipe' };
+    }
 
     const missing = unmetContext(instanceId, recipe);
     if (missing.length) {

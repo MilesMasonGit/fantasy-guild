@@ -27,10 +27,10 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
  * Station recipe selection (Recipe & Charges rework, P2).
  *
  * The rework's central reversal: **the player chooses the recipe and the board
- * gates it**, where adjacency used to choose. These tests pin the three things
- * that reversal turns on — the default on placement (R-5), the id being stable
- * rather than positional, and a save written before the field existed loading
- * into the same state a fresh placement would produce.
+ * gates it**, where adjacency used to choose. These tests pin what that
+ * reversal turns on — a station arriving with **no** recipe (TL-15, which
+ * retired R-5's lowest-level default), the id being stable rather than
+ * positional, and a picked recipe staying put.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -40,9 +40,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * A second cooking pool entry that is LOWER level than the fixtures' own, and
- * authored last. It is the instrument for two separate claims: that the default
- * is the lowest level rather than the first authored, and that inserting a
- * recipe cannot renumber an existing selection.
+ * authored last. Under R-5 it would have been the default; TL-15's tests below
+ * check that even a level-0 recipe is not picked for the player.
  */
 registerRecipePools({
     cooking: [{
@@ -68,23 +67,44 @@ beforeEach(() => {
     GameState.initNew();
 });
 
-describe('R-5 — a freshly placed station defaults to its pool\'s lowest-level recipe', () => {
-    it('takes the lowest level, not the first authored', () => {
-        // `pooled_gruel` is registered after stew and pie, and is level 0.
+describe('TL-15 — a freshly placed station starts with no recipe', () => {
+    it('is placed with nothing selected, though its pool holds a level-0 recipe', () => {
+        // `pooled_gruel` is level 0: R-5 would have picked it. TL-15 does not.
         const kitchen = place(A, 'fixture_kitchen');
-        expect(kitchen.selectedRecipeId).toBe('pooled_gruel');
+        expect(kitchen.selectedRecipeId).toBeUndefined();
+        expect(StationRecipe.selectedRecipe(kitchen)).toBeNull();
     });
 
-    it('defaults with nobody assigned at all', () => {
-        // R-5 is explicit that the worker is not consulted — not their level,
-        // not their existence.
-        const kitchen = place(A, 'fixture_kitchen');
-        expect(StationRecipe.selectedRecipe(kitchen).id).toBe('pooled_gruel');
-    });
-
-    it('defaults a PRIVATE-recipe station from its own list', () => {
+    it('a PRIVATE-recipe station starts with nothing selected too', () => {
         const forge = place(A, 'fixture_station');
-        expect(forge.selectedRecipeId).toBe('recipe_a');
+        expect(forge.selectedRecipeId).toBeUndefined();
+    });
+
+    it('with nothing picked, the resolver says choose_recipe and runs nothing', () => {
+        const kitchen = place(A, 'fixture_kitchen');
+        const res = RecipeResolver.resolveRecipe(kitchen.id, kitchen);
+        expect(res.status).toBe(RECIPE.NONE);
+        expect(res.reason).toBe('choose_recipe');
+        expect(RecipeResolver.effectiveIO(kitchen.id, kitchen).outputs).toEqual([]);
+    });
+
+    it('a picked recipe stays: placing it again does not clear or change it', () => {
+        const kitchen = place(A, 'fixture_kitchen');
+        expect(StationRecipe.setSelectedRecipe(kitchen, 'pooled_stew')).toBe(true);
+        Placement.placeTokenAt(kitchen, C(20));
+        expect(kitchen.selectedRecipeId).toBe('pooled_stew');
+        expect(RecipeResolver.resolveRecipe(kitchen.id, kitchen).reason).not.toBe('choose_recipe');
+    });
+
+    it('a picked recipe survives a save round trip', () => {
+        const kitchen = place(A, 'fixture_kitchen');
+        StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
+        const saved = JSON.parse(JSON.stringify(GameState.state));
+        GameState.initNew();
+        GameState.state.board = saved.board;
+        const loaded = BoardState.getTokenById(kitchen.id);
+        expect(loaded.selectedRecipeId).toBe('pooled_pie');
+        expect(StationRecipe.selectedRecipe(loaded).id).toBe('pooled_pie');
     });
 
     it('leaves a Token with no recipes alone', () => {
@@ -112,16 +132,19 @@ describe('The selection is the recipe\'s stable id', () => {
 
     it('refuses a recipe from another station\'s pool', () => {
         const kitchen = place(A, 'fixture_kitchen');
+        StationRecipe.setSelectedRecipe(kitchen, 'pooled_stew');
         expect(StationRecipe.setSelectedRecipe(kitchen, 'pooled_charged_bar')).toBe(false);
-        expect(kitchen.selectedRecipeId).toBe('pooled_gruel');
+        expect(kitchen.selectedRecipeId).toBe('pooled_stew');
     });
 
-    it('re-defaults a selection whose recipe no longer exists', () => {
-        // A CMS deletion under a live save. The alternative is a station idle
-        // forever for a reason nothing on screen can explain.
+    it('a selection whose recipe no longer exists becomes no recipe (TL-15)', () => {
+        // A CMS deletion under a live save. It used to re-default (R-5); now
+        // the station waits for the player and says so ("Choose a recipe").
         const kitchen = place(A, 'fixture_kitchen');
         kitchen.selectedRecipeId = 'recipe_that_was_deleted';
-        expect(StationRecipe.ensureSelection(kitchen).id).toBe('pooled_gruel');
+        expect(StationRecipe.validateSelection(kitchen)).toBeNull();
+        expect('selectedRecipeId' in kitchen).toBe(false);
+        expect(RecipeResolver.resolveRecipe(kitchen.id, kitchen).reason).toBe('choose_recipe');
     });
 });
 
@@ -142,7 +165,7 @@ describe('Persistence — until it reaches the Vault', () => {
 // The 'Save migration — a save written before the field existed' suite was
 // deleted in Free Playmat slice 1.6a with `StationRecipe.backfillBoardSelections`:
 // saves from before schema 0.8.0 are refused outright (FP-85). A station placed
-// today still gets its R-5 default on placement — see the suites above.
+// today starts with no recipe (TL-15) — see the suites above.
 
 describe('Validation, not discovery', () => {
     it('reports the selected recipe\'s own missing context, and only that', () => {

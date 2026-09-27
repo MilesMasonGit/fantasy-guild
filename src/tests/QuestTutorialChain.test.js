@@ -151,8 +151,13 @@ describe('⭐ the tutorial chain, step by step, through the real systems (9.5)',
         expect(onMat('token_workbench')).toHaveLength(1);
         claim('tut_workbench');
 
-        // 9. Craft Charcoal (a new Workbench starts on Charcoal).
+        // 9. Craft Charcoal. A new Workbench starts with no recipe (TL-15), so
+        // nothing is crafted until the player sets it to Charcoal.
         give('item_oak_wood', 10);
+        const workbench = onMat('token_workbench')[0];
+        expect(workbench.selectedRecipeId).toBeUndefined();
+        expect(runUntil(() => complete('tut_charcoal'), 30_000)).toBe(false);
+        expect(StationRecipe.setSelectedRecipe(workbench, 'recipe_muily2pf')).toBe(true);
         expect(runUntil(() => complete('tut_charcoal'), 2 * 60_000)).toBe(true);
         claim('tut_charcoal');
 

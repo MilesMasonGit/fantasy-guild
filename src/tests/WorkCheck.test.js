@@ -13,6 +13,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { pickRecipe } from './fixtures/stations.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
@@ -53,7 +54,7 @@ function hero(id, skills) {
 function put(tile, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
     Placement.placeTokenAt(instance, C(tile));
-    return instance;
+    return pickRecipe(instance);   // the player picks a station's recipe (TL-15)
 }
 
 /** A hero already working the Token on TILE, set up directly. */

@@ -22,9 +22,10 @@ import { createEmptyBoard } from '../../state/StateSchema.js';
  * ```
  *
  * A station also carries **`selectedRecipeId`** — the recipe the player set it
- * to (R-5). It is optional and absent on everything that is not a station;
+ * to. It is optional and absent on everything that is not a station;
  * `StationRecipe.js` is the only thing that reads or writes it, and its absence
- * on a station means "not chosen yet", which resolves to the pool default.
+ * on a station means "not chosen yet": the station waits, and nobody works it
+ * until the player picks (TL-15; R-5's pool default is gone).
  *
  * ## Where a Token is (Free Playmat slice 1.6a)
  * `board.tokens[id]` holds every Token on the mat, keyed by its instance id,

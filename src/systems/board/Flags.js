@@ -392,7 +392,8 @@ const LEAVE_WHY = {
     [ALERT.INPUTS]: 'it is out of materials',
     [ALERT.CHARGES]: 'it has too few charges for a cycle',
     [ALERT.NO_RECIPE]: 'its recipe is missing a Token beside it',
-    [ALERT.CHOOSE_BUILD]: 'nothing has been chosen to build on it'
+    [ALERT.CHOOSE_BUILD]: 'nothing has been chosen to build on it',
+    [ALERT.CHOOSE_RECIPE]: 'no recipe has been chosen for it'
 };
 
 /**

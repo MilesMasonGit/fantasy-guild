@@ -5,7 +5,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { deriveTokenType, derivedTokenType } from '../config/registries/tokenTypeDerivation.js';
 import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
 import { TOKENS } from '../config/registries/tokenRegistry.js';
-import { defaultRecipeFor } from '../systems/board/StationRecipe.js';
+import { poolFor } from '../systems/board/StationRecipe.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
 
 const SKILL_IDS = Object.keys(SKILLS);
@@ -140,7 +140,7 @@ describe('the shipped Tokens that declare themselves stations', () => {
             const def = TOKENS[id];
             expect(SKILL_IDS, `${id} claims skill "${stationSkillOf(def)}"`).toContain(stationSkillOf(def));
             expect(derivedTokenType(def)).toBe('station');
-            expect(defaultRecipeFor(def), `${id} has an empty pool`).toBeTruthy();
+            expect(poolFor(def).length, `${id} has an empty pool`).toBeGreaterThan(0);
         });
     }
 

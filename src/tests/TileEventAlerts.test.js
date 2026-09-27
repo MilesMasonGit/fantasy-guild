@@ -40,7 +40,12 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
 /** Put a Token on spot `i`, and plant a hero's flag there. */
-const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
+// The player picks a station's recipe (TL-15); a non-station is untouched.
+const put = (i, instance) => {
+    const res = Placement.placeTokenAt(instance, C(i));
+    pickRecipe(instance);
+    return res;
+};
 const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
 
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -50,6 +55,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { pickRecipe } from './fixtures/stations.js';
 
 function makeHero(id, level = 50) {
     const skills = {};

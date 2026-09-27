@@ -141,6 +141,7 @@ function trickleLines(instance, def, src) {
  *   itemName: (itemId: string) => string,
  *   spawnerStatus: (instanceId: string) => object|null,
  *   selectedRecipe: (instance: object, def: object) => object|null,
+ *   poolFor?: (def: object) => object[],
  *   originOf: (instance: object) => string,
  *   dev?: boolean
  * }} src
@@ -181,6 +182,11 @@ export function lifecycleLines(instance, src) {
     }
 
     if (def.foundation) out.push(...foundationLines(instance, def, src));
+    // A station waits for the player to pick a recipe (TL-15), as a Foundation
+    // waits for "what to build". Only said while nothing is picked.
+    else if (src.poolFor && src.poolFor(def).length && !src.selectedRecipe(instance, def)) {
+        out.push({ label: 'Recipe', value: 'Choose a recipe', tone: TONE.WARNING });
+    }
     if (def.trickle) out.push(...trickleLines(instance, def, src));
     if (src.dev) out.push({ label: 'Origin (dev)', value: src.originOf(instance), tone: TONE.MUTED });
     return out;

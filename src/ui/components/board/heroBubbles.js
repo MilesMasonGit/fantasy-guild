@@ -49,6 +49,8 @@ export function blockedText(alert, { token, missing = null, skill = 'the right' 
             return `${token} has too few charges left.`;
         case ALERT.CHOOSE_BUILD:
             return `Choose what to build on ${token}.`;
+        case ALERT.CHOOSE_RECIPE:
+            return `Choose a recipe for ${token}.`;
         case ALERT.NO_ROOM:
             return `There is no room for what ${token} makes.`;
         case ALERT.ACCESS:

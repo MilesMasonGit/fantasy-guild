@@ -123,6 +123,9 @@ export const MatToken = React.memo(function MatToken({
                 heroId: BoardState.workerOf(id),
                 stationSkill,
                 recipe: stationSkill ? StationRecipe.selectedRecipe(instance, def) : null,
+                // Something to choose from: a station with an empty pool is not
+                // waiting on the player, so it never says "Choose a recipe".
+                hasPool: stationSkill ? StationRecipe.poolFor(def).length > 0 : false,
                 isFoundation: !!def?.foundation,
                 isSpawner: !instance.turnedFrom && SpawnerSystem.isSpawner(def),
                 requiresHero: def ? (def.requiresHero !== false) : true
@@ -333,16 +336,18 @@ export const MatToken = React.memo(function MatToken({
                     />
                 )}
 
-                {/* A Foundation with nothing picked says so, always (Token
-                    Lifecycle 6.1): nobody works it until the player chooses. */}
-                {detail?.isFoundation && !detail?.recipe && !hidden && (
+                {/* A Foundation (Token Lifecycle 6.1) or a station (TL-15) with
+                    nothing picked says so, always: nobody works it until the
+                    player chooses. */}
+                {detail?.stationSkill && (detail?.isFoundation || detail?.hasPool) && !detail?.recipe && !hidden && (
                     <button
                         type="button"
-                        data-choose-build="true"
+                        data-choose-build={detail?.isFoundation ? 'true' : undefined}
+                        data-choose-recipe={detail?.isFoundation ? undefined : 'true'}
                         onClick={(e) => { e.stopPropagation(); onOpenRecipes?.(id); }}
                         className="absolute left-1/2 -translate-x-1/2 top-1 z-30 pointer-events-auto whitespace-nowrap px-1.5 py-0.5 rounded bg-black/85 border border-gi-gold/60 text-gi-gold text-[10px] font-bold cursor-pointer hover:scale-105 transition-transform"
                     >
-                        Choose what to build
+                        {detail?.isFoundation ? 'Choose what to build' : 'Choose a recipe'}
                     </button>
                 )}
 
