@@ -93,6 +93,9 @@ export const HERO_HIT_PX = 64;
  * edge — a leftover from the grid, where nothing was drawn below a tile. Since
  * Hero Movement (HM-2) that space is empty, so the bar hangs just under the
  * Token instead, at the Token's own width (TP-4).
+ *
+ * The bar is the ring row since B1.2 (TL-22); it keeps this gap below the
+ * lower of the Token and its hero's feet (`ringRow.js`).
  */
 export const TOKEN_BAR_GAP_U = 8;
 

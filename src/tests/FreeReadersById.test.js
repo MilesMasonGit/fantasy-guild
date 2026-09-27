@@ -28,7 +28,7 @@ import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
-import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
+import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
 import { TokenEventAlert } from '../ui/components/board/TokenEventAlert.jsx';
 import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
@@ -354,21 +354,21 @@ describe('⭐ quest events carry instanceId, and still count', () => {
 });
 
 describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () => {
-    it('a progress bar updates from its Token’s id, and ignores another Token’s', () => {
+    it('a cycle ring updates from its Token’s id, and ignores another Token’s (B1.2: was the bar)', () => {
         clearMat();
         const tok = placeAt('fixture_producer', C(14).x, C(14).y);
         const other = placeAt('fixture_producer', C(15).x, C(15).y);
         const { container } = render(React.createElement(
             EngineContext.Provider, { value: { EventBus } },
-            React.createElement(TokenProgressBar, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
+            React.createElement(TokenBadgeRow, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
         ));
-        const fill = container.querySelector('.relative > div');
+        const ring = container.querySelector('[data-ring="cycle"]');
 
         act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: other.id, percent: 80, elapsedMs: 8000, cycleTimeMs: 10000 }); });
-        expect(fill.style.width).toBe('0%');
+        expect(ring.getAttribute('data-ring-fraction')).toBe('0.000');
 
         act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: tok.id, percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
-        expect(fill.style.width).toBe('50%');
+        expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(0.5, 2);
     });
 
     it('a red alert shows on its own Token, and not on another', () => {

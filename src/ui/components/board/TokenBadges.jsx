@@ -3,13 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
-import { Infinity as InfinityIcon } from 'lucide-react';
 import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
 import { turnCountdownText } from './centreAlert.js';
 
 /**
- * The small things drawn **on** a Token: its name, its charges, the recipe gear
- * (top-left), the disallow mark (top-right) and a spawner's count.
+ * The small things drawn **on** a Token: its name, the recipe gear (top-left),
+ * the disallow mark (top-right) and a spawner's count. Its charges are a ring
+ * in the row under it since B1.2 (`TokenBadgeRow`, TL-22), which replaced the
+ * hover charge chip.
  *
  * ⚠️ The green assign-a-hero plus is gone (FB-6): heroes find work through
  * their flags.
@@ -23,52 +24,11 @@ import { turnCountdownText } from './centreAlert.js';
  */
 
 /**
- * TokenChargeBadge — remaining charges at the bottom-right of a Token on
- * hover. Shows the full number (or an infinity icon for an unlimited Token).
- *
- * ⚠️ Used to shift up above the progress bar while the Token was cycling or
- * blocked, because the bar used to hug this same bottom-right corner. The bar
- * moved into the gap below the Token (TP-2), so this corner is free at rest
- * now — the shift is retired (TPP-2).
- */
-export const TokenChargeBadge = ({ usesRemaining, isDragging, isHovered }) => {
-    const [localHover, setLocalHover] = useState(false);
-
-    if (isDragging) return null;
-
-    const visible = isHovered || localHover;
-    const isUnlimited = usesRemaining == null;
-    const displayVal = isUnlimited ? null : Number(usesRemaining).toLocaleString();
-    const titleText = isUnlimited ? 'Unlimited charges' : `${displayVal} charges remaining`;
-
-    return (
-        <div
-            onMouseEnter={() => setLocalHover(true)}
-            onMouseLeave={() => setLocalHover(false)}
-            aria-label={titleText}
-            className={cn(
-                "absolute right-1.5 bottom-1.5 z-30 pointer-events-auto",
-                "flex items-center justify-center px-1.5 py-0.5 rounded",
-                "bg-black/95 backdrop-blur-sm border border-gi-gold/50 shadow-[0_0_8px_rgba(251,191,36,0.25)]",
-                "text-gi-gold font-mono text-[10px] font-bold tabular-nums leading-none tracking-tight",
-                "transition-all duration-150 ease-out cursor-default select-none",
-                visible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
-            )}
-        >
-            {isUnlimited ? (
-                <InfinityIcon size={12} className="shrink-0 text-gi-gold" />
-            ) : (
-                <span className="text-gi-gold">{displayVal}</span>
-            )}
-        </div>
-    );
-};
-
-/**
  * TokenChargeDeltaFloater — floating numbers (-1, +50) when this Token's charges
- * change. Sits just above where the charge badge is drawn.
+ * change. `anchor="ring"`: just above the charges ring it is drawn inside
+ * (B1.2); `"corner"`: the Token's bottom-right, when no charges ring shows.
  */
-export const TokenChargeDeltaFloater = ({ instanceId }) => {
+export const TokenChargeDeltaFloater = ({ instanceId, anchor = 'corner' }) => {
     const [deltas, setDeltas] = useState([]);
     const timers = React.useRef(new Set());
 
@@ -95,8 +55,10 @@ export const TokenChargeDeltaFloater = ({ instanceId }) => {
 
     return (
         <div
+            data-charge-floater={anchor}
             className={cn(
-                "absolute right-1.5 bottom-3.5 z-40 pointer-events-none",
+                "absolute z-40 pointer-events-none",
+                anchor === 'ring' ? "left-1/2 bottom-full mb-1" : "right-1.5 bottom-3.5",
                 "transition-all duration-150 ease-out"
             )}
         >
@@ -117,7 +79,8 @@ export const TokenChargeDeltaFloater = ({ instanceId }) => {
                             ease: 'easeOut'
                         }}
                         className={cn(
-                            "absolute right-0 bottom-0 font-mono font-bold text-[12px] tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
+                            anchor === 'ring' ? "absolute left-0 bottom-0 -translate-x-1/2" : "absolute right-0 bottom-0",
+                            "font-mono font-bold text-[12px] tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
                             d.delta > 0 ? "text-emerald-300" : "text-amber-200"
                         )}
                         style={{

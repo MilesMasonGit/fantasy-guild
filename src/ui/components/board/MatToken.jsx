@@ -20,11 +20,13 @@ import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { useTokenEvent } from './tokenEvents.js';
-import { TokenProgressBar } from './TokenProgressBar.jsx';
+import { TokenBadgeRow } from './TokenBadgeRow.jsx';
+import { ringRowOffset } from './ringRow.js';
+import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { TokenCentreAlert } from './TokenEventAlert.jsx';
 import { EffectProcText } from './EffectProcText.jsx';
 import {
-    TokenChargeBadge, TokenChargeDeltaFloater, TokenNameBadge, StationGearBadge,
+    TokenNameBadge, StationGearBadge,
     DisallowBadge, SpawnerCountBadge, TurnCountdownBadge
 } from './TokenBadges.jsx';
 import { gearStateOf, spawnerCountText } from './centreAlert.js';
@@ -32,6 +34,13 @@ import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
 import { TrickleTooltip, hasTrickle } from './TrickleTooltip.jsx';
+
+/** The side the hero working `id` stands on (−1 / 1), or null. */
+function sideOfWorker(id) {
+    const heroId = BoardState.workerOf(id);
+    const side = heroId ? BoardState.heroBodyOf(heroId)?.side : null;
+    return side === -1 || side === 1 ? side : null;
+}
 
 /** How long the Hall brightens when collected loot lands on it (FB-16). */
 const RECEIVED_MS = 350;
@@ -63,7 +72,9 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * child. A hero stands between them (D-266: hero left, Token right, 48 px
  * apart), and the badges — the progress bar especially — have to stay readable
  * in front of that hero, exactly as they did on the grid. A single box would
- * make its own stacking context and bury the bar under the hero's feet.
+ * make its own stacking context and bury the bar under the hero's feet. The
+ * bar is the ring row now (B1.2, TL-22), and it lives in the badge box for the
+ * same reason.
  */
 export const MatToken = React.memo(function MatToken({
     id,
@@ -131,6 +142,9 @@ export const MatToken = React.memo(function MatToken({
                 alert: instance.alert || null,
                 disallowed: Flags.isDisallowed(instance),
                 heroId: BoardState.workerOf(id),
+                // The side the working hero stands on (−1 left, 1 right), for
+                // the ring row (B1.2). `workerOf` is null until they arrive.
+                heroSide: sideOfWorker(id),
                 stationSkill,
                 recipe: stationSkill ? StationRecipe.selectedRecipe(instance, def) : null,
                 // Something to choose from: a station with an empty pool is not
@@ -263,6 +277,15 @@ export const MatToken = React.memo(function MatToken({
             : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
     const hidden = drag.isDragging;
+
+    // B1.2 / TL-22: the ring row, centred under the pair once the hero has
+    // arrived (`workerOf` answers only then, FP-26), at their STANDING spot —
+    // not their walking position — so the row does not slide while they walk.
+    const heroSide = detail?.heroSide ?? null;
+    const heroX = heroId && heroSide != null
+        ? HeroMotion.standingSpot(typeId, { x, y }, heroSide).x
+        : null;
+    const row = ringRowOffset({ x, half: boxHalf, heroX });
 
     const token = React.useMemo(
         () => ({ typeId, instanceId: id, heroId, alert, usesRemaining }),
@@ -397,14 +420,6 @@ export const MatToken = React.memo(function MatToken({
             >
                 <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} />
 
-                <TokenChargeBadge
-                    usesRemaining={usesRemaining}
-                    isDragging={hidden}
-                    isHovered={isHovered}
-                />
-
-                <TokenChargeDeltaFloater instanceId={id} />
-
                 {/* FB-7: the recipe gear, top-left, on every Token with something
                     to choose. Nothing chosen: it pulses, and that is all — no
                     alert (owner, after Q1). Heroes still pass it over. */}
@@ -428,10 +443,15 @@ export const MatToken = React.memo(function MatToken({
                     (a Token cannot both spawn and turn). */}
                 {detail?.turns && <TurnCountdownBadge read={readTurn} isDragging={hidden} />}
 
-                <TokenProgressBar
+                {/* TL-22: cycle, charges and the Token's own ring, in one row
+                    under the Token and its hero (B1.2). It carries the -1 floater. */}
+                <TokenBadgeRow
                     instanceId={id}
-                    token={token}
-                    alert={alert}
+                    token={isGuildHallToken ? { ...token, usesRemaining: null } : token}
+                    isHovered={isHovered}
+                    isDragging={hidden}
+                    left={boxHalf + row.dx}
+                    top={boxHalf + row.dy}
                 />
 
                 {/* FB-8 / TL-14: the one mark at the centre — a spawner's or a

@@ -1,70 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import {
-    TokenChargeBadge, TokenNameBadge, TokenChargeDeltaFloater
-} from '../ui/components/board/TokenBadges.jsx';
+import { render, screen } from '@testing-library/react';
+import { TokenNameBadge, TokenChargeDeltaFloater } from '../ui/components/board/TokenBadges.jsx';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { act } from '@testing-library/react';
 
-describe('TokenChargeBadge', () => {
-    it('is hidden (opacity-0) when not hovered', () => {
-        const { container } = render(
-            React.createElement(TokenChargeBadge, { usesRemaining: 5900, isDragging: false, isHovered: false })
-        );
-        expect(container.firstChild.className).toContain('opacity-0');
-        expect(container.firstChild.className).toContain('pointer-events-none');
-    });
-
-    it('displays full number when hovered (isHovered: true)', () => {
-        const { container } = render(
-            React.createElement(TokenChargeBadge, { usesRemaining: 5900, isDragging: false, isHovered: true })
-        );
-        expect(container.firstChild.className).toContain('opacity-100');
-        expect(screen.getByText('5,900')).toBeDefined();
-        expect(container.firstChild.className).toContain('right-1.5');
-    });
-
-    it('renders infinity icon when token has unlimited uses on hover', () => {
-        const { container } = render(
-            React.createElement(TokenChargeBadge, { usesRemaining: null, isDragging: false, isHovered: true })
-        );
-        expect(container.firstChild.className).toContain('opacity-100');
-        expect(screen.getByLabelText('Unlimited charges')).toBeDefined();
-        expect(container.querySelector('svg')).toBeDefined();
-    });
-
-    it('does not render while dragging', () => {
-        const { container } = render(
-            React.createElement(TokenChargeBadge, { usesRemaining: 5900, isDragging: true, isHovered: true })
-        );
-        expect(container.firstChild).toBeNull();
-    });
-
-    it('expands to visible when hovering directly over the badge', () => {
-        const { container } = render(
-            React.createElement(TokenChargeBadge, { usesRemaining: 12450, isDragging: false, isHovered: false })
-        );
-        expect(container.firstChild.className).toContain('opacity-0');
-
-        const badge = screen.getByLabelText('12,450 charges remaining');
-        fireEvent.mouseEnter(badge);
-        expect(container.firstChild.className).toContain('opacity-100');
-        expect(screen.getByText('12,450')).toBeDefined();
-
-        fireEvent.mouseLeave(badge);
-        expect(container.firstChild.className).toContain('opacity-0');
-    });
-
-    it('stays at the Token\'s own bottom edge regardless of staffing (TPP-2: the bar moved below the Token)', () => {
-        const idle = render(React.createElement(TokenChargeBadge, { usesRemaining: 5, isHovered: true }));
-        expect(idle.container.firstChild.className).toContain('bottom-1.5');
-
-        const worked = render(React.createElement(TokenChargeBadge, { usesRemaining: 5, isHovered: true, hasHero: true }));
-        expect(worked.container.firstChild.className).toContain('bottom-1.5');
-    });
-});
+// TokenChargeBadge (the hover charge chip) went with B1.2 (TL-22): charges are a
+// ring in the row under the Token now — see TokenBadgeRow.test.js.
 
 describe('TokenChargeDeltaFloater', () => {
     // The event names the Token by instance id (slice 1.6b); the floater is

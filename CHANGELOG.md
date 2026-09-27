@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Ring badges replace the progress bar (B1.2, TL-22, FB-3, FB-4).** Under a worked Token and its
+  hero, one row of rings: the cycle (fills, seconds left inside), charges (empties, charges left)
+  and, in a fight, the enemy's HP. The row centres under the pair, whichever side the hero stands.
+  A blocked Token's cycle ring greys out. Hovering any Token with charges shows its charges ring;
+  the old hover charge chip is gone.
 - **A worked Token's problems move to its centre (B1.1, TL-22).** Need Items, Wrong Skill, Level
   Too Low and the rest are no longer labels on the progress bar: they are the red or yellow mark
   at the Token's centre (TL-14), staying until fixed. Hovering the Token opens the mark's bubble

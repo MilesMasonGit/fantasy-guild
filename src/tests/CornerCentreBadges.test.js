@@ -25,7 +25,7 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenCentreAlert } from '../ui/components/board/TokenEventAlert.jsx';
-import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
+import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
 import { StationGearBadge, DisallowBadge, SpawnerCountBadge } from '../ui/components/board/TokenBadges.jsx';
 import {
     ALERT_KIND, alertKindOf, alertFades, pickCentreAlert, spawnerCountText, gearStateOf, isGearOnlyAlert
@@ -450,11 +450,11 @@ describe('on the mat', () => {
         again(centre(ALERT.NO_ROOM));
         const mark = container.querySelector('[data-worked-alert="no_room"] [data-alert-kind="problem"]');
         expect(mark.getAttribute('data-alert-severity')).toBe('red');
-        // And the bar says none of it.
+        // And the ring row says none of it: its cycle ring just greys (B1.2).
         cleanup();
-        const bar = mount(h(TokenProgressBar, { instanceId: bench.id, token: token(ALERT.NO_ROOM), alert: ALERT.NO_ROOM })).container;
-        expect(bar.textContent).not.toContain('No Room');
-        expect(bar.querySelector('.progress-fill--red-chroma')).toBeNull();
+        const row = mount(h(TokenBadgeRow, { instanceId: bench.id, token: token(ALERT.NO_ROOM) })).container;
+        expect(row.textContent).not.toContain('No Room');
+        expect(row.querySelector('[data-ring="cycle"]').getAttribute('data-ring-greyed')).toBe('true');
     });
 
     it('B1.1: a spawner’s live problem wins over a worked one', () => {

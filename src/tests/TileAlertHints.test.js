@@ -4,7 +4,7 @@ import { render, cleanup, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { TokenCentreAlert } from '../ui/components/board/TokenEventAlert.jsx';
-import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
+import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
 import { ALERT_HINT, ALERT_LABEL, isYellowAlert } from '../ui/components/board/boardConstants.js';
 import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
@@ -192,29 +192,35 @@ describe('B1.1: a worked Token’s problem is the centre mark (TL-14, TL-22)', (
     // CornerCentreBadges, where the spawner fixture lives.
 });
 
-describe('B1.1: the bar no longer draws alerts', () => {
-    it.each(MARK_ALERTS)('prints no label and no red or yellow fill for "%s"', (alert) => {
-        const { container } = render(tree(React.createElement(TokenProgressBar, {
-            instanceId: 'tok_1', token: worked(alert), alert
-        })));
-        expect(container.querySelector('.progress-fill--red-chroma')).toBeNull();
-        expect(container.querySelector('.progress-fill--yellow-chroma')).toBeNull();
+describe('B1.1 → B1.2: the ring row draws no alerts, and greys its cycle ring while blocked', () => {
+    const row = (alert) => React.createElement(TokenBadgeRow, { instanceId: 'tok_1', token: worked(alert) });
+    const cycle = (container) => container.querySelector('[data-ring="cycle"]');
+
+    it.each(MARK_ALERTS)('prints no label and greys the cycle ring for "%s"', (alert) => {
+        const { container } = render(tree(row(alert)));
         expect(container.textContent).not.toContain(ALERT_LABEL[alert]);
         expect(container.querySelector('[data-tile-alert-hint]')).toBeNull();
-        // Blocked: the bar steps aside.
-        expect(container.firstChild.style.opacity).toBe('0');
+        expect(cycle(container).getAttribute('data-ring-greyed')).toBe('true');
+        expect(cycle(container).getAttribute('data-ring-text')).toBe('');
+    });
+
+    it('a gear-only alert does not grey the ring (the gear says it, not the centre mark)', () => {
+        for (const alert of GEAR_ONLY_ALERTS) {
+            const { container, unmount } = render(tree(row(alert)));
+            expect(cycle(container).getAttribute('data-ring-greyed')).toBeNull();
+            unmount();
+        }
     });
 
     it('ignores progress while blocked, and runs again once the alert clears', () => {
-        const { container, rerender } = render(tree(React.createElement(TokenProgressBar, {
-            instanceId: 'tok_1', token: worked(ALERT.INPUTS), alert: ALERT.INPUTS
-        })));
+        const { container, rerender } = render(tree(row(ALERT.INPUTS)));
         act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_1', percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
-        expect(container.firstChild.style.opacity).toBe('0');
+        expect(cycle(container).getAttribute('data-ring-text')).toBe('');
+        expect(cycle(container).getAttribute('data-ring-fraction')).toBe('0.000');
 
-        rerender(tree(React.createElement(TokenProgressBar, { instanceId: 'tok_1', token: worked(null), alert: null })));
+        rerender(tree(row(null)));
+        expect(cycle(container).getAttribute('data-ring-greyed')).toBeNull();
         act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_1', percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
-        expect(container.firstChild.style.opacity).toBe('1');
-        expect(container.textContent).toContain('10s');
+        expect(cycle(container).getAttribute('data-ring-text')).toBe('5s');
     });
 });

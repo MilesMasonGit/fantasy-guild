@@ -1,12 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
-import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
+import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 /**
+ * ⭐ Since B1.2 (TL-22) the progress bar is the ring row (`TokenBadgeRow`),
+ * and every guarantee below carries over to it unchanged.
+ *
  * CR2-168 item 1 — hovering a Token used to tear down and rebuild the bar's
  * four EventBus subscriptions and cancel its animation frame.
  *
@@ -29,8 +32,9 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 /**
  * Three since B1.1: the bar stopped drawing alerts, and the alert it still
- * hides for comes down as `token.alert` from `MatToken`, which re-reads it on
- * `ALERT_CHANGED` itself.
+ * greys for comes down as `token.alert` from `MatToken`, which re-reads it on
+ * `ALERT_CHANGED` itself. (The -1 floater inside the row listens for
+ * `TOKEN_CHARGES_CHANGED`, which is not counted here.)
  */
 const BAR_EVENTS = [
     BOARD_EVENTS.PROGRESS,
@@ -56,7 +60,7 @@ const withSubscriptionCounter = () => {
     return { counts, restore: () => { subSpy.mockRestore(); unsubSpy.mockRestore(); } };
 };
 
-const bar = (props) => React.createElement(TokenProgressBar, props);
+const bar = (props) => React.createElement(TokenBadgeRow, props);
 
 const tree = (props) => React.createElement(
     EngineContext.Provider,
@@ -64,7 +68,7 @@ const tree = (props) => React.createElement(
     bar(props)
 );
 
-describe('TokenProgressBar subscription churn (CR2-168 item 1)', () => {
+describe('TokenBadgeRow subscription churn (CR2-168 item 1, carried over from the bar)', () => {
     let meter;
 
     beforeEach(() => {
