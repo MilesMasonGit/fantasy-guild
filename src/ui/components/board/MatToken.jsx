@@ -28,6 +28,9 @@ import {
     DisallowBadge, SpawnerCountBadge
 } from './TokenBadges.jsx';
 import { gearStateOf, spawnerCountText } from './centreAlert.js';
+import { TokenHitArt } from './TokenHitArt.jsx';
+import { hitSkillOf } from './hitAnimations.js';
+import * as TokenGlows from '../../../systems/board/TokenGlows.js';
 
 
 /** How long a Token takes to slide to a point the game moved it to (a push). */
@@ -262,6 +265,19 @@ export const MatToken = React.memo(function MatToken({
         if (heroId) onRecallHero?.(heroId);
     };
 
+    // FB-10: the skill whose hit animation this Token plays when struck.
+    const hitSkill = React.useMemo(() => hitSkillOf(def), [def]);
+
+    // FB-11: a Token that has just become this one glows as it appears. The
+    // glow was raised under this (new) id before it was drawn (`TokenGlows`).
+    const [transformGlow, setTransformGlow] = React.useState(() => TokenGlows.glowOf(id));
+    React.useEffect(() => {
+        if (!transformGlow) return undefined;
+        const timer = setTimeout(() => setTransformGlow(null), transformGlow.remainingMs);
+        return () => clearTimeout(timer);
+    }, [transformGlow]);
+    const glowDelay = transformGlow ? `-${TokenGlows.GLOW_MS - transformGlow.remainingMs}ms` : undefined;
+
     const glow = staffed && !alert ? 'gi-glow-active' : null;
     const gear = gearStateOf(detail || {});
 
@@ -306,24 +322,41 @@ export const MatToken = React.memo(function MatToken({
                         isHovered && 'gi-token-hover-pulse'
                     )}
                 >
-                    {enemyAnimSrc ? (
-                        <AnimatedEnemySprite
-                            src={enemyAnimSrc}
-                            heroId={heroId}
-                            alt={label}
-                            size={artPx}
-                            className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
-                        />
-                    ) : (
-                        <TokenSprite
-                            typeId={typeId}
-                            surface={TOKEN_SURFACE.BOARD}
-                            scale={artScale}
-                            alt={label}
-                            className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
-                        />
-                    )}
+                    <TokenHitArt
+                        instanceId={id}
+                        skill={hitSkill}
+                        heroId={heroId}
+                        active={!!heroId && !alert}
+                        tokenX={x}
+                        className={transformGlow ? 'gi-transform-flash' : null}
+                    >
+                        {enemyAnimSrc ? (
+                            <AnimatedEnemySprite
+                                src={enemyAnimSrc}
+                                heroId={heroId}
+                                alt={label}
+                                size={artPx}
+                                className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
+                            />
+                        ) : (
+                            <TokenSprite
+                                typeId={typeId}
+                                surface={TOKEN_SURFACE.BOARD}
+                                scale={artScale}
+                                alt={label}
+                                className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
+                            />
+                        )}
+                    </TokenHitArt>
                 </div>
+                {transformGlow && (
+                    <div
+                        aria-hidden="true"
+                        data-transform-glow="true"
+                        className="gi-transform-glow absolute inset-0 pointer-events-none"
+                        style={glowDelay ? { animationDelay: glowDelay } : undefined}
+                    />
+                )}
             </div>
 
             {/* Everything written on the Token, in front of any hero on it. */}

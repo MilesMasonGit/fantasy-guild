@@ -14,6 +14,8 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { centreOf, distanceSq } from './nearby.js';
 import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
 import * as MatPlacement from './MatPlacement.js';
+import * as TokenGlows from './TokenGlows.js';
+import { TimeBankManager } from '../core/TimeBankManager.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { PLACEMENT, RANDOM_FREE_DARTS, placementOf } from '../../config/registries/placementRegistry.js';
 
@@ -392,6 +394,9 @@ export function transformInstance(old, typeId, options = {}) {
     );
     if (options.extra) Object.assign(instance, options.extra);
     BoardState.addToken(instance, at.x, at.y);
+    // FB-11: the new Token glows as it appears — kept under its NEW id, which
+    // is what the mat draws it by. Not while the time bank replays time away.
+    if (!TimeBankManager.isSpending) TokenGlows.raiseGlow(instance.id, { fromTypeId: old.typeId, typeId });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, at, ...touched]);
     if (touched.length) EventBus.publish('state_changed');

@@ -25,6 +25,10 @@ function rollStatusOnHit(source, applyFn) {
 /**
  * Live combat attack handlers (7-stat engine pass, combat_formula_spec.md §7).
  * No energy cost in combat (owner-locked F4) — HP/food is the attrition currency.
+ *
+ * `combat_hero_attack` names the enemy Token (`instanceId`, a board fight's own
+ * key) so the mat can route it to that Token: a landed hit knocks it back
+ * (feedback Q4, FB-10).
  */
 
 export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
@@ -49,7 +53,7 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
 
     // Stun check: the attempt itself spends a stack, success or failure.
     if (StatusEffectSystem.rollAttackFailure(hero.statuses)) {
-        EventBus.publish('combat_hero_attack', { cardId: fight.id, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, stunned: true, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish('combat_hero_attack', { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, stunned: true, enemyHpRemaining: fight.combat.enemyHp.current });
         fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
         return;
     }
@@ -91,9 +95,9 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
                 EventBus.publish('combat_enemy_trait_trigger', { cardId: fight.id, heroId: hero.id, traitId: 'thorns', damage: reflex });
             }
         }
-        EventBus.publish('combat_hero_attack', { cardId: fight.id, heroId: hero.id, enemyId: enemy.id, damage, hit: true, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish('combat_hero_attack', { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, enemyHpRemaining: fight.combat.enemyHp.current });
     } else {
-        EventBus.publish('combat_hero_attack', { cardId: fight.id, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish('combat_hero_attack', { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, enemyHpRemaining: fight.combat.enemyHp.current });
     }
 
     // Carry the overshoot instead of resetting (CR-002): at 10x time-scale a

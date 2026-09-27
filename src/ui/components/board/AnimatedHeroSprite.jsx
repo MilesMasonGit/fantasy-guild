@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cn } from '../../utils/cn.js';
+import { heroFrameAt, heroPhaseMs } from './hitAnimations.js';
 
 /**
  * Renders a 64x64 hero sprite sheet with 3 rows (Attack, Walk, Idle) and 8 frames per row.
@@ -15,17 +16,28 @@ export const AnimatedHeroSprite = ({
     animationState = 'idle', // 'idle', 'walk', 'attack'
     facingLeft = false,
     frameMs = 125,
+    heroId = null,
     className
 }) => {
-    const [frame, setFrame] = useState(0);
+    const clock = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const [frame, setFrame] = useState(() => heroFrameAt(clock(), heroId, frameMs));
 
     // 8 FPS by default (125 ms a frame); a limping hero plays slower.
+    // ⭐ The frame is read from the clock, not counted (feedback Q4, FB-10):
+    // the Token this hero works plays its hit on the strike frame, from the
+    // same clock and the hero's own phase (`hitAnimations.js`), so the two
+    // never drift apart. Each step waits for the next frame boundary.
     useEffect(() => {
-        const interval = setInterval(() => {
-            setFrame(f => (f + 1) % 8);
-        }, frameMs);
-        return () => clearInterval(interval);
-    }, [frameMs]);
+        let timer = null;
+        const step = () => {
+            const now = clock();
+            setFrame(heroFrameAt(now, heroId, frameMs));
+            const intoFrame = ((now + heroPhaseMs(heroId)) % frameMs + frameMs) % frameMs;
+            timer = setTimeout(step, frameMs - intoFrame + 1);
+        };
+        step();
+        return () => clearTimeout(timer);
+    }, [frameMs, heroId]);
 
     let rowOffset = 2; // Idle is row 3 (index 2)
     if (animationState === 'attack') rowOffset = 0;

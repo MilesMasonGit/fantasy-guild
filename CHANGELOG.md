@@ -4,6 +4,14 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Hit animations and the transform glow (Q4: FB-10, FB-11).** A Token now reacts each time its hero
+  strikes it, timed to the blow in the hero's working animation: Logging shakes side to side, Mining
+  jitters, Fishing bobs slowly, Farming sways from the base, Smithing squashes down, Crafting hops,
+  Cooking pulses twice, Construction thumps, Explore rustles. In a fight, each landed blow knocks the
+  enemy back away from the hero with a brief red flash (a miss does nothing). Only the art moves; the
+  Token's spot, badges and dragging are unchanged. When a Token becomes another (a sapling grows, a
+  Coast turns, a Foundation is built), the new Token flashes white-gold with a soft glow for about a
+  second. Reduced-motion settings drop the movement and keep a simple flash.
 - **Alerts after Q2.** The red alert left where a used-up Token stood, and the refused-drop mark, now
   fade after 10 seconds like a notice (neither can be fixed). While the time bank replays time away,
   spawns raise no green notice, so you come back to a calm mat.

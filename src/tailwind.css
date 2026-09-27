@@ -695,6 +695,48 @@
   .gi-token-land { animation: none; }
 }
 
+/* A Token that has just become another one (feedback Q4, FB-11): a white-gold
+ * flash of the art and a soft glow that swells out and fades, ~1 s
+ * (`TokenGlows.GLOW_MS`). The glow is its own layer over the art box; the
+ * flash is on the art's hit wrapper (`TokenHitArt`), not the sprite, which
+ * keeps its contact shadow and landing bounce to itself. */
+@keyframes gi-transform-flash {
+  0%   { filter: brightness(2.4) saturate(0.4) drop-shadow(0 0 6px rgba(255, 236, 170, 0.95)); }
+  35%  { filter: brightness(1.6) saturate(0.8) drop-shadow(0 0 5px rgba(255, 215, 90, 0.8)); }
+  100% { filter: brightness(1) saturate(1) drop-shadow(0 0 0 rgba(255, 215, 90, 0)); }
+}
+
+.gi-transform-flash {
+  animation: gi-transform-flash 1000ms ease-out both;
+}
+
+@keyframes gi-transform-glow {
+  0%   { opacity: 0;    transform: scale(0.55); }
+  15%  { opacity: 1;    transform: scale(0.9); }
+  100% { opacity: 0;    transform: scale(1.45); }
+}
+
+.gi-transform-glow {
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 236, 160, 0.75) 22%,
+    rgba(255, 200, 70, 0.35) 45%,
+    rgba(255, 200, 70, 0) 70%);
+  mix-blend-mode: screen;
+  animation: gi-transform-glow 1000ms ease-out both;
+}
+
+/* Reduced motion: no swelling, just a fade of the light. */
+@keyframes gi-transform-glow-fade {
+  0%   { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-transform-glow { animation-name: gi-transform-glow-fade; }
+}
+
 /* Working, said in colour (D-267).
  *
  * ⚠️ Since Free Playmat slice 1.5 only the green half remains — the yellow idle

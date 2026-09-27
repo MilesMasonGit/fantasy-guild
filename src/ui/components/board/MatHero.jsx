@@ -119,6 +119,7 @@ export const MatHero = ({
                     {animArt ? (
                         <AnimatedHeroSprite
                             src={animArt}
+                            heroId={heroId}
                             alt={name || 'Hero'}
                             size={artPx}
                             animationState={activeAnimation}
