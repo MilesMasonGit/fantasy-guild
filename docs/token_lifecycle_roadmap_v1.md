@@ -1,7 +1,9 @@
 # Token Lifecycle — implementation roadmap v1
 
-**Written 2026-09-25. Approved by the owner 2026-09-25. Status: BUILT — every slice done,
-⭐ waiting for the owner's playtest (10.2); see §8.**
+**Written 2026-09-25. Approved by the owner 2026-09-25. Status: BUILT 2026-09-26 — every
+slice done and merged; the owner has played it and has feedback. Follow-up work is handed to a
+new agent: [`KICKOFF_token_lifecycle_feedback.md`](KICKOFF_token_lifecycle_feedback.md). This
+document is now the record of the first build; §8 is its final status.**
 
 This roadmap builds the **first playable version** of the Spawner System
 described in [`concept_token_lifecycle.md`](concept_token_lifecycle.md) (v2.1,
@@ -174,6 +176,7 @@ for testing; retiring the Vault, Managers and Map bursts.
 | **TL-6** | **Only the starting skills.** Promotion skills are left for later. |
 | **TL-8** | **A Token a recipe makes lands straight on the mat** beside the station that made it, like a Shop purchase (owner, 2026-09-26, for slice 9.3). It counts toward the placed-Token cap; if the mat is full the cycle waits. No Token loot and no Vault. |
 | **TL-9** | **Item loot stays as it is** (owner, 2026-09-26): gathered items drop on the mat and are collected by hovering over them (not clicking); auto-collect stays off by default. The playtest pack should say so. |
+| **TL-11** | **Stay in 0.8.x** (owner, 2026-09-26): no 0.9.0 for this rework. Versions are bumped within 0.8 (0.8.1, 0.8.2, …) until the owner explicitly says to move to 0.9, which will come much later in development. |
 | **TL-10** | **Enemy drops roll per line** (owner, 2026-09-26): each line in an enemy's drop list rolls on its own chance, like station and gathering outputs, instead of one weighted pick per kill. Slice 7.8. |
 | **TL-7** | **Promotion keeps all nine starting skills** (owner, 2026-09-25, at the slice 1.1 checkpoint). Promotion never banks a foundation skill; it only adds (and, for advanced jobs, swaps) the non-foundation skills, so a promoted hero's sheet is wider (about 11). Chosen over leaving five skills banked, so promoted heroes can still build, farm and explore. Slice 1.2. |
 
@@ -241,7 +244,8 @@ out to change something the player sees.
   each chain** (§6) through the CMS. The 78 existing Tokens stay in the data but
   are left out of the shop, so they're unreachable in a new game. Converting or
   deleting them is later content work.
-* **DP-10 A save-version bump to `0.9.0`, new games only.** Loading an older
+* **DP-10 New games only** *(amended 2026-09-26 by TL-11: no bump to `0.9.0`; the save
+  version stayed `0.8.0`, and old saves load with retired fields dropped).* Loading an older
   save is not supported in this build (the project has wiped saves at every
   rework). Check `SaveManager` for how a version mismatch is handled today, and
   make it clear rather than crash.
@@ -513,9 +517,10 @@ Each retirement is its own slice, done only after its replacement is merged.
 | **10.1 New-game opening** | The starter set on the mat (SP-14, contents per SP-72, placeholders: Guild Hall, Oak Forest, Copper Mine, a few seeds in the Bank) and the Hall trickle's placeholder contents. | A new game can reach every chain in §6 without the dev panel. |
 | **10.2 Playtest pack** | A short written checklist for the owner (what to try, what to watch for), a list of every placeholder number and where to change it in the CMS, and known issues. | ⭐ The owner plays it. Their feedback becomes roadmap v2. |
 
-Version bump to **v0.9.0** in all five files (`package.json`,
-`package-lock.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`,
-`src-tauri/Cargo.lock`) and a tag, when the owner accepts the playtest build.
+~~Version bump to v0.9.0~~ **Superseded by TL-11:** the version stays in **0.8.x**. When a build is
+accepted it gets the next 0.8 number (in all five files: `package.json`, `package-lock.json`,
+`src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`) and a tag. 0.9 only when
+the owner explicitly says so.
 
 ---
 
