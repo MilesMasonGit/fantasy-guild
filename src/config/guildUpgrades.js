@@ -42,8 +42,6 @@ export const UPGRADE_SPRITES = {
     roster_size: '/assets/tokens/token_bunk_bed.png',
     bank_slots: '/assets/tokens/token_chest_iron.png',
     bank_tabs: '/assets/tokens/token_chest_addy.png',
-    token_bank_slots: '/assets/tokens/token_chest_gold.png',
-    token_bank_tabs: '/assets/tokens/token_chest_myth.png',
     guild_hall: '/assets/tokens/token_guildhall.png',
     wishing_well: '/assets/tokens/token_well_wishing.png',
     flag_radius: '/assets/tokens/token_banner_wood.png'
@@ -56,18 +54,18 @@ export const UPGRADE_SPRITES = {
  * The two boards are different sizes, so tile 17 here is not tile 17 there.
  *
  *   17 = Hall −1 row      22 = Hall −2 cols    23 = Hall −1 col
- *   31 = Hall +1 row      25 = Hall +1 col     26 = Hall +2 cols
+ *   31 = Hall +1 row      16 = Hall −1 row −1 col
  *
  * Nothing derives these from UPGRADE_BOARD_GUILD_HALL_TILE, so resizing that
- * board means recomputing all six by hand.
+ * board means recomputing them by hand. Tiles 25 and 26 held the two Token
+ * Vault tracks until the Vault was retired (Token Lifecycle 9.3); they are
+ * empty now.
  */
 export const UPGRADE_TILES = {
     16: 'flag_radius',
     17: 'roster_size',
     23: 'bank_slots',
     22: 'bank_tabs',
-    25: 'token_bank_slots',
-    26: 'token_bank_tabs',
     31: 'wishing_well'
 };
 
@@ -123,28 +121,6 @@ export const GUILD_UPGRADES = [
         statLabel: rank => `${64 + rank * 32} slots`,
         nextStatLabel: rank => `${64 + (rank + 1) * 32} slots`,
         sprite: UPGRADE_SPRITES.bank_slots
-    },
-    {
-        id: 'token_bank_tabs',
-        name: 'Vault Tabs',
-        description: 'Unlock another Token Vault tab for organizing tokens.',
-        tileIndex: 26,
-        maxRank: 15,
-        prices: placeholderPrices(15),
-        statLabel: rank => `${1 + rank} tabs`,
-        nextStatLabel: rank => `${1 + rank + 1} tabs`,
-        sprite: UPGRADE_SPRITES.token_bank_tabs
-    },
-    {
-        id: 'token_bank_slots',
-        name: 'Token Vault Slots',
-        description: 'Store 32 more kinds of Tokens in the Vault.',
-        tileIndex: 25,
-        maxRank: 10,
-        prices: placeholderPrices(10),
-        statLabel: rank => `${64 + rank * 32} slots`,
-        nextStatLabel: rank => `${64 + (rank + 1) * 32} slots`,
-        sprite: UPGRADE_SPRITES.token_bank_slots
     },
     {
         id: 'roster_size',

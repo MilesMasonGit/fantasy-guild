@@ -111,7 +111,6 @@ describe('2×2 Large Token Mechanics', () => {
             expect(BoardState.getTokenById(s1.id)).not.toBeNull();
             expect({ x: s1.x, y: s1.y }).toEqual(C(0));
             expect({ x: s2.x, y: s2.y }).toEqual(C(7));
-            expect(BoardState.getTray()).toHaveLength(0);
             // The large Token stands clear of both — small-to-large is 99.6 u.
             const placed = BoardState.getTokenById(large.id);
             expect(Math.hypot(placed.x - s1.x, placed.y - s1.y)).toBeGreaterThanOrEqual(99.6 - 1e-6);

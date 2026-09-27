@@ -8,7 +8,6 @@ import * as Placement from '../systems/board/Placement.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import { RECIPE } from '../systems/board/RecipeResolver.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
@@ -136,18 +135,8 @@ describe('Persistence — until it reaches the Vault', () => {
         expect(tokenAt(30).selectedRecipeId).toBe('recipe_b');
     });
 
-    it('forgets it in the Vault, and re-defaults when placed again', () => {
-        vi.spyOn(QuestManager, 'isTokenVaultSendUnlocked').mockReturnValue(true);
-        const forge = place(A, 'fixture_station');
-        StationRecipe.setSelectedRecipe(forge, 'recipe_b');
-
-        Placement.returnTokenToVaultById(idAt(A));
-        const drawn = TokenBank.withdraw('fixture_station');
-        Placement.placeTokenAt(drawn, C(A));
-
-        expect(tokenAt(A).selectedRecipeId).toBe('recipe_a');
-        vi.restoreAllMocks();
-    });
+    // 'forgets it in the Vault, and re-defaults when placed again' went with
+    // the Vault (Token Lifecycle 9.3).
 });
 
 // The 'Save migration — a save written before the field existed' suite was

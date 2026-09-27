@@ -53,32 +53,7 @@ beforeEach(() => {
     resetMissingContentWarnings();
 });
 
-// ---------------------------------------------------------------------------
-// CR2-054 — Tray capacity
-// ---------------------------------------------------------------------------
-
-describe('CR2-054: Tray capacity is one rule', () => {
-    const plainId = aPlainTokenId();
-
-    /** Fill the Tray with `n` non-map Tokens, bypassing the capacity check. */
-    function fillWithPlain(n) {
-        const tray = GameState.state.board.tray;
-        for (let i = 0; i < n; i++) {
-            tray.push(BoardState.createTokenInstance(plainId, tokenStartingUses(plainId)));
-        }
-    }
-
-    it('hasTraySpaceFor counts the whole batch a cascade would displace', () => {
-        fillWithPlain(BoardState.TRAY_CAPACITY - 2);
-        expect(BoardState.hasTraySpaceFor(1)).toBe(true);
-        expect(BoardState.hasTraySpaceFor(2)).toBe(true);
-        expect(BoardState.hasTraySpaceFor(3)).toBe(false);
-    });
-
-    it('TRAY_CAPACITY is 48 — the comment that said 18 was wrong', () => {
-        expect(BoardState.TRAY_CAPACITY).toBe(48);
-    });
-});
+// CR2-054 (Tray capacity is one rule) went with the Tray (Token Lifecycle 9.3).
 
 // ---------------------------------------------------------------------------
 // CR2-059 / CR2-060 — the tile alert vocabulary

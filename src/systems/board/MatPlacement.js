@@ -432,7 +432,8 @@ export function dropAt(instance, point, options = {}) {
         return { status: 'full', reason: 'Nowhere to drop that' };
     }
 
-    const restock = restockTargetAt(instance, point, options.excludeId);
+    // `noRestock`: a Token a recipe makes is always its own Token (TL-8).
+    const restock = options.noRestock ? null : restockTargetAt(instance, point, options.excludeId);
     if (restock) {
         const maxCap = restock.cap;
         const needed = maxCap - restock.target.usesRemaining;

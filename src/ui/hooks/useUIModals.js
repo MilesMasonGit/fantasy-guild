@@ -35,7 +35,8 @@ export function standingPromotionOffer(engine) {
  *
  * ⚠️ **This hook is the ONLY publisher of `ui_modal:opened`, and the engine
  * depends on it.** `QuestManager` subscribes to it and maps three `modalId`
- * values onto tutorial quest targets:
+ * values onto tutorial quest targets (`vault` has had no publisher since the
+ * Token Vault went, Token Lifecycle 9.3; its quest is re-pointed in 9.5):
  *
  * | `modalId`      | quest target       |
  * |----------------|--------------------|
@@ -66,7 +67,7 @@ export function standingPromotionOffer(engine) {
  * places (is-active, close, open) and a target added to two of the three is a
  * bubble that opens and then cannot be closed.
  */
-const DRAWER_TARGETS = new Set(['bank', 'vault', 'cartographer']);
+const DRAWER_TARGETS = new Set(['bank', 'cartographer']);
 
 export const useUIModals = (engine) => {
     // --- Modal States ---
@@ -124,11 +125,10 @@ export const useUIModals = (engine) => {
     const [bodyView, setBodyView] = useState('equipment');
 
     // --- Inspect selection state ---
-    // Per-target/pane inspection memory so Bank, Vault, Cartographer, and Guild Hall
+    // Per-target/pane inspection memory so Bank, Shop (Cartographer), and Guild Hall
     // each remember their own last inspected item/token/map/upgrade without stomping or bleeding.
     const [inspectByPane, setInspectByPane] = useState({
         bank: null,
-        vault: null,
         cartographer: null,
         guild: null
     });
@@ -142,7 +142,7 @@ export const useUIModals = (engine) => {
     // e.g. a banner's "open the drawer" prompt. Deliberately independent of
     // the nav bar's exclusivity rule below: it only adds a pane, never
     // closes anything else.)
-    // ⚠️ **One pane at a time** (D-239). Opening the Bank closes the Vault.
+    // ⚠️ **One pane at a time** (D-239). Opening the Bank closes the Shop.
     //
     // This used to append, so several panes shared the drawer's width. The
     // drawer now comes from the SIDE at a fixed width (D-238), and splitting
@@ -173,7 +173,6 @@ export const useUIModals = (engine) => {
             case 'guild': return fullscreenView === 'guild';
             case 'areas': return fullscreenView === 'areas';
             case 'bank': return drawerState.panes.includes('bank');
-            case 'vault': return drawerState.panes.includes('vault');
             case 'cartographer': return drawerState.panes.includes('cartographer');
             case 'settings': return isSettingsOpen;
             default: return false;
@@ -300,7 +299,7 @@ export const useUIModals = (engine) => {
             set: useCallback((type, id, source = null, pane = null) => {
                 const effectivePane = pane || (
                     type === 'guild_upgrade' ? 'guild' :
-                    type === 'token' ? 'vault' :
+                    type === 'token' ? 'cartographer' :
                     type === 'item' ? 'bank' : null
                 );
                 const nextSelection = { type, id, source, pane: effectivePane };
@@ -329,7 +328,7 @@ export const useUIModals = (engine) => {
             }, [])
         },
         nav: {
-            // 'guild' | 'bank' | 'vault' | 'cartographer' | 'areas' | 'settings'
+            // 'guild' | 'bank' | 'cartographer' | 'areas' | 'settings'
             //
             // 'library' (the Collection Binder) was removed on 2026-08-24
             // (CR2-144). It was a nav target with no bubble and no screen —

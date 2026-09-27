@@ -50,26 +50,18 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
         expect(tokenAt(10).typeId).toBe('token_guild_hall');
     });
 
-    it('cannot be removed from the playmat to the Vault once placed, and emits a disallow alert', () => {
+    // Was 'cannot be removed from the playmat to the Vault once placed, and
+    // emits a disallow alert'. The Vault route (and its alert) went in Token
+    // Lifecycle 9.3; Remove (5.2) is the one way off the mat, and it refuses
+    // the Hall too.
+    it('cannot be removed from the playmat once placed', () => {
         const gh = BoardState.createTokenInstance('token_guild_hall');
         put(15, gh);
 
-        const alerts = [];
-        const unsub = EventBus.subscribe('board:tile_event_alert', (e) => alerts.push(e));
-
-        // Right-click and drag-to-chest both land here (slice 1.9).
-        const vaultRes = Placement.returnTokenToVaultById(idAt(15));
-        expect(vaultRes.success).toBe(false);
-        expect(vaultRes.reason).toMatch(/cannot be removed from the playmat/i);
+        const res = Placement.removePlacedToken(idAt(15));
+        expect(res.success).toBe(false);
+        expect(res.reason).toMatch(/cannot be removed from the playmat/i);
         expect(tokenAt(15)).not.toBeNull();
-
-        expect(alerts).toHaveLength(1);
-        expect(alerts[0].instanceId).toBe(idAt(15));
-        expect(alerts[0].severity).toBe('disallow');
-        expect(alerts[0].type).toBe('drop_rejected');
-        expect(alerts[0].title).toBe('Guild Hall cannot be removed from the playmat.');
-
-        unsub();
     });
 
     it('allows heroes to staff the Guild Hall token', () => {
@@ -100,7 +92,6 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
 
             expect(res.success).toBe(true);
             expect({ x: BoardState.getTokenById(gh.id).x, y: BoardState.getTokenById(gh.id).y }).toEqual(where);
-            expect(BoardState.getTray().some(t => t.typeId === 'token_guild_hall')).toBe(false);
         });
 
         it('a large Token dropped over it does not move it', () => {
@@ -115,7 +106,6 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
 
             expect(res.success).toBe(true);
             expect({ x: BoardState.getTokenById(gh.id).x, y: BoardState.getTokenById(gh.id).y }).toEqual(where);
-            expect(BoardState.getTray().some(t => t.typeId === 'token_guild_hall')).toBe(false);
         });
     });
 

@@ -3,7 +3,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -128,8 +127,6 @@ describe('dropOnMat — one drop function for the playmat', () => {
         Flags.teardown();
         Flags.init();
         GameState.state.board.tokens = {};
-        GameState.state.board.tray = [];
-        GameState.state.board.tokenBank = {};
         GameState.state.board.flags = {};
         GameState.state.heroes = [
             { id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }
@@ -165,11 +162,9 @@ describe('dropOnMat — one drop function for the playmat', () => {
     it('a drop ON a matching copy restocks it (FP-50)', () => {
         const copy = instance('fixture_producer', 100);
         BoardState.addToken(copy, C(14).x, C(14).y);
-        TokenBank.deposit(instance('fixture_producer', 400));
-
         // ⚠️ Within the copy's art circle (64 u) — restocking is aiming AT it,
         // and since 1.6d a drop 78 u away is simply a drop beside it.
-        dropOnMat({ typeId: 'fixture_producer', from: { vaultTypeId: 'fixture_producer' } }, near(14, 20, -20));
+        dropOnMat({ typeId: 'fixture_producer', usesRemaining: 400 }, near(14, 20, -20));
 
         expect(BoardState.tokens()).toHaveLength(1);
         expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(500);
@@ -184,42 +179,9 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect({ x: only().x, y: only().y }).toEqual(point);
     });
 
-    it('from the Vault, straight onto the mat point', () => {
-        TokenBank.deposit(instance('fixture_producer', 100));
-        const point = near(8);
-        dropOnMat({ typeId: 'fixture_producer', from: { vaultTypeId: 'fixture_producer' } }, point);
-        expect(only().typeId).toBe('fixture_producer');
-        expect({ x: only().x, y: only().y }).toEqual(point);
-        expect(GameState.state.board.tokenBank.fixture_producer || []).toHaveLength(0);
-    });
-
-    it('from a loot sprite on the floor', () => {
-        const sprite = SpriteLayer.addSprite('token', 'fixture_producer', 1, null, 100);
-        const point = near(6);
-        dropOnMat({ typeId: 'fixture_producer', from: { spriteId: sprite.id } }, point);
-        expect(only().typeId).toBe('fixture_producer');
-        expect({ x: only().x, y: only().y }).toEqual(point);
-        expect(SpriteLayer.getSprites()).toHaveLength(0);
-    });
-
-    it('a refused loot sprite goes back on the floor at the drop point', () => {
-        // Only one mythic Token of a kind may be on the board: the second is refused.
-        registerTokenTypes({
-            fixture_mythic_drop: {
-                id: 'fixture_mythic_drop', name: 'Fixture Mythic', tokenType: 'resource', rarity: 'mythic',
-                uses: 5, requiresHero: false, config: { cycleTimeMs: 12000, inputs: [], outputs: [] }
-            }
-        });
-        BoardState.addToken(instance('fixture_mythic_drop', 5), C(0).x, C(0).y);
-        const sprite = SpriteLayer.addSprite('token', 'fixture_mythic_drop', 1, null, 5);
-        const point = { x: C(14).x + 33, y: C(14).y - 21 };
-        expect(dropOnMat({ typeId: 'fixture_mythic_drop', from: { spriteId: sprite.id } }, point).success).toBe(false);
-
-        const back = SpriteLayer.getSprites().filter(s => s.refId === 'fixture_mythic_drop');
-        expect(back).toHaveLength(1);
-        expect(back[0].fromX).toBe(point.x);
-        expect(back[0].fromY).toBe(point.y);
-    });
+    // 'from the Vault', 'from a loot sprite on the floor' and 'a refused loot
+    // sprite goes back on the floor' went with the Vault and Token loot
+    // (Token Lifecycle 9.3): neither origin exists any more.
 
     it('a bare typeId is made on the spot', () => {
         dropOnMat({ typeId: 'fixture_producer', usesRemaining: 42 }, near(10));
@@ -287,10 +249,9 @@ describe('dropOnMat — one drop function for the playmat', () => {
      * refused — the whole mat is the play area now.
      */
     it('⭐ a Token dropped far from the middle of the mat simply lands there now', () => {
-        TokenBank.deposit(instance('fixture_producer', 100));
         const point = { x: 100, y: 100 };
 
-        const result = dropOnMat({ typeId: 'fixture_producer', from: { vaultTypeId: 'fixture_producer' } }, point);
+        const result = dropOnMat({ typeId: 'fixture_producer', usesRemaining: 100 }, point);
 
         expect(result.success).toBe(true);
         expect(result.flyBack).toBeUndefined();
@@ -299,9 +260,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     });
 
     it('but a drop off the mat entirely is pulled back on, art and all', () => {
-        TokenBank.deposit(instance('fixture_producer', 100));
-
-        expect(dropOnMat({ typeId: 'fixture_producer', from: { vaultTypeId: 'fixture_producer' } }, { x: -400, y: 5 }).success).toBe(true);
+        expect(dropOnMat({ typeId: 'fixture_producer', usesRemaining: 100 }, { x: -400, y: 5 }).success).toBe(true);
         expect(only().x).toBeGreaterThanOrEqual(64);
         expect(only().y).toBeGreaterThanOrEqual(64);
     });

@@ -756,12 +756,8 @@ function collectSaveRefs(state, note) {
     for (const token of Object.values(board.tokens || {})) {
         note('Token', token?.typeId, 'on the playmat');
     }
-    for (const entry of board.tray || []) {
-        note('Token', entry?.typeId, 'in the Token tray');
-    }
-    for (const typeId of Object.keys(board.tokenBank || {})) {
-        note('Token', typeId, 'in the Token Vault');
-    }
+    // (The Token tray and the Token Vault were two more places until both
+    // retired in Token Lifecycle 9.3; `migrateState` drops them.)
 
     for (const itemId of Object.keys(state?.inventory?.items || {})) {
         note('item', itemId, 'in the Bank');

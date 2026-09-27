@@ -90,12 +90,49 @@ export function migrateState(state, savedVersion) {
         delete migrated.progress.guildHallMapOpens;
     }
 
+    // The Token Vault and the dormant Tray are retired (Token Lifecycle 9.3,
+    // goal 1: Tokens spend their whole life on the mat). An older save's Vault
+    // and Tray contents, their tab and cap fields, its Token loot lying on the
+    // floor and its ranks in the two Vault upgrade tracks are dropped, not
+    // kept: nothing can pick them up or place them now. Item loot stays.
+    if (isPlainObject(migrated.board)) {
+        const board = { ...migrated.board };
+        let changed = false;
+        for (const field of RETIRED_BOARD_FIELDS) {
+            if (field in board) { delete board[field]; changed = true; }
+        }
+        if (Array.isArray(board.sprites) && board.sprites.some(isTokenSprite)) {
+            board.sprites = board.sprites.filter(s => !isTokenSprite(s));
+            changed = true;
+        }
+        if (changed) migrated.board = board;
+    }
+    const ranks = migrated.progress?.guildUpgrades;
+    if (isPlainObject(ranks) && RETIRED_UPGRADES.some(id => id in ranks)) {
+        const kept = { ...ranks };
+        for (const id of RETIRED_UPGRADES) delete kept[id];
+        migrated.progress = { ...migrated.progress, guildUpgrades: kept };
+    }
+
     // The station recipe backfill (Recipe & Charges P2) and the hero-tiles →
     // flags conversion (Free Playmat 1.4b) were deleted in slice 1.6a. Both
     // only carried pre-0.8.0 boards forward, and those saves are now refused
     // by the check above.
 
     return migrated;
+}
+
+/** Board fields of the Token Vault and the Tray (Token Lifecycle 9.3). */
+export const RETIRED_BOARD_FIELDS = Object.freeze([
+    'tokenBank', 'tray', 'nextTrayZ', 'tokenBankSlots', 'tokenTabsUnlocked', 'tokenGroups'
+]);
+
+/** The Guild Hall upgrade tracks that only ever served the Token Vault. */
+export const RETIRED_UPGRADES = Object.freeze(['token_bank_slots', 'token_bank_tabs']);
+
+/** A loose Token lying on the floor — the Token loot that 9.3 retired. */
+function isTokenSprite(sprite) {
+    return sprite?.kind === 'token';
 }
 
 /** An object we can merge field-by-field — not an array, not null. */

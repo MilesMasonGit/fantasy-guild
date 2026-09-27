@@ -45,7 +45,6 @@
  * - placing a Token paints nothing — the paint hook and the old-save backfill
  *   were removed from `BoardState` in Free Playmat slice 1.6a;
  * - bursting a Map stamps nothing on what it produces (`Cartographer.openMap`);
- * - a Token sent to the Vault does not carry a stamp (`addToTokenBank`);
  * - the terrain canvas is not drawn and the board never reads terrain or its
  *   seed (`Board.jsx`), so every tile shows its plain unpainted outline;
  * - the Playmat Tuner dev panel is hidden (`ReactRoot.jsx`).

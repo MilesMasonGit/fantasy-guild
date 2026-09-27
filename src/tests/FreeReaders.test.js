@@ -7,7 +7,6 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import * as Restrictions from '../systems/board/Restrictions.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -262,7 +261,6 @@ describe('⭐ flags claim by instance id and wait by spot id', () => {
     it('a hero whose Token ran dry lets go of it by id — no wait for a restock (SP-55, 9.2)', () => {
         const spot = P(2, 2);
         const forest = at(BoardState.createTokenInstance('fixture_producer', 1), spot);
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         Flags.plant('h1', spot);
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
 

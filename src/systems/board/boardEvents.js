@@ -67,7 +67,7 @@ export const BOARD_EVENTS = {
     /**
      * A Token **landed on a tile** — the player action, as opposed to
      * `TILE_CHANGED`, which is every redraw reason a tile has (cleared,
-     * depleted, pushed, restocked, vault moved). Payload: `{ instanceId, typeId }`
+     * depleted, pushed, restocked). Payload: `{ instanceId, typeId }`
      *
      * ⚠️ **This one deliberately keeps a global name rather than the
      * `board:` prefix**, because the event already existed as the bare string
@@ -76,22 +76,9 @@ export const BOARD_EVENTS = {
      * event that is really raised; inventing `board:token_placed` alongside it
      * would have meant **two announcements of one action**, which is exactly
      * the double-count CR2-085 is about. Added 2026-08-25 (CR2-055/CR2-177's
-     * sibling — the Tray's `TRAY_CHANGED` had the same shape).
+     * sibling). The Tray's `TRAY_CHANGED` went with the Tray, Token Lifecycle 9.3.
      */
     TOKEN_PLACED: 'token_placed',
-
-    /**
-     * The Tray's contents or arrangement changed — something added, taken, or
-     * dragged to a new spot. Payload: `{ reason }`.
-     *
-     * Published from `BoardState`'s three tray mutators, so every one of the
-     * ~10 engine routes into the Tray (placement, displacement, map burst,
-     * sprite collection, purchase) announces itself without each having to
-     * remember to. Before 2026-08-25 this constant did not exist and `Tray.jsx`
-     * subscribed to `undefined`, refreshing off the `state_changed` firehose
-     * instead (CR2-055, CR2-177).
-     */
-    TRAY_CHANGED: 'board:tray_changed',
 
     /** A hero's drawn place changed. Payload: `{ heroId, instanceId?, x?, y?, reason? }` — the Token they work and the point they are drawn at (neither in the Dock). */
     HERO_MOVED: 'board:hero_moved',
@@ -249,9 +236,10 @@ export const ALERT = {
      */
     CHOOSE_BUILD: 'choose_build',
     /**
-     * A Foundation finished its build but what it becomes has nowhere legal to
-     * stand. It stays a Foundation, keeps its full progress and nothing is
-     * spent; it tries again every tick (Token Lifecycle 6.1).
+     * A finished cycle's Token has nowhere to go: a Foundation's build has
+     * nowhere legal to stand (Token Lifecycle 6.1), or a station's recipe makes
+     * a Token and the mat is full or crowded around it (TL-8, 9.3). It keeps
+     * its full progress and nothing is spent; it tries again every tick.
      */
     NO_ROOM: 'no_room',
     /**

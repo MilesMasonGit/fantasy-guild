@@ -109,8 +109,7 @@ export const SKIP = Object.freeze({
  *
  * ⚠️ **Stops hero work and nothing else.** The Token's own rules (Provides,
  * triggers) never read this. Saved on the
- * instance, so it survives a reload and a move; a Vault copy is charges only,
- * so a Token that goes through the Vault comes back allowed.
+ * instance, so it survives a reload and a move.
  */
 export function isDisallowed(instance) {
     return instance?.disallowed === true;
@@ -606,8 +605,8 @@ function keepOrRelease(r, heroId, dirty) {
     }
 
     // The claimed Token has left the board — and with it any fight against it
-    // (a depleted camp has already ended its own; a Token sent to the Tray or
-    // the Vault has not). Its last spot is the claim's remembered point.
+    // (a depleted camp has already ended its own; a removed Token has not).
+    // Its last spot is the claim's remembered point.
     BoardCombat.endFightOfHero(heroId);
     const here = sameKindAt(claim.x, claim.y, claim.typeId);
     if (here && !BoardState.heroOfInstance(here.id)) {
@@ -1029,7 +1028,7 @@ export function teardown() {
 export function init() {
     teardown();
     const dirty = () => markDirty();
-    for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, 'token_bank_updated', 'inventory_updated']) {
+    for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, 'inventory_updated']) {
         unsubscribers.push(EventBus.subscribe(event, dirty));
     }
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (payload = {}) => cycleCompleted(payload.heroId)));

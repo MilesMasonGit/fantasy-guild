@@ -35,7 +35,6 @@ import * as BoardPromotion from '../board/BoardPromotion.js';
 import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
 import * as FlagRules from '../board/FlagRules.js';
-import * as TokenBank from '../board/TokenBank.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { matW, matH } from '../../config/matGeometry.js';
@@ -43,7 +42,7 @@ import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 
 /**
  * The opening state of a new game (FP-44): the Guild Hall already standing on
- * the mat, an empty Tray, no items, and zero Heroes.
+ * the mat, no items, and zero Heroes.
  *
  * Each entry is a Token type and the mat point it starts at.
  *
@@ -105,7 +104,6 @@ export const EngineBootstrap = {
             BoardPromotion,
             Flags,
             FlagRules,
-            TokenBank,
             QuestManager,
             TimeManager,
             TimeBankManager,
@@ -229,10 +227,7 @@ export const EngineBootstrap = {
             state.heroes = [];
         }
 
-        // The Tray starts empty; the opening Tokens stand on the mat (FP-44).
-        if (state.board) {
-            state.board.tray = [];
-        }
+        // The opening Tokens stand on the mat (FP-44).
         for (const { typeId, x, y } of openingMat()) {
             BoardState.addToken(
                 BoardState.createTokenInstance(typeId, tokenStartingUses(typeId)), x, y
@@ -247,7 +242,7 @@ export const EngineBootstrap = {
             GameState.exploration = { count: 0 };
         }
 
-        logger.info('Engine', 'New game: 0 heroes, the Guild Hall on the mat, an empty Tray, 0 items.');
+        logger.info('Engine', 'New game: 0 heroes, the Guild Hall on the mat, 0 items.');
     },
 
     /**

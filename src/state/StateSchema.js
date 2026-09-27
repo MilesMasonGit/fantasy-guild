@@ -29,7 +29,8 @@
  *           at a point on the mat (`board.tokens`), not by tile, vacancies by
  *           the spot that ran dry, and the terrain fields leave the board.
  *           (Vacancies went again with the Managers, Token Lifecycle 9.2: an
- *           older save's `board.vacancies` is dropped on load, no bump.) Old
+ *           older save's `board.vacancies` is dropped on load, no bump; likewise
+ *           the Token Vault and Tray fields, Token Lifecycle 9.3.) Old
  *           saves are refused through the existing version check — no message
  *           of their own, no export, no conversion.
  */
@@ -64,24 +65,11 @@ export function createEmptyBoard() {
         // carries on; everyone else starts beside their flag. Written by
         // `BoardState` on arrival, erased when the hero lets go.
         workClaims: {},
-        tokenBank: {},
-        tray: [],
         sprites: [],
-        // Monotonic z-index handed out by `BoardState.nextTrayZ()` so the Token
-        // picked up last sits on top of the Tray pile. Persisted, so the pile
-        // keeps its stacking order across a reload.
-        nextTrayZ: 0,
-        // Recomputed from the Guild Hall ranks by GuildUpgradeManager.recompute()
-        // on every load; TokenBank.slotCap() falls back to its own base if this
-        // is still null.
-        tokenBankSlots: null,
-        // Likewise rank-derived (1 + token_bank_tabs). TokenGroups.unlockedCount()
-        // floors it at TOKEN_TAB_FREE.
-        tokenTabsUnlocked: 1,
-        // The Token Vault's tabs. Shape is owned by `TokenGroups.makeDefault()`
-        // and built on first read, deliberately — declaring it here would be a
-        // second copy of that shape. Null means "not opened yet".
-        tokenGroups: null
+        // `tokenBank`, `tray`, `nextTrayZ`, `tokenBankSlots`, `tokenTabsUnlocked`
+        // and `tokenGroups` went with the Token Vault and the Tray (Token
+        // Lifecycle 9.3): Tokens live on the mat. `migrateState` drops them
+        // from an older save.
 
         // Terrain's `terrain`, `nextPaintOrder` and `terrainSeed` left the board
         // in slice 1.6a: they were keyed by tile, and terrain is dormant (FP-10).
@@ -177,8 +165,9 @@ export const INITIAL_STATE = {
         // Per-biome task discovery: { biomeId: ['task1', 'task2', ...] }
         discoveredTasksByBiome: {},
         // Guild Hall upgrade ranks: { upgradeId: rank }. Owned by
-        // GuildUpgradeManager, which derives rosterLimit, the bank caps and the
-        // Token Vault caps from it on every load.
+        // GuildUpgradeManager, which derives rosterLimit and the bank caps
+        // from it on every load. (The Token Vault tracks went in Token
+        // Lifecycle 9.3; `migrateState` drops their ranks.)
         guildUpgrades: {}
         // `mapDiscoveries` and `guildHallMapOpens` went with the Map bursts
         // (Token Lifecycle 9.1); `migrateState` drops them from an older save.
@@ -242,13 +231,8 @@ export const INITIAL_STATE = {
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero)
     //   nextFlagOrder number                the next flag's plantedAt
-    //   tokenBank   { [typeId]: [{ usesRemaining }, ...] }  capped by DISTINCT types (D-137)
-    //   tokenBankSlots  number              derived from the Storage upgrade track
-    //   tray        [ { typeId, usesRemaining }, ... ]   ~15-20 slots (D-168)
-    //   sprites     [ ... ]                 loot on the floor (D-40), added Phase 3
-    //   nextTrayZ   number                  Tray stacking counter
-    //   tokenTabsUnlocked  number           derived from the Token tabs upgrade
-    //   tokenGroups { groupOrder, groupDefs, overrides }  the Vault's tabs
+    //   sprites     [ ... ]                 item loot on the floor (D-40), added Phase 3;
+    //                                       no Token sprites since Token Lifecycle 9.3
     //
     // ⚠️ **`flags` is a hero's place on the board, and it is the only copy.**
     // Which Token a flag works is a runtime claim; the save keeps only

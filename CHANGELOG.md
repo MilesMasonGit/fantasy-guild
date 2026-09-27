@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The Token Vault and Tray are gone.** Tokens live only on the mat: a Token a station makes (such
+  as a Copper Pickaxe) is placed right beside it, and waits if the mat is full. The Vault drawer, its
+  upgrades and right-click deposit are removed; item loot is unchanged.
 - **Enemies drop everything they list.** Each line of an enemy's drops now rolls on its own chance, like
   gathering does, so a Goblin always drops Bones and sometimes Copper Ore as well.
 - **Goblin Camps.** Buy a Goblin Camp at the Shop (10 Stone, 10 Oak Wood); it keeps up to 3 Goblins on

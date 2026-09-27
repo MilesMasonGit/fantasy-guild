@@ -44,8 +44,6 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
             tok_b: { id: 'tok_b', typeId: 'token_sawmill', x: 864, y: 864, placedAt: 1, usesRemaining: null, cycleElapsedMs: 0 }
         };
         GameState.state.board.nextTokenOrder = 2;
-        GameState.state.board.tokenBank = { token_forest: [{ usesRemaining: 5000 }] };
-        GameState.state.board.tray = [{ typeId: 'token_bear', usesRemaining: 12 }];
 
         const revived = JSON.parse(JSON.stringify(GameState.serialize()));
         const migrated = migrateState(revived.state, revived.version);
@@ -64,9 +62,8 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         // An unlimited-use Token stores null charges (D-176) and must not come
         // back as 0, which would read as depleted.
         expect(migrated.board.tokens.tok_b.usesRemaining).toBeNull();
-
-        expect(migrated.board.tokenBank.token_forest[0].usesRemaining).toBe(5000);
-        expect(migrated.board.tray[0].typeId).toBe('token_bear');
+        // (It also round-tripped the Token Vault and the Tray, which went in
+        // Token Lifecycle 9.3 — see the old-save suite below.)
     });
 
     it('refuses saves from a different schema version (locked no-migration rule)', () => {
@@ -89,5 +86,82 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         const migrated = migrateState(data.state, GAME_VERSION);
         expect(migrated.progress.rosterLimit).toBe(0);
         expect(validateSaveData({ version: GAME_VERSION, state: migrated }).valid).toBe(true);
+    });
+});
+
+/**
+ * ⭐ Token Lifecycle 9.3: the Token Vault and the dormant Tray are retired. A
+ * save written before that still loads; their fields, its Token loot on the
+ * floor and its ranks in the two Vault upgrade tracks are dropped. Item loot,
+ * the Tokens on the mat and every other upgrade rank are kept.
+ */
+describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', () => {
+    /** The pre-9.3 shape, built by hand the way such a save sits in storage. */
+    function oldSave() {
+        GameState.initNew();
+        const data = JSON.parse(JSON.stringify(GameState.serialize()));
+        const board = data.state.board;
+        board.tokens = {
+            tok_a: { id: 'tok_a', typeId: 'token_oak_forest', x: 400, y: 300, placedAt: 0, usesRemaining: 10, cycleElapsedMs: 0 }
+        };
+        board.tokenBank = { token_copper_pickaxe: [{ usesRemaining: 20 }, { usesRemaining: 7 }] };
+        board.tray = [{ typeId: 'token_coast', usesRemaining: 12, x: 0.5, y: 0.5, z: 3 }];
+        board.nextTrayZ = 3;
+        board.tokenBankSlots = 96;
+        board.tokenTabsUnlocked = 2;
+        board.tokenGroups = { groupOrder: ['vault-tab-1'], groupDefs: {}, overrides: {} };
+        board.sprites = [
+            { id: 's1', kind: 'item', refId: 'item_oak_wood', quantity: 3, x: 10, y: 10, bornAt: 0 },
+            { id: 's2', kind: 'token', refId: 'token_copper_woodaxe', quantity: 1, x: 20, y: 20, usesRemaining: 20, bornAt: 0 }
+        ];
+        data.state.progress.guildUpgrades = { roster_size: 2, token_bank_slots: 1, token_bank_tabs: 1, bank_slots: 1 };
+        return data;
+    }
+
+    it('migrates without complaint and passes the validator', () => {
+        const data = oldSave();
+        const migrated = migrateState(data.state, data.version);
+        expect(validateSaveData({ version: GAME_VERSION, state: migrated }).errors).toEqual([]);
+    });
+
+    it('drops every Vault and Tray field from the board', () => {
+        const data = oldSave();
+        const migrated = migrateState(data.state, data.version);
+        for (const field of ['tokenBank', 'tray', 'nextTrayZ', 'tokenBankSlots', 'tokenTabsUnlocked', 'tokenGroups']) {
+            expect(migrated.board).not.toHaveProperty(field);
+        }
+    });
+
+    it('drops Token loot from the floor and keeps item loot', () => {
+        const data = oldSave();
+        const migrated = migrateState(data.state, data.version);
+        expect(migrated.board.sprites.map(s => s.id)).toEqual(['s1']);
+    });
+
+    it('keeps the Tokens on the mat exactly as they were', () => {
+        const data = oldSave();
+        const migrated = migrateState(data.state, data.version);
+        expect(migrated.board.tokens.tok_a).toEqual(data.state.board.tokens.tok_a);
+    });
+
+    it('drops the two Vault upgrade ranks and keeps the rest', () => {
+        const data = oldSave();
+        const migrated = migrateState(data.state, data.version);
+        expect(migrated.progress.guildUpgrades).toEqual({ roster_size: 2, bank_slots: 1 });
+    });
+
+    it('does not mutate the save handed to it', () => {
+        const data = oldSave();
+        const before = JSON.stringify(data.state);
+        migrateState(data.state, data.version);
+        expect(JSON.stringify(data.state)).toBe(before);
+    });
+
+    it('loads into a live game', async () => {
+        const data = oldSave();
+        await GameState.initFromSave(migrateState(data.state, data.version));
+        expect(GameState.state.board.tokens.tok_a.typeId).toBe('token_oak_forest');
+        expect(GameState.state.board.tokenBank).toBeUndefined();
+        expect(GameState.state.board.tray).toBeUndefined();
     });
 });

@@ -141,7 +141,7 @@ describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)
     it('resolves back to base once the neighbour is removed', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
-        Placement.returnTokenToVaultById(idAt(NEIGHBOUR));
+        Placement.removePlacedToken(idAt(NEIGHBOUR));
         TileModifiers.rebuildAround([NEIGHBOUR]);
 
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
@@ -231,7 +231,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         run(17000);
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
 
-        Placement.returnTokenToVaultById(idAt(NEIGHBOUR));
+        Placement.removePlacedToken(idAt(NEIGHBOUR));
         TileModifiers.rebuildAround([NEIGHBOUR]);
         place(NEIGHBOUR, 'fixture_context_b');
         run(17000);
@@ -557,7 +557,7 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
         place(A, 'fixture_producer', 'hero_1');
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
 
-        Placement.returnTokenToVaultById(idAt(A));
+        Placement.removePlacedToken(idAt(A));
         TileModifiers.rebuildAround([A]);
         place(A, 'fixture_seafood_producer', 'hero_1');
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);

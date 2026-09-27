@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useEngine } from '../hooks/useEngine.js';
-import { listTokenTypeIds, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { Bug, Plus, X } from 'lucide-react';
@@ -228,30 +227,11 @@ export const TestDashboard = React.memo(() => {
         // rainfall, chaos, invasions) are deleted with the systems they drove.
         // Board tools replace them, phase by phase; spawn-loot lands in Phase 3.
         {
-            label: "🎁 Fill Vault with Tokens",
-            onClick: () => {
-                // One of every Token type, into the Vault to drag onto the mat.
-                // It filled the Tray until slice 1.9 retired it.
-                const ids = listTokenTypeIds();
-                let added = 0;
-                for (const typeId of ids) {
-                    const instance = engine.BoardState.createTokenInstance(
-                        typeId, tokenStartingUses(typeId)
-                    );
-                    if (engine.TokenBank.deposit(instance)) added++;
-                }
-                engine.EventBus.publish('token_bank_updated');
-                engine.EventBus.publish('state_changed');
-                console.log(`[Dev] Added ${added} Tokens to the Vault`);
-            }
-        },
-        {
             label: "✨ Scatter Loot (burst)",
             onClick: () => {
-                // Stands in for a Map burst until Phase 8 — 3-6 things, mixed
-                // items and Tokens, scattered from random tiles (D-167).
+                // 3-6 item stacks scattered from random points (D-167). Items
+                // only: Token loot went with the Vault (Token Lifecycle 9.3).
                 const items = ['item_yew_log', 'item_glowcap', 'item_spider_silk'];
-                const tokens = listTokenTypeIds();
                 const count = 3 + Math.floor(Math.random() * 4);
                 for (let i = 0; i < count; i++) {
                     // A random point on the mat, as a fraction of it, so the
@@ -266,14 +246,9 @@ export const TestDashboard = React.memo(() => {
                             y: hh * (163 / 1126) + Math.random() * hh * (800 / 1126)
                         }
                     };
-                    if (Math.random() < 0.6) {
-                        engine.SpriteLayer.addSprite(
-                            'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), from
-                        );
-                    } else {
-                        const typeId = tokens[Math.floor(Math.random() * tokens.length)];
-                        engine.SpriteLayer.addSprite('token', typeId, 1, from, tokenStartingUses(typeId));
-                    }
+                    engine.SpriteLayer.addSprite(
+                        'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), from
+                    );
                 }
                 console.log(`[Dev] Scattered ${count} things onto the board`);
             }
@@ -283,7 +258,6 @@ export const TestDashboard = React.memo(() => {
             onClick: () => {
                 const state = engine.GameState.state;
                 state.board.tokens = {};
-                state.board.tray = [];
                 state.board.sprites = [];
                 engine.EventBus.publish('state_changed');
                 console.log('[Dev] Board cleared');

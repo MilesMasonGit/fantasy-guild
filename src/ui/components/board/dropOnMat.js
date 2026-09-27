@@ -1,10 +1,7 @@
 // Fantasy Guild — the one drop function for the playmat (Free Playmat slice 1.6d)
 
-import { EventBus } from '../../../systems/core/EventBus.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
-import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 
@@ -21,16 +18,15 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  *   rule (FP-88). ⭐ Nothing snaps: the old spot-snapping stopgap and the
  *   practice outline it needed both went with this slice.
  *
- * A Token can come from these places, told apart by its payload's `from`:
- * `instanceId` (a Token on the mat),
- * `spriteId` (loot on the floor), `vaultTypeId`, or none (a bare
- * `typeId`: make one).
+ * A Token can come from two places, told apart by its payload's `from`:
+ * `instanceId` (a Token on the mat), or none (a bare `typeId`: make one).
+ * (Token loot on the floor and the Vault were the other two until both
+ * retired in Token Lifecycle 9.3.)
  *
  * ## ⚠️ Nothing here decides whether a Token may land
- * Every rule lives in `MatPlacement.js`, `Placement.js` and `VaultTransfer.js`.
- * This function works out what the player meant, and puts the Token back exactly
- * where it came from if the answer is no (D-138) — the Vault, the
- * floor it was lifted from, the spot it was moved off.
+ * Every rule lives in `MatPlacement.js` and `Placement.js`. This function
+ * works out what the player meant, and a refused move leaves the Token on the
+ * spot it was moved off (D-138).
  *
  * @returns the placement result (`{ success, reason?, flyBack? }`) or null
  */
@@ -71,28 +67,6 @@ export function dropOnMat(payload, point) {
 
     const from = payload.from || {};
 
-    if (from.spriteId != null) {
-        const instance = SpriteLayer.takeTokenSprite(from.spriteId);
-        if (!instance) return null;
-        const result = announce(flownBack(Placement.placeTokenAt(instance, point)));
-        if (!result.success) {
-            // Refused: back onto the floor where it was dropped.
-            SpriteLayer.addSprite('token', instance.typeId, 1, { centre: { x: point.x, y: point.y } }, instance.usesRemaining);
-        } else {
-            EventBus.publish('loot_token_placed', { instanceId: instance.id, typeId: instance.typeId });
-        }
-        return result;
-    }
-
-    // ⚠️ No `vault_withdrawn` / `token_bank_updated` publish on this route.
-    // `TokenBank.withdraw` already made both, and republishing them counted one
-    // withdrawal twice on every quest that watches for it (CR2-146).
-    if (from.vaultTypeId != null) {
-        return announce(flownBack(VaultTransfer.withdrawTo(from.vaultTypeId, { at: point })));
-    }
-
-    // ⚠️ Checked LAST of the origins: `instanceId` means "a Token on the mat"
-    // only when no other origin is named.
     if (from.instanceId != null) {
         if (!BoardState.getTokenById(from.instanceId)) return announce(refuse('No Token there'));
         return announce(flownBack(Placement.moveTokenTo(from.instanceId, point)));

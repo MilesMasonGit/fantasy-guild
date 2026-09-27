@@ -8,7 +8,6 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as BoardPromotion from '../systems/board/BoardPromotion.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
@@ -247,7 +246,6 @@ describe('⭐ combat flags roam their radius (FP-32)', () => {
 
     it('a cleared-out camp lets its hero go: no fight, no wait for a restock (SP-55, 9.2)', () => {
         put(14, 'fixture_enemy', 1);
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_enemy', 20));
         fightAt('h1', 14);
         expect(workTileOf('h1')).toBe(14);
 
@@ -454,13 +452,11 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
 
     it('accepting with the last charge leaves the hero free for other work (FPP-12)', () => {
         put(14, 'fixture_promotion', 1);
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_promotion', 1));
         Placement.plantFlagAt('h1', C(14));
         expect(train()).toHaveLength(1);
 
         expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
         expect(tokenAt(14)).toBeNull();
-        expect(BoardState.tokenBankCopies('fixture_promotion').length).toBe(1);
 
         Flags.assign(0);
 
@@ -533,7 +529,7 @@ describe('⭐ disallow (FP-35)', () => {
         expect(TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'logging')).toBe(allowed);
     });
 
-    it('survives a save and reload, and a trip through the Vault drops it', async () => {
+    it('survives a save and reload', async () => {
         put(14, 'fixture_producer');
         Flags.setDisallowed(idAt(14), true);
 
@@ -545,11 +541,7 @@ describe('⭐ disallow (FP-35)', () => {
         Flags.plant('h1', C(14));
         expect(workTileOf('h1')).toBeNull();
         expect(reasons(reloaded)).toEqual([Flags.SKIP.DISALLOWED]);
-
-        BoardState.removeToken(idAt(14));
-        TokenBank.deposit(reloaded);
-        const back = BoardState.takeFromTokenBank('fixture_producer');
-        expect(back).not.toBeNull();
-        expect(back.disallowed).toBeUndefined();
+        // (It also pinned that a trip through the Vault dropped the mark; the
+        // Vault went in Token Lifecycle 9.3.)
     });
 });

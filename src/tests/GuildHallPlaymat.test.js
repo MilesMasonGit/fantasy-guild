@@ -21,8 +21,8 @@ const TOP = GH - SIZE;              // roster_size
 const BOTTOM = GH + SIZE;           // wishing_well
 const LEFT = GH - 1;                // bank_slots
 const FAR_LEFT = GH - 2;            // bank_tabs
-const RIGHT = GH + 1;               // token_bank_slots
-const FAR_RIGHT = GH + 2;           // token_bank_tabs
+const RIGHT = GH + 1;               // empty since the Token Vault tracks went (Token Lifecycle 9.3)
+const FAR_RIGHT = GH + 2;           // empty likewise
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -46,8 +46,11 @@ describe('Guild Hall 7x7 Upgrade Board', () => {
         expect(getUpgradeDefByTile(TOP)?.id).toBe('roster_size');
         expect(getUpgradeDefByTile(LEFT)?.id).toBe('bank_slots');
         expect(getUpgradeDefByTile(FAR_LEFT)?.id).toBe('bank_tabs');
-        expect(getUpgradeDefByTile(RIGHT)?.id).toBe('token_bank_slots');
-        expect(getUpgradeDefByTile(FAR_RIGHT)?.id).toBe('token_bank_tabs');
+        // The two Token Vault tracks left the board with the Vault (9.3).
+        expect(getUpgradeDefByTile(RIGHT)).toBeNull();
+        expect(getUpgradeDefByTile(FAR_RIGHT)).toBeNull();
+        expect(getUpgradeDef('token_bank_slots')).toBeNull();
+        expect(getUpgradeDef('token_bank_tabs')).toBeNull();
     });
 
     it('makes the 4 cardinal tiles directly nearby to center accessible by default', () => {
@@ -61,14 +64,9 @@ describe('Guild Hall 7x7 Upgrade Board', () => {
     it('locks the outer tiles until their direct cardinal neighbor has rank >= 1', () => {
         const ranks = {};
         expect(isTileAccessible(FAR_LEFT, ranks)).toBe(false);  // Bank Tabs needs Bank Slots
-        expect(isTileAccessible(FAR_RIGHT, ranks)).toBe(false); // Vault Tabs needs Vault Slots
 
         ranks.bank_slots = 1;
         expect(isTileAccessible(FAR_LEFT, ranks)).toBe(true);   // Bank Tabs now unlocked!
-        expect(isTileAccessible(FAR_RIGHT, ranks)).toBe(false); // Vault Tabs still locked
-
-        ranks.token_bank_slots = 1;
-        expect(isTileAccessible(FAR_RIGHT, ranks)).toBe(true);  // Vault Tabs now unlocked!
     });
 
     it('refuses purchase of locked tile', () => {

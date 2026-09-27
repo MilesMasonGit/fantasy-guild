@@ -101,13 +101,12 @@ describe('removePlacedToken (slice 5.2)', () => {
         expect(MatCap.placedCount()).toBe(0);
     });
 
-    it('returns nothing: the Bank and the Token Vault are unchanged (TL-1)', () => {
+    it('returns nothing: the Bank is unchanged (TL-1)', () => {
+        // (It also checked the Token Vault, which went in Token Lifecycle 9.3.)
         const { forest } = forestScene();
         const bank = JSON.stringify(GameState.state.inventory);
-        const vault = JSON.stringify(BoardState.getTokenBank());
         Placement.removePlacedToken(forest.id);
         expect(JSON.stringify(GameState.state.inventory)).toBe(bank);
-        expect(JSON.stringify(BoardState.getTokenBank())).toBe(vault);
     });
 
     it('a hero working it moves on to other work (SP-52)', () => {

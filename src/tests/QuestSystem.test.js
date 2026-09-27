@@ -252,15 +252,15 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
     });
 
-    it('the Vault is open from the start — no tutorial gates it (FP-62)', () => {
-        expect(QuestManager.isTokenVaultSendUnlocked()).toBe(true);
+    // 'the Vault is open from the start — no tutorial gates it (FP-62)' went
+    // with the Vault (Token Lifecycle 9.3).
 
-        put(10, BoardState.createTokenInstance('token_oak_forest'));
-        expect(Placement.returnTokenToVaultById(idAt(10)).success).toBe(true);
-
-        SpriteLayer.addSprite('token', 'token_charcoal_kiln', 1, { centre: { x: 64, y: 64 } }, 10);
-        const spriteId = SpriteLayer.getSprites().find(s => s.refId === 'token_charcoal_kiln')?.id;
-        expect(SpriteLayer.sendTokenToVault(spriteId)).toBe(true);
+    it('quests that pointed at the Vault still load without crashing (re-pointed in 9.5)', () => {
+        // Their events have no publisher now; they must simply sit there.
+        for (const t of ['open_vault', 'vault_withdrawn', 'vault_deposited', 'loot_token_placed']) {
+            expect(() => QuestManager.reportProgress(t)).not.toThrow();
+        }
+        expect(() => QuestManager.getActiveQuests()).not.toThrow();
     });
 
     it('tutorial 5 is finished by moving a Token, and an old save’s copy is re-pointed on load', () => {

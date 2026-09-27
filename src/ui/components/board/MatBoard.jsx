@@ -21,7 +21,6 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as Placement from '../../../systems/board/Placement.js';
-import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { GameState } from '../../../state/GameState.js';
@@ -194,11 +193,8 @@ export const MatBoard = ({
         announce(Placement.recallHeroById(heroId));
     }, []);
 
-    // Right-click deposits a Token in the Vault (FP-45); the Tray it used to
-    // go to was retired in slice 1.9.
-    const handleReturnToVault = useCallback((instanceId) => {
-        announce(VaultTransfer.depositFrom({ instanceId }));
-    }, []);
+    // Right-click on a Token no hero works does nothing since the Vault went
+    // (Token Lifecycle 9.3); it used to deposit the Token there (FP-45).
 
     const handleAutoAssignHero = useCallback((instanceId) => {
         const heroes_ = GameState.state?.heroes || [];
@@ -273,7 +269,6 @@ export const MatBoard = ({
                     onClearInspect={onClearInspect}
                     onAutoAssignHero={handleAutoAssignHero}
                     onOpenRecipes={onOpenRecipes}
-                    onReturnToVault={handleReturnToVault}
                     onRecallHero={handleRecallHero}
                 />
             ))}

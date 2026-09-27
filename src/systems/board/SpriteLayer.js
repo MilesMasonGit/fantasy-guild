@@ -8,39 +8,35 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { TOKEN_PX, MAT_STEP_U } from '../../config/matGeometry.js';
 import { matW, matH } from '../../config/matGeometry.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from './BoardState.js';
-import * as TokenBank from './TokenBank.js';
-import { QuestManager } from '../quests/QuestManager.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 
 /**
- * SpriteLayer — loose loot **floating above the grid** (D-40).
+ * SpriteLayer — loose **item** loot floating above the mat (D-40).
  *
- * Sprites occupy no tile and are not banked until collected. They are the
- * board's answer to three separate problems, which is why they are built before
- * anything produces:
+ * Sprites are not banked until collected. They answer two problems:
  *
- *  1. **Loot presentation.** Items pop out on an arc and settle 1–2 tiles from
- *     their source (UI §6).
- *  2. **Map bursts** (D-142) and **crafted Tokens** (D-148) both arrive this
- *     way — the burst is the game's headline reward beat, and it is literally
- *     this layer.
- *  3. ⚠️ **Overflow storage** (D-138). **Nothing is ever lost to a full Bank.**
- *     When there is no slot, the item or Token stays on the board until the
- *     player makes room — so a full Bank announces itself *visibly*, as litter
- *     piling up across the grid, rather than through an error message. This is
- *     what protects a one-copy-ever Mythic.
+ *  1. **Loot presentation.** Items pop out on an arc and settle beside their
+ *     source (UI §6), and are collected by hovering over them (TL-9).
+ *  2. ⚠️ **Overflow storage** (D-138). **Nothing is ever lost to a full Bank.**
+ *     When there is no slot, the item stays on the mat until the player makes
+ *     room — so a full Bank announces itself *visibly*, as litter piling up,
+ *     rather than through an error message.
+ *
+ * ⭐ **Only items.** Map bursts (9.1) and crafted Tokens used to arrive here
+ * as Token sprites bound for the Vault; since Token Lifecycle 9.3 a Token a
+ * recipe makes stands on the mat beside its station (TL-8,
+ * `Placement.placeProduct`) and there is no Vault. An older save's Token
+ * sprites are dropped on load (`migrateState`).
  *
  * ## Sprites are PERSISTED, unlike every other piece of board runtime state
  * Cycle timers are deliberately not saved (D-54 forfeits them anyway). Sprites
- * are the exception: a Mythic sitting on the floor because the Token Bank was
- * full cannot evaporate on reload. That would be exactly the loss D-138 exists
- * to prevent, arriving by a different route.
+ * are the exception: loot sitting on the floor because the Bank was full
+ * cannot evaporate on reload. That would be exactly the loss D-138 exists to
+ * prevent, arriving by a different route.
  *
  * ## Collection confers no mechanical advantage (D-41, D-88)
  * Manual and automatic pickup are **identical in outcome**. The mechanic exists
@@ -193,7 +189,7 @@ export function sourcePoint(source) {
  *
  * If `existingTarget` is provided, lands in close proximity (~24-48px) to that stack.
  */
-function scatterFrom(source, kind = 'item', existingTarget = null) {
+function scatterFrom(source, existingTarget = null) {
     const sourcePos = sourcePoint(source);
 
     if (existingTarget) {
@@ -217,9 +213,7 @@ function scatterFrom(source, kind = 'item', existingTarget = null) {
 
     const angle = Math.random() * Math.PI * 2;
     // Items land within a tile's distance of the output token (0.4 - 0.85 TOKEN_PX)
-    const distance = kind === 'token'
-        ? TOKEN_PX * (0.5 + 0.3 * Math.random())
-        : TOKEN_PX * (0.4 + 0.45 * Math.random());
+    const distance = TOKEN_PX * (0.4 + 0.45 * Math.random());
 
     return {
         x: clampX(sourcePos.x + Math.cos(angle) * distance),
@@ -282,60 +276,58 @@ function scheduleAbsorption(spriteId, delayMs) {
  * for ~800ms and smoothly sliding in over 300ms. Tokens further away establish
  * their own separate stacks.
  *
- * @param {'item'|'token'} kind
- * @param {string} refId       item id or Token type id
+ * @param {'item'} kind      only `'item'`: Token sprites retired in Token
+ *        Lifecycle 9.3 (TL-8), and any other kind is refused
+ * @param {string} refId       item id
  * @param {number} quantity
  * @param {string|object|null} source  where it came from — a Token instance id,
- *        `{ centre: {x, y} }`, a Tray origin or a Map box (see `sourcePoint`),
- *        or null for overflow
- * @param {number|null} usesRemaining  Tokens only; null means unlimited (D-176)
+ *        `{ centre: {x, y} }` or a box (see `sourcePoint`), or null for overflow
  */
-export function addSprite(kind, refId, quantity = 1, source = null, usesRemaining = null, terrain = null) {
+export function addSprite(kind, refId, quantity = 1, source = null) {
     const list = sprites();
     if (!list || !refId || quantity <= 0) return null;
+    if (kind !== 'item') {
+        logger.warn('SpriteLayer', `Refused a ${kind} sprite for ${refId}: only items drop as loot`);
+        return null;
+    }
 
     // CR2-108c / CR2-063. The sprite is still created — a nameless thing on the
     // board is better than loot silently evaporating, and the owner's ruling is
     // warn-only. But an id nothing answers to draws no artwork and no name, so
     // it reads as a glitch rather than as content that needs re-pointing.
-    if (kind === 'item' && !getItem(refId)) {
+    if (!getItem(refId)) {
         warnMissingContent('SpriteLayer', 'item', refId,
             'the loot that just dropped has no name or artwork to show');
-    } else if (kind === 'token' && !getTokenType(refId)) {
-        warnMissingContent('SpriteLayer', 'Token', refId,
-            'the Token that just appeared on the board has no name or artwork to show');
     }
 
+    ItemRateTracker.recordGain(refId, quantity);
+    const sourcePos = sourcePoint(source);
+
+    // Find primary stacks of the same item
     let targetExisting = null;
-    if (kind === 'item') {
-        ItemRateTracker.recordGain(refId, quantity);
-        const sourcePos = sourcePoint(source);
+    const candidates = list.filter(s =>
+        s.kind === 'item' && s.refId === refId && !s.targetStackId
+    );
 
-        // Find primary stacks of the same item
-        const candidates = list.filter(s =>
-            s.kind === 'item' && s.refId === refId && !s.targetStackId
-        );
-
-        if (candidates.length > 0) {
-            if (sourcePos) {
-                // Find closest candidate within MAX_STACK_MERGE_DISTANCE_PX (2 tiles)
-                let closest = null;
-                let closestDist = Infinity;
-                for (const cand of candidates) {
-                    const dist = Math.hypot(cand.x - sourcePos.x, cand.y - sourcePos.y);
-                    if (dist <= MAX_STACK_MERGE_DISTANCE_PX && dist < closestDist) {
-                        closest = cand;
-                        closestDist = dist;
-                    }
+    if (candidates.length > 0) {
+        if (sourcePos) {
+            // Find closest candidate within MAX_STACK_MERGE_DISTANCE_PX (2 tiles)
+            let closest = null;
+            let closestDist = Infinity;
+            for (const cand of candidates) {
+                const dist = Math.hypot(cand.x - sourcePos.x, cand.y - sourcePos.y);
+                if (dist <= MAX_STACK_MERGE_DISTANCE_PX && dist < closestDist) {
+                    closest = cand;
+                    closestDist = dist;
                 }
-                targetExisting = closest;
-            } else {
-                targetExisting = candidates[0];
             }
+            targetExisting = closest;
+        } else {
+            targetExisting = candidates[0];
         }
     }
 
-    const { x, y, fromX, fromY } = scatterFrom(source, kind, targetExisting);
+    const { x, y, fromX, fromY } = scatterFrom(source, targetExisting);
     const sprite = {
         id: nextId(),
         kind,
@@ -347,12 +339,7 @@ export function addSprite(kind, refId, quantity = 1, source = null, usesRemainin
         fromY,
         targetStackId: targetExisting ? targetExisting.id : null,
         absorbAt: targetExisting ? Date.now() + 1100 : null,
-        usesRemaining: kind === 'token' ? usesRemaining : null,
-        // A Token that bursts onto the board arrives as a sprite and only
-        // becomes an instance when it is picked up, so the Map's terrain stamp
-        // has to ride along on the sprite or it is lost between the two
-        // (D-T6). Only set when there is one, so item sprites are unchanged.
-        ...(kind === 'token' && terrain ? { terrain } : {}),
+        usesRemaining: null,
         bornAt: Date.now()
     };
     list.push(sprite);
@@ -408,9 +395,8 @@ function announceCollected(sprite, destination = null, extra = {}) {
 }
 
 /**
- * Collect one sprite into storage, routing **by kind**: items go to the Bank,
- * Tokens to the Token Vault (the Tray they used to try first was retired in
- * slice 1.9).
+ * Collect one item sprite into the Bank. (Token sprites went to the Token
+ * Vault until both retired in Token Lifecycle 9.3; a stray one is left alone.)
  *
  * ⚠️ **Collection can fail, and failing is not an error.** Auto-collect cannot
  * collect into a full Bank, so a player running at zero visible stacks will
@@ -456,46 +442,12 @@ export function collectSprite(id) {
             return true;
         }
 
-        // Tokens go **to the Token Vault, or stay on the floor** when it is full.
-        const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining, sprite.terrain || null);
-        instance.isLanding = true;
-        if (TokenBank.deposit(instance)) {
-            takeSprite(id);
-            announceCollected(sprite, 'vault');
-            changed = true;
-            return true;
-        }
-        return false;   // Vault full — nothing is lost, it waits
+        // No other kind drops any more (Token Lifecycle 9.3).
+        return false;
     } finally {
         collecting = false;
         if (changed) announceSpriteChange();
     }
-}
-
-/**
- * Direct right-click gesture: send a loose floor Token straight to the Token Vault.
- * Triggers the particle fly animation to the Vault icon/drawer.
- */
-export function sendTokenToVault(id) {
-    const sprite = getSprites().find(s => s.id === id);
-    if (!sprite || sprite.kind !== 'token') return false;
-
-    if (!QuestManager.isTokenVaultSendUnlocked()) {
-        NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
-        return false;
-    }
-
-    const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining, sprite.terrain || null);
-    if (!TokenBank.deposit(instance)) {
-        NotificationSystem.warning('No room in the Vault');
-        return false;
-    }
-
-    takeSprite(id);
-    announceCollected(sprite, 'vault', { instanceId: instance.id });
-    EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-    EventBus.publish('state_changed');
-    return true;
 }
 
 /**
@@ -515,23 +467,6 @@ export function collectAll() {
         }
         return taken;
     });
-}
-
-/**
- * Take a Token sprite off the board as a placeable instance, without banking it.
- *
- * This is the grab-and-place path (UI §6): click and drag a Token sprite
- * **straight onto a tile**, with no trip through Bank or Tray. It is what makes
- * opening a Map flow directly into building — burst, grab the two things you
- * want, put them down, let the rest tidy itself away.
- */
-export function takeTokenSprite(id) {
-    const sprite = getSprites().find(s => s.id === id && s.kind === 'token');
-    if (!sprite) return null;
-    takeSprite(id);
-    EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-    EventBus.publish('state_changed');
-    return BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining, sprite.terrain || null);
 }
 
 /**

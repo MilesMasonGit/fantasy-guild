@@ -177,7 +177,6 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
         const moved = BoardState.getTokenById(stranded.id);
         expect(moved).not.toBeNull();                                  // never removed
         expect(MatPlacement.insideMat('rs_small', moved)).toBe(true);  // and on the mat
-        expect(BoardState.getTray()).toHaveLength(0);                  // not quietly stored
         // Exactly where the clamp put it: on the mat, overlapping a neighbour.
         expect({ x: moved.x, y: moved.y }).toEqual(MatPlacement.clampInside('rs_small', { x: 1700, y: 1000 }));
         expect(summary.crowded).toBe(1);

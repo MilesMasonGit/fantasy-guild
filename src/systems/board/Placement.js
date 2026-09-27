@@ -4,12 +4,11 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import * as Flags from './Flags.js';
 import { clampToMat, matW, matH } from '../../config/matGeometry.js';
-import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
-import * as TokenBank from './TokenBank.js';
+import * as MatCap from './MatCap.js';
 import * as StationRecipe from './StationRecipe.js';
-import { QuestManager } from '../quests/QuestManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 
 /**
@@ -38,7 +37,8 @@ import { warnMissingContent } from '../../utils/missingContent.js';
  *
  * ## ⭐ Every route takes a mat point (slice 1.6d-2)
  * The six index-taking adapters that stood at the bottom of this file —
- * `placeToken`, `moveToken`, `returnTokenToTray`, `returnTokenToVault`,
+ * `placeToken`, `moveToken`, `returnTokenToTray`, `returnTokenToVault`
+ * (its by-id successor went with the Vault, Token Lifecycle 9.3),
  * `placeHero` and `moveFlag` — were deleted with the grid. Nothing on the mat is
  * addressed by anything but a point or an instance id.
  */
@@ -109,7 +109,7 @@ function isGuildHall(t) {
  * it is the mat's centre, read live since the mat can be resized.
  *
  * Moved here from `Cartographer.js` when the Map bursts retired (Token
- * Lifecycle 9.1); the Shop and the Vault still land Tokens beside the Hall.
+ * Lifecycle 9.1); the Shop lands what it sells beside the Hall.
  */
 export function centreOfBoard() {
     const hall = BoardState.tokens().find(isGuildHall);
@@ -141,7 +141,9 @@ function refuseWithAlert(point, typeId, decision) {
  *
  * @param {object} instance the Token being placed (not yet on the mat, or being moved)
  * @param {{x: number, y: number}} point where the player let go, in mat units
- * @param {{excludeId?: string, keepCycle?: boolean}} [options]
+ * @param {{excludeId?: string, keepCycle?: boolean, noRestock?: boolean}} [options]
+ *        `noRestock` skips restock-on-copy (FP-50): a Token a recipe makes
+ *        always stands as a Token of its own (TL-8), never tops up a copy.
  * @returns {{success: boolean, reason?: string, x?: number, y?: number,
  *            nudged?: boolean, restocked?: boolean, full?: boolean}}
  */
@@ -176,7 +178,8 @@ export function placeTokenAt(instance, point, options = {}) {
 
     const decision = MatPlacement.dropAt(instance, at, {
         excludeId,
-        plan: { id: instance.id }
+        plan: { id: instance.id },
+        noRestock: !!options.noRestock
     });
 
     if (decision.status === 'full') return refuseWithAlert(at, instance.typeId, decision);
@@ -288,32 +291,54 @@ export function moveTokenTo(id, point) {
     return result;
 }
 
-/** Lift the Token with id `id` off the mat and deposit it straight into the Vault. */
-export function returnTokenToVaultById(id) {
-    const instance = BoardState.getTokenById(id);
-    if (!instance) return refuse('No Token there');
-    if (isPermanentToken(instance.typeId, instance)) return refusePermanent(instance);
+// ---------------------------------------------------------------------------
+// A Token a recipe makes (Token Lifecycle 9.3, TL-8)
+// ---------------------------------------------------------------------------
 
-    if (!QuestManager.isTokenVaultSendUnlocked()) {
-        return refuse('Token Vault storage unlocks after completing "Place a Dropped Token".');
-    }
+/**
+ * Whether `count` copies of `typeId`, made by the Token `stationId`, can land
+ * on the mat beside it right now. Pure: asked BEFORE the cycle pays, so a full
+ * mat holds the cycle rather than spending its inputs on a Token with nowhere
+ * to go (TL-8, "if the mat is full the cycle waits").
+ *
+ * Three things must hold: the mat cap has room for every copy (they are
+ * `placed`, SP-67); a Mythic of that type is not already on the mat (D-177);
+ * and there is a legal spot within nudge reach of the station, the same
+ * search a drop there would make.
+ *
+ * ⚠️ The spot is checked for the first copy only. Every shipped recipe that
+ * makes a Token makes exactly one; a recipe making several could, on a very
+ * crowded mat, find room for the first and not a later one.
+ */
+export function hasRoomForProduct(stationId, typeId, count = 1) {
+    if (!typeId || count <= 0) return true;
+    const station = BoardState.getTokenById(stationId);
+    const from = pointOf(station);
+    if (!from) return false;
+    if (!MatCap.canPlaceMore(count)) return false;
+    if (mythicAlreadyPlaced(typeId)) return false;
+    return !!MatPlacement.findSpot(typeId, from);
+}
 
-    const at = pointOf(instance);
-
-    // The Vault is where a station's recipe memory ends (concept §2.1).
-    forfeitCycle(instance);
-    StationRecipe.clearSelection(instance);
-    if (!TokenBank.deposit(instance)) return refuse('No room in the Vault');
-
-    const heroId = BoardState.workerOf(id);
-    BoardState.removeToken(id);
-
-    if (at) EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(at));
-    if (heroId && at) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
-    markAdjacencyDirty([at]);
-    EventBus.publish('state_changed');
-
-    return { success: true, idledHeroId: heroId };
+/**
+ * ⭐ Put one Token a recipe made on the mat beside the station that made it
+ * (TL-8): a fresh `placed` instance at its starting charges, through
+ * {@link placeTokenAt} aimed at the station's own point, so it lands on the
+ * nearest legal spot around it, as a Shop purchase lands beside the Hall.
+ * It never restocks a copy. No Token loot sprite is made any more.
+ *
+ * @returns {{success: boolean, reason?: string, instance?: object}}
+ */
+export function placeProduct(stationId, typeId) {
+    const station = BoardState.getTokenById(stationId);
+    const from = pointOf(station);
+    if (!from) return refuse('The station has left the mat');
+    const instance = BoardState.createTokenInstance(
+        typeId, tokenStartingUses(typeId), null, BoardState.ORIGIN.PLACED
+    );
+    instance.bornAt = Date.now();
+    const res = placeTokenAt(instance, from, { noRestock: true });
+    return res?.success ? { ...res, instance } : res;
 }
 
 /**
@@ -354,21 +379,6 @@ export function removePlacedToken(id) {
     EventBus.publish('state_changed');
 
     return { success: true, idledHeroId: heroId };
-}
-
-/** The Guild Hall's refusal, with the mark that says so. */
-function refusePermanent(instance) {
-    const tName = tokenName(instance?.typeId) || 'Guild Hall';
-    EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-        instanceId: instance.id,
-        severity: 'disallow',
-        type: 'drop_rejected',
-        name: tName,
-        title: 'Guild Hall cannot be removed from the playmat.',
-        rulesText: null,
-        message: 'Guild Hall cannot be removed from the playmat.'
-    });
-    return refuse('Guild Hall cannot be removed from the playmat.');
 }
 
 // ---------------------------------------------------------------------------

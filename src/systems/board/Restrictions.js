@@ -238,23 +238,25 @@ export function checkPlacement(point, typeId, plan = {}) {
  * Bring a board that is *already* violating back into legality.
  *
  * The one case with no last location: a save authored before a restriction
- * existed, loading into a board the rule now forbids. Offenders are lifted into
- * the **Vault** — the owner's stated fallback. Nothing is destroyed, and the
- * board is legal by the time anyone looks at it.
+ * existed, loading into a board the rule now forbids. Offenders are moved to a
+ * legal spot on the mat that `relocate` finds. (They used to be lifted into
+ * the Vault, the owner's stated fallback; the Vault went in Token Lifecycle
+ * 9.3, and Tokens now live on the mat.) Nothing is destroyed, and the board is
+ * legal by the time anyone looks at it.
  *
- * ⚠️ **Re-checked after every lift, one at a time.** A row of four Coasts
- * breaks the rule in several places at once, but removing one Coast can fix
- * three of those findings, and confiscating all four would take three Tokens
- * the player never had to lose. The earliest-arrived offender is lifted and the
- * question asked again.
+ * ⚠️ **Re-checked after every move, one at a time.** A row of four Coasts
+ * breaks the rule in several places at once, but moving one Coast can fix
+ * three of those findings, and moving all four would rearrange Tokens the
+ * player never had to lose from where they put them. The earliest-arrived
+ * offender is moved and the question asked again.
  *
- * @param {(instance: object) => boolean} depositToVault — injected so this
- *   module does not import `TokenBank`, which imports `BoardState`, which is a
- *   circle the board layer keeps out of.
- * @returns {Array<{id: string, typeId: string, x: number, y: number, reason: string}>}
- *   what moved, and the point it moved from
+ * @param {(instance: object) => ({x: number, y: number}|null)} relocate —
+ *   where the offender may stand instead, or null when there is nowhere.
+ *   Injected so this module does not import `MatPlacement`, which imports it.
+ * @returns {Array<{id: string, typeId: string, x: number, y: number, reason: string,
+ *   to: {x: number, y: number}}>} what moved, the point it moved from and to
  */
-export function reconcile(depositToVault) {
+export function reconcile(relocate) {
     const moved = [];
 
     // Bounded hard. `violations` shrinks by at least one Token per pass, but a
@@ -267,13 +269,14 @@ export function reconcile(depositToVault) {
         const instance = BoardState.getTokenById(worst.id);
         if (!instance) break;
 
-        // If the Vault will not take it, leave it where it is rather than
+        // If there is nowhere legal to go, leave it where it is rather than
         // destroy it. A board that is briefly illegal is recoverable; a Token
         // the player owned and no longer does is not.
-        if (!depositToVault(instance)) break;
+        const to = relocate(instance);
+        if (!to || !Number.isFinite(to.x) || !Number.isFinite(to.y)) break;
 
-        BoardState.removeToken(worst.id);
-        moved.push({ ...worst });
+        BoardState.setTokenPoint(worst.id, to.x, to.y);
+        moved.push({ ...worst, to: { x: to.x, y: to.y } });
     }
 
     return moved;

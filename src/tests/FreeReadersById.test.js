@@ -348,22 +348,9 @@ describe('⭐ quest events carry instanceId, and still count', () => {
         expect(progress.mock.calls.map(c => c[0])).toContain('hero_deployed');
     });
 
-    it('loot_token_placed names the Token that came off the floor', () => {
-        const sprite = SpriteLayer.addSprite('token', 'fixture_passive', 1, null, 900);
-        const seen = [];
-        const off = EventBus.subscribe('loot_token_placed', (p) => seen.push(p));
-        const progress = vi.spyOn(QuestManager, 'reportProgress');
-        try {
-            dropOnMat({ typeId: 'fixture_passive', from: { spriteId: sprite.id } }, C(14));
-        } finally {
-            off?.();
-        }
-
-        const placed = tokenAt(14);
-        expect(placed?.typeId).toBe('fixture_passive');
-        expect(seen).toEqual([{ instanceId: placed.id, typeId: 'fixture_passive' }]);
-        expect(progress.mock.calls.map(c => c[0])).toContain('loot_token_placed');
-    });
+    // 'loot_token_placed names the Token that came off the floor' went with
+    // Token loot (Token Lifecycle 9.3): the event has no publisher now, and
+    // the tutorial quest that counts it is re-pointed in 9.5.
 });
 
 describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () => {
