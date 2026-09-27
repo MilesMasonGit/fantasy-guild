@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Guild Hall upgrades show their art again (Q7: FB-40).** The Token art had moved into
+  per-family folders (`tokens/upgrade/`, `tokens/chest/`) and the upgrade tracks still pointed at the
+  old flat folder, so every upgrade but the Hall drew a broken image. Bunk Beds, Bank Slots, Bank
+  Tabs and the Wishing Well point at their art again; Flag Radius has no art of its own and borrows
+  the plain hero flag. A test now checks every upgrade's art exists.
 - **The QA panel fits the window (Q7: FB-36, FB-37).** The open QA tester panel is capped at the
   window's height, and everything under its title scrolls inside it, so its bottom never runs off a
   short window. The *banner card width* slider is gone from it.

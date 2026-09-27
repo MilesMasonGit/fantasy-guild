@@ -38,13 +38,24 @@ export function rosterLimitForRank(rank) {
     return Math.min(ROSTER_MAX, ROSTER_BASE + (rank || 0));
 }
 
+/**
+ * The art each upgrade track draws on the Guild Hall screen.
+ *
+ * ⚠️ Token art lives in per-family folders under `public/assets/tokens/`
+ * (`upgrade/`, `chest/`, …). These paths used to point at the old flat
+ * folder, so every upgrade but the Hall drew a broken image (Token Lifecycle
+ * feedback Q7, FB-40). `UpgradeSprites.test.js` checks each file exists.
+ *
+ * `flag_radius` has no art of its own (`token_banner_wood.png` exists
+ * nowhere): it borrows the plain hero flag the mat draws.
+ */
 export const UPGRADE_SPRITES = {
-    roster_size: '/assets/tokens/token_bunk_bed.png',
-    bank_slots: '/assets/tokens/token_chest_iron.png',
-    bank_tabs: '/assets/tokens/token_chest_addy.png',
+    roster_size: '/assets/tokens/upgrade/token_bunk_bed.png',
+    bank_slots: '/assets/tokens/chest/token_chest_iron.png',
+    bank_tabs: '/assets/tokens/chest/token_chest_addy.png',
     guild_hall: '/assets/tokens/token_guildhall.png',
-    wishing_well: '/assets/tokens/token_well_wishing.png',
-    flag_radius: '/assets/tokens/token_banner_wood.png'
+    wishing_well: '/assets/tokens/upgrade/token_well_wishing.png',
+    flag_radius: '/assets/ui/flag/hero_flag_base.png'
 };
 
 /**
