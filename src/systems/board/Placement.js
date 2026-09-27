@@ -204,6 +204,40 @@ export function placeTokenAt(instance, point, options = {}) {
     };
 }
 
+/** Why an arrival with nowhere at all to go is refused (Token Lifecycle 5.3). */
+export const MAT_FULL = 'The mat is full';
+
+/**
+ * ⭐ **Put a new Token on the mat as near to `aim` as it will go** — for
+ * arrivals that are nobody's drop: a Shop purchase (aimed at the Hall) and a
+ * Token a recipe makes (aimed at its station). Token Lifecycle 5.3.
+ *
+ * A player's drop that finds no room within nudge reach flies back to their
+ * hand (FP-46). These have no hand to fly back to, so instead of refusing they
+ * land on the nearest legal free spot **anywhere on the mat**
+ * (`MatPlacement.findSpotAnywhere`): the nudge-reach search first, exactly as
+ * before, then the whole mat. Nothing is pushed, and no spot breaking a
+ * `Cannot` rule is ever chosen. Refused only when the whole mat has no legal
+ * spot — {@link MAT_FULL}. It never restocks a copy.
+ *
+ * @returns {{success: boolean, reason?: string, x?: number, y?: number, nudged?: boolean, full?: boolean}}
+ */
+export function placeArrivalNear(instance, aim) {
+    if (!instance?.typeId) return refuse('Not a valid Token');
+    if (!aim || !Number.isFinite(aim.x) || !Number.isFinite(aim.y)) return refuse('Nowhere to put that');
+    if (mythicAlreadyPlaced(instance.typeId, instance.id)) {
+        return refuse(`Only one ${tokenName(instance.typeId)} can be on the board at a time`);
+    }
+    const at = clampToMat(aim);
+    const spot = MatPlacement.findSpotAnywhere(instance.typeId, at, {
+        excludeId: instance.id,
+        plan: { id: instance.id }
+    });
+    if (!spot) return refuse(MAT_FULL, { full: true });
+    const res = placeTokenAt(instance, { x: spot.x, y: spot.y }, { noRestock: true });
+    return res?.success ? { ...res, nudged: spot.nudge > 0 } : res;
+}
+
 /**
  * Carry out a restock-on-copy (FP-50): the charges move, and whatever is left
  * over stands beside the copy it just filled (FP-87).
@@ -303,8 +337,8 @@ export function moveTokenTo(id, point) {
  *
  * Three things must hold: the mat cap has room for every copy (they are
  * `placed`, SP-67); a Mythic of that type is not already on the mat (D-177);
- * and there is a legal spot within nudge reach of the station, the same
- * search a drop there would make.
+ * and there is a legal spot somewhere on the mat, nearest the station first —
+ * the same search {@link placeArrivalNear} makes (Token Lifecycle 5.3).
  *
  * ⚠️ The spot is checked for the first copy only. Every shipped recipe that
  * makes a Token makes exactly one; a recipe making several could, on a very
@@ -317,15 +351,16 @@ export function hasRoomForProduct(stationId, typeId, count = 1) {
     if (!from) return false;
     if (!MatCap.canPlaceMore(count)) return false;
     if (mythicAlreadyPlaced(typeId)) return false;
-    return !!MatPlacement.findSpot(typeId, from);
+    return !!MatPlacement.findSpotAnywhere(typeId, from);
 }
 
 /**
  * ⭐ Put one Token a recipe made on the mat beside the station that made it
  * (TL-8): a fresh `placed` instance at its starting charges, through
- * {@link placeTokenAt} aimed at the station's own point, so it lands on the
- * nearest legal spot around it, as a Shop purchase lands beside the Hall.
- * It never restocks a copy. No Token loot sprite is made any more.
+ * {@link placeArrivalNear} aimed at the station's own point, so it lands on the
+ * nearest legal spot around it — or, when that area is crowded, the nearest
+ * one anywhere on the mat (Token Lifecycle 5.3), as a Shop purchase does
+ * around the Hall. It never restocks a copy. No Token loot sprite is made any more.
  *
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */
@@ -337,7 +372,7 @@ export function placeProduct(stationId, typeId) {
         typeId, tokenStartingUses(typeId), null, BoardState.ORIGIN.PLACED
     );
     instance.bornAt = Date.now();
-    const res = placeTokenAt(instance, from, { noRestock: true });
+    const res = placeArrivalNear(instance, from);
     return res?.success ? { ...res, instance } : res;
 }
 

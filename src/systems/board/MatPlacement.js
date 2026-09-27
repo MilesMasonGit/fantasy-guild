@@ -253,6 +253,66 @@ export function findSpot(typeId, point, options = {}) {
     return null;
 }
 
+/** Grid spacing of the whole-mat search, in mat units. */
+const ANYWHERE_STEP = 8;
+
+/**
+ * ⭐ The nearest legal free spot to `point` **anywhere on the mat**, or null
+ * only when the whole mat has no legal spot for a Token of `typeId`.
+ *
+ * For arrivals with no hand to fly back to and no reason to push — a Shop
+ * purchase, a Token a recipe makes (Token Lifecycle 5.3). Tries
+ * {@link findSpot} within nudge reach first, so an arrival with room nearby
+ * lands exactly where it always did; only when that fails does it scan the
+ * whole mat.
+ *
+ * The scan is a grid 8 u apart, sorted nearest first, rather than
+ * {@link candidatesAround} out to the mat's diagonal: that ring walk would be
+ * ~half a million candidates on the default mat; the grid is ~30 000, and each
+ * is checked by the same {@link legalIn} (mat edge, crowding, `Cannot`), so a
+ * spot it returns is exactly as legal as a nudge. Nothing is pushed.
+ *
+ * @param {object} [options] as {@link findSpot} (`excludeId`, `plan`)
+ * @returns {{x: number, y: number, nudge: number}|null}
+ */
+export function findSpotAnywhere(typeId, point, options = {}) {
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+
+    const near = findSpot(typeId, point, options);
+    if (near) return near;
+
+    const r = artRadiusOf(typeId);
+    const w = matW();
+    const h = matH();
+    if (w < 2 * r || h < 2 * r) return null;
+
+    const axis = (lo, hi) => {
+        const out = [];
+        for (let v = lo; v < hi; v += ANYWHERE_STEP) out.push(v);
+        out.push(hi);
+        return out;
+    };
+    const xs = axis(r, w - r);
+    const ys = axis(r, h - r);
+
+    const candidates = [];
+    for (const x of xs) {
+        for (const y of ys) {
+            const dx = x - point.x;
+            const dy = y - point.y;
+            candidates.push({ x, y, d2: dx * dx + dy * dy });
+        }
+    }
+    candidates.sort((a, b) => a.d2 - b.d2);
+
+    // Every Token on the mat can block some candidate, so none are prefiltered away.
+    const ctx = contextFor(typeId, point, { ...options, reach: Math.hypot(w, h) });
+    for (const c of candidates) {
+        if (legalIn(typeId, c, ctx)) return { x: c.x, y: c.y, nudge: Math.sqrt(c.d2) };
+    }
+    return null;
+}
+
 /**
  * How far an arrival that cannot push looks for free space instead (FP-17), in
  * mat units. Director's pick: wider than a player's nudge reach, because an
