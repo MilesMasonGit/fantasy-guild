@@ -13,6 +13,7 @@ import * as EffectActions from './EffectActions.js';
 // either may load first.
 import * as TimedChanges from './TimedChanges.js';
 import * as TokenNotices from './TokenNotices.js';
+import * as SpriteLayer from './SpriteLayer.js';
 import { TimeBankManager } from '../core/TimeBankManager.js';
 
 /**
@@ -363,11 +364,21 @@ export function resetAlerts() {
 // ---------------------------------------------------------------------------
 
 /**
- * Advance a Token's `trickle` lines by `delta`, granting each line's items into
- * the Bank as its clock comes round — no hero needed. Worked out in closed form
- * (whole laps of `everyMs`), so one big tick grants exactly what many small
- * ones do. A full Bank follows `InventoryManager`'s usual overflow (D-138): the
- * items drop on the mat, never lost.
+ * Advance a Token's `trickle` lines by `delta`, paying each line's items as its
+ * clock comes round — no hero needed. Worked out in closed form (whole laps of
+ * `everyMs`), so one big tick grants exactly what many small ones do.
+ *
+ * ⭐ **The pay drops as loot beside the Token** (FB-53), exactly as a gathered
+ * output does (`BoardRunner` → `SpriteLayer.addSprite` with the Token's id):
+ * it floats on the mat, is collected on hover (TL-9) or by auto-collect, and
+ * flies to the Hall (Q5). Nothing reaches the Bank until it is collected, so a
+ * full Bank simply leaves it on the floor (D-138) — `collectSprite` banks
+ * through `InventoryManager` and never destroys what does not fit.
+ *
+ * **In bulk** (a time-bank replay or a long `advanceTime`), each line drops
+ * ONE sprite per call holding every lap it completed (`laps × quantity`), and
+ * `addSprite` folds same-item drops near an existing stack into that stack, as
+ * it does for every other source; the floor's stack cap still applies.
  *
  * Lines with no item, no positive quantity or no positive `everyMs` are skipped
  * (the content audit reports them).
@@ -391,7 +402,7 @@ export function advanceTrickle(instance, delta) {
         const laps = Math.floor(clock / everyMs);
         clocks.trickle[i] = clock - laps * everyMs;
         if (laps > 0) {
-            InventoryManager.addItem(line.itemId, laps * quantity, instance.typeId);
+            SpriteLayer.addSprite('item', line.itemId, laps * quantity, instance.id);
             granted += laps * quantity;
         }
     });

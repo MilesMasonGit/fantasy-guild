@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Guild Hall trickle pays onto the mat as loot (Q5b: FB-53).** The Hall's seeds no longer go
+  straight into the Bank: each payout drops as floating loot beside the Hall, like a gathered item,
+  is collected on hover (or by auto-collect when that is on) and flies to the Hall. A full Bank loses
+  nothing: the loot waits on the floor. A long fast-forward drops one pile per seed type holding every
+  payout, and later drops fold into the pile already there.
 - **Speech bubbles sit above the head, and speak up only when it matters (Q6: FB-20, FB-21, FB-22).**
   A hero's bubbles now sit with their tail just above the hero's head at every mat size (they used to
   cover the top of it, worse on a small mat). Everyday lines are gone: a hero no longer says
