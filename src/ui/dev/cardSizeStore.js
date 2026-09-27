@@ -9,6 +9,10 @@ import { useSyncExternalStore } from 'react';
  * Persisted to localStorage so it survives reloads during dev.
  *
  * Default 200px (owner decision 2026-07-09). Range clamped to a sane window.
+ *
+ * ⚠️ The QA slider that wrote this was removed (Token Lifecycle feedback Q7,
+ * FB-37). Nothing in the game sets it now; `DragGhost` still reads it, so a
+ * width saved by the old slider still applies until localStorage is cleared.
  */
 const KEY = 'dev.bannerCardWidth';
 export const BANNER_WIDTH_DEFAULT = 200;
@@ -45,7 +49,7 @@ function subscribe(listener) {
     return () => listeners.delete(listener);
 }
 
-/** React hook — re-renders the consumer whenever the QA slider changes the width. */
+/** React hook — re-renders the consumer whenever the width changes. No caller since FB-37. */
 export function useBannerCardWidth() {
     return useSyncExternalStore(subscribe, getBannerCardWidth, getBannerCardWidth);
 }

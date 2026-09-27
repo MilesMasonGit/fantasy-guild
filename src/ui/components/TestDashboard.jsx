@@ -3,7 +3,6 @@ import { useEngine } from '../hooks/useEngine.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { Bug, Plus, X } from 'lucide-react';
-import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
 import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
 import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
 import { TypographyScaleModal } from '../modals/TypographyScaleModal.jsx';
@@ -17,6 +16,13 @@ import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
 const devButtonClass = 'shrink-0 px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
+/**
+ * The open QA panel never grows past the window (FB-36): it is capped at the
+ * viewport height less its 1rem margins top and bottom, and the part under the
+ * header scrolls inside it.
+ */
+export const QA_PANEL_FIT_CLASS = 'max-h-[calc(100dvh-2rem)]';
+export const QA_PANEL_BODY_CLASS = 'flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1';
 const devLabelClass = 'text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1';
 
 /**
@@ -29,7 +35,6 @@ export const TestDashboard = React.memo(() => {
     const [showFontTest, setShowFontTest] = useState(false);
     const [showSpawnItem, setShowSpawnItem] = useState(false);
     const [showAnimationStudio, setShowAnimationStudio] = useState(false);
-    const cardWidth = useBannerCardWidth();
     const [giveId, setGiveId] = useState('');
     const [giveAmount, setGiveAmount] = useState(1);
     const [advanceMinutes, setAdvanceMinutes] = useState(10);
@@ -302,8 +307,11 @@ export const TestDashboard = React.memo(() => {
                     <Bug className="w-5 h-5" /> QA
                 </button>
             ) : (
-                <div className="fixed bottom-4 right-4 z-[9999] w-64 bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto">
-                    <div className="flex items-center justify-between mb-4 border-b border-gi-border pb-2">
+                <div
+                    data-testid="qa-panel"
+                    className={`fixed bottom-4 right-4 z-[9999] w-64 ${QA_PANEL_FIT_CLASS} bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto`}
+                >
+                    <div className="shrink-0 flex items-center justify-between mb-4 border-b border-gi-border pb-2">
                         <div className="flex items-center gap-2 text-gi-primary font-bold font-display">
                             <Bug className="w-4 h-4" /> QA TESTER
                         </div>
@@ -315,102 +323,91 @@ export const TestDashboard = React.memo(() => {
                         </button>
                     </div>
 
-                    <div className="mb-3 pb-3 border-b border-gi-border">
-                        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1">
-                            <span>Banner card width</span>
-                            <span className="text-gi-primary tabular-nums">{cardWidth}px</span>
-                        </div>
-                        <input
-                            type="range"
-                            min={BANNER_WIDTH_MIN}
-                            max={BANNER_WIDTH_MAX}
-                            value={cardWidth}
-                            onChange={(e) => setBannerCardWidth(Number(e.target.value))}
-                            className="w-full accent-gi-primary cursor-pointer"
-                        />
-                    </div>
-
-                    {/* Token Lifecycle dev tools (slice 0.2, DP-11) */}
-                    <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
-                        <div>
-                            <div className={devLabelClass}>Give item</div>
-                            <div className="flex gap-1">
-                                <input
-                                    type="text"
-                                    list="dev-item-ids"
-                                    value={giveId}
-                                    onChange={(e) => setGiveId(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') onGiveItem(); }}
-                                    placeholder="item_..."
-                                    aria-label="Item id"
-                                    className={`${devInputClass} flex-1`}
-                                />
-                                <datalist id="dev-item-ids">
-                                    {itemIds.map(id => <option key={id} value={id} />)}
-                                </datalist>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={giveAmount}
-                                    onChange={(e) => setGiveAmount(e.target.value)}
-                                    aria-label="Amount"
-                                    className={`${devInputClass} w-14`}
-                                />
-                                <button onClick={onGiveItem} className={devButtonClass}>Give</button>
+                    {/* Everything under the header scrolls, so the panel never
+                        runs off a short window (FB-36). */}
+                    <div data-testid="qa-panel-body" className={QA_PANEL_BODY_CLASS}>
+                        {/* Token Lifecycle dev tools (slice 0.2, DP-11) */}
+                        <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
+                            <div>
+                                <div className={devLabelClass}>Give item</div>
+                                <div className="flex gap-1">
+                                    <input
+                                        type="text"
+                                        list="dev-item-ids"
+                                        value={giveId}
+                                        onChange={(e) => setGiveId(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') onGiveItem(); }}
+                                        placeholder="item_..."
+                                        aria-label="Item id"
+                                        className={`${devInputClass} flex-1`}
+                                    />
+                                    <datalist id="dev-item-ids">
+                                        {itemIds.map(id => <option key={id} value={id} />)}
+                                    </datalist>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={giveAmount}
+                                        onChange={(e) => setGiveAmount(e.target.value)}
+                                        aria-label="Amount"
+                                        className={`${devInputClass} w-14`}
+                                    />
+                                    <button onClick={onGiveItem} className={devButtonClass}>Give</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <div>
-                            <div className={devLabelClass}>Advance timers (minutes)</div>
-                            <div className="flex gap-1">
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={DEV_ADVANCE_MAX_MINUTES}
-                                    value={advanceMinutes}
-                                    onChange={(e) => setAdvanceMinutes(e.target.value)}
-                                    aria-label="Minutes to advance"
-                                    className={`${devInputClass} flex-1`}
-                                />
-                                <button onClick={onAdvanceTime} className={devButtonClass}>Advance</button>
+                            <div>
+                                <div className={devLabelClass}>Advance timers (minutes)</div>
+                                <div className="flex gap-1">
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={DEV_ADVANCE_MAX_MINUTES}
+                                        value={advanceMinutes}
+                                        onChange={(e) => setAdvanceMinutes(e.target.value)}
+                                        aria-label="Minutes to advance"
+                                        className={`${devInputClass} flex-1`}
+                                    />
+                                    <button onClick={onAdvanceTime} className={devButtonClass}>Advance</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <div>
-                            <div className={devLabelClass}>Spawner kinds</div>
-                            {kindCounts.length === 0 ? (
-                                <div className="text-xs text-gi-muted">No spawners yet</div>
-                            ) : (
-                                <ul className="text-xs space-y-0.5">
-                                    {kindCounts.map(({ kind, count, cap }) => (
-                                        <li key={kind} className="flex justify-between">
-                                            <span>{kind}</span>
-                                            <span className="tabular-nums text-gi-primary">{count} / {cap}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                            <div>
+                                <div className={devLabelClass}>Spawner kinds</div>
+                                {kindCounts.length === 0 ? (
+                                    <div className="text-xs text-gi-muted">No spawners yet</div>
+                                ) : (
+                                    <ul className="text-xs space-y-0.5">
+                                        {kindCounts.map(({ kind, count, cap }) => (
+                                            <li key={kind} className="flex justify-between">
+                                                <span>{kind}</span>
+                                                <span className="tabular-nums text-gi-primary">{count} / {cap}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
+                            {devStatus && (
+                                <div className="text-[10px] text-gi-muted break-words" role="status">{devStatus}</div>
                             )}
                         </div>
 
-                        {devStatus && (
-                            <div className="text-[10px] text-gi-muted break-words" role="status">{devStatus}</div>
-                        )}
-                    </div>
-
-                    <div className="space-y-2 overflow-y-auto max-h-[50vh] custom-scrollbar pr-1">
-                        {testActions.map((action, i) => (
-                            <button
-                                key={i}
-                                onClick={action.onClick}
-                                className="w-full text-left px-3 py-2 rounded bg-gi-base hover:bg-gi-primary/20 border border-gi-border hover:border-gi-primary/50 text-sm font-bold transition-colors flex items-center gap-2 group"
-                            >
-                                <Plus className="w-3 h-3 text-gi-primary group-hover:scale-125 transition-transform" />
-                                {action.label}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="text-[10px] text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
-                        Playmat Dev Tools
+                        <div className="space-y-2">
+                            {testActions.map((action, i) => (
+                                <button
+                                    key={i}
+                                    onClick={action.onClick}
+                                    className="w-full text-left px-3 py-2 rounded bg-gi-base hover:bg-gi-primary/20 border border-gi-border hover:border-gi-primary/50 text-sm font-bold transition-colors flex items-center gap-2 group"
+                                >
+                                    <Plus className="w-3 h-3 text-gi-primary group-hover:scale-125 transition-transform" />
+                                    {action.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="text-[10px] text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
+                            Playmat Dev Tools
+                        </div>
                     </div>
                 </div>
             )}

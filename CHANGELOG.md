@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The QA panel fits the window (Q7: FB-36, FB-37).** The open QA tester panel is capped at the
+  window's height, and everything under its title scrolls inside it, so its bottom never runs off a
+  short window. The *banner card width* slider is gone from it.
 - **Speech bubbles read naturally for a Token that names no skill (Q7: FB-54).** Such a Token used
   to make its hero say *My the right level is too low…* or *I don't have the the right skill…*; it
   now reads *My level is too low to work {token}.* / *I don't have the skill to work {token}.*
