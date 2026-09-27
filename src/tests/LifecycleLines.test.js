@@ -22,8 +22,10 @@ const TYPES = {
     tree: { name: 'Oak Tree' },
     coast: {
         name: 'Coast',
-        turns: { into: [{ typeId: 'shrimp', weight: 1 }, { typeId: 'crab', weight: 1 }], everyMs: 120000, lastsMs: 60000 }
+        turns: { into: [{ typeId: 'shrimp', weight: 1 }, { typeId: 'crab', weight: 1 }], everyMs: 60000, chance: 30 }
     },
+    /** A turns block with neither cycle nor chance: the defaults, 1 min and 30% (TL-12). */
+    bay: { name: 'Bay', turns: { into: [{ typeId: 'shrimp', weight: 1 }] } },
     shrimp: { name: 'Shrimp Coast' },
     crab: { name: 'Crab Coast' },
     foundation: { name: 'Stone Foundation', foundation: { kind: 'stone', skill: 'construction' } },
@@ -127,21 +129,31 @@ describe('lifecycleLines', () => {
         expect(lifecycleLines({ id: 's2', typeId: 'sapling' }, src())[0].value).toBe('in 30 s');
     });
 
-    it('a turning Token: time until it turns, into what, and for how long', () => {
-        const lines = lifecycleLines({ id: 'c1', typeId: 'coast', clocks: { turnMs: 30000 } }, src());
-        expect(lines[0]).toEqual({ label: 'Turns into Shrimp Coast or Crab Coast', value: 'in 1 min 30 s' });
-        expect(byLabel(lines, 'Stays turned for')).toMatchObject({ value: '1 min' });
+    it('a turning Token: its next chance to turn, into what, and the odds (TL-12, FB-14)', () => {
+        const lines = lifecycleLines({ id: 'c1', typeId: 'coast', clocks: { turnMs: 26000 } }, src());
+        expect(lines[0]).toEqual({ label: 'Next chance to turn into Shrimp Coast or Crab Coast', value: 'in 34 s (30%)' });
+        expect(byLabel(lines, 'Turns')).toEqual({
+            label: 'Turns', value: '30% chance every 1 min, and the same to turn back', tone: TONE.MUTED
+        });
+        expect(byLabel(lines, 'Stays turned for')).toBeUndefined();
     });
 
-    it('a turned Token: time until it turns back, read from the original type', () => {
+    it('a turns block without a cycle or chance reads the defaults, 1 min and 30%', () => {
+        const lines = lifecycleLines({ id: 'b1', typeId: 'bay' }, src());
+        expect(lines[0]).toEqual({ label: 'Next chance to turn into Shrimp Coast', value: 'in 1 min (30%)' });
+        const back = lifecycleLines({ id: 'b2', typeId: 'shrimp', turnedFrom: 'bay', clocks: { turnMs: 45000 } }, src());
+        expect(back).toEqual([{ label: 'Next chance to turn back into Bay', value: 'in 15 s (30%)' }]);
+    });
+
+    it('a turned Token: its next chance to turn back, on the original type’s cycle and odds', () => {
         const lines = lifecycleLines({ id: 'c2', typeId: 'shrimp', turnedFrom: 'coast', clocks: { turnMs: 20000 } }, src());
-        expect(lines).toEqual([{ label: 'Turns back into Coast', value: 'in 40 s' }]);
+        expect(lines).toEqual([{ label: 'Next chance to turn back into Coast', value: 'in 40 s (30%)' }]);
     });
 
     it('a turned Token shows only its turn back, not its own blocks', () => {
         // A turned instance runs only its turn-back clock (TimedChanges).
         const lines = lifecycleLines({ id: 'c3', typeId: 'sapling', turnedFrom: 'coast', clocks: { turnMs: 0 } }, src());
-        expect(lines.map(l => l.label)).toEqual(['Turns back into Coast']);
+        expect(lines.map(l => l.label)).toEqual(['Next chance to turn back into Coast']);
     });
 
     describe('a Foundation', () => {

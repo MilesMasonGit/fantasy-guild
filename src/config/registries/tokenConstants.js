@@ -166,3 +166,39 @@ export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmla
 export function isFoundationKind(value) {
     return FOUNDATION_KINDS.includes(value);
 }
+
+/**
+ * ⭐ **A self-transforming Token rolls a chance** (owner decision TL-12,
+ * feedback FB-15). `turns: { into, everyMs, chance }` on the Token type:
+ *
+ * * `everyMs` — the roll cycle. Once per `everyMs` the Token rolls.
+ * * `chance`  — the percent chance (0 < chance ≤ 100, like every other
+ *   `chance` in the content files) that a roll succeeds.
+ *
+ * The same two numbers are used **both ways**: a Coast rolls to become a
+ * Shrimp Coast, and the Shrimp Coast (which carries `turnedFrom`) rolls with
+ * the Coast's numbers to turn back. Authored once, on the Coast.
+ *
+ * An absent field reads as its default here: 1 minute and 30%, so a Coast
+ * flips roughly every three minutes each way. `lastsMs` (the old fixed "stays
+ * turned for") is retired: nothing reads it.
+ *
+ * This is the one place the defaults live: the engine (`TimedChanges`), the
+ * inspection lines, the content audit and the CMS's new-block factory all read
+ * them from here (the CMS across the boundary, see the header note).
+ */
+export const TURN_DEFAULTS = Object.freeze({ everyMs: 60000, chance: 30 });
+
+/**
+ * The roll cycle and chance of a `turns` block, defaults filled in:
+ * `{ everyMs, chance }`, `chance` a percent. A non-number or non-positive
+ * `everyMs` reads as the default; `chance` is clamped to 0–100.
+ */
+export function turnTiming(turns) {
+    const every = Number(turns?.everyMs);
+    const everyMs = Number.isFinite(every) && every > 0 ? every : TURN_DEFAULTS.everyMs;
+    const raw = turns?.chance;
+    const c = raw === undefined || raw === null || raw === '' ? TURN_DEFAULTS.chance : Number(raw);
+    const chance = Number.isFinite(c) ? Math.min(100, Math.max(0, c)) : TURN_DEFAULTS.chance;
+    return { everyMs, chance };
+}

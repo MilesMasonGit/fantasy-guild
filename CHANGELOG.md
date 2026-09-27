@@ -4,6 +4,17 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Self-transforming Tokens roll a chance, and show a countdown (Q8: FB-14, FB-15, TL-12).** A
+  Token with a *Turns* block no longer turns on a fixed timer: once per cycle it rolls its chance,
+  and the Token it became rolls the same cycle and chance to turn back (defaults 1 min and 30%, so a
+  Coast flips about every three minutes each way). `turns` is now `{ into, everyMs, chance }`, the
+  chance a percent like every other chance in the content files; the old `lastsMs` is retired. The
+  mat shows the time to the next roll as a small badge bottom-left (B1 will make it a ring), and the
+  inspection panel reads e.g. *Next chance to turn into Shrimp Coast: in 34 s (30%)*. A roll held
+  while the Token is in the hand, or won with nowhere to stand, is kept rather than re-rolled; one
+  long tick (time bank, advance time) rolls once per whole cycle and carries the rest. The CMS
+  *Spawning and Building* section edits the cycle and chance (*Roll every*, *Chance to turn*); the
+  content audit checks the chance and warns about a leftover `lastsMs`.
 - **The Shop has no inspect panel, and shows prices as item rows (Q7: FB-24, FB-26).** The Shop
   drawer no longer opens an *Inspect* column beside it, and clicking a Token's picture opens nothing;
   the Bank keeps its column. Each price line is now the standard item row used for costs elsewhere

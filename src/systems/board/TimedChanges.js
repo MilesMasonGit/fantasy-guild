@@ -1,6 +1,7 @@
 // Fantasy Guild — Timed changes: the one clock system for Tokens (Token Lifecycle slice 3.2, DP-2)
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { turnTiming } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
 // ⚠️ A cycle: SpawnerSystem imports this module for `pickWeighted`. Both sides
@@ -14,11 +15,14 @@ import { logger } from '../../utils/Logger.js';
  *
  * * `grows: { into, afterMs }` — after `afterMs` the Token **becomes** `into`
  *   (a Sapling becomes a Tree).
- * * `turns: { into: [{ typeId, weight }], everyMs, lastsMs }` — after `everyMs`
- *   as itself the Token becomes a weighted pick from `into`, which carries
- *   `turnedFrom`; after the ORIGINAL type's `turns.lastsMs` it turns back
- *   (a Coast becomes a Shrimp Coast for a while). The timing is read from the
- *   `turnedFrom` type, so it is authored in one place.
+ * * `turns: { into: [{ typeId, weight }], everyMs, chance }` — **a chance, not
+ *   a timer** (owner decision TL-12). Once every `everyMs` the Token rolls; with
+ *   `chance` percent it becomes a weighted pick from `into`, which carries
+ *   `turnedFrom`. The turned Token rolls on the SAME cycle and chance, read
+ *   from the `turnedFrom` type, to turn back — authored once, on the Coast.
+ *   Defaults (absent fields): 1 min and 30% (`TURN_DEFAULTS` in
+ *   `tokenConstants.js`), so a Coast flips about every three minutes each way.
+ *   `lastsMs`, the old fixed "stays turned for", is retired and never read.
  *
  * Spawner intervals (slice 3.3) are one more row of the {@link HANDLERS}
  * table; the attempt itself lives in `SpawnerSystem.js`. The trickle (3.4)
@@ -27,9 +31,10 @@ import { logger } from '../../utils/Logger.js';
  *
  * ## State (saved, on the instance)
  * `instance.clocks = { growMs, turnMs, … }` — elapsed ms, created only on a
- * Token that has a timed block, and absent reads as 0. A change is a transform
- * (`EffectActions.transformInstance`): the new instance **keeps `origin`** and
- * starts with fresh clocks.
+ * Token that has a timed block, and absent reads as 0. `turnWon: 1` marks a
+ * `turns` roll that succeeded but is still waiting to happen (TL-12). A change
+ * is a transform (`EffectActions.transformInstance`): the new instance **keeps
+ * `origin`** and starts with fresh clocks.
  *
  * ## ⚠️ Every clock advances by the tick's `delta`
  * Offline time is replayed by the time bank speeding up the live engine
@@ -42,10 +47,19 @@ import { logger } from '../../utils/Logger.js';
  * {@link MAX_CHANGES_PER_TICK}). So ten minutes in one tick end in the same
  * state as ten minutes in 100 ms ticks.
  *
+ * ## A roll is one lap of the clock
+ * A roll that fails acts without replacing the Token, like a spawner's
+ * attempt: the clock starts its next lap, keeping any time past due. So a
+ * ten-minute tick rolls ten times, once per whole minute in it, and consumes
+ * `random` in the same order as ten one-minute ticks would. A chance of 100
+ * rolls nothing (it always succeeds), so it never moves the random stream.
+ *
  * ## A change with nowhere to stand
  * A transform that has no legal spot does not happen (`transformInstance`
  * returns null). The clock is then held **full** and the change is retried on
- * the next tick — once per tick, never looped within one.
+ * the next tick — once per tick, never looped within one. A `turns` roll that
+ * succeeded but could not stand is remembered (`clocks.turnWon`), so the retry
+ * does not roll again: a won roll is never lost to a blocked spot.
  *
  * ## A cycle in progress is lost (SP-51)
  * The work-cycle progress (`cycleElapsedMs`) belongs to the old instance, which
@@ -110,9 +124,56 @@ export function pickWeighted(entries, random = Math.random) {
     return usable[usable.length - 1].typeId;
 }
 
-/** The ms after which a Token turned from `turnedFrom` turns back (0 when unauthored: at once). */
-function turnBackAfter(instance) {
-    return Number(getTokenType(instance.turnedFrom)?.turns?.lastsMs) || 0;
+/**
+ * The roll cycle and chance a Token turns by (TL-12): its own `turns` block,
+ * or, on a turned Token, the ORIGINAL type's, so both directions share one
+ * authored pair. `{ everyMs, chance }` with the defaults filled in.
+ */
+export function turnTimingOf(instance) {
+    const source = instance?.turnedFrom ? getTokenType(instance.turnedFrom) : getTokenType(instance?.typeId);
+    return turnTiming(source?.turns);
+}
+
+/**
+ * Roll a turn (TL-12). Returns true when it succeeds. A chance of 100 always
+ * succeeds and 0 never does, and neither consumes `random`. A roll that won
+ * but could not happen (nowhere to stand) is remembered in `clocks.turnWon`
+ * and not rolled again on the retry.
+ */
+function rollTurn(instance, random) {
+    const clocks = instance.clocks || (instance.clocks = {});
+    if (clocks.turnWon) return true;
+    const { chance } = turnTimingOf(instance);
+    let won;
+    if (chance >= 100) won = true;
+    else if (chance <= 0) won = false;
+    else won = random() * 100 < chance;
+    if (won) clocks.turnWon = 1;
+    return won;
+}
+
+/**
+ * ⭐ When a turning Token next rolls, for the mat's countdown badge and the
+ * inspection lines (FB-14): `{ inMs, chance, back, into }` — `back` true on a
+ * turned Token (it rolls to turn back into `turnedFrom`), `into` the type ids
+ * it may become. Null for a Token that does not turn.
+ *
+ * `inMs` is 0 while a roll is held (in the hand, or won with nowhere to stand).
+ */
+export function nextTurnRoll(instance) {
+    if (!instance) return null;
+    const clockMs = Number(instance.clocks?.turnMs) || 0;
+    if (instance.turnedFrom) {
+        const original = getTokenType(instance.turnedFrom);
+        if (!original) return null;
+        const { everyMs, chance } = turnTiming(original.turns);
+        return { inMs: Math.max(0, everyMs - clockMs), chance, back: true, into: [instance.turnedFrom] };
+    }
+    const def = getTokenType(instance.typeId);
+    const entries = Array.isArray(def?.turns?.into) ? def.turns.into.filter(e => e?.typeId) : [];
+    if (!entries.length) return null;
+    const { everyMs, chance } = turnTiming(def.turns);
+    return { inMs: Math.max(0, everyMs - clockMs), chance, back: false, into: entries.map(e => e.typeId) };
 }
 
 /**
@@ -139,8 +200,11 @@ export const HANDLERS = [
         clock: 'turnMs',
         replaces: true,
         applies: (instance) => !!instance.turnedFrom && !!getTokenType(instance.turnedFrom),
-        dueMs: (instance) => turnBackAfter(instance),
-        fire: (instance) => EffectActions.transformInstance(instance, instance.turnedFrom, { fixPlaced: true })
+        dueMs: (instance) => turnTimingOf(instance).everyMs,
+        // A failed roll returns the Token itself: the clock starts its next lap.
+        fire: (instance, def, random) => (rollTurn(instance, random)
+            ? EffectActions.transformInstance(instance, instance.turnedFrom, { fixPlaced: true })
+            : instance)
     },
     {
         id: 'grows',
@@ -155,8 +219,10 @@ export const HANDLERS = [
         clock: 'turnMs',
         replaces: true,
         applies: (instance, def) => !instance.turnedFrom && Array.isArray(def?.turns?.into) && def.turns.into.length > 0,
-        dueMs: (instance, def) => Number(def.turns.everyMs) || 0,
+        dueMs: (instance, def) => turnTiming(def.turns).everyMs,
         fire: (instance, def, random) => {
+            // TL-12: roll the chance first; a failed roll is one lap, no change.
+            if (!rollTurn(instance, random)) return instance;
             const into = pickWeighted(def.turns.into, random);
             if (!into || into === instance.typeId) return null;
             return EffectActions.transformInstance(instance, into, {

@@ -5,6 +5,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { Infinity as InfinityIcon } from 'lucide-react';
 import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
+import { turnCountdownText } from './centreAlert.js';
 
 /**
  * The small things drawn **on** a Token: its name, its charges, the recipe gear
@@ -261,6 +262,47 @@ export const SpawnerCountBadge = ({ text, isDragging }) => {
                 'flex items-center justify-center px-1.5 py-0.5 rounded',
                 'bg-black/90 border border-gi-gold/50',
                 'text-gi-gold font-mono text-[10px] font-bold tabular-nums leading-none tracking-tight'
+            )}
+        >
+            {text}
+        </div>
+    );
+};
+
+/** How often the turn countdown re-reads its clock (ms). */
+export const TURN_COUNTDOWN_REFRESH_MS = 250;
+
+/**
+ * TurnCountdownBadge — time to a turning Token's next roll, `0:34`,
+ * bottom-left (FB-14, TL-12). Shown on a Coast (its next chance to turn) and
+ * on the Shrimp Coast it became (its next chance to turn back). Plain on
+ * purpose, like the spawner count it shares the corner with (a Token cannot
+ * both spawn and turn): brief B1 turns it into a ring badge.
+ *
+ * The clock runs on game time (the engine's `delta`), so the badge polls it
+ * rather than keeping its own: `read()` returns `TimedChanges.nextTurnRoll`
+ * for this Token, `{ inMs, chance, back }`, or null.
+ */
+export const TurnCountdownBadge = ({ read, isDragging }) => {
+    const [roll, setRoll] = useState(() => read?.() ?? null);
+    useEffect(() => {
+        if (!read) return undefined;
+        const timer = setInterval(() => setRoll(read() ?? null), TURN_COUNTDOWN_REFRESH_MS);
+        return () => clearInterval(timer);
+    }, [read]);
+
+    const text = roll ? turnCountdownText(roll.inMs) : null;
+    if (!text || isDragging) return null;
+    const what = roll.back ? 'turn back' : 'turn';
+    return (
+        <div
+            data-turn-countdown={text}
+            aria-label={`Next chance to ${what} in ${text} (${roll.chance}%)`}
+            className={cn(
+                'absolute left-1.5 bottom-1.5 z-30 pointer-events-none select-none',
+                'flex items-center justify-center px-1.5 py-0.5 rounded',
+                'bg-black/90 border border-sky-300/50',
+                'text-sky-200 font-mono text-[10px] font-bold tabular-nums leading-none tracking-tight'
             )}
         >
             {text}

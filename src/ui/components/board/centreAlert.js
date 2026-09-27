@@ -84,6 +84,20 @@ export function spawnerCountText(counts) {
 }
 
 /**
+ * Time to a turning Token's next roll as drawn on its badge (FB-14, TL-12):
+ * `m:ss`, rounded UP to the second so it never reads `0:00` while time is left.
+ * Null when there is nothing to count.
+ */
+export function turnCountdownText(ms) {
+    const n = Number(ms);
+    if (!Number.isFinite(n)) return null;
+    const total = Math.max(0, Math.ceil(n / 1000));
+    const min = Math.floor(total / 60);
+    const s = total % 60;
+    return `${min}:${String(s).padStart(2, '0')}`;
+}
+
+/**
  * Whether a Token gets the recipe gear (FB-7): it has something to choose — a
  * Foundation, or a station whose pool is not empty. A station with an empty
  * pool has nothing to offer, so it shows nothing.

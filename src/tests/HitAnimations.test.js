@@ -59,7 +59,7 @@ registerTokenTypes({
     fixture_q4_coast: {
         id: 'fixture_q4_coast', name: 'Fixture Q4 Coast', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
-        turns: { into: [{ typeId: 'fixture_q4_shrimp', weight: 1 }], everyMs: 1000, lastsMs: 500 }
+        turns: { into: [{ typeId: 'fixture_q4_shrimp', weight: 1 }], everyMs: 1000, chance: 100 }
     },
     fixture_q4_shrimp: {
         id: 'fixture_q4_shrimp', name: 'Fixture Q4 Shrimp Coast', tokenType: 'resource',
@@ -343,7 +343,7 @@ describe('transform glow (FB-11)', () => {
         const shrimp = BoardState.tokens().find(t => t.typeId === 'fixture_q4_shrimp');
         expect(shrimp).toBeTruthy();
         expect(TokenGlows.glowOf(shrimp.id)).not.toBeNull();
-        TimedChanges.tick(600);
+        TimedChanges.tick(1000);   // the turn back rolls on the Coast's cycle (TL-12)
         const coast = BoardState.tokens().find(t => t.typeId === 'fixture_q4_coast');
         expect(coast).toBeTruthy();
         expect(TokenGlows.glowOf(coast.id)).not.toBeNull();

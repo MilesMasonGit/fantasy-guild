@@ -226,7 +226,7 @@ export const INITIAL_STATE = {
 
     // === The Board (the playmat) ===
     //   tokens      { [id]: { id, typeId, x, y, placedAt, usesRemaining, cycleElapsedMs, selectedRecipeId? } }  (Free Playmat 1.6a)
-    //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, turnMs, ... },
+    //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, turnMs, turnWon?, ... },
     //                 turnedFrom? typeId  (Token Lifecycle 3.1 / 3.2, roadmap §3.1)
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero)

@@ -1,10 +1,12 @@
 // Fantasy Guild — the Token inspection's lifecycle lines (Token Lifecycle slice 8.1, TL-4)
 
+import { turnTiming } from '../../../config/registries/tokenConstants.js';
+
 /**
  * ⭐ **What a board Token's lifecycle blocks are doing right now**, as plain
  * rows for the inspection panel: a spawner's family and cap, its next spawn and
- * upkeep; time left to grow, to turn, or to turn back; a Foundation's build; a
- * trickle's pay; and, in dev mode, the Token's origin.
+ * upkeep; time left to grow; the next chance to turn or to turn back; a
+ * Foundation's build; a trickle's pay; and, in dev mode, the Token's origin.
  *
  * Pure: every engine read comes in through `sources`, so the panel stays thin
  * and the tests need no engine. The shapes it reads are §3.1's.
@@ -44,6 +46,16 @@ function typeList(entries, tokenName) {
         .filter(e => e?.typeId)
         .map(e => tokenName(e.typeId))
         .join(' or ');
+}
+
+/** A percent as the panel shows it: `30%`, `12.5%`. */
+function formatPercent(chance) {
+    return `${Math.round(Number(chance) * 10) / 10}%`;
+}
+
+/** "in 34 s (30%)": time to a turn's next roll, and its chance (TL-12, FB-14). */
+function nextChance(ms, chance) {
+    return `in ${formatDuration(Math.max(0, ms))} (${formatPercent(chance)})`;
 }
 
 function clock(instance, key) {
@@ -170,13 +182,12 @@ export function lifecycleLines(instance, src) {
     const out = [];
 
     if (instance.turnedFrom) {
-        // A turned Token runs only its turn back (TimedChanges): the timing is
-        // the ORIGINAL type's, authored once on it.
-        const original = src.typeOf(instance.turnedFrom);
-        const lastsMs = Number(original?.turns?.lastsMs) || 0;
+        // A turned Token runs only its turn back (TimedChanges): it rolls on the
+        // ORIGINAL type's cycle and chance, authored once on it (TL-12).
+        const { everyMs, chance } = turnTiming(src.typeOf(instance.turnedFrom)?.turns);
         out.push({
-            label: `Turns back into ${src.tokenName(instance.turnedFrom)}`,
-            value: `in ${formatDuration(Math.max(0, lastsMs - clock(instance, 'turnMs')))}`
+            label: `Next chance to turn back into ${src.tokenName(instance.turnedFrom)}`,
+            value: nextChance(everyMs - clock(instance, 'turnMs'), chance)
         });
     } else {
         if (def.spawner) out.push(...spawnerLines(instance, def, src));
@@ -188,13 +199,18 @@ export function lifecycleLines(instance, src) {
         }
         const turnsInto = typeList(def.turns?.into, src.tokenName);
         if (turnsInto) {
+            // TL-12: a chance once per cycle, not a fixed timer; the same
+            // numbers roll it back.
+            const { everyMs, chance } = turnTiming(def.turns);
             out.push({
-                label: `Turns into ${turnsInto}`,
-                value: `in ${formatDuration(Math.max(0, (Number(def.turns.everyMs) || 0) - clock(instance, 'turnMs')))}`
+                label: `Next chance to turn into ${turnsInto}`,
+                value: nextChance(everyMs - clock(instance, 'turnMs'), chance)
             });
-            if (Number(def.turns.lastsMs) > 0) {
-                out.push({ label: 'Stays turned for', value: formatDuration(def.turns.lastsMs), tone: TONE.MUTED });
-            }
+            out.push({
+                label: 'Turns',
+                value: `${formatPercent(chance)} chance every ${formatDuration(everyMs)}, and the same to turn back`,
+                tone: TONE.MUTED
+            });
         }
     }
 

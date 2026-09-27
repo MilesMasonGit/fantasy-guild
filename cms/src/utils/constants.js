@@ -131,6 +131,10 @@ export {
 // audit can never disagree about what a kind is.
 export { FOUNDATION_KINDS } from '../../../src/config/registries/tokenConstants.js';
 
+// A turning Token rolls a chance once per cycle, both ways (TL-12). The
+// defaults a new Turns block starts with (1 min, 30%) are the game's.
+export { TURN_DEFAULTS } from '../../../src/config/registries/tokenConstants.js';
+
 // An enemy is a Token (D-104), and as of 2026-09-06 that is true of the data
 // too: `data/enemies.json` and `enemyRegistry.js` are gone, and a Token is an
 // enemy because it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the

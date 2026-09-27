@@ -25,7 +25,7 @@ import { TokenCentreAlert } from './TokenEventAlert.jsx';
 import { EffectProcText } from './EffectProcText.jsx';
 import {
     TokenChargeBadge, TokenChargeDeltaFloater, TokenNameBadge, StationGearBadge,
-    DisallowBadge, SpawnerCountBadge
+    DisallowBadge, SpawnerCountBadge, TurnCountdownBadge
 } from './TokenBadges.jsx';
 import { gearStateOf, spawnerCountText } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
@@ -139,7 +139,9 @@ export const MatToken = React.memo(function MatToken({
                 isFoundation: !!def?.foundation,
                 isSpawner,
                 // FB-5: the family's live count against its cap.
-                spawnerCount: isSpawner ? spawnerCountText(SpawnerSystem.spawnerCounts(id)) : null
+                spawnerCount: isSpawner ? spawnerCountText(SpawnerSystem.spawnerCounts(id)) : null,
+                // FB-14: a Token that turns (or has turned) counts down to its next roll.
+                turns: !!TimedChanges.nextTurnRoll(instance)
             };
         },
         [
@@ -153,6 +155,9 @@ export const MatToken = React.memo(function MatToken({
         null,
         { deps: [id] }
     );
+
+    // The countdown badge polls this; stable per Token so its timer is not reset.
+    const readTurn = React.useCallback(() => TimedChanges.nextTurnRoll(BoardState.getTokenById(id)), [id]);
 
     const usesRemaining = detail?.usesRemaining ?? null;
     const alert = detail?.alert ?? null;
@@ -418,6 +423,10 @@ export const MatToken = React.memo(function MatToken({
 
                 {/* FB-5: a spawner's count against its cap. */}
                 {detail?.isSpawner && <SpawnerCountBadge text={detail?.spawnerCount} isDragging={hidden} />}
+
+                {/* FB-14 / TL-12: time to a turning Token's next roll, same corner
+                    (a Token cannot both spawn and turn). */}
+                {detail?.turns && <TurnCountdownBadge read={readTurn} isDragging={hidden} />}
 
                 <TokenProgressBar
                     instanceId={id}

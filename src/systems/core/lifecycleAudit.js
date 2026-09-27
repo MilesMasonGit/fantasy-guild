@@ -1,6 +1,6 @@
 // Fantasy Guild — content audit for the Token Lifecycle blocks (slice 4.2)
 
-import { FOUNDATION_KINDS } from '../../config/registries/tokenConstants.js';
+import { FOUNDATION_KINDS, TURN_DEFAULTS } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 
 /**
@@ -223,8 +223,18 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 }
                 checkPositive(err, `turns.into[${i}].weight`, `turns weight for ${show(target ?? '?')}`, entry?.weight);
             });
+            // TL-12: a roll every `everyMs` with `chance` percent, both ways.
             checkTime(err, 'turns.everyMs', 'turns every', t.everyMs);
-            checkTime(err, 'turns.lastsMs', 'turns lasts', t.lastsMs);
+            if (hasValue(t.chance)) {
+                if (!(typeof t.chance === 'number' && Number.isFinite(t.chance) && t.chance > 0 && t.chance <= 100)) {
+                    err('turns.chance', `turns chance is ${show(t.chance)}; it must be a percent above 0 and at most 100.`);
+                }
+            } else {
+                warn('turns.chance', `turns has no chance, so it rolls the default ${TURN_DEFAULTS.chance}% (allowed; set it in the CMS).`);
+            }
+            if (t.lastsMs !== undefined) {
+                warn('turns.lastsMs', 'turns still carries lastsMs, which nothing reads since TL-12 (the turned Token rolls back on the same cycle and chance); re-save it in the CMS to drop it.');
+            }
         }
 
         // ── foundation ──

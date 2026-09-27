@@ -62,7 +62,7 @@ function clean() {
             },
             token_coast: {
                 id: 'token_coast', name: 'Coast',
-                turns: { into: [{ typeId: 'token_shrimp_coast', weight: 1 }], everyMs: 120000, lastsMs: 60000 },
+                turns: { into: [{ typeId: 'token_shrimp_coast', weight: 1 }], everyMs: 60000, chance: 30 },
             },
             token_shrimp_coast: { id: 'token_shrimp_coast', name: 'Shrimp Coast' },
             token_stone_foundation: {
@@ -195,7 +195,7 @@ describe('Lifecycle audit — errors: shape rules', () => {
             w.tokens.token_coast.turns.into.push({ typeId: 'token_tide', weight: 1 });
             w.tokens.token_tide = {
                 id: 'token_tide', name: 'Tide',
-                turns: { into: [{ typeId: 'token_shrimp_coast', weight: 1 }], everyMs: 5000, lastsMs: 5000 },
+                turns: { into: [{ typeId: 'token_shrimp_coast', weight: 1 }], everyMs: 5000, chance: 30 },
             };
         }, { id: 'token_coast', field: 'turns.into[1].typeId', includes: ['Tide (token_tide)', 'turns block of its own'] });
     });
@@ -215,10 +215,32 @@ describe('Lifecycle audit — errors: shape rules', () => {
         ['spawner interval', (w) => { w.tokens.token_oak_forest.spawner.intervalMs = 999; }, 'token_oak_forest', 'spawner.intervalMs'],
         ['grow time', (w) => { w.tokens.token_oak_sapling.grows.afterMs = 0; }, 'token_oak_sapling', 'grows.afterMs'],
         ['turns every', (w) => { delete w.tokens.token_coast.turns.everyMs; }, 'token_coast', 'turns.everyMs'],
-        ['turns lasts', (w) => { w.tokens.token_coast.turns.lastsMs = 500; }, 'token_coast', 'turns.lastsMs'],
         ['trickle interval', (w) => { w.tokens.token_guild_hall.trickle[0].everyMs = 10; }, 'token_guild_hall', 'trickle[0].everyMs'],
     ])('%s must be at least 1000 ms', (_, mutate, id, field) => {
         expectOne(mutate, { id, field, includes: 'at least 1000 ms' });
+    });
+
+    it.each([0, -5, 101, '30', Number.NaN])('a turns chance of %s is not a percent above 0 and at most 100 (TL-12)', (chance) => {
+        expectOne((w) => { w.tokens.token_coast.turns.chance = chance; },
+            { id: 'token_coast', field: 'turns.chance', includes: 'percent above 0 and at most 100' });
+    });
+
+    it('a turns chance of 100 or a fraction is fine (TL-12)', () => {
+        const world = clean();
+        world.tokens.token_coast.turns.chance = 100;
+        expect(auditLifecycleBlocks(world)).toEqual([]);
+        world.tokens.token_coast.turns.chance = 12.5;
+        expect(auditLifecycleBlocks(world)).toEqual([]);
+    });
+
+    it('a turns block with no chance warns that it rolls the default 30% (TL-12)', () => {
+        expectOne((w) => { delete w.tokens.token_coast.turns.chance; },
+            { severity: 'warning', id: 'token_coast', field: 'turns.chance', includes: 'default 30%' });
+    });
+
+    it('a turns block still carrying the retired lastsMs warns (TL-12)', () => {
+        expectOne((w) => { w.tokens.token_coast.turns.lastsMs = 60000; },
+            { severity: 'warning', id: 'token_coast', field: 'turns.lastsMs', includes: 'nothing reads since TL-12' });
     });
 
     it('an empty spawn list', () => {
@@ -408,7 +430,7 @@ describe('The derived type knows the lifecycle blocks (slice 4.4)', () => {
         },
         fx_la_only_turns: {
             id: 'fx_la_only_turns', name: 'Only Turns',
-            turns: { into: [{ typeId: 'token_guild_hall', weight: 1 }], everyMs: 5000, lastsMs: 5000 },
+            turns: { into: [{ typeId: 'token_guild_hall', weight: 1 }], everyMs: 5000, chance: 30 },
         },
         fx_la_only_foundation: {
             id: 'fx_la_only_foundation', name: 'Only Foundation',

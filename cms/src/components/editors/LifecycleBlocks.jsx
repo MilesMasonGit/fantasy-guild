@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Plus, X, Sprout } from 'lucide-react';
 import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickleEntry, TOKEN_LIFECYCLE_BLOCKS } from '../../stores/useEntityStore';
-import { FOUNDATION_KINDS, skillsByLayer } from '../../utils/constants';
+import { FOUNDATION_KINDS, TURN_DEFAULTS, skillsByLayer } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
 
@@ -21,7 +21,7 @@ import { ItemPicker, ItemList } from './Statements';
 const BLOCK_INFO = {
   spawner: { title: 'Spawner', what: 'Adds new Tokens to the mat on a clock, up to its family’s cap.' },
   grows: { title: 'Grows', what: 'Becomes another Token after a time (Sapling → Tree).' },
-  turns: { title: 'Turns', what: 'Turns into one of a list for a while, then back (Coast ↔ Shrimp Coast).' },
+  turns: { title: 'Turns', what: 'Rolls a chance every cycle to turn into one of a list, and the same to turn back (Coast ↔ Shrimp Coast).' },
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
   trickle: { title: 'Trickle', what: 'Pays items into the Bank on a clock, no hero needed (Guild Hall only, for now).' },
@@ -136,8 +136,16 @@ function GrowsBlock({ block, tokenOptions, onChange }) {
   );
 }
 
+/**
+ * TL-12: once per cycle the Token rolls its chance to turn; the turned Token
+ * rolls the SAME cycle and chance to turn back. `lastsMs` (the old fixed
+ * "stays turned for") is retired: any edit here drops it, and a block without
+ * a cycle or chance shows (and runs on) the game's defaults.
+ */
 function TurnsBlock({ block, tokenOptions, onChange }) {
-  const patch = (p) => onChange({ ...block, ...p });
+  const rest = { ...block };
+  delete rest.lastsMs;
+  const patch = (p) => onChange({ ...rest, ...p });
   return (
     <div className="space-y-3">
       <WeightedTokenList
@@ -147,9 +155,20 @@ function TurnsBlock({ block, tokenOptions, onChange }) {
         onChange={(into) => patch({ into })}
       />
       <div className="grid grid-cols-2 gap-3">
-        <IntField label="Every (ms)" min={1000} step={1000} value={block.everyMs} onChange={(everyMs) => patch({ everyMs })} />
-        <IntField label="Lasts (ms)" min={1000} step={1000} value={block.lastsMs} onChange={(lastsMs) => patch({ lastsMs })} />
+        <IntField
+          label="Roll every (ms)" min={1000} step={1000}
+          value={block.everyMs ?? TURN_DEFAULTS.everyMs}
+          onChange={(everyMs) => patch({ everyMs })}
+        />
+        <IntField
+          label="Chance to turn (%)" min={1} max={100}
+          value={block.chance ?? TURN_DEFAULTS.chance}
+          onChange={(chance) => patch({ chance })}
+        />
       </div>
+      <p className="text-[10px] text-gray-600">
+        The same cycle and chance turn it back.
+      </p>
     </div>
   );
 }
@@ -276,12 +295,13 @@ function SkillSelect({ value, onChange, general = false }) {
   );
 }
 
-function IntField({ label, value, onChange, min = 0, step = 1 }) {
+function IntField({ label, value, onChange, min = 0, max = Infinity, step = 1 }) {
   return (
     <Field label={label}>
       <input
-        type="number" min={min} step={step} value={value ?? ''}
-        onChange={(e) => onChange(Math.max(min, Math.round(Number(e.target.value)) || min))}
+        type="number" min={min} max={Number.isFinite(max) ? max : undefined} step={step} value={value ?? ''}
+        aria-label={label}
+        onChange={(e) => onChange(Math.min(max, Math.max(min, Math.round(Number(e.target.value)) || min)))}
         className="w-full"
       />
     </Field>

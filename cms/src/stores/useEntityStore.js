@@ -19,7 +19,7 @@ import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
     migrateBearers, migratePromotionFields, migrateAppliesTargetsIn, expandBearer, expandAll, effectRefsOf, provisionalName,
-    normaliseScale, FOUNDATION_KINDS,
+    normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
 
@@ -696,7 +696,8 @@ export function makeLifecycleBlock(key) {
         case 'grows':
             return { into: '', afterMs: 30000 };
         case 'turns':
-            return { into: [], everyMs: 120000, lastsMs: 60000 };
+            // TL-12: a chance once per cycle, used both ways; no `lastsMs`.
+            return { into: [], everyMs: TURN_DEFAULTS.everyMs, chance: TURN_DEFAULTS.chance };
         case 'foundation':
             return { kind: FOUNDATION_KINDS[0], skill: 'construction' };
         case 'shop':
