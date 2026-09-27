@@ -5,7 +5,7 @@
 record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its decisions
 (TL-1…TL-11, §2) stand unless a TL- decision below replaces them.*
 
-**Status: organised and interviewed 2026-09-26; plan awaiting the owner's approval; no code changed.**
+**Status: organised and interviewed 2026-09-26; plan APPROVED by the owner 2026-09-26. Quick wins Q1–Q9 in progress (§4.1).**
 
 **Kinds:** 🐞 bug · 🔢 number tweak · 🔧 small change (a session or less) · 🏗️ larger rework
 (needs a brief and its own agent).
@@ -194,7 +194,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | **TL-18** | **Quests are Tokens.** The Guild Hall spawns them slowly up to an upgradable cap; tutorial quests start on the mat and chain under a hidden cap; non-tutorial quests can be discarded. Noticeboard, click to claim. | The quest sidebar |
 | **TL-19** | **Two Token sizes.** A CMS field: standard (64 px art at 128 px) or small (32 px art at 64 px), with a matching hit area and spacing. | One size for all |
 
-## 4. Proposed plan (awaiting approval)
+## 4. Plan (approved 2026-09-26)
 
 ### 4.1 Quick wins, this session
 
