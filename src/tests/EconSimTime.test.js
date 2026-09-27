@@ -105,7 +105,8 @@ describe('EconSim — TIME pass', () => {
         it('is the middle of the tempo band, snapped to whole seconds', () => {
             const band = bandFor('medium', 1);
             expect(bandMiddleMs('medium', 1)).toBe(16000);   // (12000 + 20000) / 2
-            expect(bandMiddleMs('quick', 1)).toBe(4000);     // (2000 + 6000) / 2, TL-21
+            expect(bandMiddleMs('quick', 1)).toBe(3000);     // (2000 + 4000) / 2, TL-21
+            expect(bandMiddleMs('fast', 1)).toBe(8000);      // (4000 + 12000) / 2, TL-21
             expect(bandMiddleMs('medium', 1)).toBe(Math.round(((band.minMs + band.maxMs) / 2) / 1000) * 1000);
 
             // Every band middle, at a spread of levels, is a whole number of seconds.

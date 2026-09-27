@@ -165,7 +165,7 @@ describe('EconSim — the lever policy (plan §5)', () => {
                         outputs: [out('item_x', { minQty: 1, maxQty: 1, chance: 95, variable: true })],
                     }),
                 },
-                values: { item_x: 8 },
+                values: { item_x: 6 },   // 6, not 8, since TL-21 moved Fast's middle from 10s to 8s,
             });
 
             const record = tunings.get('token_second');
@@ -193,7 +193,7 @@ describe('EconSim — the lever policy (plan §5)', () => {
                         outputs: [out('item_x', { minQty: 1, maxQty: 1, chance: 100, variable: true })],
                     }),
                 },
-                values: { item_x: 8 },
+                values: { item_x: 6 },   // 6, not 8, since TL-21 moved Fast's middle from 10s to 8s,
             });
 
             const record = tunings.get('token_second');

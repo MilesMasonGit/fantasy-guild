@@ -19,18 +19,18 @@ describe('the CMS tempo vocabulary (TL-21)', () => {
     });
 
     it('the TIME pass places a tagged Quick producer instead of filing an unknown-tempo row', () => {
-        expect(bandMiddleMs('quick', 1)).toBe(4000);
+        expect(bandMiddleMs('quick', 1)).toBe(3000);   // TL-21: the 3s gathering target
         const entity = {
             id: 't', name: 'T', kind: 'token', tempo: 'quick', purpose: 'iph', level: 1,
             outputs: [{ itemId: 'item_x', abundance: 1 }],
         };
         const { cycleTimes, rows } = runTempoPass([entity]);
         expect(rows.find((r) => r.code === 'unknown-tempo')).toBeUndefined();
-        expect(cycleTimes.get('t')).toBe(4000);
+        expect(cycleTimes.get('t')).toBe(3000);
     });
 
-    it('the TUNE pass keeps a Quick cycle inside 2–6s at level 1', () => {
+    it('the TUNE pass keeps a Quick cycle inside 2–4s at level 1', () => {
         const got = cycleCandidates('quick', 1, 3000, 3000);
-        expect([...got].sort((a, b) => a - b)).toEqual([2000, 4000, 5000, 6000]);
+        expect([...got].sort((a, b) => a - b)).toEqual([2000, 4000]);
     });
 });

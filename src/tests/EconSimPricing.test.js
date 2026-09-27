@@ -57,17 +57,18 @@ describe('EconSim — PRICE pass', () => {
 
     describe('a worked single-output anchor', () => {
         it('lands on a neighbouring integer', () => {
-            // Level 1, fast (band middle 10s), GPH (factor 1.0), one unit a cycle.
-            //   units/hour = 1 ÷ 10s × 3600 × 1.005      = 361.8
+            // Level 1, fast (band middle 8s since TL-21, 4–12s), GPH (factor
+            // 1.0), one unit a cycle.
+            //   units/hour = 1 ÷ 8s × 3600 × 1.005       = 452.25
             //   target     = GPH(1) × 1.0                = 1,200/h
-            //   ideal      = 1200 ÷ 361.8                = 3.32g
-            // Band at level 1 is ±25%, so both 3 and 4 land; 3 is closer.
+            //   ideal      = 1200 ÷ 452.25               = 2.65g
+            // Band at level 1 is ±25%, so both 2 and 3 land; 3 is closer.
             const result = runSim({ tokens: { a: token('token_grove') }, items: itemsFor('item_a') });
 
-            expect(result.cycleTimes.get('token_grove')).toBe(10000);
-            expect(result.details.get('item_a').unitsPerHour).toBeCloseTo(361.8, 1);
+            expect(result.cycleTimes.get('token_grove')).toBe(8000);
+            expect(result.details.get('item_a').unitsPerHour).toBeCloseTo(452.25, 1);
             expect(result.details.get('item_a').targetPerHour).toBe(1200);
-            expect(result.details.get('item_a').ideal).toBeCloseTo(3.3167, 3);
+            expect(result.details.get('item_a').ideal).toBeCloseTo(2.6534, 3);
             expect(result.values.get('item_a')).toBe(3);
             expect(result.rows.filter(r => r.severity !== 'info')).toHaveLength(0);
         });
@@ -310,10 +311,17 @@ describe('EconSim — PRICE pass', () => {
         const buildPair = (mixedId) => {
             // `mixed` anchors item_p and also drops item_q, which it does not
             // anchor. `other` anchors item_q via an explicit flag.
+            //
+            // Medium (16s), not the file's default Fast: at Fast's 8s middle
+            // (TL-21) item_q alone is worth more per hour than the whole
+            // target, so item_p's share clamps to zero and the subtraction
+            // below has nothing to measure.
             const mixed = token(mixedId, {
+                tempo: 'medium',
                 outputs: [out('item_p'), out('item_q')],
             });
             const other = token('t_mmm', {
+                tempo: 'medium',
                 outputs: [out('item_q', { anchor: true })],
             });
             return {
@@ -340,7 +348,7 @@ describe('EconSim — PRICE pass', () => {
             // whole target, so its item_p must come out strictly dearer.
             const withCoOutput = runSim(buildPair('t_aaa'));
             const alone = runSim({
-                tokens: { t_aaa: token('t_aaa', { outputs: [out('item_p')] }) },
+                tokens: { t_aaa: token('t_aaa', { tempo: 'medium', outputs: [out('item_p')] }) },
                 recipes: {},
                 items: itemsFor('item_p'),
             });

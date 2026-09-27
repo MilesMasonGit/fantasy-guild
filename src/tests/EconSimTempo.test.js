@@ -82,54 +82,45 @@ describe('the bands stay ordered Quick < Fast < Medium < Slow < Heavy', () => {
         for (let i = 1; i < bands.length; i++) {
             expect(bands[i].minMs).toBeGreaterThan(bands[i - 1].minMs);
             expect(bands[i].maxMs).toBeGreaterThan(bands[i - 1].maxMs);
-        }
-    });
-
-    it.each([1, 5, 20, 40, 70, 90, 120])('Fast to Heavy are contiguous at level %i', (level) => {
-        // Each band starts where the one before it ends — from Fast upward.
-        const names = TEMPO_NAMES.filter((t) => t !== 'quick');
-        const bands = names.map((t) => bandFor(t, level));
-        for (let i = 1; i < bands.length; i++) {
+            // Contiguous, all five: each band starts where the one before it
+            // ends. TL-21 widened Fast down to 4s to keep Quick joined on.
             expect(bands[i].minMs).toBe(bands[i - 1].maxMs);
-        }
-    });
-
-    it('⚠️ leaves a gap between Quick and Fast: 6–8s at level 1 is in no band (TL-21 as given)', () => {
-        // TL-21 set Quick at 2–6s and left Fast at 8–12s. A cycle strictly
-        // between the two belongs to neither. Pinned so that closing (or
-        // widening) the gap is a decision someone makes, not a drift.
-        expect(bandFor('quick', 1).maxMs).toBe(6000);
-        expect(bandFor('fast', 1).minMs).toBe(8000);
-        for (const ms of [6001, 7000, 7999]) {
-            expect(TEMPO_NAMES.some((t) => isInBand(ms, t, 1))).toBe(false);
         }
     });
 });
 
-describe('Quick (TL-21)', () => {
-    it('is 2–6s at level 1, exactly', () => {
-        expect(TEMPO_BANDS.quick).toEqual({ minMs: 2000, maxMs: 6000, topIsSoft: false });
-        expect(bandFor('quick', 1)).toEqual({ minMs: 2000, maxMs: 6000, topIsSoft: false });
+describe('Quick, and Fast widened (owner ruling TL-21, 2026-09-27)', () => {
+    it('Quick is 2–4s at level 1, exactly', () => {
+        expect(TEMPO_BANDS.quick).toEqual({ minMs: 2000, maxMs: 4000, topIsSoft: false });
+        expect(bandFor('quick', 1)).toEqual({ minMs: 2000, maxMs: 4000, topIsSoft: false });
     });
 
-    it('scales with level by the same rule as every other band', () => {
+    it('Fast is 4–12s at level 1 (was 8–12s)', () => {
+        expect(TEMPO_BANDS.fast).toEqual({ minMs: 4000, maxMs: 12000, topIsSoft: false });
+    });
+
+    it('scales both by the same rule as every other band', () => {
         for (const level of [1, 2, 36, 40, 71, 90]) {
-            const b = bandFor('quick', level);
-            expect(b.minMs).toBe(Math.round(2000 * levelScale(level)));
-            expect(b.maxMs).toBe(Math.round(6000 * levelScale(level)));
+            for (const [tempo, lo, hi] of [['quick', 2000, 4000], ['fast', 4000, 12000]]) {
+                const b = bandFor(tempo, level);
+                expect(b.minMs).toBe(Math.round(lo * levelScale(level)));
+                expect(b.maxMs).toBe(Math.round(hi * levelScale(level)));
+            }
         }
-        expect(secs('quick', 71)).toEqual([4, 12]);   // factor 2 exactly
+        expect(secs('quick', 71)).toEqual([4, 8]);   // factor 2 exactly
+        expect(secs('fast', 71)).toEqual([8, 24]);
     });
 
-    it('takes the Q9 pacing numbers: 3s gathering and 6s processing are Quick at level 1', () => {
+    it('takes the Q9 pacing numbers at level 1: 3s gathering is Quick, 6s and 8s processing are Fast', () => {
         expect(isInBand(3000, 'quick', 1)).toBe(true);
-        expect(isInBand(6000, 'quick', 1)).toBe(true);    // top edge, inclusive
-        expect(isInBand(6000, 'quick', 2)).toBe(true);    // a level-2 recipe (Copper Pickaxe)
+        expect(isInBand(6000, 'fast', 1)).toBe(true);
+        expect(isInBand(6000, 'fast', 2)).toBe(true);     // a level-2 recipe (Copper Pickaxe)
+        expect(isInBand(8000, 'fast', 1)).toBe(true);
+        expect(isInBand(6000, 'quick', 1)).toBe(false);
         expect(isInBand(1999, 'quick', 1)).toBe(false);
-        expect(isInBand(8000, 'quick', 1)).toBe(false);   // that is Fast
     });
 
-    it('has a closed top, like every band but Heavy', () => {
+    it('Quick has a closed top, like every band but Heavy', () => {
         expect(bandFor('quick', 1).topIsSoft).toBe(false);
         expect(isInBand(600000, 'quick', 1)).toBe(false);
     });
@@ -189,18 +180,21 @@ describe('isInBand', () => {
 describe('⚠️ the table reproduces plan §13.3\'s printed columns', () => {
     /**
      * §13.3 as printed, in seconds. If this ever disagrees with the plan, the
-     * plan wins and this table is the thing that is wrong.
+     * plan wins and this table is the thing that is wrong — with one ruled
+     * exception: Fast's floor is TL-21's 4s (owner, 2026-09-27), not the plan's
+     * 8s, so its three floors below are that rule's output. Quick is not in
+     * the plan at all and is pinned in its own block above.
      *
      *   | Tempo  | Level 1 | Level 40 | Level 90 |
-     *   | Fast   | 8–12    | 12–19    | 18–28    |
+     *   | Fast   | 4–12    | 6–19     | 9–28     |   ← floor is TL-21's, not the plan's
      *   | Medium | 12–20   | 19–31    | 27–46    |
      *   | Slow   | 20–30   | 31–47    | 46–69    |
      *   | Heavy  | 30–120  | 47–188   | 69–274   |
      */
     const PRINTED = {
-        1: { fast: [8, 12], medium: [12, 20], slow: [20, 30], heavy: [30, 120] },
-        40: { fast: [12, 19], medium: [19, 31], slow: [31, 47], heavy: [47, 188] },
-        90: { fast: [18, 28], medium: [27, 46], slow: [46, 69], heavy: [69, 274] },
+        1: { fast: [4, 12], medium: [12, 20], slow: [20, 30], heavy: [30, 120] },
+        40: { fast: [6, 19], medium: [19, 31], slow: [31, 47], heavy: [47, 188] },
+        90: { fast: [9, 28], medium: [27, 46], slow: [46, 69], heavy: [69, 274] },
     };
 
     /**

@@ -17,8 +17,8 @@
  *
  * | Tempo  | Level 1  | Level 40 | Level 90 |
  * | :----- | :------- | :------- | :------- |
- * | Quick  | 2–6s     | 3–9s     | 5–14s    |
- * | Fast   | 8–12s    | 12–19s   | 18–28s   |
+ * | Quick  | 2–4s     | 3–6s     | 5–9s     |
+ * | Fast   | 4–12s    | 6–19s    | 9–28s    |
  * | Medium | 12–20s   | 19–31s   | 27–46s   |
  * | Slow   | 20–30s   | 31–47s   | 46–69s   |
  * | Heavy  | 30–120s  | 47–188s  | 69–274s  |
@@ -26,13 +26,20 @@
  * ⚠️ **Those are three views of one rule, not three tables.** The level-1
  * column is the base band; every other column is that base scaled by level.
  *
- * ## Quick (TL-21, token lifecycle feedback, 2026-09-27)
+ * ## Quick, and Fast's lower floor (owner ruling TL-21, 2026-09-27)
  *
- * The plan's table had four rows. **Quick, 2–6s at level 1,** was added for
- * early gathering and simple processing, whose ~3s target sat below Fast's
- * 8s floor. It scales by exactly the same rule as the other four — no
- * special case. Its level-40 and level-90 cells above are that rule's output,
- * not printed plan numbers.
+ * The plan's table had four rows, with Fast at 8–12s. The owner added
+ * **Quick, 2–4s at level 1** (middle 3s), for early gathering, and **widened
+ * Fast down to 4–12s** (middle 8s) so the bands still join up. Medium, Slow
+ * and Heavy are the plan's numbers, unchanged.
+ *
+ * The middles matter because every CMS sync snaps a tagged producer (tempo
+ * *and* purpose) to its band's middle (`tempoPass.bandMiddleMs`): a Quick
+ * gatherer runs at 3s and a Fast recipe the simulator tunes runs at 8s.
+ *
+ * Both scale by exactly the same rule as the other bands — no special case.
+ * The Quick row and Fast's floors at level 40 and 90 above are that rule's
+ * output, not printed plan numbers.
  *
  * ## ⚠️ The scaling rule is `1 + (level - 1)/70`, not the plan's `1 + level/70`
  *
@@ -57,17 +64,12 @@
  * `EconSimTempo.test.js` re-runs the whole reconciliation, which is what would
  * catch someone later replacing the scaling with a second mechanism.
  *
- * ## Why Fast to Heavy are contiguous, and Quick is not
+ * ## Why the bands are contiguous
  *
- * Fast's top is Medium's floor, Medium's top is Slow's floor, and so on. A
- * cycle time from Fast's floor up therefore always falls in exactly one band
- * (bar the shared endpoints, which are inclusive on both sides — see
- * `isInBand`).
- *
- * ⚠️ **Quick stops at 6s and Fast starts at 8s**, so at level 1 a cycle
- * strictly between 6s and 8s sits in no band. That gap is the owner's TL-21
- * numbers as given, not an oversight; `EconSimTempo.test.js` pins it so a
- * change to either edge is a decision, not a drift.
+ * Quick's top is Fast's floor, Fast's top is Medium's floor, and so on. A
+ * cycle time from 2s up therefore always falls in exactly one band (bar the
+ * shared endpoints, which are inclusive on both sides — see `isInBand`).
+ * TL-21 widened Fast down to 4s precisely to keep this true.
  *
  * ## ⚠️ Heavy has no hard top
  *
@@ -104,8 +106,8 @@ export const LEVEL_SCALE_DIVISOR = 70;
  * mechanism this file exists to prevent.
  */
 export const TEMPO_BANDS = Object.freeze({
-    quick: Object.freeze({ minMs: 2000, maxMs: 6000, topIsSoft: false }),   // TL-21
-    fast: Object.freeze({ minMs: 8000, maxMs: 12000, topIsSoft: false }),
+    quick: Object.freeze({ minMs: 2000, maxMs: 4000, topIsSoft: false }),   // TL-21
+    fast: Object.freeze({ minMs: 4000, maxMs: 12000, topIsSoft: false }),   // TL-21: was 8000–12000
     medium: Object.freeze({ minMs: 12000, maxMs: 20000, topIsSoft: false }),
     slow: Object.freeze({ minMs: 20000, maxMs: 30000, topIsSoft: false }),
     heavy: Object.freeze({ minMs: 30000, maxMs: 120000, topIsSoft: true }),
@@ -156,7 +158,7 @@ export function bandFor(tempo, level = 1) {
 /**
  * Does `cycleMs` sit inside `tempo`'s band at `level`?
  *
- * **Endpoints are inclusive at both ends.** Fast to Heavy are contiguous, so a
+ * **Endpoints are inclusive at both ends.** The bands are contiguous, so a
  * cycle time exactly on a shared boundary — 12000ms at level 1, say — is in
  * *both* Fast and Medium. That is deliberate: this answers "is this a
  * defensible Fast Token?", not "which single band owns this number?", and a

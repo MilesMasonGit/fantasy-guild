@@ -157,8 +157,8 @@ describe('What Recalculate writes', () => {
         const result = useEntityStore.getState().recalculateEconomy();
         const cycle = result.tokens.token_grove.config.cycleTimeMs;
         expect(cycle % 1000).toBe(0);
-        // Fast at level 1 is 8–12s; the pass takes the middle.
-        expect(cycle).toBe(10000);
+        // Fast at level 1 is 4–12s (TL-21); the pass takes the middle.
+        expect(cycle).toBe(8000);
         expect(recipeOf(result).durationMs).toBe(16000);
     });
 
