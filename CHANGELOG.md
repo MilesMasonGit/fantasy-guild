@@ -4,6 +4,14 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **First pacing pass (Q9, FB-19).** Early gathering (Oak Tree, the three veins, Ripe Wheat, Apple
+  Tree, Shrimp Coast) is tagged Quick and runs at 3 s (Coal Vein 4 s, where the calculator moved
+  it); Oak Tree and the veins drop to 5 charges and Apple Tree to 3. Copper Ingot, Shrimp and Apple
+  Juice are tagged Fast and run at 8 s; Charcoal, Torch, Copper Nails and Copper Pickaxe are tagged
+  Fast at 6 s; the four builds and two plantings are tagged Heavy at 30 s. XP per cycle and item
+  values re-derived from the new times: most of these producers now give 1 XP a cycle instead of
+  2, and coal, the three seeds, raw shrimp and the ingots are cheaper (coal 4 → 1 g, copper ingot
+  14 → 10 g).
 - **A fifth tempo, Quick, and a wider Fast (TL-21).** Tokens and recipes can now be tagged
   *Quick*: 2–4 s at level 1 (a sync places a tuned producer at 3 s). *Fast* now reaches down to
   4 s (4–12 s, middle 8 s, was 8–12 s) so the bands still join up; Medium, Slow and Heavy are

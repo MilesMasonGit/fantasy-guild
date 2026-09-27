@@ -74,7 +74,7 @@ describe('The Mining chain in shipped data (7.2)', () => {
                 expect(vein.config.outputs.map((o) => o.itemId)).toEqual([item]);
                 expect(vein.config.outputs[0].chance).toBe(100);
                 expect(vein.acceptedTokens || []).toEqual([]);
-                expect(vein.uses).toBe(10);
+                expect(vein.uses).toBe(5);   // Q9 pacing (FB-19): was 10
             });
 
             it('what it spawns is not sold at the Shop itself', () => {

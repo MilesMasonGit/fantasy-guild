@@ -86,13 +86,13 @@ describe('The Processing chain in shipped data (7.5)', () => {
             ["Build Fighter's Academy", 'stone',
                 [{ itemId: 'item_stone', quantity: 10 }, { itemId: 'item_oak_wood', quantity: 10 }], 'token_fighter_s_academy'],
         ]) {
-            it(`${name}: Construction 1, 15 s, on ${kind}, builds ${builds}`, () => {
+            it(`${name}: Construction 1, 30 s, on ${kind}, builds ${builds}`, () => {
                 const r = named(name);
                 expect(r).toBeTruthy();
                 expect(r.skill).toBe('construction');
                 expect(r.foundationKinds).toEqual([kind]);
                 expect(r.levelRequirement).toBe(1);
-                expect(r.durationMs).toBe(15000);
+                expect(r.durationMs).toBe(30000);   // Q9 pacing (FB-19): was 15000
                 expect(r.inputs).toEqual(inputs);
                 expect(r.outputs.map((o) => o.tokenId)).toEqual([builds]);
             });

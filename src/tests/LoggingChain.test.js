@@ -67,7 +67,7 @@ describe('The Logging chain in shipped data (7.0, 7.1)', () => {
         const byItem = Object.fromEntries(tree.config.outputs.map((o) => [o.itemId, o]));
         expect(byItem.item_oak_wood.chance).toBe(100);
         expect(byItem.item_oak_seed.chance).toBe(20);
-        expect(tree.uses).toBe(10);
+        expect(tree.uses).toBe(5);   // Q9 pacing (FB-19): was 10
     });
 
     it('no Token in the chain needs a tool nearby (TL-2)', () => {

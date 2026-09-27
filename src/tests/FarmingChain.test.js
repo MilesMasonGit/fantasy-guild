@@ -70,13 +70,13 @@ describe('The Farming chain in shipped data (7.4)', () => {
         ['Plant Wheat Field', 'item_wheat_seed', 'token_wheat_field'],
         ['Plant Apple Orchard', 'item_apple_seed', 'token_apple_orchard'],
     ]) {
-        it(`${name} is a level-1 Farming recipe on Farmland: 1 seed, 15 s, builds one Token`, () => {
+        it(`${name} is a level-1 Farming recipe on Farmland: 1 seed, 30 s, builds one Token`, () => {
             const r = building(name);
             expect(r).toBeTruthy();
             expect(r.skill).toBe('farming');
             expect(r.foundationKinds).toEqual(['farmland']);
             expect(r.levelRequirement).toBe(1);
-            expect(r.durationMs).toBe(15000);
+            expect(r.durationMs).toBe(30000);   // Q9 pacing (FB-19): was 15000
             expect(r.inputs).toEqual([{ itemId: seed, quantity: 1 }]);
             expect(r.outputs.map((o) => o.tokenId)).toEqual([builds]);
         });
@@ -117,10 +117,10 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(familyOf('token_wheat_field')).toEqual(['token_wheat_sprout', 'token_ripe_wheat']);
         });
 
-        it('Ripe Wheat is harvested (Farming 1, 16 s) three times for Wheat and a 40% Wheat Seed', () => {
+        it('Ripe Wheat is harvested (Farming 1, 3 s) three times for Wheat and a 40% Wheat Seed', () => {
             expect(ripe.config.skill).toBe('farming');
             expect(ripe.config.skillRequired).toBe(1);
-            expect(ripe.config.cycleTimeMs).toBe(16000);
+            expect(ripe.config.cycleTimeMs).toBe(3000);   // Q9: Quick, the sync places it at 3 s (was 16000)
             const out = byItem(ripe);
             expect(Object.keys(out).sort()).toEqual(['item_wheat', 'item_wheat_seed']);
             expect(out.item_wheat).toMatchObject({ chance: 100, minQty: 1, maxQty: 2 });
@@ -147,9 +147,9 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(familyOf('token_apple_orchard')).toEqual(['token_apple_sapling', 'token_apple_tree']);
         });
 
-        it('an Apple Tree is Farming, has 5 charges and drops Apples and a 30% Apple Seed', () => {
+        it('an Apple Tree is Farming, has 3 charges and drops Apples and a 30% Apple Seed', () => {
             expect(appleTree.config.skill).toBe('farming');
-            expect(appleTree.uses).toBe(5);
+            expect(appleTree.uses).toBe(3);   // Q9 pacing (FB-19): was 5
             const out = byItem(appleTree);
             expect(out.item_apple.chance).toBe(100);
             expect(out.item_apple_seed).toMatchObject({ chance: 30, minQty: 1, maxQty: 1 });

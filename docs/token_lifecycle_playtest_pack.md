@@ -79,7 +79,12 @@ The tutorial quests follow the same path, so you can also just follow them.
 - A Token's **spawner, grows, turns, Foundation, Shop price and trickle** are in the Token editor's
   **Spawning and Building** section.
 - **Charges** are the Token's uses.
-- A worked Token's **cycle time and outputs** are in its work settings.
+- A worked Token's **cycle time and outputs** are in its work settings. ⚠️ A Token or recipe
+  tagged with both a **Tempo** and a **Purpose** has its cycle time re-set by every Sync (to the
+  middle of its tempo band, or a nearby whole second the calculator picks), and its XP and item
+  values re-derived from it. To change its speed, change its Tempo; a typed time only sticks on
+  something with no Purpose. Tempo bands at level 1: Quick 2–4 s, Fast 4–12 s, Medium 12–20 s,
+  Slow 20–30 s, Heavy 30 s and up (TL-21).
 - **Recipes** (costs, times, levels, which Foundation they build on) are in the **Recipes** tab.
 
 **In code** (ask me to change these):
@@ -120,11 +125,12 @@ The tutorial quests follow the same path, so you can also just follow them.
 
 | Token | Uses | Cycle | Gives |
 |---|---|---|---|
-| Oak Tree | 10 | 16 s | Oak Wood 1–2, Oak Seed 20% |
-| Copper Ore Vein / Coal Vein / Stone Outcrop | 10 | 16–20 s | Copper Ore / Coal / Stone 1–2 |
-| Shrimp Coast | — | 16 s | Raw Shrimp 1 |
-| Ripe Wheat | 3 | 16 s | Wheat 1–2, Wheat Seed 40% |
-| Apple Tree | 5 | 16 s | Apple 1–2, Apple Seed 30% |
+| Oak Tree | 5 | 3 s (Quick) | Oak Wood 1–2, Oak Seed 20% |
+| Copper Ore Vein / Stone Outcrop | 5 | 3 s (Quick) | Copper Ore / Stone 1–2 |
+| Coal Vein | 5 | 4 s (Quick; the calculator moved it off 3 s) | Coal 1–2 |
+| Shrimp Coast | — | 3 s (Quick) | Raw Shrimp 1 |
+| Ripe Wheat | 3 | 3 s (Quick) | Wheat 1–2, Wheat Seed 40% |
+| Apple Tree | 3 | 3 s (Quick) | Apple 1–2, Apple Seed 30% |
 | Oak Forest Map | 5 | 20 s, spends 1 Shrimp + 1 Torch | Oak Wood 2–4; Oak Seed 40%; Apple, Wheat Seed 25%; Copper Ore 25%; Beeswax Comb 5% |
 | Goblin | 1 life | 12 s | Bones; Copper Ore 30% (each drop rolls on its own, TL-10) |
 | Goblin Chief | 2 lives | 12 s | Copper Ingot 1–2, Bones; Beeswax Comb 25% |
@@ -133,17 +139,17 @@ The tutorial quests follow the same path, so you can also just follow them.
 
 | Where | Recipe | Cost → result | Time |
 |---|---|---|---|
-| Wood Foundation | Build Workbench / Build Cooking Pot | 5 Oak Wood | 15 s |
-| Stone Foundation | Build Furnace | 5 Stone | 15 s |
-| Stone Foundation | Build Fighter's Academy | 10 Stone + 10 Oak Wood | 15 s |
-| Farmland | Plant Wheat Field / Plant Apple Orchard | 1 Wheat Seed / 1 Apple Seed | 15 s |
-| Workbench | Charcoal | 2 Oak Wood → 1 Charcoal | 12 s |
-| Workbench | Torch | 1 Oak Wood + 1 Charcoal → 1 Torch | 12 s |
-| Furnace | Copper Ingot | 4 Copper Ore + 1 Coal → 1 Ingot | 16 s |
-| Furnace + Anvil nearby | Copper Nails | 1 Ingot + 1 Coal → 2 Nails | 16 s |
-| Furnace | Copper Pickaxe (lvl 2) | 4 Copper Ingot → a Pickaxe Token beside the Furnace (TL-8) | 12 s |
-| Cooking Pot | Shrimp | 1 Raw Shrimp + 1 Charcoal → 1 Shrimp | 16 s |
-| Cooking Pot | Apple Juice | 4 Apple + 1 Charcoal → 1 Apple Juice | 16 s |
+| Wood Foundation | Build Workbench / Build Cooking Pot | 5 Oak Wood | 30 s (Heavy) |
+| Stone Foundation | Build Furnace | 5 Stone | 30 s (Heavy) |
+| Stone Foundation | Build Fighter's Academy | 10 Stone + 10 Oak Wood | 30 s (Heavy) |
+| Farmland | Plant Wheat Field / Plant Apple Orchard | 1 Wheat Seed / 1 Apple Seed | 30 s (Heavy) |
+| Workbench | Charcoal | 2 Oak Wood → 1 Charcoal | 6 s (Fast) |
+| Workbench | Torch | 1 Oak Wood + 1 Charcoal → 1 Torch | 6 s (Fast) |
+| Furnace | Copper Ingot | 4 Copper Ore + 1 Coal → 1 Ingot | 8 s (Fast, set by the calculator) |
+| Furnace + Anvil nearby | Copper Nails | 1 Ingot + 1 Coal → 2 Nails | 6 s (Fast) |
+| Furnace | Copper Pickaxe (lvl 2) | 4 Copper Ingot → a Pickaxe Token beside the Furnace (TL-8) | 6 s (Fast) |
+| Cooking Pot | Shrimp | 1 Raw Shrimp + 1 Charcoal → 1 Shrimp | 8 s (Fast, set by the calculator) |
+| Cooking Pot | Apple Juice | 4 Apple + 1 Charcoal → 1 Apple Juice | 8 s (Fast, set by the calculator) |
 
 ## 5. What changed from before
 
