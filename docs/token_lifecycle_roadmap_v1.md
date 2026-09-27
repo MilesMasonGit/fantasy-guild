@@ -118,6 +118,29 @@ absent there). Subagents working in worktrees should expect 14.
 heroes, as designed). The console shows one pre-existing React warning
 ("Encountered two children with the same key"), not from this work.
 
+
+### 0.5 Lessons from the first build (read before any follow-up work)
+
+* **Baseline is now 10 failures** (see §0.4): compare names, not counts.
+* **CMS authoring route that worked every time** (§8, rows 7.1–7.7): run the CMS dev server; on a
+  sandbox route (`?p2=1`) turn off persistence on `useEntityStore` and `useGlobalStore`; load the
+  game data; a control sync must change nothing; author with the store's own actions; sync; reload
+  and sync again, which must report no changes. **Register sprites before starting the CMS server**
+  (or restart it after), or a sync can write empty files.
+* **Content and code go in separate commits.** A repo hook refuses any commit mixing `data/` and
+  code, merges included. Merge a content branch in steps: its `CMS sync:` commit, then its code.
+  Content lanes run one at a time (DP-12).
+* **Worktrees** start from an old commit (`git merge --ff-only main` first) and need `node_modules`,
+  `cms/node_modules` and `public/assets` linked as junctions. **Before deleting a worktree, remove
+  the junctions as links only** (`[System.IO.Directory]::Delete(path, $false)`), or a recursive
+  delete follows them into the real folders; stop any dev servers it left running.
+* **Browser checks:** screenshots time out, so use `window.Game` / `window.GameState` and `import()`
+  probes; after a code edit restart the dev server (Vite's `?t=` URLs give `import()` a second,
+  empty module copy); drawers don't open while the pane is hidden; if the page sits on LOADING,
+  navigate again; subagents share tabs, so use your own. `DevTools.advanceTime(minutes)` (minutes,
+  not ms) and `DevTools.giveItem(id, n)` speed testing up.
+* **Versions stay in 0.8.x** (TL-11).
+
 ---
 
 ## 1. Goal and scope
