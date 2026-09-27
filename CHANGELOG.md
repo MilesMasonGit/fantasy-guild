@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Upkeep moves to the bar (B2.2, FB-29).** The bar shows `Upkeep 6/min`, every ongoing item
+  cost added up, and hovering it opens the full Upkeep Summary. The Bank drawer's Upkeep toggle
+  is gone.
 - **A bar above the playmat, with the Token cap (B2.1, FB-28, FB-31).** A slim wooden strip over
   the mat holds mat controls. It shows `Tokens 7/12` (placed Tokens against the cap, the Guild
   Hall not counted), and hovering it lists placed Tokens by type with a red note for blocked or

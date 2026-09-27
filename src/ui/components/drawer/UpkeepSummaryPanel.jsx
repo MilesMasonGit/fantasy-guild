@@ -4,10 +4,10 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { computeUpkeepSummary, formatRate, formatRunsOut } from '../../../systems/board/UpkeepSummary.js';
 import { cn } from '../../utils/cn.js';
 
-/** Events after which the summary is worked out again. */
-const REFRESH_EVENTS = ['inventory_updated', BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED];
+/** Events after which the summary is worked out again (the top bar's Upkeep badge hears these too, B2.2). */
+export const REFRESH_EVENTS = ['inventory_updated', BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED];
 /** Spawner clocks and statement lapses move without an event; a slow poll catches them. */
-const POLL_MS = 2000;
+export const POLL_MS = 2000;
 
 const STATE_TEXT = { at_cap: 'at its cap', no_room: 'no room to spawn' };
 
@@ -16,8 +16,14 @@ const STATE_TEXT = { at_cap: 'at its cap', no_room: 'no room to spawn' };
  * item per minute, what the Bank holds, a rough runs-out, and who is waiting
  * unpaid, plus the trickle's income. Plain and functional — restyled by the
  * Token UI rework later. The maths lives in `systems/board/UpkeepSummary.js`.
+ *
+ * Shown in the hover popover of the mat's top-bar Upkeep badge (B2.2, FB-29);
+ * it used to fill the Bank drawer behind a toggle. `className` sizes it for
+ * its host (the popover gives it a max height, so it scrolls on its own).
+ *
+ * @param {{ className?: string }} props
  */
-export const UpkeepSummaryPanel = () => {
+export const UpkeepSummaryPanel = ({ className = 'h-full' } = {}) => {
     const [summary, setSummary] = useState(() => computeUpkeepSummary());
 
     useEffect(() => {
@@ -31,7 +37,7 @@ export const UpkeepSummaryPanel = () => {
     const nothing = !items.length && !idle.length && !income.length;
 
     return (
-        <div data-testid="upkeep-summary" className="h-full overflow-y-auto custom-scrollbar p-3 flex flex-col gap-4 text-xs text-gi-text">
+        <div data-testid="upkeep-summary" className={cn('overflow-y-auto custom-scrollbar p-3 flex flex-col gap-4 text-xs text-gi-text', className)}>
             {nothing && (
                 <div className="text-gi-muted italic">Nothing on the mat costs upkeep or pays income.</div>
             )}
