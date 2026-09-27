@@ -197,6 +197,8 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | Trickle payouts (after Q5) | **Drop as floating loot like any other item** (collected on hover, TL-9), instead of going straight into the Bank. → FB-53, slice Q5b. |
 | Mid-flight Hall moves (after Q5) | Fine as is: an item lands where the Hall was when the flight started. |
 | After Q6 | "No work in range." **kept** · a stunned hero plays **no** attack · knockback timing (625 ms, on the strike frame) **kept** · the "My the right level…" wording bug is fixed in **Q7** (→ FB-54). The owner audits `speech_bubble_lines.md` later. |
+| Floor seeds (after Q5b) | **Spawner upkeep also takes floor loot**: with trickle payouts lying on the mat (FB-53), spawners may pay upkeep from matching loot on the mat as well as the Bank, so idle play keeps running and the Hall trickle stays the backstop (SP-66). → TL-20. |
+| Hall tooltip width (after Q5b) | **Widen it to fit** each trickle line on one row. |
 | FB-46 hero dock | The **owner describes the general idea first**, then the agent makes mockups. |
 | FB-39 Hall tree | **Mockups first**; the sprite bug (FB-40) is fixed earlier as a quick win. |
 
@@ -211,6 +213,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | **TL-16** | **Enemies move again.** Each is tethered to its spawner as a hero is to a flag: idles near it, follows it if moved, walks back if carried away. **Hostile** enemies (a CMS setting) attack heroes that come within range. | Static enemy Tokens since the enemy-Tokens merge |
 | **TL-17** | **Flags have no hitbox and can be pinned.** A flag never blocks or pushes Tokens. Dropped onto a Token, it means "work only this one"; when that Token is exhausted the flag stays at the spot as a normal area flag. | Whatever FP rule gives flags a footprint (the brief checks) |
 | **TL-18** | **Quests are Tokens.** The Guild Hall spawns them slowly up to an upgradable cap; tutorial quests start on the mat and chain under a hidden cap; non-tutorial quests can be discarded. Noticeboard, click to claim. | The quest sidebar |
+| **TL-20** | **Upkeep can be paid from floor loot.** A spawner's per-spawn upkeep (SP-70) takes matching item loot lying on the mat as well as items in the Bank, through the existing `consumeFromSprites` path. The Upkeep Summary and needs-item alerts count both. | SP-70's implicit "paid from the Bank" (roadmap v1 slice 3.3) |
 | **TL-19** | **Two Token sizes.** A CMS field: standard (64 px art at 128 px) or small (32 px art at 64 px), with a matching hit area and spacing. | One size for all |
 
 ## 4. Plan (approved 2026-09-26)
