@@ -4,6 +4,21 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Speech bubbles sit above the head, and speak up only when it matters (Q6: FB-20, FB-21, FB-22).**
+  A hero's bubbles now sit with their tail just above the hero's head at every mat size (they used to
+  cover the top of it, worse on a small mat). Everyday lines are gone: a hero no longer says
+  *Working at Oak Tree.* on arriving at a job, and an unset station or Foundation no longer makes its
+  hero say *Choose a recipe…* / *Choose what to build…* (the gear alone says it, as decided after Q1).
+  Problems, level-ups and *No work in range.* still show. Every line a bubble can show, with its
+  status, is listed in `docs/speech_bubble_lines.md` for the owner's audit.
+- **Heroes in a fight attack once per attack; stuck heroes stand idle (Q6: FB-49, FB-50).** A hero
+  fighting an enemy now stands idle and plays its attack animation once each time it really attacks
+  (hit or miss), instead of swinging in a loop. The enemy's knockback on a landed hit now waits for
+  the moment the blow lands in that animation. A hero on a Token that has a problem alert stands idle
+  instead of swinging at nothing, by the same test that stops the Token reacting.
+- **A Token left in another's place glows (Q6: FB-51).** A Token spawned *where its bearer stands*
+  (for example a Stump left behind) now gets the same glow as a transform. Ordinary spawns keep the
+  green notice. No shipped Token does this yet, so it is covered by tests only.
 - **Loot flies to the Guild Hall (Q5: FB-16, FB-17).** Collected items now arc to the Guild Hall
   Token on the mat instead of the Item Bank button, following the Hall wherever it has been moved;
   the Hall brightens briefly as they land. If the Hall is not on screen (or is being carried), items

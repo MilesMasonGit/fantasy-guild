@@ -326,6 +326,13 @@ export function spawn(statement, roles, random = Math.random) {
         typeId, tokenStartingUses(typeId), null, BoardState.ORIGIN.SPAWNED
     );
     BoardState.addToken(instance, where.x, where.y);
+    // FB-51: a Token that takes its bearer's place (a Stump left behind) glows
+    // like a transform (FB-11), under its new id — also where a bearer that has
+    // already left stood. Ordinary spawns elsewhere get the green notice
+    // instead (SpawnerSystem). Not while the time bank replays time away.
+    if (replacesBearer && !TimeBankManager.isSpending) {
+        TokenGlows.raiseGlow(instance.id, { fromTypeId: bearer?.typeId ?? null, typeId });
+    }
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, { x: where.x, y: where.y }, ...touched]);
     if (touched.length) EventBus.publish('state_changed');

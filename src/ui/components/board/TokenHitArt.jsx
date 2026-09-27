@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { useTokenEvent } from './tokenEvents.js';
 import {
-    HIT_PERIOD_MS, buildHitKeyframes, hitAnimationFor, hitsOnAttack, knockbackDir, strikeStartTime
+    HIT_PERIOD_MS, STRIKE_DELAY_MS, buildHitKeyframes, hitAnimationFor, hitsOnAttack, knockbackDir, strikeStartTime
 } from './hitAnimations.js';
 
 /** The engine's one-per-attack combat event (`CombatAttackProcessor`). */
@@ -34,7 +34,9 @@ const timelineNow = () =>
  *   wrong (`active`), one looping animation whose every loop starts on the
  *   hero's strike frame (`strikeStartTime`).
  * * **Combat** (an enemy): one knockback per landed `combat_hero_attack`,
- *   away from the hero who struck.
+ *   away from the hero who struck. It waits {@link STRIKE_DELAY_MS}: the hero
+ *   plays its attack row once from that same event (feedback Q6, FB-49), and
+ *   the knockback lands on the strike frame. A miss plays no knockback.
  *
  * Reduced motion: no movement; combat keeps its red flash.
  */
@@ -55,7 +57,7 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
         return () => loop.cancel();
     }, [anim, onAttack, heroId, active]);
 
-    // Combat: one knockback per landed hit.
+    // Combat: one knockback per landed hit, on the hero's strike frame (FB-49).
     const tokenXRef = React.useRef(tokenX);
     tokenXRef.current = tokenX;
     const lastHit = React.useRef(null);
@@ -70,7 +72,7 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
         lastHit.current?.cancel();
         el.style.transformOrigin = anim.origin;
         el.dataset.hitDir = String(dir);
-        lastHit.current = el.animate(keyframes, { duration: anim.ms });
+        lastHit.current = el.animate(keyframes, { duration: anim.ms, delay: STRIKE_DELAY_MS });
     });
     React.useEffect(() => () => lastHit.current?.cancel(), []);
 

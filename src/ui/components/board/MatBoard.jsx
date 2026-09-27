@@ -9,6 +9,7 @@ import { MatHero } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
 import { MatPointAlerts } from './MatPointAlerts.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
+import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
 import { FlagLayer } from './FlagLayer.jsx';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
@@ -130,8 +131,12 @@ export const MatBoard = ({
                     name: hero?.name || 'Hero',
                     sprite: hero?.spriteId || hero?.classId || null,
                     // Not working productively: the Token it holds is stuck.
-                    // Such a hero gets no glow — the red badge says it alone.
-                    stuck: !!worked?.alert,
+                    // Such a hero gets no glow — the red badge says it alone —
+                    // and stands idle instead of swinging (FB-50). The same
+                    // test as the Token's own hit reaction (`strikesLive`).
+                    stuck: !!worked && !strikesLive(heroId, worked.alert),
+                    // Fighting: idle, one attack per real attack (FB-49).
+                    combat: !!worked && hitsOnAttack(hitSkillOf(getTokenType(worked.typeId))),
                     // Which alert — the speech bubble says what is wrong (SB-B).
                     alert: worked?.alert || null
                 });
@@ -290,9 +295,9 @@ export const MatBoard = ({
 
             {heroes.map(h => {
                 const place = heroPlacement(h);
-                let animState = 'idle';
-                if (h.moving) animState = 'walk';
-                else if (h.state === 'working') animState = 'attack';
+                const animState = heroAnimationState({
+                    moving: h.moving, working: h.state === 'working', stuck: h.stuck, combat: h.combat
+                });
 
                 return (
                     <MatHero

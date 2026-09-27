@@ -29,7 +29,7 @@ import {
 } from './TokenBadges.jsx';
 import { gearStateOf, spawnerCountText } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
-import { hitSkillOf } from './hitAnimations.js';
+import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { trickleHoverLines } from '../drawer/lifecycleLines.js';
@@ -359,7 +359,7 @@ export const MatToken = React.memo(function MatToken({
                         instanceId={id}
                         skill={hitSkill}
                         heroId={heroId}
-                        active={!!heroId && !alert}
+                        active={strikesLive(heroId, alert)}
                         tokenX={x}
                         className={transformGlow ? 'gi-transform-flash' : null}
                     >

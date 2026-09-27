@@ -22,8 +22,11 @@ import { TokenHitArt, COMBAT_ATTACK_EVENT } from '../ui/components/board/TokenHi
 import {
     HIT_ANIMATIONS, SKILL_HIT, HIT_PERIOD_MS, STRIKE_FRAME, HERO_FRAMES,
     hitSkillOf, hitAnimationNameFor, hitAnimationFor, hitsOnAttack, knockbackDir,
-    buildHitKeyframes, heroFrameAt, strikeStartTime, heroPhaseMs, redFlash
+    buildHitKeyframes, heroFrameAt, strikeStartTime, heroPhaseMs, redFlash,
+    strikesLive, heroAnimationState, heroSpriteFrame, isRealAttack, STRIKE_DELAY_MS, ATTACK_ONCE_MS, HERO_FRAME_MS
 } from '../ui/components/board/hitAnimations.js';
+import { MatHero } from '../ui/components/board/MatHero.jsx';
+import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -298,7 +301,8 @@ describe('TokenHitArt', () => {
 
             act(() => EventBus.publish(COMBAT_ATTACK_EVENT, { instanceId: 'enemy_1', heroId: 'hero_1', hit: true }));
             expect(anim.calls).toHaveLength(1);
-            expect(anim.calls[0].options).toEqual({ duration: HIT_ANIMATIONS.knockback.ms });
+            // It waits for the hero's strike frame (FB-49).
+            expect(anim.calls[0].options).toEqual({ duration: HIT_ANIMATIONS.knockback.ms, delay: STRIKE_DELAY_MS });
             // Hero to the right (x 700 > 600): knocked left.
             expect(anim.calls[0].keyframes[1].transform).toMatch(/^translate\(-10%/);
             expect(container.querySelector('[data-token-hit="knockback"]').dataset.hitDir).toBe('-1');
@@ -381,5 +385,138 @@ describe('transform glow (FB-11)', () => {
         const { container } = mount(h(MatBoard, {}));
         const art = container.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
         expect(art.querySelector('[data-transform-glow]')).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Feedback Q6 — FB-49 combat attacks once, FB-50 stuck heroes idle
+// ---------------------------------------------------------------------------
+
+describe('which row a hero plays (FB-49, FB-50)', () => {
+    it('the Token reacts and the hero swings only on the same test (FB-50)', () => {
+        expect(strikesLive('hero_1', null)).toBe(true);
+        expect(strikesLive('hero_1', 'inputs')).toBe(false);
+        expect(strikesLive(null, null)).toBe(false);
+    });
+
+    it('walks when moving, idles when stuck or not working, swings at work, fights in combat', () => {
+        expect(heroAnimationState({ moving: true, working: true })).toBe('walk');
+        expect(heroAnimationState({ working: true })).toBe('attack');
+        expect(heroAnimationState({ working: true, stuck: true })).toBe('idle');
+        expect(heroAnimationState({ working: true, stuck: true, combat: true })).toBe('idle');
+        expect(heroAnimationState({ working: true, combat: true })).toBe('combat');
+        expect(heroAnimationState({})).toBe('idle');
+    });
+
+    it('in a fight the hero idles until it attacks, then plays the attack row once', () => {
+        const heroId = 'hero_1';
+        // No attack yet: idle, on the hero's own clock.
+        expect(heroSpriteFrame('combat', 5000, { heroId }).row).toBe('idle');
+        const at = 10000;
+        const seen = [];
+        for (let t = at; t < at + ATTACK_ONCE_MS; t += HERO_FRAME_MS) {
+            const f = heroSpriteFrame('combat', t, { heroId, attackAt: at });
+            expect(f.row).toBe('attack');
+            seen.push(f.frame);
+        }
+        expect(seen).toEqual([...Array(HERO_FRAMES).keys()]);   // 0..7, once
+        // ...then back to idle until the next attack.
+        expect(heroSpriteFrame('combat', at + ATTACK_ONCE_MS, { heroId, attackAt: at }).row).toBe('idle');
+        expect(heroSpriteFrame('combat', at + 2400, { heroId, attackAt: at }).row).toBe('idle');
+    });
+
+    it('the strike frame lands exactly when the knockback starts', () => {
+        const at = 777;
+        expect(STRIKE_DELAY_MS).toBe(STRIKE_FRAME * HERO_FRAME_MS);
+        expect(heroSpriteFrame('combat', at + STRIKE_DELAY_MS, { attackAt: at }).frame).toBe(STRIKE_FRAME);
+        expect(heroSpriteFrame('combat', at + STRIKE_DELAY_MS - 1, { attackAt: at }).frame).toBe(STRIKE_FRAME - 1);
+    });
+
+    it('waits exactly to the next frame boundary', () => {
+        const f = heroSpriteFrame('combat', 1030, { attackAt: 1000 });
+        expect(f).toEqual({ row: 'attack', frame: 0, nextInMs: HERO_FRAME_MS - 30 });
+        const loop = heroSpriteFrame('attack', 0, { heroId: null });
+        expect(loop).toEqual({ row: 'attack', frame: 0, nextInMs: HERO_FRAME_MS });
+    });
+
+    it('the work swing and the walk still loop', () => {
+        expect(heroSpriteFrame('attack', 1234, { heroId: 'hero_1' })).toMatchObject({ row: 'attack', frame: heroFrameAt(1234, 'hero_1') });
+        expect(heroSpriteFrame('walk', 1234, { heroId: 'hero_1' }).row).toBe('walk');
+        expect(heroSpriteFrame('idle', 1234, { heroId: 'hero_1' }).row).toBe('idle');
+    });
+
+    it('a miss is still an attack; a stunned attempt is not', () => {
+        expect(isRealAttack({ hit: true })).toBe(true);
+        expect(isRealAttack({ hit: false })).toBe(true);
+        expect(isRealAttack({ hit: false, stunned: true })).toBe(false);
+        expect(isRealAttack(null)).toBe(false);
+    });
+});
+
+describe('MatHero in a fight (FB-49)', () => {
+    const heroEl = (container) => container.querySelector('[data-hero-row]');
+    const drawHero = (animationState) => mount(h(MatHero, {
+        heroId: 'hero_q6', name: 'Q6', sprite: 'recruit', left: 0, top: 0, z: 1, animationState
+    }));
+
+    it('stands idle until a real attack, plays the attack row on one, and ignores others', () => {
+        const { container } = drawHero('combat');
+        expect(heroEl(container).dataset.heroRow).toBe('idle');
+
+        act(() => EventBus.publish(COMBAT_ATTACK_EVENT, { instanceId: 'e', heroId: 'someone_else', hit: true }));
+        expect(heroEl(container).dataset.heroRow).toBe('idle');
+
+        act(() => EventBus.publish(COMBAT_ATTACK_EVENT, { instanceId: 'e', heroId: 'hero_q6', hit: false, stunned: true }));
+        expect(heroEl(container).dataset.heroRow).toBe('idle');
+
+        act(() => EventBus.publish(COMBAT_ATTACK_EVENT, { instanceId: 'e', heroId: 'hero_q6', hit: false }));
+        expect(heroEl(container).dataset.heroRow).toBe('attack');
+        expect(heroEl(container).dataset.heroFrame).toBe('0');
+    });
+
+    it('a working hero still swings, and a stuck one stands idle (FB-50)', () => {
+        expect(heroEl(drawHero('attack').container).dataset.heroRow).toBe('attack');
+        cleanup();
+        const stuck = heroAnimationState({ working: true, stuck: !strikesLive('hero_q6', 'inputs') });
+        expect(heroEl(drawHero(stuck).container).dataset.heroRow).toBe('idle');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Feedback Q6 — FB-51 a Token left in another's place glows
+// ---------------------------------------------------------------------------
+
+describe('spawn in place glows like a transform (FB-51)', () => {
+    const spawnOf = (placement) => ({ payload: { typeId: 'fixture_q4_sapling', placement } });
+
+    it('a Token that replaces its bearer (a Stump left behind) glows under its new id', () => {
+        const bearer = placeAt('fixture_q4_tree', 500, 500);
+        const result = EffectActions.spawn(spawnOf(PLACEMENT.HERE), { self: bearer.id });
+        expect(result.replacedBearer).toBe(true);
+        expect(TokenGlows.glowOf(result.instanceId)).toMatchObject({ fromTypeId: 'fixture_q4_tree', typeId: 'fixture_q4_sapling' });
+        expect(TokenGlows.glowOf(bearer.id)).toBeNull();
+    });
+
+    it('also where a bearer that has already left stood', () => {
+        const bearer = placeAt('fixture_q4_tree', 500, 500);
+        BoardState.removeToken(bearer.id);
+        const result = EffectActions.spawn(spawnOf(PLACEMENT.HERE), { self: bearer.id, selfPoint: { x: 500, y: 500 } });
+        expect(result.replacedBearer).toBe(true);
+        expect(TokenGlows.glowOf(result.instanceId)).not.toBeNull();
+    });
+
+    it('an ordinary spawn beside its bearer does not glow', () => {
+        const bearer = placeAt('fixture_q4_tree', 500, 500);
+        const result = EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id });
+        expect(result.replacedBearer).toBe(false);
+        expect(TokenGlows.glowOf(result.instanceId)).toBeNull();
+    });
+
+    it('nothing glows while the time bank replays time away', () => {
+        const bearer = placeAt('fixture_q4_tree', 500, 500);
+        TimeBankManager.isSpending = true;
+        const result = EffectActions.spawn(spawnOf(PLACEMENT.HERE), { self: bearer.id });
+        expect(result.replacedBearer).toBe(true);
+        expect(TokenGlows.glowOf(result.instanceId)).toBeNull();
     });
 });

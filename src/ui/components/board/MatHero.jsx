@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -14,6 +15,27 @@ import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetMan
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
+import { isRealAttack } from './hitAnimations.js';
+import { COMBAT_ATTACK_EVENT } from './TokenHitArt.jsx';
+
+/**
+ * When this hero's last real attack began (`performance.now()`), while
+ * `listening` — a fighting hero idles and plays the attack row once per
+ * `combat_hero_attack` (feedback Q6, FB-49). The enemy's knockback is timed
+ * from the same event (`TokenHitArt`), so the blow and the reaction meet on
+ * the strike frame. A stunned attempt is not an attack: the hero stays idle.
+ */
+function useLastAttackAt(heroId, listening) {
+    const [at, setAt] = useState(null);
+    useEffect(() => {
+        if (!listening || !heroId) return undefined;
+        return EventBus.subscribe(COMBAT_ATTACK_EVENT, (p) => {
+            if (p?.heroId !== heroId || !isRealAttack(p)) return;
+            setAt(typeof performance !== 'undefined' ? performance.now() : Date.now());
+        });
+    }, [heroId, listening]);
+    return listening ? at : null;
+}
 
 /**
  * A hero standing on the mat: working a Token, or idle beside their flag.
@@ -67,6 +89,7 @@ export const MatHero = ({
     const facingLeft = facing < 0;
 
     const activeAnimation = isWalking ? 'walk' : animationState;
+    const attackAt = useLastAttackAt(heroId, activeAnimation === 'combat');
 
     return (
         <button
@@ -123,6 +146,7 @@ export const MatHero = ({
                             alt={name || 'Hero'}
                             size={artPx}
                             animationState={activeAnimation}
+                            attackAt={attackAt}
                             facingLeft={facingLeft}
                             frameMs={limp ? LIMP_FRAME_MS : undefined}
                             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
