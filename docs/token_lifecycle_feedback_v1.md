@@ -5,7 +5,7 @@
 record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its decisions
 (TL-1…TL-11, §2) stand unless a TL- decision below replaces them.*
 
-**Status: organised, interview pending, no code changed.**
+**Status: organised and interviewed 2026-09-26; plan awaiting the owner's approval; no code changed.**
 
 **Kinds:** 🐞 bug · 🔢 number tweak · 🔧 small change (a session or less) · 🏗️ larger rework
 (needs a brief and its own agent).
@@ -36,7 +36,8 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | Id | Kind | Item |
 |---|---|---|
 | FB-8 | 🔧 | Alerts (the red *exhausted* one and the yellow *needs items / Tokens* one) sit at the **centre** of the Token. |
-| FB-9 | 🔧 | Alerts fade out on their own after about 10 seconds. |
+| FB-9 | 🔧 | ~~Alerts fade out on their own after about 10 seconds.~~ Refined in the interview (TL-14): **problem** alerts stay until fixed; only green notices fade. |
+| FB-48 | 🔧 | *(added in the interview)* A **green notice** alert (`ui_alert_green.png`) for things that aren't problems but may want attention, such as a new Token spawning in. Fades after about 10 seconds. |
 
 ### D. Action animations
 
@@ -160,14 +161,101 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 
 ---
 
-## 2. Interview answers
+## 2. Interview answers (owner, 2026-09-26)
 
-*(filled in during the 2026-09-26 session)*
+| Item | Answer |
+|---|---|
+| FB-9 alert fade | **Problem alerts stay** until the problem is fixed. Things that aren't problems but may want attention (e.g. a new Token spawning) use the **green** alert and fade after ~10 s. → FB-48, TL-14. |
+| FB-10 hit animations | **One per skill now**, approved as proposed: Logging side-to-side shake · Mining jitter in all directions · Fishing slow bob · Farming sway from the base, like wind · Smithing sharp downward squash (hammer blow) · Crafting small hop · Cooking quick double pulse (bubbling) · Construction drop and settle (a thump) · Explore slow rustle/tilt · Combat (Melee, Ranged, Magic) knocked back away from the hero with a brief red flash. |
+| FB-15 transforms | **Per Token, set in the CMS**, default 1 min / 30%, both directions. The timer (FB-14) counts down to the next roll. → TL-12. |
+| FB-13 no recipe | **All stations** start with no recipe, however they arrive; once picked, a recipe stays. → TL-15. |
+| FB-35 built refund | **Half of everything**: half the Foundation price plus half the build cost, rounded down (Workbench: 7 + 2 = 9 Oak Wood). → TL-13. |
+| FB-34 what can be binned | **Spawned Tokens too, for no refund**; the spawner just makes another. The Guild Hall never. → TL-13. |
+| FB-34 where the bin lives | **At the bottom of the notification column, where quests are now.** |
+| FB-45 pinned flag | When the pinned Token is exhausted, the flag **becomes a normal area flag** at that spot; it is not re-pinned automatically. → TL-17. |
+| FB-23 hostile | A hostile enemy **attacks heroes that come within range** of its spawner; others fight only when attacked. Per enemy, in the CMS. → TL-16. |
+| FB-32 disallow controls | A **disallow mode** toggle in the top bar: while on, clicking a Token flips allowed/disallowed; plus *Allow all*. Uses the existing per-Token disallow (FP-35), so no new decision. |
+| FB-41 quest Tokens | **Noticeboard, click to claim**: hover to read, it tracks itself, glows when done, click to claim, then it vanishes. No hero involved. → TL-18. |
+| FB-19 pacing | **The agent does a first pass** in the CMS (gathering 3 s with fewer charges, processing 6 s, Foundation/Farmland builds 30 s); the owner fine-tunes. |
+| FB-18 small size | A **CMS size field** (standard / small); saplings and sprouts start small; small Tokens get a smaller hit area and spacing. → TL-19. |
+| FB-46 hero dock | The **owner describes the general idea first**, then the agent makes mockups. |
+| FB-39 Hall tree | **Mockups first**; the sprite bug (FB-40) is fixed earlier as a quick win. |
 
 ## 3. New decisions
 
-*(TL-12 onward, added as answers change existing decisions)*
+| Id | Decision | Replaces |
+|---|---|---|
+| **TL-12** | **Self-transforming Tokens roll a chance.** Each has a cycle length and a chance in the CMS (default 1 min, 30%), used in **both** directions, so a Coast flips to a Shrimp Coast and back about every three minutes. The Token shows a countdown to its next roll. A catch in progress when it turns back is still lost (SP-51). | The fixed timings of SP-17 / SP-50 (and the Coast's 120 s / 60 s) |
+| **TL-13** | **Discarding refunds.** A bought Token returns **half its price**; a consumable (e.g. an Anvil) returns its price × the share of charges left, **halved**; a station built on a Foundation returns half the Foundation price **plus** half the build cost. All rounded down, per item. Spawned Tokens can be discarded for nothing; the Guild Hall never. Discarding goes through a **bin of up to nine Tokens with one confirm button**, at the bottom of the notification column. | **TL-1** (no refunds) and 5.2's inline Remove |
+| **TL-14** | **Two kinds of alert.** Problem alerts (red, yellow) sit at the **centre** of the Token and **stay until fixed**. Notices (green, e.g. a new spawn) fade after ~10 s. | 8.3's alert placement |
+| **TL-15** | **Stations start with no recipe.** Every station, however it arrives, is idle until the player picks a recipe with the gear (FB-7); heroes don't work it until then. A picked recipe stays. | Default recipes (`defaultRecipeFor`) |
+| **TL-16** | **Enemies move again.** Each is tethered to its spawner as a hero is to a flag: idles near it, follows it if moved, walks back if carried away. **Hostile** enemies (a CMS setting) attack heroes that come within range. | Static enemy Tokens since the enemy-Tokens merge |
+| **TL-17** | **Flags have no hitbox and can be pinned.** A flag never blocks or pushes Tokens. Dropped onto a Token, it means "work only this one"; when that Token is exhausted the flag stays at the spot as a normal area flag. | Whatever FP rule gives flags a footprint (the brief checks) |
+| **TL-18** | **Quests are Tokens.** The Guild Hall spawns them slowly up to an upgradable cap; tutorial quests start on the mat and chain under a hidden cap; non-tutorial quests can be discarded. Noticeboard, click to claim. | The quest sidebar |
+| **TL-19** | **Two Token sizes.** A CMS field: standard (64 px art at 128 px) or small (32 px art at 64 px), with a matching hit area and spacing. | One size for all |
 
-## 4. Priorities
+## 4. Proposed plan (awaiting approval)
 
-*(quick wins for this session; briefs for later agents)*
+### 4.1 Quick wins, this session
+
+Each line is one small slice: built, tested, played and committed separately.
+
+| # | Slice | Items |
+|---|---|---|
+| Q1 | **Behaviour fixes** | FB-12 spawned Tokens can be dragged · FB-13 / TL-15 stations start with no recipe |
+| Q2 | **Corner and centre badges** | FB-6 remove the plus · FB-7 gear top-left (opens the recipe picker) · FB-33 disallow badge top-right · FB-8 / FB-48 / TL-14 alerts centred, problems stay, green notices fade · FB-5 spawner count as a simple badge (becomes a ring in B1) |
+| Q3 | **Layering** | FB-1 flags layer like other Tokens · FB-2 a worked Token and its hero on top |
+| Q4 | **Animations** | FB-10 the ten hit animations · FB-11 transform glow |
+| Q5 | **Loot and the Hall** | FB-16 items fly to the Guild Hall · FB-17 full-size in flight · FB-30 trickle income on Hall hover |
+| Q6 | **Speech bubbles** | FB-20 raise them · FB-21 drop everyday lines · FB-22 a list of every line for the owner's audit |
+| Q7 | **Panels** | FB-36 QA panel fits the screen · FB-37 drop the banner slider · FB-40 Hall upgrade sprites · FB-47 no dock on the Hall upgrade page · FB-24 no Shop inspect panel · FB-26 Shop prices in the item-bar format |
+| Q8 | **Chance transforms** | FB-14 countdown · FB-15 / TL-12 engine + CMS field, then the Coast through the CMS |
+| Q9 | **Pacing first pass** | FB-19 through the CMS (content-only commit) |
+
+### 4.2 Briefs for later agents
+
+Short on purpose: each agent reads this document, the roadmap's §0.5 and the named decisions,
+then plans with the owner. Suggested order in brackets.
+
+**B1 Token badges (1st).** FB-3, FB-4 (and FB-5 as a ring). Ring badges that fill or empty with a
+number inside (cycle time, charges, spawner count), in one uniform row **under the hero and the
+Token together**, replacing today's progress bar. Builds on Q2's corner badges. Show the owner a
+mockup of the row before building.
+
+**B2 Top bar (2nd).** FB-28, FB-29, FB-31, FB-32. A thin bar above the playmat: Upkeep as a
+hoverable badge (moves 8.2's Upkeep Summary out of the Item Bank), the Token cap with a hover
+summary of everything on the mat, and a disallow mode plus *Allow all* (FP-35's per-Token disallow;
+Q2 draws the badge). Leave room for more mat controls.
+
+**B3 Discard bin and refunds (3rd).** FB-34, FB-35, **TL-13**. A bin of up to nine Tokens at the
+bottom of the notification column, a refund total and one *Discard all* button; replaces 5.2's
+inline Remove. Refund maths per TL-13 (a built station must remember its Foundation and build cost).
+Refunds go through `InventoryManager` (D-138). Coordinate with B6, which removes quests from that
+column.
+
+**B4 Shop drag-to-buy (4th).** FB-25, FB-27. Tokens listed on the left, dragged onto the mat to buy
+(pay on drop; refuse cleanly when the mat cap or the Bank says no). The drawer takes about a third of
+the screen and slides mostly away during a drag. Uses the dnd-kit drag system.
+
+**B5 Flags (5th).** FB-44, FB-45, **TL-17**. Flags lose their hitbox (check which FP decisions
+this touches); a flag dropped on a Token pins to it; when the Token is exhausted, the flag becomes a
+normal area flag at that spot. Closes the playtest pack's "heroes can't be steered within a skill".
+
+**B6 Quests as Tokens (6th).** FB-41–FB-43, **TL-18**. Quest Tokens spawned by the Guild Hall to
+an upgradable cap (a new Hall track), tutorial chain under a hidden cap, discard for non-tutorial
+quests (through B3's bin), noticeboard behaviour. The sidebar goes. Quest cooldowns currently run on
+the real clock and must move to the tick's `delta`.
+
+**B7 Enemies that move (7th).** FB-23, **TL-16**. Enemies tethered to their spawner like a hero to a
+flag; hostile enemies (CMS field) attack heroes within range. Reuse hero movement
+(`docs/hero_movement_roadmap_v1.md`) and the existing combat. The CMS must model the new field
+before any content uses it.
+
+**B8 Small Tokens (8th).** FB-18, **TL-19**. A CMS size field; drawing, hit area, spacing and
+pushing honour it; saplings and sprouts set to small through the CMS.
+
+**B9 Guild Hall screen (9th).** FB-38, FB-39. Mockups first: Effects list on the left, a node-and-line
+tree. ⚠️ Hall upgrade tile indices are not interchangeable with the playmat's.
+
+**B10 Horizontal hero dock (10th).** FB-46. The owner describes the general idea first; then the
+agent makes mockups; then builds.
