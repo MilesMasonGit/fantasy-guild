@@ -40,8 +40,10 @@ The tutorial quests follow the same path, so you can also just follow them.
       builds it in place. Craft **Charcoal** and **Torches**.
 - [ ] Buy **Farmland** and plant a **Wheat Field** (1 Wheat Seed) or an **Apple Orchard**
       (1 Apple Seed). Harvest **Ripe Wheat** (3 harvests each) and **Apples**.
-- [ ] Buy a **Coast**. Every 2 minutes it becomes a **Shrimp Coast** for 1 minute. Fish it while
-      it lasts: a catch in progress when it turns back is lost.
+- [ ] Buy a **Coast**. Once a minute it has a 30% chance to become a **Shrimp Coast**, and the
+      Shrimp Coast has the same chance each minute to turn back, so it flips about every three
+      minutes. The small badge bottom-left counts down to the next roll. Fish it while it lasts: a
+      catch in progress when it turns back is lost.
 - [ ] Buy a **Stone Foundation**, build a **Furnace**, smelt **Copper Ingots**. Buy a **Copper
       Anvil** (5 ingots), place it near the Furnace and smith **Copper Nails**. The Anvil wears
       out.
@@ -111,7 +113,7 @@ The tutorial quests follow the same path, so you can also just follow them.
 | Copper Mine / Coal Mine / Quarry | Copper Ore Vein / Coal Vein / Stone Outcrop | 3 | 30 s | none |
 | Goblin Camp | Goblin (95) or Goblin Chief (5) | 3 | 30 s | none |
 
-**Coast:** turns into a Shrimp Coast every 120 s, for 60 s.
+**Coast:** rolls every 60 s, 30% chance to turn into a Shrimp Coast; the Shrimp Coast rolls every 60 s, 30% to turn back (TL-12).
 **Guild Hall trickle:** 1 Oak Seed and 1 Wheat Seed every 5 min, 1 Apple Seed every 10 min.
 
 ### What gets worked

@@ -8,10 +8,10 @@ import { SKILLS } from '../config/registries/skillRegistry.js';
  * Token Lifecycle slice 7.3 — the Fishing chain, pinned from the SHIPPED data
  * (authored through the CMS, never by hand).
  *
- * Coast (sold at the Shop) → after 2 minutes turns into a Shrimp Coast → a hero
- * fishes Raw Shrimp from it → after 1 minute it turns back into a Coast (a
- * cycle in progress is lost, SP-51) → and again. No spawns, so no cap and no
- * upkeep. No fishing net (TL-2).
+ * Coast (sold at the Shop) → once a minute a 30% chance to turn into a Shrimp
+ * Coast → a hero fishes Raw Shrimp from it → once a minute a 30% chance to turn
+ * back into a Coast (a cycle in progress is lost, SP-51) → and again (TL-12).
+ * No spawns, so no cap and no upkeep. No fishing net (TL-2).
  *
  * The numbers are placeholders (TL-5); this pins the shape of the chain.
  */
@@ -26,12 +26,13 @@ const coast = tokens.token_coast;
 const shrimpCoast = tokens.token_shrimp_coast;
 
 describe('The Fishing chain in shipped data (7.3)', () => {
-    it('the Coast turns into a Shrimp Coast every 2 minutes, for 1 minute', () => {
+    it('the Coast rolls a 30% chance every minute to turn into a Shrimp Coast, and the same to turn back (TL-12)', () => {
         expect(coast.turns).toEqual({
             into: [{ typeId: 'token_shrimp_coast', weight: 1 }],
-            everyMs: 120000,
-            lastsMs: 60000,
+            everyMs: 60000,
+            chance: 30,
         });
+        expect(coast.turns).not.toHaveProperty('lastsMs');
     });
 
     it('the Coast is sold at the Shop for 10 Oak Wood, in the Fishing section', () => {
