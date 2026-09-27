@@ -12,6 +12,7 @@ import * as EffectActions from './EffectActions.js';
 // sides use namespace imports and touch the other only inside functions, so
 // either may load first.
 import * as TimedChanges from './TimedChanges.js';
+import * as TokenNotices from './TokenNotices.js';
 
 /**
  * ⭐ **Spawners** (roadmap §3.1, DP-4, DP-5, SP-5, SP-6, SP-46/SP-68).
@@ -210,6 +211,16 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     const spawned = BoardState.getTokenById(landed.instanceId);
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
 
+    // A green notice on the new Token (FB-48): news, not a problem, so it goes
+    // on its own. Raised on the id that landed; a Token that grew during the
+    // leftover time above is a new instance and simply has no notice.
+    const spawnedName = getTokenType(typeId)?.name || typeId;
+    if (BoardState.getTokenById(landed.instanceId)) TokenNotices.raiseNotice(landed.instanceId, {
+        type: 'token_spawned',
+        title: `New ${spawnedName}`,
+        rulesText: `Spawned by ${def?.name || instance.typeId}`
+    });
+
     logger.debug('SpawnerSystem', `${instance.typeId} spawned ${typeId}`);
     return instance;
 }
@@ -246,6 +257,19 @@ export function spawnerStatus(instanceId) {
     if (needs.length) return { state: SPAWNER_STATE.NEEDS_ITEM, needs, ...base };
     if (noRoom.has(instanceId) && clock >= interval) return { state: SPAWNER_STATE.NO_ROOM, ...base };
     return { state: SPAWNER_STATE.SPAWNING, nextInMs: Math.max(0, interval - clock), ...base };
+}
+
+/**
+ * A spawner's live family count against its cap — `{ count, cap }` — or null
+ * when it is not a working spawner. The cheap half of {@link spawnerStatus}
+ * (no Bank check), for the count badge on the mat (FB-5).
+ */
+export function spawnerCounts(instanceId) {
+    const instance = BoardState.getTokenById(instanceId);
+    const def = instance ? getTokenType(instance.typeId) : null;
+    if (!instance || instance.turnedFrom || !isSpawner(def)) return null;
+    const family = familyOf(instance.typeId);
+    return { count: countOf(family), cap: capOf(family) };
 }
 
 /**

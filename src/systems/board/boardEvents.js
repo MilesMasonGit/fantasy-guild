@@ -128,6 +128,14 @@ export const BOARD_EVENTS = {
      */
     SPAWNER_ALERT_CHANGED: 'board:spawner_alert_changed',
 
+    /**
+     * A Token's green notice went up or was taken down early (`TokenNotices`,
+     * TL-14, FB-48) — `{ instanceId }`. The notice itself is read from
+     * `TokenNotices.noticeOf`, because a freshly spawned Token is not drawn yet
+     * when its notice is raised.
+     */
+    NOTICE_CHANGED: 'board:notice_changed',
+
     /** Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat', heroId, typeId }` */
     COMBAT_RESOLVED: 'board:combat_resolved',
 
