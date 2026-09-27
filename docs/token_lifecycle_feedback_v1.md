@@ -49,6 +49,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | FB-50 | 🔧 | *(added after Q4)* A hero stuck on a Token (the Token has an alert) plays **idle**, not the swing. |
 | FB-52 | 🔧 | *(added after Q5)* The Guild Hall hover becomes a game-styled **live** tooltip (trickle income with a ticking "next in"). |
 | FB-53 | 🔧 | *(added after Q5)* Guild Hall trickle payouts **drop as floating loot** beside the Hall, like any other item, instead of going straight into the Bank. |
+| FB-54 | 🐞 | *(found in Q6)* A bubble for a Token that names no skill reads "My the right level is too low…" / "I don't have the the right skill…". |
 | FB-51 | 🔧 | *(added after Q4)* A Token that appears in another's place (`EffectActions.spawn` "here", e.g. a stump) gets the transform glow. |
 
 ### E. Token behaviour
@@ -195,6 +196,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | Hall tooltip (after Q5) | **A styled live tooltip now** (game-styled like the flag tooltip, ticking "next in"), not the browser's plain title. → FB-52, slice Q5b. |
 | Trickle payouts (after Q5) | **Drop as floating loot like any other item** (collected on hover, TL-9), instead of going straight into the Bank. → FB-53, slice Q5b. |
 | Mid-flight Hall moves (after Q5) | Fine as is: an item lands where the Hall was when the flight started. |
+| After Q6 | "No work in range." **kept** · a stunned hero plays **no** attack · knockback timing (625 ms, on the strike frame) **kept** · the "My the right level…" wording bug is fixed in **Q7** (→ FB-54). The owner audits `speech_bubble_lines.md` later. |
 | FB-46 hero dock | The **owner describes the general idea first**, then the agent makes mockups. |
 | FB-39 Hall tree | **Mockups first**; the sprite bug (FB-40) is fixed earlier as a quick win. |
 
@@ -226,7 +228,7 @@ Each line is one small slice: built, tested, played and committed separately.
 | Q5 | **Loot and the Hall** — ✅ done 2026-09-27 (loot aims at the Hall's on-screen art at collect time, falling back to the Bank bubble if the Hall is missing/carried/off-screen; flight size = floor size × mat scale; the Hall brightens briefly as loot lands; Hall hover title lists trickle income with "next in". Agent traced a real flight landing on the Hall's centre at a constant 64 px; director verified the hover text live. ⭐ Owner to watch the arc by eye. Tests: baseline 10) | FB-16 items fly to the Guild Hall · FB-17 full-size in flight · FB-30 trickle income on Hall hover |
 | Q5b | **Hall follow-ups** | FB-52 styled live Hall tooltip · FB-53 trickle payouts drop as loot |
 | Q6 | **Speech bubbles and hero animation** — ✅ done 2026-09-27 (bubble tail 2 u above the art at any scale; routine "Working at" and both unset-station lines dropped; catalogue [`speech_bubble_lines.md`](speech_bubble_lines.md) for the owner's audit; combat: idle, one attack play-through per real attack, knockback delayed 625 ms to the strike frame; stuck hero idles via the shared `strikesLive`; spawn-here glows (tests only: no shipped Token uses it). Agent measured all of it live; tests baseline 10) | FB-20 raise them · FB-21 drop everyday lines · FB-22 a list of every line for the owner's audit · FB-49 combat: idle, attack once per real attack · FB-50 stuck hero idles · FB-51 spawn-in-place glow |
-| Q7 | **Panels** | FB-36 QA panel fits the screen · FB-37 drop the banner slider · FB-40 Hall upgrade sprites · FB-47 no dock on the Hall upgrade page · FB-24 no Shop inspect panel · FB-26 Shop prices in the item-bar format |
+| Q7 | **Panels** | FB-36 QA panel fits the screen · FB-37 drop the banner slider · FB-40 Hall upgrade sprites · FB-47 no dock on the Hall upgrade page · FB-24 no Shop inspect panel · FB-26 Shop prices in the item-bar format · FB-54 bubble wording bug |
 | Q8 | **Chance transforms** | FB-14 countdown · FB-15 / TL-12 engine + CMS field, then the Coast through the CMS |
 | Q9 | **Pacing first pass** | FB-19 through the CMS (content-only commit) |
 
