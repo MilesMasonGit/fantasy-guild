@@ -91,15 +91,19 @@ describe('⭐ the save bump refuses old saves (FP-85)', () => {
 });
 
 describe('⭐ a new game opens with the Guild Hall on the mat (FP-44)', () => {
-    it('holds exactly the Hall on the mat, with a point', () => {
+    // ⚠️ Changed in Token Lifecycle 10.1 (SP-14): the Hall is joined by the
+    // starter Oak Forest and Copper Mine, either side of it, all `placed`.
+    it('holds the Hall in the middle of the mat, with the starter set beside it', () => {
         EngineBootstrap.createDefaultGameData();
 
         const onMat = BoardState.tokens();
-        expect(onMat.map(t => t.typeId)).toEqual(['token_guild_hall']);
+        expect(onMat.map(t => t.typeId)).toEqual(['token_guild_hall', 'token_oak_forest', 'token_copper_mine']);
         // ⭐ The middle of the mat (slice 1.6d-3). It used to be (960, 643) —
         // half a step off centre, inherited from the deleted grid's Hall tile.
         expect({ x: onMat[0].x, y: onMat[0].y }).toEqual({ x: 880, y: 563 });
-        expect(Object.keys(GameState.state.board.tokens)).toEqual([onMat[0].id]);
+        expect(onMat.slice(1).map(t => ({ x: t.x, y: t.y }))).toEqual([{ x: 560, y: 563 }, { x: 1200, y: 563 }]);
+        expect(onMat.every(t => t.origin === 'placed')).toBe(true);
+        expect(Object.keys(GameState.state.board.tokens)).toEqual(onMat.map(t => t.id));
     });
 });
 

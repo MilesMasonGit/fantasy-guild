@@ -34,21 +34,20 @@ export function standingPromotionOffer(engine) {
  * ## Contract: `ui_modal:opened` — a UI→engine notification (CR2-094)
  *
  * ⚠️ **This hook is the ONLY publisher of `ui_modal:opened`, and the engine
- * depends on it.** `QuestManager` subscribes to it and maps three `modalId`
- * values onto tutorial quest targets (`vault` has had no publisher since the
- * Token Vault went, Token Lifecycle 9.3; its quest is re-pointed in 9.5):
+ * depends on it.** `QuestManager` subscribes to it and maps two `modalId`
+ * values onto quest targets (the `vault` row went with the Token Vault, Token
+ * Lifecycle 9.3 / 9.5; `cartographer` is the Shop's pane):
  *
  * | `modalId`      | quest target       |
  * |----------------|--------------------|
  * | `bank`         | `open_bank`        |
- * | `vault`        | `open_vault`       |
  * | `cartographer` | `open_cartographer`|
  *
- * Three tutorial quests therefore advance **only** because this React hook
- * fires. The coupling is two string literals in two files that know nothing
- * about each other, so:
+ * The tutorial's "Item Bank" step therefore advances **only** because this
+ * React hook fires. The coupling is two string literals in two files that know
+ * nothing about each other, so:
  *
- * - **Any new route that opens the Bank, Vault or Cartographer must publish
+ * - **Any new route that opens the Bank or the Shop must publish
  *   this event**, or the quest silently never completes. There are two publish
  *   sites below — `openDrawerTab` (contextual auto-open) and `navToggle` (nav
  *   bubble click); a third route must join them.

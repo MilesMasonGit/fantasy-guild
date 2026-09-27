@@ -254,6 +254,7 @@ export const MatToken = React.memo(function MatToken({
                 {...drag.handleProps}
                 data-token-id={id}
                 data-token-art="true"
+                data-token-type={typeId}
                 data-guild-hall={isGuildHallToken ? 'true' : undefined}
                 title={hoverTitle}
                 data-tile-alert={alert || undefined}

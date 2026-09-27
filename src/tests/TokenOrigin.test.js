@@ -139,15 +139,17 @@ describe('⭐ the mat cap counts placed Tokens only (SP-67)', () => {
     });
 
     it('ignores spawned Tokens and the Guild Hall', () => {
-        EngineBootstrap.createDefaultGameData();   // the Hall
+        // The Hall, and the starter Oak Forest and Copper Mine (10.1), which
+        // are placed and count.
+        EngineBootstrap.createDefaultGameData();
         placeAt('fixture_producer', 200, 200);
         placeAt('fixture_kitchen', 400, 200);
         placeSpawned('fixture_passive', 600, 200);
         placeSpawned('fixture_passive', 800, 200);
         placeSpawned('fixture_passive', 1000, 200);
 
-        expect(BoardState.tokens()).toHaveLength(6);
-        expect(MatCap.placedCount()).toBe(2);
+        expect(BoardState.tokens()).toHaveLength(8);
+        expect(MatCap.placedCount()).toBe(4);
     });
 
     it('canPlaceMore answers against the cap', () => {

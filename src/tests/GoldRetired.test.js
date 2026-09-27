@@ -53,7 +53,14 @@ describe('No action earns or spends gold (SP-65)', () => {
         }
         expect(GameState.state.currency).toBeUndefined();
         expect(BoardState.tokens().some(t => getTokenType(t.typeId)?.mapId)).toBe(false);
-        expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10 * TUTORIAL_QUESTS.length);
+        // Each step pays its own small reward (slice 9.5); every item arrives.
+        const owed = {};
+        for (const t of TUTORIAL_QUESTS) {
+            for (const r of t.rewardItems) owed[r.itemId] = (owed[r.itemId] || 0) + r.quantity;
+        }
+        for (const [itemId, quantity] of Object.entries(owed)) {
+            expect(InventoryManager.getItemCount(itemId), itemId).toBe(quantity);
+        }
     });
 
 });

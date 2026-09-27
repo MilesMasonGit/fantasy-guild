@@ -4,11 +4,10 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
-import { TUTORIAL_QUESTS, TUTORIAL_REWARD_ITEMS } from './tutorialQuests.js';
+import { TUTORIAL_QUESTS, TUTORIAL_REWARD_ITEMS, tutorialTemplate } from './tutorialQuests.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getMap, listMaps } from '../../config/registries/mapRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
@@ -45,25 +44,56 @@ export function questReward(quest) {
 }
 export const ABANDON_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
-// Content pools for random bounties
-const RANDOM_ITEMS = [
-    { id: 'item_oak_wood', name: 'Oak Wood', sellPrice: 6 },
-    { id: 'item_copper_ore', name: 'Copper Ore', sellPrice: 6 },
-    { id: 'item_copper_ingot', name: 'Copper Ingot', sellPrice: 15 },
-    { id: 'item_charcoal', name: 'Charcoal', sellPrice: 8 },
-    { id: 'item_water', name: 'Water', sellPrice: 4 }
+/**
+ * Content pools for random bounties: items a new game can make (Token
+ * Lifecycle §6), each with the range a bounty asks for. Placeholders (TL-5).
+ *
+ * Bounties used to be sized from a random Map's gold price (the Map shop and
+ * the bursts retired in 9.1, gold in 9.4); the ranges replace that.
+ */
+export const RANDOM_ITEMS = [
+    { id: 'item_oak_wood', name: 'Oak Wood', min: 10, max: 25 },
+    { id: 'item_copper_ore', name: 'Copper Ore', min: 8, max: 20 },
+    { id: 'item_stone', name: 'Stone', min: 8, max: 20 },
+    { id: 'item_copper_ingot', name: 'Copper Ingot', min: 2, max: 5 },
+    { id: 'item_charcoal', name: 'Charcoal', min: 4, max: 10 },
+    { id: 'item_wheat', name: 'Wheat', min: 5, max: 15 }
 ];
 
 /**
  * Exported so the boot-time content check can confirm these creatures exist
  * (CR2-108). It is read, never written.
+ *
+ * ⚠️ An `id` is an enemy **Token** id: `combat_victory` carries the Token's id
+ * as `enemyId` (enemies are Tokens since 2026-09-06). The old `goblin`,
+ * `wolf`, `bandit` and `skeleton` ids matched nothing, so no hunt could ever
+ * finish (Token Lifecycle 9.5). The Goblin Camp is the only enemy a new game
+ * can buy (§6).
  */
 export const RANDOM_HUNTS = [
-    { id: 'goblin', name: 'Goblins', min: 2, max: 5 },
-    { id: 'wolf', name: 'Wolves', min: 2, max: 4 },
-    { id: 'bandit', name: 'Bandits', min: 2, max: 4 },
-    { id: 'skeleton', name: 'Skeletons', min: 2, max: 5 }
+    { id: 'token_goblin', name: 'Goblins', min: 2, max: 5 }
 ];
+
+/** An integer from `min` to `max`, both included. */
+function rollBetween(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Whether a report's metadata satisfies a quest. A quest narrows its target
+ * with `match` (tutorial steps), `enemyId` (hunts) or `itemId` (collections);
+ * every value it names must be present and equal in the report.
+ *
+ * ⚠️ Stricter than before 9.5, when a report with NO `itemId` or `enemyId`
+ * counted for every quest that named one. Every reporter of those two targets
+ * passes the id, so nothing that used to count stops counting.
+ */
+function reportMatches(quest, metadata) {
+    const wanted = { ...(quest.match || {}) };
+    if (quest.enemyId) wanted.enemyId = quest.enemyId;
+    if (quest.itemId) wanted.itemId = quest.itemId;
+    return Object.entries(wanted).every(([k, v]) => metadata?.[k] === v);
+}
 
 let unsubs = [];
 let initialized = false;
@@ -99,33 +129,39 @@ export const QuestManager = {
         }
         const q = GameState.state.quests;
         if (!Array.isArray(q.active)) q.active = [];
-        if (!Array.isArray(q.completedTutorials)) {
-            q.completedTutorials = [];
-            if (typeof q.tutorialStep === 'number' && q.tutorialStep > 0) {
-                for (let i = 0; i < Math.min(q.tutorialStep, TUTORIAL_QUESTS.length); i++) {
-                    q.completedTutorials.push(TUTORIAL_QUESTS[i].id);
-                }
-            }
-        }
-        q.tutorialStep = q.completedTutorials.length;
+        // A save from before the list existed kept only a step number. The
+        // chain it counted is gone (9.5), so the number maps onto nothing.
+        if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];
+        // Counts only steps the chain still has: an old save's `tutorial_N`
+        // ids stay in the list, harmless, and count for nothing.
+        q.tutorialStep = q.completedTutorials.filter(id => tutorialTemplate(id)).length;
     },
 
     /**
      * An active tutorial quest carries a COPY of its template, so a saved game
      * would keep a step's old wording and target forever. Re-read them from the
-     * template when a game starts or loads (tutorial 5 was re-pointed on
-     * 2026-09-21; a save holding the old "loot_token_placed" copy could never
-     * finish it).
+     * template when a game starts or loads.
+     *
+     * A tutorial step the chain no longer has (the whole old chain, replaced in
+     * Token Lifecycle 9.5) is dropped: its event may have no publisher, and it
+     * would hold a quest slot for ever. `ensureQuests` refills the slot.
      */
     refreshTutorialCopies() {
         this.ensureState();
-        for (const quest of GameState.state?.quests?.active || []) {
+        const q = GameState.state?.quests;
+        if (!q) return;
+        q.active = q.active.filter(quest => !quest?.isTutorial || tutorialTemplate(quest.id));
+        for (const quest of q.active) {
             if (!quest?.isTutorial) continue;
-            const template = TUTORIAL_QUESTS.find(t => t.id === quest.id);
-            if (!template) continue;
+            const template = tutorialTemplate(quest.id);
+            quest.step = template.step;
             quest.title = template.title;
             quest.instruction = template.instruction;
             quest.targetType = template.targetType;
+            quest.requiredCount = template.requiredCount;
+            quest.currentCount = Math.min(quest.currentCount || 0, template.requiredCount);
+            if (template.match) quest.match = { ...template.match };
+            else delete quest.match;
             // Slice 2.2: a saved copy may still name a reward Map.
             quest.rewardItems = copyReward(template.rewardItems);
             delete quest.rewardMapId;
@@ -176,6 +212,7 @@ export const QuestManager = {
                     title: template.title,
                     instruction: template.instruction,
                     targetType: template.targetType,
+                    ...(template.match ? { match: { ...template.match } } : {}),
                     requiredCount: template.requiredCount,
                     currentCount: 0,
                     rewardItems: copyReward(template.rewardItems),
@@ -209,9 +246,10 @@ export const QuestManager = {
     setupListeners() {
         unsubs.push(
             EventBus.subscribe('react:slot_selected', () => this.ensureQuests()),
-            EventBus.subscribe('game_loaded', () => this.refreshTutorialCopies()),
-            EventBus.subscribe('map_burst', () => this.reportProgress('map_burst')),
-            EventBus.subscribe('map_opened', () => this.reportProgress('map_burst')),
+            EventBus.subscribe('game_loaded', () => {
+                this.refreshTutorialCopies();
+                this.ensureQuests();
+            }),
             // ⚠️ **One event per player action, and only one** (CR2-085, tidied
             // 2026-08-25 alongside the CR2-055/CR2-177 event fix).
             //
@@ -220,17 +258,15 @@ export const QuestManager = {
             // actions — the semantic one (`TOKEN_PLACED`, `hero_deployed`) and a
             // board-lifecycle one (`TILE_CHANGED`, `HERO_MOVED`) — and
             // `Placement` publishes both members of each pair for a single
-            // action, so every counter advanced by 2. It was invisible only
-            // because tutorials 4 and 11 ask for one and `reportProgress` caps
-            // at the target.
+            // action, so every counter advanced by 2.
             //
             // The lifecycle events exist to redraw the UI, not to describe what
             // the player did: `TILE_CHANGED` also fires for clearing, depletion,
-            // pushes, restocks and vault moves. So the semantic event is the
+            // pushes, restocks, grows and turns. So the semantic event is the
             // quest signal, and the lifecycle subscriptions are gone. **Do not
             // add a second source back.**
             EventBus.subscribe(BOARD_EVENTS.TOKEN_PLACED, (data) => {
-                this.reportProgress('token_placed');
+                this.reportProgress('token_placed', 1, { typeId: data?.typeId });
                 if (data?.instanceId != null && data?.typeId) {
                     const def = getTokenType(data.typeId);
                     // The event names the placed Token by instance id (Free Playmat 1.6b).
@@ -240,16 +276,29 @@ export const QuestManager = {
                     }
                 }
             }),
-            // Dropping a loot Token is a *kind of* placement, not a second one:
-            // it reaches the board through `Placement.placeToken`, which has
-            // already raised `TOKEN_PLACED` above. So this only adds the extra
-            // fact that the Token came off the floor.
-            EventBus.subscribe('loot_token_placed', () => {
-                this.reportProgress('loot_token_placed');
+            // A Shop purchase (Token Lifecycle 5.1). It also lands the Token
+            // through `placeTokenAt`, which raised `TOKEN_PLACED` above: two
+            // different targets, not one action counted twice.
+            EventBus.subscribe('token_purchased', (data) => {
+                this.reportProgress('token_purchased', 1, { typeId: data?.typeId });
+            }),
+            // A Foundation became what it built, or Farmland what was planted
+            // (Token Lifecycle 6.1; published by `BoardRunner` since 9.5).
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_BUILT, (data) => {
+                this.reportProgress('token_built', 1, { typeId: data?.typeId, fromTypeId: data?.fromTypeId });
             }),
             EventBus.subscribe('hero_deployed', () => this.reportProgress('hero_deployed')),
-            EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, () => {
-                this.reportProgress('cycle_completed');
+            // A finished cycle: gathering, crafting, exploring, a kill (D-129).
+            // A failed cycle did nothing, so it counts for nothing. The Token's
+            // type and skill, and each item it made, let a step ask for one
+            // kind of work ("log an Oak Tree", "craft Charcoal").
+            EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (data) => {
+                if (data?.failed) return;
+                const skill = getTokenType(data?.typeId)?.config?.skill || null;
+                this.reportProgress('cycle_completed', 1, { typeId: data?.typeId, skill });
+                for (const itemId of new Set(data?.produced || [])) {
+                    this.reportProgress('item_produced', 1, { itemId });
+                }
             }),
             EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
                 const qty = data?.quantity || 1;
@@ -271,36 +320,31 @@ export const QuestManager = {
             // ⚠️ **`ui_modal:opened` comes from the React layer, not the engine**
             // (CR2-094). Its only publisher is `src/ui/hooks/useUIModals.js`,
             // which carries the full contract in its header — including the rule
-            // that any NEW route into the Bank, Vault or Cartographer has to
-            // publish it too, or these three tutorial quests silently stall.
-            // Do not rename these three strings on one side only.
+            // that any NEW route into the Bank or the Shop has to publish it
+            // too, or these quest targets silently stall. The Shop is still the
+            // `cartographer` pane. Do not rename these strings on one side only.
             EventBus.subscribe('ui_modal:opened', (data) => {
                 if (data?.modalId === 'bank') this.reportProgress('open_bank');
-                else if (data?.modalId === 'vault') this.reportProgress('open_vault');
                 else if (data?.modalId === 'cartographer') this.reportProgress('open_cartographer');
             }),
-            EventBus.subscribe('vault_withdrawn', () => this.reportProgress('vault_withdrawn')),
-            EventBus.subscribe('vault_deposited', () => this.reportProgress('vault_deposited')),
-            EventBus.subscribe('board_recall', () => this.reportProgress('quick_recall')),
-            EventBus.subscribe('return_to_tray', () => this.reportProgress('quick_recall')),
-            EventBus.subscribe('map_purchased', () => this.reportProgress('map_purchased')),
+            // ⚠️ Retired with the systems that published them (Token Lifecycle
+            // 9.5): `map_burst` / `map_opened` / `map_purchased` (Map bursts and
+            // the Map shop, 9.1), `vault_withdrawn` / `vault_deposited` /
+            // `loot_token_placed` and the `vault` modal (the Token Vault, 9.3),
+            // and `board_recall` / `return_to_tray` (never published at all).
+            // `QuestTutorialChain.test.js` fails if one comes back.
+            //
             // ⚠️ `hero_equipped` is NOT an engine event — nothing publishes it.
             // Equipping is announced as `hero_equipment_changed` with
             // `action: 'equip'` (EquipmentManager), which is what feeds the
-            // `hero_equipped` quest target below. A subscription to the
-            // non-existent `hero_equipped`, and one to `context_connected`
-            // (also never published — `token_placed` already reports
-            // `context_token_placed`), were deleted on 2026-08-24 (CR2-088),
-            // along with `recipe_satisfied`, whose quest target no quest uses.
+            // `hero_equipped` quest target below.
             EventBus.subscribe('hero_equipment_changed', (data) => {
                 if (data?.action === 'equip') this.reportProgress('hero_equipped');
             }),
             // ⚠️ `token_exhausted` is a quest TARGET name and a tile-log entry
-            // type — it is NOT an engine event. A second subscription to the
-            // bare string `'token_exhausted'` sat here until 2026-08-26
-            // (CR2-195); it looked like a double-count and was in fact dead,
-            // because nothing publishes it. `BOARD_EVENTS.TOKEN_DEPLETED` below
-            // is the real event and the only one that should report here.
+            // type — it is NOT an engine event (CR2-195).
+            // `BOARD_EVENTS.TOKEN_DEPLETED` is the real event and the only one
+            // that should report here.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, () => this.reportProgress('token_exhausted')),
             EventBus.subscribe('combat_victory', (data) => {
                 this.reportProgress('combat_victory');
@@ -343,12 +387,7 @@ export const QuestManager = {
         for (const quest of active) {
             if (quest.status !== 'active') continue;
             if (quest.targetType === targetType) {
-                if (quest.enemyId && metadata.enemyId && quest.enemyId !== metadata.enemyId) {
-                    continue;
-                }
-                if (quest.itemId && metadata.itemId && quest.itemId !== metadata.itemId) {
-                    continue;
-                }
+                if (!reportMatches(quest, metadata)) continue;
                 const nextCount = Math.min(quest.requiredCount, (quest.currentCount || 0) + amount);
                 if (nextCount !== quest.currentCount) {
                     quest.currentCount = nextCount;
@@ -381,19 +420,6 @@ export const QuestManager = {
     },
 
     createRandomQuest() {
-        // The Map is picked only to size the bounty (its price sets the
-        // collection target); the reward is items, not the Map (slice 2.2).
-        // Picked from the catalogue: the Map purchase that used to narrow this
-        // to the player's bought Maps retired with the bursts (Token Lifecycle
-        // 9.1); slice 9.5 re-points the quests.
-        let mapPool = listMaps().map(m => m.id);
-        if (!mapPool || mapPool.length === 0) mapPool = ['map_test_map'];
-
-        const pickedMapId = mapPool[Math.floor(Math.random() * mapPool.length)];
-        const mapDef = getMap(pickedMapId);
-        const mapPrice = mapDef?.price || 100;
-        const targetCost = Math.max(30, Math.round(mapPrice * 0.65));
-
         // Balance collection vs hunt based on current active quests
         const active = GameState.state?.quests?.active || [];
         const huntCount = active.filter(qu => qu.type === 'hunt').length;
@@ -402,7 +428,7 @@ export const QuestManager = {
 
         if (isHunt) {
             const hunt = RANDOM_HUNTS[Math.floor(Math.random() * RANDOM_HUNTS.length)];
-            const count = Math.floor(Math.random() * (hunt.max - hunt.min + 1)) + hunt.min;
+            const count = rollBetween(hunt.min, hunt.max);
             return {
                 id: nextId(),
                 isTutorial: false,
@@ -418,8 +444,7 @@ export const QuestManager = {
             };
         } else {
             const item = RANDOM_ITEMS[Math.floor(Math.random() * RANDOM_ITEMS.length)];
-            const sellPrice = item.sellPrice || 5;
-            const requiredCount = Math.max(3, Math.round(targetCost / sellPrice));
+            const requiredCount = rollBetween(item.min, item.max);
             return {
                 id: nextId(),
                 isTutorial: false,

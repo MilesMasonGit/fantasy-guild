@@ -5,26 +5,29 @@ import {
     TUTORIAL_AIDE_EVENTS
 } from '../ui/components/base/TutorialAideOverlay.jsx';
 import { EventBus } from '../systems/core/EventBus.js';
+import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 
+/**
+ * The beacon for each tutorial step (rewritten with the chain, Token
+ * Lifecycle 9.5). Tokens on the mat are found by `data-token-type`; a step
+ * whose Token is not on the mat yet points at the orb or Shop card that gets it.
+ */
 describe('Tutorial Aide Target Resolution & Events', () => {
     beforeEach(() => {
         document.body.innerHTML = `
             <div id="guild-bubble-target">Guild Hall</div>
             <div id="bank-bubble-target">Bank</div>
-            <div id="vault-bubble-target">Vault</div>
-            <div id="cartographer-bubble-target">Cartographer</div>
+            <div id="cartographer-bubble-target">Shop</div>
             <div id="rightmost-hero-dock">
                 <div data-hero-dock-tab="true">Hero Arthur</div>
             </div>
             <div id="board-container">
-                <div data-token-art="true" data-guild-hall="true">Guild Hall Token</div>
-                <div data-token-art="true">Oak Forest Token</div>
-                <div id="tile-24" data-tile-staffed="true" data-tile-has-token="true">Guild Hall with Hero</div>
-                <div data-board-map-id="map-instance-1">Map</div>
+                <div data-token-art="true" data-token-type="token_guild_hall" data-guild-hall="true">Guild Hall Token</div>
+                <div data-token-art="true" data-token-type="token_oak_forest">Oak Forest Token</div>
+                <div data-token-art="true" data-token-type="token_oak_tree">Oak Tree Token</div>
             </div>
             <div id="sprite-layer">
                 <div data-item-sprite="true">Wood Drop</div>
-                <div data-token-sprite="true">Oak Forest Drop</div>
             </div>
         `;
     });
@@ -38,9 +41,9 @@ describe('Tutorial Aide Target Resolution & Events', () => {
         const unsub1 = EventBus.subscribe(TUTORIAL_AIDE_EVENTS.HOVER, (e) => events.push({ type: 'hover', ...e }));
         const unsub2 = EventBus.subscribe(TUTORIAL_AIDE_EVENTS.UNHOVER, (e) => events.push({ type: 'unhover', ...e }));
 
-        setTutorialAideTarget('tutorial_1');
+        setTutorialAideTarget('tut_recruit');
         expect(events).toHaveLength(1);
-        expect(events[0]).toEqual({ type: 'hover', questId: 'tutorial_1' });
+        expect(events[0]).toEqual({ type: 'hover', questId: 'tut_recruit' });
 
         setTutorialAideTarget(null);
         expect(events).toHaveLength(2);
@@ -50,133 +53,67 @@ describe('Tutorial Aide Target Resolution & Events', () => {
         unsub2();
     });
 
-    it('resolves the correct DOM targets for all 16 tutorial quests', () => {
-        // tutorial_1: Drag the Guild Hall on the mat
-        const t1 = resolveTutorialTargetElement('tutorial_1');
-        expect(t1).not.toBeNull();
-        expect(t1.textContent).toBe('Guild Hall Token');
-
-        // tutorial_2: Recruit a Hero
-        const t2 = resolveTutorialTargetElement('tutorial_2');
-        expect(t2).not.toBeNull();
-        expect(t2.id).toBe('guild-bubble-target');
-
-        // tutorial_3: Upgrade Guild Hall Production
-        const t3 = resolveTutorialTargetElement('tutorial_3');
-        expect(t3).not.toBeNull();
-        expect(t3.id).toBe('guild-bubble-target');
-
-        // tutorial_4: Explore Map (board map)
-        const t4 = resolveTutorialTargetElement('tutorial_4');
-        expect(t4).not.toBeNull();
-        expect(t4.getAttribute('data-board-map-id')).toBe('map-instance-1');
-
-        // tutorial_5: Move a New Token (a Token on the mat, not the Hall)
-        const t5 = resolveTutorialTargetElement('tutorial_5');
-        expect(t5).not.toBeNull();
-        expect(t5.textContent).toBe('Oak Forest Token');
-
-        // tutorial_6: Deploy a Hero
-        const t6 = resolveTutorialTargetElement('tutorial_6');
-        expect(t6).not.toBeNull();
-        expect(t6.getAttribute('data-hero-dock-tab')).toBe('true');
-
-        // tutorial_7: Token Cycles (Staffed Token with Hero)
-        const t7 = resolveTutorialTargetElement('tutorial_7');
-        expect(t7).not.toBeNull();
-        expect(t7.id).toBe('tile-24');
-        expect(t7.getAttribute('data-tile-staffed')).toBe('true');
-
-        // tutorial_8: Collect Items
-        const t8 = resolveTutorialTargetElement('tutorial_8');
-        expect(t8).not.toBeNull();
-        expect(t8.getAttribute('data-item-sprite')).toBe('true');
-
-        // tutorial_9: Exhaust one Token
-        const t9 = resolveTutorialTargetElement('tutorial_9');
-        expect(t9).not.toBeNull();
-        expect(t9.id).toBe('tile-24');
-
-        // tutorial_10: Open Bank
-        const t10 = resolveTutorialTargetElement('tutorial_10');
-        expect(t10).not.toBeNull();
-        expect(t10.id).toBe('bank-bubble-target');
-
-        // tutorial_11: Equip Hero
-        const t11 = resolveTutorialTargetElement('tutorial_11');
-        expect(t11).not.toBeNull();
-
-        // tutorial_12: Open Vault
-        const t12 = resolveTutorialTargetElement('tutorial_12');
-        expect(t12).not.toBeNull();
-        expect(t12.id).toBe('vault-bubble-target');
-
-        // tutorial_13: Stage Token
-        const t13 = resolveTutorialTargetElement('tutorial_13');
-        expect(t13).not.toBeNull();
-
-        // tutorial_14: Context Token
-        const t14 = resolveTutorialTargetElement('tutorial_14');
-        expect(t14).not.toBeNull();
-
-        // tutorial_15: Cartographer's Shop
-        const t15 = resolveTutorialTargetElement('tutorial_15');
-        expect(t15).not.toBeNull();
-        expect(t15.id).toBe('cartographer-bubble-target');
-
-        // tutorial_16: Buy a Map
-        const t16 = resolveTutorialTargetElement('tutorial_16');
-        expect(t16).not.toBeNull();
+    it('every tutorial step has a beacon on a new game’s screen', () => {
+        for (const { id } of TUTORIAL_QUESTS) {
+            expect(resolveTutorialTargetElement(id), id).not.toBeNull();
+        }
     });
 
-    it('returns null for tutorial_4 when no map is on the board', () => {
-        document.querySelector('[data-board-map-id]')?.remove();
+    it('points at the right thing for each step', () => {
+        const text = (id) => resolveTutorialTargetElement(id)?.textContent;
+        const elId = (id) => resolveTutorialTargetElement(id)?.id;
+
+        expect(elId('tut_recruit')).toBe('guild-bubble-target');
+        expect(resolveTutorialTargetElement('tut_flag').getAttribute('data-hero-dock-tab')).toBe('true');
+        expect(text('tut_log')).toBe('Oak Tree Token');
+        expect(text('tut_collect')).toBe('Wood Drop');
+        expect(elId('tut_bank')).toBe('bank-bubble-target');
+        // Nothing bought yet: the Shop orb.
+        expect(elId('tut_shop')).toBe('cartographer-bubble-target');
+        expect(elId('tut_foundation')).toBe('cartographer-bubble-target');
+        expect(elId('tut_explore')).toBe('cartographer-bubble-target');
+    });
+
+    it('prefers the Shop card, then the Token on the mat, once they exist', () => {
+        document.body.innerHTML += `
+            <div data-shop-item="token_wood_foundation">Wood Foundation card</div>
+            <div data-shop-item="token_farmland">Farmland card</div>
+        `;
+        expect(resolveTutorialTargetElement('tut_foundation').textContent).toBe('Wood Foundation card');
+        expect(resolveTutorialTargetElement('tut_shop').textContent).toBe('Wood Foundation card');
+        expect(resolveTutorialTargetElement('tut_workbench').textContent).toBe('Wood Foundation card');
+
+        document.body.innerHTML += `
+            <div data-token-art="true" data-token-type="token_wood_foundation">Wood Foundation Token</div>
+            <div data-token-art="true" data-token-type="token_workbench">Workbench Token</div>
+            <div data-token-art="true" data-token-type="token_ripe_wheat">Ripe Wheat Token</div>
+        `;
+        expect(resolveTutorialTargetElement('tut_workbench').textContent).toBe('Wood Foundation Token');
+        expect(resolveTutorialTargetElement('tut_charcoal').textContent).toBe('Workbench Token');
+        expect(resolveTutorialTargetElement('tut_farmland').textContent).toBe('Farmland card');
+        expect(resolveTutorialTargetElement('tut_wheat').textContent).toBe('Ripe Wheat Token');
+    });
+
+    it('an old chain id resolves to nothing', () => {
         expect(resolveTutorialTargetElement('tutorial_4')).toBeNull();
+        expect(resolveTutorialTargetElement('tutorial_12')).toBeNull();
     });
 
-    it('returns null for tutorial_7 when no token is staffed by a hero', () => {
-        document.querySelector('[data-tile-staffed="true"]')?.removeAttribute('data-tile-staffed');
-        expect(resolveTutorialTargetElement('tutorial_7')).toBeNull();
-    });
-
-    it('identifies Guild Hall Upgrade screen targets for Recruit a Hero and Wishing Well quests', () => {
+    it('identifies the Guild Hall Upgrade screen target for Recruit a Hero', () => {
         document.body.innerHTML += `
             <div data-guild-hall-board="true">
                 <div id="guild-roster-upgrade-node" data-guild-roster-upgrade="true">Guild Roster Upgrade</div>
-                <div id="guild-wishing-well-upgrade-node" data-guild-wishing-well-upgrade="true">Wishing Well Upgrade</div>
             </div>
             <div id="inspection-panel">
-                <button id="guild-upgrade-button" data-guild-upgrade-button="true" data-guild-roster-upgrade-button="true" data-guild-well-upgrade-button="true">Claim Starter Hero (Free)</button>
+                <button id="guild-upgrade-button" data-guild-upgrade-button="true" data-guild-roster-upgrade-button="true">Claim Starter Hero (Free)</button>
             </div>
         `;
 
         const matNode = document.querySelector('[data-guild-roster-upgrade="true"]');
-        expect(matNode).not.toBeNull();
         expect(matNode.id).toBe('guild-roster-upgrade-node');
-
-        const wellNode = document.querySelector('[data-guild-wishing-well-upgrade="true"]');
-        expect(wellNode).not.toBeNull();
-        expect(wellNode.id).toBe('guild-wishing-well-upgrade-node');
-
-        const upgradeBtn = document.querySelector('[data-guild-upgrade-button="true"]');
-        expect(upgradeBtn).not.toBeNull();
-        expect(upgradeBtn.id).toBe('guild-upgrade-button');
-        expect(document.querySelector('[data-guild-roster-upgrade-button="true"]')).toBe(upgradeBtn);
-        expect(document.querySelector('[data-guild-well-upgrade-button="true"]')).toBe(upgradeBtn);
+        expect(document.querySelector('[data-guild-roster-upgrade-button="true"]').id).toBe('guild-upgrade-button');
 
         // Target resolver prefers the node directly on the guild mat when present
-        expect(resolveTutorialTargetElement('tutorial_2')).toBe(matNode);
-        expect(resolveTutorialTargetElement('tutorial_3')).toBe(wellNode);
-    });
-
-    it('highlights finite non-infinite tokens on the playmat for Exhaust one Token quest', () => {
-        document.body.innerHTML = `
-            <div id="tile-10" data-tile-has-token="true">Infinite Guild Hall</div>
-            <div id="tile-12" data-tile-has-token="true" data-tile-finite-token="true">Oak Tree (Finite)</div>
-        `;
-
-        const target = resolveTutorialTargetElement('tutorial_9');
-        expect(target).not.toBeNull();
-        expect(target.id).toBe('tile-12');
+        expect(resolveTutorialTargetElement('tut_recruit')).toBe(matNode);
     });
 });

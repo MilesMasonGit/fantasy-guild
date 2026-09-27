@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A new game starts with an Oak Forest and a Copper Mine** beside the Guild Hall, and a few Oak
+  Seeds, Wheat Seeds and Oak Wood in the Bank. The tutorial is rewritten around the new loop: recruit,
+  plant a flag, log, collect, shop, build a Workbench, craft, farm and explore.
 - **The Token Vault and Tray are gone.** Tokens live only on the mat: a Token a station makes (such
   as a Copper Pickaxe) is placed right beside it, and waits if the mat is full. The Vault drawer, its
   upgrades and right-click deposit are removed; item loot is unchanged.

@@ -1,163 +1,137 @@
 // Fantasy Guild - Tutorial Quests Specification
 //
-// Each step rewards a few items (slice 2.2, SP-65). They used to reward a
-// "Guild Hall Map" that burst into a scripted sequence of Tokens (and, on the
-// last step, 2000 gold). Quest rewards that gave Maps or gold give items
-// instead; the amounts are placeholders (TL-5) and use live `item_*` ids only.
-// Oak Wood is what the Map shop and the Guild Hall upgrades are priced in, so a
-// finished step can always be spent on something.
+// ⭐ The tutorial walks the Token Lifecycle loop (slice 9.5): recruit a hero,
+// plant their flag, gather, collect the loot, buy at the Shop, build on a
+// Foundation, craft, farm and explore. Every step is completable in a new game
+// with no dev tools, and every `targetType` is reported by `QuestManager` from
+// an event the engine (or, for `open_bank`, the React layer) really publishes.
+// `QuestTutorialChain.test.js` drives each step through the real systems.
+//
+// The old chain (Map bursts, the Token Vault, context tools, buying a Map)
+// used ids `tutorial_1` … `tutorial_16`. The new steps use different ids on
+// purpose: an old save's `completedTutorials` must not tick off a new step
+// that merely shares a number with an old one. Old ids a save still carries
+// are ignored, and an old step still active is dropped on load.
+//
+// `match` narrows a target to one Token type, item or skill: a quest with a
+// `match` only counts a report whose metadata carries every listed value.
+//
+// Rewards are small placeholder items (TL-5, SP-65), live `item_*` ids only.
 
-/** A tutorial step's reward. Callers copy it; it is never handed out as-is. */
+/** The default tutorial reward, and what a step with no rewards of its own pays. */
 export const TUTORIAL_REWARD_ITEMS = Object.freeze([
     Object.freeze({ itemId: 'item_oak_wood', quantity: 10 })
 ]);
 
+const reward = (itemId, quantity) => Object.freeze([Object.freeze({ itemId, quantity })]);
+
 export const TUTORIAL_QUESTS = [
     {
-        id: 'tutorial_1',
-        step: 0,
-        title: 'Place a Token',
-        instruction: 'Drag the Guild Hall to a new spot on the Playmat.',
-        targetType: 'token_placed',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'tutorial_2',
-        step: 1,
+        id: 'tut_recruit',
         title: 'Recruit a Hero',
-        instruction: 'Recruit a Hero from the Guild Hall (Purple orb on the top left of the screen)',
+        instruction: 'Open the Guild Hall (purple orb, top left) and buy Bunk Beds to recruit your first Hero. The first one is free.',
         targetType: 'hero_recruited',
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tutorial_3',
-        step: 2,
-        title: 'Upgrade Guild Hall Production',
-        instruction: 'Purchase the Wishing Well upgrade in the Guild Hall to generate Water.',
-        targetType: 'wishing_well_upgraded',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'tutorial_4',
-        step: 3,
-        title: 'Explore one Map',
-        instruction: 'Explore one Map (Click to open)',
-        targetType: 'map_burst',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'tutorial_5',
-        step: 4,
-        title: 'Move a New Token',
-        instruction: 'Drag one of the Tokens your Map just produced to a new spot on the Playmat.',
-        // Re-pointed 2026-09-21 (owner): Map bursts put Tokens straight on the
-        // mat (FP-16), so the old "place a dropped loot Token" could never
-        // complete. Any placement counts.
-        targetType: 'token_placed',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'tutorial_6',
-        step: 5,
-        title: 'Deploy a Hero',
-        instruction: 'Drag and drop a Hero from the Hero Dock at the bottom of the screen onto a Token.',
+        id: 'tut_flag',
+        title: 'Plant a Flag',
+        instruction: 'Drag your Hero from the Hero Dock onto the mat beside the Oak Forest. Their flag marks where they work.',
         targetType: 'hero_deployed',
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tutorial_7',
-        step: 6,
-        title: 'Token Cycles',
-        instruction: 'Complete 10 Token work cycles.',
+        id: 'tut_log',
+        title: 'Log an Oak Tree',
+        instruction: 'The Oak Forest grows Oak Trees from Oak Seeds. Let your Hero log 3 times.',
         targetType: 'cycle_completed',
-        requiredCount: 10,
-        rewardItems: TUTORIAL_REWARD_ITEMS
+        match: { typeId: 'token_oak_tree' },
+        requiredCount: 3,
+        rewardItems: reward('item_oak_seed', 2)
     },
     {
-        id: 'tutorial_8',
-        step: 7,
-        title: 'Collect Items',
-        instruction: 'Collect 10 items off the playmat (Hover over to collect)',
+        id: 'tut_collect',
+        title: 'Collect Loot',
+        instruction: 'Hover over the items your Hero drops on the mat to collect 10 of them.',
         targetType: 'loot_collected',
         requiredCount: 10,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tutorial_9',
-        step: 8,
-        title: 'Exhaust one Token',
-        instruction: 'Work a Token until all its charges are exhausted.',
-        targetType: 'token_exhausted',
-        requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
-    },
-    {
-        id: 'tutorial_10',
-        step: 9,
+        id: 'tut_bank',
         title: 'Item Bank',
-        instruction: 'Open your Item Bank (Yellow orb on the left of the screen)',
+        instruction: 'Open your Item Bank (yellow orb on the left). Its Upkeep button shows what your Tokens use up.',
         targetType: 'open_bank',
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tutorial_11',
-        step: 10,
-        title: 'Equip a Hero',
-        instruction: 'Drag an item from your Item Bank onto a Hero in the Hero Dock.',
-        targetType: 'hero_equipped',
+        id: 'tut_shop',
+        title: 'Visit the Shop',
+        instruction: 'Open the Shop (green orb on the left) and buy something. A Quarry gives Stone.',
+        targetType: 'token_purchased',
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tutorial_12',
-        step: 11,
-        title: 'Token Vault',
-        instruction: 'Open your Token Vault (Light Blue orb on the left of the screen)',
-        targetType: 'open_vault',
+        id: 'tut_foundation',
+        title: 'Buy a Foundation',
+        instruction: 'Buy a Wood Foundation at the Shop. Buildings are built on Foundations.',
+        targetType: 'token_purchased',
+        match: { typeId: 'token_wood_foundation' },
+        requiredCount: 1,
+        rewardItems: reward('item_oak_wood', 5)
+    },
+    {
+        id: 'tut_workbench',
+        title: 'Build a Workbench',
+        instruction: 'Click the Wood Foundation, choose Workbench, and let a Hero build it with Construction.',
+        targetType: 'token_built',
+        match: { typeId: 'token_workbench' },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     },
     {
-        id: 'tutorial_13',
-        step: 12,
-        title: 'Stage a Token',
-        instruction: 'Drag and drop a Token from the Vault onto the Playmat.',
-        targetType: 'vault_withdrawn',
+        id: 'tut_charcoal',
+        title: 'Craft Charcoal',
+        instruction: 'Set the Workbench to Charcoal and let a Hero craft one. Charcoal is fuel for cooking.',
+        targetType: 'item_produced',
+        match: { itemId: 'item_charcoal' },
         requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
+        rewardItems: reward('item_wheat_seed', 2)
     },
     {
-        id: 'tutorial_14',
-        step: 13,
-        title: 'Add a Context Token',
-        instruction: 'Place a Tool (like a Pickaxe or an Axe) nearby to a relevant Token on the Playmat.',
-        targetType: 'context_token_placed',
+        id: 'tut_farmland',
+        title: 'Plant Farmland',
+        instruction: 'Buy Farmland at the Shop, choose Wheat Field or Apple Orchard, and let a Hero plant it with Farming.',
+        targetType: 'token_built',
+        match: { fromTypeId: 'token_farmland' },
         requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
+        rewardItems: reward('item_wheat_seed', 2)
     },
     {
-        id: 'tutorial_15',
-        step: 14,
-        title: "Cartographer's Shop",
-        instruction: "Open the Cartographer's Shop (Green orb on the left of the screen)",
-        targetType: 'open_cartographer',
+        id: 'tut_wheat',
+        title: 'Harvest Wheat',
+        instruction: 'A Wheat Field grows Wheat Sprouts that ripen. Harvest Ripe Wheat once.',
+        targetType: 'cycle_completed',
+        match: { typeId: 'token_ripe_wheat' },
         requiredCount: 1,
-        rewardItems: TUTORIAL_REWARD_ITEMS
+        rewardItems: reward('item_torch', 1)
     },
     {
-        id: 'tutorial_16',
-        step: 15,
-        title: 'Buy a Map',
-        instruction: 'Buy one map from the Cartographer (it will drop onto the Playmat).',
-        targetType: 'map_purchased',
+        id: 'tut_explore',
+        title: 'Explore a Map',
+        instruction: 'Buy an Oak Forest Map at the Shop. Each exploration uses a cooked Shrimp and a Torch from the Bank.',
+        targetType: 'cycle_completed',
+        match: { skill: 'explore' },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     }
-];
+].map((quest, step) => ({ ...quest, step }));
+
+/** The template for a tutorial id, or undefined for an id the chain no longer has. */
+export function tutorialTemplate(id) {
+    return TUTORIAL_QUESTS.find(t => t.id === id);
+}

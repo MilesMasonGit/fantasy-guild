@@ -42,7 +42,8 @@ import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 
 /**
  * The opening state of a new game (FP-44): the Guild Hall already standing on
- * the mat, no items, and zero Heroes.
+ * the mat with the starter set beside it (10.1), and zero Heroes. The Bank's
+ * opening items are `OPENING_ITEMS`, below.
  *
  * Each entry is a Token type and the mat point it starts at.
  *
@@ -59,17 +60,40 @@ import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
  * the opening spot to whatever size the mat happened to be when this file was
  * first imported. Call it when a new game is being built.
  *
+ * ## The starter set (Token Lifecycle 10.1, SP-14; contents are SP-72 placeholders)
+ * Beside the Hall stand an **Oak Forest** (left) and a **Copper Mine** (right),
+ * both `placed`: the Forest turns Oak Seeds into Oak Trees, and Oak Wood buys
+ * everything else at the Shop; the Mine needs no upkeep. `OPENING_OFFSET` keeps
+ * them clear of the Hall's art and close enough that one flag between them
+ * reaches both.
+ *
  * @returns {Array<{typeId: string, x: number, y: number}>}
  */
 export function openingMat() {
+    const x = Math.round(matW() / 2);
+    const y = Math.round(matH() / 2);
     return [
-        {
-            typeId: 'token_guild_hall',
-            x: Math.round(matW() / 2),
-            y: Math.round(matH() / 2)
-        }
+        { typeId: 'token_guild_hall', x, y },
+        { typeId: 'token_oak_forest', x: x - OPENING_OFFSET, y },
+        { typeId: 'token_copper_mine', x: x + OPENING_OFFSET, y }
     ];
 }
+
+/** How far the starter Forest and Mine stand from the Hall's centre, in mat units. */
+export const OPENING_OFFSET = 320;
+
+/**
+ * What a new game's Bank holds (Token Lifecycle 10.1, SP-14, SP-72
+ * placeholders): Oak Seeds so the Forest spawns trees at once (it pays one
+ * seed per spawn), a little Oak Wood towards the first Shop purchase, and two
+ * Wheat Seeds for the first Farmland. The Guild Hall's trickle (in the CMS)
+ * keeps the seeds coming.
+ */
+export const OPENING_ITEMS = Object.freeze([
+    Object.freeze({ itemId: 'item_oak_seed', quantity: 3 }),
+    Object.freeze({ itemId: 'item_oak_wood', quantity: 10 }),
+    Object.freeze({ itemId: 'item_wheat_seed', quantity: 2 })
+]);
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -219,8 +243,12 @@ export const EngineBootstrap = {
         const state = GameState.state;
         if (!state) return;
 
-        // Start with no items
+        // The Bank starts with the opening items only (10.1). Through
+        // `InventoryManager`, like every other gain.
         if (state.inventory) state.inventory.items = {};
+        for (const { itemId, quantity } of OPENING_ITEMS) {
+            InventoryManager.addItem(itemId, quantity, 'opening');
+        }
 
         // Start with no Heroes (first hero recruited via Guild Hall upgrade)
         if (state.heroes) {
@@ -242,7 +270,7 @@ export const EngineBootstrap = {
             GameState.exploration = { count: 0 };
         }
 
-        logger.info('Engine', 'New game: 0 heroes, the Guild Hall on the mat, 0 items.');
+        logger.info('Engine', 'New game: 0 heroes, the starter Tokens on the mat, the opening items in the Bank.');
     },
 
     /**
