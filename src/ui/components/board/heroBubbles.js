@@ -38,7 +38,7 @@ const withArticle = (name) => `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
  * @param {string} alert  an `ALERT` value
  * @param {{token: string, missing?: {type: ('tokens'|'items'|null), items: string[]}, skill?: string}} facts
  */
-export function blockedText(alert, { token, missing = null, skill = 'the right' }) {
+export function blockedText(alert, { token, missing = null, skill = null }) {
     const items = missing?.items || [];
     switch (alert) {
         case ALERT.INPUTS:
@@ -53,10 +53,12 @@ export function blockedText(alert, { token, missing = null, skill = 'the right' 
             return `Choose a recipe for ${token}.`;
         case ALERT.NO_ROOM:
             return `There is no room for what ${token} makes.`;
+        // A Token that names no skill (FB-54) drops the skill from the
+        // sentence rather than filling it with a placeholder.
         case ALERT.ACCESS:
-            return `My ${skill} level is too low to work ${token}.`;
+            return skill ? `My ${skill} level is too low to work ${token}.` : `My level is too low to work ${token}.`;
         case ALERT.UNSKILLED:
-            return `I don’t have the ${skill} skill to work ${token}.`;
+            return skill ? `I don’t have the ${skill} skill to work ${token}.` : `I don’t have the skill to work ${token}.`;
         default:
             return null;
     }

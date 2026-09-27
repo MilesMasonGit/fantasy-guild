@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Speech bubbles read naturally for a Token that names no skill (Q7: FB-54).** Such a Token used
+  to make its hero say *My the right level is too low…* or *I don't have the the right skill…*; it
+  now reads *My level is too low to work {token}.* / *I don't have the skill to work {token}.*
 - **The Guild Hall tooltip is as wide as its lines (Q5b follow-up).** Each trickle line now fits on
   one row, even with all-caps text on, capped to the window width. The flag tooltip is unchanged.
 - **Spawners pay their upkeep from loot on the mat too (TL-20).** A spawner's per-spawn upkeep (a

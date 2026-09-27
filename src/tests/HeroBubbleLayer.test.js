@@ -26,6 +26,13 @@ describe('Hero speech bubbles', () => {
         expect(blockedText(ALERT.UNSKILLED, { token: 'Campfire', skill: 'Mining' })).toBe('I don’t have the Mining skill to work Campfire.');
     });
 
+    it('drop the skill from the sentence when the Token names none (FB-54)', () => {
+        // `blockedLineFor` passes `skill: undefined` for such a Token.
+        expect(blockedText(ALERT.ACCESS, { token: 'Campfire', skill: undefined })).toBe('My level is too low to work Campfire.');
+        expect(blockedText(ALERT.UNSKILLED, { token: 'Campfire', skill: undefined })).toBe('I don’t have the skill to work Campfire.');
+        expect(blockedText(ALERT.ACCESS, { token: 'Campfire' })).not.toMatch(/the right/);
+    });
+
     it('say nothing for a reason they have no wording for', () => {
         expect(blockedText('something_new', { token: 'X' })).toBeNull();
     });

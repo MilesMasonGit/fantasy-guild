@@ -33,8 +33,8 @@ the hero's head.
 | 4 | {token} has nothing to make. | Same situation as 3, when the game can't name what is missing. | Kept |
 | 5 | {token} has too few charges left. | The Token, or a Token next to it that the recipe uses, hasn't enough charges for one more cycle. | Kept |
 | 6 | There is no room for what {token} makes. | A finished cycle makes a Token and there is nowhere for it to go (mat full or too crowded around it), or a Foundation's building has nowhere legal to stand. | Kept |
-| 7 | My {skill} level is too low to work {token}. | The hero has the skill but not a high enough level (also used by promotion Tokens). | Kept |
-| 8 | I don't have the {skill} skill to work {token}. | The hero doesn't have that skill at all (also used by promotion Tokens). | Kept |
+| 7 | My {skill} level is too low to work {token}. | The hero has the skill but not a high enough level (also used by promotion Tokens). If the Token names no skill it reads "My level is too low to work {token}." (FB-54). | Kept |
+| 8 | I don't have the {skill} skill to work {token}. | The hero doesn't have that skill at all (also used by promotion Tokens). If the Token names no skill it reads "I don't have the skill to work {token}." (FB-54). | Kept |
 | 9 | Choose a recipe for {token}. | A hero is on a station that has no recipe chosen. *(The Q1 line.)* | **Dropped (FB-21)** — after Q1 you ruled that an unset station shows only its gear, with no alert: it is waiting, not broken. The hero now keeps quiet too, to match. Rare anyway: heroes don't go to unset stations, so this only happened if a recipe was cleared while a hero was working. |
 | 10 | Choose what to build on {token}. | The same for a Foundation with nothing chosen. | **Dropped (FB-21)** — the same ruling covered Foundations ("Choose what to build" alert replaced by the gear), so we treated it the same way. Say if you want it back. |
 
