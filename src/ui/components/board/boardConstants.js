@@ -102,7 +102,8 @@ export const TOKEN_BAR_GAP_U = 8;
  * Hovering a tile whose Token cannot work states exactly what is wrong. There
  * is no aggregate supply dashboard, so diagnosis happens tile by tile, and this
  * table is the whole of it. Two surfaces read it: the tile's own `title`
- * (`BoardTile`) and the hover panel under the alert bar (`TileProgressBar`).
+ * (`BoardTile`) and the hover bubble of a Token's centre mark
+ * (`TokenCentreAlert`; the alert bar's panel until B1.1).
  *
  * Keyed off the engine's exported `ALERT` so the two vocabularies cannot drift.
  */
@@ -157,7 +158,11 @@ export function skipHint(reason, { holder = null, hero = null } = {}) {
     return text.replace('{holder}', holder || 'another hero').replace('{hero}', hero || 'the hero');
 }
 
-/** The two-word label printed on the alert bar itself. The sentence is in `ALERT_HINT`. */
+/**
+ * The two-word label for an alert — since B1.1 the heading of a worked
+ * Token's centre-mark bubble (it was the text on the alert bar). The sentence
+ * is in `ALERT_HINT`.
+ */
 export const ALERT_LABEL = {
     [ALERT.INPUTS]: 'Need Items',
     [ALERT.ACCESS]: 'Level Too Low',
@@ -174,6 +179,9 @@ export const ALERT_LABEL = {
 /** Alerts drawn in warning yellow; every other alert is drawn in red. */
 const YELLOW_ALERTS = [ALERT.INPUTS, ALERT.SPAWN_NEEDS_ITEM];
 
+/** Whether an alert is drawn in warning yellow rather than red. */
+export const isYellowAlert = (alert) => YELLOW_ALERTS.includes(alert);
+
 /** The bar's fill class for an alert value. */
 export const alertFillClass = (alert) =>
-    YELLOW_ALERTS.includes(alert) ? 'progress-fill--yellow-chroma' : 'progress-fill--red-chroma';
+    isYellowAlert(alert) ? 'progress-fill--yellow-chroma' : 'progress-fill--red-chroma';

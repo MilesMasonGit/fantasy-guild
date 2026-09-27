@@ -1,14 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
 import * as TokenNotices from '../../../systems/board/TokenNotices.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { ALERT_HINT } from './boardConstants.js';
+import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
+import { ALERT_HINT, ALERT_LABEL, isYellowAlert } from './boardConstants.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { cn } from '../../utils/cn.js';
 import { useTokenEvent } from './tokenEvents.js';
-import { ALERT_KIND, alertKindOf, alertFades, pickCentreAlert } from './centreAlert.js';
+import { ALERT_KIND, alertKindOf, alertFades, pickCentreAlert, workedAlertOf } from './centreAlert.js';
 
 /**
  * The floating alert mark — "Token Exhausted", "Needs Oak Seed to spawn", a
@@ -179,11 +181,16 @@ export const EventAlertMark = ({ alert }) => {
                         : '/assets/ui/ui_alert_yellow.png'
     );
 
+    const missing = alertData.missing?.items?.length ? alertData.missing : null;
     const speechBubble = (
         <div
+            data-tile-alert-hint={alertData.hint || undefined}
             className={cn(
                 iconRect ? "fixed -translate-x-1/2 -translate-y-full" : "absolute bottom-full left-1/2 -translate-x-1/2 mb-2",
-                "whitespace-nowrap z-[9999] pointer-events-none",
+                // A worked Token's hint is a whole sentence: wrap it, as the
+                // bar's dropdown did, instead of one very long line (B1.1).
+                alertData.hint ? "w-max max-w-[220px] whitespace-normal" : "whitespace-nowrap",
+                "z-[9999] pointer-events-none",
                 "px-2.5 py-1.5 rounded-md shadow-2xl backdrop-blur-md border",
                 "flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150",
                 (isDisallow || isRed)
@@ -217,6 +224,18 @@ export const EventAlertMark = ({ alert }) => {
                     )}>
                         {alertData.rulesText}
                     </span>
+                )}
+                {/* A worked Token's missing requirements (B1.1; the bar's
+                    dropdown before). */}
+                {missing && (
+                    <div data-missing-requirements={missing.type} className="flex flex-col gap-0.5 pt-1 mt-0.5 border-t border-white/15">
+                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
+                            {missing.type === 'items' ? 'Items' : 'Tokens'}
+                        </span>
+                        {missing.items.map((name, i) => (
+                            <span key={i} className="text-[11px] font-semibold leading-tight">{name}</span>
+                        ))}
+                    </div>
                 )}
             </div>
 
@@ -311,6 +330,27 @@ export function spawnerAlertData(state) {
     };
 }
 
+/**
+ * The mark's own words for a worked Token's problem (B1.1): the alert's short
+ * label as the heading, its `ALERT_HINT` sentence, and — when there are any —
+ * the missing requirements listed under it. Yellow or red as the bar was.
+ */
+export function workedAlertData(alert, missing = null) {
+    if (!alert) return null;
+    const title = ALERT_LABEL[alert] || 'Blocked';
+    return {
+        severity: isYellowAlert(alert) ? 'yellow' : 'red',
+        type: alert,
+        title,
+        message: title,
+        rulesText: ALERT_HINT[alert] || null,
+        hint: alert,
+        missing: missing?.items?.length ? missing : null
+    };
+}
+
+const NO_MISSING = Object.freeze({ type: null, items: [] });
+
 /** A Token's green notice, read from `TokenNotices` and timed out here. */
 function useNotice(instanceId) {
     const [notice, setNotice] = useState(() => TokenNotices.noticeOf(instanceId));
@@ -342,14 +382,22 @@ const noticeAlertData = (notice) => notice ? {
     rulesText: notice.rulesText
 } : null;
 
-/** A mark whose life is decided elsewhere (the engine, or a notice's clock). */
-function useStaticMark(alertData, { isFading = false, fadeMs, onDismiss } = {}) {
+/**
+ * A mark whose life is decided elsewhere (the engine, or a notice's clock).
+ * `hovered` opens its bubble from outside — the pointer is on the Token, not
+ * necessarily on the mark (B1.1).
+ */
+function useStaticMark(alertData, { isFading = false, fadeMs, onDismiss, hovered = false } = {}) {
     const [isHovered, setIsHovered] = useState(false);
     const [iconRect, setIconRect] = useState(null);
     const iconRef = useRef(null);
+    const shown = !!alertData;
+    useLayoutEffect(() => {
+        if (hovered && shown && iconRef.current) setIconRect(iconRef.current.getBoundingClientRect());
+    }, [hovered, shown]);
     return {
         alertData,
-        isHovered,
+        isHovered: isHovered || (hovered && shown),
         isFading,
         fadeMs,
         isDismissed: false,
@@ -367,17 +415,22 @@ function useStaticMark(alertData, { isFading = false, fadeMs, onDismiss } = {}) 
 /**
  * ⭐ **The one mark at a Token's centre** (FB-8, FB-48, TL-14).
  *
- * Three sources, one place, one mark: a spawner's live problem
- * (`SPAWNER_ALERT_CHANGED`), news of a problem (`TILE_EVENT_ALERT`), and a
- * green notice (`TokenNotices`). `pickCentreAlert` decides, so a notice never
+ * Four sources, one place, one mark: a spawner's live problem
+ * (`SPAWNER_ALERT_CHANGED`), a worked Token's live problem (`token.alert` or
+ * its missing requirements, B1.1), news of a problem (`TILE_EVENT_ALERT`),
+ * and a green notice (`TokenNotices`). `pickCentreAlert` decides, so a notice never
  * covers a problem. A green `TILE_EVENT_ALERT` (a restock) is turned into a
  * notice rather than drawn as news, so every green mark fades the same way.
  *
- * A live spawner problem cannot be clicked away — the problem is still there.
+ * A Token is a spawner or worked, not both; should both ever apply, the
+ * spawner's problem is the one shown. A worked Token's bubble opens when the
+ * pointer is anywhere on the Token (`isHovered`), as the bar's dropdown did.
+ *
+ * A live problem cannot be clicked away — the problem is still there.
  * Anything happening to the Token — it is replaced, it is picked up —
  * dismisses the news, because the news is about the Token as it was.
  */
-export const TokenCentreAlert = ({ instanceId, isSpawner = false }) => {
+export const TokenCentreAlert = ({ instanceId, isSpawner = false, token = null, isHovered = false }) => {
     const event = useEventAlert();
     const { activePayload } = useActiveDrag();
     const { alertData, isDismissed, show, dismiss } = event;
@@ -414,6 +467,25 @@ export const TokenCentreAlert = ({ instanceId, isSpawner = false }) => {
     const liveData = spawnerAlertData(spawnerState);
     const live = useStaticMark(liveData);
 
+    // A worked Token's live problem (B1.1). The requirements are re-read on
+    // hover too, so the list is current when the player looks at it.
+    const hasHero = !!token?.heroId;
+    // ⚠️ Read the live instance, not `token`: MatToken's `token` is a slim
+    // projection without `selectedRecipeId`, so a station's inputs were never
+    // found and the list stayed empty (seen live in B1.1; the bar had the same flaw).
+    const missing = useMemo(
+        () => {
+            if (!hasHero) return NO_MISSING;
+            const id = token.instanceId ?? instanceId;
+            return getMissingRequirements(id, BoardState.getTokenById(id) ?? token);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [instanceId, token, hasHero, isHovered]
+    );
+    const workedAlert = liveData ? null : workedAlertOf({ hasHero, alert: token?.alert ?? null, missingType: missing.type });
+    const workedData = workedAlertData(workedAlert, missing);
+    const worked = useStaticMark(workedData, { hovered: isHovered });
+
     const { notice, isFading: noticeFading } = useNotice(instanceId);
     const noticeMark = useStaticMark(noticeAlertData(notice), {
         isFading: noticeFading,
@@ -421,7 +493,14 @@ export const TokenCentreAlert = ({ instanceId, isSpawner = false }) => {
         onDismiss: () => TokenNotices.clearNotice(instanceId)
     });
 
-    const pick = pickCentreAlert({ live: liveData, event: alertData, notice });
+    const pick = pickCentreAlert({ live: liveData || workedData, event: alertData, notice });
+    if (pick === 'live' && !liveData) {
+        return (
+            <div data-worked-alert={workedAlert}>
+                <EventAlertMark alert={worked} />
+            </div>
+        );
+    }
     if (pick === 'live') {
         return (
             <div data-spawner-alert={spawnerState.alert}>

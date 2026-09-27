@@ -4,6 +4,12 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A worked Token's problems move to its centre (B1.1, TL-22).** Need Items, Wrong Skill, Level
+  Too Low and the rest are no longer labels on the progress bar: they are the red or yellow mark
+  at the Token's centre (TL-14), staying until fixed. Hovering the Token opens the mark's bubble
+  with the hint sentence and what is missing, wrapped to a readable width. The missing list now
+  reads a station's chosen recipe, so a Furnace short of ore finally names the ore (the old bar
+  never did). The bar hides while its Token is blocked; ring badges replace it next.
 - **First pacing pass (Q9, FB-19).** Early gathering (Oak Tree, the three veins, Ripe Wheat, Apple
   Tree, Shrimp Coast) is tagged Quick and runs at 3 s (Coal Vein 4 s, where the calculator moved
   it); Oak Tree and the veins drop to 5 charges and Apple Tree to 3. Copper Ingot, Shrimp and Apple

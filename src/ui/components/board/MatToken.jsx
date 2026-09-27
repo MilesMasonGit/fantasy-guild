@@ -431,13 +431,18 @@ export const MatToken = React.memo(function MatToken({
                 <TokenProgressBar
                     instanceId={id}
                     token={token}
-                    isHovered={isHovered}
                     alert={alert}
                 />
 
-                {/* FB-8 / TL-14: the one mark at the centre — a spawner's live
-                    problem, news of a problem, or a green notice that fades. */}
-                <TokenCentreAlert instanceId={id} isSpawner={!!detail?.isSpawner} />
+                {/* FB-8 / TL-14: the one mark at the centre — a spawner's or a
+                    worked Token's live problem (B1.1), news of a problem, or a
+                    green notice that fades. */}
+                <TokenCentreAlert
+                    instanceId={id}
+                    isSpawner={!!detail?.isSpawner}
+                    token={token}
+                    isHovered={isHovered}
+                />
                 <EffectProcText instanceId={id} />
             </div>
 

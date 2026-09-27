@@ -27,14 +27,18 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
  * but they pin the mechanism that causes it.
  */
 
+/**
+ * Three since B1.1: the bar stopped drawing alerts, and the alert it still
+ * hides for comes down as `token.alert` from `MatToken`, which re-reads it on
+ * `ALERT_CHANGED` itself.
+ */
 const BAR_EVENTS = [
     BOARD_EVENTS.PROGRESS,
-    BOARD_EVENTS.ALERT_CHANGED,
     BOARD_EVENTS.CYCLE_COMPLETE,
     BOARD_EVENTS.TILE_CHANGED
 ];
 
-/** Count subscribe/unsubscribe traffic on just the four events the bar uses. */
+/** Count subscribe/unsubscribe traffic on just the events the bar uses. */
 const withSubscriptionCounter = () => {
     const counts = { subscribe: 0, unsubscribe: 0 };
     const realSubscribe = EventBus.subscribe.bind(EventBus);
@@ -72,13 +76,13 @@ describe('TokenProgressBar subscription churn (CR2-168 item 1)', () => {
         meter.restore();
     });
 
-    it('subscribes exactly four times on mount', () => {
+    it('subscribes exactly three times on mount', () => {
         render(tree({ instanceId: 'tok_a', token: { typeId: 'fixture_producer', heroId: 'hero_1' } }));
-        expect(meter.counts.subscribe).toBe(4);
+        expect(meter.counts.subscribe).toBe(3);
         expect(meter.counts.unsubscribe).toBe(0);
     });
 
-    it('⭐ eighty Tokens still cost four subscriptions, not three hundred and twenty', () => {
+    it('⭐ eighty Tokens still cost three subscriptions, not two hundred and forty', () => {
         const bars = Array.from({ length: 80 }, (_, i) => bar({
             key: `tok_${i}`,
             instanceId: `tok_${i}`,
@@ -86,7 +90,7 @@ describe('TokenProgressBar subscription churn (CR2-168 item 1)', () => {
         }));
         render(React.createElement(EngineContext.Provider, { value: { EventBus } }, bars));
 
-        expect(meter.counts.subscribe).toBe(4);
+        expect(meter.counts.subscribe).toBe(3);
         expect(meter.counts.unsubscribe).toBe(0);
     });
 
@@ -149,8 +153,8 @@ describe('TokenProgressBar subscription churn (CR2-168 item 1)', () => {
 
         // The last listener for each event left, so the router closed its bus
         // subscription and opened a fresh one for the new Token.
-        expect(meter.counts.subscribe).toBe(8);
-        expect(meter.counts.unsubscribe).toBe(4);
+        expect(meter.counts.subscribe).toBe(6);
+        expect(meter.counts.unsubscribe).toBe(3);
     });
 
     it('leaves no subscriptions behind on unmount', () => {
@@ -163,12 +167,9 @@ describe('TokenProgressBar subscription churn (CR2-168 item 1)', () => {
         expect(BAR_EVENTS.map(e => EventBus.getSubscriberCount(e))).toEqual(before);
     });
 
-    it('still shows the alert when it arrives by event, without resubscribing', () => {
+    it('does not listen for ALERT_CHANGED at all (B1.1)', () => {
+        const before = EventBus.getSubscriberCount(BOARD_EVENTS.ALERT_CHANGED);
         render(tree({ instanceId: 'tok_a', token: { typeId: 'fixture_producer', heroId: 'hero_1' } }));
-        const afterMount = meter.counts.subscribe;
-
-        EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: 'tok_a', alert: 'inputs' });
-
-        expect(meter.counts.subscribe).toBe(afterMount);
+        expect(EventBus.getSubscriberCount(BOARD_EVENTS.ALERT_CHANGED)).toBe(before);
     });
 });

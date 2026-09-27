@@ -6,6 +6,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 (TL-1…TL-11, §2) stand unless a TL- decision below replaces them.*
 
 **Status: quick wins Q1–Q9 (plus Q5b) ALL DONE and merged 2026-09-27. Larger reworks B1–B10 (§4.2) wait for later agents. Open owner questions: §5.**
+**B1 (ring badges) in progress from 2026-09-27:** owner answers in §2 (B1 rows), decision TL-22, slices in §4.2 under B1.
 
 **Kinds:** 🐞 bug · 🔢 number tweak · 🔧 small change (a session or less) · 🏗️ larger rework
 (needs a brief and its own agent).
@@ -203,6 +204,10 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | Snap-to-middle (during Q9) | Every CMS sync snaps a tagged producer's cycle time to its band's middle. Owner chose **narrow Quick to 2–4 s** (middle 3 s), **widen Fast down to 4 s** to close the gap (so 4–12 s, middle 8 s), **accept 8 s** for the calculator-tuned processing recipes, and **tag** Charcoal, Torch, Copper Nails and the builds anyway (Fast / Heavy). TL-21 rewritten accordingly. |
 | FB-46 hero dock | The **owner describes the general idea first**, then the agent makes mockups. |
 | FB-39 Hall tree | **Mockups first**; the sprite bug (FB-40) is fixed earlier as a quick win. |
+| B1 layout (2026-09-27, from the mockup) | **Bare rings, centred** under the pair (option A): each ring has its own dark backing, no tray. With no hero the row centres under the Token alone. Heroes stand on either side (`HeroMotion.standingSpot`), so the row follows the pair. → TL-22. |
+| B1 visibility | **Mixed**: standing facts (spawner `n/cap`, turn countdown) always show; cycle, charges and enemy HP show while a hero works the Token; hovering any Token shows its charges ring, replacing the bottom-right hover charge chip. |
+| B1 rings and order | **Fixed order**: cycle, then charges, then the Token's own ring (spawner count, turn countdown or enemy HP). The cycle ring shows **seconds left**; unlimited charges draw no charges ring. Colours as the mockup: white cycle (fills), gold charges (empties), green spawner (fills to cap), sky turn (empties), red HP (empties). |
+| B1 alert labels | The progress bar's red/yellow labels (Need Items, Wrong Skill, Level Too Low…) **become the centre alert mark** (TL-14), with the same hint and missing-requirements list on hover. The cycle ring greys out while blocked. |
 
 ## 3. New decisions
 
@@ -217,6 +222,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | **TL-18** | **Quests are Tokens.** The Guild Hall spawns them slowly up to an upgradable cap; tutorial quests start on the mat and chain under a hidden cap; non-tutorial quests can be discarded. Noticeboard, click to claim. | The quest sidebar |
 | **TL-20** | **Upkeep can be paid from floor loot.** A spawner's per-spawn upkeep (SP-70) takes matching item loot lying on the mat as well as items in the Bank, through the existing `consumeFromSprites` path. The Upkeep Summary and needs-item alerts count both. | SP-70's implicit "paid from the Bank" (roadmap v1 slice 3.3) |
 | **TL-21** | **A fifth tempo band, Quick, 2–4 s at level 1** (middle 3 s), and **Fast widened to 4–12 s** (middle 8 s) so the bands join up; Medium, Slow and Heavy unchanged; all scale with level as before. Because every CMS sync snaps a tuned producer to its band's middle, gathering (tagged Quick) runs at 3 s and the calculator-tuned processing recipes (Copper Ingot, Shrimp, Apple Juice, tagged Fast) at 8 s; untuned recipes (Charcoal, Torch, Copper Nails, Copper Pickaxe) are tagged Fast and keep a typed 6 s; builds and plantings are tagged Heavy at 30 s. XP per cycle and item values re-derive from the new times (accepted). | The tempo table's four bands (economic simulator plan §13.3): Fast was 8–12 s |
+| **TL-22** | **Ring badges replace the progress bar.** A Token's live numbers are ring badges (a ring that fills or empties, the number inside) in one row centred **under the hero and the Token together** (under the Token alone with no hero): cycle (seconds left), charges, then the Token's own ring (spawner count, turn countdown, enemy HP). A worked Token's problems move to the centre alert mark (TL-14). | TP-2 / TP-4 (the progress bar in the gap under the Token), the corner spawner count and turn countdown (Q2, Q8), and the hover charge chip |
 | **TL-19** | **Two Token sizes.** A CMS field: standard (64 px art at 128 px) or small (32 px art at 64 px), with a matching hit area and spacing. | One size for all |
 
 ## 4. Plan (approved 2026-09-26)
@@ -247,6 +253,12 @@ then plans with the owner. Suggested order in brackets.
 number inside (cycle time, charges, spawner count), in one uniform row **under the hero and the
 Token together**, replacing today's progress bar. Builds on Q2's corner badges. Show the owner a
 mockup of the row before building.
+
+| # | B1 slice | Status |
+|---|---|---|
+| B1.1 | **Centre alerts**: a worked Token's problems become the centre mark (TL-14) with the hint and missing list on Token hover; the bar stops drawing alerts | ✅ 2026-09-27. Director verified live on a Furnace (slot 3): one Copper Ingot cycle with the bar, then ore ran out → yellow centre mark, bar hidden; Token hover shows "Need Items", the hint and "Copper Ore" in a 220 px bubble. Director fixed two things found live: the missing list read MatToken's slim token (no `selectedRecipeId`), so a station's inputs were never listed (the old bar had the same flaw), and the bubble was one 552 px line. A gear-only alert (nothing chosen) now draws nothing at all. Tests: baseline 10 |
+| B1.2 | **Ring row**: ring badge + row centred under the pair; cycle (seconds left), charges, enemy HP; delete the bar and the hover charge chip | — |
+| B1.3 | **Standing rings**: spawner `n/cap` and turn countdown move from the corner into the row | — |
 
 **B2 Top bar (2nd).** FB-28, FB-29, FB-31, FB-32. A thin bar above the playmat: Upkeep as a
 hoverable badge (moves 8.2's Upkeep Summary out of the Item Bank), the Token cap with a hover

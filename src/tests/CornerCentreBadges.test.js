@@ -438,17 +438,33 @@ describe('on the mat', () => {
         expect(onOpenRecipes).toHaveBeenCalledWith(bench.id);
     });
 
-    it('FB-7: a staffed unset station draws no red Choose Recipe bar; a real problem still does', () => {
+    it('FB-7: a staffed unset station draws no red Choose Recipe mark; a real problem still does (B1.1: at the centre)', () => {
         const bench = put('fixture_q2_bench');
-        const token = { typeId: bench.typeId, instanceId: bench.id, heroId: 'h1', alert: ALERT.CHOOSE_RECIPE };
-        const bar = mount(h(TokenProgressBar, { instanceId: bench.id, token, alert: ALERT.CHOOSE_RECIPE })).container;
-        expect(bar.textContent).not.toContain('Choose Recipe');
+        const token = (alert) => ({ typeId: bench.typeId, instanceId: bench.id, heroId: 'h1', alert });
+        const centre = (alert) => h(TokenCentreAlert, { instanceId: bench.id, token: token(alert) });
+        const { container, rerender } = mount(centre(ALERT.CHOOSE_RECIPE));
+        const again = (el) => rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el)));
+        expect(container.querySelector('[data-alert-kind]')).toBeNull();
+        again(centre(ALERT.CHOOSE_BUILD));
+        expect(container.querySelector('[data-alert-kind]')).toBeNull();
+        again(centre(ALERT.NO_ROOM));
+        const mark = container.querySelector('[data-worked-alert="no_room"] [data-alert-kind="problem"]');
+        expect(mark.getAttribute('data-alert-severity')).toBe('red');
+        // And the bar says none of it.
+        cleanup();
+        const bar = mount(h(TokenProgressBar, { instanceId: bench.id, token: token(ALERT.NO_ROOM), alert: ALERT.NO_ROOM })).container;
+        expect(bar.textContent).not.toContain('No Room');
         expect(bar.querySelector('.progress-fill--red-chroma')).toBeNull();
-        act(() => { EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: bench.id, alert: ALERT.CHOOSE_BUILD }); });
-        expect(bar.textContent).not.toContain('Choose Build');
-        act(() => { EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: bench.id, alert: ALERT.NO_ROOM }); });
-        expect(bar.textContent).toContain('No Room');
-        expect(bar.querySelector('.progress-fill--red-chroma')).not.toBeNull();
+    });
+
+    it('B1.1: a spawner’s live problem wins over a worked one', () => {
+        const forest = put('fixture_q2_forest');
+        SpawnerSystem.syncAlerts();
+        const token = { typeId: forest.typeId, instanceId: forest.id, heroId: 'h1', alert: ALERT.ACCESS };
+        const { container } = mount(h(TokenCentreAlert, { instanceId: forest.id, isSpawner: true, token }));
+        expect(container.querySelector('[data-spawner-alert]').getAttribute('data-spawner-alert')).toBe(ALERT.SPAWN_NEEDS_ITEM);
+        expect(container.querySelector('[data-worked-alert]')).toBeNull();
+        expect(container.querySelectorAll('[data-alert-kind]').length).toBe(1);
     });
 
     it('FB-7: a chosen recipe keeps the gear, still', () => {

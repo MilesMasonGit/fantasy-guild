@@ -39,6 +39,28 @@ export const GEAR_ONLY_ALERTS = new Set([ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE
 /** Whether an engine alert is one the gear says instead of a red or yellow mark. */
 export const isGearOnlyAlert = (alert) => GEAR_ONLY_ALERTS.has(alert);
 
+/**
+ * ⭐ A worked Token's live problem (B1.1, TL-14, TL-22): the alert its centre
+ * mark shows, or null. Moved here from the progress bar, which used to print it.
+ *
+ * * Only while a hero is on the Token.
+ * * The engine's `instance.alert` first — unless the gear says it
+ *   ({@link isGearOnlyAlert}), in which case nothing at all: a station with
+ *   nothing chosen is waiting for the player, whatever else it lacks.
+ * * Otherwise what `getMissingRequirements` finds: missing Tokens read as
+ *   `no_recipe`, missing items as `inputs`.
+ *
+ * @param {{hasHero?: boolean, alert?: string|null, missingType?: string|null}} worked
+ * @returns {string|null} an `ALERT` value
+ */
+export function workedAlertOf({ hasHero = false, alert = null, missingType = null } = {}) {
+    if (!hasHero) return null;
+    if (alert) return isGearOnlyAlert(alert) ? null : alert;
+    if (missingType === 'tokens') return ALERT.NO_RECIPE;
+    if (missingType === 'items') return ALERT.INPUTS;
+    return null;
+}
+
 /** What kind of alert a `TILE_EVENT_ALERT` payload is. */
 export function alertKindOf(payload) {
     if (!payload) return null;
@@ -65,7 +87,9 @@ export function alertFades(payload) {
 
 /**
  * The one mark drawn at a Token's centre. A live problem first, then news of a
- * problem, then a notice — so a notice never covers a problem.
+ * problem, then a notice — so a notice never covers a problem. A live problem
+ * is a spawner's or a worked Token's (B1.1); the caller passes the spawner's
+ * when both apply.
  *
  * @param {{live?: object|null, event?: object|null, notice?: object|null}} marks
  * @returns {'live'|'event'|'notice'|null}
