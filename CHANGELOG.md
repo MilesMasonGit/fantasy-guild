@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The Guild Hall tooltip is as wide as its lines (Q5b follow-up).** Each trickle line now fits on
+  one row, even with all-caps text on, capped to the window width. The flag tooltip is unchanged.
 - **Spawners pay their upkeep from loot on the mat too (TL-20).** A spawner's per-spawn upkeep (a
   Forest's Oak Seed) is paid from the Bank first, then from matching loot lying anywhere on the mat,
   the same way recipe inputs already are. A spawner no longer shows *needs Oak Seed* while seeds it

@@ -126,4 +126,17 @@ describe('⭐ FB-52: the Hall tooltip', () => {
         expect(tooltip().style.left).toBe('100px');
         expect(tooltip().style.top).toBe('208px');
     });
+
+    it('is as wide as its longest line, one row each, capped to the window (the flag tooltip keeps a fixed 256 px)', () => {
+        render(React.createElement(TrickleTooltip, {
+            instanceId: 'x',
+            readLines: () => ['Trickle income:', 'a line'],
+            anchorOf: () => null
+        }));
+        const cls = tooltip().className;
+        expect(cls).toContain('w-max');
+        expect(cls).toContain('whitespace-nowrap');
+        expect(cls).toContain('max-w-[calc(100vw-16px)]');
+        expect(cls).not.toContain('w-64');
+    });
 });

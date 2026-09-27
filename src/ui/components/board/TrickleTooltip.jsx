@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -9,6 +9,9 @@ import { placeUnder } from './tooltipPlacement.js';
 
 /** How often the tooltip re-reads the trickle clocks while shown (FB-52). */
 export const TRICKLE_TOOLTIP_REFRESH_MS = 1000;
+
+/** The width it is placed with before it has been measured (the flag tooltip's). */
+const START_WIDTH = 256;
 
 /** The live readers `trickleHoverLines` takes. */
 const TRICKLE_SOURCES = {
@@ -46,6 +49,11 @@ export function hasTrickle(def) {
  * The wording and maths are `trickleHoverLines`' (the inspection panel's
  * *Pays* rows); this only draws them.
  *
+ * ⭐ **As wide as its longest line** (owner, after Q5b): each trickle line sits
+ * on one row even under the all-caps setting, capped to the window; it is
+ * measured after each draw so `placeUnder` keeps it on screen. The flag
+ * tooltip keeps its fixed 256 px.
+ *
  * @param {{
  *   instanceId: string,
  *   readLines?: (instanceId: string) => string[],   // tests
@@ -55,6 +63,12 @@ export function hasTrickle(def) {
 export const TrickleTooltip = ({ instanceId, readLines = liveTrickleLines, anchorOf = artOf }) => {
     const { isDragging: anyDrag } = useActiveDrag();
     const [, refresh] = useState(0);
+    const boxRef = useRef(null);
+    const [width, setWidth] = useState(START_WIDTH);
+    useLayoutEffect(() => {
+        const measured = boxRef.current?.offsetWidth;
+        if (measured > 0 && measured !== width) setWidth(measured);
+    });
     useEffect(() => {
         const timer = setInterval(() => refresh(n => n + 1), TRICKLE_TOOLTIP_REFRESH_MS);
         return () => clearInterval(timer);
@@ -69,10 +83,11 @@ export const TrickleTooltip = ({ instanceId, readLines = liveTrickleLines, ancho
 
     return createPortal(
         <div
+            ref={boxRef}
             role="tooltip"
             data-trickle-tooltip={instanceId}
-            className="fixed z-[90] w-64 p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
-            style={placeUnder(anchorOf(instanceId), 256, 48 + pays.length * 16)}
+            className="fixed z-[90] w-max max-w-[calc(100vw-16px)] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white whitespace-nowrap"
+            style={placeUnder(anchorOf(instanceId), width, 48 + pays.length * 16)}
         >
             {title && <div className="font-bold text-gi-gold">{title}</div>}
             <div className="text-white/80">{heading}</div>
