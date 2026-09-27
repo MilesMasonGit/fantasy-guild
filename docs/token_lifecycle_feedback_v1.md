@@ -178,6 +178,8 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | FB-41 quest Tokens | **Noticeboard, click to claim**: hover to read, it tracks itself, glows when done, click to claim, then it vanishes. No hero involved. → TL-18. |
 | FB-19 pacing | **The agent does a first pass** in the CMS (gathering 3 s with fewer charges, processing 6 s, Foundation/Farmland builds 30 s); the owner fine-tunes. |
 | FB-18 small size | A **CMS size field** (standard / small); saplings and sprouts start small; small Tokens get a smaller hit area and spacing. → TL-19. |
+| FB-12 retest (after Q1) | "Probably just a misclick on my end, it seems to be working fine now." Q1's hold-while-carried fix stays. |
+| Unset station look (after Q1) | **Just the gear, no alert**: a station or Foundation with nothing chosen shows only the gear (FB-7), perhaps gently pulsing; it is waiting, not broken. Replaces Q1's red "Choose a recipe" and 6.1's red "Choose what to build" alerts. Done in Q2. |
 | FB-46 hero dock | The **owner describes the general idea first**, then the agent makes mockups. |
 | FB-39 Hall tree | **Mockups first**; the sprite bug (FB-40) is fixed earlier as a quick win. |
 
