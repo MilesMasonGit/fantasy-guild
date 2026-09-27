@@ -13,6 +13,7 @@ import * as EffectActions from './EffectActions.js';
 // either may load first.
 import * as TimedChanges from './TimedChanges.js';
 import * as TokenNotices from './TokenNotices.js';
+import { TimeBankManager } from '../core/TimeBankManager.js';
 
 /**
  * ⭐ **Spawners** (roadmap §3.1, DP-4, DP-5, SP-5, SP-6, SP-46/SP-68).
@@ -214,8 +215,10 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     // A green notice on the new Token (FB-48): news, not a problem, so it goes
     // on its own. Raised on the id that landed; a Token that grew during the
     // leftover time above is a new instance and simply has no notice.
+    // ⭐ None while the time bank replays time away (owner, after Q2): the
+    // player comes back to a calm mat, not a field of green marks.
     const spawnedName = getTokenType(typeId)?.name || typeId;
-    if (BoardState.getTokenById(landed.instanceId)) TokenNotices.raiseNotice(landed.instanceId, {
+    if (!TimeBankManager.isSpending && BoardState.getTokenById(landed.instanceId)) TokenNotices.raiseNotice(landed.instanceId, {
         type: 'token_spawned',
         title: `New ${spawnedName}`,
         rulesText: `Spawned by ${def?.name || instance.typeId}`

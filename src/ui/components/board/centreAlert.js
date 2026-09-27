@@ -7,9 +7,11 @@ import { ALERT } from '../../../systems/board/boardEvents.js';
  *
  * * A **problem** (red or yellow) sits at the centre of its Token and stays
  *   until the problem is fixed. A live problem — a spawner that needs an item
- *   or has no room — comes down when the engine says the cause is gone; news
- *   of a problem that cannot be fixed any more (a Token that ran dry, a
- *   refused drop) stays until the player reads it.
+ *   or has no room — comes down when the engine says the cause is gone.
+ *   ⭐ **News of a problem that cannot be fixed** (a Token that ran dry, a
+ *   refused drop) fades after ten seconds like a notice, still in red
+ *   ({@link alertFades}; owner, after Q2: a problem that cannot be fixed
+ *   should not linger).
  * * A **notice** (green) is not a problem: a Token a spawner has just made, a
  *   restock. It sits in the same place and goes on its own after
  *   `TokenNotices.NOTICE_MS`.
@@ -43,6 +45,22 @@ export function alertKindOf(payload) {
     if (HERO_SPOKEN_ALERTS.has(payload.type) || payload.severity === 'upgrade') return ALERT_KIND.SPOKEN;
     if (payload.severity === 'green' || payload.severity === 'notice') return ALERT_KIND.NOTICE;
     return ALERT_KIND.PROBLEM;
+}
+
+/**
+ * Problem news that cannot be fixed, so it fades after `TokenNotices.NOTICE_MS`
+ * instead of waiting to be read (owner, after Q2).
+ *
+ * * `token_exhausted` — the Token is gone; the spawner's own live alert
+ *   covers any real problem left behind.
+ * * `drop_rejected` — the drop simply did not happen; there is nothing on the
+ *   mat left to fix.
+ */
+export const FADING_NEWS = new Set(['token_exhausted', 'drop_rejected']);
+
+/** Whether a `TILE_EVENT_ALERT` problem fades on its own (it is news that cannot be fixed). */
+export function alertFades(payload) {
+    return !!payload && alertKindOf(payload) === ALERT_KIND.PROBLEM && FADING_NEWS.has(payload.type);
 }
 
 /**

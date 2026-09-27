@@ -28,8 +28,10 @@ import { TokenCentreAlert } from '../ui/components/board/TokenEventAlert.jsx';
 import { TokenProgressBar } from '../ui/components/board/TokenProgressBar.jsx';
 import { StationGearBadge, DisallowBadge, SpawnerCountBadge } from '../ui/components/board/TokenBadges.jsx';
 import {
-    ALERT_KIND, alertKindOf, pickCentreAlert, spawnerCountText, gearStateOf, isGearOnlyAlert
+    ALERT_KIND, alertKindOf, alertFades, pickCentreAlert, spawnerCountText, gearStateOf, isGearOnlyAlert
 } from '../ui/components/board/centreAlert.js';
+import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
+import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -145,7 +147,7 @@ beforeEach(() => {
 
 describe('alert classification (TL-14)', () => {
     it('every alert kind the mat can be sent is a problem, a notice or spoken by a hero', () => {
-        // News of a problem: stays until read.
+        // News of a problem: red or yellow, at the centre.
         expect(alertKindOf({ severity: 'red', type: 'token_exhausted' })).toBe(ALERT_KIND.PROBLEM);
         expect(alertKindOf({ severity: 'disallow', type: 'drop_rejected' })).toBe(ALERT_KIND.PROBLEM);
         expect(alertKindOf({ severity: 'yellow', type: 'anything_else' })).toBe(ALERT_KIND.PROBLEM);
@@ -157,6 +159,15 @@ describe('alert classification (TL-14)', () => {
         }
         expect(alertKindOf({ severity: 'upgrade', type: 'x' })).toBe(ALERT_KIND.SPOKEN);
         expect(alertKindOf(null)).toBeNull();
+    });
+
+    it('news of a problem that cannot be fixed fades; other problems and notices do not use this clock (after Q2)', () => {
+        expect(alertFades({ severity: 'red', type: 'token_exhausted' })).toBe(true);
+        expect(alertFades({ severity: 'disallow', type: 'drop_rejected' })).toBe(true);
+        expect(alertFades({ severity: 'yellow', type: 'anything_else' })).toBe(false);
+        expect(alertFades({ severity: 'green', type: 'token_restocked' })).toBe(false);   // a notice, faded by TokenNotices
+        expect(alertFades({ severity: 'yellow', type: 'out_of_item' })).toBe(false);      // spoken by the hero
+        expect(alertFades(null)).toBe(false);
     });
 
     it('nothing chosen is the gear\'s to say, not a problem', () => {
@@ -249,6 +260,46 @@ describe('TokenNotices — the ten-second notice', () => {
         });
         expect(TokenNotices.noticeOf(forest.id)).toBeNull();
     });
+
+    it('after Q2: no notice while the time bank replays time away; one again afterwards', () => {
+        InventoryManager.addItem('fixture_q2_seed', 5);
+        put('fixture_q2_forest');
+        TimeBankManager.isSpending = true;
+        try {
+            for (let t = 0; t < 1200; t += 100) BoardRunner.tick(100);
+        } finally {
+            TimeBankManager.isSpending = false;
+        }
+        const quiet = BoardState.tokens().filter(t => t.typeId === 'fixture_q2_sapling');
+        expect(quiet.length).toBe(1);
+        expect(TokenNotices.noticeOf(quiet[0].id)).toBeNull();
+
+        for (let t = 0; t < 1200; t += 100) BoardRunner.tick(100);
+        const next = BoardState.tokens().filter(t => t.typeId === 'fixture_q2_sapling' && t.id !== quiet[0].id);
+        expect(next.length).toBe(1);
+        expect(TokenNotices.noticeOf(next[0].id)).toMatchObject({ type: 'token_spawned' });
+    });
+});
+
+describe('the spot a used-up Token stood on (after Q2)', () => {
+    it('its red alert goes on its own after ten seconds', () => {
+        vi.useFakeTimers();
+        const { container } = mount(h(MatPointAlerts));
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                instanceId: 'gone_1', x: 400, y: 400, severity: 'red', type: 'token_exhausted', name: 'Oak', message: 'Token Exhausted: Oak'
+            });
+        });
+        const mark = container.querySelector('[data-mat-point-alert] [data-alert-kind="problem"]');
+        expect(mark).not.toBeNull();
+        expect(mark.getAttribute('data-alert-fades')).toBe('true');
+        expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_alert_red.png');
+
+        act(() => { vi.advanceTimersByTime(8000); });
+        expect(container.querySelector('[data-mat-point-alert]')).not.toBeNull();
+        act(() => { vi.advanceTimersByTime(2100); });
+        expect(container.querySelector('[data-mat-point-alert]')).toBeNull();
+    });
 });
 
 describe('TokenCentreAlert — one mark at the centre', () => {
@@ -280,22 +331,46 @@ describe('TokenCentreAlert — one mark at the centre', () => {
         expect(TokenNotices.noticeOf('tok_r')).toMatchObject({ title: 'Restocked from X' });
     });
 
-    it('a problem covers a notice, and never fades on its own', () => {
+    it('a problem covers a notice; problem news that can be read stays until read', () => {
         vi.useFakeTimers();
         TokenNotices.raiseNotice('tok_p', { title: 'New Sapling' });
         const { container } = mount(h(TokenCentreAlert, { instanceId: 'tok_p' }));
         act(() => {
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                instanceId: 'tok_p', severity: 'red', type: 'token_exhausted', name: 'X', message: 'Token Exhausted: X'
+                instanceId: 'tok_p', severity: 'yellow', type: 'fixture_problem', name: 'X', message: 'Something: X'
             });
         });
         const mark = container.querySelector('[data-alert-kind]');
         expect(mark.getAttribute('data-alert-kind')).toBe('problem');
         expect(mark.className).toContain('top-1/2');
+        expect(mark.getAttribute('data-alert-fades')).toBeNull();
 
         act(() => { vi.advanceTimersByTime(60000); });
         expect(container.querySelector('[data-alert-kind="problem"]')).not.toBeNull();
         expect(container.querySelector('[data-alert-kind="problem"]').style.opacity).toBe('1');
+    });
+
+    it('after Q2: a refused drop on a Token stays red, then fades after ten seconds, hovered or not', () => {
+        vi.useFakeTimers();
+        const { container } = mount(h(TokenCentreAlert, { instanceId: 'tok_d' }));
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                instanceId: 'tok_d', severity: 'disallow', type: 'drop_rejected', name: 'X', message: 'Drop Rejected: X'
+            });
+        });
+        const mark = container.querySelector('[data-alert-kind="problem"]');
+        expect(mark.getAttribute('data-alert-fades')).toBe('true');
+        expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_disallow_red.png');
+
+        // Reading it does not stop the clock.
+        fireEvent.mouseEnter(mark);
+        fireEvent.mouseLeave(mark);
+        act(() => { vi.advanceTimersByTime(TokenNotices.NOTICE_MS - 2000); });
+        expect(container.querySelector('[data-alert-kind="problem"]').style.opacity).toBe('1');
+        act(() => { vi.advanceTimersByTime(1000); });
+        expect(container.querySelector('[data-alert-kind="problem"]').style.opacity).toBe('0');
+        act(() => { vi.advanceTimersByTime(1100); });
+        expect(container.querySelector('[data-alert-kind]')).toBeNull();
     });
 
     it('a hero-spoken alert draws nothing', () => {

@@ -8,7 +8,7 @@ import { ALERT_HINT } from './boardConstants.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { cn } from '../../utils/cn.js';
 import { useTokenEvent } from './tokenEvents.js';
-import { ALERT_KIND, alertKindOf, pickCentreAlert } from './centreAlert.js';
+import { ALERT_KIND, alertKindOf, alertFades, pickCentreAlert } from './centreAlert.js';
 
 /**
  * The floating alert mark — "Token Exhausted", "Needs Oak Seed to spawn", a
@@ -17,12 +17,13 @@ import { ALERT_KIND, alertKindOf, pickCentreAlert } from './centreAlert.js';
  * ⭐ Drawn at the **centre** of the thing it is about (FB-8, TL-14), with a
  * pop-up bubble on hover. There are two kinds (`centreAlert.js`):
  *
- * * **Problems** (red, yellow) never fade on their own. A live one — a
- *   spawner waiting on the Bank or on room — stays until the engine says the
- *   cause is gone. News of a problem that cannot be fixed any more (a Token
- *   ran dry, a drop was refused) stays until the player reads it: once
- *   hovered and left it waits 5s, then fades over 3s; clicking it dismisses it
- *   at once.
+ * * **Problems** (red, yellow). A live one — a spawner waiting on the Bank or
+ *   on room — stays until the engine says the cause is gone. News of a
+ *   problem that cannot be fixed any more (a Token ran dry, a drop was
+ *   refused — `alertFades`) goes after `TokenNotices.NOTICE_MS` like a notice,
+ *   still red (owner, after Q2). Any other problem news stays until the
+ *   player reads it: once hovered and left it waits 5s, then fades over 3s.
+ *   Clicking any of them dismisses it at once.
  * * **Notices** (green) go on their own after `TokenNotices.NOTICE_MS`.
  *
  * A Token shows one mark at a time: a problem always wins over a notice.
@@ -43,8 +44,11 @@ export function useEventAlert(onGone = null) {
     const [isFading, setIsFading] = useState(false);
     const [isDismissed, setIsDismissed] = useState(false);
     const [iconRect, setIconRect] = useState(null);
+    /** Whether the news up now fades on its own clock (`alertFades`). */
+    const [fades, setFades] = useState(false);
 
     const iconRef = useRef(null);
+    const fadesRef = useRef(false);
     const delayTimerRef = useRef(null);
     const fadeTimerRef = useRef(null);
     const goneRef = useRef(onGone);
@@ -76,6 +80,21 @@ export function useEventAlert(onGone = null) {
         clearTimers();
         setIsDismissed(false);
         setIsFading(false);
+        // News that cannot be fixed goes on its own after the notice's ten
+        // seconds, fading over its last moment, hovered or not.
+        const selfFading = alertFades(p);
+        fadesRef.current = selfFading;
+        setFades(selfFading);
+        if (selfFading) {
+            delayTimerRef.current = setTimeout(() => {
+                setIsFading(true);
+                fadeTimerRef.current = setTimeout(() => {
+                    setAlertData(null);
+                    setIsFading(false);
+                    goneRef.current?.();
+                }, NOTICE_FADE_MS);
+            }, Math.max(0, TokenNotices.NOTICE_MS - NOTICE_FADE_MS));
+        }
         setAlertData(prev => {
             let startLevel = p.startLevel;
             const newLevel = p.newLevel;
@@ -107,6 +126,12 @@ export function useEventAlert(onGone = null) {
 
     const onMouseEnter = () => {
         if (isDismissed) return;
+        if (fadesRef.current) {
+            // Its own clock keeps running; hovering only reads it.
+            if (iconRef.current) setIconRect(iconRef.current.getBoundingClientRect());
+            setIsHovered(true);
+            return;
+        }
         clearTimers();
         setIsFading(false);
         if (iconRef.current) setIconRect(iconRef.current.getBoundingClientRect());
@@ -115,7 +140,7 @@ export function useEventAlert(onGone = null) {
 
     const onMouseLeave = () => {
         setIsHovered(false);
-        if (!alertData || isDismissed) return;
+        if (!alertData || isDismissed || fadesRef.current) return;
         // 5s wait, then a 3s fade.
         delayTimerRef.current = setTimeout(() => {
             setIsFading(true);
@@ -127,7 +152,10 @@ export function useEventAlert(onGone = null) {
         }, 5000);
     };
 
-    return { alertData, isHovered, isFading, isDismissed, iconRect, iconRef, show, dismiss, onMouseEnter, onMouseLeave };
+    return {
+        alertData, isHovered, isFading, isDismissed, iconRect, iconRef, show, dismiss, onMouseEnter, onMouseLeave,
+        fades, fadeMs: fades ? NOTICE_FADE_MS : undefined
+    };
 }
 
 /** The icon itself, and its hover bubble. `alert` is a {@link useEventAlert}. */
@@ -211,6 +239,7 @@ export const EventAlertMark = ({ alert }) => {
             ref={iconRef}
             data-alert-kind={isGreen ? ALERT_KIND.NOTICE : ALERT_KIND.PROBLEM}
             data-alert-severity={alertData.severity}
+            data-alert-fades={alert.fades ? 'true' : undefined}
             onClick={(e) => { e.stopPropagation(); dismiss(); }}
             className={cn(
                 "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[100]",

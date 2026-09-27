@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Alerts after Q2.** The red alert left where a used-up Token stood, and the refused-drop mark, now
+  fade after 10 seconds like a notice (neither can be fixed). While the time bank replays time away,
+  spawns raise no green notice, so you come back to a calm mat.
 - **Layering on the mat (Q3: FB-1, FB-2).** Hero flags now layer like Tokens: a flag standing higher
   on the mat than a Token is drawn behind it, one lower is drawn in front (they used to draw on top of
   everything). The idle hero beside a flag layers with it. While a hero works a Token, that Token and
