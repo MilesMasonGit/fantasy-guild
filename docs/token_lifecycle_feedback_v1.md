@@ -45,6 +45,9 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 |---|---|---|
 | FB-10 | 🔧 | A basic "hit" animation on the Token each time the hero strikes it, per skill: Forestry = side-to-side shake, Mining = shake in all directions, Fishing = slow bob up and down; others to be agreed. More complex animations come later. |
 | FB-11 | 🔧 | A bright, glowy **transform** animation when work completes and a Token changes. |
+| FB-49 | 🔧 | *(added after Q4)* In combat the hero **idles until it attacks**, then plays the attack animation **once** per real attack (not a looping swing). |
+| FB-50 | 🔧 | *(added after Q4)* A hero stuck on a Token (the Token has an alert) plays **idle**, not the swing. |
+| FB-51 | 🔧 | *(added after Q4)* A Token that appears in another's place (`EffectActions.spawn` "here", e.g. a stump) gets the transform glow. |
 
 ### E. Token behaviour
 
@@ -184,6 +187,9 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | Notices during catch-up (after Q2) | **No notices while the game replays time away** (time bank): you come back to a calm mat. Done with Q3. |
 | Notice text (after Q2) | "New Oak Sapling", hover "Spawned by Oak Forest": **keep**. |
 | Test save slot (after Q2) | Slot 3 deleted with the owner's OK; agents use **slot 3** for fresh test games and never touch slots 1–2. |
+| Combat knockback (after Q4) | **Only on real hits.** Owner: *"I'll want to update the animation cycle for combat to have the hero idling until they attack, where it will play the attack animation once."* → FB-49. |
+| Stuck hero (after Q4) | **The hero idles when stuck** (its Token has an alert), instead of swinging at nothing. → FB-50. |
+| Spawn glow (after Q4) | **Yes:** a Token that appears in another's place (e.g. a stump, via `EffectActions.spawn`) glows like a transform. → FB-51. |
 | FB-46 hero dock | The **owner describes the general idea first**, then the agent makes mockups. |
 | FB-39 Hall tree | **Mockups first**; the sprite bug (FB-40) is fixed earlier as a quick win. |
 
@@ -213,7 +219,7 @@ Each line is one small slice: built, tested, played and committed separately.
 | Q3 | **Layering** — ✅ done 2026-09-26 (flags sort with Tokens by y in one band; worked Tokens + their hero in a band above; the hovered Token frontmost; flags now sit under loot. Q2 follow-ups: exhausted / refused-drop alerts fade after 10 s; no spawn notices during time-bank replay. Director verified live: a flag above the Forest drew behind it (z 10 vs 16); a worked Oak Tree drew above the Token below it (37 vs 34). Tests: baseline 10) | FB-1 flags layer like other Tokens · FB-2 a worked Token and its hero on top |
 | Q4 | **Animations** — ✅ built 2026-09-26, ⭐ owner to watch them play (a hit = the hero's 1 s swing loop, synced to its strike frame 5 from one shared clock; combat knocks back on each real landed hit, ~2.5 s; table in `hitAnimations.js`; glow on every `transformInstance` via `TokenGlows.js`, skipped during catch-up. Verified by probes, not by eye: the agent's browser pane was hidden, so animations were confirmed running and timed but not watched. Tests: baseline 10) | FB-10 the ten hit animations · FB-11 transform glow |
 | Q5 | **Loot and the Hall** | FB-16 items fly to the Guild Hall · FB-17 full-size in flight · FB-30 trickle income on Hall hover |
-| Q6 | **Speech bubbles** | FB-20 raise them · FB-21 drop everyday lines · FB-22 a list of every line for the owner's audit |
+| Q6 | **Speech bubbles and hero animation** | FB-20 raise them · FB-21 drop everyday lines · FB-22 a list of every line for the owner's audit · FB-49 combat: idle, attack once per real attack · FB-50 stuck hero idles · FB-51 spawn-in-place glow |
 | Q7 | **Panels** | FB-36 QA panel fits the screen · FB-37 drop the banner slider · FB-40 Hall upgrade sprites · FB-47 no dock on the Hall upgrade page · FB-24 no Shop inspect panel · FB-26 Shop prices in the item-bar format |
 | Q8 | **Chance transforms** | FB-14 countdown · FB-15 / TL-12 engine + CMS field, then the Coast through the CMS |
 | Q9 | **Pacing first pass** | FB-19 through the CMS (content-only commit) |
