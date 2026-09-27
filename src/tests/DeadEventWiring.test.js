@@ -219,9 +219,11 @@ describe('dead event wiring stays dead', () => {
         // ...and QuestManager the only subscriber.
         expect(sitesFor(/subscribe\(\s*['"]ui_modal:opened['"]/)).toEqual(['systems/quests/QuestManager.js']);
 
-        // Both ends must still agree on the three modal ids.
-        for (const modalId of ['bank', 'vault', 'cartographer']) {
+        // Both ends must still agree on the modal ids. `vault` went with the
+        // Token Vault (Token Lifecycle 9.3); its quest mapping went in 9.5.
+        for (const modalId of ['bank', 'cartographer']) {
             expect(stripComments(quests.text)).toContain(`modalId === '${modalId}'`);
         }
+        expect(stripComments(quests.text)).not.toContain(`modalId === 'vault'`);
     });
 });

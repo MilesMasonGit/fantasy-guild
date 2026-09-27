@@ -18,88 +18,62 @@ export function setTutorialAideTarget(questId) {
     }
 }
 
-/** Resolves the target DOM element for a given tutorial quest */
+/**
+ * Resolves the target DOM element for a given tutorial quest (the chain in
+ * `tutorialQuests.js`, rewritten for the Token Lifecycle loop in slice 9.5).
+ * Each case falls back to the orb that opens the right screen.
+ */
 export function resolveTutorialTargetElement(questId) {
     if (typeof document === 'undefined' || !questId) return null;
 
+    const q = (selector) => document.querySelector(selector);
+    const token = (typeId) => q(`[data-token-art="true"][data-token-type="${typeId}"]`);
+    const shopItem = (typeId) => q(`[data-shop-item="${typeId}"]`) || q('#cartographer-bubble-target');
+
     switch (questId) {
-        case 'tutorial_1': // Drag the Guild Hall to a new spot on the mat
-            return document.querySelector('[data-token-art="true"][data-guild-hall="true"]');
-
-        case 'tutorial_2': // Recruit a Hero from Guild Hall
+        case 'tut_recruit': // Recruit a Hero from the Guild Hall board
             return (
-                document.querySelector('[data-guild-roster-upgrade="true"]') ||
-                document.querySelector('#guild-bubble-target') ||
-                document.querySelector('button[title*="Guild"]')
+                q('[data-guild-roster-upgrade="true"]') ||
+                q('#guild-bubble-target') ||
+                q('button[title*="Guild"]')
             );
 
-        case 'tutorial_3': // Upgrade Guild Hall Production (Wishing Well)
+        case 'tut_flag': // Drag a Hero from the Hero Dock onto the mat
             return (
-                document.querySelector('[data-guild-wishing-well-upgrade="true"]') ||
-                document.querySelector('#guild-bubble-target') ||
-                document.querySelector('button[title*="Guild"]')
+                q('[data-hero-dock-tab]') ||
+                q('#rightmost-hero-dock') ||
+                q('#hero-dock')
             );
 
-        case 'tutorial_4': // Explore one Map (strictly on-board map, no tray fallback)
-            return document.querySelector('[data-board-map-id]');
+        case 'tut_log': // Log an Oak Tree
+            return token('token_oak_tree') || token('token_oak_forest');
 
-        case 'tutorial_5': // Move a New Token (any Token on the mat but the Guild Hall)
-            return document.querySelector('[data-token-art="true"]:not([data-guild-hall])');
+        case 'tut_collect': // Collect loot by hovering
+            return q('[data-item-sprite="true"]') || q('#sprite-layer');
 
-        case 'tutorial_6': // Deploy a Hero from Hero Dock
-            return (
-                document.querySelector('[data-hero-dock-tab]') ||
-                document.querySelector('#rightmost-hero-dock') ||
-                document.querySelector('#hero-dock')
-            );
+        case 'tut_bank': // Item Bank
+            return q('#bank-bubble-target');
 
-        case 'tutorial_7': // Token Cycles (any token with a Hero assigned to it)
-            return document.querySelector('[data-tile-staffed="true"]');
+        case 'tut_shop': // Buy anything at the Shop
+            return q('[data-shop-item]') || q('#cartographer-bubble-target');
 
-        case 'tutorial_8': // Collect Items
-            return (
-                document.querySelector('[data-item-sprite="true"]') ||
-                document.querySelector('#sprite-layer')
-            );
+        case 'tut_foundation': // Buy a Wood Foundation
+            return shopItem('token_wood_foundation');
 
-        case 'tutorial_9': // Exhaust one Token (tokens on the playmat that are not infinite)
-            return (
-                document.querySelector('[data-tile-staffed="true"][data-tile-finite-token="true"]') ||
-                document.querySelector('[data-tile-finite-token="true"]') ||
-                document.querySelector('[data-tile-staffed="true"]') ||
-                document.querySelector('[data-tile-has-token="true"]')
-            );
+        case 'tut_workbench': // Build a Workbench on the Wood Foundation
+            return token('token_wood_foundation') || shopItem('token_wood_foundation');
 
-        case 'tutorial_10': // Item Bank
-            return document.querySelector('#bank-bubble-target');
+        case 'tut_charcoal': // Craft Charcoal at the Workbench
+            return token('token_workbench') || token('token_wood_foundation') || shopItem('token_wood_foundation');
 
-        case 'tutorial_11': // Equip a Hero
-            return (
-                document.querySelector('[data-bank-item]') ||
-                document.querySelector('[data-hero-dock-tab]') ||
-                document.querySelector('#bank-bubble-target')
-            );
+        case 'tut_farmland': // Plant Farmland
+            return token('token_farmland') || shopItem('token_farmland');
 
-        case 'tutorial_12': // Token Vault
-            return document.querySelector('#vault-bubble-target');
+        case 'tut_wheat': // Harvest Ripe Wheat
+            return token('token_ripe_wheat') || token('token_wheat_field') || token('token_farmland') || shopItem('token_farmland');
 
-        case 'tutorial_13': // Stage a Token from the Vault onto the mat
-            return (
-                document.querySelector('[data-vault-first-token]') ||
-                document.querySelector('#vault-bubble-target')
-            );
-
-        case 'tutorial_14': // Add a Context Token — tools come out of the Vault
-            return document.querySelector('#vault-bubble-target');
-
-        case 'tutorial_15': // Cartographer's Shop
-            return document.querySelector('#cartographer-bubble-target');
-
-        case 'tutorial_16': // Buy a Map
-            return (
-                document.querySelector('[data-cartographer-map-card]') ||
-                document.querySelector('#cartographer-bubble-target')
-            );
+        case 'tut_explore': // Explore the Oak Forest Map
+            return token('token_oak_forest_map') || shopItem('token_oak_forest_map');
 
         default:
             return null;
@@ -219,20 +193,10 @@ export const TutorialAideOverlay = () => {
     const isRecruitHeroQuestActive = useGameState(
         () => {
             const activeQuests = GameState.state?.quests?.active || [];
-            const q = activeQuests.find(quest => quest.targetType === 'hero_recruited' || quest.id === 'tutorial_2');
+            const q = activeQuests.find(quest => quest.targetType === 'hero_recruited');
             return !!q && (q.currentCount || 0) < (q.requiredCount || 1);
         },
         ['state_changed', 'quests_updated', 'hero_recruited', 'guild_upgrades_updated']
-    );
-
-    // Track if "Upgrade Guild Hall Production" (Wishing Well) is active in Quest Log and incomplete
-    const isWishingWellQuestActive = useGameState(
-        () => {
-            const activeQuests = GameState.state?.quests?.active || [];
-            const q = activeQuests.find(quest => quest.targetType === 'guild_upgrade_purchased' || quest.targetType === 'wishing_well_upgraded' || quest.id === 'tutorial_3');
-            return !!q && (q.currentCount || 0) < (q.requiredCount || 1);
-        },
-        ['state_changed', 'quests_updated', 'guild_upgrades_updated']
     );
 
     useEffect(() => {
@@ -273,22 +237,6 @@ export const TutorialAideOverlay = () => {
                             key="guild_roster_upgrade_button"
                             keyId="guild_roster_upgrade_button"
                             target="[data-guild-roster-upgrade-button='true']"
-                        />
-                    </>
-                )}
-
-                {/* 3. Standing beacons on Guild Hall Upgrade screen during Wishing Well Upgrade */}
-                {isWishingWellQuestActive && (
-                    <>
-                        <TutorialBeacon
-                            key="guild_wishing_well_mat"
-                            keyId="guild_wishing_well_mat"
-                            target="[data-guild-wishing-well-upgrade='true']"
-                        />
-                        <TutorialBeacon
-                            key="guild_well_upgrade_button"
-                            keyId="guild_well_upgrade_button"
-                            target="[data-guild-well-upgrade-button='true']"
                         />
                     </>
                 )}

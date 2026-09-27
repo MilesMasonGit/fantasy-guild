@@ -92,6 +92,19 @@ export const BOARD_EVENTS = {
      */
     HEROES_WALKED: 'board:heroes_walked',
 
+    /**
+     * A Foundation finished its build and became the Token it built, in place
+     * (Token Lifecycle 6.1, DP-6) — Farmland planted by Farming included.
+     * Payload: `{ instanceId, typeId, fromTypeId, heroId }`: the new Token, what
+     * it was built as, the Foundation's type, and the hero who built it.
+     *
+     * Published once by `BoardRunner`, after the transform has succeeded (slice
+     * 9.5, for the tutorial's "build a Workbench"). `TILE_CHANGED` fires for the
+     * same transform, but also for grows, turns and every redraw, so it cannot
+     * say "something was built".
+     */
+    TOKEN_BUILT: 'board:token_built',
+
     /** A Token ran out of charges and left the board (D-176). Payload: `{ instanceId, x, y, typeId, instance?, heroId? }` */
     TOKEN_DEPLETED: 'board:token_depleted',
 

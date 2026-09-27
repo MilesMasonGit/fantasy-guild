@@ -478,8 +478,12 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
     // hero lets go on the next pass and moves on (SP-52). A failed build has
     // spent its inputs and stays a Foundation, like any failed cycle.
     if (buildTypeId && !failed) {
+        const fromTypeId = instance.typeId;
         const built = Foundations.buildInPlace(instance, buildTypeId);
         if (built) {
+            EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {
+                instanceId: built.id, typeId: buildTypeId, fromTypeId, heroId: heroId || null
+            });
             EventBus.publish('state_changed');
         } else {
             logger.warn('BoardRunner', `${def.name}: had room to build ${buildTypeId}, then did not`);
