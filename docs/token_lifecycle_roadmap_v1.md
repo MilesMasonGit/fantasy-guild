@@ -139,6 +139,8 @@ heroes, as designed). The console shows one pre-existing React warning
   empty module copy); drawers don't open while the pane is hidden; if the page sits on LOADING,
   navigate again; subagents share tabs, so use your own. `DevTools.advanceTime(minutes)` (minutes,
   not ms) and `DevTools.giveItem(id, n)` speed testing up.
+* ⚠️ **Every CMS sync re-derives tuned producers** (found in feedback slice Q9, 2026-09-27): a Token or recipe tagged with both a tempo and a purpose has its cycle time snapped to its band's middle (or a nearby whole second), and its XP and item values re-derived, on EVERY sync. A typed time survives only on an untuned recipe (no purpose) or a Token-making build. Dry-run the simulator before a pacing change. Bands after TL-21: Quick 2–4 s, Fast 4–12 s, Medium 12–20 s, Slow 20–30 s, Heavy 30–120 s at level 1.
+* **The CMS sandbox:** the `?p2=1` / `?p6=1` routes mean nothing to the current CMS code; the real safeguard is swapping a do-nothing storage in for persistence on `useEntityStore` and `useGlobalStore` before loading (feedback slices Q8, Q9).
 * **Versions stay in 0.8.x** (TL-11).
 
 ---

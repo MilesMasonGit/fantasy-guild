@@ -5,7 +5,7 @@
 record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its decisions
 (TL-1…TL-11, §2) stand unless a TL- decision below replaces them.*
 
-**Status: organised and interviewed 2026-09-26; plan APPROVED by the owner 2026-09-26. Quick wins Q1–Q9 in progress (§4.1).**
+**Status: quick wins Q1–Q9 (plus Q5b) ALL DONE and merged 2026-09-27. Larger reworks B1–B10 (§4.2) wait for later agents. Open owner questions: §5.**
 
 **Kinds:** 🐞 bug · 🔢 number tweak · 🔧 small change (a session or less) · 🏗️ larger rework
 (needs a brief and its own agent).
@@ -236,7 +236,7 @@ Each line is one small slice: built, tested, played and committed separately.
 | Q6 | **Speech bubbles and hero animation** — ✅ done 2026-09-27 (bubble tail 2 u above the art at any scale; routine "Working at" and both unset-station lines dropped; catalogue [`speech_bubble_lines.md`](speech_bubble_lines.md) for the owner's audit; combat: idle, one attack play-through per real attack, knockback delayed 625 ms to the strike frame; stuck hero idles via the shared `strikesLive`; spawn-here glows (tests only: no shipped Token uses it). Agent measured all of it live; tests baseline 10) | FB-20 raise them · FB-21 drop everyday lines · FB-22 a list of every line for the owner's audit · FB-49 combat: idle, attack once per real attack · FB-50 stuck hero idles · FB-51 spawn-in-place glow |
 | Q7 | **Panels** — ✅ done 2026-09-27 (QA panel capped to the window with one scroll body, banner slider gone — `cardSizeStore` kept, the drag ghost still reads it; Hall upgrade sprites repointed to the moved art, Flag Radius borrows the hero flag; no dock on the Guild Hall page; Shop has no inspect column, prices as `EntityRibbon` rows; FB-54 wording fixed. Agent verified QA panel, Hall images, dock, a purchase live; ⭐ Shop drawer not seen live (drawers don't open with the pane hidden) — owner to glance. Tests: baseline 10) | FB-36 QA panel fits the screen · FB-37 drop the banner slider · FB-40 Hall upgrade sprites · FB-47 no dock on the Hall upgrade page · FB-24 no Shop inspect panel · FB-26 Shop prices in the item-bar format · FB-54 bubble wording bug |
 | Q8 | **Chance transforms** — ✅ done 2026-09-27 (`turns: { into, everyMs, chance }`, chance a PERCENT like every other content chance, defaults 60000 ms / 30 in `tokenConstants.js`; turn-back reads the original's numbers; `lastsMs` retired (audit warns); a failed roll is one clock lap, so big ticks equal many small ones; a won-but-blocked roll is kept (`clocks.turnWon`); sky-blue `m:ss` countdown badge bottom-left + inspection lines; CMS Turns block edits both fields. Content: Coast re-authored through the CMS (`fabb252`, 2 lines). Agent verified live: 49 flips in 180 simulated minutes (~27%), badge counting down both ways. Tests: baseline 10) | FB-14 countdown · FB-15 / TL-12 engine + CMS field, then the Coast through the CMS |
-| Q9 | **Pacing first pass** | FB-19 through the CMS (content-only commit) |
+| Q9 | **Pacing first pass** — ✅ done 2026-09-27 (TL-21 bands in `tempoBands.js`; content `ace6e1a` through the CMS: gathering 3 s tagged Quick with 5 uses (Apple Tree 3, Ripe Wheat 3) — ⚠️ **Coal Vein landed at 4 s** (tagged for gold, the calculator slowed it); Copper Ingot / Shrimp / Apple Juice 8 s Fast; Charcoal, Torch, Copper Nails, Copper Pickaxe 6 s Fast; builds and plantings 30 s Heavy; XP per cycle 2 → 1 and 12 item values fell (coal 4 → 1, seeds to 1–2, ingots slightly). Agent timed live: Oak Tree every 3.00 s, gone after 5; Workbench build ~30 s; Charcoal every 6.00 s. Tests: baseline 10) | FB-19 through the CMS (content-only commit) |
 
 ### 4.2 Briefs for later agents
 
@@ -285,3 +285,14 @@ tree. ⚠️ Hall upgrade tile indices are not interchangeable with the playmat'
 
 **B10 Horizontal hero dock (10th).** FB-46. The owner describes the general idea first; then the
 agent makes mockups; then builds.
+
+## 5. Open questions for the owner (end of the quick-win session, 2026-09-27)
+
+1. **Coal Vein at 4 s** (Q9): accept, re-tag its purpose from gold to items (likely 3 s, different value), or leave for the simulator rework.
+2. **Flag Radius upgrade art** (Q7): it borrows the plain hero flag; keep until B9, or use the red banner art.
+3. **"Item-bar format"** (Q7): Shop prices use the full `EntityRibbon` row (icon, name, have/need); or the compact icon-and-number pills of the Hall's Upgrade button.
+4. **Rule upkeep and floor loot** (Q5b): TL-20 covers spawner upkeep only; rule (`BlockUpkeep`) upkeep still pays from the Bank alone.
+5. **The bubble audit**: [`speech_bubble_lines.md`](speech_bubble_lines.md) awaits the owner's add/remove list.
+6. **Watch by eye** (never seen on screen by an agent, whose browser pane was hidden): Q4 hit animations and transform glow, Q5 loot flight to the Hall, Q7 Shop drawer, Q8 countdown badge.
+
+Noticed in passing, not fixed (out of scope): a freshly recruited hero's class reads "Adventurer", not "Recruit" (Q9 agent); `cardSizeStore` is half dead (Q7); the Guild Hall Map's loot pool names a missing `token_fallen_oak_tree`; unreachable Shop branches in `InspectionPanel.jsx`; the Settings toggle still says "between cards and inventory".
