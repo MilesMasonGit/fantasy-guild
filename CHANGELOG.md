@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The Guild Hall has a proper hover tooltip (Q5b: FB-52).** Hovering the Hall now shows a
+  game-styled panel, like the flag's, with its trickle income and a *next in* countdown that ticks
+  every second, instead of the browser's plain hover text. It never gets in the way of dragging or
+  clicking the Hall or collecting loot beside it, and hides during a drag.
 - **Guild Hall trickle pays onto the mat as loot (Q5b: FB-53).** The Hall's seeds no longer go
   straight into the Bank: each payout drops as floating loot beside the Hall, like a gathered item,
   is collected on hover (or by auto-collect when that is on) and flies to the Hall. A full Bank loses

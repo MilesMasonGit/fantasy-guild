@@ -18,6 +18,7 @@ import { GameState } from '../../../state/GameState.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
 import { flagTooltip } from './flagText.js';
+import { placeUnder } from './tooltipPlacement.js';
 import { pointerToMat } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
@@ -344,17 +345,6 @@ const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = f
     );
 };
 
-
-/** Fixed-position place for a floating panel under an anchor, kept on screen. */
-function placeUnder(anchor, width, height = 180) {
-    const rect = anchor?.getBoundingClientRect?.();
-    if (!rect || typeof window === 'undefined') return { left: 0, top: 0 };
-    const margin = 8;
-    const left = Math.max(margin, Math.min(window.innerWidth - width - margin, rect.left));
-    const below = rect.bottom + margin;
-    const top = below + height > window.innerHeight ? Math.max(margin, rect.top - height - margin) : below;
-    return { left, top };
-}
 
 export const STATE_TONE = {
     working: 'text-emerald-300',

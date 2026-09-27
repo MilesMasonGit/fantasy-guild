@@ -31,14 +31,7 @@ import { gearStateOf, spawnerCountText } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
-import { trickleHoverLines } from '../drawer/lifecycleLines.js';
-
-/** The live readers `trickleHoverLines` takes. */
-const TRICKLE_SOURCES = {
-    typeOf: getTokenType,
-    itemName: (itemId) => getItem(itemId)?.name || itemId
-};
+import { TrickleTooltip, hasTrickle } from './TrickleTooltip.jsx';
 
 /** How long the Hall brightens when collected loot lands on it (FB-16). */
 const RECEIVED_MS = 350;
@@ -235,19 +228,17 @@ export const MatToken = React.memo(function MatToken({
      * are read when the pointer arrives rather than kept in the projection.
      */
     const [skipLines, setSkipLines] = React.useState([]);
-    // FB-30: a Token with a trickle (the Guild Hall) says what it pays and when
-    // next, read on arrival like the skips (its clock moves without events).
-    const [trickleLines, setTrickleLines] = React.useState([]);
     React.useEffect(() => {
         if (!isHovered) return;
         setSkipLines(tokenSkipLines(id));
-        setTrickleLines(trickleHoverLines(BoardState.getTokenById(id), TRICKLE_SOURCES));
     }, [isHovered, id]);
+
+    // FB-30 → FB-52: a Token with a trickle (the Guild Hall) shows what it pays
+    // in a game-styled tooltip with a live "next in", not the native title.
+    const showTrickle = isHovered && hasTrickle(def);
 
     const alertHint = alert ? ALERT_HINT[alert] : null;
     const hoverTitle = [
-        ...(isHovered ? trickleLines : []),
-        alertHint,
         detail?.disallowed ? 'Heroes may not work this' : null,
         ...(isHovered ? skipLines : [])
     ].filter(Boolean).join('\n') || undefined;
@@ -440,6 +431,8 @@ export const MatToken = React.memo(function MatToken({
                 <TokenCentreAlert instanceId={id} isSpawner={!!detail?.isSpawner} />
                 <EffectProcText instanceId={id} />
             </div>
+
+            {showTrickle && !hidden && <TrickleTooltip instanceId={id} />}
         </>
     );
 });
