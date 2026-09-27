@@ -21,7 +21,7 @@ import * as BoardState from './BoardState.js';
  */
 
 /** Whether an instance is the Guild Hall — the same test `Cartographer` uses. */
-function isGuildHall(instance) {
+export function isGuildHall(instance) {
     return instance?.typeId === 'token_guild_hall' || !!getTokenType(instance?.typeId)?.isGuildHall;
 }
 

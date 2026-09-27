@@ -40,10 +40,13 @@ import PlaymatTuner from './components/PlaymatTuner.jsx';
 import MatTuner from './components/MatTuner.jsx';
 import { TERRAIN_ENABLED } from '../config/registries/terrainRegistry.js';
 import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
+import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
+import MatCapBadge from './components/board/MatCapBadge.jsx';
 
 /** Time Bank widget visibility — parked, not deleted (owner request
- *  2026-08-02). The widget and its manager are untouched; only the HUD
- *  placement is switched off, so restoring it is this one flag. */
+ *  2026-08-02). The widget and its manager are untouched; only its placement
+ *  is switched off, so restoring it is this one flag. It lives at the right
+ *  end of the mat's top bar (B2 Time Bank, FB-28). */
 const SHOW_TIME_BANK = false;
 
 // Overlays & Modals
@@ -334,8 +337,19 @@ export const ReactRoot = ({ engine }) => {
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
-                                className="flex-1 min-w-0 overflow-hidden pointer-events-auto relative z-0 min-h-0"
+                                className="flex-1 min-w-0 overflow-hidden pointer-events-auto relative z-0 min-h-0 flex flex-col"
                             >
+                                {/* The mat's top bar (B2, FB-28): above the Board
+                                    in this column, never over it, so the box Board
+                                    measures for its fit is the bar's height
+                                    shorter and the mat shrinks to match. */}
+                                {showsMatTopBar(ui.fullscreen.view) && (
+                                    <MatTopBar
+                                        left={<MatCapBadge />}
+                                        right={SHOW_TIME_BANK ? <TimeBankWidget /> : null}
+                                    />
+                                )}
+                                <div className="flex-1 min-w-0 min-h-0 relative">
                                 {isGuildView ? (
                                     <GuildHallBoard
                                         selectedTileIndex={selectedUpgradeTile}
@@ -353,15 +367,6 @@ export const ReactRoot = ({ engine }) => {
                                         onClearInspect={() => ui.inspect.clear()}
                                     />
                                 )}
-                                {/* Global HUD Layer */}
-                                <div className="absolute inset-0 z-[100] pointer-events-none">
-                                    <div className="relative w-full h-full">
-                                        {SHOW_TIME_BANK && (
-                                            <div className="absolute top-2 right-2 pointer-events-auto">
-                                                <TimeBankWidget />
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
                             {/* Guild Hall Effects Panel */}

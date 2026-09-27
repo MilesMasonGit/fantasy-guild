@@ -207,6 +207,11 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | B1 layout (2026-09-27, from the mockup) | **Bare rings, centred** under the pair (option A): each ring has its own dark backing, no tray. With no hero the row centres under the Token alone. Heroes stand on either side (`HeroMotion.standingSpot`), so the row follows the pair. → TL-22. |
 | B1 visibility | **Mixed**: standing facts (spawner `n/cap`, turn countdown) always show; cycle, charges and enemy HP show while a hero works the Token; hovering any Token shows its charges ring, replacing the bottom-right hover charge chip. |
 | B1 rings and order | **Fixed order**: cycle, then charges, then the Token's own ring (spawner count, turn countdown or enemy HP). The cycle ring shows **seconds left**; unlimited charges draw no charges ring. Colours as the mockup: white cycle (fills), gold charges (empties), green spawner (fills to cap), sky turn (empties), red HP (empties). |
+| B2 bar style (2026-09-27, from the mockup) | **A slim wooden strip** across the top of the board area, styled like the mat's brown frame: info on the left (Token cap, Upkeep), controls on the right (disallow mode, *Allow all*, Time Bank), room in the middle for future mat controls. The mat shrinks slightly to fit. |
+| B2 Upkeep badge | **Total items per minute, always neutral** (`Upkeep 2/min`, every item added up; never coloured — spawners' own centre alerts do the warning). Hover opens the full Upkeep Summary (8.2). The Bank drawer's Upkeep toggle is **removed** (FB-29). |
+| B2 Token cap | `Tokens 7/12` (placed, SP-67). Hover lists **placed Tokens by type with counts**, with a short red note where some are blocked or disallowed, then one line of spawned Tokens marked "not counted". |
+| B2 disallow mode | **A toggle**: on, the mat gets a red dashed edge and a hint line; each click on a Token flips allowed / disallowed (FP-35); dragging pauses; Esc or the button ends it. **Allow all** acts at once, no confirm. |
+| B2 Time Bank | The Time Bank widget **moves into the bar** (right end). It is switched off in code today (`SHOW_TIME_BANK = false` in `ReactRoot.jsx`), so it moves behind the same switch and stays hidden until the owner turns it on. |
 | B1 alert labels | The progress bar's red/yellow labels (Need Items, Wrong Skill, Level Too Low…) **become the centre alert mark** (TL-14), with the same hint and missing-requirements list on hover. The cycle ring greys out while blocked. |
 
 ## 3. New decisions
@@ -264,6 +269,12 @@ mockup of the row before building.
 hoverable badge (moves 8.2's Upkeep Summary out of the Item Bank), the Token cap with a hover
 summary of everything on the mat, and a disallow mode plus *Allow all* (FP-35's per-Token disallow;
 Q2 draws the badge). Leave room for more mat controls.
+
+| # | B2 slice | Status |
+|---|---|---|
+| B2.1 | **The bar and the Token cap**: wooden strip above the mat; `Tokens n/cap` with the by-type hover summary; the Time Bank widget moved in (still switched off) | ✅ 2026-09-27. `MatTopBar.jsx` (30 px, left/right slots, not on the Guild Hall view), `MatCapBadge.jsx`, pure `MatSummary.js`; refreshed by `TILE_CHANGED`/`TOKEN_PLACED`/`TOKEN_DEPLETED`/`state_changed`/`game_loaded` and Mat Tuner changes, no polling; groups sorted most copies first, then name. "Blocked" = a non-gear engine alert or a spawner's live alert, worked or not. Director verified live (slot 3): bar 0–28 px, mat below it from 55 px (not covered, rescaled); `Tokens 2/40` on a new game → `5/40` after placing three; real hover showed "Placed 5 of 40 · Furnace ×2 (1 off) · Oak Forest ×2 (2 blocked, no seeds) · Copper Mine ×1 · Spawned 4 (not counted)". Tests: baseline 10 |
+| B2.2 | **Upkeep badge**: `Upkeep n/min`, hover = the Upkeep Summary; the Bank drawer's Upkeep toggle removed | — |
+| B2.3 | **Disallow mode**: toggle, click-to-flip, red dashed mat edge + hint, Esc ends, dragging paused; *Allow all* | — |
 
 **B3 Discard bin and refunds (3rd).** FB-34, FB-35, **TL-13**. A bin of up to nine Tokens at the
 bottom of the notification column, a refund total and one *Discard all* button; replaces 5.2's

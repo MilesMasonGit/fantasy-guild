@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A bar above the playmat, with the Token cap (B2.1, FB-28, FB-31).** A slim wooden strip over
+  the mat holds mat controls. It shows `Tokens 7/12` (placed Tokens against the cap, the Guild
+  Hall not counted), and hovering it lists placed Tokens by type with a red note for blocked or
+  disallowed ones, then the spawned Tokens, which don't count. The Time Bank widget now lives in
+  the bar (still switched off).
 - **Spawner count and turn countdown become rings (B1.3, FB-5, FB-14).** A spawner's `3/5` is a
   green ring that fills to its cap, and a Coast's countdown a sky-blue ring that empties toward its
   next roll. Both always show, last in the ring row, and the corner badges they replace are gone.
