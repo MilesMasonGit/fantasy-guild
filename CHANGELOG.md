@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Layering on the mat (Q3: FB-1, FB-2).** Hero flags now layer like Tokens: a flag standing higher
+  on the mat than a Token is drawn behind it, one lower is drawn in front (they used to draw on top of
+  everything). The idle hero beside a flag layers with it. While a hero works a Token, that Token and
+  its hero draw above every other Token and flag; when the work stops they drop back into place. With
+  the pointer on a flag, the Token behind it no longer pops up over it.
 - **Corner and centre badges (Q2: FB-5, FB-6, FB-7, FB-8, FB-33, FB-48, TL-14).** The green plus on
   workable Tokens is gone. A station or Foundation with something to choose shows the gear sprite in
   its top-left corner; with nothing chosen the gear pulses gently and there is no red alert (heroes

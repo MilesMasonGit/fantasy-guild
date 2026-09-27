@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { MAT_Z, tokenZ } from './matLayers.js';
+import { MAT_Z, matStackOrder, heroZ } from './matLayers.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
 import { pointerToMat } from './matPoint.js';
@@ -87,20 +87,13 @@ export const MatBoard = ({
     /**
      * Back to front: lower on the mat draws in front, then the earlier-placed
      * (`placedAt`), so the order never flickers between two Tokens level with
-     * each other.
+     * each other. This is only the order the Tokens are written into the page;
+     * who is in front is `matStackOrder`'s, below.
      */
     const ordered = useMemo(
         () => [...tokens].sort((a, b) => (a.y - b.y) || (a.placedAt - b.placedAt)),
         [tokens]
     );
-    const zById = useMemo(() => {
-        const out = new Map();
-        ordered.forEach((t, i) => out.set(t.id, tokenZ(i)));
-        // The hovered Token comes to the front of the layer, so its own
-        // listeners — drag, click, right-click — are the ones under the pointer.
-        if (hoveredId && out.has(hoveredId)) out.set(hoveredId, tokenZ(ordered.length));
-        return out;
-    }, [ordered, hoveredId]);
 
     /**
      * ⭐ **Every hero on the mat is drawn here, where they really are** (Hero
@@ -157,6 +150,21 @@ export const MatBoard = ({
     );
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
 
+    /** Every flag's point, in planting order — flags sort with the Tokens (FB-1). */
+    const flagsRaw = useGameState(
+        () => {
+            const out = [];
+            for (const [heroId] of BoardState.heroesOnBoard()) {
+                const flag = BoardState.flagOf(heroId);
+                if (flag) out.push({ heroId, y: flag.y });
+            }
+            return out;
+        },
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, 'heroes_updated', 'state_changed'],
+        null
+    );
+    const flagPoints = useMemo(() => flagsRaw || [], [flagsRaw]);
+
     // The painted ground. Dormant while terrain is off (FP-10).
     const terrain = useGameState(
         state => (TERRAIN_ENABLED ? state.board?.terrain || NO_TERRAIN : NO_TERRAIN),
@@ -171,6 +179,13 @@ export const MatBoard = ({
         if (typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active')) return;
         const el = rootRef.current;
         if (!el) return;
+        // On a flag (its opaque pixels — `alphaHitTest`), the flag is what is in
+        // front: raising a Token behind it would cover the flag under the
+        // pointer and it could not be grabbed (flags sort with Tokens, FB-1).
+        if (e.target?.closest?.('[data-flag], [data-flag-gear]')) {
+            setHoveredId(prev => (prev === null ? prev : null));
+            return;
+        }
         const point = pointerToMat({ x: e.clientX, y: e.clientY }, el.getBoundingClientRect());
         let id = point ? (Flags.tokenAtPoint(point)?.id ?? null) : null;
         if (!id) {
@@ -210,6 +225,19 @@ export const MatBoard = ({
         return out;
     }, [heroes]);
 
+    /**
+     * ⭐ **Who is in front of whom** (feedback Q3): Tokens and flags sorted
+     * together (FB-1); a worked Token, with its hero, in front of every Token
+     * and flag at rest (FB-2); the hovered Token frontmost. `matLayers.js`.
+     */
+    // Keyed by the worked ids, not the heroes: heroes redraw every walking step.
+    const workedKey = [...workedBy.keys()].sort().join('|');
+    const order = useMemo(
+        () => matStackOrder({ tokens, flags: flagPoints, workedIds: workedKey ? workedKey.split('|') : [], hoveredId }),
+        [tokens, flagPoints, workedKey, hoveredId]
+    );
+    const zById = order.tokenZ;
+
     return (
         <div
             ref={rootRef}
@@ -240,7 +268,8 @@ export const MatBoard = ({
 
             {TERRAIN_ENABLED && <TerrainCanvas terrain={terrain} seed={0} />}
 
-            {/* 10+ — Tokens, the heroes on them, and what is written on them. */}
+            {/* 10+ — Tokens, the heroes on them, and what is written on them;
+                flags and idle heroes sort in among them (FlagLayer, below). */}
             {ordered.map(t => (
                 <MatToken
                     key={t.id}
@@ -273,9 +302,7 @@ export const MatBoard = ({
                         sprite={h.sprite}
                         left={place.left}
                         top={place.top}
-                        z={h.state === 'idle' ? MAT_Z.IDLE_HERO
-                            : h.moving ? MAT_Z.WALKING_HERO
-                            : (h.tokenId && zById.has(h.tokenId) ? zById.get(h.tokenId) + 1 : MAT_Z.WAITING_HERO)}
+                        z={heroZ(h, order)}
                         glow={h.state === 'working' && !h.stuck ? 'gi-glow-active' : null}
                         hovered={hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId)}
                         onHover={setHoverHeroId}
@@ -297,8 +324,9 @@ export const MatBoard = ({
             {/* 800 — loot on the floor. */}
             <SpriteLayerView />
 
-            {/* 850 — flags, idle heroes and their rings. */}
+            {/* Flags, sorted in among the Tokens (FB-1), and their rings (760). */}
             <FlagLayer
+                flagZ={order.flagZ}
                 inspectedHeroId={inspectedHeroId}
                 hoverHeroId={hoverHeroId}
                 onHoverHero={setHoverHeroId}

@@ -115,8 +115,11 @@ function useFlagDragPoint(matRef) {
  * @param {{ heroId: string, x: number, y: number }|null} dragRing an explicit
  *   plant preview; without one the layer follows the live drag itself
  * @param {{current: HTMLElement|null}} matRef the mat's own element
+ * @param {Map<string, number>|null} flagZ each flag's z in the mat's order
+ *   (`matStackOrder`, feedback Q3 FB-1). Given, the flags sort in among the
+ *   Tokens; without it (the layer on its own) they all sit at `MAT_Z.FLAGS`.
  */
-export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null, matRef = null }) => {
+export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null, matRef = null, flagZ = null }) => {
     const flags = useGameState(
         projectFlags,
         [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, 'heroes_updated', 'state_changed']
@@ -148,10 +151,18 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     }
 
     /**
-     * ⚠️ Two layers. Rings sit above the Tokens; **flags sit above the loot
-     * sprites** (and idle heroes just above the flags, in `MatBoard`). Loot lands beside the Token that dropped it —
-     * often right where a flag stands — and a flag under a pile of Oak Wood
-     * could not be clicked or dragged (found while verifying 1.5).
+     * ⚠️ Two layers. Rings sit above the Tokens.
+     *
+     * ⭐ **Flags sort in among the Tokens** (feedback Q3, FB-1): a flag standing
+     * higher on the mat than a Token is drawn behind it, like any Token. For
+     * that the pennants' box must **not** have a z-index of its own — a z-index
+     * would make it one stacking layer, and every flag in it would sit above or
+     * below every Token together. Each flag carries its own z (`flagZ`), and the
+     * idle hero beside it is one above (`MatBoard`).
+     *
+     * ⚠️ Flags used to sit above the loot, because a flag under a pile of Oak
+     * Wood could not be grabbed (found while verifying 1.5). Loot is collected
+     * the moment the pointer touches it, so a pile never stays in the way.
      */
     return (
         <>
@@ -187,13 +198,13 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
         <div
             data-flag-pennants
             className="absolute left-0 top-0 pointer-events-none"
-            style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.FLAGS }}
+            style={flagZ ? { width: mat.w, height: mat.h } : { width: mat.w, height: mat.h, zIndex: MAT_Z.FLAGS }}
         >
             {flags.map((f, i) => (
                 <Flag
                     key={`flag-${f.heroId}`}
                     flag={f}
-                    z={i * 3}
+                    z={flagZ?.get(f.heroId) ?? i * 3}
                     artPx={artPx}
                     onHover={onHoverHero}
                     boardHovered={hoverHeroId === f.heroId}
