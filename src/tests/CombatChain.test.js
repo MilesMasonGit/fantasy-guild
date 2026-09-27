@@ -151,6 +151,10 @@ describe('The Goblin Camp on the mat', () => {
         TileModifiers.init();
         SpawnerSystem.resetAlerts();
         EngineBootstrap.createDefaultGameData();
+        // The Hall alone and an empty Bank: a new game minus the starter set and
+        // opening items (Token Lifecycle 10.1), which these tests do not count.
+        for (const t of BoardState.tokens()) if (t.typeId !== 'token_guild_hall') BoardState.removeToken(t.id);
+        GameState.state.inventory.items = {};
     });
 
     afterEach(() => {
