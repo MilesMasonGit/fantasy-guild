@@ -202,7 +202,7 @@ Each line is one small slice: built, tested, played and committed separately.
 
 | # | Slice | Items |
 |---|---|---|
-| Q1 | **Behaviour fixes** | FB-12 spawned Tokens can be dragged · FB-13 / TL-15 stations start with no recipe |
+| Q1 | **Behaviour fixes** — ✅ done 2026-09-26 | FB-12 spawned Tokens can be dragged · FB-13 / TL-15 stations start with no recipe. *FB-12: no rule blocked spawned drags; the one reproducible failure was a Token that grew or turned while carried (it became a new Token and the move was lost). A Token in the hand now holds any grow/turn until it is put down. ⚠️ Owner to retest: if saplings still won't move, say when it happens. FB-13: `defaultRecipeFor` removed; a station with nothing picked says "Choose a recipe" (red, like Foundations) and flags skip it; a deleted recipe id becomes no recipe. Tests: baseline 10, no new failures.* |
 | Q2 | **Corner and centre badges** | FB-6 remove the plus · FB-7 gear top-left (opens the recipe picker) · FB-33 disallow badge top-right · FB-8 / FB-48 / TL-14 alerts centred, problems stay, green notices fade · FB-5 spawner count as a simple badge (becomes a ring in B1) |
 | Q3 | **Layering** | FB-1 flags layer like other Tokens · FB-2 a worked Token and its hero on top |
 | Q4 | **Animations** | FB-10 the ten hit animations · FB-11 transform glow |
