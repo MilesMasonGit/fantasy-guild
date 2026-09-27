@@ -19,6 +19,7 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import * as MatCap from '../systems/board/MatCap.js';
 
 /**
  * Token Lifecycle slice 3.2 — **timed changes** (roadmap DP-2, §3.1):
@@ -132,6 +133,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    for (const t of BoardState.tokens()) TimedChanges.setInHand(t.id, false);
     TriggerSystem.teardown();
     TileModifiers.teardown();
     resetMatTuning();
@@ -216,6 +218,76 @@ describe('⭐ grows — a Sapling becomes a Tree after its time', () => {
         TimedChanges.tick(100);
         expect(BoardState.getTokenById(sapling.id)).toBeNull();
         expect(BoardState.tokens().some(t => t.typeId === 'fixture_tl_big_tree')).toBe(true);
+    });
+});
+
+// --- moving a spawned Token (owner feedback FB-12) --------------------------
+
+describe('⭐ a spawned Token moves like any other, and keeps what makes it spawned (FB-12)', () => {
+    const spawnedAt = (typeId, x, y) => {
+        const inst = BoardState.createTokenInstance(typeId, null, null, BoardState.ORIGIN.SPAWNED);
+        return BoardState.addToken(inst, x, y);
+    };
+
+    it('moves, stays spawned, and still does not count toward the mat cap (SP-67)', () => {
+        const sapling = spawnedAt('fixture_tl_sapling', 400, 400);
+        const before = MatCap.placedCount();
+        const res = Placement.moveTokenTo(sapling.id, { x: 900, y: 700 });
+        expect(res.success).toBe(true);
+        expect(sapling.x).toBe(900);
+        expect(sapling.y).toBe(700);
+        expect(BoardState.originOf(sapling)).toBe(BoardState.ORIGIN.SPAWNED);
+        expect(MatCap.placedCount()).toBe(before);
+        // Still pushable by a spawn (SP-68): only placed Tokens are held fixed.
+        expect(BoardState.placedTokenIds()).not.toContain(sapling.id);
+    });
+
+    it('a moved Sapling keeps its grow clock, and grows on schedule where it now stands', () => {
+        const sapling = spawnedAt('fixture_tl_sapling', 400, 400);
+        run(20000);
+        expect(sapling.clocks.growMs).toBe(20000);
+
+        Placement.moveTokenTo(sapling.id, { x: 900, y: 700 });
+        expect(sapling.clocks.growMs).toBe(20000);
+
+        run(9900);
+        expect(BoardState.getTokenById(sapling.id)).toBeTruthy();
+        run(200);
+        const tree = at(900, 700);
+        expect(tree?.typeId).toBe('fixture_tl_tree');
+        expect(BoardState.originOf(tree)).toBe(BoardState.ORIGIN.SPAWNED);
+    });
+
+    it('does not grow while while carried: the change waits, then happens where it was put down', () => {
+        const sapling = spawnedAt('fixture_tl_sapling', 400, 400);
+        run(29000);
+
+        // Picked up with a second to go, carried for five.
+        TimedChanges.setInHand(sapling.id, true);
+        run(5000);
+        expect(BoardState.getTokenById(sapling.id)).toBeTruthy();       // the drag's id still names it
+        expect(sapling.clocks.growMs).toBe(30000);                      // held full, not set back
+
+        // Dropped: the move lands on the same instance...
+        expect(Placement.moveTokenTo(sapling.id, { x: 900, y: 700 }).success).toBe(true);
+        TimedChanges.setInHand(sapling.id, false);
+        expect(at(900, 700)?.id).toBe(sapling.id);
+
+        // ...and the next tick grows it there.
+        run(100);
+        expect(BoardState.getTokenById(sapling.id)).toBeNull();
+        expect(at(900, 700)?.typeId).toBe('fixture_tl_tree');
+        expect(at(400, 400)).toBeNull();
+    });
+
+    it('a Coast in the hand does not turn either', () => {
+        const coast = placeAt('fixture_tl_cove', 400, 400);
+        TimedChanges.setInHand(coast.id, true);
+        run(60000);
+        expect(BoardState.getTokenById(coast.id)?.typeId).toBe('fixture_tl_cove');
+        TimedChanges.setInHand(coast.id, false);
+        run(100);
+        expect(at(400, 400)?.typeId).toBe('fixture_tl_shrimp_coast');
     });
 });
 

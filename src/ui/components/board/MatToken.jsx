@@ -17,6 +17,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { TokenProgressBar } from './TokenProgressBar.jsx';
@@ -173,6 +174,16 @@ export const MatToken = React.memo(function MatToken({
     React.useEffect(() => {
         if (drag.isDragging) onClearInspect?.();
     }, [drag.isDragging, onClearInspect]);
+
+    // While it is in the player's hand, a Token does not grow or turn into
+    // something else: that would swap it for a new instance mid-drag and lose
+    // the move (FB-12). The change waits and happens where it is put down.
+    // Released after the drop has been handled, which runs before this clean-up.
+    React.useEffect(() => {
+        if (!drag.isDragging) return undefined;
+        TimedChanges.setInHand(id, true);
+        return () => TimedChanges.setInHand(id, false);
+    }, [drag.isDragging, id]);
 
     // ⭐ A Token the player moved simply IS where they let it go (owner,
     // 2026-09-21). The `left`/`top` slide exists for moves the game makes — a

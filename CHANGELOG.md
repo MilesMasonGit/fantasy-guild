@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Spawned Tokens that grow can be moved (FB-12).** A Sapling (or a turning Coast) no longer grows
+  or turns while you are dragging it, which used to swap it for a new Token mid-drag and lose the move.
+  The change waits and happens where you put it down; its grow clock is kept.
 - **Stations start with no recipe (TL-15, FB-13).** A station, however it arrives, is idle until
   you pick a recipe; heroes don't work it until then, and it says *Choose a recipe*. A picked recipe
   stays, including across saves; a saved recipe that no longer exists becomes no recipe.

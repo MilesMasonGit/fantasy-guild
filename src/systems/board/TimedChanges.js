@@ -58,6 +58,42 @@ import { logger } from '../../utils/Logger.js';
 /** Most changes one Token may go through in one tick — a guard, not a design number. */
 export const MAX_CHANGES_PER_TICK = 64;
 
+// ---------------------------------------------------------------------------
+// A Token in the player's hand (owner feedback FB-12)
+// ---------------------------------------------------------------------------
+
+/**
+ * Instance ids of Tokens the player is dragging right now. Runtime only, never
+ * saved: a drag does not outlive the page.
+ *
+ * ## Why a change waits while a Token is in the hand
+ * A change is a transform: the Token is replaced by a **new instance** with a
+ * new id. The drag is keyed by the old id, so a Sapling that grew while the
+ * player was carrying it vanished from under the cursor, the drop found "No
+ * Token there", and the new Oak Tree stood where the Sapling had been. To the
+ * player, spawned Tokens that grow could not be moved (FB-12).
+ *
+ * So a change that falls due while its Token is in the hand is **held**,
+ * exactly as a change with nowhere to stand is: its clock stays full and it
+ * fires on the first tick after the Token is put down, where it was put down.
+ * The clock itself keeps counting, so a moved Sapling is not set back. Only
+ * the handlers that replace the Token wait ({@link HANDLERS} `replaces`); a
+ * spawner in the hand still spawns.
+ */
+const inHand = new Set();
+
+/** Mark Token `id` as in the player's hand (`true`) or put down (`false`). */
+export function setInHand(id, held) {
+    if (id == null) return;
+    if (held) inHand.add(id);
+    else inHand.delete(id);
+}
+
+/** Whether Token `id` is in the player's hand. */
+export function isInHand(id) {
+    return inHand.has(id);
+}
+
 /** A weighted pick from `[{ typeId, weight }]`, skipping unknown types and non-positive weights. */
 export function pickWeighted(entries, random = Math.random) {
     const usable = (Array.isArray(entries) ? entries : [])
@@ -83,6 +119,8 @@ function turnBackAfter(instance) {
  * ⭐ The handler table. Each entry is one kind of clock:
  *
  * * `clock` — the key in `instance.clocks` it counts on;
+ * * `replaces` — true when firing puts a new instance in the Token's place, so
+ *   it waits while the Token is in the player's hand ({@link setInHand});
  * * `applies(instance, def)` — whether this Token runs it;
  * * `dueMs(instance, def)` — when it fires;
  * * `fire(instance, def, random, ctx)` — what happens. `ctx` is
@@ -99,6 +137,7 @@ export const HANDLERS = [
     {
         id: 'turn_back',
         clock: 'turnMs',
+        replaces: true,
         applies: (instance) => !!instance.turnedFrom && !!getTokenType(instance.turnedFrom),
         dueMs: (instance) => turnBackAfter(instance),
         fire: (instance) => EffectActions.transformInstance(instance, instance.turnedFrom, { fixPlaced: true })
@@ -106,6 +145,7 @@ export const HANDLERS = [
     {
         id: 'grows',
         clock: 'growMs',
+        replaces: true,
         applies: (instance, def) => !instance.turnedFrom && !!def?.grows?.into && Number(def.grows.afterMs) >= 0,
         dueMs: (instance, def) => Number(def.grows.afterMs) || 0,
         fire: (instance, def) => EffectActions.transformInstance(instance, def.grows.into, { fixPlaced: true })
@@ -113,6 +153,7 @@ export const HANDLERS = [
     {
         id: 'turns',
         clock: 'turnMs',
+        replaces: true,
         applies: (instance, def) => !instance.turnedFrom && Array.isArray(def?.turns?.into) && def.turns.into.length > 0,
         dueMs: (instance, def) => Number(def.turns.everyMs) || 0,
         fire: (instance, def, random) => {
@@ -170,6 +211,13 @@ export function advance(instance, delta, random = Math.random) {
             if (over >= 0 && (!due || over > due.over)) due = { h, at, over };
         }
         if (!due) return;
+
+        // In the player's hand: a change that would replace it waits, clock
+        // held full, until it is put down (FB-12).
+        if (due.h.replaces && inHand.has(current.id)) {
+            clocks[due.h.clock] = due.at;
+            return;
+        }
 
         const next = due.h.fire(current, def, random, { overMs: due.over, advance });
         if (!next) {
