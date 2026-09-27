@@ -25,9 +25,11 @@ import { logger } from '../../utils/Logger.js';
  *   `InputAllocator` (Bank first, then loot on the floor).
  * * **The mat cap** (SP-67): a purchase is refused once the placed Tokens
  *   reach `MatCap.matCap()`.
- * * A bought Token lands **beside the Guild Hall** (FP-18), through
- *   `Placement.placeTokenAt` at `Placement.centreOfBoard()` — the route the
- *   Vault's click-to-place uses — created with `origin: 'placed'`.
+ * * A bought Token lands **beside the Guild Hall** (FP-18), created with
+ *   `origin: 'placed'`, through `Placement.placeArrivalNear` aimed at
+ *   `Placement.centreOfBoard()`. When the area around the Hall is crowded it
+ *   lands on the nearest legal free spot anywhere on the mat instead (Token
+ *   Lifecycle 5.3); only a mat with no legal spot at all refuses.
  */
 
 /** The section every Token without a skill section falls under. */
@@ -94,7 +96,7 @@ export function canBuy(typeId) {
 
 /**
  * Buy one Token: check the cap and the price, put it on the mat beside the
- * Guild Hall, then take the items. Placing first means a mat with no room
+ * Guild Hall (or the nearest free spot to it), then take the items. Placing first means a mat with no room
  * refuses the purchase without taking anything; nothing runs between the check
  * and the payment, so the payment cannot then fall short.
  *
@@ -110,7 +112,7 @@ export function buy(typeId) {
     );
     instance.bornAt = Date.now();
 
-    const placed = Placement.placeTokenAt(instance, Placement.centreOfBoard());
+    const placed = Placement.placeArrivalNear(instance, Placement.centreOfBoard());
     if (!placed?.success) return refuse(placed?.reason || 'No room on the mat');
 
     if (!InputAllocator.consumeInputs(price)) {

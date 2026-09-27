@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Shop purchases always find room.** When the area around the Guild Hall is crowded, a purchase (or
+  a Token a station makes) goes to the nearest free spot on the mat instead of being refused.
+- **Playtest pack** for the token lifecycle build: `docs/token_lifecycle_playtest_pack.md`.
 - **A new game starts with an Oak Forest and a Copper Mine** beside the Guild Hall, and a few Oak
   Seeds, Wheat Seeds and Oak Wood in the Bank. The tutorial is rewritten around the new loop: recruit,
   plant a flag, log, collect, shop, build a Workbench, craft, farm and explore.

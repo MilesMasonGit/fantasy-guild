@@ -61,6 +61,12 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: 12, sprite: 'skill_mining',
         requiresHero: false
     },
+    /** Filler for crowding the station (Token Lifecycle 5.3). */
+    fixture_drop_crowd: {
+        id: 'fixture_drop_crowd', name: 'Fixture Crowd', tokenType: 'support',
+        rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_mining',
+        requiresHero: false
+    },
     /** An unlimited Token to be crafted — `uses: null` (R-4). */
     fixture_dropped_eternal: {
         id: 'fixture_dropped_eternal', name: 'Fixture Dropped Eternal', tokenType: 'support',
@@ -256,6 +262,34 @@ describe('⭐ With no room, the cycle waits and nothing is lost (TL-8)', () => {
         run(15000);
 
         expect(made()).toHaveLength(0);
+    });
+});
+
+describe('A crowded station still places what it makes (Token Lifecycle 5.3)', () => {
+    it('lands the Token on the nearest free spot anywhere on the mat, pushing nothing', () => {
+        const station = BoardState.createTokenInstance('fixture_drop_bench', 900);
+        BoardState.addToken(station, 900, 560);
+        const crowd = [];
+        for (let dx = -400; dx <= 400; dx += 50) {
+            for (let dy = -400; dy <= 400; dy += 50) {
+                if ((dx === 0 && dy === 0) || Math.hypot(dx, dy) > 400) continue;
+                const t = BoardState.createTokenInstance('fixture_drop_crowd', 1, null, BoardState.ORIGIN.SPAWNED);
+                BoardState.addToken(t, 900 + dx, 560 + dy);
+                crowd.push({ id: t.id, x: t.x, y: t.y });
+            }
+        }
+
+        expect(Placement.hasRoomForProduct(station.id, 'fixture_dropped_tool')).toBe(true);
+        const res = Placement.placeProduct(station.id, 'fixture_dropped_tool');
+        expect(res.success).toBe(true);
+
+        const [tool] = made('fixture_dropped_tool');
+        expect(Math.hypot(tool.x - 900, tool.y - 560)).toBeGreaterThan(400);
+        expect({ x: station.x, y: station.y }).toEqual({ x: 900, y: 560 });
+        for (const c of crowd) {
+            const t = BoardState.getTokenById(c.id);
+            expect({ x: t.x, y: t.y }).toEqual({ x: c.x, y: c.y });
+        }
     });
 });
 
