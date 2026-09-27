@@ -1,0 +1,60 @@
+# Speech bubble lines — every line a hero can say
+
+*Written 2026-09-27 for Token Lifecycle feedback Q6 (FB-22). This is the owner's audit list:
+every line a speech bubble can show, what makes it appear, and whether it is on.
+Tell us what to add, remove or reword.*
+
+**How to read this.** Words in `{curly brackets}` are filled in by the game, e.g. `{token}`
+becomes "Oak Tree". The game shows bubble text in capitals if the all-caps setting is on.
+
+**Status:**
+- **Kept** — the hero says it.
+- **Dropped (FB-21)** — the hero no longer says it. The wording is still in the game, so any
+  dropped line can be switched back on with a one-line change.
+- **Unsure — owner to decide** — kept for now; we'd like your call.
+
+Where the switches live (for whoever changes them): moments in `MOMENT_SPOKEN`
+(`src/ui/components/board/heroSpeech.js`), problem lines in `SILENT_BLOCKS`
+(`src/ui/components/board/heroBubbles.js`). None of these lines live in the game data
+(`data/*.json`); they are all in code.
+
+---
+
+## 1. The hero is stuck on a Token (problem lines)
+
+These show while the problem lasts and disappear the moment it is fixed. They sit nearest
+the hero's head.
+
+| # | Line | When it appears | Status |
+|---|---|---|---|
+| 1 | I need {items} to work {token}. | The Token (usually a station) is out of the items it uses. `{items}` names what is missing, e.g. "Oak Wood" or "Oak Wood and Stone". Waits **3 seconds** first, so it doesn't flicker when items are about to arrive. | Kept |
+| 2 | I need more items to work {token}. | Same as 1, when the game can't name the missing items. | Kept |
+| 3 | I need {a tool / Token} nearby to work {token}. | The recipe needs another Token next to it (e.g. "I need a Pickaxe nearby to work Copper Ore Vein."). Several are joined: "a Pickaxe and an Anvil". | Kept |
+| 4 | {token} has nothing to make. | Same situation as 3, when the game can't name what is missing. | Kept |
+| 5 | {token} has too few charges left. | The Token, or a Token next to it that the recipe uses, hasn't enough charges for one more cycle. | Kept |
+| 6 | There is no room for what {token} makes. | A finished cycle makes a Token and there is nowhere for it to go (mat full or too crowded around it), or a Foundation's building has nowhere legal to stand. | Kept |
+| 7 | My {skill} level is too low to work {token}. | The hero has the skill but not a high enough level (also used by promotion Tokens). | Kept |
+| 8 | I don't have the {skill} skill to work {token}. | The hero doesn't have that skill at all (also used by promotion Tokens). | Kept |
+| 9 | Choose a recipe for {token}. | A hero is on a station that has no recipe chosen. *(The Q1 line.)* | **Dropped (FB-21)** — after Q1 you ruled that an unset station shows only its gear, with no alert: it is waiting, not broken. The hero now keeps quiet too, to match. Rare anyway: heroes don't go to unset stations, so this only happened if a recipe was cleared while a hero was working. |
+| 10 | Choose what to build on {token}. | The same for a Foundation with nothing chosen. | **Dropped (FB-21)** — the same ruling covered Foundations ("Choose what to build" alert replaced by the gear), so we treated it the same way. Say if you want it back. |
+
+**Not covered:** a few rare promotion-Token problems have no wording yet, so the hero says
+nothing for them (as before).
+
+## 2. Moments (things that happened)
+
+These appear for **5 seconds** and then go by themselves. A hero shows at most 3 bubbles at
+once; the oldest moment gives way.
+
+| # | Line | When it appears | Status |
+|---|---|---|---|
+| 11 | Working at {token}. | The hero arrives at a Token to work it. | **Dropped (FB-21)** — everyday; this is the "I'm working on Oak Tree" line from your feedback. |
+| 12 | No work in range. | The hero was busy (walking to a job or working) and is now standing at their flag with nothing to do. | **Unsure — owner to decide.** Kept for now: an idle hero is worth knowing about. But it also fires each time the last Token in a flag's range runs out, which on a busy mat can be often. |
+| 13 | {skill} is now level {level}. | One of the hero's skills levels up, e.g. "Mining is now level 4." | Kept |
+
+## 3. Not speech bubbles
+
+For completeness, these are **not** said by heroes and are not part of this list: the alert
+marks on Tokens (red / yellow problems, green notices such as "New Oak Sapling"), a
+spawner's own "needs items" / "no room" alerts (no hero involved), and alerts at a bare spot
+on the mat (a refused drop, a spot that ran dry).

@@ -56,3 +56,26 @@ export const momentText = {
     idle: () => 'No work in range.',
     levelUp: (skill, level) => `${skill} is now level ${level}.`
 };
+
+/**
+ * ⭐ **Which moments a hero actually says** (Token Lifecycle feedback Q6,
+ * FB-21): bubbles are for unusual events, not the everyday. Arriving at a job
+ * happens every few seconds on a busy mat, so it is silent; the wording above
+ * stays so the owner can turn it back on here. The full list of every line,
+ * with its status, is `docs/speech_bubble_lines.md` — keep the two in step.
+ *
+ * * `arrived` — dropped (routine: the owner's own example).
+ * * `idle` — kept, owner to decide: a hero with nothing to do is worth
+ *   knowing, but it also fires whenever the last Token in range runs out.
+ * * `levelUp` — kept (a notable event).
+ */
+export const MOMENT_SPOKEN = Object.freeze({
+    arrived: false,
+    idle: true,
+    levelUp: true
+});
+
+/** Whether a moment of this kind (`momentText`'s key) is spoken at all. */
+export function speaksMoment(kind) {
+    return MOMENT_SPOKEN[kind] === true;
+}

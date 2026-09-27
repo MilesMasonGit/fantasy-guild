@@ -1,13 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { FLAG_PX } from './flagGeometry.js';
 import { MAT_Z } from './matLayers.js';
 import { blockedLineFor, readyToSpeak } from './heroBubbles.js';
-import { addMoment, liveMoments, stackOf, momentText } from './heroSpeech.js';
+import { addMoment, liveMoments, stackOf, momentText, speaksMoment } from './heroSpeech.js';
+import { useMatFit } from './MatFitContext.jsx';
+import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { layoutStacks } from './bubbleLayout.js';
+import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 
@@ -41,6 +42,10 @@ const guessSize = (stack) => ({
  * * **moments** — arriving at a job, going idle, a level-up — timed, and gone
  *   by themselves (`heroSpeech.js`).
  *
+ * Only unusual events are spoken (feedback Q6, FB-21): routine lines are
+ * filtered out by `speaksMoment` / `speaksBlock`, and every line with its
+ * status is listed in `docs/speech_bubble_lines.md`.
+ *
  * Stacks are kept off each other and inside the mat (SB-4, `bubbleLayout.js`);
  * a nudged stack's little tail still points at its hero.
  */
@@ -52,9 +57,14 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const sizesRef = useRef(new Map());     // heroId → measured {w, h} of its stack
     const [, setSizeTick] = useState(0);
     const mat = useMatSize();
+    // The hero's art size in mat units, as `MatHero` draws it (FB-20).
+    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, boardScaleAt(useMatFit()));
     const wasIdleRef = useRef(null);        // heroId → was idle last render (null until the first look)
 
-    const say = (heroId, moment) => {
+    // `kind` is the moment's entry in `MOMENT_SPOKEN`: routine ones stay
+    // silent (FB-21).
+    const say = (heroId, kind, moment) => {
+        if (!speaksMoment(kind)) return;
         const at = Date.now();
         momentsRef.current.set(heroId, addMoment(momentsRef.current.get(heroId) || [], moment, at));
         setNow(at);
@@ -67,14 +77,14 @@ export const HeroBubbleLayer = ({ heroes }) => {
         const unsubs = [
             EventBus.subscribe('hero_leveled', ({ heroId, skillName, newLevel }) => {
                 if (!heroId || !skillName) return;
-                sayRef.current(heroId, { key: `level:${skillName}`, text: momentText.levelUp(skillName, newLevel) });
+                sayRef.current(heroId, 'levelUp', { key: `level:${skillName}`, text: momentText.levelUp(skillName, newLevel) });
             }),
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
                 if (p?.reason !== 'arrived' || !p.heroId || !p.instanceId) return;
                 const token = BoardState.getTokenById(p.instanceId);
                 if (!token) return;
                 const name = getTokenType(token.typeId)?.name || tokenName(token.typeId) || token.typeId;
-                sayRef.current(p.heroId, { key: 'arrived', text: momentText.arrived(name) });
+                sayRef.current(p.heroId, 'arrived', { key: 'arrived', text: momentText.arrived(name) });
             })
         ];
         return () => unsubs.forEach(u => u());
@@ -91,7 +101,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
-                sayRef.current(h.heroId, { key: 'idle', text: momentText.idle() });
+                sayRef.current(h.heroId, 'idle', { key: 'idle', text: momentText.idle() });
             }
         }
         wasIdleRef.current = next;
@@ -133,9 +143,9 @@ export const HeroBubbleLayer = ({ heroes }) => {
             : null;
         const stack = stackOf(momentsRef.current.get(h.heroId) || [], blocked, t);
         if (!stack.length) continue;
-        // The bottom of the stack sits on the top of the hero's box
-        // (`heroPlacement`'s top, without importing it back from MatBoard).
-        anchored.push({ h, stack, x: h.x, y: h.y - FLAG_PX / 2 + FLAG_PX * 0.2 });
+        // The tail sits just above the head, read from the art's real size at
+        // this mat scale (FB-20, `bubbleAnchorY`).
+        anchored.push({ h, stack, x: h.x, y: bubbleAnchorY(h.y, artPx) });
     }
     const offsets = layoutStacks(
         anchored.map(a => ({ id: a.h.heroId, x: a.x, y: a.y, ...(sizesRef.current.get(a.h.heroId) || guessSize(a.stack)) })),

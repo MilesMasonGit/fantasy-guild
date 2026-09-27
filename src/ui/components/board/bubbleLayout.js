@@ -1,6 +1,36 @@
 // Fantasy Guild — keeping speech bubbles from crowding each other (Hero Speech Bubbles slice SB-D)
 
 /**
+ * How far the little tail hangs below the bottom of a bubble, in mat units:
+ * an 8 px square turned 45° and centred on the bubble's bottom edge
+ * (`HeroBubbleLayer`), so its tip is half a diagonal (~5.7) down.
+ */
+export const BUBBLE_TAIL_PX = 6;
+
+/** Clear air between the tail's tip and the top of the hero's head. */
+export const BUBBLE_HEAD_GAP_PX = 2;
+
+/**
+ * ⭐ **Where a hero's stack of bubbles sits: the tail just above the head**
+ * (Token Lifecycle feedback Q6, FB-20).
+ *
+ * The hero's art is a square of `artPx` mat units centred on the hero's point,
+ * and the head reaches the very top of it (the shipped sheets have their
+ * first opaque row at 0–3 of 64). The art's size in mat units changes with the
+ * mat's scale (`boardScaleAt`: it steps to whole screen pixels while the mat
+ * glides), so the anchor is read from the art, not from the hero's fixed
+ * 64 × 128 hit box — that fixed box is what put the bubble over the head
+ * before, worse the smaller the mat was drawn.
+ *
+ * @param {number} heroY  the hero's point, mat units
+ * @param {number} artPx  the hero's art size, mat units (`tokenSizeFor(BOARD, 1, boardScaleAt(fit))`)
+ * @returns {number} the y the bottom of the stack sits on
+ */
+export function bubbleAnchorY(heroY, artPx) {
+    return heroY - artPx / 2 - BUBBLE_TAIL_PX - BUBBLE_HEAD_GAP_PX;
+}
+
+/**
  * ⭐ **Where each hero's stack of bubbles really goes** (SB-4).
  *
  * Every stack starts centred over its hero's head, its bottom edge on the

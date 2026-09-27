@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addMoment, liveMoments, stackOf, momentText, MAX_BUBBLES, MOMENT_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { addMoment, liveMoments, stackOf, momentText, MAX_BUBBLES, MOMENT_TTL_MS, speaksMoment, MOMENT_SPOKEN } from '../ui/components/board/heroSpeech.js';
 
 describe('A hero’s stack of speech bubbles', () => {
     it('keeps a moment until its time is up, then lets it go', () => {
@@ -36,5 +36,13 @@ describe('A hero’s stack of speech bubbles', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
         expect(momentText.idle()).toBe('No work in range.');
         expect(momentText.levelUp('Mining', 4)).toBe('Mining is now level 4.');
+    });
+
+    it('says only unusual moments: arriving at a job is routine and silent (FB-21)', () => {
+        expect(speaksMoment('arrived')).toBe(false);
+        expect(speaksMoment('idle')).toBe(true);
+        expect(speaksMoment('levelUp')).toBe(true);
+        expect(speaksMoment('something_new')).toBe(false);
+        expect(Object.keys(MOMENT_SPOKEN).sort()).toEqual(Object.keys(momentText).sort());
     });
 });

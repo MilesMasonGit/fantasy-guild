@@ -63,11 +63,27 @@ export function blockedText(alert, { token, missing = null, skill = 'the right' 
 }
 
 /**
+ * ⭐ **Blocks a hero does not speak about** (Token Lifecycle feedback Q6,
+ * FB-21). A station or Foundation with nothing chosen is waiting, not broken:
+ * the owner ruled after Q1 that it shows only its gear (FB-7), with no alert,
+ * so its hero says nothing either. The wording in `blockedText` stays, so the
+ * owner can reinstate a line by taking it out of this set. Every line and its
+ * status: `docs/speech_bubble_lines.md`.
+ */
+export const SILENT_BLOCKS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
+
+/** Whether a hero speaks about this block at all. */
+export function speaksBlock(alert) {
+    return !!alert && !SILENT_BLOCKS.has(alert);
+}
+
+/**
  * The blocked line for a hero working `tokenId`, or null when they are not
- * blocked. `alert` is the Token's own alert, already known to the caller.
+ * blocked (or the block is one they keep quiet about, `speaksBlock`). `alert`
+ * is the Token's own alert, already known to the caller.
  */
 export function blockedLineFor(tokenId, alert) {
-    if (!tokenId || !alert) return null;
+    if (!tokenId || !speaksBlock(alert)) return null;
     const token = BoardState.getTokenById(tokenId);
     if (!token) return null;
     const def = getTokenType(token.typeId);

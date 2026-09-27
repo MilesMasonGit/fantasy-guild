@@ -76,3 +76,18 @@ Each slice: tests, run the game and exercise it, one commit, merge.
 | SB-B | **Done 2026-09-23** — `heroBubbles.js` (wording, pure) + layer reads the held Token's live alert; item shortage waits `INPUTS_DELAY_MS` = 3000 (provisional); `TokenEventAlert` ignores `out_of_item/token/charges` (engine events unchanged, `TileEventAlerts.test` still pins them). Checked in game: Pickaxe/Oak Wood lines, 3s delay, clears on fix. Text shows in capitals because the app has an all-caps setting. Promotion-Token blocks have no wording yet (say nothing). |
 | SB-C | **Done 2026-09-23** — `heroSpeech.js` (pure stack rules: cap 3, one line per key, moments expire after 5s, blocked line nearest the head); layer listens for `hero_leveled` and `HERO_MOVED` reason `arrived`, and notices going idle from the hero's `state` (not `moving`, which re-fired on every stroll). Wording: "Working at X.", "No work in range.", "Skill is now level N.". The on-Token / point level-up icon is suppressed (SB-2). Checked in game. |
 | SB-D | **Done 2026-09-23** — `bubbleLayout.js` (pure: clamp to mat, slide to the nearest free spot, else lift; earlier heroes keep their place); layer measures real stack sizes after drawing; the tail sits on the bubble nearest the head and points at the hero when nudged. Checked in game with four heroes on one spot plus one at the mat edge: no overlaps, all inside. **Plan complete.** |
+
+## 8. Later changes
+
+* **2026-09-27, Token Lifecycle feedback Q6** (`docs/token_lifecycle_feedback_v1.md` FB-20–22):
+  * **SB-1 narrowed (FB-21):** bubbles are for unusual events only. *Arriving at a job*
+    ("Working at X.") is no longer spoken; going idle and level-ups still are. Unset
+    station / Foundation blocks (`CHOOSE_RECIPE`, `CHOOSE_BUILD`) are silent too, matching
+    the owner's post-Q1 ruling that an unset station shows only its gear. Switches:
+    `MOMENT_SPOKEN` (`heroSpeech.js`), `SILENT_BLOCKS` (`heroBubbles.js`).
+  * **SB-2 consequence:** those two blocks now show neither an icon nor a bubble; the gear is
+    the only sign (by the owner's decision).
+  * **Placement (FB-20):** the stack is anchored to the top of the hero's *art*, whose size
+    depends on the mat scale (`bubbleAnchorY`), not to the fixed hit box, so the tail sits just
+    above the head at every scale.
+  * **Every line, with its status:** `docs/speech_bubble_lines.md` (FB-22), for the owner's audit.

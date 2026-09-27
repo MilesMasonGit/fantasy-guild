@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { layoutStacks } from '../ui/components/board/bubbleLayout.js';
+import { layoutStacks, bubbleAnchorY, BUBBLE_TAIL_PX } from '../ui/components/board/bubbleLayout.js';
+import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
 
 const MAT = { w: 1000, h: 600 };
 const rect = (it, o) => ({ l: it.x - it.w / 2 + o.dx, r: it.x + it.w / 2 + o.dx, t: it.y - it.h + o.dy, b: it.y + o.dy });
@@ -67,5 +68,17 @@ describe('Speech bubble layout', () => {
             { id: 'b', x: 510, y: 300, w: 100, h: 20 }
         ];
         expect(layoutStacks(items, MAT)).toEqual(layoutStacks(items, MAT));
+    });
+
+    it('puts the tail just above the head at every mat scale (FB-20)', () => {
+        for (const fit of [0.21, 0.35, 0.5, 0.75, 1, 1.5, 2]) {
+            const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, boardScaleAt(fit));
+            const heroY = 400;
+            const artTop = heroY - artPx / 2;          // the head reaches the top row of the art
+            const anchor = bubbleAnchorY(heroY, artPx);
+            const tailTip = anchor + BUBBLE_TAIL_PX;
+            expect(tailTip).toBeLessThanOrEqual(artTop);     // never over the head
+            expect(artTop - tailTip).toBeLessThanOrEqual(4); // but only just above it
+        }
     });
 });

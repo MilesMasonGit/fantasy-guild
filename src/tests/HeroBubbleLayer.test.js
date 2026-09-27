@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { ALERT } from '../systems/board/boardEvents.js';
-import { blockedText, joinNames, readyToSpeak, INPUTS_DELAY_MS } from '../ui/components/board/heroBubbles.js';
+import { blockedText, blockedLineFor, joinNames, readyToSpeak, speaksBlock, INPUTS_DELAY_MS } from '../ui/components/board/heroBubbles.js';
 
 describe('Hero speech bubbles', () => {
     it('draw above every other mat layer', () => {
@@ -35,5 +35,20 @@ describe('Hero speech bubbles', () => {
         expect(readyToSpeak(ALERT.INPUTS, 0, INPUTS_DELAY_MS)).toBe(true);
         expect(readyToSpeak(ALERT.CHARGES, 0, 0)).toBe(true);
         expect(readyToSpeak(ALERT.NO_RECIPE, 0, 0)).toBe(true);
+    });
+
+    it('keep quiet about an unset station or Foundation, which shows only its gear (FB-21)', () => {
+        expect(speaksBlock(ALERT.CHOOSE_RECIPE)).toBe(false);
+        expect(speaksBlock(ALERT.CHOOSE_BUILD)).toBe(false);
+        expect(blockedLineFor('any-id', ALERT.CHOOSE_RECIPE)).toBeNull();
+        // Their wording is kept, so the owner can reinstate them.
+        expect(blockedText(ALERT.CHOOSE_RECIPE, { token: 'Workbench' })).toBe('Choose a recipe for Workbench.');
+    });
+
+    it('still speak about every real problem (FB-21)', () => {
+        for (const a of [ALERT.INPUTS, ALERT.NO_RECIPE, ALERT.CHARGES, ALERT.NO_ROOM, ALERT.ACCESS, ALERT.UNSKILLED]) {
+            expect(speaksBlock(a)).toBe(true);
+        }
+        expect(speaksBlock(null)).toBe(false);
     });
 });
