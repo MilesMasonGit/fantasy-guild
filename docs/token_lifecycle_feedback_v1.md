@@ -6,7 +6,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 (TL-1…TL-11, §2) stand unless a TL- decision below replaces them.*
 
 **Status: quick wins Q1–Q9 (plus Q5b) ALL DONE and merged 2026-09-27. Larger reworks B1–B10 (§4.2) wait for later agents. Open owner questions: §5.**
-**B1 (ring badges) DONE 2026-09-27, slices B1.1–B1.3 merged; ⭐ owner to look by eye (ring size, row in front of the hero, hover bubble height):** owner answers in §2 (B1 rows), decision TL-22, slices in §4.2 under B1.
+**B2 (top bar) DONE 2026-09-27, B2.1–B2.3 merged (answers: §2 B2 rows). B1 (ring badges) DONE 2026-09-27, slices B1.1–B1.3 merged; ⭐ owner to look by eye (ring size, row in front of the hero, hover bubble height):** owner answers in §2 (B1 rows), decision TL-22, slices in §4.2 under B1.
 
 **Kinds:** 🐞 bug · 🔢 number tweak · 🔧 small change (a session or less) · 🏗️ larger rework
 (needs a brief and its own agent).
