@@ -25,13 +25,13 @@
         "variable": false
       }
     ],
-    "xp": 2,
+    "xp": 1,
     "id": "recipe_copper_ingot",
-    "durationMs": 16000,
+    "durationMs": 8000,
     "levelRequirement": 1,
     "stationChargeCost": 1,
     "sim": {
-      "tempo": "medium",
+      "tempo": "fast",
       "purpose": "iph"
     },
     "skill": "smithing"
@@ -61,11 +61,11 @@
     ],
     "xp": 0,
     "id": "recipe_copper_pickaxe",
-    "durationMs": 12000,
+    "durationMs": 6000,
     "levelRequirement": 2,
     "stationChargeCost": 1,
     "sim": {
-      "tempo": "medium",
+      "tempo": "fast",
       "purpose": "iph"
     },
     "skill": "smithing"
@@ -365,9 +365,12 @@
         "variable": false
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 2
+    "xp": 2,
+    "sim": {
+      "tempo": "fast"
+    }
   },
   {
     "name": "Dough",
@@ -434,13 +437,13 @@
         "anchor": true
       }
     ],
-    "xp": 2,
+    "xp": 1,
     "id": "recipe_shrimp",
-    "durationMs": 16000,
+    "durationMs": 8000,
     "levelRequirement": 1,
     "stationChargeCost": 1,
     "sim": {
-      "tempo": "medium",
+      "tempo": "fast",
       "purpose": "iph"
     },
     "skill": "cooking"
@@ -475,11 +478,11 @@
         "anchor": true
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 8000,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 1,
     "sim": {
-      "tempo": "medium",
+      "tempo": "fast",
       "purpose": "iph"
     }
   },
@@ -647,9 +650,12 @@
         "variable": false
       }
     ],
-    "durationMs": 12000,
+    "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 2
+    "xp": 2,
+    "sim": {
+      "tempo": "fast"
+    }
   },
   {
     "id": "recipe_muily2pg",
@@ -680,9 +686,12 @@
         "variable": false
       }
     ],
-    "durationMs": 12000,
+    "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 2
+    "xp": 2,
+    "sim": {
+      "tempo": "fast"
+    }
   },
   {
     "id": "recipe_muil1w5z",
@@ -709,12 +718,15 @@
         "variable": false
       }
     ],
-    "durationMs": 15000,
+    "durationMs": 30000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
       "farmland"
-    ]
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
   },
   {
     "id": "recipe_muil1w60",
@@ -741,12 +753,15 @@
         "variable": false
       }
     ],
-    "durationMs": 15000,
+    "durationMs": 30000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
       "farmland"
-    ]
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
   },
   {
     "id": "recipe_muily2pb",
@@ -773,12 +788,15 @@
         "variable": false
       }
     ],
-    "durationMs": 15000,
+    "durationMs": 30000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
       "wood"
-    ]
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
   },
   {
     "id": "recipe_muily2pc",
@@ -805,12 +823,15 @@
         "variable": false
       }
     ],
-    "durationMs": 15000,
+    "durationMs": 30000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
       "wood"
-    ]
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
   },
   {
     "id": "recipe_muily2pd",
@@ -837,12 +858,15 @@
         "variable": false
       }
     ],
-    "durationMs": 15000,
+    "durationMs": 30000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
       "stone"
-    ]
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
   },
   {
     "id": "recipe_muily2pe",
@@ -873,11 +897,14 @@
         "variable": false
       }
     ],
-    "durationMs": 15000,
+    "durationMs": 30000,
     "stationChargeCost": 1,
     "xp": 5,
     "foundationKinds": [
       "stone"
-    ]
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
   }
 ]

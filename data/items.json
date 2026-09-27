@@ -42,7 +42,7 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": 14,
+    "value": 10,
     "autoSyncId": true,
     "id": "item_copper_ingot",
     "valueSource": "recipe_copper_ingot"
@@ -81,7 +81,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_raw_shrimp",
     "valueSource": "token_shrimp_coast"
@@ -224,7 +224,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 4,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_coal",
     "valueSource": "token_coal_vein"
@@ -588,7 +588,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 38,
+    "value": 32,
     "valueSource": "recipe_mtp8qjj0",
     "autoSyncId": true,
     "id": "item_iron_ingot"
@@ -601,7 +601,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1444,
+    "value": 1431,
     "valueSource": "recipe_mtp8qjj3",
     "autoSyncId": true,
     "id": "item_mythril_ingot"
@@ -614,7 +614,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 416,
+    "value": 410,
     "valueSource": "recipe_mtp8qjj1",
     "autoSyncId": true,
     "id": "item_gold_ingot"
@@ -627,7 +627,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 131,
+    "value": 125,
     "valueSource": "recipe_mtp8qjj2",
     "autoSyncId": true,
     "id": "item_silver_ingot"
@@ -640,7 +640,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 6376,
+    "value": 6355,
     "valueSource": "recipe_mtp8qjj4",
     "autoSyncId": true,
     "id": "item_adamantine_ingot"
@@ -653,7 +653,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 7894,
+    "value": 7866,
     "valueSource": "recipe_mtp8qjj5",
     "autoSyncId": true,
     "id": "item_darkmetal_ingot"
@@ -757,7 +757,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 8,
+    "value": 2,
     "valueSource": "token_oak_tree",
     "autoSyncId": true,
     "id": "item_oak_seed"
@@ -783,7 +783,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 4,
+    "value": 1,
     "valueSource": "token_ripe_wheat",
     "autoSyncId": true,
     "id": "item_wheat_seed"
@@ -796,7 +796,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 5,
+    "value": 1,
     "valueSource": "token_apple_tree",
     "autoSyncId": true,
     "id": "item_apple_seed"
