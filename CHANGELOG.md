@@ -4,6 +4,13 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Loot flies to the Guild Hall (Q5: FB-16, FB-17).** Collected items now arc to the Guild Hall
+  Token on the mat instead of the Item Bank button, following the Hall wherever it has been moved;
+  the Hall brightens briefly as they land. If the Hall is not on screen (or is being carried), items
+  fly to the Bank button as before. Items stay the size they were on the mat for the whole flight
+  (they used to shrink). Banking is unchanged: a full Bank still leaves the loot on the mat.
+- **Guild Hall trickle on hover (Q5: FB-30).** Hovering the Guild Hall shows its trickle income, for
+  example *1 Oak Seed every 5 min (next in 2 min 3 s)*, one line per item it pays.
 - **Hit animations and the transform glow (Q4: FB-10, FB-11).** A Token now reacts each time its hero
   strikes it, timed to the blow in the hero's working animation: Logging shakes side to side, Mining
   jitters, Fishing bobs slowly, Farming sways from the base, Smithing squashes down, Crafting hops,

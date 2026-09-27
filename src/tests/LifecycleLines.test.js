@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lifecycleLines, formatDuration, TONE } from '../ui/components/drawer/lifecycleLines.js';
+import { lifecycleLines, formatDuration, TONE, trickleHoverLines } from '../ui/components/drawer/lifecycleLines.js';
 
 /**
  * Token Lifecycle slice 8.1 — the inspection panel's lifecycle lines (TL-4).
@@ -177,5 +177,22 @@ describe('lifecycleLines', () => {
             { label: 'Origin (dev)', value: 'spawned', tone: TONE.MUTED }
         ]);
         expect(lifecycleLines({ id: 'p', typeId: 'tree' }, src({ dev: true }))[0].value).toBe('placed');
+    });
+});
+
+describe('trickleHoverLines (FB-30)', () => {
+    it('says what the Hall pays, how often and when next', () => {
+        expect(trickleHoverLines({ id: 'h', typeId: 'hall', clocks: { trickle: [100000] } }, src()))
+            .toEqual(['Trickle income:', '2 Oak Seed every 5 min (next in 3 min 20 s)']);
+    });
+
+    it('starts a fresh clock at the full interval', () => {
+        expect(trickleHoverLines({ id: 'h', typeId: 'hall' }, src()))
+            .toEqual(['Trickle income:', '2 Oak Seed every 5 min (next in 5 min)']);
+    });
+
+    it('is empty for a Token with no trickle, or no Token', () => {
+        expect(trickleHoverLines({ id: 't', typeId: 'tree' }, src())).toEqual([]);
+        expect(trickleHoverLines(null, src())).toEqual([]);
     });
 });

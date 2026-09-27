@@ -31,6 +31,17 @@ import { gearStateOf, spawnerCountText } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf } from './hitAnimations.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import { trickleHoverLines } from '../drawer/lifecycleLines.js';
+
+/** The live readers `trickleHoverLines` takes. */
+const TRICKLE_SOURCES = {
+    typeOf: getTokenType,
+    itemName: (itemId) => getItem(itemId)?.name || itemId
+};
+
+/** How long the Hall brightens when collected loot lands on it (FB-16). */
+const RECEIVED_MS = 350;
 
 
 /** How long a Token takes to slide to a point the game moved it to (a push). */
@@ -224,13 +235,18 @@ export const MatToken = React.memo(function MatToken({
      * are read when the pointer arrives rather than kept in the projection.
      */
     const [skipLines, setSkipLines] = React.useState([]);
+    // FB-30: a Token with a trickle (the Guild Hall) says what it pays and when
+    // next, read on arrival like the skips (its clock moves without events).
+    const [trickleLines, setTrickleLines] = React.useState([]);
     React.useEffect(() => {
         if (!isHovered) return;
         setSkipLines(tokenSkipLines(id));
+        setTrickleLines(trickleHoverLines(BoardState.getTokenById(id), TRICKLE_SOURCES));
     }, [isHovered, id]);
 
     const alertHint = alert ? ALERT_HINT[alert] : null;
     const hoverTitle = [
+        ...(isHovered ? trickleLines : []),
         alertHint,
         detail?.disallowed ? 'Heroes may not work this' : null,
         ...(isHovered ? skipLines : [])
@@ -278,6 +294,21 @@ export const MatToken = React.memo(function MatToken({
     }, [transformGlow]);
     const glowDelay = transformGlow ? `-${TokenGlows.GLOW_MS - transformGlow.remainingMs}ms` : undefined;
 
+    // FB-16: collected loot flies to the Hall; a subtle brighten as it lands.
+    const [received, setReceived] = React.useState(false);
+    const receivedTimer = React.useRef(null);
+    const isHall = isGuildHallToken || !!def?.isGuildHall;
+    React.useEffect(() => {
+        if (!isHall) return undefined;
+        const unsub = EventBus.subscribe('particle_landed', (p) => {
+            if (p?.landsOn !== 'hall') return;
+            setReceived(true);
+            clearTimeout(receivedTimer.current);
+            receivedTimer.current = setTimeout(() => setReceived(false), RECEIVED_MS);
+        });
+        return () => { unsub?.(); clearTimeout(receivedTimer.current); };
+    }, [isHall]);
+
     const glow = staffed && !alert ? 'gi-glow-active' : null;
     const gear = gearStateOf(detail || {});
 
@@ -290,7 +321,8 @@ export const MatToken = React.memo(function MatToken({
                 data-token-id={id}
                 data-token-art="true"
                 data-token-type={typeId}
-                data-guild-hall={isGuildHallToken ? 'true' : undefined}
+                data-guild-hall={isHall ? 'true' : undefined}
+                data-hall-received={received ? 'true' : undefined}
                 title={hoverTitle}
                 data-tile-alert={alert || undefined}
                 data-tile-staffed={staffed ? 'true' : undefined}
@@ -319,7 +351,8 @@ export const MatToken = React.memo(function MatToken({
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        isHovered && 'gi-token-hover-pulse'
+                        isHovered && 'gi-token-hover-pulse',
+                        received && 'brightness-125 saturate-125'
                     )}
                 >
                     <TokenHitArt

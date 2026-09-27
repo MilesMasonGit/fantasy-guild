@@ -132,6 +132,23 @@ function trickleLines(instance, def, src) {
 }
 
 /**
+ * ⭐ **The trickle income as hover text** (FB-30): a heading, then one line per
+ * paying trickle line, e.g. "1 Oak Seed every 5 min (next in 3 min 20 s)".
+ * The same wording and maths as the inspection panel's *Pays* rows — this only
+ * relabels them. Empty for a Token with no trickle.
+ *
+ * @param {object|null} instance
+ * @param {{ typeOf: (typeId: string) => object|null, itemName: (itemId: string) => string }} src
+ * @returns {string[]}
+ */
+export function trickleHoverLines(instance, src) {
+    const def = instance ? src.typeOf(instance.typeId) : null;
+    if (!def?.trickle) return [];
+    const pays = trickleLines(instance, def, src).map(line => line.value);
+    return pays.length ? ['Trickle income:', ...pays] : [];
+}
+
+/**
  * The lifecycle rows for one board Token.
  *
  * @param {object|null} instance the Token on the mat
