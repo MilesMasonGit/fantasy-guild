@@ -71,6 +71,7 @@ function board() {
     if (!state.board.flags || typeof state.board.flags !== 'object') state.board.flags = {};
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.workClaims || typeof state.board.workClaims !== 'object') state.board.workClaims = {};
+    if (!Array.isArray(state.board.bin)) state.board.bin = [];
     // Spot vacancies went with the Managers (Token Lifecycle 9.2, SP-55); an
     // older save's leftover map is simply dropped.
     if ('vacancies' in state.board) delete state.board.vacancies;
@@ -266,6 +267,20 @@ export function tokens() {
 export function tokensAtPoint(x, y) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return [];
     return tokens().filter(t => t.x === x && t.y === y);
+}
+
+/**
+ * ## The discard bin (B3.1, FB-34) — the saved half
+ *
+ * `board.bin` is an array of whole Token instances lifted off the mat, in the
+ * order they went in. They are **not** in `board.tokens`, so nothing that walks
+ * the mat — work, adjacency, spawner families, drawing — sees them. The rules
+ * (what may go in, refunds, discarding) live in `DiscardBin.js`; this is the
+ * storage only. The live array is returned, so callers must not hold it across
+ * a load.
+ */
+export function binTokens() {
+    return board()?.bin || [];
 }
 
 // ---------------------------------------------------------------------------

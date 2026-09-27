@@ -25,10 +25,18 @@ export function isGuildHall(instance) {
     return instance?.typeId === 'token_guild_hall' || !!getTokenType(instance?.typeId)?.isGuildHall;
 }
 
-/** Placed Tokens on the mat now, not counting the Guild Hall. */
+/**
+ * Placed Tokens on the mat now, not counting the Guild Hall — **plus placed
+ * Tokens waiting in the discard bin** (B3.1). Owner, B3 interview: a binned
+ * Token still counts toward the cap until it is discarded, so the bin cannot
+ * be used to dodge it. Spawned Tokens in the bin do not count, as on the mat.
+ */
 export function placedCount() {
     let n = 0;
     for (const t of BoardState.tokens()) {
+        if (BoardState.originOf(t) === BoardState.ORIGIN.PLACED && !isGuildHall(t)) n++;
+    }
+    for (const t of BoardState.binTokens()) {
         if (BoardState.originOf(t) === BoardState.ORIGIN.PLACED && !isGuildHall(t)) n++;
     }
     return n;

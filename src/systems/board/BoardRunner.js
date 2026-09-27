@@ -479,7 +479,9 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
     // spent its inputs and stays a Foundation, like any failed cycle.
     if (buildTypeId && !failed) {
         const fromTypeId = instance.typeId;
-        const built = Foundations.buildInPlace(instance, buildTypeId);
+        // The paid `inputs` go with it: the built Token remembers its
+        // Foundation and build cost for the discard refund (B3.1, TL-13).
+        const built = Foundations.buildInPlace(instance, buildTypeId, inputs);
         if (built) {
             EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {
                 instanceId: built.id, typeId: buildTypeId, fromTypeId, heroId: heroId || null

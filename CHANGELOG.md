@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Discard bin engine and refunds (B3.1, TL-13).** Tokens can be held in a bin of nine off the mat
+  (still counting toward the cap), taken back out unchanged, or discarded together for a refund:
+  half the price of a bought Token, a charge-weighted half for consumables, half the Foundation and
+  half the build cost for a built station, nothing for spawned Tokens. Built stations now remember
+  what they were built from. No screen yet.
 - **Disallow mode and Allow all (B2.3, FB-32).** A *Disallow mode* button in the bar: while it is
   on, the mat has a red dashed edge, clicking a Token heroes can work flips it allowed or
   disallowed, and nothing on the mat can be dragged (the dock and the Bank still can). Esc or the

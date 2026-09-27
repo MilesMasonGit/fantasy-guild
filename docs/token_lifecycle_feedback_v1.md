@@ -306,6 +306,11 @@ inline Remove. Refund maths per TL-13 (a built station must remember its Foundat
 Refunds go through `InventoryManager` (D-138). Coordinate with B6, which removes quests from that
 column.
 
+| # | B3 slice | Status |
+|---|---|---|
+| B3.1 | **Bin engine + refunds** (`DiscardBin.js`): bin of 9 saved in `state.board.bin`, binned placed Tokens still count toward the cap, `unbinToken` puts one back unchanged, TL-13 refunds, `discardAll` pays through `InventoryManager`; built stations remember `builtFrom` (Foundation + paid build cost) | ✅ 2026-09-27. Consumable refund = ⌊price × left / (starting × 2)⌋ per item (Anvil 30/60 of 10 → 2); built = ⌊Foundation/2⌋ + ⌊build/2⌋ (Workbench 9); old-save built station without `builtFrom` → half the Foundation price only. ⚠️ `builtFrom` is lost if the built Token later transforms. Engine only, verified by 20 tests; live check with B3.2. Tests: baseline 10 |
+| B3.2 | **Bin UI**: grid of nine icon slots at the bottom of the notification column, drag in / drag back out, refund total, *Discard all (n)*; the inspection panel's Remove goes | — |
+
 **B4 Shop drag-to-buy (4th).** FB-25, FB-27. Tokens listed on the left, dragged onto the mat to buy
 (pay on drop; refuse cleanly when the mat cap or the Bank says no). The drawer takes about a third of
 the screen and slides mostly away during a drag. Uses the dnd-kit drag system.

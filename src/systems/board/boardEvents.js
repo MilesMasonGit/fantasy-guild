@@ -105,6 +105,15 @@ export const BOARD_EVENTS = {
      */
     TOKEN_BUILT: 'board:token_built',
 
+    /**
+     * The discard bin changed (B3.1, FB-34): a Token went in, came back out,
+     * or the bin was emptied by *Discard all*. Payload: `{ action, instanceId?,
+     * typeId?, count, refunded? }` — `action` is `'binned'`, `'unbinned'` or
+     * `'discarded'`; `count` is how many Tokens the bin holds now; `refunded`
+     * (on `'discarded'`) is what was paid, `[{ itemId, quantity }]`.
+     */
+    BIN_CHANGED: 'board:bin_changed',
+
     /** A Token ran out of charges and left the board (D-176). Payload: `{ instanceId, x, y, typeId, instance?, heroId? }` */
     TOKEN_DEPLETED: 'board:token_depleted',
 

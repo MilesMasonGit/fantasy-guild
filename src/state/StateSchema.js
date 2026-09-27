@@ -66,6 +66,13 @@ export function createEmptyBoard() {
         // `BoardState` on arrival, erased when the hero lets go.
         workClaims: {},
         sprites: [],
+        // The discard bin (B3.1, FB-34, TL-13): up to nine whole Token
+        // instances lifted off the mat, in the order they went in, each with
+        // its charges, recipe, origin and `builtFrom`. Not in `tokens`, so
+        // nothing on the mat sees them; `MatCap` still counts the placed ones.
+        // An older save without it gets an empty bin from `migrateState`'s
+        // two-level backfill. Owned by `DiscardBin.js`.
+        bin: [],
         // `tokenBank`, `tray`, `nextTrayZ`, `tokenBankSlots`, `tokenTabsUnlocked`
         // and `tokenGroups` went with the Token Vault and the Tray (Token
         // Lifecycle 9.3): Tokens live on the mat. `migrateState` drops them
