@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Disallow mode and Allow all (B2.3, FB-32).** A *Disallow mode* button in the bar: while it is
+  on, the mat has a red dashed edge, clicking a Token heroes can work flips it allowed or
+  disallowed, and nothing on the mat can be dragged (the dock and the Bank still can). Esc or the
+  button ends it. *Allow all (n)* lets heroes work every Token again, at once.
 - **Upkeep moves to the bar (B2.2, FB-29).** The bar shows `Upkeep 6/min`, every ongoing item
   cost added up, and hovering it opens the full Upkeep Summary. The Bank drawer's Upkeep toggle
   is gone.

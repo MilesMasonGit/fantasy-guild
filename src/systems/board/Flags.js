@@ -901,6 +901,22 @@ export function setDisallowed(instanceId, on = true) {
 }
 
 /**
+ * **Allow every disallowed Token on the mat again**, at once (B2.3, FB-32 —
+ * the bar's *Allow all*, no confirm by owner decision). Each goes through
+ * {@link setDisallowed}, so flags are marked to choose again on the next tick.
+ *
+ * @returns {number} how many Tokens were allowed
+ */
+export function allowAll() {
+    let n = 0;
+    for (const instance of BoardState.tokens()) {
+        if (!isDisallowed(instance)) continue;
+        if (setDisallowed(instance.id, false).success) n++;
+    }
+    return n;
+}
+
+/**
  * What a hero is doing, for the dock and the idle mark:
  * `docked` (no flag) · `returning` (no flag, still walking home, M3) ·
  * `working` · `walking` (on the way — to a claimed Token,

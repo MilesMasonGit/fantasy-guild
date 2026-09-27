@@ -17,6 +17,8 @@ import { TERRAIN_ENABLED } from '../../../config/registries/terrainRegistry.js';
 import { announce } from './dropOnMat.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
+import { useDisallowMode, flipDisallowed } from '../../hooks/useDisallowMode.js';
+import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
@@ -63,6 +65,11 @@ export const MatBoard = ({
     const [hoveredId, setHoveredId] = useState(null);
     const [hoverHeroId, setHoverHeroId] = useState(null);
     const { isDragging } = useActiveDrag();
+
+    // B2.3 (FB-32): disallow mode. Read once here and handed to each Token as
+    // a prop, so a Token holds no subscription of its own for it.
+    const disallowMode = useDisallowMode();
+    const fit = useMatFit() || 1;
 
     // dnd-kit owns the pointer during a drag, and a Token re-ordering itself
     // under the ghost made it flicker. Nothing is hovered while dragging.
@@ -211,6 +218,9 @@ export const MatBoard = ({
         announce(Placement.recallHeroById(heroId));
     }, []);
 
+    // B2.3: a click on a Token in disallow mode (a Token no hero works: nothing).
+    const handleFlipDisallow = useCallback((instanceId) => { flipDisallowed(instanceId); }, []);
+
     // Right-click on a Token no hero works does nothing since the Vault went
     // (Token Lifecycle 9.3); it used to deposit the Token there (FP-45).
 
@@ -247,6 +257,7 @@ export const MatBoard = ({
         <div
             ref={rootRef}
             data-mat-board
+            data-disallow-mode={disallowMode ? 'on' : undefined}
             className="absolute left-0 top-0"
             style={{ width: mat.w, height: mat.h }}
             onPointerMove={handlePointerMove}
@@ -290,6 +301,8 @@ export const MatBoard = ({
                     onClearInspect={onClearInspect}
                     onOpenRecipes={onOpenRecipes}
                     onRecallHero={handleRecallHero}
+                    disallowMode={disallowMode}
+                    onFlipDisallow={handleFlipDisallow}
                 />
             ))}
 
@@ -340,9 +353,38 @@ export const MatBoard = ({
 
             {/* 860 — hero speech bubbles, above every hero. */}
             <HeroBubbleLayer heroes={heroes} />
+
+            {/* B2.3 (FB-32): disallow mode's red dashed edge and hint, above
+                everything and never in the pointer's way. Sized against the
+                mat's fit so they read the same at any zoom. */}
+            {disallowMode && (
+                <div
+                    data-disallow-edge
+                    aria-hidden="true"
+                    className="absolute left-0 top-0 pointer-events-none"
+                    style={{
+                        width: mat.w,
+                        height: mat.h,
+                        zIndex: DISALLOW_EDGE_Z,
+                        borderRadius: 28,
+                        border: `${3 / fit}px dashed #E24B4A`
+                    }}
+                >
+                    <div
+                        data-disallow-hint
+                        className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#791F1F]/90 border border-[#E24B4A] text-red-50 font-pixel"
+                        style={{ top: 12 / fit, fontSize: 11 / fit, padding: `${2 / fit}px ${8 / fit}px` }}
+                    >
+                        Click a Token to allow / disallow · Esc to finish
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+
+/** Disallow mode's edge and hint (B2.3): above the speech bubbles (`MAT_Z.HERO_BUBBLE`, 860). */
+const DISALLOW_EDGE_Z = 900;
 
 /** Shared empty terrain, so a dormant board's selector returns a stable value. */
 const NO_TERRAIN = Object.freeze({});

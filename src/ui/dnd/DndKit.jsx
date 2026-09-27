@@ -146,6 +146,7 @@ export const useActiveDrag = () => React.useContext(DeckDndContext);
 export const DragPointerContext = React.createContext(null);
 export const useDragPointer = () => React.useContext(DragPointerContext);
 import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
+import { isDisallowMode } from '../hooks/useDisallowMode.js';
 
 export class AlphaPointerSensor extends PointerSensor {
     static activators = [
@@ -155,6 +156,12 @@ export class AlphaPointerSensor extends PointerSensor {
                 if (!event.isPrimary || event.button !== 0) {
                     return false;
                 }
+                // B2.3 (FB-32): dragging ON THE MAT pauses in disallow mode —
+                // Tokens, heroes and flags, which all live inside the mat's
+                // `data-board-origin` box. The dock and the Bank still drag
+                // (owner, 2026-09-27: mat only). A refused press stays a plain
+                // click, which the mode turns into a flip.
+                if (isDisallowMode() && event.target?.closest?.('[data-board-origin]')) return false;
                 const target = event.target;
                 const alphaEl = target?.closest?.('[data-alpha-test]');
                 if (alphaEl) {

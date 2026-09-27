@@ -43,6 +43,7 @@ import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
 import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
+import MatDisallowControls from './components/board/MatDisallowControls.jsx';
 
 /** Time Bank widget visibility — parked, not deleted (owner request
  *  2026-08-02). The widget and its manager are untouched; only its placement
@@ -347,7 +348,7 @@ export const ReactRoot = ({ engine }) => {
                                 {showsMatTopBar(ui.fullscreen.view) && (
                                     <MatTopBar
                                         left={<><MatCapBadge /><MatUpkeepBadge /></>}
-                                        right={SHOW_TIME_BANK ? <TimeBankWidget /> : null}
+                                        right={<><MatDisallowControls />{SHOW_TIME_BANK ? <TimeBankWidget /> : null}</>}
                                     />
                                 )}
                                 <div className="flex-1 min-w-0 min-h-0 relative">

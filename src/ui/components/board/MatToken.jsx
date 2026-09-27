@@ -88,7 +88,9 @@ export const MatToken = React.memo(function MatToken({
     onInspectToken,
     onClearInspect,
     onOpenRecipes,
-    onRecallHero
+    onRecallHero,
+    disallowMode = false,
+    onFlipDisallow
 }) {
     const r = artRadius(size);
 
@@ -312,6 +314,8 @@ export const MatToken = React.memo(function MatToken({
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        // B2.3: in disallow mode a Token only flips; nothing is recalled.
+        if (disallowMode) return;
         // Recalls the hero working it. (A Token without one used to go to the
         // Vault; the Vault went in Token Lifecycle 9.3.)
         if (heroId) onRecallHero?.(heroId);
@@ -367,9 +371,15 @@ export const MatToken = React.memo(function MatToken({
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
                     if (drag.isDragging) return;
+                    // B2.3 (FB-32): in disallow mode a click flips the Token
+                    // allowed ⇄ disallowed (FP-35) and does nothing else.
+                    if (disallowMode) { onFlipDisallow?.(id); return; }
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
-                onDoubleClick={(e) => onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id)}
+                onDoubleClick={(e) => {
+                    if (disallowMode) return;
+                    onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
+                }}
                 style={{
                     ...boxStyle,
                     zIndex: z,
@@ -380,7 +390,8 @@ export const MatToken = React.memo(function MatToken({
                     visibility: hidden ? 'hidden' : 'visible'
                 }}
                 className={cn(
-                    'absolute select-none pointer-events-auto cursor-grab active:cursor-grabbing',
+                    'absolute select-none pointer-events-auto',
+                    disallowMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
                     glow
                 )}
             >
@@ -446,7 +457,7 @@ export const MatToken = React.memo(function MatToken({
                         recipe={detail?.recipe}
                         pulsing={gear.pulsing}
                         isFoundation={!!detail?.isFoundation}
-                        onClick={() => onOpenRecipes?.(id)}
+                        onClick={() => (disallowMode ? onFlipDisallow?.(id) : onOpenRecipes?.(id))}
                     />
                 )}
 

@@ -61,7 +61,7 @@ export function liveMatSummary() {
 }
 
 /** Re-render whenever any of `events` fires (and the Mat Tuner changes), while `on`. */
-function useRefreshOn(events, on = true) {
+export function useRefreshOn(events, on = true) {
     const [, bump] = useState(0);
     useEffect(() => {
         if (!on) return undefined;
