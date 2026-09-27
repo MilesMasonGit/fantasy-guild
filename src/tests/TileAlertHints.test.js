@@ -6,6 +6,7 @@ import { ALERT_HINT, ALERT_LABEL } from '../ui/components/board/boardConstants.j
 import { ALERT } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { EventBus } from '../systems/core/EventBus.js';
+import { GEAR_ONLY_ALERTS } from '../ui/components/board/centreAlert.js';
 
 /**
  * These tests exist because this feature was written once and never shown.
@@ -19,6 +20,13 @@ import { EventBus } from '../systems/core/EventBus.js';
 
 /** Every alert value that can reach a Token (one enum since CR2-060). */
 const ALERT_VALUES = Object.values(ALERT);
+
+/**
+ * The bar's alerts: every value except "nothing chosen", which the pulsing
+ * recipe gear says instead (Token Lifecycle feedback Q2, FB-7). Those two are
+ * pinned below to draw nothing on the bar.
+ */
+const BAR_ALERTS = ALERT_VALUES.filter(a => !GEAR_ONLY_ALERTS.has(a));
 
 const renderBar = (alert) => render(
     React.createElement(
@@ -56,7 +64,7 @@ describe('Token alert hints (D-114)', () => {
         expect(ALERT_HINT.unstocked).toBeUndefined();
     });
 
-    it.each(ALERT_VALUES)('shows the hint on hover for "%s"', (alert) => {
+    it.each(BAR_ALERTS)('shows the hint on hover for "%s"', (alert) => {
         const { container } = renderBar(alert);
         const panel = container.querySelector(`[data-tile-alert-hint="${alert}"]`);
         expect(panel, `no hover panel rendered for "${alert}"`).toBeTruthy();
@@ -64,7 +72,7 @@ describe('Token alert hints (D-114)', () => {
         cleanup();
     });
 
-    it.each(ALERT_VALUES)('draws a warning mark on the bar for "%s"', (alert) => {
+    it.each(BAR_ALERTS)('draws a warning mark on the bar for "%s"', (alert) => {
         const { container } = renderBar(alert);
         const fill = container.querySelector('[class*="progress-fill--"]');
         expect(fill).toBeTruthy();
@@ -74,6 +82,15 @@ describe('Token alert hints (D-114)', () => {
             .not.toContain('progress-fill--white-chroma');
         expect(fill.style.width).toBe('100%');
         expect(container.textContent).toContain(ALERT_LABEL[alert]);
+        cleanup();
+    });
+
+    it.each([...GEAR_ONLY_ALERTS])('draws nothing on the bar for "%s" — the gear says it (FB-7)', (alert) => {
+        const { container } = renderBar(alert);
+        expect(container.querySelector(`[data-tile-alert-hint="${alert}"]`)).toBeNull();
+        expect(container.querySelector('.progress-fill--red-chroma')).toBeNull();
+        expect(container.querySelector('.progress-fill--yellow-chroma')).toBeNull();
+        expect(container.textContent).not.toContain(ALERT_LABEL[alert]);
         cleanup();
     });
 

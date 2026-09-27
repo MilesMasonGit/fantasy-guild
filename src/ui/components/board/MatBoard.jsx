@@ -22,8 +22,6 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { GameState } from '../../../state/GameState.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 
 /**
@@ -196,19 +194,8 @@ export const MatBoard = ({
     // Right-click on a Token no hero works does nothing since the Vault went
     // (Token Lifecycle 9.3); it used to deposit the Token there (FP-45).
 
-    const handleAutoAssignHero = useCallback((instanceId) => {
-        const heroes_ = GameState.state?.heroes || [];
-        // A hero with no flag is in the Dock and free to send (slice 1.4b).
-        const idleHero = heroes_.find(h => !BoardState.flagOf(h.id));
-        const token = BoardState.getTokenById(instanceId);
-        if (idleHero && token) {
-            announce(Placement.plantFlagAt(idleHero.id, { x: token.x, y: token.y }));
-        } else if (heroes_.length === 0) {
-            NotificationSystem.warning('No heroes recruited yet');
-        } else {
-            NotificationSystem.info('All heroes are working elsewhere — drag a hero to reassign');
-        }
-    }, []);
+    // The green plus that sent an idle hero to a Token went with FB-6 (Token
+    // Lifecycle feedback Q2): heroes find work through their flags.
 
     // Only a Token that acts on or depends on its neighbours shows a ring
     // (owner, 2026-09-21) — `showsNearRing`.
@@ -267,7 +254,6 @@ export const MatBoard = ({
                     hasHero={workedBy.has(t.id)}
                     onInspectToken={onInspectToken}
                     onClearInspect={onClearInspect}
-                    onAutoAssignHero={handleAutoAssignHero}
                     onOpenRecipes={onOpenRecipes}
                     onRecallHero={handleRecallHero}
                 />

@@ -2,28 +2,39 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import * as TokenNotices from '../../../systems/board/TokenNotices.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ALERT_HINT } from './boardConstants.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { cn } from '../../utils/cn.js';
 import { useTokenEvent } from './tokenEvents.js';
+import { ALERT_KIND, alertKindOf, pickCentreAlert } from './centreAlert.js';
 
 /**
- * The floating alert mark — "Token Exhausted", "Missing Items", a refused drop.
+ * The floating alert mark — "Token Exhausted", "Needs Oak Seed to spawn", a
+ * refused drop, a green "New Oak Sapling".
  *
- * Shown at the top-left of the thing it is about, with a pop-up bubble on hover.
- * Unhovered after being read it waits 5s, then fades out over 3s. Re-hovering
- * resets the wait. Clicking it, or anything happening to its Token, dismisses it
- * at once; once dismissed, hovering does not bring it back.
+ * ⭐ Drawn at the **centre** of the thing it is about (FB-8, TL-14), with a
+ * pop-up bubble on hover. There are two kinds (`centreAlert.js`):
  *
- * Two things draw one: {@link TokenEventAlert}, on a Token, by instance id; and
- * `MatPointAlerts`, at a bare mat point, for an alert whose Token has just left
- * the mat or never existed (a refused drop). The state machine and the mark are
- * shared between them so the two cannot drift.
+ * * **Problems** (red, yellow) never fade on their own. A live one — a
+ *   spawner waiting on the Bank or on room — stays until the engine says the
+ *   cause is gone. News of a problem that cannot be fixed any more (a Token
+ *   ran dry, a drop was refused) stays until the player reads it: once
+ *   hovered and left it waits 5s, then fades over 3s; clicking it dismisses it
+ *   at once.
+ * * **Notices** (green) go on their own after `TokenNotices.NOTICE_MS`.
+ *
+ * A Token shows one mark at a time: a problem always wins over a notice.
+ *
+ * Two things draw one: {@link TokenCentreAlert}, on a Token, by instance id;
+ * and `MatPointAlerts`, at a bare mat point, for an alert whose Token has just
+ * left the mat or never existed (a refused drop). The state machine and the
+ * mark are shared between them so the two cannot drift.
  */
 
-/** Alert types a hero's speech bubble now says instead (SB-2). */
-const HERO_SPOKEN_ALERTS = new Set(['out_of_item', 'out_of_token', 'out_of_charges', 'hero_level_up']);
+/** How long a notice takes to fade out at the end of its life, in ms. */
+const NOTICE_FADE_MS = 1500;
 
 /** The alert's life: what it says, whether it is fading, and how to end it. */
 export function useEventAlert(onGone = null) {
@@ -198,9 +209,11 @@ export const EventAlertMark = ({ alert }) => {
     return (
         <div
             ref={iconRef}
+            data-alert-kind={isGreen ? ALERT_KIND.NOTICE : ALERT_KIND.PROBLEM}
+            data-alert-severity={alertData.severity}
             onClick={(e) => { e.stopPropagation(); dismiss(); }}
             className={cn(
-                "absolute top-1.5 left-[2px] z-[100]",
+                "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[100]",
                 isDismissed ? "pointer-events-none" : "pointer-events-auto"
             )}
             style={{
@@ -208,7 +221,7 @@ export const EventAlertMark = ({ alert }) => {
                 transition: isDismissed
                     ? 'opacity 400ms ease-out'
                     : isFading
-                        ? 'opacity 3000ms cubic-bezier(0.4, 0, 0.2, 1)'
+                        ? `opacity ${alert.fadeMs ?? 3000}ms cubic-bezier(0.4, 0, 0.2, 1)`
                         : 'none'
             }}
             onMouseEnter={onMouseEnter}
@@ -248,34 +261,6 @@ export const EventAlertMark = ({ alert }) => {
     );
 };
 
-/**
- * The alert drawn on one Token, by instance id (slice 1.6c-2). Anything
- * happening to that Token — it moves, it is replaced, it is picked up —
- * dismisses it, because the news is about the Token as it was.
- */
-export const TokenEventAlert = ({ instanceId }) => {
-    const alert = useEventAlert();
-    const { activePayload } = useActiveDrag();
-    const { alertData, isDismissed, show, dismiss } = alert;
-
-    // A hero blocked at this Token says so in a speech bubble over their head
-    // (SB-2), so those alerts are not also drawn as an icon here.
-    const showUnlessSpoken = useCallback((p) => {
-        if (!HERO_SPOKEN_ALERTS.has(p?.type)) show(p);
-    }, [show]);
-
-    useTokenEvent(BOARD_EVENTS.TILE_EVENT_ALERT, instanceId, showUnlessSpoken);
-    useTokenEvent(BOARD_EVENTS.TILE_CHANGED, instanceId, dismiss);
-
-    // Picked up: the alert goes with the Token leaving the spot.
-    useEffect(() => {
-        const dragged = activePayload?.from?.instanceId ?? null;
-        if (dragged && dragged === instanceId && alertData && !isDismissed) dismiss();
-    }, [activePayload, instanceId, alertData, isDismissed, dismiss]);
-
-    return <EventAlertMark alert={alert} />;
-};
-
 /** "A", "A and B", "A, B and C". */
 const joinNames = (names) => names.length <= 1
     ? (names[0] || '')
@@ -297,46 +282,136 @@ export function spawnerAlertData(state) {
     };
 }
 
-/**
- * A spawner's waiting alert (Token Lifecycle 8.3): the same icon and hover
- * bubble as {@link TokenEventAlert}, but it is a live fact rather than news.
- * It stays up, unhovered, for as long as the engine says the spawner is
- * stuck, and goes the moment `SPAWNER_ALERT_CHANGED` says the cause is fixed.
- * No fade, and clicking it does not hide it — the problem is still there.
- */
-export const SpawnerAlertMark = ({ instanceId }) => {
-    const [state, setState] = useState(() => SpawnerSystem.spawnerAlertOf(instanceId));
+/** A Token's green notice, read from `TokenNotices` and timed out here. */
+function useNotice(instanceId) {
+    const [notice, setNotice] = useState(() => TokenNotices.noticeOf(instanceId));
+    const [isFading, setIsFading] = useState(false);
+
+    const refresh = useCallback(() => setNotice(TokenNotices.noticeOf(instanceId)), [instanceId]);
+    useEffect(() => { refresh(); }, [refresh]);
+    useTokenEvent(BOARD_EVENTS.NOTICE_CHANGED, instanceId, refresh);
+
+    // Fade over its last moment, then read again (which finds it gone).
+    useEffect(() => {
+        setIsFading(false);
+        if (!notice) return undefined;
+        const left = Math.max(0, notice.remainingMs);
+        const fade = setTimeout(() => setIsFading(true), Math.max(0, left - NOTICE_FADE_MS));
+        const gone = setTimeout(refresh, left + 20);
+        return () => { clearTimeout(fade); clearTimeout(gone); };
+    }, [notice, refresh]);
+
+    return { notice, isFading };
+}
+
+/** The mark's own words for a notice. */
+const noticeAlertData = (notice) => notice ? {
+    severity: 'green',
+    type: notice.type,
+    title: notice.title,
+    message: notice.title,
+    rulesText: notice.rulesText
+} : null;
+
+/** A mark whose life is decided elsewhere (the engine, or a notice's clock). */
+function useStaticMark(alertData, { isFading = false, fadeMs, onDismiss } = {}) {
     const [isHovered, setIsHovered] = useState(false);
     const [iconRect, setIconRect] = useState(null);
     const iconRef = useRef(null);
-
-    useEffect(() => { setState(SpawnerSystem.spawnerAlertOf(instanceId)); }, [instanceId]);
-    useTokenEvent(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, instanceId, () => {
-        setState(SpawnerSystem.spawnerAlertOf(instanceId));
-    });
-
-    const alertData = spawnerAlertData(state);
-    if (!alertData) return null;
-
-    const alert = {
+    return {
         alertData,
         isHovered,
-        isFading: false,
+        isFading,
+        fadeMs,
         isDismissed: false,
         iconRect,
         iconRef,
-        dismiss: () => {},
+        dismiss: onDismiss || (() => {}),
         onMouseEnter: () => {
             if (iconRef.current) setIconRect(iconRef.current.getBoundingClientRect());
             setIsHovered(true);
         },
         onMouseLeave: () => setIsHovered(false)
     };
-    return (
-        <div data-spawner-alert={state.alert}>
-            <EventAlertMark alert={alert} />
-        </div>
-    );
+}
+
+/**
+ * ⭐ **The one mark at a Token's centre** (FB-8, FB-48, TL-14).
+ *
+ * Three sources, one place, one mark: a spawner's live problem
+ * (`SPAWNER_ALERT_CHANGED`), news of a problem (`TILE_EVENT_ALERT`), and a
+ * green notice (`TokenNotices`). `pickCentreAlert` decides, so a notice never
+ * covers a problem. A green `TILE_EVENT_ALERT` (a restock) is turned into a
+ * notice rather than drawn as news, so every green mark fades the same way.
+ *
+ * A live spawner problem cannot be clicked away — the problem is still there.
+ * Anything happening to the Token — it is replaced, it is picked up —
+ * dismisses the news, because the news is about the Token as it was.
+ */
+export const TokenCentreAlert = ({ instanceId, isSpawner = false }) => {
+    const event = useEventAlert();
+    const { activePayload } = useActiveDrag();
+    const { alertData, isDismissed, show, dismiss } = event;
+
+    const onEvent = useCallback((p) => {
+        const kind = alertKindOf(p);
+        if (kind === ALERT_KIND.SPOKEN) return;   // said by the hero (SB-2)
+        if (kind === ALERT_KIND.NOTICE) {
+            TokenNotices.raiseNotice(instanceId, {
+                type: p.type, title: p.title || p.message, rulesText: p.rulesText || null
+            });
+            return;
+        }
+        show(p);
+    }, [instanceId, show]);
+
+    useTokenEvent(BOARD_EVENTS.TILE_EVENT_ALERT, instanceId, onEvent);
+    useTokenEvent(BOARD_EVENTS.TILE_CHANGED, instanceId, dismiss);
+
+    // Picked up: the news goes with the Token leaving the spot.
+    useEffect(() => {
+        const dragged = activePayload?.from?.instanceId ?? null;
+        if (dragged && dragged === instanceId && alertData && !isDismissed) dismiss();
+    }, [activePayload, instanceId, alertData, isDismissed, dismiss]);
+
+    // A spawner's live problem (Token Lifecycle 8.3).
+    const [spawnerState, setSpawnerState] = useState(() => isSpawner ? SpawnerSystem.spawnerAlertOf(instanceId) : null);
+    useEffect(() => {
+        setSpawnerState(isSpawner ? SpawnerSystem.spawnerAlertOf(instanceId) : null);
+    }, [instanceId, isSpawner]);
+    useTokenEvent(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, instanceId, () => {
+        setSpawnerState(isSpawner ? SpawnerSystem.spawnerAlertOf(instanceId) : null);
+    });
+    const liveData = spawnerAlertData(spawnerState);
+    const live = useStaticMark(liveData);
+
+    const { notice, isFading: noticeFading } = useNotice(instanceId);
+    const noticeMark = useStaticMark(noticeAlertData(notice), {
+        isFading: noticeFading,
+        fadeMs: NOTICE_FADE_MS,
+        onDismiss: () => TokenNotices.clearNotice(instanceId)
+    });
+
+    const pick = pickCentreAlert({ live: liveData, event: alertData, notice });
+    if (pick === 'live') {
+        return (
+            <div data-spawner-alert={spawnerState.alert}>
+                <EventAlertMark alert={live} />
+            </div>
+        );
+    }
+    if (pick === 'event') return <EventAlertMark alert={event} />;
+    if (pick === 'notice') {
+        return (
+            <div data-token-notice={notice.type}>
+                <EventAlertMark alert={noticeMark} />
+            </div>
+        );
+    }
+    return null;
 };
+
+/** The centre mark for news alone — a Token that is not a spawner. */
+export const TokenEventAlert = ({ instanceId }) => <TokenCentreAlert instanceId={instanceId} />;
 
 export default TokenEventAlert;

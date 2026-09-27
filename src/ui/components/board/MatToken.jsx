@@ -21,11 +21,13 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { TokenProgressBar } from './TokenProgressBar.jsx';
-import { TokenEventAlert, SpawnerAlertMark } from './TokenEventAlert.jsx';
+import { TokenCentreAlert } from './TokenEventAlert.jsx';
 import { EffectProcText } from './EffectProcText.jsx';
 import {
-    TokenChargeBadge, TokenChargeDeltaFloater, TokenNameBadge, AddHeroBadge, StationGearBadge
+    TokenChargeBadge, TokenChargeDeltaFloater, TokenNameBadge, StationGearBadge,
+    DisallowBadge, SpawnerCountBadge
 } from './TokenBadges.jsx';
+import { gearStateOf, spawnerCountText } from './centreAlert.js';
 
 
 /** How long a Token takes to slide to a point the game moved it to (a push). */
@@ -67,7 +69,6 @@ export const MatToken = React.memo(function MatToken({
     hasHero = false,
     onInspectToken,
     onClearInspect,
-    onAutoAssignHero,
     onOpenRecipes,
     onRecallHero
 }) {
@@ -117,6 +118,7 @@ export const MatToken = React.memo(function MatToken({
             if (!instance) return null;
             // A Foundation picks its recipe like a station (Token Lifecycle 6.1).
             const stationSkill = def ? (def.foundation?.skill || stationSkillOf(def)) : null;
+            const isSpawner = !instance.turnedFrom && SpawnerSystem.isSpawner(def);
             return {
                 usesRemaining: instance.usesRemaining ?? null,
                 alert: instance.alert || null,
@@ -125,11 +127,12 @@ export const MatToken = React.memo(function MatToken({
                 stationSkill,
                 recipe: stationSkill ? StationRecipe.selectedRecipe(instance, def) : null,
                 // Something to choose from: a station with an empty pool is not
-                // waiting on the player, so it never says "Choose a recipe".
+                // waiting on the player, so it gets no gear (FB-7).
                 hasPool: stationSkill ? StationRecipe.poolFor(def).length > 0 : false,
                 isFoundation: !!def?.foundation,
-                isSpawner: !instance.turnedFrom && SpawnerSystem.isSpawner(def),
-                requiresHero: def ? (def.requiresHero !== false) : true
+                isSpawner,
+                // FB-5: the family's live count against its cap.
+                spawnerCount: isSpawner ? spawnerCountText(SpawnerSystem.spawnerCounts(id)) : null
             };
         },
         [
@@ -137,6 +140,7 @@ export const MatToken = React.memo(function MatToken({
             BOARD_EVENTS.ALERT_CHANGED,
             BOARD_EVENTS.HERO_MOVED,
             BOARD_EVENTS.TOKEN_CHARGES_CHANGED,
+            BOARD_EVENTS.TOKEN_PLACED,
             'state_changed'
         ],
         null,
@@ -259,6 +263,7 @@ export const MatToken = React.memo(function MatToken({
     };
 
     const glow = staffed && !alert ? 'gi-glow-active' : null;
+    const gear = gearStateOf(detail || {});
 
     return (
         <>
@@ -338,49 +343,24 @@ export const MatToken = React.memo(function MatToken({
 
                 <TokenChargeDeltaFloater instanceId={id} />
 
-                {detail?.stationSkill && (
+                {/* FB-7: the recipe gear, top-left, on every Token with something
+                    to choose. Nothing chosen: it pulses, and that is all — no
+                    alert (owner, after Q1). Heroes still pass it over. */}
+                {gear.show && (
                     <StationGearBadge
-                        isHovered={isHovered}
                         isDragging={hidden}
                         recipe={detail?.recipe}
+                        pulsing={gear.pulsing}
+                        isFoundation={!!detail?.isFoundation}
                         onClick={() => onOpenRecipes?.(id)}
                     />
                 )}
 
-                {/* A Foundation (Token Lifecycle 6.1) or a station (TL-15) with
-                    nothing picked says so, always: nobody works it until the
-                    player chooses. */}
-                {detail?.stationSkill && (detail?.isFoundation || detail?.hasPool) && !detail?.recipe && !hidden && (
-                    <button
-                        type="button"
-                        data-choose-build={detail?.isFoundation ? 'true' : undefined}
-                        data-choose-recipe={detail?.isFoundation ? undefined : 'true'}
-                        onClick={(e) => { e.stopPropagation(); onOpenRecipes?.(id); }}
-                        className="absolute left-1/2 -translate-x-1/2 top-1 z-30 pointer-events-auto whitespace-nowrap px-1.5 py-0.5 rounded bg-black/85 border border-gi-gold/60 text-gi-gold text-[10px] font-bold cursor-pointer hover:scale-105 transition-transform"
-                    >
-                        {detail?.isFoundation ? 'Choose what to build' : 'Choose a recipe'}
-                    </button>
-                )}
+                {/* FB-33: disallowed (FP-35), top-right, always shown. */}
+                {detail?.disallowed && <DisallowBadge isDragging={hidden} />}
 
-                {/* Disallowed (FP-35): a dim ⊘ in the bottom-left, always shown (FPP-8) */}
-                {detail?.disallowed && (
-                    <div
-                        data-tile-disallowed="true"
-                        aria-label="Heroes may not work this"
-                        className="absolute left-1.5 bottom-1 z-30 pointer-events-none select-none text-[26px] leading-none font-bold text-stone-200/55"
-                        style={{ textShadow: '0 1px 2px #000, 0 0 3px #000' }}
-                    >
-                        ⊘
-                    </div>
-                )}
-
-                {detail?.requiresHero !== false && !staffed && !detail?.disallowed && (
-                    <AddHeroBadge
-                        isHovered={isHovered}
-                        isDragging={hidden}
-                        onClick={() => onAutoAssignHero?.(id)}
-                    />
-                )}
+                {/* FB-5: a spawner's count against its cap. */}
+                {detail?.isSpawner && <SpawnerCountBadge text={detail?.spawnerCount} isDragging={hidden} />}
 
                 <TokenProgressBar
                     instanceId={id}
@@ -389,9 +369,9 @@ export const MatToken = React.memo(function MatToken({
                     alert={alert}
                 />
 
-                <TokenEventAlert instanceId={id} />
-                {/* A spawner waiting on the Bank or on room (Token Lifecycle 8.3). */}
-                {detail?.isSpawner && !hidden && <SpawnerAlertMark instanceId={id} />}
+                {/* FB-8 / TL-14: the one mark at the centre — a spawner's live
+                    problem, news of a problem, or a green notice that fades. */}
+                <TokenCentreAlert instanceId={id} isSpawner={!!detail?.isSpawner} />
                 <EffectProcText instanceId={id} />
             </div>
         </>

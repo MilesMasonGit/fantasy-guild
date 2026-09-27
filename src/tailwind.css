@@ -783,6 +783,21 @@
   animation: gi-hover-bob 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* The recipe gear on a station or Foundation with nothing chosen (FB-7):
+   a gentle breathe, not an alarm. */
+@keyframes gi-gear-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.14); filter: brightness(1.35) drop-shadow(0 0 4px rgba(251, 191, 36, 0.8)); }
+}
+
+.gi-gear-pulse {
+  animation: gi-gear-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-gear-pulse { animation: none; }
+}
+
 @keyframes gi-item-equipped-bob {
   0% {
     transform: translateY(0) scale(1);

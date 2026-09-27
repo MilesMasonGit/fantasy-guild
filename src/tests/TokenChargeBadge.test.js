@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import {
-    TokenChargeBadge, TokenNameBadge, AddHeroBadge, TokenChargeDeltaFloater
+    TokenChargeBadge, TokenNameBadge, TokenChargeDeltaFloater
 } from '../ui/components/board/TokenBadges.jsx';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -148,39 +148,4 @@ describe('TokenNameBadge', () => {
     });
 });
 
-describe('AddHeroBadge', () => {
-    it('is hidden (opacity-0) when not hovered', () => {
-        const { container } = render(
-            React.createElement(AddHeroBadge, { isHovered: false, isDragging: false, onClick: () => {} })
-        );
-        expect(container.firstChild.className).toContain('opacity-0');
-        expect(container.firstChild.className).toContain('pointer-events-none');
-    });
-
-    it('is visible (opacity-100) at bottom-left when hovered', () => {
-        const { container } = render(
-            React.createElement(AddHeroBadge, { isHovered: true, isDragging: false, onClick: () => {} })
-        );
-        expect(container.firstChild.className).toContain('opacity-100');
-        expect(container.firstChild.className).toContain('left-1.5');
-        expect(container.firstChild.className).toContain('bottom-1.5');
-        expect(screen.getByLabelText('Assign Hero')).toBeDefined();
-    });
-
-    it('fires onClick callback when clicked', () => {
-        const handleClick = vi.fn();
-        render(
-            React.createElement(AddHeroBadge, { isHovered: true, isDragging: false, onClick: handleClick })
-        );
-        const button = screen.getByLabelText('Assign Hero');
-        fireEvent.click(button);
-        expect(handleClick).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not render while dragging', () => {
-        const { container } = render(
-            React.createElement(AddHeroBadge, { isHovered: true, isDragging: true, onClick: () => {} })
-        );
-        expect(container.firstChild).toBeNull();
-    });
-});
+// AddHeroBadge (the green plus) was removed with FB-6; see CornerCentreBadges.test.js.

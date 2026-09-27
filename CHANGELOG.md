@@ -4,6 +4,13 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Corner and centre badges (Q2: FB-5, FB-6, FB-7, FB-8, FB-33, FB-48, TL-14).** The green plus on
+  workable Tokens is gone. A station or Foundation with something to choose shows the gear sprite in
+  its top-left corner; with nothing chosen the gear pulses gently and there is no red alert (heroes
+  still skip it); click the gear to choose. A disallowed Token shows the red disallow sprite top-right.
+  Alerts sit at the centre of the Token: problems (red, yellow) stay until fixed or read, while green
+  notices, such as a Token a spawner has just made or a restock, fade after about 10 seconds. A problem
+  always covers a notice. Spawners show their live count against their cap, for example 2/5.
 - **Spawned Tokens that grow can be moved (FB-12).** A Sapling (or a turning Coast) no longer grows
   or turns while you are dragging it, which used to swap it for a new Token mid-drag and lose the move.
   The change waits and happens where you put it down; its grow clock is kept.

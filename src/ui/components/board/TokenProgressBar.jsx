@@ -4,6 +4,10 @@ import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js
 import { cn } from '../../utils/cn.js';
 import { ALERT_HINT, ALERT_LABEL, alertFillClass, TOKEN_BAR_GAP_U } from './boardConstants.js';
 import { subscribeToken } from './tokenEvents.js';
+import { isGearOnlyAlert } from './centreAlert.js';
+
+/** An engine alert as the bar draws it: "nothing chosen" is the gear's to say (FB-7), not the bar's. */
+const barAlert = (alert) => (alert && !isGearOnlyAlert(alert) ? alert : null);
 
 /**
  * TokenProgressBar — zero-re-render cycle progress bar in the gap below a
@@ -43,7 +47,7 @@ export const TokenProgressBar = ({ instanceId = null, token = null, isHovered = 
     const containerRef = useRef(null);
     const fillRef = useRef(null);
     const labelRef = useRef(null);
-    const [eventAlert, setEventAlert] = useState(initialAlert || token?.alert || null);
+    const [eventAlert, setEventAlert] = useState(barAlert(initialAlert || token?.alert || null));
 
     const hasHero = !!token?.heroId;
 
@@ -58,7 +62,7 @@ export const TokenProgressBar = ({ instanceId = null, token = null, isHovered = 
     const effectiveAlert = useMemo(() => {
         if (!hasHero) return null;
         if (eventAlert) return eventAlert;
-        if (token?.alert) return token.alert;
+        if (barAlert(token?.alert)) return token.alert;
         if (missingReqs.type === 'tokens') return 'no_recipe';
         if (missingReqs.type === 'items') return 'inputs';
         return null;
@@ -234,8 +238,8 @@ export const TokenProgressBar = ({ instanceId = null, token = null, isHovered = 
         const unsubs = [
             subscribeToken(BOARD_EVENTS.PROGRESS, instanceId, apply),
             subscribeToken(BOARD_EVENTS.ALERT_CHANGED, instanceId, (p) => {
-                setEventAlert(p?.alert || null);
-                renderAlert(p?.alert);
+                setEventAlert(barAlert(p?.alert));
+                renderAlert(barAlert(p?.alert));
             }),
             subscribeToken(BOARD_EVENTS.CYCLE_COMPLETE, instanceId, onCycleComplete),
             subscribeToken(BOARD_EVENTS.TILE_CHANGED, instanceId, onTokenChanged)
