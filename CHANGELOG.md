@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The Shop has no inspect panel, and shows prices as item rows (Q7: FB-24, FB-26).** The Shop
+  drawer no longer opens an *Inspect* column beside it, and clicking a Token's picture opens nothing;
+  the Bank keeps its column. Each price line is now the standard item row used for costs elsewhere
+  (icon, name, *have/need*), red when the Bank and the floor hold too few. Buying is unchanged: the
+  Buy button, which names what is missing.
 - **No hero dock on the Guild Hall upgrade screen (Q7: FB-47).** The horizontal hero dock under the
   board is left out while the Guild Hall upgrades are open, and comes back on the playmat.
 - **Guild Hall upgrades show their art again (Q7: FB-40).** The Token art had moved into

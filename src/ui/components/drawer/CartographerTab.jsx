@@ -2,6 +2,7 @@ import { useCallback, useRef, useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import * as Shop from '../../../systems/board/Shop.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -14,11 +15,15 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
  * price, what the Bank holds against it, and a Buy button that names what is
  * missing (`Shop.js`). Header: placed Tokens against the mat cap (SP-67).
  *
+ * No inspect panel (Token Lifecycle feedback Q7, FB-24): the drawer shows the
+ * Shop on its own and a row's sprite opens nothing. Prices use the standard
+ * `EntityRibbon` item row, have / need, short in red (FB-26).
+ *
  * The old Map shop below it (Map cards, bursts, the Oak-Wood-priced Map
  * purchase) was deleted with the Map bursts (Token Lifecycle 9.1): a Map is an
  * ordinary Explore producer now, sold here like any other Token (slice 7.6).
  */
-export const CartographerTab = ({ onInspect }) => {
+export const CartographerTab = () => {
     const scrollRef = useRef(null);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
@@ -110,7 +115,6 @@ export const CartographerTab = ({ onInspect }) => {
                                 key={item.typeId}
                                 item={item}
                                 onBuy={() => buyToken(item.typeId, item.name)}
-                                onInspect={onInspect}
                             />
                         ))}
                     </section>
@@ -133,44 +137,49 @@ export const CartographerTab = ({ onInspect }) => {
 };
 
 /**
- * One Token for sale: sprite, name, price lines (have / need) and a Buy button
- * whose label says what is missing when it cannot be bought. Plain on purpose
- * (TL-4).
+ * One Token for sale: sprite, name and a Buy button whose label says what is
+ * missing when it cannot be bought, then one standard item row per price line
+ * (have / need). Plain on purpose (TL-4).
  */
-const ShopRow = ({ item, onBuy, onInspect }) => {
+export const ShopRow = ({ item, onBuy }) => {
     const ok = item.affordability.success;
     return (
-        <div data-shop-item={item.typeId} className="rounded-lg border border-gi-border/50 bg-gi-base/50 p-2 flex items-center gap-3">
-            <button
-                onClick={() => onInspect?.('token', item.typeId)}
-                className="w-12 h-12 shrink-0 flex items-center justify-center cursor-pointer"
-                title={item.name}
-            >
-                <TokenSprite typeId={item.typeId} surface={TOKEN_SURFACE.CATALOGUE} alt={item.name} />
-            </button>
-            <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-gi-text">{item.name}</div>
-                <div className="flex flex-wrap gap-x-3 text-[11px] tabular-nums">
+        <div data-shop-item={item.typeId} className="rounded-lg border border-gi-border/50 bg-gi-base/50 p-2 flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+                <div className="w-12 h-12 shrink-0 flex items-center justify-center" title={item.name}>
+                    <TokenSprite typeId={item.typeId} surface={TOKEN_SURFACE.CATALOGUE} alt={item.name} />
+                </div>
+                <div className="flex-1 min-w-0 text-sm font-bold text-gi-text">{item.name}</div>
+                <button
+                    onClick={onBuy}
+                    disabled={!ok}
+                    title={ok ? 'Buy' : item.affordability.reason}
+                    className={cn(
+                        'px-3 py-1 rounded-lg font-bold text-xs border shrink-0 max-w-[45%] text-right',
+                        ok
+                            ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-gold hover:bg-gi-gold/25 cursor-pointer'
+                            : 'border-gi-border/40 bg-black/20 text-gi-danger cursor-not-allowed'
+                    )}
+                >
+                    {ok ? 'Buy' : item.affordability.reason}
+                </button>
+            </div>
+            {item.price.length > 0 && (
+                <div data-shop-price className="flex flex-col gap-1">
                     {item.price.map(p => (
-                        <span key={p.itemId} className={p.enough ? 'text-gi-muted' : 'text-gi-danger'}>
-                            {p.name} {p.have}/{p.need}
-                        </span>
+                        <EntityRibbon
+                            key={p.itemId}
+                            kind="item"
+                            id={p.itemId}
+                            name={p.name}
+                            have={p.have}
+                            required={p.need}
+                            size="sm"
+                            variant="cost"
+                        />
                     ))}
                 </div>
-            </div>
-            <button
-                onClick={onBuy}
-                disabled={!ok}
-                title={ok ? 'Buy' : item.affordability.reason}
-                className={cn(
-                    'px-3 py-1 rounded-lg font-bold text-xs border shrink-0 max-w-[45%] text-right',
-                    ok
-                        ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-gold hover:bg-gi-gold/25 cursor-pointer'
-                        : 'border-gi-border/40 bg-black/20 text-gi-danger cursor-not-allowed'
-                )}
-            >
-                {ok ? 'Buy' : item.affordability.reason}
-            </button>
+            )}
         </div>
     );
 };

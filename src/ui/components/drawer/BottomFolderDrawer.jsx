@@ -37,14 +37,15 @@ import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js'
 // entry in step with its component's signature (CR2-166).
 const PANES = [
     {
-        key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab,
+        key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab, inspects: true,
         paneProps: ({ filter, searchQuery, onInspect, selId }) => ({ filter, searchQuery, onInspect, selectedItemId: selId })
     },
     // The one shop that is deliberately NOT on the board (D-98). The Map is
-    // still a Token, so only the transaction leaves the grid.
+    // still a Token, so only the transaction leaves the grid. No inspect
+    // column beside it (Token Lifecycle feedback Q7, FB-24).
     {
-        key: 'cartographer', label: 'Shop', icon: MapIcon, Component: CartographerTab,
-        paneProps: ({ onInspect }) => ({ onInspect })
+        key: 'cartographer', label: 'Shop', icon: MapIcon, Component: CartographerTab, inspects: false,
+        paneProps: () => ({})
     }
 ];
 
@@ -60,6 +61,7 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
     // already fills the drawer.
     const shownPanes = PANES.filter(p => drawer.panes.includes(p.key));
     const activeKey = shownPanes[0]?.key || null;
+    const showsInspect = !!shownPanes[0]?.inspects;
     const slideOffset = menuRight ? '100%' : '-100%';
 
     const handleInspect = (type, id, source = null) => inspect.set(type, id, source, activeKey);
@@ -115,15 +117,17 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
                         ...(menuRight ? { left: columnWidthCss(NOTIFICATION_COLUMN) } : { right: columnWidthCss(NOTIFICATION_COLUMN) })
                     }}
                 >
-                    <InspectionPanel
-                        selection={sidebarSelection}
-                        onInspect={handleInspect}
-                        onClear={() => inspect.clear(activeKey)}
-                        searchQuery={searchQuery}
-                        onSearchChange={setSearchQuery}
-                        activePane={activeKey}
-                        className="border-r border-gi-border/50"
-                    />
+                    {showsInspect && (
+                        <InspectionPanel
+                            selection={sidebarSelection}
+                            onInspect={handleInspect}
+                            onClear={() => inspect.clear(activeKey)}
+                            searchQuery={searchQuery}
+                            onSearchChange={setSearchQuery}
+                            activePane={activeKey}
+                            className="border-r border-gi-border/50"
+                        />
+                    )}
                     {shownPanes.map(({ key, label, icon: Icon, Component, paneProps }) => {
                         // Only the pane whose tiles match the selection type
                         // highlights it (each pane reads its own prop name).
