@@ -47,6 +47,8 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | FB-11 | 🔧 | A bright, glowy **transform** animation when work completes and a Token changes. |
 | FB-49 | 🔧 | *(added after Q4)* In combat the hero **idles until it attacks**, then plays the attack animation **once** per real attack (not a looping swing). |
 | FB-50 | 🔧 | *(added after Q4)* A hero stuck on a Token (the Token has an alert) plays **idle**, not the swing. |
+| FB-52 | 🔧 | *(added after Q5)* The Guild Hall hover becomes a game-styled **live** tooltip (trickle income with a ticking "next in"). |
+| FB-53 | 🔧 | *(added after Q5)* Guild Hall trickle payouts **drop as floating loot** beside the Hall, like any other item, instead of going straight into the Bank. |
 | FB-51 | 🔧 | *(added after Q4)* A Token that appears in another's place (`EffectActions.spawn` "here", e.g. a stump) gets the transform glow. |
 
 ### E. Token behaviour
@@ -190,6 +192,9 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | Combat knockback (after Q4) | **Only on real hits.** Owner: *"I'll want to update the animation cycle for combat to have the hero idling until they attack, where it will play the attack animation once."* → FB-49. |
 | Stuck hero (after Q4) | **The hero idles when stuck** (its Token has an alert), instead of swinging at nothing. → FB-50. |
 | Spawn glow (after Q4) | **Yes:** a Token that appears in another's place (e.g. a stump, via `EffectActions.spawn`) glows like a transform. → FB-51. |
+| Hall tooltip (after Q5) | **A styled live tooltip now** (game-styled like the flag tooltip, ticking "next in"), not the browser's plain title. → FB-52, slice Q5b. |
+| Trickle payouts (after Q5) | **Drop as floating loot like any other item** (collected on hover, TL-9), instead of going straight into the Bank. → FB-53, slice Q5b. |
+| Mid-flight Hall moves (after Q5) | Fine as is: an item lands where the Hall was when the flight started. |
 | FB-46 hero dock | The **owner describes the general idea first**, then the agent makes mockups. |
 | FB-39 Hall tree | **Mockups first**; the sprite bug (FB-40) is fixed earlier as a quick win. |
 
@@ -219,7 +224,8 @@ Each line is one small slice: built, tested, played and committed separately.
 | Q3 | **Layering** — ✅ done 2026-09-26 (flags sort with Tokens by y in one band; worked Tokens + their hero in a band above; the hovered Token frontmost; flags now sit under loot. Q2 follow-ups: exhausted / refused-drop alerts fade after 10 s; no spawn notices during time-bank replay. Director verified live: a flag above the Forest drew behind it (z 10 vs 16); a worked Oak Tree drew above the Token below it (37 vs 34). Tests: baseline 10) | FB-1 flags layer like other Tokens · FB-2 a worked Token and its hero on top |
 | Q4 | **Animations** — ✅ built 2026-09-26, ⭐ owner to watch them play (a hit = the hero's 1 s swing loop, synced to its strike frame 5 from one shared clock; combat knocks back on each real landed hit, ~2.5 s; table in `hitAnimations.js`; glow on every `transformInstance` via `TokenGlows.js`, skipped during catch-up. Verified by probes, not by eye: the agent's browser pane was hidden, so animations were confirmed running and timed but not watched. Tests: baseline 10) | FB-10 the ten hit animations · FB-11 transform glow |
 | Q5 | **Loot and the Hall** — ✅ done 2026-09-27 (loot aims at the Hall's on-screen art at collect time, falling back to the Bank bubble if the Hall is missing/carried/off-screen; flight size = floor size × mat scale; the Hall brightens briefly as loot lands; Hall hover title lists trickle income with "next in". Agent traced a real flight landing on the Hall's centre at a constant 64 px; director verified the hover text live. ⭐ Owner to watch the arc by eye. Tests: baseline 10) | FB-16 items fly to the Guild Hall · FB-17 full-size in flight · FB-30 trickle income on Hall hover |
-| Q6 | **Speech bubbles and hero animation** | FB-20 raise them · FB-21 drop everyday lines · FB-22 a list of every line for the owner's audit · FB-49 combat: idle, attack once per real attack · FB-50 stuck hero idles · FB-51 spawn-in-place glow |
+| Q5b | **Hall follow-ups** | FB-52 styled live Hall tooltip · FB-53 trickle payouts drop as loot |
+| Q6 | **Speech bubbles and hero animation** — ✅ done 2026-09-27 (bubble tail 2 u above the art at any scale; routine "Working at" and both unset-station lines dropped; catalogue [`speech_bubble_lines.md`](speech_bubble_lines.md) for the owner's audit; combat: idle, one attack play-through per real attack, knockback delayed 625 ms to the strike frame; stuck hero idles via the shared `strikesLive`; spawn-here glows (tests only: no shipped Token uses it). Agent measured all of it live; tests baseline 10) | FB-20 raise them · FB-21 drop everyday lines · FB-22 a list of every line for the owner's audit · FB-49 combat: idle, attack once per real attack · FB-50 stuck hero idles · FB-51 spawn-in-place glow |
 | Q7 | **Panels** | FB-36 QA panel fits the screen · FB-37 drop the banner slider · FB-40 Hall upgrade sprites · FB-47 no dock on the Hall upgrade page · FB-24 no Shop inspect panel · FB-26 Shop prices in the item-bar format |
 | Q8 | **Chance transforms** | FB-14 countdown · FB-15 / TL-12 engine + CMS field, then the Coast through the CMS |
 | Q9 | **Pacing first pass** | FB-19 through the CMS (content-only commit) |
