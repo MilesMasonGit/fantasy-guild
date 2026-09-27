@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A fifth tempo, Quick (TL-21).** Tokens and recipes can now be tagged *Quick*: 2–6 s at
+  level 1, scaling with level by the same rule as the other four. It sits first in the CMS's Tempo
+  buttons and Progression dropdowns, and the simulator's passes accept it. The other four bands are
+  unchanged, so a cycle between 6 s and 8 s at level 1 belongs to no band.
 - **Self-transforming Tokens roll a chance, and show a countdown (Q8: FB-14, FB-15, TL-12).** A
   Token with a *Turns* block no longer turns on a fixed timer: once per cycle it rolls its chance,
   and the Token it became rolls the same cycle and chance to turn back (defaults 1 min and 30%, so a

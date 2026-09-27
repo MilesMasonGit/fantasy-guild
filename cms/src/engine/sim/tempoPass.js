@@ -114,7 +114,7 @@ export function runTempoPass(entities) {
                 `${entity.name} produces but has no Tempo/Purpose tags — untagged, outside the economy pass.`,
                 {
                     entityId: entity.id,
-                    remedies: ['Tag it with a Tempo (fast/medium/slow/heavy) and a Purpose (gph/iph/xph).'],
+                    remedies: ['Tag it with a Tempo (quick/fast/medium/slow/heavy) and a Purpose (gph/iph/xph).'],
                     detail: { tempo: entity.tempo, purpose: entity.purpose },
                 }
             ));
@@ -144,14 +144,14 @@ export function runTempoPass(entities) {
 
         const cycleTimeMs = bandMiddleMs(entity.tempo, entity.level);
         if (!Number.isFinite(cycleTimeMs) || cycleTimeMs <= 0) {
-            // A tempo outside the four names. `bandFor` returns null rather
+            // A tempo outside the five names. `bandFor` returns null rather
             // than guessing, so this is a mistyped tag, not a missing one.
             skipped.set(entity.id, 'untagged');
             rows.push(makeRow(
                 SEVERITY.INFO,
                 'unknown-tempo',
-                `${entity.name} is tagged tempo "${entity.tempo}", which is not one of fast/medium/slow/heavy.`,
-                { entityId: entity.id, remedies: ['Re-tag it with one of the four tempos.'] }
+                `${entity.name} is tagged tempo "${entity.tempo}", which is not one of quick/fast/medium/slow/heavy.`,
+                { entityId: entity.id, remedies: ['Re-tag it with one of the five tempos.'] }
             ));
             continue;
         }

@@ -226,7 +226,7 @@ export {
   blankRestriction,
 } from '../../../src/config/registries/restrictionPalette.js';
 
-// The four tempos and their cycle-time bands (economic simulator rework P2,
+// The five tempos and their cycle-time bands (economic simulator rework P2,
 // plan §13.3). Same one-direction rule as everything else here: the game
 // declares the vocabulary, the CMS offers it. ⚠️ Nothing acts on a tempo yet —
 // P3 and P4 build the passes that will read it. Today these only fill the
@@ -298,7 +298,7 @@ export const EQUIP_SLOTS = EQUIP_CATEGORIES.map((c) => c.id);
 // content only uses values these lists declare.
 export const TOKEN_TYPES = [...GAME_TOKEN_TYPES];
 export const TOKEN_RARITIES = [...GAME_TOKEN_RARITIES];
-// The four tempos and their cycle-time bands (economic simulator rework P2,
+// The five tempos and their cycle-time bands (economic simulator rework P2,
 // plan §13.3). Same one-direction rule as the vocabularies above: the game
 // declares it, the CMS offers it.
 //

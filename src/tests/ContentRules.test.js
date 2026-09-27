@@ -409,6 +409,14 @@ describe('Rule 4 — cycle times stay in their band', () => {
             expect(check(fixture('heavy', 20000, 1))).toBe(false);
         });
 
+        it('accepts a Quick Token at level 1 running 3s (TL-21), where the flat 10–30s rule would not', () => {
+            expect(isTempo('quick')).toBe(true);
+            expect(check(fixture('quick', 3000, 1))).toBe(true);
+            expect(check(fixture('quick', 3000, undefined))).toBe(true);   // no level = level 1
+            expect(check(fixture('quick', 10000, 1))).toBe(false);         // too slow for Quick
+            expect(check(fixture('quick', 1500, 1))).toBe(false);          // too quick even for Quick
+        });
+
         it('falls back to the untagged rule when the tempo is not a real one', () => {
             expect(isTempo('brisk')).toBe(false);
         });

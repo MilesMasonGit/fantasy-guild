@@ -21,8 +21,8 @@ const secs = (tempo, level) => {
 };
 
 describe('the tempo vocabulary', () => {
-    it('is exactly four names, in band order', () => {
-        expect(TEMPO_NAMES).toEqual(['fast', 'medium', 'slow', 'heavy']);
+    it('is exactly five names, in band order (Quick added by TL-21)', () => {
+        expect(TEMPO_NAMES).toEqual(['quick', 'fast', 'medium', 'slow', 'heavy']);
     });
 
     it('recognises its own names and nothing else', () => {
@@ -74,7 +74,7 @@ describe('scaling', () => {
     });
 });
 
-describe('the bands stay ordered Fast < Medium < Slow < Heavy', () => {
+describe('the bands stay ordered Quick < Fast < Medium < Slow < Heavy', () => {
     // Not just at level 1: a scaling bug that multiplied one row differently
     // would only show up further up the ladder.
     it.each([1, 5, 20, 40, 70, 90, 120])('at level %i', (level) => {
@@ -82,9 +82,56 @@ describe('the bands stay ordered Fast < Medium < Slow < Heavy', () => {
         for (let i = 1; i < bands.length; i++) {
             expect(bands[i].minMs).toBeGreaterThan(bands[i - 1].minMs);
             expect(bands[i].maxMs).toBeGreaterThan(bands[i - 1].maxMs);
-            // Contiguous: each band starts where the one before it ends.
+        }
+    });
+
+    it.each([1, 5, 20, 40, 70, 90, 120])('Fast to Heavy are contiguous at level %i', (level) => {
+        // Each band starts where the one before it ends — from Fast upward.
+        const names = TEMPO_NAMES.filter((t) => t !== 'quick');
+        const bands = names.map((t) => bandFor(t, level));
+        for (let i = 1; i < bands.length; i++) {
             expect(bands[i].minMs).toBe(bands[i - 1].maxMs);
         }
+    });
+
+    it('⚠️ leaves a gap between Quick and Fast: 6–8s at level 1 is in no band (TL-21 as given)', () => {
+        // TL-21 set Quick at 2–6s and left Fast at 8–12s. A cycle strictly
+        // between the two belongs to neither. Pinned so that closing (or
+        // widening) the gap is a decision someone makes, not a drift.
+        expect(bandFor('quick', 1).maxMs).toBe(6000);
+        expect(bandFor('fast', 1).minMs).toBe(8000);
+        for (const ms of [6001, 7000, 7999]) {
+            expect(TEMPO_NAMES.some((t) => isInBand(ms, t, 1))).toBe(false);
+        }
+    });
+});
+
+describe('Quick (TL-21)', () => {
+    it('is 2–6s at level 1, exactly', () => {
+        expect(TEMPO_BANDS.quick).toEqual({ minMs: 2000, maxMs: 6000, topIsSoft: false });
+        expect(bandFor('quick', 1)).toEqual({ minMs: 2000, maxMs: 6000, topIsSoft: false });
+    });
+
+    it('scales with level by the same rule as every other band', () => {
+        for (const level of [1, 2, 36, 40, 71, 90]) {
+            const b = bandFor('quick', level);
+            expect(b.minMs).toBe(Math.round(2000 * levelScale(level)));
+            expect(b.maxMs).toBe(Math.round(6000 * levelScale(level)));
+        }
+        expect(secs('quick', 71)).toEqual([4, 12]);   // factor 2 exactly
+    });
+
+    it('takes the Q9 pacing numbers: 3s gathering and 6s processing are Quick at level 1', () => {
+        expect(isInBand(3000, 'quick', 1)).toBe(true);
+        expect(isInBand(6000, 'quick', 1)).toBe(true);    // top edge, inclusive
+        expect(isInBand(6000, 'quick', 2)).toBe(true);    // a level-2 recipe (Copper Pickaxe)
+        expect(isInBand(1999, 'quick', 1)).toBe(false);
+        expect(isInBand(8000, 'quick', 1)).toBe(false);   // that is Fast
+    });
+
+    it('has a closed top, like every band but Heavy', () => {
+        expect(bandFor('quick', 1).topIsSoft).toBe(false);
+        expect(isInBand(600000, 'quick', 1)).toBe(false);
     });
 });
 
@@ -128,7 +175,7 @@ describe('isInBand', () => {
     it('leaves Heavy\'s top open and every other top closed', () => {
         expect(bandFor('heavy', 1).topIsSoft).toBe(true);
         expect(isInBand(600000, 'heavy', 1)).toBe(true);
-        for (const tempo of ['fast', 'medium', 'slow']) {
+        for (const tempo of ['quick', 'fast', 'medium', 'slow']) {
             expect(bandFor(tempo, 1).topIsSoft).toBe(false);
             expect(isInBand(600000, tempo, 1)).toBe(false);
         }

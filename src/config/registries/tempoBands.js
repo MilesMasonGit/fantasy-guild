@@ -1,11 +1,11 @@
 /**
- * Tempo — the four speeds a producing Token or recipe is allowed to run at.
+ * Tempo — the five speeds a producing Token or recipe is allowed to run at.
  *
  * Added 2026-08-28 for the economic simulator rework (phase P2). This module is
  * **vocabulary and arithmetic only**. Nothing reads a Token's tempo yet: the
  * passes that will place cycle times inside these bands are P3 and P4, and the
  * CMS write-back that will act on them is P5. What exists today is the table,
- * so that the CMS can offer the four names and `ContentRules` can check a
+ * so that the CMS can offer the tempo names and `ContentRules` can check a
  * Token that has been given one.
  *
  * It lives game-side rather than in `cms/` for the same reason `tokenConstants`
@@ -17,6 +17,7 @@
  *
  * | Tempo  | Level 1  | Level 40 | Level 90 |
  * | :----- | :------- | :------- | :------- |
+ * | Quick  | 2–6s     | 3–9s     | 5–14s    |
  * | Fast   | 8–12s    | 12–19s   | 18–28s   |
  * | Medium | 12–20s   | 19–31s   | 27–46s   |
  * | Slow   | 20–30s   | 31–47s   | 46–69s   |
@@ -24,6 +25,14 @@
  *
  * ⚠️ **Those are three views of one rule, not three tables.** The level-1
  * column is the base band; every other column is that base scaled by level.
+ *
+ * ## Quick (TL-21, token lifecycle feedback, 2026-09-27)
+ *
+ * The plan's table had four rows. **Quick, 2–6s at level 1,** was added for
+ * early gathering and simple processing, whose ~3s target sat below Fast's
+ * 8s floor. It scales by exactly the same rule as the other four — no
+ * special case. Its level-40 and level-90 cells above are that rule's output,
+ * not printed plan numbers.
  *
  * ## ⚠️ The scaling rule is `1 + (level - 1)/70`, not the plan's `1 + level/70`
  *
@@ -48,11 +57,17 @@
  * `EconSimTempo.test.js` re-runs the whole reconciliation, which is what would
  * catch someone later replacing the scaling with a second mechanism.
  *
- * ## Why the bands are contiguous
+ * ## Why Fast to Heavy are contiguous, and Quick is not
  *
  * Fast's top is Medium's floor, Medium's top is Slow's floor, and so on. A
- * cycle time therefore always falls in exactly one band (bar the shared
- * endpoints, which are inclusive on both sides — see `isInBand`).
+ * cycle time from Fast's floor up therefore always falls in exactly one band
+ * (bar the shared endpoints, which are inclusive on both sides — see
+ * `isInBand`).
+ *
+ * ⚠️ **Quick stops at 6s and Fast starts at 8s**, so at level 1 a cycle
+ * strictly between 6s and 8s sits in no band. That gap is the owner's TL-21
+ * numbers as given, not an oversight; `EconSimTempo.test.js` pins it so a
+ * change to either edge is a decision, not a drift.
  *
  * ## ⚠️ Heavy has no hard top
  *
@@ -69,11 +84,11 @@
  */
 
 /**
- * The four tempos, **ordered slowest-growing to slowest** — Fast < Medium <
+ * The five tempos, **ordered fastest to slowest** — Quick < Fast < Medium <
  * Slow < Heavy. The order is load-bearing: it is the order the bands stack in,
- * and UI that offers the four names should offer them this way round.
+ * and UI that offers the names should offer them this way round.
  */
-export const TEMPO_NAMES = Object.freeze(['fast', 'medium', 'slow', 'heavy']);
+export const TEMPO_NAMES = Object.freeze(['quick', 'fast', 'medium', 'slow', 'heavy']);
 
 /**
  * The divisor in the scaling rule `1 + (level - 1)/70` (plan §13.3, with the
@@ -89,13 +104,14 @@ export const LEVEL_SCALE_DIVISOR = 70;
  * mechanism this file exists to prevent.
  */
 export const TEMPO_BANDS = Object.freeze({
+    quick: Object.freeze({ minMs: 2000, maxMs: 6000, topIsSoft: false }),   // TL-21
     fast: Object.freeze({ minMs: 8000, maxMs: 12000, topIsSoft: false }),
     medium: Object.freeze({ minMs: 12000, maxMs: 20000, topIsSoft: false }),
     slow: Object.freeze({ minMs: 20000, maxMs: 30000, topIsSoft: false }),
     heavy: Object.freeze({ minMs: 30000, maxMs: 120000, topIsSoft: true }),
 });
 
-/** Is `value` one of the four tempo names? */
+/** Is `value` one of the five tempo names? */
 export function isTempo(value) {
     return TEMPO_NAMES.includes(value);
 }
@@ -121,7 +137,7 @@ export function levelScale(level) {
  * The cycle-time band for `tempo` at `level`, in milliseconds, rounded to the
  * nearest millisecond.
  *
- * Returns `null` for a tempo that is not one of the four — callers decide
+ * Returns `null` for a tempo that is not one of the five — callers decide
  * whether an untagged or mistyped record is an error or simply not their
  * business. `topIsSoft` is carried through so a caller can tell a real ceiling
  * from Heavy's advisory one.
@@ -140,7 +156,7 @@ export function bandFor(tempo, level = 1) {
 /**
  * Does `cycleMs` sit inside `tempo`'s band at `level`?
  *
- * **Endpoints are inclusive at both ends.** The bands are contiguous, so a
+ * **Endpoints are inclusive at both ends.** Fast to Heavy are contiguous, so a
  * cycle time exactly on a shared boundary — 12000ms at level 1, say — is in
  * *both* Fast and Medium. That is deliberate: this answers "is this a
  * defensible Fast Token?", not "which single band owns this number?", and a
