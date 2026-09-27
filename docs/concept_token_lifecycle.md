@@ -471,7 +471,11 @@ Per-skill open questions are listed under each skill in §5.
 
 ## 7. What this changes in existing plans
 
-None of these has been edited; each needs the owner's decision first.
+✅ **Carried out by the implementation (2026-09-26):** see
+[`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md) §8, slices 9.1–9.4 and 7.0–7.7.
+Map bursts, the Vault, the Tray and Managers are gone; the free-playmat roadmap carries a
+superseded banner. Tool Tokens remain (tools-as-equipment, SP-53, is later work). The table below
+is kept as the record of what was planned.
 
 | Existing item | Effect |
 |---|---|
