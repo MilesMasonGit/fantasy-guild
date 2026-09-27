@@ -230,6 +230,10 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 | B7 range | Enemies **potter within about one Token's width** of their spawner (like idle heroes by a flag); a hostile one **attacks heroes inside the live flag radius** of its spawner. Both in the Mat Tuner. |
 | B9 Hall layout | **The Hall in the centre, a web of upgrades spreading out from it**, joined by lines; the Effects list on the left (FB-38). Nodes placed freely, not on squares. → TL-23. |
 | B9 web unlock | An upgrade opens when **any upgrade linked to it is bought** (or it links straight to the Hall). Links set in code now, CMS later. → TL-23. |
+| B10 idea (owner's description) | Heroes shown **full size and idling** in the dock, **probably just the top half**; **name and health bar above their heads**; heroes out on the mat are **darkened and lowered**. |
+| B10 frame | **A dark strip, no ledge.** A deployed hero's art is darkened and lowered, but its **name and health bar stay at the same height** (they don't sink). |
+| B10 actions | **Hover lifts** the hero a little; click / double-click / drag onto the mat **as today**. The hero and its name / HP bar **may overlap the playmat** above the dock. |
+| B10 Bank dock | The vertical hero panel beside the Bank is **left as it is** for now. |
 | B1 alert labels | The progress bar's red/yellow labels (Need Items, Wrong Skill, Level Too Low…) **become the centre alert mark** (TL-14), with the same hint and missing-requirements list on hover. The cycle ring greys out while blocked. |
 
 ## 3. New decisions
