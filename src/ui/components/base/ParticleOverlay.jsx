@@ -5,6 +5,7 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { GameState } from '../../../state/GameState.js';
+import { lootFlightTarget, lootSpriteScreenPx } from '../../utils/lootFlight.js';
 
 /** Gap between staggered particles from one collection burst. */
 const STAGGER_RESET_MS = 250;
@@ -150,8 +151,10 @@ class ParticleSystem {
     /**
      * One collected sprite, flying from where it lay to where it went (D-236).
      *
-     * Items land on the **Bank** bubble (D-232), so the particle teaches the
-     * routing rather than just decorating it. (Tokens flew to the Token Vault
+     * Items land on the **Guild Hall Token on the mat** (FB-16, Q5; the Bank
+     * bubble before, D-232), found live by `lootFlightTarget` so a dragged
+     * Hall is followed; the Bank bubble is the fallback when the Hall is not
+     * on screen. Items fly at the size they lay on the floor (FB-17). (Tokens flew to the Token Vault
      * bubble until Token loot and the Vault retired, Token Lifecycle 9.3.)
      *
      * ⚠️ **The stagger is global, not per-call.** The old `spawnFlyingItems`
@@ -172,7 +175,6 @@ class ParticleSystem {
 
         if (kind === 'token') return;
         const isHero = kind === 'hero' || destination === 'dock' || destination === 'cursor';
-        const target = isHero ? 'dock' : 'bank-bubble-target';
 
         // Items resolve through the item registry; Heroes have their own
         let template;
@@ -205,6 +207,7 @@ class ParticleSystem {
         }
 
         let toRect;
+        let landsOn = null;
         if (toScreenX != null && toScreenY != null) {
             toRect = {
                 left: toScreenX,
@@ -214,8 +217,12 @@ class ParticleSystem {
                 right: toScreenX,
                 bottom: toScreenY
             };
+        } else if (isHero) {
+            toRect = this._getRect({ target: 'dock', heroId: actualRefId });
         } else {
-            toRect = this._getRect(isHero ? { target: 'dock', heroId: actualRefId } : target);
+            const landing = lootFlightTarget(document);
+            toRect = landing?.rect;
+            landsOn = landing?.target ?? null;
         }
         if (!fromRect || !toRect) return;
         if (!this._isRectInViewport(fromRect)) return;
@@ -243,6 +250,9 @@ class ParticleSystem {
             spriteKey: template.id,
             mode: 'gain',
             destination,
+            landsOn,
+            // FB-17: an item keeps its floor size in flight; a hero keeps 32.
+            size: isHero ? 32 : this._floorItemPx(),
             trayX,
             trayY,
             instanceId,
@@ -299,6 +309,13 @@ class ParticleSystem {
             if (byQuest) return byQuest.getBoundingClientRect();
         }
         return document.querySelector(`[data-card-id="${source}"]`)?.getBoundingClientRect();
+    }
+
+    /** An item's on-screen floor size, from the mat's live fit (`data-board-scale`). */
+    _floorItemPx() {
+        const board = document.querySelector('[data-board-origin]');
+        const fit = Number(board?.getAttribute?.('data-board-scale'));
+        return lootSpriteScreenPx(fit > 0 ? fit : 1);
     }
 
     _isRectInViewport(rect) {
@@ -367,6 +384,11 @@ class ParticleSystem {
                     itemId: p.itemId,
                     mode: p.mode,
                     destination: p.destination,
+                    landsOn: p.landsOn,
+                    // Where it landed and how big it was, in screen px (probes).
+                    x: p.path.endX,
+                    y: p.path.endY,
+                    size: p.size,
                     trayX: p.trayX,
                     trayY: p.trayY,
                     instanceId: p.instanceId
@@ -454,10 +476,13 @@ class ParticleSystem {
             ctx.globalCompositeOperation = 'source-over';
             ctx.globalAlpha = 1.0;
             const sprite = this.spriteCache.get(p.spriteKey);
+            const size = p.size || 32;
             if (sprite && sprite.loaded) {
-                ctx.drawImage(sprite.img, p.x - 16, p.y - 16, 32, 32);
+                // Whole-multiple pixel art: no smoothing, or 2x art blurs.
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(sprite.img, p.x - size / 2, p.y - size / 2, size, size);
             } else {
-                ctx.font = '24px sans-serif';
+                ctx.font = `${Math.round(size * 0.75)}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(p.icon, p.x, p.y);

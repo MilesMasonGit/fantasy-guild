@@ -4,7 +4,8 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z } from './matLayers.js';
-import { PixelArt, boardScaleAt } from '../base/TokenSprite.jsx';
+import { PixelArt } from '../base/TokenSprite.jsx';
+import { lootSpriteMatPx } from '../../utils/lootFlight.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
@@ -24,7 +25,7 @@ import { useMatFit } from './MatFitContext.jsx';
  * ## The gestures (UI §6, D-88, TL-9)
  * | Gesture | Result |
  * | :-- | :-- |
- * | Hover an item | Collected on the way in — goes to the **Bank** |
+ * | Hover an item | Collected on the way in — banked, and flies to the **Guild Hall** (FB-16) |
  * | Click it | Same as hovering |
  *
  * ⭐ **Items only** since Token Lifecycle 9.3. Token loot (drag it onto the mat,
@@ -60,9 +61,6 @@ export const SpriteLayerView = () => {
     );
 };
 
-/** Items come from a 32px source and render 2x (64px) on the floor. */
-const FLOOR_ITEM_PX = 64;
-
 /**
  * Whether a drag is in flight anywhere.
  *
@@ -96,7 +94,6 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
     const [isAbsorbingPulse, setIsAbsorbingPulse] = React.useState(false);
     const elementRef = React.useRef(null);
     const fit = useMatFit();
-    const artScale = boardScaleAt(fit);
 
     React.useEffect(() => {
         if (!justThrown(sprite)) return;
@@ -138,7 +135,9 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
 
     const art = resolveSpritePath(getItem(sprite.refId) || sprite.refId);
     const label = getItem(sprite.refId)?.name || sprite.refId;
-    const spriteSize = FLOOR_ITEM_PX * (artScale / 2);
+    // Items come from 32px art and render at half a Token's board scale; the
+    // flight to the Hall draws at this same on-screen size (FB-17).
+    const spriteSize = lootSpriteMatPx(fit);
 
     const handlePointerMove = () => {
         if (!elementRef.current) return;
