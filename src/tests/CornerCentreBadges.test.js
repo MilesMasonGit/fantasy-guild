@@ -26,7 +26,8 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenCentreAlert } from '../ui/components/board/TokenEventAlert.jsx';
 import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
-import { StationGearBadge, DisallowBadge, SpawnerCountBadge } from '../ui/components/board/TokenBadges.jsx';
+import * as TokenBadges from '../ui/components/board/TokenBadges.jsx';
+import { StationGearBadge, DisallowBadge } from '../ui/components/board/TokenBadges.jsx';
 import {
     ALERT_KIND, alertKindOf, alertFades, pickCentreAlert, spawnerCountText, gearStateOf, isGearOnlyAlert
 } from '../ui/components/board/centreAlert.js';
@@ -50,7 +51,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * * FB-33: a disallowed Token shows the red disallow sprite top-right.
  * * FB-8 / TL-14: alerts at the centre; problems stay, green notices fade.
  * * FB-48: a freshly spawned Token shows a green notice for ~10 s.
- * * FB-5: a spawner shows its live count against its cap.
+ * * FB-5: a spawner shows its live count against its cap — since B1.3 as a
+ *   green ring in the row under it (TL-22), not a corner badge.
  */
 
 registerItems({
@@ -403,14 +405,12 @@ describe('the badges on their own', () => {
         expect(set.querySelector('button').className).not.toContain('gi-gear-pulse');
     });
 
-    it('disallow and count badges render, and hide while dragging', () => {
+    it('disallow badge renders, and hides while dragging; the corner count badges are gone (B1.3)', () => {
         expect(mount(h(DisallowBadge, { isDragging: false })).container.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_disallow_red.png');
         cleanup();
         expect(mount(h(DisallowBadge, { isDragging: true })).container.querySelector('[data-tile-disallowed]')).toBeNull();
-        cleanup();
-        expect(mount(h(SpawnerCountBadge, { text: '2/5', isDragging: false })).container.querySelector('[data-spawner-count]').textContent).toBe('2/5');
-        cleanup();
-        expect(mount(h(SpawnerCountBadge, { text: null, isDragging: false })).container.querySelector('[data-spawner-count]')).toBeNull();
+        expect(TokenBadges.SpawnerCountBadge).toBeUndefined();
+        expect(TokenBadges.TurnCountdownBadge).toBeUndefined();
     });
 });
 
@@ -483,12 +483,16 @@ describe('on the mat', () => {
         expect(overlay(container, empty.id).querySelector('[data-station-gear]')).toBeNull();
     });
 
-    it('FB-5: a spawner shows its count against its cap', () => {
+    it('FB-5 / B1.3: a spawner shows its count against its cap as a ring in its row, not in a corner', () => {
         const forest = put('fixture_q2_forest');
         put('fixture_q2_sapling', FAR);
         put('fixture_q2_sapling', { x: 1400, y: 300 });
         const { container } = mount(h(MatBoard));
-        expect(overlay(container, forest.id).querySelector('[data-spawner-count]').textContent).toBe('2/5');
+        const o = overlay(container, forest.id);
+        const ring = o.querySelector('[data-ring-row] [data-ring="spawner"]');
+        expect(ring.getAttribute('data-ring-text')).toBe('2/5');
+        expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(0.4, 3);
+        expect(o.querySelector('[data-spawner-count]')).toBeNull();
     });
 
     it('FB-8: a spawner that needs an item says so at its centre, and it stays', () => {

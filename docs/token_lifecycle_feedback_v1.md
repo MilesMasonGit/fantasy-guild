@@ -6,7 +6,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 (TL-1…TL-11, §2) stand unless a TL- decision below replaces them.*
 
 **Status: quick wins Q1–Q9 (plus Q5b) ALL DONE and merged 2026-09-27. Larger reworks B1–B10 (§4.2) wait for later agents. Open owner questions: §5.**
-**B1 (ring badges) in progress from 2026-09-27:** owner answers in §2 (B1 rows), decision TL-22, slices in §4.2 under B1.
+**B1 (ring badges) DONE 2026-09-27, slices B1.1–B1.3 merged; ⭐ owner to look by eye (ring size, row in front of the hero, hover bubble height):** owner answers in §2 (B1 rows), decision TL-22, slices in §4.2 under B1.
 
 **Kinds:** 🐞 bug · 🔢 number tweak · 🔧 small change (a session or less) · 🏗️ larger rework
 (needs a brief and its own agent).
@@ -258,7 +258,7 @@ mockup of the row before building.
 |---|---|---|
 | B1.1 | **Centre alerts**: a worked Token's problems become the centre mark (TL-14) with the hint and missing list on Token hover; the bar stops drawing alerts | ✅ 2026-09-27. Director verified live on a Furnace (slot 3): one Copper Ingot cycle with the bar, then ore ran out → yellow centre mark, bar hidden; Token hover shows "Need Items", the hint and "Copper Ore" in a 220 px bubble. Director fixed two things found live: the missing list read MatToken's slim token (no `selectedRecipeId`), so a station's inputs were never listed (the old bar had the same flaw), and the bubble was one 552 px line. A gear-only alert (nothing chosen) now draws nothing at all. Tests: baseline 10 |
 | B1.2 | **Ring row**: ring badge + row centred under the pair; cycle (seconds left), charges, enemy HP; delete the bar and the hover charge chip | ✅ 2026-09-27. `RingBadge.jsx`, `TokenBadgeRow.jsx`, `ringRow.js`; rings 42 mat units (≈21 px at the default zoom); `TokenProgressBar.jsx` and `TokenChargeBadge` deleted; the −1 floater sits above the charges ring (corner when there is none); counts ≥ 1000 shortened (`1.2k`). Director verified live (slot 3): Oak Tree with the hero on its right — cycle `3s→2s→1s` filling, charges `5→4` emptying, row centre 413 px vs the pair's midpoint 414 px; Cow in combat — HP ring only, `32→0→32`; blocked Furnace — grey cycle ring, no number, no charges ring (unlimited), yellow centre mark; unworked Copper Vein — charges ring on hover only. Tests: baseline 10. ⭐ Owner to look by eye: ring size, and the row in front of the hero |
-| B1.3 | **Standing rings**: spawner `n/cap` and turn countdown move from the corner into the row | — |
+| B1.3 | **Standing rings**: spawner `n/cap` and turn countdown move from the corner into the row | ✅ 2026-09-27. `TurnRing.jsx` polls the roll clock itself (only it re-renders); the interval comes from `TimedChanges.turnTimingOf` (the original's numbers on a turned Token, TL-12); corner `SpawnerCountBadge` / `TurnCountdownBadge` deleted; probes read `[data-ring="spawner"]` / `[data-ring="turn"]`. Director verified live (slot 3), no hero, no hover: Oak Forest green ring `0/5`, centred under the Forest, going `1/5` when a sapling spawned; Coast sky ring `1:00→0:55`, emptying (0.988→0.900); no corner badges left. Tests: baseline 10 |
 
 **B2 Top bar (2nd).** FB-28, FB-29, FB-31, FB-32. A thin bar above the playmat: Upkeep as a
 hoverable badge (moves 8.2's Upkeep Summary out of the Item Bank), the Token cap with a hover

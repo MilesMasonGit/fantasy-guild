@@ -101,14 +101,14 @@ export function pickCentreAlert({ live = null, event = null, notice = null } = {
     return null;
 }
 
-/** A spawner's live count against its cap, as drawn on its badge (FB-5). */
+/** A spawner's live count against its cap, as drawn in its ring (FB-5, B1.3). */
 export function spawnerCountText(counts) {
     if (!counts || !Number.isFinite(counts.count) || !Number.isFinite(counts.cap)) return null;
     return `${counts.count}/${counts.cap}`;
 }
 
 /**
- * Time to a turning Token's next roll as drawn on its badge (FB-14, TL-12):
+ * Time to a turning Token's next roll as drawn in its ring (FB-14, TL-12, B1.3):
  * `m:ss`, rounded UP to the second so it never reads `0:00` while time is left.
  * Null when there is nothing to count.
  */

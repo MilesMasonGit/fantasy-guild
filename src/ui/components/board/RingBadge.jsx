@@ -37,7 +37,8 @@ const fontFor = (text) => {
     const n = String(text ?? '').length;
     if (n <= 2) return 15;
     if (n === 3) return 12.5;
-    return 10.5;
+    if (n === 4) return 10.5;
+    return 9;   // a spawner's `10/10` (B1.3)
 };
 
 /**

@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Spawner count and turn countdown become rings (B1.3, FB-5, FB-14).** A spawner's `3/5` is a
+  green ring that fills to its cap, and a Coast's countdown a sky-blue ring that empties toward its
+  next roll. Both always show, last in the ring row, and the corner badges they replace are gone.
 - **Ring badges replace the progress bar (B1.2, TL-22, FB-3, FB-4).** Under a worked Token and its
   hero, one row of rings: the cycle (fills, seconds left inside), charges (empties, charges left)
   and, in a fight, the enemy's HP. The row centres under the pair, whichever side the hero stands.

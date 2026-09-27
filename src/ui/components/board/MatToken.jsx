@@ -21,15 +21,15 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { TokenBadgeRow } from './TokenBadgeRow.jsx';
-import { ringRowOffset } from './ringRow.js';
+import { ringRowOffset, spawnerRing } from './ringRow.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { TokenCentreAlert } from './TokenEventAlert.jsx';
 import { EffectProcText } from './EffectProcText.jsx';
 import {
     TokenNameBadge, StationGearBadge,
-    DisallowBadge, SpawnerCountBadge, TurnCountdownBadge
+    DisallowBadge
 } from './TokenBadges.jsx';
-import { gearStateOf, spawnerCountText } from './centreAlert.js';
+import { gearStateOf } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
@@ -152,8 +152,9 @@ export const MatToken = React.memo(function MatToken({
                 hasPool: stationSkill ? StationRecipe.poolFor(def).length > 0 : false,
                 isFoundation: !!def?.foundation,
                 isSpawner,
-                // FB-5: the family's live count against its cap.
-                spawnerCount: isSpawner ? spawnerCountText(SpawnerSystem.spawnerCounts(id)) : null,
+                // FB-5: the family's live count against its cap, `{ count, cap }`
+                // — the spawner ring (B1.3).
+                spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,
                 // FB-14: a Token that turns (or has turned) counts down to its next roll.
                 turns: !!TimedChanges.nextTurnRoll(instance)
             };
@@ -170,8 +171,24 @@ export const MatToken = React.memo(function MatToken({
         { deps: [id] }
     );
 
-    // The countdown badge polls this; stable per Token so its timer is not reset.
-    const readTurn = React.useCallback(() => TimedChanges.nextTurnRoll(BoardState.getTokenById(id)), [id]);
+    // The turn ring polls this (B1.3); stable per Token so its timer is not
+    // reset. `everyMs` is the roll cycle it empties over — on a turned Token
+    // the ORIGINAL's, as the roll itself uses (TL-12, `turnTimingOf`).
+    const readTurn = React.useCallback(() => {
+        const instance = BoardState.getTokenById(id);
+        const roll = TimedChanges.nextTurnRoll(instance);
+        return roll ? { ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
+    }, [id]);
+
+    // The spawner's standing ring (FB-5, B1.3), after cycle and charges.
+    const spawnerCounts = detail?.spawnerCounts ?? null;
+    const standingRings = React.useMemo(
+        () => {
+            const ring = spawnerRing(spawnerCounts);
+            return ring ? [ring] : null;
+        },
+        [spawnerCounts?.count, spawnerCounts?.cap]   // eslint-disable-line react-hooks/exhaustive-deps
+    );
 
     const usesRemaining = detail?.usesRemaining ?? null;
     const alert = detail?.alert ?? null;
@@ -436,15 +453,10 @@ export const MatToken = React.memo(function MatToken({
                 {/* FB-33: disallowed (FP-35), top-right, always shown. */}
                 {detail?.disallowed && <DisallowBadge isDragging={hidden} />}
 
-                {/* FB-5: a spawner's count against its cap. */}
-                {detail?.isSpawner && <SpawnerCountBadge text={detail?.spawnerCount} isDragging={hidden} />}
-
-                {/* FB-14 / TL-12: time to a turning Token's next roll, same corner
-                    (a Token cannot both spawn and turn). */}
-                {detail?.turns && <TurnCountdownBadge read={readTurn} isDragging={hidden} />}
-
                 {/* TL-22: cycle, charges and the Token's own ring, in one row
-                    under the Token and its hero (B1.2). It carries the -1 floater. */}
+                    under the Token and its hero (B1.2). It carries the -1 floater.
+                    B1.3: a spawner's count (FB-5) and a turning Token's
+                    countdown (FB-14 / TL-12) stand in it always. */}
                 <TokenBadgeRow
                     instanceId={id}
                     token={isGuildHallToken ? { ...token, usesRemaining: null } : token}
@@ -452,6 +464,8 @@ export const MatToken = React.memo(function MatToken({
                     isDragging={hidden}
                     left={boxHalf + row.dx}
                     top={boxHalf + row.dy}
+                    extraRings={standingRings}
+                    readTurn={detail?.turns ? readTurn : null}
                 />
 
                 {/* FB-8 / TL-14: the one mark at the centre — a spawner's or a

@@ -2,6 +2,7 @@
 
 import { HERO_HIT_PX, TOKEN_BAR_GAP_U } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
+import { spawnerCountText } from './centreAlert.js';
 
 /**
  * ⭐ **Ring badges** (TL-22, FB-3, FB-4): a Token's live numbers are rings that
@@ -9,8 +10,7 @@ import { FLAG_PX } from './flagGeometry.js';
  * the Token together — or under the Token alone with no hero at work.
  *
  * Fixed order (owner, B1 rows): cycle, then charges, then the Token's own ring
- * (enemy HP here; spawner count and turn countdown join in B1.3 by passing
- * more entries to the row).
+ * (enemy HP, a spawner's count or a turn countdown — the last two since B1.3).
  */
 
 /**
@@ -28,7 +28,7 @@ export const RING_GAP_U = 6;
 
 /**
  * Each ring's colour (owner-approved mockup). Cycle fills, charges and HP
- * empty; spawner (fills to cap) and turn (empties) are B1.3's.
+ * empty; spawner fills to its cap and turn empties toward its roll (B1.3).
  */
 export const RING_COLOUR = Object.freeze({
     cycle: '#f4f1e8',
@@ -103,4 +103,31 @@ export function ringCount(n) {
     if (a < 10000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}k`;
     if (a < 1e6) return `${Math.round(v / 1000)}k`;
     return `${(v / 1e6).toFixed(a < 1e7 ? 1 : 0).replace(/\.0$/, '')}M`;
+}
+
+/**
+ * A spawner's standing ring (FB-5, B1.3): its family's live count against its
+ * cap, `3/5`, filling toward the cap. Null for a Token that is not a working
+ * spawner (`SpawnerSystem.spawnerCounts` gave null).
+ *
+ * @param {{count: number, cap: number}|null} counts
+ * @returns {{kind: 'spawner', fraction: number, text: string, title: string}|null}
+ */
+export function spawnerRing(counts) {
+    const text = spawnerCountText(counts);
+    if (!text) return null;
+    const fraction = counts.cap > 0 ? Math.max(0, Math.min(1, counts.count / counts.cap)) : 1;
+    return { kind: 'spawner', fraction, text, title: `${text} spawned` };
+}
+
+/** How often the turn ring re-reads its game-time clock (ms). */
+export const TURN_COUNTDOWN_REFRESH_MS = 250;
+
+/**
+ * How full the turn ring is (FB-14, TL-12, B1.3): time left to the next roll
+ * over the roll cycle, so it empties toward the roll. No cycle: empty.
+ */
+export function turnFraction(inMs, everyMs) {
+    if (!(everyMs > 0)) return 0;
+    return Math.max(0, Math.min(1, (Number(inMs) || 0) / everyMs));
 }

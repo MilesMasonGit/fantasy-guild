@@ -8,6 +8,7 @@ import { workedAlertOf } from './centreAlert.js';
 import { RingBadge, paintRing } from './RingBadge.jsx';
 import { RING_GAP_U, chargesFraction, cycleSecondsText, ringCount } from './ringRow.js';
 import { TokenChargeDeltaFloater } from './TokenBadges.jsx';
+import { TurnRing } from './TurnRing.jsx';
 
 const NO_MISSING = Object.freeze({ type: null, items: [] });
 
@@ -15,8 +16,9 @@ const NO_MISSING = Object.freeze({ type: null, items: [] });
  * ⭐ **TokenBadgeRow — a Token's ring row** (TL-22, B1.2). It replaced the
  * progress bar (`TokenProgressBar`, TP-2 / TP-4) and the hover charge chip.
  *
- * Fixed order: **cycle, charges, then the Token's own ring** (enemy HP here;
- * B1.3 adds a spawner's count or a turn countdown through `extraRings`).
+ * Fixed order: **cycle, charges, then the Token's own ring** — enemy HP, or a
+ * standing ring (B1.3): a spawner's count (`extraRings`) or a turn countdown
+ * (`readTurn`). A Token cannot both spawn and turn.
  *
  * * **Cycle** — while a hero works the Token and it is not a fight. Fills as
  *   the cycle runs; the number is seconds left, rounded up. Smooth between
@@ -27,6 +29,12 @@ const NO_MISSING = Object.freeze({ type: null, items: [] });
  *   with a finite count. Empties as charges go. Unlimited: no ring.
  * * **HP** — in a fight (`PROGRESS` with `combat: true`). Empties as the
  *   enemy's HP falls. No cycle ring then.
+ * * **Spawner** (FB-5) and **turn** (FB-14, TL-12) — standing facts, shown
+ *   always, hero or not, hovered or not (owner, B1 visibility "Mixed"). The
+ *   spawner ring fills to its cap (`spawnerRing`, passed in `extraRings`); the
+ *   turn ring empties toward the next roll and polls its own clock
+ *   (`TurnRing`), so the poll never re-renders this row or the MatToken.
+ * * While the Token is dragged: no row at all, standing rings included.
  * * Nothing to show: no row at all.
  *
  * The row is positioned by `MatToken` (`ringRowOffset`), in the Token's badge
@@ -47,7 +55,8 @@ export const TokenBadgeRow = ({
     isDragging = false,
     left = 0,
     top = 0,
-    extraRings = null
+    extraRings = null,
+    readTurn = null
 }) => {
     const typeId = token?.typeId ?? null;
     const hasHero = !!token?.heroId;
@@ -198,7 +207,9 @@ export const TokenBadgeRow = ({
     const showHp = fight && !!hp && hp.max > 0;
     const extras = (extraRings || []).filter(Boolean);
 
-    const hasRow = !isDragging && (showCycle || showCharges || showHp || extras.length > 0);
+    const showTurn = typeof readTurn === 'function';
+
+    const hasRow = !isDragging && (showCycle || showCharges || showHp || extras.length > 0 || showTurn);
 
     // The -1 / +50 floater rides just above the charges ring when there is
     // one, and floats from the Token's corner when there is not (a restock
@@ -243,6 +254,7 @@ export const TokenBadgeRow = ({
                     {extras.map(r => (
                         <RingBadge key={r.kind} kind={r.kind} fraction={r.fraction} text={r.text} title={r.title} />
                     ))}
+                    {showTurn && <TurnRing read={readTurn} />}
                 </div>
             )}
         </>

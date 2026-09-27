@@ -15,7 +15,8 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { TurnCountdownBadge, TURN_COUNTDOWN_REFRESH_MS } from '../ui/components/board/TokenBadges.jsx';
+import { TurnRing } from '../ui/components/board/TurnRing.jsx';
+import { TURN_COUNTDOWN_REFRESH_MS, turnFraction } from '../ui/components/board/ringRow.js';
 import { turnCountdownText } from '../ui/components/board/centreAlert.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -29,8 +30,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ Token Lifecycle feedback, slice **Q8 — FB-14**: a Token that turns on its
  * own shows a countdown to its next roll (TL-12), on the Coast and on the
- * Shrimp Coast it became. A plain badge bottom-left for now (brief B1 makes it
- * a ring).
+ * Shrimp Coast it became. Since B1.3 it is a sky ring in the row under the
+ * Token (TL-22), emptying toward the roll, always shown; the corner badge is
+ * gone.
  */
 
 registerTokenTypes({
@@ -51,7 +53,9 @@ const mount = (el) => render(
     h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
 );
 const overlay = (container, id) => container.querySelector(`[data-token-overlay="${id}"]`);
-const countdownOf = (container, id) => overlay(container, id)?.querySelector('[data-turn-countdown]') ?? null;
+const countdownOf = (container, id) => overlay(container, id)?.querySelector('[data-ring="turn"]') ?? null;
+const textOf = (el) => el?.getAttribute('data-ring-text') ?? null;
+const fractionOf = (el) => Number(el?.getAttribute('data-ring-fraction'));
 
 beforeEach(() => {
     resetMatTuning();
@@ -74,19 +78,27 @@ describe('countdown text (FB-14)', () => {
         expect(turnCountdownText(undefined)).toBeNull();
     });
 
-    it('the badge draws what it reads, names the odds, and hides while dragging', () => {
-        const read = () => ({ inMs: 34000, chance: 30, back: false });
-        const badge = mount(h(TurnCountdownBadge, { read, isDragging: false })).container.querySelector('[data-turn-countdown]');
-        expect(badge.textContent).toBe('0:34');
-        expect(badge.getAttribute('aria-label')).toBe('Next chance to turn in 0:34 (30%)');
+    it('the ring empties over the roll cycle', () => {
+        expect(turnFraction(60000, 60000)).toBe(1);
+        expect(turnFraction(15000, 60000)).toBe(0.25);
+        expect(turnFraction(0, 60000)).toBe(0);
+        expect(turnFraction(90000, 60000)).toBe(1);
+        expect(turnFraction(5000, 0)).toBe(0);
+    });
+
+    it('the ring draws what it reads, names the odds, and draws nothing with nothing to read', () => {
+        const read = () => ({ inMs: 34000, chance: 30, back: false, everyMs: 60000 });
+        const ring = mount(h(TurnRing, { read })).container.querySelector('[data-ring="turn"]');
+        expect(textOf(ring)).toBe('0:34');
+        expect(ring.querySelector('[data-ring-label]').textContent).toBe('0:34');
+        expect(fractionOf(ring)).toBeCloseTo(34 / 60, 3);
+        expect(ring.getAttribute('aria-label')).toBe('Next chance to turn in 0:34 (30%)');
         cleanup();
-        const back = () => ({ inMs: 5000, chance: 30, back: true });
-        expect(mount(h(TurnCountdownBadge, { read: back, isDragging: false })).container
-            .querySelector('[data-turn-countdown]').getAttribute('aria-label')).toBe('Next chance to turn back in 0:05 (30%)');
+        const back = () => ({ inMs: 5000, chance: 30, back: true, everyMs: 60000 });
+        expect(mount(h(TurnRing, { read: back })).container
+            .querySelector('[data-ring="turn"]').getAttribute('aria-label')).toBe('Next chance to turn back in 0:05 (30%)');
         cleanup();
-        expect(mount(h(TurnCountdownBadge, { read, isDragging: true })).container.querySelector('[data-turn-countdown]')).toBeNull();
-        cleanup();
-        expect(mount(h(TurnCountdownBadge, { read: () => null, isDragging: false })).container.querySelector('[data-turn-countdown]')).toBeNull();
+        expect(mount(h(TurnRing, { read: () => null })).container.querySelector('[data-ring]')).toBeNull();
     });
 });
 
@@ -96,21 +108,29 @@ describe('on the mat (FB-14)', () => {
         const coast = BoardState.createTokenInstance('fixture_q8_coast');
         Placement.placeTokenAt(coast, AT);
         const { container } = mount(h(MatBoard));
-        expect(countdownOf(container, coast.id).textContent).toBe('1:00');
+        // Standing: no hero, no hover, and still a full sky ring.
+        expect(textOf(countdownOf(container, coast.id))).toBe('1:00');
+        expect(fractionOf(countdownOf(container, coast.id))).toBe(1);
 
-        // 26 s of game time: the badge re-reads the clock on its next refresh.
+        // 26 s of game time: the ring re-reads the clock on its next refresh,
+        // and has emptied by as much.
         act(() => { TimedChanges.tick(26000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        expect(countdownOf(container, coast.id).textContent).toBe('0:34');
+        expect(textOf(countdownOf(container, coast.id))).toBe('0:34');
+        expect(fractionOf(countdownOf(container, coast.id))).toBeCloseTo(34 / 60, 3);
+        act(() => { TimedChanges.tick(19000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
+        expect(textOf(countdownOf(container, coast.id))).toBe('0:15');
+        expect(fractionOf(countdownOf(container, coast.id))).toBeCloseTo(0.25, 3);
 
         // The roll (100%): a Shrimp Coast, counting down afresh to its roll back.
         // (The mat re-reads its Token list on a microtask, hence the async act.)
-        await act(async () => { TimedChanges.tick(34000); });
+        await act(async () => { TimedChanges.tick(15000); });
         act(() => { vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
         const shrimp = BoardState.tokens().find(t => t.typeId === 'fixture_q8_shrimp');
         expect(shrimp?.turnedFrom).toBe('fixture_q8_coast');
-        const badge = countdownOf(container, shrimp.id);
-        expect(badge.textContent).toBe('1:00');
-        expect(badge.getAttribute('aria-label')).toContain('turn back');
+        const ring = countdownOf(container, shrimp.id);
+        expect(textOf(ring)).toBe('1:00');
+        expect(fractionOf(ring)).toBe(1);
+        expect(ring.getAttribute('aria-label')).toContain('turn back');
     });
 
     it('a Token that does not turn has no countdown', () => {

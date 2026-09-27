@@ -12,14 +12,15 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
-import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
 import { HERO_HIT_PX, TOKEN_BAR_GAP_U } from '../ui/components/board/boardConstants.js';
 import {
-    ringRowOffset, cycleSecondsText, chargesFraction, ringCount, RING_D_U, RING_STROKE_U
+    ringRowOffset, cycleSecondsText, chargesFraction, ringCount, RING_D_U, RING_STROKE_U,
+    spawnerRing, RING_COLOUR
 } from '../ui/components/board/ringRow.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -38,7 +39,24 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * then the Token's own ring (enemy HP here, empties). It replaced the progress
  * bar and the hover charge chip. Its subscription rules are pinned in
  * `TokenBadgeRowSubscriptions.test.js`, its blocked look in `TileAlertHints`.
+ *
+ * **B1.3 — standing rings**: a spawner's `n/cap` (green, fills to cap) and a
+ * turning Token's countdown (sky, empties; its polling is pinned in
+ * `TurnCountdown.test.js`) always show, hero or not, hovered or not — but not
+ * while dragged — after cycle and charges.
  */
+
+registerTokenTypes({
+    fixture_b13_sapling: {
+        id: 'fixture_b13_sapling', name: 'Fixture B1.3 Sapling', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature'
+    },
+    fixture_b13_forest: {
+        id: 'fixture_b13_forest', name: 'Fixture B1.3 Forest', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature', requiresHero: false,
+        spawner: { spawns: [{ typeId: 'fixture_b13_sapling', weight: 1 }], allowance: 5, intervalMs: 1000 }
+    }
+});
 
 const h = React.createElement;
 const tree = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el));
@@ -231,6 +249,60 @@ describe('which rings show', () => {
     });
 });
 
+describe('standing rings (B1.3)', () => {
+    const kindsOf = (c) => [...c.querySelectorAll('[data-ring]')].map(e => e.getAttribute('data-ring'));
+    const turnRead = () => ({ inMs: 30000, chance: 30, back: false, everyMs: 60000 });
+
+    it('spawner: n/cap, filling to the cap', () => {
+        expect(spawnerRing({ count: 3, cap: 5 })).toMatchObject({ kind: 'spawner', text: '3/5', fraction: 0.6 });
+        expect(spawnerRing({ count: 5, cap: 5 }).fraction).toBe(1);
+        expect(spawnerRing(null)).toBeNull();
+        expect(RING_COLOUR.spawner).toBe('#86efac');
+        expect(RING_COLOUR.turn).toBe('#7dd3fc');
+    });
+
+    it('⭐ a spawner shows its green ring with no hero and no hover', () => {
+        const { container } = mount(row({
+            token: worked({ heroId: null, usesRemaining: null }),
+            extraRings: [spawnerRing({ count: 3, cap: 5 })]
+        }));
+        expect(container.querySelector('[data-ring-row]')).not.toBeNull();
+        expect(kindsOf(container)).toEqual(['spawner']);
+        const r = ring(container, 'spawner');
+        expect(r.getAttribute('data-ring-text')).toBe('3/5');
+        expect(Number(r.getAttribute('data-ring-fraction'))).toBeCloseTo(0.6, 3);
+        expect(r.querySelector('[data-ring-arc]').getAttribute('stroke')).toBe(RING_COLOUR.spawner);
+    });
+
+    it('a turning Token shows its sky ring with no hero and no hover', () => {
+        const { container } = mount(row({ token: worked({ heroId: null }), readTurn: turnRead }));
+        expect(kindsOf(container)).toEqual(['turn']);
+        expect(ring(container, 'turn').getAttribute('data-ring-text')).toBe('0:30');
+        expect(ring(container, 'turn').querySelector('[data-ring-arc]').getAttribute('stroke')).toBe(RING_COLOUR.turn);
+    });
+
+    it('⭐ order with a hero at work: cycle, charges, then the standing ring last', () => {
+        const { container, rerender } = mount(row({
+            token: worked({ usesRemaining: 4 }),
+            extraRings: [spawnerRing({ count: 3, cap: 5 })]
+        }));
+        expect(kindsOf(container)).toEqual(['cycle', 'charges', 'spawner']);
+        rerender(tree(row({ token: worked({ usesRemaining: 4 }), readTurn: turnRead })));
+        expect(kindsOf(container)).toEqual(['cycle', 'charges', 'turn']);
+    });
+
+    it('no standing ring while dragged', () => {
+        const { container } = mount(row({
+            token: worked({ heroId: null }),
+            isDragging: true,
+            extraRings: [spawnerRing({ count: 3, cap: 5 })],
+            readTurn: turnRead
+        }));
+        expect(container.querySelector('[data-ring-row]')).toBeNull();
+        expect(container.querySelector('[data-ring]')).toBeNull();
+    });
+});
+
 describe('on the mat: centred under the pair (MatToken)', () => {
     const AT = { x: 560, y: 520 };
 
@@ -272,6 +344,23 @@ describe('on the mat: centred under the pair (MatToken)', () => {
         const tok = put('fixture_producer');
         const { container } = mount(h(MatBoard));
         expect(rowAt(container, tok)).toBeNull();
+    });
+
+    it('⭐ B1.3: a spawner at 3 of 5 stands a green 3/5 ring under itself, no hero, no hover, no corner badge', () => {
+        const forest = put('fixture_b13_forest');
+        put('fixture_b13_sapling', { x: 1200, y: 520 });
+        put('fixture_b13_sapling', { x: 1400, y: 300 });
+        put('fixture_b13_sapling', { x: 1400, y: 800 });
+        const { container } = mount(h(MatBoard));
+        const at = rowAt(container, forest);
+        expect(at).not.toBeNull();
+        expect(at.x).toBeCloseTo(forest.x, 5);          // centred under the Token alone
+        const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
+        const r = o.querySelector('[data-ring-row] [data-ring="spawner"]');
+        expect(r.getAttribute('data-ring-text')).toBe('3/5');
+        expect(Number(r.getAttribute('data-ring-fraction'))).toBeCloseTo(0.6, 3);
+        expect(o.querySelectorAll('[data-ring]').length).toBe(1);
+        expect(o.querySelector('[data-spawner-count], [data-turn-countdown]')).toBeNull();
     });
 
     for (const [name, side] of [['RIGHT', 1], ['LEFT', -1]]) {
