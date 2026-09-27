@@ -10,6 +10,15 @@ import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 
+/**
+ * Whether the horizontal hero dock shows under the main surface. It shows on
+ * the playmat and is left out of the Guild Hall upgrade screen (Token
+ * Lifecycle feedback Q7, FB-47). `fullscreenView` is `ui.fullscreen.view`.
+ */
+export function showsBottomHeroDock(fullscreenView) {
+    return fullscreenView !== 'guild';
+}
+
 export const BottomHeroDock = ({
     isBankOpen = false,
     selectedHeroId,

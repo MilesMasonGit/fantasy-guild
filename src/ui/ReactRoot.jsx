@@ -19,7 +19,7 @@ import Board from './components/board/Board.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
-import BottomHeroDock from './components/dock/BottomHeroDock.jsx';
+import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHeroDock.jsx';
 import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
@@ -370,15 +370,18 @@ export const ReactRoot = ({ engine }) => {
                             )}
                             </div>
 
-                            {/* Bottom Hero Dock: horizontal sliding tabs */}
-                            <BottomHeroDock
-                                isBankOpen={isBankOpen}
-                                selectedHeroId={inspectHeroId}
-                                onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                onCloseHero={() => setInspectHeroId(null)}
-                                onEditHero={(id) => ui.dock.openEdit(id)}
-                            />
+                            {/* Bottom Hero Dock: horizontal sliding tabs. Not on
+                                the Guild Hall upgrade screen (FB-47). */}
+                            {showsBottomHeroDock(ui.fullscreen.view) && (
+                                <BottomHeroDock
+                                    isBankOpen={isBankOpen}
+                                    selectedHeroId={inspectHeroId}
+                                    onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                    onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                    onCloseHero={() => setInspectHeroId(null)}
+                                    onEditHero={(id) => ui.dock.openEdit(id)}
+                                />
+                            )}
                         </div>
                         {!menuRight && (
                             isGuildView ? (

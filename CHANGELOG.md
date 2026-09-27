@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **No hero dock on the Guild Hall upgrade screen (Q7: FB-47).** The horizontal hero dock under the
+  board is left out while the Guild Hall upgrades are open, and comes back on the playmat.
 - **Guild Hall upgrades show their art again (Q7: FB-40).** The Token art had moved into
   per-family folders (`tokens/upgrade/`, `tokens/chest/`) and the upgrade tracks still pointed at the
   old flat folder, so every upgrade but the Hall drew a broken image. Bunk Beds, Bank Slots, Bank
