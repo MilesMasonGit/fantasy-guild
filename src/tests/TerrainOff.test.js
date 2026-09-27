@@ -4,7 +4,6 @@ import { GameState } from '../state/GameState.js';
 import { createEmptyBoard } from '../state/StateSchema.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -76,10 +75,8 @@ describe('Terrain is switched off (FP-10)', () => {
 
     it.skip('keeps terrain a save already holds, untouched (terrain left the schema in 1.6a, FP-10)', () => {});
 
-    it('a Token sent to the Vault does not carry a stamp', () => {
-        expect(TokenBank.deposit(BoardState.createTokenInstance('fixture_off_mine', 60, 'shore'))).toBe(true);
-        expect(BoardState.takeFromTokenBank('fixture_off_mine').terrain).toBeUndefined();
-    });
+    // 'a Token sent to the Vault does not carry a stamp' went with the Vault
+    // (Token Lifecycle 9.3).
 
     // 'bursting a Map stamps nothing on the Tokens it produces' went with the
     // Map bursts (Token Lifecycle 9.1).

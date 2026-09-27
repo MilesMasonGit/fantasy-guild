@@ -63,7 +63,6 @@ describe('Token Restocking on Same-Type Drop', () => {
         // Nothing was pushed aside or sent to the Tray: the incoming Token was
         // absorbed whole, so only the one copy stands on the mat.
         expect(BoardState.tokens()).toHaveLength(1);
-        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     /**
@@ -91,7 +90,6 @@ describe('Token Restocking on Same-Type Drop', () => {
         const apart = Math.hypot(leftover.x - onBoard.x, leftover.y - onBoard.y);
         expect(apart).toBeGreaterThanOrEqual(61.2 - 1e-6);
         expect(apart).toBeLessThan(120);
-        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('refuses the leftover when it has nowhere at all to stand, so it flies back (FP-46)', () => {
@@ -111,7 +109,6 @@ describe('Token Restocking on Same-Type Drop', () => {
         expect(BoardState.getTokenById(onBoard.id).usesRemaining).toBe(5000);
         expect(incoming.usesRemaining).toBe(30);
         expect(BoardState.getTokenById(incoming.id)).toBeNull();
-        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     /**

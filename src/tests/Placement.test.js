@@ -3,7 +3,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Flags from '../systems/board/Flags.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -125,7 +124,6 @@ describe('⭐ Nothing is displaced any more (slice 1.6d-1)', () => {
 
         expect(result.success).toBe(true);
         expect(result.displacedToken).toBeNull();
-        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('a working hero keeps the Token they were on when something lands beside it', () => {
@@ -139,20 +137,6 @@ describe('⭐ Nothing is displaced any more (slice 1.6d-1)', () => {
         // Their Token never moved, so neither did they.
         expect(BoardState.workerOf(worked.id)).toBe('hero_1');
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
-    });
-
-    it('a full Tray can no longer refuse a drop, because no drop needs the Tray', () => {
-        for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
-            BoardState.addToTray(token('filler'));
-        }
-        const sitting = place('fixture_producer', A);
-        Placement.plantFlagAt('hero_1', A);
-
-        const result = Placement.placeTokenAt(token('fixture_buff_yield'), A);
-
-        expect(result.success).toBe(true);
-        expect(BoardState.getTokenById(sitting.id)).not.toBeNull();
-        expect(BoardState.workerOf(sitting.id)).toBe('hero_1');
     });
 });
 
@@ -392,16 +376,17 @@ describe('Recalling a hero', () => {
     });
 });
 
-describe('Returning a Token to the Vault (right-click, FP-45)', () => {
+// Was 'Returning a Token to the Vault (right-click, FP-45)'. Right-click to the
+// Vault went in Token Lifecycle 9.3; Remove (5.2) is the one way off the mat,
+// and these pin that it behaves as the Vault route did for the mat and the hero.
+describe('Taking a Token off the mat (removePlacedToken)', () => {
     it('lifts it off the mat and leaves the ground clear', () => {
         const forest = place('fixture_producer', A);
 
-        expect(Placement.returnTokenToVaultById(forest.id).success).toBe(true);
+        expect(Placement.removePlacedToken(forest.id).success).toBe(true);
 
         expect(BoardState.getTokenById(forest.id)).toBeNull();
         expect(BoardState.tokensAtPoint(A.x, A.y)).toHaveLength(0);
-        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
-        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('leaves the hero’s flag standing there, idle', () => {
@@ -412,7 +397,7 @@ describe('Returning a Token to the Vault (right-click, FP-45)', () => {
         const forest = place('fixture_producer', A);
         Placement.plantFlagAt('hero_1', A);
 
-        const result = Placement.returnTokenToVaultById(forest.id);
+        const result = Placement.removePlacedToken(forest.id);
         Flags.assign(0);
 
         expect(result.idledHeroId).toBe('hero_1');
@@ -422,58 +407,15 @@ describe('Returning a Token to the Vault (right-click, FP-45)', () => {
 
     it('refuses to remove the Guild Hall token from the playmat', () => {
         const hall = place('token_guild_hall', A);
-        expect(Placement.returnTokenToVaultById(hall.id).success).toBe(false);
+        expect(Placement.removePlacedToken(hall.id).success).toBe(false);
     });
 
     it('refuses a Token that is not on the mat', () => {
-        expect(Placement.returnTokenToVaultById('tok_nobody').success).toBe(false);
+        expect(Placement.removePlacedToken('tok_nobody').success).toBe(false);
     });
 });
 
-describe('The Token Bank (D-137, D-77)', () => {
-    it('caps distinct types, never copies', () => {
-        // Stacks are never capped: a hundred Forests is one slot.
-        for (let i = 0; i < 100; i++) BoardState.addToTokenBank(token('fixture_producer'), 2);
-        expect(BoardState.tokenBankSlotsUsed()).toBe(1);
-        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(100);
-    });
-
-    it('refuses a NEW type at the slot cap but still accepts a held one', () => {
-        BoardState.addToTokenBank(token('a'), 2);
-        BoardState.addToTokenBank(token('b'), 2);
-        expect(BoardState.addToTokenBank(token('c'), 2)).toBe(false);
-        expect(BoardState.addToTokenBank(token('a'), 2)).toBe(true);
-    });
-
-    it('draws a FULL Token before a partial one (D-77)', () => {
-        // A player must never be handed a nearly-spent Token while a fresh one
-        // sits in storage.
-        BoardState.addToTokenBank(token('fixture_producer', 12));
-        BoardState.addToTokenBank(token('fixture_producer', 5000));
-        BoardState.addToTokenBank(token('fixture_producer', 300));
-
-        expect(BoardState.takeFromTokenBank('fixture_producer').usesRemaining).toBe(5000);
-        expect(BoardState.takeFromTokenBank('fixture_producer').usesRemaining).toBe(300);
-        expect(BoardState.takeFromTokenBank('fixture_producer').usesRemaining).toBe(12);
-    });
-
-    it('treats an unlimited-use Token as the fullest possible', () => {
-        // null means unlimited (D-176), and must never sort as "less than 12".
-        BoardState.addToTokenBank(token('fixture_producer', 12));
-        BoardState.addToTokenBank(token('fixture_producer', null));
-        expect(BoardState.takeFromTokenBank('fixture_producer').usesRemaining).toBeNull();
-    });
-
-    it('frees the slot when the last copy leaves', () => {
-        BoardState.addToTokenBank(token('fixture_producer', 10));
-        BoardState.takeFromTokenBank('fixture_producer');
-        expect(BoardState.tokenBankSlotsUsed()).toBe(0);
-    });
-
-    it('returns null for a type it does not hold', () => {
-        expect(BoardState.takeFromTokenBank('token_nothing')).toBeNull();
-    });
-});
+// 'The Token Bank (D-137, D-77)' went with the Vault (Token Lifecycle 9.3).
 
 describe('Board queries', () => {
     it('lists the Tokens on the mat in arrival order', () => {
@@ -491,31 +433,8 @@ describe('Board queries', () => {
     });
 });
 
-describe('Returning a Token to the Vault (Placement.returnTokenToVaultById)', () => {
-    it('deposits the Token into the Vault and takes it off the mat without duplicating', () => {
-        const forest = place('fixture_producer', A, 5000);
-
-        const result = Placement.returnTokenToVaultById(forest.id);
-
-        expect(result.success).toBe(true);
-        expect(BoardState.getTokenById(forest.id)).toBeNull();
-        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
-    });
-
-    it('refuses if there is no room in the Vault and leaves the Token on the mat', () => {
-        // Fill bank slots
-        for (let i = 0; i < TokenBank.BASE_TOKEN_BANK_SLOTS; i++) {
-            BoardState.addToTokenBank(token(`dummy_${i}`, 100), TokenBank.BASE_TOKEN_BANK_SLOTS);
-        }
-        const forest = place('fixture_producer', A, 5000);
-
-        const result = Placement.returnTokenToVaultById(forest.id);
-
-        expect(result.success).toBe(false);
-        expect(result.reason).toMatch(/no room/i);
-        expect(BoardState.getTokenById(forest.id)).not.toBeNull();
-    });
-});
+// 'Returning a Token to the Vault (Placement.returnTokenToVaultById)' went with
+// the Vault (Token Lifecycle 9.3); removal is `RemoveToken.test.js`.
 
 describe('Passive vs Active Token Hero Constraints', () => {
     it('a hero may be dropped on a passive token, but never works it (1.4b)', () => {

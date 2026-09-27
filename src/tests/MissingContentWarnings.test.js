@@ -4,7 +4,6 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { logger } from '../utils/Logger.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
@@ -81,18 +80,10 @@ describe('Loot with no artwork (SpriteLayer.addSprite)', () => {
         expect(lines[0][1]).toContain('"ghost_item"');
     });
 
-    it('names a missing Token once', () => {
-        SpriteLayer.addSprite('token', 'ghost_token', 1, 10, 100);
-        SpriteLayer.addSprite('token', 'ghost_token', 1, 20, 100);
-
-        const lines = missingContentWarnings();
-        expect(lines).toHaveLength(1);
-        expect(lines[0][1]).toContain('Token "ghost_token"');
-    });
+    // 'names a missing Token once' went with Token sprites (Token Lifecycle 9.3).
 
     it('says nothing for content that resolves', () => {
         SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
-        SpriteLayer.addSprite('token', 'fixture_producer', 1, 20, 100);
         expect(missingContentWarnings()).toHaveLength(0);
     });
 
@@ -132,37 +123,18 @@ describe('A Token that will never do anything (Placement.placeTokenAt)', () => {
     });
 });
 
-describe('A Vault deposit with nothing behind it (TokenBank.deposit)', () => {
-    it('names it once, however many copies go in', () => {
-        TokenBank.deposit({ typeId: 'ghost_token' });
-        TokenBank.deposit({ typeId: 'ghost_token' });
-
-        const lines = missingContentWarnings();
-        expect(lines).toHaveLength(1);
-        expect(lines[0][0]).toBe('TokenBank');
-        expect(lines[0][1]).toContain('"ghost_token"');
-    });
-
-    it('says nothing for a Token that exists', () => {
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 100));
-        expect(missingContentWarnings()).toHaveLength(0);
-    });
-
-    it('still banks it', () => {
-        expect(TokenBank.deposit({ typeId: 'ghost_token' })).toBe(true);
-    });
-});
-
 describe('Each site speaks for itself', () => {
     // De-duplication is per site as well as per id: the same stale id showing up
-    // in the Vault and on the board are two different things to fix, and one
-    // hiding the other is how a half-finished rename stays half-finished.
+    // in two places are two different things to fix, and one hiding the other
+    // is how a half-finished rename stays half-finished. (This used to pair the
+    // Vault with a Token sprite; both went in Token Lifecycle 9.3, and the
+    // Vault's own warning tests with them.)
     it('reports the same stale id separately at two different sites', () => {
-        TokenBank.deposit({ typeId: 'ghost_token' });
-        SpriteLayer.addSprite('token', 'ghost_token', 1, 10, 100);
+        SpriteLayer.addSprite('item', 'ghost_thing', 1, 10);
+        Placement.placeTokenAt({ typeId: 'ghost_thing' }, C(0));
 
         const lines = missingContentWarnings();
         expect(lines).toHaveLength(2);
-        expect(lines.map(l => l[0])).toEqual(['TokenBank', 'SpriteLayer']);
+        expect(lines.map(l => l[0])).toEqual(['SpriteLayer', 'Placement']);
     });
 });

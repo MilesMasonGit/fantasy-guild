@@ -107,7 +107,7 @@ class GameStateClass {
     // top-level slice is unreachable from the UI without a getter here — which
     // is why the retired `areaStates` / `outposts` / `playmatOrder` getters had
     // to exist too, and why they go with their systems.
-    get board() { return this.state?.board || { tiles: {}, tokenBank: {}, tray: [] }; }
+    get board() { return this.state?.board || { tiles: {} }; }
 
     // ========================================
     // === Board Accessors (Phase 2) ===

@@ -6,7 +6,6 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as TokenGroups from '../systems/board/TokenGroups.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
 
@@ -51,7 +50,6 @@ function playALittle() {
     SpriteLayer.init();
     GuildUpgradeManager.recompute();
     QuestManager.ensureState();
-    TokenGroups.ensure();
 
     // The Cartographer's three fields (a purchase, a discovery and the Guild
     // Hall drop index) were written here until the Map bursts and the Map
@@ -92,7 +90,7 @@ describe('The declared schema matches the save (CR2-042, CR2-069)', () => {
     it('names the twelve fields the review found saved but undeclared', () => {
         // Spelled out so a future deletion of one of them is a deliberate act.
         expect(Object.keys(INITIAL_STATE.board)).toEqual(
-            expect.arrayContaining(['sprites', 'tokenBankSlots', 'tokenTabsUnlocked', 'tokenGroups'])
+            expect.arrayContaining(['sprites'])
         );
         expect(Object.keys(INITIAL_STATE.inventory)).toEqual(
             expect.arrayContaining(['maxTabs', 'maxSlots'])
@@ -108,6 +106,11 @@ describe('The declared schema matches the save (CR2-042, CR2-069)', () => {
         expect(INITIAL_STATE.progress).not.toHaveProperty('guildHallMapOpens');
         expect(INITIAL_STATE.cartographer).toBeUndefined();
         expect(INITIAL_STATE.board).not.toHaveProperty('maps');
+        // Deleted on purpose with the Token Vault and the Tray (Token
+        // Lifecycle 9.3): three of the twelve lived here.
+        for (const field of ['tokenBank', 'tray', 'nextTrayZ', 'tokenBankSlots', 'tokenTabsUnlocked', 'tokenGroups']) {
+            expect(INITIAL_STATE.board).not.toHaveProperty(field);
+        }
     });
 
     it('still passes its own validator after a real play session', () => {
@@ -126,7 +129,7 @@ describe('One definition of an empty board (CR2-049)', () => {
         GameState.initNew();
         delete GameState.state.board;
         const BoardState = await import('../systems/board/BoardState.js');
-        BoardState.getTray();
+        BoardState.tokens();
         expect(Object.keys(GameState.state.board).sort())
             .toEqual(Object.keys(createEmptyBoard()).sort());
     });
@@ -160,12 +163,12 @@ describe('Migration repairs a partially-present section (CR2-042)', () => {
     it('never overwrites a field the save already stores, including 0 and null', () => {
         const state = GameState.serialize().state;
         state.time.gameTimeMs = 0;   // was progress.guildHallMapOpens, deleted in 9.1
-        state.board.tokenGroups = { groupOrder: ['mine'], groupDefs: {}, overrides: {} };
+        state.board.workClaims = { h1: { instanceId: 'mine', side: 1 } };   // was board.tokenGroups, deleted in 9.3
         state.meta.createdAt = null;
 
         const migrated = migrateState(state, GAME_VERSION);
         expect(migrated.time.gameTimeMs).toBe(0);
-        expect(migrated.board.tokenGroups.groupOrder).toEqual(['mine']);
+        expect(migrated.board.workClaims.h1.instanceId).toBe('mine');
         expect(migrated.meta.createdAt).toBeNull();
     });
 

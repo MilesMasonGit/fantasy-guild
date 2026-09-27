@@ -31,10 +31,9 @@ import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
  *
  * ## Lifetime
  * The selection lives on the Token instance, so it travels with the Token: it
- * survives a save, a move across the board, and a trip through the Tray. The
- * Vault is where it ends — `TokenBank` stores a copy as charges alone, so a
- * Token drawn back out is a fresh instance and re-defaults on placement, which
- * is exactly what the concept asks for (§2.1) and what R-5 describes.
+ * survives a save and a move across the mat, and ends when the Token is
+ * removed. (A trip through the Vault used to end it too; the Vault went in
+ * Token Lifecycle 9.3.)
  */
 
 /** A recipe's level gate. Absent means ungated — fixtures author no level. */

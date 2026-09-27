@@ -2,21 +2,6 @@
 
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
-import { TERRAIN_ENABLED } from '../../config/registries/terrainRegistry.js';
-import { EventBus } from '../core/EventBus.js';
-import { BOARD_EVENTS } from './boardEvents.js';
-
-/**
- * Announce a Tray change (CR2-055, CR2-177 — added 2026-08-25).
- *
- * This is the one exception to "this layer knows shape, not rules": the three
- * tray mutators below are the funnel every route into the Tray passes through,
- * and putting the announcement here is what stops the ~10 callers each having
- * to remember it. It is a notification, not a rule.
- */
-function announceTray(reason) {
-    EventBus.publish(BOARD_EVENTS.TRAY_CHANGED, { reason });
-}
 
 /**
  * BoardState — read/write primitives over `state.board`.
@@ -82,14 +67,15 @@ function board() {
     if (!state.board) state.board = createEmptyBoard();
     if (!state.board.tokens || typeof state.board.tokens !== 'object') state.board.tokens = {};
     if (typeof state.board.nextTokenOrder !== 'number') state.board.nextTokenOrder = 0;
-    if (!state.board.tokenBank) state.board.tokenBank = {};
-    if (!Array.isArray(state.board.tray)) state.board.tray = [];
     if (!state.board.flags || typeof state.board.flags !== 'object') state.board.flags = {};
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.workClaims || typeof state.board.workClaims !== 'object') state.board.workClaims = {};
     // Spot vacancies went with the Managers (Token Lifecycle 9.2, SP-55); an
     // older save's leftover map is simply dropped.
     if ('vacancies' in state.board) delete state.board.vacancies;
+    // The Token Vault and the dormant Tray went in Token Lifecycle 9.3 (goal 1:
+    // Tokens live on the mat). `migrateState` drops their fields from an older
+    // save; nothing here reads them.
     return state.board;
 }
 
@@ -110,8 +96,8 @@ function newTokenId() {
  * ## Where a Token came from (Token Lifecycle DP-3, slice 3.1)
  *
  * * `placed`  — the player put it there, or the game did on the player's
- *   behalf: the opening Guild Hall, a Token dragged from the Vault, Tray or a
- *   dropped sprite, a crafted Token, anything bought or built.
+ *   behalf: the opening Guild Hall, a crafted Token (TL-8), anything bought
+ *   or built.
  * * `spawned` — the engine made it (`EffectActions.spawn`): a sapling from a
  *   Forest, a goblin from a camp.
  *
@@ -220,7 +206,7 @@ export function addToken(instance, x, y) {
  *
  * Its `x`, `y` and `placedAt` stay on the instance: a Token lifted and put
  * straight back down elsewhere keeps its place in the arrival order, as a move
- * does. Only entering the Tray clears `placedAt` (see `addToTray`).
+ * does.
  */
 export function removeToken(id) {
     const b = board();
@@ -550,295 +536,4 @@ export function displayPointOf(heroId) {
     if (work) return { x: work.x, y: work.y };
     const flag = flagOf(heroId);
     return flag ? { x: flag.x, y: flag.y } : null;
-}
-
-// ---------------------------------------------------------------------------
-// The Tray (D-86, D-107, D-168)
-// ---------------------------------------------------------------------------
-
-/**
- * The Tray — a permanent staging area, and **load-bearing rather than
- * decorative**.
- *
- * Opening a Bank covers the board, so Tokens cannot be dragged Bank→tile
- * directly. The flow is **Bank → Tray → Board**. Remove the Tray and placement
- * stops working entirely.
- *
- * It is also where displaced Tokens go, which is why it is roomy from the start.
- */
-export function getTray() {
-    const b = board();
-    if (!b) return [];
-    backfillTrayPositions(b.tray);
-    return b.tray;
-}
-
-/**
- * Whether the Tray has room for `count` more Tokens.
- *
- * **The one definition of Tray capacity (CR2-054.)** `addToTray` enforces the
- * same rule. (Maps used to be exempt; that went with the Map bursts, Token
- * Lifecycle 9.1.)
- */
-export function hasTraySpaceFor(count = 1, capacity = TRAY_CAPACITY) {
-    return getTray().length + count <= capacity;
-}
-
-/** Whether the Tray has room for at least one more standard Token. */
-export function hasTraySpace(capacity = TRAY_CAPACITY) {
-    return hasTraySpaceFor(1, capacity);
-}
-
-/**
- * Append to the Tray. Returns false when full.
- */
-export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
-    const b = board();
-    if (!b || !instance) return false;
-
-    if (!hasTraySpaceFor(1, capacity)) return false;
-
-    // A Token entering the Tray gives up its place in the mat's arrival order.
-    // ⚠️ The Tray stores fractions in the same `x`/`y` the mat stores points in,
-    // so its caller must take it off the mat straight after this.
-    delete instance.placedAt;
-
-    const at = position || scatterIntoTray(b.tray);
-    instance.x = clamp01(at.x);
-    instance.y = clamp01(at.y);
-    instance.z = nextTrayZ();
-    if (position != null) {
-        delete instance.isLanding;
-    }
-
-    b.tray.push(instance);
-    announceTray('added');
-    return true;
-}
-
-/** Remove and return the Tray entry at `slot`, or null. */
-export function takeFromTray(slot) {
-    const b = board();
-    if (!b || slot < 0 || slot >= b.tray.length) return null;
-    const taken = b.tray.splice(slot, 1)[0] || null;
-    if (taken) announceTray('taken');
-    return taken;
-}
-
-/** Increment and return the next monotonically increasing Tray z-index. */
-export function nextTrayZ() {
-    const b = board();
-    if (!b) return 1;
-    b.nextTrayZ = (b.nextTrayZ || 0) + 1;
-    return b.nextTrayZ;
-}
-
-/** Bring a Tray token to the very top z-level when handled. */
-export function bringTrayTokenToFront(slot) {
-    const b = board();
-    const entry = b?.tray?.[slot];
-    if (!entry) return null;
-    entry.z = nextTrayZ();
-    return entry.z;
-}
-
-/** Move the Token at `slot` to a new Tray position. Fractions, clamped. */
-export function setTrayPosition(slot, x, y) {
-    const b = board();
-    const entry = b?.tray?.[slot];
-    if (!entry) return false;
-    entry.x = clamp01(x);
-    entry.y = clamp01(y);
-    entry.z = nextTrayZ();
-    announceTray('moved');
-    return true;
-}
-
-/** Tray capacity (D-168). Raised later by the Economy upgrade track (D-163). */
-export const TRAY_CAPACITY = 48;
-
-// ---------------------------------------------------------------------------
-// Tray positions (D-223, D-226, D-227)
-// ---------------------------------------------------------------------------
-
-/**
- * ## The Tray is a free surface, not a grid (D-223)
- *
- * Tokens sit wherever they are put, may overlap freely, and stay there between
- * sessions. Three things about how that is stored are load-bearing:
- *
- * **1. Position lives on the INSTANCE, never on the slot index.**
- * `takeFromTray()` splices, so every index after the removed one shifts down.
- * Anything keyed to a slot number would make the whole Tray jump whenever one
- * Token was placed. Because each Token carries its own `x`/`y`, splicing cannot
- * disturb the arrangement — **which is also why no Token id is needed here.**
- *
- * **2. Positions are FRACTIONS of the placeable area, not pixels (D-226).**
- * `0` is flush against the left/top edge and `1` flush against the right/bottom,
- * so the renderer computes `fraction × (surface − sprite)`. The Tray body is
- * `flex-1` — its height changes with the window and collapses when a bottom
- * drawer opens — and absolute pixels would leave Tokens below the fold, on the
- * one surface that holds them. Fractions squash
- * and stretch instead: nothing ever leaves the surface, nothing needs scrolling,
- * and all 18 stay visible so the `n / 18` count keeps describing what you see.
- * *Accepted cost:* spacing is not preserved, only rough layout — a deliberate
- * gap can close up on a short window.
- *
- * **3. Scattering happens in that same fraction space**, so a narrow tall Tray
- * naturally spreads Tokens further apart vertically than horizontally. That is
- * the right bias for a 256px column and is why no aspect correction is applied.
- */
-
-const clamp01 = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.5);
-
-/** How many candidate spots to consider before choosing the emptiest. */
-const SCATTER_DARTS = 40;
-
-/**
- * A position for a Token arriving on its own — random, but biased toward open
- * space (D-227).
- *
- * Throw `SCATTER_DARTS` random points and keep whichever lands furthest from
- * everything already down. Overlap therefore begins only once the Tray genuinely
- * runs out of room.
- *
- * *Why not uniform random:* it does not read as physical, it reads as broken —
- * Tokens bury each other while obvious free space sits unused beside them, and a
- * six-item Map burst (D-167) can drop three things on one spot. Real objects
- * tipped onto a real surface spread out, so seeking space is **more** physical
- * than uniform randomness, not less.
- */
-export function scatterIntoTray(existing = [], options = {}) {
-    let best = { x: Math.random(), y: options.biasTop ? Math.random() * 0.45 : Math.random() };
-    let bestGap = -1;
-
-    for (let d = 0; d < SCATTER_DARTS; d++) {
-        const x = Math.random();
-        const y = options.biasTop ? (0.05 + Math.random() * 0.42) : Math.random();
-
-        let nearest = Infinity;
-        for (const e of existing) {
-            if (e?.x == null || e?.y == null) continue;
-            const gap = Math.hypot(e.x - x, e.y - y);
-            if (gap < nearest) nearest = gap;
-        }
-
-        if (nearest > bestGap) { bestGap = nearest; best = { x, y }; }
-    }
-
-    return best;
-}
-
-/**
- * Give a position to any Tray Token that loaded without one.
- *
- * **This is what makes the change need no save-schema break.** `migrateState()`
- * refuses any save whose version is not an exact match, and every rework so far
- * has broken compatibility deliberately — but adding an optional field does not
- * require that. A Token saved before positions existed is simply scattered on
- * read, exactly as a fresh arrival would be. Schema stays 0.6.0.
- */
-export function backfillTrayPositions(tray) {
-    if (!Array.isArray(tray)) return;
-    for (const entry of tray) {
-        if (!entry || (entry.x != null && entry.y != null)) continue;
-        const at = scatterIntoTray(tray);
-        entry.x = at.x;
-        entry.y = at.y;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// The Token Bank (D-137)
-// ---------------------------------------------------------------------------
-
-/**
- * **Stacks are never capped; slots are** (D-137). The Token Bank caps the number
- * of *distinct types* held, never how many copies of one type.
- *
- * Capping copies would punish a productive board, which is the opposite of what
- * the economy is for. Capping variety creates pressure to specialise without
- * ever making success feel like a problem.
- *
- * These are the storage primitives only. Consolidation (D-77), the slot cap and
- * selling are **rules**, and live in `TokenBank.js` — the same split that keeps
- * placement policy out of `setToken`.
- */
-export function getTokenBank() {
-    return board()?.tokenBank || {};
-}
-
-/** How many distinct Token types the Bank holds — the thing that is capped. */
-export function tokenBankSlotsUsed() {
-    return Object.keys(getTokenBank()).length;
-}
-
-/** Every copy of one Token type held in the Bank. */
-export function tokenBankCopies(typeId) {
-    return getTokenBank()[typeId] || [];
-}
-
-/**
- * Put a Token into the Bank, **raw** — no consolidation, no slot cap.
- *
- * Callers should use `TokenBank.deposit()`, which applies both. This stays
- * exported because consolidation needs a way to write copies back without
- * recursing through its own rules.
- *
- * Refused only when it would need a NEW slot and none is free — adding to a
- * type already held never needs one, exactly as the item Bank behaves. A
- * refusal never destroys the Token: every caller leaves it on the board as a
- * sprite instead (D-138).
- */
-export function addToTokenBank(instance, slotCap = Infinity) {
-    const b = board();
-    if (!b || !instance?.typeId) return false;
-    const bank = b.tokenBank;
-    if (!bank[instance.typeId]) {
-        if (Object.keys(bank).length >= slotCap) return false;
-        bank[instance.typeId] = [];
-    }
-    // ⚠️ The Vault stores copies, not instances — its key IS the type, and
-    // everything else about a Token is dropped. `terrain` has to be carried
-    // explicitly or a Token that goes board → Vault → board forgets which Map
-    // produced it (D-T6). Absent rather than null when there is no stamp, so
-    // Vault records stay the size they were.
-    const copy = { usesRemaining: instance.usesRemaining ?? null };
-    if (TERRAIN_ENABLED && instance.terrain) copy.terrain = instance.terrain; // dormant (FP-10)
-    bank[instance.typeId].push(copy);
-    return true;
-}
-
-/** Replace every copy of a type at once. Used by consolidation's repack. */
-export function setTokenBankCopies(typeId, copies) {
-    const b = board();
-    if (!b || !typeId) return;
-    if (copies?.length) b.tokenBank[typeId] = copies;
-    else delete b.tokenBank[typeId];
-}
-
-/**
- * Take one copy of a type out of the Bank.
- *
- * **Placement always draws a full Token first** (D-77); partials are used last.
- * Doing it here rather than at each call site means a player can never be handed
- * a nearly-spent Token while a fresh one sits in storage.
- */
-export function takeFromTokenBank(typeId) {
-    const bank = board()?.tokenBank;
-    const copies = bank?.[typeId];
-    if (!copies?.length) return null;
-
-    // Unlimited (null) counts as the fullest possible.
-    let best = 0;
-    for (let i = 1; i < copies.length; i++) {
-        const a = copies[best].usesRemaining;
-        const b2 = copies[i].usesRemaining;
-        if (a === null) break;
-        if (b2 === null || b2 > a) best = i;
-    }
-
-    const [copy] = copies.splice(best, 1);
-    if (!copies.length) delete bank[typeId];
-    return createTokenInstance(typeId, copy.usesRemaining ?? null, copy.terrain || null);
 }

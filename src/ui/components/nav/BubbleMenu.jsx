@@ -1,17 +1,10 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import {
-    Castle, Landmark, Vault, Map as MapIcon,
+    Castle, Landmark, Map as MapIcon,
     Settings
 } from 'lucide-react';
-import { useGameState } from '../../hooks/useGameState.js';
-import { useEntityDrop } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { getTokenType } from '../../../config/registries/tokenRegistry.js';
-import { QuestManager } from '../../../systems/quests/QuestManager.js';
 
 /**
  * BubbleMenu — UI Overhaul Phase 1 (ui_overhaul_spec.md §COL-01).
@@ -112,31 +105,6 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
     // screen and was removed on 2026-08-24 (CR2-144).
     const aboveOwnModal = nav.isActive('settings');
 
-    const isVaultSendUnlocked = useGameState(
-        () => QuestManager.isTokenVaultSendUnlocked(),
-        ['state_changed', 'quests_updated', 'loot_token_placed', 'token_placed']
-    );
-
-    const vaultDrop = useEntityDrop({
-        id: 'vault-bubble-deposit',
-        surface: DND_SURFACE.HUD,
-        accepts: (p) => {
-            if (!isVaultSendUnlocked) return false;
-            if (p.kind !== DRAG_KIND.TOKEN) return false;
-            const def = getTokenType(p.typeId);
-            if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
-            // Every Vault control accepts the same origins (owner ruling
-            // 2026-08-25). `depositFrom` handles them all — including naming
-            // the Map refusal instead of silently ignoring the drop.
-            return (p.from?.instanceId != null || p.from?.spriteId != null);
-        },
-        // `depositFrom` publishes the repaint for every route (CR2-134).
-        onDrop: (p) => {
-            const res = VaultTransfer.depositFrom(p.from);
-            if (!res.success && res.reason) NotificationSystem.warning(res.reason);
-        }
-    });
-
     return (
         <nav
             className={cn(
@@ -157,13 +125,8 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             {/* No Heroes bubble: the Hero Dock is always on screen, so there
                 is nothing to toggle (Hero Dock Phase 7). */}
             <Bubble id="bank-bubble-target" icon={Landmark} label="Item Bank" color="yellow" active={nav.isActive('bank')} onClick={() => nav.toggle('bank')} />
-            {/* The Token Vault is a Bank of its own: Tokens are capped
-                separately from items (D-137) and are for placing rather than
-                storing (D-158), so they get their own door rather than a tab
-                inside someone else's. */}
-            {/* `id` is the particle landing spot for collected Tokens (D-232),
-                exactly as the Bank bubble is for items. */}
-            <Bubble id="vault-bubble-target" ref={vaultDrop.setNodeRef} droppableProps={vaultDrop.droppableProps} isValidDrop={vaultDrop.valid} icon={Vault} label="Token Vault" color="lblu" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
+            {/* The Token Vault bubble went with the Vault (Token Lifecycle
+                9.3): Tokens spend their whole life on the mat. */}
             {/* The Cartographer: the one shop that is deliberately off-board
                 (D-98). A Cartographer Token would have permanently consumed a
                 tile AND a hero purely to keep progression ticking. */}
@@ -173,8 +136,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 the Area Manager managed areas, both deleted by the playmat
                 rework.
 
-                The Token Vault and Cartographer above are both deliberate
-                off-board exceptions — the design's rule is not "no menus", it is
+                The Shop above is a deliberate off-board exception — the design's rule is not "no menus", it is
                 "no menu decides what the board does" (grid concept §1). */}
 
             <div className="mt-auto" />

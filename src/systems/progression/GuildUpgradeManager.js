@@ -7,7 +7,6 @@ import {
     GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isTileAccessible, getLockReason,
     rosterLimitForRank
 } from '../../config/guildUpgrades.js';
-import { BASE_TOKEN_BANK_SLOTS, SLOTS_PER_RANK } from '../board/TokenBank.js';
 import { generateHero } from '../hero/HeroGenerator.js';
 import { rehydrateHero } from '../hero/logic/HeroRehydration.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -22,12 +21,11 @@ import { logger } from '../../utils/Logger.js';
  * derived stat is RECOMPUTED from ranks:
  *   bank_tabs        -> inventory.maxTabs      (1 + rank)
  *   bank_slots       -> inventory.maxSlots     (64 + 32·rank)
- *   token_bank_slots -> board.tokenBankSlots   (BASE + SLOTS_PER_RANK·rank)
- *   token_bank_tabs  -> board.tokenTabsUnlocked (1 + rank)
  *   roster_size      -> progress.rosterLimit   (rosterLimitForRank(rank), at most ROSTER_MAX = 8)
  *
- * (The five figures above were all wrong until 2026-08-25 — they described an
- * older cost curve. Read `recompute()` below, not this list.)
+ * (These figures were all wrong until 2026-08-25 — they described an
+ * older cost curve. Read `recompute()` below, not this list. The two Token
+ * Vault tracks went with the Vault, Token Lifecycle 9.3.)
  */
 export const GuildUpgradeManager = {
     init() {
@@ -173,11 +171,6 @@ export const GuildUpgradeManager = {
             state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
             state.progress.flagRadiusBonus = (ranks.flag_radius || 0) * 40;
         }
-        if (state.board) {
-            state.board.tokenBankSlots =
-                BASE_TOKEN_BANK_SLOTS + (ranks.token_bank_slots || 0) * SLOTS_PER_RANK;
-            state.board.tokenTabsUnlocked = 1 + (ranks.token_bank_tabs || 0);
-        }
 
         // Synchronize dynamic production for Guild Hall token
         const wishingWellRank = ranks.wishing_well ?? ranks.guildmasters_banner ?? 0;
@@ -208,7 +201,6 @@ export const GuildUpgradeManager = {
             TileModifiers.rebuildAll();
         }
 
-        EventBus.publish('token_bank_updated');
         EventBus.publish('inventory_updated');
         EventBus.publish('heroes_updated');
         // `collection_updated` was published here to nobody and was deleted on

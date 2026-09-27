@@ -53,8 +53,6 @@ export const InspectionPanel = ({
             <TokenInspection
                 typeId={selection.id}
                 showSell={!isCartographer}
-                showPlaceOnMat={!isCartographer}
-                showViewInVault={isCartographer}
             />
         );
     } else if (selection?.type === 'item') {
@@ -106,14 +104,14 @@ export const InspectionPanel = ({
                 </span>
             </div>
 
-            {/* Search bar for Bank / Vault */}
-            {(activePane === 'bank' || activePane === 'vault') && (
+            {/* Search bar for the Bank */}
+            {activePane === 'bank' && (
                 <div className="shrink-0 flex items-center gap-2 px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/50 focus-within:bg-gi-base/80 transition-colors">
                     <Search size={14} className="text-gi-muted shrink-0" />
                     <input
                         value={searchQuery || ''}
                         onChange={e => onSearchChange?.(e.target.value)}
-                        placeholder={`Search ${activePane === 'vault' ? 'tokens' : 'items'}…`}
+                        placeholder="Search items…"
                         className="bg-transparent outline-none text-xs text-gi-text w-full placeholder:text-gi-muted/60"
                     />
                     {searchQuery ? (

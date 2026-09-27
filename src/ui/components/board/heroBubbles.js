@@ -50,7 +50,7 @@ export function blockedText(alert, { token, missing = null, skill = 'the right' 
         case ALERT.CHOOSE_BUILD:
             return `Choose what to build on ${token}.`;
         case ALERT.NO_ROOM:
-            return `There is no room to build on ${token}.`;
+            return `There is no room for what ${token} makes.`;
         case ALERT.ACCESS:
             return `My ${skill} level is too low to work ${token}.`;
         case ALERT.UNSKILLED:

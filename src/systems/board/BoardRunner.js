@@ -3,7 +3,7 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
-import { getTokenType, rollOutputQuantity, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity, outputRange, tokenName } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -24,11 +24,12 @@ import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as Restrictions from './Restrictions.js';
+import * as Placement from './Placement.js';
+import * as MatPlacement from './MatPlacement.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
-import * as TokenBank from './TokenBank.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { centreOf } from './nearby.js';
@@ -150,6 +151,64 @@ function setAlert(instance, reason) {
 }
 
 /**
+ * The most copies a recipe's Token outputs can make in one cycle: each
+ * output's authored maximum, `chance` ignored (TL-8 reserves room for all).
+ */
+function tokenOutputCount(io) {
+    let n = 0;
+    for (const output of io?.outputs || []) {
+        if (output?.tokenId) n += Math.max(0, outputRange(output).max);
+    }
+    return n;
+}
+
+/**
+ * Whether every Token this cycle could make has room beside the station
+ * (TL-8). True when the recipe makes no Token.
+ */
+function hasRoomForTokenOutputs(id, io) {
+    const count = tokenOutputCount(io);
+    if (count <= 0) return true;
+    for (const output of io.outputs) {
+        if (output?.tokenId && !Placement.hasRoomForProduct(id, output.tokenId, count)) return false;
+    }
+    return true;
+}
+
+/**
+ * A Token output makes exactly what it rolled, beside the station (TL-8):
+ * never widened by YIELD or doubled by LOOT_MULT, because room was reserved
+ * for the recipe's authored maximum before the cycle paid, and a Token must
+ * never be made with nowhere to stand. It is not pushed to `produced`: that
+ * list is matched against item ids (`TriggerSystem.producedMatches`).
+ */
+function placeTokenOutput(instance, output) {
+    const copies = rollOutputQuantity(output);
+    for (let i = 0; i < copies; i++) {
+        const placed = Placement.placeProduct(instance.id, output.tokenId);
+        if (!placed?.success) {
+            logger.warn('BoardRunner',
+                `${tokenName(output.tokenId) || output.tokenId} found no room beside ${tokenName(instance.typeId) || instance.typeId}: ${placed?.reason || 'no spot'}`);
+        }
+    }
+}
+
+/** How far the load-time repair looks for a legal spot, in mat units. */
+const RELOCATE_REACH = 640;
+
+/**
+ * Where a Token that breaks a `Cannot` on load should stand instead: the
+ * nearest legal point, or null to leave it where it is.
+ */
+function relocateOffender(instance) {
+    return MatPlacement.findSpot(instance.typeId, { x: instance.x, y: instance.y }, {
+        excludeId: instance.id,
+        plan: { id: instance.id },
+        reach: RELOCATE_REACH
+    });
+}
+
+/**
  * One Token finished a cycle.
  *
  * Order matters: **pay first, then produce.** Deciding the whole exchange before
@@ -172,6 +231,19 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
      */
     const buildTypeId = Foundations.isFoundation(def) ? Foundations.buildTargetOf(io) : null;
     if (buildTypeId && !Foundations.hasRoomToBuild(instance, buildTypeId)) {
+        setAlert(instance, ALERT.NO_ROOM);
+        return;
+    }
+
+    /**
+     * A Token a recipe makes lands on the mat beside this station (TL-8,
+     * Token Lifecycle 9.3), as a `placed` Token that counts toward the mat
+     * cap. Room is checked here, before anything is paid, exactly as a build
+     * checks above: with the mat full or nowhere legal beside the station, the
+     * cycle holds at full progress with the `NO_ROOM` mark, nothing is spent
+     * and nothing is lost, and it retries every tick.
+     */
+    if (!buildTypeId && !hasRoomForTokenOutputs(id, io)) {
         setAlert(instance, ALERT.NO_ROOM);
         return;
     }
@@ -232,8 +304,9 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
     );
     const failed = failChance > 0 && Math.random() * 100 < failChance;
 
-    // Output lands on the BOARD, not in the Bank (D-40). It is not banked until
-    // collected, and if the Bank is full it simply waits there (D-138).
+    // Item output lands on the BOARD, not in the Bank (D-40). It is not banked
+    // until collected, and if the Bank is full it simply waits there (D-138).
+    // A Token output stands on the mat beside the station (TL-8).
     //
     // YIELD is widened the same way (G-5): a Sawmill beside a Forest nudges what
     // it produces. Fractional results round probabilistically, so a x1.5 yield
@@ -263,6 +336,11 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
+        if (output.tokenId) {
+            placeTokenOutput(instance, output);
+            continue;
+        }
+
         // Roll the authored range FIRST, then widen it (CMS-41). Order matters:
         // a Sawmill should scale whatever this cycle actually rolled, not the
         // range's midpoint — otherwise a 1–5 output would buff identically on a
@@ -281,30 +359,7 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         // Market's old currency output (D-141) — pays nothing: gold is retired
         // (SP-65) and its code deleted (Token Lifecycle 9.4). The cycle still
         // runs and still takes its inputs.
-        if (output.tokenId) {
-            /**
-             * A recipe that outputs a Token drops it on the floor, through the
-             * same call a Map burst uses (`Cartographer.js:344`): one sprite
-             * per copy, carrying `tokenStartingUses` as its charges, so a
-             * crafted Token arrives at full life and an unlimited one arrives
-             * with `usesRemaining: null` (R-4).
-             *
-             * One sprite per copy rather than a single stack of `quantity`:
-             * `SpriteLayer` only merges `kind: 'item'` sprites, and both
-             * collection paths — `takeTokenSprite` and `sendTokenToVault` —
-             * build exactly one instance from a token sprite regardless of its
-             * quantity, so a stack of 3 would collect as 1.
-             *
-             * Not pushed to `produced`: that list is matched against
-             * `when.watchItemId` in `TriggerSystem.producedMatches`, which
-             * compares item ids.
-             */
-            for (let i = 0; i < quantity; i++) {
-                SpriteLayer.addSprite(
-                    'token', output.tokenId, 1, id, tokenStartingUses(output.tokenId)
-                );
-            }
-        } else if (output.itemId) {
+        if (output.itemId) {
             SpriteLayer.addSprite('item', output.itemId, quantity, id);
             produced.push(output.itemId);
         }
@@ -631,6 +686,12 @@ export function tick(delta) {
             && !Foundations.hasRoomToBuild(instance, Foundations.buildTargetOf(io))) {
             continue;
         }
+        // Likewise a station whose finished cycle makes a Token with no room
+        // beside it or no room under the mat cap (TL-8).
+        if (instance.alert === ALERT.NO_ROOM && !Foundations.isFoundation(def)
+            && !hasRoomForTokenOutputs(id, io)) {
+            continue;
+        }
 
         setAlert(instance,null);
 
@@ -709,23 +770,25 @@ export function init() {
         /**
          * The one path a `Cannot` has no last location to fly back to: a save
          * authored before the restriction existed, loading into a board the
-         * rule now forbids. The offenders go to the **Vault** — the owner's
-         * stated fallback — so nothing is destroyed and the board is legal by
-         * the time the player sees it.
+         * rule now forbids. The offenders are moved to the nearest legal spot
+         * on the mat (the Vault that used to take them went in Token Lifecycle
+         * 9.3), so nothing is destroyed and the board is legal by the time the
+         * player sees it. A Token with no legal spot anywhere near stays put.
          *
-         * Almost always a no-op: it costs one pass over the occupied tiles, and
-         * only Tokens carrying a `Cannot` are examined at all.
+         * Almost always a no-op: it costs one pass over the Tokens, and only
+         * Tokens carrying a `Cannot` are examined at all.
          */
-        const lifted = Restrictions.reconcile(instance => TokenBank.deposit(instance));
-        for (const { id, x, y } of lifted) {
+        const moved = Restrictions.reconcile(relocateOffender);
+        for (const { id, typeId, x, y, to } of moved) {
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, x, y, typeId: null });
-            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [{ x, y }] });
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...to, typeId });
+            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [{ x, y }, to] });
         }
-        if (lifted.length) {
+        if (moved.length) {
             TileModifiers.rebuildAll();
             EventBus.publish('state_changed');
             logger.info('BoardRunner',
-                `${lifted.length} Token(s) sat somewhere their rules forbid and were moved to the Vault`);
+                `${moved.length} Token(s) sat somewhere their rules forbid and were moved to a legal spot`);
         }
     });
 

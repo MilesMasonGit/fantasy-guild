@@ -4,54 +4,39 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z } from './matLayers.js';
-import { PixelArt, tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
-import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
+import { PixelArt, boardScaleAt } from '../base/TokenSprite.jsx';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 
 /**
- * SpriteLayerView — loot floating **above** the grid (D-40).
+ * SpriteLayerView — item loot floating **above** the mat (D-40).
  *
- * Sprites occupy no tile, which is why this is an absolutely-positioned overlay
- * rather than anything the grid knows about. It sits over the board and below
- * the HUD.
+ * An absolutely-positioned overlay over the mat and below the HUD.
  *
  * ## Loot has mass
- * Items pop out on an arc and **settle with a bounce** (UI §5). That physicality
- * is not decoration: D-142 asks the Map burst to be the game's headline reward
- * beat, and a burst is only 3–6 things (D-167), so **the spectacle rests on
- * presentation, not volume**. If a four-item burst reads as flat in testing, the
- * lever is here first and quantity second.
+ * Items pop out on an arc and **settle with a bounce** (UI §5).
  *
- * ## The gestures (UI §6, D-88, D-232)
+ * ## The gestures (UI §6, D-88, TL-9)
  * | Gesture | Result |
  * | :-- | :-- |
- * | Hover an **item** | Collected on the way in — goes to the **Bank** |
- * | Hover a **Token** and move away | Collected on the way out — goes to the **Token Vault** |
- * | Click either | Same as hovering |
- * | Drag a Token | Place it **straight onto a tile**, no trip through storage |
+ * | Hover an item | Collected on the way in — goes to the **Bank** |
+ * | Click it | Same as hovering |
  *
- * The last is what makes opening a Map flow into building: burst, grab the two
- * things you want, put them down, let the rest tidy itself away.
- *
- * ⚠️ **Tokens go to the Vault, not the Tray** (D-232, reversing D-158). Sending
- * them to the Tray filled the rack with things the player never chose; the Tray
- * now holds only what was put there deliberately. (Maps were once refused by the
- * Vault, D-156; that rule retired with the Map bursts, Token Lifecycle 9.1.)
+ * ⭐ **Items only** since Token Lifecycle 9.3. Token loot (drag it onto the mat,
+ * or hover or right-click it into the Token Vault) went with the Vault: a
+ * Token a recipe makes now stands on the mat beside its station (TL-8).
  */
 export const SpriteLayerView = () => {
     const mat = useMatSize();
     const sprites = useGameState(
-        state => (state.board?.sprites || []).map(s => ({
+        state => (state.board?.sprites || []).filter(s => s.kind !== 'token').map(s => ({
             id: s.id, kind: s.kind, refId: s.refId,
             quantity: s.quantity, x: s.x, y: s.y,
-            usesRemaining: s.usesRemaining,
             fromX: s.fromX, fromY: s.fromY, bornAt: s.bornAt,
             targetStackId: s.targetStackId, absorbAt: s.absorbAt
         })),
@@ -75,10 +60,7 @@ export const SpriteLayerView = () => {
     );
 };
 
-/**
- * Items come from a 32px source and render 2x (64px) on the floor.
- * Tokens render at full 128px (or 256px for 2x2) floor size via TOKEN_SURFACE.FLOOR.
- */
+/** Items come from a 32px source and render 2x (64px) on the floor. */
 const FLOOR_ITEM_PX = 64;
 
 /**
@@ -107,29 +89,14 @@ const isDragActive = () =>
 const THROW_WINDOW_MS = 1000;
 const justThrown = (sprite) => Date.now() - (sprite.bornAt ?? 0) < THROW_WINDOW_MS;
 
-/** One piece of loot on the floor. */
+/** One piece of item loot on the floor. */
 const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
-    const isToken = sprite.kind === 'token';
-    const { isDragging: isAnyDragging, activePayload } = useActiveDrag();
+    const { isDragging: isAnyDragging } = useActiveDrag();
     const [isHovered, setIsHovered] = React.useState(false);
     const [isAbsorbingPulse, setIsAbsorbingPulse] = React.useState(false);
     const elementRef = React.useRef(null);
     const fit = useMatFit();
     const artScale = boardScaleAt(fit);
-
-    const drag = useEntityDrag({
-        id: `sprite-${sprite.id}`,
-        kind: DRAG_KIND.TOKEN,
-        payload: {
-            typeId: sprite.refId,
-            from: { spriteId: sprite.id },
-            usesRemaining: sprite.usesRemaining
-        },
-        sourceSurface: DND_SURFACE.BOARD,
-        disabled: !isToken
-    });
-
-    const isThisDragging = isToken && (drag.isDragging || activePayload?.from?.spriteId === sprite.id);
 
     React.useEffect(() => {
         if (!justThrown(sprite)) return;
@@ -169,61 +136,39 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
         return unsub;
     }, [sprite.id]);
 
-    const setNodeRef = (node) => {
-        elementRef.current = node;
-        if (isToken) drag.setNodeRef(node);
-    };
-
-    const art = isToken
-        ? tokenSpritePath(sprite.refId)
-        : resolveSpritePath(getItem(sprite.refId) || sprite.refId);
-
-    const label = isToken ? tokenName(sprite.refId) : (getItem(sprite.refId)?.name || sprite.refId);
-    const spriteSize = isToken ? tokenSizeFor(TOKEN_SURFACE.FLOOR, sprite.refId, artScale) : FLOOR_ITEM_PX * (artScale / 2);
+    const art = resolveSpritePath(getItem(sprite.refId) || sprite.refId);
+    const label = getItem(sprite.refId)?.name || sprite.refId;
+    const spriteSize = FLOOR_ITEM_PX * (artScale / 2);
 
     const handlePointerMove = () => {
         if (!elementRef.current) return;
         if (!isHovered) {
             setIsHovered(true);
-            if (!isToken && !isAnyDragging) onCollect(sprite.id);
+            if (!isAnyDragging) onCollect(sprite.id);
         }
     };
 
     const handleClick = (e) => {
-        if (isToken) {
-            e.stopPropagation();
-        } else {
-            e.stopPropagation();
-            onCollect(sprite.id);
-        }
-    };
-
-    const handleContextMenu = (e) => {
-        e.preventDefault();
         e.stopPropagation();
-        if (isToken) SpriteLayer.sendTokenToVault(sprite.id);
+        onCollect(sprite.id);
     };
 
     return (
         <button
-            ref={setNodeRef}
-            {...(isToken ? drag.handleProps : {})}
-            data-item-sprite={!isToken ? "true" : undefined}
-            data-token-sprite={isToken ? "true" : undefined}
+            ref={elementRef}
+            data-item-sprite="true"
             type="button"
             onClick={handleClick}
-            onContextMenu={handleContextMenu}
             onMouseEnter={() => {
                 setIsHovered(true);
-                if (!isToken && !isAnyDragging) onCollect(sprite.id);
+                if (!isAnyDragging) onCollect(sprite.id);
             }}
             onMouseMove={handlePointerMove}
             onMouseLeave={() => setIsHovered(false)}
             className={cn(
                 'absolute -translate-x-1/2 -translate-y-1/2',
                 'flex items-center justify-center',
-                isToken ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
-                isThisDragging ? 'opacity-0 pointer-events-none' : 'pointer-events-auto'
+                'cursor-pointer pointer-events-auto'
             )}
             style={{
                 left: sprite.x,
@@ -231,22 +176,18 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
                 width: spriteSize,
                 height: spriteSize,
                 borderRadius: '50%',
-                zIndex: 50,
-                opacity: isThisDragging ? 0 : 1,
-                visibility: isThisDragging ? 'hidden' : 'visible',
-                pointerEvents: isThisDragging ? 'none' : 'auto'
+                zIndex: 50
             }}
         >
             <div
                 className={cn(
                     'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                    isHovered && isToken && !isAnyDragging && !drag.isDragging && 'brightness-110',
                     isAbsorbingPulse && 'brightness-125 saturate-125'
                 )}
             >
                 <PixelArt src={art} alt={label} size={spriteSize} hovering />
             </div>
-            {!isToken && sprite.quantity > 1 && (
+            {sprite.quantity > 1 && (
                 <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 text-[9px] font-bold text-white tabular-nums">
                     {sprite.quantity}
                 </span>

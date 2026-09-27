@@ -13,16 +13,14 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { lifecycleLines } from './lifecycleLines.js';
-import { ArrowRight, Vault, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 /**
  * TokenInspection — a Token's full detail, styled consistently with ItemInspection.
@@ -30,8 +28,9 @@ import { ArrowRight, Vault, Trash2 } from 'lucide-react';
  * ## Why this is load-bearing rather than a nicety (D-145)
  * Hero-time is the scarce resource. A player must never have to spend a
  * tile and a hero to discover what something does — planning happens before
- * placement, so the same sheet has to be reachable from the Vault,
- * the Cartographer's pool and the board alike.
+ * placement, so the same sheet has to be reachable from the Shop and the
+ * board alike. (It was also reachable from the Token Vault, and offered Place
+ * on Mat from there, until the Vault went in Token Lifecycle 9.3.)
  */
 export const TokenInspection = ({
     typeId,
@@ -40,8 +39,6 @@ export const TokenInspection = ({
     // (SP-65, slice 2.2).
     // eslint-disable-next-line no-unused-vars
     showSell = true,
-    showPlaceOnMat = true,
-    showViewInVault = false,
     // The board Token this panel was opened from, by instance id (slice
     // 1.6c-2). Only a Token on the board can be marked "heroes may not work
     // this".
@@ -52,23 +49,10 @@ export const TokenInspection = ({
 }) => {
     const def = getTokenType(typeId);
 
-    const inVaultCopies = useGameState(
-        () => BoardState.tokenBankCopies(typeId),
-        ['token_bank_updated', 'state_changed'],
-        null,
-        { deps: [typeId] }
-    ) || [];
-    const inVaultCount = inVaultCopies.length;
-
     if (!def) return null;
 
     const routes = productionRoutes(typeId);
     const enemy = enemyProfileOf(def);
-
-    const partialCopy = inVaultCopies.find(
-        c => c.usesRemaining != null && def.uses != null && c.usesRemaining < def.uses
-    );
-    const partialCharges = partialCopy?.usesRemaining;
 
     // (The line naming the Maps that burst into this Token went with the Map
     // bursts, Token Lifecycle 9.1.)
@@ -132,41 +116,13 @@ export const TokenInspection = ({
     const xpAmount = def.config?.xp ?? 0;
     const cycleSec = def.config?.cycleTimeMs ? (def.config.cycleTimeMs / 1000).toFixed(0) : null;
 
-    const handlePlaceOnMat = () => {
-        const res = VaultTransfer.withdrawTo(typeId);
-        if (!res.success) {
-            if (res.reason) NotificationSystem.warning(res.reason);
-            return;
-        }
-        NotificationSystem.success(`Placed ${tokenName(typeId)} beside the Guild Hall`);
-    };
-
     return (
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
-            {/* Header: Centered 128px sprite with hover Place on Mat, name, found in/rarity, tags */}
+            {/* Header: Centered 128px sprite, name, found in/rarity, tags */}
             <div className="flex flex-col items-center text-center">
                 {!hideSprite && (
                     <div className="relative group flex items-center justify-center w-32 h-32 mb-1 rounded-lg overflow-hidden">
                         <TokenSprite typeId={typeId} surface={TOKEN_SURFACE.INSPECT} size={128} alt={def.name} />
-
-                        {/* Place on Mat button on sprite hover */}
-                        {showPlaceOnMat && inVaultCount > 0 && (
-                            <button
-                                onClick={handlePlaceOnMat}
-                                title="Place one copy on the mat, beside the Guild Hall"
-                                className={cn(
-                                    'absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 p-2 bg-black/75 backdrop-blur-[2px] transition-opacity duration-150',
-                                    'opacity-0 group-hover:opacity-100 cursor-pointer active:scale-[0.98]'
-                                )}
-                            >
-                                <div className="p-1.5 rounded-full bg-gi-primary/20 border border-gi-primary/60 text-gi-primary shadow">
-                                    <ArrowRight size={18} />
-                                </div>
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-gi-text text-center leading-tight drop-shadow">
-                                    Place on Mat
-                                </span>
-                            </button>
-                        )}
                     </div>
                 )}
 
@@ -249,7 +205,7 @@ export const TokenInspection = ({
                             <span className="text-gi-success font-sans">∞</span>
                         ) : (
                             <span>
-                                {partialCharges != null ? partialCharges : def.uses}/{def.uses}
+                                {def.uses}/{def.uses}
                             </span>
                         )}
                     </div>
@@ -305,30 +261,6 @@ export const TokenInspection = ({
             )}
 
             {Object.keys(getProvidedTagsWithTiers(def)).length > 0 && <DrivesBlock def={def} />}
-
-            {/* The Vault count. Its Value badge and the Sell controls went with
-                gold (SP-65, slice 2.2). */}
-            {!def.cannotLeaveBoard && !def.isGuildHall && inVaultCount > 0 && (
-                <div className="flex items-center gap-2 text-xs pt-1">
-                    <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                        <span className="text-gi-muted">Vault</span>
-                        <span className="font-bold text-gi-text tabular-nums">{inVaultCount}</span>
-                    </div>
-                </div>
-            )}
-
-            {/* View in Vault action */}
-            {showViewInVault && inVaultCount > 0 && (
-                <div className="pt-2 border-t border-gi-border/40">
-                    <button
-                        onClick={() => EventBus.publish('ui:open_drawer', { tab: 'vault' })}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs md:text-sm uppercase tracking-wide transition-colors border-gi-primary/60 bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25 cursor-pointer active:scale-[0.99]"
-                    >
-                        <Vault size={14} className="text-gi-primary" /> View in Token Vault
-                    </button>
-                </div>
-            )}
-
         </div>
     );
 };

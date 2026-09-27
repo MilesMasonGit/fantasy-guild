@@ -290,7 +290,6 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
         expect(leftover.usesRemaining).toBe(30);
         expect(gap(leftover, copy)).toBeGreaterThanOrEqual(61.2 - 1e-6);
         expect(gap(leftover, copy)).toBeLessThan(120);
-        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('a leftover with nowhere to stand is refused and flies back — never to the Tray (FP-46)', () => {
@@ -305,7 +304,6 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
         expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(100);
         expect(BoardState.getTokenById(incoming.id)).toBeNull();
         expect(incoming.usesRemaining).toBe(30);
-        expect(BoardState.getTray()).toHaveLength(0);
     });
 
     it('a copy already full is not a restock target — the newcomer nudges clear', () => {
@@ -430,14 +428,11 @@ describe('flags and the Guild Hall', () => {
         expect(moved.y).toBeGreaterThanOrEqual(0);
     });
 
-    it('and still refuses to be sent to the Vault', () => {
+    it('and still refuses to be removed (the Vault it also refused went in 9.3)', () => {
         const hall = placeAt('token_guild_hall', 900, 700);
-        GameState.state.quests.completedTutorials = ['tutorial_5'];
 
-        expect(Placement.returnTokenToVaultById(hall.id).success).toBe(false);
+        expect(Placement.removePlacedToken(hall.id).success).toBe(false);
         expect(BoardState.getTokenById(hall.id)).not.toBeNull();
-        expect(BoardState.getTray()).toHaveLength(0);
-        expect(BoardState.tokenBankCopies('token_guild_hall')).toHaveLength(0);
     });
 });
 

@@ -113,7 +113,7 @@ export const ALERT_HINT = {
     [ALERT.NO_RECIPE]: 'This station is missing a Token its recipe needs beside it',
     [ALERT.CHARGES]: 'Not enough charges left here to run a full cycle',
     [ALERT.CHOOSE_BUILD]: 'Choose what to build on this Foundation',
-    [ALERT.NO_ROOM]: 'No room for what this Foundation builds — clear some space around it',
+    [ALERT.NO_ROOM]: 'No room on the mat for what this makes — clear some space around it, or remove a placed Token if the mat is full',
     [ALERT.SPAWN_NEEDS_ITEM]: 'This spawner can’t pay its upkeep — put the item in the Bank',
     [ALERT.SPAWN_NO_ROOM]: 'Nowhere free for this spawner’s next Token — clear some space around it'
 };
@@ -135,7 +135,7 @@ export const SKIP_HINT = {
     [ALERT.NO_RECIPE]: 'missing a Token its recipe needs beside it',
     [ALERT.CHARGES]: 'not enough charges for a cycle',
     [ALERT.CHOOSE_BUILD]: 'nothing chosen to build',
-    [ALERT.NO_ROOM]: 'no room to build',
+    [ALERT.NO_ROOM]: 'no room for what it makes',
     [ALERT.SPAWN_NEEDS_ITEM]: 'can’t pay its upkeep',
     [ALERT.SPAWN_NO_ROOM]: 'no room to spawn',
     no_skill: 'names no skill',

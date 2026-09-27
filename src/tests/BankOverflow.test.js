@@ -118,51 +118,9 @@ describe('D-138 — a full Bank never destroys anything', () => {
 // live path — see `TokenCycle.test.js` ("waits when inputs are missing, D-114")
 // and `Risk13Allocation.test.js` for starvation behaviour.
 
-/**
- * ⚠️ **The cascade reversed on 2026-08-07 (D-232).** These cases used to assert
- * Tray → Token Bank → the board, per D-158. Tokens now go to **storage first**:
- * a burst no longer fills the rack with things the player did not choose, and
- * the Tray holds only what was put there on purpose.
- *
- * **D-138's guarantee is untouched and is what the last case still pins:**
- * nothing is ever destroyed by a full anything.
- */
-describe('Tokens collect into the Token Vault, or wait on the floor', () => {
-    // Slice 1.9 retired the Tray, which used to be tried first. A Token put in
-    // it now would be invisible and unreachable, so no collection may go there.
-    it('a Token sprite collects straight into the Vault, charges intact', () => {
-        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
-        const sprite = SpriteLayer.getSprites()[0];
-
-        expect(SpriteLayer.collectSprite(sprite.id)).toBe(true);
-        expect(BoardState.getTray()).toHaveLength(0);
-        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
-        expect(BoardState.tokenBankCopies('token_forest')[0].usesRemaining).toBe(500);
-    });
-
-    it('a Mythic with nowhere to go WAITS on the board rather than being lost', () => {
-        // One-copy-ever. This is the case D-138 exists for.
-        SpriteLayer.addSprite('token', 'token_deck_of_many_things', 1, 10, null);
-
-        const sprite = SpriteLayer.getSprites().find(s => s.refId === 'token_deck_of_many_things');
-        SpriteLayer.collectSprite(sprite.id);
-
-        // Wherever it ends up — Token Bank or still on the floor — there is
-        // exactly one of it, and it was never destroyed. That is the whole
-        // guarantee for a one-copy-ever drop.
-        expect(
-            BoardState.tokenBankCopies('token_deck_of_many_things').length +
-            SpriteLayer.getSprites().filter(s => s.refId === 'token_deck_of_many_things').length
-        ).toBe(1);
-        expect(BoardState.getTray()).toHaveLength(0);
-    });
-
-    it('preserves an unlimited-use Token’s null charges through the round trip', () => {
-        SpriteLayer.addSprite('token', 'token_campfire', 1, 10, null);
-        SpriteLayer.collectSprite(SpriteLayer.getSprites()[0].id);
-        expect(BoardState.tokenBankCopies('token_campfire')[0].usesRemaining).toBeNull();
-    });
-});
+// 'Tokens collect into the Token Vault, or wait on the floor' went with Token
+// loot and the Vault (Token Lifecycle 9.3): a Token a recipe makes now stands
+// on the mat beside its station (TL-8, `TokenOutputsOnMat.test.js`).
 
 describe('Sprites feed Tokens directly (D-42)', () => {
     it('loot on the ground never starves a chain', () => {
@@ -187,16 +145,6 @@ describe('Sprites feed Tokens directly (D-42)', () => {
 });
 
 describe('Sprite behaviour', () => {
-    it('grab-and-place takes a Token off the board without banking it (UI §6)', () => {
-        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
-        const instance = SpriteLayer.takeTokenSprite(SpriteLayer.getSprites()[0].id);
-
-        expect(instance.typeId).toBe('token_forest');
-        expect(instance.usesRemaining).toBe(500);
-        expect(SpriteLayer.getSprites()).toHaveLength(0);
-        expect(BoardState.getTray()).toHaveLength(0);   // no trip through storage
-    });
-
     it('lands sprites inside the board, never off the edge', () => {
         for (const tile of [0, 6, 42, 48, 24]) {
             SpriteLayer.addSprite('item', `item_${tile}`, 1, tile);
@@ -209,19 +157,12 @@ describe('Sprite behaviour', () => {
         }
     });
 
-    it('does NOT merge Tokens — each carries its own charges', () => {
-        // Summing two half-spent Forests into "2 Forests" would invent or
-        // destroy uses. Consolidating partials is the Token Bank's job (D-77).
-        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 100);
-        SpriteLayer.addSprite('token', 'token_forest', 1, 20, 4000);
-        expect(SpriteLayer.getSprites()).toHaveLength(2);
-    });
+    // 'grab-and-place', 'does NOT merge Tokens' and 'collecting a floating
+    // Token routes to the Token Vault' went with Token sprites (9.3).
 
-    it('collecting a floating Token routes to the Token Vault, never the Tray', () => {
-        SpriteLayer.addSprite('token', 'token_yew_stand', 1, 10, 500);
-        const spriteId = SpriteLayer.getSprites()[0].id;
-        expect(SpriteLayer.collectSprite(spriteId)).toBe(true);
-        expect(BoardState.tokenBankCopies('token_yew_stand')).toHaveLength(1);
-        expect(BoardState.getTray()).toHaveLength(0);
+    it('refuses a Token sprite: only items drop as loot (Token Lifecycle 9.3)', () => {
+        expect(SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500)).toBeNull();
+        expect(SpriteLayer.getSprites()).toHaveLength(0);
     });
 });
+

@@ -8,7 +8,6 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
@@ -321,9 +320,8 @@ describe('fixable problems (FP-69, FPP-1, FPP-2, FPP-5)', () => {
 });
 
 describe('⭐ a hero whose Token runs dry moves on — no Manager wait (SP-55, 9.2)', () => {
-    it('takes other work in range at once, even with a copy in the Vault', () => {
+    it('takes other work in range at once', () => {
         const first = put(14, 'fixture_producer', 1);
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         put(20, 'fixture_producer');
         plant('h1', 14);
         expect(workTileOf('h1')).toBe(14);
@@ -337,7 +335,6 @@ describe('⭐ a hero whose Token runs dry moves on — no Manager wait (SP-55, 9
 
     it('with nothing else in range is idle, not waiting', () => {
         const first = put(14, 'fixture_producer', 1);
-        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         plant('h1', 14);
 
         Charges.destroyToken(first, { heroId: 'h1' });

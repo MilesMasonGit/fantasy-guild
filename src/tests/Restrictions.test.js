@@ -4,7 +4,7 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Restrictions from '../systems/board/Restrictions.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
+import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
@@ -270,7 +270,6 @@ describe('A 2×2 can no longer shove anybody into an illegal spot (slice 1.6d-1)
             .filter(t => t.typeId !== 'fixture_big_slab')
             .map(t => `${t.id}:${t.x},${t.y}`).sort();
         expect(after).toEqual(before);
-        expect(BoardState.getTray()).toEqual([]);
     });
 
     it('still allows a 2×2 that breaks nothing', () => {
@@ -282,8 +281,18 @@ describe('A 2×2 can no longer shove anybody into an illegal spot (slice 1.6d-1)
     });
 });
 
+/**
+ * The load-time repair's `relocate`, as `BoardRunner` passes it: the nearest
+ * legal point within 640 u. (It lifted offenders into the Vault until the
+ * Vault went in Token Lifecycle 9.3; now they move to a legal spot.)
+ */
+const relocate = (instance) => MatPlacement.findSpot(
+    instance.typeId, { x: instance.x, y: instance.y },
+    { excludeId: instance.id, plan: { id: instance.id }, reach: 640 }
+);
+
 describe('A saved board that already breaks a rule is repaired, never destroyed', () => {
-    it('lifts the offender into the Vault', () => {
+    it('moves the offender to a legal spot on the mat', () => {
         // Build the illegal board directly, the way a save from before the rule
         // existed would rehydrate it — bypassing placement entirely.
         seat(9, BoardState.createTokenInstance('fixture_coast', 500));
@@ -292,13 +301,16 @@ describe('A saved board that already breaks a rule is repaired, never destroyed'
         }
         expect(Restrictions.violations()).not.toEqual([]);
 
-        const moved = Restrictions.reconcile(instance => TokenBank.deposit(instance));
+        const count = BoardState.tokens().length;
+        const moved = Restrictions.reconcile(relocate);
 
         expect(moved.length).toBeGreaterThan(0);
         expect(Restrictions.violations()).toEqual([]);
-        // Nothing destroyed: every lifted Token is in the Vault.
-        for (const { typeId } of moved) {
-            expect(BoardState.tokenBankCopies(typeId).length).toBeGreaterThan(0);
+        // Nothing destroyed: every moved Token is still on the mat, where it went.
+        expect(BoardState.tokens()).toHaveLength(count);
+        for (const { id, to } of moved) {
+            const t = BoardState.getTokenById(id);
+            expect({ x: t.x, y: t.y }).toEqual(to);
         }
     });
 
@@ -308,10 +320,10 @@ describe('A saved board that already breaks a rule is repaired, never destroyed'
             seat(tile, BoardState.createTokenInstance('fixture_plain_coast', 500));
         }
 
-        const moved = Restrictions.reconcile(instance => TokenBank.deposit(instance));
+        const moved = Restrictions.reconcile(relocate);
 
-        // Four Tokens are involved; removing one fixes it. Confiscating more
-        // than necessary would cost the player Tokens they never had to lose.
+        // Four Tokens are involved; moving one fixes it. Moving more than
+        // necessary would rearrange the player's mat for nothing.
         expect(moved).toHaveLength(1);
     });
 
@@ -319,7 +331,7 @@ describe('A saved board that already breaks a rule is repaired, never destroyed'
         place(8, 'fixture_plain_coast');
         place(9, 'fixture_coast');
 
-        expect(Restrictions.reconcile(() => true)).toEqual([]);
+        expect(Restrictions.reconcile(relocate)).toEqual([]);
         expect(tokenAt(9)?.typeId).toBe('fixture_coast');
     });
 
@@ -329,8 +341,8 @@ describe('A saved board that already breaks a rule is repaired, never destroyed'
             seat(tile, BoardState.createTokenInstance('fixture_plain_coast', 500));
         }
 
-        // A Vault that refuses everything.
-        const moved = Restrictions.reconcile(() => false);
+        // Nowhere legal to go.
+        const moved = Restrictions.reconcile(() => null);
 
         expect(moved).toEqual([]);
         expect(tokenAt(9)?.typeId).toBe('fixture_coast');

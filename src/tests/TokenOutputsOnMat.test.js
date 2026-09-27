@@ -1,33 +1,28 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as StationRecipe from '../systems/board/StationRecipe.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
+import * as MatCap from '../systems/board/MatCap.js';
+import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
- * Token outputs via floor drop (Recipe & Charges rework, P5 / concept §1).
+ * ⭐ TL-8 (owner, 2026-09-26, Token Lifecycle slice 9.3): **a Token a recipe
+ * makes lands straight on the mat beside the station that made it**, like a
+ * Shop purchase. It is `placed`, carries its starting charges, counts toward
+ * the mat cap, and if there is no room the cycle waits. No Token loot, no
+ * Vault.
  *
- * A recipe output carries exactly one of `itemId`, `tokenId` or `currency`
- * (pinned by `RecipeSchema.test.js`). Items become floor sprites and gold is
- * credited; before P5 a `tokenId` output matched neither branch in
- * `BoardRunner` and produced nothing at all.
- *
- * These tests pin the drop itself: that it goes through the same
- * `SpriteLayer.addSprite('token', …)` call a Map burst uses, that it carries
- * `tokenStartingUses` as its charges (with `null` meaning unlimited, R-4), and
- * that `chance` / `minQty` / `maxQty` / the point it flies from behave as they
- * already do for item outputs.
- *
- * ⚠️ **Fixture-proven only.** No shipped recipe declares a Token output.
+ * Replaces `TokenOutputDrops.test.js`, which pinned the retired behaviour
+ * (the Token dropped on the floor as a loot sprite bound for the Vault).
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -103,6 +98,13 @@ registerRecipePools({
                 { itemId: 'fixture_oak_wood', minQty: 2, maxQty: 2, chance: 100 }
             ],
             durationMs: 10000, xp: 0
+        },
+        {
+            // Like the Copper Pickaxe: ingredients in, one Token out.
+            id: 'tool_for_wood', levelRequirement: 1, requiresContext: [],
+            inputs: [{ itemId: 'fixture_oak_wood', quantity: 2 }],
+            outputs: [{ tokenId: 'fixture_dropped_tool', minQty: 1, maxQty: 1, chance: 100 }],
+            durationMs: 10000, xp: 0
         }
     ]
 });
@@ -126,6 +128,10 @@ function bench(recipeId) {
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 
+/** Every crafted Token standing on the mat. */
+const made = (typeId = null) => BoardState.tokens().filter(t =>
+    t.typeId === (typeId || t.typeId) && t.typeId.startsWith('fixture_dropped_'));
+
 const tokenSprites = () => SpriteLayer.getSprites().filter(s => s.kind === 'token');
 
 beforeEach(() => {
@@ -136,97 +142,132 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-describe('A recipe that outputs a Token drops it on the floor', () => {
-    it('spawns a token sprite where before it produced nothing', () => {
+afterEach(() => resetMatTuning());
+
+describe('⭐ A Token a recipe makes stands on the mat beside its station (TL-8)', () => {
+    it('places it as a `placed` Token, and makes no loot sprite', () => {
         bench('drop_one_tool');
         run(11000);
 
-        const drops = tokenSprites();
-        expect(drops).toHaveLength(1);
-        expect(drops[0].refId).toBe('fixture_dropped_tool');
-        expect(drops[0].quantity).toBe(1);
+        const tools = made('fixture_dropped_tool');
+        expect(tools).toHaveLength(1);
+        expect(BoardState.originOf(tools[0])).toBe(BoardState.ORIGIN.PLACED);
+        expect(tokenSprites()).toHaveLength(0);
+        expect(SpriteLayer.getSprites()).toHaveLength(0);
     });
 
-    it('gives the drop its starting charges', () => {
+    it('lands it beside the station, not on top of it and not across the mat', () => {
+        const station = bench('drop_one_tool');
+        run(11000);
+
+        const [tool] = made('fixture_dropped_tool');
+        const d = Math.hypot(tool.x - station.x, tool.y - station.y);
+        expect(d).toBeGreaterThan(0);
+        expect(d).toBeLessThan(200);
+    });
+
+    it('gives it its starting charges', () => {
         bench('drop_one_tool');
         run(11000);
 
-        expect(tokenSprites()[0].usesRemaining).toBe(12);
-        expect(tokenSprites()[0].usesRemaining).toBe(tokenStartingUses('fixture_dropped_tool'));
+        expect(made('fixture_dropped_tool')[0].usesRemaining).toBe(tokenStartingUses('fixture_dropped_tool'));
     });
 
-    it('drops an unlimited Token with `usesRemaining: null` (R-4)', () => {
+    it('gives an unlimited Token `usesRemaining: null` (R-4)', () => {
         bench('drop_eternal');
         run(11000);
 
-        const drop = tokenSprites()[0];
-        expect(drop.refId).toBe('fixture_dropped_eternal');
-        expect(drop.usesRemaining).toBeNull();
+        expect(made('fixture_dropped_eternal')[0].usesRemaining).toBeNull();
     });
 
-    it('does not put the Token in the Vault or the Bank', () => {
+    it('does not put it in the Bank', () => {
         bench('drop_one_tool');
         run(11000);
 
-        expect(TokenBank.contents()).toEqual([]);
         expect(InventoryManager.getItemCount('fixture_dropped_tool')).toBe(0);
     });
 
-    it('collects off the floor as a real instance carrying those charges', () => {
+    it('counts toward the mat cap', () => {
         bench('drop_one_tool');
+        const before = MatCap.placedCount();
         run(11000);
 
-        const instance = SpriteLayer.takeTokenSprite(tokenSprites()[0].id);
-        expect(instance.typeId).toBe('fixture_dropped_tool');
-        expect(instance.usesRemaining).toBe(12);
+        expect(MatCap.placedCount()).toBe(before + 1);
     });
-});
 
-describe('It obeys the drop mechanics item outputs already use', () => {
-    it('honours a quantity range — one sprite per copy', () => {
-        // Token sprites never merge (`addSprite` only stacks `kind: 'item'`),
-        // and both collection paths build ONE instance from a sprite whatever
-        // its quantity, so three copies have to be three sprites.
+    it('makes one Token per copy of a quantity range', () => {
         bench('drop_three_tools');
         run(11000);
 
-        const drops = tokenSprites();
-        expect(drops).toHaveLength(3);
-        expect(drops.every(s => s.quantity === 1)).toBe(true);
-        expect(drops.every(s => s.usesRemaining === 12)).toBe(true);
+        expect(made('fixture_dropped_tool')).toHaveLength(3);
     });
 
-    it('honours `chance` — a 0% output drops nothing', () => {
+    it('honours `chance` — a 0% output makes nothing', () => {
         bench('drop_never');
         run(11000);
 
-        expect(tokenSprites()).toHaveLength(0);
+        expect(made()).toHaveLength(0);
     });
 
-    it('flies from the station’s own point, like an item output from the same cycle', () => {
+    it('leaves item outputs of the same cycle dropping as loot, as before (TL-9)', () => {
         bench('drop_tool_and_item');
         run(11000);
 
-        const { x: expectedX, y: expectedY } = C(STATION);
+        expect(made('fixture_dropped_tool')).toHaveLength(1);
+        const items = SpriteLayer.getSprites().filter(s => s.kind === 'item');
+        expect(items).toHaveLength(1);
+        expect(items[0].refId).toBe('fixture_oak_wood');
+    });
+});
 
-        const token = tokenSprites()[0];
-        expect(token.fromX).toBeCloseTo(expectedX);
-        expect(token.fromY).toBeCloseTo(expectedY);
+describe('⭐ With no room, the cycle waits and nothing is lost (TL-8)', () => {
+    it('holds a finished cycle when the mat is at its cap: no Token, no sprite, nothing spent', () => {
+        InventoryManager.addItem('fixture_oak_wood', 10);
+        const station = bench('tool_for_wood');
+        setMatTuning('matCap', MatCap.placedCount());   // the bench fills the mat
 
-        const item = SpriteLayer.getSprites().find(s => s.kind === 'item');
-        expect(item.fromX).toBeCloseTo(token.fromX);
-        expect(item.fromY).toBeCloseTo(token.fromY);
+        run(15000);
+
+        expect(made()).toHaveLength(0);
+        expect(tokenSprites()).toHaveLength(0);
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(10);
+        expect(station.alert).toBe(ALERT.NO_ROOM);
+        expect(station.cycleElapsedMs).toBeGreaterThanOrEqual(10000);
     });
 
-    it('keeps making them — the floor has no capacity to run out of (D-138)', () => {
-        // Item sprites and Map bursts both call `addSprite` unconditionally;
-        // there is no board-full refusal to match. Litter piling up IS the
-        // overflow behaviour.
-        bench('drop_one_tool');
-        for (let i = 0; i < 30; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 5);
+    it('completes and pays as soon as there is room again', () => {
+        InventoryManager.addItem('fixture_oak_wood', 10);
+        const station = bench('tool_for_wood');
+        setMatTuning('matCap', MatCap.placedCount());
+        run(15000);
 
-        run(110000);   // eleven cycles
+        setMatTuning('matCap', 40);
+        run(200);
 
-        expect(tokenSprites().length).toBeGreaterThanOrEqual(10);
+        expect(made('fixture_dropped_tool')).toHaveLength(1);
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(8);
+        expect(station.alert).not.toBe(ALERT.NO_ROOM);
+    });
+
+    it('reserves room for every copy a cycle could make, not just one', () => {
+        bench('drop_three_tools');
+        setMatTuning('matCap', MatCap.placedCount() + 2);   // room for two of three
+
+        run(15000);
+
+        expect(made()).toHaveLength(0);
+    });
+});
+
+describe('Token loot is gone from the sprite layer', () => {
+    it('refuses to make a Token sprite at all', () => {
+        expect(SpriteLayer.addSprite('token', 'fixture_dropped_tool', 1, null)).toBeNull();
+        expect(tokenSprites()).toHaveLength(0);
+    });
+
+    it('has no Token pickup or Vault routes left', () => {
+        expect(SpriteLayer.takeTokenSprite).toBeUndefined();
+        expect(SpriteLayer.sendTokenToVault).toBeUndefined();
+        expect(Placement.returnTokenToVaultById).toBeUndefined();
     });
 });

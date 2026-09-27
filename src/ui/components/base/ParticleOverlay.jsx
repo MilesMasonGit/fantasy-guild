@@ -3,7 +3,6 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
-import { tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { GameState } from '../../../state/GameState.js';
 
@@ -151,9 +150,9 @@ class ParticleSystem {
     /**
      * One collected sprite, flying from where it lay to where it went (D-236).
      *
-     * Items land on the **Bank** bubble, Tokens on the **Token Vault** bubble
-     * (D-232) — each aims at the door its contents actually went through, so the
-     * particle teaches the routing rather than just decorating it.
+     * Items land on the **Bank** bubble (D-232), so the particle teaches the
+     * routing rather than just decorating it. (Tokens flew to the Token Vault
+     * bubble until Token loot and the Vault retired, Token Lifecycle 9.3.)
      *
      * ⚠️ **The stagger is global, not per-call.** The old `spawnFlyingItems`
      * (deleted 2026-08-26 with its last two callers) staggered by array index,
@@ -171,22 +170,13 @@ class ParticleSystem {
         const actualRefId = refId || heroId;
         if (!actualRefId) return;
 
-        const isToken = kind === 'token';
+        if (kind === 'token') return;
         const isHero = kind === 'hero' || destination === 'dock' || destination === 'cursor';
-        let target;
-        if (isHero) {
-            target = 'dock';
-        } else if (isToken) {
-            target = destination === 'tray' ? 'tray-bubble-target' : 'vault-bubble-target';
-        } else {
-            target = 'bank-bubble-target';
-        }
+        const target = isHero ? 'dock' : 'bank-bubble-target';
 
-        // Items resolve through the item registry; Tokens & Heroes have their own
+        // Items resolve through the item registry; Heroes have their own
         let template;
-        if (isToken) {
-            template = { id: actualRefId, color: '#60a5fa', _src: tokenSpritePath(actualRefId) };
-        } else if (isHero) {
+        if (isHero) {
             const hero = (GameState.heroes || []).find(h => h.id === actualRefId);
             const heroSpriteRef = hero?.spriteId || hero?.heroSprite || hero?.icon || hero?.classId || actualRefId;
             template = {
@@ -234,14 +224,8 @@ class ParticleSystem {
 
         const startX = fromRect.left + (fromRect.width ? fromRect.width / 2 : 0);
         const startY = fromRect.top + (fromRect.height ? fromRect.height / 2 : 0);
-        let endX = toRect.left + (toRect.width ? toRect.width / 2 : 0);
-        let endY = toRect.top + (toRect.height ? toRect.height / 2 : 0);
-
-        if (isToken && destination === 'tray' && trayX != null && trayY != null) {
-            const tokenPx = 48;
-            endX = toRect.left + trayX * Math.max(0, toRect.width - tokenPx) + tokenPx / 2;
-            endY = toRect.top + trayY * Math.max(0, toRect.height - tokenPx) + tokenPx / 2;
-        }
+        const endX = toRect.left + (toRect.width ? toRect.width / 2 : 0);
+        const endY = toRect.top + (toRect.height ? toRect.height / 2 : 0);
 
         const dx = endX - startX;
         const dy = endY - startY;

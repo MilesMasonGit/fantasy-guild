@@ -143,17 +143,6 @@ export const QuestManager = {
         return GameState.state?.quests?.tutorialStep || 0;
     },
 
-    /**
-     * Whether Tokens may be sent to the Vault. **Always, for now** (FP-62): the
-     * Vault is unlocked from the start until the tutorial pass (FP-39). It used
-     * to wait for "Place a Dropped Token", which Map bursts can no longer
-     * trigger (FP-16), so a fresh save would have been locked out for good.
-     * Kept as a function so the tutorial pass has one place to gate it again.
-     */
-    isTokenVaultSendUnlocked() {
-        return true;
-    },
-
     ensureQuests() {
         this.ensureState();
         if (!GameState.state?.quests) return;

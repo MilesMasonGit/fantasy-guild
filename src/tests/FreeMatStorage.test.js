@@ -91,7 +91,7 @@ describe('⭐ the save bump refuses old saves (FP-85)', () => {
 });
 
 describe('⭐ a new game opens with the Guild Hall on the mat (FP-44)', () => {
-    it('holds exactly the Hall on the mat, with a point, and nothing in the Tray', () => {
+    it('holds exactly the Hall on the mat, with a point', () => {
         EngineBootstrap.createDefaultGameData();
 
         const onMat = BoardState.tokens();
@@ -100,7 +100,6 @@ describe('⭐ a new game opens with the Guild Hall on the mat (FP-44)', () => {
         // half a step off centre, inherited from the deleted grid's Hall tile.
         expect({ x: onMat[0].x, y: onMat[0].y }).toEqual({ x: 880, y: 563 });
         expect(Object.keys(GameState.state.board.tokens)).toEqual([onMat[0].id]);
-        expect(BoardState.getTray()).toEqual([]);
     });
 });
 

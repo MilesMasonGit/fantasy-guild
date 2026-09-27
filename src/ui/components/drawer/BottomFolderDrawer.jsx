@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { Landmark, Vault, Map as MapIcon } from 'lucide-react';
+import { Landmark, Map as MapIcon } from 'lucide-react';
 import { useGameState } from '../../hooks/useGameState.js';
 import BankTab from './BankTab.jsx';
-import TokenVaultTab from './TokenVaultTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import CartographerTab from './CartographerTab.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
@@ -18,9 +17,10 @@ import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js'
  * (D-239), and **inspection has left it entirely** for a panel over the Tray
  * (D-240). Renaming it to `BankDrawer` is a tidy-up worth doing separately.
  *
- * Two panes: the item Bank and the Token Vault (Phase 7). The Stations pane
- * was temporary by design and retired once station cards moved to the
- * Collection Binder's Deployment Panel.
+ * Two panes: the item Bank and the Shop. The Token Vault pane went with the
+ * Vault (Token Lifecycle 9.3); the Stations pane was temporary by design and
+ * retired once station cards moved to the Collection Binder's Deployment
+ * Panel.
  *
  * Per-pane header: title + Close. **Maximize is gone** — with one pane at a
  * time it had nothing left to do. Opening/closing is driven by the BubbleMenu
@@ -40,13 +40,6 @@ const PANES = [
         key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab,
         paneProps: ({ filter, searchQuery, onInspect, selId }) => ({ filter, searchQuery, onInspect, selectedItemId: selId })
     },
-    // Items and Tokens are stored separately because they are capped separately
-    // (D-137) and used for different things — items are for storing, Tokens are
-    // for placing (D-158).
-    {
-        key: 'vault', label: 'Token Vault', icon: Vault, Component: TokenVaultTab,
-        paneProps: ({ searchQuery, onInspect, selId }) => ({ searchQuery, onInspect, selectedTemplateId: selId })
-    },
     // The one shop that is deliberately NOT on the board (D-98). The Map is
     // still a Token, so only the transaction leaves the grid.
     {
@@ -57,7 +50,7 @@ const PANES = [
 
 // Which selection type each pane's tiles produce — used to hand each pane
 // only its own selection for tile highlighting.
-const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token', cartographer: 'token' };
+const PANE_SELECTION_TYPE = { bank: 'item', cartographer: 'token' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
     const [searchQuery, setSearchQuery] = useState('');

@@ -68,7 +68,6 @@ export const MatToken = React.memo(function MatToken({
     onClearInspect,
     onAutoAssignHero,
     onOpenRecipes,
-    onReturnToVault,
     onRecallHero
 }) {
     const r = artRadius(size);
@@ -240,8 +239,9 @@ export const MatToken = React.memo(function MatToken({
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        // Recalls the hero working it. (A Token without one used to go to the
+        // Vault; the Vault went in Token Lifecycle 9.3.)
         if (heroId) onRecallHero?.(heroId);
-        else if (!isGuildHallToken) onReturnToVault?.(id);
     };
 
     const glow = staffed && !alert ? 'gi-glow-active' : null;

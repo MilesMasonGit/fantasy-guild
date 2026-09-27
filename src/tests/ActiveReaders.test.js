@@ -9,7 +9,6 @@ import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Restrictions from '../systems/board/Restrictions.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -486,7 +485,7 @@ describe('Placement publishes one dirty event per change, covering the Near radi
         Placement.placeTokenAt(BoardState.createTokenInstance('fixture_buff_yield', 800), S14);
         expect(yieldAt(S12)).toBeCloseTo(105);
 
-        Placement.returnTokenToVaultById(idAt(S14));
+        Placement.removePlacedToken(idAt(S14));
         expect(yieldAt(S12)).toBeCloseTo(100);
     });
 
@@ -554,7 +553,7 @@ describe('⭐ a board-reach rule refreshes distant Tokens (pre-existing bug)', (
         Placement.placeTokenAt(BoardState.createTokenInstance('fixture_board_buff', null), S0);
         expect(yieldAt(S35)).toBeCloseTo(105);
 
-        Placement.returnTokenToVaultById(idAt(S0));
+        Placement.removePlacedToken(idAt(S0));
         expect(yieldAt(S35)).toBeCloseTo(100);
     });
 });

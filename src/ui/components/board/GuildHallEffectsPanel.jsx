@@ -21,7 +21,7 @@ export const GuildHallEffectsPanel = ({ menuRight = false }) => {
             const statements = def?.statements || [];
             return { outputs, statements };
         },
-        ['guild_upgrades_updated', 'state_changed', 'token_placed', 'token_bank_updated']
+        ['guild_upgrades_updated', 'state_changed', 'token_placed']
     );
 
     const outputs = guildHallData?.outputs || [];
