@@ -35,6 +35,7 @@ import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
 import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
 import ToastContainer from './components/base/ToastContainer.jsx';
 import { QuestColumn } from './components/quests/QuestColumn.jsx';
+import DiscardBinPanel from './components/board/DiscardBinPanel.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
 import PlaymatTuner from './components/PlaymatTuner.jsx';
 import MatTuner from './components/MatTuner.jsx';
@@ -133,8 +134,9 @@ const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
                     )}
                 </div>
 
-                {/* Bottom: Quests */}
-                <div className="shrink-0 flex flex-col border-t border-gi-border/30">
+                {/* Bottom: Quests. May shrink and scroll (B3.2) so the bin
+                    below always stays on screen in a short window. */}
+                <div className="min-h-0 flex flex-col border-t border-gi-border/30">
                     <button
                         type="button"
                         onClick={() => setQuestsHidden(h => !h)}
@@ -143,8 +145,17 @@ const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
                         {questsHidden ? 'Show Quests' : 'Quests'}
                     </button>
                     {!questsHidden && (
-                        <QuestColumn />
+                        <div className="min-h-0 overflow-y-auto gi-scrollbar">
+                            <QuestColumn />
+                        </div>
                     )}
+                </div>
+
+                {/* Bottom-most: the discard bin (B3.2, FB-34, TL-13). Fixed
+                    size at the foot of the column; notifications above take
+                    whatever is left. */}
+                <div className="shrink-0 pt-2 border-t border-gi-border/30">
+                    <DiscardBinPanel />
                 </div>
             </div>
         </aside>

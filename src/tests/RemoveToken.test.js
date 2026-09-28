@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { render, cleanup } from '@testing-library/react';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -150,37 +150,14 @@ describe('removePlacedToken (slice 5.2)', () => {
     });
 });
 
-describe('the Remove action in the Token panel', () => {
-    it('asks first, with the TL-1 wording, then removes and calls onRemoved', async () => {
-        const { forest } = forestScene();
-        const onRemoved = vi.fn();
-        const { container, getByText } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id, onRemoved }));
-
-        expect(removeBox(container).getAttribute('data-remove-token')).toBe('idle');
-        await act(async () => { fireEvent.click(getByText('Remove')); });
-        expect(removeBox(container).getAttribute('data-remove-token')).toBe('confirming');
-        expect(container.textContent).toContain('This is gone for good. Nothing is returned.');
-        expect(BoardState.getTokenById(forest.id)).toBe(forest);
-
-        await act(async () => { fireEvent.click(getByText('Remove')); });
-        expect(BoardState.getTokenById(forest.id)).toBeNull();
-        expect(onRemoved).toHaveBeenCalledTimes(1);
-    });
-
-    it('Cancel keeps the Token', async () => {
-        const { forest } = forestScene();
-        const { getByText } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
-        await act(async () => { fireEvent.click(getByText('Remove')); });
-        await act(async () => { fireEvent.click(getByText('Cancel')); });
-        expect(BoardState.getTokenById(forest.id)).toBe(forest);
-    });
-
-    it('is not offered for the Guild Hall, a spawned Token, or a Token not on the board', () => {
-        const { hall, east } = forestScene();
-        expect(removeBox(mount(h(TokenInspection, { typeId: 'token_guild_hall', instanceId: hall.id })).container)).toBeNull();
-        cleanup();
-        expect(removeBox(mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: east.id })).container)).toBeNull();
-        cleanup();
-        expect(removeBox(mount(h(TokenInspection, { typeId: 'fixture_producer' })).container)).toBeNull();
+describe('the Token panel offers no Remove (B3.2, TL-13)', () => {
+    it('has no inline Remove: a Token leaves the mat through the discard bin', () => {
+        const { hall, forest, east } = forestScene();
+        for (const [typeId, instanceId] of [['fixture_producer', forest.id], ['fixture_producer', east.id], ['token_guild_hall', hall.id]]) {
+            const { container } = mount(h(TokenInspection, { typeId, instanceId }));
+            expect(removeBox(container)).toBeNull();
+            expect([...container.querySelectorAll('button')].some(b => /remove/i.test(b.textContent))).toBe(false);
+            cleanup();
+        }
     });
 });

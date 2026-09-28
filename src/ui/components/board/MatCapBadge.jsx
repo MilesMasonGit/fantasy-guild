@@ -20,11 +20,14 @@ import { placeUnder } from './tooltipPlacement.js';
  * belt and braces: `TOKEN_PLACED` and `TOKEN_DEPLETED` for the player's own
  * actions, `state_changed` and `game_loaded` for a load or a new game. The cap
  * itself is a Mat Tuner number, heard through `onMatTuningChanged`.
+ * `BIN_CHANGED` (B3.2): *Discard all* is what finally drops binned Tokens from
+ * the count.
  */
 export const CAP_EVENTS = Object.freeze([
     BOARD_EVENTS.TILE_CHANGED,
     BOARD_EVENTS.TOKEN_PLACED,
     BOARD_EVENTS.TOKEN_DEPLETED,
+    BOARD_EVENTS.BIN_CHANGED,
     'state_changed',
     'game_loaded'
 ]);
@@ -56,7 +59,9 @@ export function liveMatSummary() {
         nameOf: tokenName,
         isGuildHall: MatCap.isGuildHall,
         isBlocked: hasLiveProblem,
-        isOff: Flags.isDisallowed
+        isOff: Flags.isDisallowed,
+        // B3.2 (TL-13): binned placed Tokens still count until discarded.
+        binned: BoardState.binTokens()
     });
 }
 
@@ -80,7 +85,8 @@ export function useRefreshOn(events, on = true) {
 export const MatCapPopover = ({ anchor, summary, cap }) => {
     if (typeof document === 'undefined') return null;
     const { placed, spawned } = summary;
-    const height = 60 + placed.groups.length * 16 + (spawned.count ? 40 : 0);
+    const binned = summary.binned?.count || 0;
+    const height = 60 + placed.groups.length * 16 + (spawned.count ? 40 : 0) + (binned ? 24 : 0);
     return createPortal(
         <div
             role="tooltip"
@@ -88,7 +94,8 @@ export const MatCapPopover = ({ anchor, summary, cap }) => {
             className="fixed z-[90] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
             style={{ width: POPOVER_WIDTH, ...placeUnder(anchor, POPOVER_WIDTH, height) }}
         >
-            <div className="font-bold text-gi-gold">Placed {placed.count} of {cap}</div>
+            {/* The total the badge shows: on the mat plus in the bin (B3.2). */}
+            <div className="font-bold text-gi-gold">Placed {placed.count + binned} of {cap}</div>
             {placed.groups.length ? (
                 <ul className="mt-1 flex flex-col gap-0.5">
                     {placed.groups.map(g => {
@@ -103,6 +110,11 @@ export const MatCapPopover = ({ anchor, summary, cap }) => {
                 </ul>
             ) : (
                 <div className="mt-1 text-white/60">Nothing placed yet.</div>
+            )}
+            {binned > 0 && (
+                <div data-mat-cap-binned className="mt-1 pt-1 border-t border-white/10 text-white/80">
+                    In the bin {binned} (counted until discarded)
+                </div>
             )}
             {spawned.count > 0 && (
                 <div data-mat-cap-spawned className="mt-1 pt-1 border-t border-white/10">

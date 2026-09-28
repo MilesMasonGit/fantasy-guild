@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The discard bin (B3.2, FB-34).** At the foot of the notification column: drag Tokens from the mat
+  into a grid of nine slots (each shows the Token), drag any back out, see the refund, and press
+  *Discard all (n)* to discard them and collect it. The inspection panel's Remove button is gone.
 - **Discard bin engine and refunds (B3.1, TL-13).** Tokens can be held in a bin of nine off the mat
   (still counting toward the cap), taken back out unchanged, or discarded together for a refund:
   half the price of a bought Token, a charge-weighted half for consumables, half the Foundation and

@@ -13,14 +13,11 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import * as Placement from '../../../systems/board/Placement.js';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { lifecycleLines } from './lifecycleLines.js';
-import { Trash2 } from 'lucide-react';
 
 /**
  * TokenInspection — a Token's full detail, styled consistently with ItemInspection.
@@ -42,10 +39,7 @@ export const TokenInspection = ({
     // The board Token this panel was opened from, by instance id (slice
     // 1.6c-2). Only a Token on the board can be marked "heroes may not work
     // this".
-    instanceId = null,
-    // Called after this board Token has been removed (slice 5.2), so the
-    // popup it sits in can close.
-    onRemoved = null
+    instanceId = null
 }) => {
     const def = getTokenType(typeId);
 
@@ -224,7 +218,8 @@ export const TokenInspection = ({
                 {instanceId != null && <LifecycleLines instanceId={instanceId} />}
             </div>
 
-            {instanceId != null && <RemoveFromMat instanceId={instanceId} onRemoved={onRemoved} />}
+            {/* 5.2's inline Remove went with B3.2 (TL-13): a Token leaves the
+                mat by being dragged into the discard bin. */}
 
             {/* Production Routes */}
             {routes.length > 0 && (
@@ -312,77 +307,6 @@ const HeroesMayWork = ({ instanceId }) => {
                 />
             </button>
         </label>
-    );
-};
-
-/**
- * ⭐ **Remove** (Token Lifecycle slice 5.2, TL-1).
- *
- * Only for a board Token the player **placed** — never the Guild Hall, never a
- * spawned Token (those are worked out, SP-6). Two steps, the same inline
- * confirm the quest list uses for Abandon: the first click asks, the second
- * removes. Nothing is refunded.
- */
-const RemoveFromMat = ({ instanceId, onRemoved }) => {
-    const [confirming, setConfirming] = useState(false);
-    const removable = useGameState(
-        () => {
-            const instance = BoardState.getTokenById(instanceId);
-            if (!instance) return false;
-            if (Placement.isPermanentToken(instance.typeId, instance)) return false;
-            return BoardState.originOf(instance) === BoardState.ORIGIN.PLACED;
-        },
-        [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
-        null,
-        { deps: [instanceId] }
-    );
-    if (!removable) return null;
-
-    const remove = () => {
-        setConfirming(false);
-        const name = tokenName(BoardState.getTokenById(instanceId)?.typeId);
-        const res = Placement.removePlacedToken(instanceId);
-        if (!res.success) {
-            if (res.reason) NotificationSystem.warning(res.reason);
-            return;
-        }
-        NotificationSystem.info(`Removed ${name}`);
-        onRemoved?.();
-    };
-
-    return (
-        <div data-remove-token={confirming ? 'confirming' : 'idle'} className="pt-2 border-t border-gi-border/40">
-            {confirming ? (
-                <div className="flex flex-col gap-2 px-3 py-2 rounded-lg border border-red-500/50 bg-[#1a0f0f]/95">
-                    <p className="text-xs font-bold text-red-300">This is gone for good. Nothing is returned.</p>
-                    <div className="flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setConfirming(false)}
-                            className="px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase bg-white/10 hover:bg-white/20 text-gray-200 cursor-pointer transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={remove}
-                            className="px-3 py-1 rounded text-[10px] font-mono font-bold uppercase bg-red-600 hover:bg-red-500 text-white cursor-pointer transition-colors active:scale-95"
-                        >
-                            Remove
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <button
-                    type="button"
-                    onClick={() => setConfirming(true)}
-                    title="Remove this Token from the mat for good"
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs uppercase tracking-wide transition-colors border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 cursor-pointer active:scale-[0.99]"
-                >
-                    <Trash2 size={14} /> Remove
-                </button>
-            )}
-        </div>
     );
 };
 

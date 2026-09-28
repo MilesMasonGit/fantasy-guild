@@ -2,6 +2,7 @@
 
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as DiscardBin from '../../../systems/board/DiscardBin.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 
@@ -18,8 +19,10 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  *   rule (FP-88). ⭐ Nothing snaps: the old spot-snapping stopgap and the
  *   practice outline it needed both went with this slice.
  *
- * A Token can come from two places, told apart by its payload's `from`:
- * `instanceId` (a Token on the mat), or none (a bare `typeId`: make one).
+ * A Token can come from three places, told apart by its payload's `from`:
+ * `instanceId` (a Token on the mat), `binnedId` (a Token dragged back out of
+ * the discard bin, B3.2 — the same instance returns, `DiscardBin.unbinToken`),
+ * or none (a bare `typeId`: make one).
  * (Token loot on the floor and the Vault were the other two until both
  * retired in Token Lifecycle 9.3.)
  *
@@ -70,6 +73,11 @@ export function dropOnMat(payload, point) {
     if (from.instanceId != null) {
         if (!BoardState.getTokenById(from.instanceId)) return announce(refuse('No Token there'));
         return announce(flownBack(Placement.moveTokenTo(from.instanceId, point)));
+    }
+
+    // B3.2 (FB-34, TL-13): back out of the bin, unchanged, at the drop point.
+    if (from.binnedId != null) {
+        return announce(flownBack(DiscardBin.unbinToken(from.binnedId, point)));
     }
 
     if (payload.typeId) {

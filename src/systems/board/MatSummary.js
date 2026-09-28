@@ -12,6 +12,10 @@ import { ORIGIN, originOf } from './BoardState.js';
  * * **Spawned** Tokens are listed apart, "not counted": their family's cap
  *   bounds them instead (SP-5).
  * * **The Guild Hall is in neither**: it is always there and never counts.
+ * * **Binned** placed Tokens (B3.2, TL-13) are off the mat but still counted
+ *   by `MatCap` until *Discard all*, so they get their own line, "counted",
+ *   and the popover's total matches the badge. Spawned or Hall Tokens in the
+ *   bin are not counted, as on the mat.
  *
  * Pure — the caller hands in the Tokens and every reader, so this can be
  * tested without a mat, and the UI decides what "blocked" means (the gear-only
@@ -26,14 +30,16 @@ import { ORIGIN, originOf } from './BoardState.js';
  *   nameOf: (typeId: string) => string,
  *   isGuildHall: (instance: object) => boolean,
  *   isBlocked?: (instance: object) => boolean,
- *   isOff?: (instance: object) => boolean
- * }} readers
+ *   isOff?: (instance: object) => boolean,
+ *   binned?: object[]
+ * }} readers  `binned`: the Token instances in the discard bin (B3.2)
  * @returns {{
  *   placed: { count: number, groups: {typeId: string, name: string, count: number, blocked: number, off: number}[] },
- *   spawned: { count: number, groups: {typeId: string, name: string, count: number}[] }
+ *   spawned: { count: number, groups: {typeId: string, name: string, count: number}[] },
+ *   binned: { count: number }
  * }}
  */
-export function summariseMat(tokens = [], { nameOf, isGuildHall, isBlocked = () => false, isOff = () => false } = {}) {
+export function summariseMat(tokens = [], { nameOf, isGuildHall, isBlocked = () => false, isOff = () => false, binned = [] } = {}) {
     const placed = new Map();
     const spawned = new Map();
     for (const t of tokens) {
@@ -55,9 +61,13 @@ export function summariseMat(tokens = [], { nameOf, isGuildHall, isBlocked = () 
     const total = (groups) => groups.reduce((n, g) => n + g.count, 0);
     const placedGroups = [...placed.values()].sort(order);
     const spawnedGroups = [...spawned.values()].sort(order).map(({ typeId, name, count }) => ({ typeId, name, count }));
+    const binnedCount = (binned || []).filter(t =>
+        t?.typeId && !isGuildHall?.(t) && originOf(t) !== ORIGIN.SPAWNED
+    ).length;
     return {
         placed: { count: total(placedGroups), groups: placedGroups },
-        spawned: { count: total(spawnedGroups), groups: spawnedGroups }
+        spawned: { count: total(spawnedGroups), groups: spawnedGroups },
+        binned: { count: binnedCount }
     };
 }
 
