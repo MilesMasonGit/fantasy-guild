@@ -351,6 +351,11 @@ before any content uses it.
 **B8 Small Tokens (8th).** FB-18, **TL-19**. A CMS size field; drawing, hit area, spacing and
 pushing honour it; saplings and sprouts set to small through the CMS.
 
+| # | B8 slice | Status |
+|---|---|---|
+| B8.1 | **The size field** (TL-19): `artSize: 'small'` (1×1 only), one helper `tokenBodyScale` / `artRadiusOf` drives art, hit area, spacing, spawn/arrival spots, standing spots; rings stay full size; CMS *Token Size* select | ✅ 2026-09-27 (`c1cfe56`). Field named `artSize` (not `size` = footprint, not `scale` = effects); on-mat art halves (listings keep the full icon); corner badges hang off a small Token's corners; control sync byte-identical (tested). ⚠️ Saplings borrow 64 px sprites: crisp at default zoom, slightly soft only at very large windows (odd pixel steps ≥ 3) until real 32 px art exists. Tests: baseline 10 |
+| B8.2 | **Content through the CMS**: Oak Sapling, Apple Sapling, Wheat Sprout small | ✅ 2026-09-27. Sandboxed CMS, control sync clean, content commit `1b96035` (three `"artSize": "small"` lines only), second sync clean; tests `b7eef55`. Director verified live (fresh slot 3): Oak and Apple Sapling draw 32 px beside a 64 px Oak Tree, radius 32 vs 64; a second sapling dropped 40 u from the first stayed exactly there (standard Tokens would be nudged). Tests: baseline 10 |
+
 **B9 Guild Hall screen (9th).** FB-38, FB-39. Mockups first: Effects list on the left, a node-and-line
 tree. ⚠️ Hall upgrade tile indices are not interchangeable with the playmat's.
 

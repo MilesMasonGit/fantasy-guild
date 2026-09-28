@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Small Tokens (B8, TL-19, FB-18).** A Token can be Small in the CMS: half-size art, hit area and
+  spacing, with full-size ring badges. The Oak Sapling, Apple Sapling and Wheat Sprout are small.
 - **Goblins are hostile (B7.3).** Goblin and Goblin Chief now attack heroes near their camp; Cow and
   Thorn Elemental still fight only when attacked. Set through the CMS.
 - **Hostile enemies and fight-back (B7.2, TL-16, TL-24).** An enemy marked Hostile (a new CMS
