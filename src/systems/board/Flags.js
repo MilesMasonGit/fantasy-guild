@@ -113,6 +113,12 @@ import * as PromotionSystem from '../hero/PromotionSystem.js';
  * * A pin whose Token is still there but can no longer be worked (disallowed
  *   later, a rule switched off, another hero on it) is **kept**: the hero waits
  *   by it, and the flag's hover says why.
+ *
+ * ## ⭐ Attacked heroes fight back (B7.2, TL-24)
+ * A hostile enemy (`Hostiles.js`) attacks a hero through {@link ambush}: the
+ * hero drops their work and claims that enemy, and keeps it whatever their
+ * Fight rule or pin says until the kill or the enemy is gone. The rules here
+ * still govern only what a hero *seeks*.
  */
 
 /** How long a flag with nothing to do waits before looking again, in game ms. */
@@ -332,8 +338,10 @@ function resetProgress(instance) {
  * time anyone engages it, including this hero re-planting on it (FP-49).
  */
 function release(heroId) {
-    // A cycle-end mark belongs to the claim it was earned on (FP-80).
+    // A cycle-end mark belongs to the claim it was earned on (FP-80), and so
+    // does an ambush (B7.2): letting go of the enemy ends the fight-back.
     rt()?.cycleEnded.delete(heroId);
+    rt()?.ambushes.delete(heroId);
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return null;
     resetProgress(BoardState.getTokenById(claim.instanceId));
@@ -604,6 +612,22 @@ function keepOrRelease(r, heroId, dirty) {
     const flag = BoardState.flagOf(heroId);
     const claim = BoardState.claimOfHero(heroId);
     const instance = BoardState.getTokenById(claim.instanceId);
+
+    // ⭐ **Fighting back** (B7.2, TL-24). A hero a hostile enemy attacked holds
+    // that enemy whatever their rules or pin say, until a kill (its
+    // `CYCLE_COMPLETE`) or the enemy leaves the mat. Then the ambush is over and
+    // this same pass treats the claim like any other: kept if their own rules
+    // would keep it, else let go, and their flag (or pin) chooses again.
+    const ambushId = r.ambushes.get(heroId);
+    if (ambushId) {
+        const over = ambushId !== claim.instanceId || !instance || r.cycleEnded.has(heroId);
+        if (over) r.ambushes.delete(heroId);
+        else if (!isDisallowed(instance) && FlagRules.canFight(heroId)) {
+            claim.x = instance.x;
+            claim.y = instance.y;
+            return;
+        }
+    }
 
     if (instance) {
         claim.x = instance.x;
@@ -948,6 +972,8 @@ export function resetRules(heroId) {
 function releaseIfWorking(heroId, ruleId) {
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return;
+    // An attacked hero fights back whatever the Fight rule says (B7.2, TL-24).
+    if (rt()?.ambushes.get(heroId) === claim.instanceId) return;
     const instance = BoardState.getTokenById(claim.instanceId);
     if (!instance) return;
     const def = getTokenType(instance.typeId);
@@ -1007,6 +1033,52 @@ export function furl(heroId, reason = 'recall') {
     }
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, instanceId: null, reason });
     return true;
+}
+
+/**
+ * ⭐ **A hostile enemy attacks `heroId`** (B7.2, TL-16, TL-24; called by
+ * `Hostiles.js`). The hero drops whatever they were doing — let go exactly as
+ * any hero leaving work is, so that Token's cycle resets (FP-68, D-131) — and
+ * claims the enemy, which starts the fight through the normal route: they walk
+ * up to it (the enemy holds still for them, B7.1) and `BoardCombat.tickToken`
+ * begins the fight on arrival.
+ *
+ * Until the kill, or the enemy leaving the mat, `keepOrRelease` keeps the claim
+ * **whatever their Fight rule or pin says** — the rule governs only whether a
+ * hero *seeks* a fight. Then their flag chooses again as normal, so they go
+ * back to work (or to their pinned Token). A re-plant, a recall or a defeat
+ * ends it early, as any claim.
+ *
+ * Refused (false): no flag, no such enemy on the mat, a hero who cannot fight
+ * (a Recruit would stand there forever: no fight can start), or an enemy
+ * another hero already holds.
+ *
+ * @returns {boolean} whether the hero is now fighting back
+ */
+export function ambush(heroId, instanceId) {
+    const r = rt();
+    const enemy = BoardState.getTokenById(instanceId);
+    if (!r || !BoardState.flagOf(heroId) || !enemy || !BoardCombat.isEnemyToken(enemy)) return false;
+    if (!FlagRules.canFight(heroId)) return false;
+    const holder = BoardState.heroOfInstance(instanceId);
+    if (holder && holder !== heroId) return false;
+
+    quiet++;
+    try {
+        if (BoardState.claimOfHero(heroId)?.instanceId !== instanceId) release(heroId);
+        r.nextTryAt.delete(heroId);
+        claimToken(heroId, enemy);
+        r.ambushes.set(heroId, instanceId);
+    } finally {
+        quiet--;
+    }
+    announceMoved(heroId);
+    return true;
+}
+
+/** The enemy that attacked `heroId` and that they are fighting back, or null (B7.2). */
+export function ambusherOf(heroId) {
+    return rt()?.ambushes.get(heroId) ?? null;
 }
 
 /**
@@ -1144,6 +1216,7 @@ export function reset() {
     r.nextTryAt.clear();
     r.notified.clear();
     r.cycleEnded.clear();
+    r.ambushes.clear();
     r.bodies.clear();
     r.dirty = true;
 }

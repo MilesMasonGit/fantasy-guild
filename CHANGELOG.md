@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Hostile enemies and fight-back (B7.2, TL-16, TL-24).** An enemy marked Hostile (a new CMS
+  checkbox) attacks a hero that comes within a flag's radius of its spawner. An attacked hero
+  always fights back, whatever its rules say, then returns to its work.
 - **Enemies move (B7.1, TL-16).** Enemies wander near the spawner that made them, walk after it when
   you move it, walk back if you drag them away, and stand still while fighting.
 - **Quest Token UI (B6.2, FB-41, TL-18).** Hover a quest Token to read it: title (tagged

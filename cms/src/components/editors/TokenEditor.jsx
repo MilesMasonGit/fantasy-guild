@@ -533,6 +533,29 @@ export default function TokenEditor() {
               </Field>
             </div>
 
+            {/* TL-16 / FB-23 (B7.2): a hostile enemy attacks a hero who comes
+                inside the flag radius around its spawner; a peaceful one fights
+                only when a hero attacks it. Written ONLY when ticked — unticking
+                removes the key, so a peaceful enemy's block stays exactly as it
+                was (missing = peaceful, which is what the game reads). */}
+            <label className="flex items-center gap-2.5 cursor-pointer select-none mt-3">
+              <input
+                type="checkbox"
+                aria-label="Hostile"
+                checked={enemy?.hostile === true}
+                onChange={(e) => {
+                  const next = { ...enemy };
+                  if (e.target.checked) next.hostile = true;
+                  else delete next.hostile;
+                  update('enemy', next);
+                }}
+              />
+              <span className="text-[11px] text-gray-300">Hostile</span>
+              <span className="text-[10px] text-gray-600">
+                attacks heroes who come near its spawner; otherwise it fights only when attacked
+              </span>
+            </label>
+
             {/* Read-only, and derived by the GAME's own curve rather than a copy
                 of it here — so what the author is shown is what the fight uses. */}
             {enemyBudget && (

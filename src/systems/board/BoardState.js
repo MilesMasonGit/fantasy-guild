@@ -388,6 +388,9 @@ function runtimeOf(b) {
             notified: new Set(),
             // Heroes who just finished a cycle, to look for better work (FP-80).
             cycleEnded: new Set(),
+            // Heroes a hostile enemy attacked, heroId → that enemy's instance
+            // id: they fight back whatever their rules say (B7.2, TL-24).
+            ambushes: new Map(),
             // Where each hero on the mat actually is (Hero Movement M1) — see
             // "Hero bodies" below. Owned by `HeroMotion.js`.
             bodies: new Map(),

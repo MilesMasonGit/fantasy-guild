@@ -20,6 +20,7 @@ import * as BoardPromotion from './BoardPromotion.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as EnemyMotion from './EnemyMotion.js';
+import * as Hostiles from './Hostiles.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
@@ -520,6 +521,11 @@ export function tick(delta) {
     // Enemies potter by their spawner (B7.1, TL-16) — after the heroes, so an
     // enemy a hero claimed this tick already holds still for them.
     EnemyMotion.tick(delta);
+
+    // Hostile enemies attack heroes inside the flag radius of their spawner
+    // (B7.2, TL-16) — after the enemies' steps, and before any Token ticks, so
+    // an attacked hero standing beside the enemy fights this same tick.
+    Hostiles.tick(delta);
 
     // Every Token on the mat, by instance id, in arrival order (Free Playmat 1.6b).
     const onMat = BoardState.tokens();

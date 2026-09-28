@@ -64,6 +64,17 @@ export function isEnemyDef(def) {
 }
 
 /**
+ * Whether an enemy Token type is **hostile** (B7.2, TL-16, FB-23): it attacks
+ * a hero who comes inside the flag radius around its spawner
+ * (`board/Hostiles.js`). Authored in the CMS as `enemy.hostile`; only a literal
+ * `true` counts, and a missing field is peaceful — such an enemy fights only
+ * when a hero attacks it, as every enemy did before B7.2.
+ */
+export function isHostileEnemy(def) {
+    return isEnemyDef(def) && def.enemy.hostile === true;
+}
+
+/**
  * Build the enemy stat block for a Token definition.
  *
  * Returns exactly the twelve fields the ported combat engine reads off an
