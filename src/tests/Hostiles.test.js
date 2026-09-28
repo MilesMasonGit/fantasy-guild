@@ -151,8 +151,13 @@ describe('the field (enemy.hostile)', () => {
         expect(isHostileEnemy(null)).toBe(false);
     });
 
-    it('no shipped enemy is hostile yet — content is B7.3, through the CMS', () => {
-        for (const id of ['token_goblin', 'token_goblin_chief', 'token_cow', 'token_thorn_elemental']) {
+    it('B7.3: Goblin and Goblin Chief ship hostile; Cow and Thorn Elemental stay peaceful', () => {
+        for (const id of ['token_goblin', 'token_goblin_chief']) {
+            const def = getTokenType(id);
+            expect(def).toBeTruthy();
+            expect(isHostileEnemy(def)).toBe(true);
+        }
+        for (const id of ['token_cow', 'token_thorn_elemental']) {
             const def = getTokenType(id);
             if (def) expect(isHostileEnemy(def)).toBe(false);
         }

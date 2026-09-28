@@ -69,9 +69,15 @@ afterEach(() => {
 });
 
 describe('a control sync of today’s data changes nothing', () => {
-    it('the shipped content has enemies, and none of them carries hostile yet (B7.3 sets it)', () => {
+    it('B7.3: exactly Goblin and Goblin Chief ship hostile; Cow and Thorn Elemental do not', () => {
         expect(enemyIds.length).toBeGreaterThan(0);
-        for (const id of enemyIds) expect(shippedTokens[id].enemy).not.toHaveProperty('hostile');
+        const hostile = enemyIds.filter((id) => shippedTokens[id].enemy.hostile === true).sort();
+        expect(hostile).toEqual(['token_goblin', 'token_goblin_chief']);
+        for (const id of ['token_cow', 'token_thorn_elemental']) {
+            expect(shippedTokens[id].enemy).not.toHaveProperty('hostile');
+            expect(isHostileEnemy(shippedTokens[id])).toBe(false);
+        }
+        for (const id of hostile) expect(isHostileEnemy(shippedTokens[id])).toBe(true);
     });
 
     it('load → Recalculate → Sync writes all five files byte-identical', () => {
@@ -81,7 +87,8 @@ describe('a control sync of today’s data changes nothing', () => {
 });
 
 describe('enemy.hostile survives load → edit → sync → reload', () => {
-    const target = () => enemyIds.find((id) => id === 'token_goblin') || enemyIds[0];
+    // A Token that ships peaceful (the goblins ship hostile since B7.3).
+    const target = () => enemyIds.find((id) => id === 'token_cow') || enemyIds.find((id) => !shippedTokens[id].enemy.hostile);
 
     it('hostile: true reaches tokens.json, the rest of the enemy block untouched', () => {
         const id = target();
@@ -120,7 +127,7 @@ describe('the Token editor’s Hostile checkbox', () => {
     }
 
     it('ticking writes hostile: true; unticking removes the key (absent = peaceful)', () => {
-        const id = enemyIds.find((t) => t === 'token_goblin') || enemyIds[0];
+        const id = enemyIds.find((t) => t === 'token_cow') || enemyIds.find((t) => !shippedTokens[t].enemy.hostile);
         const before = JSON.stringify(useEntityStore.getState().tokens[id].enemy);
         const { container } = editor(id);
         const box = within(container).getByLabelText('Hostile');
@@ -138,7 +145,7 @@ describe('the Token editor’s Hostile checkbox', () => {
     });
 
     it('editing the style keeps hostile', () => {
-        const id = enemyIds[0];
+        const id = enemyIds.find((t) => t === 'token_cow') || enemyIds.find((t) => !shippedTokens[t].enemy.hostile);
         const enemy = useEntityStore.getState().tokens[id].enemy;
         useEntityStore.getState().updateToken(id, { enemy: { ...enemy, hostile: true } });
         const { container } = editor(id);
