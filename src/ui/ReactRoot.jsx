@@ -35,7 +35,6 @@ import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
 import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
 import ToastContainer from './components/base/ToastContainer.jsx';
-import { QuestColumn } from './components/quests/QuestColumn.jsx';
 import DiscardBinPanel from './components/board/DiscardBinPanel.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
 import PlaymatTuner from './components/PlaymatTuner.jsx';
@@ -82,9 +81,8 @@ import PromotionCeremonyModal from './modals/PromotionCeremonyModal.jsx';
  * board. Refining it is expected — but note the floor: `Toast` carries
  * `min-w-[220px]`, so under about 240px the toasts overflow their own column.
  */
-const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
+export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
     const [notificationsHidden, setNotificationsHidden] = React.useState(false);
-    const [questsHidden, setQuestsHidden] = React.useState(false);
     const slideFrom = menuRight ? 40 : -40;
 
     return (
@@ -135,26 +133,10 @@ const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
                     )}
                 </div>
 
-                {/* Bottom: Quests. May shrink and scroll (B3.2) so the bin
-                    below always stays on screen in a short window. */}
-                <div className="min-h-0 flex flex-col border-t border-gi-border/30">
-                    <button
-                        type="button"
-                        onClick={() => setQuestsHidden(h => !h)}
-                        className="w-full text-center py-2 text-sm md:text-base font-bold text-gi-text hover:text-gi-primary border-b border-gi-border/30 transition-colors cursor-pointer select-none"
-                    >
-                        {questsHidden ? 'Show Quests' : 'Quests'}
-                    </button>
-                    {!questsHidden && (
-                        <div className="min-h-0 overflow-y-auto gi-scrollbar">
-                            <QuestColumn />
-                        </div>
-                    )}
-                </div>
-
                 {/* Bottom-most: the discard bin (B3.2, FB-34, TL-13). Fixed
                     size at the foot of the column; notifications above take
-                    whatever is left. */}
+                    whatever is left. The Quests section that sat between
+                    them went in B6.2: quests are Tokens on the mat (TL-18). */}
                 <div className="shrink-0 pt-2 border-t border-gi-border/30">
                     <DiscardBinPanel />
                 </div>

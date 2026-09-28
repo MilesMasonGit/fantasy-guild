@@ -687,6 +687,32 @@
   .gi-transform-glow { animation-name: gi-transform-glow-fade; }
 }
 
+/* A quest Token that is done, waiting to be claimed (B6.2, TL-18): the
+ * transform glow's gold (FB-11), held as a halo behind the art that breathes
+ * gently for as long as the quest waits. Hollow in the middle so the board's
+ * art is never washed out; the layer spills past the art box (MatToken). */
+@keyframes gi-quest-ready {
+  0%, 100% { opacity: 0.6; transform: scale(0.94); }
+  50%      { opacity: 1;   transform: scale(1.06); }
+}
+
+.gi-quest-ready {
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 236, 160, 0) 28%,
+    rgba(255, 215, 90, 0.55) 48%,
+    rgba(255, 200, 70, 0.25) 62%,
+    rgba(255, 200, 70, 0) 72%);
+  mix-blend-mode: screen;
+  animation: gi-quest-ready 1800ms ease-in-out infinite;
+}
+
+/* Reduced motion keeps the halo, only its breathing goes: the glow IS the
+   "done" state. */
+@media (prefers-reduced-motion: reduce) {
+  .gi-quest-ready { animation: none; opacity: 0.9; }
+}
+
 /* Working, said in colour (D-267).
  *
  * ⚠️ Since Free Playmat slice 1.5 only the green half remains — the yellow idle

@@ -35,7 +35,10 @@ export const RING_COLOUR = Object.freeze({
     charges: '#fbbf24',   // the game's gi-gold
     hp: '#F09595',
     spawner: '#86efac',
-    turn: '#7dd3fc'
+    turn: '#7dd3fc',
+    // B6.2 (TL-18): a quest's progress, parchment — warmer and paler than
+    // the charges gold, so a done quest's full ring is not read as charges.
+    quest: '#e8c98a'
 });
 
 /** The stroke a greyed ring (a blocked cycle) is drawn in. */
@@ -118,6 +121,27 @@ export function spawnerRing(counts) {
     if (!text) return null;
     const fraction = counts.cap > 0 ? Math.max(0, Math.min(1, counts.count / counts.cap)) : 1;
     return { kind: 'spawner', fraction, text, title: `${text} spawned` };
+}
+
+/**
+ * A quest Token's standing ring (B6.2, TL-18, "B6 + B8 displays"): its
+ * progress, `3/10`, filling toward done. Null for anything that is not a
+ * quest (`detail.quest` null).
+ *
+ * @param {{currentCount: number, requiredCount: number, title?: string}|null} quest
+ * @returns {{kind: 'quest', fraction: number, text: string, title: string}|null}
+ */
+export function questRing(quest) {
+    if (!quest) return null;
+    const required = Math.max(1, Number(quest.requiredCount) || 1);
+    const current = Math.max(0, Math.min(required, Number(quest.currentCount) || 0));
+    const text = `${ringCount(current)}/${ringCount(required)}`;
+    return {
+        kind: 'quest',
+        fraction: current / required,
+        text,
+        title: quest.title ? `${quest.title}: ${text}` : text
+    };
 }
 
 /** How often the turn ring re-reads its game-time clock (ms). */

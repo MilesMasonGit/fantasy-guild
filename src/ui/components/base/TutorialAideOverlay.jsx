@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { GameState } from '../../../state/GameState.js';
+import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 
 export const TUTORIAL_AIDE_EVENTS = {
     HOVER: 'tutorial_aide:hover',
@@ -16,6 +16,17 @@ export function setTutorialAideTarget(questId) {
     } else {
         EventBus.publish(TUTORIAL_AIDE_EVENTS.UNHOVER, {});
     }
+}
+
+/**
+ * ⭐ The tutorial step the player is on (B6.2): the tutorial quest Token on
+ * the mat that is not yet done, as its live quest — or null. Since B6.1 the
+ * steps are quest Tokens (TL-18); `state.quests.active` only ever holds an old
+ * save's sidebar quests waiting to be converted, so it is always empty in play.
+ */
+export function activeTutorialQuest() {
+    const token = QuestTokens.tutorialTokens().find(t => !t.quest.done);
+    return token ? token.quest : null;
 }
 
 /**
@@ -189,13 +200,10 @@ export const TutorialBeacon = ({ target, keyId }) => {
 export const TutorialAideOverlay = () => {
     const [activeQuestId, setActiveQuestId] = useState(null);
 
-    // Track if "Recruit a Hero" is active in Quest Log and incomplete
+    // Standing beacons while the current tutorial step is "Recruit a Hero"
+    // and not done — read from the tutorial quest Token (B6.2).
     const isRecruitHeroQuestActive = useGameState(
-        () => {
-            const activeQuests = GameState.state?.quests?.active || [];
-            const q = activeQuests.find(quest => quest.targetType === 'hero_recruited');
-            return !!q && (q.currentCount || 0) < (q.requiredCount || 1);
-        },
+        () => activeTutorialQuest()?.targetType === 'hero_recruited',
         ['state_changed', 'quests_updated', 'hero_recruited', 'guild_upgrades_updated']
     );
 

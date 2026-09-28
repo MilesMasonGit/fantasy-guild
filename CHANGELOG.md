@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Quest Token UI (B6.2, FB-41, TL-18).** Hover a quest Token to read it: title (tagged
+  *Tutorial* for a tutorial step), instruction, what's still needed, the reward, and "Click to
+  claim" once done. Its progress stands in a parchment ring under it (`3/10`); a done quest glows
+  gold until clicked, and clicking it claims (disallow mode never claims). The Quests section is
+  gone from the notification column, and the tutorial highlights read the tutorial quest Token.
 - **Quest Tokens engine (B6.1, FB-41–FB-43, TL-18).** Quests are Tokens now: the Guild Hall spawns
   them beside itself (spawned, so they never count toward the Token cap). Bounties arrive every 3
   minutes of game time up to 2 on the mat; a new Hall upgrade, the Notice Board, adds one a rank

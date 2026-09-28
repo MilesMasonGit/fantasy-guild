@@ -21,7 +21,7 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { TokenBadgeRow } from './TokenBadgeRow.jsx';
-import { ringRowOffset, spawnerRing } from './ringRow.js';
+import { ringRowOffset, spawnerRing, questRing } from './ringRow.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { TokenCentreAlert } from './TokenEventAlert.jsx';
 import { EffectProcText } from './EffectProcText.jsx';
@@ -34,6 +34,33 @@ import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
 import { TrickleTooltip, hasTrickle } from './TrickleTooltip.jsx';
+import { QuestTooltip } from './QuestTooltip.jsx';
+import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
+
+/**
+ * A quest Token's quest as a flat projection for `detail` (B6.2): what the
+ * ring, the glow and the tooltip draw. Rebuilt on every read, so the
+ * projection's deep compare sees progress (CR-044). Null for any other Token.
+ */
+function questProjection(instance) {
+    if (!QuestTokens.isQuestToken(instance)) return null;
+    const q = instance.quest;
+    return {
+        id: q.id,
+        title: q.title,
+        instruction: q.instruction || null,
+        type: q.type || null,
+        itemId: q.itemId || null,
+        enemyId: q.enemyId || null,
+        currentCount: q.currentCount || 0,
+        requiredCount: q.requiredCount || 1,
+        rewardItems: (q.rewardItems || []).map(r => ({ itemId: r.itemId, quantity: r.quantity })),
+        tutorial: !!q.tutorial,
+        done: !!q.done
+    };
+}
 
 /** The side the hero working `id` stands on (−1 / 1), or null. */
 function sideOfWorker(id) {
@@ -158,7 +185,11 @@ export const MatToken = React.memo(function MatToken({
                 // — the spawner ring (B1.3).
                 spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,
                 // FB-14: a Token that turns (or has turned) counts down to its next roll.
-                turns: !!TimedChanges.nextTurnRoll(instance)
+                turns: !!TimedChanges.nextTurnRoll(instance),
+                // B6.2 (TL-18): a quest Token's quest — ring, glow, tooltip,
+                // click to claim. Progress publishes `state_changed`, so this
+                // needs no subscription of its own.
+                quest: questProjection(instance)
             };
         },
         [
@@ -182,15 +213,18 @@ export const MatToken = React.memo(function MatToken({
         return roll ? { ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
     }, [id]);
 
-    // The spawner's standing ring (FB-5, B1.3), after cycle and charges.
+    // The spawner's standing ring (FB-5, B1.3), after cycle and charges; a
+    // quest's progress ring (B6.2, TL-18) stands in the same place.
     const spawnerCounts = detail?.spawnerCounts ?? null;
+    const quest = detail?.quest ?? null;
     const standingRings = React.useMemo(
         () => {
-            const ring = spawnerRing(spawnerCounts);
+            const ring = spawnerRing(spawnerCounts) || questRing(quest);
             return ring ? [ring] : null;
         },
-        [spawnerCounts?.count, spawnerCounts?.cap]   // eslint-disable-line react-hooks/exhaustive-deps
+        [spawnerCounts?.count, spawnerCounts?.cap, quest?.currentCount, quest?.requiredCount, quest?.title]   // eslint-disable-line react-hooks/exhaustive-deps
     );
+    const questDone = !!quest?.done;
 
     const usesRemaining = detail?.usesRemaining ?? null;
     const alert = detail?.alert ?? null;
@@ -274,6 +308,17 @@ export const MatToken = React.memo(function MatToken({
     // FB-30 → FB-52: a Token with a trickle (the Guild Hall) shows what it pays
     // in a game-styled tooltip with a live "next in", not the native title.
     const showTrickle = isHovered && hasTrickle(def);
+
+    // B6.2 (TL-18): hovering a quest Token reads it (`QuestTooltip`), and a
+    // tutorial step still to do lights its target, as hovering its sidebar
+    // card did (`TutorialAideOverlay`).
+    const showQuestTip = isHovered && !!quest;
+    const aideStep = isHovered && quest?.tutorial && !questDone ? quest.id : null;
+    React.useEffect(() => {
+        if (!aideStep) return undefined;
+        setTutorialAideTarget(aideStep);
+        return () => setTutorialAideTarget(null);
+    }, [aideStep]);
 
     const alertHint = alert ? ALERT_HINT[alert] : null;
     const hoverTitle = [
@@ -363,6 +408,7 @@ export const MatToken = React.memo(function MatToken({
                 data-token-type={typeId}
                 data-guild-hall={isHall ? 'true' : undefined}
                 data-hall-received={received ? 'true' : undefined}
+                data-quest-claimable={questDone ? 'true' : undefined}
                 title={hoverTitle}
                 data-tile-alert={alert || undefined}
                 data-tile-staffed={staffed ? 'true' : undefined}
@@ -372,8 +418,21 @@ export const MatToken = React.memo(function MatToken({
                 onClick={(e) => {
                     if (drag.isDragging) return;
                     // B2.3 (FB-32): in disallow mode a click flips the Token
-                    // allowed ⇄ disallowed (FP-35) and does nothing else.
+                    // allowed ⇄ disallowed (FP-35) and does nothing else —
+                    // it never claims a quest.
                     if (disallowMode) { onFlipDisallow?.(id); return; }
+                    // B6.2 (TL-18, FB-41): click a done quest to claim it. The
+                    // engine drops the reward as loot and removes the Token.
+                    // `skipSlide` is still on just after a drop, so the drop's
+                    // own click never claims. A quest not yet done inspects.
+                    if (questDone) {
+                        if (skipSlide) return;
+                        const result = QuestTokens.claimQuest(id);
+                        if (result && result.success === false && result.reason) {
+                            NotificationSystem.warning(result.reason);
+                        }
+                        return;
+                    }
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
                 onDoubleClick={(e) => {
@@ -391,10 +450,21 @@ export const MatToken = React.memo(function MatToken({
                 }}
                 className={cn(
                     'absolute select-none pointer-events-auto',
-                    disallowMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
+                    disallowMode || questDone ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
                     glow
                 )}
             >
+                {/* B6.2 (TL-18): a done quest glows until claimed — the
+                    transform glow's gold (FB-11), held as a halo behind the
+                    art that breathes (`gi-quest-ready`), spilling past it. */}
+                {questDone && (
+                    <div
+                        aria-hidden="true"
+                        data-quest-glow="true"
+                        className="gi-quest-ready absolute pointer-events-none"
+                        style={{ inset: '-22%' }}
+                    />
+                )}
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
@@ -443,6 +513,8 @@ export const MatToken = React.memo(function MatToken({
             <div
                 data-token-id={id}
                 data-token-overlay={id}
+                data-quest-token={quest ? id : undefined}
+                data-quest-done={quest ? String(questDone) : undefined}
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, zIndex: z + 2, visibility: hidden ? 'hidden' : 'visible' }}
             >
@@ -492,6 +564,7 @@ export const MatToken = React.memo(function MatToken({
             </div>
 
             {showTrickle && !hidden && <TrickleTooltip instanceId={id} />}
+            {showQuestTip && !hidden && <QuestTooltip instanceId={id} quest={quest} />}
         </>
     );
 });
