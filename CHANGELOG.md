@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Goblins are hostile (B7.3).** Goblin and Goblin Chief now attack heroes near their camp; Cow and
+  Thorn Elemental still fight only when attacked. Set through the CMS.
 - **Hostile enemies and fight-back (B7.2, TL-16, TL-24).** An enemy marked Hostile (a new CMS
   checkbox) attacks a hero that comes within a flag's radius of its spawner. An attacked hero
   always fights back, whatever its rules say, then returns to its work.
