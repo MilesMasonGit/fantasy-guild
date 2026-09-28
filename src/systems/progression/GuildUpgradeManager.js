@@ -4,7 +4,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
-    GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isTileAccessible, getLockReason,
+    GUILD_UPGRADES, getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
     rosterLimitForRank
 } from '../../config/guildUpgrades.js';
 import { generateHero } from '../hero/HeroGenerator.js';
@@ -15,7 +15,7 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
- * GuildUpgradeManager — the upgrade tree installed on the 7×7 Guild Hall playmat.
+ * GuildUpgradeManager — the Guild Hall upgrade web (B9, TL-23).
  *
  * Ranks persist in `state.progress.guildUpgrades` ({ upgradeId: rank }); every
  * derived stat is RECOMPUTED from ranks:
@@ -48,11 +48,11 @@ export const GuildUpgradeManager = {
         return ranks[upgradeId] || 0;
     },
 
-    /** Check if an upgrade node is accessible by its tile adjacency. */
+    /** Whether an upgrade's node is open on the web: a linked node bought, or linked to the Hall (TL-23). */
     isAccessible(upgradeId) {
         const def = getUpgradeDef(upgradeId);
-        if (!def || def.tileIndex == null) return false;
-        return isTileAccessible(def.tileIndex, this.getRanks());
+        if (!def) return false;
+        return isUpgradeAccessible(def.id, this.getRanks());
     },
 
     /**
@@ -116,8 +116,8 @@ export const GuildUpgradeManager = {
         if (!def) return { success: false, error: 'Unknown upgrade' };
 
         const ranks = this.getRanks();
-        if (def.tileIndex != null && !isTileAccessible(def.tileIndex, ranks)) {
-            const reason = getLockReason(def.tileIndex, ranks);
+        if (!isUpgradeAccessible(def.id, ranks)) {
+            const reason = getLockReason(def.id, ranks);
             return { success: false, error: reason || 'That upgrade is locked' };
         }
 
@@ -231,12 +231,11 @@ export const GuildUpgradeManager = {
     getDisplayList() {
         return GUILD_UPGRADES.map(def => {
             const rank = this.getRank(def.id);
-            const accessible = def.tileIndex != null ? isTileAccessible(def.tileIndex, this.getRanks()) : true;
+            const accessible = isUpgradeAccessible(def.id, this.getRanks());
             return {
                 id: def.id,
                 name: def.name,
                 description: def.description,
-                tileIndex: def.tileIndex,
                 rank,
                 maxRank: def.maxRank,
                 maxed: rank >= def.maxRank,

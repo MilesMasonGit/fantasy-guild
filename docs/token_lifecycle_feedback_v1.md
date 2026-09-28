@@ -359,6 +359,10 @@ pushing honour it; saplings and sprouts set to small through the CMS.
 **B9 Guild Hall screen (9th).** FB-38, FB-39. Mockups first: Effects list on the left, a node-and-line
 tree. ⚠️ Hall upgrade tile indices are not interchangeable with the playmat's.
 
+| # | B9 slice | Status |
+|---|---|---|
+| B9 | **The Guild Hall upgrade web** (TL-23, FB-38, FB-39): the Hall in the centre, upgrades as nodes with `node {x,y}` and `links`, lines between them, unlock when any linked node is bought; Effects on the left; tile grid removed | ✅ 2026-09-28. `isUpgradeAccessible(id, ranks)` (+ optional `gate(ranks)` for future skill locks); `upgradeBoardGeometry.js` deleted; selection by upgrade id. Links chosen to keep **exactly** today's reachability (tested against the old tile rule): Bunk Beds, Bank Slots, Notice Board, Wishing Well link to the Hall; Bank Tabs to Bank Slots; Scouting Flags to Bunk Beds and Bank Slots. Saves unchanged (ranks were always by id). Effects list always left of the web; `menuRight` still decides the nav / inspection sides. Clicking the Hall closes the screen, as the centre tile did. Director verified live (slot 3, nav button, 1280×720 screenshot): Hall centred, six nodes with sprites and rank plaques, Bunk Beds gold (bought, its Hall line lit), four buyable, Bank Tabs grey and locked behind Bank Slots, Effects on the left. ⭐ Owner: the look; the Effects list's faint text (unchanged styling). Tests: baseline 10 |
+
 **B10 Horizontal hero dock (10th).** FB-46. The owner describes the general idea first; then the
 agent makes mockups; then builds.
 

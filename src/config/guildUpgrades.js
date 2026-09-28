@@ -1,10 +1,4 @@
-// Fantasy Guild — Guild Hall upgrade definitions & 7x7 Upgrade Board Layout.
-
-import {
-    UPGRADE_BOARD_SIZE,
-    UPGRADE_BOARD_TILE_COUNT,
-    UPGRADE_BOARD_GUILD_HALL_TILE
-} from './upgradeBoardGeometry.js';
+// Fantasy Guild — Guild Hall upgrade definitions & the upgrade web (B9, TL-23).
 
 /**
  * Heroes a guild starts with, before any Roster Size rank is bought.
@@ -61,29 +55,25 @@ export const UPGRADE_SPRITES = {
 };
 
 /**
- * Where each upgrade sits on the 7×7 upgrade board, around the Hall at tile 24.
+ * ⭐ **The Guild Hall upgrades are a web around the Hall** (B9, TL-23, FB-39).
  *
- * ⚠️ These indices are addresses on the **upgrade board**, not the playmat.
- * The two boards are different sizes, so tile 17 here is not tile 17 there.
+ * The Hall sits at the centre of its screen; every upgrade is a node placed
+ * freely around it, joined to other nodes by lines. There are no squares and no
+ * tile indices any more — the 7×7 upgrade grid and its cardinal-neighbour
+ * unlock went with this slice. An upgrade is addressed by its id, everywhere.
  *
- *   17 = Hall −1 row      22 = Hall −2 cols    23 = Hall −1 col
- *   31 = Hall +1 row      16 = Hall −1 row −1 col
- *   25 = Hall +1 col (Notice Board, B6.1)
+ * Each upgrade carries:
+ *   `node`  — `{ x, y }` in a unit space centred on the Hall (0, 0); +x is
+ *             right, +y is down. The first ring sits about 0.5 out. The screen
+ *             turns these into pixels (`GuildHallBoard`).
+ *   `links` — ids of the nodes it is joined to, or `HALL_NODE` for the Hall.
+ *             A link is a line, so it counts from both ends (see
+ *             {@link getUpgradeLinks}); each is written once, on the outer node.
  *
- * Nothing derives these from UPGRADE_BOARD_GUILD_HALL_TILE, so resizing that
- * board means recomputing them by hand. Tiles 25 and 26 held the two Token
- * Vault tracks until the Vault was retired (Token Lifecycle 9.3); 25 holds
- * the Notice Board since B6.1 (beside the Hall, so it is open from the start),
- * and 26 is empty. B9 re-lays the board as a web (TL-23).
+ * Links and positions are set here in code for now; the CMS gets them later
+ * (B9 web unlock).
  */
-export const UPGRADE_TILES = {
-    16: 'flag_radius',
-    17: 'roster_size',
-    23: 'bank_slots',
-    22: 'bank_tabs',
-    31: 'wishing_well',
-    25: 'notice_board'
-};
+export const HALL_NODE = 'hall';
 
 /**
  * Guild Hall upgrades are paid in items, never gold (SP-65, slice 2.1).
@@ -126,7 +116,9 @@ export const GUILD_UPGRADES = [
         id: 'bank_tabs',
         name: 'Bank Tabs',
         description: 'Unlock another Bank tab for organizing items in storage.',
-        tileIndex: 22,
+        // Beyond Bank Slots on the left, as it sat beyond it on the old grid.
+        node: { x: -0.95, y: 0 },
+        links: ['bank_slots'],
         maxRank: 15,
         prices: placeholderPrices(15),
         statLabel: rank => `${1 + rank} tabs`,
@@ -137,7 +129,8 @@ export const GUILD_UPGRADES = [
         id: 'bank_slots',
         name: 'Bank Slots',
         description: 'Store 32 more kinds of items in the Bank.',
-        tileIndex: 23,
+        node: { x: -0.5, y: 0 },
+        links: [HALL_NODE],
         maxRank: 10,
         prices: placeholderPrices(10),
         statLabel: rank => `${64 + rank * 32} slots`,
@@ -148,7 +141,8 @@ export const GUILD_UPGRADES = [
         id: 'roster_size',
         name: 'Bunk Beds',
         description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
-        tileIndex: 17,
+        node: { x: 0, y: -0.5 },
+        links: [HALL_NODE],
         // One hero per rank, 0 to ROSTER_MAX (8 since 2026-09-21; was 12).
         maxRank: ROSTER_MAX - ROSTER_BASE,
         prices: placeholderPrices(ROSTER_MAX - ROSTER_BASE, { freeFirstRank: true }),
@@ -160,7 +154,10 @@ export const GUILD_UPGRADES = [
         id: 'flag_radius',
         name: 'Scouting Flags',
         description: 'Increases the radius heroes look for work from their flags.',
-        tileIndex: 16,
+        // Between Bunk Beds and Bank Slots: either one bought opens it, as
+        // either grid neighbour did before B9.
+        node: { x: -0.55, y: -0.55 },
+        links: ['roster_size', 'bank_slots'],
         maxRank: 5,
         prices: placeholderPrices(5),
         statLabel: rank => `+${rank * 40}u reach`,
@@ -171,7 +168,8 @@ export const GUILD_UPGRADES = [
         id: 'wishing_well',
         name: 'Wishing Well',
         description: 'The Guild Hall draws fresh water every cycle.',
-        tileIndex: 31,
+        node: { x: 0, y: 0.5 },
+        links: [HALL_NODE],
         maxRank: 10,
         prices: placeholderPrices(10, { freeFirstRank: true }),
         statLabel: rank => rank === 0 ? 'No water generated' : `${rank} Water / 10s`,
@@ -185,7 +183,8 @@ export const GUILD_UPGRADES = [
         id: 'notice_board',
         name: 'Notice Board',
         description: 'The Guild Hall keeps one more quest on the mat at a time.',
-        tileIndex: 25,
+        node: { x: 0.5, y: 0 },
+        links: [HALL_NODE],
         maxRank: NOTICE_BOARD_MAX_RANK,
         prices: placeholderPrices(NOTICE_BOARD_MAX_RANK),
         statLabel: rank => `+${rank} quest${rank === 1 ? '' : 's'}`,
@@ -198,12 +197,6 @@ export const GUILD_UPGRADES = [
 export function getUpgradeDef(id) {
     const key = id === 'guildmasters_banner' ? 'wishing_well' : id;
     return GUILD_UPGRADES.find(u => u.id === key) || null;
-}
-
-/** Look up an upgrade definition by upgrade-board tile index (0-48). */
-export function getUpgradeDefByTile(tileIndex) {
-    const id = UPGRADE_TILES[tileIndex];
-    return id ? getUpgradeDef(id) : null;
 }
 
 /**
@@ -230,84 +223,99 @@ export function totalPrice(price) {
     return [...totals].map(([itemId, quantity]) => ({ itemId, quantity }));
 }
 
-/**
- * Get cardinal neighbors (Up, Down, Left, Right) of an upgrade-board tile.
- *
- * Deliberately *not* `adjacency.neighboursOf` — that is the playmat's
- * 8-neighbour rule (D-81), on a differently-sized grid. The upgrade tree
- * spreads along the four cardinal directions only, across its own 7×7 board.
- */
-export function getCardinalNeighbors(tileIndex) {
-    if (tileIndex < 0 || tileIndex >= UPGRADE_BOARD_TILE_COUNT) return [];
-    const size = UPGRADE_BOARD_SIZE;
-    const row = Math.floor(tileIndex / size);
-    const col = tileIndex % size;
-    const neighbors = [];
-    if (row > 0) neighbors.push((row - 1) * size + col); // Up
-    if (row < size - 1) neighbors.push((row + 1) * size + col); // Down
-    if (col > 0) neighbors.push(row * size + (col - 1)); // Left
-    if (col < size - 1) neighbors.push(row * size + (col + 1)); // Right
-    return neighbors;
+/** A rank from a ranks map, honouring the Wishing Well's old id. */
+function rankIn(ranks, id) {
+    if (id === 'wishing_well') return ranks?.wishing_well ?? ranks?.guildmasters_banner ?? 0;
+    return ranks?.[id] || 0;
 }
 
 /**
- * Check if a tile is accessible for upgrading based on cardinal adjacency.
- * A tile is accessible if:
- * 1. It is directly nearby to the Center Guild Hall (Tile 24), OR
- * 2. It is directly nearby to a tile that has rank >= 1.
+ * Every node joined to an upgrade by a line: the ones it names in `links`,
+ * plus every upgrade that names it (a line counts from both ends, TL-23). May
+ * include {@link HALL_NODE}.
  */
-export function isTileAccessible(tileIndex, ranks = {}) {
-    if (tileIndex === UPGRADE_BOARD_GUILD_HALL_TILE) return true;
-    const neighbors = getCardinalNeighbors(tileIndex);
-    for (const n of neighbors) {
-        if (n === UPGRADE_BOARD_GUILD_HALL_TILE) return true;
-        const upgradeId = UPGRADE_TILES[n];
-        if (upgradeId && (ranks[upgradeId] || 0) >= 1) {
-            return true;
+export function getUpgradeLinks(upgradeId) {
+    const def = getUpgradeDef(upgradeId);
+    if (!def) return [];
+    const out = new Set(def.links || []);
+    for (const other of GUILD_UPGRADES) {
+        if (other.id !== def.id && (other.links || []).includes(def.id)) out.add(other.id);
+    }
+    return [...out];
+}
+
+/**
+ * Every line of the web, once each, as `{ from, to }` — `from` is the upgrade
+ * that names the link in its `links`, `to` the node it names (an upgrade id or
+ * {@link HALL_NODE}). A pair named from both ends is drawn once.
+ */
+export function getUpgradeWebLinks() {
+    const seen = new Set();
+    const out = [];
+    for (const def of GUILD_UPGRADES) {
+        for (const to of def.links || []) {
+            const key = [def.id, to].sort().join('|');
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push({ from: def.id, to });
         }
     }
-    return false;
+    return out;
 }
 
 /**
- * The kinds of lock a tile can carry. Today only adjacency exists; the owner
- * intends skill gates later ("Requires Blacksmithing 5"), which is why the
- * kind is carried alongside the text rather than left implicit — the UI shows
- * some kinds and deliberately stays quiet about others.
+ * The kinds of lock an upgrade can carry. The owner intends skill gates later
+ * ("Requires Blacksmithing 5"), which is why the kind is carried alongside the
+ * text rather than left implicit — the UI shows some kinds and deliberately
+ * stays quiet about others.
  */
 export const LOCK_KIND = {
-    /** Blocked by the board's adjacency rule, which the board already shows. */
-    ADJACENCY: 'adjacency'
+    /** No linked node bought yet — the web already shows this (TL-23). */
+    LINK: 'link',
+    /**
+     * A gate an upgrade sets itself through `gate(ranks)` — meant for skill
+     * requirements. No upgrade sets one yet; the inspection panel spells these
+     * out, where it stays silent about LINK.
+     */
+    SKILL: 'skill'
 };
 
 /**
- * Returns why a tile is locked, as { kind, text }, or null if it is not.
+ * Why an upgrade cannot be bought yet, as `{ kind, text }`, or null when it
+ * can be (rank and price aside).
+ *
+ * Its own `gate(ranks)` is asked first — an upgrade may refuse however its
+ * links stand. Then the web rule (TL-23): it opens once **any** node linked to
+ * it has rank ≥ 1, or straight away when it is linked to the Hall.
  */
-export function getLockDetail(tileIndex, ranks = {}) {
-    if (isTileAccessible(tileIndex, ranks)) return null;
-    const neighbors = getCardinalNeighbors(tileIndex);
-    const requiredUpgrades = [];
-    for (const n of neighbors) {
-        const upId = UPGRADE_TILES[n];
-        if (upId) {
-            const def = getUpgradeDef(upId);
-            if (def) requiredUpgrades.push(def.name);
-        }
-    }
-    if (requiredUpgrades.length > 0) {
+export function getLockDetail(upgradeId, ranks = {}) {
+    const def = getUpgradeDef(upgradeId);
+    if (!def) return { kind: LOCK_KIND.LINK, text: 'Unknown upgrade' };
+    const gated = typeof def.gate === 'function' ? def.gate(ranks) : null;
+    if (gated) return gated;
+
+    const links = getUpgradeLinks(def.id);
+    if (links.includes(HALL_NODE)) return null;
+    if (links.some(id => rankIn(ranks, id) >= 1)) return null;
+
+    const names = links.map(id => getUpgradeDef(id)?.name).filter(Boolean);
+    if (names.length > 0) {
         return {
-            kind: LOCK_KIND.ADJACENCY,
-            text: `Requires nearby upgrade (${requiredUpgrades.join(' or ')}) at Level 1+`
+            kind: LOCK_KIND.LINK,
+            text: `Requires a linked upgrade (${names.join(' or ')}) at Rank I+`
         };
     }
-    return { kind: LOCK_KIND.ADJACENCY, text: 'Path to this upgrade is locked' };
+    return { kind: LOCK_KIND.LINK, text: 'Path to this upgrade is locked' };
 }
 
-/**
- * Returns why a tile is locked if inaccessible, as plain text.
- */
-export function getLockReason(tileIndex, ranks = {}) {
-    const detail = getLockDetail(tileIndex, ranks);
+/** True when an upgrade may be bought, rank and price aside (TL-23). */
+export function isUpgradeAccessible(upgradeId, ranks = {}) {
+    return getLockDetail(upgradeId, ranks) === null;
+}
+
+/** Why an upgrade is locked, as plain text, or null when it is not. */
+export function getLockReason(upgradeId, ranks = {}) {
+    const detail = getLockDetail(upgradeId, ranks);
     return detail ? detail.text : null;
 }
 

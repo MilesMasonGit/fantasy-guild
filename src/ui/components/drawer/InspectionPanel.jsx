@@ -40,11 +40,9 @@ export const InspectionPanel = ({
 
     if (selection?.type === 'guild_upgrade') {
         const upgradeDef = selection.upgradeDef || selection.source?.upgradeDef || getUpgradeDef(selection.id);
-        const tileIndex = selection.tileIndex ?? selection.source?.tileIndex;
         body = (
             <GuildUpgradeInspection
                 upgradeDef={upgradeDef}
-                tileIndex={tileIndex}
                 onClose={onClear}
             />
         );

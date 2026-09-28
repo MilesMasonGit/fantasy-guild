@@ -15,7 +15,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { matW, matH } from '../config/matGeometry.js';
-import { UPGRADE_BOARD_PX } from '../config/upgradeBoardGeometry.js';
+import { WEB_W, WEB_H } from '../ui/components/board/GuildHallBoard.jsx';
 import { fitScale, useBoardScale } from '../ui/hooks/useBoardScale.js';
 import { MatBoard, heroPlacement } from '../ui/components/board/MatBoard.jsx';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
@@ -111,11 +111,27 @@ describe('fitting the mat into the window (CR2-179, FP-86)', () => {
         expect(fitScale(1200, 900, 944)).toBe(fitScale(1200, 900, 944, 944));
     });
 
-    it('the Guild Hall upgrade board still measures as one square', () => {
-        const { result } = renderHook(() => useBoardScale(UPGRADE_BOARD_PX));
+    // The Guild Hall's 7×7 upgrade grid (a square) became a web in B9; the web
+    // passes both its sides, like the mat.
+    it('the Guild Hall upgrade web fits by its two sides', () => {
+        const { result } = renderHook(() => useBoardScale(WEB_W, WEB_H));
         const el = document.createElement('div');
-        Object.defineProperty(el, 'clientWidth', { value: UPGRADE_BOARD_PX / 2 });
-        Object.defineProperty(el, 'clientHeight', { value: UPGRADE_BOARD_PX / 2 });
+        Object.defineProperty(el, 'clientWidth', { value: WEB_W });
+        Object.defineProperty(el, 'clientHeight', { value: WEB_H / 2 });
+
+        act(() => { result.current.ref(el); });
+        act(() => { window.dispatchEvent(new Event('resize')); });
+
+        expect(result.current.scale).toBe(0.5);
+        expect(result.current.size).toBe(WEB_W / 2);
+        expect(result.current.height).toBe(WEB_H / 2);
+    });
+
+    it('a square board (one side given) still measures as one square', () => {
+        const { result } = renderHook(() => useBoardScale(800));
+        const el = document.createElement('div');
+        Object.defineProperty(el, 'clientWidth', { value: 400 });
+        Object.defineProperty(el, 'clientHeight', { value: 400 });
 
         act(() => { result.current.ref(el); });
         act(() => { window.dispatchEvent(new Event('resize')); });

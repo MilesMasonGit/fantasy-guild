@@ -2,40 +2,65 @@ import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
-    UPGRADE_BOARD_TILE_PX,
-    UPGRADE_BOARD_SIZE,
-    UPGRADE_BOARD_TILE_COUNT,
-    UPGRADE_BOARD_PX,
-    UPGRADE_BOARD_TILE_GAP_PX,
-    UPGRADE_BOARD_GUILD_HALL_TILE
-} from '../../../config/upgradeBoardGeometry.js';
-import {
-    getUpgradeDefByTile, isTileAccessible, toRoman, GUILD_UPGRADES
+    GUILD_UPGRADES, HALL_NODE, getUpgradeDef, getUpgradeWebLinks, isUpgradeAccessible, toRoman
 } from '../../../config/guildUpgrades.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 
-const FLOOR = [
-    'pm_board_guild_hall_1', 'pm_board_guild_hall_2', 'pm_board_guild_hall_3',
-    'pm_board_guild_hall_4', 'pm_board_guild_hall_5'
-];
-const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
+/**
+ * The web's natural drawing space, in pixels, before it is scaled to fit the
+ * window (`useBoardScale`, as the mat does). Upgrade node positions are unit
+ * coordinates centred on the Hall (`guildUpgrades.js`); one unit is
+ * `WEB_UNIT_PX`, so the first ring (0.5 out) sits 200px from the Hall.
+ */
+export const WEB_W = 1000;
+export const WEB_H = 760;
+export const WEB_UNIT_PX = 400;
+const NODE_PX = 112;
+const HALL_PX = 168;
+
+const PIXEL_FONT = "'Silkscreen', cursive, monospace";
+const OUTLINE = '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 3px rgba(0,0,0,0.95)';
+
+/** A node's centre in the web's natural pixels. The Hall is the middle. */
+export function webPoint(nodeId) {
+    if (nodeId === HALL_NODE) return { x: WEB_W / 2, y: WEB_H / 2 };
+    const node = getUpgradeDef(nodeId)?.node || { x: 0, y: 0 };
+    return { x: WEB_W / 2 + node.x * WEB_UNIT_PX, y: WEB_H / 2 + node.y * WEB_UNIT_PX };
+}
 
 /**
- * GuildHallBoard — the Guild Hall Upgrades board.
+ * A node's state on the web (B9): `maxed` at its top rank, `bought` from rank
+ * one, `buyable` when open but not yet bought, `locked` when no linked node is
+ * bought (TL-23). The Hall is the root and counts as bought.
+ */
+export function nodeState(nodeId, ranks) {
+    if (nodeId === HALL_NODE) return 'bought';
+    const def = getUpgradeDef(nodeId);
+    if (!def) return 'locked';
+    const rank = ranks[def.id] || 0;
+    if (rank >= def.maxRank) return 'maxed';
+    if (rank >= 1) return 'bought';
+    return isUpgradeAccessible(def.id, ranks) ? 'buyable' : 'locked';
+}
+
+const isOwned = (state) => state === 'bought' || state === 'maxed';
+
+/**
+ * GuildHallBoard — the Guild Hall upgrade web (B9, TL-23, FB-39).
  *
- * It looks like the playmat and shares its tile art and 128px tiles, but it is
- * a separate 7×7 surface with its own 8px gaps: the playmat's size is a live
- * design question, while this is a fixed diagram of a fixed upgrade tree. Every
- * measurement here is an UPGRADE_BOARD_* constant for that reason — a playmat
- * tile index means a different square and must never be used here.
+ * The Hall in the centre, every upgrade a node placed freely around it, lines
+ * between linked nodes. A line glows gold once both its ends are bought (the
+ * Hall always is), so the bought paths read at a glance; a line to a locked
+ * node is dimmed. There are no tiles here: nodes are picked by upgrade id.
+ * The Effects list sits to the left of this, in `ReactRoot` (FB-38).
  */
 export const GuildHallBoard = ({
-    selectedTileIndex,
-    onSelectTile,
+    selectedUpgradeId,
+    onSelectUpgrade,
     onClose
 }) => {
-    const [hoveredTileIndex, setHoveredTileIndex] = useState(null);
+    const [hovered, setHovered] = useState(null);
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
         ['guild_upgrades_updated', 'state_changed']
@@ -48,161 +73,195 @@ export const GuildHallBoard = ({
     );
     const affordable = new Set((affordableSignature || '').split(',').filter(Boolean));
 
-    const fit = useBoardScale(UPGRADE_BOARD_PX);
+    const fit = useBoardScale(WEB_W, WEB_H);
+    const links = getUpgradeWebLinks();
+    const hall = webPoint(HALL_NODE);
 
     return (
-        // Same fit-to-window treatment as the playmat (CR2-179) — this 944px
-        // grid went off-screen in exactly the same way.
-        <div
-            ref={fit.ref}
-            className="w-full h-full min-w-0 min-h-0 flex items-center justify-center p-8 overflow-hidden select-none"
-        >
-            <div className="relative shrink-0" style={{ width: fit.size, height: fit.size }}>
+        <div className="w-full h-full min-w-0 min-h-0 flex items-center justify-center py-8 px-4 overflow-hidden select-none">
+            {/* The wooden frame (the Effects panel's), floored in the Hall's
+                own boards. */}
             <div
-                data-board-origin
-                data-guild-hall-board="true"
-                data-natural-width={UPGRADE_BOARD_PX}
-                className="relative shrink-0"
+                className="w-full h-full min-w-0 min-h-0 relative rounded-2xl border-4 border-[#3a271d] overflow-hidden flex"
                 style={{
-                    width: UPGRADE_BOARD_PX,
-                    height: UPGRADE_BOARD_PX,
-                    transform: `scale(${fit.scale})`,
-                    transformOrigin: 'top left'
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('/assets/playmat/tiles/pm_board_guild_hall_1.png')`,
+                    backgroundRepeat: 'repeat',
+                    backgroundSize: 'auto, 128px',
+                    imageRendering: 'pixelated',
+                    boxShadow: 'inset 0 0 28px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.6)'
                 }}
             >
-                <div
-                    className="grid shrink-0"
-                    style={{
-                        gridTemplateColumns: `repeat(${UPGRADE_BOARD_SIZE}, ${UPGRADE_BOARD_TILE_PX}px)`,
-                        gap: `${UPGRADE_BOARD_TILE_GAP_PX}px`,
-                        width: UPGRADE_BOARD_PX,
-                        height: UPGRADE_BOARD_PX,
-                        imageRendering: 'pixelated'
-                    }}
-                >
-                    {Array.from({ length: UPGRADE_BOARD_TILE_COUNT }, (_, index) => {
-                        const isCenter = index === UPGRADE_BOARD_GUILD_HALL_TILE;
-                        const def = getUpgradeDefByTile(index);
-                        const isSelected = selectedTileIndex === index;
-                        const rank = def ? (ranks[def.id] || 0) : 0;
-                        const accessible = def ? isTileAccessible(index, ranks) : false;
-                        const isMax = def ? rank >= def.maxRank : false;
-                        const canAfford = def && accessible && !isMax && affordable.has(def.id);
-
-                        return (
-                            <div
-                                key={index}
-                                id={def?.id === 'roster_size' ? "guild-roster-upgrade-node" : def?.id === 'wishing_well' ? "guild-wishing-well-upgrade-node" : undefined}
-                                data-guild-roster-upgrade={def?.id === 'roster_size' ? "true" : undefined}
-                                data-guild-wishing-well-upgrade={def?.id === 'wishing_well' ? "true" : undefined}
-                                onMouseEnter={() => setHoveredTileIndex(index)}
-                                onMouseLeave={() => setHoveredTileIndex(null)}
-                                onClick={() => {
-                                    if (isCenter) {
-                                        onClose?.();
-                                    } else if (def) {
-                                        onSelectTile?.(index, def);
-                                    }
-                                }}
-                                style={{
-                                    width: UPGRADE_BOARD_TILE_PX,
-                                    height: UPGRADE_BOARD_TILE_PX,
-                                    backgroundImage: `url(${floorFor(index)})`,
-                                    backgroundSize: 'cover',
-                                    imageRendering: 'pixelated'
-                                }}
-                                className={cn(
-                                    'relative select-none',
-                                    isCenter && 'cursor-pointer',
-                                    def && 'cursor-pointer',
-                                    isSelected && 'ring-2 ring-gi-gold'
-                                )}
+                <div ref={fit.ref} className="flex-1 min-w-0 min-h-0 flex items-center justify-center p-4 overflow-hidden">
+                    <div className="relative shrink-0" style={{ width: fit.size, height: fit.height }}>
+                        <div
+                            data-board-origin
+                            data-guild-hall-board="true"
+                            data-natural-width={WEB_W}
+                            data-natural-height={WEB_H}
+                            className="relative shrink-0"
+                            style={{
+                                width: WEB_W,
+                                height: WEB_H,
+                                transform: `scale(${fit.scale})`,
+                                transformOrigin: 'top left'
+                            }}
+                        >
+                            {/* Lines first, so the nodes sit on top of them. */}
+                            <svg
+                                className="absolute inset-0 pointer-events-none"
+                                width={WEB_W}
+                                height={WEB_H}
+                                viewBox={`0 0 ${WEB_W} ${WEB_H}`}
                             >
-                                {/* Center Guild Hall Tile */}
-                                {isCenter && (
-                                    <div
-                                        className={cn(
-                                            "absolute inset-0 flex items-center justify-center transition-[filter] duration-150",
-                                            hoveredTileIndex === index && "gi-token-hover-pulse"
-                                        )}
-                                    >
-                                        <img
-                                            src="/assets/tokens/token_guildhall.png"
-                                            alt="Guild Hall"
-                                            className="w-32 h-32 object-contain drop-shadow-md"
-                                            style={{ imageRendering: 'pixelated' }}
-                                        />
-                                    </div>
-                                )}
-
-                                {/* Affordable Upgrade Alert Badge (Top Left with Token Alert glow and bob) */}
-                                {canAfford && (
-                                    <div
-                                        data-upgrade-available="true"
-                                        className="absolute top-1.5 left-[2px] z-[100] pointer-events-none"
-                                    >
-                                        <div className="relative w-8 h-8 flex items-center justify-center">
-                                            <img
-                                                src="/assets/ui/ui_upgrade.png"
-                                                alt="Upgrade Available"
-                                                className="w-8 h-8 object-contain select-none animate-bounce drop-shadow-[0_0_8px_rgba(234,179,8,0.9)]"
-                                                style={{
-                                                    width: '32px',
-                                                    height: '32px',
-                                                    imageRendering: 'pixelated',
-                                                    animationDuration: '2s',
-                                                    transform: 'none'
-                                                }}
+                                {links.map(({ from, to }) => {
+                                    const a = webPoint(from);
+                                    const b = webPoint(to);
+                                    const sa = nodeState(from, ranks);
+                                    const sb = nodeState(to, ranks);
+                                    const lit = isOwned(sa) && isOwned(sb);
+                                    const dim = sa === 'locked' || sb === 'locked';
+                                    return (
+                                        <g key={`${from}:${to}`} data-hall-link={`${from}:${to}`} data-link-lit={lit ? 'true' : 'false'}>
+                                            {/* A dark casing under every line keeps it legible on the floor. */}
+                                            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#140d08" strokeWidth={12} strokeLinecap="round" opacity={dim ? 0.5 : 0.9} />
+                                            <line
+                                                x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                                                stroke={lit ? '#f5c542' : dim ? '#4a3526' : '#9a7650'}
+                                                strokeWidth={lit ? 6 : 5}
+                                                strokeLinecap="round"
+                                                strokeDasharray={dim ? '10 10' : undefined}
+                                                opacity={dim ? 0.6 : 1}
+                                                style={lit ? { filter: 'drop-shadow(0 0 6px rgba(245,197,66,0.85))' } : undefined}
                                             />
-                                        </div>
-                                    </div>
-                                )}
+                                        </g>
+                                    );
+                                })}
+                            </svg>
 
-                                {/* Accessible Upgrade Sprite (128px) & Roman Numeral Rank */}
-                                {def && accessible && (
-                                    <>
-                                        <div
+                            {/* The Hall. Clicking it returns to the playmat, as the
+                                centre tile did before B9. */}
+                            <button
+                                type="button"
+                                data-hall-node={HALL_NODE}
+                                data-node-state="bought"
+                                title="Return to Playmat"
+                                onMouseEnter={() => setHovered(HALL_NODE)}
+                                onMouseLeave={() => setHovered(null)}
+                                onClick={() => onClose?.()}
+                                className="absolute flex items-center justify-center rounded-full border-4 border-gi-gold bg-[#2a1d15] cursor-pointer"
+                                style={{
+                                    left: hall.x - HALL_PX / 2,
+                                    top: hall.y - HALL_PX / 2,
+                                    width: HALL_PX,
+                                    height: HALL_PX,
+                                    boxShadow: '0 0 22px rgba(245,197,66,0.55), inset 0 0 18px rgba(0,0,0,0.8)'
+                                }}
+                            >
+                                <img
+                                    src="/assets/tokens/token_guildhall.png"
+                                    alt="Guild Hall"
+                                    className={cn('w-32 h-32 object-contain drop-shadow-md transition-[filter] duration-150', hovered === HALL_NODE && 'gi-token-hover-pulse')}
+                                    style={{ imageRendering: 'pixelated' }}
+                                />
+                            </button>
+
+                            {GUILD_UPGRADES.map(def => {
+                                const p = webPoint(def.id);
+                                const state = nodeState(def.id, ranks);
+                                const rank = ranks[def.id] || 0;
+                                const isSelected = selectedUpgradeId === def.id;
+                                const canAfford = (state === 'buyable' || state === 'bought') && affordable.has(def.id);
+                                const owned = isOwned(state);
+                                return (
+                                    <div
+                                        key={def.id}
+                                        className="absolute flex flex-col items-center"
+                                        style={{ left: p.x - NODE_PX / 2, top: p.y - NODE_PX / 2, width: NODE_PX }}
+                                    >
+                                        <button
+                                            type="button"
+                                            data-hall-node={def.id}
+                                            data-node-state={state}
+                                            data-selected={isSelected ? 'true' : undefined}
+                                            id={def.id === 'roster_size' ? 'guild-roster-upgrade-node' : def.id === 'wishing_well' ? 'guild-wishing-well-upgrade-node' : undefined}
+                                            data-guild-roster-upgrade={def.id === 'roster_size' ? 'true' : undefined}
+                                            data-guild-wishing-well-upgrade={def.id === 'wishing_well' ? 'true' : undefined}
+                                            title={def.name}
+                                            onMouseEnter={() => setHovered(def.id)}
+                                            onMouseLeave={() => setHovered(null)}
+                                            onClick={() => onSelectUpgrade?.(def)}
                                             className={cn(
-                                                "absolute inset-0 flex items-center justify-center pointer-events-none transition-[filter] duration-150",
-                                                hoveredTileIndex === index && "gi-token-hover-pulse"
+                                                'relative flex items-center justify-center rounded-xl border-4 cursor-pointer transition-[box-shadow,border-color] duration-150',
+                                                state === 'maxed' && 'border-yellow-300',
+                                                state === 'bought' && 'border-gi-gold',
+                                                state === 'buyable' && 'border-[#9a7650]',
+                                                state === 'locked' && 'border-[#3a271d]',
+                                                isSelected && 'outline outline-4 outline-offset-2 outline-white/85'
                                             )}
+                                            style={{
+                                                width: NODE_PX,
+                                                height: NODE_PX,
+                                                backgroundColor: state === 'locked' ? '#15100b' : '#2a1d15',
+                                                boxShadow: state === 'maxed'
+                                                    ? '0 0 24px rgba(253,224,71,0.8), inset 0 0 14px rgba(0,0,0,0.8)'
+                                                    : state === 'bought'
+                                                        ? '0 0 14px rgba(245,197,66,0.55), inset 0 0 14px rgba(0,0,0,0.8)'
+                                                        : 'inset 0 0 14px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.6)'
+                                            }}
                                         >
                                             <img
                                                 src={def.sprite}
                                                 alt={def.name}
-                                                className="w-32 h-32 object-contain pointer-events-auto"
+                                                className={cn(
+                                                    'w-24 h-24 object-contain transition-[filter] duration-150',
+                                                    state === 'locked' && 'grayscale opacity-30',
+                                                    hovered === def.id && state !== 'locked' && 'gi-token-hover-pulse'
+                                                )}
                                                 style={{ imageRendering: 'pixelated' }}
                                             />
-                                        </div>
-                                        {/* Silkscreen Roman Numeral Level Badge with Black Outline */}
+                                            {state === 'locked' && (
+                                                <img
+                                                    src="/assets/ui/ui_lock.png"
+                                                    alt="Locked"
+                                                    className="absolute w-12 h-12 object-contain opacity-80 drop-shadow-md pointer-events-none"
+                                                    style={{ imageRendering: 'pixelated' }}
+                                                />
+                                            )}
+                                            {/* Affordable: the Token Alert badge, as on the old board. */}
+                                            {canAfford && (
+                                                <div data-upgrade-available="true" className="absolute -top-3 -left-3 z-10 pointer-events-none">
+                                                    <img
+                                                        src="/assets/ui/ui_upgrade.png"
+                                                        alt="Upgrade Available"
+                                                        className="select-none animate-bounce drop-shadow-[0_0_8px_rgba(234,179,8,0.9)]"
+                                                        style={{ width: 32, height: 32, imageRendering: 'pixelated', animationDuration: '2s' }}
+                                                    />
+                                                </div>
+                                            )}
+                                        </button>
+                                        {/* The plaque: name and rank. */}
                                         <div
-                                            className="absolute bottom-1 right-1.5 select-none pointer-events-none text-white text-[11px] font-bold"
-                                            style={{
-                                                fontFamily: "'Silkscreen', cursive, monospace",
-                                                textShadow: '0 1px 0 #000, 1px 0 0 #000, 0 -1px 0 #000, -1px 0 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 3px rgba(0,0,0,0.95)'
-                                            }}
+                                            className={cn(
+                                                'mt-1.5 px-2 py-0.5 rounded-md border-2 text-center whitespace-nowrap pointer-events-none',
+                                                owned ? 'bg-[#3d2a1f] border-gi-gold/70' : 'bg-[#1c140e]/95 border-[#3a271d]',
+                                                state === 'locked' && 'opacity-60'
+                                            )}
+                                            style={{ fontFamily: PIXEL_FONT, textShadow: OUTLINE }}
                                         >
-                                            {toRoman(rank)}
+                                            <div className="text-[11px] leading-tight text-white">{def.name}</div>
+                                            <div
+                                                data-node-rank
+                                                className={cn('text-[11px] leading-tight', state === 'maxed' ? 'text-yellow-300' : owned ? 'text-gi-gold' : 'text-stone-400')}
+                                            >
+                                                {`${toRoman(rank)}/${toRoman(def.maxRank)}`}
+                                            </div>
                                         </div>
-                                    </>
-                                )}
-
-                                {/* Locked Upgrade Tile: pixel art ui_lock sprite in center */}
-                                {def && !accessible && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <img
-                                            src="/assets/ui/ui_lock.png"
-                                            alt="Locked"
-                                            className="w-16 h-16 object-contain opacity-70 drop-shadow-md"
-                                            style={{ imageRendering: 'pixelated' }}
-                                        />
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
-            </div>
             </div>
         </div>
     );

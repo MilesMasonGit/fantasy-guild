@@ -5,7 +5,7 @@ import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeMa
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import {
-    getUpgradePrice, isTileAccessible, getLockDetail, LOCK_KIND, toRoman
+    getUpgradePrice, getLockDetail, LOCK_KIND, toRoman
 } from '../../../config/guildUpgrades.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
@@ -28,7 +28,7 @@ const priceText = (price) =>
  * - Simple, non-redundant details.
  * - Progression list with wide flat scroll arrows matching Cartographer and Hero Inspection.
  */
-export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
+export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
     const scrollRef = useRef(null);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
@@ -78,15 +78,16 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
 
     const rank = ranks[upgradeDef.id] || 0;
     const isMax = rank >= upgradeDef.maxRank;
-    const accessible = tileIndex != null ? isTileAccessible(tileIndex, ranks) : true;
-    // The adjacency lock is deliberately NOT spelled out here (owner decision,
-    // 2026-08-25): the board already shows which tiles neighbour an unlocked
-    // upgrade, so repeating it is noise. The slot below exists for the lock
-    // kinds still to come — skill gates such as "Requires Blacksmithing 5" —
-    // which the player cannot read off the board. Add the new kind to
-    // `LOCK_KIND` and it appears here automatically.
-    const lock = !accessible && tileIndex != null ? getLockDetail(tileIndex, ranks) : null;
-    const lockReason = lock && lock.kind !== LOCK_KIND.ADJACENCY ? lock.text : null;
+    // Read by upgrade id: the web has no tiles (B9, TL-23).
+    const lock = getLockDetail(upgradeDef.id, ranks);
+    const accessible = lock === null;
+    // The link lock is deliberately NOT spelled out here (owner decision,
+    // 2026-08-25, made for the old grid's adjacency lock): the web already
+    // shows which nodes are joined to a bought one, so repeating it is noise.
+    // The slot below is for the lock kinds the player cannot read off the web —
+    // skill gates such as "Requires Blacksmithing 5" (`LOCK_KIND.SKILL`, set
+    // through an upgrade's `gate`).
+    const lockReason = lock && lock.kind !== LOCK_KIND.LINK ? lock.text : null;
     const price = !isMax ? getUpgradePrice(upgradeDef, rank) : null;
     const canAfford = price != null
         && price.every(p => (haveCounts[p.itemId] || 0) >= p.quantity);
@@ -129,7 +130,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
             {/* 1. Large Central Hero Box with Distinct Upgrade Button */}
             <div className="p-4 rounded-xl bg-black/40 border border-gi-border/40 flex flex-col items-center justify-center text-center relative shrink-0 shadow-inner">
                 {/* Way out of the panel. Without this the only exit was picking
-                    a different tile or closing the whole drawer (CR2-167). */}
+                    a different node or closing the whole drawer (CR2-167). */}
                 {onClose && (
                     <button
                         type="button"
@@ -197,7 +198,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
                             <span>Upgrade Locked</span>
                         </div>
                     ) : null}
-                    {/* The display slot described above: silent for adjacency,
+                    {/* The display slot described above: silent for the link lock,
                         used by future skill-gate reasons. */}
                     {lockReason && (
                         <p className="mt-2 text-[11px] leading-snug text-red-300/90 text-center">

@@ -1,7 +1,6 @@
 import React from 'react';
-import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { SIDE_COLUMN_PX } from './boardConstants.js';
+import { SIDE_COLUMN_PX, TRAY_COLUMN, columnWidthCss } from './boardConstants.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
@@ -9,10 +8,14 @@ import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { Package, Sparkles } from 'lucide-react';
 
 /**
- * GuildHallEffectsPanel — replaces the Token Tray during Guild Hall Upgrades.
- * Uses the exact width and framing of the Token Tray to summarize active outputs and boosts.
+ * GuildHallEffectsPanel — the Guild Hall's active outputs and boosts, shown
+ * beside the upgrade web.
+ *
+ * Always on the LEFT of the web (B9, FB-38), whichever side the nav is on, so
+ * it takes no `menuRight`. Its width is the Tray's column spec, so it gives way
+ * on a narrow window before the web does (FP-100).
  */
-export const GuildHallEffectsPanel = ({ menuRight = false }) => {
+export const GuildHallEffectsPanel = () => {
     // Re-evaluate whenever upgrades, board, or game state updates
     const guildHallData = useGameState(
         () => {
@@ -30,10 +33,9 @@ export const GuildHallEffectsPanel = ({ menuRight = false }) => {
     return (
         <aside
             data-dnd-region="drawer"
-            className={cn(
-                "w-72 md:w-80 xl:w-[320px] 2xl:w-[340px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent relative z-10 select-none pointer-events-auto",
-                menuRight ? "pl-8 pr-0" : "pr-8 pl-0"
-            )}
+            data-hall-effects
+            style={{ width: columnWidthCss(TRAY_COLUMN) }}
+            className="shrink-0 h-full flex flex-col items-center justify-center py-8 pl-8 pr-0 bg-transparent relative z-10 select-none pointer-events-auto"
         >
             {/* Inner Wrapper matched to SIDE_COLUMN_PX (Playmat Height) */}
             <div

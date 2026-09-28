@@ -50,11 +50,11 @@ export const MIN_BOARD_SCALE = 0.1;
  * one such place, the free-floating Map position in `Board.jsx`.
  *
  * ## Two boards, two natural sizes
- * The Guild Hall upgrade board is its own 7×7 surface and is a different number
- * of pixels wide from the playmat, so every caller passes its own `naturalPx` —
- * the mat passes its live size (`useMatSize`, slice 1.6d-3), the upgrade board
- * `UPGRADE_BOARD_PX`. There is no default: the old one was the deleted grid's
- * `BOARD_PX` (slice 1.6d-2).
+ * The Guild Hall upgrade web is its own drawing and a different size from the
+ * playmat, so every caller passes its own natural size — the mat passes its
+ * live size (`useMatSize`, slice 1.6d-3), the upgrade web its `WEB_W × WEB_H`
+ * (B9; it was the 7×7 grid's `UPGRADE_BOARD_PX` until then). There is no
+ * default: the old one was the deleted grid's `BOARD_PX` (slice 1.6d-2).
  *
  * ⚠️ The mat's natural size is no longer fixed — the Mat Tuner can change it
  * while the game runs — so this hook re-measures when `naturalPx` changes. How

@@ -11,7 +11,7 @@ import { EngineProvider } from '../ui/context/EngineContext.jsx';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import {
-    getUpgradeDef, getLockDetail, getLockReason, isTileAccessible, LOCK_KIND, UPGRADE_TILES
+    getUpgradeDef, getLockDetail, getLockReason, isUpgradeAccessible, LOCK_KIND, GUILD_UPGRADES
 } from '../config/guildUpgrades.js';
 
 const closeButton = (container) =>
@@ -44,33 +44,33 @@ describe('GIModal — whether a close control is offered', () => {
 });
 
 describe('guildUpgrades — lock reasons carry their kind', () => {
-    it('reports the adjacency kind for a tile with no unlocked neighbour', () => {
-        const lockedTile = Number(Object.keys(UPGRADE_TILES).find(t => !isTileAccessible(Number(t), {})));
-        expect(Number.isNaN(lockedTile)).toBe(false);
-        const detail = getLockDetail(lockedTile, {});
+    it('reports the link kind for an upgrade with no bought linked node', () => {
+        const locked = GUILD_UPGRADES.find(d => !isUpgradeAccessible(d.id, {}))?.id;
+        expect(locked).toBeTruthy();
+        const detail = getLockDetail(locked, {});
         expect(detail).not.toBeNull();
-        expect(detail.kind).toBe(LOCK_KIND.ADJACENCY);
+        expect(detail.kind).toBe(LOCK_KIND.LINK);
         // The plain-text helper the purchase path uses is unchanged.
-        expect(getLockReason(lockedTile, {})).toBe(detail.text);
+        expect(getLockReason(locked, {})).toBe(detail.text);
     });
 
-    it('returns null for an accessible tile', () => {
-        const openTile = Number(Object.keys(UPGRADE_TILES).find(t => isTileAccessible(Number(t), {})));
-        expect(getLockDetail(openTile, {})).toBeNull();
-        expect(getLockReason(openTile, {})).toBeNull();
+    it('returns null for an accessible upgrade', () => {
+        const open = GUILD_UPGRADES.find(d => isUpgradeAccessible(d.id, {}))?.id;
+        expect(getLockDetail(open, {})).toBeNull();
+        expect(getLockReason(open, {})).toBeNull();
     });
 });
 
 describe('GuildUpgradeInspection', () => {
     const def = getUpgradeDef('roster_size');
-    const lockedTile = Number(Object.keys(UPGRADE_TILES).find(t => !isTileAccessible(Number(t), {})));
+    const lockedId = GUILD_UPGRADES.find(d => !isUpgradeAccessible(d.id, {}))?.id;
     // The panel reads state through useGameState, which insists on an engine.
     const withEngine = (el) => React.createElement(EngineProvider, { engine: { GameState, EventBus } }, el);
 
     it('offers a way out of the panel', () => {
         const onClose = vi.fn();
         const { container } = render(
-            withEngine(React.createElement(GuildUpgradeInspection, { upgradeDef: def, tileIndex: 17, onClose }))
+            withEngine(React.createElement(GuildUpgradeInspection, { upgradeDef: def, onClose }))
         );
         const btn = closeButton(container);
         expect(btn).toBeTruthy();
@@ -78,16 +78,15 @@ describe('GuildUpgradeInspection', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('stays silent about the adjacency lock — the board already shows it', () => {
+    it('stays silent about the link lock — the web already shows it', () => {
         const { container } = render(
             withEngine(React.createElement(GuildUpgradeInspection, {
-                upgradeDef: getUpgradeDef(UPGRADE_TILES[lockedTile]),
-                tileIndex: lockedTile
+                upgradeDef: getUpgradeDef(lockedId)
             }))
         );
-        // It says the upgrade is locked, but does not spell out the adjacency rule.
+        // It says the upgrade is locked, but does not spell out the link rule.
         expect(container.textContent).toContain('Upgrade Locked');
-        expect(container.textContent).not.toContain('Requires nearby upgrade');
+        expect(container.textContent).not.toContain('Requires a linked upgrade');
         expect(container.textContent).not.toContain('Path to this upgrade is locked');
     });
 });

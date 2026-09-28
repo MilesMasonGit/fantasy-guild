@@ -3,26 +3,11 @@ import { GameState } from '../state/GameState.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import {
-    isTileAccessible, getUpgradeDefByTile, getUpgradePrice, getUpgradeDef,
+    isUpgradeAccessible, getUpgradeLinks, getUpgradeWebLinks, getLockDetail, LOCK_KIND, HALL_NODE,
+    getUpgradePrice, getUpgradeDef,
     ROSTER_BASE, GUILD_UPGRADES, PLACEHOLDER_PRICE_ITEM, placeholderPrices
 } from '../config/guildUpgrades.js';
 import { getItem } from '../config/registries/itemRegistry.js';
-import {
-    UPGRADE_BOARD_SIZE as SIZE,
-    UPGRADE_BOARD_GUILD_HALL_TILE as GH
-} from '../config/upgradeBoardGeometry.js';
-
-// The six upgrade tiles, named by where they sit relative to the Guild Hall so
-// this file does not have to be rewritten every time the board is resized.
-//
-// ⚠️ These are addresses on the 7x7 UPGRADE board, which is a different surface
-// from the playmat and is deliberately not resized alongside it.
-const TOP = GH - SIZE;              // roster_size
-const BOTTOM = GH + SIZE;           // wishing_well
-const LEFT = GH - 1;                // bank_slots
-const FAR_LEFT = GH - 2;            // bank_tabs
-const RIGHT = GH + 1;               // notice_board (B6.1); empty from 9.3 until then
-const FAR_RIGHT = GH + 2;           // empty likewise
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -41,39 +26,115 @@ beforeEach(() => {
     InventoryManager.init();
 });
 
-describe('Guild Hall 7x7 Upgrade Board', () => {
-    it('configures tile mappings correctly around center Guild Hall', () => {
-        expect(getUpgradeDefByTile(TOP)?.id).toBe('roster_size');
-        expect(getUpgradeDefByTile(LEFT)?.id).toBe('bank_slots');
-        expect(getUpgradeDefByTile(FAR_LEFT)?.id).toBe('bank_tabs');
-        // The two Token Vault tracks left the board with the Vault (9.3).
-        // Tile 25 holds the Notice Board since B6.1 (TL-18).
-        expect(getUpgradeDefByTile(RIGHT)?.id).toBe('notice_board');
-        expect(getUpgradeDefByTile(FAR_RIGHT)).toBeNull();
+/**
+ * B9 (TL-23): the Hall's upgrades are a web. An upgrade opens once ANY node
+ * linked to it has rank >= 1, or straight away when it is linked to the Hall.
+ * Before B9 they sat on a 7x7 grid and opened by cardinal neighbour.
+ */
+describe('Guild Hall upgrade web', () => {
+    it('gives every upgrade a node position and at least one link, and no tile index', () => {
+        for (const def of GUILD_UPGRADES) {
+            expect(def.tileIndex, def.id).toBeUndefined();
+            expect(Number.isFinite(def.node?.x), def.id).toBe(true);
+            expect(Number.isFinite(def.node?.y), def.id).toBe(true);
+            expect(def.links.length, def.id).toBeGreaterThan(0);
+            for (const to of def.links) {
+                expect(to === HALL_NODE || !!getUpgradeDef(to), `${def.id} -> ${to}`).toBe(true);
+            }
+        }
         expect(getUpgradeDef('token_bank_slots')).toBeNull();
         expect(getUpgradeDef('token_bank_tabs')).toBeNull();
     });
 
-    it('makes the 4 cardinal tiles directly nearby to center accessible by default', () => {
-        const ranks = {};
-        expect(isTileAccessible(TOP, ranks)).toBe(true);
-        expect(isTileAccessible(LEFT, ranks)).toBe(true);
-        expect(isTileAccessible(RIGHT, ranks)).toBe(true);
-        expect(isTileAccessible(BOTTOM, ranks)).toBe(true);
+    it('keeps no two nodes on the same spot, nor on the Hall', () => {
+        const spots = GUILD_UPGRADES.map(d => `${d.node.x},${d.node.y}`);
+        expect(new Set(spots).size).toBe(spots.length);
+        expect(spots).not.toContain('0,0');
     });
 
-    it('locks the outer tiles until their direct cardinal neighbor has rank >= 1', () => {
-        const ranks = {};
-        expect(isTileAccessible(FAR_LEFT, ranks)).toBe(false);  // Bank Tabs needs Bank Slots
-
-        ranks.bank_slots = 1;
-        expect(isTileAccessible(FAR_LEFT, ranks)).toBe(true);   // Bank Tabs now unlocked!
+    it('counts a link from both ends and draws each line once', () => {
+        expect(getUpgradeLinks('bank_slots')).toEqual(expect.arrayContaining([HALL_NODE, 'bank_tabs', 'flag_radius']));
+        expect(getUpgradeLinks('bank_tabs')).toEqual(['bank_slots']);
+        const keys = getUpgradeWebLinks().map(l => [l.from, l.to].sort().join('|'));
+        expect(new Set(keys).size).toBe(keys.length);
+        expect(keys.length).toBe(GUILD_UPGRADES.reduce((n, d) => n + d.links.length, 0));
     });
 
-    it('refuses purchase of locked tile', () => {
+    // Starting reachability is exactly what the 7x7 grid gave before B9: the
+    // four tiles beside the Hall open, Bank Tabs (beyond Bank Slots) and
+    // Scouting Flags (between Bunk Beds and Bank Slots) shut.
+    it('matches the old grid: the same upgrades open and shut on a new game', () => {
+        const open = GUILD_UPGRADES.filter(d => isUpgradeAccessible(d.id, {})).map(d => d.id).sort();
+        expect(open).toEqual(['bank_slots', 'notice_board', 'roster_size', 'wishing_well']);
+    });
+
+    it('opens a node once ANY linked node has rank >= 1', () => {
+        expect(isUpgradeAccessible('bank_tabs', {})).toBe(false);
+        expect(isUpgradeAccessible('bank_tabs', { bank_slots: 1 })).toBe(true);
+
+        // Scouting Flags is linked to two nodes: either one opens it.
+        expect(isUpgradeAccessible('flag_radius', {})).toBe(false);
+        expect(isUpgradeAccessible('flag_radius', { roster_size: 1 })).toBe(true);
+        expect(isUpgradeAccessible('flag_radius', { bank_slots: 1 })).toBe(true);
+        // A bought node that is NOT linked does not.
+        expect(isUpgradeAccessible('flag_radius', { notice_board: 3, wishing_well: 1 })).toBe(false);
+    });
+
+    it('matches the old grid after every single first purchase', () => {
+        // The old rule, per tile: bank_tabs needed bank_slots; flag_radius
+        // needed bank_slots or roster_size. Nothing else was ever shut.
+        const oldOpen = (id, ranks) => {
+            if (id === 'bank_tabs') return (ranks.bank_slots || 0) >= 1;
+            if (id === 'flag_radius') return (ranks.bank_slots || 0) >= 1 || (ranks.roster_size || 0) >= 1;
+            return true;
+        };
+        for (const bought of GUILD_UPGRADES) {
+            const ranks = { [bought.id]: 1 };
+            for (const def of GUILD_UPGRADES) {
+                expect(isUpgradeAccessible(def.id, ranks), `${def.id} after ${bought.id}`).toBe(oldOpen(def.id, ranks));
+            }
+        }
+    });
+
+    it('lets an upgrade gate itself however its links stand (the skill-lock hook)', () => {
+        const def = getUpgradeDef('notice_board');
+        const saved = def.gate;
+        def.gate = () => ({ kind: LOCK_KIND.SKILL, text: 'Requires Blacksmithing 5' });
+        try {
+            expect(isUpgradeAccessible('notice_board', {})).toBe(false);
+            expect(getLockDetail('notice_board', {})).toEqual({ kind: LOCK_KIND.SKILL, text: 'Requires Blacksmithing 5' });
+            InventoryManager.addItem('item_oak_wood', 1000);
+            const res = GuildUpgradeManager.purchase('notice_board');
+            expect(res.success).toBe(false);
+            expect(res.error).toBe('Requires Blacksmithing 5');
+            expect(GuildUpgradeManager.getRank('notice_board')).toBe(0);
+        } finally {
+            if (saved === undefined) delete def.gate; else def.gate = saved;
+        }
+        expect(isUpgradeAccessible('notice_board', {})).toBe(true);
+    });
+
+    it('reports a link lock with its kind, and nothing for an open node', () => {
+        const detail = getLockDetail('bank_tabs', {});
+        expect(detail.kind).toBe(LOCK_KIND.LINK);
+        expect(detail.text).toContain('Bank Slots');
+        expect(getLockDetail('bank_slots', {})).toBeNull();
+    });
+
+    it('keeps ranks keyed by upgrade id, so saves need no migration', () => {
+        stock(nextPrice('bank_slots'));
+        expect(GuildUpgradeManager.purchase('bank_slots').success).toBe(true);
+        expect(GameState.state.progress.guildUpgrades).toEqual({ bank_slots: 1 });
+        // A save written before B9 carries the same shape and opens the same way.
+        GameState.state.progress.guildUpgrades = { roster_size: 2, bank_slots: 1, bank_tabs: 3 };
+        expect(GuildUpgradeManager.isAccessible('flag_radius')).toBe(true);
+        expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(3);
+    });
+
+    it('refuses purchase of a locked upgrade', () => {
         const res = GuildUpgradeManager.purchase('bank_tabs');
         expect(res.success).toBe(false);
-        expect(res.error).toContain('Requires nearby upgrade');
+        expect(res.error).toContain('Requires a linked upgrade');
     });
 
     it('allows purchasing roster_size rank 0 for free and recruits initial starter hero', () => {

@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The Guild Hall upgrade web (B9, TL-23).** The Hall screen is a web: the Guild Hall in the centre,
+  upgrades around it joined by lines, lit gold where bought; an upgrade opens once anything linked
+  to it is bought. The Effects list sits on the left. The 7×7 grid is gone.
 - **Small Tokens (B8, TL-19, FB-18).** A Token can be Small in the CMS: half-size art, hit area and
   spacing, with full-size ring badges. The Oak Sapling, Apple Sapling and Wheat Sprout are small.
 - **Goblins are hostile (B7.3).** Goblin and Goblin Chief now attack heroes near their camp; Cow and

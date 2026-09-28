@@ -26,7 +26,7 @@ import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
 import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
-import { getUpgradeDef, getUpgradeDefByTile } from '../config/guildUpgrades.js';
+import { getUpgradeDef } from '../config/guildUpgrades.js';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 
@@ -185,16 +185,17 @@ export const ReactRoot = ({ engine }) => {
         return () => unsubscribe();
     }, []);
 
-    const [selectedUpgradeTile, setSelectedUpgradeTile] = React.useState(17);
+    // The Hall's upgrade web selects by upgrade id — it has no tiles (B9, TL-23).
+    const [selectedUpgradeId, setSelectedUpgradeId] = React.useState('roster_size');
     const isGuildView = ui.fullscreen.view === 'guild';
     const isBankOpen = ui.drawer.panes.includes('bank');
 
     const handleOpenGuildHall = React.useCallback(() => {
         ui.fullscreen.open('guild');
-        setSelectedUpgradeTile(17);
+        setSelectedUpgradeId('roster_size');
         const def = getUpgradeDef('roster_size');
         if (def) {
-            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def, tileIndex: 17 }, 'guild');
+            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
         }
     }, [ui.fullscreen, ui.inspect]);
 
@@ -242,11 +243,11 @@ export const ReactRoot = ({ engine }) => {
         };
     }, []);
 
-    const selectedUpgradeDef = selectedUpgradeTile != null ? getUpgradeDefByTile(selectedUpgradeTile) : null;
+    const selectedUpgradeDef = selectedUpgradeId != null ? getUpgradeDef(selectedUpgradeId) : null;
     const guildPaneSelection = ui.inspect.getByPane ? ui.inspect.getByPane('guild') : null;
     const guildInspectSelection = guildPaneSelection || (ui.inspect.selection?.type === 'guild_upgrade' 
         ? ui.inspect.selection 
-        : (selectedUpgradeDef ? { type: 'guild_upgrade', id: selectedUpgradeDef.id, upgradeDef: selectedUpgradeDef, tileIndex: selectedUpgradeTile, pane: 'guild' } : null));
+        : (selectedUpgradeDef ? { type: 'guild_upgrade', id: selectedUpgradeDef.id, upgradeDef: selectedUpgradeDef, pane: 'guild' } : null));
 
     return (
         <EngineProvider engine={engine}>
@@ -327,9 +328,11 @@ export const ReactRoot = ({ engine }) => {
                         )}
                         <div className="flex-1 relative flex flex-col overflow-hidden z-10">
                             <div className="flex-1 flex min-h-0 relative">
-                            {menuRight && isGuildView && (
-                                <GuildHallEffectsPanel menuRight={true} />
-                            )}
+                            {/* The Guild Hall Effects list: always LEFT of the
+                                upgrade web, whichever side the nav is on (B9,
+                                FB-38). With the nav flipped right it sits
+                                between the inspection column and the web. */}
+                            {isGuildView && <GuildHallEffectsPanel />}
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
@@ -348,10 +351,10 @@ export const ReactRoot = ({ engine }) => {
                                 <div className="flex-1 min-w-0 min-h-0 relative">
                                 {isGuildView ? (
                                     <GuildHallBoard
-                                        selectedTileIndex={selectedUpgradeTile}
-                                        onSelectTile={(tileIndex, def) => {
-                                            setSelectedUpgradeTile(tileIndex);
-                                            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def, tileIndex }, 'guild');
+                                        selectedUpgradeId={guildInspectSelection?.id ?? selectedUpgradeId}
+                                        onSelectUpgrade={(def) => {
+                                            setSelectedUpgradeId(def.id);
+                                            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def }, 'guild');
                                         }}
                                         onClose={handleCloseGuildHall}
                                     />
@@ -365,10 +368,6 @@ export const ReactRoot = ({ engine }) => {
                                 )}
                                 </div>
                             </div>
-                            {/* Guild Hall Effects Panel */}
-                            {!menuRight && isGuildView && (
-                                <GuildHallEffectsPanel menuRight={false} />
-                            )}
                             </div>
 
                             {/* Bottom Hero Dock: horizontal sliding tabs. Not on

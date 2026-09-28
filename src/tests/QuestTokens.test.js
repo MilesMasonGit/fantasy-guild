@@ -15,7 +15,7 @@ import {
     getTokenType, getAllTokenTypes, listTokenTypeIds, tokenSpritePath, TOKENS
 } from '../config/registries/tokenRegistry.js';
 import { QUEST_TOKEN_TYPE, ENGINE_TOKEN_TYPES } from '../config/registries/engineTokens.js';
-import { getUpgradeDef, getUpgradeDefByTile, isTileAccessible, NOTICE_BOARD_MAX_RANK } from '../config/guildUpgrades.js';
+import { getUpgradeDef, isUpgradeAccessible, HALL_NODE, NOTICE_BOARD_MAX_RANK } from '../config/guildUpgrades.js';
 import { MAT_TUNABLES, matTuning, setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -149,11 +149,10 @@ describe('the Guild Hall spawns bounties up to the cap on a game-time clock (TL-
 });
 
 describe('the Notice Board raises the cap by one a rank, to 5', () => {
-    it('sits beside the Hall on the upgrade board and costs items', () => {
+    it('is linked to the Hall on the upgrade web and costs items', () => {
         const def = getUpgradeDef('notice_board');
-        expect(def.tileIndex).toBe(25);
-        expect(getUpgradeDefByTile(25)).toBe(def);
-        expect(isTileAccessible(25, {})).toBe(true);
+        expect(def.links).toContain(HALL_NODE);   // the B9 web (TL-23); tile 25 before
+        expect(isUpgradeAccessible('notice_board', {})).toBe(true);
         expect(def.maxRank).toBe(NOTICE_BOARD_MAX_RANK);
         expect(matTuning('questCap') + NOTICE_BOARD_MAX_RANK).toBe(matTuning('questCapMax'));
         for (const price of def.prices) expect(price.length).toBeGreaterThan(0);
