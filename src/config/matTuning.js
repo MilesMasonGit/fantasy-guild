@@ -113,6 +113,32 @@ export const MAT_TUNABLES = Object.freeze([
         hint: 'The most Tokens the player may have placed on the mat (SP-10, SP-67). Counts only placed Tokens (spawners, stations, Foundations); spawned trees, veins and enemies are bounded by their own family caps instead. The Guild Hall never counts.',
         min: 1, max: 200, step: 1, def: 40,
         format: (v) => `${Math.round(v)} placed Tokens`
+    },
+    // Quest Tokens (B6.1, TL-18, FB-41): the Guild Hall spawns bounties up to
+    // a cap the Notice Board upgrade raises. Tutorial quests are not counted.
+    {
+        key: 'questCap',
+        group: 'Quests',
+        label: 'Quest cap',
+        hint: 'How many bounty quests the Guild Hall keeps on the mat before the Notice Board is upgraded (TL-18). Each Notice Board rank adds one, up to the max below. Tutorial quests do not count.',
+        min: 0, max: 10, step: 1, def: 2,
+        format: (v) => `${Math.round(v)} quests`
+    },
+    {
+        key: 'questCapMax',
+        group: 'Quests',
+        label: 'Quest cap max',
+        hint: 'The most bounty quests the Notice Board can raise the cap to (TL-18: 2 plus one per rank, to 5).',
+        min: 1, max: 20, step: 1, def: 5,
+        format: (v) => `${Math.round(v)} quests`
+    },
+    {
+        key: 'questEverySec',
+        group: 'Quests',
+        label: 'Quest every',
+        hint: 'Game time between bounty quests while the mat has fewer than the cap (TL-18: 3 min). The clock only runs below the cap, and the time bank speeds it up.',
+        min: 10, max: 1800, step: 10, def: 180,
+        format: (v) => `${Math.floor(v / 60)} min ${Math.round(v % 60)} s`
     }
 ]);
 

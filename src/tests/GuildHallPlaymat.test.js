@@ -21,7 +21,7 @@ const TOP = GH - SIZE;              // roster_size
 const BOTTOM = GH + SIZE;           // wishing_well
 const LEFT = GH - 1;                // bank_slots
 const FAR_LEFT = GH - 2;            // bank_tabs
-const RIGHT = GH + 1;               // empty since the Token Vault tracks went (Token Lifecycle 9.3)
+const RIGHT = GH + 1;               // notice_board (B6.1); empty from 9.3 until then
 const FAR_RIGHT = GH + 2;           // empty likewise
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -47,7 +47,8 @@ describe('Guild Hall 7x7 Upgrade Board', () => {
         expect(getUpgradeDefByTile(LEFT)?.id).toBe('bank_slots');
         expect(getUpgradeDefByTile(FAR_LEFT)?.id).toBe('bank_tabs');
         // The two Token Vault tracks left the board with the Vault (9.3).
-        expect(getUpgradeDefByTile(RIGHT)).toBeNull();
+        // Tile 25 holds the Notice Board since B6.1 (TL-18).
+        expect(getUpgradeDefByTile(RIGHT)?.id).toBe('notice_board');
         expect(getUpgradeDefByTile(FAR_RIGHT)).toBeNull();
         expect(getUpgradeDef('token_bank_slots')).toBeNull();
         expect(getUpgradeDef('token_bank_tabs')).toBeNull();

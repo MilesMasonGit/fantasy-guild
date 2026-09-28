@@ -66,9 +66,13 @@ function runUntil(done, maxMs) {
 
 const complete = (id) => (quest(id)?.currentCount || 0) >= (quest(id)?.requiredCount || Infinity);
 
-/** The step is offered, finishes, and pays out. */
+/**
+ * The step is offered, finishes, and pays out. Since B6.1 it is the only
+ * tutorial quest Token on the mat (FB-42), and claiming it brings the next.
+ */
 function claim(id) {
     expect(quest(id), `${id} is offered`).toBeTruthy();
+    expect(QuestManager.getActiveQuests().filter(q => q.tutorial).map(q => q.id)).toEqual([id]);
     expect(complete(id), `${id} is complete`).toBe(true);
     expect(QuestManager.claimQuest(id).success, id).toBe(true);
 }
@@ -94,6 +98,9 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     GameState.state.inventory.maxSlots = 50;
+    // Quest Tokens are spawned by the Guild Hall (B6.1, TL-18), so the mat
+    // needs one — in the middle, clear of every SPOT's flag.
+    BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 600);
     QuestManager.init();
 });
 

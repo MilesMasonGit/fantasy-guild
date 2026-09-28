@@ -38,6 +38,7 @@ import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { EFFECTS } from './effectRegistry.js';
 import { expandBearer } from '../../systems/effects/effectLibrary.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
+import { engineTokenType } from './engineTokens.js';
 
 /**
  * Merge every Token JSON source into one keyed object.
@@ -117,9 +118,16 @@ export function registerTokenTypes(definitions) {
     }
 }
 
-/** A Token definition by id, or null. */
+/**
+ * A Token definition by id, or null.
+ *
+ * Falls back to the engine-owned types (`engineTokens.js`, B6.1: the quest
+ * Token), so an instance of one resolves like any Token. They are NOT in
+ * `TOKENS` or {@link getAllTokenTypes}: those stay the authored content set
+ * the audits and the Shop walk.
+ */
 export function getTokenType(typeId) {
-    return TOKENS[typeId] || null;
+    return TOKENS[typeId] || engineTokenType(typeId);
 }
 
 /** Every Token definition, keyed by id. */
@@ -134,7 +142,7 @@ export function listTokenTypeIds() {
 
 /** A Token's display name, falling back to its id so the UI never renders blank. */
 export function tokenName(typeId) {
-    return TOKENS[typeId]?.name || typeId || 'Unknown Token';
+    return getTokenType(typeId)?.name || typeId || 'Unknown Token';
 }
 
 /**
@@ -162,13 +170,13 @@ export function tokenName(typeId) {
  * is data about a Token, not the Token's charges.
  */
 export function tokenStartingUses(typeId) {
-    const def = TOKENS[typeId];
+    const def = getTokenType(typeId);
     return def ? (def.uses ?? null) : null;
 }
 
 /** The sprite path for a Token's art. */
 export function tokenSpritePath(typeId) {
-    const def = TOKENS[typeId];
+    const def = getTokenType(typeId);
     if (!def) return null;
     const sprite = def.sprite || typeId;
     const resolved = resolveSpritePath(sprite);

@@ -332,6 +332,11 @@ an upgradable cap (a new Hall track), tutorial chain under a hidden cap, discard
 quests (through B3's bin), noticeboard behaviour. The sidebar goes. Quest cooldowns currently run on
 the real clock and must move to the tick's `delta`.
 
+| # | B6 slice | Status |
+|---|---|---|
+| B6.1 | **Quest Token engine**: `token_quest` (engine-owned, registered in code, not content), quests on the Token (`instance.quest`), Hall spawns, cap 2 + Notice Board, 3 min on game `delta`, tutorial chain, claim → loot, bin rules, old sidebar quests converted | ✅ 2026-09-27. `QuestTokens.js` (`window.Game.QuestTokens`), Mat Tuner group *Quests* (`questCap` 2, `questCapMax` 5, `questEverySec` 180). **Notice Board has 3 ranks** (2 + 3 reaches the owner's max of 5; a 4th would buy nothing), tile 25, placeholder prices. **Director defaults:** bounties run alongside the tutorial; when the cap is reached, leftover clock time is dropped (a freed place gets its next quest one full interval later). Tutorial quests can't be binned. Director verified live (fresh slot 3): the first tutorial quest was on the mat at once; +3 min → a bounty, +9 min → 2 bounties (cap), the tutorial not counted, `Tokens 2/40` unchanged; claiming an unfinished quest refused; claiming a done bounty and the done tutorial step dropped their Oak Wood as loot and removed the Tokens, and the next step "Plant a Flag" appeared. Tests: baseline 10 |
+| B6.2 | **Quest Token UI**: hover to read, progress ring, glow when done, click to claim; the quest sidebar goes; the tutorial highlight reads quest Tokens | — |
+
 **B7 Enemies that move (7th).** FB-23, **TL-16**. Enemies tethered to their spawner like a hero to a
 flag; hostile enemies (CMS field) attack heroes within range. Reuse hero movement
 (`docs/hero_movement_roadmap_v1.md`) and the existing combat. The CMS must model the new field

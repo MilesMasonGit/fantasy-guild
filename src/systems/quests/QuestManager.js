@@ -1,18 +1,36 @@
 // Fantasy Guild - Quest Manager
-// Manages Multi-Tutorial Chain, Instant Replenishment, Abandon Mechanics, Progress Tracking, and Claim Actions
+// Hears the game's events and reports quest progress; generates bounties and
+// works out rewards. The quests themselves are Tokens on the mat since B6.1
+// (TL-18): see QuestTokens.js.
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
-import { TUTORIAL_QUESTS, TUTORIAL_REWARD_ITEMS, tutorialTemplate } from './tutorialQuests.js';
-import { InventoryManager } from '../inventory/InventoryManager.js';
+import { TUTORIAL_REWARD_ITEMS, tutorialTemplate } from './tutorialQuests.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
+// ⚠️ A cycle: QuestTokens imports this module. Both sides touch the other
+// only inside functions, so either may load first.
+import * as QuestTokens from './QuestTokens.js';
 
-export const MAX_ACTIVE_QUESTS = 3;
+/**
+ * ⭐ **B6.1 (TL-18, FB-41–FB-43): the sidebar's slots are retired.** Quests are
+ * Tokens the Guild Hall spawns (`QuestTokens.js`), which own the cap, the
+ * game-time clock, the tutorial chain, claiming and saves. This manager keeps
+ * what does not care where a quest is:
+ *
+ * * **the event subscriptions** — every report it has always made, now
+ *   counted on the quest Tokens (`QuestTokens.reportProgress`);
+ * * **bounty generation** ({@link QuestManager.createRandomQuest}, the pools);
+ * * **the reward rule** ({@link questReward}).
+ *
+ * Gone: `MAX_ACTIVE_QUESTS`, the instant refill, the `Date.now()` abandon
+ * cooldown (`ABANDON_COOLDOWN_MS`, `status: 'abandoned'` slots) and
+ * `generateRandomQuest`. `state.quests.active` is read once more, by the
+ * migration that turns a save's sidebar quests into Tokens, and is then empty.
+ */
 
 /**
  * What a random bounty pays (slice 2.2, SP-65). Quests used to reward a Map;
@@ -23,7 +41,7 @@ export const BOUNTY_REWARD_ITEMS = Object.freeze([
 ]);
 
 /** A fresh, mutable copy of a reward list, safe to store on a quest. */
-function copyReward(list) {
+export function copyReward(list) {
     return (list || []).map(r => ({ itemId: r.itemId, quantity: r.quantity }));
 }
 
@@ -37,12 +55,11 @@ function copyReward(list) {
 export function questReward(quest) {
     const list = Array.isArray(quest?.rewardItems) && quest.rewardItems.length
         ? quest.rewardItems
-        : (quest?.isTutorial ? TUTORIAL_REWARD_ITEMS : BOUNTY_REWARD_ITEMS);
+        : ((quest?.tutorial || quest?.isTutorial) ? TUTORIAL_REWARD_ITEMS : BOUNTY_REWARD_ITEMS);
     return list
         .filter(r => r?.itemId && r.quantity > 0)
         .map(r => ({ itemId: r.itemId, quantity: r.quantity, name: getItem(r.itemId)?.name || r.itemId }));
 }
-export const ABANDON_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Content pools for random bounties: items a new game can make (Token
@@ -79,22 +96,6 @@ function rollBetween(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/**
- * Whether a report's metadata satisfies a quest. A quest narrows its target
- * with `match` (tutorial steps), `enemyId` (hunts) or `itemId` (collections);
- * every value it names must be present and equal in the report.
- *
- * ⚠️ Stricter than before 9.5, when a report with NO `itemId` or `enemyId`
- * counted for every quest that named one. Every reporter of those two targets
- * passes the id, so nothing that used to count stops counting.
- */
-function reportMatches(quest, metadata) {
-    const wanted = { ...(quest.match || {}) };
-    if (quest.enemyId) wanted.enemyId = quest.enemyId;
-    if (quest.itemId) wanted.itemId = quest.itemId;
-    return Object.entries(wanted).every(([k, v]) => metadata?.[k] === v);
-}
-
 let unsubs = [];
 let initialized = false;
 
@@ -106,9 +107,9 @@ export const QuestManager = {
     init() {
         if (initialized) return;
         this.ensureState();
-        this.refreshTutorialCopies();
         this.setupListeners();
-        this.ensureQuests();
+        QuestTokens.requestCheck();
+        QuestTokens.ensure();
         initialized = true;
     },
 
@@ -116,6 +117,7 @@ export const QuestManager = {
         unsubs.forEach(unsub => unsub?.());
         unsubs = [];
         initialized = false;
+        QuestTokens.resetRuntime();
     },
 
     ensureState() {
@@ -124,54 +126,31 @@ export const QuestManager = {
             GameState.state.quests = {
                 active: [],
                 completedTutorials: [],
-                tutorialStep: 0
+                tutorialStep: 0,
+                clockMs: 0
             };
         }
         const q = GameState.state.quests;
+        // Since B6.1 `active` holds only a save's sidebar quests waiting to be
+        // turned into quest Tokens (`QuestTokens.migrateSidebarQuests`).
         if (!Array.isArray(q.active)) q.active = [];
         // A save from before the list existed kept only a step number. The
         // chain it counted is gone (9.5), so the number maps onto nothing.
         if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];
+        // The bounty clock, in game ms (B6.1); replaces `nextQuestAt`.
+        if (!Number.isFinite(q.clockMs)) q.clockMs = 0;
         // Counts only steps the chain still has: an old save's `tutorial_N`
         // ids stay in the list, harmless, and count for nothing.
         q.tutorialStep = q.completedTutorials.filter(id => tutorialTemplate(id)).length;
     },
 
     /**
-     * An active tutorial quest carries a COPY of its template, so a saved game
-     * would keep a step's old wording and target forever. Re-read them from the
-     * template when a game starts or loads.
-     *
-     * A tutorial step the chain no longer has (the whole old chain, replaced in
-     * Token Lifecycle 9.5) is dropped: its event may have no publisher, and it
-     * would hold a quest slot for ever. `ensureQuests` refills the slot.
+     * The quests on the mat, as the live quest objects on their Tokens
+     * (B6.1). Each Token's instance id is `QuestTokens.questTokens()[i].id`.
      */
-    refreshTutorialCopies() {
-        this.ensureState();
-        const q = GameState.state?.quests;
-        if (!q) return;
-        q.active = q.active.filter(quest => !quest?.isTutorial || tutorialTemplate(quest.id));
-        for (const quest of q.active) {
-            if (!quest?.isTutorial) continue;
-            const template = tutorialTemplate(quest.id);
-            quest.step = template.step;
-            quest.title = template.title;
-            quest.instruction = template.instruction;
-            quest.targetType = template.targetType;
-            quest.requiredCount = template.requiredCount;
-            quest.currentCount = Math.min(quest.currentCount || 0, template.requiredCount);
-            if (template.match) quest.match = { ...template.match };
-            else delete quest.match;
-            // Slice 2.2: a saved copy may still name a reward Map.
-            quest.rewardItems = copyReward(template.rewardItems);
-            delete quest.rewardMapId;
-            delete quest.rewardMapName;
-        }
-    },
-
     getActiveQuests() {
         this.ensureState();
-        return GameState.state?.quests?.active || [];
+        return QuestTokens.questTokens().map(t => t.quest);
     },
 
     getTutorialStep() {
@@ -179,75 +158,26 @@ export const QuestManager = {
         return GameState.state?.quests?.tutorialStep || 0;
     },
 
+    /**
+     * Kept for the sidebar, which calls it on mount until B6.2 removes it. It
+     * no longer fills slots: it asks `QuestTokens` to bring the mat up to what
+     * is owed (a save's quests, the tutorial step).
+     */
     ensureQuests() {
         this.ensureState();
-        if (!GameState.state?.quests) return;
-        const q = GameState.state.quests;
-        let changed = false;
-
-        // 1. Clean up expired abandoned slots
-        const now = Date.now();
-        const initialLen = q.active.length;
-        q.active = q.active.filter(quest => {
-            if (quest.status === 'abandoned') {
-                return quest.readyAt > now;
-            }
-            return true;
-        });
-        if (q.active.length !== initialLen) changed = true;
-
-        // 2. Fill available slots up to MAX_ACTIVE_QUESTS with tutorial quests first
-        const completedSet = new Set(q.completedTutorials || []);
-        const activeTutorialIds = new Set(
-            q.active.filter(qu => qu.isTutorial).map(qu => qu.id)
-        );
-
-        for (const template of TUTORIAL_QUESTS) {
-            if (q.active.length >= MAX_ACTIVE_QUESTS) break;
-            if (!completedSet.has(template.id) && !activeTutorialIds.has(template.id)) {
-                q.active.push({
-                    id: template.id,
-                    isTutorial: true,
-                    step: template.step,
-                    title: template.title,
-                    instruction: template.instruction,
-                    targetType: template.targetType,
-                    ...(template.match ? { match: { ...template.match } } : {}),
-                    requiredCount: template.requiredCount,
-                    currentCount: 0,
-                    rewardItems: copyReward(template.rewardItems),
-                    status: 'active',
-                    createdAt: Date.now()
-                });
-                activeTutorialIds.add(template.id);
-                changed = true;
-            }
-        }
-
-        // 3. If all tutorial quests are completed/offered, fill empty slots with random bounties
-        const allTutorialsDoneOrOffered = TUTORIAL_QUESTS.every(
-            t => completedSet.has(t.id) || activeTutorialIds.has(t.id)
-        );
-        if (allTutorialsDoneOrOffered) {
-            while (q.active.length < MAX_ACTIVE_QUESTS) {
-                const bounty = this.createRandomQuest();
-                if (!bounty) break;
-                q.active.push(bounty);
-                changed = true;
-            }
-        }
-
-        if (changed) {
-            EventBus.publish('quests_updated', {});
-            EventBus.publish('state_changed', {});
-        }
+        QuestTokens.ensure();
     },
 
     setupListeners() {
         unsubs.push(
-            EventBus.subscribe('react:slot_selected', () => this.ensureQuests()),
+            // A new game or a load: the mat is checked on the next tick too
+            // (a new game's Guild Hall lands after this subscriber runs).
+            EventBus.subscribe('react:slot_selected', () => {
+                QuestTokens.requestCheck();
+                this.ensureQuests();
+            }),
             EventBus.subscribe('game_loaded', () => {
-                this.refreshTutorialCopies();
+                QuestTokens.requestCheck();
                 this.ensureQuests();
             }),
             // ⚠️ **One event per player action, and only one** (CR2-085, tidied
@@ -355,75 +285,35 @@ export const QuestManager = {
         );
     },
 
+    /** Collection bounties follow the Bank (unchanged rule, now on the Tokens). */
     syncInventoryQuests() {
         this.ensureState();
-        const active = GameState.state?.quests?.active;
-        if (!active || active.length === 0) return;
-
-        let changed = false;
-        for (const quest of active) {
-            if (quest.status === 'active' && quest.type === 'collection' && quest.itemId) {
-                const held = InventoryStore.getItems()?.[quest.itemId]?.quantity || 0;
-                const nextCount = Math.min(quest.requiredCount, held);
-                if (nextCount !== quest.currentCount) {
-                    quest.currentCount = nextCount;
-                    changed = true;
-                }
-            }
-        }
-
-        if (changed) {
-            EventBus.publish('quests_updated', {});
-            EventBus.publish('state_changed', {});
-        }
+        QuestTokens.syncCollections();
     },
 
+    /** Count one report against every quest Token on the mat that wants it. */
     reportProgress(targetType, amount = 1, metadata = {}) {
         this.ensureState();
-        const active = GameState.state?.quests?.active;
-        if (!active || active.length === 0) return;
-
-        let changed = false;
-        for (const quest of active) {
-            if (quest.status !== 'active') continue;
-            if (quest.targetType === targetType) {
-                if (!reportMatches(quest, metadata)) continue;
-                const nextCount = Math.min(quest.requiredCount, (quest.currentCount || 0) + amount);
-                if (nextCount !== quest.currentCount) {
-                    quest.currentCount = nextCount;
-                    changed = true;
-                }
-            }
-        }
-
-        if (changed) {
-            EventBus.publish('quests_updated', {});
-            EventBus.publish('state_changed', {});
-        }
+        QuestTokens.reportProgress(targetType, amount, metadata);
     },
 
+    /**
+     * The game loop's `quest_manager` handler, with its time-scaled `delta`:
+     * the quest Tokens' clock (B6.1). The per-tick Bank sync is gone; it
+     * follows `inventory_updated` instead.
+     */
     tick(deltaMs) {
         this.ensureState();
-        const q = GameState.state?.quests;
-        if (!q) return;
-
-        const now = Date.now();
-
-        // 1. Check for expired abandoned cooldown slots
-        const hasExpiredSlot = q.active.some(quest => quest.status === 'abandoned' && quest.readyAt <= now);
-        if (hasExpiredSlot) {
-            this.ensureQuests();
-        }
-
-        // 2. Sync inventory collection quests
-        this.syncInventoryQuests();
+        QuestTokens.tick(deltaMs);
     },
 
-    createRandomQuest() {
-        // Balance collection vs hunt based on current active quests
-        const active = GameState.state?.quests?.active || [];
-        const huntCount = active.filter(qu => qu.type === 'hunt').length;
-        const collectionCount = active.filter(qu => qu.type === 'collection').length;
+    /**
+     * One random bounty's content (not yet on the mat). Hunts and collections
+     * are balanced against `existing` — the quests already out.
+     */
+    createRandomQuest(existing = QuestTokens.questTokens().map(t => t.quest)) {
+        const huntCount = existing.filter(qu => qu?.type === 'hunt').length;
+        const collectionCount = existing.filter(qu => qu?.type === 'collection').length;
         const isHunt = huntCount < collectionCount ? true : collectionCount < huntCount ? false : Math.random() > 0.5;
 
         if (isHunt) {
@@ -438,9 +328,7 @@ export const QuestManager = {
                 enemyId: hunt.id,
                 requiredCount: count,
                 currentCount: 0,
-                rewardItems: copyReward(BOUNTY_REWARD_ITEMS),
-                status: 'active',
-                createdAt: Date.now()
+                rewardItems: copyReward(BOUNTY_REWARD_ITEMS)
             };
         } else {
             const item = RANDOM_ITEMS[Math.floor(Math.random() * RANDOM_ITEMS.length)];
@@ -454,104 +342,38 @@ export const QuestManager = {
                 itemId: item.id,
                 requiredCount: requiredCount,
                 currentCount: InventoryStore.getItems()?.[item.id]?.quantity || 0,
-                rewardItems: copyReward(BOUNTY_REWARD_ITEMS),
-                status: 'active',
-                createdAt: Date.now()
+                rewardItems: copyReward(BOUNTY_REWARD_ITEMS)
             };
         }
     },
 
-    generateRandomQuest() {
-        this.ensureState();
-        if (!GameState.state?.quests) return null;
-        const q = GameState.state.quests;
-        if (q.active.length >= MAX_ACTIVE_QUESTS) return null;
-
-        const quest = this.createRandomQuest();
-        if (quest) {
-            q.active.push(quest);
-            EventBus.publish('quests_updated', {});
-            EventBus.publish('state_changed', {});
-        }
-        return quest;
-    },
-
+    /**
+     * ⚠️ Retired with the sidebar (B6.1): a bounty is discarded by dragging its
+     * Token to the bin (FB-43), with no cooldown. Kept so the sidebar's button
+     * fails politely until B6.2 removes it.
+     */
     abandonQuest(questId) {
-        this.ensureState();
-        if (!GameState.state?.quests) return { success: false, reason: 'No active state' };
-        const q = GameState.state.quests;
-        const index = q.active.findIndex(qu => qu.id === questId);
-        if (index === -1) return { success: false, reason: 'Quest not found' };
-
-        const abandoned = q.active[index];
-        if (abandoned.isTutorial) {
-            return { success: false, reason: 'Tutorial quests cannot be abandoned' };
-        }
-
-        // Replace slot with an abandoned cooldown placeholder
-        q.active[index] = {
-            id: nextId(),
-            status: 'abandoned',
-            originalId: abandoned.id,
-            readyAt: Date.now() + ABANDON_COOLDOWN_MS
-        };
-
-        NotificationSystem.info(`Abandoned quest. Searching for new quest in 5m.`);
-        EventBus.publish('quests_updated', {});
-        EventBus.publish('state_changed', {});
-        return { success: true };
+        const token = findQuestToken(questId);
+        if (token?.quest?.tutorial) return { success: false, reason: 'Tutorial quests cannot be abandoned' };
+        return { success: false, reason: 'Drag a quest to the bin to discard it' };
     },
 
-    // `sourceRect` is still passed by the quest card; it placed the reward
-    // Map's flight and has nothing to place now that the reward is items.
+    /**
+     * Claim a quest by its quest id or its Token's instance id — see
+     * `QuestTokens.claimQuest` (B6.1: the reward drops as loot beside the
+     * Token, and the Token vanishes).
+     */
     // eslint-disable-next-line no-unused-vars
     claimQuest(questId, sourceRect = null) {
         this.ensureState();
-        const q = GameState.state?.quests;
-        if (!q || !Array.isArray(q.active)) return { success: false, reason: 'No active quests' };
-
-        const index = q.active.findIndex(qu => qu.id === questId);
-        if (index === -1) return { success: false, reason: 'Quest not found' };
-
-        const quest = q.active[index];
-        if (quest.status !== 'active' || quest.currentCount < quest.requiredCount) {
-            return { success: false, reason: 'Quest requirements not met yet' };
-        }
-
-        // If collection quest, deduct items
-        if (quest.type === 'collection' && quest.itemId) {
-            const held = InventoryStore.getItems()?.[quest.itemId]?.quantity || 0;
-            if (held < quest.requiredCount) {
-                return { success: false, reason: `Need ${quest.requiredCount}× ${getItem(quest.itemId)?.name || quest.itemId}` };
-            }
-            InventoryManager.removeItem(quest.itemId, quest.requiredCount);
-        }
-
-        // Pay the reward: items, into the Bank (slice 2.2, SP-65). It used to
-        // toss a Map Token onto the mat. `addItem` drops any overflow on the
-        // mat as loot, so nothing is lost to a full Bank (D-138), and its
-        // `inventory_updated` is the announcement (no second toast, CR2-092).
-        const rewardItems = questReward(quest);
-        for (const r of rewardItems) InventoryManager.addItem(r.itemId, r.quantity, 'quest_reward');
-
-        EventBus.publish('quest_claimed', { questId, rewardItems });
-
-        // Record tutorial completion
-        if (quest.isTutorial) {
-            if (!q.completedTutorials.includes(quest.id)) {
-                q.completedTutorials.push(quest.id);
-            }
-            q.tutorialStep = q.completedTutorials.length;
-        }
-
-        // Remove claimed quest from active list
-        q.active.splice(index, 1);
-
-        // Immediately replenish the slot
-        this.ensureQuests();
-
-        EventBus.publish('quests_updated', {});
-        EventBus.publish('state_changed', {});
-        return { success: true, rewardItems };
+        const token = findQuestToken(questId);
+        if (!token) return { success: false, reason: 'Quest not found' };
+        return QuestTokens.claimQuest(token.id);
     }
 };
+
+/** The quest Token on the mat with instance id or quest id `id`, or null. */
+function findQuestToken(id) {
+    if (!id) return null;
+    return QuestTokens.questTokens().find(t => t.id === id || t.quest?.id === id) || null;
+}

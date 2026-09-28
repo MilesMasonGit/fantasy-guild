@@ -72,7 +72,9 @@ class GameStateClass {
                 active: [],
                 completedTutorials: [],
                 tutorialStep: 0,
-                nextQuestAt: Date.now() + 3600000
+                // B6.1: quests run on the game-time `clockMs`, not the wall clock.
+                clockMs: 0,
+                nextQuestAt: null
             };
         }
     }

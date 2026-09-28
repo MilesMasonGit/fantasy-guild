@@ -36,6 +36,8 @@ import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
 import * as FlagRules from '../board/FlagRules.js';
 import { QuestManager } from '../quests/QuestManager.js';
+// B6.1: quest Tokens on the mat, exposed for console probes (`Game.QuestTokens`).
+import * as QuestTokens from '../quests/QuestTokens.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
@@ -129,6 +131,7 @@ export const EngineBootstrap = {
             Flags,
             FlagRules,
             QuestManager,
+            QuestTokens,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,

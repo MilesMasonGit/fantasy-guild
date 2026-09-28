@@ -55,7 +55,9 @@ export const UPGRADE_SPRITES = {
     bank_tabs: '/assets/tokens/chest/token_chest_addy.png',
     guild_hall: '/assets/tokens/token_guildhall.png',
     wishing_well: '/assets/tokens/upgrade/token_well_wishing.png',
-    flag_radius: '/assets/ui/flag/hero_flag_base.png'
+    flag_radius: '/assets/ui/flag/hero_flag_base.png',
+    // The quest Token's own art (B6.1): the board that makes the quests.
+    notice_board: '/assets/ui/quest_board.png'
 };
 
 /**
@@ -66,18 +68,21 @@ export const UPGRADE_SPRITES = {
  *
  *   17 = Hall −1 row      22 = Hall −2 cols    23 = Hall −1 col
  *   31 = Hall +1 row      16 = Hall −1 row −1 col
+ *   25 = Hall +1 col (Notice Board, B6.1)
  *
  * Nothing derives these from UPGRADE_BOARD_GUILD_HALL_TILE, so resizing that
  * board means recomputing them by hand. Tiles 25 and 26 held the two Token
- * Vault tracks until the Vault was retired (Token Lifecycle 9.3); they are
- * empty now.
+ * Vault tracks until the Vault was retired (Token Lifecycle 9.3); 25 holds
+ * the Notice Board since B6.1 (beside the Hall, so it is open from the start),
+ * and 26 is empty. B9 re-lays the board as a web (TL-23).
  */
 export const UPGRADE_TILES = {
     16: 'flag_radius',
     17: 'roster_size',
     23: 'bank_slots',
     22: 'bank_tabs',
-    31: 'wishing_well'
+    31: 'wishing_well',
+    25: 'notice_board'
 };
 
 /**
@@ -109,6 +114,12 @@ export function placeholderPrices(maxRank, {
         return [{ itemId, quantity: perRank * rank }];
     });
 }
+
+/**
+ * Notice Board ranks (B6.1, TL-18): +1 quest per rank from the base of 2 to
+ * the owner's 5, so three ranks. A rank past the ceiling would buy nothing.
+ */
+export const NOTICE_BOARD_MAX_RANK = 3;
 
 export const GUILD_UPGRADES = [
     {
@@ -166,6 +177,20 @@ export const GUILD_UPGRADES = [
         statLabel: rank => rank === 0 ? 'No water generated' : `${rank} Water / 10s`,
         nextStatLabel: rank => `${rank + 1} Water / 10s`,
         sprite: UPGRADE_SPRITES.wishing_well
+    },
+    {
+        // B6.1 (TL-18, FB-41): each rank lets the Guild Hall keep one more
+        // bounty quest on the mat. The base and the ceiling are Mat Tuner rows
+        // (`questCap`, `questCapMax`: 2 and 5), read by `QuestTokens.questCap`.
+        id: 'notice_board',
+        name: 'Notice Board',
+        description: 'The Guild Hall keeps one more quest on the mat at a time.',
+        tileIndex: 25,
+        maxRank: NOTICE_BOARD_MAX_RANK,
+        prices: placeholderPrices(NOTICE_BOARD_MAX_RANK),
+        statLabel: rank => `+${rank} quest${rank === 1 ? '' : 's'}`,
+        nextStatLabel: rank => `+${rank + 1} quests`,
+        sprite: UPGRADE_SPRITES.notice_board
     }
 ];
 

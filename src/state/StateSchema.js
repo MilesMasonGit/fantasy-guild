@@ -257,6 +257,11 @@ export const INITIAL_STATE = {
         // is the record, the step number is the summary.
         completedTutorials: [],
         tutorialStep: 0,
+        // The bounty clock in game ms (B6.1, TL-18): advanced by the tick's
+        // `delta` while fewer bounty quest Tokens than the cap are on the mat.
+        // The quests themselves are Tokens (`instance.quest`); `active` above
+        // only holds an older save's sidebar quests until they are converted.
+        clockMs: 0,
         nextQuestAt: null
     },
 

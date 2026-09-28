@@ -44,13 +44,18 @@ describe('No action earns or spends gold (SP-65)', () => {
     });
 
     it('claiming every tutorial quest leaves gold at 0 and puts no Map on the mat', () => {
+        // Quests are Tokens the Guild Hall spawns (B6.1, TL-18); a claimed
+        // reward drops as loot beside the quest, banked when collected.
+        BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
         QuestManager.init();
         for (const t of TUTORIAL_QUESTS) {
             const q = QuestManager.getActiveQuests().find(x => x.id === t.id);
             expect(q, t.id).toBeDefined();
             q.currentCount = q.requiredCount;
+            q.done = true;
             expect(QuestManager.claimQuest(t.id).success, t.id).toBe(true);
         }
+        for (const sprite of SpriteLayer.getSprites().filter(sp => sp.kind === 'item')) SpriteLayer.collectSprite(sprite.id);
         expect(GameState.state.currency).toBeUndefined();
         expect(BoardState.tokens().some(t => getTokenType(t.typeId)?.mapId)).toBe(false);
         // Each step pays its own small reward (slice 9.5); every item arrives.

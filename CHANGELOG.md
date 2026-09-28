@@ -4,6 +4,13 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Quest Tokens engine (B6.1, FB-41–FB-43, TL-18).** Quests are Tokens now: the Guild Hall spawns
+  them beside itself (spawned, so they never count toward the Token cap). Bounties arrive every 3
+  minutes of game time up to 2 on the mat; a new Hall upgrade, the Notice Board, adds one a rank
+  up to 5. The tutorial starts with its first step on the mat and brings the next one when a step
+  is claimed. Claiming a finished quest drops its reward as loot beside it and the quest vanishes;
+  bounties can be binned and discarded (no refund), tutorial steps can't. An older save's quests
+  move onto the mat with their progress. No quest screen yet (B6.2): the sidebar is now empty.
 - **Flags: no hitbox, and pinning (B5, FB-44, FB-45, TL-17).** A flag no longer blocks the pointer
   for a Token behind it. Drop a hero's flag onto a Token it can work to pin it there: the hero
   works only that Token, the flag moves with it, and when it runs out the flag stays as a normal
