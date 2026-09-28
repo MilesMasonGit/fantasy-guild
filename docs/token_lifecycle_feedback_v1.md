@@ -6,7 +6,7 @@ record is [`token_lifecycle_roadmap_v1.md`](token_lifecycle_roadmap_v1.md); its 
 (TL-1…TL-11, §2) stand unless a TL- decision below replaces them.*
 
 **Status: quick wins Q1–Q9 (plus Q5b) ALL DONE and merged 2026-09-27. Larger reworks B1–B10 (§4.2) wait for later agents. Open owner questions: §5.**
-**B2 (top bar) DONE 2026-09-27, B2.1–B2.3 merged (answers: §2 B2 rows). B1 (ring badges) DONE 2026-09-27, slices B1.1–B1.3 merged; ⭐ owner to look by eye (ring size, row in front of the hero, hover bubble height):** owner answers in §2 (B1 rows), decision TL-22, slices in §4.2 under B1.
+**ALL BRIEFS B1–B10 DONE and merged (2026-09-27/28); per-slice status tables under each brief in §4.2.** B2 (top bar) DONE 2026-09-27, B2.1–B2.3 merged (answers: §2 B2 rows). B1 (ring badges) DONE 2026-09-27, slices B1.1–B1.3 merged; ⭐ owner to look by eye (ring size, row in front of the hero, hover bubble height):** owner answers in §2 (B1 rows), decision TL-22, slices in §4.2 under B1.
 
 **Kinds:** 🐞 bug · 🔢 number tweak · 🔧 small change (a session or less) · 🏗️ larger rework
 (needs a brief and its own agent).
@@ -365,6 +365,10 @@ tree. ⚠️ Hall upgrade tile indices are not interchangeable with the playmat'
 
 **B10 Horizontal hero dock (10th).** FB-46. The owner describes the general idea first; then the
 agent makes mockups; then builds.
+
+| # | B10 slice | Status |
+|---|---|---|
+| B10 | **The horizontal hero dock** (FB-46): a dark 64 px strip, heroes drawn with their idle animation and cropped at the waist, name + HP bar above their heads at one height, deployed heroes darkened and sunk (labels don't sink), hover lifts; click / drag as before | ✅ 2026-09-28. `DockHeroFigure.jsx`, `dockHeroView.js`, rewritten `BottomHeroDock.jsx`; reuses the mat's `AnimatedHeroSprite` (idle, own frame clock per sprite); the mat's fit reaches the dock through `setLiveMatFit`. **Director fix found live:** at 1280×720 the mat's fit gave 64 px heroes, so only a 32 px sliver of each head showed → the dock's art never goes below 128 px (the top half fills the strip). HP bar green > 50 %, amber > 20 %, red below; wounded marked in red. Drag payload unchanged (tested); item-equip, flag-recall and reorder drops kept. Pinned hero cards were already unused (nothing called them). ⚠️ Double-click does the same as click (`ReactRoot` wires both to one toggle; editing is reached from the inspection sheet) — as before. The Bank's vertical hero panel is untouched. Director verified live (slot 3, 1280×720 screenshot): four heroes (Rage, Kira, Rowan, Hammer) from the waist up with names and full green bars; Rage, out on the mat, darker and lower with its label level with the others. ⭐ Owner by eye: the look, hover lift. Tests: baseline 10 |
 
 ## 5. Open questions for the owner (end of the quick-win session, 2026-09-27)
 

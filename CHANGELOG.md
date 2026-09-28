@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The hero dock shows the heroes (B10, FB-46).** Heroes stand in a dark strip under the mat, idling
+  and seen from the waist up, with their name and health bar above their heads. Heroes out on the
+  mat are darkened and lowered; hovering lifts a hero. Click and drag work as before.
 - **The Guild Hall upgrade web (B9, TL-23).** The Hall screen is a web: the Guild Hall in the centre,
   upgrades around it joined by lines, lit gold where bought; an upgrade opens once anything linked
   to it is bought. The Effects list sits on the left. The 7×7 grid is gone.

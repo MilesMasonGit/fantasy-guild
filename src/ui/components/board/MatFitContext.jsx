@@ -29,3 +29,33 @@ export const MatFitProvider = MatFitContext.Provider;
 export const useMatFit = () => React.useContext(MatFitContext);
 
 export default MatFitContext;
+
+/**
+ * ⭐ **The mat's fit, for things drawn OUTSIDE the mat** (B10, FB-46).
+ *
+ * The horizontal hero dock draws each hero at the same art size as the mat
+ * does, but it sits under the Board, outside the provider above. `Board`
+ * reports its live fit here; the dock reads it with `useLiveMatFit`. Until a
+ * Board has reported, the fit is 1 — the mat's natural size, as above.
+ */
+let liveFit = 1;
+const fitListeners = new Set();
+
+/** Board's report of its current fit. Ignores non-numbers and repeats. */
+export function setLiveMatFit(fit) {
+    if (!Number.isFinite(fit) || fit <= 0 || fit === liveFit) return;
+    liveFit = fit;
+    for (const fn of fitListeners) fn();
+}
+
+/** The last fit a Board reported (1 if none has). */
+export const getLiveMatFit = () => liveFit;
+
+const subscribeLiveFit = (fn) => {
+    fitListeners.add(fn);
+    return () => fitListeners.delete(fn);
+};
+
+/** The live mat fit, re-rendering when Board reports a new one. */
+export const useLiveMatFit = () =>
+    React.useSyncExternalStore(subscribeLiveFit, getLiveMatFit, getLiveMatFit);

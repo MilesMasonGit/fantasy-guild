@@ -1,10 +1,10 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { dropOnMat } from './dropOnMat.js';
 import { pointerToMat } from './matPoint.js';
 import { MatBoard } from './MatBoard.jsx';
-import { MatFitProvider } from './MatFitContext.jsx';
+import { MatFitProvider, setLiveMatFit } from './MatFitContext.jsx';
 import { useEngine } from '../../hooks/useEngine.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { GameState } from '../../../state/GameState.js';
@@ -40,6 +40,8 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
     // how much it is then shrunk to fit this window (CR2-179).
     const mat = useMatSize();
     const fit = useBoardScale(mat.w, mat.h);
+    // The hero dock under the mat draws heroes at the mat's art size (B10, FB-46).
+    useEffect(() => { setLiveMatFit(fit.scale); }, [fit.scale]);
 
     // The mat's own element: every screen pointer is measured against it.
     const matRef = useRef(null);
