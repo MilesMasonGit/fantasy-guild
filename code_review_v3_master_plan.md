@@ -761,3 +761,40 @@ Round 2's guide drifted three times in a day because code kept moving under it.
 rather than working around it.** Treat both this plan and the pre-filed tickets
 as evidence to check, not truth to inherit — every pre-filed ticket
 (CR3-001…022) was written from reading, not measuring.
+
+---
+
+## 10. Director mode — the autonomous run *(owner interview, 2026-09-28)*
+
+From 2026-09-28 the owner is away for ~20 hours. One **director** agent runs the
+review by dispatching **subagents**, and moves on to easy-win fixes if the
+review finishes. These rulings override anything above that conflicts.
+
+| Topic | Owner ruling |
+|---|---|
+| **Easy wins** (after the review) | **Small + safe + proven only**: effort S, risk low, **not a design choice**, and provable by tests or the benchmark. Invisible speed fixes are allowed (e.g. the particle canvas sleeping when empty). **Nothing that changes how the game looks or plays.** |
+| **Merging** | Each piece of work on its own branch; **merged to `main` only when verified**: test baseline unchanged (the same 10 known failures, or fewer) and, for speed work, `npm run bench -- --compare` does not regress. **Never push to GitHub.** |
+| **Blocked on an owner question** | **Park it and keep going.** Write it to the questions list in `docs/REVIEW_V3_RUN_LOG.md` (multiple choice, recommendation first), skip that item, carry on. |
+| **Shared folder** | Nobody else will work in the checkout. Work in the main folder. |
+| **Session C (certification)** | **Prepare it; the owner runs it.** Measure what the preview pane can, labelled *not representative*, and write a ~15-minute step-by-step checklist using the Perf HUD's copy-report button. |
+| **Git LFS (CR3-027)** | **Do it first**, excluding `public/assets/archive/` and `public/assets/maybe/` (7 small files; ask later). |
+| **Palette files** (`data/palettes/*.json`) | **Commit them as-is**, on their own commit. |
+| **Parallelism** | **Review sessions in parallel (3–4 at a time); code changes one at a time** (tooling builds, spikes that touch the tree, fixes), so the test baseline stays trustworthy. |
+| **Updates** | Running log in `docs/REVIEW_V3_RUN_LOG.md`, plus a phone notification at milestones: benchmark built, review complete, each fix wave merged. |
+
+### How parallel review sessions avoid colliding
+
+- **Each R-session writes its own file**, `docs/review_v3/Rn.md`, never the
+  shared findings doc. The director merges them into
+  `code_review_v3_findings.md` and commits.
+- **Ticket number ranges** so no renumbering is needed: R1 `CR3-100…149`,
+  R2 `150…199`, R3 `200…249`, R4 `250…299`, R5 `300…349`, R6 `350…399`,
+  R7 `400…449`, R8 `450…499`, R9 `500…549`, R10 `550…599`, C `600…649`.
+- **Review sessions change no files outside their own `Rn.md`.** Throwaway
+  spikes (Q4) run in a **separate git worktree** (now faithful, because the art
+  is in git after CR3-027), measured, then deleted — never in the main folder.
+  ⚠ If a worktree gets a `node_modules` junction, remove the junction with
+  `cmd /c rmdir` **before** removing the worktree, or the real packages go too.
+- A session that finds a pre-filed CR3 ticket in its territory **updates it by
+  writing a verdict line in its own `Rn.md`** (confirmed with a number /
+  closed / changed); the director applies it.
