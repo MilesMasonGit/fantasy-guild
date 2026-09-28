@@ -97,6 +97,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         logger.info('main', 'React UI Engine online.');
     }
 
+    // Perf harness (round-3 review, P3): `window.__perf`, the Perf HUD and
+    // `?stress=<name>`. Dev builds only — a production build drops this line
+    // and the whole of src/ui/dev/perf with it.
+    if (import.meta.env.DEV) {
+        import('./ui/dev/perf/perfHarness.js').then(m => m.installPerf());
+    }
+
     // Dismiss the boot splash now that the UI is mounted over warm art.
     const splash = document.getElementById('boot-splash');
     if (splash) {

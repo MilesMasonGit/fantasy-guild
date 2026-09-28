@@ -12,6 +12,7 @@ import {
     DEV_ADVANCE_STEP_MS, DEV_ADVANCE_MAX_STEPS
 } from '../../systems/core/DevTools.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
+import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
@@ -326,6 +327,10 @@ export const TestDashboard = React.memo(() => {
                     {/* Everything under the header scrolls, so the panel never
                         runs off a short window (FB-36). */}
                     <div data-testid="qa-panel-body" className={QA_PANEL_BODY_CLASS}>
+                        {/* Perf HUD + stress scenarios (round-3 review, P3).
+                            Compile-time dev only: a production build with
+                            Debug Mode on still has no harness. */}
+                        {import.meta.env.DEV && <PerfDevSection />}
                         {/* Token Lifecycle dev tools (slice 0.2, DP-11) */}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
                             <div>

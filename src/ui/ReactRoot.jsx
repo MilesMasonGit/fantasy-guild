@@ -45,6 +45,7 @@ import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
 import MatDisallowControls from './components/board/MatDisallowControls.jsx';
+import { PerfProfiler } from './dev/perf/PerfProfiler.jsx';
 
 /** Time Bank widget visibility — parked, not deleted (owner request
  *  2026-08-02). The widget and its manager are untouched; only its placement
@@ -184,6 +185,15 @@ export const ReactRoot = ({ engine }) => {
         });
         return () => unsubscribe();
     }, []);
+
+    // A stress scenario from the perf harness (`?stress=…`, round-3 review P3)
+    // builds its own board, so the slot picker has nothing left to ask. Dev
+    // builds only; the event is published by src/ui/dev/perf/stressScenarios.js.
+    const closeSlotSelection = ui.slotSelection.close;
+    React.useEffect(() => {
+        if (!import.meta.env.DEV) return undefined;
+        return EventBus.subscribe('dev:stress_started', () => closeSlotSelection());
+    }, [closeSlotSelection]);
 
     // The Hall's upgrade web selects by upgrade id — it has no tiles (B9, TL-23).
     const [selectedUpgradeId, setSelectedUpgradeId] = React.useState('roster_size');
@@ -343,10 +353,12 @@ export const ReactRoot = ({ engine }) => {
                                     measures for its fit is the bar's height
                                     shorter and the mat shrinks to match. */}
                                 {showsMatTopBar(ui.fullscreen.view) && (
-                                    <MatTopBar
-                                        left={<><MatCapBadge /><MatUpkeepBadge /></>}
-                                        right={<><MatDisallowControls />{SHOW_TIME_BANK ? <TimeBankWidget /> : null}</>}
-                                    />
+                                    <PerfProfiler id="TopBar">
+                                        <MatTopBar
+                                            left={<><MatCapBadge /><MatUpkeepBadge /></>}
+                                            right={<><MatDisallowControls />{SHOW_TIME_BANK ? <TimeBankWidget /> : null}</>}
+                                        />
+                                    </PerfProfiler>
                                 )}
                                 <div className="flex-1 min-w-0 min-h-0 relative">
                                 {isGuildView ? (
@@ -373,14 +385,16 @@ export const ReactRoot = ({ engine }) => {
                             {/* Bottom Hero Dock: horizontal sliding tabs. Not on
                                 the Guild Hall upgrade screen (FB-47). */}
                             {showsBottomHeroDock(ui.fullscreen.view) && (
-                                <BottomHeroDock
-                                    isBankOpen={isBankOpen}
-                                    selectedHeroId={inspectHeroId}
-                                    onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                    onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                    onCloseHero={() => setInspectHeroId(null)}
-                                    onEditHero={(id) => ui.dock.openEdit(id)}
-                                />
+                                <PerfProfiler id="HeroDock">
+                                    <BottomHeroDock
+                                        isBankOpen={isBankOpen}
+                                        selectedHeroId={inspectHeroId}
+                                        onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                        onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                        onCloseHero={() => setInspectHeroId(null)}
+                                        onEditHero={(id) => ui.dock.openEdit(id)}
+                                    />
+                                </PerfProfiler>
                             )}
                         </div>
                         {!menuRight && (
@@ -437,7 +451,10 @@ export const ReactRoot = ({ engine }) => {
                             than a child of the board column, because it has to
                             reach across the notifications column — which the
                             board column does not contain. */}
-                        <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
+                        {/* Perf HUD commit counting, dev only (P3). */}
+                        <PerfProfiler id="Drawer">
+                            <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
+                        </PerfProfiler>
                         {/* The Shop drawer, from the left edge (B4: FB-25, FB-27). */}
                         <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
                     </div>

@@ -4,6 +4,7 @@ import { useMatSize } from '../../hooks/useMatSize.js';
 import { dropOnMat } from './dropOnMat.js';
 import { pointerToMat } from './matPoint.js';
 import { MatBoard } from './MatBoard.jsx';
+import { PerfProfiler } from '../../dev/perf/PerfProfiler.jsx';
 import { MatFitProvider, setLiveMatFit } from './MatFitContext.jsx';
 import { useEngine } from '../../hooks/useEngine.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -126,12 +127,16 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
                         whole multiple of ART_PX through it. Nothing else on the
                         mat cares — the transform handles the rest. */}
                     <MatFitProvider value={fit.scale}>
-                        <MatBoard
-                            inspectedHeroId={inspectedHeroId}
-                            onInspectToken={onInspectToken}
-                            onClearInspect={onClearInspect}
-                            onOpenRecipes={handleOpenRecipes}
-                        />
+                        {/* Counts MatBoard's React commits for the Perf HUD —
+                            dev builds only, and only when armed (P3). */}
+                        <PerfProfiler id="MatBoard">
+                            <MatBoard
+                                inspectedHeroId={inspectedHeroId}
+                                onInspectToken={onInspectToken}
+                                onClearInspect={onClearInspect}
+                                onOpenRecipes={handleOpenRecipes}
+                            />
+                        </PerfProfiler>
                     </MatFitProvider>
                 </div>
             </div>
