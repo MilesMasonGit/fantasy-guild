@@ -5,8 +5,10 @@ Tickets are **`CR3-NNN`**. Read the plan's §6 for severity, category codes and
 the priority score.
 
 > **Plan approved — all six §9 questions answered (2026-09-27/28).** The
-> tickets below were filed during planning (2026-09-27) from **reading the code,
-> not measuring it**. Every one says so. P2's benchmark confirms or closes them.
+> tickets CR3-001…022 were filed during planning (2026-09-27) from **reading the
+> code, not measuring it**. Every one says so. P2's benchmark confirms or closes
+> them. CR3-023…046 come from P1 (2026-09-28): the tooling run and the round-2
+> re-triage. **Round 2's tracker is archived — this file is the single truth.**
 
 ---
 
@@ -14,8 +16,8 @@ the priority score.
 
 | # | Session | State | Date | Commit | Notes |
 |---|---|---|---|---|---|
-| — | Planning survey | ✅ Done | 2026-09-27 | *(uncommitted — plan Q6)* | 22 tickets pre-filed |
-| P1 | Clean baseline & round-2 re-triage | 🔲 Not started | | | |
+| — | Planning survey | ✅ Done | 2026-09-27 | `6908bca` | 22 tickets pre-filed |
+| P1 | Clean baseline & round-2 re-triage | ✅ Done | 2026-09-28 | *(this commit)* | 88 open CR2 tickets walked against the code: 37 closed, 4 CMS lane, 1 econ-sim lane, 2 closed by owner decision, 44 carried into CR3-018/020/024…046; tooling run filed CR3-023…027 |
 | P2 | Build Tier A — headless benchmark | 🔲 Not started | | | |
 | P3 | Build Tier B — stress scenarios + Perf HUD | 🔲 Not started | | | |
 | R1 | Engine loop, clock & event bus | 🔲 Not started | | | |
@@ -40,17 +42,28 @@ the priority score.
 Branch `b9/hall-web`, HEAD `00c8550`, with another session's uncommitted work
 in 7 files. `vitest run`: **3,691 passed / 15 failed / 29 skipped, 226 files.**
 
-### Clean baseline *(P1 fills this in on clean `main`)*
+### Clean baseline — taken by P1, 2026-09-28
 
-| Measure | Value |
-|---|---|
-| Commit | |
-| Tests | |
-| `npm run lint` problems | |
-| `npm run cycles` | |
-| `npm run duplication` | |
-| `node tools/reachability.mjs` non-test orphans | |
-| `npm run build` JS / CSS / `public/assets` | |
+`main` at **`17fdcef`**. The working tree held two uncommitted palette edits
+from another session (`data/palettes/*.json`); nothing in the game or its tests
+reads those files (only the CMS's `RecolorEditor`), so they cannot affect these
+numbers.
+
+| Measure | Value | Round 2 close, for comparison |
+|---|---|---|
+| Tests | **3,731 passed / 10 failed / 29 skipped — 228 files** | 840 / 0 / 21, 58 files |
+| The 10 failures | ContentRules (redberry band) 1 · EconSimRunner (anchor flag) 1 · EconSimTime (config-less rows) 1 · OneRuleOnePlace (Map materials) 1 · TerrainRegistry 6. **Same count as the 2026-09-26 recorded baseline** — all known, none new. | |
+| `npm run lint` | **98 errors, 9 warnings in 82 files**: 70 `no-unused-vars`, 25 `no-undef` (**all in test files** — Node's `__dirname`/`process`/`require`, a config gap, not a game crash risk), 8 `exhaustive-deps`, 3 `no-useless-assignment` | 32–83 |
+| `npm run cycles` | **4 cycle groups, 3 of them dangerous (all-static)** — see CR3-023 | **0 dangerous** |
+| `npm run duplication` | 18 clones, 0.42 % of lines | 12 clones, 0.44 % |
+| `node tools/reachability.mjs` | 240 of 499 files unreached, all but 6 are tests. Non-test: `nameRegistry.js` (barrel-only, known live), `tempoBands.js` + `statementSlots.js` (**live via `cms/src`** — the tool's lie #2), `terrainAssignments.js` (tests only), `HeroDockCard.jsx` + `DockSkillsGrid.jsx` (**genuinely dead**, CR3-024) | 66 of 232 |
+| `npm run build` | **1,152 KB JS** (352 KB gzip) + 321 KB CSS, single chunk; 3 "dynamic import will not move module" warnings | 865 KB JS |
+| `public/assets` | **38.6 MB, 1,102 files — and git-ignored** (CR3-027) | 11 MB |
+
+⚠ **Lesson for later sessions:** a clean `git worktree` is **not** a faithful
+test environment here. `public/assets/` and `cms/node_modules/` are git-ignored,
+so 26 test files fail in a fresh checkout for reasons unrelated to the code.
+Run the baseline in the real checkout and confirm the dirty files are unread.
 
 ### Performance baseline *(P2 and P3 fill this in)*
 
@@ -242,8 +255,9 @@ measured** (plan §6.1).
 
 ### CR3-019 — Round 2's 74 open tickets never re-checked against the free mat
 - **Category / Severity / Effort**: DOC · P2 · M
-- **Where**: `code_review_v2_findings.md` §"WHERE THE BACKLOG ACTUALLY STANDS"
+- **Where**: `archive/docs/code_review_v2_findings.md` §"WHERE THE BACKLOG ACTUALLY STANDS"
 - **Owner session**: P1
+- **Status**: ✅ **Fixed 2026-09-28 (P1).** 88 tickets walked (the count had grown from 74 once partly-fixed rows were included); see the P1 re-triage section below.
 
 ### CR3-020 — No performance tooling exists
 - **Category / Severity / Effort**: TST · P1 · L
@@ -264,3 +278,228 @@ measured** (plan §6.1).
 - **Where**: `src/ui/components/board/MatHero.jsx:28-38` (`useLastAttackAt` subscribes to `COMBAT_ATTACK_EVENT` and filters by `heroId`)
 - **What**: 8 heroes × every attack. Cheap today; the `tokenEvents.js` id-router pattern already exists and could serve heroes too.
 - **Owner session**: R4
+
+---
+
+## P1 — Round-2 re-triage *(2026-09-28, against `main` at `17fdcef`)*
+
+Every CR2 ticket that round 2's tracker did not mark fixed or moot — **88
+tickets** (90 rows; CR2-062 and CR2-168 each appear twice) — was checked against
+the current code, not against its own status line. Each verdict below cites what
+was looked at. Round 2's two documents are archived to `archive/docs/`; **this
+table is now the only record of what happened to them.**
+
+### Closed — 37
+
+| CR2 | Verdict | Evidence |
+|---|---|---|
+| 011 | ✅ Fixed (content) | `item_blackberry` now exists in `items.json`; `token_thorn_elemental` drops it |
+| 014 | ✅ Fixed | enemies folded into Tokens; no `biomeId` in content; only a comment in `StateSchema.js` |
+| 029, 074 | ⚪ Moot | the gear-stat pipeline was deleted (UE-16, `EquipmentManager.js:180-195`); items are effect bearers |
+| 046 | ✅ Fixed | `card_spawned`, `cards_updated`, `game_saved`, loop-start events gone; EventBus logging kept on purpose |
+| 050 | ⚪ Moot | loot sprites take mat points (`SpriteLayer.js:170-175`) since slice 1.8 |
+| 052, 063 | ⚪ Moot | `Cartographer.js` deleted (Map bursts retired, `ac88c99`); map quests retired (TL 9.5) |
+| 056 | ✅ Fixed | `collectSprite` now 2 publishes; sweeps batched (`asSweep`). Load re-measured in R4 |
+| 062 | ⚪ Moot | `getOccupyingToken` gone with the grid |
+| 082 | ✅ Fixed | `XP_TABLE` is read (`XPCurve.js:94`) |
+| 084 | ✅ Fixed | `RANDOM_HUNTS` targets `token_goblin` (TL 9.5) |
+| 092 | ✅ Fixed | all ten dead events have zero publishers now |
+| 095 | ⚪ Moot | `QuestManager` uses `Date.now()` only for ids; the Time Bank is out of scope (owner) |
+| 109, 112, 114, 123 | ⚪ Closed | already marked STALE by the 2026-08-26 triage; re-confirmed nothing live remains |
+| 111 | ✅ Fixed | `data/tokenRecipes.json` now holds authored recipes |
+| 115 | ✅ Fixed | `recipes.json`, `encounters.json`, `subskills.json` deleted; `DatabaseManager` no longer globs them |
+| 121 | ✅ Fixed | 0 of 94 Tokens carry top-level `charges`/`xp` |
+| 124 | ✅ Fixed | `public/assets/ui/pm_table_*.png` exist at the manifest path |
+| 132 | ✅ Fixed | all three events `useUIModals` subscribes to now have a publisher |
+| **139** | ⚪ **False premise** | claimed `options.deps` falling back to a fresh `[]` re-runs the effect every render. React compares deps **element by element**, not by array identity — an empty array never re-triggers. Nothing to fix. |
+| 148, 149 | ✅ Fixed | both dead particle branches removed (`ParticleOverlay.jsx:84-93` records it) |
+| 151 | ⚪ Moot | `GISurface.jsx` deleted |
+| 157, 176 | ⚪ Moot | `RightmostHeroDock`/`VerticalHeroDock` deleted; recall now via `dockRecall.js` |
+| 162 | ⚪ Moot | gold retired (SP-65, `4e97816`) |
+| 167 | ⚪ Moot | the upgrade board was rebuilt as a web (B9, `9e45e7e`); R8 re-checks the new surface fresh |
+| 168 | ⚪ Void | grid-era render notes measured on the 7×7; superseded by CR3-007…012 and re-measured in R6 |
+| 170 | ⚪ Moot | its remaining part was the Map branch; Map bursts retired |
+| 181 | ⚪ Moot | `TokenBank.js`/`TokenVaultTab.jsx` deleted (Vault retired, `6e86e5e`) |
+| 191 | ✅ Fixed | zero `no-undef` in game source (lint, this session) |
+| 195 | ✅ Fixed | no bare `token_exhausted` subscription remains (it is only a payload `type`) |
+| 198 | ✅ Fixed (content) | `item_copper_ingot` now appears in 3 recipes — **confirm in play during session C** |
+
+### Routed elsewhere — 7
+
+| CR2 | Where it lives now |
+|---|---|
+| 003, 032, 189 (**P0**), 190 | **CMS lane** — owner routed 2026-08-26; round 3 does not review `cms/src` |
+| 201 | **Economic-simulator lane** — handoff item |
+| 098 | **Closed by owner decision 32** ("keep collecting") — no action |
+| 150 | Informational ("not a bug — recorded so nobody files it") — closed |
+
+### Carried into round 3 — 44 tickets, grouped
+
+| CR3 | Absorbs CR2 |
+|---|---|
+| CR3-018 | 009 |
+| CR3-020 | 067 |
+| CR3-024 | 174, 083 (part) |
+| CR3-025 | 036, 083 (part), 152, 171, 184 |
+| CR3-026 | 186, 188 |
+| CR3-028 | 058 |
+| CR3-029 | 057 |
+| CR3-030 | 105 |
+| CR3-031 | 026 |
+| CR3-032 | 027, 028, 061 |
+| CR3-033 | 131, 047 |
+| CR3-034 | 094 |
+| CR3-035 | 087 |
+| CR3-036 | 020, 075, 076 |
+| CR3-037 | 106 |
+| CR3-038 | 024, 025, 039, 091 |
+| CR3-039 | 031 |
+| CR3-040 | 185, 194 |
+| CR3-041 | 004, 005, 182, 199 |
+| CR3-042 | 010 |
+| CR3-043 | 142, 147, 161 |
+| CR3-044 | 101 |
+| CR3-045 | 200 |
+| CR3-046 | 045, 187 |
+
+---
+
+### Filed by P1 — 2026-09-28
+
+### CR3-023 — Three dangerous import cycles have appeared since round 2
+- **Category / Severity / Effort**: LAY · P2 · M
+- **Impact / Confidence / Score**: 3 · 1.0 (tool output) · 1.5
+- **Risk**: medium — a static cycle can hand a module an undefined import at load, depending on import order
+- **Where**: `npm run cycles` — (1) `BoardCombat.js ↔ Flags.js`, a 6-module group; (2) `SpawnerSystem.js ↔ TimedChanges.js`; (3) `QuestManager.js ↔ QuestTokens.js`. The 16-module `GameState` group is broken by a dynamic import, as in round 2.
+- **What**: round 2 closed with **zero** all-static cycles. All three are new, from Hero Movement and Token Lifecycle.
+- **Owner session**: R2 (group 1), R3 (group 2), R4 (group 3)
+
+### CR3-024 — Two dead dock components (absorbs CR2-174, part of CR2-083)
+- **Category / Severity / Effort**: DC · P3 · S
+- **Where**: `src/ui/components/dock/HeroDockCard.jsx` (imported by nothing — checked `src/`, `cms/src/`, `src/tests/`), `DockSkillsGrid.jsx` (imported only by `HeroDockCard`). CR2-174's item 1 (`h-[DOCK_TAB_H]`) lives in the dead file; its items 2–4 are gone.
+- **Owner session**: R9
+
+### CR3-025 — Lint residue, regenerated (absorbs CR2-036, 152, 171, 184, part of 083)
+- **Category / Severity / Effort**: DC+WIRE · P3 · M
+- **Where**: `npm run lint` at `17fdcef`: 70 `no-unused-vars`, 8 `react-hooks/exhaustive-deps`, 3 `no-useless-assignment`, and **25 `no-undef` all in test files** because `eslint.config.js` gives tests no Node globals (`__dirname`, `process`, `require`) — CR2-184's config gap.
+- **What**: round 2's site lists were stale in both directions; **use this regenerated list only.** Each "assigned but never used" is a candidate half-wired feature. Distribute by territory at the start of each R-session.
+- **Owner session**: every R-session for its own paths; R9 for the config gap
+
+### CR3-026 — The bundle grew a third, still one chunk (absorbs CR2-186, 188)
+- **Category / Severity / Effort**: PNT · P3 · M
+- **Where**: `npm run build`: **1,152 KB JS** (352 KB gzip), up from 865 KB; single chunk; 3 "dynamic import will not move module" warnings (`GameState.js` lazy imports, `SettingsModal.jsx`); five `@fontsource/*` in `dependencies`.
+- **What**: startup parse cost on a desktop app is modest, but the growth is worth one look — e.g. `framer-motion`'s share. Measure first.
+- **Owner session**: R9
+
+### CR3-027 — The 38.6 MB art folder is not in version control
+- **Category / Severity / Effort**: DOC · P2 · S *(a question for the owner, not a code fix)*
+- **Impact / Confidence / Score**: 4 · 1.0 · 4.0
+- **Where**: `.gitignore:40` ignores `public/assets/` — 1,102 files, 38.6 MB (was 11 MB at round 2).
+- **What**: the game's art has **no git history and no rollback point**; a tag like `v0.8.0` cannot reproduce the game on another machine. It also means a fresh checkout cannot run the art tests (26 test files fail in a clean worktree). There may be a deliberate reason (size, a separate art pipeline) — **owner to decide**: keep ignored, use Git LFS, or back up elsewhere.
+- **Owner session**: owner question, raised at the end of P1
+
+### CR3-028 — Input-cost discount applied when paying, not when checking (CR2-058)
+- **Category / Severity / Effort**: WIRE · P2 · S
+- **Where**: discount applied at completion via `TileModifiers.resolveAxis(INPUT_COST)` (`BoardRunner.js:253-259`); the gate (`WorkCheck.js`, `InputAllocator.checkInputs :60`) never reads `INPUT_COST`.
+- **What**: a Token whose neighbours' discount makes a cycle affordable can still show "out of inputs" and never start. Re-verified in code 2026-09-28; not yet reproduced in play.
+- **Owner session**: R3
+
+### CR3-029 — Item-threshold triggers re-evaluated on every Bank change (CR2-057)
+- **Category / Severity / Effort**: HPB · P2 · S
+- **Where**: `TriggerSystem.js:580-586` — "evaluated against the Bank each time the coarse `inventory_updated` fires"
+- **What**: same shape as CR3-002 — per-tick work at steady state with 8 heroes producing. The bench will size it.
+- **Owner session**: R3
+
+### CR3-030 — The logger always runs at debug level (CR2-105)
+- **Category / Severity / Effort**: HPB · P2 · S
+- **Where**: `src/utils/Logger.js:31` (`minLevel = debug`)
+- **What**: every `logger.debug` on a hot path formats and prints in the shipped game. `PERFORMANCE.md` itself lists console logging as a hot-path pitfall. Bench: count log calls per tick.
+- **Owner session**: R1
+
+### CR3-031 — Every tick handler registers at the default priority (CR2-026)
+- **Category / Severity / Effort**: CON · P3 · S
+- **Where**: `EngineBootstrap.js:195-244` — 9 handlers, no priority argument; order is registration order by accident
+- **Owner session**: R1
+
+### CR3-032 — Small per-tick allocations and event bursts in combat, statuses and upkeep (CR2-027, 028, 061)
+- **Category / Severity / Effort**: GC · P3 · S
+- **Where**: `CombatProcessor.js:79-97` (`heroStatsForUi` rebuilt every combat tick); `StatusEffectSystem.js:118` (`heroes_updated` per hero per status tick — every hero-listening component re-selects); `BlockUpkeep.js:21` (a `filter` per Token per tick)
+- **Owner session**: R4 (combat, statuses), R3 (upkeep)
+
+### CR3-033 — About 13 Settings controls change nothing (CR2-131, CR2-047)
+- **Category / Severity / Effort**: UX · **P1** · M
+- **Where**: `src/ui/modals/SettingsModal.jsx`. Keys with no reader outside Settings (string search, 2026-09-28 — confirm nested reads before acting): `gameplay.enableAnimations`, `gameplay.themeMode`, `showLevelUpMessages`, `showLootMessages`, `showSystemMessages`, `ui.instantPackReveal`, `ui.largeTrayTokens` (the Tray is gone), `ui.tooltipsBoostTiles`, `ui.tooltipsCardBadges`, `ui.tooltipsEnabled`, `ui.tooltipsItems`, `ui.zoomToCursor`; plus `notifications.position`, ignored in column mode (`ToastContainer.jsx:22`).
+- **What**: **the owner already decided (CR2-131): disable them and mark "coming soon"** — not implemented. Several now name retired concepts (packs, Tray, tiles, cards) and should simply go.
+- **Owner session**: R8
+
+### CR3-034 — Three tutorial steps advance only because React publishes the event (CR2-094)
+- **Category / Severity / Effort**: LAY · P2 · S
+- **Where**: `useUIModals.js:34-36` is the only publisher of `ui_modal:opened`; `QuestManager.js:250-256` subscribes. Now documented as a contract, but still a rule whose only trigger is in the UI layer.
+- **Owner session**: R5
+
+### CR3-035 — Enemy kill counts are never recorded (CR2-087)
+- **Category / Severity / Effort**: WIRE · P3 · S
+- **Where**: `RegistryManager.recordEnemyDefeat` (`:82`) has no caller
+- **What**: downgraded from P1 — the Codex screen it blocked **does not exist** in the current UI; nothing displays kill counts. Wire it or delete it when a Codex is planned.
+- **Owner session**: R4
+
+### CR3-036 — Dead combat and loot code (CR2-020, 075, 076)
+- **Category / Severity / Effort**: DC · P3 · S
+- **Where**: `LootSystem.handleTaskReward` (`:91`) has no caller (`EffectAxes.js:12` says so); the fight object's `combat.stats` is created empty (`CombatProcessor.js:30`) and read (`:93`) but never written. CR2-076's player-facing half (the Cookout yield buff) is **fixed** — YIELD is now applied in `BoardRunner.js:353`.
+- **Owner session**: R4
+
+### CR3-037 — A second hero-creation route (CR2-106)
+- **Category / Severity / Effort**: CON · P3 · S
+- **Where**: `GuildUpgradeManager.js:135-141` calls `generateHero()` directly when the roster upgrade is bought, rather than the hero manager's recruit route
+- **Owner session**: R4
+
+### CR3-038 — Retired-concept residue in boot, clock and schema (CR2-024, 025, 039, 091)
+- **Category / Severity / Effort**: VES · P3 · S
+- **Where**: `TimeManager.js:21` keeps its own clock that restarts at zero each boot; `EngineBootstrap.js:277-279` writes `GameState.exploration` (exploration retired); `StateSchema.js:204-215` `unlockedAreaSets` saved and read by nothing; `tokenConstants.js` `TOKEN_TYPES` enforcement still open (prose fixed)
+- **Owner session**: R1 (clock, boot), R9 (schema, constants)
+
+### CR3-039 — Toasts may leave page elements behind (CR2-031)
+- **Category / Severity / Effort**: ML · P3 · S
+- **Where**: `ToastContainer.jsx:120-145` (the file's own `CR-050` note)
+- **What**: a slow DOM leak over a long session. The Tier C soak (DOM node count) will confirm or close it.
+- **Owner session**: R8, confirmed in C
+
+### CR3-040 — Most of the engine object is unread by the game — but agents depend on it (CR2-185, 194)
+- **Category / Severity / Effort**: DC · P3 · S
+- **Where**: `EngineBootstrap.js:114` returns 34 entries; roughly 16 are read by nothing in `src/` (string search). But `main.jsx:67` exposes it as `window.Game`, which **every browser verification on this project uses** (`window.Game.LoopRunner.tick`, …) and which the P3 Perf HUD will use too.
+- **What**: do **not** prune without keeping a dev-only probe. Likely resolution: leave it and document it as the debug surface.
+- **Owner session**: R1
+
+### CR3-041 — The test harness proves some features only with fixtures (CR2-004, 005, 182, 199)
+- **Category / Severity / Effort**: TST · P2 · M
+- **Where**: fixtures register **7 of 15** item ids that are not in real content (`src/tests/fixtures/testTokens.js`, `fixtureItems.js`); 17 `ContentRules` cases skipped; several rework features (`ContextToolTiers`…) are proven only against fixtures
+- **What**: the suite can be green where the real content is broken — round 2's central lesson. R10 turns this into the coverage plan that must exist before risky fix waves.
+- **Owner session**: R10
+
+### CR3-042 — The CMS imports game source across the project boundary (CR2-010)
+- **Category / Severity / Effort**: LAY · P2 · M
+- **Where**: 30 distinct import specifiers from `cms/src` into the game's `src/`
+- **What**: this is why the reachability tool reports `statementSlots.js` and `tempoBands.js` as dead when they are live. Round 3 does not review `cms/src`, but it owns the boundary.
+- **Owner session**: R9
+
+### CR3-043 — Small UI leftovers (CR2-142, 147, 161)
+- **Category / Severity / Effort**: UX/DC · P3 · S
+- **Where**: `useUIModals.js:198-215` defers every nav open by a frame; `LayoutSandbox.jsx` tunes a card that no longer exists (a kept dev surface — round 2 Q5); `BankTab.jsx:34` `typeFilter` state that nothing sets (owner decided: retire)
+- **Owner session**: R8
+
+### CR3-044 — Randomness is unseeded everywhere (CR2-101)
+- **Category / Severity / Effort**: TST · P3 · S → **matters to P2**
+- **Where**: `src/utils/RNG.js` has 1 importer; 63 direct `Math.random()` calls in game source
+- **What**: harmless for play, but **a benchmark must be repeatable**: two runs of scenario S2 should do the same work. P2 has to stub `Math.random` with a seeded generator at the bench boundary (without changing game code).
+- **Owner session**: P2 (workaround), R10 (verdict)
+
+### CR3-045 — A crafted Token can arrive with unlimited charges (CR2-200)
+- **Category / Severity / Effort**: CON · P2 · M
+- **Where**: the Token-output drop path; `tokenStartingUses` (`tokenRegistry.js:172`)
+- **What**: **needs an owner decision** (as filed in round 2). Token Lifecycle changed how crafted Tokens land (9.3); R3 re-checks whether the gap survives before asking.
+- **Owner session**: R3
+
+### CR3-046 — Desktop-shell group, deferred until the Tauri work (CR2-045, 187)
+- **Category / Severity / Effort**: CON · P2 · M
+- **Where**: `SaveManager.js:168-178` (`exportSave`/`importSave` — no player-facing way to back up a save; owner decision 25: wait for Tauri); `src-tauri/` gaps from CR2-187 (item 2 proposed, not applied)
+- **Owner session**: not this round — **deferred by owner decision**; listed so it is not lost
