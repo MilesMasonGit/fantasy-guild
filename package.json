@@ -13,6 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
+    "bench": "node bench/run.mjs",
+    "bench:micro": "vitest bench --config bench/micro/vitest.config.mjs --run",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
