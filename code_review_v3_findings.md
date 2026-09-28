@@ -18,7 +18,7 @@ the priority score.
 |---|---|---|---|---|---|
 | — | Planning survey | ✅ Done | 2026-09-27 | `6908bca` | 22 tickets pre-filed |
 | P1 | Clean baseline & round-2 re-triage | ✅ Done | 2026-09-28 | *(this commit)* | 88 open CR2 tickets walked against the code: 37 closed, 4 CMS lane, 1 econ-sim lane, 2 closed by owner decision, 44 carried into CR3-018/020/024…046; tooling run filed CR3-023…027 |
-| P2 | Build Tier A — headless benchmark | 🔲 Not started | | | |
+| P2 | Build Tier A — headless benchmark | ✅ Done | 2026-09-28 | `42181be` | `npm run bench` + `bench:micro`; S2 misses target ~2×, S3 cliff; 4 tickets confirmed, 2 closed; CR3-047 filed |
 | P3 | Build Tier B — stress scenarios + Perf HUD | 🔲 Not started | | | |
 | R1 | Engine loop, clock & event bus | 🔲 Not started | | | |
 | R2 | Board state & spatial physics | 🔲 Not started | | | |
@@ -27,8 +27,8 @@ the priority score.
 | R5 | UI ↔ engine boundary & render cascades | 🔲 Not started | | | |
 | R6 | Mat renderer: paint, layout & composite | 🔲 Not started | | | |
 | R7 | Drag & drop and input | 🔲 Not started | | | |
-| R8 | UI/UX consistency across surfaces | 🔲 Not started | | | |
-| R9 | Vestiges, documentation & layer separation | 🔲 Not started | | | |
+| R8 | UI/UX consistency across surfaces | ✅ Done | 2026-09-28 | *(wave-1 commit)* | 18 tickets CR3-450…467 (1 P1); 11 owner questions |
+| R9 | Vestiges, documentation & layer separation | ✅ Done | 2026-09-28 | *(wave-1 commit)* | 16 tickets CR3-500…515 (0 P1); 5 owner questions |
 | R10 | Expansion readiness & test coverage | 🔲 Not started | | | |
 | C | Runtime certification (hands-on) | 🔲 Not started | | | |
 | Z | Synthesis & fix waves | 🔲 Not started | | | |
@@ -505,3 +505,107 @@ table is now the only record of what happened to them.**
 - **Category / Severity / Effort**: CON · P2 · M
 - **Where**: `SaveManager.js:168-178` (`exportSave`/`importSave` — no player-facing way to back up a save; owner decision 25: wait for Tauri); `src-tauri/` gaps from CR2-187 (item 2 proposed, not applied)
 - **Owner session**: not this round — **deferred by owner decision**; listed so it is not lost
+
+---
+
+## Wave 1 results — P2, R8, R9 *(2026-09-28, merged by the director)*
+
+**How session tickets are kept (director change to plan §10):** each review
+session's tickets stay in its own file under `docs/review_v3/`, in full. This
+doc holds an **index** of them, plus the director's verdicts on pre-filed
+tickets, so there is exactly one copy of every ticket body.
+
+### Verdicts on pre-filed tickets
+
+| Ticket | Verdict | Evidence (session) |
+|---|---|---|
+| CR3-001 | ✅ **Confirmed by measurement** → severity **P1** (misses a §4.4 target) | `tokens()` called 47×/tick ≈ 59 % of the S2 tick; 131×/tick ≈ 65 % of S3 (P2) |
+| CR3-002 | ⚪ **Not supported** — close | `Flags.evaluate` 0.19 calls/tick, 0.01 ms (P2) |
+| CR3-003 | ✅ **Confirmed** → **P1** | push solver 3.7 / 17.9 / 40 ms at 40 / 150 / 300 Tokens; S4 worst arrival 59 ms, shrink 20→6 338 ms vs 8 ms target (P2) |
+| CR3-004 | ✅ **Confirmed** → **P1**, and **wider**: `rebuildAll` is quadratic **even without an aura** (0.95 / 12.7 / 53 ms at 40/150/300) | S5 p99 14.3 ms vs S2 3.2 ms (P2) |
+| CR3-005 | ✅ Confirmed, not dominant — stays P2 | 1.0 `tile_event_alert` per tick per stalled station; 2nd most frequent event after `board:progress` 3.3/tick (P2) |
+| CR3-015 | 🔄 Changed | 34 files, not 20; the only save-compat piece is `RETIRED_BOARD_FIELDS` in `SaveMigration.js` (R9) |
+| CR3-016 | ✅ Confirmed; rename brief is CR3-501. ⚠ `HeroDockTab.jsx:97` subscribes with the raw string `'board:tile_changed'` — fix it first or the dock silently stops updating (R9) |
+| CR3-018 | ✅ Confirmed and widened — see CR3-513/514 (R9) |
+| CR3-020 | 🟡 Partly fixed — Tier A built and merged (`42181be`); Tier B is P3 |
+| CR3-024 | ✅ Confirmed (R9) |
+| CR3-025 | ✅ Confirmed; exact `eslint.config.js` fix written in R9 §7; lint distribution by territory in R9 §7 |
+| CR3-026 | ✅ Confirmed, stays P3. Correction: the `@fontsource/*` packages add nothing to the bundle (R9) |
+| CR3-029 | ⚪ **Not supported** — close | 0.002 ms/tick (P2) |
+| CR3-033 | 🔄 Changed: exactly 13 inert controls; 4 name retired things; 9 need a fresh ruling (run log Q2·Q1) (R8) |
+| CR3-038 | 🔄 Changed: 8 retired `collection` fields can leave the schema; `TOKEN_TYPES` must keep `manager` and `map` (R9) |
+| CR3-039 | ✅ Confirmed open; lines drifted to `ToastContainer.jsx:134-156`; soak in session C decides (R8) |
+| CR3-042 | ✅ Confirmed: 27 game modules imported directly by the CMS, 36 transitively (R9 §5.5) |
+| CR3-043 | 🔄 Changed and wider: the only publisher of `ui:open_drawer` is unreachable, so the whole slot-filter chain is dead (R8) |
+
+**Plan corrections found by R9:** plan §2.D is stale — the Guild Hall upgrade
+board has not been a 7×7 since B9 (`FreeMatGuards.test.js:202-206` now scans it).
+The reachability tool's "barrel hides orphans" explanation for `nameRegistry` is
+wrong: the barrel no longer exists; the real cause is a comment apostrophe that
+fools the import regex (CR3-505).
+
+### Filed by the director from P2's numbers
+
+### CR3-047 — Spawners at their cap retry every tick; the realistic tick's biggest stage
+- **Category / Severity / Effort**: HPB · **P1** · S–M
+- **Impact / Confidence / Score**: 5 · 1.0 (measured) · 2.5–5
+- **Risk**: medium — spawn timing is gameplay; the fix must spawn at exactly the same moments
+- **Where**: `SpawnerSystem.attemptSpawn` re-run every tick for spawners already at their family cap; `syncAlerts` rescans every spawner every tick; both inside `TimedChanges.tick`
+- **Evidence**: `TimedChanges.tick` is **0.80 of 1.45 ms** of the S2 tick (P2 profile). With CR3-001 this explains nearly all of the S2 miss.
+- **Owner session**: R3
+
+### Performance baseline — Tier A, quiet machine *(`bench/baseline.json`, 2026-09-28, commit `3472ab6`, i7-8700, Node 24.11)*
+
+| Scenario | Tokens | Tick p50 | Tick p99 | Tick max | Events/tick | Heap drift | vs §4.4 target |
+|---|---|---|---|---|---|---|---|
+| S1 Quiet Hall | 9 | 0.038 ms | 0.172 ms | 1.5 ms | — | — | ✅ |
+| S2 Realistic | 109 | 1.33 ms | **3.18 ms** | 14.6 ms | 6.1 | — | ❌ p99 ≤ 1.5, max ≤ 4 |
+| S3 Torture | 313 | 5.93 ms | **67.7 ms** | 244 ms | 9.6 | — | ❌ p99 ≤ 4 — a cliff |
+| S4 Push storm | 85 | worst arrival **59.6 ms**; shrink 20→6 **338 ms** | | | | | ❌ ≤ 8 ms |
+| S5 Rebuild storm | 109 | 1.27 ms | **14.3 ms** | 25.3 ms | 6.3 | — | ❌ |
+| S6 Long idle (32 game-min default; 8 h with `--long`) | 109 | 1.30 ms | 3.08 ms | 17.4 ms | — | +0.8 MB over 30 min; P2's 8 h run: +0.3 % h1→h8 | ✅ memory flat |
+
+Re-run with `--compare` on the same machine: every number within 5 %
+(`✓ No regression`). Frame-time columns come from P3/C.
+
+⚠ S4 reports **"player drops 0/50 landed"** — R2 must confirm whether the
+scenario's crowded region refuses drops by design or the scenario is wrong.
+
+### Index of tickets filed by R8 and R9 (34)
+
+| Ticket | Sev | Effort | Category | Title | File |
+|---|---|---|---|---|---|
+| CR3-450 | P1 | S | UX+WIRE | The hero sheet beside the Bank closes on the first click inside it | `docs/review_v3/R8.md` |
+| CR3-451 | P2 | S | WIRE | The Guild Hall upgrade panel's Close button does nothing visible | `docs/review_v3/R8.md` |
+| CR3-452 | P2 | S | WIRE+UX | Toast types look alike, and the "×N" of grouped toasts is never shown | `docs/review_v3/R8.md` |
+| CR3-453 | P2 | S | UX | The Typography Scale window is (probably) boxed inside Settings, and Escape leaves an unsaved preview applied | `docs/review_v3/R8.md` |
+| CR3-454 | P2 | M | UX | Every surface has its own way to close | `docs/review_v3/R8.md` |
+| CR3-455 | P2 | M | UX | Five tooltip implementations, and the shared look is copy-pasted | `docs/review_v3/R8.md` |
+| CR3-456 | P2 | M | UX+LAY | z-index: one table for the mat, about 20 hand-typed numbers for everything else | `docs/review_v3/R8.md` |
+| CR3-457 | P2 | S | WIRE | Dragging a hero to reorder in the Bank's hero panel shows a drop line, then does nothing | `docs/review_v3/R8.md` |
+| CR3-458 | P2 (until measured) | S | RC | Tutorial beacons re-render every frame while shown | `docs/review_v3/R8.md` |
+| CR3-459 | P3 | S | DOC+DC | The nav's "rise above my own modal" layer can never work; its comment says it does | `docs/review_v3/R8.md` |
+| CR3-460 | P3 | M | DOC+UX | Typography: the code's sizes and fonts are not what renders; the scale is written four times | `docs/review_v3/R8.md` |
+| CR3-461 | P3 | S | WIRE+DC | Events subscribed with no publisher, and a publisher nobody can reach | `docs/review_v3/R8.md` |
+| CR3-462 | P3 | S | DC | `useUIModals` hands out controls nobody uses (overlaps R5) | `docs/review_v3/R8.md` |
+| CR3-463 | P3 | S | WIRE+DC | Props accepted and ignored; branches no caller reaches | `docs/review_v3/R8.md` |
+| CR3-464 | P3 | S | VES+DOC | Retired vocabulary on screen, and stale or rambling comments | `docs/review_v3/R8.md` |
+| CR3-465 | P3 | S | DC | Stylesheets that are loaded but unused, or used but never loaded | `docs/review_v3/R8.md` |
+| CR3-466 | P3 | S | ML | The equip-flash timer's cleanup is returned from an event handler, so it never runs | `docs/review_v3/R8.md` |
+| CR3-467 | P3 | M | DC | Lint residue in R8's territory (claimed from CR3-025) | `docs/review_v3/R8.md` |
+| CR3-500 | P3 | S | VES+UX | Players read "tile" in rules text, and the editor's reach hint is wrong | `docs/review_v3/R9.md` |
+| CR3-501 | P3 | M | VES | Rename the tile-named engine vocabulary (the CR3-016 execution brief) | `docs/review_v3/R9.md` |
+| CR3-502 | P3 | S | DC | Dead tile- and Tray-era code with no reader | `docs/review_v3/R9.md` |
+| CR3-503 | P3 | M | VES+DOC | Tray names and Tray-as-current comments in live code | `docs/review_v3/R9.md` |
+| CR3-504 | P3 | S | VES | Card/deck-era names in live code | `docs/review_v3/R9.md` |
+| CR3-505 | P2 | S | TST | The reachability and cycle tools miss an import after a comment with an apostrophe | `docs/review_v3/R9.md` |
+| CR3-506 | P3 | S | TST | `.mjs`/`.cjs` files are linted with no rules; `bench/` is not covered | `docs/review_v3/R9.md` |
+| CR3-507 | P3 | S | DC | Five `@fontsource/*` packages are declared but never imported | `docs/review_v3/R9.md` |
+| CR3-508 | P3 | S | CON | The build ships and pre-loads un-versioned art, and two test pages | `docs/review_v3/R9.md` |
+| CR3-509 | P3 | S | CON | Build warnings: two dynamic imports are load-bearing, one is pointless | `docs/review_v3/R9.md` |
+| CR3-510 | P2 | S | LAY | The "content grammar" modules must stay pure for the CMS, and nothing says so | `docs/review_v3/R9.md` |
+| CR3-511 | P3 | S | LAY | The CMS imports `itemRegistry` for one constant and drags the content loader with it | `docs/review_v3/R9.md` |
+| CR3-512 | P3 | M | LAY | Two ways into the engine: `useEngine` and direct module imports | `docs/review_v3/R9.md` |
+| CR3-513 | P2 | M | DOC | The documents agents load first are wrong, and one tells them to hand-edit content | `docs/review_v3/R9.md` |
+| CR3-514 | P3 | S | DOC | Archive sweep: ~45 history docs in live folders, and two archive folders | `docs/review_v3/R9.md` |
+| CR3-515 | P3 | M | LAY | Starting content and quest content are written in engine code | `docs/review_v3/R9.md` |
