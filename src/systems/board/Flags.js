@@ -257,7 +257,8 @@ const UNDER_POINT = new Set(['promotion', 'hall']);
 
 /**
  * Whether a mat point sits on a Token — inside its **art circle** (1×1: 64 u,
- * 2×2: 144 u from its centre, `matGeometry`). Slice 1.6b; it was the Token's
+ * 2×2: 144 u from its centre, a small 1×1 32 u — `matGeometry.artRadiusOf`,
+ * TL-19 / B8.1). Slice 1.6b; it was the Token's
  * tiles plus their gaps.
  */
 export function pointOnToken(instance, point) {

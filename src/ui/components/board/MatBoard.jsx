@@ -88,7 +88,6 @@ export const MatBoard = ({
             x: t.x,
             y: t.y,
             placedAt: t.placedAt ?? 0,
-            size: getTokenType(t.typeId)?.size || 1,
             // B7.1 (TL-16): an enemy walking by its spawner glides from step to
             // step, facing the way it goes. Null for everything standing still.
             walkFacing: EnemyMotion.walkFacingOf(t.id)
@@ -314,7 +313,6 @@ export const MatBoard = ({
                     typeId={t.typeId}
                     x={t.x}
                     y={t.y}
-                    size={t.size}
                     walkFacing={t.walkFacing}
                     z={zById.get(t.id)}
                     isHovered={hoveredId === t.id}

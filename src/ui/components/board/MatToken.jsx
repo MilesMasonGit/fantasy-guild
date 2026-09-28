@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
-import { artRadius } from '../../../config/matGeometry.js';
+import { artRadiusOf, isSmallToken } from '../../../config/matGeometry.js';
 import { ALERT_HINT } from './boardConstants.js';
 import { tokenSkipLines } from './flagText.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
@@ -84,7 +84,7 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * square of the grid and asked a stopgap adapter which tile each event meant.
  *
  * * **A box at `(x − r, y − r)`, `2r` across**, where `r` is the art radius for
- *   its size (1×1: 64 u, 2×2: 144 u — `matGeometry`). A move the game makes (a
+ *   its size (1×1: 64 u, 2×2: 144 u, a small 1×1: 32 u — `matGeometry`, TL-19). A move the game makes (a
  *   push) is a CSS `left`/`top` slide; a move the player makes is not — the
  *   Token is simply where it was let go.
  * * **A drag source and nothing else.** The whole mat is the one drop target
@@ -109,7 +109,6 @@ export const MatToken = React.memo(function MatToken({
     typeId,
     x,
     y,
-    size = 1,
     walkFacing = null,
     z,
     isHovered = false,
@@ -121,7 +120,11 @@ export const MatToken = React.memo(function MatToken({
     disallowMode = false,
     onFlipDisallow
 }) {
-    const r = artRadius(size);
+    // TL-19 (B8.1): the radius and the art both come from the type (footprint
+    // and `artSize` alike), so a small Token is half size here exactly as it
+    // is to the engine (`artRadiusOf`).
+    const r = artRadiusOf(typeId);
+    const small = isSmallToken(typeId);
 
     /**
      * ⭐ FP-99 — how big this Token's art is drawn, in mat units.
@@ -142,7 +145,7 @@ export const MatToken = React.memo(function MatToken({
      */
     const fit = useMatFit();
     const artScale = boardScaleAt(fit);
-    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, size, artScale);
+    const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, artScale);
     const boxPx = Math.max(r * 2, artPx);
     const boxHalf = boxPx / 2;
 
@@ -414,6 +417,7 @@ export const MatToken = React.memo(function MatToken({
                 data-token-id={id}
                 data-token-art="true"
                 data-token-type={typeId}
+                data-token-small={small ? 'true' : undefined}
                 data-guild-hall={isHall ? 'true' : undefined}
                 data-hall-received={received ? 'true' : undefined}
                 data-quest-claimable={questDone ? 'true' : undefined}
@@ -527,7 +531,7 @@ export const MatToken = React.memo(function MatToken({
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, zIndex: z + 2, visibility: hidden ? 'hidden' : 'visible' }}
             >
-                <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} />
+                <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} small={small} />
 
                 {/* FB-7: the recipe gear, top-left, on every Token with something
                     to choose. Nothing chosen: it pulses, and that is all — no
@@ -538,17 +542,21 @@ export const MatToken = React.memo(function MatToken({
                         recipe={detail?.recipe}
                         pulsing={gear.pulsing}
                         isFoundation={!!detail?.isFoundation}
+                        small={small}
                         onClick={() => (disallowMode ? onFlipDisallow?.(id) : onOpenRecipes?.(id))}
                     />
                 )}
 
                 {/* FB-33: disallowed (FP-35), top-right, always shown. */}
-                {detail?.disallowed && <DisallowBadge isDragging={hidden} />}
+                {detail?.disallowed && <DisallowBadge isDragging={hidden} small={small} />}
 
                 {/* TL-22: cycle, charges and the Token's own ring, in one row
                     under the Token and its hero (B1.2). It carries the -1 floater.
                     B1.3: a spawner's count (FB-5) and a turning Token's
-                    countdown (FB-14 / TL-12) stand in it always. */}
+                    countdown (FB-14 / TL-12) stand in it always.
+                    TL-19 (B8.1): a small Token keeps FULL-size rings (owner) —
+                    `RING_D_U` is fixed in mat units; only the row's anchor
+                    (`boxHalf`) follows the smaller Token. */}
                 <TokenBadgeRow
                     instanceId={id}
                     token={isGuildHallToken ? { ...token, usesRemaining: null } : token}

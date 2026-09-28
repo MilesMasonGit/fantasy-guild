@@ -1,5 +1,5 @@
 import { cn } from '../../utils/cn.js';
-import { ART_PX } from '../../../config/matGeometry.js';
+import { ART_PX, tokenBodyScale } from '../../../config/matGeometry.js';
 import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
 
@@ -130,10 +130,26 @@ export const tokenSizeFor = (surface, typeIdOrSize = 1, scale = TOKEN_SCALE[surf
     if (typeof typeIdOrSize === 'number') {
         sizeMultiplier = typeIdOrSize;
     } else if (typeof typeIdOrSize === 'string') {
-        sizeMultiplier = getTokenType(typeIdOrSize)?.size || 1;
+        sizeMultiplier = (getTokenType(typeIdOrSize)?.size || 1) *
+            (ON_MAT_SURFACES.has(surface) ? tokenBodyScale(typeIdOrSize) : 1);
     }
     return ART_PX * sizeMultiplier * scale;
 };
+
+/**
+ * ⭐ TL-19 / B8.1: the surfaces where a **small** Token is drawn at half size —
+ * the mat itself, the hand carrying a Token onto it (D-220: the ghost is the
+ * size of the hole it is going into) and the floor. Listings (Tray, Vault,
+ * inspection, catalogue chips) keep the full icon: they are about which Token,
+ * not how big it stands.
+ *
+ * Only a **type id** gets the halving; a bare number is a footprint and means
+ * what it always did. At the board's whole-step scale (FP-99) a small Token
+ * lands on `steps × 32` screen pixels — a whole multiple of 32 px art, and of a
+ * borrowed 64 px sprite whenever `steps` is even (at 1× it is an exact halving,
+ * as `CATALOGUE` already draws).
+ */
+const ON_MAT_SURFACES = new Set([TOKEN_SURFACE.BOARD, TOKEN_SURFACE.CARRY, TOKEN_SURFACE.FLOOR]);
 
 /**
  * The contact shadow that makes a Token sit *on* a surface rather than be

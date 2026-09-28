@@ -98,13 +98,15 @@ export const TokenChargeDeltaFloater = ({ instanceId, anchor = 'corner' }) => {
  * TokenNameBadge — the Token's name across the top on hover. Clean outlined
  * text that wraps onto as many lines as it needs.
  */
-export const TokenNameBadge = ({ name, isDragging, isHovered }) => {
+export const TokenNameBadge = ({ name, isDragging, isHovered, small = false }) => {
     if (!name || isDragging) return null;
 
     return (
         <div
             className={cn(
-                "absolute top-1 left-1 right-1 z-30 pointer-events-none",
+                // TL-19 (B8.1): a small Token's box is half as wide, so its
+                // name may run past the box's sides rather than wrap per word.
+                small ? "absolute top-1 -left-8 -right-8 z-30 pointer-events-none" : "absolute top-1 left-1 right-1 z-30 pointer-events-none",
                 "flex items-start justify-center text-center select-none",
                 "transition-opacity ease-out",
                 isHovered ? "opacity-100 duration-500 delay-[1200ms]" : "opacity-0 duration-150 delay-0"
@@ -135,7 +137,7 @@ export const TokenNameBadge = ({ name, isDragging, isHovered }) => {
  * Hovering previews the selected recipe (concept §2.1) — outputs first, then
  * what it consumes.
  */
-export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, onClick }) => {
+export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, small = false, onClick }) => {
     if (isDragging) return null;
 
     const outputs = outputSummary(recipe);
@@ -146,7 +148,10 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
     return (
         <div
             data-station-gear={pulsing ? 'unset' : 'set'}
-            className="absolute left-1 top-1 z-30 group pointer-events-auto"
+            data-badge-corner={small ? 'small' : undefined}
+            // TL-19 (B8.1): on a small Token the gear hangs off the corner
+            // instead of covering the top half of 64 u of art.
+            className={cn('absolute z-30 group pointer-events-auto', small ? '-left-3 -top-3' : 'left-1 top-1')}
         >
             <button
                 type="button"
@@ -190,13 +195,18 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
  * may not work (FP-35 per-Token disallow, FB-33). Always shown. It replaced the
  * dim ⊘ that sat bottom-left (FPP-8).
  */
-export const DisallowBadge = ({ isDragging }) => {
+export const DisallowBadge = ({ isDragging, small = false }) => {
     if (isDragging) return null;
     return (
         <div
             data-tile-disallowed="true"
             aria-label="Heroes may not work this"
-            className="absolute right-1 top-1 z-30 pointer-events-none select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
+            data-badge-corner={small ? 'small' : undefined}
+            // TL-19 (B8.1): off the corner on a small Token, as the gear is.
+            className={cn(
+                'absolute z-30 pointer-events-none select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
+                small ? '-right-3 -top-3' : 'right-1 top-1'
+            )}
         >
             <img
                 src="/assets/ui/ui_disallow_red.png"

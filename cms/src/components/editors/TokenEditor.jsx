@@ -173,7 +173,11 @@ export default function TokenEditor() {
           <Field label="Grid Size">
             <select
               value={token.size ?? 1}
-              onChange={(e) => update('size', Number(e.target.value))}
+              onChange={(e) => {
+                const size = Number(e.target.value);
+                // TL-19 (B8.1): only a 1×1 may be small, so going 2×2 clears it.
+                updateToken(activeId, size === 1 ? { size } : { size, artSize: undefined });
+              }}
               className="w-full"
             >
               <option value={1}>1×1 (Standard — 128px)</option>
@@ -181,6 +185,29 @@ export default function TokenEditor() {
             </select>
             <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
               1 tile slot, or 4 tile slots on the playmat.
+            </p>
+          </Field>
+
+          {/* TL-19 / FB-18 (B8.1): standard (64 px art at 128 px) or small
+              (32 px art at 64 px, with a half-size hit area and spacing) —
+              the game reads `artSize` (`matGeometry.isSmallToken`). Written
+              ONLY when Small: choosing Standard removes the key, so every
+              standard Token's record stays exactly as it was. 1×1 only; the
+              control is disabled on a 2×2 (and the game ignores it there). */}
+          <Field label="Token Size">
+            <select
+              aria-label="Token Size"
+              value={(token.size ?? 1) === 1 && token.artSize === 'small' ? 'small' : 'standard'}
+              onChange={(e) => update('artSize', e.target.value === 'small' ? 'small' : undefined)}
+              className="w-full"
+              disabled={(token.size ?? 1) !== 1}
+              title={(token.size ?? 1) !== 1 ? 'Only a 1×1 Token can be small' : undefined}
+            >
+              <option value="standard">Standard (64px art at 128px)</option>
+              <option value="small">Small (32px art at 64px)</option>
+            </select>
+            <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+              Small: half-size art, hit area and spacing. Its rings stay full size.
             </p>
           </Field>
         </div>
