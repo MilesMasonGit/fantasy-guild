@@ -11,6 +11,9 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { placeAt } from './fixtures/mat.js';
+import * as NotificationSystem from '../systems/core/NotificationSystem.js';
+import { dropOnMat } from '../ui/components/board/dropOnMat.js';
+import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
 /**
  * Token Lifecycle slice 5.1 — **the Shop** (SP-12, SP-13, SP-65, SP-67).
@@ -39,6 +42,7 @@ registerTokenTypes({
 });
 
 beforeEach(() => {
+    vi.clearAllMocks();
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();
@@ -197,3 +201,99 @@ describe('buying', () => {
     });
 });
 
+
+/**
+ * ⭐ B4 (FB-25): **buy by dragging onto the mat** — pay on drop, placed at the
+ * drop point, nothing taken when the spot, the cap or the Bank says no.
+ */
+describe('buying at a point (B4)', () => {
+    const SPOT = { x: 400, y: 300 };
+
+    it('pays and places the Token at the drop point, as placed', () => {
+        InventoryManager.addItem(WOOD, 12);
+        const result = Shop.buyAt('fixture_shop_forest', SPOT);
+        expect(result.success).toBe(true);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(2);
+        const [forest] = onMat('fixture_shop_forest');
+        expect({ x: forest.x, y: forest.y }).toEqual(SPOT);
+        expect(forest.origin).toBe('placed');
+    });
+
+    it('a refused placement charges nothing and flies back (full)', () => {
+        InventoryManager.addItem(WOOD, 25);
+        // Pack the area round the spot far past nudge reach with spawned Tokens.
+        for (let dx = -400; dx <= 400; dx += 50) {
+            for (let dy = -300; dy <= 300; dy += 50) {
+                const t = BoardState.createTokenInstance('fixture_not_sold', 1, null, BoardState.ORIGIN.SPAWNED);
+                BoardState.addToken(t, SPOT.x + dx, SPOT.y + dy);
+            }
+        }
+        const result = Shop.buyAt('fixture_shop_forest', SPOT);
+        expect(result.success).toBe(false);
+        expect(result.full).toBe(true);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(25);
+        expect(onMat('fixture_shop_forest')).toHaveLength(0);
+    });
+
+    it('is refused at the mat cap, and takes nothing', () => {
+        InventoryManager.addItem(WOOD, 50);
+        placeAt('fixture_not_sold', 1200, 900);
+        setMatTuning('matCap', MatCap.placedCount());
+        const result = Shop.buyAt('fixture_shop_forest', SPOT);
+        expect(result.success).toBe(false);
+        expect(result.reason).toMatch(/full/i);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(50);
+        expect(onMat('fixture_shop_forest')).toHaveLength(0);
+    });
+
+    it('is refused when the Bank is short, naming what is missing', () => {
+        InventoryManager.addItem(WOOD, 4);
+        const result = Shop.buyAt('fixture_shop_forest', SPOT);
+        expect(result.success).toBe(false);
+        expect(result.reason).toMatch(/6× /);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(4);
+    });
+
+    it('a point off the mat is refused as offMat, nothing taken', () => {
+        InventoryManager.addItem(WOOD, 12);
+        const result = Shop.buyAt('fixture_shop_forest', { x: -50, y: 300 });
+        expect(result).toMatchObject({ success: false, offMat: true });
+        expect(InventoryManager.getItemCount(WOOD)).toBe(12);
+    });
+
+    it('never restocks a copy it is dropped on: it is a new Token', () => {
+        InventoryManager.addItem(WOOD, 25);
+        expect(Shop.buyAt('fixture_shop_forest', SPOT).success).toBe(true);
+        expect(Shop.buyAt('fixture_shop_forest', SPOT).success).toBe(true);
+        expect(onMat('fixture_shop_forest')).toHaveLength(2);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(5);
+    });
+});
+
+describe('the mat drop route for a Shop row (B4)', () => {
+    const payload = (typeId) => ({ kind: DRAG_KIND.TOKEN, typeId, from: { shop: typeId } });
+
+    it('buys at the drop point', () => {
+        InventoryManager.addItem(WOOD, 10);
+        const res = dropOnMat(payload('fixture_shop_forest'), { x: 500, y: 350 });
+        expect(res.success).toBe(true);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(0);
+        const [forest] = onMat('fixture_shop_forest');
+        expect({ x: forest.x, y: forest.y }).toEqual({ x: 500, y: 350 });
+    });
+
+    it('a refusal is announced, flies back, and makes nothing', () => {
+        const res = dropOnMat(payload('fixture_shop_forest'), { x: 500, y: 350 });
+        expect(res).toMatchObject({ success: false, flyBack: true });
+        expect(NotificationSystem.warning).toHaveBeenCalledWith(expect.stringMatching(/Need/));
+        expect(onMat('fixture_shop_forest')).toHaveLength(0);
+    });
+
+    it('off the mat is a plain cancel: flown back, not announced', () => {
+        InventoryManager.addItem(WOOD, 10);
+        const res = dropOnMat(payload('fixture_shop_forest'), { x: -200, y: 350 });
+        expect(res).toMatchObject({ success: false, flyBack: true });
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
+        expect(InventoryManager.getItemCount(WOOD)).toBe(10);
+    });
+});

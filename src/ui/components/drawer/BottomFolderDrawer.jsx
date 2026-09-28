@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { Landmark, Map as MapIcon } from 'lucide-react';
+import { Landmark } from 'lucide-react';
 import { useGameState } from '../../hooks/useGameState.js';
 import BankTab from './BankTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
-import CartographerTab from './CartographerTab.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
 
 /**
@@ -17,7 +16,8 @@ import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js'
  * (D-239), and **inspection has left it entirely** for a panel over the Tray
  * (D-240). Renaming it to `BankDrawer` is a tidy-up worth doing separately.
  *
- * Two panes: the item Bank and the Shop. The Token Vault pane went with the
+ * One pane: the item Bank. The Shop pane left for its own drawer from the
+ * left edge (`ShopDrawer`, B4: FB-25, FB-27). The Token Vault pane went with the
  * Vault (Token Lifecycle 9.3); the Stations pane was temporary by design and
  * retired once station cards moved to the Collection Binder's Deployment
  * Panel.
@@ -39,19 +39,12 @@ const PANES = [
     {
         key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab, inspects: true,
         paneProps: ({ filter, searchQuery, onInspect, selId }) => ({ filter, searchQuery, onInspect, selectedItemId: selId })
-    },
-    // The one shop that is deliberately NOT on the board (D-98). The Map is
-    // still a Token, so only the transaction leaves the grid. No inspect
-    // column beside it (Token Lifecycle feedback Q7, FB-24).
-    {
-        key: 'cartographer', label: 'Shop', icon: MapIcon, Component: CartographerTab, inspects: false,
-        paneProps: () => ({})
     }
 ];
 
 // Which selection type each pane's tiles produce — used to hand each pane
 // only its own selection for tile highlighting.
-const PANE_SELECTION_TYPE = { bank: 'item', cartographer: 'token' };
+const PANE_SELECTION_TYPE = { bank: 'item' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
     const [searchQuery, setSearchQuery] = useState('');

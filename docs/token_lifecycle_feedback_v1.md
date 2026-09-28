@@ -315,6 +315,10 @@ column.
 (pay on drop; refuse cleanly when the mat cap or the Bank says no). The drawer takes about a third of
 the screen and slides mostly away during a drag. Uses the dnd-kit drag system.
 
+| # | B4 slice | Status |
+|---|---|---|
+| B4 | **Shop drag-to-buy drawer**: from the left, a third wide; drag a row onto the mat to buy, pay on drop at the drop point; lip while dragging; unaffordable / over-cap rows dimmed, missing in red, not draggable; the bottom drawer keeps the Bank only | ✅ 2026-09-27. `ShopDrawer.jsx` (renamed from `CartographerTab.jsx`), `Shop.buyAt(typeId, point)` (places with `noRestock`, a refused placement charges nothing, off-mat = silent cancel), `dropOnMat` route `from.shop`, lip 28 px, drawer not a droppable (Board checks its live box at drop). Director verified live (slot 3): opened by the drawer event, 11 rows with affordability (Oak Forest / Coast / Farmland affordable at 10 Oak Wood; others dimmed, "Need 10× Stone"…); `buyAt` an Oak Forest at (1500, 300) → placed exactly there, Oak Wood 10 → 0, the row turned unaffordable; off-mat refused with no charge. ⚠️ With the agent's pane hidden, animation frames are frozen: the nav *Shop* button (which opens on the next frame, like the Bank's) and the slide could not be seen. ⭐ Owner by eye: the nav button opens the drawer, the slide, a real drag with the lip. A dropped Token never restocks a copy it lands on (director default). Tests: baseline 10 |
+
 **B5 Flags (5th).** FB-44, FB-45, **TL-17**. Flags lose their hitbox (check which FP decisions
 this touches); a flag dropped on a Token pins to it; when the Token is exhausted, the flag becomes a
 normal area flag at that spot. Closes the playtest pack's "heroes can't be steered within a skill".

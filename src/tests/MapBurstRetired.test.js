@@ -47,7 +47,7 @@ describe('The burst code is deleted (9.1)', () => {
     });
 
     it('the Shop panel has no Maps section', () => {
-        const tab = readFileSync(join(src, 'ui/components/drawer/CartographerTab.jsx'), 'utf8');
+        const tab = readFileSync(join(src, 'ui/components/drawer/ShopDrawer.jsx'), 'utf8');
         expect(tab).not.toMatch(/MapCard|buyMap|Cartographer\.|>Maps</);
     });
 

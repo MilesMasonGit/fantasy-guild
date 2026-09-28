@@ -3,6 +3,7 @@
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as DiscardBin from '../../../systems/board/DiscardBin.js';
+import * as Shop from '../../../systems/board/Shop.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 
@@ -19,10 +20,11 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  *   rule (FP-88). ⭐ Nothing snaps: the old spot-snapping stopgap and the
  *   practice outline it needed both went with this slice.
  *
- * A Token can come from three places, told apart by its payload's `from`:
+ * A Token can come from four places, told apart by its payload's `from`:
  * `instanceId` (a Token on the mat), `binnedId` (a Token dragged back out of
  * the discard bin, B3.2 — the same instance returns, `DiscardBin.unbinToken`),
- * or none (a bare `typeId`: make one).
+ * `shop` (a Shop row, B4: bought at the drop point, `Shop.buyAt`), or none
+ * (a bare `typeId`: make one).
  * (Token loot on the floor and the Vault were the other two until both
  * retired in Token Lifecycle 9.3.)
  *
@@ -78,6 +80,17 @@ export function dropOnMat(payload, point) {
     // B3.2 (FB-34, TL-13): back out of the bin, unchanged, at the drop point.
     if (from.binnedId != null) {
         return announce(flownBack(DiscardBin.unbinToken(from.binnedId, point)));
+    }
+
+    // B4 (FB-25): a Shop row dragged onto the mat, paid on drop and placed at
+    // the drop point. A point off the mat (the proximity fallback can hand the
+    // mat a drop just outside it) is a plain cancel: flown back, not
+    // announced. Must come before the bare-typeId route, which makes a Token
+    // for nothing.
+    if (from.shop) {
+        const res = Shop.buyAt(payload.typeId || from.shop, point);
+        if (res?.offMat) return { ...res, flyBack: true };
+        return announce(res?.success ? res : { ...res, flyBack: true });
     }
 
     if (payload.typeId) {

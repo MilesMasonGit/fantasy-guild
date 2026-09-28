@@ -14,6 +14,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
 import { StationRecipeModal } from './StationRecipeModal.jsx';
+import { isShopPayload, pointerOverShopDrawer } from '../drawer/ShopDrawer.jsx';
 
 /**
  * The playmat: one drop surface, scaled to fit, with `MatBoard` drawing what is
@@ -52,6 +53,9 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
         surface: DND_SURFACE.BOARD,
         accepts: matAccepts,
         onDrop: (p, info) => {
+            // B4 (FB-27): a Shop Token let go over the Shop drawer's lip, which
+            // covers the mat's left edge, is a plain cancel, not a purchase.
+            if (isShopPayload(p) && pointerOverShopDrawer(info?.pointer)) return false;
             const el = matRef.current;
             const point = el ? pointerToMat(info?.pointer, el.getBoundingClientRect()) : null;
             const result = dropOnMat(p, point);

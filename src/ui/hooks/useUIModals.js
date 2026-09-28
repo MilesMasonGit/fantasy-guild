@@ -66,7 +66,15 @@ export function standingPromotionOffer(engine) {
  * places (is-active, close, open) and a target added to two of the three is a
  * bubble that opens and then cannot be closed.
  */
-const DRAWER_TARGETS = new Set(['bank', 'cartographer']);
+const DRAWER_TARGETS = new Set(['bank']);
+
+/**
+ * The Shop's nav target. Since B4 (FB-25, FB-27) the Shop is its own drawer
+ * from the left edge (`ShopDrawer`), not a pane of the Bank's drawer, so it
+ * has its own open flag (`ui.shop`). The target keeps the old
+ * `cartographer` name: the quest wiring and the tutorial read that string.
+ */
+const SHOP_TARGET = 'cartographer';
 
 export const useUIModals = (engine) => {
     // --- Modal States ---
@@ -91,6 +99,9 @@ export const useUIModals = (engine) => {
     // object per open so panes can re-apply the same filter twice;
     // `maximized` names the pane expanded to full height (or null).
     const [drawerState, setDrawerState] = useState({ panes: [], filters: {}, maximized: null });
+
+    // --- The Shop drawer (B4) --- open or shut; it stays open while buying.
+    const [isShopOpen, setIsShopOpen] = useState(false);
 
     // --- Hero Dock pinned cards (Hero Dock Phase 5) ---
     // An ORDERED list of pinned hero ids, oldest first, capped at
@@ -141,7 +152,7 @@ export const useUIModals = (engine) => {
     // e.g. a banner's "open the drawer" prompt. Deliberately independent of
     // the nav bar's exclusivity rule below: it only adds a pane, never
     // closes anything else.)
-    // ⚠️ **One pane at a time** (D-239). Opening the Bank closes the Shop.
+    // ⚠️ **One pane at a time** (D-239). Since B4 the Bank is the only pane.
     //
     // This used to append, so several panes shared the drawer's width. The
     // drawer now comes from the SIDE at a fixed width (D-238), and splitting
@@ -149,6 +160,12 @@ export const useUIModals = (engine) => {
     // three columns of the Bank's 96px grid. `panes` stays an array so every
     // existing reader keeps working; it simply never holds more than one.
     const openDrawerTab = useCallback((tab, filter = null) => {
+        // B4: the Shop is no longer a pane — open its own drawer instead.
+        if (tab === SHOP_TARGET) {
+            setIsShopOpen(true);
+            EventBus.publish('ui_modal:opened', { modalId: tab });
+            return;
+        }
         setDrawerState(s => ({
             ...s,
             panes: [tab],
@@ -172,16 +189,17 @@ export const useUIModals = (engine) => {
             case 'guild': return fullscreenView === 'guild';
             case 'areas': return fullscreenView === 'areas';
             case 'bank': return drawerState.panes.includes('bank');
-            case 'cartographer': return drawerState.panes.includes('cartographer');
+            case SHOP_TARGET: return isShopOpen;
             case 'settings': return isSettingsOpen;
             default: return false;
         }
-    }, [fullscreenView, drawerState.panes, isSettingsOpen]);
+    }, [fullscreenView, drawerState.panes, isSettingsOpen, isShopOpen]);
 
     const navToggle = useCallback((target) => {
         if (isNavActive(target)) {
             if (target === 'guild' || target === 'areas') setFullscreenView(null);
             else if (DRAWER_TARGETS.has(target)) setDrawerState({ panes: [], filters: {}, maximized: null });
+            else if (target === SHOP_TARGET) setIsShopOpen(false);
             else if (target === 'settings') setIsSettingsOpen(false);
             return;
         }
@@ -193,6 +211,7 @@ export const useUIModals = (engine) => {
         setFullscreenView(null);
         setDrawerState({ panes: [], filters: {}, maximized: null });
         setIsSettingsOpen(false);
+        setIsShopOpen(false);
         requestAnimationFrame(() => {
             setFullscreenView(target === 'guild' ? 'guild' : target === 'areas' ? 'areas' : null);
             setDrawerState(
@@ -201,6 +220,7 @@ export const useUIModals = (engine) => {
                     : { panes: [], filters: {}, maximized: null }
             );
             setIsSettingsOpen(target === 'settings');
+            setIsShopOpen(target === SHOP_TARGET);
             EventBus.publish('ui_modal:opened', { modalId: target });
         });
     }, [isNavActive]);
@@ -245,6 +265,13 @@ export const useUIModals = (engine) => {
             toggleMaximize: useCallback(tab => {
                 setDrawerState(s => ({ ...s, maximized: s.maximized === tab ? null : tab }));
             }, [])
+        },
+        // The Shop drawer (B4, FB-25 / FB-27). The nav bubble goes through
+        // `nav.toggle('cartographer')`; this is for the drawer's own Close.
+        shop: {
+            isOpen: isShopOpen,
+            open: useCallback(() => setIsShopOpen(true), []),
+            close: useCallback(() => setIsShopOpen(false), [])
         },
         dock: {
             pinned: pinnedHeroIds,

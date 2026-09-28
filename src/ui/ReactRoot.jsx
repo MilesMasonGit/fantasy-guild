@@ -17,6 +17,7 @@ import { useUIModals } from './hooks/useUIModals.js';
 // Components
 import Board from './components/board/Board.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
+import ShopDrawer from './components/drawer/ShopDrawer.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHeroDock.jsx';
@@ -456,6 +457,8 @@ export const ReactRoot = ({ engine }) => {
                             reach across the notifications column — which the
                             board column does not contain. */}
                         <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
+                        {/* The Shop drawer, from the left edge (B4: FB-25, FB-27). */}
+                        <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
                     </div>
                 </div>
 

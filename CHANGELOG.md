@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Shop: drag to buy (B4, FB-25, FB-27).** The Shop is a drawer from the left edge. Drag a Token
+  onto the mat to buy it there; the drawer slides away to a thin lip while you drag. Tokens you
+  can't afford or fit are dimmed and say what's missing. The Buy buttons and the Shop tab in the
+  bottom drawer are gone.
 - **The discard bin (B3.2, FB-34).** At the foot of the notification column: drag Tokens from the mat
   into a grid of nine slots (each shows the Token), drag any back out, see the refund, and press
   *Discard all (n)* to discard them and collect it. The inspection panel's Remove button is gone.

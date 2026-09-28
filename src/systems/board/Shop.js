@@ -12,6 +12,7 @@ import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
 import * as Placement from './Placement.js';
 import { logger } from '../../utils/Logger.js';
+import { matW, matH } from '../../config/matGeometry.js';
 
 /**
  * The Shop — the reworked Cartographer (SP-12).
@@ -100,9 +101,46 @@ export function canBuy(typeId) {
  * refuses the purchase without taking anything; nothing runs between the check
  * and the payment, so the payment cannot then fall short.
  *
+ * The Shop drawer no longer calls this: since B4 a row is dragged onto the
+ * mat and bought there ({@link buyAt}). The tutorial and chain tests still do.
+ *
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */
 export function buy(typeId) {
+    return purchase(typeId, (instance) => Placement.placeArrivalNear(instance, Placement.centreOfBoard()));
+}
+
+/**
+ * ⭐ **Buy one Token where the player let it go** (B4, FB-25): a Shop row
+ * dragged onto the mat pays on drop. The same checks as {@link buy}, but the
+ * Token goes through `Placement.placeTokenAt` at `point` (exactly there, or
+ * nudged to the nearest legal spot, like any Token dropped on the mat) rather
+ * than beside the Hall.
+ *
+ * * A point off the mat is refused with `offMat`: the drop is a plain cancel.
+ * * A placement refusal charges nothing and keeps its `full` flag, so the drag
+ *   flies back (FP-46).
+ * * `noRestock`: a bought Token is always a new Token, never charges poured
+ *   into a copy it was dropped on.
+ *
+ * @param {string} typeId
+ * @param {{x:number, y:number}} point mat units
+ * @returns {{success: boolean, reason?: string, instance?: object, full?: boolean, offMat?: boolean}}
+ */
+export function buyAt(typeId, point) {
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)
+        || point.x < 0 || point.y < 0 || point.x > matW() || point.y > matH()) {
+        return { ...refuse('Not on the mat'), offMat: true };
+    }
+    return purchase(typeId, (instance) => Placement.placeTokenAt(instance, point, { noRestock: true }));
+}
+
+/**
+ * The one purchase path: check, make the instance, let `place` put it on the
+ * mat, and only then take the items. A refused placement comes back as it
+ * came (its `full` flag included) with nothing taken.
+ */
+function purchase(typeId, place) {
     const allowed = canBuy(typeId);
     if (!allowed.success) return allowed;
 
@@ -112,8 +150,8 @@ export function buy(typeId) {
     );
     instance.bornAt = Date.now();
 
-    const placed = Placement.placeArrivalNear(instance, Placement.centreOfBoard());
-    if (!placed?.success) return refuse(placed?.reason || 'No room on the mat');
+    const placed = place(instance);
+    if (!placed?.success) return { ...(placed || {}), ...refuse(placed?.reason || 'No room on the mat') };
 
     if (!InputAllocator.consumeInputs(price)) {
         // Unreachable in practice (checked above); undo the placement so a
@@ -126,7 +164,7 @@ export function buy(typeId) {
     EventBus.publish('token_purchased', { typeId, instanceId: instance.id, price });
     EventBus.publish('state_changed');
     logger.info('Shop', `Bought ${tokenName(typeId)}`);
-    return { success: true, instance };
+    return { success: true, instance, x: placed.x, y: placed.y, nudged: !!placed.nudged };
 }
 
 /**
