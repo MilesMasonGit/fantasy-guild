@@ -24,6 +24,9 @@ import { isSmallToken } from '../config/matGeometry.js';
  * through untouched. Only a 1×1 may be small: the control is disabled on a 2×2
  * and switching Grid Size to 2×2 clears it.
  *
+ * B8.2 shipped the three small Tokens (`SHIPPED_SMALL`); the round-trip and
+ * editor tests use a standard 1×1 (`STANDARD`) so they still start standard.
+ *
  * Nothing here touches `data/`: the files are READ, loaded into the store the
  * way `/api/load-game-data` builds its payload, and the sync payload is built
  * in memory with `syncFiles` and compared. No request is sent.
@@ -62,7 +65,8 @@ function syncPayload() {
 }
 
 const shippedTokens = JSON.parse(raw['tokens.json']);
-const SAPLING = 'token_oak_sapling';
+const STANDARD = 'token_stone_outcrop';
+const SHIPPED_SMALL = ['token_apple_sapling', 'token_oak_sapling', 'token_wheat_sprout'];
 
 beforeEach(() => load(shipped()));
 afterEach(() => {
@@ -71,10 +75,15 @@ afterEach(() => {
 });
 
 describe('a control sync of today’s data changes nothing', () => {
-    it('no shipped Token carries artSize yet (B8.2 sets it through the CMS)', () => {
-        const marked = Object.keys(shippedTokens).filter((id) => 'artSize' in shippedTokens[id]);
-        expect(marked).toEqual([]);
-        expect(shippedTokens[SAPLING].size).toBe(1);
+    it('exactly the saplings and the sprout ship small (B8.2, through the CMS)', () => {
+        const marked = Object.keys(shippedTokens).filter((id) => 'artSize' in shippedTokens[id]).sort();
+        expect(marked).toEqual(SHIPPED_SMALL);
+        for (const id of SHIPPED_SMALL) {
+            expect(shippedTokens[id].artSize).toBe('small');
+            expect(shippedTokens[id].size).toBe(1);
+        }
+        expect('artSize' in shippedTokens[STANDARD]).toBe(false);
+        expect(shippedTokens[STANDARD].size).toBe(1);
     });
 
     it('load → Recalculate → Sync writes all five files byte-identical', () => {
@@ -85,26 +94,26 @@ describe('a control sync of today’s data changes nothing', () => {
 
 describe("artSize: 'small' survives load → edit → sync → reload", () => {
     it("reaches tokens.json on that Token only, the rest of its record untouched", () => {
-        const before = { ...useEntityStore.getState().tokens[SAPLING] };
-        useEntityStore.getState().updateToken(SAPLING, { artSize: 'small' });
+        const before = { ...useEntityStore.getState().tokens[STANDARD] };
+        useEntityStore.getState().updateToken(STANDARD, { artSize: 'small' });
 
-        const written = syncPayload()['tokens.json'][SAPLING];
+        const written = syncPayload()['tokens.json'][STANDARD];
         expect(written).toEqual({ ...before, artSize: 'small' });
         expect(isSmallToken(written)).toBe(true);
     });
 
     it('a second load of the synced files and a second sync change nothing, and keep it', () => {
-        useEntityStore.getState().updateToken(SAPLING, { artSize: 'small' });
+        useEntityStore.getState().updateToken(STANDARD, { artSize: 'small' });
         const first = syncPayload();
         const serialised = Object.fromEntries(FILES.map((f) => [f, JSON.stringify(first[f], null, 2)]));
 
         load(Object.fromEntries(FILES.map((f) => [f, JSON.parse(serialised[f])])));
         const second = syncPayload();
         for (const f of FILES) expect(JSON.stringify(second[f], null, 2)).toBe(serialised[f]);
-        expect(second['tokens.json'][SAPLING].artSize).toBe('small');
+        expect(second['tokens.json'][STANDARD].artSize).toBe('small');
 
         const now = second['tokens.json'];
-        for (const other of Object.keys(shippedTokens).filter((t) => t !== SAPLING)) {
+        for (const other of Object.keys(shippedTokens).filter((t) => t !== STANDARD)) {
             expect(JSON.stringify(now[other])).toBe(JSON.stringify(shippedTokens[other]));
         }
         // Every other file is exactly as shipped.
@@ -121,29 +130,29 @@ describe('the Token editor’s Token Size control', () => {
     }
 
     it('Small writes artSize: small; Standard removes it and the sync is byte-identical again', () => {
-        const { container } = editor(SAPLING);
+        const { container } = editor(STANDARD);
         const select = within(container).getByLabelText('Token Size');
         expect(select.value).toBe('standard');
         expect(select.disabled).toBe(false);
 
         fireEvent.change(select, { target: { value: 'small' } });
-        expect(useEntityStore.getState().tokens[SAPLING].artSize).toBe('small');
+        expect(useEntityStore.getState().tokens[STANDARD].artSize).toBe('small');
         expect(select.value).toBe('small');
 
         fireEvent.change(select, { target: { value: 'standard' } });
-        expect(useEntityStore.getState().tokens[SAPLING].artSize).toBeUndefined();
+        expect(useEntityStore.getState().tokens[STANDARD].artSize).toBeUndefined();
         const files = syncPayload();
         expect(JSON.stringify(files['tokens.json'], null, 2)).toBe(raw['tokens.json'].trimEnd());
     });
 
     it('⚠️ a 2×2 cannot be small: the control is disabled and going 2×2 clears it', () => {
-        useEntityStore.getState().updateToken(SAPLING, { artSize: 'small' });
-        const { container } = editor(SAPLING);
+        useEntityStore.getState().updateToken(STANDARD, { artSize: 'small' });
+        const { container } = editor(STANDARD);
         const grid = [...container.querySelectorAll('select')]
             .find((s) => [...s.options].map((o) => o.value).join() === '1,2');
         fireEvent.change(grid, { target: { value: '2' } });
 
-        const token = useEntityStore.getState().tokens[SAPLING];
+        const token = useEntityStore.getState().tokens[STANDARD];
         expect(token.size).toBe(2);
         expect(token.artSize).toBeUndefined();
         const select = within(container).getByLabelText('Token Size');
