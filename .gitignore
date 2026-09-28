@@ -37,6 +37,8 @@ cms/backups/*
 !cms/backups/cms-workspace-2026-08-28-p25-tagged.json
 
 # Game assets
-public/assets/
+public/assets/archive/
+public/assets/maybe/
+public/assets/**/waste/
 raw_assets/
 scratch_*.txt
