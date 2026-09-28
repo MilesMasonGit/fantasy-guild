@@ -76,6 +76,6 @@ three times on this project.
 | `vertical_slice_roadmap.md` | Same era, same problem. |
 | `agent_personas/` | Seven agent personas and their skills — Architect, Auditor, Designer, Handler, Muse, Stylist, Trader. All named `GDD.md` as the specification to match, and several linked to a scratch folder outside this project. **Retired by the owner 2026-08-26: only the Artist persona is in use.** |
 
-**What to read instead**: `CLAUDE.md` for ground rules, `code_review_v2_findings.md`
-for the current backlog and the owner's recorded decisions, and the concept /
+**What to read instead**: `CLAUDE.md` for ground rules, `code_review_v3_findings.md`
+for the current backlog (round 2 and its owner decisions: `archive/docs/code_review_v2_findings.md`), and the concept /
 roadmap pair for whichever feature you are working on.

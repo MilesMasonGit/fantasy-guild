@@ -14,9 +14,9 @@ the findings tracker every session writes into. Tickets this round are
 (CR3-001…022). Every one is marked **reasoned, not measured** — the benchmark
 tooling in §4 is what turns them into measured facts or closes them.
 
-**Round 2** (`code_review_v2_guide.md`, `code_review_v2_findings.md`) is
-**history, not current truth.** Its method is inherited (§6). Its backlog is not,
-until the re-triage in Session **P1** decides what survived the Free Playmat.
+**Round 2** (archived 2026-09-28 to `archive/docs/code_review_v2_guide.md` and `archive/docs/code_review_v2_findings.md`) is
+**history, not current truth.** Its method is inherited (§6). Its open tickets
+were re-triaged by Session **P1** on 2026-09-28 — see the findings doc.
 
 ---
 
@@ -522,7 +522,9 @@ changed**. Performance tickets carry a before-number from the bench.
 - **Files:** the 393 *tile* hits and 20 *tray* files (classification only);
   `src/tests/FreeMatGuards.test.js` allow-lists; `.agent/guides/`,
   `.agent/workflows/`, root and `docs/` markdown; `src/config/` (37 files) for
-  the config / engine / presentation split; `tools/reachability.mjs` output.
+  the config / engine / presentation split; `tools/reachability.mjs` output;
+  and the build — `vite.config.js`, `eslint.config.js`, `package.json`
+  dependencies, bundle composition (CR3-025, CR3-026; added by P1).
 - **Key questions:** For every tile/tray hit: residue, save-compatibility, or
   legitimate (terrain, Guild Hall board, sprite sheets — §2.D)? Which docs are
   history (archive), which are live but wrong (rewrite), which are live and right?

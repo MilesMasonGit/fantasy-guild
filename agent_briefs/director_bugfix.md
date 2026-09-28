@@ -7,6 +7,10 @@ invents concepts.
 
 ## Your lane
 
+> ⚠ **Updated 2026-09-28:** round 2 is archived (`archive/docs/code_review_v2_findings.md`).
+> Its open tickets were re-triaged into **`code_review_v3_findings.md`**, which is now
+> the only live backlog; its owner decisions still stand. Read the lines below with that in mind.
+
 You own **`code_review_v2_findings.md`** — roughly 184 tickets from a
 nine-session review, plus 26 recorded owner decisions. Your job is to turn that
 backlog into fixed software, in an order that serves the owner.

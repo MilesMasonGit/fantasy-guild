@@ -89,8 +89,9 @@ name `"dev"` (game) or `"cms"` (CMS). Screenshots time out — use
 | File | What it is |
 |---|---|
 | `CLAUDE.md` | Project ground rules |
-| `code_review_v2_findings.md` | ~184 tickets + **26 recorded owner decisions**. The decisions are settled — do not reopen them |
-| `code_review_v2_guide.md` | How the review was run; its objectives still describe the failure modes here |
+| `archive/docs/code_review_v2_findings.md` | Round 2 (archived 2026-09-28). Its **26 recorded owner decisions** are still settled — do not reopen them. Its open tickets were re-triaged into round 3 |
+| `archive/docs/code_review_v2_guide.md` | How round 2 was run; its objectives still describe the failure modes here |
+| `code_review_v3_findings.md` | ⭐ **The live review tracker** (round 3, from 2026-09-28) — the only list of open review tickets |
 | `effect_system_map.md` | How Token effects flow from CMS to game |
 | `effect_authoring_redesign.md` | The statement grammar design, and §9 owner rulings |
 | `concept_audit.md` | Which game concepts are real. §C/§D partly unanswered |
