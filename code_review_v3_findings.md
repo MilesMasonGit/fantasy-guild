@@ -397,6 +397,8 @@ table is now the only record of what happened to them.**
 - **Where**: `.gitignore:40` ignores `public/assets/` — 1,102 files, 38.6 MB (was 11 MB at round 2).
 - **What**: the game's art has **no git history and no rollback point**; a tag like `v0.8.0` cannot reproduce the game on another machine. It also means a fresh checkout cannot run the art tests (26 test files fail in a clean worktree). There may be a deliberate reason (size, a separate art pipeline) — **owner to decide**: keep ignored, use Git LFS, or back up elsewhere.
 - **Owner session**: owner question, raised at the end of P1
+- **Owner ruling 2026-09-28: put the art under Git LFS.** A repository change, not review work — done as its own small slice outside the review sessions (queued as a separate task). ⚠ Nothing has been pushed to GitHub by the owner's standing instruction; check LFS storage limits before the first push. `public/assets/` also holds folders named `archive` and `maybe` — ask whether those belong in version control before tracking everything.
+- **Status**: 🟡 Decided, not yet done
 
 ### CR3-028 — Input-cost discount applied when paying, not when checking (CR2-058)
 - **Category / Severity / Effort**: WIRE · P2 · S
