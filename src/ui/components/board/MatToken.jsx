@@ -38,6 +38,7 @@ import { QuestTooltip } from './QuestTooltip.jsx';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
+import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 
 /**
  * A quest Token's quest as a flat projection for `detail` (B6.2): what the
@@ -109,6 +110,7 @@ export const MatToken = React.memo(function MatToken({
     x,
     y,
     size = 1,
+    walkFacing = null,
     z,
     isHovered = false,
     hasHero = false,
@@ -331,6 +333,10 @@ export const MatToken = React.memo(function MatToken({
     // with Hero Movement M1.
     const left = x - boxHalf;
     const top = y - boxHalf;
+    // B7.1 (TL-16): an enemy walking by its spawner steps once a tick, so it
+    // glides linearly over one tick, as a walking hero does (`MatHero`). The
+    // art, the badges, the ring row and the alerts all ride in these boxes.
+    const walking = walkFacing != null;
     const boxStyle = {
         left,
         top,
@@ -338,7 +344,9 @@ export const MatToken = React.memo(function MatToken({
         height: boxPx,
         transition: skipSlide
             ? 'none'
-            : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
+            : walking
+                ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
+                : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
     const hidden = drag.isDragging;
 
@@ -484,6 +492,7 @@ export const MatToken = React.memo(function MatToken({
                             <AnimatedEnemySprite
                                 src={enemyAnimSrc}
                                 heroId={heroId}
+                                walkFacing={walkFacing}
                                 alt={label}
                                 size={artPx}
                                 className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}

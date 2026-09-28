@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Enemies move (B7.1, TL-16).** Enemies wander near the spawner that made them, walk after it when
+  you move it, walk back if you drag them away, and stand still while fighting.
 - **Quest Token UI (B6.2, FB-41, TL-18).** Hover a quest Token to read it: title (tagged
   *Tutorial* for a tutorial step), instruction, what's still needed, the reward, and "Click to
   claim" once done. Its progress stands in a parchment ring under it (`3/10`); a done quest glows

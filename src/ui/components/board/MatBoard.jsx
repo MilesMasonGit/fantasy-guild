@@ -23,6 +23,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
+import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
@@ -87,9 +88,12 @@ export const MatBoard = ({
             x: t.x,
             y: t.y,
             placedAt: t.placedAt ?? 0,
-            size: getTokenType(t.typeId)?.size || 1
+            size: getTokenType(t.typeId)?.size || 1,
+            // B7.1 (TL-16): an enemy walking by its spawner glides from step to
+            // step, facing the way it goes. Null for everything standing still.
+            walkFacing: EnemyMotion.walkFacingOf(t.id)
         })),
-        [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, 'state_changed'],
+        [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, BOARD_EVENTS.ENEMIES_WALKED, 'state_changed'],
         null
     );
     const tokens = useMemo(() => tokensRaw || [], [tokensRaw]);
@@ -311,6 +315,7 @@ export const MatBoard = ({
                     x={t.x}
                     y={t.y}
                     size={t.size}
+                    walkFacing={t.walkFacing}
                     z={zById.get(t.id)}
                     isHovered={hoveredId === t.id}
                     hasHero={workedBy.has(t.id)}

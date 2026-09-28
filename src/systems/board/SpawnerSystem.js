@@ -1,6 +1,7 @@
 // Fantasy Guild — Spawners and the Guild Hall trickle (Token Lifecycle slices 3.3 and 3.4)
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { EventBus } from '../core/EventBus.js';
@@ -221,6 +222,9 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     InputAllocator.consumeInputs(upkeepOf(def));
 
     const spawned = BoardState.getTokenById(landed.instanceId);
+    // B7.1 (TL-16, FB-23): an enemy is tethered to the spawner that made it —
+    // this instance, not its type — and potters by it (`EnemyMotion`). Saved.
+    if (spawned && isEnemyDef(getTokenType(spawned.typeId))) spawned.tether = instance.id;
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
 
     // A green notice on the new Token (FB-48): news, not a problem, so it goes

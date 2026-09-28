@@ -6,6 +6,7 @@ import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
 import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
 
 /**
  * ⭐ **Heroes live on the mat** (`docs/hero_movement_roadmap_v1.md`). `Flags.js`
@@ -54,9 +55,6 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 
 /** Gap between a Token's art edge and the centre of the hero working it, in mat units. */
 export const STAND_GAP = 16;
-
-/** Closer than this to a destination counts as there, in mat units. */
-const ARRIVE_EPS = 0.5;
 
 /**
  * Where an idle hero stands relative to their flag's pole base, in mat units:
@@ -160,14 +158,12 @@ function stopPottering(body) {
 
 /** A random stroll offset from the idle spot, uniform over a disc of `potterRadius`. */
 function strollOffset() {
-    const r = potterRadius() * Math.sqrt(random());
-    const angle = random() * Math.PI * 2;
-    return { dx: Math.cos(angle) * r, dy: Math.sin(angle) * r };
+    return randomOffset(potterRadius(), random);
 }
 
 /** A pause between strolls, in game ms. */
 function pauseMs() {
-    return POTTER_PAUSE_MS.min + random() * (POTTER_PAUSE_MS.max - POTTER_PAUSE_MS.min);
+    return randomPauseMs(POTTER_PAUSE_MS, random);
 }
 
 /** Keep a point on the mat. */
@@ -245,25 +241,10 @@ function step(heroId, body, delta) {
         return false;
     }
 
-    const dx = dest.x - body.x;
-    const dy = dest.y - body.y;
-    const dist = Math.hypot(dx, dy);
     const speed = walkSpeed() * (body.limp ? LIMP_FACTOR : body.potter ? STROLL_FACTOR : 1);
     const reach = BoardState.isInstantArrival() ? Infinity : speed * Math.max(0, delta) / 1000;
-
-    let moved;
-    if (dist <= Math.max(reach, ARRIVE_EPS)) {
-        moved = dist > 0;
-        body.x = dest.x;
-        body.y = dest.y;
-        body.moving = false;
-    } else {
-        body.x += (dx / dist) * reach;
-        body.y += (dy / dist) * reach;
-        body.moving = true;
-        moved = reach > 0;
-    }
-    if (Math.abs(dx) > ARRIVE_EPS) body.facing = dx < 0 ? -1 : 1;
+    // The step itself is shared with enemies (B7.1, `walking.js`).
+    const moved = stepToward(body, dest, reach);
 
     // Home: in through the Hall, and gone (HM-5, HM-6).
     if (body.homeward) {

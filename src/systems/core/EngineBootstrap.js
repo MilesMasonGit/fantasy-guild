@@ -38,6 +38,8 @@ import * as FlagRules from '../board/FlagRules.js';
 import { QuestManager } from '../quests/QuestManager.js';
 // B6.1: quest Tokens on the mat, exposed for console probes (`Game.QuestTokens`).
 import * as QuestTokens from '../quests/QuestTokens.js';
+// B7.1: enemies pottering by their spawner (`Game.EnemyMotion`).
+import * as EnemyMotion from '../board/EnemyMotion.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
@@ -132,6 +134,7 @@ export const EngineBootstrap = {
             FlagRules,
             QuestManager,
             QuestTokens,
+            EnemyMotion,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,

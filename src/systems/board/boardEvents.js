@@ -93,6 +93,17 @@ export const BOARD_EVENTS = {
     HEROES_WALKED: 'board:heroes_walked',
 
     /**
+     * Enemies took a step by their spawner (B7.1, TL-16, FB-23). No payload —
+     * read positions off the Tokens, or `EnemyMotion.bodyOf`. Published at
+     * most once per engine tick, and only when an enemy moved, set off or
+     * stopped. ⚠️ Deliberately NOT `TILE_CHANGED` (every Token redraws and
+     * bounces, idle flags look again) nor `ADJACENCY_DIRTY` (rebuilds
+     * neighbourhoods): `EnemyMotion` raises that one once per walk, when the
+     * enemy stops.
+     */
+    ENEMIES_WALKED: 'board:enemies_walked',
+
+    /**
      * A flag dropped on a Token was NOT pinned to it because its hero cannot
      * work it (B5, FB-45) — it stands there as a normal area flag instead.
      * Payload: `{ heroId, instanceId, reason }`, `reason` a skip reason

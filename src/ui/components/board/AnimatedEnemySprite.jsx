@@ -65,6 +65,7 @@ const TURN_PAUSE_MS = Object.freeze({ min: 12000, max: 24000 });
 export const AnimatedEnemySprite = ({
     src,
     heroId = null,
+    walkFacing = null,
     alt,
     size = 64,
     frameMs = 125,
@@ -103,6 +104,14 @@ export const AnimatedEnemySprite = ({
         scheduleTurn();
         return () => clearTimeout(turnTimer.current);
     }, [heroId]);
+
+    // B7.1 (TL-16): walking by its spawner, it faces the way it walks, and
+    // keeps that facing when it stops. The sheets have no walk cycle, so the
+    // idle cycle plays while it glides.
+    useEffect(() => {
+        if (heroId) return;
+        if (walkFacing === FACING.LEFT || walkFacing === FACING.RIGHT) setFacing(walkFacing);
+    }, [walkFacing, heroId]);
 
     const row = (heroId ? ATTACK_ROW : IDLE_ROW) + Math.floor(frame / COLS);
     const col = frame % COLS;

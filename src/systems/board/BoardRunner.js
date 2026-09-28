@@ -19,6 +19,7 @@ import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
+import * as EnemyMotion from './EnemyMotion.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
@@ -515,6 +516,10 @@ export function tick(delta) {
     // them where, and before any Token ticks: a Token's cycle runs only once
     // its hero has arrived (FP-26), and one who arrives this tick starts now.
     HeroMotion.tick(delta);
+
+    // Enemies potter by their spawner (B7.1, TL-16) — after the heroes, so an
+    // enemy a hero claimed this tick already holds still for them.
+    EnemyMotion.tick(delta);
 
     // Every Token on the mat, by instance id, in arrival order (Free Playmat 1.6b).
     const onMat = BoardState.tokens();

@@ -342,6 +342,12 @@ flag; hostile enemies (CMS field) attack heroes within range. Reuse hero movemen
 (`docs/hero_movement_roadmap_v1.md`) and the existing combat. The CMS must model the new field
 before any content uses it.
 
+| # | B7 slice | Status |
+|---|---|---|
+| B7.1 | **Enemies move, tethered to their spawner** (TL-16): potter near it, follow it, walk back, still while fighting | ✅ 2026-09-27. `EnemyMotion.js` (`window.Game.EnemyMotion`), shared step helper `walking.js` (HeroMotion uses it too); `instance.tether` set at spawn, old saves attach once to the nearest family spawner; Mat Tuner group *Enemies* (`enemyWalkSpeed` 90 u/s, `enemyPotterRadius` 128 u beyond the spawner's edge); strolls at half speed; also still while a hero is walking up to it or it is in the hand; a step publishes only `ENEMIES_WALKED` (one `ADJACENCY_DIRTY` when a walk ends). Enemy sheets have no walk cycle: idle plays while gliding. Only the Goblin Camp spawns enemies today (Cow, Thorn Elemental have no spawner and stay put). Director verified live (slot 3): a Goblin Camp's 3 Goblins all wandered (max 188 u from the camp); moving the camp across the mat → all three around it again (81–113 u) within 12 s; one dropped 1038 u away walked back to 75 u in 12 s. Tests: baseline 10 |
+| B7.2 | **Hostility + fight-back** (TL-16, TL-24): CMS `hostile` field, hostile enemies attack heroes inside the flag radius of their spawner, attacked heroes always fight back | — |
+| B7.3 | **Content through the CMS**: Goblin and Goblin Chief hostile | — |
+
 **B8 Small Tokens (8th).** FB-18, **TL-19**. A CMS size field; drawing, hit area, spacing and
 pushing honour it; saplings and sprouts set to small through the CMS.
 

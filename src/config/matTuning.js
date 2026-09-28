@@ -74,6 +74,23 @@ export const MAT_TUNABLES = Object.freeze([
         min: 0, max: 240, step: 1, def: 80,
         format: (v) => (Math.round(v) === 0 ? 'off' : `${Math.round(v)} u`)
     },
+    // Enemies potter by their spawner (B7.1, TL-16, FB-23, owner's "B7 range").
+    {
+        key: 'enemyWalkSpeed',
+        group: 'Enemies',
+        label: 'Enemy walk speed',
+        hint: 'How fast enemies walk, in mat units a second (B7.1, TL-16): back to their spawner when carried away, or after it when it is moved. They potter near it at half this. A bit slower than heroes (120) by default.',
+        min: 10, max: 600, step: 1, def: 90,
+        format: (v) => `${Math.round(v)} u/s · ${(1760 / v).toFixed(1)} s across`
+    },
+    {
+        key: 'enemyPotterRadius',
+        group: 'Enemies',
+        label: 'Enemy wander',
+        hint: 'How far past the edge of its spawner an enemy potters, in mat units (B7.1, owner’s "B7 range": about one Token’s width, 128). They pause 2-6 s between strolls. 0 stops the strolls; they still follow their spawner and walk back to its edge.',
+        min: 0, max: 400, step: 1, def: 128,
+        format: (v) => (Math.round(v) === 0 ? 'off' : `${Math.round(v)} u`)
+    },
     {
         key: 'hitboxPct',
         group: 'Crowding',

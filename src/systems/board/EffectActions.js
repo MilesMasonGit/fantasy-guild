@@ -400,6 +400,9 @@ export function transformInstance(old, typeId, options = {}) {
         typeId, tokenStartingUses(typeId), null, BoardState.originOf(old)
     );
     if (options.extra) Object.assign(instance, options.extra);
+    // B7.1 (TL-16): an enemy's tether to its spawner is a fact about where it
+    // belongs, not about what it was, so it is carried across like `origin`.
+    if (typeof old.tether === 'string') instance.tether = old.tether;
     BoardState.addToken(instance, at.x, at.y);
     // FB-11: the new Token glows as it appears — kept under its NEW id, which
     // is what the mat draws it by. Not while the time bank replays time away.
