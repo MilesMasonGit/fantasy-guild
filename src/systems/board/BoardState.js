@@ -168,13 +168,25 @@ export function layoutVersion() {
     return { tokens: tokensObj, version: tokensObj ? (layoutVersions.get(tokensObj) || 0) : 0 };
 }
 
-/** After a Token's point changes: a claimed Token keeps its hero (FP-68), and the claim's last-known point follows. */
+/**
+ * After a Token's point changes: a claimed Token keeps its hero (FP-68), and the
+ * claim's last-known point follows. **A flag pinned to it moves with it** (B5,
+ * "pin follows", FB-45): a pinned flag's point is its Token's centre, so the
+ * hero walks after the Token and, should it be used up, the flag is left
+ * standing at its last spot (TL-17).
+ */
 function afterPointChange(b, instance) {
     bumpLayout(b);
     for (const claim of runtimeOf(b).claims.values()) {
         if (claim.instanceId === instance.id) {
             claim.x = instance.x;
             claim.y = instance.y;
+        }
+    }
+    for (const flag of Object.values(b.flags || {})) {
+        if (flag?.pinnedTo === instance.id) {
+            flag.x = instance.x;
+            flag.y = instance.y;
         }
     }
 }
@@ -290,9 +302,15 @@ export function binTokens() {
 /**
  * ## Flags (Free Playmat slice 1.4b) — the saved half
  *
- * `board.flags[heroId] = { x, y, skill, plantedAt }` is where each hero's flag
- * stands, in mat units, with the one skill it works (FP-23). **A hero with no
- * flag is in the Dock** — the Dock is still not a data structure.
+ * `board.flags[heroId] = { x, y, plantedAt, pinnedTo? }` is where each hero's
+ * flag stands, in mat units (the `skill` it once carried went with FP-71).
+ * **A hero with no flag is in the Dock** — the Dock is still not a data structure.
+ *
+ * `pinnedTo` (B5, FB-45, TL-17) is the instance id of the Token the flag is
+ * pinned to — its hero works only that Token — and is absent on an area flag,
+ * which is also how every save from before B5 reads (no migration needed).
+ * While pinned, `x`/`y` are that Token's centre and follow it when it moves
+ * (`afterPointChange`); `Flags.js` lapses the pin when the Token is gone.
  *
  * `plantedAt` comes from `board.nextFlagOrder`, a counter bumped on every plant,
  * and is the order heroes choose in (earlier flags choose first).

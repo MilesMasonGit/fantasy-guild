@@ -5,7 +5,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag, useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { matW, matH, clampToMat } from '../../../config/matGeometry.js';
+import { matW, matH, clampToMat, artRadiusOf } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z } from './matLayers.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
@@ -24,7 +24,7 @@ import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
 import {
     GEAR_PX, GEAR_OFFSET,
-    IDLE_CHIP_OFFSET, POLE_BASE
+    IDLE_CHIP_OFFSET, POLE_BASE, pinnedFlagPoint
 } from './flagGeometry.js';
 
 /**
@@ -36,8 +36,8 @@ import {
  * * **Flag** (FP-77, FP-82, FP-83) — the owner's sprite in the hero's lasting
  *   colour, 128 px, its **pole base standing exactly on the flag's point**. Drag
  *   it to move the flag (`DRAG_KIND.FLAG`); hover for status and skips. It
- *   answers **only on opaque pixels** (`data-alpha-test`, FP-64): a click on the
- *   sky around the cloth reaches the Token underneath.
+ *   answers on a round area the size of its art (owner, 2026-09-21 — there is
+ *   no opaque-pixel test, whatever older notes say), except over a Token (below).
  *   ⛔ The grid's fan-out, its three-flag cap and its "+N" chip are **gone**:
  *   flags may stand very close together or overlap, and never push, nudge or
  *   hide each other (FP-83). Later flags draw in front of earlier ones.
@@ -54,6 +54,14 @@ import {
  * * **Reach ring** (FP-64, A-4) — a dashed gold circle of the live flag radius,
  *   only while that flag or its hero is hovered, dragged or inspected, or while
  *   a dragged Token would land inside it.
+ * * ⭐ **No hitbox over Tokens** (B5, FB-44, TL-17) — wherever the pointer is
+ *   on a Token's art circle, every flag lets it through (`yieldToTokens`,
+ *   set by `MatBoard`), so a flag never eats a Token's hover, click or grab.
+ *   A flag is grabbed by the part of it that stands over bare mat.
+ * * ⭐ **Pinned** (B5, FB-45) — a flag pinned to a Token is drawn with its
+ *   pole planted at the top of that Token (`pinnedFlagPoint`), carries
+ *   `data-flag-pinned`, shows no reach ring (the radius does not apply) and
+ *   says "Working only X" on hover.
  */
 
 /** The live flag radius, following the Mat Tuner and the Scouting Flags upgrade. */
@@ -76,10 +84,17 @@ function projectFlags() {
         const flag = BoardState.flagOf(heroId);
         if (!flag) continue;
         const hero = heroes.find(h => h?.id === heroId);
+        // A pinned flag is drawn on its Token (B5); a lapsed pin reads as an
+        // area flag even before the next tick takes the pin off.
+        const pinned = Flags.pinnedTokenOf(heroId);
+        const drawn = pinned ? pinnedFlagPoint(pinned, artRadiusOf(pinned.typeId)) : flag;
         out.push({
             heroId,
             x: flag.x,
             y: flag.y,
+            drawX: drawn.x,
+            drawY: drawn.y,
+            pinnedTo: pinned ? pinned.id : null,
             state: Flags.statusOf(heroId).state,
             name: hero?.name || 'Hero',
             sprite: hero?.spriteId || hero?.classId || null,
@@ -106,6 +121,10 @@ function useFlagDragPoint(matRef) {
     if (!point) return null;
     // Off the mat entirely (over the Tray, the Dock): nothing to preview.
     if (point.x < 0 || point.y < 0 || point.x > matW() || point.y > matH()) return null;
+    // Over a Token this hero would be pinned to (B5): the radius will not
+    // apply, so no reach ring.
+    const under = Flags.tokenAtPoint(point);
+    if (under && !Flags.pinRefusal(activePayload.heroId, under)) return null;
     return { heroId: activePayload.heroId, ...clampToMat(point) };
 }
 
@@ -120,7 +139,7 @@ function useFlagDragPoint(matRef) {
  *   (`matStackOrder`, feedback Q3 FB-1). Given, the flags sort in among the
  *   Tokens; without it (the layer on its own) they all sit at `MAT_Z.FLAGS`.
  */
-export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null, matRef = null, flagZ = null }) => {
+export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null, matRef = null, flagZ = null, yieldToTokens = false }) => {
     const flags = useGameState(
         projectFlags,
         [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, 'heroes_updated', 'state_changed']
@@ -134,9 +153,10 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     const ring = dragRing || liveDragRing;
 
     const rings = new Map();
+    // A pinned flag has no reach to show (B5, FB-45).
     for (const id of [inspectedHeroId, hoverHeroId]) {
         const flag = id ? flags.find(f => f.heroId === id) : null;
-        if (flag) rings.set(id, { x: flag.x, y: flag.y });
+        if (flag && !flag.pinnedTo) rings.set(id, { x: flag.x, y: flag.y });
     }
     if (ring?.heroId) rings.set(ring.heroId, { x: ring.x, y: ring.y });
 
@@ -145,7 +165,7 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     const landing = useTokenDragLanding(matRef);
     if (landing) {
         for (const flag of flags) {
-            if (!rings.has(flag.heroId) && Flags.flagReaches(flag, landing)) {
+            if (!flag.pinnedTo && !rings.has(flag.heroId) && Flags.flagReaches(flag, landing)) {
                 rings.set(flag.heroId, { x: flag.x, y: flag.y });
             }
         }
@@ -210,6 +230,7 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
                     onHover={onHoverHero}
                     boardHovered={hoverHeroId === f.heroId}
                     inspected={inspectedHeroId === f.heroId}
+                    yieldToTokens={yieldToTokens}
                 />
             ))}
         </div>
@@ -235,7 +256,7 @@ function useLingering(wanted) {
 }
 
 /** One hero's flag: drag to move it, hover for why, gear for the rules. */
-const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false }) => {
+const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false }) => {
     const ref = useRef(null);
     const [hovered, setHovered] = useState(false);
     const [gearHovered, setGearHovered] = useState(false);
@@ -265,8 +286,8 @@ const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = f
     };
 
     const scaleFactor = artPx / 128;
-    const originLeft = (flag.x ?? 0) - POLE_BASE.x * scaleFactor;
-    const originTop = (flag.y ?? 0) - POLE_BASE.y * scaleFactor;
+    const originLeft = (flag.drawX ?? flag.x ?? 0) - POLE_BASE.x * scaleFactor;
+    const originTop = (flag.drawY ?? flag.y ?? 0) - POLE_BASE.y * scaleFactor;
 
     const handleClick = (e) => {
         e.stopPropagation();
@@ -281,12 +302,15 @@ const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = f
                 data-flag={flag.heroId}
                 data-flag-state={flag.state}
                 data-flag-colour={flag.colour || 'base'}
+                data-flag-pinned={flag.pinnedTo || undefined}
                 aria-label={`${flag.name}’s flag`}
                 onMouseEnter={() => { setHovered(true); onHover?.(flag.heroId); }}
                 onMouseLeave={() => { setHovered(false); onHover?.(null); }}
                 onClick={handleClick}
                 className={cn(
-                    'absolute pointer-events-auto p-0 m-0 bg-transparent border-0 outline-none',
+                    'absolute p-0 m-0 bg-transparent border-0 outline-none',
+                    // FB-44: over a Token the pointer goes to the Token.
+                    yieldToTokens ? 'pointer-events-none' : 'pointer-events-auto',
                     'cursor-grab active:cursor-grabbing',
                     carried && 'opacity-30'
                 )}
@@ -370,9 +394,10 @@ export const FlagTooltip = ({ anchor, heroId }) => {
             role="tooltip"
             data-flag-tooltip={heroId}
             className="fixed z-[90] w-64 p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
-            style={placeUnder(anchor, 256, 64 + tip.skips.length * 16)}
+            style={placeUnder(anchor, 256, 64 + (tip.pin ? 16 : 0) + tip.skips.length * 16)}
         >
             <div className="font-bold text-gi-gold">{tip.title}</div>
+            {tip.pin && <div data-flag-tooltip-pin className="text-gi-gold/90">{tip.pin}</div>}
             <div className={STATE_TONE[tip.state] || 'text-white/80'}>{tip.status}</div>
             {tip.skips.length > 0 && (
                 <ul className="mt-1 pt-1 border-t border-white/10 flex flex-col gap-0.5 text-white/75">

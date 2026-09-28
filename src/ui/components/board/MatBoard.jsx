@@ -64,6 +64,8 @@ export const MatBoard = ({
     /** The Token the pointer is on, and the hero it is on — both by id. */
     const [hoveredId, setHoveredId] = useState(null);
     const [hoverHeroId, setHoverHeroId] = useState(null);
+    /** The pointer is on a Token's art circle, so every flag lets it through (FB-44). */
+    const [flagsYield, setFlagsYield] = useState(false);
     const { isDragging } = useActiveDrag();
 
     // B2.3 (FB-32): disallow mode. Read once here and handed to each Token as
@@ -74,7 +76,7 @@ export const MatBoard = ({
     // dnd-kit owns the pointer during a drag, and a Token re-ordering itself
     // under the ghost made it flicker. Nothing is hovered while dragging.
     React.useEffect(() => {
-        if (isDragging) setHoveredId(null);
+        if (isDragging) { setHoveredId(null); setFlagsYield(false); }
     }, [isDragging]);
 
     /** Every Token on the mat: where it is, and nothing about how it is doing. */
@@ -191,16 +193,31 @@ export const MatBoard = ({
         if (typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active')) return;
         const el = rootRef.current;
         if (!el) return;
-        // On a flag (its opaque pixels — `alphaHitTest`), the flag is what is in
-        // front: raising a Token behind it would cover the flag under the
-        // pointer and it could not be grabbed (flags sort with Tokens, FB-1).
-        if (e.target?.closest?.('[data-flag], [data-flag-gear]')) {
+        // The gear is a control, not part of the flag's body: on it, nothing is hovered.
+        if (e.target?.closest?.('[data-flag-gear]')) {
             setHoveredId(prev => (prev === null ? prev : null));
+            setFlagsYield(false);
             return;
         }
+        /**
+         * ⭐ **Flags have no hitbox over Tokens** (B5, FB-44, TL-17). A point on a
+         * Token's art circle is that Token's, even when a flag is drawn in front
+         * of it: the Token is hovered (and so raised to the front), and every
+         * flag lets the pointer through until it leaves the circle. A flag is
+         * grabbed by the part of it standing over bare mat. ⛔ This reverses the
+         * 2026-09-21 ruling that a flag's round area keeps clicks meant for a
+         * Token just behind it.
+         */
         const point = pointerToMat({ x: e.clientX, y: e.clientY }, el.getBoundingClientRect());
         let id = point ? (Flags.tokenAtPoint(point)?.id ?? null) : null;
+        const onToken = !!id;
+        setFlagsYield(prev => (prev === onToken ? prev : onToken));
         if (!id) {
+            // Not over a Token: a flag in front keeps the pointer (it is grabbable).
+            if (e.target?.closest?.('[data-flag]')) {
+                setHoveredId(prev => (prev === null ? prev : null));
+                return;
+            }
             // Outside every art circle, but perhaps on a badge that reaches past
             // one — the gear sits in the corner of the box, beyond the circle.
             id = e.target?.closest?.('[data-token-id]')?.getAttribute('data-token-id') || null;
@@ -208,7 +225,7 @@ export const MatBoard = ({
         setHoveredId(prev => (prev === id ? prev : id));
     }, []);
 
-    const clearHover = useCallback(() => setHoveredId(null), []);
+    const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); }, []);
 
     // ---------------------------------------------------------------------
     // What the player can do to a Token
@@ -349,6 +366,7 @@ export const MatBoard = ({
                 hoverHeroId={hoverHeroId}
                 onHoverHero={setHoverHeroId}
                 matRef={rootRef}
+                yieldToTokens={flagsYield}
             />
 
             {/* 860 — hero speech bubbles, above every hero. */}

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
-import { blockedLineFor, readyToSpeak } from './heroBubbles.js';
+import { blockedLineFor, readyToSpeak, pinRefusedLineFor } from './heroBubbles.js';
 import { addMoment, liveMoments, stackOf, momentText, speaksMoment } from './heroSpeech.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
@@ -39,8 +39,8 @@ const guessSize = (stack) => ({
  * * **blocked** (`hero.alert`, the alert on the Token they hold) — says what is
  *   wrong for as long as it is wrong, re-read twice a second so it names what
  *   is missing *now*; a shortage of items waits first (SB-6);
- * * **moments** — arriving at a job, going idle, a level-up — timed, and gone
- *   by themselves (`heroSpeech.js`).
+ * * **moments** — arriving at a job, going idle, a level-up, a flag that
+ *   could not be pinned (B5) — timed, and gone by themselves (`heroSpeech.js`).
  *
  * Only unusual events are spoken (feedback Q6, FB-21): routine lines are
  * filtered out by `speaksMoment` / `speaksBlock`, and every line with its
@@ -85,6 +85,13 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 if (!token) return;
                 const name = getTokenType(token.typeId)?.name || tokenName(token.typeId) || token.typeId;
                 sayRef.current(p.heroId, 'arrived', { key: 'arrived', text: momentText.arrived(name) });
+            }),
+            // B5 bad pin (FB-45): the flag could not be pinned to the Token it
+            // was dropped on, so the hero says why in their stuck-line words.
+            EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, (p) => {
+                if (!p?.heroId) return;
+                const text = pinRefusedLineFor(p.instanceId, p.reason);
+                if (text) sayRef.current(p.heroId, 'pinRefused', { key: 'pinRefused', text: momentText.pinRefused(text) });
             })
         ];
         return () => unsubs.forEach(u => u());

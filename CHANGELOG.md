@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Flags: no hitbox, and pinning (B5, FB-44, FB-45, TL-17).** A flag no longer blocks the pointer
+  for a Token behind it. Drop a hero's flag onto a Token it can work to pin it there: the hero
+  works only that Token, the flag moves with it, and when it runs out the flag stays as a normal
+  area flag. A Token the hero can't work, or a spawner, just gets an area flag (with the hero
+  saying why, for skill or level).
 - **Shop: drag to buy (B4, FB-25, FB-27).** The Shop is a drawer from the left edge. Drag a Token
   onto the mat to buy it there; the drawer slides away to a thin lip while you drag. Tokens you
   can't afford or fit are dimmed and say what's missing. The Buy buttons and the Shop tab in the

@@ -54,7 +54,10 @@ export function stackOf(moments, blocked, now) {
 export const momentText = {
     arrived: (token) => `Working at ${token}.`,
     idle: () => 'No work in range.',
-    levelUp: (skill, level) => `${skill} is now level ${level}.`
+    levelUp: (skill, level) => `${skill} is now level ${level}.`,
+    // B5 (FB-45): no wording of its own — the blocked sentence for its reason,
+    // already built by `heroBubbles.pinRefusedLineFor`, word for word.
+    pinRefused: (line) => line
 };
 
 /**
@@ -68,11 +71,14 @@ export const momentText = {
  * * `idle` — kept, owner to decide: a hero with nothing to do is worth
  *   knowing, but it also fires whenever the last Token in range runs out.
  * * `levelUp` — kept (a notable event).
+ * * `pinRefused` — kept (B5, FB-45): a flag dropped on a Token its hero can't
+ *   work plants as an area flag, and the hero says why, once.
  */
 export const MOMENT_SPOKEN = Object.freeze({
     arrived: false,
     idle: true,
-    levelUp: true
+    levelUp: true,
+    pinRefused: true
 });
 
 /** Whether a moment of this kind (`momentText`'s key) is spoken at all. */

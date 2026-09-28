@@ -236,7 +236,8 @@ export const INITIAL_STATE = {
     //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, turnMs, turnWon?, ... },
     //                 turnedFrom? typeId  (Token Lifecycle 3.1 / 3.2, roadmap §3.1)
     //   nextTokenOrder number               the next Token's placedAt
-    //   flags       { [heroId]: { x, y, plantedAt } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero)
+    //   flags       { [heroId]: { x, y, plantedAt, pinnedTo? } }  each hero's flag (Free Playmat 1.4b; no skill since 1.5b — the hero's rules live on the hero;
+    //                 pinnedTo = the Token instance id it is pinned to, absent on an area flag and in older saves — B5, FB-45)
     //   nextFlagOrder number                the next flag's plantedAt
     //   sprites     [ ... ]                 item loot on the floor (D-40), added Phase 3;
     //                                       no Token sprites since Token Lifecycle 9.3

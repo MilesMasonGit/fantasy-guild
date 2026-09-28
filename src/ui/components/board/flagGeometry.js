@@ -46,3 +46,22 @@ export function flagOrigin(point) {
         top: (point?.y ?? 0) - POLE_BASE.y
     };
 }
+
+/**
+ * How far inside a Token's art circle a pinned flag's pole stands, in mat
+ * units — just enough that the pole reads as planted in the Token.
+ */
+export const PIN_INSET = 12;
+
+/**
+ * ⭐ Where a **pinned** flag is drawn (B5, FB-45): its pole planted at the top
+ * of its Token's art circle, so the cloth flies above the Token rather than
+ * covering it. The flag's own point is the Token's centre (it follows the
+ * Token); this is only where it is drawn.
+ *
+ * @param {{x:number,y:number}} centre the pinned Token's centre
+ * @param {number} artRadius the Token's art radius (`matGeometry.artRadiusOf`)
+ */
+export function pinnedFlagPoint(centre, artRadius) {
+    return { x: centre.x, y: centre.y - Math.max(0, artRadius - PIN_INSET) };
+}

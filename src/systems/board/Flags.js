@@ -83,8 +83,36 @@ import * as PromotionSystem from '../hero/PromotionSystem.js';
  *
  * ## ⚠️ No rebuild storms
  * `HERO_MOVED` makes `TileModifiers` rebuild two neighbourhoods, so it is
- * published **only when a claim actually changes** (and once per plant or
- * furl). A stable board publishes none (`Flags.test.js` runs 100 ticks).
+ * published **only when a claim actually changes** (and once per plant, furl
+ * or lapsed pin). A stable board publishes none (`Flags.test.js` runs 100 ticks).
+ *
+ * ## ⭐ Pinned flags (B5, FB-45, TL-17)
+ * A flag the player **drops onto a Token** (`plant(…, { pin: true })`, the
+ * drop route only) is **pinned** to it — `flag.pinnedTo` is that Token's
+ * instance id — and the hero works **only that Token**: the radius, the
+ * priorities, other Tokens, enemies they would seek and anything under the
+ * flag's point are all ignored (`evaluate`). ⚠️ Replaces FP-49 ("targeting is
+ * not its own system") for a drop on a Token.
+ *
+ * * Only a Token the hero **can work** is pinned (`pinRefusal`): a worked
+ *   Token or an enemy, not disallowed, naming a skill, held at the level it
+ *   asks, with the hero's rule on. A **spawner** (or anything else no hero
+ *   works — promotion Tokens and the Guild Hall keep their own under-the-flag
+ *   rule) is silently a normal area flag. A skill or level refusal plants a
+ *   normal area flag at the drop point and publishes `PIN_REFUSED`, which the
+ *   hero's speech bubble says (amends FP-60). A **fixable** problem (inputs,
+ *   charges, no recipe) does not refuse: the hero can work it once it is fixed.
+ * * While pinned the flag's point **is the Token's centre**: `BoardState`
+ *   moves it with the Token, so a moved Token carries its flag and the hero
+ *   walks after it (B5 pin follows).
+ * * **When the pinned Token leaves the mat** — used up, removed, binned, or
+ *   turned into something else (a transform is a fresh instance, so a tree
+ *   becoming a stump counts) — the pin lapses at the start of the next
+ *   `assign`: the flag stays at the Token's last spot as a normal area flag and
+ *   the hero chooses again that same pass (TL-17: never re-pinned by itself).
+ * * A pin whose Token is still there but can no longer be worked (disallowed
+ *   later, a rule switched off, another hero on it) is **kept**: the hero waits
+ *   by it, and the flag's hover says why.
  */
 
 /** How long a flag with nothing to do waits before looking again, in game ms. */
@@ -139,6 +167,22 @@ export function flagReaches(flag, point) {
 }
 
 const rt = () => BoardState.flagRuntime();
+
+// ---------------------------------------------------------------------------
+// Pins (B5, FB-45, TL-17)
+// ---------------------------------------------------------------------------
+
+/** The instance id `heroId`'s flag is pinned to, or null (an area flag). */
+export function pinnedIdOf(heroId) {
+    const id = BoardState.flagOf(heroId)?.pinnedTo;
+    return typeof id === 'string' && id ? id : null;
+}
+
+/** The Token `heroId`'s flag is pinned to, while it is still on the mat; else null. */
+export function pinnedTokenOf(heroId) {
+    const id = pinnedIdOf(heroId);
+    return id ? BoardState.getTokenById(id) : null;
+}
 
 /** Something changed that could make a skipped Token workable: look again next tick. */
 export function markDirty() {
@@ -438,9 +482,27 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
     const from = HeroMotion.heroPointOf(heroId) || point;
     const underPoint = [];
     const inRange = [];
-    const under = tokenAtPoint(point);
 
-    for (const instance of BoardState.tokens()) {
+    // ⭐ A pinned flag has one candidate, its Token (B5, FB-45): no radius, no
+    // other Token, no enemy to seek, nothing under the point. It still passes
+    // every check below, so a pinned hero waits (with the reason recorded)
+    // rather than working something they cannot. A lapsed pin is an area flag
+    // again by the time anything calls this (`lapsePins`).
+    const pinnedId = typeof flag.pinnedTo === 'string' ? flag.pinnedTo : null;
+    if (pinnedId) {
+        const instance = pinnedId === excludeInstanceId ? null : BoardState.getTokenById(pinnedId);
+        const def = instance ? getTokenType(instance.typeId) : null;
+        const kind = instance ? kindOf(instance, def) : null;
+        if (kind) {
+            const ruleId = ruleIdOf(kind, def);
+            const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
+            inRange.push({ instance, def, kind, d: 0, ruleId, rank });
+        }
+    }
+
+    const under = pinnedId ? null : tokenAtPoint(point);
+
+    for (const instance of (pinnedId ? [] : BoardState.tokens())) {
         if (!instance?.typeId || instance.id === excludeInstanceId) continue;
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
@@ -549,7 +611,9 @@ function keepOrRelease(r, heroId, dirty) {
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
 
-        const eligible = !isDisallowed(instance) && (
+        // A pinned hero holds nothing but their pinned Token (B5, FB-45).
+        const pinnedId = typeof flag?.pinnedTo === 'string' ? flag.pinnedTo : null;
+        const eligible = !isDisallowed(instance) && (!pinnedId || pinnedId === instance.id) && (
             (kind === 'hall')
             || (kind === 'promotion' && !promotionRefusal(heroId, instance))
             || (kind === 'enemy' && ruleAllows(heroId, FlagRules.FIGHT))
@@ -622,6 +686,30 @@ function keepOrRelease(r, heroId, dirty) {
     announceMoved(heroId);
 }
 
+/**
+ * ⭐ **A pin lapses when its Token leaves the mat** (TL-17): used up, removed,
+ * binned, or transformed (a fresh instance, `EffectActions.transformInstance`).
+ * The flag stays where it stands — the Token's last spot, since a pinned
+ * flag's point follows its Token — as a normal area flag, and the hero looks
+ * for other work in its radius on this same pass. Never re-pinned by itself.
+ *
+ * One id lookup per pinned flag per tick: flat, like the rest of `assign`.
+ */
+function lapsePins(r, order) {
+    for (const heroId of order) {
+        const flag = BoardState.flagOf(heroId);
+        if (!flag || !('pinnedTo' in flag)) continue;
+        if (typeof flag.pinnedTo === 'string' && BoardState.getTokenById(flag.pinnedTo)) continue;
+        const { pinnedTo: _gone, ...area } = flag;
+        BoardState.setFlag(heroId, area);
+        r.nextTryAt.delete(heroId);
+        r.dirty = true;
+        // The flag is drawn differently now (no longer on a Token), and a hero
+        // standing idle by it has no claim change to announce it.
+        announceMoved(heroId);
+    }
+}
+
 function plantingOrder() {
     const flags = BoardState.getFlags();
     return Object.keys(flags).sort((a, b) => (flags[a].plantedAt ?? 0) - (flags[b].plantedAt ?? 0));
@@ -643,6 +731,8 @@ export function assign(delta = 0) {
 
     const order = plantingOrder();
     if (!order.length) return;
+
+    lapsePins(r, order);
 
     for (const heroId of order) {
         if (BoardState.claimOfHero(heroId)) keepOrRelease(r, heroId, dirty);
@@ -676,7 +766,41 @@ export function assignHero(heroId) {
  * planting order. A flag carries no skill (FP-71): what the hero works comes
  * from their rules, which a re-plant does not touch.
  */
-export function plant(heroId, point) {
+/**
+ * Why `heroId`'s flag may not be pinned to `instance` (B5, FB-45), or null if
+ * it may. `{ reason, silent }`: a `silent` refusal is a Token no flag is ever
+ * pinned to (a spawner, a Token no hero works, a Promotion Token or the Guild
+ * Hall — those two keep their own under-the-flag rule, FP-61 / FPP-10), so the
+ * flag just plants there with nothing said. Otherwise `reason` is a skip
+ * reason (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `SKIP.DISALLOWED`,
+ * `SKIP.RULE_OFF`), which the hero's bubble says where it has words for it.
+ *
+ * The same gates `evaluate` applies — disallowed, the skill, the rule, the
+ * level (`WorkCheck.heroReason`) — minus the ones the player can fix later
+ * (inputs, charges, a recipe: FIXABLE) and another hero working it, which a
+ * pinned hero simply waits out.
+ */
+export function pinRefusal(heroId, instance) {
+    if (!heroId || !instance?.typeId) return { reason: null, silent: true };
+    const def = getTokenType(instance.typeId);
+    // B5 spawner pin: heroes never work a spawner itself.
+    if (def?.spawner) return { reason: null, silent: true };
+    const kind = kindOf(instance, def);
+    if (kind !== 'work' && kind !== 'enemy') return { reason: null, silent: true };
+    // A worked Token naming no skill is unfinished content (FP-47): no pin, nothing said.
+    if (kind === 'work' && !hasWorkSkill(def)) return { reason: SKIP.NO_SKILL, silent: true };
+    if (isDisallowed(instance)) return { reason: SKIP.DISALLOWED, silent: false };
+    const ruleId = ruleIdOf(kind, def);
+    if (!FlagRules.holdsRule(heroId, ruleId)) return { reason: ALERT.UNSKILLED, silent: false };
+    if (!FlagRules.ruleOf(heroId, ruleId).allowed) return { reason: SKIP.RULE_OFF, silent: false };
+    if (kind === 'work') {
+        const reason = WorkCheck.heroReason(heroId, workConfigOf(def, instance));
+        if (reason) return { reason, silent: false };
+    }
+    return null;
+}
+
+export function plant(heroId, point, { pin = false } = {}) {
     if (!heroId || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
         return { success: false, reason: 'Nowhere to plant a flag' };
     }
@@ -692,9 +816,28 @@ export function plant(heroId, point) {
     // that hero's standing offer is theirs to answer.
     clearOfferUnder(heroId, point);
 
+    // ⭐ B5 (FB-45): a drop inside a Token's art circle — the same test the mat
+    // uses for "which Token is under the pointer" — pins the flag to it when
+    // the hero can work it. A pinned flag stands on the Token's centre, so it
+    // moves with the Token (`BoardState`). A refused pin is an area flag at
+    // the drop point, and a loud refusal is said by the hero's bubble.
+    let pinTo = null;
+    let refused = null;
+    if (pin) {
+        const target = tokenAtPoint(point);
+        if (target) {
+            const refusal = pinRefusal(heroId, target);
+            if (!refusal) pinTo = target;
+            else if (!refusal.silent) refused = { instanceId: target.id, reason: refusal.reason };
+        }
+    }
+    const at = pinTo ? { x: pinTo.x, y: pinTo.y } : { x: point.x, y: point.y };
+
     const previous = BoardState.flagOf(heroId);
-    if (previous && previous.x === point.x && previous.y === point.y) {
-        return { success: true, unchanged: true };
+    if (previous && previous.x === at.x && previous.y === at.y
+        && (previous.pinnedTo || null) === (pinTo?.id || null)) {
+        if (refused) EventBus.publish(BOARD_EVENTS.PIN_REFUSED, { heroId, ...refused });
+        return { success: true, unchanged: true, pinnedTo: pinTo?.id ?? null, pinRefused: refused?.reason ?? null };
     }
 
     quiet++;
@@ -704,7 +847,10 @@ export function plant(heroId, point) {
         forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
         r.cycleEnded.delete(heroId);
-        BoardState.setFlag(heroId, { x: point.x, y: point.y, plantedAt: BoardState.takeFlagOrder() });
+        BoardState.setFlag(heroId, {
+            x: at.x, y: at.y, plantedAt: BoardState.takeFlagOrder(),
+            ...(pinTo ? { pinnedTo: pinTo.id } : {})
+        });
         r.dirty = true;
         // Out of the Guild Hall (or turning round on the way home) BEFORE
         // choosing, so "nearest" is measured from where they are (HMP-1, HM-4).
@@ -728,7 +874,9 @@ export function plant(heroId, point) {
      */
     const under = tokenAtPoint(point);
     EventBus.publish('hero_deployed', { heroId, instanceId: under?.id ?? null, typeId: under?.typeId ?? null });
-    return { success: true };
+    // Said after the plant, so the bubble finds the hero on the mat (B5 bad pin).
+    if (refused) EventBus.publish(BOARD_EVENTS.PIN_REFUSED, { heroId, ...refused });
+    return { success: true, pinnedTo: pinTo?.id ?? null, pinRefused: refused?.reason ?? null };
 }
 
 /**

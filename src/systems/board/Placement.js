@@ -429,22 +429,30 @@ export function removePlacedToken(id) {
  * range; otherwise the hero works something else in range, or idles at the flag.
  *
  * ⚠️ **Nobody is displaced.** Two heroes can plant on one spot; only one works
- * the Token (FP-25). Flags never nudge each other or Tokens (FP-83).
+ * the Token (FP-25). Flags never nudge each other or Tokens (FP-83), and have
+ * no footprint at all: nothing in placement ever reads a flag (FB-44, TL-17).
+ *
+ * `{ pin: true }` is the player's drop (`dropOnMat`): a drop on a Token the
+ * hero can work **pins** the flag to it (B5, FB-45 — see `Flags.plant`), and
+ * the result names it (`pinnedTo`) or why it was refused (`pinRefused`). Off
+ * by default, so the many callers that plant on a Token to set a scene keep
+ * the area-flag behaviour they were written for.
  */
-export function plantFlagAt(heroId, point) {
+export function plantFlagAt(heroId, point, { pin = false } = {}) {
     if (!heroId) return refuse('No hero');
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return refuse('Nowhere to plant a flag');
     const at = clampToMat(point);
 
     // `Flags.plant` announces `hero_deployed` itself, for every route (1.5).
-    const planted = Flags.plant(heroId, at);
+    const planted = Flags.plant(heroId, at, { pin });
     if (!planted.success) return planted;
-    if (planted.unchanged) return { success: true, point: at, workedToken: BoardState.workTokenOf(heroId) };
+    const pinInfo = { pinnedTo: planted.pinnedTo ?? null, pinRefused: planted.pinRefused ?? null };
+    if (planted.unchanged) return { success: true, point: at, workedToken: BoardState.workTokenOf(heroId), ...pinInfo };
 
     EventBus.publish('heroes_updated', { source: 'board_placement' });
     EventBus.publish('state_changed');
 
-    return { success: true, point: at, workedToken: BoardState.workTokenOf(heroId) };
+    return { success: true, point: at, workedToken: BoardState.workTokenOf(heroId), ...pinInfo };
 }
 
 /**

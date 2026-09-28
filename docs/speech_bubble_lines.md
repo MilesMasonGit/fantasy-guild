@@ -51,6 +51,7 @@ once; the oldest moment gives way.
 | 11 | Working at {token}. | The hero arrives at a Token to work it. | **Dropped (FB-21)** — everyday; this is the "I'm working on Oak Tree" line from your feedback. |
 | 12 | No work in range. | The hero was busy (walking to a job or working) and is now standing at their flag with nothing to do. | **Unsure — owner to decide.** Kept for now: an idle hero is worth knowing about. But it also fires each time the last Token in a flag's range runs out, which on a busy mat can be often. |
 | 13 | {skill} is now level {level}. | One of the hero's skills levels up, e.g. "Mining is now level 4." | Kept |
+| 14 | *(line 7 or 8, word for word)* | **B5 (FB-45):** you dropped the hero's flag on a Token they can't work — skill not held (line 8) or level too low (line 7). The flag stands there as a normal area flag instead of being pinned, and the hero says why once. A Token you disallowed, or one whose skill is switched off in the hero's rules, is refused silently (no wording yet); a spawner is never pinned and nothing is said. | Kept |
 
 ## 3. Not speech bubbles
 

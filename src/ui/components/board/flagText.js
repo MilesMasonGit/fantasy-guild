@@ -42,15 +42,26 @@ export function skipLine(skip, heroId = null) {
 }
 
 /**
+ * "Working only Oak Tree" for a flag pinned to a Token (B5, FB-45), else null.
+ * Read live, like everything here: a pin lapses when its Token is used up.
+ */
+export function flagPinLine(heroId) {
+    const token = Flags.pinnedTokenOf(heroId);
+    return token ? `Working only ${tokenName(token.typeId) || 'this Token'}` : null;
+}
+
+/**
  * Everything the pennant's tooltip shows, as
- * `{ title, state, status, skips: string[], more }`. The title is the hero's
- * name: a flag has no skill since slice 1.5b (FP-71).
+ * `{ title, pin, state, status, skips: string[], more }`. The title is the
+ * hero's name: a flag has no skill since slice 1.5b (FP-71). `pin` is
+ * {@link flagPinLine} (null on an area flag).
  */
 export function flagTooltip(heroId) {
     const state = Flags.statusOf(heroId).state;
     const all = Flags.skipsOfHero(heroId).map(s => skipLine(s, heroId));
     return {
         title: heroName(heroId),
+        pin: flagPinLine(heroId),
         state,
         status: flagStatusLine(heroId),
         skips: all.slice(0, MAX_SKIP_LINES),

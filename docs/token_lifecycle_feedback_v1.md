@@ -323,6 +323,10 @@ the screen and slides mostly away during a drag. Uses the dnd-kit drag system.
 this touches); a flag dropped on a Token pins to it; when the Token is exhausted, the flag becomes a
 normal area flag at that spot. Closes the playtest pack's "heroes can't be steered within a skill".
 
+| # | B5 slice | Status |
+|---|---|---|
+| B5 | **Flags: no hitbox (FB-44) + pinned flags (FB-45, TL-17)** | ✅ 2026-09-27. The engine never gave flags a footprint; the **pointer** did: a flag's 128 px round button caught hovers/clicks meant for a Token behind it (a 2026-09-21 owner ruling, now reversed by FB-44/TL-17). Now a Token under the pointer wins and flags yield. Pins: `board.flags[heroId].pinnedTo` (instance id); only the player's flag drop pins (`plantFlagAt(…, { pin: true })`); a pinned hero's only candidate is its Token; the flag follows the Token when moved; `Flags.lapsePins` turns it into an area flag at the spot when the Token is gone (used up, removed, binned, or transformed — a transform makes a new instance, so it is not re-pinned); refused pins (skill not held, level too low) plant an area flag and the hero says the existing stuck-hero line; spawners, the Guild Hall and Promotion Tokens stay area flags silently. Director verified live (slot 3): pinned a flag to the farther of two Oak Trees → the hero worked only it; moved the Tree to (900, 500) → flag followed, still pinned; the Tree ran out → flag stayed there unpinned, hero idle (nothing in range); a drop on the Copper Mine → area flag, no pin. **Director defaults for the owner to overrule:** a pinned Token that is later disallowed or whose skill rule is switched off stays pinned and the hero waits (no override of the rule); disallowed / rule-off refusals get no bubble (no existing wording); Guild Hall and Promotion Tokens keep their old under-the-flag behaviour. Tests: baseline 10 |
+
 **B6 Quests as Tokens (6th).** FB-41–FB-43, **TL-18**. Quest Tokens spawned by the Guild Hall to
 an upgradable cap (a new Hall track), tutorial chain under a hidden cap, discard for non-tutorial
 quests (through B3's bin), noticeboard behaviour. The sidebar goes. Quest cooldowns currently run on

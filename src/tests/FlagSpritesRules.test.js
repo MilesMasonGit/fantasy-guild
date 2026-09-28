@@ -350,8 +350,10 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
     /**
      * The flag used to answer only on its opaque pixels (alpha hit-testing).
      * The slice 1.9 work swapped that for a round hit area the size of the
-     * drawn art, and the owner kept it: easier to grab a thin flag, at the cost
-     * of its circle catching clicks meant for a Token just behind it.
+     * drawn art, and the owner kept it: easier to grab a thin flag.
+     * ⚠️ Its old cost — the circle catching clicks meant for a Token just
+     * behind it — is gone since B5 (FB-44): over a Token's art circle every
+     * flag lets the pointer through (`MatLayering.test.js`, `B5Flags.test.js`).
      */
     it('is round, the size of its art, and no longer opts into alpha hit-testing', () => {
         Flags.plant('h1', C(20));

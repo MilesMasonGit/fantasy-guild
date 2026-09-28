@@ -14,7 +14,8 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
  *
  * ## What lands where (free placement, slice 1.6d)
  * * **A hero or a flag** — the flag stands **exactly where it was let go**,
- *   clamped to the mat (FP-94, `Placement.plantFlagAt`).
+ *   clamped to the mat (FP-94, `Placement.plantFlagAt`) — or, let go on a
+ *   Token its hero can work, is **pinned** to that Token (B5, FB-45).
  * * **Any Token** (a Map is an ordinary Token since Token Lifecycle 9.1) — stands **exactly where it was let go**, or at the
  *   nearest legal point when that spot is crowded or would break a `Cannot`
  *   rule (FP-88). ⭐ Nothing snaps: the old spot-snapping stopgap and the
@@ -67,7 +68,8 @@ export function dropOnMat(payload, point) {
         if (payload.kind === DRAG_KIND.FLAG && !BoardState.flagOf(payload.heroId)) {
             return announce(refuse('That hero has no flag planted'));
         }
-        return announce(Placement.plantFlagAt(payload.heroId, point));
+        // B5 (FB-45): a drop on a Token the hero can work pins the flag to it.
+        return announce(Placement.plantFlagAt(payload.heroId, point, { pin: true }));
     }
 
     const from = payload.from || {};

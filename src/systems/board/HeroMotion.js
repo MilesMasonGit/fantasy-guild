@@ -69,8 +69,14 @@ const ARRIVE_EPS = 0.5;
  */
 export const IDLE_SPOT = Object.freeze({ dx: 72, dy: -72 });
 
-/** The point an idle hero stands at beside `flag`. */
+/**
+ * The point an idle hero stands at beside `flag`. A **pinned** flag (B5,
+ * FB-45) stands on its Token's centre, so its idle hero waits where they would
+ * work it — beside the Token, on the right — rather than on top of it.
+ */
 export function idleSpot(flag) {
+    const pinned = typeof flag?.pinnedTo === 'string' ? BoardState.getTokenById(flag.pinnedTo) : null;
+    if (pinned) return standingSpot(pinned.typeId, pinned, 1);
     return { x: flag.x + IDLE_SPOT.dx, y: flag.y + IDLE_SPOT.dy };
 }
 

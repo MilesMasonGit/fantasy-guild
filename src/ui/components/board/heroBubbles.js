@@ -101,6 +101,26 @@ export function blockedLineFor(tokenId, alert) {
 }
 
 /**
+ * ⭐ What a hero says when their flag, dropped on a Token, could not be pinned
+ * to it (B5 bad pin, FB-45) — the **same sentence** they would say stuck on
+ * that Token for that reason (lines 7 and 8 of `docs/speech_bubble_lines.md`:
+ * level too low, skill not held). Null for a reason with no wording (a Token
+ * the player disallowed, or the hero's own rule switched off): the flag's hover
+ * still says it. Spoken as a moment (`heroSpeech.MOMENT_SPOKEN.pinRefused`).
+ */
+export function pinRefusedLineFor(tokenId, reason) {
+    if (!tokenId || !reason) return null;
+    const token = BoardState.getTokenById(tokenId);
+    if (!token) return null;
+    const def = getTokenType(token.typeId);
+    const skillId = workConfigOf(def)?.skill;
+    return blockedText(reason, {
+        token: def?.name || tokenName(token.typeId) || token.typeId,
+        skill: skillId ? (getSkill(skillId)?.name || skillId) : undefined
+    });
+}
+
+/**
  * Whether a block has been showing long enough to speak. Only item shortages
  * wait (SB-6); every other block speaks at once.
  */

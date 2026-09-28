@@ -209,7 +209,13 @@ describe('on the mat', () => {
         expect(zOfToken(container, worked.id)).toBeGreaterThan(zOfFlag(container, 'h2') + 2);
     });
 
-    it('the pointer on a flag raises no Token over it', () => {
+    /**
+     * ⛔ Reversed by B5 (FB-44, TL-17): this used to pin that a flag in front
+     * of a Token kept the pointer — "the pointer on a flag raises no Token over
+     * it". Flags have no hitbox over Tokens now: a point on a Token's art
+     * circle is the Token's, wherever the event lands.
+     */
+    it('FB-44: the pointer on a flag over a Token hovers the Token, and every flag lets it through', () => {
         const tok = placeAt('fixture_producer', 600, 600);
         Flags.plant('h1', { x: 600, y: 770 });
         const { container } = mount(h(MatBoard));
@@ -217,14 +223,17 @@ describe('on the mat', () => {
         root.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0 });
 
         const flagEl = container.querySelector('[data-flag="h1"]');
-        const before = zOfToken(container, tok.id);
-        // A point inside the Token's art circle, but the event lands on the flag.
-        fireEvent.pointerMove(flagEl, { clientX: 600, clientY: 640 });
-        expect(zOfToken(container, tok.id)).toBe(before);
         expect(zOfFlag(container, 'h1')).toBeGreaterThan(zOfToken(container, tok.id));
+        expect(flagEl.className).toContain('pointer-events-auto');
 
-        // The same point on the Token itself raises it, as before.
-        fireEvent.pointerMove(root, { clientX: 600, clientY: 640 });
+        // A point inside the Token's art circle, though the event lands on the flag.
+        fireEvent.pointerMove(flagEl, { clientX: 600, clientY: 640 });
         expect(zOfToken(container, tok.id)).toBeGreaterThan(zOfFlag(container, 'h1'));
+        expect(flagEl.className).toContain('pointer-events-none');
+
+        // Off the Token, on the flag's cloth over bare mat: the flag has the pointer again.
+        fireEvent.pointerMove(flagEl, { clientX: 640, clientY: 700 });
+        expect(flagEl.className).toContain('pointer-events-auto');
+        expect(zOfFlag(container, 'h1')).toBeGreaterThan(zOfToken(container, tok.id));
     });
 });

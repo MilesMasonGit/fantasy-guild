@@ -93,6 +93,15 @@ export const BOARD_EVENTS = {
     HEROES_WALKED: 'board:heroes_walked',
 
     /**
+     * A flag dropped on a Token was NOT pinned to it because its hero cannot
+     * work it (B5, FB-45) — it stands there as a normal area flag instead.
+     * Payload: `{ heroId, instanceId, reason }`, `reason` a skip reason
+     * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `disallowed`, `rule_off`). The hero's
+     * speech bubble says why (`HeroBubbleLayer`). Published by `Flags.plant`.
+     */
+    PIN_REFUSED: 'board:pin_refused',
+
+    /**
      * A Foundation finished its build and became the Token it built, in place
      * (Token Lifecycle 6.1, DP-6) — Farmland planted by Farming included.
      * Payload: `{ instanceId, typeId, fromTypeId, heroId }`: the new Token, what
