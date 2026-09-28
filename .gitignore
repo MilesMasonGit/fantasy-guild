@@ -42,3 +42,6 @@ public/assets/maybe/
 public/assets/**/waste/
 raw_assets/
 scratch_*.txt
+
+# Benchmark output (npm run bench); bench/baseline.json is committed.
+bench/results/
