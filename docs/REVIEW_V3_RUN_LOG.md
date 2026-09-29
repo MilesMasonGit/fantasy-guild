@@ -148,6 +148,24 @@ here blocked the rest of the run.)*
     - **Hidden event errors in tests**: **(A) Recommended: count them first,
       then make new ones fail.**
 
+14. **From R6 (drawing speed)**: 4 questions, `docs/review_v3/R6.md` §9.
+    **Also: R6 §1 lists what to look at with your own eyes** (sprite crispness
+    while walking, bubbles following walkers, ring smoothness, strike timing,
+    limp pace, loot sparkles).
+    - **Sprite shadows and glows are the frame-rate limit** (CR3-350). **(A)
+      Recommended: keep the look, but draw shadows and glows as images
+      instead of live filters.** (B) Remove them. (C) Keep them as they are and
+      accept ~100–125 FPS on a busy mat.
+    - **The cheap drawing fixes**: **(A) Recommended: the particle-canvas sleep
+      now as an easy win (it changes nothing visible); the other four (walkers
+      by transform, one ring clock, hero frames without React, the tutorial
+      beacon) as one batch you look at before it merges.**
+    - **Switching the mat to canvas drawing**: **(A) Recommended: don't decide
+      now.** Do the cheap set and the shadow choice, let the engine fixes remove
+      the 300-Token cliff, then measure a production build in session C.
+    - **The particle burst cap** (dropped by mistake in `f8dcae0`): **(A)
+      Recommended: restore it.**
+
 12. **Uncommitted art in the main folder** (made 2026-09-29 12:00–12:50, not
     by the review): ~35 art files moved or renamed (ore, veins, foundations,
     planks). The art is now versioned in Git LFS, so this needs committing by
@@ -183,4 +201,8 @@ here blocked the rest of the run.)*
 | 2026-09-29 | R10 launched (expansion readiness + the coverage plan for the fix waves) | — |
 | 2026-09-29 | **R5 done** (UI↔engine): 12 tickets, 2 P1. **CR3-300: the dock HP bars go stale**, reproduced in the game (87/144 HP drawn at 35 %); director confirmed the selector pattern in `DockHeroFigure.jsx:75` and `HeroDockTab.jsx:70`. **The "~40 renders/s" is mostly hero sprite frames flipped through React (8 heroes × 8 fps)**; MatBoard's own full re-renders are 8.8/s, 90 % caused by enemy steps. `state_changed` is milder than feared. All 44 subscriptions paired; no rules enforced in the UI | merged `d75663f` |
 | 2026-09-29 13:20 | Usage-limit stop hit R6 and R10; both resumed. **Found uncommitted art work in the main folder** (made 12:00–12:50 today: plank variants, ore and foundation art moved into new folders). Not made by any review agent; the director is leaving it untouched and will never stage it. See question 12 | — |
-| 2026-09-29 | **R10 done** (expansion + coverage): 17 tickets, 0 P1. **Coverage plan: of the 15 P1 tickets, 0 are safe to fix blind, 12 need a test first, 3 need the owner's eyes; of 50 P2s, 14 are safe now.** The bench can't yet catch a speed fix that changes the game (CR3-550, now the first fix-phase job). The 10 known failures are all content drift or a retired premise. Several shipped-content gaps make some findings latent (no shipped aura, statuses or item rules yet) | pending commit |
+| 2026-09-29 | **R10 done** (expansion + coverage): 17 tickets, 0 P1. **Coverage plan: of the 15 P1 tickets, 0 are safe to fix blind, 12 need a test first, 3 need the owner's eyes; of 50 P2s, 14 are safe now.** The bench can't yet catch a speed fix that changes the game (CR3-550, now the first fix-phase job). The 10 known failures are all content drift or a retired premise. Several shipped-content gaps make some findings latent (no shipped aura, statuses or item rules yet) | merged `21119e5` |
+| 2026-09-29 | Bench identical-results gate (CR3-550) + S4 scenario fix (CR3-156) launched, bench-only | — |
+| 2026-09-29 | **R6 done** (drawing): 10 tickets, 1 P1. Measured in headless Chrome on the owner's GPU (dev build). **Filters are the frame-rate limit: S2 ~100–125 FPS with them, 164 FPS without (CR3-350).** The look-preserving cheap set takes S2 from ~99 to ~151 FPS and frames within budget from 38 % to 73 %. The web-page mat tops out around ~200 Tokens on this PC. Real bug: at 300 Tokens, 95 Tokens share one draw order (CR3-354). **All 10 review sessions are now done** | pending commit |
+| 2026-09-29 | Z (fix plan) and C (certification checklist) launched in parallel | — |
+| 2026-09-29 | **C done: `docs/review_v3/C.md`**, the owner's checklist: 9 setup steps + 27 checks (~25 min), optional bench run and 60-min soak; works through the desktop app (`npm run tauri:dev`). Two §4.4 rows can't be measured as written (the HUD counts the whole mat, CR3-356) and are marked so | pending commit |
