@@ -20,18 +20,18 @@ the priority score.
 | P1 | Clean baseline & round-2 re-triage | ✅ Done | 2026-09-28 | *(this commit)* | 88 open CR2 tickets walked against the code: 37 closed, 4 CMS lane, 1 econ-sim lane, 2 closed by owner decision, 44 carried into CR3-018/020/024…046; tooling run filed CR3-023…027 |
 | P2 | Build Tier A — headless benchmark | ✅ Done | 2026-09-28 | `42181be` | `npm run bench` + `bench:micro`; S2 misses target ~2×, S3 cliff; 4 tickets confirmed, 2 closed; CR3-047 filed |
 | P3 | Build Tier B — stress scenarios + Perf HUD | ✅ Done | 2026-09-28 | `f9af6ba` | `?stress=<name>`, Perf HUD, `window.__perf`; production build verified clean; first reading: MatBoard ~40 commits/s at S2 (dev, preview pane) |
-| R1 | Engine loop, clock & event bus | 🔲 Not started | | | |
-| R2 | Board state & spatial physics | 🔲 Not started | | | |
-| R3 | Work, flags & rule evaluation | 🔲 Not started | | | |
-| R4 | Combat, heroes, effects & loot | 🔲 Not started | | | |
-| R5 | UI ↔ engine boundary & render cascades | 🔲 Not started | | | |
-| R6 | Mat renderer: paint, layout & composite | 🔲 Not started | | | |
-| R7 | Drag & drop and input | 🔲 Not started | | | |
+| R1 | Engine loop, clock & event bus | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
+| R2 | Board state & spatial physics | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
+| R3 | Work, flags & rule evaluation | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
+| R4 | Combat, heroes, effects & loot | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
+| R5 | UI ↔ engine boundary & render cascades | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
+| R6 | Mat renderer: paint, layout & composite | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
+| R7 | Drag & drop and input | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
 | R8 | UI/UX consistency across surfaces | ✅ Done | 2026-09-28 | *(wave-1 commit)* | 18 tickets CR3-450…467 (1 P1); 11 owner questions |
 | R9 | Vestiges, documentation & layer separation | ✅ Done | 2026-09-28 | *(wave-1 commit)* | 16 tickets CR3-500…515 (0 P1); 5 owner questions |
-| R10 | Expansion readiness & test coverage | 🔲 Not started | | | |
-| C | Runtime certification (hands-on) | 🔲 Not started | | | |
-| Z | Synthesis & fix waves | 🔲 Not started | | | |
+| R10 | Expansion readiness & test coverage | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
+| C | Runtime certification (hands-on) | 🟡 Checklist ready — owner runs it | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
+| Z | Synthesis & fix waves | ✅ Done | 2026-09-29 | see run log | tickets in `docs/review_v3/`; master table in `Z.md` |
 
 ---
 
