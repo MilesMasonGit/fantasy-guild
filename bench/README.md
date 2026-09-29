@@ -14,8 +14,9 @@ layout/paint cost are Tier B (the in-game Perf HUD).
 |---|---|---|
 | `npm run bench` | S1–S6, 3 timing runs each (S6 once), profile passes for S2–S5 | ~3 min |
 | `npm run bench -- --only=S2,S3` | only some scenarios | |
-| `npm run bench -- --compare` | also compare with `bench/baseline.json`; **exits 1** if any checked number is more than 20 % slower | |
-| `npm run bench -- --save-baseline` | write this run's medians as `bench/baseline.json` | |
+| `npm run bench -- --compare` | also compare with `bench/baseline.json`: **exits 2** (WORK CHANGED) if any scenario did different work, **exits 1** if any checked number is more than 20 % slower — see below | |
+| `npm run bench -- --accept-work-change=CR3-123` | compare, but let a deliberate, ruled change of work through: rewrites only the fingerprints in `bench/baseline.json` and records the ticket (implies `--compare`) | |
+| `npm run bench -- --save-baseline` | write this run's medians and fingerprints as `bench/baseline.json` | |
 | `npm run bench -- --long` | S6 for the full 8 game-hours (288,000 ticks) | ~8 min more |
 | `npm run bench -- --repeats=5` | more timing runs per scenario (the median is reported) | |
 | `npm run bench -- --no-profile` | skip the profile passes | faster |
@@ -32,9 +33,9 @@ the machine name and CPU.
 - **p50** is the typical tick, **p99** the one-in-a-hundred slow tick (ten times
   a second, that is one every 10 s), **max** the worst seen.
 - **same work** — each scenario is run several times with the same seed; "yes"
-  means every run ended in exactly the same state (Tokens, charges, Bank, hero
-  XP, loot). "NO" means the runs did different work and their times are not
-  comparable — investigate before trusting the numbers.
+  means every run ended with exactly the same fingerprint (below). "NO" means
+  the runs did different work and their times are not comparable — investigate
+  before trusting the numbers. (`--compare` then fails with exit 2.)
 - **heap Δ** is the heap after a forced garbage collection, after the measured
   ticks minus before. S6's checkpoints show the trend over game time.
 - The **profile** lines come from a separate run with probes switched on (see
@@ -43,10 +44,73 @@ the machine name and CPU.
 
 ### `--compare` and the baseline
 
-`--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5, S6)
-and the **worst single arrival/drop** and **the shrink** (S4). A number fails
-when it is more than **×1.2** the baseline **and** more than **0.02 ms** worse
-(the floor stops sub-microsecond timer noise on S1 from failing a run).
+`--compare` checks two separate things against `bench/baseline.json`, and says
+which one failed by its exit code:
+
+| Exit | Means | What to do |
+|---|---|---|
+| **0** | same work, no timing regression | merge-ready (as far as the bench goes) |
+| **1** | **REGRESSED** — slower, same work | run it again before believing it (timing is noisy), then find the slowdown |
+| **2** | **WORK CHANGED** — the engine did different work from the baseline | a speed fix must not do this: find out why. A deliberate, ruled change: `--accept-work-change=<ticket>` |
+| **3** | the bench itself failed (a worker crashed, a bad option, no baseline) | read the error |
+
+Exit 2 wins over 1: when the work changed, the timings measure different work.
+The merge rule for a speed fix is: the test baseline unchanged, **and**
+`npm run bench -- --compare` exits 0.
+
+#### The work: identical results as a gate (CR3-550)
+
+Every timing run ends by taking a **fingerprint** of what the engine did
+(`lib/fingerprint.mjs`), and the baseline stores each scenario's fingerprint
+beside its timings. `--compare` prints `same` or `WORK CHANGED` per scenario,
+names every field that differs and shows both values. The fingerprint is:
+
+- readable totals: Tokens on the mat, charges left, Bank items, hero XP, loot
+  sprites, game time;
+- `tokensHash` — every Token's id, type, **exact** `x`,`y`, charges, arrival
+  order and cycle progress, in arrival order;
+- `bankHash` (every item and quantity), `heroHash` (each hero's status, HP,
+  energy, skills and XP, statuses, equipment, flag, claimed Token and walking
+  body), `spriteHash` (every loot sprite, exact point included), `binHash`;
+- **`randomDraws`** — how many numbers the seeded `Math.random` handed out
+  (`lib/prelude.mjs`). The most sensitive single number: a change that consumes
+  randomness in a different order changes it even when the end state happens
+  to match;
+- **S4 only**: the position hash after the arrivals, after the landing drops
+  and after the shrink, the measured rim radius, and every count (arrivals
+  landed, drops refused, landing drops placed / nudged / refused).
+
+Totals alone are too weak — moving a Token or giving a buff to a different
+Token can keep every total identical. The hashes are not.
+
+What changes the work, and what does not:
+
+- `--seed` changes every scenario's work, and `--long` S6's. A run with other
+  values than the baseline's prints `not checked` for those scenarios instead
+  of failing.
+- `--repeats`, `--inject-slow`, `--no-profile` and `--cpu-prof` change only the
+  time (proved: `--inject-slow` exits 1, never 2).
+- A different **Node version** can change the work for reasons outside the
+  code (it prints a warning and still fails). Re-take the baseline on a Node
+  upgrade.
+- Fingerprints come from the timing runs. The profile pass is not checked.
+
+**`--accept-work-change=<ticket>`** is for a change of behaviour someone ruled
+on (a ticket, an owner decision). It still runs the whole compare, but a
+`WORK CHANGED` scenario is let through: its new fingerprint is written into
+`bench/baseline.json` (the timing numbers are left alone), the ticket, commit
+and changed fields are appended to `meta.workChanges` there, and the results
+JSON records it as `acceptedWorkChange`. Commit the baseline with the change.
+A run whose repeats disagree (not deterministic) is never accepted. Don't use
+it to make a speed fix pass: a speed fix that changes the work is not identical.
+
+#### The timings
+
+`--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5, S6),
+and for S4 the **worst arrival**, the **worst landing drop**, the **worst
+refused drop** and **the shrink**, each on its own. A number fails when it is
+more than **×1.2** the baseline **and** more than **0.02 ms** worse (the floor
+stops sub-microsecond timer noise on S1 from failing a run).
 
 ⚠ Timing is noisy: another program using the CPU moves these numbers. Take the
 baseline on a quiet machine, and when a compare fails, run it again before
@@ -60,7 +124,7 @@ baseline from one machine means nothing on another.
 | S1 | Quiet Hall | Hall, 1 hero, 5 Tokens (4 producers, 1 mill) — the floor | 2,000 + 5,000 |
 | S2 | Realistic late game | 11-step mat. Hall + 39 placed (the default cap is 40): 20 producers, 3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs, 3 Forests + 3 Quarries (60 spawned trees/rocks), 2 goblin camps (6 hostile goblins walking about). 8 heroes with flags, walking; one pinned to a smelter that runs dry (a stalled station with a hero on it). Quest Tokens from the Hall. Loot drops every cycle, auto-collect on. ~108 Tokens. | 1,000 + 3,000 |
 | S3 | Torture | 20-step mat. 200 placed incl. Hall and **one board-reach aura**, 5 Forests + 5 Quarries (100 spawned), 4 war camps (20 goblins), 8 heroes. ~320 Tokens. | 300 + 500 |
-| S4 | Push storm | 20-step mat, 60 placed + a Forest packed round with 24 trees. 50 **arrivals** at the Forest (`EffectActions.spawn`, which pushes), 50 **player drops** there (`Placement.placeTokenAt`, which nudges or refuses), then the mat **shrunk 20 → 6**. Each operation timed on its own. | — |
+| S4 | Push storm | 20-step mat, 60 placed + a Forest packed round with 24 trees. 50 **arrivals** at the Forest (`EffectActions.spawn`, which pushes); 50 **refused player drops** in the cluster's middle (`Placement.placeTokenAt` — every one flies back, **by design**: FP-46, a drop never pushes); 50 **landing player drops** aimed round the cluster's rim (the radius is measured: the farthest tree from the Forest; angles i × 2π/50), each landing with a nudge, then taken off again; then the mat **shrunk 20 → 6**. Each operation timed on its own (CR3-156). | — |
 | S5 | Rebuild storm | S2 plus one board-reach aura | 500 + 1,500 |
 | S6 | Long idle | S2, 30 game-minutes with a checkpoint every 5 (`--long`: 8 game-hours, every 30) — heap after GC and the size of every runtime structure the bench can see | 1,000 + 18,000 |
 
@@ -72,7 +136,9 @@ rather than waiting for the board to fill.
 
 - `run.mjs` — the command. Runs each scenario in a **fresh Node process**
   (`worker.mjs`), a few times, takes medians, prints the table, writes JSON,
-  compares.
+  compares (work first, then timings) and sets the exit code.
+- `lib/fingerprint.mjs` — the work fingerprint (CR3-550): stable FNV-1a hashes
+  of the end state, read through the same engine modules the run used.
 - `worker.mjs` — one run. The engine uses Vite-only features
   (`import.meta.glob` in `DatabaseManager.js`), so plain Node cannot import it.
   The worker starts a Vite server in middleware mode (no HTTP, no watcher) and
@@ -80,7 +146,7 @@ rather than waiting for the board to fill.
   uses, in the plain Node environment. Started with `--expose-gc`.
 - `lib/prelude.mjs` — the process boundary, loaded before any engine code:
   - **seeded `Math.random`** (mulberry32, reseeded per scenario — CR3-044), so
-    two runs do the same work;
+    two runs do the same work; it counts its draws for the fingerprint;
   - a **virtual wall clock**: `Date.now()` advances 100 ms per tick, as it does
     in the game, so loot absorption, effect expiry and the rate windows behave
     as they would in play (`performance.now()` is untouched — it is the timer);

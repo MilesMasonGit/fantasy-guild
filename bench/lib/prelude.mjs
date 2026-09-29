@@ -18,8 +18,13 @@
 // before it builds a scenario.
 
 let rngState = 1;
+// How many numbers have been drawn since the last reseed — part of a run's
+// work fingerprint (CR3-550). A change that consumes randomness in a different
+// order changes this even when the end state happens to match.
+let draws = 0;
 
 function seeded() {
+    draws++;
     rngState = (rngState + 0x6D2B79F5) | 0;
     let t = rngState;
     t = Math.imul(t ^ (t >>> 15), t | 1);
@@ -32,7 +37,8 @@ Math.random = seeded;
 
 globalThis.__bench = {
     realRandom,
-    reseed(seed) { rngState = (Number(seed) | 0) || 1; },
+    reseed(seed) { rngState = (Number(seed) | 0) || 1; draws = 0; },
+    draws: () => draws,
     clock: null
 };
 
