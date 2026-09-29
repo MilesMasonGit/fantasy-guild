@@ -125,6 +125,16 @@ here blocked the rest of the run.)*
       whole mat, CR3-151): **(A) Recommended: only the newcomer and whatever it
       pushes into.** It changes future pushes; saved layouts don't move.
 
+11. **From R5 (UI ↔ engine boundary)**: 2 questions, `docs/review_v3/R5.md`.
+    - **What the "MatBoard ≤ 1 re-render a second" target counts**: **(A)
+      Recommended: MatBoard's own re-renders only**, with sprite animation
+      frames given their own rule. (B) Every re-render inside the mat, as the
+      HUD counts today.
+    - **How UI components reach the engine**: **(A) Recommended: keep direct
+      calls, with one new rule**: engine commands announce their own changes,
+      and the UI never publishes engine events. (B) Route every command through
+      one Commands module, best done later with the Stage 2 work.
+
 ---
 
 ## Log
@@ -147,4 +157,6 @@ here blocked the rest of the run.)*
 | 2026-09-29 | **R4 done** (combat/effects/loot): 17 tickets, 1 P1: CR3-250, each kill triggers two whole-neighbourhood rebuilds (one for a hero who didn't move), 123–222 ms per kill on the torture board. Director confirmed it in code. R4 also caught a **director error**: P1 closed CR2-082 wrongly (the XP table is still unused, now CR3-258); corrected | pending commit |
 | 2026-09-29 | **R3 done** (work/flags/rules): 7 tickets, 1 P1 (CR3-200: every enemy step empties the "who is near whom" cache). **Spikes for CR3-047 + CR3-004: S2 p99 4.6 → 2.2 ms, S3 p99 87 → 12 ms, identical game results**; adding CR3-200's fix would reach S2 p99 1.34 ms (under target). No error boundary anywhere yet (CR3-203) | merged `930d47c` |
 | 2026-09-29 | **R7 done** (drag & input): 14 tickets, 1 P1: CR3-402, a Token or flag let go over an open drawer lands on the mat hidden underneath (director confirmed the code path; needs a hands-on check in session C). Every drop's legality is enforced in the engine, so round 2's worst failure shape is absent. Picking up and dropping likely re-renders all ~150 Tokens (CR3-400). 14 hands-on checks written for the owner | pending commit |
-| 2026-09-29 | **R2 done** (board state, spatial): 9 tickets, 1 P1 (CR3-150 nudge search/shrink). **Spikes, identical positions checked by checksum: S2 p99 3.1 → 1.5 ms (at target), S4 worst arrival 56 → 13 ms, shrink 333 → 73 ms**. The Token-list cache (CR3-001) must reset only on add/remove; the director confirmed those are the only writers (`BoardState.js:209-229`). S4's refused drops are correct behaviour (FP-46); the scenario needs fixing (CR3-156). No leaks | pending commit |
+| 2026-09-29 | **R2 done** (board state, spatial): 9 tickets, 1 P1 (CR3-150 nudge search/shrink). **Spikes, identical positions checked by checksum: S2 p99 3.1 → 1.5 ms (at target), S4 worst arrival 56 → 13 ms, shrink 333 → 73 ms**. The Token-list cache (CR3-001) must reset only on add/remove; the director confirmed those are the only writers (`BoardState.js:209-229`). S4's refused drops are correct behaviour (FP-46); the scenario needs fixing (CR3-156). No leaks | merged `fbc1ebf` |
+| 2026-09-29 | R10 launched (expansion readiness + the coverage plan for the fix waves) | — |
+| 2026-09-29 | **R5 done** (UI↔engine): 12 tickets, 2 P1. **CR3-300: the dock HP bars go stale**, reproduced in the game (87/144 HP drawn at 35 %); director confirmed the selector pattern in `DockHeroFigure.jsx:75` and `HeroDockTab.jsx:70`. **The "~40 renders/s" is mostly hero sprite frames flipped through React (8 heroes × 8 fps)**; MatBoard's own full re-renders are 8.8/s, 90 % caused by enemy steps. `state_changed` is milder than feared. All 44 subscriptions paired; no rules enforced in the UI | pending commit |
