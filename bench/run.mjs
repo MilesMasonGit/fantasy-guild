@@ -5,8 +5,14 @@
 //
 //   npm run bench                       S1–S6, default lengths
 //   npm run bench -- --only=S2,S3       some scenarios
-//   npm run bench -- --compare          also compare with bench/baseline.json;
-//                                       exits 1 on a regression over 20 %
+//   npm run bench -- --compare          also compare with bench/baseline.json:
+//                                       the work first (fingerprints), then
+//                                       the timings
+//   npm run bench -- --accept-work-change=CR3-123
+//                                       compare, but let a deliberate, ruled
+//                                       work change through: rewrites only the
+//                                       fingerprints in bench/baseline.json and
+//                                       records the ticket (implies --compare)
 //   npm run bench -- --save-baseline    write this run as bench/baseline.json
 //   npm run bench -- --long             S6 for the full 8 game-hours
 //   npm run bench -- --repeats=5        timing runs per scenario (default 3)
@@ -14,6 +20,15 @@
 //   npm run bench -- --cpu-prof         also write V8 .cpuprofile files
 //   npm run bench -- --inject-slow=0.5  add a tick handler that busy-waits
 //                                       0.5 ms — proves --compare catches it
+//
+// Exit codes:
+//   0  all good
+//   1  SLOWER — a timing regression (> 20 % and > 0.02 ms over the baseline)
+//   2  WORK CHANGED — a scenario ended in a different state, or drew a
+//      different number of random numbers, than the baseline (or its repeats
+//      disagreed with each other). Wins over 1: timings of different work are
+//      not comparable.
+//   3  the bench itself failed (a worker crashed, a bad option, no baseline)
 //
 // See bench/README.md.
 
@@ -29,28 +44,34 @@ const root = path.resolve(here, '..');
 const resultsDir = path.join(here, 'results');
 const baselineFile = path.join(here, 'baseline.json');
 
-/** Scenario id → file, and which get a profile pass by default. */
+/**
+ * Scenario id → file, and which get a profile pass by default. `longChangesWork`:
+ * `--long` runs more ticks, so the end state differs from a normal run's.
+ */
 const SCENARIOS = [
     { id: 'S1', file: 's1-quiet-hall.mjs', name: 'Quiet Hall', profile: false },
     { id: 'S2', file: 's2-realistic.mjs', name: 'Realistic late game', profile: true },
     { id: 'S3', file: 's3-torture.mjs', name: 'Torture', profile: true },
     { id: 'S4', file: 's4-push-storm.mjs', name: 'Push storm', profile: true },
     { id: 'S5', file: 's5-rebuild-storm.mjs', name: 'Rebuild storm', profile: true },
-    { id: 'S6', file: 's6-long-idle.mjs', name: 'Long idle', profile: false, repeats: 1 }
+    { id: 'S6', file: 's6-long-idle.mjs', name: 'Long idle', profile: false, repeats: 1, longChangesWork: true }
 ];
 
 /** A regression is > 20 % slower AND more than this many ms slower (timer noise floor). */
 const REGRESSION_RATIO = 1.2;
 const NOISE_FLOOR_MS = 0.02;
 
+const EXIT = { OK: 0, SLOWER: 1, WORK_CHANGED: 2, BENCH_FAILED: 3 };
+
 // ---------------------------------------------------------------------------
 // Arguments
 // ---------------------------------------------------------------------------
 
 function parseArgs(argv) {
-    const args = { repeats: 3, profile: true, compare: false, saveBaseline: false, long: false, cpuProf: false, injectSlowMs: 0, only: null, seed: 1 };
+    const args = { repeats: 3, profile: true, compare: false, saveBaseline: false, long: false, cpuProf: false, injectSlowMs: 0, only: null, seed: 1, acceptWorkChange: null };
     for (const a of argv) {
-        const [key, value] = a.replace(/^--/, '').split('=');
+        const [key, ...rest] = a.replace(/^--/, '').split('=');
+        const value = rest.join('=');
         switch (key) {
             case 'only': args.only = new Set(value.split(',').map(s => s.trim().toUpperCase())); break;
             case 'repeats': args.repeats = Math.max(1, Number(value) || 1); break;
@@ -61,6 +82,13 @@ function parseArgs(argv) {
             case 'cpu-prof': args.cpuProf = true; break;
             case 'inject-slow': args.injectSlowMs = Number(value) || 0; break;
             case 'seed': args.seed = Number(value) || 1; break;
+            case 'accept-work-change':
+                // The ticket that ruled the change, e.g. CR3-201. Required: a
+                // silent re-baseline of the work is exactly what the gate stops.
+                if (!value.trim()) throw new Error('--accept-work-change needs the ticket that ruled the change, e.g. --accept-work-change=CR3-201');
+                args.acceptWorkChange = value.trim();
+                args.compare = true;
+                break;
             default: throw new Error(`unknown option --${key} (see bench/run.mjs)`);
         }
     }
@@ -100,16 +128,26 @@ function aggregateTicks(runs) {
     return tick;
 }
 
+/** S4: each kind of operation on its own (CR3-156), never one mixed "worst". */
 function aggregateCustom(runs) {
+    const c0 = runs[0].custom;
     return {
-        worstDropMs: median(runs.map(r => r.custom.worstDropMs)),
-        shrinkMs: median(runs.map(r => r.custom.shrinkMs)),
         arrivalsP50: median(runs.map(r => r.custom.arrivals.p50)),
         arrivalsWorst: median(runs.map(r => r.custom.arrivals.worstMs)),
-        dropsWorst: median(runs.map(r => r.custom.drops.worstMs)),
-        arrivalsLanded: runs[0].custom.arrivals.landed,
-        dropsLanded: runs[0].custom.drops.landed,
-        shrinkTokens: runs[0].custom.shrink.tokens
+        landedP50: median(runs.map(r => r.custom.landingDrops.p50)),
+        landedWorst: median(runs.map(r => r.custom.landingDrops.worstMs)),
+        refusedWorst: median(runs.map(r => r.custom.refusedDrops.worstMs)),
+        shrinkMs: median(runs.map(r => r.custom.shrinkMs)),
+        // Counts are work, not time: they are in the fingerprint as well.
+        arrivalsLanded: c0.arrivals.landed,
+        refusedCount: c0.refusedDrops.count,
+        landing: {
+            placed: c0.landingDrops.placed, nudged: c0.landingDrops.nudged,
+            refused: c0.landingDrops.refused, restocked: c0.landingDrops.restocked,
+            nudgeMeanU: c0.landingDrops.nudgeMeanU, nudgeMaxU: c0.landingDrops.nudgeMaxU
+        },
+        rimRadius: c0.rimRadius,
+        shrinkTokens: c0.shrink.tokens
     };
 }
 
@@ -147,7 +185,12 @@ function printTable(rows) {
     for (const r of rows) {
         if (r.custom) {
             const c = r.custom;
-            console.log(`\n${r.id} ${r.name}: worst single arrival/drop ${f(c.worstDropMs, 2)} ms · arrivals p50 ${f(c.arrivalsP50, 2)} ms, worst ${f(c.arrivalsWorst, 2)} ms (${c.arrivalsLanded}/50 landed) · player drops worst ${f(c.dropsWorst, 2)} ms (${c.dropsLanded}/50 landed) · shrink 20→6 with ${c.shrinkTokens} Tokens ${f(c.shrinkMs, 1)} ms`);
+            const l = c.landing;
+            console.log(`\n${r.id} ${r.name}:`);
+            console.log(`  arrivals (they push)       p50 ${f(c.arrivalsP50, 2)} ms, worst ${f(c.arrivalsWorst, 2)} ms · ${c.arrivalsLanded}/50 landed`);
+            console.log(`  player drops, refused      worst ${f(c.refusedWorst, 2)} ms · ${c.refusedCount}/50 refused, by design (FP-46: a drop never pushes, and the cluster's middle has no room within nudge reach)`);
+            console.log(`  player drops at the rim    p50 ${f(c.landedP50, 2)} ms, worst ${f(c.landedWorst, 2)} ms · aimed ${f(c.rimRadius, 1)} u out · ${l.placed + l.nudged}/50 landed (${l.placed} exact, ${l.nudged} nudged: mean ${f(l.nudgeMeanU, 1)} u, max ${f(l.nudgeMaxU, 1)} u) · ${l.refused} refused${l.restocked ? ` · ${l.restocked} restocked` : ''}`);
+            console.log(`  shrink 20→6                ${f(c.shrinkMs, 1)} ms with ${c.shrinkTokens} Tokens`);
         }
         if (r.checkpoints) {
             console.log(`\n${r.id} ${r.name} checkpoints (heap after forced GC):`);
@@ -164,16 +207,104 @@ function printTable(rows) {
 }
 
 // ---------------------------------------------------------------------------
-// Compare
+// Compare, part 1: the work (CR3-550)
 // ---------------------------------------------------------------------------
 
-/** The numbers --compare checks, per scenario. */
+/**
+ * The options a scenario's work depends on. The seed changes every scenario's
+ * work; `--long` changes S6's. Nothing else does — `--repeats`, `--inject-slow`,
+ * `--no-profile` and `--cpu-prof` change only how long things take.
+ */
+function identityOptions(scenarioId, args) {
+    const scenario = SCENARIOS.find(s => s.id === scenarioId);
+    return scenario?.longChangesWork ? { seed: args.seed, long: args.long } : { seed: args.seed };
+}
+
+/** The fields of two fingerprints that differ, as `[{ field, base, now }]`. */
+function diffFingerprint(base, now) {
+    const fields = [...new Set([...Object.keys(base || {}), ...Object.keys(now || {})])];
+    return fields
+        .filter(k => JSON.stringify(base?.[k]) !== JSON.stringify(now?.[k]))
+        .map(field => ({ field, base: base?.[field], now: now?.[field] }));
+}
+
+/**
+ * Per scenario, one verdict:
+ *  - `same`             — the fingerprint matches the baseline exactly;
+ *  - `WORK CHANGED`     — it does not (the differing fields are listed);
+ *  - `NOT DETERMINISTIC` — this run's own repeats disagreed, so there is no
+ *                         single answer to compare (also a failure);
+ *  - `NO FINGERPRINT`   — the baseline has none for this scenario (re-take it);
+ *  - `not checked`      — this run's seed (or S6's `--long`) differs from the
+ *                         baseline's, so its work is expected to differ.
+ */
+function compareWork(rows, baseline, args) {
+    const checks = [];
+    for (const row of rows) {
+        const base = baseline.scenarios?.[row.id];
+        const now = row.fingerprints[0];
+        const options = identityOptions(row.id, args);
+        if (!row.sameWork) {
+            checks.push({ id: row.id, verdict: 'NOT DETERMINISTIC', diffs: diffFingerprint(row.fingerprints[0], row.fingerprints.find(p => JSON.stringify(p) !== JSON.stringify(row.fingerprints[0]))) });
+            continue;
+        }
+        if (!base?.fingerprint) {
+            checks.push({ id: row.id, verdict: 'NO FINGERPRINT', diffs: [] });
+            continue;
+        }
+        if (JSON.stringify(base.fingerprintOptions) !== JSON.stringify(options)) {
+            checks.push({ id: row.id, verdict: 'not checked', diffs: [], note: `run with ${JSON.stringify(options)}, baseline taken with ${JSON.stringify(base.fingerprintOptions)}` });
+            continue;
+        }
+        const diffs = diffFingerprint(base.fingerprint, now);
+        checks.push({ id: row.id, verdict: diffs.length ? 'WORK CHANGED' : 'same', diffs });
+    }
+    return checks;
+}
+
+const show = (v) => (v === undefined ? '(none)' : typeof v === 'string' ? v : JSON.stringify(v));
+
+function printWork(checks, baseline, accepted) {
+    console.log(`\nWork against bench/baseline.json (${baseline.meta?.commit ?? '?'}): the end state and the number of random draws must match exactly`);
+    if (baseline.meta?.node && baseline.meta.node !== process.version) {
+        console.log(`⚠ Node changed: baseline ${baseline.meta.node}, now ${process.version}. The work may differ for reasons outside the code; re-take the baseline on a Node upgrade.`);
+    }
+    for (const c of checks) {
+        let verdict = c.verdict;
+        if (accepted && (c.verdict === 'WORK CHANGED' || c.verdict === 'NO FINGERPRINT')) verdict = `${c.verdict}: accepted under ${accepted}`;
+        console.log(`  ${c.id.padEnd(4)}  ${verdict}${c.note ? ` (${c.note})` : ''}`);
+        for (const d of c.diffs) {
+            console.log(`          ${d.field.padEnd(24)} ${c.verdict === 'NOT DETERMINISTIC' ? 'run 1' : 'baseline'} ${show(d.base).padEnd(20)} ${c.verdict === 'NOT DETERMINISTIC' ? 'other run' : 'now'} ${show(d.now)}`);
+        }
+        if (c.verdict === 'NO FINGERPRINT') console.log('          the baseline predates the work gate: re-take it with --save-baseline');
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Compare, part 2: the timings
+// ---------------------------------------------------------------------------
+
+/**
+ * The numbers --compare checks, per scenario.
+ *
+ * S4's landing drops are checked on their **p50**, not their worst: each takes
+ * ~3 ms, so the worst of 50 is whichever one a GC pause or the OS happened to
+ * hit, and moved 4.5–8.4 ms between runs on a quiet machine (the p50 stayed
+ * within 3.10–3.41). Their worst is still printed and kept in the results JSON.
+ */
 function comparable(row) {
-    if (row.custom) return { worstDropMs: row.custom.worstDropMs, shrinkMs: row.custom.shrinkMs };
+    if (row.custom) {
+        return {
+            arrivalsWorst: row.custom.arrivalsWorst,
+            landedP50: row.custom.landedP50,
+            refusedWorst: row.custom.refusedWorst,
+            shrinkMs: row.custom.shrinkMs
+        };
+    }
     return { p50: row.tick.p50, p99: row.tick.p99 };
 }
 
-function compare(rows, baseline) {
+function compareTiming(rows, baseline) {
     const out = [];
     for (const row of rows) {
         const base = baseline.scenarios?.[row.id];
@@ -182,13 +313,13 @@ function compare(rows, baseline) {
             const b = base[metric];
             const ratio = value / b;
             const regressed = Number.isFinite(b) && ratio > REGRESSION_RATIO && (value - b) > NOISE_FLOOR_MS;
-            out.push({ id: row.id, metric, base: b, now: value, ratio, verdict: regressed ? 'REGRESSED' : 'ok' });
+            out.push({ id: row.id, metric, base: b, now: value, ratio, verdict: !Number.isFinite(b) ? 'no baseline' : regressed ? 'REGRESSED' : 'ok' });
         }
     }
-    console.log(`\nCompare with bench/baseline.json (${baseline.meta?.commit ?? '?'}, ${baseline.meta?.date ?? '?'}): fail above ×${REGRESSION_RATIO} and +${NOISE_FLOOR_MS} ms`);
-    console.log('Scenario  metric        baseline ms      now ms    ratio  verdict');
+    console.log(`\nTiming against bench/baseline.json (${baseline.meta?.commit ?? '?'}, ${baseline.meta?.date ?? '?'}): fail above ×${REGRESSION_RATIO} and +${NOISE_FLOOR_MS} ms`);
+    console.log('Scenario  metric          baseline ms      now ms    ratio  verdict');
     for (const c of out) {
-        console.log(`${c.id.padEnd(8)}  ${c.metric.padEnd(12)}  ${f(c.base).padStart(11)}  ${f(c.now).padStart(10)}  ${f(c.ratio, 2).padStart(7)}  ${c.verdict}`);
+        console.log(`${c.id.padEnd(8)}  ${c.metric.padEnd(14)}  ${f(c.base).padStart(11)}  ${f(c.now).padStart(10)}  ${f(c.ratio, 2).padStart(7)}  ${c.verdict}`);
     }
     return out;
 }
@@ -269,40 +400,117 @@ async function main() {
 
     printTable(rows);
 
-    let comparison = null;
-    let failed = false;
+    let workChecks = null;
+    let timing = null;
+    let workFailed = false;
+    let slower = false;
+    let benchFailed = false;
+    let accepted = null;
+    let baseline = null;
+
     if (args.compare) {
         if (!fs.existsSync(baselineFile)) {
             console.log('\n--compare: there is no bench/baseline.json yet (make one with --save-baseline).');
-            failed = true;
+            benchFailed = true;
         } else {
-            comparison = compare(rows, JSON.parse(fs.readFileSync(baselineFile, 'utf8')));
-            failed = comparison.some(c => c.verdict === 'REGRESSED');
-            console.log(failed ? '\n✗ REGRESSION: at least one number is more than 20 % slower than the baseline.' : '\n✓ No regression against the baseline.');
+            baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
+            workChecks = compareWork(rows, baseline, args);
+            const changed = workChecks.filter(c => c.verdict === 'WORK CHANGED' || c.verdict === 'NO FINGERPRINT');
+            const nondeterministic = workChecks.filter(c => c.verdict === 'NOT DETERMINISTIC');
+            if (args.acceptWorkChange && changed.length) {
+                accepted = {
+                    ticket: args.acceptWorkChange,
+                    scenarios: Object.fromEntries(changed.map(c => [c.id, c.diffs.map(d => d.field)]))
+                };
+            }
+            printWork(workChecks, baseline, accepted?.ticket);
+            workFailed = nondeterministic.length > 0 || (changed.length > 0 && !accepted);
+
+            timing = compareTiming(rows, baseline);
+            slower = timing.some(c => c.verdict === 'REGRESSED');
+
+            console.log('');
+            if (nondeterministic.length) {
+                console.log(`✗ WORK CHANGED: ${nondeterministic.map(c => c.id).join(', ')} did different work from one repeat to the next (not deterministic). Nothing can be compared until that is fixed.`);
+            }
+            if (changed.length && !accepted) {
+                console.log(`✗ WORK CHANGED: ${changed.map(c => `${c.id} (${c.diffs.map(d => d.field).join(', ') || 'no fingerprint in the baseline'})`).join('; ')}.`);
+                console.log('  The engine did different work from the baseline: a different end state or a different number of random draws.');
+                console.log('  If a speed fix did this, it is not identical: find out why. If the change is deliberate and ruled,');
+                console.log('  re-run with --accept-work-change=<ticket> to record it in bench/baseline.json.');
+            }
+            if (accepted) {
+                console.log(`✓ WORK CHANGED, accepted under ${accepted.ticket}: the new fingerprints of ${Object.keys(accepted.scenarios).join(', ')} are written to bench/baseline.json (commit it with the change).`);
+            } else if (args.acceptWorkChange && !nondeterministic.length) {
+                console.log(`--accept-work-change=${args.acceptWorkChange}: nothing to accept, the work matches the baseline. bench/baseline.json is unchanged.`);
+            }
+            if (!workFailed && !changed.length) console.log('✓ Same work as the baseline.');
+            if (slower) {
+                console.log(`✗ REGRESSION: at least one number is more than 20 % slower than the baseline.${workFailed || accepted ? ' (The work changed too, so these timings measure different work.)' : ''}`);
+            } else {
+                console.log('✓ No timing regression against the baseline.');
+            }
         }
     }
 
     const elapsedS = (Date.now() - started) / 1000;
-    const report = { meta: { ...meta, elapsedS }, scenarios: rows, comparison };
+    const report = {
+        meta: { ...meta, elapsedS },
+        scenarios: rows,
+        work: workChecks,
+        acceptedWorkChange: accepted,
+        comparison: timing
+    };
     fs.mkdirSync(resultsDir, { recursive: true });
     const stamp = meta.date.replace(/[:.]/g, '-');
     const file = path.join(resultsDir, `bench-${stamp}-${meta.commit}.json`);
     fs.writeFileSync(file, JSON.stringify(report, null, 2));
     console.log(`\nWrote ${path.relative(root, file)} (${elapsedS.toFixed(0)} s).`);
 
-    if (args.saveBaseline) {
-        const baseline = {
-            meta: { ...meta, note: 'Medians of the timing runs. Re-take on a quiet machine: npm run bench -- --save-baseline' },
-            scenarios: Object.fromEntries(rows.map(r => [r.id, comparable(r)]))
-        };
+    // --accept-work-change: rewrite ONLY the fingerprints of the scenarios that
+    // changed. The timing numbers stay those of the quiet-machine baseline.
+    if (accepted && baseline) {
+        for (const id of Object.keys(accepted.scenarios)) {
+            const row = rows.find(r => r.id === id);
+            baseline.scenarios[id] = {
+                ...(baseline.scenarios[id] || comparable(row)),
+                fingerprint: row.fingerprints[0],
+                fingerprintOptions: identityOptions(id, args)
+            };
+        }
+        baseline.meta.workChanges = [...(baseline.meta.workChanges || []), {
+            ticket: accepted.ticket, commit: meta.commit, branch: meta.branch, dirty: meta.dirty,
+            date: meta.date, node: meta.node, scenarios: accepted.scenarios
+        }];
         fs.writeFileSync(baselineFile, JSON.stringify(baseline, null, 2) + '\n');
-        console.log('Wrote bench/baseline.json.');
+        console.log('Updated the fingerprints in bench/baseline.json.');
     }
 
-    process.exit(failed ? 1 : 0);
+    if (args.saveBaseline) {
+        const unsettled = rows.filter(r => !r.sameWork);
+        if (unsettled.length) {
+            console.log(`✗ Not saving bench/baseline.json: ${unsettled.map(r => r.id).join(', ')} did different work from one repeat to the next.`);
+            workFailed = true;
+        } else {
+            const out = {
+                meta: { ...meta, note: 'Medians of the timing runs, and each scenario\'s work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline' },
+                scenarios: Object.fromEntries(rows.map(r => [r.id, {
+                    ...comparable(r),
+                    fingerprint: r.fingerprints[0],
+                    fingerprintOptions: identityOptions(r.id, args)
+                }]))
+            };
+            if (args.acceptWorkChange) out.meta.workChanges = [{ ticket: args.acceptWorkChange, commit: meta.commit, date: meta.date, scenarios: 'all (re-saved)' }];
+            fs.writeFileSync(baselineFile, JSON.stringify(out, null, 2) + '\n');
+            console.log('Wrote bench/baseline.json.');
+        }
+    }
+
+    const code = workFailed ? EXIT.WORK_CHANGED : benchFailed ? EXIT.BENCH_FAILED : slower ? EXIT.SLOWER : EXIT.OK;
+    process.exit(code);
 }
 
 main().catch(err => {
     console.error(err?.stack || err);
-    process.exit(2);
+    process.exit(EXIT.BENCH_FAILED);
 });

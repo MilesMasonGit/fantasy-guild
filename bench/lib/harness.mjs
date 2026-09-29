@@ -20,6 +20,7 @@ import { setMatTuning } from '../../src/config/matTuning.js';
 import { logger } from '../../src/utils/Logger.js';
 import * as fixtures from '../fixtures.mjs';
 import { summarise } from './stats.mjs';
+import { fingerprint } from './fingerprint.mjs';
 
 const now = () => performance.now();
 const TICK_MS = 100;
@@ -224,28 +225,8 @@ function makeProfiler() {
 }
 
 // ---------------------------------------------------------------------------
-// A work fingerprint: two runs of one scenario should agree on this exactly
+// The work fingerprint lives in ./fingerprint.mjs (CR3-550)
 // ---------------------------------------------------------------------------
-
-function fingerprint() {
-    const s = GameState.state;
-    let uses = 0;
-    for (const t of BoardState.tokens()) uses += Number(t.usesRemaining) || 0;
-    let items = 0;
-    for (const entry of Object.values(s.inventory?.items || {})) items += Number(entry?.quantity) || 0;
-    let xp = 0;
-    for (const hero of s.heroes || []) {
-        for (const sk of Object.values(hero.skills || {})) xp += Number(sk?.xp) || 0;
-    }
-    return {
-        tokens: BoardState.tokens().length,
-        uses,
-        bankItems: items,
-        heroXp: Math.round(xp),
-        sprites: (s.board?.sprites || []).length,
-        gameTimeMs: s.time?.gameTimeMs
-    };
-}
 
 /** Sizes of the runtime structures S6 watches for unbounded growth. */
 function structureSizes() {
@@ -344,7 +325,9 @@ export async function run(opts) {
         if (profiler) result.profile = profiler.report(plan.measure);
     }
 
-    result.fingerprint = fingerprint();
+    // A non-tick scenario (S4) adds its own checkpoints and counts — the
+    // position hashes after each stage — to the end-of-run fingerprint.
+    result.fingerprint = { ...fingerprint(), ...(result.custom?.identity || {}) };
     result.structures = structureSizes();
     result.logger = { ...loggerCounts };
     result.console = { ...consoleCounts };
