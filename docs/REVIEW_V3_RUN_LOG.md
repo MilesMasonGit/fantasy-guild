@@ -135,6 +135,28 @@ here blocked the rest of the run.)*
       and the UI never publishes engine events. (B) Route every command through
       one Commands module, best done later with the Stage 2 work.
 
+13. **From R10 (expansion readiness, test coverage)**: 5 questions, `docs/review_v3/R10.md` §9.
+    - **The 10 known test failures**: **(A) Recommended: mark them as expected
+      failures in their test files**, so a new failure stands out automatically.
+    - **Spike copies of the project**: **(A) Recommended: also link the CMS's
+      packages into them**, so all tests run there.
+    - **The benchmark fails when a speed fix changes the game's outcome**:
+      **(A) Recommended: yes.** ⚠ The director is going ahead with this one
+      before the fix waves, because it's tooling only and it is how "the game
+      plays the same" gets proven. It's reversible; say so if you disagree.
+    - **A one-sitting type-checking trial after the fix waves**: **(A) Recommended.**
+    - **Hidden event errors in tests**: **(A) Recommended: count them first,
+      then make new ones fail.**
+
+12. **Uncommitted art in the main folder** (made 2026-09-29 12:00–12:50, not
+    by the review): ~35 art files moved or renamed (ore, veins, foundations,
+    planks). The art is now versioned in Git LFS, so this needs committing by
+    whoever made it, and any content paths pointing at the old locations need
+    updating through the CMS. **(A) Recommended: you (or your art session)
+    commit it when finished; the review keeps its hands off.** (B) The director
+    commits it as-is after checking nothing in the game points at a missing
+    file.
+
 ---
 
 ## Log
@@ -159,4 +181,6 @@ here blocked the rest of the run.)*
 | 2026-09-29 | **R7 done** (drag & input): 14 tickets, 1 P1: CR3-402, a Token or flag let go over an open drawer lands on the mat hidden underneath (director confirmed the code path; needs a hands-on check in session C). Every drop's legality is enforced in the engine, so round 2's worst failure shape is absent. Picking up and dropping likely re-renders all ~150 Tokens (CR3-400). 14 hands-on checks written for the owner | pending commit |
 | 2026-09-29 | **R2 done** (board state, spatial): 9 tickets, 1 P1 (CR3-150 nudge search/shrink). **Spikes, identical positions checked by checksum: S2 p99 3.1 → 1.5 ms (at target), S4 worst arrival 56 → 13 ms, shrink 333 → 73 ms**. The Token-list cache (CR3-001) must reset only on add/remove; the director confirmed those are the only writers (`BoardState.js:209-229`). S4's refused drops are correct behaviour (FP-46); the scenario needs fixing (CR3-156). No leaks | merged `fbc1ebf` |
 | 2026-09-29 | R10 launched (expansion readiness + the coverage plan for the fix waves) | — |
-| 2026-09-29 | **R5 done** (UI↔engine): 12 tickets, 2 P1. **CR3-300: the dock HP bars go stale**, reproduced in the game (87/144 HP drawn at 35 %); director confirmed the selector pattern in `DockHeroFigure.jsx:75` and `HeroDockTab.jsx:70`. **The "~40 renders/s" is mostly hero sprite frames flipped through React (8 heroes × 8 fps)**; MatBoard's own full re-renders are 8.8/s, 90 % caused by enemy steps. `state_changed` is milder than feared. All 44 subscriptions paired; no rules enforced in the UI | pending commit |
+| 2026-09-29 | **R5 done** (UI↔engine): 12 tickets, 2 P1. **CR3-300: the dock HP bars go stale**, reproduced in the game (87/144 HP drawn at 35 %); director confirmed the selector pattern in `DockHeroFigure.jsx:75` and `HeroDockTab.jsx:70`. **The "~40 renders/s" is mostly hero sprite frames flipped through React (8 heroes × 8 fps)**; MatBoard's own full re-renders are 8.8/s, 90 % caused by enemy steps. `state_changed` is milder than feared. All 44 subscriptions paired; no rules enforced in the UI | merged `d75663f` |
+| 2026-09-29 13:20 | Usage-limit stop hit R6 and R10; both resumed. **Found uncommitted art work in the main folder** (made 12:00–12:50 today: plank variants, ore and foundation art moved into new folders). Not made by any review agent; the director is leaving it untouched and will never stage it. See question 12 | — |
+| 2026-09-29 | **R10 done** (expansion + coverage): 17 tickets, 0 P1. **Coverage plan: of the 15 P1 tickets, 0 are safe to fix blind, 12 need a test first, 3 need the owner's eyes; of 50 P2s, 14 are safe now.** The bench can't yet catch a speed fix that changes the game (CR3-550, now the first fix-phase job). The 10 known failures are all content drift or a retired premise. Several shipped-content gaps make some findings latent (no shipped aura, statuses or item rules yet) | pending commit |
