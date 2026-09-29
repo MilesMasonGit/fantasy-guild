@@ -284,12 +284,19 @@ function printWork(checks, baseline, accepted) {
 // Compare, part 2: the timings
 // ---------------------------------------------------------------------------
 
-/** The numbers --compare checks, per scenario. */
+/**
+ * The numbers --compare checks, per scenario.
+ *
+ * S4's landing drops are checked on their **p50**, not their worst: each takes
+ * ~3 ms, so the worst of 50 is whichever one a GC pause or the OS happened to
+ * hit, and moved 4.5–8.4 ms between runs on a quiet machine (the p50 stayed
+ * within 3.10–3.41). Their worst is still printed and kept in the results JSON.
+ */
 function comparable(row) {
     if (row.custom) {
         return {
             arrivalsWorst: row.custom.arrivalsWorst,
-            landedWorst: row.custom.landedWorst,
+            landedP50: row.custom.landedP50,
             refusedWorst: row.custom.refusedWorst,
             shrinkMs: row.custom.shrinkMs
         };

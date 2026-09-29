@@ -107,15 +107,22 @@ it to make a speed fix pass: a speed fix that changes the work is not identical.
 #### The timings
 
 `--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5, S6),
-and for S4 the **worst arrival**, the **worst landing drop**, the **worst
+and for S4 the **worst arrival**, the **p50 landing drop**, the **worst
 refused drop** and **the shrink**, each on its own. A number fails when it is
 more than **×1.2** the baseline **and** more than **0.02 ms** worse (the floor
-stops sub-microsecond timer noise on S1 from failing a run).
+stops sub-microsecond timer noise on S1 from failing a run). The landing drops
+are checked on their p50 because the worst of fifty ~3 ms drops is whichever
+one a GC pause hit: it moved 4.5–8.4 ms between runs on a quiet machine, while
+the p50 stayed within 3.10–3.41 ms. Their worst is still printed.
 
 ⚠ Timing is noisy: another program using the CPU moves these numbers. Take the
 baseline on a quiet machine, and when a compare fails, run it again before
-believing it. `bench/baseline.json` records the machine it was taken on; a
-baseline from one machine means nothing on another.
+believing it. Even quiet, a p99 or a worst-of-50 can land just over ×1.2 on
+one run in three or so; a real regression fails every run. The work check is
+not affected by load at all.
+
+`bench/baseline.json` records the machine it was taken on; a baseline's
+timings from one machine mean nothing on another.
 
 ## The scenarios
 
