@@ -106,6 +106,25 @@ here blocked the rest of the run.)*
    - **The Wishing Well rewrites the Guild Hall on load** (wiping rules
      authored on the Hall): **(A) Recommended: keep its water separate.**
 
+9. **From R7 (drag & drop, input)**: 4 questions, `docs/review_v3/R7.md` §7.
+   - **Something let go over an open drawer** (today it lands on the mat
+     hidden underneath, CR3-402): **(A) Recommended: it flies back, like any
+     miss.** (B) Keep today's behaviour. (C) Drawers slide aside during mat drags.
+   - **Keyboard access to ~150 mat Tokens**: **(A) Recommended: take them out
+     of the Tab order** and drop the untrue "press space to drag" screen-reader
+     text. (B) Build real keyboard dragging.
+   - **Hover rings mid-drag**: **(A) Recommended: only the flags the Token
+     would land in.**
+   - **Escape during a drag**: **(A) Recommended: it only cancels the drag**
+     (today it also closes the hero sheet and ends disallow mode).
+
+10. **From R2 (board state, spatial physics)**: 2 questions, `docs/review_v3/R2.md` §8.
+    - **Shrink speed target**: only the developer Mat Tuner can shrink the mat.
+      **(A) Recommended: keep the 8 ms target for player actions only.**
+    - **What a push moves** (today it separates every overlapping pair on the
+      whole mat, CR3-151): **(A) Recommended: only the newcomer and whatever it
+      pushes into.** It changes future pushes; saved layouts don't move.
+
 ---
 
 ## Log
@@ -126,4 +145,6 @@ here blocked the rest of the run.)*
 | 2026-09-28 | **R1 done** (engine loop): 11 tickets, **2 P1 both confirmed by the director in code**: CR3-100, a new game's first save is written before the Guild Hall exists (a crash in the first 10 min leaves a dead slot); CR3-101, a PC clock change sends negative time through every system. Also measured: spawners are 53 % of the realistic tick; event batching is not worth bringing back; autosave is 0.7 ms | pending wave-2 commit |
 | 2026-09-29 | Weekly limit hit; resumed after reset. R3 and R4 had finished writing just before | — |
 | 2026-09-29 | **R4 done** (combat/effects/loot): 17 tickets, 1 P1: CR3-250, each kill triggers two whole-neighbourhood rebuilds (one for a hero who didn't move), 123–222 ms per kill on the torture board. Director confirmed it in code. R4 also caught a **director error**: P1 closed CR2-082 wrongly (the XP table is still unused, now CR3-258); corrected | pending commit |
-| 2026-09-29 | **R3 done** (work/flags/rules): 7 tickets, 1 P1 (CR3-200: every enemy step empties the "who is near whom" cache). **Spikes for CR3-047 + CR3-004: S2 p99 4.6 → 2.2 ms, S3 p99 87 → 12 ms, identical game results**; adding CR3-200's fix would reach S2 p99 1.34 ms (under target). No error boundary anywhere yet (CR3-203) | pending commit |
+| 2026-09-29 | **R3 done** (work/flags/rules): 7 tickets, 1 P1 (CR3-200: every enemy step empties the "who is near whom" cache). **Spikes for CR3-047 + CR3-004: S2 p99 4.6 → 2.2 ms, S3 p99 87 → 12 ms, identical game results**; adding CR3-200's fix would reach S2 p99 1.34 ms (under target). No error boundary anywhere yet (CR3-203) | merged `930d47c` |
+| 2026-09-29 | **R7 done** (drag & input): 14 tickets, 1 P1: CR3-402, a Token or flag let go over an open drawer lands on the mat hidden underneath (director confirmed the code path; needs a hands-on check in session C). Every drop's legality is enforced in the engine, so round 2's worst failure shape is absent. Picking up and dropping likely re-renders all ~150 Tokens (CR3-400). 14 hands-on checks written for the owner | pending commit |
+| 2026-09-29 | **R2 done** (board state, spatial): 9 tickets, 1 P1 (CR3-150 nudge search/shrink). **Spikes, identical positions checked by checksum: S2 p99 3.1 → 1.5 ms (at target), S4 worst arrival 56 → 13 ms, shrink 333 → 73 ms**. The Token-list cache (CR3-001) must reset only on add/remove; the director confirmed those are the only writers (`BoardState.js:209-229`). S4's refused drops are correct behaviour (FP-46); the scenario needs fixing (CR3-156). No leaks | pending commit |
