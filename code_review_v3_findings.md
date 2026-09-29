@@ -19,7 +19,7 @@ the priority score.
 | — | Planning survey | ✅ Done | 2026-09-27 | `6908bca` | 22 tickets pre-filed |
 | P1 | Clean baseline & round-2 re-triage | ✅ Done | 2026-09-28 | *(this commit)* | 88 open CR2 tickets walked against the code: 37 closed, 4 CMS lane, 1 econ-sim lane, 2 closed by owner decision, 44 carried into CR3-018/020/024…046; tooling run filed CR3-023…027 |
 | P2 | Build Tier A — headless benchmark | ✅ Done | 2026-09-28 | `42181be` | `npm run bench` + `bench:micro`; S2 misses target ~2×, S3 cliff; 4 tickets confirmed, 2 closed; CR3-047 filed |
-| P3 | Build Tier B — stress scenarios + Perf HUD | 🔲 Not started | | | |
+| P3 | Build Tier B — stress scenarios + Perf HUD | ✅ Done | 2026-09-28 | `f9af6ba` | `?stress=<name>`, Perf HUD, `window.__perf`; production build verified clean; first reading: MatBoard ~40 commits/s at S2 (dev, preview pane) |
 | R1 | Engine loop, clock & event bus | 🔲 Not started | | | |
 | R2 | Board state & spatial physics | 🔲 Not started | | | |
 | R3 | Work, flags & rule evaluation | 🔲 Not started | | | |
@@ -301,7 +301,7 @@ table is now the only record of what happened to them.**
 | 052, 063 | ⚪ Moot | `Cartographer.js` deleted (Map bursts retired, `ac88c99`); map quests retired (TL 9.5) |
 | 056 | ✅ Fixed | `collectSprite` now 2 publishes; sweeps batched (`asSweep`). Load re-measured in R4 |
 | 062 | ⚪ Moot | `getOccupyingToken` gone with the grid |
-| 082 | ✅ Fixed | `XP_TABLE` is read (`XPCurve.js:94`) |
+| 082 | ~~✅ Fixed~~ ⚠ **WRONG — reopened as CR3-258 (R4)** | the director cited `XPCurve.js:94`, but that line is inside `getXpTable`, which nothing calls; the table is still unused (215 µs per XP award at level 99) |
 | 084 | ✅ Fixed | `RANDOM_HUNTS` targets `token_goblin` (TL 9.5) |
 | 092 | ✅ Fixed | all ten dead events have zero publishers now |
 | 095 | ⚪ Moot | `QuestManager` uses `Date.now()` only for ids; the Time Bank is out of scope (owner) |

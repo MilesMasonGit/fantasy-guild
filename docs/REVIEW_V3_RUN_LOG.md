@@ -64,6 +64,48 @@ here blocked the rest of the run.)*
      **(A) Recommended: keep it**, so a baseline says which machine it belongs to.
      (B) Drop it.
 
+5. **From P3 (the in-game Perf HUD)**: 2 questions, `docs/review_v3/P3.md`.
+   - **Should the HUD also work in a shipped build with Debug Mode on?**
+     **(A) Recommended: no, dev builds only**; `npm run tauri:dev` already runs
+     the real desktop app with it. (B) Yes, behind Debug Mode, so the exact
+     player build can be measured, but the harness code ships to players (off).
+   - **Certify frame rate on the dev build, or add a profiling build?** React's
+     dev mode is slower than what players get, so dev numbers are pessimistic.
+     **(A) Recommended: certify on the dev build and treat a near miss as
+     "re-check".** (B) Add a small `build:perf` (a production build with
+     profiling, never shipped) as its own ticket.
+
+6. **From R1 (engine loop, clock, events)**: 4 questions, `docs/review_v3/R1.md` §8.
+   - **Game time while playing**: **(A) Recommended: use a clock the PC can't
+     move** (a monotonic timer) for time while the game is open, and the wall
+     clock only for time away. Today, setting the PC clock back sends
+     "negative time" through every system (CR3-101, confirmed by the director).
+   - **A stalled station's warning**: **(A) Recommended: announce it once**, not
+     10 times a second.
+   - **Buff rebuilds**: **(A) Recommended: merge them to one per tick**; decide
+     together with R2's findings.
+   - **Unused clock pieces**: **(A) Recommended: remove them**, but keep the
+     debug surface (`window.Game`) that testing depends on.
+
+7. **From R3 (work, flags, rules)**: 3 questions, `docs/review_v3/R3.md` §7.
+   - **Crafted Tokens with no charge count** (the Copper Woodaxe never wears
+     out): **(A) Recommended: keep "no count = unlimited"**, but have the
+     content check flag crafted/Shop Tokens that have none.
+   - **Rule upkeep**: **(A) Recommended: let it also take matching loot from
+     the mat, Bank first** (already open item 4 in the token-lifecycle feedback).
+   - **Item rule moments**: **(A) Recommended: offer items only the two moments
+     that actually fire** ("starting work", "engaging").
+
+8. **From R4 (combat, heroes, effects, loot)**: 4 questions, `docs/review_v3/R4.md` §7.
+   - **Kill loot and yield/double-loot/bonus rules**: **(A) Recommended: yes**,
+     the same rules as station output.
+   - **Timed effects' clock**: **(A) Recommended: game time**, like wounds and
+     quest timers.
+   - **Defeat clears timed effects too**: **(A) Recommended: yes**, and
+     `Removes` should reach statuses too.
+   - **The Wishing Well rewrites the Guild Hall on load** (wiping rules
+     authored on the Hall): **(A) Recommended: keep its water separate.**
+
 ---
 
 ## Log
@@ -77,3 +119,11 @@ here blocked the rest of the run.)*
 | 2026-09-28 | **R8 done** (UI/UX): 18 tickets, 1 P1 (CR3-450, a hero sheet that probably closes on the first click inside it). Director spot-checked CR3-451 and CR3-452: both hold | wave-1 commit |
 | 2026-09-28 | **R9 done** (vestiges/docs/build): 16 tickets, no P1. Found the plan's §2.D stale and the real reason `nameRegistry` looks dead (a comment apostrophe fools the tool). Director spot-checked it: it holds | wave-1 commit |
 | 2026-09-28 | **P2 done: `npm run bench` built.** Director re-took the baseline on a quiet machine; a compare re-run stays within 5 %. **S2 realistic p99 3.2 ms vs 1.5 target; S3 torture 68 ms (a cliff); push storm 60 ms vs 8.** Main causes: the Token list copied and sorted 47×/tick (CR3-001) and capped spawners retrying every tick (CR3-047). Memory is flat | merged `42181be` |
+| 2026-09-28 | Wave 2 launched: P3 + R1–R4. All five stopped by a usage limit mid-run; resumed intact (two spike worktrees survived correctly) | — |
+| 2026-09-28 | **P3 done: in-game Perf HUD** (`?stress=realistic`, `window.__perf.report()`, Copy report button). Director checked: game-source changes are dev-gated; the production `Profiler` is a pass-through. First reading (dev build, preview pane): **MatBoard re-renders ~40×/s at S2 vs a target of 1** | merged `f9af6ba` |
+| 2026-09-28 | Wave 3 launched: R5 (UI↔engine), R6 (mat drawing), R7 (drag & input), each in its own browser tab | — |
+| 2026-09-28 | Another usage-limit stop hit six agents; all resumed. Director confirmed `node_modules` intact after the spike cleanups | — |
+| 2026-09-28 | **R1 done** (engine loop): 11 tickets, **2 P1 both confirmed by the director in code**: CR3-100, a new game's first save is written before the Guild Hall exists (a crash in the first 10 min leaves a dead slot); CR3-101, a PC clock change sends negative time through every system. Also measured: spawners are 53 % of the realistic tick; event batching is not worth bringing back; autosave is 0.7 ms | pending wave-2 commit |
+| 2026-09-29 | Weekly limit hit; resumed after reset. R3 and R4 had finished writing just before | — |
+| 2026-09-29 | **R4 done** (combat/effects/loot): 17 tickets, 1 P1: CR3-250, each kill triggers two whole-neighbourhood rebuilds (one for a hero who didn't move), 123–222 ms per kill on the torture board. Director confirmed it in code. R4 also caught a **director error**: P1 closed CR2-082 wrongly (the XP table is still unused, now CR3-258); corrected | pending commit |
+| 2026-09-29 | **R3 done** (work/flags/rules): 7 tickets, 1 P1 (CR3-200: every enemy step empties the "who is near whom" cache). **Spikes for CR3-047 + CR3-004: S2 p99 4.6 → 2.2 ms, S3 p99 87 → 12 ms, identical game results**; adding CR3-200's fix would reach S2 p99 1.34 ms (under target). No error boundary anywhere yet (CR3-203) | pending commit |
