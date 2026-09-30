@@ -1030,3 +1030,36 @@ So the engine figures that matter to a player **today** are the S2 ones (no aura
   shrink 338 ms). The gate branch re-takes it.
 - **Reasoned, not reproduced:** CR3-402, 450, 451, 400, 401, 403, 405, 409, 412 and 453.
   Session C confirms them.
+
+---
+
+## 11. Owner rulings — interview of 2026-09-30
+
+The owner answered the top 16 of §8 directly and ruled that **the recommended
+answer (A) stands for the other 19** (logged, and overrulable later). These
+rulings supersede §8's open status. Numbers refer to §8.
+
+| § 8 | Ruling | Effect on the waves |
+|---|---|---|
+| **1** Exact engine fixes rated medium risk | **Yes.** A `WORK CHANGED` result or any new test failure parks the fix. | **Wave 3 (CR3-004, 200, 250, 254, 201, 103) and CR3-157 are now autonomous-eligible.** |
+| **2** The 10 known failures | **Mark them as expected** in their test files. | CR3-553 in Wave 0. |
+| **3** Visible-bug batch | **Stale HP bars (CR3-300) and dead buttons (CR3-451) may be batched without a look.** ⚠ **Ask the owner about any bug that could be a design choice.** The hero sheet **is supposed to close on a click on the playmat**. | Wave 2 split: 300, 451, 203 (error boundary) proceed; 405 (silent refused equip: what message?) needs asking. |
+| — CR3-450 clarified | **Closing on a click INSIDE the Bank-side hero sheet is a bug.** Clicking the playmat (or outside both) still closes it. | CR3-450 into the Wave 2 batch. |
+| **4** Drawing set | **Particle sleep now; the rest (walkers by transform, one ring clock, hero frames without React, the beacon fix, memo) as one batch the owner eye-checks before it is kept.** MatBoard's target counts its own renders (§8 Q4 A). | Wave 4 prepared on a branch, **not merged until the owner has looked**. |
+| **5** Shadows | **Owner's own design: a hard, solid-black silhouette copy of the sprite offset down-right (pixel-crisp), and sharp coloured pixel outlines instead of the glow** for hover/selected, working and alerts (the sprite art already has 1-px black outlines). **Measure first**: spike running (`docs/review_v3/SPIKE_shadows.md` when done); offset to be tested (1/2/3 art-px). | Wave 5 waits for the spike and the owner's pick. |
+| **6** Game clock | **A clock the PC can't move** while playing; the wall clock only for time away. | CR3-101 (P1) unblocked. |
+| **7** Drop over a drawer | **The Shop drawer slides aside when a dragged Shop item comes over the playmat, and reopens when dragged back over the drawer.** Item drags (onto heroes) need no slide. **While the Bank is open, the playmat cannot be interacted with at all**: the Bank covers it. | CR3-402 becomes: implement the Shop slide-back; **verify the Bank rule is enforced** (if a mat drag can start with the Bank open, fix that). |
+| **8** Settings | **Delete the 4 retired, "coming soon" on the 4 already ruled, disable the 5 unwired** (until wired in a later wave). | CR3-033 unblocked. |
+| **9** Engine target | **Keep 1.5 ms p99** on the realistic board. | — |
+| **10** Certification build | **The dev build; a near miss means re-check.** | Session C as written. |
+| **11** Hidden event errors in tests | **Count them first, then make new ones fail.** | CR3-555. |
+| **12** Stuck station's warning | **Say it once**, and again only if it clears and comes back. | CR3-005. |
+| **13** Spike copies | **Link `cms/node_modules` too**; remove both links before removing the copy. | CR3-552. |
+| **14** The 8 ms rule and the dev Mat Tuner shrink | **Player actions only.** | CR3-150 severity drops. |
+| **15** What a push moves | **Only what the newcomer crowds** (and what that pushes into). | CR3-151; CR3-152 unnecessary. ⚠ Changes future pushes → the bench gate will report WORK CHANGED for S4; accept it under CR3-151. |
+| **16** Escape | **One press, one layer**; during a drag it only cancels the drag; click-outside closes light pop-ups only; drawers never close on a stray click. | CR3-454/409. |
+| **17–35** | **Recommendation (A) stands** for each, as written in §8. **Except 23** (the uncommitted art): already done; the director committed it with the owner's permission (`24551cf`). **22**: the four scrap art folders stay out of git (A). | — |
+
+### Also decided in the same conversation
+- **The new art**: committed; the ore veins and Stone Outcrop use the new vein art (sprite ids repointed); 38 new sprites registered.
+- **The owner's CMS to-do**: Wood Foundation → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, the Stone item → `item_stone`; **retire the Copper Rubble Token** ("we'll just have copper veins").
