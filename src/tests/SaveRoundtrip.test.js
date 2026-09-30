@@ -1,5 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
+import { generateHero } from '../systems/hero/HeroGenerator.js';
+import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import * as BoardPromotion from '../systems/board/BoardPromotion.js';
+import { FLAG_COLOURS } from '../systems/board/FlagColours.js';
+import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { getStatusStacks } from '../config/registries/statusRegistry.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerEffects } from '../config/registries/effectRegistry.js';
+import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { migrateState, IncompatibleSaveError } from '../systems/core/SaveMigration.js';
 import { GAME_VERSION, validateSaveData } from '../state/StateSchema.js';
 
@@ -163,5 +174,104 @@ describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', 
         expect(GameState.state.board.tokens.tok_a.typeId).toBe('token_oak_forest');
         expect(GameState.state.board.tokenBank).toBeUndefined();
         expect(GameState.state.board.tray).toBeUndefined();
+    });
+});
+
+/**
+ * ⭐ A hero comes back from a save exactly as they went in (CR3-266, test
+ * first for CR3-251/252). Through the real load route: serialize → JSON →
+ * `migrateState` → `GameState.initFromSave` (which rehydrates each hero and
+ * re-registers their gear on the aggregator, the route CR2-040 was found on).
+ *
+ * ⚠ Not here: a live effect (`hero.effects`) reaching the aggregator after a
+ * load. That fails today (CR3-252) and lands, red first, with its fix.
+ */
+describe('a hero round-trips through a save (CR3-266)', () => {
+    beforeAll(() => {
+        registerEffects({
+            fixture_effect_rt_plating: {
+                id: 'fixture_effect_rt_plating', name: 'Round-trip Plating',
+                statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.ARMOR, bucket: 'flat', value: 3 } }]
+            }
+        });
+        registerItems({
+            fixture_rt_plate: { id: 'fixture_rt_plate', name: 'Round-trip Plate', effects: [{ effectId: 'fixture_effect_rt_plating', scale: 1 }] }
+        });
+    });
+
+    /** Save the live game and load it back the way a slot does. */
+    async function saveAndLoad() {
+        const revived = JSON.parse(JSON.stringify(GameState.serialize()));
+        await GameState.initFromSave(migrateState(revived.state, revived.version));
+        return GameState.state;
+    }
+
+    function hero(id) {
+        const h = generateHero({ name: id });
+        h.id = id;
+        return h;
+    }
+
+    beforeEach(() => {
+        GameState.initNew();
+    });
+
+    it('keeps statuses, banked skills, the wound timer and the flag colour', async () => {
+        const banked = COMBAT_SKILL_IDS[0];
+        const a = hero('hero_rt_a');
+        a.statuses = [{ id: 'poison', stacks: 2, remaining: 3 }, { id: 'well_fed', stacks: 1 }];
+        a.bankedSkills = { [banked]: { level: 7, xp: 123 } };
+        a.flagColour = FLAG_COLOURS[3];
+        const b = hero('hero_rt_b');
+        b.status = 'wounded';
+        b.woundedRemainingMs = 12345;
+        GameState.state.heroes = [a, b];
+
+        const loaded = await saveAndLoad();
+        const [la, lb] = loaded.heroes;
+
+        expect(la.statuses).toEqual([{ id: 'poison', stacks: 2, remaining: 3 }, { id: 'well_fed', stacks: 1 }]);
+        expect(getStatusStacks(la.statuses, 'poison')).toBe(2);
+        // A non-foundation skill stays banked: only banked foundation skills go
+        // back on the sheet at load (TL-7).
+        expect(la.bankedSkills).toEqual({ [banked]: { level: 7, xp: 123 } });
+        expect(la.flagColour).toBe(FLAG_COLOURS[3]);
+        expect(lb.status).toBe('wounded');
+        expect(lb.woundedRemainingMs).toBe(12345);
+    });
+
+    it('keeps a paused promotion offer on its Token', async () => {
+        GameState.state.heroes = [hero('hero_rt_a')];
+        GameState.state.board.tokens = {
+            tok_yard: {
+                id: 'tok_yard', typeId: 'fixture_promotion', x: 400, y: 300, placedAt: 0,
+                usesRemaining: null, cycleElapsedMs: 0, promotionPaused: true, promotionHeroId: 'hero_rt_a'
+            }
+        };
+        GameState.state.board.nextTokenOrder = 1;
+
+        const loaded = await saveAndLoad();
+        const yard = loaded.board.tokens.tok_yard;
+
+        expect(yard.promotionPaused).toBe(true);
+        expect(yard.promotionHeroId).toBe('hero_rt_a');
+        expect(BoardPromotion.isPaused(yard)).toBe(true);
+        expect(BoardPromotion.getOffer('tok_yard')).toMatchObject({ instanceId: 'tok_yard', heroId: 'hero_rt_a' });
+    });
+
+    it('puts carried gear back on the aggregator combat reads', async () => {
+        const a = hero('hero_rt_a');
+        a.equipment = Array(9).fill(null);
+        a.equipment[2] = 'fixture_rt_plate';
+        GameState.state.heroes = [a];
+        InventoryManager.init();
+        InventoryManager.addItem('fixture_rt_plate', 3);
+
+        const loaded = await saveAndLoad();
+        const la = loaded.heroes[0];
+
+        expect(la.equipment[2]).toBe('fixture_rt_plate');
+        expect(la.aggregator).toBeDefined();
+        expect(la.aggregator.query('ARMOR')).toBe(3);
     });
 });
