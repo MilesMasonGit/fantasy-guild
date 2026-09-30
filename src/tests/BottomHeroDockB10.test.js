@@ -24,6 +24,7 @@ import {
     DOCK_STRIP_PX, dockArtPx, dockArtOffset, dockArtFilter, hpPercent, hpTone, isDeployedStatus
 } from '../ui/components/dock/dockHeroView.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 const h = React.createElement;
 
@@ -90,7 +91,7 @@ describe('B10 horizontal hero dock', () => {
         // At a fit of 1 the mat draws heroes at 2 × 64 px.
         expect(sprite.style.width).toBe('128px');
         // The frame's top half shows: it starts half an art above the edge.
-        expect(art.style.top).toBe('64px');
+        expect(drawnPoint(art).y).toBe(64);
         expect(view.container.querySelector('[data-bottom-hero-dock]').style.height).toBe(`${DOCK_STRIP_PX}px`);
     });
 

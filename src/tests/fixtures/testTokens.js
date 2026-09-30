@@ -385,7 +385,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [],
-            outputs: [{ itemId: 'item_fish', quantity: 2, chance: 100 }]
+            outputs: [{ itemId: 'fixture_fish', quantity: 2, chance: 100 }]
         }
     },
 
@@ -654,7 +654,7 @@ export const FIXTURE_TOKENS = {
      * A Market, for the currency-output path (D-141).
      *
      * ⚠️ **Its numbers encode the owner's rule** (2026-08-20): *a Market pays
-     * roughly a 20% premium over the Bank's sell price.* `item_market_goods`
+     * roughly a 20% premium over the Bank's sell price.* `fixture_market_goods`
      * is worth 10, so 10 of them sell raw for 100 and this Market pays 120 —
      * exactly `MARKET_PREMIUM`.
      *
@@ -669,7 +669,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_social',
         config: {
             skill: 'commerce', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
-            inputs: [{ itemId: 'item_market_goods', quantity: 10 }],
+            inputs: [{ itemId: 'fixture_market_goods', quantity: 10 }],
             outputs: [{ currency: 'gold', quantity: 120, chance: 100 }]
         }
     },
@@ -793,8 +793,8 @@ export const FIXTURE_RECIPE_POOLS = {
             id: 'pooled_stew',
             levelRequirement: 5,
             requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
-            inputs: [{ itemId: 'item_carrot', quantity: 1 }],
-            outputs: [{ itemId: 'item_leek_potato_stew', minQty: 1, maxQty: 1, chance: 100 }],
+            inputs: [{ itemId: 'fixture_carrot', quantity: 1 }],
+            outputs: [{ itemId: 'fixture_leek_potato_stew', minQty: 1, maxQty: 1, chance: 100 }],
             durationMs: 10000,
             xp: 5
         },
@@ -856,6 +856,14 @@ export const FIXTURE_RECIPE_POOLS = {
  * the `fixture_` convention above — harmless while they are shadowed, but they
  * are the same tripwire in miniature. Not changed here; left as its own job.
  *
+ * ⭐ CR3-551 (round-3 review): four of the seven ids that content does NOT
+ * define moved to the `fixture_` prefix: `fixture_fish`, `fixture_carrot`,
+ * `fixture_market_goods`, `fixture_leek_potato_stew`. The other three
+ * (`item_yew_log`, `item_glowcap`, `item_spider_silk`) stay for now because
+ * the headless bench (`bench/fixtures.mjs`) makes them: renaming them changes
+ * the bench's work fingerprint (Bank and loot hashes), so it needs a ruled
+ * `--accept-work-change` and its own commit.
+ *
  * Numbers are instruments, not balance: a `value` of 1 keeps any economy
  * assertion that touches them arithmetically obvious. (It replaced `trueCost`
  * and `sellPrice`, which the retired balance engine wrote and nothing read;
@@ -890,7 +898,7 @@ export const FIXTURE_ITEMS = {
      * `RosterAndMarkets` "keep measuring real values". Neither suite mentions
      * any of the three; neither failed when the rename was simulated against
      * the whole suite; and Market's premium rule is already asserted against
-     * `item_market_goods` below, precisely because content prices were useless
+     * `fixture_market_goods` below, precisely because content prices were useless
      * for it. Nothing was lost: all three were worth 1g in `data/items.json`,
      * which is what the fixture defaults already give.
      */
@@ -909,16 +917,16 @@ export const FIXTURE_ITEMS = {
      * the ratio is real. (It said `baseValue: 10` until the Bank stopped reading
      * a field no item has; the number and its purpose are unchanged.)
      */
-    item_market_goods: fixtureItem(
-        'item_market_goods', 'Market Goods', 'material', 'ore_copper', { value: 10 }
+    fixture_market_goods: fixtureItem(
+        'fixture_market_goods', 'Market Goods', 'material', 'ore_copper', { value: 10 }
     ),
 
     // Cooking chain, for the shared recipe pool above.
-    item_carrot: fixtureItem('item_carrot', 'Carrot', 'ingredient', 'wood_oak'),
+    fixture_carrot: fixtureItem('fixture_carrot', 'Carrot', 'ingredient', 'wood_oak'),
     item_blueberry: fixtureItem('item_blueberry', 'Blueberry', 'ingredient', 'wood_oak'),
-    item_fish: fixtureItem('item_fish', 'Fish', 'ingredient', 'd_water'),
-    item_leek_potato_stew: fixtureItem(
-        'item_leek_potato_stew', 'Leek & Potato Stew', 'food', 'd_water',
+    fixture_fish: fixtureItem('fixture_fish', 'Fish', 'ingredient', 'd_water'),
+    fixture_leek_potato_stew: fixtureItem(
+        'fixture_leek_potato_stew', 'Leek & Potato Stew', 'food', 'd_water',
         { restoreAmount: 10, restoreType: 'HP' }
     ),
     item_blueberry_pie: fixtureItem(

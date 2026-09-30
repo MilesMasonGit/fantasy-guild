@@ -49,7 +49,7 @@ registerRecipePools({
         levelRequirement: 0,
         requiresContext: [],
         inputs: [],
-        outputs: [{ itemId: 'item_carrot', minQty: 1, maxQty: 1, chance: 100 }],
+        outputs: [{ itemId: 'fixture_carrot', minQty: 1, maxQty: 1, chance: 100 }],
         durationMs: 10000,
         xp: 1
     }]

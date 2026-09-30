@@ -43,7 +43,7 @@ registerRecipePools({
         // A bare string, exactly as the CMS writes it before a tier is picked.
         requiresContext: ['ctx_fixture_a'],
         inputs: [],
-        outputs: [{ itemId: 'item_carrot', minQty: 1, maxQty: 1, chance: 100 }],
+        outputs: [{ itemId: 'fixture_carrot', minQty: 1, maxQty: 1, chance: 100 }],
         durationMs: 10000,
         xp: 1
     }]

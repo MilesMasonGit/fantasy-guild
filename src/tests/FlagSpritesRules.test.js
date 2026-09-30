@@ -30,6 +30,7 @@ import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
 import { useUIModals } from '../ui/hooks/useUIModals.js';
 import { isRecallDrop, recallFromDrop } from '../ui/components/dock/dockRecall.js';
 import { flagOrigin, POLE_BASE, FLAG_PX } from '../ui/components/board/flagGeometry.js';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -332,8 +333,8 @@ describe('FP-83 — a flag stands exactly where it was dropped', () => {
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
         const { left, top } = flagOrigin(C(14));
-        expect(parseFloat(flag.style.left)).toBe(left);
-        expect(parseFloat(flag.style.top)).toBe(top);
+        expect(drawnPoint(flag).x).toBe(left);
+        expect(drawnPoint(flag).y).toBe(top);
     });
 
     it('a flag planted off the old grid stands there too — no snapping', () => {
@@ -341,8 +342,8 @@ describe('FP-83 — a flag stands exactly where it was dropped', () => {
         Flags.plant('h1', odd);
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
-        expect(parseFloat(flag.style.left) + POLE_BASE.x).toBe(odd.x);
-        expect(parseFloat(flag.style.top) + POLE_BASE.y).toBe(odd.y);
+        expect(drawnPoint(flag).x + POLE_BASE.x).toBe(odd.x);
+        expect(drawnPoint(flag).y + POLE_BASE.y).toBe(odd.y);
     });
 });
 
@@ -514,8 +515,8 @@ describe('several flags on one point (FP-83)', () => {
         // ⛔ The grid's fan-out and its three-flag cap are gone: flags overlap.
         const { left, top } = flagOrigin(C(20));
         drawn.forEach(el => {
-            expect(parseFloat(el.style.left)).toBe(left);
-            expect(parseFloat(el.style.top)).toBe(top);
+            expect(drawnPoint(el).x).toBe(left);
+            expect(drawnPoint(el).y).toBe(top);
         });
 
         // Planting order decides who is in front; nobody is hidden.

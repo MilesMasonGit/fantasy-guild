@@ -18,6 +18,7 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
 import { HERO_HIT_PX, TOKEN_BAR_GAP_U } from '../ui/components/board/boardConstants.js';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 import {
     ringRowOffset, cycleSecondsText, chargesFraction, ringCount, RING_D_U, RING_STROKE_U,
     spawnerRing, RING_COLOUR
@@ -329,8 +330,8 @@ describe('on the mat: centred under the pair (MatToken)', () => {
         const r = o.querySelector('[data-ring-row]');
         if (!r) return null;
         return {
-            x: parseFloat(o.style.left) + parseFloat(r.style.left),
-            y: parseFloat(o.style.top) + parseFloat(r.style.top)
+            x: drawnPoint(o).x + drawnPoint(r).x,
+            y: drawnPoint(o).y + drawnPoint(r).y
         };
     }
 

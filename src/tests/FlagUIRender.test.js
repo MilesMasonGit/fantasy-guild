@@ -20,6 +20,7 @@ import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { TokenInspection } from '../ui/components/drawer/TokenInspection.jsx';
 import { dockStatusLine, flagTooltip } from '../ui/components/board/flagText.js';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -157,8 +158,8 @@ describe('the idle mark (FP-29)', () => {
         const a = container.querySelector('[data-flag="h1"]');
         const b = container.querySelector('[data-flag="fighter"]');
 
-        expect(b.style.left).toBe(a.style.left);
-        expect(b.style.top).toBe(a.style.top);
+        expect(drawnPoint(b).x).toBe(drawnPoint(a).x);
+        expect(drawnPoint(b).y).toBe(drawnPoint(a).y);
         // Later plantings draw in front; nothing is pushed aside or hidden.
         expect(Number(b.style.zIndex)).toBeGreaterThan(Number(a.style.zIndex));
         expect(container.querySelector('[data-flag-more]')).toBeNull();

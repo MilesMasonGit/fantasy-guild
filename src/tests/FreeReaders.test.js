@@ -11,7 +11,7 @@ import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { nearby, neighbourIds, centreOf, tokensAround } from '../systems/board/nearby.js';
+import { nearby, neighbourIds, centreOf, tokensAround, nearRadius } from '../systems/board/nearby.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
@@ -145,6 +145,44 @@ describe('⭐ a moved buff Token: its old neighbours lose it AND its new neighbo
 // `nearby` answers is pinned on its own terms in `Nearby.test.js`.
 
 // ---------------------------------------------------------------------------
+// tokens() is a snapshot (CR3-001, test first)
+// ---------------------------------------------------------------------------
+
+describe('⭐ a tokens() list can be walked while Tokens are removed (CR3-001)', () => {
+    // CR3-001 caches the list `tokens()` returns. The engine walks it and
+    // removes as it goes (a depleted Token, a kill), so a cached list must
+    // never be the same array a removal edits: the walk would skip entries.
+    it('visits every Token that was on the mat when the walk began, whatever is removed meanwhile', () => {
+        const placed = [0, 1, 2, 3, 4].map(i => at('fixture_producer', P(i, 0)));
+        const ids = placed.map(t => t.id);
+
+        const visited = [];
+        for (const t of BoardState.tokens()) {
+            visited.push(t.id);
+            BoardState.removeToken(t.id);                 // the one in hand
+            if (t.id === ids[1]) BoardState.removeToken(ids[3]); // and one further on
+        }
+
+        expect(visited).toEqual(ids);
+        expect(BoardState.tokens()).toEqual([]);
+    });
+
+    it('a list taken before an add does not grow while it is walked', () => {
+        at('fixture_producer', P(0, 0));
+        at('fixture_producer', P(1, 0));
+        const list = BoardState.tokens();
+        let steps = 0;
+        for (const t of list) {
+            steps++;
+            if (steps === 1) at('fixture_producer', P(2 + steps, 0));
+            expect(t).toBeDefined();
+        }
+        expect(steps).toBe(2);
+        expect(BoardState.tokens()).toHaveLength(3);
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Restrictions — the projected view
 // ---------------------------------------------------------------------------
 
@@ -225,6 +263,46 @@ describe('⭐ the per-instance neighbour cache drops on add, move, remove and a 
 
         BoardState.removeToken(tool.id);                                // remove
         expect(tiers()).toEqual({});
+    });
+
+    // CR3-200 (test first) swaps the whole-cache drop on any move for a
+    // per-move one. These are the moves a per-move cache could miss.
+    it('a provider moved in from far away is seen at its new place (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(2, 2));
+        const tool = at('fixture_tool', P(6, 5));
+        const tiers = () => RecipeResolver.contextTiersAround(station.id);
+        expect(tiers()).toEqual({});
+
+        BoardState.setTokenPoint(tool.id, P(3, 2).x, P(3, 2).y);         // far → beside
+        expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
+        expect(RecipeResolver.resolveRecipe(station.id, station).status).toBe(RecipeResolver.RECIPE.OK);
+    });
+
+    it('the station itself moving next to a provider sees it, and moving away loses it (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(0, 0));
+        at('fixture_tool', P(4, 3));
+        const tiers = () => RecipeResolver.contextTiersAround(station.id);
+        expect(tiers()).toEqual({});
+
+        BoardState.setTokenPoint(station.id, P(4, 2).x, P(4, 2).y);      // the station moves, not the tool
+        expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
+
+        BoardState.setTokenPoint(station.id, P(0, 0).x, P(0, 0).y);
+        expect(tiers()).toEqual({});
+    });
+
+    it('a provider exactly on the Near radius counts; one unit further does not (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(2, 2));
+        const r = nearRadius();
+        const tool = at('fixture_tool', { x: P(2, 2).x + r, y: P(2, 2).y });
+        const tiers = () => RecipeResolver.contextTiersAround(station.id);
+        expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
+
+        BoardState.setTokenPoint(tool.id, P(2, 2).x + r + 1, P(2, 2).y);
+        expect(tiers()).toEqual({});
+
+        BoardState.setTokenPoint(tool.id, P(2, 2).x + r, P(2, 2).y);
+        expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
     });
 
     it('a new board (a load) starts a fresh cache', () => {
@@ -328,6 +406,67 @@ describe('⭐ a board-reach rule still rebuilds every Token', () => {
         BoardState.removeToken(buff.id);
         TileModifiers.rebuildAround([where]);
         expect(yieldOf(far)).toBeCloseTo(100);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// CR3-004 (test first): what counts as an ambient source
+// ---------------------------------------------------------------------------
+
+const UPKEEP_AURA = 'fixture_free_upkeep_aura';
+const WHEN_ONLY = 'fixture_free_when_only';
+
+registerTokenTypes({
+    /** A board-reach +5% yield aura that costs one oak wood a second. */
+    [UPKEEP_AURA]: {
+        id: UPKEEP_AURA, name: 'Free Upkeep Aura', tokenType: 'buff', rarity: 'rare', theme: 'fixture',
+        uses: null, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_free_upkeep_aura', keyword: 'provides', reach: 'board', to: { mode: 'all' },
+            payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 },
+            upkeep: { items: [{ itemId: 'fixture_oak_wood', quantity: 1 }], cadenceMs: 1000 }
+        }]
+    },
+    /** Its only rule fires on a moment (`when`), so it is never an ambient source. */
+    [WHEN_ONLY]: {
+        id: WHEN_ONLY, name: 'Free When Only', tokenType: 'buff', rarity: 'common', theme: 'fixture',
+        uses: null, sprite: 'skill_nature',
+        statements: [{
+            id: 'stm_free_when_only', keyword: 'provides', to: { mode: 'all' },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
+            payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.5 }
+        }]
+    }
+});
+
+describe('⭐ what counts as an ambient source (CR3-004, test first)', () => {
+    // CR3-004 indexes the Tokens that can be ambient sources instead of
+    // scanning every Token. The index must drop an aura whose upkeep lapses
+    // and must never list a rule that only fires on a moment.
+
+    it('a board-reach aura whose upkeep goes unpaid stops reaching a distant Token, and comes back when paid', () => {
+        const far = at('fixture_producer', P(5, 5));
+        at(UPKEEP_AURA, P(0, 0));
+        TileModifiers.rebuildAll();
+        expect(yieldOf(far), 'paid until its first charge falls due').toBeCloseTo(105);
+
+        // The Bank is empty: at the first cadence the rule lapses.
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(0);
+        for (let t = 0; t < 1000; t += 100) BoardRunner.tick(100);
+        expect(yieldOf(far), 'an unpaid aura still reaches').toBeCloseTo(100);
+
+        // Paid again at the next cadence.
+        InventoryManager.addItem('fixture_oak_wood', 5);
+        for (let t = 0; t < 1000; t += 100) BoardRunner.tick(100);
+        expect(yieldOf(far)).toBeCloseTo(105);
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(4);
+    });
+
+    it('a Token whose only rule has a `when` is not an ambient source for its neighbour', () => {
+        const producer = at('fixture_producer', P(1, 0));
+        at(WHEN_ONLY, P(2, 0));
+        TileModifiers.rebuildAll();
+        expect(yieldOf(producer)).toBeCloseTo(100);
     });
 });
 

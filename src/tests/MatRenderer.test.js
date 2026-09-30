@@ -24,6 +24,7 @@ import { HERO_HIT_PX } from '../ui/components/board/boardConstants.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -161,8 +162,8 @@ describe('a Token is a circle of art at a point', () => {
         const { container } = mount(h(MatBoard));
 
         const art = artOf(container, tok.id);
-        expect(parseFloat(art.style.left)).toBe(600 - 64);
-        expect(parseFloat(art.style.top)).toBe(400 - 64);
+        expect(drawnPoint(art).x).toBe(600 - 64);
+        expect(drawnPoint(art).y).toBe(400 - 64);
         expect(art.style.width).toBe('128px');
         expect(art.style.height).toBe('128px');
     });
@@ -172,8 +173,8 @@ describe('a Token is a circle of art at a point', () => {
         const { container } = mount(h(MatBoard));
 
         const art = artOf(container, tok.id);
-        expect(parseFloat(art.style.left)).toBe(700 - 144);
-        expect(parseFloat(art.style.top)).toBe(500 - 144);
+        expect(drawnPoint(art).x).toBe(700 - 144);
+        expect(drawnPoint(art).y).toBe(500 - 144);
         expect(art.style.width).toBe('288px');
         expect(art.style.height).toBe('288px');
     });
@@ -197,8 +198,8 @@ describe('a Token is a circle of art at a point', () => {
         });
 
         const after = artOf(container, tok.id);
-        expect(parseFloat(after.style.left)).toBe(900 - 64);
-        expect(parseFloat(after.style.top)).toBe(700 - 64);
+        expect(drawnPoint(after).x).toBe(900 - 64);
+        expect(drawnPoint(after).y).toBe(700 - 64);
         // A push is now a slide, not a remount: same element, animated.
         expect(after).toBe(before);
         expect(after.style.transition).toContain('left');
@@ -226,10 +227,10 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
         const place = heroPlacement(spot);
 
         expect(spot.x).toBe(tok.x + 64 + HeroMotion.STAND_GAP);
-        expect(parseFloat(drawn.style.left)).toBe(place.left);
-        expect(parseFloat(drawn.style.top)).toBe(place.top);
+        expect(drawnPoint(drawn).x).toBe(place.left);
+        expect(drawnPoint(drawn).y).toBe(place.top);
         // D-266's slide-apart is gone: the Token has not moved.
-        expect(parseFloat(artOf(container, tok.id).style.left)).toBe(tok.x - 64);
+        expect(drawnPoint(artOf(container, tok.id)).x).toBe(tok.x - 64);
     });
 
     it('an idle hero stands beside their own flag (FP-84)', () => {
@@ -241,8 +242,8 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
         const idle = container.querySelector('[data-board-hero="h1"]');
         const place = heroPlacement(HeroMotion.idleSpot({ x: 500, y: 900 }));
 
-        expect(parseFloat(idle.style.left)).toBe(place.left);
-        expect(parseFloat(idle.style.top)).toBe(place.top);
+        expect(drawnPoint(idle).x).toBe(place.left);
+        expect(drawnPoint(idle).y).toBe(place.top);
         expect(HeroMotion.idleSpot({ x: 500, y: 900 })).toEqual({ x: 572, y: 828 });
     });
 

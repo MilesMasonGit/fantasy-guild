@@ -214,6 +214,54 @@ describe('⭐ a Forest spawns its family up to its allowance', () => {
     });
 });
 
+// --- CR3-047 (test first): the census a faster spawner pass must keep ------
+
+describe('⭐ the family census is exact within one tick (CR3-047)', () => {
+    // CR3-047 counts each family once per tick instead of per spawner. That is
+    // only right if a spawn earlier in the same pass is counted by the next
+    // spawner, and if the family follows a re-registered spawner type.
+
+    it('two Forests one short of their shared cap, both due in the same tick, spawn exactly once', () => {
+        give(SEED, 100);
+        // 9 of the family by hand: the two Forests' combined cap is 10.
+        for (let i = 0; i < 9; i++) placeAt('fixture_sp_tree', 160 + i * 160, 160);
+        const a = placeAt('fixture_sp_forest', 500, 600);
+        const b = placeAt('fixture_sp_forest', 1100, 600);
+
+        run(19900);
+        expect(family()).toHaveLength(9);
+        expect(a.clocks.spawnMs).toBe(b.clocks.spawnMs);   // both due on the same next tick
+
+        run(100);
+        expect(family()).toHaveLength(10);
+        expect(seeds()).toBe(99);
+
+        run(5 * 60000);
+        expect(family()).toHaveLength(10);
+        expect(seeds()).toBe(99);
+    });
+
+    it('re-registering a spawner type with other spawns moves its family with it', () => {
+        registerTokenTypes({
+            fixture_sp_shifting: {
+                id: 'fixture_sp_shifting', name: 'Fixture Sp Shifting', tokenType: 'resource',
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+                spawner: { spawns: [{ typeId: 'fixture_sp_sapling', weight: 1 }], allowance: 2, intervalMs: 5000, upkeep: [] }
+            }
+        });
+        expect(SpawnerSystem.familyOf('fixture_sp_shifting')).toEqual(['fixture_sp_sapling', 'fixture_sp_tree']);
+
+        registerTokenTypes({
+            fixture_sp_shifting: {
+                id: 'fixture_sp_shifting', name: 'Fixture Sp Shifting', tokenType: 'resource',
+                rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
+                spawner: { spawns: [{ typeId: 'fixture_passive', weight: 1 }], allowance: 2, intervalMs: 5000, upkeep: [] }
+            }
+        });
+        expect(SpawnerSystem.familyOf('fixture_sp_shifting')).toEqual(['fixture_passive']);
+    });
+});
+
 // --- SP-6 -------------------------------------------------------------------
 
 describe('⭐ removing a spawner lowers the cap and removes nothing (SP-6)', () => {

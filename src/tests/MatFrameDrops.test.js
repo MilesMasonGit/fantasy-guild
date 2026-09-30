@@ -91,6 +91,41 @@ describe('pointerToMat — screen pointer → mat point', () => {
         expect(pointerToMat({ x: 120 + 480, y: 80 + 321.5 }, rect)).toEqual({ x: 960, y: 643 });
     });
 
+    // CR3-413: the maths holds at any mat size and zoom, because both the
+    // width and the scale are read live. Pinned at the Mat Tuner's extremes.
+    describe('at other mat sizes and zooms (CR3-413)', () => {
+        afterEach(() => resetMatTuning());
+
+        /** The mat's on-screen box at `fit`, with its corner at (left, top). */
+        const rectAt = (fit, left = 30, top = 70) => ({ left, top, width: matW() * fit, height: matH() * fit });
+        const screenOf = (p, fit, left = 30, top = 70) => ({ x: left + p.x * fit, y: top + p.y * fit });
+
+        for (const steps of [6, 20]) {
+            for (const fit of [1, 0.5, 0.1]) {
+                it(`${steps} steps at fit ${fit}: the far corner and the middle map back exactly`, () => {
+                    setMatTuning('matSteps', steps);
+                    const corner = { x: matW(), y: matH() };
+                    const middle = { x: matW() / 2, y: matH() / 2 };
+                    for (const p of [corner, middle, { x: 0, y: 0 }]) {
+                        const got = pointerToMat(screenOf(p, fit), rectAt(fit));
+                        expect(got.x).toBeCloseTo(p.x, 9);
+                        expect(got.y).toBeCloseTo(p.y, 9);
+                    }
+                });
+            }
+        }
+
+        it('reads the width live: the same box means a different point after a resize', () => {
+            const rect = { left: 0, top: 0, width: 960 };
+            setMatTuning('matSteps', 6);                 // 960 u wide: scale 1
+            expect(pointerToMat({ x: 480, y: 100 }, rect)).toEqual({ x: 480, y: 100 });
+            setMatTuning('matSteps', 20);                // 3200 u wide: the same box is scale 0.3
+            const p = pointerToMat({ x: 480, y: 100 }, rect);
+            expect(p.x).toBeCloseTo(1600, 9);
+            expect(p.y).toBeCloseTo(100 / 0.3, 9);
+        });
+    });
+
     it('adds the grab offset, and refuses a missing pointer or rect', () => {
         const rect = { left: 0, top: 0, width: matW() };
         expect(pointerToMat({ x: 10, y: 20 }, rect, { x: 5, y: -5 })).toEqual({ x: 15, y: 15 });

@@ -93,33 +93,39 @@ export default [
         },
     },
 
-    // ---- Tests: vitest globals ----
+    // ---- Tests: vitest globals, plus Node's — tests read fixtures with
+    // fs / __dirname / process, which vitest provides at runtime (CR3-025).
     {
         files: ['src/tests/**/*.{js,jsx}'],
         languageOptions: {
             globals: {
                 ...globals.browser,
-                describe: 'readonly',
-                it: 'readonly',
-                test: 'readonly',
-                expect: 'readonly',
-                vi: 'readonly',
-                beforeEach: 'readonly',
-                afterEach: 'readonly',
-                beforeAll: 'readonly',
-                afterAll: 'readonly',
-                suite: 'readonly',
+                ...globals.node,
+                ...globals.vitest,
             },
         },
     },
 
-    // ---- Node-side scripts and config files ----
+    // ---- Node-side scripts, tools, the bench and config files ----
+    // ⚠ These are .mjs/.cjs, which the game-source block above (**/*.{js,jsx})
+    // does not match — so until now they were linted with NO rules at all.
     {
-        files: ['tools/**/*.mjs', 'scripts/**/*.{js,mjs}', '*.config.js', '*.config.mjs'],
+        files: [
+            'tools/**/*.mjs',
+            'bench/**/*.{js,mjs}',
+            'scripts/**/*.{js,mjs,cjs}',
+            '*.config.js',
+            '*.config.mjs',
+        ],
         languageOptions: {
-            globals: {
-                ...globals.node,
-            },
+            globals: { ...globals.node },
+        },
+        rules: {
+            ...js.configs.recommended.rules,
+            'no-unused-vars': ['error', {
+                args: 'after-used', argsIgnorePattern: '^_', varsIgnorePattern: '^_',
+                caughtErrors: 'none', ignoreRestSiblings: true,
+            }],
         },
     },
 ];

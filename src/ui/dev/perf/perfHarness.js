@@ -11,7 +11,7 @@
 // | Frame work (estimate) | from the frame's start (the rAF timestamp) to the first task after it — style, layout, paint and any script that landed in that frame. Refresh-rate independent, so it reads the 6.06 ms budget on a 60 Hz screen too (plan §2.B) |
 // | Long Animation Frames | `PerformanceObserver` type `long-animation-frame`, with its script attribution; falls back to `longtask` (no attribution) where unsupported |
 // | Engine tick | `GameLoop.runHandlers` wrapped at runtime, `performance.measure('fg-perf:tick')` per tick (visible in DevTools' Performance panel as User Timing) |
-// | React commits | `<PerfProfiler>` around MatBoard, the hero dock, the drawer and the top bar (only when armed at page load) |
+// | React commits | `<PerfProfiler>` around MatBoard, the hero dock, the drawer and the top bar (only when armed at page load). ⚠ The "MatBoard" figure is every commit in the mat SUBTREE (a hero's frame step counts); MatBoard's own renders are counted separately by `usePerfRenderCount` (CR3-311) |
 // | Events | `EventBus.publish` wrapped at runtime: per second, by name, and subscriber calls |
 // | DOM nodes, EventBus listeners, JS heap | sampled every 2 s (heap: `performance.memory`, Chromium only) |
 //
@@ -28,7 +28,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { MsHistogram, Ring, round } from './perfStats.js';
-import { reactCommits, PROFILED_SURFACES } from './PerfProfiler.jsx';
+import { reactCommits, PROFILED_SURFACES, ownRenders, SELF_COUNTED } from './PerfProfiler.jsx';
 import { HUD_STORAGE_KEY, profilingArmed, stressFromUrl, hudRemembered } from './perfFlags.js';
 import { mountHud, unmountHud, renderHud, hudStatus, hudNodeCount, hudMounted } from './perfHud.js';
 import { buildStress, resolveStress, STRESS_SCENARIOS, STRESS_STARTED_EVENT } from './stressScenarios.js';
@@ -80,8 +80,8 @@ let listeners = { last: null, min: null, max: null };
 let heap = { startMb: null, lastMb: null, maxMb: null, totalMb: null, limitMb: null };
 
 // Rates on the HUD are "since the last HUD update", not whole-window.
-let lastRate = { at: 0, events: 0, ticks: 0, commits: {} };
-let rates = { events: null, ticks: null, react: {} };
+let lastRate = { at: 0, events: 0, ticks: 0, commits: {}, own: {} };
+let rates = { events: null, ticks: null, react: {}, own: {} };
 
 function freshLoaf() {
     return { count: 0, over100: 0, over200: 0, maxMs: 0, totalMs: 0, blockingMs: 0, scripts: new Map(), worst: [] };
@@ -257,8 +257,14 @@ function updateRates() {
             rates.react[id] = (c - (lastRate.commits[id] || 0)) / dt;
             lastRate.commits[id] = c;
         }
+        for (const id of SELF_COUNTED) {
+            const n = ownRenders[id] || 0;
+            rates.own[id] = (n - (lastRate.own[id] || 0)) / dt;
+            lastRate.own[id] = n;
+        }
     } else {
         for (const id of PROFILED_SURFACES) lastRate.commits[id] = reactCommits[id]?.commits || 0;
+        for (const id of SELF_COUNTED) lastRate.own[id] = ownRenders[id] || 0;
     }
     lastRate.at = now;
     lastRate.events = eventsTotal;
@@ -280,11 +286,12 @@ export function reset() {
     loaf = freshLoaf();
     eventsTotal = 0; listenerCalls = 0; eventsByName = new Map();
     for (const id of Object.keys(reactCommits)) delete reactCommits[id];
+    for (const id of Object.keys(ownRenders)) delete ownRenders[id];
     dom = { last: null, min: null, max: null };
     listeners = { last: null, min: null, max: null };
     heap = { startMb: null, lastMb: null, maxMb: null, totalMb: null, limitMb: null };
-    lastRate = { at: 0, events: 0, ticks: 0, commits: {} };
-    rates = { events: null, ticks: null, react: {} };
+    lastRate = { at: 0, events: 0, ticks: 0, commits: {}, own: {} };
+    rates = { events: null, ticks: null, react: {}, own: {} };
     hiddenMs = 0;
     hiddenSince = typeof document !== 'undefined' && document.visibilityState === 'hidden' ? performance.now() : null;
     lastFrameTs = 0;
@@ -364,6 +371,7 @@ export function snapshot() {
         tick: { ...ticks.summary(), perSecond: rates.ticks },
         reactArmed: profilingArmed(),
         react: rates.react,
+        ownRenders: rates.own,
         eventsPerSecond: rates.events,
         listeners: listeners.last,
         domNodes: dom.last,
@@ -387,6 +395,8 @@ export function report() {
         const c = reactCommits[id] || { commits: 0, mounts: 0, totalMs: 0, maxMs: 0 };
         react[id] = { commits: c.commits, perSecond: perS(c.commits), mounts: c.mounts, totalMs: round(c.totalMs, 1), maxMs: round(c.maxMs, 2) };
     }
+    const own = {};
+    for (const id of SELF_COUNTED) own[id] = { renders: ownRenders[id] || 0, perSecond: perS(ownRenders[id] || 0) };
     const nowHidden = hiddenMs + (hiddenSince !== null ? performance.now() - hiddenSince : 0);
     let census = null;
     try {
@@ -452,7 +462,10 @@ export function report() {
             worst: loaf.worst
         },
         tick: { ...ticks.summary(), perSecond: perS(ticks.count) },
-        react: { armed: profilingArmed(), surfaces: react },
+        // `surfaces` are Profiler subtree commits: "MatBoard" there is the mat
+        // SUBTREE (every hero frame step counts). `ownRenders` is the
+        // component's own committed renders (CR3-311).
+        react: { armed: profilingArmed(), surfaces: react, ownRenders: own },
         events: {
             total: eventsTotal,
             perSecond: perS(eventsTotal),

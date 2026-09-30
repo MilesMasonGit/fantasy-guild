@@ -89,7 +89,7 @@ registerTokenTypes({
         tags: ['Coast'],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
-            inputs: [], outputs: [{ itemId: 'item_fish', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_fish', quantity: 1, chance: 100 }]
         }
     },
     /** Untagged, so the filter must not reach it. */
@@ -98,7 +98,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
-            inputs: [], outputs: [{ itemId: 'item_fish', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_fish', quantity: 1, chance: 100 }]
         }
     }
 });

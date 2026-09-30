@@ -29,6 +29,7 @@ import { flagTooltip } from '../ui/components/board/flagText.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { pinnedFlagPoint, POLE_BASE } from '../ui/components/board/flagGeometry.js';
 import { EngineContext } from '../ui/context/EngineContext';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -370,8 +371,8 @@ describe('a pinned flag on the screen', () => {
         const el = container.querySelector('[data-flag="h1"]');
         expect(el.getAttribute('data-flag-pinned')).toBe(t.id);
         const at = pinnedFlagPoint(t, artRadiusOf(t.typeId));
-        expect(parseFloat(el.style.left) + POLE_BASE.x).toBeCloseTo(at.x);
-        expect(parseFloat(el.style.top) + POLE_BASE.y).toBeCloseTo(at.y);
+        expect(drawnPoint(el).x + POLE_BASE.x).toBeCloseTo(at.x);
+        expect(drawnPoint(el).y + POLE_BASE.y).toBeCloseTo(at.y);
         expect(container.querySelector('[data-flag-ring="h1"]')).toBeNull();
         expect(flagTooltip('h1').pin).toBe('Working only Fixture Producer');
     });

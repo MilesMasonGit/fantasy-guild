@@ -572,7 +572,7 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_fish')).toBe(4);   // 2 doubled
+        expect(SpriteLayer.countOnBoard('fixture_fish')).toBe(4);   // 2 doubled
     });
 });
 
@@ -588,17 +588,17 @@ describe('Skill-pooled recipes (CMS-39, CMS-76, CMS-77)', () => {
      */
 
     it('a pooled station with no context makes nothing, exactly like a private one', () => {
-        InventoryManager.addItem('item_carrot', 10);
+        InventoryManager.addItem('fixture_carrot', 10);
         const kitchen = place(A, 'fixture_kitchen', 'hero_1');
 
         run(20000);
 
-        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_leek_potato_stew')).toBe(0);
         expect(kitchen.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
     });
 
     it('runs a recipe it never declared, drawn from its skill pool', () => {
-        InventoryManager.addItem('item_carrot', 10);
+        InventoryManager.addItem('fixture_carrot', 10);
         place(A, 'fixture_kitchen', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
 
@@ -606,38 +606,38 @@ describe('Skill-pooled recipes (CMS-39, CMS-76, CMS-77)', () => {
 
         // Nothing on fixture_kitchen mentions `pooled_stew` — it is authored
         // against the `cooking` skill, not against this station.
-        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_leek_potato_stew')).toBe(1);
     });
 
     it('shares one pool between two stations of the same skill', () => {
         // The reason pooling exists: a second Cooking station needs no recipes
         // copied into it, and inherits everything the first one can make.
-        InventoryManager.addItem('item_carrot', 10);
+        InventoryManager.addItem('fixture_carrot', 10);
         place(A, 'fixture_camp_stove', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
 
         run(11000);
 
-        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_leek_potato_stew')).toBe(1);
     });
 
     it('uses the RECIPE\'s cycle time, not the station\'s (CMS-70)', () => {
         // The station says 16s; `pooled_stew` says 10s. A Feast can plausibly
         // take longer than Bread, which is what lets recipe complexity
         // correlate with time.
-        InventoryManager.addItem('item_carrot', 10);
+        InventoryManager.addItem('fixture_carrot', 10);
         place(A, 'fixture_kitchen', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
 
         run(cycleMs(10000) - 600);
-        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_leek_potato_stew')).toBe(0);
 
         run(1200);
-        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_leek_potato_stew')).toBe(1);
     });
 
     it('awards the RECIPE\'s XP, not the station\'s', () => {
-        InventoryManager.addItem('item_carrot', 10);
+        InventoryManager.addItem('fixture_carrot', 10);
         place(A, 'fixture_kitchen', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
 

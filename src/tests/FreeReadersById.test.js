@@ -33,6 +33,7 @@ import { TokenEventAlert } from '../ui/components/board/TokenEventAlert.jsx';
 import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -399,7 +400,7 @@ describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () =>
         expect(mark).not.toBeNull();
         expect(mark.querySelector('img')?.getAttribute('alt')).toBe('Token Exhausted: Forest');
         // Centred on the point the Token stood on, one Token wide.
-        expect(parseFloat(mark.style.left)).toBe(C(14).x - 64);
-        expect(parseFloat(mark.style.top)).toBe(C(14).y - 64);
+        expect(drawnPoint(mark).x).toBe(C(14).x - 64);
+        expect(drawnPoint(mark).y).toBe(C(14).y - 64);
     });
 });

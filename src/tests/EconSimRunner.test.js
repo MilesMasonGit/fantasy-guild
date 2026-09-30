@@ -105,7 +105,13 @@ describe('EconSim — the runner', () => {
         }
     });
 
-    it('honours an explicit anchor flag over the rule that would elect otherwise', () => {
+    // ⚠ CR3-553 EXPECTED FAILURE (owner ruling 2026-09-30: "mark them as
+    // expected"). Content drift: `item_birch_wood`'s anchor flag sits on
+    // `token_birch_tree`, but the sim elects `token_birch_forest`. Either the
+    // anchor moved in the CMS or the flag names the wrong Token: an
+    // owner-authored anchor, to check in the CMS (R10 section 4.2, row 2).
+    // `it.fails` goes red the day this passes: then make it a plain `it`.
+    it.fails('honours an explicit anchor flag over the rule that would elect otherwise', () => {
         // ⚠️ This used to name `item_charcoal` specifically: the Campfire was
         // level 1 (so the rule would elect it) but mythic, and a flag on
         // `recipe_charcoal` overrode it. The owner re-authored both away on

@@ -66,7 +66,8 @@ function solveShippedCorpus() {
  * The tests deliberately read the registries rather than a fixture, so adding a
  * Token to the game is enough to put it under every rule below.
  *
- * ## ⚠️ Why 18 cases below are `it.skip` (cleanup, 2026-08-18)
+ * ## ⚠️ Why 27 cases below are skipped (cleanup, 2026-08-18; count corrected by
+ * CR3-554: 13 `it.skip` plus two `it.skip.each` over the 7 Maps)
  *
  * Content is mid-re-authoring in the CMS: the live set is 5 items and 10
  * Tokens, a deliberate starter slice rather than a finished game. Most rules
@@ -337,12 +338,24 @@ describe('Rule 4 — cycle times stay in their band', () => {
                 expect(untagged).toEqual([]);
             });
         } else {
-            it.each(untagged)('%s runs within the band', (id) => {
-                const cycle = TOKENS[id].config?.cycleTimeMs;
-                if (cycle == null) return;                 // inert, or a Map
-                expect(cycle).toBeGreaterThanOrEqual(10000);
-                expect(cycle).toBeLessThanOrEqual(30000);
-            });
+            // ⚠ CR3-553 (owner ruling 2026-09-30: "mark them as expected"): a
+            // Token listed here is an EXPECTED failure. `it.fails` passes while
+            // the assertion fails and fails the day it passes, so when the
+            // content is fixed this goes red: delete the entry.
+            const KNOWN_BAND_DRIFT = {
+                // Content drift: authored in the CMS at 5,000 ms and untagged,
+                // below the 10-30 s band (R10 section 4.2, row 1). A CMS number.
+                token_redberry_bush: 'cycle 5 s, below the band'
+            };
+            for (const id of untagged) {
+                const run = KNOWN_BAND_DRIFT[id] ? it.fails : it;
+                run(`${id} runs within the band`, () => {
+                    const cycle = TOKENS[id].config?.cycleTimeMs;
+                    if (cycle == null) return;                 // inert, or a Map
+                    expect(cycle).toBeGreaterThanOrEqual(10000);
+                    expect(cycle).toBeLessThanOrEqual(30000);
+                });
+            }
         }
     });
 

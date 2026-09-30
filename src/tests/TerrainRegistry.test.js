@@ -47,6 +47,19 @@ const POOLED_TOKEN_IDS = new Set(
 
 const POOLLESS_TOKEN_IDS = Object.keys(TOKENS).filter(id => !POOLED_TOKEN_IDS.has(id));
 
+/*
+ * ⚠ SIX EXPECTED FAILURES (CR3-553, owner ruling 2026-09-30: "mark them as
+ * expected"). The six `it.fails` below fail today because this file's hand
+ * tables (`terrainAssignments.js` MAP_TERRAIN / TOKEN_TERRAIN) no longer match
+ * the content: Maps and Tokens were added, retired and re-pooled in the CMS
+ * while terrain is dormant (`TERRAIN_ENABLED = false`, FP-10), so no player sees
+ * it. Content drift, not an engine bug (R10 section 4.2, rows 5-10; CR3-564).
+ *
+ * `it.fails` PASSES while the assertion fails, and FAILS the day it starts
+ * passing. If one of these goes red, the drift was fixed: turn it back into a
+ * plain `it` and delete its note.
+ */
+
 describe('Terrain types name real art', () => {
     it('every terrain sits on a substrate that exists', () => {
         for (const [id, terrain] of Object.entries(TERRAIN_TYPES)) {
@@ -170,7 +183,9 @@ describe('Terrain types name real art', () => {
 });
 
 describe('Every Map stamps a real terrain', () => {
-    it('covers every authored Map', () => {
+    // CR3-553 expected failure: `map_volcanic_island` (added in the CMS) has no
+    // MAP_TERRAIN row. Content drift in a dormant table.
+    it.fails('covers every authored Map', () => {
         for (const mapId of Object.keys(MAPS)) {
             expect(MAP_TERRAIN[mapId], `${mapId} has no terrain`).toBeDefined();
         }
@@ -195,7 +210,9 @@ describe('Every Map stamps a real terrain', () => {
 });
 
 describe('⚠️ Every Token can answer what it paints (D-T4, D-T7)', () => {
-    it('every Token that no Map produces has its own terrain', () => {
+    // CR3-553 expected failure: 19 pool-less Tokens added since the table was
+    // written have no TOKEN_TERRAIN row. Content drift in a dormant table.
+    it.fails('every Token that no Map produces has its own terrain', () => {
         // This is the guarantee that makes "every Token paints" true. 50 of the
         // 75 Tokens are crafted or bought and never come out of a Map pool, so
         // there is no stamp to inherit and the override is the only answer.
@@ -203,7 +220,10 @@ describe('⚠️ Every Token can answer what it paints (D-T4, D-T7)', () => {
         expect(missing, 'pool-less Tokens with no terrain').toEqual([]);
     });
 
-    it('⭐ overrides a Token a Map can produce only on purpose', () => {
+    // CR3-553 expected failure: a Map pool now lists 4 Tokens the table
+    // overrides (banana, coconut, pineapple, watermelon) with no stated reason
+    // here. Content drift in a dormant table.
+    it.fails('⭐ overrides a Token a Map can produce only on purpose', () => {
         // An override beats the Map stamp, so listing a pooled Token in
         // TOKEN_TERRAIN kills map inheritance for it — and the whole reason the
         // stamp exists is Tokens like `token_wishing_well`, farmland out of
@@ -246,7 +266,9 @@ describe('⚠️ Every Token can answer what it paints (D-T4, D-T7)', () => {
         }
     });
 
-    it('accounts for all 75 Tokens between the two routes', () => {
+    // CR3-553 expected failure: the content has 94 Tokens now, 75 answered.
+    // Content drift in a dormant table.
+    it.fails('accounts for all 75 Tokens between the two routes', () => {
         const answered = new Set([...POOLED_TOKEN_IDS, ...Object.keys(TOKEN_TERRAIN)]);
         expect(answered.size).toBe(Object.keys(TOKENS).length);
     });
@@ -276,7 +298,10 @@ describe('Resolving a Token’s terrain (D-T5 precedence)', () => {
         expect(terrainForToken('token_wheat_field')).toBe('farmland');
     });
 
-    it('⚠️ does NOT guess for a Token that two Maps list', () => {
+    // CR3-553 expected failure: `token_coal_vein` is no longer listed by two
+    // Maps, so the sole-Map fallback answers (hills). The premise changed with
+    // the Map pools (Map bursts are retired).
+    it.fails('⚠️ does NOT guess for a Token that two Maps list', () => {
         // The ambiguity the burst stamp exists to resolve. Picking one of the
         // two would be wrong half the time and impossible to notice.
         expect(terrainForToken('token_coal_vein')).toBe(DEFAULT_TERRAIN);
@@ -309,7 +334,10 @@ describe('Resolving a Token’s terrain (D-T5 precedence)', () => {
         }
     });
 
-    it('ignores a stamp naming a terrain that no longer exists', () => {
+    // CR3-553 expected failure: `token_wishing_well` is no longer listed by two
+    // Maps, so the sole-Map fallback answers (farmland) instead of the default.
+    // The premise changed with the Map pools (Map bursts are retired).
+    it.fails('ignores a stamp naming a terrain that no longer exists', () => {
         // A stamp is written into a save (P1), so an old save can carry a
         // terrain id that has since been renamed. That must degrade to the
         // default, not paint nothing.

@@ -56,7 +56,7 @@ registerTokenTypes({
         statements: [LIMIT_STATEMENT],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
-            inputs: [], outputs: [{ itemId: 'item_fish', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_fish', quantity: 1, chance: 100 }]
         }
     },
     /** Carries the tag but no rule — the thing being counted, not the counter. */
@@ -66,7 +66,7 @@ registerTokenTypes({
         tags: ['Coast'],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
-            inputs: [], outputs: [{ itemId: 'item_fish', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_fish', quantity: 1, chance: 100 }]
         }
     },
     /** A 2×2, to exercise the cascade path. */

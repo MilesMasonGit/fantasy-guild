@@ -39,7 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 const fishing = (cycleTimeMs) => ({
     skill: 'fishing', skillRequired: 1, cycleTimeMs, xp: 1,
-    inputs: [], outputs: [{ itemId: 'item_fish', quantity: 1, chance: 100 }]
+    inputs: [], outputs: [{ itemId: 'fixture_fish', quantity: 1, chance: 100 }]
 });
 
 registerTokenTypes({

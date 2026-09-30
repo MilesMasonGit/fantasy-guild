@@ -27,6 +27,7 @@ import { DisallowBadge, StationGearBadge } from '../ui/components/board/TokenBad
 import { RING_D_U } from '../ui/components/board/ringRow.js';
 import { TOKEN_BAR_GAP_U } from '../ui/components/board/boardConstants.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -246,7 +247,7 @@ describe('on the mat (MatBoard)', () => {
         const art = container.querySelector(`[data-token-art][data-token-id="${small.id}"]`);
         expect(art.getAttribute('data-token-small')).toBe('true');
         expect(parseFloat(art.style.width)).toBe(64);
-        expect(parseFloat(art.style.left)).toBe(small.x - 32);
+        expect(drawnPoint(art).x).toBe(small.x - 32);
         expect(parseFloat(art.querySelector('img').style.width)).toBe(64);
 
         const big = container.querySelector(`[data-token-art][data-token-id="${standard.id}"]`);
@@ -264,7 +265,7 @@ describe('on the mat (MatBoard)', () => {
         expect(parseFloat(o.style.width)).toBe(64);
         const row = o.querySelector('[data-ring-row]');
         expect(row).not.toBeNull();
-        expect(parseFloat(o.style.top) + parseFloat(row.style.top)).toBeCloseTo(spawner.y + 32 + TOKEN_BAR_GAP_U, 5);
+        expect(drawnPoint(o).y + drawnPoint(row).y).toBeCloseTo(spawner.y + 32 + TOKEN_BAR_GAP_U, 5);
         const ring = row.querySelector('[data-ring="spawner"]');
         expect(parseFloat(ring.style.width)).toBe(RING_D_U);
         expect(parseFloat(ring.style.height)).toBe(RING_D_U);

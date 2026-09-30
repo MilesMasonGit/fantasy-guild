@@ -162,7 +162,13 @@ describe('EconSim — TIME pass', () => {
             expect(result.rows).toHaveLength(0);
         });
 
-        it('the shipped corpus files no row for its 23 config-less Tokens', () => {
+        // ⚠ CR3-553 EXPECTED FAILURE (owner ruling 2026-09-30: "mark them as
+        // expected"). The sim files 23 info rows for the config-less Tokens that
+        // this test calls a structural skip. A test-vs-sim disagreement, and
+        // the one known failure that MIGHT be a real economic-simulator bug:
+        // that lane's owner should rule (R10 section 4.2, row 3).
+        // `it.fails` goes red the day this passes: then make it a plain `it`.
+        it.fails('the shipped corpus files no row for its 23 config-less Tokens', () => {
             const entities = adaptCorpus({ tokens: tokenData, recipes: recipeData });
             const result = runTempoPass(entities);
             const inert = [...result.skipped.values()].filter(r => r === 'inert').length;

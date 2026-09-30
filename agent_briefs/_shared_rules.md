@@ -103,7 +103,10 @@ Tools: `npm run lint`, `npm run cycles`, `npm run duplication`,
 (`cms/src` imports seven modules out of the game's `src/`), a filename match is
 not an import, and the barrel `registries/index.js` hides orphans. Also: the
 engine's DI object in `EngineBootstrap` makes dead modules look used — 21 of its
-29 entries are never read off it.
+29 entries are never read off it. Since CR3-505 both reachability and
+`cycles` strip comments before matching: a comment with an apostrophe used to
+hide the real import after it (that, not the barrel, is why `nameRegistry`
+looked orphaned), and a commented-out import used to count.
 
 ## State as of 2026-08-20
 

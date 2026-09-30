@@ -156,7 +156,7 @@ describe('A Market demands Commerce (D-259)', () => {
         // UNSKILLED for hover rather than raising a red mark (Free Playmat 1.4b,
         // FP-48, FP-60).
         Flags.plant('hero_1', C(10), { skill: 'commerce' });
-        InventoryManager.addItem('item_market_goods', 100);
+        InventoryManager.addItem('fixture_market_goods', 100);
         run(20000);
 
         expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.UNSKILLED]);
@@ -170,10 +170,10 @@ describe('A Market demands Commerce (D-259)', () => {
     it('runs for a hero who holds Commerce, and pays no gold (SP-65)', () => {
         GameState.state.heroes = [makeHero('hero_1', ['commerce'], 50)];
         place(10, 'fixture_market', 'hero_1');
-        InventoryManager.addItem('item_market_goods', 100);
+        InventoryManager.addItem('fixture_market_goods', 100);
         run(20000);
 
-        expect(InventoryManager.getItemCount('item_market_goods')).toBeLessThan(100);
+        expect(InventoryManager.getItemCount('fixture_market_goods')).toBeLessThan(100);
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
