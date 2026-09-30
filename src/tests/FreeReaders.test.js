@@ -11,7 +11,7 @@ import * as Charges from '../systems/board/Charges.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { nearby, neighbourIds, centreOf, tokensAround } from '../systems/board/nearby.js';
+import { nearby, neighbourIds, centreOf, tokensAround, nearRadius } from '../systems/board/nearby.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
@@ -263,6 +263,46 @@ describe('⭐ the per-instance neighbour cache drops on add, move, remove and a 
 
         BoardState.removeToken(tool.id);                                // remove
         expect(tiers()).toEqual({});
+    });
+
+    // CR3-200 (test first) swaps the whole-cache drop on any move for a
+    // per-move one. These are the moves a per-move cache could miss.
+    it('a provider moved in from far away is seen at its new place (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(2, 2));
+        const tool = at('fixture_tool', P(6, 5));
+        const tiers = () => RecipeResolver.contextTiersAround(station.id);
+        expect(tiers()).toEqual({});
+
+        BoardState.setTokenPoint(tool.id, P(3, 2).x, P(3, 2).y);         // far → beside
+        expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
+        expect(RecipeResolver.resolveRecipe(station.id, station).status).toBe(RecipeResolver.RECIPE.OK);
+    });
+
+    it('the station itself moving next to a provider sees it, and moving away loses it (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(0, 0));
+        at('fixture_tool', P(4, 3));
+        const tiers = () => RecipeResolver.contextTiersAround(station.id);
+        expect(tiers()).toEqual({});
+
+        BoardState.setTokenPoint(station.id, P(4, 2).x, P(4, 2).y);      // the station moves, not the tool
+        expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
+
+        BoardState.setTokenPoint(station.id, P(0, 0).x, P(0, 0).y);
+        expect(tiers()).toEqual({});
+    });
+
+    it('a provider exactly on the Near radius counts; one unit further does not (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(2, 2));
+        const r = nearRadius();
+        const tool = at('fixture_tool', { x: P(2, 2).x + r, y: P(2, 2).y });
+        const tiers = () => RecipeResolver.contextTiersAround(station.id);
+        expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
+
+        BoardState.setTokenPoint(tool.id, P(2, 2).x + r + 1, P(2, 2).y);
+        expect(tiers()).toEqual({});
+
+        BoardState.setTokenPoint(tool.id, P(2, 2).x + r, P(2, 2).y);
+        expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
     });
 
     it('a new board (a load) starts a fresh cache', () => {
