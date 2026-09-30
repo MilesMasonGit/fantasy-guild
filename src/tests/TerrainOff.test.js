@@ -68,12 +68,11 @@ describe('Terrain is switched off (FP-10)', () => {
         }
     });
 
-    // Skipped since Free Playmat 1.6a: the backfill and the tile-keyed terrain
-    // storage these pinned were removed from BoardState and the save schema.
-    // Terrain stays dormant (FP-10) and needs new storage on a free mat.
-    it.skip('does not backfill paint under an old save’s Tokens (backfill removed in 1.6a, FP-10)', () => {});
-
-    it.skip('keeps terrain a save already holds, untouched (terrain left the schema in 1.6a, FP-10)', () => {});
+    // 'does not backfill paint under an old save's Tokens' and 'keeps terrain
+    // a save already holds, untouched' went with Free Playmat 1.6a: the backfill
+    // and the tile-keyed terrain storage they pinned were removed from
+    // BoardState and the save schema. Terrain stays dormant (FP-10) and needs
+    // new storage on a free mat. (Empty skipped tombstones deleted, CR3-554.)
 
     // 'a Token sent to the Vault does not carry a stamp' went with the Vault
     // (Token Lifecycle 9.3).

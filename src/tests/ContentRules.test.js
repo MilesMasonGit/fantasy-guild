@@ -66,7 +66,8 @@ function solveShippedCorpus() {
  * The tests deliberately read the registries rather than a fixture, so adding a
  * Token to the game is enough to put it under every rule below.
  *
- * ## ⚠️ Why 18 cases below are `it.skip` (cleanup, 2026-08-18)
+ * ## ⚠️ Why 27 cases below are skipped (cleanup, 2026-08-18; count corrected by
+ * CR3-554: 13 `it.skip` plus two `it.skip.each` over the 7 Maps)
  *
  * Content is mid-re-authoring in the CMS: the live set is 5 items and 10
  * Tokens, a deliberate starter slice rather than a finished game. Most rules
