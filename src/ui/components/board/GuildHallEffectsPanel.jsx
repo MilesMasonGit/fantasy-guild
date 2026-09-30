@@ -5,6 +5,7 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Package, Sparkles } from 'lucide-react';
 
 /**
@@ -24,7 +25,7 @@ export const GuildHallEffectsPanel = () => {
             const statements = def?.statements || [];
             return { outputs, statements };
         },
-        ['guild_upgrades_updated', 'state_changed', 'token_placed']
+        ['guild_upgrades_updated', 'state_changed', BOARD_EVENTS.TOKEN_PLACED]
     );
 
     const outputs = guildHallData?.outputs || [];
