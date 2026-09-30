@@ -47,6 +47,43 @@ export function sourceCode() {
     return sourceFiles().map(file => ({ file: rel(file), code: codeOf(fs.readFileSync(file, 'utf8')) }));
 }
 
+/** Real import specifiers: static, re-export and dynamic (the tools' regex, run on stripped code). */
+const IMPORT_RE = /(?:import\s[^'"]*?|import\(|export\s[^'"]*?from\s*|from\s*)['"]([^'"]+)['"]/g;
+
+/** A specifier from `fromRel` (a `src/`-relative file) → a `src/`-relative file, or null (a package). */
+function resolveImport(fromRel, spec) {
+    let base;
+    if (spec.startsWith('@/')) base = path.posix.join(SRC, spec.slice(2));
+    else if (spec.startsWith('.')) base = path.posix.join(path.posix.dirname(`${SRC}/${fromRel}`), spec);
+    else return null;
+    for (const cand of [base, `${base}.js`, `${base}.jsx`, `${base}/index.js`, `${base}/index.jsx`]) {
+        if (/\.(js|jsx)$/.test(cand) && fs.existsSync(cand) && fs.statSync(cand).isFile()) return rel(cand);
+    }
+    return null;
+}
+
+/**
+ * Every `src/` file `startRel` loads, through any chain of imports, itself
+ * included (`src/`-relative paths). Packages and files outside `src/` are not
+ * followed.
+ */
+export function importClosure(startRel) {
+    const seen = new Set();
+    const queue = [startRel];
+    while (queue.length) {
+        const file = queue.pop();
+        if (seen.has(file)) continue;
+        let text;
+        try { text = fs.readFileSync(`${SRC}/${file}`, 'utf8'); } catch { continue; }
+        seen.add(file);
+        for (const m of codeOf(text).matchAll(IMPORT_RE)) {
+            const dep = resolveImport(file, m[1]);
+            if (dep && !seen.has(dep)) queue.push(dep);
+        }
+    }
+    return seen;
+}
+
 /** Line numbers (1-based) in `code` where `pattern` (a global RegExp) matches. */
 export function matchLines(code, pattern) {
     const lines = [];
