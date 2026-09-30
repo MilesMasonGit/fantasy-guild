@@ -4,6 +4,13 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **New ore vein art.** Copper, coal, iron, gold, silver, mythril, adamantine and darkmetal veins,
+  and the Stone Outcrop, show their new vein pictures. New foundation, stone and plank art is
+  ready to pick in the CMS.
+- **The game's art is now versioned** (Git LFS), so every save point can bring back the art that
+  went with it.
+- **Code review round 3** (see `docs/review_v3/Z.md`): a speed benchmark (`npm run bench`) and an
+  in-game performance overlay for developers (`?stress=realistic`).
 - **The hero dock shows the heroes (B10, FB-46).** Heroes stand in a dark strip under the mat, idling
   and seen from the waist up, with their name and health bar above their heads. Heroes out on the
   mat are darkened and lowered; hovering lifts a hero. Click and drag work as before.
