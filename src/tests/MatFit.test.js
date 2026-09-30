@@ -22,6 +22,7 @@ import {
     NOTIFICATION_COLUMN, TRAY_COLUMN, columnWidthAt, columnWidthCss
 } from '../ui/components/board/boardConstants.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -202,7 +203,7 @@ describe('⭐ the drawn Token, on the mat (FP-99)', () => {
 
         const box = boxOf(container, tok.id);
         expect(parseFloat(box.style.width)).toBe(128);
-        expect(parseFloat(box.style.left)).toBe(600 - 64);
+        expect(drawnPoint(box).x).toBe(600 - 64);
         expect(parseFloat(spriteOf(container, tok.id).style.width)).toBe(128);
     });
 
@@ -229,8 +230,8 @@ describe('⭐ the drawn Token, on the mat (FP-99)', () => {
 
         const box = boxOf(container, tok.id);
         const w = parseFloat(box.style.width);
-        expect(parseFloat(box.style.left) + w / 2).toBeCloseTo(600, 6);
-        expect(parseFloat(box.style.top) + w / 2).toBeCloseTo(400, 6);
+        expect(drawnPoint(box).x + w / 2).toBeCloseTo(600, 6);
+        expect(drawnPoint(box).y + w / 2).toBeCloseTo(400, 6);
     });
 
     it('a 2×2’s box keeps its own wider circle when the art is the smaller of the two', () => {
@@ -240,7 +241,7 @@ describe('⭐ the drawn Token, on the mat (FP-99)', () => {
         // 288 u circle, 256 u of art: the circle still wins, exactly as before.
         expect(parseFloat(boxOf(container, tok.id).style.width)).toBe(288);
         expect(parseFloat(spriteOf(container, tok.id).style.width)).toBe(256);
-        expect(parseFloat(boxOf(container, tok.id).style.left)).toBe(700 - 144);
+        expect(drawnPoint(boxOf(container, tok.id)).x).toBe(700 - 144);
     });
 
     it('⭐ the Token’s point is untouched — this is a drawing rule only', () => {
