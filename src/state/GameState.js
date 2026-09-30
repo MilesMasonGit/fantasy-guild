@@ -59,6 +59,12 @@ class GameStateClass {
         // no-op at runtime.
 
         // Heroes
+        // ⚠️ These two imports are LOAD-BEARING cycle breakers: keep them
+        // dynamic (CR3-509). HeroManager and EquipmentManager, and the
+        // modules they import, import this one back; importing them statically
+        // re-forms the 16-module all-static cycle (`npm run cycles`, Cycle 1)
+        // and the build's two "dynamically imported … but also statically
+        // imported" warnings for them are expected.
         const HM = await import('../systems/hero/HeroManager.js');
         const EM = await import('../systems/equipment/EquipmentManager.js');
         (this.state.heroes || []).forEach(hero => {
