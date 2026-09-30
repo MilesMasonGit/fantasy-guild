@@ -23,7 +23,7 @@ const OWNER = 'systems/board/BoardState.js';
 /** `….tokens[…] = …` (not `==`), and `delete ….tokens[…]`. */
 const WRITES = [
     /\.tokens\s*\[[^\]]*\]\s*=(?!=)/g,
-    /\bdelete\s+[\w$.?\]\[]*\.tokens\s*\[/g,
+    /\bdelete\s+[\w$.?[\]]*\.tokens\s*\[/g,
     /Object\.assign\(\s*[\w$.]*\.tokens\s*,/g
 ];
 
