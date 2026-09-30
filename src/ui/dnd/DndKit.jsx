@@ -43,7 +43,8 @@ const sfx = (clip) => EventBus.publish('audio:play', { clip });
  * sits in) when the cursor is over the child, while the parent still resolves
  * over its own empty space. Board slots don't nest, so they're unaffected.
  */
-function smallestWithin(args) {
+// Exported for tests only (CR3-413); nothing else imports it.
+export function smallestWithin(args) {
     const hits = pointerWithin(args);
     if (hits.length > 0) {
         if (hits.length === 1) return hits;
@@ -108,7 +109,8 @@ function smallestWithin(args) {
  * than elementFromPoint (which was flaky over the board's stacked overlays and
  * made the bloom miss). Drawers win over the board where they overlap.
  */
-function surfaceAtPoint(x, y) {
+// Exported for tests only (CR3-413); nothing else imports it.
+export function surfaceAtPoint(x, y) {
     if (typeof document === 'undefined') return null;
     for (const el of document.querySelectorAll('[data-dnd-region="miniboard"]')) {
         const r = el.getBoundingClientRect();
