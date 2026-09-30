@@ -170,6 +170,41 @@ class GameStateClass {
             state: saveState
         };
     }
+
+    /**
+     * The save as a JSON string, byte for byte `JSON.stringify(this.serialize())`
+     * but without deep-copying the whole state first (CR3-109).
+     *
+     * A `stringify` replacer does the two things `serialize()` does to its copy,
+     * on the way out, and never touches the live state:
+     * - each hero is written as a shallow copy without `HERO_PROPS_TO_STRIP`
+     *   (a copy with keys deleted keeps the others in their order, as the
+     *   deep copy did);
+     * - `meta` is written with `lastSavedAt` set (in place if it is already
+     *   there, last if not, as an assignment to the copy did).
+     * Only the top-level `state.heroes` and `state.meta` are rewritten: the
+     * replacer checks its holder is the state itself.
+     *
+     * `SaveBytesIdentical.test.js` compares the two on S2- and S3-shaped boards.
+     * @returns {string}
+     */
+    serializeJson() {
+        const state = this.state;
+        const savedAt = Date.now();
+        const replacer = function (key, value) {
+            if (this !== state) return value;
+            if (key === 'heroes' && Array.isArray(value)) {
+                return value.map(hero => {
+                    const out = { ...hero };
+                    for (const prop of HERO_PROPS_TO_STRIP) delete out[prop];
+                    return out;
+                });
+            }
+            if (key === 'meta') return { ...value, lastSavedAt: savedAt };
+            return value;
+        };
+        return JSON.stringify({ version: GAME_VERSION, savedAt, state }, replacer);
+    }
 }
 
 export const GameState = new GameStateClass();
