@@ -369,6 +369,67 @@ describe('⭐ a board-reach rule still rebuilds every Token', () => {
     });
 });
 
+// ---------------------------------------------------------------------------
+// CR3-004 (test first): what counts as an ambient source
+// ---------------------------------------------------------------------------
+
+const UPKEEP_AURA = 'fixture_free_upkeep_aura';
+const WHEN_ONLY = 'fixture_free_when_only';
+
+registerTokenTypes({
+    /** A board-reach +5% yield aura that costs one oak wood a second. */
+    [UPKEEP_AURA]: {
+        id: UPKEEP_AURA, name: 'Free Upkeep Aura', tokenType: 'buff', rarity: 'rare', theme: 'fixture',
+        uses: null, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_free_upkeep_aura', keyword: 'provides', reach: 'board', to: { mode: 'all' },
+            payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 },
+            upkeep: { items: [{ itemId: 'fixture_oak_wood', quantity: 1 }], cadenceMs: 1000 }
+        }]
+    },
+    /** Its only rule fires on a moment (`when`), so it is never an ambient source. */
+    [WHEN_ONLY]: {
+        id: WHEN_ONLY, name: 'Free When Only', tokenType: 'buff', rarity: 'common', theme: 'fixture',
+        uses: null, sprite: 'skill_nature',
+        statements: [{
+            id: 'stm_free_when_only', keyword: 'provides', to: { mode: 'all' },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
+            payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.5 }
+        }]
+    }
+});
+
+describe('⭐ what counts as an ambient source (CR3-004, test first)', () => {
+    // CR3-004 indexes the Tokens that can be ambient sources instead of
+    // scanning every Token. The index must drop an aura whose upkeep lapses
+    // and must never list a rule that only fires on a moment.
+
+    it('a board-reach aura whose upkeep goes unpaid stops reaching a distant Token, and comes back when paid', () => {
+        const far = at('fixture_producer', P(5, 5));
+        at(UPKEEP_AURA, P(0, 0));
+        TileModifiers.rebuildAll();
+        expect(yieldOf(far), 'paid until its first charge falls due').toBeCloseTo(105);
+
+        // The Bank is empty: at the first cadence the rule lapses.
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(0);
+        for (let t = 0; t < 1000; t += 100) BoardRunner.tick(100);
+        expect(yieldOf(far), 'an unpaid aura still reaches').toBeCloseTo(100);
+
+        // Paid again at the next cadence.
+        InventoryManager.addItem('fixture_oak_wood', 5);
+        for (let t = 0; t < 1000; t += 100) BoardRunner.tick(100);
+        expect(yieldOf(far)).toBeCloseTo(105);
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(4);
+    });
+
+    it('a Token whose only rule has a `when` is not an ambient source for its neighbour', () => {
+        const producer = at('fixture_producer', P(1, 0));
+        at(WHEN_ONLY, P(2, 0));
+        TileModifiers.rebuildAll();
+        expect(yieldOf(producer)).toBeCloseTo(100);
+    });
+});
+
 // Keep the helper import honest: every id the readers hand back is a real Token.
 describe('ids, not tiles', () => {
     it('nearby and neighbourIds answer instance ids that getTokenById finds', () => {
