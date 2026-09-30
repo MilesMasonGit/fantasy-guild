@@ -145,6 +145,44 @@ describe('⭐ a moved buff Token: its old neighbours lose it AND its new neighbo
 // `nearby` answers is pinned on its own terms in `Nearby.test.js`.
 
 // ---------------------------------------------------------------------------
+// tokens() is a snapshot (CR3-001, test first)
+// ---------------------------------------------------------------------------
+
+describe('⭐ a tokens() list can be walked while Tokens are removed (CR3-001)', () => {
+    // CR3-001 caches the list `tokens()` returns. The engine walks it and
+    // removes as it goes (a depleted Token, a kill), so a cached list must
+    // never be the same array a removal edits: the walk would skip entries.
+    it('visits every Token that was on the mat when the walk began, whatever is removed meanwhile', () => {
+        const placed = [0, 1, 2, 3, 4].map(i => at('fixture_producer', P(i, 0)));
+        const ids = placed.map(t => t.id);
+
+        const visited = [];
+        for (const t of BoardState.tokens()) {
+            visited.push(t.id);
+            BoardState.removeToken(t.id);                 // the one in hand
+            if (t.id === ids[1]) BoardState.removeToken(ids[3]); // and one further on
+        }
+
+        expect(visited).toEqual(ids);
+        expect(BoardState.tokens()).toEqual([]);
+    });
+
+    it('a list taken before an add does not grow while it is walked', () => {
+        at('fixture_producer', P(0, 0));
+        at('fixture_producer', P(1, 0));
+        const list = BoardState.tokens();
+        let steps = 0;
+        for (const t of list) {
+            steps++;
+            if (steps === 1) at('fixture_producer', P(2 + steps, 0));
+            expect(t).toBeDefined();
+        }
+        expect(steps).toBe(2);
+        expect(BoardState.tokens()).toHaveLength(3);
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Restrictions — the projected view
 // ---------------------------------------------------------------------------
 
