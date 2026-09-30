@@ -772,7 +772,7 @@ review finishes. These rulings override anything above that conflicts.
 
 | Topic | Owner ruling |
 |---|---|
-| **Easy wins** (after the review) | **Small + safe + proven only**: effort S, risk low, **not a design choice**, and provable by tests or the benchmark. Invisible speed fixes are allowed (e.g. the particle canvas sleeping when empty). **Nothing that changes how the game looks or plays.** |
+| **Easy wins** (after the review) | **Small + safe + proven only**: effort S, risk low, **not a design choice**, and provable by tests or the benchmark. Invisible speed fixes are allowed (e.g. the particle canvas sleeping when empty). **Nothing that changes how the game looks or plays.** ⭐ **Widened 2026-09-30** (owner interview, `docs/review_v3/Z.md` §11): **exact engine speed fixes rated medium risk are allowed** when proven by named tests and the bench's identical-work gate; **visible-bug fixes that only restore intended behaviour may be batched** (stale HP bars, dead buttons), but **any bug that could be a design choice is asked first**; the drawing batch waits for the owner's eye-check before it is kept. |
 | **Merging** | Each piece of work on its own branch; **merged to `main` only when verified**: test baseline unchanged (the same 10 known failures, or fewer) and, for speed work, `npm run bench -- --compare` does not regress. **Never push to GitHub.** |
 | **Blocked on an owner question** | **Park it and keep going.** Write it to the questions list in `docs/REVIEW_V3_RUN_LOG.md` (multiple choice, recommendation first), skip that item, carry on. |
 | **Shared folder** | Nobody else will work in the checkout. Work in the main folder. |

@@ -8,6 +8,12 @@ bottom of the log. **Owner: start with "Questions waiting for you".**
 
 ## Questions waiting for you
 
+> ✅ **ANSWERED 2026-09-30** in an owner interview. The rulings are in
+> **`docs/review_v3/Z.md` §11**; they supersede the list below, which is kept
+> for the record. Still open: the **shadow/outline choice** (the spike is
+> measuring the owner's hard-silhouette idea) and the **owner's CMS to-do**
+> (see the log).
+
 *(Parked items, each as multiple choice with a recommendation first. Nothing
 here blocked the rest of the run.)*
 
