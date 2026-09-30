@@ -45,7 +45,7 @@ import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
 import MatDisallowControls from './components/board/MatDisallowControls.jsx';
-import { PerfProfiler } from './dev/perf/PerfProfiler.jsx';
+import { PerfProfiler, usePerfHudShowing } from './dev/perf/PerfProfiler.jsx';
 
 /** Time Bank widget visibility — parked, not deleted (owner request
  *  2026-08-02). The widget and its manager are untouched; only its placement
@@ -169,6 +169,9 @@ export const ReactRoot = ({ engine }) => {
         ui.slotSelection.close();
         engine.EventBus.publish('react:slot_selected', { index, isNewGame: isEmpty });
     };
+
+    // Dev only: the FPS counter stands down while the Perf HUD is up (CR3-358).
+    const perfHudShowing = usePerfHudShowing();
 
     // Dynamic Debug Mode Subscription ---
     const [debugMode, setDebugMode] = React.useState(() => SettingsManager.get('debugMode') ?? false);
@@ -468,7 +471,10 @@ export const ReactRoot = ({ engine }) => {
                         {TERRAIN_ENABLED && <PlaymatTuner />}
                         {/* Tunes the free playmat's rules (FP-66). */}
                         <MatTuner />
-                        <FPSCounter />
+                        {/* Hidden while the Perf HUD is on: its own frame loop
+                            and per-second commit would be measured by the HUD,
+                            and the HUD shows frames already (CR3-358). */}
+                        {!perfHudShowing && <FPSCounter />}
                     </>
                 )}
 

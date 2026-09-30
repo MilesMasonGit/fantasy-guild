@@ -9,7 +9,14 @@
 // each call writes `textContent` into fixed nodes — no nodes are created per
 // update, no layout is read.
 
-const ROOT_ID = 'fg-perf-hud';
+import { HUD_ROOT_ID, HUD_SHOWN_EVENT } from './perfFlags.js';
+
+const ROOT_ID = HUD_ROOT_ID;
+
+/** Tell the React side the HUD came or went (it hides the FPS counter, CR3-358). */
+function announceShown(on) {
+    try { globalThis.dispatchEvent?.(new CustomEvent(HUD_SHOWN_EVENT, { detail: { on } })); } catch { /* ignore */ }
+}
 
 let root = null;
 let body = null;
@@ -58,11 +65,14 @@ export function mountHud(on) {
     root.appendChild(body);
     root.appendChild(bar);
     document.body.appendChild(root);
+    announceShown(true);
 }
 
 export function unmountHud() {
+    const was = !!root;
     root?.remove();
     root = body = status = handlers = null;
+    if (was) announceShown(false);
 }
 
 export function hudMounted() {
@@ -97,7 +107,7 @@ export function renderHud(s) {
         `LoAF ${s.loaf.supported ? int(s.loaf.count) + '  max ' + fmt(s.loaf.maxMs, 0) + ' ms' : 'unsupported'}${s.loaf.top ? '  top: ' + s.loaf.top : ''}`,
         `tick p50 ${fmt(s.tick.p50)}  p99 ${fmt(s.tick.p99)}  max ${fmt(s.tick.max)} ms  · ${fmt(s.tick.perSecond, 1)}/s`,
         s.reactArmed
-            ? `react/s  mat ${fmt(r.MatBoard, 1)}  dock ${fmt(r.HeroDock, 1)}  drawer ${fmt(r.Drawer, 1)}  bar ${fmt(r.TopBar, 1)}`
+            ? `react/s  mat subtree commits ${fmt(r.MatBoard, 1)} (MatBoard itself ${fmt(s.ownRenders?.MatBoard, 1)})  dock ${fmt(r.HeroDock, 1)}  drawer ${fmt(r.Drawer, 1)}  bar ${fmt(r.TopBar, 1)}`
             : 'react/s  off — reload with the HUD on to count commits',
         `events/s ${int(s.eventsPerSecond)}  listeners ${int(s.listeners)}  DOM ${int(s.domNodes)}  heap ${s.heapMb === null ? 'n/a' : fmt(s.heapMb, 0) + ' MB'}`
     ];

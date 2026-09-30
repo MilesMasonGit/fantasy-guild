@@ -11,6 +11,9 @@ project's first tagged baseline — everything before it was untagged developmen
   went with it.
 - **Code review round 3** (see `docs/review_v3/Z.md`): a speed benchmark (`npm run bench`) and an
   in-game performance overlay for developers (`?stress=realistic`).
+- **Performance overlay (developers only).** Its mat figure is now labelled "mat subtree commits"
+  (every redraw of anything on the mat), with "MatBoard itself" beside it (how often the mat as a
+  whole redrew). The small FPS counter in the corner hides while the overlay is on.
 - **The hero dock shows the heroes (B10, FB-46).** Heroes stand in a dark strip under the mat, idling
   and seen from the waist up, with their name and health bar above their heads. Heroes out on the
   mat are darkened and lowered; hovering lifts a hero. Click and drag work as before.

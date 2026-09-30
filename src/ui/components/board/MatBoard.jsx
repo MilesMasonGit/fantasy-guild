@@ -27,6 +27,7 @@ import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
 
 /**
  * ⭐ **The playmat as it is actually drawn** (Free Playmat slice 1.6c-2).
@@ -56,6 +57,9 @@ export const MatBoard = ({
     onOpenRecipes,
     inspectedHeroId = null
 }) => {
+    // Dev only (an empty function in production): MatBoard's OWN renders for
+    // the Perf HUD, beside Board.jsx's subtree Profiler (CR3-311).
+    usePerfRenderCount('MatBoard');
     const rootRef = useRef(null);
 
     // How big the mat is right now (slice 1.6d-3). Read through the hook so the

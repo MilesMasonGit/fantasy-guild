@@ -127,8 +127,10 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
                         whole multiple of ART_PX through it. Nothing else on the
                         mat cares — the transform handles the rest. */}
                     <MatFitProvider value={fit.scale}>
-                        {/* Counts MatBoard's React commits for the Perf HUD —
-                            dev builds only, and only when armed (P3). */}
+                        {/* Counts every React commit in the mat SUBTREE for the
+                            Perf HUD (a hero's frame step counts too; MatBoard's
+                            own renders are counted inside it, CR3-311) — dev
+                            builds only, and only when armed (P3). */}
                         <PerfProfiler id="MatBoard">
                             <MatBoard
                                 inspectedHeroId={inspectedHeroId}

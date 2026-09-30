@@ -15,6 +15,12 @@ export const PERF_ENABLED = !!import.meta.env.DEV;
 /** localStorage key: the owner switched the HUD on, keep it on across reloads. */
 export const HUD_STORAGE_KEY = 'fg_perf_hud';
 
+/** Window event fired when the HUD overlay is shown or hidden; `detail.on`. */
+export const HUD_SHOWN_EVENT = 'fg-perf-hud-shown';
+
+/** The HUD overlay's element id (perfHud.js creates it). */
+export const HUD_ROOT_ID = 'fg-perf-hud';
+
 /** URL flags that arm the harness for this page load. */
 function urlFlags() {
     try {
