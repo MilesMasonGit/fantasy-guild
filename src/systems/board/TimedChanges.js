@@ -4,10 +4,15 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { turnTiming } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
-// ⚠️ A cycle: SpawnerSystem imports this module for `pickWeighted`. Both sides
-// touch the other only inside functions, so either may load first.
+// One way only: SpawnerSystem no longer imports this module (it took
+// `pickWeighted` from here, which formed a cycle; CR3-023 group 2).
 import * as SpawnerSystem from './SpawnerSystem.js';
+import { pickWeighted } from './weightedPick.js';
 import { logger } from '../../utils/Logger.js';
+
+// Re-exported for existing callers and tests; it lives in a leaf module so
+// SpawnerSystem can use it without importing this one (CR3-023).
+export { pickWeighted };
 
 /**
  * ⭐ **Everything on the mat that happens on a clock rather than a hero's work**
@@ -106,22 +111,6 @@ export function setInHand(id, held) {
 /** Whether Token `id` is in the player's hand. */
 export function isInHand(id) {
     return inHand.has(id);
-}
-
-/** A weighted pick from `[{ typeId, weight }]`, skipping unknown types and non-positive weights. */
-export function pickWeighted(entries, random = Math.random) {
-    const usable = (Array.isArray(entries) ? entries : [])
-        .filter(e => e?.typeId && getTokenType(e.typeId) && Number(e.weight) > 0);
-    if (!usable.length) return null;
-    // One choice rolls nothing, so a single-entry list never moves the random stream.
-    if (usable.length === 1) return usable[0].typeId;
-    const total = usable.reduce((sum, e) => sum + Number(e.weight), 0);
-    let roll = random() * total;
-    for (const e of usable) {
-        roll -= Number(e.weight);
-        if (roll < 0) return e.typeId;
-    }
-    return usable[usable.length - 1].typeId;
 }
 
 /**
