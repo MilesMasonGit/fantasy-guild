@@ -13,8 +13,9 @@
 //    or `import('…')`. We never search for a bare filename. An earlier pass in
 //    this project matched any quoted string containing a module's stem,
 //    including doc comments, and confidently reported the wrong answer.
-// 2. Commented-out imports still match the regex (there is no JS parser here),
-//    so a cycle could in principle be reported through a dead comment. Every
+// 2. Comments are stripped before matching (CR3-505), so a commented-out
+//    import is not an edge, and a comment with an apostrophe can no longer
+//    swallow the real import after it. There is still no JS parser here: every
 //    cycle printed below names its files and the specifier line, so a human can
 //    confirm in seconds. Treat output as a lead, not a verdict.
 // 3. Scope is `src/` only. `cms/src` imports a handful of game modules directly;
@@ -56,6 +57,14 @@ function resolveImport(fromFile, spec) {
     return null;
 }
 
+/** Strip block and line comments in ONE left-to-right pass, so only real code
+ *  is scanned. One pass matters: a line comment that mentions a glob such as
+ *  data/*.json must not open a block comment that swallows the imports below
+ *  it. (FreeMatGuards.test.js's `codeOf` strips block comments first.) */
+function codeOf(text) {
+    return text.replace(/\/\*[\s\S]*?\*\/|(^|[^:\\])\/\/[^\n]*/g, (m, pre) => (pre ?? '') + ' ');
+}
+
 // Matches only genuine import specifiers — see accuracy note 1 above.
 // Group 1 is set when the specifier came from a DYNAMIC `import('…')`.
 const importRe = /(?:import\s[^'"]*?|(import\()|export\s[^'"]*?from\s*|from\s*)['"]([^'"]+)['"]/g;
@@ -67,7 +76,7 @@ for (const file of files) {
     const deps = new Set();
     const statics = new Set();
     let text;
-    try { text = readFileSync(file, 'utf8'); } catch { text = ''; }
+    try { text = codeOf(readFileSync(file, 'utf8')); } catch { text = ''; }
     for (const m of text.matchAll(importRe)) {
         const r = resolveImport(file, m[2]);
         // Only edges that stay inside src/ — see accuracy note 3. A few test
