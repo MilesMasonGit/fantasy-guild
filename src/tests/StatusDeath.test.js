@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as StatusEffectSystem from '../systems/effects/StatusEffectSystem.js';
@@ -82,7 +83,12 @@ beforeAll(() => {
     // Subscribes `hero_downed` → `resolveStatusDefeat`. Once per file: the
     // EventBus is a singleton, so re-subscribing per test would stack handlers.
     BoardCombat.init();
+    // CR3-557: Flags' subscribers too, as the game starts them. CR3-157's cycle
+    // cut moves the defeat's flag furl onto an event Flags subscribes to, and
+    // this suite asserts the furl; started here first, green before the cut.
+    Flags.init();
 });
+afterAll(() => Flags.teardown());
 
 beforeEach(() => {
     vi.clearAllMocks();

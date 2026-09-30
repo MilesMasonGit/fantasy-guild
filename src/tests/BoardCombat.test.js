@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -90,6 +90,14 @@ function place(tile, typeId, heroId = null, uses = undefined) {
 function run(ms) {
     for (let t = 0; t < ms; t += 100) BoardRunner.tick(100);
 }
+
+// CR3-557: start Flags' subscribers, as the game does. Today a defeat furls the
+// flag by a direct call from BoardCombat; CR3-157's cycle cut moves that onto
+// an event Flags subscribes to, and this suite asserts the furl (the Defeat
+// case). Started here first, green before the cut, so the cut is not mistaken
+// for a regression. Once per file: the EventBus is a singleton.
+beforeAll(() => Flags.init());
+afterAll(() => Flags.teardown());
 
 beforeEach(() => {
     GameState.initNew();

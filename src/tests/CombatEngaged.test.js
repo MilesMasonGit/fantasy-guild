@@ -79,6 +79,10 @@ beforeEach(() => {
     SpriteLayer.init();
     LootSystem.init();
     BoardCombat.init();
+    // ⚠ CR3-557: when CR3-157's cycle cut gives LoadoutMoments its own
+    // COMBAT_ENGAGED subscriber (a `LoadoutMoments.init()`, which does not exist
+    // yet), start it here, confirm this file green, and only then cut: the
+    // flask case below fires a carried COMBAT_ENGAGED rule.
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     GameState.state.heroes = [makeHero('hero_1')];
