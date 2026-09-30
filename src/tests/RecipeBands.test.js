@@ -28,9 +28,9 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 /** A ladder of three: one under the worker, one over them, one over the guild. */
 registerRecipePools({
     band_skill: [
-        { id: 'band_high', name: 'Banquet', levelRequirement: 30, inputs: [], requiresContext: [], outputs: [{ itemId: 'item_carrot', minQty: 1, maxQty: 1, chance: 100 }], durationMs: 10000, xp: 1 },
-        { id: 'band_low', name: 'Broth', levelRequirement: 2, inputs: [{ itemId: 'item_carrot', quantity: 2 }], requiresContext: [], outputs: [{ itemId: 'item_carrot', minQty: 1, maxQty: 1, chance: 100 }], durationMs: 10000, xp: 1 },
-        { id: 'band_mid', name: 'Roast', levelRequirement: 10, inputs: [], requiresContext: [{ tag: 'ctx_pie_tin', minTier: 2 }], outputs: [{ itemId: 'item_carrot', minQty: 1, maxQty: 2, chance: 50 }], durationMs: 10000, xp: 1 }
+        { id: 'band_high', name: 'Banquet', levelRequirement: 30, inputs: [], requiresContext: [], outputs: [{ itemId: 'fixture_carrot', minQty: 1, maxQty: 1, chance: 100 }], durationMs: 10000, xp: 1 },
+        { id: 'band_low', name: 'Broth', levelRequirement: 2, inputs: [{ itemId: 'fixture_carrot', quantity: 2 }], requiresContext: [], outputs: [{ itemId: 'fixture_carrot', minQty: 1, maxQty: 1, chance: 100 }], durationMs: 10000, xp: 1 },
+        { id: 'band_mid', name: 'Roast', levelRequirement: 10, inputs: [], requiresContext: [{ tag: 'ctx_pie_tin', minTier: 2 }], outputs: [{ itemId: 'fixture_carrot', minQty: 1, maxQty: 2, chance: 50 }], durationMs: 10000, xp: 1 }
     ]
 });
 
@@ -176,9 +176,9 @@ describe('StationRecipeModal', () => {
 describe('StationGearBadge', () => {
     const recipe = {
         id: 'band_mid', name: 'Roast',
-        inputs: [{ itemId: 'item_carrot', quantity: 2 }],
+        inputs: [{ itemId: 'fixture_carrot', quantity: 2 }],
         requiresContext: [{ tag: 'ctx_pie_tin', minTier: 2 }],
-        outputs: [{ itemId: 'item_carrot', minQty: 1, maxQty: 1, chance: 100 }]
+        outputs: [{ itemId: 'fixture_carrot', minQty: 1, maxQty: 1, chance: 100 }]
     };
 
     it('previews the selected recipe on hover (concept §2.1)', () => {

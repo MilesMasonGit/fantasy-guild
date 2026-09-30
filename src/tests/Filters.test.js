@@ -100,7 +100,7 @@ describe('a filter narrows who a rule reaches', () => {
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_fish')).toBe(4);   // 2 × (1 + 1)
+        expect(SpriteLayer.countOnBoard('fixture_fish')).toBe(4);   // 2 × (1 + 1)
     });
 
     it('does not apply when it fails', () => {
@@ -110,7 +110,7 @@ describe('a filter narrows who a rule reaches', () => {
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_fish')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_fish')).toBe(2);
     });
 
     it('⭐ negates, which doubles what every filter can say', () => {
@@ -120,7 +120,7 @@ describe('a filter narrows who a rule reaches', () => {
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_fish')).toBe(2);   // excluded
+        expect(SpriteLayer.countOnBoard('fixture_fish')).toBe(2);   // excluded
     });
 
     it('⭐ stacks, and every one must pass (G-9: AND, always)', () => {
@@ -134,7 +134,7 @@ describe('a filter narrows who a rule reaches', () => {
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_fish')).toBe(4);
+        expect(SpriteLayer.countOnBoard('fixture_fish')).toBe(4);
     });
 
     it('fails the whole stack when one of them fails', () => {
@@ -147,7 +147,7 @@ describe('a filter narrows who a rule reaches', () => {
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_fish')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_fish')).toBe(2);
     });
 });
 

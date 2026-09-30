@@ -70,17 +70,17 @@ describe('A Market is an ordinary Token whose output is gold', () => {
     it('consumes its inputs and credits no gold (SP-65)', () => {
         const def = getTokenType(MARKET);
         expect(def.config.outputs[0].quantity).toBeGreaterThan(0);
-        InventoryManager.addItem('item_market_goods', 10);
+        InventoryManager.addItem('fixture_market_goods', 10);
         place(SPOT, MARKET, 'hero_1');
 
         run(16000);   // one 15s cycle
 
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
-        expect(InventoryManager.getItemCount('item_market_goods')).toBe(0);
+        expect(InventoryManager.getItemCount('fixture_market_goods')).toBe(0);
     });
 
     it('drops no sprite — gold is not an item and has nowhere to land', () => {
-        InventoryManager.addItem('item_market_goods', 10);
+        InventoryManager.addItem('fixture_market_goods', 10);
         place(SPOT, MARKET, 'hero_1');
 
         run(16000);
@@ -89,7 +89,7 @@ describe('A Market is an ordinary Token whose output is gold', () => {
     });
 
     it('waits when it cannot afford its inputs, exactly like any other Token', () => {
-        InventoryManager.addItem('item_market_goods', 3);      // needs 10
+        InventoryManager.addItem('fixture_market_goods', 3);      // needs 10
         const market = place(SPOT, MARKET, 'hero_1');
 
         run(16000);
@@ -99,7 +99,7 @@ describe('A Market is an ordinary Token whose output is gold', () => {
     });
 
     it('needs a hero — gold income is not a passive trickle', () => {
-        InventoryManager.addItem('item_market_goods', 50);
+        InventoryManager.addItem('fixture_market_goods', 50);
         place(SPOT, MARKET);                                // unstaffed
 
         run(30000);
