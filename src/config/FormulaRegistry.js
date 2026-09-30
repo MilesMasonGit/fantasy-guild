@@ -249,9 +249,9 @@ export const GLOBAL_COMBAT_XP_MULTIPLIER = 1.0;
 export const MAX_SKILL_LEVEL = 99;
 
 /** XP curve formula constant: floor(level + 300 * 2^(level/7)) / 4 cumulative */
-// The actual XP curve implementation lives in XPCurve.js. ⚠️ That file builds a
-// pre-computed table at module load, but `levelFromXp` does NOT read it — it
-// loops on `xpForLevel` instead (CR2-082, open). These two constants are
-// documentation only; nothing imports them.
+// The actual XP curve implementation lives in XPCurve.js, which builds a
+// pre-computed table at module load; `levelFromXp` reads it (CR3-258, which
+// closed CR2-082). These two constants are documentation only; nothing
+// imports them.
 export const XP_CURVE_BASE = 300;
 export const XP_CURVE_EXPONENT_DIVISOR = 7;
