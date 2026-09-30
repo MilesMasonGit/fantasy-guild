@@ -14,6 +14,9 @@ project's first tagged baseline — everything before it was untagged developmen
 - **Performance overlay (developers only).** Its mat figure is now labelled "mat subtree commits"
   (every redraw of anything on the mat), with "MatBoard itself" beside it (how often the mat as a
   whole redrew). The small FPS counter in the corner hides while the overlay is on.
+- **A brand-new game is now saved complete straight away** (CR3-100). Before, the first save was
+  written before the Guild Hall and the starting items were laid out, so if the game closed
+  uncleanly in its first ten minutes, that slot loaded as an empty table with no Guild Hall.
 - **The hero dock shows the heroes (B10, FB-46).** Heroes stand in a dark strip under the mat, idling
   and seen from the waist up, with their name and health bar above their heads. Heroes out on the
   mat are darkened and lowered; hovering lifts a hero. Click and drag work as before.
