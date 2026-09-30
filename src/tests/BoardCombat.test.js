@@ -14,6 +14,8 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as RegenSystem from '../systems/hero/RegenSystem.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
@@ -192,6 +194,20 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
     });
 });
 
+/** Every board event of the killing tick, in order, as published on 2026-09-30 (CR3-250). */
+const KILLING_TICK_EVENTS = [
+    'board:sprites_changed',
+    'board:progress',
+    'board:token_charges_changed',
+    'board:cycle_complete',
+    'board:combat_resolved',
+    'board:tile_event_alert',
+    'board:token_depleted',
+    'board:tile_changed',
+    'board:hero_moved',
+    'board:adjacency_dirty'
+];
+
 describe('A kill', () => {
     /**
      * ⚠️ THE SAFETY NET for the card-system retirement (2026-08-18).
@@ -248,6 +264,55 @@ describe('A kill', () => {
         run(60000);
 
         expect(rack.usesRemaining).toBeLessThan(10);
+    });
+
+    /**
+     * CR3-250 (test first): a kill rebuilds the neighbourhood twice today, and
+     * its fix must not change what the killing tick tells the rest of the game,
+     * nor what the buffs around it add up to.
+     */
+    it('the killing tick names the enemy as depleted and changed, in a pinned order (CR3-250)', () => {
+        const bear = place(10, 'fixture_enemy', 'hero_1', 1);
+        const published = [];
+        const original = EventBus.publish;
+        EventBus.publish = function (name, payload) {
+            if (String(name).startsWith('board:')) published.push({ name, payload });
+            return original.call(this, name, payload);
+        };
+        let killing = null;
+        try {
+            for (let t = 0; t < 60000 && tokenAt(10); t += 100) {
+                published.length = 0;
+                BoardRunner.tick(100);
+                if (!tokenAt(10)) killing = [...published];
+            }
+        } finally {
+            EventBus.publish = original;
+        }
+        expect(killing, 'the enemy was never killed').not.toBeNull();
+
+        const depleted = killing.filter(e => e.name === BOARD_EVENTS.TOKEN_DEPLETED && e.payload?.instanceId === bear.id);
+        expect(depleted).toHaveLength(1);
+        expect(depleted[0].payload.typeId).toBe('fixture_enemy');
+        const changed = killing.filter(e => e.name === BOARD_EVENTS.TILE_CHANGED && e.payload?.instanceId === bear.id);
+        expect(changed.map(e => e.payload.typeId)).toContain(null);
+
+        // The whole board-event sequence of that tick, as it is today.
+        expect(killing.map(e => e.name)).toEqual(KILLING_TICK_EVENTS);
+    });
+
+    it('a kill leaves a nearby producer\'s buffed yield exactly as it was (CR3-250)', () => {
+        place(10, 'fixture_enemy', 'hero_1', 1);
+        place(11, 'fixture_buff_yield', null, 10);                 // Near the enemy
+        const producer = place(17, 'fixture_producer');            // Near the buff
+        TileModifiers.rebuildAll();
+        const yieldOf = () => TileModifiers.resolveAxis(producer.id, EFFECT_TYPES.YIELD, 100);
+        const before = yieldOf();
+        expect(before).toBeGreaterThan(100);
+
+        run(60000);
+        expect(tokenAt(10)).toBeNull();
+        expect(yieldOf()).toBeCloseTo(before);
     });
 
     it('a depleted enemy Token disappears, leaving its hero standing there', () => {
