@@ -13,6 +13,7 @@ import { ViewportProvider } from './context/ViewportContext.jsx';
 
 // Hooks
 import { useUIModals } from './hooks/useUIModals.js';
+import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 
 // Components
 import Board from './components/board/Board.jsx';
@@ -154,6 +155,7 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
 export const ReactRoot = ({ engine }) => {
     // --- Modular State Management ---
     const ui = useUIModals(engine);
+    const { onInspectToken, onClearInspect } = useInspectTokenHandlers(ui.inspect);
 
     // --- Core Actions ---
     const handleSlotSelect = async (index) => {
@@ -377,8 +379,8 @@ export const ReactRoot = ({ engine }) => {
                                     <Board
                                         inspectedHeroId={inspectHeroId}
                                         onOpenGuildHall={handleOpenGuildHall}
-                                        onInspectToken={(typeId, rect, instanceId) => ui.inspect.set('token', typeId, { rect, instanceId })}
-                                        onClearInspect={() => ui.inspect.clear()}
+                                        onInspectToken={onInspectToken}
+                                        onClearInspect={onClearInspect}
                                     />
                                 )}
                                 </div>
