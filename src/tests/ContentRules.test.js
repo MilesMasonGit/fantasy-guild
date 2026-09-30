@@ -337,12 +337,24 @@ describe('Rule 4 — cycle times stay in their band', () => {
                 expect(untagged).toEqual([]);
             });
         } else {
-            it.each(untagged)('%s runs within the band', (id) => {
-                const cycle = TOKENS[id].config?.cycleTimeMs;
-                if (cycle == null) return;                 // inert, or a Map
-                expect(cycle).toBeGreaterThanOrEqual(10000);
-                expect(cycle).toBeLessThanOrEqual(30000);
-            });
+            // ⚠ CR3-553 (owner ruling 2026-09-30: "mark them as expected"): a
+            // Token listed here is an EXPECTED failure. `it.fails` passes while
+            // the assertion fails and fails the day it passes, so when the
+            // content is fixed this goes red: delete the entry.
+            const KNOWN_BAND_DRIFT = {
+                // Content drift: authored in the CMS at 5,000 ms and untagged,
+                // below the 10-30 s band (R10 section 4.2, row 1). A CMS number.
+                token_redberry_bush: 'cycle 5 s, below the band'
+            };
+            for (const id of untagged) {
+                const run = KNOWN_BAND_DRIFT[id] ? it.fails : it;
+                run(`${id} runs within the band`, () => {
+                    const cycle = TOKENS[id].config?.cycleTimeMs;
+                    if (cycle == null) return;                 // inert, or a Map
+                    expect(cycle).toBeGreaterThanOrEqual(10000);
+                    expect(cycle).toBeLessThanOrEqual(30000);
+                });
+            }
         }
     });
 
