@@ -116,6 +116,23 @@ export function registerTokenTypes(definitions) {
     for (const [typeId, def] of Object.entries(definitions || {})) {
         TOKENS[typeId] = expandBearer(migrateAppliesTargets(def), EFFECTS);
     }
+    tokenRegistryVersion++;
+}
+
+/**
+ * ## The registry version (CR3-047, round 3 review R3 §3.1 item 4)
+ * Bumped on every `registerTokenTypes` call — today only a CMS re-sync (which
+ * reloads the page) or a test re-registering a type mid-file. Nothing in the
+ * shipped game changes content at runtime. A reader that memoises something
+ * derived from a Token *type* (not an instance) — `SpawnerSystem.familyOf`'s
+ * cache — keys on this too, so a test that re-registers a type cannot see a
+ * stale answer.
+ */
+let tokenRegistryVersion = 0;
+
+/** The registry's own version — see above. */
+export function registryVersion() {
+    return tokenRegistryVersion;
 }
 
 /**

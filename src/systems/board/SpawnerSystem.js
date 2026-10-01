@@ -1,6 +1,6 @@
 // Fantasy Guild — Spawners and the Guild Hall trickle (Token Lifecycle slices 3.3 and 3.4)
 
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
 import { logger } from '../../utils/Logger.js';
@@ -95,6 +95,15 @@ function allowanceOf(def) {
 }
 
 /**
+ * ⭐ **The family memo (CR3-047, round 3 review R3 §3.1).** A spawner type's
+ * family never changes without a content reload (`registerTokenTypes`), so it
+ * is memoised per type id, keyed on {@link registryVersion} — a test that
+ * re-registers a type mid-file sees the new family on its very next call.
+ */
+const familyCache = new Map();
+let familyCacheRegVersion = -1;
+
+/**
  * A spawner type's **family**: every type in its `spawns` list plus everything
  * they grow into, following `grows.into` until it stops (§3.1). An Oak
  * Forest's is `{Oak Sapling, Oak Tree}`.
@@ -102,44 +111,92 @@ function allowanceOf(def) {
  * @returns {string[]} in discovery order (the first spawned type first)
  */
 export function familyOf(spawnerTypeId) {
+    const regVersion = registryVersion();
+    if (regVersion !== familyCacheRegVersion) {
+        familyCache.clear();
+        familyCacheRegVersion = regVersion;
+    }
+    const cached = familyCache.get(spawnerTypeId);
+    if (cached) return cached;
+
     const block = spawnerBlock(getTokenType(spawnerTypeId));
-    if (!block) return [];
     const family = [];
-    const seen = new Set();
-    for (const entry of block.spawns) {
-        let typeId = entry?.typeId;
-        // `seen` also stops a grows loop (A → B → A), which the audit forbids.
-        while (typeId && getTokenType(typeId) && !seen.has(typeId)) {
-            seen.add(typeId);
-            family.push(typeId);
-            typeId = getTokenType(typeId)?.grows?.into;
+    if (block) {
+        const seen = new Set();
+        for (const entry of block.spawns) {
+            let typeId = entry?.typeId;
+            // `seen` also stops a grows loop (A → B → A), which the audit forbids.
+            while (typeId && getTokenType(typeId) && !seen.has(typeId)) {
+                seen.add(typeId);
+                family.push(typeId);
+                typeId = getTokenType(typeId)?.grows?.into;
+            }
         }
     }
+    familyCache.set(spawnerTypeId, family);
     return family;
+}
+
+/**
+ * ⭐ **The census (CR3-047, round 3 review R3 §3.1).** One pass over the mat,
+ * rebuilt lazily only when membership changes (an add or remove — the same
+ * counter CR3-001's cached `tokens()` keys on, `BoardState.membershipVersion`)
+ * or the Token registry does. `attemptSpawn`'s cap check and `syncAlerts`'
+ * once-a-tick rescan of every spawner used to each walk the whole mat;
+ * now they share one scan per tick (or per spawn, since a spawn earlier in
+ * the same pass bumps membership and the next spawner re-counts).
+ */
+let census = { tokens: null, version: -1, regVersion: -1, spawners: [], countByType: new Map(), capsByKey: new Map() };
+
+function ensureCensus() {
+    const { tokens, version } = BoardState.membershipVersion();
+    const regVersion = registryVersion();
+    if (census.tokens === tokens && census.version === version && census.regVersion === regVersion) return census;
+
+    const countByType = new Map();
+    const spawners = [];
+    for (const t of BoardState.tokens()) {
+        countByType.set(t.typeId, (countByType.get(t.typeId) || 0) + 1);
+        if (!t.turnedFrom && isSpawner(getTokenType(t.typeId))) spawners.push(t);
+    }
+    census = { tokens, version, regVersion, spawners, countByType, capsByKey: new Map() };
+    return census;
 }
 
 /** Every working spawner on the mat (a turned Token is not one). */
 function liveSpawners() {
-    return BoardState.tokens().filter(t => !t.turnedFrom && isSpawner(getTokenType(t.typeId)));
+    return ensureCensus().spawners;
 }
 
 /** Live Tokens on the mat whose type is in `family`, whatever their origin. */
 function countOf(family) {
-    const set = new Set(family);
-    return BoardState.tokens().filter(t => set.has(t.typeId)).length;
+    const { countByType } = ensureCensus();
+    let total = 0;
+    // `family` never carries a duplicate type id (`familyOf`'s `seen` set), so
+    // summing each type's count is exactly today's "set membership" filter.
+    for (const typeId of family) total += countByType.get(typeId) || 0;
+    return total;
 }
 
 /**
  * A family's cap: the sum of `allowance` over every live spawner whose family
  * shares a type with it (DP-4). Two Forests make 10; removing one makes 5 and
- * removes nothing (SP-6).
+ * removes nothing (SP-6). Memoised per family key inside the census, so
+ * `spawnerStatus`'s own call and `syncAlerts`' rescan of the same spawner
+ * share one answer.
  */
 function capOf(family, spawners = liveSpawners()) {
+    const { capsByKey } = ensureCensus();
+    const key = family.join('|');
+    const cached = capsByKey.get(key);
+    if (cached !== undefined) return cached;
+
     const set = new Set(family);
     let cap = 0;
     for (const s of spawners) {
         if (familyOf(s.typeId).some(typeId => set.has(typeId))) cap += allowanceOf(getTokenType(s.typeId));
     }
+    capsByKey.set(key, cap);
     return cap;
 }
 
