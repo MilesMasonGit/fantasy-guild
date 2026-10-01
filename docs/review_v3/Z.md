@@ -1080,3 +1080,7 @@ glow) runs as fast as every mat effect off: S2 ~155-158 fps vs ~92 today (dev, h
   **1 screen-pixel** and **1 art-pixel** variants, switchable in the dev Mat Tuner, with
   side-by-side screenshots, for the owner to pick by eye.
 - Everything ships in the drawing batch the owner eye-checks before it is kept (§11 Q4).
+
+### Wave 2 rulings (owner, 2026-09-30)
+- **CR3-405 refused equip**: the item flies back, no equip sound, and a short notification says why.
+- **CR3-203 crash safety net**: only the broken area is replaced by a small plain panel ("Something went wrong here") with a Reload button; the rest of the game keeps working.
