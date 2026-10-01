@@ -1,4 +1,4 @@
-import { RING_D_U, RING_COLOUR, RING_GREY } from './ringRow.js';
+import { RING_D_U, RING_COLOUR, RING_GREY, GLIDING_RINGS } from './ringRow.js';
 
 /**
  * RingBadge — one ring of a Token's ring row (TL-22, B1.2): a faint track, an
@@ -19,6 +19,17 @@ import { RING_D_U, RING_COLOUR, RING_GREY } from './ringRow.js';
  *
  * `greyed` draws the arc grey and hides the number: a worked Token that is
  * blocked (its problem is the centre mark, B1.1).
+ *
+ * ## ⭐ Count rings glide (owner, 2026-10-01)
+ * A controlled ring of a kind in {@link GLIDING_RINGS} (charges, a spawner's
+ * count) slides to its new value over ~0.8 s instead of jumping. Its arc is a
+ * full-length dash pushed back by `stroke-dashoffset`, and a CSS transition on
+ * that one property (`gi-ring-glide`) does the motion. Why CSS and not the
+ * shared `frameClock`: the browser runs it with no JavaScript at all, only
+ * the ring whose value changed animates, it stops by itself, and a ring at
+ * rest costs nothing — the clock would need a subscriber, a per-frame
+ * callback and our own easing for the same result. The number inside
+ * changes at once; only the arc glides.
  */
 
 const VIEW = 28;
@@ -27,10 +38,13 @@ const R = (VIEW - STROKE) / 2;
 /** The arc's full length, for `stroke-dasharray`. */
 export const RING_CIRCUMFERENCE = 2 * Math.PI * R;
 
-const dash = (fraction) => {
-    const f = Math.max(0, Math.min(1, Number(fraction) || 0));
-    return `${(f * RING_CIRCUMFERENCE).toFixed(3)} ${RING_CIRCUMFERENCE.toFixed(3)}`;
-};
+const clamp01 = (fraction) => Math.max(0, Math.min(1, Number(fraction) || 0));
+
+const dash = (fraction) => `${(clamp01(fraction) * RING_CIRCUMFERENCE).toFixed(3)} ${RING_CIRCUMFERENCE.toFixed(3)}`;
+
+/** A gliding ring's arc: one full-length dash, pushed back by the empty part. */
+const FULL_DASH = `${RING_CIRCUMFERENCE.toFixed(3)} ${RING_CIRCUMFERENCE.toFixed(3)}`;
+export const glideOffset = (fraction) => ((1 - clamp01(fraction)) * RING_CIRCUMFERENCE).toFixed(3);
 
 /** How big the number is, by how many characters it has. */
 const fontFor = (text) => {
@@ -67,6 +81,7 @@ export function paintRing(root, fraction, text) {
 export const RingBadge = ({ kind, fraction, text, greyed = false, title, rootRef, children }) => {
     const colour = RING_COLOUR[kind] || RING_COLOUR.cycle;
     const controlled = fraction !== undefined;
+    const glide = controlled && GLIDING_RINGS.has(kind);
     const shown = controlled ? (text ?? '') : '';
     return (
         <div
@@ -75,6 +90,7 @@ export const RingBadge = ({ kind, fraction, text, greyed = false, title, rootRef
             data-ring-text={shown}
             data-ring-fraction={controlled ? Math.max(0, Math.min(1, Number(fraction) || 0)).toFixed(3) : '0.000'}
             data-ring-greyed={greyed ? 'true' : undefined}
+            data-ring-glide={glide ? 'true' : undefined}
             aria-label={title}
             className="relative shrink-0 select-none pointer-events-none"
             style={{ width: RING_D_U, height: RING_D_U }}
@@ -100,7 +116,9 @@ export const RingBadge = ({ kind, fraction, text, greyed = false, title, rootRef
                     stroke={greyed ? RING_GREY : colour}
                     strokeWidth={STROKE}
                     strokeLinecap="butt"
-                    strokeDasharray={dash(controlled ? fraction : 0)}
+                    strokeDasharray={glide ? FULL_DASH : dash(controlled ? fraction : 0)}
+                    className={glide ? 'gi-ring-glide' : undefined}
+                    style={glide ? { strokeDashoffset: glideOffset(fraction) } : undefined}
                     transform={`rotate(-90 ${VIEW / 2} ${VIEW / 2})`}
                 />
             </svg>

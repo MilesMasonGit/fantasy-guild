@@ -775,6 +775,17 @@
   .gi-gear-pulse { animation: none; }
 }
 
+/* A count ring gliding to its new value (owner, 2026-10-01): a Token's charges
+   and a spawner's count. Only the ring whose value changed animates; at rest
+   nothing runs. `RingBadge` explains why this is CSS, not the frame clock. */
+.gi-ring-glide {
+  transition: stroke-dashoffset 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-ring-glide { transition: none; }
+}
+
 /* A Token's charge floater, -1 or +50 (CR3-357): rises a few pixels and fades
    over 3 s. It was a framer-motion keyframe animation on the JavaScript frame
    loop; this is the same curve (stops at 0 / 8 / 82 / 100 %, ease-out on each
