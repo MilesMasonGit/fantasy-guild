@@ -113,14 +113,20 @@ export const MatHero = ({
             }}
             onMouseEnter={() => onHover?.(heroId)}
             onMouseLeave={() => onHover?.(null)}
+            // ⭐ A walker moves by `transform` (CR3-007, R6 rule 5): a step
+            // costs no layout, and the graphics side does not redraw the
+            // ground under the hero. Always this style, walking or not — a
+            // box switching from left/top to a transform would slide in from
+            // the mat's corner. ⚠️ Never add `will-change` here (R6: 3× slower).
             style={{
-                left,
-                top,
+                left: 0,
+                top: 0,
+                transform: `translate(${left}px, ${top}px)`,
                 width: HERO_HIT_PX,
                 height: FLAG_PX,
                 zIndex: z,
                 transition: isWalking
-                    ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
+                    ? `transform ${TICK_INTERVAL_MS}ms linear`
                     : 'none'
             }}
             className={cn(

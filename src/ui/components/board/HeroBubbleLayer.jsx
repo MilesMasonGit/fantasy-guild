@@ -193,12 +193,15 @@ export const HeroBubbleLayer = ({ heroes }) => {
                         key={h.heroId}
                         data-hero-bubble-stack={h.heroId}
                         className="absolute flex flex-col items-center justify-end gap-1 pointer-events-none"
+                        // Moved by `transform`, as its hero is (CR3-007); the
+                        // second translate keeps the stack centred over the
+                        // point, tail down.
                         style={{
-                            left: x + dx,
-                            top: y + dy,
-                            transform: 'translate(-50%, -100%)',
+                            left: 0,
+                            top: 0,
+                            transform: `translate(${x + dx}px, ${y + dy}px) translate(-50%, -100%)`,
                             transition: h.moving
-                                ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
+                                ? `transform ${TICK_INTERVAL_MS}ms linear`
                                 : 'none'
                         }}
                     >

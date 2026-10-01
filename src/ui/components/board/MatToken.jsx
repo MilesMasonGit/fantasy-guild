@@ -340,7 +340,25 @@ export const MatToken = React.memo(function MatToken({
     // glides linearly over one tick, as a walking hero does (`MatHero`). The
     // art, the badges, the ring row and the alerts all ride in these boxes.
     const walking = walkFacing != null;
-    const boxStyle = {
+    // ⭐ CR3-007 (R6 rule 5): a Token that can walk — an enemy — is placed
+    // and glides by `transform`; every other Token stays on left/top (a
+    // transform on all 300 Tokens of a busy mat cost more in compositing than
+    // it saved). Decided once, at mount, by kind: a box switching styles
+    // mid-life would slide in from the mat's corner.
+    // ⚠️ Never add `will-change` to these boxes (R6: 3× slower).
+    const [walker] = React.useState(() => !!def?.enemy);
+    const boxStyle = walker ? {
+        left: 0,
+        top: 0,
+        transform: `translate(${left}px, ${top}px)`,
+        width: boxPx,
+        height: boxPx,
+        transition: skipSlide
+            ? 'none'
+            : walking
+                ? `transform ${TICK_INTERVAL_MS}ms linear`
+                : `transform ${SLIDE_MS}ms ${SLIDE_EASE}`
+    } : {
         left,
         top,
         width: boxPx,
