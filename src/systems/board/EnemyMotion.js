@@ -49,9 +49,9 @@ import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.j
  * tick cannot fling an enemy across the mat.
  *
  * ⚠️ **A step publishes no Token events.** The point is written with
- * `BoardState.setTokenPoint`, which publishes nothing (it bumps the layout
- * version, so `nearby.neighbourIds`' cache is simply rebuilt next time it is
- * asked). The screen hears one `ENEMIES_WALKED` per tick at most. The Near
+ * `BoardState.setTokenPoint`, which publishes nothing (it journals the move,
+ * so `nearby.neighbourIds` drops only the cached entries within Near of either
+ * end next time it is asked, CR3-200). The screen hears one `ENEMIES_WALKED` per tick at most. The Near
  * neighbourhood is rebuilt (`ADJACENCY_DIRTY`, both ends) once per walk, when
  * the enemy stops — never per step. No shipped enemy carries an ambient rule
  * today, so that rebuild is insurance, not load-bearing.

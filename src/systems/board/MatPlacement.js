@@ -1,8 +1,8 @@
 // Fantasy Guild — Where a Token may stand on the free playmat (Free Playmat slice 1.6d)
 
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { artRadiusOf, matW, matH, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
-import { matTuning } from '../../config/matTuning.js';
+import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { distanceSq, nearRadius } from './nearby.js';
 import * as BoardState from './BoardState.js';
@@ -139,17 +139,18 @@ function hasCannot(typeId) {
  */
 const BUCKET_THRESHOLD = 16;
 
-function bucketKey(x, y, cell) {
-    return `${Math.floor(x / cell)}|${Math.floor(y / cell)}`;
-}
-
 function bucketNeighbours(neighbours, cell) {
     if (neighbours.length < BUCKET_THRESHOLD || !(cell > 0)) return null;
+    // Column index → row index → bucket (CR3-201): a lookup builds no string,
+    // and every integer index is its own key, so no two cells can collide.
     const cells = new Map();
     for (const n of neighbours) {
-        const key = bucketKey(n.x, n.y, cell);
-        let bucket = cells.get(key);
-        if (!bucket) cells.set(key, bucket = []);
+        const ix = Math.floor(n.x / cell);
+        const iy = Math.floor(n.y / cell);
+        let column = cells.get(ix);
+        if (!column) cells.set(ix, column = new Map());
+        let bucket = column.get(iy);
+        if (!bucket) column.set(iy, bucket = []);
         bucket.push(n);
     }
     return cells;
@@ -227,25 +228,32 @@ export function isClear(typeId, point, excludeId = null) {
 
 /** The hot inner test: `point` against the prefiltered neighbour list. */
 function clearOf(point, ctx) {
+    return clearAt(point.x, point.y, ctx);
+}
+
+/** {@link clearOf} on bare coordinates, so a search need not build a point per candidate. */
+function clearAt(x, y, ctx) {
     if (!ctx.buckets) {
         for (const n of ctx.neighbours) {
-            const dx = point.x - n.x;
-            const dy = point.y - n.y;
+            const dx = x - n.x;
+            const dy = y - n.y;
             if (dx * dx + dy * dy < n.gapSq - EPS) return false;
         }
         return true;
     }
     // Exact (see `bucketNeighbours`): only the 3×3 cells round the candidate
     // can hold a neighbour close enough to block it.
-    const cx = Math.floor(point.x / ctx.cell);
-    const cy = Math.floor(point.y / ctx.cell);
+    const cx = Math.floor(x / ctx.cell);
+    const cy = Math.floor(y / ctx.cell);
     for (let ix = cx - 1; ix <= cx + 1; ix++) {
+        const column = ctx.buckets.get(ix);
+        if (!column) continue;
         for (let iy = cy - 1; iy <= cy + 1; iy++) {
-            const bucket = ctx.buckets.get(`${ix}|${iy}`);
+            const bucket = column.get(iy);
             if (!bucket) continue;
             for (const n of bucket) {
-                const dx = point.x - n.x;
-                const dy = point.y - n.y;
+                const dx = x - n.x;
+                const dy = y - n.y;
                 if (dx * dx + dy * dy < n.gapSq - EPS) return false;
             }
         }
@@ -279,6 +287,44 @@ function legalIn(typeId, point, ctx) {
 }
 
 /**
+ * ⭐ **Searches that found nothing, remembered while nothing they read changed**
+ * (CR3-201, round 3 review R3).
+ *
+ * A spawner with nowhere to land, a Foundation with no room to build and a
+ * recipe whose Token has nowhere to go all ask the same failing question every
+ * tick until room appears. A search reads only the board (which Tokens, where
+ * — `BoardState`'s membership counter and move journal), the Mat Tuner (any
+ * change bumps `tuningGeneration`) and the Token registry (`registryVersion`).
+ * While all three are exactly as they were, the same question has the same
+ * answer, so a remembered failure is returned without searching again.
+ *
+ * Only failures are remembered — a success is acted on at once and changes
+ * the board — and never for a search that consulted a `Cannot` rule or was
+ * given a `plan` (a projected board): those read more than the three above.
+ * Any change at all forgets everything, so this is exact, and it pays off
+ * exactly while the board is still — which is when a stuck search would
+ * otherwise repeat. (A move anywhere forgets: a fallback search reaches 640 u,
+ * most of the default mat, so keying by region would rarely keep anything.)
+ */
+let tuningGeneration = 0;
+let tuningWatched = false;
+let failedSearches = { tokens: null, stamp: '', keys: new Set() };
+
+/** The failure memo for the board as it is now, emptied if anything changed. */
+function failureMemo() {
+    if (!tuningWatched) {
+        tuningWatched = true;
+        onMatTuningChanged(() => { tuningGeneration++; });
+    }
+    const { tokens, version } = BoardState.membershipVersion();
+    const stamp = `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}`;
+    if (failedSearches.tokens !== tokens || failedSearches.stamp !== stamp) {
+        failedSearches = { tokens, stamp, keys: new Set() };
+    }
+    return failedSearches.keys;
+}
+
+/**
  * ⭐ The nearest point to `point` where a Token of `typeId` may legally stand,
  * or **null** when there is none within nudge reach (FP-46 — it flies back).
  *
@@ -301,12 +347,33 @@ export function findSpot(typeId, point, options = {}) {
     // would turn a renamed CMS id from "a Token that sits there doing nothing"
     // into "a Token that cannot be put down at all", which is a far harder
     // failure to recognise and is not this file's call to make.
+    const memo = options.plan ? null : failureMemo();
+    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}` : null;
+    if (memo?.has(key)) return null;
+
     const ctx = contextFor(typeId, point, options);
-    for (const candidate of candidatesAround(point, ctx.reach)) {
-        if (legalIn(typeId, candidate, ctx)) {
-            return { x: candidate.x, y: candidate.y, nudge: candidate.nudge };
+
+    // ⭐ `candidatesAround`'s walk, inlined (CR3-201): the same candidates in
+    // the same order, from the same expressions, each put through the same
+    // three tests `legalIn` makes (mat edge, crowding, then `Cannot`), but on
+    // bare coordinates — so a search that fails, tens of thousands of
+    // candidates every tick something waits for room, allocates nothing per
+    // candidate. A point object is made only for a candidate that gets as far
+    // as `Cannot`, which needs one. `whyRefused` still walks the generator.
+    const { r, w, h } = ctx.bounds;
+    const at = (x, y) => x >= r && y >= r && x <= w - r && y <= h - r
+        && clearAt(x, y, ctx)
+        && (!ctx.cannotMatters || legalIn(typeId, { x, y }, ctx));
+
+    if (at(point.x, point.y)) return { x: point.x, y: point.y, nudge: 0 };
+    for (let d = RING_STEP; d <= ctx.reach; d += RING_STEP) {
+        for (const { cos, sin } of ringTrig(d)) {
+            const x = point.x + cos * d;
+            const y = point.y + sin * d;
+            if (at(x, y)) return { x, y, nudge: d };
         }
     }
+    if (memo && !ctx.cannotMatters) memo.add(key);
     return null;
 }
 

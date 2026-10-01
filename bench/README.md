@@ -12,7 +12,7 @@ layout/paint cost are Tier B (the in-game Perf HUD).
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench` | S1–S6, 3 timing runs each (S6 once), profile passes for S2–S5 | ~3 min |
+| `npm run bench` | S1–S7, 3 timing runs each (S6 once), profile passes for S2–S5 and S7 | ~4 min |
 | `npm run bench -- --only=S2,S3` | only some scenarios | |
 | `npm run bench -- --compare` | also compare with `bench/baseline.json`: **exits 2** (WORK CHANGED) if any scenario did different work, **exits 1** if any checked number is more than 20 % slower — see below | |
 | `npm run bench -- --accept-work-change=CR3-123` | compare, but let a deliberate, ruled change of work through: rewrites only the fingerprints in `bench/baseline.json` and records the ticket (implies `--compare`) | |
@@ -106,7 +106,7 @@ it to make a speed fix pass: a speed fix that changes the work is not identical.
 
 #### The timings
 
-`--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5, S6),
+`--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5–S7),
 and for S4 the **worst arrival**, the **p50 landing drop**, the **worst
 refused drop** and **the shrink**, each on its own. A number fails when it is
 more than **×1.2** the baseline **and** more than **0.02 ms** worse (the floor
@@ -134,6 +134,7 @@ timings from one machine mean nothing on another.
 | S4 | Push storm | 20-step mat, 60 placed + a Forest packed round with 24 trees. 50 **arrivals** at the Forest (`EffectActions.spawn`, which pushes); 50 **refused player drops** in the cluster's middle (`Placement.placeTokenAt` — every one flies back, **by design**: FP-46, a drop never pushes); 50 **landing player drops** aimed round the cluster's rim (the radius is measured: the farthest tree from the Forest; angles i × 2π/50), each landing with a nudge, then taken off again; then the mat **shrunk 20 → 6**. Each operation timed on its own (CR3-156). | — |
 | S5 | Rebuild storm | S2 plus one board-reach aura | 500 + 1,500 |
 | S6 | Long idle | S2, 30 game-minutes with a checkpoint every 5 (`--long`: 8 game-hours, every 30) — heap after GC and the size of every runtime structure the bench can see | 1,000 + 18,000 |
+| S7 | Waiting for room | 8-step mat packed with placed passives until not even a tree fits within 800 u of the two waiters: a **Forest under its cap with nowhere to spawn**, and a **Foundation building a 2×2 station with no room to stand**, a builder pinned to it. Both re-run their placement search every tick (CR3-201). Its own types and recipe are registered inside the scenario, so no other scenario's work changes. Added to `baseline.json` on its own (`meta.addedScenarios`). | 300 + 1,500 |
 
 Every spawner is filled to its cap before the heroes arrive (`prefillSpawners`,
 through the real `SpawnerSystem.attemptSpawn`), so the warm-up warms the JIT

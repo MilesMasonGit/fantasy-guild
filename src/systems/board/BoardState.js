@@ -193,6 +193,62 @@ export function membershipVersion() {
 }
 
 /**
+ * ## The move journal (CR3-200, round 3 review R2 §3.6)
+ * Every {@link setTokenPoint} records the moved id and its from and to points
+ * here, kept per `tokens` object like the counters above. A reader that caches
+ * something about *who is near whom* — `nearby.neighbourIds` — replays the
+ * moves it has not seen ({@link eachMoveSince}) and drops only the entries a
+ * move can have changed, instead of the whole cache on every step a walking
+ * enemy takes. Adds and removes are not journalled: they bump
+ * {@link membershipVersion}, which drops such a cache outright.
+ *
+ * It is a journal the reader pulls rather than a callback, because this file
+ * cannot import `nearby.js` (that would be a cycle). A fixed ring of the last
+ * {@link MOVE_JOURNAL_SIZE} moves, so a step allocates nothing; a reader that
+ * fell further behind than that is told so and must start over.
+ */
+const moveJournals = new WeakMap();
+export const MOVE_JOURNAL_SIZE = 512;
+
+function journalMove(b, id, fx, fy, tx, ty) {
+    let journal = moveJournals.get(b.tokens);
+    if (!journal) {
+        journal = { count: 0, ids: new Array(MOVE_JOURNAL_SIZE), xy: new Float64Array(MOVE_JOURNAL_SIZE * 4) };
+        moveJournals.set(b.tokens, journal);
+    }
+    const slot = journal.count % MOVE_JOURNAL_SIZE;
+    journal.ids[slot] = id;
+    journal.xy[slot * 4] = fx;
+    journal.xy[slot * 4 + 1] = fy;
+    journal.xy[slot * 4 + 2] = tx;
+    journal.xy[slot * 4 + 3] = ty;
+    journal.count++;
+}
+
+/** How many moves the current board has journalled, ever (a position, not a size). */
+export function moveCount() {
+    return moveJournals.get(board()?.tokens)?.count || 0;
+}
+
+/**
+ * Call `fn(id, fromX, fromY, toX, toY)` for every move journalled on the
+ * current board after position `since`, oldest first. Returns **false** — and
+ * calls nothing — when some of those moves are no longer kept (start over).
+ */
+export function eachMoveSince(since, fn) {
+    const journal = moveJournals.get(board()?.tokens);
+    const count = journal?.count || 0;
+    if (since === count) return true;
+    if (!journal || since > count || count - since > MOVE_JOURNAL_SIZE) return false;
+    const { ids, xy } = journal;
+    for (let i = since; i < count; i++) {
+        const slot = i % MOVE_JOURNAL_SIZE;
+        fn(ids[slot], xy[slot * 4], xy[slot * 4 + 1], xy[slot * 4 + 2], xy[slot * 4 + 3]);
+    }
+    return true;
+}
+
+/**
  * After a Token's point changes: a claimed Token keeps its hero (FP-68), and the
  * claim's last-known point follows. **A flag pinned to it moves with it** (B5,
  * "pin follows", FB-45): a pinned flag's point is its Token's centre, so the
@@ -266,8 +322,11 @@ export function setTokenPoint(id, x, y) {
     const b = board();
     const instance = id ? b?.tokens?.[id] : null;
     if (!instance || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    const fx = instance.x;
+    const fy = instance.y;
     instance.x = x;
     instance.y = y;
+    journalMove(b, id, fx, fy, x, y);
     afterPointChange(b, instance);
     return true;
 }

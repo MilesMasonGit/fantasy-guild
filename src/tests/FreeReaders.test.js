@@ -332,6 +332,36 @@ describe('⭐ the per-instance neighbour cache drops on add, move, remove and a 
         expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
     });
 
+    it('⭐ a move of an unrelated far Token keeps the cached list — the same array (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(0, 0));
+        at('fixture_tool', P(1, 0));
+        const far = at('fixture_producer', P(6, 5));
+        const first = neighbourIds(station.id);
+        expect(RecipeResolver.contextTiersAround(station.id)).toEqual({ ctx_fixture_tool: 1 });
+
+        BoardState.setTokenPoint(far.id, P(6, 4).x, P(6, 4).y);         // far → still far
+        expect(neighbourIds(station.id), 'an unrelated move dropped the entry').toBe(first);
+
+        // …but a move into Near still drops it, and the new list is right.
+        BoardState.setTokenPoint(far.id, P(0, 1).x, P(0, 1).y);
+        expect(neighbourIds(station.id)).not.toBe(first);
+        expect(sortedIds(neighbourIds(station.id))).toEqual(sortedIds(nearby(station.id)));
+    });
+
+    it('a reader that fell behind the kept journal starts over, and is still right (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(0, 0));
+        const tool = at('fixture_tool', P(6, 5));
+        const far = at('fixture_producer', P(6, 4));
+        expect(RecipeResolver.contextTiersAround(station.id)).toEqual({});
+
+        BoardState.setTokenPoint(tool.id, P(1, 0).x, P(1, 0).y);         // into Near…
+        for (let i = 0; i <= BoardState.MOVE_JOURNAL_SIZE; i++) {        // …then more moves than are kept
+            BoardState.setTokenPoint(far.id, P(6, 4).x + (i % 2), P(6, 4).y);
+        }
+        expect(BoardState.eachMoveSince(0, () => {})).toBe(false);
+        expect(RecipeResolver.contextTiersAround(station.id)).toEqual({ ctx_fixture_tool: 1 });
+    });
+
     it('a new board (a load) starts a fresh cache', () => {
         const station = at('fixture_tool_gated', P(2, 2));
         at('fixture_tool', P(3, 2));
@@ -494,6 +524,47 @@ describe('⭐ what counts as an ambient source (CR3-004, test first)', () => {
         at(WHEN_ONLY, P(2, 0));
         TileModifiers.rebuildAll();
         expect(yieldOf(producer)).toBeCloseTo(100);
+    });
+
+    it('a type re-registered with an ambient rule becomes a source with no add or remove (registry version)', () => {
+        const LATE = 'fixture_free_late_source';
+        registerTokenTypes({
+            [LATE]: {
+                id: LATE, name: 'Free Late Source', tokenType: 'buff', rarity: 'common', theme: 'fixture',
+                uses: null, sprite: 'skill_nature', statements: []
+            }
+        });
+        const producer = at('fixture_producer', P(1, 0));
+        const late = at(LATE, P(2, 0));
+        TileModifiers.rebuildAll();
+        expect(yieldOf(producer)).toBeCloseTo(100);
+
+        // A content reload gives the same type a buff; nothing on the mat changes.
+        registerTokenTypes({
+            [LATE]: {
+                id: LATE, name: 'Free Late Source', tokenType: 'buff', rarity: 'common', theme: 'fixture',
+                uses: null, sprite: 'skill_nature',
+                statements: [{
+                    id: 'stm_free_late_source', keyword: 'provides', to: { mode: 'all' },
+                    payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 }
+                }]
+            }
+        });
+        TileModifiers.rebuildAround([centreOf(late)]);
+        expect(yieldOf(producer), 'the index kept the old, source-less type').toBeCloseTo(105);
+    });
+
+    it('a source moving keeps the index exact: Near is measured from where it stands now', () => {
+        const producer = at('fixture_producer', P(1, 0));
+        const buff = at('fixture_buff_yield', P(5, 5));
+        TileModifiers.rebuildAll();
+        expect(yieldOf(producer)).toBeCloseTo(100);
+
+        // A move bumps no membership, so the index is reused, not re-scanned.
+        const from = centreOf(buff);
+        BoardState.setTokenPoint(buff.id, P(2, 0).x, P(2, 0).y);
+        TileModifiers.rebuildAround([from, P(2, 0)]);
+        expect(yieldOf(producer)).toBeCloseTo(105);
     });
 });
 
