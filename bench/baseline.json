@@ -1,9 +1,9 @@
 {
   "meta": {
-    "commit": "7df9999",
-    "branch": "bench/rebaseline-wave1",
+    "commit": "a005383",
+    "branch": "bench/rebaseline-wave3",
     "dirty": false,
-    "date": "2026-10-01T00:38:30.585Z",
+    "date": "2026-10-01T09:11:32.343Z",
     "node": "v24.11.1",
     "machine": "DESKTOP-IEM8MOS",
     "cpu": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
@@ -21,23 +21,12 @@
       "seed": 1,
       "acceptWorkChange": null
     },
-    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline",
-    "addedScenarios": [
-      {
-        "id": "S7",
-        "ticket": "CR3-201",
-        "commit": "0330698",
-        "dirty": true,
-        "date": "2026-10-01T06:09:56.605Z",
-        "node": "v24.11.1",
-        "note": "Added on its own: S7 timings and fingerprint taken on the engine before any CR3-201 engine change (only the new scenario uncommitted). S1-S6 untouched."
-      }
-    ]
+    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline"
   },
   "scenarios": {
     "S1": {
-      "p50": 0.03559999999993124,
-      "p99": 0.15150000000016917,
+      "p50": 0.03650000000016007,
+      "p99": 0.1596999999999298,
       "fingerprint": {
         "tokens": 9,
         "uses": 22934,
@@ -57,8 +46,8 @@
       }
     },
     "S2": {
-      "p50": 0.3813999999997577,
-      "p99": 1.3692000000000917,
+      "p50": 0.31839999999965585,
+      "p99": 0.784900000000107,
       "fingerprint": {
         "tokens": 109,
         "uses": 125740,
@@ -78,8 +67,8 @@
       }
     },
     "S3": {
-      "p50": 1.2087000000001353,
-      "p99": 31.95589999999993,
+      "p50": 0.7842000000000553,
+      "p99": 7.300600000000031,
       "fingerprint": {
         "tokens": 313,
         "uses": 715126,
@@ -99,10 +88,10 @@
       }
     },
     "S4": {
-      "arrivalsWorst": 14.551100000000133,
-      "landedP50": 1.6008999999999105,
-      "refusedWorst": 2.3893000000000484,
-      "shrinkMs": 170.96620000000007,
+      "arrivalsWorst": 13.645500000000084,
+      "landedP50": 0.5033999999998287,
+      "refusedWorst": 1.5559000000000651,
+      "shrinkMs": 52.43709999999987,
       "fingerprint": {
         "tokens": 135,
         "uses": 191360,
@@ -133,8 +122,8 @@
       }
     },
     "S5": {
-      "p50": 0.3938999999995758,
-      "p99": 6.177300000000287,
+      "p50": 0.33580000000006294,
+      "p99": 1.5648000000001048,
       "fingerprint": {
         "tokens": 109,
         "uses": 125818,
@@ -154,8 +143,8 @@
       }
     },
     "S6": {
-      "p50": 0.3621000000002823,
-      "p99": 1.1990000000005239,
+      "p50": 0.30060000000048603,
+      "p99": 0.6757999999999811,
       "fingerprint": {
         "tokens": 109,
         "uses": 124794,
@@ -176,8 +165,8 @@
       }
     },
     "S7": {
-      "p50": 21.20130000000063,
-      "p99": 29.54989999999816,
+      "p50": 2.0174000000006345,
+      "p99": 3.5711999999998625,
       "fingerprint": {
         "tokens": 189,
         "uses": 165391,
