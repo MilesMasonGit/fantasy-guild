@@ -72,8 +72,22 @@ export const DockHeroFigure = ({
         return undefined;
     }, [globalDragging]);
 
+    // Flat projection per the useGameState selector contract (CR-044, CR3-300):
+    // `hp` is rebuilt fresh from primitives each evaluation, never the store's
+    // own nested object, so an in-place HP mutation is actually seen as a change.
     const hero = useGameState(
-        state => (state.heroes || []).find(h => h.id === heroId),
+        state => {
+            const h = (state.heroes || []).find(x => x.id === heroId);
+            return h ? {
+                name: h.name,
+                spriteId: h.spriteId,
+                icon: h.icon,
+                heroSprite: h.heroSprite,
+                classId: h.classId,
+                status: h.status,
+                hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
+            } : null;
+        },
         ['heroes_updated', 'hero_equipment_changed', 'hero:status_changed', 'state_changed'],
         null,
         { deps: [heroId] }

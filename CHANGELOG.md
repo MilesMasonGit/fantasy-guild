@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The dock's HP bars keep up with a hero's health (CR3-300).** They used to only catch up when
+  something else about the hero changed; now a hit or a heal shows right away, in both the bottom
+  hero dock and the Bank's side panel.
 - **New ore vein art.** Copper, coal, iron, gold, silver, mythril, adamantine and darkmetal veins,
   and the Stone Outcrop, show their new vein pictures. New foundation, stone and plank art is
   ready to pick in the CMS.
