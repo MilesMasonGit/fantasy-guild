@@ -25,6 +25,18 @@ export const InventoryManager = {
      * @param {string|null} sourceId - The source (card or enemy)
      * @returns {number} Amount actually added
      */
+    /**
+     * Whether the Bank has no slot for `itemId`: it holds none of it and every
+     * slot is taken. The one test {@link addItem} refuses a new type by, shared
+     * so `SpriteLayer`'s sweeps can skip a pile it would refuse (CR3-254)
+     * rather than re-trying it every tick.
+     */
+    lacksSlotFor(itemId) {
+        if (InventoryStore.getEntry(itemId)) return false;
+        const maxSlots = GameState.inventory.maxSlots ?? 20;
+        return Object.keys(InventoryStore.getItems()).length >= maxSlots;
+    },
+
     addItem(itemId, amount, sourceId = null) {
         if (amount <= 0) return 0;
         const template = getItem(itemId);
@@ -48,13 +60,9 @@ export const InventoryManager = {
         //    `SpriteLayer` don't import each other. That makes the guarantee one
         //    subscriber away from being silently untrue — if items ever start
         //    vanishing, check `SpriteLayer.init()` is running first.
-        if (!InventoryStore.getEntry(itemId)) {
-            const maxSlots = GameState.inventory.maxSlots ?? 20;
-            const usedSlots = Object.keys(InventoryStore.getItems()).length;
-            if (usedSlots >= maxSlots) {
-                EventBus.publish('inventory_overflow', { itemId, amount });
-                return 0;
-            }
+        if (this.lacksSlotFor(itemId)) {
+            EventBus.publish('inventory_overflow', { itemId, amount });
+            return 0;
         }
 
         let addedCount = amount;

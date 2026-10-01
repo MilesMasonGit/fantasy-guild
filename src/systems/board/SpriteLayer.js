@@ -451,6 +451,32 @@ export function collectSprite(id) {
 }
 
 /**
+ * ⭐ **Whether a sweep can skip this pile: the Bank would certainly refuse it**
+ * (CR3-254, round 3 review R4). An item pile whose item the Bank has no slot
+ * for (`InventoryManager.lacksSlotFor`, the very test `addItem` refuses by) is
+ * refused by {@link collectSprite} with nothing changed and nothing announced —
+ * so skipping it is exact. Coins (always swept) and items with no definition
+ * (which `addItem` reports) are never skipped. Read live per pile, so room made
+ * any way at all — a sale, a Bank upgrade, a pile collected earlier in the same
+ * sweep — is seen at once.
+ *
+ * Without it, a full Bank under a big loot flood re-tried every pile every
+ * tick, each through a linear lookup: 0.42 ms a tick at 400 piles, ~1.5 at 800.
+ */
+const COIN_REFS = new Set(['item_coins', 'item_coin', 'coins', 'coin']);
+
+function bankRefuses(sprite) {
+    if (sprite.kind !== 'item' || COIN_REFS.has(sprite.refId)) return false;
+    if (!getItem(sprite.refId)) return false;
+    return InventoryManager.lacksSlotFor(sprite.refId);
+}
+
+/** {@link collectSprite}, skipping a pile the Bank would refuse. For the sweeps. */
+function sweepOne(sprite) {
+    return bankRefuses(sprite) ? false : collectSprite(sprite.id);
+}
+
+/**
  * Collect everything that will fit. Whatever does not fit stays put.
  *
  * One sweep, one announcement (CR2-056) — see `asSweep`. Each sprite still
@@ -463,7 +489,7 @@ export function collectAll() {
     return asSweep(() => {
         let taken = 0;
         for (const sprite of [...getSprites()]) {
-            if (collectSprite(sprite.id)) taken++;
+            if (sweepOne(sprite)) taken++;
         }
         return taken;
     });
@@ -540,7 +566,7 @@ export function tick(deltaMs) {
     if (list.length > cap) {
         const excess = [...list].sort((a, b) => a.bornAt - b.bornAt).slice(0, list.length - cap);
         asSweep(() => {
-            for (const sprite of excess) collectSprite(sprite.id);
+            for (const sprite of excess) sweepOne(sprite);
         });
     }
 
@@ -552,7 +578,7 @@ export function tick(deltaMs) {
 
     asSweep(() => {
         for (const sprite of [...list]) {
-            if (now - sprite.bornAt >= delay) collectSprite(sprite.id);
+            if (now - sprite.bornAt >= delay) sweepOne(sprite);
         }
     });
 }

@@ -1,7 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { SettingsManager } from '../systems/core/SettingsManager.js';
+import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { matW, matH } from '../config/matGeometry.js';
 
@@ -166,3 +169,55 @@ describe('Sprite behaviour', () => {
     });
 });
 
+
+// ---------------------------------------------------------------------------
+// CR3-254 (round 3 review R4, test from R10): the sweeps skip a pile the Bank
+// would refuse, read live — so room made with no event at all is still seen.
+// ---------------------------------------------------------------------------
+
+describe('⭐ a full Bank under a loot flood (CR3-254)', () => {
+    /** 30 refused piles of distinct items, over a stack cap of 10. */
+    function flood() {
+        fillBank(2);
+        const list = GameState.state.board.sprites = [];
+        for (let i = 0; i < 30; i++) {
+            list.push({ id: `spr_flood_${i}`, kind: 'item', refId: `item_flood_${i}`, quantity: 1, x: 200 + i, y: 200, bornAt: i });
+        }
+        SettingsManager.set('gameplay.maxItemStacks', 10);
+        return list;
+    }
+
+    afterEach(() => SettingsManager.set('gameplay.maxItemStacks', 40));
+
+    it('leaves every refused pile where it is, with nothing announced', () => {
+        const list = flood();
+        const publish = vi.spyOn(EventBus, 'publish');
+        SpriteLayer.tick(100);
+        expect(list).toHaveLength(30);
+        expect(publish.mock.calls.map(c => c[0])).not.toContain('state_changed');
+        publish.mockRestore();
+    });
+
+    it('room appearing WITHOUT an inventory_updated (a bank_slots rank written straight into the save) is swept on the next tick', () => {
+        const list = flood();
+        SpriteLayer.tick(100);
+        expect(list).toHaveLength(30);
+
+        GameState.state.inventory.maxSlots = 5;           // no event at all
+        SpriteLayer.tick(100);
+        // The three oldest piles take the three new slots; the rest wait.
+        expect(list).toHaveLength(27);
+        expect(GameState.state.inventory.items.item_flood_0.quantity).toBe(1);
+        expect(GameState.state.inventory.items.item_flood_2.quantity).toBe(1);
+        expect(GameState.state.inventory.items.item_flood_3).toBeUndefined();
+    });
+
+    it('room made by the Guild Hall upgrade (GuildUpgradeManager.recompute) is swept on the next tick', () => {
+        const list = flood();
+        SpriteLayer.tick(100);
+        GameState.state.progress.guildUpgrades = { bank_slots: 1 };   // +32 slots
+        GuildUpgradeManager.recompute();
+        SpriteLayer.tick(100);
+        expect(list).toHaveLength(10);                    // back down to the stack cap
+    });
+});
