@@ -5,7 +5,6 @@ import { useSyncExternalStore } from 'react';
 import {
     SPRITE_FX_DIR, shadowScreenPx, outlineFolder, silhouetteFolder
 } from '../../config/spriteFx.js';
-import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 
 /**
  * The game side of `scripts/spriteFx.mjs`. The generator writes a manifest of
@@ -57,11 +56,6 @@ if (import.meta.hot) {
     import.meta.hot.on('sprite-fx:update', () => { loadSpriteFxManifest(); });
 }
 
-// The dev Mat Tuner row that changes how these are drawn.
-onMatTuningChanged((key) => {
-    if (key === null || key === 'raisedShadow') bump();
-});
-
 const subscribe = (fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
 const snapshot = () => version;
 
@@ -69,9 +63,6 @@ const snapshot = () => version;
 export function useSpriteFxVersion() {
     return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
-
-/** Raised shadow setting (dev Mat Tuner): true = stays on the ground while the sprite rises. */
-export const shadowStaysOnGround = () => matTuning('raisedShadow') >= 1;
 
 /** `'/assets/x.png?v=1'` → `'assets/x.png'`; null for anything that is not a local asset. */
 export function assetKey(src) {

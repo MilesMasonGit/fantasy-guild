@@ -156,16 +156,6 @@ export const MAT_TUNABLES = Object.freeze([
         hint: 'Game time between bounty quests while the mat has fewer than the cap (TL-18: 3 min). The clock only runs below the cap, and the time bank speeds it up.',
         min: 10, max: 1800, step: 10, def: 180,
         format: (v) => `${Math.floor(v / 60)} min ${Math.round(v % 60)} s`
-    },
-    // Wave 5 (CR3-350, Z §11): the owner picks this by eye. Look only — it
-    // does not change what the game does. `src/config/spriteFx.js`.
-    {
-        key: 'raisedShadow',
-        group: 'Look',
-        label: 'Raised shadow',
-        hint: 'Where the hard shadow of a dragged Token or floating loot sits. Left: always 2 art pixels down-right of the sprite, wherever it rises. Right: it stays on the ground, so it falls further away as the sprite lifts or bobs up.',
-        min: 0, max: 1, step: 1, def: 0,
-        format: (v) => (Math.round(v) >= 1 ? 'stays on the ground' : 'follows the sprite')
     }
 ]);
 

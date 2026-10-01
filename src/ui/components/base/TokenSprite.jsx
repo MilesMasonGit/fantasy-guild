@@ -4,7 +4,7 @@ import { tokenName, tokenSpritePath, getTokenType } from '../../../config/regist
 import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
 import { useMatFit } from '../board/MatFitContext.jsx';
 import {
-    useSpriteFxVersion, shadowLayer, outlineLayer, layerStyle, shadowStaysOnGround
+    useSpriteFxVersion, shadowLayer, outlineLayer, layerStyle
 } from '../../utils/spriteFx.js';
 
 /**
@@ -239,26 +239,17 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
     const fit = useMatFit();
     const shadow = (lifted || hovering) ? shadowLayer(src, size, fit) : null;
     const ring = outline ? outlineLayer(src, size, outline) : null;
-    const grounded = shadowStaysOnGround();
-
-    const silhouette = shadow && (
-        <span
-            aria-hidden="true"
-            data-sprite-shadow="true"
-            style={layerStyle(shadow.url, shadow.offset, shadow.offset, size, size)}
-        />
-    );
 
     // `lifted` is a held object: raised by a fixed transform. `hovering` is a
     // floating one (D-221): raised by the bob keyframes instead. Either way the
-    // shadow rises with the art, unless the dev "stays on the ground" look is on.
+    // shadow rises with the art, always 2 art pixels down-right of it (owner's
+    // final ruling, 2026-10-01).
     return (
         <span
             className={cn('relative inline-block pointer-events-none select-none', className)}
             style={{ width: size, height: size, ...style }}
             data-sprite-outline={outline || undefined}
         >
-            {grounded && silhouette}
             <span
                 className={cn('absolute left-0 top-0', hovering && 'gi-sprite-hover')}
                 style={{
@@ -267,7 +258,13 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
                     transform: lifted ? `translateY(-${LIFT_OFFSET_PX}px)` : undefined
                 }}
             >
-                {!grounded && silhouette}
+                {shadow && (
+                    <span
+                        aria-hidden="true"
+                        data-sprite-shadow="true"
+                        style={layerStyle(shadow.url, shadow.offset, shadow.offset, size, size)}
+                    />
+                )}
                 {ring && (
                     <span
                         aria-hidden="true"

@@ -16,7 +16,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses, tokenSpritePath } from '../config/registries/tokenRegistry.js';
 import { ALERT } from '../systems/board/boardEvents.js';
-import { resetMatTuning, setMatTuning, MAT_TUNABLES } from '../config/matTuning.js';
+import { resetMatTuning, MAT_TUNABLES } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
@@ -133,12 +133,12 @@ describe('a dragged Token and floating loot cast the hard shadow', () => {
         expect(container.querySelector('[data-sprite-shadow]').style.left).toBe('8px');
     });
 
-    it('"Raised shadow: stays on the ground" keeps the silhouette out of the rising group', () => {
-        setMatTuning('raisedShadow', 1);
-        const { container } = render(h(PixelArt, { src: ITEM_SRC, size: 64, hovering: true }));
-        const sil = container.querySelector('[data-sprite-shadow]');
-        expect(sil.parentElement.className).not.toContain('gi-sprite-hover');
-        expect(container.querySelector('img').parentElement.className).toContain('gi-sprite-hover');
+    it('the shadow always follows the sprite (owner’s final ruling): it rises in the same box as the art', () => {
+        const lifted = render(h(PixelArt, { src: TOKEN_SRC, size: 128, lifted: true })).container;
+        const sil = lifted.querySelector('[data-sprite-shadow]');
+        expect(sil.parentElement).toBe(lifted.querySelector('img').parentElement);
+        expect(sil.parentElement.style.transform).toBe('translateY(-4px)');
+        expect(MAT_TUNABLES.find(t => t.key === 'raisedShadow')).toBeUndefined();
     });
 
     it('a sprite the generator has not seen draws without a shadow, never broken', () => {
@@ -213,8 +213,9 @@ describe('the outline is one art pixel, scaled with the sprite like the art', ()
         expect([inMat.style.left, inMat.style.width]).toEqual(['-4px', '264px']);
     });
 
-    it('there is one outline image per colour — no thickness setting in the Mat Tuner', () => {
+    it('there is one outline image per colour — no thickness setting, and no Look rows in the Mat Tuner', () => {
         expect(MAT_TUNABLES.find(t => t.key === 'outlinePx')).toBeUndefined();
+        expect(MAT_TUNABLES.filter(t => t.group === 'Look')).toEqual([]);
     });
 });
 
