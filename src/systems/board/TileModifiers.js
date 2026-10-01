@@ -3,9 +3,9 @@
 import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
-import { nearby, reachFrom, tokensAround } from './nearby.js';
+import { nearby, reachFrom, tokensAround, nearRadius, centreOf, distanceSq } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import { isStatementPaid } from './BlockUpkeep.js';
 import { REACH, RELATION, reachOf, reachCovers } from '../../config/registries/reachRegistry.js';
@@ -306,6 +306,52 @@ export function filterTargets(sourceId, statement, fallbackPoint = null) {
  *   Individual Tokens may still opt out with `noStackDuplicates` (D-82).
  */
 
+/** Whether a statement applies continuously: an ambient keyword and no `When`. */
+const isAmbient = (statement) => !statement?.when?.event && AMBIENT_KEYWORDS.has(statement?.keyword);
+
+/**
+ * ⭐ **The ambient-source index (CR3-004, round 3 review R3 §3.2).**
+ *
+ * The Tokens on the mat whose type carries at least one ambient statement
+ * (`isAmbient`), **in arrival order** — a filter of `BoardState.tokens()`, so
+ * the order the no-stack guard and the aggregators see is unchanged — plus
+ * whether any Token carries a `board`-reach rule (any keyword, exactly what
+ * the old scan asked).
+ *
+ * Keyed on the membership counter (an add or a remove; a move cannot change
+ * which Tokens are on the mat or their order) and the Token registry's version
+ * (a content reload can make a type a source). {@link rebuildAll} also drops it,
+ * so a definition edited in place and followed by a full rebuild — what
+ * `GuildUpgradeManager.recompute` does to the Guild Hall — is re-read too.
+ *
+ * Statements, reach, upkeep and filters are still evaluated live per rebuild;
+ * the index only decides which Tokens are worth asking.
+ */
+let sourceIndex = { tokens: null, version: -1, regVersion: -1, sources: [], boardReach: false };
+
+function ambientSourceIndex() {
+    const { tokens, version } = BoardState.membershipVersion();
+    const regVersion = registryVersion();
+    if (sourceIndex.tokens === tokens && sourceIndex.version === version
+        && sourceIndex.regVersion === regVersion) return sourceIndex;
+
+    const sources = [];
+    let boardReach = false;
+    for (const instance of BoardState.tokens()) {
+        const statements = statementsOf(getTokenType(instance.typeId));
+        if (!statements.length) continue;
+        if (!boardReach && statements.some(s => reachOf(s) === REACH.BOARD)) boardReach = true;
+        if (statements.some(isAmbient)) sources.push(instance);
+    }
+    sourceIndex = { tokens, version, regVersion, sources, boardReach };
+    return sourceIndex;
+}
+
+/** Forget the index, so the next read re-scans the mat. */
+function dropSourceIndex() {
+    sourceIndex = { tokens: null, version: -1, regVersion: -1, sources: [], boardReach: false };
+}
+
 /**
  * Generator yielding every **statement** reaching this tile.
  *
@@ -329,14 +375,12 @@ export function filterTargets(sourceId, statement, fallbackPoint = null) {
  * authored. The source set is now every occupied Token, and each statement's
  * `reach` decides whether it carries from there to here (`reachCovers`).
  *
- * ## The cost, and why it is acceptable
- * This walks every occupied tile rather than eight neighbours — at most 36 on a
- * 6×6 board. It runs on board changes (`rebuildToken`) and on cycle completion
- * (`collectItemGrants`, `collectStatusApplications`), neither of which is a hot
- * loop; the per-frame path reads the *cached* aggregator and does not come
- * through here at all. Scanning unconditionally is chosen over a "does any Token
- * have board reach?" cache because a stale cache here is a silently missing
- * effect, which is the failure mode this project keeps paying for.
+ * ## The cost (CR3-004)
+ * This used to walk every Token on the mat, plus a sorted `nearby()` query, per
+ * Token rebuilt — so `rebuildAll` was quadratic whatever the board held. It now
+ * walks only the ambient-source index (`ambientSourceIndex`), which is rebuilt
+ * whenever membership or the registry changes and on every `rebuildAll`, and
+ * measures Near per source directly. One rebuild is O(sources).
  */
 function* applicableStatements(selfId) {
     const self = BoardState.getTokenById(selfId);
@@ -346,16 +390,26 @@ function* applicableStatements(selfId) {
 
     // `nearby` means Near: every other Token whose centre is within the Near
     // radius of this Token's centre (Free Playmat 1.2, FP-41; by id since 1.6b).
-    const nearbyIds = new Set(nearby(self.id, REACH.NEARBY));
+    // Measured per source below with exactly `tokensWithin`'s test (CR3-004):
+    // both centres present and `distanceSq <= radius²`.
+    const selfCentre = centreOf(self);
+    const radius = nearRadius();
+    const radiusSq = radius * radius;
 
-    // Every Token on the mat, once each, in arrival order.
-    for (const instance of BoardState.tokens()) {
+    // ⭐ Only the Tokens that can be ambient sources, in arrival order
+    // (CR3-004, round 3 review R3 §3.2). Every other Token was `continue`d
+    // past below without touching `seenTypes`, so skipping them is exact.
+    for (const instance of ambientSourceIndex().sources) {
         // Where this source stands relative to the Token being rebuilt. Computed
         // once per source rather than per statement, because it is a fact about
         // the board and every statement on the Token shares it.
-        const relation = instance.id === self.id ? RELATION.SELF
-            : nearbyIds.has(instance.id) ? RELATION.NEARBY
-                : RELATION.DISTANT;
+        let relation;
+        if (instance.id === self.id) relation = RELATION.SELF;
+        else {
+            const centre = selfCentre ? centreOf(instance) : null;
+            relation = centre && distanceSq(selfCentre, centre) <= radiusSq
+                ? RELATION.NEARBY : RELATION.DISTANT;
+        }
 
         const def = getTokenType(instance.typeId);
 
@@ -531,14 +585,11 @@ export function collectItemGrants(instanceId, effectType) {
 /**
  * Whether any Token on the board carries a rule with `board` reach.
  *
- * Scanned, not cached: a few dozen Tokens at most, on board events only.
+ * Read off the ambient-source index (CR3-004), which re-scans on any add,
+ * remove or content reload — the only things that can change the answer.
  */
 function boardReachOnBoard() {
-    for (const instance of BoardState.tokens()) {
-        const statements = statementsOf(getTokenType(instance?.typeId));
-        if (statements.some(s => reachOf(s) === REACH.BOARD)) return true;
-    }
-    return false;
+    return ambientSourceIndex().boardReach;
 }
 
 /**
@@ -604,6 +655,7 @@ export function rebuildAround(points) {
 /** Rebuild every Token on the mat — on boot and after a save load. */
 export function rebuildAll() {
     clearAll();
+    dropSourceIndex();
     boardReachLive = boardReachOnBoard();
     for (const instance of BoardState.tokens()) rebuildToken(instance.id);
 }

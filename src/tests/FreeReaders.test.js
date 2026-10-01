@@ -495,6 +495,47 @@ describe('⭐ what counts as an ambient source (CR3-004, test first)', () => {
         TileModifiers.rebuildAll();
         expect(yieldOf(producer)).toBeCloseTo(100);
     });
+
+    it('a type re-registered with an ambient rule becomes a source with no add or remove (registry version)', () => {
+        const LATE = 'fixture_free_late_source';
+        registerTokenTypes({
+            [LATE]: {
+                id: LATE, name: 'Free Late Source', tokenType: 'buff', rarity: 'common', theme: 'fixture',
+                uses: null, sprite: 'skill_nature', statements: []
+            }
+        });
+        const producer = at('fixture_producer', P(1, 0));
+        const late = at(LATE, P(2, 0));
+        TileModifiers.rebuildAll();
+        expect(yieldOf(producer)).toBeCloseTo(100);
+
+        // A content reload gives the same type a buff; nothing on the mat changes.
+        registerTokenTypes({
+            [LATE]: {
+                id: LATE, name: 'Free Late Source', tokenType: 'buff', rarity: 'common', theme: 'fixture',
+                uses: null, sprite: 'skill_nature',
+                statements: [{
+                    id: 'stm_free_late_source', keyword: 'provides', to: { mode: 'all' },
+                    payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05 }
+                }]
+            }
+        });
+        TileModifiers.rebuildAround([centreOf(late)]);
+        expect(yieldOf(producer), 'the index kept the old, source-less type').toBeCloseTo(105);
+    });
+
+    it('a source moving keeps the index exact: Near is measured from where it stands now', () => {
+        const producer = at('fixture_producer', P(1, 0));
+        const buff = at('fixture_buff_yield', P(5, 5));
+        TileModifiers.rebuildAll();
+        expect(yieldOf(producer)).toBeCloseTo(100);
+
+        // A move bumps no membership, so the index is reused, not re-scanned.
+        const from = centreOf(buff);
+        BoardState.setTokenPoint(buff.id, P(2, 0).x, P(2, 0).y);
+        TileModifiers.rebuildAround([from, P(2, 0)]);
+        expect(yieldOf(producer)).toBeCloseTo(105);
+    });
 });
 
 // Keep the helper import honest: every id the readers hand back is a real Token.
