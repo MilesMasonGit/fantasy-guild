@@ -24,6 +24,7 @@ import { EventBus } from './systems/core/EventBus.js';
 import { SaveManager } from './systems/core/SaveManager.js';
 import { SettingsManager } from './systems/core/SettingsManager.js';
 import { preloadGameArt } from './systems/core/AssetPreloader.js';
+import { loadSpriteFxManifest } from './ui/utils/spriteFx.js';
 import { logger } from './utils/Logger.js';
 
 /**
@@ -49,6 +50,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Art preload runs concurrently with engine setup; the React mount below
     // gates on the critical subset so first paint never shows sprite pop-in.
     const artReady = preloadGameArt();
+    // Wave 5: which sprites have a generated hard shadow and outlines
+    // (`scripts/spriteFx.mjs`). A small file; failure only means no effects.
+    const fxReady = loadSpriteFxManifest();
     // `AssetManager.initializeAssets()` used to be dynamically imported and
     // called here. It was an empty function kept for "legacy support for
     // main.jsx" — i.e. this line was the only reason it existed. Both went on
@@ -90,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     EngineBootstrap.init();
 
     // 7. Mount the React UI Engine (gated on critical art being warm)
-    await artReady;
+    await Promise.all([artReady, fxReady]);
     const reactRootEl = document.getElementById('react-root');
     if (reactRootEl) {
         const root = createRoot(reactRootEl);

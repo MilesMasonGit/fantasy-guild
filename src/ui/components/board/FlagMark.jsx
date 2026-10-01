@@ -10,12 +10,13 @@ import { FLAG_PX } from './flagGeometry.js';
  * Drawn by the board's `FlagLayer`, the drag ghost, the rules panel and the
  * Edit Hero colour swatches, so a flag looks the same everywhere.
  */
-export const FlagMark = ({ colour = null, size = FLAG_PX, lifted = false, alt = 'Flag', className, style }) => (
+export const FlagMark = ({ colour = null, size = FLAG_PX, lifted = false, outline, alt = 'Flag', className, style }) => (
     <PixelArt
         src={flagSpritePath(colour)}
         alt={alt}
         size={size}
         lifted={lifted}
+        outline={outline}
         className={className}
         style={style}
     />

@@ -133,6 +133,18 @@ export function surfaceAtPoint(x, y) {
 const GLOW_BOLD = 'drop-shadow(0 10px 18px rgba(0,0,0,0.55))';
 const GLOW_COMPACT = 'drop-shadow(0 4px 8px rgba(0,0,0,0.45))';
 
+/**
+ * ⭐ Wave 5 (owner rulings Z §11): a carried Token, hero or flag casts the hard
+ * pixel shadow `PixelArt` draws for `lifted` — a soft drop-shadow on top of it
+ * would be a second, blurred shadow. Only a carried item (its card frame)
+ * keeps the soft one.
+ */
+const SPRITE_KINDS = new Set([DRAG_KIND.TOKEN, DRAG_KIND.HERO, DRAG_KIND.FLAG]);
+function overlayFilter(kind, bold) {
+    const lift = 'brightness(1.15) saturate(1.25)';
+    return SPRITE_KINDS.has(kind) ? lift : `${bold ? GLOW_BOLD : GLOW_COMPACT} ${lift}`;
+}
+
 export const DeckDndContext = React.createContext({ activePayload: null, isDragging: false });
 export const useActiveDrag = () => React.useContext(DeckDndContext);
 
@@ -406,7 +418,7 @@ export const DeckDndProvider = ({ children }) => {
                             animate={{ opacity: isOverMiniboard ? 0.3 : 1 }}
                             transition={{ duration: 0.15, ease: 'easeOut' }}
                             className="w-full h-full flex items-center justify-center origin-center will-change-transform"
-                            style={{ filter: `${bold ? GLOW_BOLD : GLOW_COMPACT} brightness(1.15) saturate(1.25)` }}
+                            style={{ filter: overlayFilter(activePayload.kind, bold) }}
                         >
                             <DragGhost payload={activePayload} bold={bold} />
                         </motion.div>

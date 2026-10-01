@@ -1,6 +1,9 @@
 import { useLayoutEffect, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
 import { heroSpriteFrame } from './hitAnimations.js';
+import { HERO_SHEET_GRID } from '../../../config/spriteFx.js';
+import { useMatFit } from './MatFitContext.jsx';
+import { useSpriteFxVersion, sheetOutlineLayer } from '../../utils/spriteFx.js';
 
 /** The sheet's row for each state the clock can ask for. */
 const ROW_INDEX = { attack: 0, walk: 1, idle: 2 };
@@ -19,6 +22,11 @@ const ROW_INDEX = { attack: 0, walk: 1, idle: 2 };
  * React renders this only when its props change; none of the per-frame values
  * appear in the JSX, so a re-render never writes over a frame the clock has
  * already moved on. Which frame shows is pinned in `SpriteFrameSequence.test.js`.
+ *
+ * ⭐ **Outline** (Wave 5, `outline`: `'work'` | `'hover'` | `'alert'`): a
+ * generated outline sheet the same size and grid as the art, under it, moved
+ * by the same frame step — so it follows every frame with no filter. It is
+ * always in the tree (an empty layer when off) so the step can write to it.
  */
 export const AnimatedHeroSprite = ({
     src,
@@ -29,10 +37,15 @@ export const AnimatedHeroSprite = ({
     frameMs = 125,
     heroId = null,
     attackAt = null, // 'combat': when the last real attack began (performance.now())
+    outline = null,
     className
 }) => {
     const rootRef = useRef(null);
     const imgRef = useRef(null);
+    const ringRef = useRef(null);
+    useSpriteFxVersion();
+    const fit = useMatFit();
+    const ring = outline ? sheetOutlineLayer(src, size, fit, outline) : null;
 
     // 8 FPS by default (125 ms a frame); a limping hero plays slower.
     // ⭐ The frame is read from the clock, not counted (feedback Q4, FB-10):
@@ -54,7 +67,9 @@ export const AnimatedHeroSprite = ({
                 shownFrame = next.frame;
                 const img = imgRef.current;
                 const root = rootRef.current;
-                if (img) img.style.transform = `translate(-${next.frame * size}px, -${(ROW_INDEX[next.row] ?? 2) * size}px)`;
+                const at = `translate(-${next.frame * size}px, -${(ROW_INDEX[next.row] ?? 2) * size}px)`;
+                if (img) img.style.transform = at;
+                if (ringRef.current) ringRef.current.style.transform = at;
                 if (root) {
                     root.setAttribute('data-hero-row', next.row);
                     root.setAttribute('data-hero-frame', String(next.frame));
@@ -66,6 +81,11 @@ export const AnimatedHeroSprite = ({
         return () => clearTimeout(timer);
     }, [frameMs, heroId, animationState, attackAt, size]);
 
+    // An outline turned on mid-frame takes the frame already showing.
+    useLayoutEffect(() => {
+        if (ringRef.current && imgRef.current) ringRef.current.style.transform = imgRef.current.style.transform;
+    }, [ring?.url]);
+
     return (
         <div
             ref={rootRef}
@@ -75,11 +95,26 @@ export const AnimatedHeroSprite = ({
                 height: size
             }}
             title={alt}
+            data-sprite-outline={outline || undefined}
         >
             <div
                 className="absolute inset-0"
                 style={{ transform: facingLeft ? 'scaleX(-1)' : 'none' }}
             >
+                <span
+                    ref={ringRef}
+                    aria-hidden="true"
+                    data-sprite-ring={ring ? outline : undefined}
+                    className="absolute left-0 top-0 pointer-events-none"
+                    style={{
+                        width: `${size * HERO_SHEET_GRID.cols}px`,
+                        height: `${size * HERO_SHEET_GRID.rows}px`,
+                        backgroundImage: ring ? `url("${ring.url}")` : 'none',
+                        backgroundSize: '100% 100%',
+                        backgroundRepeat: 'no-repeat',
+                        imageRendering: 'pixelated'
+                    }}
+                />
                 <img
                     ref={imgRef}
                     src={src}
@@ -87,8 +122,8 @@ export const AnimatedHeroSprite = ({
                     draggable={false}
                     className="absolute pointer-events-none"
                     style={{
-                        width: `${size * 8}px`,
-                        height: `${size * 3}px`,
+                        width: `${size * HERO_SHEET_GRID.cols}px`,
+                        height: `${size * HERO_SHEET_GRID.rows}px`,
                         maxWidth: 'none',
                         maxHeight: 'none',
                         imageRendering: 'pixelated'
