@@ -612,15 +612,21 @@ export function workerOf(instanceId) {
     return heroId && arrivedAt(heroId, instanceId) ? heroId : null;
 }
 
-/** The instance id of the Token `heroId` works, or null. */
+/**
+ * The instance id of the Token `heroId` works, or null.
+ *
+ * ⭐ **A read, not a write (CR3-158).** This used to also refresh the claim's
+ * last-known point here — harmless, since `afterPointChange` already keeps
+ * every claim current on every move, but a seam documented as a question
+ * (above) silently writing is the kind of thing a future cache or memo over
+ * it would break.
+ */
 export function workTokenOf(heroId) {
     if (!heroId) return null;
     const claim = claimOfHero(heroId);
     if (!claim) return null;
     const instance = getTokenById(claim.instanceId);
     if (!instance) return null;
-    claim.x = instance.x;
-    claim.y = instance.y;
     return arrivedAt(heroId, instance.id) ? instance.id : null;
 }
 
