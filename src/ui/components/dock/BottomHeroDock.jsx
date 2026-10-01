@@ -82,7 +82,12 @@ export const BottomHeroDock = ({
                 e.target.closest('[data-dnd-surface="drawer"]') ||
                 e.target.closest('[data-dnd-region="drawer"]') ||
                 e.target.closest('[data-item-id]') ||
-                e.target.closest('[data-bank-tab]')
+                e.target.closest('[data-bank-tab]') ||
+                // The Bank-side hero panel (its tabs AND its own inspection
+                // sheet) is a separate aside this dock doesn't contain, but a
+                // click there is still "inside" (CR3-450). The playmat, or
+                // anywhere else, is genuinely outside and still closes it.
+                e.target.closest('[data-bank-hero-panel]')
             ) {
                 return;
             }

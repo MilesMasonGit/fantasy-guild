@@ -34,6 +34,11 @@ export const BankHeroPanel = ({
     return (
         <aside
             ref={asideRef}
+            // Exempts this whole panel (hero tabs + inspection sheet) from the
+            // bottom dock's outside-click listener (CR3-450): the bottom dock
+            // stays mounted under the Bank, so without this marker any click
+            // in here looked "outside" to it and closed the sheet early.
+            data-bank-hero-panel="true"
             className={cn(
                 'absolute inset-y-0 z-[100] pointer-events-none flex flex-col justify-center gap-3 py-4 w-full',
                 isDockLeft ? 'left-0' : 'right-0'
