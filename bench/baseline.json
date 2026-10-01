@@ -21,7 +21,18 @@
       "seed": 1,
       "acceptWorkChange": null
     },
-    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline"
+    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline",
+    "addedScenarios": [
+      {
+        "id": "S7",
+        "ticket": "CR3-201",
+        "commit": "0330698",
+        "dirty": true,
+        "date": "2026-10-01T06:09:56.605Z",
+        "node": "v24.11.1",
+        "note": "Added on its own: S7 timings and fingerprint taken on the engine before any CR3-201 engine change (only the new scenario uncommitted). S1-S6 untouched."
+      }
+    ]
   },
   "scenarios": {
     "S1": {
@@ -162,6 +173,27 @@
       "fingerprintOptions": {
         "seed": 1,
         "long": false
+      }
+    },
+    "S7": {
+      "p50": 21.20130000000063,
+      "p99": 29.54989999999816,
+      "fingerprint": {
+        "tokens": 189,
+        "uses": 165391,
+        "bankItems": 1080,
+        "heroXp": 101333,
+        "sprites": 40,
+        "gameTimeMs": 180000,
+        "tokensHash": "86d71c01",
+        "bankHash": "9ccecbd4",
+        "heroHash": "fe53450e",
+        "spriteHash": "200b58b1",
+        "binHash": "811c9dc5",
+        "randomDraws": 4641
+      },
+      "fingerprintOptions": {
+        "seed": 1
       }
     }
   }

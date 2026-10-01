@@ -3,7 +3,7 @@
 // Runs each scenario in a fresh Node process (bench/worker.mjs), a few times,
 // takes the median, prints a table and writes JSON to bench/results/.
 //
-//   npm run bench                       S1–S6, default lengths
+//   npm run bench                       S1–S7, default lengths
 //   npm run bench -- --only=S2,S3       some scenarios
 //   npm run bench -- --compare          also compare with bench/baseline.json:
 //                                       the work first (fingerprints), then
@@ -54,7 +54,8 @@ const SCENARIOS = [
     { id: 'S3', file: 's3-torture.mjs', name: 'Torture', profile: true },
     { id: 'S4', file: 's4-push-storm.mjs', name: 'Push storm', profile: true },
     { id: 'S5', file: 's5-rebuild-storm.mjs', name: 'Rebuild storm', profile: true },
-    { id: 'S6', file: 's6-long-idle.mjs', name: 'Long idle', profile: false, repeats: 1, longChangesWork: true }
+    { id: 'S6', file: 's6-long-idle.mjs', name: 'Long idle', profile: false, repeats: 1, longChangesWork: true },
+    { id: 'S7', file: 's7-waiting-room.mjs', name: 'Waiting for room', profile: true }
 ];
 
 /** A regression is > 20 % slower AND more than this many ms slower (timer noise floor). */
