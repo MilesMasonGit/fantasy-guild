@@ -8,6 +8,9 @@ import { GameState } from '../../../state/GameState.js';
 import { lootFlightTarget, lootSpriteScreenPx } from '../../utils/lootFlight.js';
 
 /** Gap between staggered particles from one collection burst. */
+const STAGGER_MS = 60;
+
+/** A quiet spell this long starts the burst queue again from zero. */
 const STAGGER_RESET_MS = 250;
 
 /**
@@ -170,6 +173,9 @@ class ParticleSystem {
         this.particles = [];
         this.sparkles = [];
         this.spriteCache = new Map();
+        // The burst queue (`_nextSlot`): a place for the next particle, and when one was last asked for.
+        this._slot = 0;
+        this._lastSpawnAt = -Infinity;
     }
 
     /**
@@ -268,6 +274,12 @@ class ParticleSystem {
 
         if (![startX, startY, endX, endY, cpX, cpY].every(Number.isFinite)) return;
 
+        // ⭐ CR3-352 (owner R6-Q4 = A): at most MAX_CONCURRENT from one burst,
+        // STAGGER_MS apart. Asked only once this particle would really fly, so
+        // a refused one does not use up a place. The loot is collected either way.
+        const slot = this._nextSlot();
+        if (slot == null) return;
+
         this.particles.push({
             itemId: template.id,
             icon: template.icon,
@@ -280,7 +292,7 @@ class ParticleSystem {
             trayX,
             trayY,
             instanceId,
-            startTime: performance.now(),
+            startTime: performance.now() + slot * STAGGER_MS,
             duration: destination === 'cursor' ? 320 : (650 + Math.random() * 150),
             path: { startX, startY, endX, endY, cpX, cpY },
             trail: [],
@@ -296,7 +308,7 @@ class ParticleSystem {
      */
     _nextSlot() {
         const now = performance.now();
-        if (now - (this._lastSpawnAt || 0) > STAGGER_RESET_MS) this._slot = 0;
+        if (now - this._lastSpawnAt > STAGGER_RESET_MS) this._slot = 0;
         this._lastSpawnAt = now;
         if (this._slot >= MAX_CONCURRENT) return null;
         return this._slot++;

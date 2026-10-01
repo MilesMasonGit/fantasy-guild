@@ -63,7 +63,7 @@ export function useTokenDragLanding(matRef) {
     return spot ? { x: spot.x, y: spot.y, typeId: activePayload.typeId } : null;
 }
 
-export const MatRings = ({ hoveredCentre = null, matRef = null }) => {
+export const MatRings = React.memo(function MatRings({ hoveredCentre = null, matRef = null }) {
     const radius = useNearRadius();
     const mat = useMatSize();
     const { isDragging } = useActiveDrag();
@@ -100,6 +100,6 @@ export const MatRings = ({ hoveredCentre = null, matRef = null }) => {
             />
         </svg>
     );
-};
+});
 
 export default MatRings;

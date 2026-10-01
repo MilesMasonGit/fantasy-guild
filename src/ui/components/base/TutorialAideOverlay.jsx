@@ -109,11 +109,14 @@ export const TutorialBeacon = ({ target, keyId }) => {
         if (el) {
             const r = el.getBoundingClientRect();
             if (r.width > 0 && r.height > 0) {
-                setTargetRect({
+                const next = {
                     x: r.left + r.width / 2,
                     y: r.top + r.height / 2,
                     radius: Math.max(40, Math.max(r.width, r.height) / 2 + 18)
-                });
+                };
+                // CR3-458: keep the rect we have when the target has not moved,
+                // so a still beacon is not re-rendered every animation frame.
+                setTargetRect(prev => (prev && prev.x === next.x && prev.y === next.y && prev.radius === next.radius ? prev : next));
                 return;
             }
         }

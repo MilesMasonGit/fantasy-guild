@@ -4,6 +4,15 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A crisp pixel look for shadows and highlights (Wave 5, CR3-350).** Tokens resting on the board
+  no longer have a soft shadow. A Token you are dragging, and loot floating on the mat, cast a hard
+  black pixel shadow instead. The soft green glow is gone too: a sharp coloured outline now shows a
+  Token's or hero's state (green working, white hovered or selected, red alert). The outline is one
+  pixel of the art, touching it only edge to edge, so it stays crisp and even. Busy boards draw
+  noticeably faster as a result.
+- **Charge and spawner count rings glide to their new value** instead of jumping.
+- **Smoother drawing on busy mats; looks the same (Wave 4: CR3-007, 011, 301, 303, 351, 352, 353,
+  354, 357, 458).**
 - **The dock's HP bars keep up with a hero's health (CR3-300).** They used to only catch up when
   something else about the hero changed; now a hit or a heal shows right away, in both the bottom
   hero dock and the Bank's side panel.

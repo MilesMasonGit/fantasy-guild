@@ -2,6 +2,10 @@ import { cn } from '../../utils/cn.js';
 import { ART_PX, tokenBodyScale } from '../../../config/matGeometry.js';
 import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
+import { useMatFit } from '../board/MatFitContext.jsx';
+import {
+    useSpriteFxVersion, shadowLayer, outlineLayer, layerStyle
+} from '../../utils/spriteFx.js';
 
 /**
  * TokenSprite — the single component that draws a Token, anywhere (D-222).
@@ -25,9 +29,8 @@ import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
  * ## The rules it enforces
  * - **No frame, ever** (D-219). The art is the object. Borders, rings and panel
  *   backgrounds belong to the *surface* behind the Token, never to the Token.
- * - **One contact shadow everywhere** (D-215). Identical framing, proportion and
- *   weight on every surface — that is what makes it the same object even when
- *   it is not the same number of pixels.
+ * - **No shadow at rest; a hard one in the hand** (Wave 5, owner rulings Z §11,
+ *   superseding D-215's soft contact shadow on every surface) — see `PixelArt`.
  * - **Every size is `ART_PX × scale`** and every scale is a whole number, or an
  *   exact halving. `ART_PX` lives in `matGeometry.js`, and nothing may hardcode
  *   a pixel size, so small mode stays a config change (roadmap G-20).
@@ -152,68 +155,134 @@ export const tokenSizeFor = (surface, typeIdOrSize = 1, scale = TOKEN_SCALE[surf
 const ON_MAT_SURFACES = new Set([TOKEN_SURFACE.BOARD, TOKEN_SURFACE.CARRY, TOKEN_SURFACE.FLOOR]);
 
 /**
- * The contact shadow that makes a Token sit *on* a surface rather than be
- * printed on it (D-215).
+ * ⭐ **Hard pixel shadows and outlines, as pictures** (Wave 5, CR3-350; owner
+ * rulings Z §11, 2026-09-30). This replaced D-215's soft contact shadow, which
+ * every sprite carried as a CSS `drop-shadow` filter — the graphics card's
+ * biggest cost on a busy mat.
  *
- * Two states, because a lifted object is the one thing that legitimately looks
- * different (D-220): **resting** is tight and dark and close underneath;
- * **lifted** is larger, softer and further away, and the art offsets upward.
- * That is what a real object does when you pick it up off a table, and it is
- * what replaces the retired "bloom on cross-over" — the Token itself never
- * changes size mid-drag.
+ * - **A sprite at rest has no shadow at all.** Not on the board, not in a
+ *   listing.
+ * - **A held Token (`lifted`) and floating loot (`hovering`) cast a hard
+ *   shadow**: a solid black silhouette of the art, 2 art pixels down and to
+ *   the right, pixel-crisp.
+ * - **`outline`** (`'work'` green, `'hover'` white, `'alert'` red) draws a
+ *   sharp coloured line, one art pixel thick and on the art's own grid,
+ *   around the art's own black outline — what the green working glow and the
+ *   hover brightening used to say. Its pixels touch the art edge to edge only
+ *   (owner ruling, 2026-10-01; `src/config/spriteFx.js`).
+ *
+ * Both are images made from the art by `scripts/spriteFx.mjs` and drawn as
+ * plain layers (`src/ui/utils/spriteFx.js`): no live filter anywhere. A
+ * sprite the generator has not seen draws without them, never broken.
+ *
+ * ⚠️ Never add `will-change` to a sprite (R6: 3× slower).
  */
-export const RESTING_SHADOW = 'drop-shadow(0 3px 2px rgba(0,0,0,0.80))';
-const LIFTED_SHADOW = 'drop-shadow(0 10px 7px rgba(0,0,0,0.55))';
 const LIFT_OFFSET_PX = 4;
 
+/** The `<img>` style every sprite shares. */
+const spriteImgStyle = (size, extra) => ({
+    width: size,
+    height: size,
+    // ⚠️ Tailwind's preflight sets `img { max-width: 100% }`, which
+    // silently SHRINKS the art to fit whatever box it lands in — and
+    // a shrunk sprite is a fractionally-scaled sprite, the exact
+    // defect this component exists to prevent. It bit the drag ghost
+    // first: dnd-kit sizes its DragOverlay to the source node, so a
+    // 128px carried Token was being clamped to a 74px Tray slot.
+    // The size asked for is the size rendered, everywhere.
+    maxWidth: 'none',
+    maxHeight: 'none',
+    // Non-negotiable for the same reason: the browser's default
+    // smoothing would blur any surface that ever got a fractional box.
+    imageRendering: 'pixelated',
+    ...extra
+});
+
 /**
- * PixelArt — a raw pixel sprite at an exact size, with the shared weight.
+ * PixelArt — a raw pixel sprite at an exact size.
  *
  * Split out from `TokenSprite` because the floor draws **items** as well as
  * Tokens (D-158) and they must be the same displayed size there, but an item
  * resolves its art from the item registry and is drawn from a 32px source
  * rather than a 64px one. Both land on whole-number scales at every size this
  * file produces, so one renderer is correct for both.
+ *
+ * A sprite with nothing extra (the usual case off the mat) is one `<img>`, as
+ * before. A sprite that can carry a shadow or an outline — `lifted`,
+ * `hovering`, or any `outline` prop at all, even null — is a small box: the
+ * caller's class and style go on the box, the layers sit inside it under the
+ * `<img>`. Callers on the mat always pass `outline`, so the box stays put as
+ * the outline comes and goes.
+ *
+ * @param {boolean} lifted    held in the hand: hard shadow, art raised 4 px
+ * @param {boolean} hovering  floating loot: hard shadow, art bobbing (D-221)
+ * @param {'work'|'hover'|'alert'|null} [outline]
  */
-export const PixelArt = ({ src, alt, size, lifted = false, hovering = false, className, style }) => {
-    if (!src) return null;
-    preloadAlphaMask(src);
-
-    // `lifted` and `hovering` are the same physical idea reached two ways.
-    // `lifted` is a held object: the offset is a fixed inline transform.
-    // `hovering` is a floating one (D-221): the offset comes from the bob
-    // keyframes instead, because setting it inline here would be overridden by
-    // the animation anyway.
-    const off = lifted || hovering;
-
+export const PixelArt = (props) => {
+    if (!props.src) return null;
+    preloadAlphaMask(props.src);
+    if (props.lifted || props.hovering || props.outline !== undefined) return <LayeredPixelArt {...props} />;
+    const { src, alt, size, className, style } = props;
     return (
         <img
             src={src}
             alt={alt}
             draggable={false}
-            className={cn('pointer-events-none select-none', hovering && 'gi-sprite-hover', className)}
-            style={{
-                width: size,
-                height: size,
-                // ⚠️ Tailwind's preflight sets `img { max-width: 100% }`, which
-                // silently SHRINKS the art to fit whatever box it lands in — and
-                // a shrunk sprite is a fractionally-scaled sprite, the exact
-                // defect this component exists to prevent. It bit the drag ghost
-                // first: dnd-kit sizes its DragOverlay to the source node, so a
-                // 128px carried Token was being clamped to a 74px Tray slot.
-                // The size asked for is the size rendered, everywhere.
-                maxWidth: 'none',
-                maxHeight: 'none',
-                // Non-negotiable for the same reason: the browser's default
-                // smoothing would blur any surface that ever got a fractional box.
-                imageRendering: 'pixelated',
-                filter: off ? LIFTED_SHADOW : RESTING_SHADOW,
-                transform: lifted ? `translateY(-${LIFT_OFFSET_PX}px)` : undefined,
-                ...style
-            }}
+            className={cn('pointer-events-none select-none', className)}
+            style={spriteImgStyle(size, style)}
         />
     );
 };
+
+function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, outline = null, className, style }) {
+    useSpriteFxVersion();
+    const fit = useMatFit();
+    const shadow = (lifted || hovering) ? shadowLayer(src, size, fit) : null;
+    const ring = outline ? outlineLayer(src, size, outline) : null;
+
+    // `lifted` is a held object: raised by a fixed transform. `hovering` is a
+    // floating one (D-221): raised by the bob keyframes instead. Either way the
+    // shadow rises with the art, always 2 art pixels down-right of it (owner's
+    // final ruling, 2026-10-01).
+    return (
+        <span
+            className={cn('relative inline-block pointer-events-none select-none', className)}
+            style={{ width: size, height: size, ...style }}
+            data-sprite-outline={outline || undefined}
+        >
+            <span
+                className={cn('absolute left-0 top-0', hovering && 'gi-sprite-hover')}
+                style={{
+                    width: size,
+                    height: size,
+                    transform: lifted ? `translateY(-${LIFT_OFFSET_PX}px)` : undefined
+                }}
+            >
+                {shadow && (
+                    <span
+                        aria-hidden="true"
+                        data-sprite-shadow="true"
+                        style={layerStyle(shadow.url, shadow.offset, shadow.offset, size, size)}
+                    />
+                )}
+                {ring && (
+                    <span
+                        aria-hidden="true"
+                        data-sprite-ring={outline}
+                        style={layerStyle(ring.url, -ring.pad, -ring.pad, size + 2 * ring.pad, size + 2 * ring.pad)}
+                    />
+                )}
+                <img
+                    src={src}
+                    alt={alt}
+                    draggable={false}
+                    className="absolute left-0 top-0"
+                    style={spriteImgStyle(size)}
+                />
+            </span>
+        </span>
+    );
+}
 
 /**
  * A Token, drawn for a given surface.
@@ -221,14 +290,17 @@ export const PixelArt = ({ src, alt, size, lifted = false, hovering = false, cla
  * @param {string}  typeId    Token type id; art resolves through the registry.
  * @param {string}  surface   One of `TOKEN_SURFACE`. Decides the size — callers
  *                            never state a pixel value.
- * @param {boolean} lifted    Held by the cursor: bigger softer shadow, art
- *                            offset up. The size does **not** change (D-220).
+ * @param {boolean} lifted    Held by the cursor: hard shadow, art offset up.
+ *                            The size does **not** change (D-220).
+ * @param {string}  outline   `'work'` | `'hover'` | `'alert'` | null — the
+ *                            coloured outline (Wave 5). Mat callers always
+ *                            pass it; elsewhere leave it out.
  * @param {string}  alt       Overrides the registry name, for callers that
  *                            already have a label.
  * @param {number}  scale     Overrides the surface's own scale. The board passes
  *                            `boardScaleAt(fit)` (FP-99); nothing else sets it.
  */
-export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, size, scale, lifted = false, alt, className, style }) => {
+export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, size, scale, lifted = false, outline, alt, className, style }) => {
     const src = tokenSpritePath(typeId);
     if (!src) return null;
 
@@ -238,6 +310,7 @@ export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, size, scale
             alt={alt ?? tokenName(typeId)}
             size={size ?? tokenSizeFor(surface, typeId, scale)}
             lifted={lifted}
+            outline={outline}
             className={className}
             style={style}
         />

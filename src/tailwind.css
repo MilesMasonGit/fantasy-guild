@@ -578,8 +578,8 @@
 
 /* ⚠️ Reduced motion must NOT flatten the two kinds back together, or the item
    vs Token distinction disappears for anyone who sets it. The bob stops; the
-   RAISED SHADOW AND OFFSET STAY, applied statically. A detached shadow reads as
-   "floating" on its own — the motion only made it livelier. */
+   RAISED OFFSET AND THE HARD SHADOW STAY (Wave 5: only floating loot has a
+   shadow at all now, so the shadow alone already says "floating"). */
 @media (prefers-reduced-motion: reduce) {
   .gi-sprite-hover {
     animation: none;
@@ -599,26 +599,27 @@
  * the staggered edges D-216 exists to eliminate. Every offset below is a whole
  * number of pixels.
  *
- * The shadow does the work the squash would have: it is wide and soft while the
- * Token is in the air, snaps tight and dark at the moment of impact, then eases
- * back to the resting shadow every other surface uses. That is the same
- * vocabulary as the lifted state on the drag ghost (D-220), played backwards.
+ * The shadow used to do the work the squash would have (wide and soft in the
+ * air, tight at impact). ⭐ Wave 5 (owner rulings Z §11): a Token on the board
+ * has no shadow, so the bounce is movement only — and no filter, which also
+ * means the animation's `fill-mode: both` no longer holds a live filter on
+ * every Token that ever landed.
  */
 @keyframes gi-token-land {
-  0%   { transform: translateY(-20px); filter: drop-shadow(0 16px 10px rgba(0,0,0,0.40)); }
-  10%  { transform: translateY(-12px); filter: drop-shadow(0 12px 8px rgba(0,0,0,0.48)); }
-  18%  { transform: translateY(-6px);  filter: drop-shadow(0 8px 5px rgba(0,0,0,0.60)); }
-  25%  { transform: translateY(-1px);  filter: drop-shadow(0 4px 3px rgba(0,0,0,0.75)); }
-  30%  { transform: translateY(3px);   filter: drop-shadow(0 2px 1px rgba(0,0,0,0.92)); }  /* impact */
-  38%  { transform: translateY(1px);   filter: drop-shadow(0 2px 1px rgba(0,0,0,0.90)); }
-  46%  { transform: translateY(-4px);  filter: drop-shadow(0 6px 4px rgba(0,0,0,0.68)); }  /* rebound */
-  54%  { transform: translateY(-5px);  filter: drop-shadow(0 7px 4px rgba(0,0,0,0.65)); }
-  62%  { transform: translateY(-3px);  filter: drop-shadow(0 5px 3px rgba(0,0,0,0.72)); }
-  70%  { transform: translateY(0);     filter: drop-shadow(0 3px 2px rgba(0,0,0,0.85)); }
-  78%  { transform: translateY(1px);   filter: drop-shadow(0 2px 2px rgba(0,0,0,0.88)); }  /* settle */
-  86%  { transform: translateY(0);     filter: drop-shadow(0 3px 2px rgba(0,0,0,0.82)); }
-  93%  { transform: translateY(-1px);  filter: drop-shadow(0 4px 2px rgba(0,0,0,0.80)); }
-  100% { transform: translateY(0);     filter: drop-shadow(0 3px 2px rgba(0,0,0,0.80)); }
+  0%   { transform: translateY(-20px); }
+  10%  { transform: translateY(-12px); }
+  18%  { transform: translateY(-6px); }
+  25%  { transform: translateY(-1px); }
+  30%  { transform: translateY(3px); }  /* impact */
+  38%  { transform: translateY(1px); }
+  46%  { transform: translateY(-4px); }  /* rebound */
+  54%  { transform: translateY(-5px); }
+  62%  { transform: translateY(-3px); }
+  70%  { transform: translateY(0); }
+  78%  { transform: translateY(1px); }  /* settle */
+  86%  { transform: translateY(0); }
+  93%  { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
 }
 
 /**
@@ -713,62 +714,13 @@
   .gi-quest-ready { animation: none; opacity: 0.9; }
 }
 
-/* Working, said in colour (D-267).
- *
- * ⚠️ Since Free Playmat slice 1.5 only the green half remains — the yellow idle
- * glow described below was retired (FP-29); see the note after `.gi-glow-active`.
- *
- * A staffed tile lights up: **green while the pairing works, yellow when it has
- * nothing to do**, on BOTH the hero and the Token, so the pair reads as one unit
- * changing state rather than two things being marked separately. An unstaffed
- * Token gets nothing — with ~8 heroes on 48 tiles most of the board is unstaffed
- * at any moment, and D-149 is explicit that this is not an error.
- *
- * ⚠️ **Applied to the WRAPPER, never to the sprite's own `<img>`.** Every sprite
- * carries its contact shadow as an inline `filter` (D-215), and `gi-token-land`
- * animates that same property for 380ms on placement. A third filter on the
- * image would be overridden by the landing animation — CSS animations outrank
- * inline styles — so the glow would blink out exactly when a Token was placed.
- * Filtering the parent composites the whole sprite instead, which follows the
- * pixel-art silhouette just as precisely and leaves both other uses alone.
- *
- * ⚠️ **Green pulses, yellow is steady** (owner decision 2026-08-12), which is the
- * opposite of the obvious choice and better: a productive board *breathes*, and
- * stillness is what makes an idle hero stand out against it. Yellow also carries
- * D-172's job of being the thing a returning player hunts for, and it no longer
- * has the glowing name chip to do it — this is that cue, restored.
- *
- * Colours are `--color-gi-success` (#09b554) and `--color-gi-warning` (#ffb300),
- * written out because `drop-shadow` needs the alpha channel. Keep them in step
- * with the variables if the palette moves.
- */
-@keyframes gi-glow-active {
-  0%, 100% {
-    filter: drop-shadow(0 0 3px rgba(9, 181, 84, 0.55)) drop-shadow(0 0 7px rgba(9, 181, 84, 0.32));
-  }
-  50% {
-    filter: drop-shadow(0 0 5px rgba(9, 181, 84, 0.85)) drop-shadow(0 0 12px rgba(9, 181, 84, 0.50));
-  }
-}
-
-.gi-glow-active {
-  animation: gi-glow-active 2.6s ease-in-out infinite;
-}
-
-/* The steady yellow `gi-glow-idle` is gone (Free Playmat slice 1.5, FP-29):
-   an idle hero is now drawn small and unlit beside a grey pennant with a "…"
-   chip (`FlagLayer`), and a staffed-but-stuck Token shows only its red badge. */
-
-/* ⚠️ Reduced motion must NOT drop the green glow, only its breathing. The colour
-   IS the state; losing it would leave a player who sets this preference unable
-   to tell a working tile from a stuck one. Same reasoning as `gi-sprite-hover`,
-   which keeps its offset when it loses its bob. */
-@media (prefers-reduced-motion: reduce) {
-  .gi-glow-active {
-    animation: none;
-    filter: drop-shadow(0 0 4px rgba(9, 181, 84, 0.70)) drop-shadow(0 0 9px rgba(9, 181, 84, 0.42));
-  }
-}
+/* Working, said in colour (D-267) — ⭐ now a sharp green OUTLINE, not a glow
+ * (Wave 5, owner rulings Z §11, CR3-350). The breathing `gi-glow-active`
+ * drop-shadow filter that lived here was the busy mat's biggest graphics cost;
+ * the outline is a picture generated from the art (`scripts/spriteFx.mjs`),
+ * drawn under the sprite by `PixelArt` and the sheet animators: green working,
+ * white hovered or selected, red alert (`spriteOutline.js`). Reduced motion
+ * needs nothing special — the outline never moved. */
 
 /* Token Hover Pulse & Vibrancy (Option 1: Elastic Quick Hop)
  *
@@ -801,6 +753,13 @@
   animation: gi-hover-bob 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* The same hop for a Token or hero on the mat, WITHOUT the brightening: there
+   the white outline says "hovered" (Wave 5, owner rulings Z §11), and a
+   filter on a sprite is what Wave 5 removed. */
+.gi-token-hover-hop {
+  animation: gi-hover-bob 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* The recipe gear on a station or Foundation with nothing chosen (FB-7):
    a gentle breathe, not an alarm. */
 @keyframes gi-gear-pulse {
@@ -814,6 +773,33 @@
 
 @media (prefers-reduced-motion: reduce) {
   .gi-gear-pulse { animation: none; }
+}
+
+/* A count ring gliding to its new value (owner, 2026-10-01): a Token's charges
+   and a spawner's count. Only the ring whose value changed animates; at rest
+   nothing runs. `RingBadge` explains why this is CSS, not the frame clock. */
+.gi-ring-glide {
+  transition: stroke-dashoffset 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-ring-glide { transition: none; }
+}
+
+/* A Token's charge floater, -1 or +50 (CR3-357): rises a few pixels and fades
+   over 3 s. It was a framer-motion keyframe animation on the JavaScript frame
+   loop; this is the same curve (stops at 0 / 8 / 82 / 100 %, ease-out on each
+   segment, as framer's `easeOut`) on the compositor. Only `opacity` and
+   `transform`: the ring anchor's centring is Tailwind's separate `translate`. */
+@keyframes gi-charge-float {
+  0%   { opacity: 0; transform: translateY(2px) scale(0.95); }
+  8%   { opacity: 1; transform: translateY(0) scale(1); }
+  82%  { opacity: 1; transform: translateY(-2px) scale(1); }
+  100% { opacity: 0; transform: translateY(-5px) scale(0.98); }
+}
+
+.gi-charge-float {
+  animation: gi-charge-float 3s ease-out both;
 }
 
 @keyframes gi-item-equipped-bob {
@@ -843,6 +829,7 @@
 @media (prefers-reduced-motion: reduce) {
   .gi-hover-pulse:hover,
   .gi-token-hover-pulse,
+  .gi-token-hover-hop,
   .gi-item-equipped-bob {
     animation: none;
   }

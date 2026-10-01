@@ -32,6 +32,7 @@ import {
 import { gearStateOf } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
+import { tokenOutline } from './spriteOutline.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
 import { TrickleTooltip, hasTrickle } from './TrickleTooltip.jsx';
 import { QuestTooltip } from './QuestTooltip.jsx';
@@ -112,6 +113,7 @@ export const MatToken = React.memo(function MatToken({
     walkFacing = null,
     z,
     isHovered = false,
+    selected = false,
     hasHero = false,
     onInspectToken,
     onClearInspect,
@@ -340,7 +342,25 @@ export const MatToken = React.memo(function MatToken({
     // glides linearly over one tick, as a walking hero does (`MatHero`). The
     // art, the badges, the ring row and the alerts all ride in these boxes.
     const walking = walkFacing != null;
-    const boxStyle = {
+    // ⭐ CR3-007 (R6 rule 5): a Token that can walk — an enemy — is placed
+    // and glides by `transform`; every other Token stays on left/top (a
+    // transform on all 300 Tokens of a busy mat cost more in compositing than
+    // it saved). Decided once, at mount, by kind: a box switching styles
+    // mid-life would slide in from the mat's corner.
+    // ⚠️ Never add `will-change` to these boxes (R6: 3× slower).
+    const [walker] = React.useState(() => !!def?.enemy);
+    const boxStyle = walker ? {
+        left: 0,
+        top: 0,
+        transform: `translate(${left}px, ${top}px)`,
+        width: boxPx,
+        height: boxPx,
+        transition: skipSlide
+            ? 'none'
+            : walking
+                ? `transform ${TICK_INTERVAL_MS}ms linear`
+                : `transform ${SLIDE_MS}ms ${SLIDE_EASE}`
+    } : {
         left,
         top,
         width: boxPx,
@@ -405,7 +425,11 @@ export const MatToken = React.memo(function MatToken({
         return () => { unsub?.(); clearTimeout(receivedTimer.current); };
     }, [isHall]);
 
-    const glow = staffed && !alert ? 'gi-glow-active' : null;
+    // ⭐ Wave 5 (owner rulings Z §11): a sharp coloured outline replaces the
+    // breathing green glow and the hover brightening — white hovered or
+    // selected, red in alert, green worked (`spriteOutline.js`). It is a
+    // generated picture under the art, not a filter.
+    const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed });
     const gear = gearStateOf(detail || {});
 
     return (
@@ -424,6 +448,7 @@ export const MatToken = React.memo(function MatToken({
                 title={hoverTitle}
                 data-tile-alert={alert || undefined}
                 data-tile-staffed={staffed ? 'true' : undefined}
+                data-outline={outline || undefined}
                 data-tile-has-token="true"
                 data-tile-finite-token={isFiniteToken ? 'true' : undefined}
                 onContextMenu={handleContextMenu}
@@ -462,8 +487,7 @@ export const MatToken = React.memo(function MatToken({
                 }}
                 className={cn(
                     'absolute select-none pointer-events-auto',
-                    disallowMode || questDone ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
-                    glow
+                    disallowMode || questDone ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 )}
             >
                 {/* B6.2 (TL-18): a done quest glows until claimed — the
@@ -480,7 +504,7 @@ export const MatToken = React.memo(function MatToken({
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        isHovered && 'gi-token-hover-pulse',
+                        isHovered && 'gi-token-hover-hop',
                         received && 'brightness-125 saturate-125'
                     )}
                 >
@@ -499,6 +523,7 @@ export const MatToken = React.memo(function MatToken({
                                 walkFacing={walkFacing}
                                 alt={label}
                                 size={artPx}
+                                outline={outline}
                                 className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
                             />
                         ) : (
@@ -507,6 +532,7 @@ export const MatToken = React.memo(function MatToken({
                                 surface={TOKEN_SURFACE.BOARD}
                                 scale={artScale}
                                 alt={label}
+                                outline={outline}
                                 className={cn('absolute inset-0 m-auto', landing && 'gi-token-land')}
                             />
                         )}

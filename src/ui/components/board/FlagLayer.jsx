@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
@@ -17,6 +17,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
+import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
 import { placeUnder } from './tooltipPlacement.js';
 import { pointerToMat } from './matPoint.js';
@@ -256,7 +257,7 @@ function useLingering(wanted) {
 }
 
 /** One hero's flag: drag to move it, hover for why, gear for the rules. */
-const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false }) => {
+const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false }) {
     const ref = useRef(null);
     const [hovered, setHovered] = useState(false);
     const [gearHovered, setGearHovered] = useState(false);
@@ -323,7 +324,13 @@ const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = f
                     zIndex: z
                 }}
             >
-                <FlagMark colour={flag.colour} size={artPx} alt={`${flag.name}’s flag`} className="absolute left-0 top-0" />
+                <FlagMark
+                    colour={flag.colour}
+                    size={artPx}
+                    alt={`${flag.name}’s flag`}
+                    outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}
+                    className="absolute left-0 top-0"
+                />
                 {idle && (
                     <span
                         data-flag-idle-chip
@@ -367,7 +374,7 @@ const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = f
             {hovered && !anyDrag && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
         </>
     );
-};
+});
 
 
 export const STATE_TONE = {

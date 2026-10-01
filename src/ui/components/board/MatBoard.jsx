@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { MAT_Z, matStackOrder, heroZ } from './matLayers.js';
+import { MAT_Z, matStackOrder, sameStackOrder, heroZ } from './matLayers.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
 import { pointerToMat } from './matPoint.js';
@@ -11,6 +11,7 @@ import { MatPointAlerts } from './MatPointAlerts.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
 import { FlagLayer } from './FlagLayer.jsx';
+import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { TERRAIN_ENABLED } from '../../../config/registries/terrainRegistry.js';
@@ -55,7 +56,8 @@ export const MatBoard = ({
     onInspectToken,
     onClearInspect,
     onOpenRecipes,
-    inspectedHeroId = null
+    inspectedHeroId = null,
+    inspectedTokenId = null
 }) => {
     // Dev only (an empty function in production): MatBoard's OWN renders for
     // the Perf HUD, beside Board.jsx's subtree Profiler (CR3-311).
@@ -271,10 +273,13 @@ export const MatBoard = ({
      */
     // Keyed by the worked ids, not the heroes: heroes redraw every walking step.
     const workedKey = [...workedBy.keys()].sort().join('|');
-    const order = useMemo(
-        () => matStackOrder({ tokens, flags: flagPoints, workedIds: workedKey ? workedKey.split('|') : [], hoveredId }),
-        [tokens, flagPoints, workedKey, hoveredId]
-    );
+    // The same object when no z changed (CR3-303), so `flagZ` is a stable prop.
+    const lastOrderRef = useRef(null);
+    const order = useMemo(() => {
+        const next = matStackOrder({ tokens, flags: flagPoints, workedIds: workedKey ? workedKey.split('|') : [], hoveredId });
+        return sameStackOrder(lastOrderRef.current, next) ? lastOrderRef.current : next;
+    }, [tokens, flagPoints, workedKey, hoveredId]);
+    lastOrderRef.current = order;
     const zById = order.tokenZ;
 
     return (
@@ -320,6 +325,7 @@ export const MatBoard = ({
                     walkFacing={t.walkFacing}
                     z={zById.get(t.id)}
                     isHovered={hoveredId === t.id}
+                    selected={inspectedTokenId != null && inspectedTokenId === t.id}
                     hasHero={workedBy.has(t.id)}
                     onInspectToken={onInspectToken}
                     onClearInspect={onClearInspect}
@@ -345,7 +351,12 @@ export const MatBoard = ({
                         left={place.left}
                         top={place.top}
                         z={heroZ(h, order)}
-                        glow={h.state === 'working' && !h.stuck ? 'gi-glow-active' : null}
+                        outline={heroOutline({
+                            hovered: hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
+                            selected: inspectedHeroId === h.heroId,
+                            working: h.state === 'working',
+                            stuck: h.stuck
+                        })}
                         hovered={hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId)}
                         onHover={setHoverHeroId}
                         onRecall={handleRecallHero}

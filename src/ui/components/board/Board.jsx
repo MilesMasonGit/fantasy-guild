@@ -45,7 +45,7 @@ export function matAccepts(p) {
     return false;
 }
 
-export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }) => {
+export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, inspectedTokenId = null }) => {
     const { EventBus } = useEngine();
 
     // How big the mat is (slice 1.6d-3 — the Mat Tuner can change it live), and
@@ -150,6 +150,7 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
                             <PerfProfiler id="MatBoard">
                                 <MatBoard
                                     inspectedHeroId={inspectedHeroId}
+                                    inspectedTokenId={inspectedTokenId}
                                     onInspectToken={onInspectToken}
                                     onClearInspect={onClearInspect}
                                     onOpenRecipes={handleOpenRecipes}

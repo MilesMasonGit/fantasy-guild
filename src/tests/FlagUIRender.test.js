@@ -102,16 +102,19 @@ describe('the idle mark (FP-29)', () => {
         const { container } = mount(h(MatBoard));
         const drawn = container.querySelector('[data-board-hero="h1"]');
         expect(drawn).toBeTruthy();
-        expect(drawn.className).not.toContain('gi-glow-active');
+        // Wave 5: the glow is a green outline now — and still not on a stuck hero.
+        expect(drawn.getAttribute('data-outline')).toBeNull();
         expect(container.querySelector('.gi-glow-idle')).toBeNull();
     });
 
-    it('keeps the working glow', () => {
+    it('keeps the working glow — as a green outline (Wave 5)', () => {
         put(TOKEN,'fixture_producer');
         Flags.plant('h1', TOKEN);
 
         const { container } = mount(h(MatBoard));
-        expect(container.querySelector('[data-board-hero="h1"]').className).toContain('gi-glow-active');
+        const hero = container.querySelector('[data-board-hero="h1"]');
+        expect(hero.getAttribute('data-outline')).toBe('work');
+        expect(hero.className).not.toContain('gi-glow-active');
     });
 
     it('an idle flag keeps its colour, has a "…" chip, and its hero stands beside it at 128 px with no glow', () => {
@@ -136,7 +139,7 @@ describe('the idle mark (FP-29)', () => {
         // an animated sheet's <img> is the whole 8-frame strip, so it is the
         // frame box that is measured, not the image.
         expect(idle.querySelector('div[style*="width: 128px"]')).not.toBeNull();
-        expect(idle.className).not.toContain('gi-glow-active');
+        expect(idle.getAttribute('data-outline')).toBeNull();
         expect(board.querySelector('.gi-glow-idle')).toBeNull();
     });
 

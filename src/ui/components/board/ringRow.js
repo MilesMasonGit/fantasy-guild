@@ -41,6 +41,13 @@ export const RING_COLOUR = Object.freeze({
     quest: '#e8c98a'
 });
 
+/**
+ * ⭐ The count rings that GLIDE to a new value instead of jumping (owner,
+ * 2026-10-01): a Token's charges, and a spawner's count against its cap.
+ * `RingBadge` gives them a CSS transition (`gi-ring-glide`, ~0.8 s).
+ */
+export const GLIDING_RINGS = Object.freeze(new Set(['charges', 'spawner']));
+
 /** The stroke a greyed ring (a blocked cycle) is drawn in. */
 export const RING_GREY = '#8a8a8a';
 

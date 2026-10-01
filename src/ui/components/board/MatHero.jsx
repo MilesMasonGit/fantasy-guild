@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -46,14 +46,14 @@ function useLastAttackAt(heroId, listening) {
  * next job; dropped on the Dock it recalls. The hero stays drawn where they are
  * while the flag is in the hand.
  */
-export const MatHero = ({
+export const MatHero = memo(function MatHero({
     heroId,
     name,
     sprite,
     left,
     top,
     z,
-    glow = null,
+    outline = null,
     hovered = false,
     onHover,
     onRecall,
@@ -61,7 +61,7 @@ export const MatHero = ({
     moving = false,
     facing = 1,
     limp = false
-}) => {
+}) {
     const drag = useEntityDrag({
         id: `hero-${heroId}`,
         kind: DRAG_KIND.FLAG,
@@ -99,6 +99,7 @@ export const MatHero = ({
             data-alpha-test="true"
             data-board-hero={heroId}
             data-hero-limp={limp ? 'true' : undefined}
+            data-outline={outline || undefined}
             aria-label={name || 'Hero'}
             onClick={(e) => {
                 if (!opaque(e)) return;
@@ -113,20 +114,25 @@ export const MatHero = ({
             }}
             onMouseEnter={() => onHover?.(heroId)}
             onMouseLeave={() => onHover?.(null)}
+            // ⭐ A walker moves by `transform` (CR3-007, R6 rule 5): a step
+            // costs no layout, and the graphics side does not redraw the
+            // ground under the hero. Always this style, walking or not — a
+            // box switching from left/top to a transform would slide in from
+            // the mat's corner. ⚠️ Never add `will-change` here (R6: 3× slower).
             style={{
-                left,
-                top,
+                left: 0,
+                top: 0,
+                transform: `translate(${left}px, ${top}px)`,
                 width: HERO_HIT_PX,
                 height: FLAG_PX,
                 zIndex: z,
                 transition: isWalking
-                    ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
+                    ? `transform ${TICK_INTERVAL_MS}ms linear`
                     : 'none'
             }}
             className={cn(
                 'absolute p-0 m-0 bg-transparent border-0 outline-none',
                 'pointer-events-auto cursor-grab active:cursor-grabbing',
-                glow,
                 isThisHeroDragging && 'opacity-0 pointer-events-none'
             )}
         >
@@ -134,7 +140,7 @@ export const MatHero = ({
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        hovered && !drag.isDragging && 'gi-token-hover-pulse'
+                        hovered && !drag.isDragging && 'gi-token-hover-hop'
                     )}
                     // A defeated hero limping home looks wounded (HM-6).
                     style={limp ? { filter: LIMP_FILTER } : undefined}
@@ -149,6 +155,7 @@ export const MatHero = ({
                             attackAt={attackAt}
                             facingLeft={facingLeft}
                             frameMs={limp ? LIMP_FRAME_MS : undefined}
+                            outline={outline}
                             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                         />
                     ) : (
@@ -156,6 +163,7 @@ export const MatHero = ({
                             src={staticArt}
                             alt={name || 'Hero'}
                             size={artPx}
+                            outline={outline}
                             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-transform duration-200"
                             style={{ transform: facingLeft ? 'scaleX(-1)' : 'none' }}
                         />
@@ -164,6 +172,6 @@ export const MatHero = ({
             )}
         </button>
     );
-};
+});
 
 export default MatHero;

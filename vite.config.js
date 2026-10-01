@@ -4,6 +4,10 @@ import path from 'path';
 import fs from 'fs';
 
 import { fileURLToPath } from 'url';
+// Wave 5 (CR3-350): the sprites' hard shadows and coloured outlines are
+// pictures generated from the art, into the git-ignored public/_gen/sprite-fx/
+// — before a build, and when the dev server starts or a sprite changes.
+import { spriteFxPlugin } from './scripts/spriteFx.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The app version, taken from package.json at build time and injected as
@@ -74,7 +78,7 @@ export default defineConfig({
     define: {
         __APP_VERSION__: JSON.stringify(packageVersion)
     },
-    plugins: [react(), assetManifestPlugin()],
+    plugins: [react(), assetManifestPlugin(), spriteFxPlugin({ root: __dirname })],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src')

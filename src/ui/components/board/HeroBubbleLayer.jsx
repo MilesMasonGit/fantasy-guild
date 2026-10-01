@@ -160,6 +160,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
     );
 
     // Measure what was drawn, so the next pass spaces real sizes, not guesses.
+    // ⭐ Only when what the stacks SAY changes (CR3-353): a stack's size is its
+    // lines, and this layer re-renders on every walking step, where measuring
+    // forced a layout inside each commit.
+    const measureKey = anchored
+        .map(({ h, stack }) => `${h.heroId}:${stack.map(b => `${b.id}=${b.text}`).join('|')}`)
+        .join('||');
     useLayoutEffect(() => {
         const root = layerRef.current;
         if (!root) return;
@@ -177,7 +183,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
         }
         for (const id of [...sizesRef.current.keys()]) if (!seen.has(id)) sizesRef.current.delete(id);
         if (changed) setSizeTick(n => n + 1);
-    });
+    }, [measureKey]);
 
     return (
         <div
@@ -193,12 +199,15 @@ export const HeroBubbleLayer = ({ heroes }) => {
                         key={h.heroId}
                         data-hero-bubble-stack={h.heroId}
                         className="absolute flex flex-col items-center justify-end gap-1 pointer-events-none"
+                        // Moved by `transform`, as its hero is (CR3-007); the
+                        // second translate keeps the stack centred over the
+                        // point, tail down.
                         style={{
-                            left: x + dx,
-                            top: y + dy,
-                            transform: 'translate(-50%, -100%)',
+                            left: 0,
+                            top: 0,
+                            transform: `translate(${x + dx}px, ${y + dy}px) translate(-50%, -100%)`,
                             transition: h.moving
-                                ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
+                                ? `transform ${TICK_INTERVAL_MS}ms linear`
                                 : 'none'
                         }}
                     >

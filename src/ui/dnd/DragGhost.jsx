@@ -19,7 +19,7 @@ import { flagColourOf } from '../../systems/board/FlagColours.js';
  * ## Bloom is retired for Tokens & Heroes
  * Carried Tokens and Heroes no longer change size at all or show card frames.
  * They are 128px from pick-up to release, and being held is expressed by the
- * shadow instead — see `TokenSprite` / `PixelArt`'s lifted state.
+ * shadow instead — the hard pixel shadow of `PixelArt`'s lifted state (Wave 5).
  * `bold` is therefore ignored by `TokenGhost` and `HeroGhost`.
  *
  * ⚠️ **Items still bloom, and still use the retired banner tiers.**
@@ -114,7 +114,8 @@ export const FlagGhost = ({ payload }) => {
  * true only over the board; now it is true over the Tray as well, which is what
  * lets the size stay constant.
  *
- * `lifted` is what says "this is in your hand": a larger, softer, further shadow
+ * `lifted` is what says "this is in your hand": a hard black silhouette 2 art
+ * pixels down-right (the only Tokens with a shadow at all, owner ruling Z §11)
  * and a few pixels of upward offset — a real object picked up off a table.
  * A "slight" scale-up was considered and is impossible: from a 64px source there
  * is nothing between 128 and 192, and anything between them lands off the pixel
