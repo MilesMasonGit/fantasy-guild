@@ -26,7 +26,14 @@ export const DisallowModeToggle = () => {
 
     useEffect(() => {
         if (!on) return undefined;
-        const onKey = (e) => { if (e.key === 'Escape') setDisallowMode(false); };
+        // CR3-409 (owner: one Escape, one layer): while a drag is live,
+        // Escape only cancels it. dnd-kit's own Escape-to-cancel listener
+        // attaches at pointerdown, after this one (registered the moment
+        // disallow mode turned on), so it always runs AFTER this check — by
+        // the time it fires, `gi-dnd-active` is still present here.
+        const onKey = (e) => {
+            if (e.key === 'Escape' && !document.body.classList.contains('gi-dnd-active')) setDisallowMode(false);
+        };
         document.addEventListener('keydown', onKey);
         return () => document.removeEventListener('keydown', onKey);
     }, [on]);

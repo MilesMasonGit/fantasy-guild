@@ -91,7 +91,12 @@ export const BottomHeroDock = ({
         };
 
         const handleKeyDown = (e) => {
-            if (e.key === 'Escape') {
+            // CR3-409 (owner: one Escape, one layer): while a drag is live,
+            // Escape only cancels it. dnd-kit's own Escape-to-cancel listener
+            // attaches at pointerdown, after this one (registered the moment
+            // the sheet opened), so it always runs AFTER this check — by the
+            // time it fires, `gi-dnd-active` is still present here.
+            if (e.key === 'Escape' && !document.body.classList.contains('gi-dnd-active')) {
                 onCloseHero?.();
             }
         };
