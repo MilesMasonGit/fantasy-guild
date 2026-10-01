@@ -22,13 +22,15 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
  *      Flat projections are rebuilt each evaluation, so the equality check
  *      compares VALUES and re-renders exactly when a value changed.
  *
- *   2. Pass `{ deepClone: true }` when you genuinely need a whole subtree
- *      (see CardsTab, which needs all of `collection`). Costs a
- *      structuredClone per evaluation — fine for small slices, not for
- *      per-tick data.
+ *   2. Pass `{ deepClone: true }` when you genuinely need a whole subtree.
+ *      Costs a structuredClone per evaluation — fine for small slices, not
+ *      for per-tick data.
  *
  *   3. Return a derived SIGNATURE string for "did this list change" checks:
  *        state => deckSlots.map(s => s.templateId).join(',')           ✔
+ *
+ * THE CANONICAL EXAMPLE is `DockHeroFigure`'s hero (CR3-300): a flat
+ * projection of exactly the fields it draws, `hp` rebuilt from primitives.
  *
  * ANTI-PATTERN — returning a live object and reading nested fields off it:
  *        state => state.heroes.find(h => h.id === id)                  �’
@@ -37,6 +39,20 @@ import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
  *
  * `{ bypassClone: true }` hands back the raw reference (O(1)) and never
  * re-renders on mutation — use only with an explicit `_rev`-style trigger.
+ *
+ * ## Also part of the contract (CR3-310)
+ * * ⚠️ **`events` and `options` are read once, at mount.** A caller that
+ *   passes a different `events` list later is silently still subscribed to
+ *   the first one. (The selector and the filter function are re-read every
+ *   render.)
+ * * **Name the specific events.** The default, `state_changed`, is the
+ *   catch-all being retired (CR3-305); a surface that reads state no specific
+ *   event names listens to `GAME_RESET` as well.
+ * * Several events in one task run the selector once (a microtask), and the
+ *   result is compared with the last value BEFORE React is asked to render,
+ *   so an event that changed nothing costs one selector call and no render.
+ * * A slice for ONE mat Token belongs in `useTokenState` (`tokenEvents.js`),
+ *   which wakes only that Token (CR3-304).
  *
  * @param {Function} selector - Extracts a slice of state, per the contract above
  * @param {Array<string>} [events=['state_changed']] - EventBus events that trigger re-evaluation
