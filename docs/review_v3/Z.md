@@ -1063,3 +1063,20 @@ rulings supersede §8's open status. Numbers refer to §8.
 ### Also decided in the same conversation
 - **The new art**: committed; the ore veins and Stone Outcrop use the new vein art (sprite ids repointed); 38 new sprites registered.
 - **The owner's CMS to-do**: Wood Foundation → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, the Stone item → `item_stone`; **retire the Copper Rubble Token** ("we'll just have copper veins").
+
+### Shadows and outlines — owner rulings after the spike (2026-09-30)
+
+The spike (`docs/review_v3/SPIKE_shadows.md`, screenshots in `docs/review_v3/spike_shadows/`)
+showed the owner's idea (hard silhouette shadow + ready-made outline images replacing the
+glow) runs as fast as every mat effect off: S2 ~155-158 fps vs ~92 today (dev, headless).
+
+- **Hard black silhouette shadow, 2 art-pixel offset down-right: approved.**
+- **The shadow appears ONLY on a Token being dragged (lifted) and on floating loot.** A Token
+  resting on the board has **no shadow at all** (today's always-on RESTING_SHADOW filter goes).
+- **Outlines replace the glow**, colours kept: **green = working, white = hovered/selected,
+  red = alert.**
+- **Outline thickness: the owner wants 1 px and finds the spike's outline too thick.** The spike
+  used 1 art-pixel (2 screen pixels at the 2x sprite scale). The real build produces both
+  **1 screen-pixel** and **1 art-pixel** variants, switchable in the dev Mat Tuner, with
+  side-by-side screenshots, for the owner to pick by eye.
+- Everything ships in the drawing batch the owner eye-checks before it is kept (§11 Q4).
