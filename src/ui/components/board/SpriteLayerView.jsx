@@ -88,7 +88,7 @@ const THROW_WINDOW_MS = 1000;
 const justThrown = (sprite) => Date.now() - (sprite.bornAt ?? 0) < THROW_WINDOW_MS;
 
 /** One piece of item loot on the floor. */
-const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
+const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onCollect }) {
     const { isDragging: isAnyDragging } = useActiveDrag();
     const [isHovered, setIsHovered] = React.useState(false);
     const [isAbsorbingPulse, setIsAbsorbingPulse] = React.useState(false);
@@ -193,6 +193,6 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
             )}
         </button>
     );
-};
+});
 
 export default SpriteLayerView;

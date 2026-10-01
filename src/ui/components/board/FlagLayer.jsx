@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
@@ -256,7 +256,7 @@ function useLingering(wanted) {
 }
 
 /** One hero's flag: drag to move it, hover for why, gear for the rules. */
-const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false }) => {
+const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = false, yieldToTokens = false }) {
     const ref = useRef(null);
     const [hovered, setHovered] = useState(false);
     const [gearHovered, setGearHovered] = useState(false);
@@ -367,7 +367,7 @@ const Flag = ({ flag, z = 0, artPx, onHover, boardHovered = false, inspected = f
             {hovered && !anyDrag && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
         </>
     );
-};
+});
 
 
 export const STATE_TONE = {

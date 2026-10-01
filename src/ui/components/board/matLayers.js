@@ -109,6 +109,24 @@ export function matStackOrder({ tokens = [], flags = [], workedIds = [], hovered
 }
 
 /**
+ * Whether two {@link matStackOrder} answers put everything at the same z
+ * (CR3-303). `MatBoard` keeps the old answer when they do, so the maps it hands
+ * on stay the same objects and a memoised layer is not redrawn for a new map
+ * with the same contents.
+ */
+export function sameStackOrder(a, b) {
+    if (!a || !b) return false;
+    return sameMap(a.tokenZ, b.tokenZ) && sameMap(a.flagZ, b.flagZ);
+}
+
+function sameMap(a, b) {
+    if (a === b) return true;
+    if (a.size !== b.size) return false;
+    for (const [k, v] of a) if (b.get(k) !== v) return false;
+    return true;
+}
+
+/**
  * The z of one hero on the mat, given {@link matStackOrder}'s answer.
  *
  * * **Walking** somewhere (not a stroll by an idle hero): above every Token

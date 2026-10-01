@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -46,7 +46,7 @@ function useLastAttackAt(heroId, listening) {
  * next job; dropped on the Dock it recalls. The hero stays drawn where they are
  * while the flag is in the hand.
  */
-export const MatHero = ({
+export const MatHero = memo(function MatHero({
     heroId,
     name,
     sprite,
@@ -61,7 +61,7 @@ export const MatHero = ({
     moving = false,
     facing = 1,
     limp = false
-}) => {
+}) {
     const drag = useEntityDrag({
         id: `hero-${heroId}`,
         kind: DRAG_KIND.FLAG,
@@ -170,6 +170,6 @@ export const MatHero = ({
             )}
         </button>
     );
-};
+});
 
 export default MatHero;

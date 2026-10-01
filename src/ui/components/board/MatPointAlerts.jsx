@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -40,7 +40,7 @@ export function isPointAlert(payload) {
     return true;
 }
 
-export const MatPointAlerts = () => {
+export const MatPointAlerts = memo(function MatPointAlerts() {
     const [alerts, setAlerts] = useState([]);
     const mat = useMatSize();
 
@@ -73,7 +73,7 @@ export const MatPointAlerts = () => {
             ))}
         </div>
     );
-};
+});
 
 /** One alert standing at a mat point. */
 const PointAlert = ({ alert, onGone }) => {
