@@ -3,7 +3,7 @@
 
 import { useSyncExternalStore } from 'react';
 import {
-    SPRITE_FX_DIR, pickOutlineVariant, shadowScreenPx, outlineFolder, silhouetteFolder
+    SPRITE_FX_DIR, shadowScreenPx, outlineFolder, silhouetteFolder
 } from '../../config/spriteFx.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 
@@ -17,10 +17,11 @@ import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
  * — brand-new art before the dev watcher fires, a CMS data URL, a test with no
  * manifest — simply draws with no shadow and no outline.
  *
- * All sizes come back in the CALLER's CSS pixels. `fit` is how many screen
- * pixels one of those is: the mat's fit inside the mat (`useMatFit`), 1
- * outside it (the drag ghost, the dock). "Screen pixel" means a CSS pixel
- * after the mat's transform, the unit the whole-pixel art rule (FP-99) uses.
+ * All sizes come back in the CALLER's CSS pixels. The outline is one ART
+ * pixel, drawn at the sprite's own scale, so it needs nothing else. The
+ * shadow's offset is rounded to whole screen pixels, so it takes `fit`: how
+ * many screen pixels one caller pixel is — the mat's fit inside the mat
+ * (`useMatFit`), 1 outside it (the drag ghost, the dock).
  */
 
 /** @type {Record<string, {w:number,h:number,cols?:number,rows?:number,outlined:boolean}>|null} */
@@ -56,21 +57,18 @@ if (import.meta.hot) {
     import.meta.hot.on('sprite-fx:update', () => { loadSpriteFxManifest(); });
 }
 
-// The two dev Mat Tuner rows that change how these are drawn.
+// The dev Mat Tuner row that changes how these are drawn.
 onMatTuningChanged((key) => {
-    if (key === null || key === 'outlinePx' || key === 'raisedShadow') bump();
+    if (key === null || key === 'raisedShadow') bump();
 });
 
 const subscribe = (fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
 const snapshot = () => version;
 
-/** Re-renders the caller when the manifest arrives or a look setting changes. */
+/** Re-renders the caller when the manifest arrives or is redrawn. */
 export function useSpriteFxVersion() {
     return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
-
-/** The thickness setting (dev Mat Tuner): `'screen'` (1 screen pixel, default) or `'art'`. */
-export const outlineMode = () => (matTuning('outlinePx') >= 1 ? 'art' : 'screen');
 
 /** Raised shadow setting (dev Mat Tuner): true = stays on the ground while the sprite rises. */
 export const shadowStaysOnGround = () => matTuning('raisedShadow') >= 1;
@@ -125,27 +123,26 @@ export function shadowLayer(src, size, fit = 1) {
 /**
  * The outline for a single sprite drawn `size` CSS px wide, in `colour`
  * (`work` | `hover` | `alert`): its url, and how far it reaches past the
- * sprite on every side (CSS px) — the image is drawn `pad` up-left of the
- * sprite and `size + 2·pad` across. Null if this sprite has no outlines.
+ * sprite on every side — exactly one art pixel at the size it is drawn
+ * (`size / art width`). The image is drawn `pad` up-left of the sprite and
+ * `size + 2·pad` across, so it is scaled exactly like the art and every
+ * outline pixel lands on the art's grid. Null if this sprite has no outlines.
  */
-export function outlineLayer(src, size, fit = 1, colour, mode = outlineMode()) {
+export function outlineLayer(src, size, colour) {
     const entry = spriteFxEntry(src);
-    if (!entry || !entry.outlined || entry.cols || !colour || !(size > 0) || !(fit > 0)) return null;
-    const k = screenPerSource(entry, size, fit);
-    const v = pickOutlineVariant(k, mode);
-    return { url: url(outlineFolder(colour, v), entry.key), pad: ((v.r * k) / v.u) / fit, variant: v };
+    if (!entry || !entry.outlined || entry.cols || !colour || !(size > 0)) return null;
+    return { url: url(outlineFolder(colour), entry.key), pad: size / entry.w };
 }
 
 /**
- * The outline sheet for an animated sprite sheet whose frames are drawn
- * `cellPx` CSS px wide. It has the sheet's own size and grid, so it is drawn
- * exactly like the sheet, with the same frame offset. Null if none.
+ * The outline sheet for an animated sprite sheet. It has the sheet's own size
+ * and grid (each frame's ring grown inside its cell), so it is drawn exactly
+ * like the sheet, with the same frame offset. Null if none.
  */
-export function sheetOutlineLayer(src, cellPx, fit = 1, colour, mode = outlineMode()) {
+export function sheetOutlineLayer(src, colour) {
     const entry = spriteFxEntry(src);
-    if (!entry || !entry.outlined || !entry.cols || !colour || !(cellPx > 0) || !(fit > 0)) return null;
-    const v = pickOutlineVariant(screenPerSource(entry, cellPx, fit), mode);
-    return { url: url(outlineFolder(colour, v), entry.key), variant: v };
+    if (!entry || !entry.outlined || !entry.cols || !colour) return null;
+    return { url: url(outlineFolder(colour), entry.key) };
 }
 
 /**

@@ -183,7 +183,7 @@ describe('state → outline colour', () => {
             const { container } = render(h(PixelArt, { src: TOKEN_SRC, size: 128, outline: colour }));
             const ring = container.querySelector('[data-sprite-ring]');
             expect(ring.getAttribute('data-sprite-ring')).toBe(colour);
-            expect(ring.style.backgroundImage).toContain(`/_gen/sprite-fx/ol-${colour}-`);
+            expect(ring.style.backgroundImage).toContain(`/_gen/sprite-fx/ol-${colour}/`);
             expect(filtersIn(container)).toEqual([]);
             cleanup();
         }
@@ -191,48 +191,30 @@ describe('state → outline colour', () => {
 
     it('a flag on the mat is outlined the same way', () => {
         const { container } = render(h(FlagMark, { size: 128, outline: 'hover' }));
-        expect(container.querySelector('[data-sprite-ring="hover"]').style.backgroundImage).toContain(`ol-hover-u2r1/${assetKey(FLAG_SRC)}`);
+        expect(container.querySelector('[data-sprite-ring="hover"]').style.backgroundImage).toContain(`ol-hover/${assetKey(FLAG_SRC)}`);
     });
 });
 
-describe('the thickness setting switches the outline image', () => {
+describe('the outline is one art pixel, scaled with the sprite like the art', () => {
     const ring = (props, fit = 1) => render(withFit(fit, h(PixelArt, { src: TOKEN_SRC, outline: 'work', ...props })))
         .container.querySelector('[data-sprite-ring]');
 
-    it('is a dev Mat Tuner row, defaulting to 1 screen pixel', () => {
-        const row = MAT_TUNABLES.find(t => t.key === 'outlinePx');
-        expect(row).toMatchObject({ group: 'Look', min: 0, max: 1, step: 1, def: 0 });
-        expect(row.format(0)).toBe('1 screen pixel');
-        expect(row.format(1)).toBe('1 art pixel');
-        expect(MAT_TUNABLES.find(t => t.key === 'raisedShadow')).toMatchObject({ group: 'Look', def: 0 });
-    });
-
-    it('1 screen pixel (default): at 2× the art is outlined from its 2×-enlarged image, 1 px past the sprite', () => {
+    it('64-pixel art at 128 px (2×): the ring image reaches exactly one art pixel (2 px) past the sprite', () => {
         const el = ring({ size: 128 });
-        expect(el.style.backgroundImage).toContain('ol-work-u2r1/');
-        expect([el.style.left, el.style.top, el.style.width]).toEqual(['-1px', '-1px', '130px']);
+        expect(el.style.backgroundImage).toContain('ol-work/');
+        // The image is the art's size plus one pixel each side (66), drawn 132 px: 2 px per image pixel.
+        expect([el.style.left, el.style.top, el.style.width, el.style.height]).toEqual(['-2px', '-2px', '132px', '132px']);
     });
 
-    it('1 art pixel: the 1× image, 2 screen px past the sprite at 2× — switched live', () => {
-        const { container } = render(h(PixelArt, { src: TOKEN_SRC, outline: 'work', size: 128 }));
-        expect(container.querySelector('[data-sprite-ring]').style.backgroundImage).toContain('u2r1');
-        act(() => { setMatTuning('outlinePx', 1); });
-        const el = container.querySelector('[data-sprite-ring]');
-        expect(el.style.backgroundImage).toContain('ol-work-u1r1/');
-        expect([el.style.left, el.style.width]).toEqual(['-2px', '132px']);
+    it('at 3× it is 3 px; inside a mat at fit 0.5 it is one art pixel in mat units, whatever the fit', () => {
+        expect(ring({ size: 192 }).style.left).toBe('-3px');
+        cleanup();
+        const inMat = ring({ size: 256 }, 0.5);    // 256 u = 128 screen px: one art pixel = 4 u = 2 screen px
+        expect([inMat.style.left, inMat.style.width]).toEqual(['-4px', '264px']);
     });
 
-    it('stays one whole screen pixel at other mat sizes (3× art, and fit 0.5)', () => {
-        expect(ring({ size: 192 }).style.backgroundImage).toContain('u3r1');
-        cleanup();
-        const half = ring({ size: 256 }, 0.5);   // 256 u at fit 0.5 = 128 screen px: k = 2
-        expect(half.style.backgroundImage).toContain('u2r1');
-        expect(half.style.left).toBe('-2px');     // 1 screen px = 2 mat units
-        cleanup();
-        // Art drawn at half its size (k = 0.5) needs the 2-pixel ring to reach a whole pixel.
-        const small = ring({ size: 32 });
-        expect(small.style.backgroundImage).toContain('u1r2');
-        expect(small.style.left).toBe('-1px');
+    it('there is one outline image per colour — no thickness setting in the Mat Tuner', () => {
+        expect(MAT_TUNABLES.find(t => t.key === 'outlinePx')).toBeUndefined();
     });
 });
 
@@ -245,7 +227,7 @@ describe('animated sheets carry an outline sheet that follows every frame', () =
             expect(ringEl.style.backgroundImage).toBe('none');
             rerender(h(AnimatedHeroSprite, { src: SHEET_SRC, size: 128, animationState: 'walk', outline: 'work' }));
             expect(ringEl.getAttribute('data-sprite-ring')).toBe('work');
-            expect(ringEl.style.backgroundImage).toContain('ol-work-u2r1/assets/heroes/animations/ani_look_0.png');
+            expect(ringEl.style.backgroundImage).toContain('ol-work/assets/heroes/animations/ani_look_0.png');
             expect([ringEl.style.width, ringEl.style.height]).toEqual(['1024px', '384px']);
             const img = container.querySelector('img');
             expect(ringEl.style.transform).toBe(img.style.transform);
@@ -264,7 +246,7 @@ describe('animated sheets carry an outline sheet that follows every frame', () =
             const { container } = render(h(AnimatedEnemySprite, { src: ENEMY_SRC, size: 128, outline: 'alert' }));
             expect(filtersIn(container)).toEqual([]);
             const ringEl = container.querySelector('[data-sprite-ring]');
-            expect(ringEl.style.backgroundImage).toContain('ol-alert-u2r1/');
+            expect(ringEl.style.backgroundImage).toContain('ol-alert/');
             const art = container.querySelector('[role="img"]');
             act(() => { vi.advanceTimersByTime(300); });
             expect(art.style.backgroundPosition).not.toBe('');

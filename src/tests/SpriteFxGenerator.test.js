@@ -8,7 +8,7 @@ import {
     alphaMask, silhouetteRgba, outlineMask, colourRgba, generateSpriteFx, listSprites
 } from '../../scripts/spriteFx.mjs';
 import {
-    SPRITE_FX_DIR, OUTLINE_COLOURS, OUTLINE_VARIANTS, pickOutlineVariant, shadowScreenPx,
+    SPRITE_FX_DIR, OUTLINE_COLOURS, shadowScreenPx,
     sheetGridOf, isOutlined, HERO_SHEET_GRID, ENEMY_SHEET_GRID
 } from '../config/spriteFx.js';
 
@@ -18,8 +18,10 @@ import {
  * filters. These pin what the generator draws:
  *
  * - the silhouette is the art's alpha mask, in solid black;
- * - an outline is the 1-pixel ring an 8-direction dilation adds, per colour
- *   (on the art enlarged u× for the thin "1 screen pixel" variants);
+ * - an outline is ONE ART PIXEL on the art's own grid, and only where a clear
+ *   pixel touches the art EDGE TO EDGE (up/down/left/right): a plus-shaped,
+ *   4-connected dilation minus the art (owner ruling 2026-10-01 — no pixel
+ *   that only touches the art corner to corner, so no "doubles");
  * - a sprite sheet's ring stays inside each frame cell.
  */
 
@@ -33,26 +35,48 @@ function art(w, h, pixels) {
     return buf;
 }
 
-/** Brute force: the set of output pixels a (u, r) ring should contain. */
-function bruteRing(mask, w, h, u, r, grid) {
-    const pad = grid ? 0 : r;
-    const UW = w * u, UH = h * u, W = UW + 2 * pad, H = UH + 2 * pad;
-    const inArt = (x, y) => x >= 0 && y >= 0 && x < UW && y < UH && mask[Math.floor(y / u) * w + Math.floor(x / u)] === 1;
-    const cell = (x, y) => grid ? `${Math.floor(x / (UW / grid.cols))},${Math.floor(y / (UH / grid.rows))}` : '0';
+const CARDINAL = [[0, -1], [-1, 0], [1, 0], [0, 1]];
+const DIAGONAL = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+
+/** Brute force: every clear pixel with an art pixel edge to edge (same frame cell for a sheet). */
+function bruteRing(mask, w, h, grid) {
+    const pad = grid ? 0 : 1;
+    const W = w + 2 * pad, H = h + 2 * pad;
+    const inArt = (x, y) => x >= 0 && y >= 0 && x < w && y < h && mask[y * w + x] === 1;
+    const cell = (x, y) => grid ? `${Math.floor(x / (w / grid.cols))},${Math.floor(y / (h / grid.rows))}` : '0';
     const out = new Set();
     for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
         const x = X - pad, y = Y - pad;
         if (inArt(x, y)) continue;
-        let hit = false;
-        for (let dy = -r; dy <= r && !hit; dy++) for (let dx = -r; dx <= r && !hit; dx++) {
-            if (inArt(x + dx, y + dy) && (!grid || (x >= 0 && y >= 0 && x < UW && y < UH && cell(x, y) === cell(x + dx, y + dy)))) hit = true;
-        }
-        if (hit) out.add(Y * W + X);
+        if (CARDINAL.some(([dx, dy]) => inArt(x + dx, y + dy) && (!grid || cell(x, y) === cell(x + dx, y + dy)))) out.add(Y * W + X);
     }
     return { set: out, W, H };
 }
 
 const setOf = (mask) => new Set([...mask.keys()].filter(i => mask[i]));
+
+/**
+ * The owner's rule, checked pixel by pixel: every ring pixel touches the art
+ * edge to edge, no ring pixel touches it ONLY corner to corner, and no clear
+ * pixel that touches the art edge to edge was left out.
+ */
+function expectCardinalOnly(mask, w, h, ring, grid = null) {
+    const pad = grid ? 0 : 1;
+    const inArt = (x, y) => x >= 0 && y >= 0 && x < w && y < h && mask[y * w + x] === 1;
+    for (let Y = 0; Y < ring.height; Y++) for (let X = 0; X < ring.width; X++) {
+        const x = X - pad, y = Y - pad;
+        const on = ring.mask[Y * ring.width + X] === 1;
+        const edge = CARDINAL.some(([dx, dy]) => inArt(x + dx, y + dy));
+        const corner = DIAGONAL.some(([dx, dy]) => inArt(x + dx, y + dy));
+        if (on) {
+            expect(inArt(x, y), `ring pixel ${x},${y} is on the art`).toBe(false);
+            expect(edge, `ring pixel ${x},${y} only touches the art diagonally`).toBe(true);
+        } else if (!grid && !inArt(x, y)) {
+            expect(edge, `clear pixel ${x},${y} touches the art edge to edge but has no outline`).toBe(false);
+        }
+        void corner;
+    }
+}
 
 describe('the silhouette is the art’s alpha mask, in black', () => {
     it('is opaque black exactly where the art has alpha, clear elsewhere', () => {
@@ -68,82 +92,87 @@ describe('the silhouette is the art’s alpha mask, in black', () => {
     });
 });
 
-describe('an outline is the 1-pixel ring a dilation adds', () => {
-    it('one art pixel at u1r1: its 8 neighbours, padded by 1', () => {
+describe('an outline is one art pixel, edge to edge only (4-connected)', () => {
+    it('one art pixel: a plus — its 4 edge neighbours, never its corners; padded by 1', () => {
         const mask = alphaMask(art(1, 1, [[0, 0]]), 1, 1);
-        const ring = outlineMask(mask, 1, 1, { u: 1, r: 1 });
-        expect(ring.width).toBe(3);
-        expect(ring.height).toBe(3);
-        expect([...ring.mask]).toEqual([1, 1, 1, 1, 0, 1, 1, 1, 1]);
-    });
-
-    it('one art pixel at u2r1 (the "1 screen pixel" image at 2×): a 2×2 block ringed by one pixel', () => {
-        const mask = alphaMask(art(1, 1, [[0, 0]]), 1, 1);
-        const ring = outlineMask(mask, 1, 1, { u: 2, r: 1 });
-        expect([ring.width, ring.height]).toEqual([4, 4]);
+        const ring = outlineMask(mask, 1, 1);
+        expect([ring.width, ring.height]).toEqual([3, 3]);
         expect([...ring.mask]).toEqual([
-            1, 1, 1, 1,
-            1, 0, 0, 1,
-            1, 0, 0, 1,
-            1, 1, 1, 1
+            0, 1, 0,
+            1, 0, 1,
+            0, 1, 0
         ]);
     });
 
-    it('matches a brute-force dilation-minus-art for every variant, on irregular art', () => {
-        const pixels = [[1, 1], [2, 1], [5, 2], [3, 4], [3, 5], [0, 6], [6, 6]];
-        const mask = alphaMask(art(7, 7, pixels), 7, 7);
-        for (const v of OUTLINE_VARIANTS) {
-            const ring = outlineMask(mask, 7, 7, v);
-            const want = bruteRing(mask, 7, 7, v.u, v.r, null);
-            expect([ring.width, ring.height]).toEqual([want.W, want.H]);
-            expect(setOf(ring.mask)).toEqual(want.set);
-        }
+    it('a square keeps square sides and empty corners (no corner pixel, no doubles)', () => {
+        const px = [];
+        for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) px.push([x, y]);
+        const ring = outlineMask(alphaMask(art(3, 3, px), 3, 3), 3, 3);
+        expect([...ring.mask]).toEqual([
+            0, 1, 1, 1, 0,
+            1, 0, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            1, 0, 0, 0, 1,
+            0, 1, 1, 1, 0
+        ]);
     });
 
-    it('a sprite sheet grows inside each frame cell and is not padded', () => {
-        // Two 4-px cells side by side; art touching the shared edge from both sides.
-        const pixels = [[3, 1], [4, 2], [0, 0]];
+    it('a diagonal staircase gets a single-pixel staircase, not a thick band', () => {
+        const mask = alphaMask(art(3, 3, [[0, 0], [1, 1], [2, 2]]), 3, 3);
+        const ring = outlineMask(mask, 3, 3);
+        // Above-right of the stair: (1,0) and (2,1) — and NOT (2,0), which only touches it diagonally.
+        const at = (x, y) => ring.mask[(y + 1) * ring.width + (x + 1)];
+        expect([at(1, 0), at(2, 1), at(2, 0)]).toEqual([1, 1, 0]);
+        expectCardinalOnly(mask, 3, 3, ring);
+    });
+
+    it('matches a brute-force cardinal dilation on irregular art, and no ring pixel is only diagonal', () => {
+        const pixels = [[1, 1], [2, 1], [5, 2], [3, 4], [3, 5], [0, 6], [6, 6], [4, 4], [5, 5]];
+        const mask = alphaMask(art(7, 7, pixels), 7, 7);
+        const ring = outlineMask(mask, 7, 7);
+        const want = bruteRing(mask, 7, 7, null);
+        expect([ring.width, ring.height]).toEqual([want.W, want.H]);
+        expect(setOf(ring.mask)).toEqual(want.set);
+        expectCardinalOnly(mask, 7, 7, ring);
+    });
+
+    it('the art’s own black border counts as art: the ring sits outside it', () => {
+        // A 3×3 sprite: black border pixels round one coloured middle.
+        const rgba = Buffer.alloc(3 * 3 * 4);
+        for (let i = 0; i < 9; i++) rgba[i * 4 + 3] = 255;   // all opaque; border is black (0,0,0)
+        rgba[4 * 4] = 200;                                    // the middle is coloured
+        const ring = outlineMask(alphaMask(rgba, 3, 3), 3, 3);
+        // Nothing inside the 3×3 art box is ring.
+        for (let y = 1; y <= 3; y++) for (let x = 1; x <= 3; x++) expect(ring.mask[y * 5 + x]).toBe(0);
+    });
+
+    it('a sprite sheet grows inside each frame cell, cardinal only, and is not padded', () => {
+        // Two 4-px cells side by side; art on both sides of the shared edge.
+        const pixels = [[3, 1], [4, 3], [0, 0]];
         const mask = alphaMask(art(8, 4, pixels), 8, 4);
         const grid = { cols: 2, rows: 1 };
-        for (const v of [{ u: 1, r: 1 }, { u: 2, r: 1 }]) {
-            const ring = outlineMask(mask, 8, 4, { ...v, grid });
-            expect([ring.width, ring.height]).toEqual([8 * v.u, 4 * v.u]);
-            expect(setOf(ring.mask)).toEqual(bruteRing(mask, 8, 4, v.u, v.r, grid).set);
-        }
-        // At u1r1, the pixel at (3, 1) — the left cell's last column — rings
-        // (2, 0) in its own cell but never (4, 0) across the frame edge.
-        const r1 = outlineMask(mask, 8, 4, { u: 1, r: 1, grid });
-        expect(r1.mask[0 * 8 + 2]).toBe(1);
-        expect(r1.mask[0 * 8 + 4]).toBe(0);
+        const ring = outlineMask(mask, 8, 4, { grid });
+        expect([ring.width, ring.height]).toEqual([8, 4]);
+        expect(setOf(ring.mask)).toEqual(bruteRing(mask, 8, 4, grid).set);
+        expectCardinalOnly(mask, 8, 4, ring, grid);
+        // (3, 1) — the left cell's last column — rings (2, 1) in its own cell,
+        // never (4, 1) across the frame edge, and never its diagonal (2, 0).
+        expect(ring.mask[1 * 8 + 2]).toBe(1);
+        expect(ring.mask[1 * 8 + 4]).toBe(0);
+        expect(ring.mask[0 * 8 + 2]).toBe(0);
     });
 
     it('is filled with one solid colour per state', () => {
-        const ring = outlineMask(alphaMask(art(1, 1, [[0, 0]]), 1, 1), 1, 1, { u: 1, r: 1 });
+        const ring = outlineMask(alphaMask(art(1, 1, [[0, 0]]), 1, 1), 1, 1);
         for (const [name, rgb] of Object.entries(OUTLINE_COLOURS)) {
             const px = colourRgba(ring.mask, 3, 3, rgb);
-            expect([...px.subarray(0, 4)], name).toEqual([...rgb, 255]);
+            expect([...px.subarray(4, 8)], name).toEqual([...rgb, 255]);    // (1,0): edge neighbour
+            expect([...px.subarray(0, 4)], name).toEqual([0, 0, 0, 0]);     // (0,0): corner, clear
             expect([...px.subarray(16, 20)], name).toEqual([0, 0, 0, 0]);   // the art's own pixel
         }
         expect(OUTLINE_COLOURS.work).toEqual([9, 181, 84]);
         expect(OUTLINE_COLOURS.hover).toEqual([255, 255, 255]);
         expect(OUTLINE_COLOURS.alert).toEqual([239, 68, 68]);
-    });
-});
-
-describe('which outline image is drawn: the thickness setting', () => {
-    it('"1 screen pixel" picks the image that lands on exactly one screen pixel', () => {
-        expect(pickOutlineVariant(1, 'screen')).toEqual({ u: 1, r: 1 });
-        expect(pickOutlineVariant(2, 'screen')).toEqual({ u: 2, r: 1 });
-        expect(pickOutlineVariant(3, 'screen')).toEqual({ u: 3, r: 1 });
-        expect(pickOutlineVariant(4, 'screen')).toEqual({ u: 4, r: 1 });
-        expect(pickOutlineVariant(0.5, 'screen')).toEqual({ u: 1, r: 2 });
-    });
-
-    it('"1 art pixel" draws one pixel of the art, never thinner than a screen pixel', () => {
-        expect(pickOutlineVariant(1, 'art')).toEqual({ u: 1, r: 1 });
-        expect(pickOutlineVariant(2, 'art')).toEqual({ u: 1, r: 1 });
-        expect(pickOutlineVariant(3, 'art')).toEqual({ u: 1, r: 1 });
-        expect(pickOutlineVariant(0.5, 'art')).toEqual({ u: 1, r: 2 });
     });
 
     it('the shadow sits 2 art pixels away, in whole screen pixels', () => {
@@ -207,7 +236,7 @@ describe('generateSpriteFx — files on disk, kept current', () => {
         expect(manifest.sprites['assets/tokens/token_test.png']).toMatchObject({ w: 4, h: 4, outlined: true });
         expect(manifest.sprites['assets/ui/ui_test.png']).toMatchObject({ w: 2, h: 2, outlined: false });
         expect(manifest.sprites['assets/heroes/animations/ani_test_0.png']).toMatchObject({ w: 16, h: 6, cols: 8, rows: 3, outlined: true });
-        expect(fs.existsSync(path.join(out(), 'ol-work-u1r1', 'assets/ui/ui_test.png'))).toBe(false);
+        expect(fs.existsSync(path.join(out(), 'ol-work', 'assets/ui/ui_test.png'))).toBe(false);
         expect(fs.existsSync(path.join(out(), 'sil', 'assets/audio/not_a_sprite.png'))).toBe(false);
         // Nothing was written beside the owner's art.
         expect(fs.readdirSync(path.join(root, 'public', 'assets', 'tokens'))).toEqual(['token_test.png']);
@@ -226,27 +255,35 @@ describe('generateSpriteFx — files on disk, kept current', () => {
         }
     });
 
-    it('each outline PNG decodes to the ring, in its colour, for every variant', async () => {
+    it('each outline PNG decodes to the cardinal ring, at the art’s own pixel size plus 1, in its colour', async () => {
         const src = await read(path.join(root, 'public', 'assets/tokens/token_test.png'));
         const mask = alphaMask(src.data, 4, 4);
-        for (const v of OUTLINE_VARIANTS) {
-            const want = bruteRing(mask, 4, 4, v.u, v.r, null);
-            for (const [colour, rgb] of Object.entries(OUTLINE_COLOURS)) {
-                const img = await read(path.join(out(), `ol-${colour}-u${v.u}r${v.r}`, 'assets/tokens/token_test.png'));
-                expect([img.w, img.h]).toEqual([want.W, want.H]);
-                const got = new Set();
-                for (let i = 0; i < img.w * img.h; i++) {
-                    const px = [...img.data.subarray(i * 4, i * 4 + 4)];
-                    if (px[3]) { expect(px).toEqual([...rgb, 255]); got.add(i); }
-                }
-                expect(got).toEqual(want.set);
+        const want = bruteRing(mask, 4, 4, null);
+        for (const [colour, rgb] of Object.entries(OUTLINE_COLOURS)) {
+            const img = await read(path.join(out(), `ol-${colour}`, 'assets/tokens/token_test.png'));
+            // One image pixel per art pixel: whole art pixels once scaled with the sprite.
+            expect([img.w, img.h]).toEqual([6, 6]);
+            const got = new Set();
+            for (let i = 0; i < img.w * img.h; i++) {
+                const px = [...img.data.subarray(i * 4, i * 4 + 4)];
+                if (px[3]) { expect(px).toEqual([...rgb, 255]); got.add(i); }
             }
+            expect(got).toEqual(want.set);
+            expectCardinalOnly(mask, 4, 4, { mask: Uint8Array.from({ length: 36 }, (_, i) => (got.has(i) ? 1 : 0)), width: 6, height: 6 });
         }
+        // The old thin-line images are not made any more.
+        expect(fs.readdirSync(out()).filter(d => /-u\d+r\d+$/.test(d))).toEqual([]);
     });
 
-    it('a sheet’s outline keeps the sheet’s size and grid', async () => {
-        const img = await read(path.join(out(), 'ol-hover-u2r1', 'assets/heroes/animations/ani_test_0.png'));
-        expect([img.w, img.h]).toEqual([32, 12]);
+    it('a sheet’s outline keeps the sheet’s size and grid, cardinal only per frame', async () => {
+        const src = await read(path.join(root, 'public', 'assets/heroes/animations/ani_test_0.png'));
+        const img = await read(path.join(out(), 'ol-hover', 'assets/heroes/animations/ani_test_0.png'));
+        expect([img.w, img.h]).toEqual([16, 6]);
+        const mask = alphaMask(src.data, 16, 6);
+        const grid = { cols: 8, rows: 3 };
+        const got = new Set();
+        for (let i = 0; i < 96; i++) if (img.data[i * 4 + 3]) got.add(i);
+        expect(got).toEqual(bruteRing(mask, 16, 6, grid).set);
     });
 
     it('a second run redraws nothing; a changed sprite is redrawn; a deleted one is cleaned up', async () => {

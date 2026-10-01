@@ -23,7 +23,7 @@
 export const SPRITE_FX_DIR = '_gen/sprite-fx';
 
 /** Bump to make every machine regenerate everything on its next start. */
-export const SPRITE_FX_VERSION = 1;
+export const SPRITE_FX_VERSION = 2;
 
 /**
  * The outline colours, as RGB. `work` is `--color-gi-success` (#09b554, the
@@ -36,25 +36,19 @@ export const OUTLINE_COLOURS = Object.freeze({
 });
 
 /**
- * The outline images made for each outlined sprite. `u` is how many times the
- * art is enlarged (nearest-neighbour) before it is outlined; `r` is how many
- * of those enlarged pixels the outline is thick.
+ * ⭐ **The outline is one art pixel, on the art's own grid, cardinal only**
+ * (owner ruling, 2026-10-01, after Wave 5's first look). An outline pixel sits
+ * where a clear pixel touches the art EDGE TO EDGE — up, down, left or right —
+ * never where it only touches it corner to corner. That is a plus-shaped
+ * (4-connected) dilation of the full alpha mask (the art's own black border
+ * counts as art), minus the art. It is drawn scaled with the sprite, exactly
+ * like the art, so every outline pixel is a whole art pixel.
  *
- * Why several: on screen an outline is `r × k / u` pixels thick, where `k` is
- * how many screen pixels one pixel of the source art covers (2 for a Token at
- * the usual 2× size). "1 screen pixel" at `k = 2` therefore needs the art
- * enlarged 2× first (`u2r1`); "1 art pixel" is `u1r1`. A sprite drawn at half
- * its art size (`k = 0.5`) needs `u1r2` so the line still lands on one whole
- * screen pixel. `pickOutlineVariant` chooses.
+ * Why not 8-connected: the corner-only pixels it adds make "doubles" — L-shaped
+ * clumps where a 1-px line turns — and a line that looks chunky and uneven.
+ * Why not thinner than an art pixel: on a 2× sprite that draws half-pixels,
+ * off the art's grid.
  */
-export const OUTLINE_VARIANTS = Object.freeze([
-    Object.freeze({ u: 1, r: 1 }),
-    Object.freeze({ u: 1, r: 2 }),
-    Object.freeze({ u: 2, r: 1 }),
-    Object.freeze({ u: 3, r: 1 }),
-    Object.freeze({ u: 4, r: 1 })
-]);
-
 /**
  * Animated sprite sheets: their frame grid, so an outline is grown **inside
  * each frame's cell** and never bleeds into the next frame. The same numbers
@@ -96,32 +90,7 @@ export const MAX_OUTLINE_PX = 512;
 
 /** Folder names, relative to `SPRITE_FX_DIR`. */
 export const silhouetteFolder = () => 'sil';
-export const outlineFolder = (colour, { u, r }) => `ol-${colour}-u${u}r${r}`;
-
-/**
- * The outline image to draw for a sprite whose source pixel covers `k` screen
- * pixels, for the thickness setting `mode`:
- *
- * - `'screen'` — 1 screen pixel, whatever the sprite's size;
- * - `'art'` — 1 pixel of the art as drawn (`k` screen pixels), never less
- *   than one screen pixel.
- *
- * Picks the variant whose thickness is closest to the target; on a tie, the
- * smaller image.
- */
-export function pickOutlineVariant(k, mode = 'screen') {
-    const target = mode === 'art' ? Math.max(1, k) : 1;
-    let best = OUTLINE_VARIANTS[0];
-    let bestErr = Infinity;
-    for (const v of OUTLINE_VARIANTS) {
-        const err = Math.abs((v.r * k) / v.u - target);
-        if (err < bestErr - 1e-9 || (Math.abs(err - bestErr) <= 1e-9 && v.u < best.u)) {
-            best = v;
-            bestErr = err;
-        }
-    }
-    return best;
-}
+export const outlineFolder = (colour) => `ol-${colour}`;
 
 /**
  * The hard shadow's offset, in whole screen pixels: 2 art pixels (owner

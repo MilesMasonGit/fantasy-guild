@@ -157,16 +157,8 @@ export const MAT_TUNABLES = Object.freeze([
         min: 10, max: 1800, step: 10, def: 180,
         format: (v) => `${Math.floor(v / 60)} min ${Math.round(v % 60)} s`
     },
-    // Wave 5 (CR3-350, Z §11): the owner picks these two by eye. Look only —
-    // neither changes what the game does. `src/config/spriteFx.js`.
-    {
-        key: 'outlinePx',
-        group: 'Look',
-        label: 'Outline thickness',
-        hint: 'How thick the coloured outlines are (green working, white hovered or selected, red alert). Left: 1 screen pixel, the thinnest line there is. Right: 1 pixel of the art, which at the usual 2× sprite size is 2 screen pixels (the spike’s look).',
-        min: 0, max: 1, step: 1, def: 0,
-        format: (v) => (Math.round(v) >= 1 ? '1 art pixel' : '1 screen pixel')
-    },
+    // Wave 5 (CR3-350, Z §11): the owner picks this by eye. Look only — it
+    // does not change what the game does. `src/config/spriteFx.js`.
     {
         key: 'raisedShadow',
         group: 'Look',

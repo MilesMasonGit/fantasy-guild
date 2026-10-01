@@ -166,8 +166,10 @@ const ON_MAT_SURFACES = new Set([TOKEN_SURFACE.BOARD, TOKEN_SURFACE.CARRY, TOKEN
  *   shadow**: a solid black silhouette of the art, 2 art pixels down and to
  *   the right, pixel-crisp.
  * - **`outline`** (`'work'` green, `'hover'` white, `'alert'` red) draws a
- *   sharp coloured line around the art's own black outline — what the green
- *   working glow and the hover brightening used to say.
+ *   sharp coloured line, one art pixel thick and on the art's own grid,
+ *   around the art's own black outline — what the green working glow and the
+ *   hover brightening used to say. Its pixels touch the art edge to edge only
+ *   (owner ruling, 2026-10-01; `src/config/spriteFx.js`).
  *
  * Both are images made from the art by `scripts/spriteFx.mjs` and drawn as
  * plain layers (`src/ui/utils/spriteFx.js`): no live filter anywhere. A
@@ -236,7 +238,7 @@ function LayeredPixelArt({ src, alt, size, lifted = false, hovering = false, out
     useSpriteFxVersion();
     const fit = useMatFit();
     const shadow = (lifted || hovering) ? shadowLayer(src, size, fit) : null;
-    const ring = outline ? outlineLayer(src, size, fit, outline) : null;
+    const ring = outline ? outlineLayer(src, size, outline) : null;
     const grounded = shadowStaysOnGround();
 
     const silhouette = shadow && (

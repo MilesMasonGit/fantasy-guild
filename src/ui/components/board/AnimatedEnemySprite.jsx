@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { ENEMY_SHEET_GRID } from '../../../config/spriteFx.js';
-import { useMatFit } from './MatFitContext.jsx';
 import { useSpriteFxVersion, sheetOutlineLayer } from '../../utils/spriteFx.js';
 
 /**
@@ -97,8 +96,7 @@ export const AnimatedEnemySprite = ({
         if (ringRef.current) ringRef.current.style.backgroundPosition = pos;
     };
     useSpriteFxVersion();
-    const fit = useMatFit();
-    const ring = outline ? sheetOutlineLayer(src, size, fit, outline) : null;
+    const ring = outline ? sheetOutlineLayer(src, outline) : null;
 
     // The cycle (fought or not) and the cell size show at once.
     useLayoutEffect(() => { paintRef.current(); }, [heroId, size, ring?.url]);

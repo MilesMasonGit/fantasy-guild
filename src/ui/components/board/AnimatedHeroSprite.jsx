@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
 import { heroSpriteFrame } from './hitAnimations.js';
 import { HERO_SHEET_GRID } from '../../../config/spriteFx.js';
-import { useMatFit } from './MatFitContext.jsx';
 import { useSpriteFxVersion, sheetOutlineLayer } from '../../utils/spriteFx.js';
 
 /** The sheet's row for each state the clock can ask for. */
@@ -44,8 +43,7 @@ export const AnimatedHeroSprite = ({
     const imgRef = useRef(null);
     const ringRef = useRef(null);
     useSpriteFxVersion();
-    const fit = useMatFit();
-    const ring = outline ? sheetOutlineLayer(src, size, fit, outline) : null;
+    const ring = outline ? sheetOutlineLayer(src, outline) : null;
 
     // 8 FPS by default (125 ms a frame); a limping hero plays slower.
     // ⭐ The frame is read from the clock, not counted (feedback Q4, FB-10):

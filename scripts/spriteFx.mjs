@@ -10,12 +10,13 @@
 //
 // Output, all under the git-ignored `public/_gen/sprite-fx/`:
 //   sil/<assets path>                black where the art is, clear elsewhere
-//   ol-<colour>-u<u>r<r>/<path>      the ring an r-pixel dilation adds around
-//                                    the art enlarged u×, in that colour
-//                                    (padded by r on every side — except a
-//                                    sprite sheet, grown inside each frame
-//                                    cell and not padded, so it is drawn with
-//                                    the sheet's own frame maths)
+//   ol-<colour>/<path>               the 1-art-pixel ring a plus-shaped
+//                                    (4-connected) dilation adds around the
+//                                    art, in that colour (padded by 1 on
+//                                    every side — except a sprite sheet,
+//                                    grown inside each frame cell and not
+//                                    padded, so it is drawn with the sheet's
+//                                    own frame maths)
 //   manifest.json                    what exists, and each source's hash
 import fs from 'fs';
 import path from 'path';
@@ -23,7 +24,7 @@ import crypto from 'crypto';
 import { fileURLToPath, pathToFileURL } from 'url';
 import sharp from 'sharp';
 import {
-    SPRITE_FX_DIR, SPRITE_FX_VERSION, OUTLINE_COLOURS, OUTLINE_VARIANTS,
+    SPRITE_FX_DIR, SPRITE_FX_VERSION, OUTLINE_COLOURS,
     sheetGridOf, isOutlined, SKIPPED_DIRS, MAX_SILHOUETTE_PX, MAX_OUTLINE_PX,
     silhouetteFolder, outlineFolder
 } from '../src/config/spriteFx.js';
@@ -49,49 +50,42 @@ export function silhouetteRgba(mask, w, h) {
     return out;
 }
 
+/** The four edge neighbours: an outline pixel touches the art edge to edge. */
+const CARDINAL = [[0, -1], [-1, 0], [1, 0], [0, 1]];
+
 /**
- * The outline mask: the mask enlarged `u`× (nearest-neighbour), grown by `r`
- * pixels in all 8 directions, minus the enlarged mask itself — the ring.
+ * The outline mask: every clear pixel that touches the art **edge to edge**
+ * (up, down, left or right — a plus-shaped, 4-connected dilation), on the
+ * art's own pixel grid. A pixel that only touches the art corner to corner is
+ * never part of it (owner ruling, 2026-10-01: no "doubles").
  *
- * A single sprite is padded by `r` on every side so the ring has room
- * (`(w·u + 2r) × (h·u + 2r)`). A sheet (`grid` given) is not padded and grows
- * only inside each frame cell, so one frame's ring never reaches the next.
+ * The art's own 1-px black border counts as art: the ring grows from the full
+ * alpha mask, so it sits outside that border.
+ *
+ * A single sprite is padded by one pixel on every side so the ring has room
+ * (`(w + 2) × (h + 2)`). A sheet (`grid` given) is not padded and grows only
+ * inside each frame cell, so one frame's ring never reaches the next.
  */
-export function outlineMask(mask, w, h, { u = 1, r = 1, grid = null } = {}) {
-    const pad = grid ? 0 : r;
-    const UW = w * u, UH = h * u;
-    const W = UW + 2 * pad, H = UH + 2 * pad;
-    const cellW = grid ? UW / grid.cols : 0;
-    const cellH = grid ? UH / grid.rows : 0;
-    const big = new Uint8Array(UW * UH);
-    for (let y = 0; y < UH; y++) {
-        const sy = Math.floor(y / u);
-        for (let x = 0; x < UW; x++) big[y * UW + x] = mask[sy * w + Math.floor(x / u)];
-    }
+export function outlineMask(mask, w, h, { grid = null } = {}) {
+    const pad = grid ? 0 : 1;
+    const W = w + 2 * pad, H = h + 2 * pad;
+    const cellW = grid ? w / grid.cols : 0;
+    const cellH = grid ? h / grid.rows : 0;
     const out = new Uint8Array(W * H);
-    for (let y = 0; y < UH; y++) {
-        for (let x = 0; x < UW; x++) {
-            if (!big[y * UW + x]) continue;
-            const cx = grid ? Math.floor(x / cellW) : 0;
-            const cy = grid ? Math.floor(y / cellH) : 0;
-            for (let dy = -r; dy <= r; dy++) {
-                const ny = y + dy;
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            if (!mask[y * w + x]) continue;
+            for (const [dx, dy] of CARDINAL) {
+                const nx = x + dx, ny = y + dy;
                 if (grid) {
-                    if (ny < 0 || ny >= UH || Math.floor(ny / cellH) !== cy) continue;
+                    if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                    if (Math.floor(nx / cellW) !== Math.floor(x / cellW) || Math.floor(ny / cellH) !== Math.floor(y / cellH)) continue;
                 }
-                for (let dx = -r; dx <= r; dx++) {
-                    const nx = x + dx;
-                    if (grid) {
-                        if (nx < 0 || nx >= UW || Math.floor(nx / cellW) !== cx) continue;
-                    }
-                    out[(ny + pad) * W + (nx + pad)] = 1;
-                }
+                const inside = nx >= 0 && ny >= 0 && nx < w && ny < h;
+                if (inside && mask[ny * w + nx]) continue;   // art, not ring
+                out[(ny + pad) * W + (nx + pad)] = 1;
             }
         }
-    }
-    // Take the art itself back out: what is left is the ring.
-    for (let y = 0; y < UH; y++) {
-        for (let x = 0; x < UW; x++) if (big[y * UW + x]) out[(y + pad) * W + (x + pad)] = 0;
     }
     return { mask: out, width: W, height: H };
 }
@@ -143,9 +137,7 @@ const writePng = (file, rgba, width, height) => {
 function outputsOf(rel, entry) {
     const files = [`${silhouetteFolder()}/${rel}`];
     if (entry?.outlined) {
-        for (const colour of Object.keys(OUTLINE_COLOURS)) {
-            for (const v of OUTLINE_VARIANTS) files.push(`${outlineFolder(colour, v)}/${rel}`);
-        }
+        for (const colour of Object.keys(OUTLINE_COLOURS)) files.push(`${outlineFolder(colour)}/${rel}`);
     }
     return files;
 }
@@ -162,15 +154,13 @@ async function generateOne(root, outDir, rel, hash) {
     const jobs = [writePng(path.join(outDir, silhouetteFolder(), rel), silhouetteRgba(mask, w, h), w, h)];
     const outlined = isOutlined(rel) && w <= MAX_OUTLINE_PX && h <= MAX_OUTLINE_PX;
     if (outlined) {
-        for (const v of OUTLINE_VARIANTS) {
-            const ring = outlineMask(mask, w, h, { ...v, grid });
-            for (const [colour, rgb] of Object.entries(OUTLINE_COLOURS)) {
-                jobs.push(writePng(
-                    path.join(outDir, outlineFolder(colour, v), rel),
-                    colourRgba(ring.mask, ring.width, ring.height, rgb),
-                    ring.width, ring.height
-                ));
-            }
+        const ring = outlineMask(mask, w, h, { grid });
+        for (const [colour, rgb] of Object.entries(OUTLINE_COLOURS)) {
+            jobs.push(writePng(
+                path.join(outDir, outlineFolder(colour), rel),
+                colourRgba(ring.mask, ring.width, ring.height, rgb),
+                ring.width, ring.height
+            ));
         }
     }
     await Promise.all(jobs);
@@ -205,6 +195,15 @@ export async function generateSpriteFx({ root = DEFAULT_ROOT, force = false, log
     const oldSprites = current ? (old.sprites || {}) : {};
     const oldSkipped = current ? (old.skipped || {}) : {};
     if (!force && old && !current) log('sprite-fx: generator changed, redrawing everything');
+    // A different generator (or --force) starts from an empty folder, so no
+    // images of an older layout are left behind to ship.
+    // (Its contents, not the folder: on Windows a running dev server's watcher
+    // holds the folder itself open.)
+    if (!current && fs.existsSync(outDir)) {
+        for (const e of fs.readdirSync(outDir)) {
+            try { fs.rmSync(path.join(outDir, e), { recursive: true, force: true }); } catch { /* in use: overwritten below */ }
+        }
+    }
 
     const rels = listSprites(root);
     const sprites = {};
