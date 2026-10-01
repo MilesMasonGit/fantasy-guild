@@ -10,7 +10,6 @@ import { cn } from '../utils/cn.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { DragGhost } from './DragGhost.jsx';
 import { DND_SURFACE, DRAG_SFX, DRAG_KIND } from './dragConstants.js';
-import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { displayPointOf } from '../../systems/board/BoardState.js';
 
 /**
@@ -192,7 +191,7 @@ export const useDragSurface = () => React.useContext(DragSurfaceContext);
 import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
 import { isDisallowMode } from '../hooks/useDisallowMode.js';
 import { isMatBankLocked } from '../hooks/useMatBankLock.js';
-import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * CR3-404 — owns the per-frame cursor publish on its own, so a frame where
@@ -327,7 +326,8 @@ export const DeckDndProvider = ({ children }) => {
                 const toScreenX = a?.clientX ?? (typeof window !== 'undefined' ? window.innerWidth - 40 : 0);
                 const toScreenY = a?.clientY ?? (typeof window !== 'undefined' ? window.innerHeight / 2 : 0);
 
-                EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+                // A UI-only event: SPRITE_COLLECTED is the engine's, and quests count it (CR3-306).
+                EventBus.publish(UI_EVENTS.UI_PARTICLE_FLY, {
                     kind: 'hero',
                     refId: payload.heroId,
                     heroId: payload.heroId,

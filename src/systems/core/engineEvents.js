@@ -12,7 +12,8 @@
  * * `ENGINE_EVENTS` — published by the engine (`src/systems`). The rule
  *   (R5-Q2 = A, CR3-306): **an engine command announces its own change; the
  *   UI never publishes an engine event.** The only exceptions are the dev
- *   panels listed in the guard test (they fake engine changes on purpose).
+ *   panels listed in `UiEventOwnership.test.js` (they fake engine changes
+ *   on purpose).
  * * `UI_EVENTS` — published by the UI. Most are UI-to-UI (`ui:*`, `dev:*`,
  *   `inspect_hero`). Two are **declared UI → engine notices**, facts the
  *   engine cannot observe for itself: `react:slot_selected` (a slot was
@@ -141,6 +142,21 @@ export const UI_EVENTS = Object.freeze({
     INSPECT_HERO: 'inspect_hero',
     /** A collect particle reached its Token. Payload: `{ instanceId, … }`. */
     PARTICLE_LANDED: 'particle_landed',
+    /**
+     * A flying sprite for the eye only — a hero picked up from the dock flies
+     * from their mat point to the cursor. Same payload as the board's
+     * `SPRITE_COLLECTED` (`{ kind, refId, quantity, x, y, toScreenX, toScreenY,
+     * destination }`), which the UI used to publish for it; that event is the
+     * engine's, and quests count it (CR3-306).
+     */
+    UI_PARTICLE_FLY: 'ui:particle_fly',
+    /**
+     * A message on one Token that the engine did not raise — the Guild Hall
+     * dragged off the mat. Same payload as the board's `TILE_EVENT_ALERT`
+     * (`{ instanceId, severity, type, title, message, … }`), which the UI used
+     * to publish for it (CR3-306, CR3-013).
+     */
+    UI_TOKEN_ALERT: 'ui:token_alert',
     /** Payload: `{ tab }`. */
     UI_OPEN_DRAWER: 'ui:open_drawer',
     /** Payload: `{ heroId }`. */

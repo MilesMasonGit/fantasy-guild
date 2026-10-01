@@ -98,15 +98,19 @@ export const ParticleOverlay = ({ disabled }) => {
          *   being consumed" animation, belonging to the retired hero food/drink
          *   model. Nothing has ever published it.
          */
-        const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
+        const onCollected = (data) => {
             if (disabledRef.current) return;
             system.spawnCollected(data);
             if (system.particles.length) wakeRef.current?.();
-        });
+        };
+        const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, onCollected);
+        // The same flight for the eye only (a hero lifted from the dock, CR3-306).
+        const subFly = EventBus.subscribe(UI_EVENTS.UI_PARTICLE_FLY, onCollected);
 
         return () => {
             window.removeEventListener('resize', handleResize);
             subCollected();
+            subFly();
         };
     }, []);
 

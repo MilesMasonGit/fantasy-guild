@@ -247,7 +247,8 @@ export const MatToken = React.memo(function MatToken({
             typeId,
             from: { instanceId: id },
             onMiss: isPermanent ? () => {
-                EventBus?.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                // A UI-only alert: TILE_EVENT_ALERT is the engine's (CR3-306).
+                EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
                     instanceId: id,
                     severity: 'disallow',
                     type: 'drop_rejected',
