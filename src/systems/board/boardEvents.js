@@ -19,12 +19,14 @@
  * existing global names. Those must never trigger per-tile stat recalculation —
  * only the events below do that.
  *
- * ## Status: declared ahead of their publishers
- * Phase 1 introduces this file so that surviving systems (`StatusEffectSystem`)
- * have something to subscribe to once `areaEvents.js` is deleted. **The
- * publishers land later** — the board runner in Phase 4, combat in Phase 6. A
- * subscriber registered against an event nobody publishes yet is inert, which is
- * the intended state until then.
+ * ## Always by constant, never by raw string (CR3-106)
+ * Every publisher and subscriber names these constants. A raw `'board:…'`
+ * string outside this file fails `BoardEventNames.test.js`, because a typo in
+ * one is a subscription that silently never fires.
+ *
+ * Every event here has a publisher (the old "declared ahead of their
+ * publishers" status ended long ago; the one that never got one, `TILE_PUSHED`,
+ * was deleted). The payloads below are what the publishers actually send.
  *
  * @see playmat_roadmap_v1.md Phase 1 §A, Phase 4 §B
  */
@@ -37,7 +39,9 @@ export const BOARD_EVENTS = {
      * Everything that "happens per cycle" hangs off this: context and buff Token
      * wear (D-126), status decay, and cycle counting.
      *
-     * Payload: `{ instanceId, typeId, heroId, failed, produced }`
+     * Payload: `{ instanceId, typeId, heroId, failed, produced }`. ⚠️ Only the
+     * work runner (`BoardRunner`) sends `produced`; combat's kill and a
+     * promotion's training cycle omit it, so a reader must default it.
      */
     CYCLE_COMPLETE: 'board:cycle_complete',
 
@@ -65,8 +69,8 @@ export const BOARD_EVENTS = {
     TILE_CHANGED: 'board:tile_changed',
 
     /**
-     * A Token **landed on a tile** — the player action, as opposed to
-     * `TILE_CHANGED`, which is every redraw reason a tile has (cleared,
+     * A Token **was placed on the mat** — the player action, as opposed to
+     * `TILE_CHANGED`, which is every redraw reason a Token has (cleared,
      * depleted, pushed, restocked). Payload: `{ instanceId, typeId }`
      *
      * ⚠️ **This one deliberately keeps a global name rather than the
@@ -168,19 +172,25 @@ export const BOARD_EVENTS = {
     /** Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat', heroId, typeId }` */
     COMBAT_RESOLVED: 'board:combat_resolved',
 
-    /** High-frequency cycle progress, for ref-based UI updates only. Payload: `{ instanceId, percent }` */
+    /**
+     * High-frequency cycle progress, for ref-based UI updates only.
+     * Payload: `{ instanceId, percent }`, plus `elapsedMs, cycleTimeMs` from the
+     * work runner, or `combat: true, enemyHp, enemyMaxHp` from a fight. A reset
+     * to zero (a promotion answered, a flag moved) sends `percent: 0` alone.
+     */
     PROGRESS: 'board:progress',
 
     /** A loot sprite was dropped, merged, collected or consumed. Payload: `{ spriteId? }` */
     SPRITES_CHANGED: 'board:sprites_changed',
 
-    /** A token was smoothly pushed from one tile to another by a 2x2 cascade. Payload: `{ fromTile, toTile, typeId, heroId, durationMs }` */
-    TILE_PUSHED: 'board:tile_pushed',
-
     /**
      * A sprite was **successfully** taken off the floor and into storage
-     * (D-236). Payload: `{ kind, refId, quantity, x, y }`, where `x`/`y` are
-     * board coordinates — the point it flew from.
+     * (D-236). Payload: `{ kind, refId, quantity, x, y, destination }`, where
+     * `x`/`y` are board coordinates — the point it flew from — and
+     * `destination` is where it went (`'bank'` for an item; `'dock'` for a
+     * recalled hero). A hero picked up off the mat by drag (`DndKit`, a UI
+     * publisher) adds `heroId`, `toScreenX`, `toScreenY` and
+     * `destination: 'cursor'`; a hero recall adds `heroId`.
      *
      * ⚠️ **Fires on success only, and that is load-bearing.** Collection can
      * legitimately fail: a full Bank leaves the item on the floor as D-138's
@@ -196,7 +206,14 @@ export const BOARD_EVENTS = {
     /** A lingering loot sprite was absorbed into its parent stack. Payload: `{ parentId, absorbedId, quantity }` */
     SPRITE_ABSORBED: 'board:sprite_absorbed',
 
-    /** On-board event notification alert (missing items, missing tokens, token exhausted). Payload: `{ instanceId?, x?, y?, severity, type, name, message }` */
+    /**
+     * On-board event notification alert (missing items, missing tokens, token
+     * exhausted, a skill level-up). Payload: `{ instanceId?, x?, y?, severity,
+     * type, name, message }`, plus, by publisher: a `title` (a missing Token, a
+     * restock, a refused drop), a `rulesText` (a refused drop, and the UI's
+     * Guild Hall refusal in `MatToken`), or a level-up's `heroId, heroName,
+     * skillId, skillName, startLevel, newLevel` (`NotificationSubscriptions`).
+     */
     TILE_EVENT_ALERT: 'board:tile_event_alert',
 
     /** A token's charges changed (consumed cycle, support wear, or restocked). Payload: `{ instanceId, delta, remaining, typeId }` */

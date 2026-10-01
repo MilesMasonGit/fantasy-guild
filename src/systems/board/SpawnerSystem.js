@@ -8,10 +8,9 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
-// ⚠️ A cycle: TimedChanges imports this module for its handler table. Both
-// sides use namespace imports and touch the other only inside functions, so
-// either may load first.
-import * as TimedChanges from './TimedChanges.js';
+// TimedChanges imports this module for its handler table; this one does not
+// import TimedChanges back (CR3-023 group 2), only the leaf pick it used.
+import { pickWeighted } from './weightedPick.js';
 import * as TokenNotices from './TokenNotices.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
@@ -201,7 +200,7 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     if (countOf(family) >= capOf(family)) return null;          // at cap: waits
     if (missingUpkeep(def).length) return null;                  // needs an item: waits
 
-    const typeId = TimedChanges.pickWeighted(block.spawns, random);
+    const typeId = pickWeighted(block.spawns, random);
     if (!typeId) return null;
 
     const landed = EffectActions.spawn(

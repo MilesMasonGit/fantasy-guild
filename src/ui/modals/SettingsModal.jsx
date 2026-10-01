@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
+// Static: SaveManager is already in the main chunk (main.jsx and the slot
+// screen import it), so the dynamic import here split nothing (CR3-509).
+import { SaveManager } from '../../systems/core/SaveManager.js';
 import { cn } from '../utils/cn.js';
 import { Bell, MonitorPlay, Volume2, Wrench, Save, Eye, Type, Sliders } from 'lucide-react';
 import { TypographyScaleModal } from './TypographyScaleModal.jsx';
@@ -12,14 +15,12 @@ import { TypographyScaleModal } from './TypographyScaleModal.jsx';
 export const SettingsModal = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState('accessibility');
     const [settings, setSettings] = useState({});
-    const [SaveManager, setSaveManager] = useState(null);
     const [isTypographyOpen, setIsTypographyOpen] = useState(false);
 
     // Read current settings when opened
     useEffect(() => {
         if (isOpen) {
             setSettings({ ...SettingsManager.settings });
-            import('../../systems/core/SaveManager.js').then(module => setSaveManager(module.SaveManager));
         }
     }, [isOpen]);
 
@@ -163,7 +164,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             />
                             <div className="pt-4 border-t border-white/10">
                                 <button
-                                    onClick={() => SaveManager?.save(true)}
+                                    onClick={() => SaveManager.save(true)}
                                     className="w-full flex items-center justify-center gap-2 py-3 bg-gi-primary text-black font-bold uppercase tracking-widest rounded hover:brightness-110 transition-all font-pixel shadow-lg"
                                 >
                                     <Save className="w-4 h-4" /> Save Game Now

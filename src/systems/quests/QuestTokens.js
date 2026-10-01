@@ -17,9 +17,9 @@ import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { TUTORIAL_QUESTS, tutorialTemplate } from './tutorialQuests.js';
-// ⚠️ A cycle: QuestManager imports this module. Both sides touch the other
-// only inside functions, so either may load first.
-import { QuestManager, questReward, copyReward } from './QuestManager.js';
+// The bounty and reward helpers come from the leaf `questBounties.js`, not
+// QuestManager, so this module does not import QuestManager (CR3-023 group 3).
+import { createRandomQuest, questReward, copyReward } from './questBounties.js';
 
 export { QUEST_TOKEN_TYPE };
 
@@ -253,7 +253,7 @@ export function spawnQuest(quest, random = Math.random) {
 
 /** Spawn one random bounty (QuestManager's pools). */
 export function spawnBounty(random = Math.random) {
-    const bounty = QuestManager.createRandomQuest(questTokens().map(t => t.quest));
+    const bounty = createRandomQuest(questTokens().map(t => t.quest));
     return bounty ? spawnQuest(bountyQuest(bounty), random) : null;
 }
 

@@ -12,7 +12,9 @@ import { validateSaveData } from '../../state/StateSchema.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 const MAX_SLOTS = 3;
-let AUTO_SAVE_INTERVAL = 60000; // Default 1 minute
+// A placeholder until `syncSettings()` reads `gameplay.autoSaveIntervalMinutes`
+// at init. The real default is 10 minutes (SettingsManager's defaults).
+let AUTO_SAVE_INTERVAL = 60000;
 
 /**
  * SaveManager - Handles multi-slot persistence of game state
@@ -115,9 +117,9 @@ export const SaveManager = {
         }
 
         try {
-            // GameState.serialize() already returns { version, savedAt, state }
-            const data = GameState.serialize();
-            const json = JSON.stringify(data);
+            // The same bytes as `JSON.stringify(GameState.serialize())`, without
+            // deep-copying the state first (CR3-109).
+            const json = GameState.serializeJson();
             const slotKey = this.getSlotKey(this.currentSlot);
 
             // Roll the previous save into the backup key first (CR-054), so a
@@ -167,7 +169,7 @@ export const SaveManager = {
      */
     exportSave() {
         if (!GameState.getIsInitialized()) return null;
-        return JSON.stringify(GameState.serialize());
+        return GameState.serializeJson();
     },
 
     /**

@@ -296,6 +296,12 @@ export const EngineBootstrap = {
         // 2. Data Initialization
         if (isNewGame) {
             this.createDefaultGameData();
+            // Save the finished opening now (CR3-100). The save that claimed
+            // the slot (`SaveManager.newGame`) was written before the Hall and
+            // the opening items existed, and the next one is the autosave
+            // minutes later, so a game that died before then loaded as an
+            // empty table with no Guild Hall.
+            SaveManager.save(false);
         }
 
         // 3. State Sync

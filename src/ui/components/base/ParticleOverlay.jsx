@@ -43,6 +43,8 @@ export const ParticleOverlay = ({ disabled }) => {
     const systemRef = useRef(null);
     const frameIdRef = useRef(null);
     const disabledRef = useRef(disabled);
+    /** Starts the frame loop if it is asleep (set by the loop effect below). */
+    const wakeRef = useRef(null);
 
     // Sync ref
     useEffect(() => {
@@ -95,6 +97,7 @@ export const ParticleOverlay = ({ disabled }) => {
         const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
             if (disabledRef.current) return;
             system.spawnCollected(data);
+            if (system.particles.length) wakeRef.current?.();
         });
 
         return () => {
@@ -103,9 +106,19 @@ export const ParticleOverlay = ({ disabled }) => {
         };
     }, []);
 
-    // Dedicated Animation Loop Effect
+    /**
+     * The frame loop. ⚠️ It **sleeps when there is nothing to draw** (CR3-010):
+     * once the last particle has landed and the last sparkle faded, the loop
+     * stops asking for frames, and a new collection wakes it. It used to
+     * re-arm every frame forever, clearing an empty full-screen canvas sixty
+     * times a second for the whole session (R6 measured frame work p50
+     * 5.56 → 4.65 ms at S2 with the sleep). The final frame before sleeping
+     * has just run `draw()`, which clears the canvas first, so nothing is
+     * left on screen.
+     */
     useEffect(() => {
         if (disabled) {
+            wakeRef.current = null;
             if (frameIdRef.current) {
                 cancelAnimationFrame(frameIdRef.current);
                 frameIdRef.current = null;
@@ -114,15 +127,26 @@ export const ParticleOverlay = ({ disabled }) => {
         }
 
         const loop = (time) => {
-            if (systemRef.current) {
-                systemRef.current.update(time);
-                systemRef.current.draw();
+            frameIdRef.current = null;
+            const system = systemRef.current;
+            if (!system) return;
+            system.update(time);
+            system.draw();
+            if (system.particles.length || system.sparkles.length) {
+                frameIdRef.current = requestAnimationFrame(loop);
             }
-            frameIdRef.current = requestAnimationFrame(loop);
         };
-        frameIdRef.current = requestAnimationFrame(loop);
+        const wake = () => {
+            if (frameIdRef.current == null && !disabledRef.current) {
+                frameIdRef.current = requestAnimationFrame(loop);
+            }
+        };
+        wakeRef.current = wake;
+        const system = systemRef.current;
+        if (system && (system.particles.length || system.sparkles.length)) wake();
 
         return () => {
+            wakeRef.current = null;
             if (frameIdRef.current) {
                 cancelAnimationFrame(frameIdRef.current);
                 frameIdRef.current = null;

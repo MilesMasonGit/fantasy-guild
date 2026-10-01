@@ -144,12 +144,18 @@ function heroSpeedFactor(heroId, skill) {
  * per Token, not once per tick, but `alert` is not persisted: it happened again
  * on every load and every reload, as a burst across the whole board, at the
  * moment the UI is already busiest.
+ *
+ * Returns whether the alert changed. A stuck station's news
+ * (`TILE_EVENT_ALERT`) is published only then (CR3-005, owner: "say it
+ * once"): once when the problem starts, and again only if it clears and comes
+ * back. It used to repeat every tick while the red mark already showed it.
  */
 function setAlert(instance, reason) {
     const next = reason || null;
-    if ((instance.alert || null) === next) return;
+    if ((instance.alert || null) === next) return false;
     instance.alert = next;
     EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: instance.id, alert: instance.alert });
+    return true;
 }
 
 /**
@@ -636,8 +642,7 @@ export function tick(delta) {
                 ? reqs.items.join(', ')
                 : (def?.name || tokenName(instance.typeId) || instance.typeId);
 
-            setAlert(instance,ALERT.NO_RECIPE);
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            if (setAlert(instance, ALERT.NO_RECIPE)) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
                 instanceId: id,
                 severity: 'yellow',
                 type: 'out_of_token',
@@ -661,12 +666,12 @@ export function tick(delta) {
             // Waits, keeping whatever progress it had. There are no partial
             // cycles (D-127) — it does not run slower, it runs later.
             InputAllocator.noteStarved(instance.typeId);
-            setAlert(instance,ALERT.INPUTS);
+            const startsNow = setAlert(instance, ALERT.INPUTS);
 
             const missingItem = check.inputCheck?.missing?.[0];
             const itemDef = missingItem ? getItem(missingItem.itemId) : null;
             const itemName = itemDef?.name || missingItem?.itemId || 'Item';
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            if (startsNow) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
                 instanceId: id,
                 severity: 'yellow',
                 type: 'out_of_item',
@@ -685,8 +690,7 @@ export function tick(delta) {
          */
         if (check.reason === ALERT.CHARGES) {
             InputAllocator.noteStarved(instance.typeId);
-            setAlert(instance,ALERT.CHARGES);
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            if (setAlert(instance, ALERT.CHARGES)) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
                 instanceId: id,
                 severity: 'yellow',
                 type: 'out_of_charges',

@@ -94,7 +94,7 @@ export const HeroDockTab = ({
     const token = useGameState(
         // The Token they work, by instance id (Free Playmat slice 1.6b).
         () => workId == null ? null : BoardState.getTokenById(workId),
-        ['board:tile_changed', 'state_changed'],
+        [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
         null,
         { deps: [workId] }
     );
