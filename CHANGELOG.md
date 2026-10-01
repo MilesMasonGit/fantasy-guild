@@ -21,6 +21,11 @@ project's first tagged baseline — everything before it was untagged developmen
   everything else keeps working.
 - **Reordering heroes in the Bank's side panel works now (CR3-457).** It already showed the drop
   line; dragging a hero to reorder there now actually moves it, the same as the bottom dock.
+- **Settings tidy-up (CR3-033).** Four controls naming things that no longer exist (Large Tray
+  Tokens, Card Badge Tooltips, Boost Tile Tooltips, Instant Pack Reveal) are gone. Nine more that
+  do nothing yet (Theme Mode, Zoom to Cursor, Animations, Notification Position, Master Tooltips,
+  Item Tooltips, System/Level Up/Loot Messages) are now shown disabled and marked "Coming soon"
+  instead of looking live.
 - **New ore vein art.** Copper, coal, iron, gold, silver, mythril, adamantine and darkmetal veins,
   and the Stone Outcrop, show their new vein pictures. New foundation, stone and plank art is
   ready to pick in the CMS.

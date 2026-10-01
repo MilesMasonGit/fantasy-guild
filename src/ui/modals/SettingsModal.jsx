@@ -108,20 +108,26 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 description="Convert standard headers and labels to uppercase for readability"
                             />
 
-                            <SettingSelect label="Theme Mode" value={getVal('gameplay.themeMode')} onChange={(v) => handleSettingChange('gameplay.themeMode', v)} options={[{value: 'dark', label: 'Dark'}, {value: 'light', label: 'Light'}]} />
+                            {/* CR3-033 (round-2 decision 14): ruled disabled +
+                                "coming soon" rather than wired or removed. */}
+                            <SettingSelect settingKey="gameplay.themeMode" disabled label="Theme Mode" value={getVal('gameplay.themeMode')} onChange={(v) => handleSettingChange('gameplay.themeMode', v)} options={[{value: 'dark', label: 'Dark'}, {value: 'light', label: 'Light'}]} />
 
-                            <SettingToggle 
-                                label="Zoom to Cursor" 
-                                value={getVal('ui.zoomToCursor')} 
-                                onChange={(v) => handleSettingChange('ui.zoomToCursor', v)} 
+                            <SettingToggle
+                                settingKey="ui.zoomToCursor"
+                                disabled
+                                label="Zoom to Cursor"
+                                value={getVal('ui.zoomToCursor')}
+                                onChange={(v) => handleSettingChange('ui.zoomToCursor', v)}
                                 description="Zoom towards your mouse instead of center screen"
                             />
 
-                            <SettingToggle 
-                                label="Animations" 
-                                value={getVal('gameplay.enableAnimations')} 
-                                onChange={(v) => handleSettingChange('gameplay.enableAnimations', v)} 
-                                description="Disable animations for reduced motion / performance" 
+                            <SettingToggle
+                                settingKey="gameplay.enableAnimations"
+                                disabled
+                                label="Animations"
+                                value={getVal('gameplay.enableAnimations')}
+                                onChange={(v) => handleSettingChange('gameplay.enableAnimations', v)}
+                                description="Disable animations for reduced motion / performance"
                             />
                         </div>
                     )}
@@ -129,13 +135,19 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     {/* NOTIFICATIONS */}
                     {activeTab === 'notifications' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
-                            <SettingToggle label="System Messages" value={getVal('showSystemMessages')} onChange={(v) => handleSettingChange('showSystemMessages', v)} description="Show messages like game saved, errors, etc." />
-                            <SettingToggle label="Level Up Messages" value={getVal('showLevelUpMessages')} onChange={(v) => handleSettingChange('showLevelUpMessages', v)} />
-                            <SettingToggle label="Loot Messages" value={getVal('showLootMessages')} onChange={(v) => handleSettingChange('showLootMessages', v)} />
-                            <SettingSelect 
-                                label="Notification Position" 
-                                value={getVal('notifications.position')} 
-                                onChange={(v) => handleSettingChange('notifications.position', v)} 
+                            {/* CR3-033: these five are not wired to anything yet
+                                (the setting is read nowhere) — disabled with
+                                "coming soon" until a later wave wires them,
+                                rather than left to look live and do nothing. */}
+                            <SettingToggle settingKey="showSystemMessages" disabled label="System Messages" value={getVal('showSystemMessages')} onChange={(v) => handleSettingChange('showSystemMessages', v)} description="Show messages like game saved, errors, etc." />
+                            <SettingToggle settingKey="showLevelUpMessages" disabled label="Level Up Messages" value={getVal('showLevelUpMessages')} onChange={(v) => handleSettingChange('showLevelUpMessages', v)} />
+                            <SettingToggle settingKey="showLootMessages" disabled label="Loot Messages" value={getVal('showLootMessages')} onChange={(v) => handleSettingChange('showLootMessages', v)} />
+                            <SettingSelect
+                                settingKey="notifications.position"
+                                disabled
+                                label="Notification Position"
+                                value={getVal('notifications.position')}
+                                onChange={(v) => handleSettingChange('notifications.position', v)}
                                 options={[
                                     { value: 'top_left', label: 'Top Left' },
                                     { value: 'top_right', label: 'Top Right' },
@@ -143,7 +155,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                     { value: 'bottom_right', label: 'Bottom Right' },
                                     { value: 'center_top', label: 'Center Top' },
                                     { value: 'center_bottom', label: 'Center Bottom' }
-                                ]} 
+                                ]}
                             />
                         </div>
                     )}
@@ -185,18 +197,15 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             <div className="pt-4 mt-2 border-t border-white/10 flex flex-col gap-2">
                                 <span className="text-[10px] font-bold text-gi-primary uppercase tracking-[0.2em] mb-1 opacity-80">UI & HUD Toggles</span>
                                 <SettingToggle label="Menu on Right Side" value={getVal('ui.bubbleMenuRight')} onChange={(v) => handleSettingChange('ui.bubbleMenuRight', v)} description="Dock the bubble menu on the right edge of the screen" />
-                                <SettingToggle 
-                                    label="Large Tray Tokens (128px)" 
-                                    value={getVal('ui.largeTrayTokens') ?? true} 
-                                    onChange={(v) => handleSettingChange('ui.largeTrayTokens', v)} 
-                                    description="Display staged Tray tokens at full 128px board size (turn off for compact 64px size)" 
-                                />
-                                <SettingToggle label="Master Tooltips" value={getVal('ui.tooltipsEnabled')} onChange={(v) => handleSettingChange('ui.tooltipsEnabled', v)} />
-                                <SettingToggle label="Card Badge Tooltips" value={getVal('ui.tooltipsCardBadges')} onChange={(v) => handleSettingChange('ui.tooltipsCardBadges', v)} />
-                                <SettingToggle label="Boost Tile Tooltips" value={getVal('ui.tooltipsBoostTiles')} onChange={(v) => handleSettingChange('ui.tooltipsBoostTiles', v)} />
-                                <SettingToggle label="Item Tooltips" value={getVal('ui.tooltipsItems')} onChange={(v) => handleSettingChange('ui.tooltipsItems', v)} />
+                                {/* CR3-033: "Large Tray Tokens", "Card Badge
+                                    Tooltips", "Boost Tile Tooltips" and
+                                    "Instant Pack Reveal" named the Tray, cards
+                                    and boost tiles — all retired — and packs,
+                                    which never shipped. Deleted rather than
+                                    disabled: there is nothing to wire later. */}
+                                <SettingToggle settingKey="ui.tooltipsEnabled" disabled label="Master Tooltips" value={getVal('ui.tooltipsEnabled')} onChange={(v) => handleSettingChange('ui.tooltipsEnabled', v)} />
+                                <SettingToggle settingKey="ui.tooltipsItems" disabled label="Item Tooltips" value={getVal('ui.tooltipsItems')} onChange={(v) => handleSettingChange('ui.tooltipsItems', v)} />
                                 <SettingToggle label="Item Fly Particles" value={getVal('ui.itemParticles')} onChange={(v) => handleSettingChange('ui.itemParticles', v)} description="Show items flying between cards and inventory" />
-                                <SettingToggle label="Instant Pack Reveal" value={getVal('ui.instantPackReveal')} onChange={(v) => handleSettingChange('ui.instantPackReveal', v)} description="Skip the card-flip: pack cards arrive already face up" />
                             </div>
                         </div>
                     )}
@@ -243,15 +252,28 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
 // --- INTERNAL SUB-COMPONENTS ---
 
-const SettingToggle = ({ label, value, onChange, description }) => (
-    <div className="flex items-center justify-between p-3 bg-black/40 rounded border border-white/5">
+// CR3-033: a control with nothing behind it yet (not wired, or ruled
+// "coming soon") is DISABLED rather than left to look live — a player could
+// flip it and nothing would happen. `disabled` greys the row, blocks the
+// control, and adds the "(Coming soon)" tag; it never changes `value` or
+// `onChange`, so re-wiring it later is just dropping the prop.
+const SettingToggle = ({ label, value, onChange, description, disabled = false, settingKey }) => (
+    <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between p-3 bg-black/40 rounded border border-white/5", disabled && "opacity-50")}>
         <div className="flex flex-col">
-            <span className="text-sm font-bold text-white font-pixel tracking-wide">{label}</span>
+            <span className="text-sm font-bold text-white font-pixel tracking-wide">
+                {label}
+                {disabled && <span className="ml-2 text-[9px] font-normal normal-case text-gi-muted">(Coming soon)</span>}
+            </span>
             {description && <span className="text-[10px] text-gray-500">{description}</span>}
         </div>
         <button
-            onClick={() => onChange(!value)}
-            className={cn("w-12 h-6 rounded-full relative transition-colors duration-300", value ? "bg-gi-success" : "bg-gray-700")}
+            onClick={() => { if (!disabled) onChange(!value); }}
+            disabled={disabled}
+            className={cn(
+                "w-12 h-6 rounded-full relative transition-colors duration-300",
+                value ? "bg-gi-success" : "bg-gray-700",
+                disabled && "cursor-not-allowed"
+            )}
         >
             <div className={cn("w-5 h-5 bg-white rounded-full absolute top-[2px] transition-transform duration-300", value ? "translate-x-[26px]" : "translate-x-[2px]")} />
         </button>
@@ -268,18 +290,26 @@ const SettingSlider = ({ label, value = 100, onChange }) => (
     </div>
 );
 
-const SettingSelect = ({ label, value, options, onChange }) => (
-    <div className="flex items-center justify-between p-3 bg-black/40 rounded border border-white/5">
-        <span className="text-sm font-bold text-white font-pixel tracking-wide">{label}</span>
+const SettingSelect = ({ label, value, options, onChange, disabled = false, settingKey }) => (
+    <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between p-3 bg-black/40 rounded border border-white/5", disabled && "opacity-50")}>
+        <span className="text-sm font-bold text-white font-pixel tracking-wide">
+            {label}
+            {disabled && <span className="ml-2 text-[9px] font-normal normal-case text-gi-muted">(Coming soon)</span>}
+        </span>
         <select
             value={String(value)}
+            disabled={disabled}
             onChange={(e) => {
+                if (disabled) return;
                 let val = e.target.value;
                 if (val === 'true') val = true; else if (val === 'false') val = false;
                 else if (!isNaN(parseInt(val))) val = parseInt(val);
                 onChange(val);
             }}
-            className="bg-gray-900 border border-white/20 text-white rounded px-3 py-1.5 focus:border-gi-primary outline-none font-bold"
+            className={cn(
+                "bg-gray-900 border border-white/20 text-white rounded px-3 py-1.5 focus:border-gi-primary outline-none font-bold",
+                disabled && "cursor-not-allowed"
+            )}
         >
             {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
