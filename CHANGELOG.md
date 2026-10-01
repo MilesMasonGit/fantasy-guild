@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Smoother drawing on busy mats; looks the same (Wave 4: CR3-007, 011, 301, 303, 351, 352, 353,
+  354, 357, 458).**
 - **The dock's HP bars keep up with a hero's health (CR3-300).** They used to only catch up when
   something else about the hero changed; now a hit or a heal shows right away, in both the bottom
   hero dock and the Bank's side panel.
