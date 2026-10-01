@@ -13,6 +13,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import {
     getUpgradeDef, getLockDetail, getLockReason, isUpgradeAccessible, LOCK_KIND, GUILD_UPGRADES
 } from '../config/guildUpgrades.js';
+import { selectGuildInspectSelection } from '../ui/guildInspectSelection.js';
 
 const closeButton = (container) =>
     Array.from(container.querySelectorAll('button'))
@@ -68,6 +69,11 @@ describe('GuildUpgradeInspection', () => {
     const withEngine = (el) => React.createElement(EngineProvider, { engine: { GameState, EventBus } }, el);
 
     it('offers a way out of the panel', () => {
+        // This only proves the X calls whatever `onClose` it was given — it
+        // passed while CR3-451 was live, because the bug was never in this
+        // leaf component. It is ReactRoot's fallback chain that resurrected
+        // the same upgrade after `onClose` ran. See the CR3-451 block below
+        // for the test that actually covers the bug.
         const onClose = vi.fn();
         const { container } = render(
             withEngine(React.createElement(GuildUpgradeInspection, { upgradeDef: def, onClose }))
@@ -88,5 +94,77 @@ describe('GuildUpgradeInspection', () => {
         expect(container.textContent).toContain('Upgrade Locked');
         expect(container.textContent).not.toContain('Requires a linked upgrade');
         expect(container.textContent).not.toContain('Path to this upgrade is locked');
+    });
+});
+
+describe('selectGuildInspectSelection — the Guild Hall panel\'s fallback chain (CR3-451)', () => {
+    it('returns null once every source is cleared', () => {
+        const sel = selectGuildInspectSelection({
+            guildPaneSelection: null,
+            globalSelection: null,
+            selectedUpgradeId: null,
+            getUpgradeDefFn: getUpgradeDef
+        });
+        expect(sel).toBeNull();
+    });
+
+    it('falls back to the web\'s last-picked id while it is still set', () => {
+        const sel = selectGuildInspectSelection({
+            guildPaneSelection: null,
+            globalSelection: null,
+            selectedUpgradeId: 'roster_size',
+            getUpgradeDefFn: getUpgradeDef
+        });
+        expect(sel?.id).toBe('roster_size');
+    });
+
+    it('prefers the pane\'s own explicit selection over the last-picked id', () => {
+        const explicit = { type: 'guild_upgrade', id: 'wishing_well', pane: 'guild' };
+        const sel = selectGuildInspectSelection({
+            guildPaneSelection: explicit,
+            globalSelection: null,
+            selectedUpgradeId: 'roster_size',
+            getUpgradeDefFn: getUpgradeDef
+        });
+        expect(sel).toBe(explicit);
+    });
+});
+
+describe('The Guild Hall panel actually closes on Close (CR3-451)', () => {
+    // The panel reads state through useGameState, which insists on an engine.
+    const withEngine = (el) => React.createElement(EngineProvider, { engine: { GameState, EventBus } }, el);
+
+    // A minimal stand-in for ReactRoot's own wiring: the `selectedUpgradeId`
+    // state, the pane-selection state `ui.inspect` would hold, and the same
+    // fallback chain and Close handler ReactRoot now uses. If Close only
+    // cleared the pane (the pre-fix behaviour), this chain would still pick
+    // `selectedUpgradeId` back up and the panel would reappear at once.
+    function GuildPaneHarness({ initialUpgradeId = 'roster_size' }) {
+        const [selectedUpgradeId, setSelectedUpgradeId] = React.useState(initialUpgradeId);
+        const [paneSelection, setPaneSelection] = React.useState(null);
+
+        const selection = selectGuildInspectSelection({
+            guildPaneSelection: paneSelection,
+            globalSelection: null,
+            selectedUpgradeId,
+            getUpgradeDefFn: getUpgradeDef
+        });
+
+        const handleClose = () => {
+            setPaneSelection(null);
+            setSelectedUpgradeId(null); // the CR3-451 fix
+        };
+
+        return selection
+            ? React.createElement(GuildUpgradeInspection, { upgradeDef: selection.upgradeDef, onClose: handleClose })
+            : React.createElement('div', { 'data-testid': 'guild-panel-empty' }, 'nothing inspected');
+    }
+
+    it('disappears after Close, instead of re-showing the same upgrade', () => {
+        const { container } = render(withEngine(React.createElement(GuildPaneHarness)));
+        expect(closeButton(container)).toBeTruthy();
+        fireEvent.click(closeButton(container));
+        expect(container.querySelector('[data-testid="guild-panel-empty"]')).not.toBeNull();
+        expect(closeButton(container)).toBeFalsy();
     });
 });

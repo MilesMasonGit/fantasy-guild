@@ -10,6 +10,8 @@ project's first tagged baseline — everything before it was untagged developmen
 - **The hero sheet beside the Bank no longer closes itself the moment you click inside it
   (CR3-450).** Clicking the Edit button, a skill row, or anywhere else in that panel now works as
   expected. Clicking the playmat (or anywhere else outside) still closes it, as intended.
+- **The Guild Hall upgrade panel's Close button actually closes it now (CR3-451).** It used to
+  clear the panel and instantly put the same upgrade right back.
 - **New ore vein art.** Copper, coal, iron, gold, silver, mythril, adamantine and darkmetal veins,
   and the Stone Outcrop, show their new vein pictures. New foundation, stone and plank art is
   ready to pick in the CMS.

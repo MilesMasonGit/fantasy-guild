@@ -28,6 +28,7 @@ import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx'
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
 import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
+import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 
@@ -258,11 +259,22 @@ export const ReactRoot = ({ engine }) => {
         };
     }, []);
 
-    const selectedUpgradeDef = selectedUpgradeId != null ? getUpgradeDef(selectedUpgradeId) : null;
     const guildPaneSelection = ui.inspect.getByPane ? ui.inspect.getByPane('guild') : null;
-    const guildInspectSelection = guildPaneSelection || (ui.inspect.selection?.type === 'guild_upgrade' 
-        ? ui.inspect.selection 
-        : (selectedUpgradeDef ? { type: 'guild_upgrade', id: selectedUpgradeDef.id, upgradeDef: selectedUpgradeDef, pane: 'guild' } : null));
+    const guildInspectSelection = selectGuildInspectSelection({
+        guildPaneSelection,
+        globalSelection: ui.inspect.selection,
+        selectedUpgradeId,
+        getUpgradeDefFn: getUpgradeDef
+    });
+
+    // CR3-451: Close must clear BOTH the pane's explicit selection and the
+    // web's own "last picked" id — clearing only the pane left the fallback
+    // chain above re-deriving the same selection on the next render, so the
+    // panel looked like it never closed.
+    const handleClearGuildInspect = React.useCallback(() => {
+        ui.inspect.clear('guild');
+        setSelectedUpgradeId(null);
+    }, [ui.inspect]);
 
     return (
         <EngineProvider engine={engine}>
@@ -316,7 +328,7 @@ export const ReactRoot = ({ engine }) => {
                                             <InspectionPanel
                                                 className="w-full h-full flex-1"
                                                 selection={guildInspectSelection}
-                                                onClear={() => ui.inspect.clear('guild')}
+                                                onClear={handleClearGuildInspect}
                                             />
                                         </div>
                                     </div>
@@ -426,7 +438,7 @@ export const ReactRoot = ({ engine }) => {
                                             <InspectionPanel
                                                 className="w-full h-full flex-1"
                                                 selection={guildInspectSelection}
-                                                onClear={() => ui.inspect.clear('guild')}
+                                                onClear={handleClearGuildInspect}
                                             />
                                         </div>
                                     </div>
