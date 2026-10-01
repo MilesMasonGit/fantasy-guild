@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { DockHeroFigure } from './DockHeroFigure.jsx';
 import { DOCK_STRIP_PX, DOCK_SLOT_PX, DOCK_SLOT_MIN_PX, dockArtPx } from './dockHeroView.js';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
@@ -107,14 +107,8 @@ export const BottomHeroDock = ({
     const recall = useEntityDrop({
         id: 'bottom-dock-recall',
         surface: DND_SURFACE.DRAWER,
-        accepts: p => isRecallDrop(p) || (p.kind === DRAG_KIND.HERO && !!p.from?.areaId),
-        onDrop: p => {
-            if (isRecallDrop(p)) {
-                recallFromDrop(engine.BoardPlacement, p);
-            } else if (p.from?.areaId) {
-                engine.HeroAssignmentManager?.unassignHero(p.from.areaId);
-            }
-        }
+        accepts: isRecallDrop,
+        onDrop: p => recallFromDrop(engine.BoardPlacement, p)
     });
 
     return (

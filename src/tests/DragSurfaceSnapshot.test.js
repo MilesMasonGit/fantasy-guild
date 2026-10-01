@@ -11,9 +11,9 @@ import { DND_SURFACE } from '../ui/dnd/dragConstants.js';
  *
  * `surfaceWithinRegions` is the same containment rule as `surfaceAtPoint`,
  * against a pre-fetched array rather than the DOM. This pins:
- *   1. it reproduces `surfaceAtPoint`'s exact priority (miniboard, then a
- *      drawer over the board, as `DragChain.test.js` already pins for
- *      `surfaceAtPoint` itself);
+ *   1. it reproduces `surfaceAtPoint`'s exact priority (a drawer over the
+ *      board, as `DragChain.test.js` already pins for `surfaceAtPoint`
+ *      itself);
  *   2. a snapshot answers from the array alone — no `querySelectorAll` call —
  *      so checking it on every pointer move costs no DOM query;
  *   3. the snapshot does not see a region added, removed or moved after it
@@ -46,16 +46,6 @@ describe('surfaceWithinRegions matches surfaceAtPoint’s priority (CR3-403)', (
         expect(surfaceAtPoint(700, 300)).toBe(DND_SURFACE.DRAWER);
         expect(surfaceAtPoint(100, 300)).toBe(DND_SURFACE.BOARD);
         expect(surfaceAtPoint(1500, 300)).toBeNull();
-    });
-
-    it('a miniboard wins over both', () => {
-        region(DND_SURFACE.BOARD, { left: 0, top: 0, width: 1000, height: 700 });
-        region(DND_SURFACE.DRAWER, { left: 600, top: 0, width: 400, height: 700 });
-        region(DND_SURFACE.MINIBOARD, { left: 650, top: 100, width: 200, height: 200 });
-        const regions = snapshotDndRegions();
-
-        expect(surfaceWithinRegions(700, 150, regions)).toBe(DND_SURFACE.MINIBOARD);
-        expect(surfaceAtPoint(700, 150)).toBe(DND_SURFACE.MINIBOARD);
     });
 });
 

@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useDndContext } from '@dnd-kit/core';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
-import { getBannerCardWidth } from '../dev/cardSizeStore.js';
 import { DRAG_KIND } from './dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt, boardArtSteps } from '../components/base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
@@ -22,22 +21,10 @@ import { flagColourOf } from '../../systems/board/FlagColours.js';
  * shadow instead — the hard pixel shadow of `PixelArt`'s lifted state (Wave 5).
  * `bold` is therefore ignored by `TokenGhost` and `HeroGhost`.
  *
- * ⚠️ **Items still bloom, and still use the retired banner tiers.**
+ * `ItemGhost` never used the bold/compact card-frame split either — it has
+ * always drawn a single 64px icon (CR3-407 deleted the dead `GhostCardFrame`/
+ * banner-tier chain `ItemGhost` never called).
  */
-
-/** Current banner card tier ('md' | 'sm'), read live from the layout marker. */
-function boardTier() {
-    if (typeof document === 'undefined') return 'md';
-    return document.querySelector('[data-card-tier]')?.getAttribute('data-card-tier') || 'md';
-}
-
-/** Banner card dimensions for the current tier — matches AreaBannerRow cards. */
-function bannerCardSize() {
-    const tier = boardTier();
-    return tier === 'sm'
-        ? { size: 'sm', width: 100, height: 128, sprite: 64 }
-        : { size: 'md', width: getBannerCardWidth(), height: 256, sprite: 128 };
-}
 
 function liveBoardFit() {
     if (typeof document === 'undefined') return 1;
@@ -47,8 +34,7 @@ function liveBoardFit() {
 
 export const DragGhost = ({ payload, bold }) => {
     const { over } = useDndContext();
-    const isOverMiniBoard = over && String(over.id).startsWith('miniboard-tile-');
-    const isOverPlaymat = bold && over && (String(over.id).startsWith('tile-') || over.data?.current?.surface === 'board');
+    const isOverPlaymat = bold && over && over.data?.current?.surface === 'board';
 
     const isGuildHall = payload?.kind === DRAG_KIND.TOKEN && (
         payload.typeId === 'token_guild_hall' ||
@@ -59,7 +45,7 @@ export const DragGhost = ({ payload, bold }) => {
     );
 
     const isGuildHallOffBoard = isGuildHall && !isOverPlaymat;
-    const opacityStyle = (isOverMiniBoard || isGuildHallOffBoard) ? { opacity: 0.5 } : {};
+    const opacityStyle = isGuildHallOffBoard ? { opacity: 0.5 } : {};
 
     if (!payload) return null;
     switch (payload.kind) {
@@ -153,33 +139,6 @@ const HeroGhost = ({ payload }) => {
                 size={size}
                 lifted
             />
-        </div>
-    );
-};
-
-/**
- * Card-frame shell used by the bold item ghost, sized to the banner tier.
- *
- * Restored verbatim from before `345abfe`, which reworked Token and Hero ghosts
- * to be frameless (D-219/D-220) and deleted this helper — but left `ItemGhost`
- * still calling it, so every bold item drag threw. Items deliberately still
- * bloom into a card, as the file header says, so the frame is still wanted.
- */
-const GhostCardFrame = ({ title, children }) => {
-    const { width, height } = bannerCardSize();
-    return (
-        <div
-            style={{ width, height }}
-            className="rounded-xl border border-white/40 bg-black/70 flex flex-col overflow-hidden"
-        >
-            {title && (
-                <div className="bg-black/40 border-b border-white/10 px-2 py-1.5 text-center">
-                    <span className="gi-card-title font-bold tracking-widest uppercase text-white text-[11px] truncate block">{title}</span>
-                </div>
-            )}
-            <div className="flex-1 flex items-center justify-center min-h-0" style={{ imageRendering: 'pixelated' }}>
-                {children}
-            </div>
         </div>
     );
 };
