@@ -199,7 +199,7 @@ export async function generateSpriteFx({ root = DEFAULT_ROOT, force = false, log
     const t0 = Date.now();
     const outDir = path.join(root, 'public', SPRITE_FX_DIR);
     const manifestFile = path.join(outDir, 'manifest.json');
-    let old = null;
+    let old;
     try { old = JSON.parse(fs.readFileSync(manifestFile, 'utf8')); } catch { old = null; }
     const current = !force && old?.version === SPRITE_FX_VERSION;
     const oldSprites = current ? (old.sprites || {}) : {};
@@ -215,7 +215,8 @@ export async function generateSpriteFx({ root = DEFAULT_ROOT, force = false, log
     for (const rel of rels) {
         const hash = hashOf(path.join(root, 'public', rel));
         const prev = oldSprites[rel];
-        if (prev && prev.hash === hash && outputsOf(rel, prev).every(f => fs.existsSync(path.join(outDir, f)))) {
+        const outlineRuleSame = prev && prev.outlined === (isOutlined(rel) && prev.w <= MAX_OUTLINE_PX && prev.h <= MAX_OUTLINE_PX);
+        if (prev && prev.hash === hash && outlineRuleSame && outputsOf(rel, prev).every(f => fs.existsSync(path.join(outDir, f)))) {
             sprites[rel] = prev;
         } else if (oldSkipped[rel] === hash) {
             skipped[rel] = hash;

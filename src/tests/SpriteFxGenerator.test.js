@@ -155,13 +155,14 @@ describe('which outline image is drawn: the thickness setting', () => {
 });
 
 describe('what gets outlines, and the sheet grids the game draws with', () => {
-    it('mat sprites are outlined; items and UI icons get a silhouette only; flags are outlined', () => {
+    it('anything a Token can wear is outlined; the UI’s own icons get a silhouette only; flags are outlined', () => {
         expect(isOutlined('assets/tokens/nature/token_tree_oak.png')).toBe(true);
         expect(isOutlined('assets/heroes/animations/ani_fighter_0.png')).toBe(true);
         expect(isOutlined('assets/enemies/animal/anim/ani_cow.png')).toBe(true);
         expect(isOutlined('assets/ui/flag/hero_flag_base.png')).toBe(true);
         expect(isOutlined('assets/playmat/props/prop_tree_oak.png')).toBe(true);
-        expect(isOutlined('assets/items/ore/item_copper_ore.png')).toBe(false);
+        expect(isOutlined('assets/items/ore/item_copper_ore.png')).toBe(true);
+        expect(isOutlined('assets/skills/skill_mining.png')).toBe(true);
         expect(isOutlined('assets/ui/ui_alert_red.png')).toBe(false);
     });
 
@@ -190,7 +191,7 @@ describe('generateSpriteFx — files on disk, kept current', () => {
     beforeAll(async () => {
         root = fs.mkdtempSync(path.join(os.tmpdir(), 'sprite-fx-'));
         await writeArt('assets/tokens/token_test.png', 4, 4, [[1, 1], [2, 1], [1, 2]]);
-        await writeArt('assets/items/item_test.png', 2, 2, [[0, 0]]);
+        await writeArt('assets/ui/ui_test.png', 2, 2, [[0, 0]]);
         await writeArt('assets/heroes/animations/ani_test_0.png', 16, 6, [[1, 1], [9, 4]]);
         await writeArt('assets/audio/not_a_sprite.png', 2, 2, [[0, 0]]);
     });
@@ -200,13 +201,13 @@ describe('generateSpriteFx — files on disk, kept current', () => {
         const r = await generateSpriteFx({ root });
         expect(r.generated).toBe(3);
         expect(listSprites(root)).toEqual([
-            'assets/heroes/animations/ani_test_0.png', 'assets/items/item_test.png', 'assets/tokens/token_test.png'
+            'assets/heroes/animations/ani_test_0.png', 'assets/tokens/token_test.png', 'assets/ui/ui_test.png'
         ]);
         const manifest = JSON.parse(fs.readFileSync(path.join(out(), 'manifest.json'), 'utf8'));
         expect(manifest.sprites['assets/tokens/token_test.png']).toMatchObject({ w: 4, h: 4, outlined: true });
-        expect(manifest.sprites['assets/items/item_test.png']).toMatchObject({ w: 2, h: 2, outlined: false });
+        expect(manifest.sprites['assets/ui/ui_test.png']).toMatchObject({ w: 2, h: 2, outlined: false });
         expect(manifest.sprites['assets/heroes/animations/ani_test_0.png']).toMatchObject({ w: 16, h: 6, cols: 8, rows: 3, outlined: true });
-        expect(fs.existsSync(path.join(out(), 'ol-work-u1r1', 'assets/items/item_test.png'))).toBe(false);
+        expect(fs.existsSync(path.join(out(), 'ol-work-u1r1', 'assets/ui/ui_test.png'))).toBe(false);
         expect(fs.existsSync(path.join(out(), 'sil', 'assets/audio/not_a_sprite.png'))).toBe(false);
         // Nothing was written beside the owner's art.
         expect(fs.readdirSync(path.join(root, 'public', 'assets', 'tokens'))).toEqual(['token_test.png']);
@@ -255,11 +256,11 @@ describe('generateSpriteFx — files on disk, kept current', () => {
         const sil = await read(path.join(out(), 'sil', 'assets/tokens/token_test.png'));
         expect(sil.data[3]).toBe(255);
         expect(sil.data[(1 * 4 + 1) * 4 + 3]).toBe(0);
-        fs.rmSync(path.join(root, 'public', 'assets/items/item_test.png'));
+        fs.rmSync(path.join(root, 'public', 'assets/ui/ui_test.png'));
         const r = await generateSpriteFx({ root });
         expect(r.removed).toBe(1);
-        expect(fs.existsSync(path.join(out(), 'sil', 'assets/items/item_test.png'))).toBe(false);
+        expect(fs.existsSync(path.join(out(), 'sil', 'assets/ui/ui_test.png'))).toBe(false);
         const manifest = JSON.parse(fs.readFileSync(path.join(out(), 'manifest.json'), 'utf8'));
-        expect(manifest.sprites['assets/items/item_test.png']).toBeUndefined();
+        expect(manifest.sprites['assets/ui/ui_test.png']).toBeUndefined();
     });
 });

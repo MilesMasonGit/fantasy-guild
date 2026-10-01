@@ -77,14 +77,14 @@ export function sheetGridOf(rel) {
 
 /**
  * Which sprites get outlines as well as a silhouette: anything that can stand
- * on the mat (Tokens, enemies, heroes, flags, and the playmat art two Tokens
- * borrow). Items, skill icons and the UI only ever need a silhouette (loot
- * floats; nothing else is outlined).
+ * on the mat. A Token's art may be any sprite the CMS points it at — the
+ * stress boards' fixture Tokens wear skill icons, two real Tokens borrow
+ * playmat art — so that is everything except the UI's own chrome. Flags are
+ * the one UI sprite on the mat.
  */
 export function isOutlined(rel) {
     if (/^assets\/ui\/flag\//i.test(rel)) return true;
-    if (/^assets\/(items|skills|icon|ui)\//i.test(rel)) return false;
-    return true;
+    return !/^assets\/ui\//i.test(rel);
 }
 
 /** Folders never processed: not sprites, or not shipped. */
