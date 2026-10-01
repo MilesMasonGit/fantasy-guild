@@ -160,6 +160,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
     );
 
     // Measure what was drawn, so the next pass spaces real sizes, not guesses.
+    // ⭐ Only when what the stacks SAY changes (CR3-353): a stack's size is its
+    // lines, and this layer re-renders on every walking step, where measuring
+    // forced a layout inside each commit.
+    const measureKey = anchored
+        .map(({ h, stack }) => `${h.heroId}:${stack.map(b => `${b.id}=${b.text}`).join('|')}`)
+        .join('||');
     useLayoutEffect(() => {
         const root = layerRef.current;
         if (!root) return;
@@ -177,7 +183,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
         }
         for (const id of [...sizesRef.current.keys()]) if (!seen.has(id)) sizesRef.current.delete(id);
         if (changed) setSizeTick(n => n + 1);
-    });
+    }, [measureKey]);
 
     return (
         <div
