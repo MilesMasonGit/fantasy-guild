@@ -82,6 +82,7 @@ export function getTokenAggregator(instanceId) {
 /** Drop every Token aggregator (before a rehydrate, and in tests). */
 export function clearAll() {
     aggregators.clear();
+    lastWorkOf.clear();
 }
 
 /** Live subscriptions, so `init` is idempotent across reloads and tests. */
@@ -127,6 +128,37 @@ export function init() {
         const now = BoardState.displayPointOf(heroId);
         if (now) lastPointOf.set(heroId, now);
         else lastPointOf.delete(heroId);
+
+        /**
+         * ⭐ **Skip when no Token's worker changed (CR3-250, engine-only form).**
+         *
+         * A Token's inbound buffs read the hero side of the board in exactly one
+         * way: who works it (`workerOf`, for the `being worked` and `whose hero
+         * carries` filters). This hero changes that answer for some Token on
+         * the mat only when the Token they work — counted only while it is still
+         * on the mat — differs from last time. A kill (the enemy left; they now
+         * work nothing), a re-plant while idle or walking, and a claim on a
+         * Token not yet reached all leave it unchanged; the board change itself
+         * (the enemy leaving, a Token moving) is rebuilt by whoever made it.
+         *
+         * ⚠️ **Not "the point is unchanged"** (Z §4's sketch): a pinned flag
+         * stands on its Token's centre, so a hero ARRIVING there keeps the same
+         * point while starting to work — that rebuild is the one that must run
+         * (`HeroMovedRebuild.test.js`). The publish itself stays: six UI
+         * subscribers redraw on it.
+         */
+        const board = BoardState.membershipVersion().tokens;
+        if (board !== lastWorkBoard) {
+            lastWorkOf.clear();
+            lastWorkBoard = board;
+        }
+        const workNow = BoardState.workTokenOf(heroId);
+        const known = lastWorkOf.has(heroId);
+        const workBefore = known ? lastWorkOf.get(heroId) : null;
+        lastWorkOf.set(heroId, workNow);
+        const before = workBefore && BoardState.getTokenById(workBefore) ? workBefore : null;
+        if (known && before === workNow) return;
+
         rebuildAround([left, now]);
     }));
 
@@ -150,11 +182,22 @@ export function init() {
  */
 const lastPointOf = new Map();
 
+/**
+ * The Token each hero worked when we last heard (`workTokenOf`, null for
+ * none), for CR3-250's skip. Runtime-only like `lastPointOf`; a hero with no
+ * entry yet is always rebuilt around. Forgotten on a new board (a load), on
+ * {@link clearAll} (before a rehydrate) and on {@link rebuildAll}, so the
+ * first event after any of them always rebuilds.
+ */
+const lastWorkOf = new Map();
+let lastWorkBoard = null;
+
 /** Drop the subscriptions. */
 export function teardown() {
     unsubscribers.forEach(u => u?.());
     unsubscribers = [];
     lastPointOf.clear();
+    lastWorkOf.clear();
 }
 
 /** The source id one Token's buff registers under. Per COPY (instance id), never per type. */
@@ -654,7 +697,7 @@ export function rebuildAround(points) {
 
 /** Rebuild every Token on the mat — on boot and after a save load. */
 export function rebuildAll() {
-    clearAll();
+    clearAll();          // also forgets lastWorkOf (CR3-250)
     dropSourceIndex();
     boardReachLive = boardReachOnBoard();
     for (const instance of BoardState.tokens()) rebuildToken(instance.id);
