@@ -139,17 +139,18 @@ function hasCannot(typeId) {
  */
 const BUCKET_THRESHOLD = 16;
 
-function bucketKey(x, y, cell) {
-    return `${Math.floor(x / cell)}|${Math.floor(y / cell)}`;
-}
-
 function bucketNeighbours(neighbours, cell) {
     if (neighbours.length < BUCKET_THRESHOLD || !(cell > 0)) return null;
+    // Column index → row index → bucket (CR3-201): a lookup builds no string,
+    // and every integer index is its own key, so no two cells can collide.
     const cells = new Map();
     for (const n of neighbours) {
-        const key = bucketKey(n.x, n.y, cell);
-        let bucket = cells.get(key);
-        if (!bucket) cells.set(key, bucket = []);
+        const ix = Math.floor(n.x / cell);
+        const iy = Math.floor(n.y / cell);
+        let column = cells.get(ix);
+        if (!column) cells.set(ix, column = new Map());
+        let bucket = column.get(iy);
+        if (!bucket) column.set(iy, bucket = []);
         bucket.push(n);
     }
     return cells;
@@ -227,25 +228,32 @@ export function isClear(typeId, point, excludeId = null) {
 
 /** The hot inner test: `point` against the prefiltered neighbour list. */
 function clearOf(point, ctx) {
+    return clearAt(point.x, point.y, ctx);
+}
+
+/** {@link clearOf} on bare coordinates, so a search need not build a point per candidate. */
+function clearAt(x, y, ctx) {
     if (!ctx.buckets) {
         for (const n of ctx.neighbours) {
-            const dx = point.x - n.x;
-            const dy = point.y - n.y;
+            const dx = x - n.x;
+            const dy = y - n.y;
             if (dx * dx + dy * dy < n.gapSq - EPS) return false;
         }
         return true;
     }
     // Exact (see `bucketNeighbours`): only the 3×3 cells round the candidate
     // can hold a neighbour close enough to block it.
-    const cx = Math.floor(point.x / ctx.cell);
-    const cy = Math.floor(point.y / ctx.cell);
+    const cx = Math.floor(x / ctx.cell);
+    const cy = Math.floor(y / ctx.cell);
     for (let ix = cx - 1; ix <= cx + 1; ix++) {
+        const column = ctx.buckets.get(ix);
+        if (!column) continue;
         for (let iy = cy - 1; iy <= cy + 1; iy++) {
-            const bucket = ctx.buckets.get(`${ix}|${iy}`);
+            const bucket = column.get(iy);
             if (!bucket) continue;
             for (const n of bucket) {
-                const dx = point.x - n.x;
-                const dy = point.y - n.y;
+                const dx = x - n.x;
+                const dy = y - n.y;
                 if (dx * dx + dy * dy < n.gapSq - EPS) return false;
             }
         }
@@ -302,9 +310,25 @@ export function findSpot(typeId, point, options = {}) {
     // into "a Token that cannot be put down at all", which is a far harder
     // failure to recognise and is not this file's call to make.
     const ctx = contextFor(typeId, point, options);
-    for (const candidate of candidatesAround(point, ctx.reach)) {
-        if (legalIn(typeId, candidate, ctx)) {
-            return { x: candidate.x, y: candidate.y, nudge: candidate.nudge };
+
+    // ⭐ `candidatesAround`'s walk, inlined (CR3-201): the same candidates in
+    // the same order, from the same expressions, each put through the same
+    // three tests `legalIn` makes (mat edge, crowding, then `Cannot`), but on
+    // bare coordinates — so a search that fails, tens of thousands of
+    // candidates every tick something waits for room, allocates nothing per
+    // candidate. A point object is made only for a candidate that gets as far
+    // as `Cannot`, which needs one. `whyRefused` still walks the generator.
+    const { r, w, h } = ctx.bounds;
+    const at = (x, y) => x >= r && y >= r && x <= w - r && y <= h - r
+        && clearAt(x, y, ctx)
+        && (!ctx.cannotMatters || legalIn(typeId, { x, y }, ctx));
+
+    if (at(point.x, point.y)) return { x: point.x, y: point.y, nudge: 0 };
+    for (let d = RING_STEP; d <= ctx.reach; d += RING_STEP) {
+        for (const { cos, sin } of ringTrig(d)) {
+            const x = point.x + cos * d;
+            const y = point.y + sin * d;
+            if (at(x, y)) return { x, y, nudge: d };
         }
     }
     return null;
