@@ -193,7 +193,22 @@ export const EngineBootstrap = {
     /**
      * Map Tick Logic to GameLoop
      */
+    /**
+     * ⭐ **Explicit priorities (CR3-031, round 3 review R1 §6).** `onTick`
+     * defaults every handler to 100, so this order used to come only from
+     * `Array.prototype.sort`'s stability plus registration order below — true,
+     * but accidental. A permutation spike (R1: same seed, 4,000 S2 ticks, a
+     * uses/Bank/XP fingerprint) found every reordering gives an identical
+     * result **except one**: `quest_manager` before `board_runner` draws a
+     * bounty Token's spawn one tick earlier, consuming the shared random
+     * stream in a different order (uses 125,738 → 125,739, Bank 498 → 497,
+     * XP 491,452 → 491,449). So only that one relation is load-bearing; the
+     * ten-apart spacing below reproduces today's registration order exactly
+     * (`TickHandlerOrder.test.js` pins `quest_manager` after `board_runner`)
+     * while leaving room to insert a handler later without renumbering nine.
+     */
     _registerTickHandlers() {
+        // 10: the game clock. Nothing else reads a tick-fresher gameTimeMs.
         GameLoop.onTick('time_tracking', (delta) => {
             if (GameState.getIsInitialized()) {
                 GameState.updateTime({
@@ -203,44 +218,57 @@ export const EngineBootstrap = {
                 // Lifetime playtime for the save-slot screen (CR-006).
                 GameState.state.meta.totalPlaytime = (GameState.state.meta.totalPlaytime || 0) + delta;
             }
-        });
+        }, 10);
 
-        // Live effect instances — poisons, regenerations, anything with a clock
-        // on it. Fires on the same 5s interval the status engine used, so a
-        // re-authored Poison ticks at exactly the rate it always did.
+        // 20: live effect instances — poisons, regenerations, anything with a
+        // clock on it. Fires on the same 5s interval the status engine used, so
+        // a re-authored Poison ticks at exactly the rate it always did. No
+        // ordering dependency on the board found by the spike; kept early as
+        // it always ran.
         GameLoop.onTick('live_effects', (delta) => {
             if (GameState.getIsInitialized()) {
                 LiveEffects.tick(delta, TriggerSystem.fireLiveStatement);
             }
-        });
+        }, 20);
 
+        // 30: hero regen. No measured ordering dependency.
         GameLoop.onTick('regen_system', (delta) => {
             if (GameState.getIsInitialized()) RegenSystem.tick(delta);
-        });
+        }, 30);
 
+        // 40: the board (spawners, growth, work, combat). ⚠️ Must run BEFORE
+        // `quest_manager` (50): a bounty spawned before the board advances this
+        // tick is seen one tick earlier, drawing from the shared random stream
+        // in a different order (R1 permutation spike, above).
         GameLoop.onTick('board_runner', (delta) => {
             if (GameState.getIsInitialized()) BoardRunner.tick(delta);
-        });
+        }, 40);
 
+        // 45: the time bank. No measured ordering dependency; kept between the
+        // board and the quest manager, as registered.
         GameLoop.onTick('time_bank', (delta) => {
             if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
-        });
+        }, 45);
 
+        // 50: bounty quests. Must run AFTER `board_runner` (40) — see there.
         GameLoop.onTick('quest_manager', (delta) => {
             if (GameState.getIsInitialized()) QuestManager.tick(delta);
-        });
+        }, 50);
 
+        // 60: loot sprites. No measured ordering dependency.
         GameLoop.onTick('sprite_layer', (delta) => {
             if (GameState.getIsInitialized()) SpriteLayer.tick(delta);
-        });
+        }, 60);
 
+        // 70: the wounded clock. No measured ordering dependency.
         GameLoop.onTick('wounded_system', (delta) => {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);
-        });
+        }, 70);
 
+        // 80: status effects. No measured ordering dependency.
         GameLoop.onTick('status_effects', (delta) => {
             if (GameState.getIsInitialized()) StatusEffectSystem.tick(delta);
-        });
+        }, 80);
     },
 
     /**
