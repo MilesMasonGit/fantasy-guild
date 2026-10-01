@@ -9,6 +9,7 @@ import { RingBadge, paintRing } from './RingBadge.jsx';
 import { RING_GAP_U, chargesFraction, cycleSecondsText, ringCount } from './ringRow.js';
 import { TokenChargeDeltaFloater } from './TokenBadges.jsx';
 import { TurnRing } from './TurnRing.jsx';
+import { onFrame } from './frameClock.js';
 
 const NO_MISSING = Object.freeze({ type: null, items: [] });
 
@@ -93,12 +94,13 @@ export const TokenBadgeRow = ({
         let lastElapsed = 0;
         let cycleTime = null;
         let lastTimestamp = performance.now();
-        let rafId = null;
+        // The shared frame clock's unsubscribe while the sweep runs (CR3-011).
+        let offClock = null;
 
         const stop = () => {
             active = false;
-            cancelAnimationFrame(rafId);
-            rafId = null;
+            offClock?.();
+            offClock = null;
         };
 
         const paint = () => {
@@ -112,7 +114,6 @@ export const TokenBadgeRow = ({
             lastElapsed = Math.min(cycleTime, lastElapsed + (now - lastTimestamp));
             lastTimestamp = now;
             paint();
-            rafId = requestAnimationFrame(updateFrame);
         };
 
         const setFight = (on) => {
@@ -150,8 +151,8 @@ export const TokenBadgeRow = ({
             if (!active && cycleTime && liveRef.current.hasHero) {
                 active = true;
                 lastTimestamp = performance.now();
-                cancelAnimationFrame(rafId);
-                rafId = requestAnimationFrame(updateFrame);
+                offClock?.();
+                offClock = onFrame(updateFrame);
             }
         };
 
