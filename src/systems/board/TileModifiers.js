@@ -9,7 +9,7 @@ import { getTokenType, registryVersion } from '../../config/registries/tokenRegi
 import { KEYWORD, statementsOf } from '../effects/statements.js';
 import { isStatementPaid } from './BlockUpkeep.js';
 import { REACH, RELATION, reachOf, reachCovers } from '../../config/registries/reachRegistry.js';
-import { FILTER_NEEDS, matchesFilters } from '../../config/registries/filterRegistry.js';
+import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind } from '../../config/registries/filterRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
@@ -83,6 +83,8 @@ export function getTokenAggregator(instanceId) {
 export function clearAll() {
     aggregators.clear();
     lastWorkOf.clear();
+    // Every Token's buffs are gone, so the next board-reach rebuild is whole.
+    lastRebuild = null;
 }
 
 /** Live subscriptions, so `init` is idempotent across reloads and tests. */
@@ -370,7 +372,10 @@ const isAmbient = (statement) => !statement?.when?.event && AMBIENT_KEYWORDS.has
  * Statements, reach, upkeep and filters are still evaluated live per rebuild;
  * the index only decides which Tokens are worth asking.
  */
-let sourceIndex = { tokens: null, version: -1, regVersion: -1, sources: [], boardReach: false };
+const EMPTY_INDEX = Object.freeze({
+    tokens: null, version: -1, regVersion: -1, sources: [], boardReach: false, stateFilters: false
+});
+let sourceIndex = EMPTY_INDEX;
 
 function ambientSourceIndex() {
     const { tokens, version } = BoardState.membershipVersion();
@@ -380,19 +385,46 @@ function ambientSourceIndex() {
 
     const sources = [];
     let boardReach = false;
+    let stateFilters = false;
     for (const instance of BoardState.tokens()) {
         const statements = statementsOf(getTokenType(instance.typeId));
         if (!statements.length) continue;
         if (!boardReach && statements.some(s => reachOf(s) === REACH.BOARD)) boardReach = true;
-        if (statements.some(isAmbient)) sources.push(instance);
+        if (statements.some(isAmbient)) {
+            sources.push(instance);
+            if (!stateFilters && statements.some(s => isAmbient(s) && readsLiveState(s))) stateFilters = true;
+        }
     }
-    sourceIndex = { tokens, version, regVersion, sources, boardReach };
+    sourceIndex = { tokens, version, regVersion, sources, boardReach, stateFilters };
     return sourceIndex;
 }
 
 /** Forget the index, so the next read re-scans the mat. */
 function dropSourceIndex() {
-    sourceIndex = { tokens: null, version: -1, regVersion: -1, sources: [], boardReach: false };
+    sourceIndex = EMPTY_INDEX;
+}
+
+/**
+ * Whether a statement's filter reads anything but the target's definition —
+ * its charges (`charges_below`) or who works it (`worked`, `carrying`).
+ *
+ * Those answers change with no board change at all (a cycle spends a charge, a
+ * hero picks up an effect), so nothing rebuilds around the target when they do.
+ * See {@link rebuildTokens} for why that matters to the board-reach refresh.
+ */
+function readsLiveState(statement) {
+    return filtersOf(statement?.to).some(f => getFilterKind(f.kind).needs !== FILTER_NEEDS.DEF);
+}
+
+/**
+ * Whether where a Token of this type stands decides whom its ambient rules
+ * reach — any reach that tells a Near Token from a distant one (`nearby`,
+ * `self_and_nearby`). `self` and `board` reach the same Tokens wherever the
+ * source stands.
+ */
+function reachDependsOnPlace(typeId) {
+    return statementsOf(getTokenType(typeId)).some(s => isAmbient(s)
+        && reachCovers(reachOf(s), RELATION.NEARBY) !== reachCovers(reachOf(s), RELATION.DISTANT));
 }
 
 /**
@@ -626,16 +658,6 @@ export function collectItemGrants(instanceId, effectType) {
 }
 
 /**
- * Whether any Token on the board carries a rule with `board` reach.
- *
- * Read off the ambient-source index (CR3-004), which re-scans on any add,
- * remove or content reload — the only things that can change the answer.
- */
-function boardReachOnBoard() {
-    return ambientSourceIndex().boardReach;
-}
-
-/**
  * Whether a board-reach rule was on the board at the last rebuild.
  *
  * ⚠️ Needed because the Token that matters may be the one that just **left**: by
@@ -647,27 +669,177 @@ function boardReachOnBoard() {
 let boardReachLive = false;
 
 /**
- * Rebuild exactly these Tokens — or **every** Token when a board-reach rule is,
- * or just was, on the mat.
+ * ⭐ **What every Token's buffs were last computed from, while a board-reach
+ * rule is (or just was) on the mat** (Wave 3b — round 3 review R3 §3.2, "the
+ * optional second step"). Null whenever the next such rebuild must be whole.
+ *
+ * `{ tokens, regVersion, radius, signature, layout, gen }`:
+ * * `signature` — {@link boardSignature} at that rebuild;
+ * * `layout` — per Token on the mat: `{ inst, x, y, typeId, placeDep, gen }`,
+ *   where it stood and whether where it stands decides whom it reaches
+ *   ({@link reachDependsOnPlace}). Kept current by every rebuild below.
+ */
+let lastRebuild = null;
+
+/**
+ * The board-reach rules that can reach a Token from anywhere: every ambient
+ * `board` statement on the mat, in arrival order, with the Token carrying it
+ * and whether it is paid (`isStatementPaid`). A flat list of
+ * `instance, statement, paid` triples, compared element by element.
+ *
+ * Object identity covers the rest: a source replaced or re-typed, or a content
+ * reload handing out new statement objects, is a different entry.
+ */
+function boardSignature(index) {
+    const signature = [];
+    for (const instance of index.sources) {
+        for (const statement of statementsOf(getTokenType(instance.typeId))) {
+            if (!isAmbient(statement) || reachOf(statement) !== REACH.BOARD) continue;
+            signature.push(instance, statement, isStatementPaid(instance, statement.id));
+        }
+    }
+    return signature;
+}
+
+function sameSignature(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
+
+function layoutEntry(instance, gen, placeDep) {
+    return { inst: instance, x: instance.x, y: instance.y, typeId: instance.typeId, placeDep, gen };
+}
+
+/** Remember the mat as every Token's buffs were just computed from (a whole rebuild). */
+function rememberWholeRebuild(index, signature) {
+    if (index.stateFilters) {
+        lastRebuild = null;
+        return;
+    }
+    const placeDep = new Map();
+    const layout = new Map();
+    for (const instance of BoardState.tokens()) {
+        let dep = placeDep.get(instance.typeId);
+        if (dep === undefined) {
+            dep = reachDependsOnPlace(instance.typeId);
+            placeDep.set(instance.typeId, dep);
+        }
+        layout.set(instance.id, layoutEntry(instance, 0, dep));
+    }
+    lastRebuild = {
+        tokens: BoardState.membershipVersion().tokens,
+        regVersion: registryVersion(),
+        radius: nearRadius(),
+        signature,
+        layout,
+        gen: 0
+    };
+}
+
+/**
+ * Every Token that arrived, left, moved or was replaced since the last
+ * rebuild, as what to rebuild for it: the Token itself (`ids`) and, for one
+ * whose place decides whom it reaches, the points it left and arrived at
+ * (`points`). Brings the remembered layout up to date as it goes.
+ */
+function layoutChanges() {
+    const state = lastRebuild;
+    const gen = ++state.gen;
+    const ids = [];
+    const points = [];
+    for (const instance of BoardState.tokens()) {
+        const was = state.layout.get(instance.id);
+        if (was && was.inst === instance && was.typeId === instance.typeId
+            && was.x === instance.x && was.y === instance.y) {
+            was.gen = gen;
+            continue;
+        }
+        if (was?.placeDep) points.push({ x: was.x, y: was.y });
+        const now = layoutEntry(instance, gen, reachDependsOnPlace(instance.typeId));
+        state.layout.set(instance.id, now);
+        ids.push(instance.id);
+        if (now.placeDep) points.push({ x: now.x, y: now.y });
+    }
+    for (const [id, was] of state.layout) {
+        if (was.gen === gen) continue;
+        if (was.placeDep) points.push({ x: was.x, y: was.y });
+        state.layout.delete(id);
+    }
+    return { ids, points };
+}
+
+/**
+ * Rebuild exactly these Tokens — and, while a board-reach rule is (or just
+ * was) on the mat, whatever else a whole-mat rebuild would change.
  *
  * ## The board-reach refresh (Free Playmat 1.3, pre-existing bug)
  * A `board` rule reaches every Token, however far. Rebuilding only the Tokens
  * within Near of a change left distant Tokens holding a buff from a Token that
  * had left, or missing one from a Token that had just arrived or changed, until
- * the next full rebuild. So while such a rule is (or was) present, a change
- * anywhere rebuilds every Token on the mat — cheap, and on events only.
+ * the next full rebuild. So while such a rule is (or was) present, every
+ * rebuild leaves every Token's buffs exactly as a whole-mat rebuild would.
+ *
+ * ## ⭐ The whole mat only when the board-reach rules changed (Wave 3b, R3 §3.2)
+ * It used to get there by rebuilding every Token on every change — on a
+ * 300-Token board with one aura, nearly all of S3's remaining cost. A Token's
+ * buffs can only change, with nothing near it named by the caller, when:
+ *
+ * 1. **the board-reach rules changed** — a source arrived, left, was replaced,
+ *    or went paid/unpaid ({@link boardSignature}); or content was reloaded,
+ *    Near was retuned or the board itself swapped: **the whole mat**;
+ * 2. **a filter reads live state** (`charges_below`, `worked`, `carrying`) on
+ *    any ambient rule on the mat — those answers change with no board event,
+ *    and the whole rebuild was what refreshed them: **the whole mat**, as before;
+ * 3. **a Token arrived, left or moved since the last rebuild** without its
+ *    caller naming the place (a walking enemy rebuilds only when its walk
+ *    ends): **that Token, plus Near of both its places when its place decides
+ *    whom it reaches** ({@link layoutChanges}).
+ *
+ * Nothing else a Token's buffs read can change between two rebuilds: its own
+ * type and its sources' types change only with content (1), a `board` or
+ * `self` rule reaches the same Tokens wherever its source stands, and a Near
+ * source's upkeep flipping is rebuilt around at once (`BoardRunner.tick`). So
+ * a Token outside all of those keeps exactly the buffs a whole rebuild would
+ * give it, and is skipped. `BoardReachRebuild.test.js` checks every Token
+ * against a whole rebuild after every step.
+ *
+ * Without a board-reach rule nothing here runs: exactly `ids`, as before.
  *
  * @param {string[]} ids instance ids
  */
 export function rebuildTokens(ids) {
-    const now = boardReachOnBoard();
-    const wholeBoard = now || boardReachLive;
+    const index = ambientSourceIndex();
+    const now = index.boardReach;
+    const inMode = now || boardReachLive;
     boardReachLive = now;
-    if (wholeBoard) {
-        for (const instance of BoardState.tokens()) rebuildToken(instance.id);
+    if (!inMode) {
+        lastRebuild = null;
+        for (const id of ids || []) rebuildToken(id);
         return;
     }
-    for (const id of ids || []) rebuildToken(id);
+
+    const signature = boardSignature(index);
+    const last = lastRebuild;
+    if (index.stateFilters || !last
+        || last.tokens !== BoardState.membershipVersion().tokens
+        || last.regVersion !== registryVersion()
+        || last.radius !== nearRadius()
+        || !sameSignature(last.signature, signature)) {
+        for (const instance of BoardState.tokens()) rebuildToken(instance.id);
+        rememberWholeRebuild(index, signature);
+        return;
+    }
+
+    const changed = layoutChanges();
+    if (!changed.ids.length && !changed.points.length) {
+        for (const id of ids || []) rebuildToken(id);
+        return;
+    }
+    const todo = new Set(ids || []);
+    for (const id of changed.ids) todo.add(id);
+    for (const id of tokensAround(changed.points)) todo.add(id);
+    for (const id of todo) rebuildToken(id);
 }
 
 /**
@@ -697,10 +869,12 @@ export function rebuildAround(points) {
 
 /** Rebuild every Token on the mat — on boot and after a save load. */
 export function rebuildAll() {
-    clearAll();          // also forgets lastWorkOf (CR3-250)
+    clearAll();          // also forgets lastWorkOf (CR3-250) and lastRebuild (Wave 3b)
     dropSourceIndex();
-    boardReachLive = boardReachOnBoard();
+    const index = ambientSourceIndex();
+    boardReachLive = index.boardReach;
     for (const instance of BoardState.tokens()) rebuildToken(instance.id);
+    if (boardReachLive) rememberWholeRebuild(index, boardSignature(index));
 }
 
 /**
