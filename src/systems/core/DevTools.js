@@ -116,6 +116,7 @@ export function advanceTime(minutes, {
         steps++;
     }
 
+    EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_time_skip' });
     EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return { ok: true, advancedMs, steps, capped };
 }

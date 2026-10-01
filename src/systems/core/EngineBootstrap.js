@@ -353,7 +353,9 @@ export const EngineBootstrap = {
         // 4. Start the Engine
         GameLoop.start();
 
-        // 5. Trigger Initial UI Sync
+        // 5. Trigger Initial UI Sync. GAME_RESET is the one "everything may
+        // have changed" event (CR3-305); state_changed stays until stage 3.
+        EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: isNewGame ? 'new_game' : 'load' });
         EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);

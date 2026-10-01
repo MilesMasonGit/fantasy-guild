@@ -155,6 +155,7 @@ export async function buildStress(name) {
         }
     });
 
+    EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_stress' });
     EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
     EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);

@@ -40,6 +40,16 @@ export const ENGINE_EVENTS = Object.freeze({
      */
     STATE_CHANGED: 'state_changed',
 
+    /**
+     * ⭐ **The one "everything may have changed" event** (CR3-305 stage 1):
+     * a new game or a load has finished booting, a stress scenario was built,
+     * or the dev time-skip ran. Payload: `{ reason }` — `'new_game'`,
+     * `'load'`, `'dev_time_skip'` or `'dev_stress'`. A surface that reads
+     * state no specific event names listens to this instead of
+     * `state_changed`.
+     */
+    GAME_RESET: 'game_reset',
+
     /** A save slot was loaded. Payload: `{ slot, savedAt }`. */
     GAME_LOADED: 'game_loaded',
 
@@ -212,6 +222,7 @@ export const ORPHAN_EVENTS = Object.freeze({
  * (`Game.EventBus.setLogging(true)`) can hook without touching the engine.
  */
 export const NO_LISTENER = Object.freeze({
+    [ENGINE_EVENTS.GAME_RESET]: 'CR3-305 stage 1: its listeners arrive with stage 2',
     [ENGINE_EVENTS.REGISTRY_UPDATED]: 'console affordance; the discovery events below are the specific ones',
     [ENGINE_EVENTS.ITEM_DISCOVERED]: 'first-seen moment, for a future "new item" notice',
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
