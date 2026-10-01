@@ -222,7 +222,6 @@ export const ORPHAN_EVENTS = Object.freeze({
  * (`Game.EventBus.setLogging(true)`) can hook without touching the engine.
  */
 export const NO_LISTENER = Object.freeze({
-    [ENGINE_EVENTS.GAME_RESET]: 'CR3-305 stage 1: its listeners arrive with stage 2',
     [ENGINE_EVENTS.REGISTRY_UPDATED]: 'console affordance; the discovery events below are the specific ones',
     [ENGINE_EVENTS.ITEM_DISCOVERED]: 'first-seen moment, for a future "new item" notice',
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',

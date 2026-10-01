@@ -294,6 +294,7 @@ export function ensureTutorial() {
  */
 export function refreshTutorialTokens() {
     let changed = false;
+    const refreshed = [];
     for (const instance of tutorialTokens()) {
         const template = tutorialTemplate(instance.quest.id);
         if (!template) {
@@ -302,7 +303,11 @@ export function refreshTutorialTokens() {
             continue;
         }
         instance.quest = tutorialQuest(template, instance.quest);
+        refreshed.push(instance.id);
     }
+    // Each refreshed copy says so by id (CR3-304: a quest Token hears its own
+    // QUESTS_UPDATED, not the catch-all state_changed).
+    for (const instanceId of refreshed) EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId });
     if (changed) publishChanged();
 }
 
