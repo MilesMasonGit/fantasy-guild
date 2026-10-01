@@ -4,12 +4,35 @@ import { GameLoop } from '../systems/core/GameLoop.js';
 import { TimeManager } from '../systems/core/TimeManager.js';
 import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 import { MAX_TICK_DELTA_MS, TIME_BANK } from '../config/loopConstants.js';
+import * as BoardState from '../systems/board/BoardState.js';
+import * as Placement from '../systems/board/Placement.js';
+import * as BoardRunner from '../systems/board/BoardRunner.js';
+import * as TileModifiers from '../systems/board/TileModifiers.js';
+import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import './fixtures/testTokens.js';
 
 // CR2-041: a single tick used to carry the whole gap since the last one, so a
 // sleeping laptop added its entire sleep to `meta.totalPlaytime` and
 // `time.gameTimeMs` while producing nothing. The delta is now clamped, and the
 // remainder is routed to the Time Bank (owner decision 4, 2026-08-19) rather
 // than discarded.
+//
+// CR3-101 (round 3 review R1, owner ruling: "a clock the PC can't move"):
+// `TimeManager.update()` used to measure the in-session delta with `Date.now()`
+// — the wall clock, which the player's OS can step in either direction. A
+// backward step made every working Token's progress go negative and replayed
+// `CYCLE_START` (paying its carried costs) once a tick until it climbed back
+// above zero; a forward step dumped the jump into the Time Bank. The fix reads
+// `performance.now()` instead, which the OS clock cannot move, and floors the
+// delta at 0 as a last-resort guard. So the spy below moves from `Date.now` to
+// `performance.now` — that is the clock `TimeManager` now actually reads — and
+// a SEPARATE `Date.now` spy is used to prove a wall-clock jump, by itself, no
+// longer does anything while the game is open.
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(),
@@ -18,17 +41,24 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000;
 
-/** Freeze the clock so deltas are exact rather than "about 100ms". */
-let clock = 1_000_000_000_000;
-const advance = ms => { clock += ms; };
+/** The monotonic clock `TimeManager` measures the delta with (CR3-101). */
+let perfClock = 0;
+const advancePerf = ms => { perfClock += ms; };
 
-describe('Tick delta clamp (CR2-041)', () => {
-    let nowSpy;
+/** The wall clock — settable by the player's OS, read only for time AWAY. */
+let wallClock = 1_000_000_000_000;
+const advanceWall = ms => { wallClock += ms; };
+
+describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
+    let perfSpy;
+    let wallSpy;
     let wasRunning;
 
     beforeEach(() => {
-        clock = 1_000_000_000_000;
-        nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => clock);
+        perfClock = 0;
+        wallClock = 1_000_000_000_000;
+        perfSpy = vi.spyOn(performance, 'now').mockImplementation(() => perfClock);
+        wallSpy = vi.spyOn(Date, 'now').mockImplementation(() => wallClock);
 
         GameState.initNew();
         TimeBankManager.isSpending = false;
@@ -44,7 +74,8 @@ describe('Tick delta clamp (CR2-041)', () => {
 
     afterEach(() => {
         GameLoop.isRunning = wasRunning;
-        nowSpy.mockRestore();
+        perfSpy.mockRestore();
+        wallSpy.mockRestore();
     });
 
     // ------------------------------------------------------------------
@@ -52,30 +83,30 @@ describe('Tick delta clamp (CR2-041)', () => {
     // ------------------------------------------------------------------
 
     it('clamps an eight-hour gap to the maximum tick delta', () => {
-        advance(EIGHT_HOURS_MS);
+        advancePerf(EIGHT_HOURS_MS);
         expect(TimeManager.update()).toBe(MAX_TICK_DELTA_MS);
     });
 
     it('passes a normal frame delta through unchanged', () => {
-        advance(100);
+        advancePerf(100);
         expect(TimeManager.update()).toBe(100);
         expect(TimeManager.consumeOverflow()).toBe(0);
     });
 
     it('passes a slow frame well under the ceiling through unchanged', () => {
-        advance(750);
+        advancePerf(750);
         expect(TimeManager.update()).toBe(750);
         expect(TimeManager.consumeOverflow()).toBe(0);
     });
 
     it('does not advance game time by eight hours', () => {
-        advance(EIGHT_HOURS_MS);
+        advancePerf(EIGHT_HOURS_MS);
         TimeManager.update();
         expect(TimeManager.getGameTime()).toBe(MAX_TICK_DELTA_MS);
     });
 
     it('parks the undelivered remainder as overflow, once', () => {
-        advance(EIGHT_HOURS_MS);
+        advancePerf(EIGHT_HOURS_MS);
         TimeManager.update();
         expect(TimeManager.consumeOverflow()).toBe(EIGHT_HOURS_MS - MAX_TICK_DELTA_MS);
         // Taken, not left lying around for the next tick to bank again.
@@ -84,10 +115,151 @@ describe('Tick delta clamp (CR2-041)', () => {
 
     it('produces no overflow while paused', () => {
         TimeManager.pause();
-        advance(EIGHT_HOURS_MS);
+        advancePerf(EIGHT_HOURS_MS);
         expect(TimeManager.update()).toBe(0);
         expect(TimeManager.consumeOverflow()).toBe(0);
         TimeManager.resume();
+    });
+
+    // ------------------------------------------------------------------
+    // CR3-101: the monotonic clock itself cannot go backwards
+    // ------------------------------------------------------------------
+
+    describe('a monotonic read that goes backward (CR3-101 safety floor)', () => {
+        it('floors the delta at 0, never negative', () => {
+            advancePerf(1000);
+            TimeManager.update(); // establishes lastTickTime at perfClock=1000
+
+            perfClock -= 5000; // a clock that should never happen, handled anyway
+            expect(TimeManager.update()).toBe(0);
+        });
+
+        it('does not pollute the Time Bank overflow with a negative amount', () => {
+            advancePerf(1000);
+            TimeManager.update();
+
+            perfClock -= 5000;
+            TimeManager.update();
+            expect(TimeManager.consumeOverflow()).toBe(0);
+        });
+    });
+
+    // ------------------------------------------------------------------
+    // CR3-101: the WALL clock (Date.now, the one the player's OS can move)
+    // must have no effect on the in-session delta at all
+    // ------------------------------------------------------------------
+
+    describe('the wall clock cannot move the game while it is open (CR3-101)', () => {
+        it('a 5s backward step of the wall clock produces no negative delta', () => {
+            advancePerf(100);
+            expect(TimeManager.update()).toBe(100);
+
+            advanceWall(-5000); // the PC's clock, not performance.now
+
+            advancePerf(100);
+            expect(TimeManager.update()).toBe(100);
+            expect(TimeManager.consumeOverflow()).toBe(0);
+        });
+
+        it('a 1h forward step of the wall clock delivers a normal delta, not an hour', () => {
+            advancePerf(100);
+            expect(TimeManager.update()).toBe(100);
+
+            advanceWall(60 * 60 * 1000); // the PC's clock, not performance.now
+
+            advancePerf(100);
+            expect(TimeManager.update()).toBe(100);
+            expect(TimeManager.consumeOverflow()).toBe(0);
+        });
+    });
+
+    // ------------------------------------------------------------------
+    // CR3-101: the player-visible symptom — replayed CYCLE_START, and a
+    // forward jump feeding the Time Bank while playing
+    // ------------------------------------------------------------------
+
+    describe('the board does not notice a moved wall clock while playing (CR3-101)', () => {
+        const POINT = { x: 400, y: 200 };
+        let started;
+        let unsubscribe;
+
+        function makeWorkerHero(id) {
+            const skills = {};
+            for (const s of getAllSkillIds()) skills[s] = { level: 50, xp: 0 };
+            return {
+                id, name: id, status: 'idle', level: 50, skills,
+                hp: { current: 100, max: 100 }, equipment: new Array(9).fill(null)
+            };
+        }
+
+        beforeEach(() => {
+            InventoryManager.init();
+            SpriteLayer.init();
+            BoardState.clear?.();
+            TileModifiers.rebuildAll();
+            GameState.state.heroes = [makeWorkerHero('hero_1')];
+
+            const instance = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'));
+            Placement.placeTokenAt(instance, POINT);
+            TileModifiers.rebuildAround([instance]);
+            Placement.plantFlagAt('hero_1', POINT);
+
+            started = [];
+            unsubscribe = EventBus.subscribe(BOARD_EVENTS.CYCLE_START, (p) => started.push(p));
+
+            // The real board_runner handler, driven through the real
+            // TimeManager-measured delta rather than a hand-fed one, so the
+            // clock fix is actually what's under test.
+            GameLoop.onTick('test_cr3101_board_runner', (delta) => BoardRunner.tick(delta));
+            GameLoop.isRunning = true;
+            TimeBankManager.init(); // idempotent; wires the time_overflow subscription
+        });
+
+        afterEach(() => {
+            unsubscribe?.();
+            GameLoop.offTick('test_cr3101_board_runner');
+        });
+
+        it('a 5s backward step of the wall clock produces no burst of CYCLE_START', () => {
+            // Run well into the fixture's 12s cycle, at a normal 100ms cadence,
+            // so a cycle has already started once.
+            for (let i = 0; i < 30; i++) {
+                advancePerf(100);
+                GameLoop.tick();
+            }
+            expect(started.length).toBe(1);
+            started.length = 0; // discard the one legitimate start
+
+            // The PC's wall clock jumps back 5s. performance.now is untouched —
+            // this is exactly what changing the system clock does in real life.
+            advanceWall(-5000);
+
+            const deltas = [];
+            for (let i = 0; i < 50; i++) {
+                advancePerf(100);
+                GameLoop.tick();
+                deltas.push(TimeManager.getDelta());
+            }
+
+            expect(deltas.every(d => d === 100)).toBe(true);
+            expect(started).toEqual([]);
+        });
+
+        it('a 1h forward step of the wall clock banks nothing while playing', () => {
+            for (let i = 0; i < 10; i++) {
+                advancePerf(100);
+                GameLoop.tick();
+            }
+
+            advanceWall(60 * 60 * 1000);
+
+            for (let i = 0; i < 10; i++) {
+                advancePerf(100);
+                GameLoop.tick();
+            }
+
+            expect(TimeBankManager.getBankedMs()).toBe(0);
+        });
     });
 
     // ------------------------------------------------------------------
@@ -120,7 +292,7 @@ describe('Tick delta clamp (CR2-041)', () => {
         });
 
         it('an eight-hour gap adds at most one clamped tick of playtime', () => {
-            advance(EIGHT_HOURS_MS);
+            advancePerf(EIGHT_HOURS_MS);
             GameLoop.tick();
 
             expect(GameState.state.meta.totalPlaytime).toBe(MAX_TICK_DELTA_MS);
@@ -130,7 +302,7 @@ describe('Tick delta clamp (CR2-041)', () => {
 
         it('normal ticks still accumulate playtime as before', () => {
             for (let i = 0; i < 5; i++) {
-                advance(100);
+                advancePerf(100);
                 GameLoop.tick();
             }
             expect(GameState.state.meta.totalPlaytime).toBe(500);
@@ -149,7 +321,7 @@ describe('Tick delta clamp (CR2-041)', () => {
         });
 
         it('banks the time the clamp refused to deliver', () => {
-            advance(EIGHT_HOURS_MS);
+            advancePerf(EIGHT_HOURS_MS);
             GameLoop.tick();
 
             expect(TimeBankManager.getBankedMs())
@@ -157,23 +329,23 @@ describe('Tick delta clamp (CR2-041)', () => {
         });
 
         it('banks nothing on a normal tick', () => {
-            advance(100);
+            advancePerf(100);
             GameLoop.tick();
             expect(TimeBankManager.getBankedMs()).toBe(0);
         });
 
         it('still honours the 24-hour bank cap', () => {
-            advance(TIME_BANK.MAX_MS * 3);
+            advancePerf(TIME_BANK.MAX_MS * 3);
             GameLoop.tick();
             expect(TimeBankManager.getBankedMs()).toBe(TIME_BANK.MAX_MS);
         });
 
         it('does not double-bank on the following tick', () => {
-            advance(EIGHT_HOURS_MS);
+            advancePerf(EIGHT_HOURS_MS);
             GameLoop.tick();
             const afterFirst = TimeBankManager.getBankedMs();
 
-            advance(100);
+            advancePerf(100);
             GameLoop.tick();
             expect(TimeBankManager.getBankedMs()).toBe(afterFirst);
         });

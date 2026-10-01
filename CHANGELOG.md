@@ -39,6 +39,16 @@ project's first tagged baseline — everything before it was untagged developmen
 - **A brand-new game is now saved complete straight away** (CR3-100). Before, the first save was
   written before the Guild Hall and the starting items were laid out, so if the game closed
   uncleanly in its first ten minutes, that slot loaded as an empty table with no Guild Hall.
+- **Changing the PC's clock no longer disturbs the game (CR3-101).** While you're playing, elapsed
+  time is now measured by a clock the PC can't move. Winding the system clock back used to make
+  every working station "start a new cycle" over and over (and pay for it each time); winding it
+  forward used to stuff the jump into the Time Bank. Neither happens now. Time away while the game
+  is closed is unaffected — that still uses the real clock, as it should.
+- **The Shop slides aside while you place something (CR3-402).** Carrying a Shop item out over the
+  playmat now slides the Shop drawer out of the way so you can see where you're dropping it, and it
+  slides back the moment you move back over the drawer — not just when you let go. Letting go back
+  over the drawer still cancels, as before. Separately, with the Bank open, the playmat it was
+  hiding is confirmed to take no clicks or drags at all, the same as it looks.
 - **The hero dock shows the heroes (B10, FB-46).** Heroes stand in a dark strip under the mat, idling
   and seen from the waist up, with their name and health bar above their heads. Heroes out on the
   mat are darkened and lowered; hovering lifts a hero. Click and drag work as before.

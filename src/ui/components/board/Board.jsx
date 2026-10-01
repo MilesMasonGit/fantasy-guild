@@ -17,6 +17,7 @@ import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
 import { StationRecipeModal } from './StationRecipeModal.jsx';
 import { isShopPayload, pointerOverShopDrawer } from '../drawer/ShopDrawer.jsx';
+import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
 
 /**
  * The playmat: one drop surface, scaled to fit, with `MatBoard` drawing what is
@@ -28,8 +29,17 @@ import { isShopPayload, pointerOverShopDrawer } from '../drawer/ShopDrawer.jsx';
  * that happens on a drop is `dropOnMat`'s.
  */
 
-/** What the playmat's own drop target takes: any Token, and a hero or a flag with a hero. */
+/**
+ * What the playmat's own drop target takes: any Token, and a hero or a flag
+ * with a hero.
+ *
+ * ⭐ **CR3-402** (owner ruling): while the Bank is open the mat takes nothing
+ * at all — the Bank covers it, and dnd-kit never calls `onDrop` for a target
+ * whose `accepts` refuses the payload, so this one check is enough to make
+ * every drop onto the mat a miss while the Bank is open.
+ */
 export function matAccepts(p) {
+    if (isMatBankLocked()) return false;
     if (p?.kind === DRAG_KIND.TOKEN) return true;
     if (p?.kind === DRAG_KIND.HERO || p?.kind === DRAG_KIND.FLAG) return !!p.heroId;
     return false;

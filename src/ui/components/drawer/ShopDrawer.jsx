@@ -6,7 +6,7 @@ import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import * as Shop from '../../../systems/board/Shop.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
-import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useActiveDrag, useDragSurface } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 
 /**
@@ -21,9 +21,11 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
  *   `TOKEN` with `from.shop`; `dropOnMat` hands it to `Shop.buyAt`, which pays
  *   on drop and places the Token at the drop point. There are no Buy buttons.
  * * **While a Shop row is carried, the drawer slides away to a lip**
- *   ({@link SHOP_LIP_PX} wide, FB-27) so the mat shows; it slides back when
- *   the drag ends and stays open. A Shop Token let go over the lip (or the
- *   drawer) is a plain cancel ({@link pointerOverShopDrawer}).
+ *   ({@link SHOP_LIP_PX} wide, FB-27) whenever the pointer is over the
+ *   playmat, and slides back open the moment it comes back over the drawer
+ *   (CR3-402, owner ruling 2026-09-30) — not just when the drag ends. A Shop
+ *   Token let go over the lip (or the reopened drawer) is a plain cancel
+ *   ({@link pointerOverShopDrawer}).
  * * **Rows that cannot be bought are dimmed, say why in red, and cannot be
  *   picked up** (B4 unaffordable). They re-read on every Bank, cap or bin
  *   change, and on a Mat Tuner cap change.
@@ -56,10 +58,20 @@ export function pointerOverShopDrawer(pointer) {
 /** A Shop row being carried. */
 export const isShopPayload = (p) => p?.kind === DRAG_KIND.TOKEN && !!p.from?.shop;
 
-/** `'closed' | 'open' | 'lip'`: shut, open, or slid away during a Shop drag. */
-export function shopDrawerState(isOpen, activePayload) {
+/**
+ * `'closed' | 'open' | 'lip'`: shut, open, or slid away during a Shop drag.
+ *
+ * ⭐ **CR3-402** (owner ruling 2026-09-30): the slide now tracks WHERE the
+ * Shop row is being carried, not just that it is being carried. It is a lip
+ * while the pointer is over the playmat, and open again the moment it is
+ * back over the drawer — so the player can change their mind mid-drag. The
+ * default for `surface` reproduces the old "always a lip" behaviour for any
+ * caller that does not track position (e.g. a test driving this directly).
+ */
+export function shopDrawerState(isOpen, activePayload, surface = DND_SURFACE.BOARD) {
     if (!isOpen) return 'closed';
-    return isShopPayload(activePayload) ? 'lip' : 'open';
+    if (!isShopPayload(activePayload)) return 'open';
+    return surface === DND_SURFACE.DRAWER ? 'open' : 'lip';
 }
 
 /** The slide for each state. */
@@ -93,7 +105,8 @@ function useShopRefresh(active) {
 export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
     useShopRefresh(isOpen);
     const { activePayload } = useActiveDrag();
-    const state = shopDrawerState(isOpen, activePayload);
+    const surface = useDragSurface();
+    const state = shopDrawerState(isOpen, activePayload, surface);
 
     const shop = isOpen ? Shop.catalogue() : [];
     const cap = Shop.capStatus();
