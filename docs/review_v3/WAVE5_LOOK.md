@@ -2,7 +2,48 @@
 
 *Branch `draw/wave5`, built on top of `draw/wave4` (neither is merged — owner ruling Z §11 Q4:
 the drawing batch waits for your look; review both together). Written 2026-10-01 by the Wave 5
-engineer. Pictures are in [`wave5_look/`](wave5_look/).*
+engineer. Pictures are in [`wave5_look/`](wave5_look/). **Updated the same day after your first
+look: see "Your follow-up" just below.***
+
+## Your follow-up (2026-10-01, after reviewing the branch live)
+
+You liked the shadows and the speed, and asked for three changes. All three are done:
+
+1. **The outline is redrawn** — the old one "still didn't look right". Two causes, both fixed:
+   - it drew **half art pixels** (1 screen pixel on a sprite drawn at 2×), off the art's grid;
+   - it had **"doubles"**: L-shaped clumps where the line turns, from pixels that only touched the
+     art at a corner.
+
+   Now: **an outline pixel sits only where it touches the art edge to edge** (up, down, left or
+   right — never only corner to corner), it is **exactly one art pixel** thick, and it is **scaled
+   with the sprite like the art itself**, so every outline pixel is a whole art pixel on the art's
+   grid. The art's own black border counts as part of the sprite: the coloured line sits outside
+   it. Heroes and enemies follow the same rule, frame by frame. There is no thickness setting any
+   more. Pictures: **`outline_v2_compare_1x.png`** (actual size) and
+   **`outline_v2_compare_4x.png`** (enlarged): before on the left, after on the right — worked
+   (tree and hero), hovered, alert, an enemy (the cow), and a hero on its own.
+2. **The charge ring and the spawner's count ring now glide** to a new value over about
+   0.8 seconds, slowing as they arrive, instead of jumping. The number inside changes at once;
+   the ring slides. Nothing runs while a ring is still, and only the ring that changed moves.
+3. **The raised shadow follows the sprite** (your final ruling). The "stays on the ground" option
+   and its Mat Tuner row are gone.
+
+The Mat Tuner has no "Look" group any more.
+
+### One question for you: the inside corners
+
+**W5-3 — Where the outline turns an inside corner.** Your rule ("edge to edge only") already
+removes the doubles at the outer corners. There is one case it keeps: where the art itself has an
+**inside corner** (an L-shaped notch), the outline pixel in the elbow of that L touches the art on
+two sides, so by the rule it belongs — and the outline makes a small L there. Across the 196 Token
+sprites that is about **2 % of outline pixels** (840 of 39,468), on 169 sprites, so most sprites
+have one or two somewhere. Look at the inside corners of the cow's legs and the minecart's wheels
+in `outline_v2_compare_4x.png`.
+- **(A) Recommended: keep the rule exactly as you gave it** (built). The line stays unbroken
+  edge to edge all the way round, and an elbow pixel is still a single art pixel.
+- (B) Also drop the elbow pixel at an inside corner, so the line cuts the corner diagonally there,
+  the way some pixel artists hand-clean outlines. Slightly lighter corners; the line is then joined
+  only corner to corner at those spots. A small change if you want it.
 
 ## In plain language
 
@@ -30,30 +71,11 @@ On the busy board, measured on this PC in a hidden test browser, back to back wi
 On the 300-Token torture board: ~110 → **~147** frames a second, and 16 % → **76 %** of frames
 within budget.
 
-## Your two choices
+## Your two earlier choices — decided
 
-**W5-1 — How thick the coloured outline is.** You asked for 1 px and found the spike's outline a
-little thick. Both are built; you can switch live in the Mat Tuner (see "How to try it", step 5).
-On the usual board size the art is drawn at 2×, so one pixel of the art is two screen pixels.
-Pictures: `compare_1x.png` (actual size) and `compare_4x.png` (enlarged), columns 2 and 3.
-- **(A) Recommended: 1 screen pixel** (the default now). The thinnest line a screen can draw; it
-  hugs the art like a second edge. At the usual size it is half as thick as the spike's.
-- (B) 1 art pixel. The spike's look: as thick as the art's own black outline, so it reads more
-  strongly from a distance, and looks chunkier up close.
-
-  ⚠ If your game window is small enough that sprites are drawn at 1× (each art pixel is one
-  screen pixel), A and B look identical. The difference shows at 2× and above.
-
-**W5-2 — Where the shadow sits while a sprite is raised.** You approved "2 art pixels down-right".
-A dragged Token is also lifted 4 px, and floating loot bobs up and down, so there is a question of
-whether the shadow rises with the sprite. Pictures: `shadow_dragged_and_loot_4x.png` (and `_1x`).
-- **(A) Recommended: the shadow follows the sprite**, always exactly 2 art pixels down-right
-  (built, the default). The same shape everywhere; loot's shadow stays a thin crisp edge.
-- (B) The shadow stays on the ground while the sprite rises, so it falls further away the higher
-  the sprite goes (today's dragged Token worked like this, softly). Reads more as "lifted", but on
-  floating loot it becomes the heavy black blob the spike warned about.
-
-  You can switch this live too (Mat Tuner, "Raised shadow").
+- **W5-1 Outline thickness:** superseded by your follow-up — exactly one art pixel, edge to edge
+  only (above). The 1-screen-pixel version is gone.
+- **W5-2 Raised shadow:** **(A) follows the sprite**, 2 art pixels down-right (your final ruling).
 
 ## What to look at (the eye-check list)
 
@@ -76,6 +98,10 @@ whether the shadow rises with the sprite. Pictures: `shadow_dragged_and_loot_4x.
 7. **The landing bounce** when you put a Token down still drops and rebounds, but no longer
    flashes a shadow.
 8. **Animated heroes and enemies**: their outline follows every animation frame.
+9. **The outline's shape** (follow-up): one art pixel thick, square to the art's own pixels, no
+   pixels hanging off the corners (`outline_v2_*`).
+10. **Count rings glide** (follow-up): watch a worked Token's gold charges ring tick down, and a
+    spawner's green ring as it fills. Each step should slide, not snap.
 
 ## How to try it yourself
 
@@ -86,22 +112,22 @@ whether the shadow rises with the sprite. Pictures: `shadow_dragged_and_loot_4x.
 3. **Your own game:** open the address it prints (usually `http://localhost:5173/`) and play:
    hover Tokens, pick one up, watch working heroes, collect loot.
 4. **The busy board** (does not touch your saves): `http://localhost:5173/?stress=realistic`.
-5. **Switch the two choices live:** open the **Mat Tuner** (developer panel), group **Look**:
-   - **Outline thickness** — left: 1 screen pixel, right: 1 art pixel;
-   - **Raised shadow** — left: follows the sprite, right: stays on the ground.
-   They change the look only, never the game. ⚠ A stress board resets the Mat Tuner for its tab,
-   so switch them after the board has loaded.
-6. To compare with Wave 4, ask the director to switch to `draw/wave4` and repeat.
+5. To compare with Wave 4, ask the director to switch to `draw/wave4` and repeat.
 
 ## The pictures (`wave5_look/`)
 
-Taken in a hidden test browser at 2560 × 1440, where the board's sprites are drawn at 2× (the size
+Taken in a hidden test browser at 2560 × 1440, where a full-size Token is drawn at 2× (the size
 most players see). **Real game Tokens** (64-pixel art: oak tree, campfire, minecart, coast,
-copper pickaxe, copper ore), placed on the quiet test board with one hero working the tree.
+copper pickaxe, copper ore, the cow), placed on the quiet test board with one hero working the
+tree. ⚠ Correction to the first version of this note: the campfire, oak tree and minecart are
+**small** Tokens, drawn at half that (one art pixel = one screen pixel); the hero and the cow are
+drawn at 2×. That is why the new outline is one screen pixel on the campfire and two on the hero.
 
 | File | What it is |
 |---|---|
-| `compare_1x.png` | **Start here.** Actual size. Rows: worked, hovered, alert, resting, dragged, floating loot. Columns: today (Wave 4), outline 1 screen px, outline 1 art px |
+| `outline_v2_compare_1x.png`, `outline_v2_compare_4x.png` | **Start here (follow-up).** Before (the first outline) against after (one art pixel, edge to edge only): worked tree and hero, hovered campfire, alerted minecart, the cow (enemy sheet), and the hero alone |
+| `outline_v2_old_*`, `outline_v2_new_*` (`_1x`, `_4x`) | Each of those subjects on its own, before and after |
+| `compare_1x.png` | *First version (superseded by the follow-up).* Actual size. Rows: worked, hovered, alert, resting, dragged, floating loot. Columns: today (Wave 4), outline 1 screen px, outline 1 art px |
 | `compare_4x.png` | The same (first four rows), enlarged 4× with every pixel kept square |
 | `shadow_dragged_and_loot_4x.png`, `_1x.png` | Choice W5-2: today, shadow follows the sprite, shadow stays on the ground |
 | `stress_board_4x.png` | The same three columns on the busy test board (its test Tokens wear small 32-pixel icons, so "1 art px" is 4 screen px there) |
@@ -119,6 +145,9 @@ Tokens themselves do not move.
 | `e526933` | Every sprite a Token can wear gets outlines (not just the tokens folder) |
 | `ab437a4` | Sprites drop the soft shadow filter; hard shadow in the hand and on loot; outline layers; the two Mat Tuner rows |
 | `28f24a4` | Outlines replace the glow and the hover brightening; selection outlines; the landing bounce loses its shadow |
+| `1f45f14` | Follow-up: the outline is one art pixel, edge to edge only (4-connected), scaled with the sprite; the thickness setting goes |
+| `094eecf` | Follow-up: the raised shadow always follows the sprite; its setting goes |
+| `c41665e` | Follow-up: the charges and spawner count rings glide (a CSS transition, about 0.8 s) |
 
 ## The measurements in full (for the director)
 
@@ -161,6 +190,23 @@ bouncing "!" alert icons' glows (`TokenEventAlert.jsx`, `TokenBadges.jsx`).
 skipped — Wave 4's 3919 plus 42 new. **Build:** `npx vite build` passes from an empty generated
 folder (721 sprites drawn in 12.7 s), and `dist/_gen/sprite-fx/` holds the 11,116 images and the
 manifest (~4 MB).
+
+### After the follow-up (2026-10-01, afternoon)
+
+- **Engine:** `npm run bench -- --compare` → **same work**, S1–S7. The first run flagged one
+  timing (S4 `refusedWorst` ×1.40, a single worst-case sample); no engine file changed since
+  `120b077`, and the rerun was clean (×1.04, no regression).
+- **Tests:** 1 failed (the same AssetManager "every sprite exists on disk") | 3968 passed | 27
+  skipped. New: the generator's ring is checked pixel by pixel against a brute-force
+  edge-to-edge reference, with no ring pixel only diagonal to the art and every ring pixel one
+  image pixel per art pixel (`SpriteFxGenerator.test.js`); the ring glide (`RingGlide.test.js`);
+  the Look rows gone (`SpriteFxLook.test.js`).
+- **Build:** `npx vite build` passes; `dist/_gen/sprite-fx/` now holds 2,800 images (one outline
+  per colour instead of five) and the manifest, ~4.2 MB.
+- **Ring glide checked in a real (headless) browser:** a charges ring's offset went 0 → 59 → 75 →
+  78.3 → 78.5 at 0.05 / 0.2 / 0.4 / 0.6 / 1.0 s — a smooth ease-out over 0.8 s.
+- **Frame rate not re-measured:** the follow-up draws the same layers (one picture per outlined
+  sprite, still no filters); the glide runs only on a ring whose value just changed.
 
 ## Noticed, not changed (outside this wave)
 
