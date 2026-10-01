@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { RESTING_SHADOW } from '../base/TokenSprite.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -71,14 +71,35 @@ export const AnimatedEnemySprite = ({
     frameMs = 125,
     className
 }) => {
-    const [frame, setFrame] = useState(0);
     const [facing, setFacing] = useState(FACING.LEFT);
     const turnTimer = useRef(null);
+
+    // ⭐ The frame is written to the element, not kept in React state
+    // (CR3-301, R6 rule 4): `background-position` is set directly on each
+    // step, so an animating enemy costs no React commits. `frameRef` keeps
+    // counting across a change of cycle, as the state it replaced did.
+    const artRef = useRef(null);
+    const frameRef = useRef(0);
+    const paintRef = useRef(null);
+    paintRef.current = () => {
+        const el = artRef.current;
+        if (!el) return;
+        const frame = frameRef.current;
+        const row = (heroId ? ATTACK_ROW : IDLE_ROW) + Math.floor(frame / COLS);
+        const col = frame % COLS;
+        el.style.backgroundPosition = `-${col * size}px -${row * size}px`;
+    };
+
+    // The cycle (fought or not) and the cell size show at once.
+    useLayoutEffect(() => { paintRef.current(); }, [heroId, size]);
 
     // Frame advance — a local clock, unrelated to the game's own tick,
     // exactly like AnimatedHeroSprite's. 8 frames either cycle.
     useEffect(() => {
-        const id = setInterval(() => setFrame(f => (f + 1) % 8), frameMs);
+        const id = setInterval(() => {
+            frameRef.current = (frameRef.current + 1) % 8;
+            paintRef.current();
+        }, frameMs);
         return () => clearInterval(id);
     }, [frameMs]);
 
@@ -113,9 +134,6 @@ export const AnimatedEnemySprite = ({
         if (walkFacing === FACING.LEFT || walkFacing === FACING.RIGHT) setFacing(walkFacing);
     }, [walkFacing, heroId]);
 
-    const row = (heroId ? ATTACK_ROW : IDLE_ROW) + Math.floor(frame / COLS);
-    const col = frame % COLS;
-
     return (
         <div
             className={cn('pointer-events-none select-none', className)}
@@ -127,13 +145,14 @@ export const AnimatedEnemySprite = ({
                 too, and a CSS animation on the same element would override this
                 inline flip for its 380ms, every time a fought or freshly-turned
                 enemy is re-placed. */}
+            {/* `background-position` (the frame) is written by `paintRef`, not here. */}
             <div
+                ref={artRef}
                 className="w-full h-full"
                 style={{
                     backgroundImage: `url(${src})`,
                     backgroundRepeat: 'no-repeat',
                     backgroundSize: `${size * COLS}px ${size * COLS}px`,
-                    backgroundPosition: `-${col * size}px -${row * size}px`,
                     imageRendering: 'pixelated',
                     filter: RESTING_SHADOW,
                     transform: facing === FACING.RIGHT ? 'scaleX(-1)' : 'none'
