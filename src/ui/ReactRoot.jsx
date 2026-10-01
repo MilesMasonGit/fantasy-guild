@@ -10,6 +10,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { EngineProvider } from './context/EngineContext.jsx';
 import { DeckDndProvider } from './dnd/DndKit.jsx';
 import { ViewportProvider } from './context/ViewportContext.jsx';
+import { setMatBankLocked } from './hooks/useMatBankLock.js';
 
 // Hooks
 import { useUIModals } from './hooks/useUIModals.js';
@@ -206,6 +207,12 @@ export const ReactRoot = ({ engine }) => {
     const [selectedUpgradeId, setSelectedUpgradeId] = React.useState('roster_size');
     const isGuildView = ui.fullscreen.view === 'guild';
     const isBankOpen = ui.drawer.panes.includes('bank');
+
+    // CR3-402 (owner ruling): while the Bank is open the mat is not
+    // interactive at all. `useMatBankLock` is the one place that reaches
+    // outside React (the drag sensor) to enforce it, so this is its only
+    // writer, kept in step with the Bank's own open/closed state.
+    React.useEffect(() => { setMatBankLocked(isBankOpen); }, [isBankOpen]);
 
     const handleOpenGuildHall = React.useCallback(() => {
         ui.fullscreen.open('guild');

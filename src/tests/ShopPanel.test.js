@@ -12,8 +12,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { DeckDndProvider, DeckDndContext } from '../ui/dnd/DndKit.jsx';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DeckDndProvider, DeckDndContext, DragSurfaceContext } from '../ui/dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../ui/dnd/dragConstants.js';
 import { matAccepts } from '../ui/components/board/Board.jsx';
 import { useUIModals } from '../ui/hooks/useUIModals.js';
 
@@ -65,9 +65,13 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); resetMatTuning(); });
 
-/** The drawer inside a drag system, optionally with a drag in the hand. */
-function mountDrawer({ isOpen = true, carrying = null } = {}) {
-    const inner = h(ShopDrawer, { isOpen, onClose: () => {} });
+/** The drawer inside a drag system, optionally with a drag in the hand and
+ *  over a given surface (CR3-402: the lip/open state now depends on it). */
+function mountDrawer({ isOpen = true, carrying = null, surface = undefined } = {}) {
+    let inner = h(ShopDrawer, { isOpen, onClose: () => {} });
+    if (surface !== undefined) {
+        inner = h(DragSurfaceContext.Provider, { value: surface }, inner);
+    }
     const withDrag = carrying
         ? h(DeckDndContext.Provider, { value: { activePayload: carrying, isDragging: true } }, inner)
         : inner;
@@ -121,6 +125,34 @@ describe('the Shop drawer (B4)', () => {
         expect(shopDrawerTransform('open')).toBe('translateX(0)');
         expect(shopDrawerTransform('lip')).toBe(`translateX(calc(-100% + ${SHOP_LIP_PX}px))`);
         expect(shopDrawerTransform('closed')).toBe('translateX(-100%)');
+    });
+
+    describe('⭐ the slide tracks WHERE the row is carried, not just that it is (CR3-402)', () => {
+        const shopDrag = { kind: DRAG_KIND.TOKEN, ...shopRowPayload('fixture_sp_forest') };
+
+        it('is a lip over the playmat, and open again back over the drawer', () => {
+            expect(shopDrawerState(true, shopDrag, DND_SURFACE.BOARD)).toBe('lip');
+            expect(shopDrawerState(true, shopDrag, DND_SURFACE.DRAWER)).toBe('open');
+        });
+
+        it('defaults to the old always-a-lip behaviour when no surface is tracked', () => {
+            expect(shopDrawerState(true, shopDrag)).toBe('lip');
+        });
+
+        it('a non-Shop payload never slides the drawer, whatever the surface', () => {
+            const matDrag = { kind: DRAG_KIND.TOKEN, typeId: 'x', from: { instanceId: 't1' } };
+            expect(shopDrawerState(true, matDrag, DND_SURFACE.BOARD)).toBe('open');
+            expect(shopDrawerState(true, matDrag, DND_SURFACE.DRAWER)).toBe('open');
+        });
+
+        it('mounted: slides to the lip over the board, and reopens back over the drawer', () => {
+            const overBoard = mountDrawer({ carrying: shopDrag, surface: DND_SURFACE.BOARD });
+            expect(overBoard.container.querySelector('[data-shop-drawer]').getAttribute('data-shop-drawer-state')).toBe('lip');
+            cleanup();
+
+            const overDrawer = mountDrawer({ carrying: shopDrag, surface: DND_SURFACE.DRAWER });
+            expect(overDrawer.container.querySelector('[data-shop-drawer]').getAttribute('data-shop-drawer-state')).toBe('open');
+        });
     });
 
     it('draws open, a third of the screen, anchored left', () => {

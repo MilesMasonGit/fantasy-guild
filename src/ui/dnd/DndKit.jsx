@@ -147,8 +147,20 @@ export const useActiveDrag = () => React.useContext(DeckDndContext);
  */
 export const DragPointerContext = React.createContext(null);
 export const useDragPointer = () => React.useContext(DragPointerContext);
+
+/**
+ * Which big region ('board' | 'drawer' | 'miniboard' | null) the pointer is
+ * over while a drag is live — the same `surface` state that drives the
+ * ghost's bloom, now readable by a drawer that needs to react to it too
+ * (the Shop's slide-aside, CR3-402). Changes only when the pointer crosses a
+ * region boundary, far less often than every frame, so a dedicated context
+ * for it is cheap — unlike `DragPointerContext` above.
+ */
+export const DragSurfaceContext = React.createContext(undefined);
+export const useDragSurface = () => React.useContext(DragSurfaceContext);
 import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
 import { isDisallowMode } from '../hooks/useDisallowMode.js';
+import { isMatBankLocked } from '../hooks/useMatBankLock.js';
 
 export class AlphaPointerSensor extends PointerSensor {
     static activators = [
@@ -163,7 +175,11 @@ export class AlphaPointerSensor extends PointerSensor {
                 // `data-board-origin` box. The dock and the Bank still drag
                 // (owner, 2026-09-27: mat only). A refused press stays a plain
                 // click, which the mode turns into a flip.
-                if (isDisallowMode() && event.target?.closest?.('[data-board-origin]')) return false;
+                //
+                // CR3-402 (owner ruling): while the Bank is open the mat is
+                // not interactive at all, for the same reason and the same
+                // box — nothing on the mat may even start a drag.
+                if ((isDisallowMode() || isMatBankLocked()) && event.target?.closest?.('[data-board-origin]')) return false;
                 const target = event.target;
                 const alphaEl = target?.closest?.('[data-alpha-test]');
                 if (alphaEl) {
@@ -370,6 +386,7 @@ export const DeckDndProvider = ({ children }) => {
 
     return (
         <DeckDndContext.Provider value={activeValue}>
+            <DragSurfaceContext.Provider value={activePayload ? surface : null}>
             <DragPointerContext.Provider value={dragPointer}>
             <DndContext
                 sensors={sensors}
@@ -397,6 +414,7 @@ export const DeckDndProvider = ({ children }) => {
                 </DragOverlay>
             </DndContext>
             </DragPointerContext.Provider>
+            </DragSurfaceContext.Provider>
         </DeckDndContext.Provider>
     );
 };
