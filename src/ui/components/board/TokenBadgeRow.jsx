@@ -13,6 +13,9 @@ import { onFrame } from './frameClock.js';
 
 const NO_MISSING = Object.freeze({ type: null, items: [] });
 
+/** How many visible steps the cycle ring sweeps in one cycle (CR3-351): 0.9° each. */
+const RING_STEPS = 400;
+
 /**
  * ⭐ **TokenBadgeRow — a Token's ring row** (TL-22, B1.2). It replaced the
  * progress bar (`TokenProgressBar`, TP-2 / TP-4) and the hover charge chip.
@@ -103,9 +106,29 @@ export const TokenBadgeRow = ({
             offClock = null;
         };
 
+        // ⭐ CR3-351 (R6 rule 3): write the ring only when a pixel would move.
+        // The sweep is quantised to RING_STEPS a cycle (0.9° — well under a
+        // pixel at any mat size), so a 16 s cycle writes ~25 times a second
+        // instead of once every display frame. The seconds and a remounted
+        // ring always write.
+        let lastStep = null;
+        let lastText = null;
+        let lastRoot = null;
         const paint = () => {
+            const root = cycleRef.current;
             const f = cycleTime ? lastElapsed / cycleTime : 0;
-            paintRing(cycleRef.current, f, cycleSecondsText(lastElapsed, cycleTime));
+            const text = cycleSecondsText(lastElapsed, cycleTime);
+            const step = Math.round(Math.max(0, Math.min(1, f)) * RING_STEPS);
+            if (root === lastRoot && step === lastStep && text === lastText) return;
+            lastRoot = root;
+            lastStep = step;
+            lastText = text;
+            paintRing(root, f, text);
+        };
+        /** Any other write to the ring: the next sweep frame must write too. */
+        const paintOnce = (f, text) => {
+            lastRoot = null;
+            paintRing(cycleRef.current, f, text);
         };
 
         const updateFrame = () => {
@@ -146,7 +169,7 @@ export const TokenBadgeRow = ({
             if (cycleTime) {
                 paint();
             } else {
-                paintRing(cycleRef.current, (p?.percent || 0) / 100, '');
+                paintOnce((p?.percent || 0) / 100, '');
             }
             if (!active && cycleTime && liveRef.current.hasHero) {
                 active = true;
@@ -179,7 +202,7 @@ export const TokenBadgeRow = ({
             if (blockedNow) {
                 // Frozen where it was; the number goes.
                 stop();
-                paintRing(cycleRef.current, cycleTime ? lastElapsed / cycleTime : 0, '');
+                paintOnce(cycleTime ? lastElapsed / cycleTime : 0, '');
             }
         };
 
