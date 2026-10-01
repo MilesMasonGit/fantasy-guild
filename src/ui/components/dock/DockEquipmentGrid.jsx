@@ -9,6 +9,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { SLOT_ORDER, categoryOfItem, getCategoryInfo, CATEGORY_KINDS } from '../../../config/registries/equipmentConstants.js';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { equipOrAnnounce } from './dockEquip.js';
 
 /**
  * DockEquipmentGrid — the pinned card's loadout grid: NINE flexible slots in
@@ -105,9 +106,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
         surface: DND_SURFACE.DRAWER,
         accepts: p => p.kind === DRAG_KIND.ITEM,
         onDrop: p => {
-            if (p.itemId) {
-                engine.EquipmentManager.equipItem(heroId, p.itemId, slot);
-            }
+            if (p.itemId) return equipOrAnnounce(engine, heroId, p.itemId, slot);
         }
     });
 

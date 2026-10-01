@@ -13,6 +13,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Pencil, Backpack, Heart } from 'lucide-react';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
+import { equipOrAnnounce } from './dockEquip.js';
 import { dockStatusLine } from '../board/flagText.js';
 
 /** The status line's colour: working green, idle at a flag stone, in the Guild blue. */
@@ -152,9 +153,9 @@ export const HeroDockTab = ({
             if (isRecallDrop(p)) {
                 recallFromDrop(engine.BoardPlacement, p);
             } else if (p.kind === DRAG_KIND.ITEM && p.itemId) {
+                if (!equipOrAnnounce(engine, heroId, p.itemId)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
-                engine.EquipmentManager.equipItem(heroId, p.itemId);
                 EventBus.publish('inspect_hero', { heroId });
             } else if (p.kind === DRAG_KIND.HERO && p.heroId && p.heroId !== heroId) {
                 onReorder?.(p.heroId, heroId);

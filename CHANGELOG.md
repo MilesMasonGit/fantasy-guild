@@ -12,6 +12,9 @@ project's first tagged baseline — everything before it was untagged developmen
   expected. Clicking the playmat (or anywhere else outside) still closes it, as intended.
 - **The Guild Hall upgrade panel's Close button actually closes it now (CR3-451).** It used to
   clear the panel and instantly put the same upgrade right back.
+- **A refused equip no longer pretends to succeed (CR3-405).** Dropping an item on a hero who
+  already carries it, has no free slot, or is out of stock now sends the item back where it came
+  from, plays no equip sound, and shows a short message saying why.
 - **New ore vein art.** Copper, coal, iron, gold, silver, mythril, adamantine and darkmetal veins,
   and the Stone Outcrop, show their new vein pictures. New foundation, stone and plank art is
   ready to pick in the CMS.
