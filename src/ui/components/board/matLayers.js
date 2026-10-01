@@ -98,13 +98,27 @@ export function matStackOrder({ tokens = [], flags = [], workedIds = [], hovered
 
     resting.sort(backToFront);
     busy.sort(backToFront);
-    const stack = [...resting, ...busy, ...(hovered ? [hovered] : [])];
+
+    /**
+     * ⭐ **The worked band and the hovered Token have reserved ranks** (CR3-354).
+     * The range holds `TOKEN_SPAN + 1` ranks. Past that (a busy mat: ~225
+     * Tokens and flags) the ranks clamp — and before this they clamped at the
+     * TOP, so every worked Token and the hovered one tied with ~95 resting
+     * Tokens at one z and the page order decided who was in front. Now only
+     * the resting band clamps, below ranks kept free for the worked Tokens
+     * and the hovered one, which therefore always draw (and take the pointer)
+     * in front. Under the cap every rank is exactly what it was.
+     */
+    const reserved = busy.length + (hovered ? 1 : 0);
+    const restCap = Math.max(0, TOKEN_SPAN - reserved);
+    const base = Math.min(resting.length, restCap + 1);
 
     const tokenZOut = new Map();
     const flagZOut = new Map();
-    stack.forEach((e, rank) => {
-        (e.kind === 'flag' ? flagZOut : tokenZOut).set(e.id, tokenZ(rank));
-    });
+    const put = (e, rank) => (e.kind === 'flag' ? flagZOut : tokenZOut).set(e.id, tokenZ(rank));
+    resting.forEach((e, i) => put(e, Math.min(i, restCap)));
+    busy.forEach((e, j) => put(e, base + j));
+    if (hovered) put(hovered, base + busy.length);
     return { tokenZ: tokenZOut, flagZ: flagZOut };
 }
 

@@ -111,6 +111,40 @@ describe('matStackOrder — the rule', () => {
     });
 });
 
+describe('⭐ CR3-354: a busy mat (S3 size) keeps worked and hovered Tokens in front', () => {
+    // R6's S3 probe: 314 Tokens and 2 flags gave only 220 distinct z values,
+    // with all 7 worked Tokens tied with 95 resting ones at the top.
+    const tokens = Array.from({ length: 310 }, (_, i) => ({ id: `t${i}`, y: i * 3, placedAt: i }));
+    const flags = [{ heroId: 'h1', y: 400 }, { heroId: 'h2', y: 900 }];
+    const workedIds = ['t5', 't40', 't120', 't200', 't250', 't290', 't305'];
+    const { tokenZ: tz, flagZ: fz } = matStackOrder({ tokens, flags, workedIds, hoveredId: 't300' });
+    const restingZ = [...tokens.filter(t => !workedIds.includes(t.id) && t.id !== 't300').map(t => tz.get(t.id)), ...fz.values()];
+
+    it('every worked Token is above every resting Token and flag, each at its own z', () => {
+        const worked = workedIds.map(id => tz.get(id));
+        expect(Math.min(...worked)).toBeGreaterThan(Math.max(...restingZ) + 2);
+        expect(new Set(worked).size).toBe(workedIds.length);
+        // Among themselves, the usual back-to-front rule.
+        expect([...worked].sort((a, b) => a - b)).toEqual(worked);
+    });
+
+    it('the hovered Token is above them all, and the whole stack stays below the walking heroes', () => {
+        const top = tz.get('t300');
+        expect(top).toBeGreaterThan(Math.max(...workedIds.map(id => tz.get(id))));
+        expect(top + 2).toBeLessThan(MAT_Z.WAITING_HERO);
+    });
+
+    it('under the cap, every z is exactly what it was (dense ranks)', () => {
+        const small = Array.from({ length: 50 }, (_, i) => ({ id: `s${i}`, y: i }));
+        const { tokenZ: sz } = matStackOrder({ tokens: small, workedIds: ['s3'], hoveredId: 's7' });
+        const ranksOf = (id) => (sz.get(id) - MAT_Z.TOKEN_BASE) / 3;
+        expect(ranksOf('s0')).toBe(0);
+        expect(ranksOf('s49')).toBe(47);   // 48 resting: 0…47
+        expect(ranksOf('s3')).toBe(48);    // then the worked one
+        expect(ranksOf('s7')).toBe(49);    // then the hovered one
+    });
+});
+
 describe('heroZ — where each hero goes', () => {
     const order = matStackOrder({
         tokens: [{ id: 'tok', y: 500 }, { id: 'other', y: 900 }],
