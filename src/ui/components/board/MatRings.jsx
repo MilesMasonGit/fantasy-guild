@@ -47,20 +47,51 @@ function useNearRadius() {
  * loose wherever it is let go. Shared by the Near ring here and the flag rings
  * in `FlagLayer` (a flag's ring shows while a dragged Token would land in it).
  */
+// CR3-401: `MatRings` and `FlagLayer` both call this with the same `matRef`,
+// each frame, while a Token is in the hand — so the landing used to be worked
+// out twice (a `pointerToMat` plus a `MatPlacement.findSpot` walk) for the
+// exact same answer. `pointer` is a fresh object only once per animation
+// frame (`DndKit.jsx`'s `setDragPointer`), and `activePayload` only changes at
+// drag start/end, so caching on their identity — plus the mat element's, in
+// case a caller passed a different `matRef` — answers the second call inside
+// the same frame for free and still recomputes the moment anything real
+// changes.
+let cachedInputs = null;
+let cachedResult = null;
+
 export function useTokenDragLanding(matRef) {
     const { activePayload, isDragging } = useActiveDrag();
     const pointer = useDragPointer();
-    if (!isDragging || activePayload?.kind !== DRAG_KIND.TOKEN || !pointer || !matRef?.current) return null;
+    const matEl = matRef?.current || null;
 
-    const point = pointerToMat(pointer, matRef.current.getBoundingClientRect());
-    if (!point) return null;
+    if (!isDragging || activePayload?.kind !== DRAG_KIND.TOKEN || !pointer || !matEl) {
+        cachedInputs = null;
+        return null;
+    }
 
-    // Where this very Token would land, itself excluded so a Token being
-    // moved does not block its own preview.
-    const spot = MatPlacement.findSpot(activePayload.typeId, clampToMat(point), {
-        excludeId: activePayload.from?.instanceId || null
-    });
-    return spot ? { x: spot.x, y: spot.y, typeId: activePayload.typeId } : null;
+    if (
+        cachedInputs &&
+        cachedInputs.pointer === pointer &&
+        cachedInputs.activePayload === activePayload &&
+        cachedInputs.matEl === matEl
+    ) {
+        return cachedResult;
+    }
+
+    const point = pointerToMat(pointer, matEl.getBoundingClientRect());
+    let result = null;
+    if (point) {
+        // Where this very Token would land, itself excluded so a Token being
+        // moved does not block its own preview.
+        const spot = MatPlacement.findSpot(activePayload.typeId, clampToMat(point), {
+            excludeId: activePayload.from?.instanceId || null
+        });
+        result = spot ? { x: spot.x, y: spot.y, typeId: activePayload.typeId } : null;
+    }
+
+    cachedInputs = { pointer, activePayload, matEl };
+    cachedResult = result;
+    return result;
 }
 
 export const MatRings = React.memo(function MatRings({ hoveredCentre = null, matRef = null }) {
