@@ -15,6 +15,10 @@ project's first tagged baseline — everything before it was untagged developmen
 - **A refused equip no longer pretends to succeed (CR3-405).** Dropping an item on a hero who
   already carries it, has no free slot, or is out of stock now sends the item back where it came
   from, plays no equip sound, and shows a short message saying why.
+- **A crash on one part of the screen no longer blacks out the whole game (CR3-203).** The
+  playmat, the hero dock, the Bank panel, and the Bank and Shop drawers each now catch their own
+  render errors and show a small "Something went wrong here" panel with a Reload button, while
+  everything else keeps working.
 - **New ore vein art.** Copper, coal, iron, gold, silver, mythril, adamantine and darkmetal veins,
   and the Stone Outcrop, show their new vein pictures. New foundation, stone and plank art is
   ready to pick in the CMS.
