@@ -46,6 +46,13 @@ export const MAT_Z = Object.freeze({
 /** How many Tokens and flags can be sorted before the range would reach the layer above. */
 export const TOKEN_SPAN = Math.floor((MAT_Z.WAITING_HERO - MAT_Z.TOKEN_BASE) / 3) - 1;
 
+/**
+ * Ranks kept for worked Tokens when the mat is too busy for every rank to be
+ * distinct (CR3-354). Only heroes work Tokens and the roster holds 8; this
+ * leaves twice that. Past it, worked Tokens tie among themselves only.
+ */
+export const WORKED_BAND = 16;
+
 /** The z of the `rank`-th Token or flag from the back. Its hero is +1, its badges +2. */
 export function tokenZ(rank) {
     return MAT_Z.TOKEN_BASE + Math.min(rank, TOKEN_SPAN) * 3;
@@ -109,16 +116,23 @@ export function matStackOrder({ tokens = [], flags = [], workedIds = [], hovered
      * and the hovered one, which therefore always draw (and take the pointer)
      * in front. Under the cap every rank is exactly what it was.
      */
-    const reserved = busy.length + (hovered ? 1 : 0);
-    const restCap = Math.max(0, TOKEN_SPAN - reserved);
-    const base = Math.min(resting.length, restCap + 1);
-
     const tokenZOut = new Map();
     const flagZOut = new Map();
     const put = (e, rank) => (e.kind === 'flag' ? flagZOut : tokenZOut).set(e.id, tokenZ(rank));
-    resting.forEach((e, i) => put(e, Math.min(i, restCap)));
-    busy.forEach((e, j) => put(e, base + j));
-    if (hovered) put(hovered, base + busy.length);
+    const total = resting.length + busy.length + (hovered ? 1 : 0);
+    if (total <= TOKEN_SPAN + 1) {
+        // Room for everyone: dense ranks, back to front, exactly as always.
+        [...resting, ...busy, ...(hovered ? [hovered] : [])].forEach(put);
+    } else {
+        // ⚠️ The reserve is a FIXED size, not "however many are worked now":
+        // a reserve that grew and shrank with the worked count moved the
+        // clamp, and every clamped resting Token (~90 at S3) was re-ranked
+        // and redrawn each time a hero started or stopped work.
+        const restCap = TOKEN_SPAN - WORKED_BAND - 1;
+        resting.forEach((e, i) => put(e, Math.min(i, restCap)));
+        busy.forEach((e, j) => put(e, Math.min(restCap + 1 + j, TOKEN_SPAN - 1)));
+        if (hovered) put(hovered, TOKEN_SPAN);
+    }
     return { tokenZ: tokenZOut, flagZ: flagZOut };
 }
 

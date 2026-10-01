@@ -134,6 +134,15 @@ describe('⭐ CR3-354: a busy mat (S3 size) keeps worked and hovered Tokens in f
         expect(top + 2).toBeLessThan(MAT_Z.WAITING_HERO);
     });
 
+    it('a hero starting work does not re-rank the Tokens tied at the clamp (no mass redraw)', () => {
+        const more = matStackOrder({ tokens, flags, workedIds: [...workedIds, 't10'], hoveredId: 't300' });
+        const clamped = tokens.filter(t => tz.get(t.id) === Math.max(...restingZ) && t.id !== 't10');
+        expect(clamped.length).toBeGreaterThan(50);
+        // Only the one at the clamp's edge steps down into the rank t10 left.
+        const moved = clamped.filter(t => more.tokenZ.get(t.id) !== tz.get(t.id));
+        expect(moved.length).toBeLessThanOrEqual(1);
+    });
+
     it('under the cap, every z is exactly what it was (dense ranks)', () => {
         const small = Array.from({ length: 50 }, (_, i) => ({ id: `s${i}`, y: i }));
         const { tokenZ: sz } = matStackOrder({ tokens: small, workedIds: ['s3'], hoveredId: 's7' });
