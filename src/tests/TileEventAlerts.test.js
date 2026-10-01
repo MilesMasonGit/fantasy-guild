@@ -145,6 +145,39 @@ describe('On-Board Tile Event Alerts', () => {
         expect(itemAlert.message).toContain('Out of item:');
     });
 
+    /**
+     * CR3-005 (owner, Z §11 Q12: "say it once"): a stuck station announces its
+     * problem once, and again only if it clears and comes back. It used to
+     * re-publish every tick (ten times a second) while the red mark, which
+     * already shows the problem, stayed up.
+     */
+    it('a stalled station says it once, and again only after it clears and stalls again (CR3-005)', () => {
+        const events = [];
+        EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => { if (e.type === 'out_of_item') events.push(e); });
+
+        const consumer = BoardState.createTokenInstance('fixture_consumer');
+        put(8, consumer);
+        staff(8, 'hero_1');
+
+        for (let i = 0; i < 10; i++) BoardRunner.tick(100);
+        expect(events.length).toBe(1);
+        expect(consumer.alert).toBe('inputs');
+
+        // Give it the input: the mark clears and nothing new is said.
+        InventoryManager.addItem('fixture_oak_wood', 2);
+        BoardRunner.tick(100);
+        expect(consumer.alert).toBeNull();
+        expect(events.length).toBe(1);
+
+        // Take it away again (or let the cycle use it up): one more, once.
+        if (InventoryManager.getItemCount('fixture_oak_wood') > 0) {
+            InventoryManager.removeItem('fixture_oak_wood', InventoryManager.getItemCount('fixture_oak_wood'));
+        }
+        for (let i = 0; i < 250; i++) BoardRunner.tick(100);
+        expect(consumer.alert).toBe('inputs');
+        expect(events.length).toBe(2);
+    });
+
     it('emits Yellow alert when a station lacks nearby token recipe', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
