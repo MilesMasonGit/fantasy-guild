@@ -180,6 +180,33 @@ describe('⭐ a tokens() list can be walked while Tokens are removed (CR3-001)',
         expect(steps).toBe(2);
         expect(BoardState.tokens()).toHaveLength(3);
     });
+
+    it('⭐ is the SAME array across a setTokenPoint, and a new one after an add or a remove (CR3-001)', () => {
+        const a = at('fixture_producer', P(0, 0));
+        const before = BoardState.tokens();
+
+        // A move changes nothing about membership or arrival order: the cache
+        // must not rebuild, or every enemy step (`setTokenPoint`) would defeat
+        // the whole point of caching.
+        BoardState.setTokenPoint(a.id, P(1, 1).x, P(1, 1).y);
+        expect(BoardState.tokens()).toBe(before);
+
+        // An add changes membership: a new array, holding the new Token too.
+        at('fixture_producer', P(2, 0));
+        const afterAdd = BoardState.tokens();
+        expect(afterAdd).not.toBe(before);
+        expect(afterAdd).toHaveLength(2);
+
+        // A remove changes membership too: another new array.
+        BoardState.removeToken(a.id);
+        const afterRemove = BoardState.tokens();
+        expect(afterRemove).not.toBe(afterAdd);
+        expect(afterRemove).toHaveLength(1);
+
+        // Shared and frozen (R2 §3.2): nothing may mutate the handed-out list.
+        expect(Object.isFrozen(afterRemove)).toBe(true);
+        expect(() => { afterRemove.push({}); }).toThrow();
+    });
 });
 
 // ---------------------------------------------------------------------------

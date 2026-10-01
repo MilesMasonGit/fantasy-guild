@@ -128,6 +128,34 @@ function hasCannot(typeId) {
 }
 
 /**
+ * Neighbours too many to scan one by one (round 3 review CR3-003, R2 §4.3
+ * item 3a) are bucketed into square cells **as wide as the widest gap any of
+ * them could have** (`largestGap`, already the bound used to prefilter them
+ * in the first place: no real neighbour's own gap can exceed it). A neighbour
+ * closer than its own gap to `point` is therefore never more than one cell
+ * away on either axis, so {@link clearOf} only has to look at the 3×3 cells
+ * round the candidate's own cell — same answer, far fewer comparisons. Below
+ * the threshold the plain scan is already cheap, so nothing is bucketed.
+ */
+const BUCKET_THRESHOLD = 16;
+
+function bucketKey(x, y, cell) {
+    return `${Math.floor(x / cell)}|${Math.floor(y / cell)}`;
+}
+
+function bucketNeighbours(neighbours, cell) {
+    if (neighbours.length < BUCKET_THRESHOLD || !(cell > 0)) return null;
+    const cells = new Map();
+    for (const n of neighbours) {
+        const key = bucketKey(n.x, n.y, cell);
+        let bucket = cells.get(key);
+        if (!bucket) cells.set(key, bucket = []);
+        bucket.push(n);
+    }
+    return cells;
+}
+
+/**
  * Everything one drop needs to know, worked out **once** before the search
  * starts rather than per candidate.
  *
@@ -159,6 +187,11 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
     const cannotSpan = reach + nearRadius() + LARGEST_ART_RADIUS;
     const cannotSpanSq = cannotSpan * cannotSpan;
 
+    // The mat edge, read once per search rather than once per candidate
+    // (CR3-150, R2 §4.3 item 3b): `insideBounds` below uses this instead of
+    // `insideMat` recomputing `artRadiusOf`/`matW`/`matH` every time.
+    const bounds = { r: artRadiusOf(typeId), w: matW(), h: matH() };
+
     const neighbours = [];
     let cannotMatters = hasCannot(typeId);
 
@@ -173,7 +206,13 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
         if (!cannotMatters && d2 <= cannotSpanSq && hasCannot(other.typeId)) cannotMatters = true;
     }
 
-    return { typeId, neighbours, cannotMatters, plan, excludeId, reach };
+    const buckets = bucketNeighbours(neighbours, largestGap);
+    return { typeId, neighbours, buckets, cell: largestGap, cannotMatters, plan, excludeId, reach, bounds };
+}
+
+/** {@link insideMat}, against bounds already read once for this search. */
+function insideBounds(point, { r, w, h }) {
+    return point.x >= r && point.y >= r && point.x <= w - r && point.y <= h - r;
 }
 
 /**
@@ -188,10 +227,28 @@ export function isClear(typeId, point, excludeId = null) {
 
 /** The hot inner test: `point` against the prefiltered neighbour list. */
 function clearOf(point, ctx) {
-    for (const n of ctx.neighbours) {
-        const dx = point.x - n.x;
-        const dy = point.y - n.y;
-        if (dx * dx + dy * dy < n.gapSq - EPS) return false;
+    if (!ctx.buckets) {
+        for (const n of ctx.neighbours) {
+            const dx = point.x - n.x;
+            const dy = point.y - n.y;
+            if (dx * dx + dy * dy < n.gapSq - EPS) return false;
+        }
+        return true;
+    }
+    // Exact (see `bucketNeighbours`): only the 3×3 cells round the candidate
+    // can hold a neighbour close enough to block it.
+    const cx = Math.floor(point.x / ctx.cell);
+    const cy = Math.floor(point.y / ctx.cell);
+    for (let ix = cx - 1; ix <= cx + 1; ix++) {
+        for (let iy = cy - 1; iy <= cy + 1; iy++) {
+            const bucket = ctx.buckets.get(`${ix}|${iy}`);
+            if (!bucket) continue;
+            for (const n of bucket) {
+                const dx = point.x - n.x;
+                const dy = point.y - n.y;
+                if (dx * dx + dy * dy < n.gapSq - EPS) return false;
+            }
+        }
     }
     return true;
 }
@@ -209,7 +266,7 @@ export function isLegal(typeId, point, options = {}) {
 }
 
 function legalIn(typeId, point, ctx) {
-    if (!insideMat(typeId, point)) return false;
+    if (!insideBounds(point, ctx.bounds)) return false;
     if (!clearOf(point, ctx)) return false;
     if (!ctx.cannotMatters) return true;
 
@@ -372,10 +429,18 @@ export function forceSpot(typeId, point, options = {}) {
  * clamped back onto the mat. Positions are not rounded (see the loop).
  */
 function relax(typeId, at, excludeId, fixedIds) {
+    // Hit radius per body, once (CR3-003, R2 §4.3 item 1), and the overlap
+    // factor read once for this push (`minGap`'s own expression, hoisted —
+    // still read live, so a Mat Tuner change takes effect on the very next
+    // push, just not candidate by candidate within this one).
+    const factor = 1 - matTuning('overlapPct') / 100;
     const bodies = BoardState.tokens()
         .filter(t => t.id !== excludeId && Number.isFinite(t.x) && Number.isFinite(t.y))
-        .map(t => ({ id: t.id, typeId: t.typeId, x: t.x, y: t.y, x0: t.x, y0: t.y, fixed: fixedIds.has(t.id) }));
-    const newcomer = { id: null, typeId, x: at.x, y: at.y, fixed: true };
+        .map(t => ({
+            id: t.id, typeId: t.typeId, x: t.x, y: t.y, x0: t.x, y0: t.y,
+            h: hitRadiusOf(t.typeId), fixed: fixedIds.has(t.id)
+        }));
+    const newcomer = { id: null, typeId, x: at.x, y: at.y, h: hitRadiusOf(typeId), fixed: true };
     bodies.push(newcomer);
 
     for (let pass = 0; pass < PUSH_PASSES; pass++) {
@@ -385,9 +450,13 @@ function relax(typeId, at, excludeId, fixedIds) {
                 const a = bodies[i];
                 const b = bodies[j];
                 if (a.fixed && b.fixed) continue;
-                const gap = minGap(a.typeId, b.typeId);
+                const gap = (a.h + b.h) * factor;
                 const dx = b.x - a.x;
                 const dy = b.y - a.y;
+                // Axis rejection before `hypot` (item 2): if either axis is
+                // already ≥ the gap, the hypot would be too, so the pair is
+                // not overlapping and the original test would `continue` too.
+                if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) continue;
                 const d = Math.hypot(dx, dy);
                 if (d * d >= gap * gap - EPS) continue;
 
@@ -430,7 +499,11 @@ function relax(typeId, at, excludeId, fixedIds) {
             const a = bodies[i];
             const b = bodies[j];
             if (!answerable(a) && !answerable(b)) continue;
-            const gap = minGap(a.typeId, b.typeId);
+            const gap = (a.h + b.h) * factor;
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            // Same axis rejection as the pass loop, before `distanceSq`.
+            if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) continue;
             if (distanceSq(a, b) < gap * gap - EPS) return null;
         }
     }
@@ -451,6 +524,29 @@ function relax(typeId, at, excludeId, fixedIds) {
 }
 
 /**
+ * A ring's unit offsets, `{ cos, sin }` per candidate — the same expression
+ * `candidatesAround` always computed, just worked out once per ring distance
+ * and reused (CR3-150, R2 §4.3 item 3c). A ring's shape depends only on `d`
+ * (and the fixed `RING_ARC`), never on the drop point, so it is identical on
+ * every search and safe to cache for the module's lifetime.
+ */
+const ringTrigCache = new Map();
+
+function ringTrig(d) {
+    let table = ringTrigCache.get(d);
+    if (!table) {
+        const count = Math.ceil(2 * Math.PI * d / RING_ARC);
+        table = new Array(count);
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * Math.PI * 2;
+            table[i] = { cos: Math.cos(angle), sin: Math.sin(angle) };
+        }
+        ringTrigCache.set(d, table);
+    }
+    return table;
+}
+
+/**
  * The points a drop is willing to consider, nearest first: the drop point
  * itself, then rings outward to `reach`.
  *
@@ -460,10 +556,8 @@ function relax(typeId, at, excludeId, fixedIds) {
 function* candidatesAround(point, reach) {
     yield { x: point.x, y: point.y, nudge: 0 };
     for (let d = RING_STEP; d <= reach; d += RING_STEP) {
-        const count = Math.ceil(2 * Math.PI * d / RING_ARC);
-        for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            yield { x: point.x + Math.cos(angle) * d, y: point.y + Math.sin(angle) * d, nudge: d };
+        for (const { cos, sin } of ringTrig(d)) {
+            yield { x: point.x + cos * d, y: point.y + sin * d, nudge: d };
         }
     }
 }
@@ -566,7 +660,7 @@ function whyRefused(typeId, point, options = {}) {
      * rule is precisely what stopped the Token finding a home nearby.
      */
     for (const candidate of candidatesAround(point, ctx.reach)) {
-        if (!insideMat(typeId, candidate) || !clearOf(candidate, ctx)) continue;
+        if (!insideBounds(candidate, ctx.bounds) || !clearOf(candidate, ctx)) continue;
         const verdict = Restrictions.checkPlacement(candidate, typeId, plan);
         if (!verdict.ok) {
             return {

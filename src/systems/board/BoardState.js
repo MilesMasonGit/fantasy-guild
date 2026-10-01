@@ -169,6 +169,30 @@ export function layoutVersion() {
 }
 
 /**
+ * ## The membership version (CR3-001, CR3-047 — round 3 review, R2 §3.4)
+ * A counter bumped only when a Token is **added to or removed from** the mat
+ * (`addToken`, `removeToken`) — never by `setTokenPoint`, whose moves cannot
+ * change which Tokens are on the mat or their arrival order. Kept per `tokens`
+ * object, exactly like {@link layoutVersion}, which also counts moves and so
+ * would rebuild a membership-keyed cache on nearly every tick (walking
+ * enemies bump it almost every tick, R2 §3.1).
+ *
+ * `tokens()` below keys its cache on this; `SpawnerSystem`'s census (CR3-047)
+ * keys its own on the same counter — one counter serves both.
+ */
+const membershipVersions = new WeakMap();
+
+function bumpMembership(b) {
+    membershipVersions.set(b.tokens, (membershipVersions.get(b.tokens) || 0) + 1);
+}
+
+/** `{ tokens, version }` — changes identity or number only when membership does. */
+export function membershipVersion() {
+    const tokensObj = board()?.tokens || null;
+    return { tokens: tokensObj, version: tokensObj ? (membershipVersions.get(tokensObj) || 0) : 0 };
+}
+
+/**
  * After a Token's point changes: a claimed Token keeps its hero (FP-68), and the
  * claim's last-known point follows. **A flag pinned to it moves with it** (B5,
  * "pin follows", FB-45): a pinned flag's point is its Token's centre, so the
@@ -211,6 +235,11 @@ export function addToken(instance, x, y) {
     instance.y = y;
     stampOrder(b, instance);
     b.tokens[instance.id] = instance;
+    // Every call bumps membership (CR3-001 C-9), including a *different*
+    // object replacing the same id above: a cached list holding the old
+    // instance would be stale. Over-bumping on a plain move-through-add
+    // (`placeTokenAt`) is harmless — measured at 0.006 extra rebuilds/tick.
+    bumpMembership(b);
     afterPointChange(b, instance);
     return instance;
 }
@@ -228,6 +257,7 @@ export function removeToken(id) {
     if (!instance) return null;
     delete b.tokens[id];
     bumpLayout(b);
+    bumpMembership(b);
     return instance;
 }
 
@@ -267,12 +297,40 @@ export function getTokenById(id) {
     return board()?.tokens?.[id] || null;
 }
 
-/** Every Token on the mat, in the order they arrived (`placedAt` ascending). */
+/** No Tokens — a frozen, shared empty list for when there is no board. */
+const EMPTY_TOKENS = Object.freeze([]);
+
+/**
+ * ⭐ **The cached Token list (CR3-001, round 3 review R2 §3.4).** Rebuilt only
+ * when membership changes (an add or a remove — never a move), so a tick that
+ * neither adds nor removes anything reuses the same array. **Replaced, never
+ * patched**: a caller mid-iteration when a Token is added or removed keeps
+ * walking its own snapshot, exactly as a fresh `Object.values().sort()` would
+ * have (`BoardTokensWritePath.test.js`, `FreeReaders.test.js`).
+ */
+let tokenListCache = { tokens: null, version: -1, list: EMPTY_TOKENS };
+
+/**
+ * Every Token on the mat, in the order they arrived (`placedAt` ascending).
+ *
+ * ⚠️ **Shared and frozen.** Iterate it, map it, filter it — never mutate it,
+ * and never hand it to a UI selector: the instances inside it move in place
+ * (their `x`/`y` change without the array changing), so a selector that
+ * returned this list itself would deep-compare equal to a stale snapshot and
+ * miss every move (R2 §3.2).
+ */
 export function tokens() {
-    const map = board()?.tokens || {};
-    return Object.values(map)
-        .filter(t => t?.typeId)
-        .sort((a, b) => (a.placedAt ?? 0) - (b.placedAt ?? 0));
+    const map = board()?.tokens || null;
+    if (!map) return EMPTY_TOKENS;
+    const version = membershipVersions.get(map) || 0;
+    if (tokenListCache.tokens === map && tokenListCache.version === version) return tokenListCache.list;
+    const list = Object.freeze(
+        Object.values(map)
+            .filter(t => t?.typeId)
+            .sort((a, b) => (a.placedAt ?? 0) - (b.placedAt ?? 0))
+    );
+    tokenListCache = { tokens: map, version, list };
+    return list;
 }
 
 /** Every Token whose centre is exactly `(x, y)`, in arrival order. */
@@ -554,15 +612,21 @@ export function workerOf(instanceId) {
     return heroId && arrivedAt(heroId, instanceId) ? heroId : null;
 }
 
-/** The instance id of the Token `heroId` works, or null. */
+/**
+ * The instance id of the Token `heroId` works, or null.
+ *
+ * ⭐ **A read, not a write (CR3-158).** This used to also refresh the claim's
+ * last-known point here — harmless, since `afterPointChange` already keeps
+ * every claim current on every move, but a seam documented as a question
+ * (above) silently writing is the kind of thing a future cache or memo over
+ * it would break.
+ */
 export function workTokenOf(heroId) {
     if (!heroId) return null;
     const claim = claimOfHero(heroId);
     if (!claim) return null;
     const instance = getTokenById(claim.instanceId);
     if (!instance) return null;
-    claim.x = instance.x;
-    claim.y = instance.y;
     return arrivedAt(heroId, instance.id) ? instance.id : null;
 }
 
