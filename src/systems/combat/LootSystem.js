@@ -10,6 +10,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
 import { resolveYield } from '../effects/EffectAxes.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Scale a drop quantity by a yield multiplier (Cookout-style buffs) with
@@ -33,7 +34,7 @@ const LootSystem = {
 
     init() {
         if (this.initialized) return;
-        EventBus.subscribe('combat_victory', (data) => this.handleCombatVictory(data));
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, (data) => this.handleCombatVictory(data));
         this.initialized = true;
         logger.info('LootSystem', 'Loot system initialized');
     },
@@ -51,7 +52,7 @@ const LootSystem = {
         const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : null;
 
         if (!sourceData) {
-            EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, drops: [] });
+            EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, drops: [] });
             return;
         }
 
@@ -82,7 +83,7 @@ const LootSystem = {
             }
         }
 
-        EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, instanceId, drops: generatedDrops });
+        EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, instanceId, drops: generatedDrops });
     },
 
     /**
@@ -112,7 +113,7 @@ const LootSystem = {
             }
         }
 
-        EventBus.publish('loot_generated', { cardId: card.id, areaId, drops: generatedDrops });
+        EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId: card.id, areaId, drops: generatedDrops });
 
         if (combatTrigger) {
             return { type: 'combat_trigger', enemyId: combatTrigger.enemyId };

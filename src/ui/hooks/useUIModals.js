@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { DOCK_MAX_PINNED } from '../components/dock/dockConstants.js';
 import { EventBus } from '../../systems/core/EventBus.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * The first promotion offer standing on the board, or null (Promotes rule P4).
@@ -163,7 +164,7 @@ export const useUIModals = (engine) => {
         // B4: the Shop is no longer a pane — open its own drawer instead.
         if (tab === SHOP_TARGET) {
             setIsShopOpen(true);
-            EventBus.publish('ui_modal:opened', { modalId: tab });
+            EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
             return;
         }
         setDrawerState(s => ({
@@ -174,7 +175,7 @@ export const useUIModals = (engine) => {
             // left to do.
             maximized: null
         }));
-        EventBus.publish('ui_modal:opened', { modalId: tab });
+        EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
     }, []);
 
     // --- Nav bar exclusivity (bubble clicks only) ---
@@ -221,7 +222,7 @@ export const useUIModals = (engine) => {
             );
             setIsSettingsOpen(target === 'settings');
             setIsShopOpen(target === SHOP_TARGET);
-            EventBus.publish('ui_modal:opened', { modalId: target });
+            EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: target });
         });
     }, [isNavActive]);
 
@@ -378,18 +379,18 @@ export const useUIModals = (engine) => {
         // `ui:open_pack_overlay` (the pack overlay is gone), and
         // `ui:open_loot_table` (the loot-table modal is gone — see above).
         const subs = [
-            engine.EventBus.subscribe('dev:toggle-sandbox', () => setIsSandboxOpen(prev => !prev)),
+            engine.EventBus.subscribe(UI_EVENTS.DEV_TOGGLE_SANDBOX, () => setIsSandboxOpen(prev => !prev)),
             // Contextual auto-open from empty banner slots (§12.B). The
             // 'heroes' tab is gone — the dock is always on screen, so an empty
             // hero slot has nothing to open and just says so on the card.
-            engine.EventBus.subscribe('ui:open_drawer', (data) => {
+            engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_DRAWER, (data) => {
                 const tab = data?.tab;
                 if (!tab || tab === 'heroes') return;
                 openDrawerTab(tab, data?.filter);
             }),
             // A flag's gear badge (FlagLayer) — the only route into a hero's
             // flag rules (FP-73, FPP-20).
-            engine.EventBus.subscribe('ui:open_flag_rules', (data) => {
+            engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, (data) => {
                 if (data?.heroId) setFlagRulesHeroId(data.heroId);
             }),
             // A hero finished training. Nothing has happened to them yet — the
@@ -402,7 +403,7 @@ export const useUIModals = (engine) => {
             // the hero would stand on the Token forever with nothing asking —
             // the tile holds, and the ready event already fired in another
             // session. A DECLINED offer is not standing, so this never re-asks.
-            engine.EventBus.subscribe('game_loaded', () => {
+            engine.EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
                 setPromotionOffer(standingPromotionOffer(engine));
             })
         ];

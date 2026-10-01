@@ -8,6 +8,7 @@ import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as Flags from './Flags.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * ⭐ **Shrinking the mat pulls what no longer fits back inside** (FP-98).
@@ -124,7 +125,7 @@ export function fitToMat() {
 
     // One rebuild for the whole resize (see the note at the top of this file).
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: dirty });
-    EventBus.publish('state_changed', {});
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 
     if (summary.crowded > 0) {
         NotificationSystem.warning(

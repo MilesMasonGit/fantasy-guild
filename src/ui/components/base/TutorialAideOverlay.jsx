@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 export const TUTORIAL_AIDE_EVENTS = {
-    HOVER: 'tutorial_aide:hover',
-    UNHOVER: 'tutorial_aide:unhover'
+    HOVER: UI_EVENTS.TUTORIAL_AIDE_HOVER,
+    UNHOVER: UI_EVENTS.TUTORIAL_AIDE_UNHOVER
 };
 
 /** Set the active tutorial quest to highlight */
@@ -207,7 +208,7 @@ export const TutorialAideOverlay = () => {
     // and not done — read from the tutorial quest Token (B6.2).
     const isRecruitHeroQuestActive = useGameState(
         () => activeTutorialQuest()?.targetType === 'hero_recruited',
-        ['state_changed', 'quests_updated', 'hero_recruited', 'guild_upgrades_updated']
+        [ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.QUESTS_UPDATED, ENGINE_EVENTS.HERO_RECRUITED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED]
     );
 
     useEffect(() => {

@@ -40,6 +40,7 @@ import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * A quest Token's quest as a flat projection for `detail` (B6.2): what the
@@ -205,7 +206,7 @@ export const MatToken = React.memo(function MatToken({
             BOARD_EVENTS.HERO_MOVED,
             BOARD_EVENTS.TOKEN_CHARGES_CHANGED,
             BOARD_EVENTS.TOKEN_PLACED,
-            'state_changed'
+            ENGINE_EVENTS.STATE_CHANGED
         ],
         null,
         { deps: [id] }
@@ -420,7 +421,7 @@ export const MatToken = React.memo(function MatToken({
     const isHall = isGuildHallToken || !!def?.isGuildHall;
     React.useEffect(() => {
         if (!isHall) return undefined;
-        const unsub = EventBus.subscribe('particle_landed', (p) => {
+        const unsub = EventBus.subscribe(UI_EVENTS.PARTICLE_LANDED, (p) => {
             if (p?.landsOn !== 'hall') return;
             setReceived(true);
             clearTimeout(receivedTimer.current);

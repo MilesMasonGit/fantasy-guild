@@ -13,6 +13,7 @@ import * as BoardState from './BoardState.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * SpriteLayer — loose **item** loot floating above the mat (D-40).
@@ -85,7 +86,7 @@ function announceSpriteChange() {
         return;
     }
     EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-    EventBus.publish('state_changed');
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 }
 
 /**
@@ -101,7 +102,7 @@ function asSweep(fn) {
         if (sweepDepth === 0 && sweepDirty) {
             sweepDirty = false;
             EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-            EventBus.publish('state_changed');
+            EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         }
     }
 }
@@ -519,7 +520,7 @@ export function consumeFromSprites(itemId, amount) {
     const taken = amount - remaining;
     if (taken > 0) {
         EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-        EventBus.publish('state_changed');
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     }
     return taken;
 }
@@ -599,7 +600,7 @@ export function init() {
     if (initialized) return;
     initialized = true;
 
-    EventBus.subscribe('inventory_overflow', ({ itemId, amount }) => {
+    EventBus.subscribe(ENGINE_EVENTS.INVENTORY_OVERFLOW, ({ itemId, amount }) => {
         // Ignore overflow raised by our own collect attempt: the sprite is
         // already on the board and re-adding it would duplicate it every sweep.
         if (collecting) return;

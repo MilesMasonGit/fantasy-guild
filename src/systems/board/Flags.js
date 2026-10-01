@@ -18,6 +18,7 @@ import { ensureFlagColour } from './FlagColours.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as PromotionSystem from '../hero/PromotionSystem.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Flags — **a hero plants a flag, and works anything they can around it**
@@ -898,7 +899,7 @@ export function plant(heroId, point, { pin = false } = {}) {
      * or null for bare mat (slice 1.6b).
      */
     const under = tokenAtPoint(point);
-    EventBus.publish('hero_deployed', { heroId, instanceId: under?.id ?? null, typeId: under?.typeId ?? null });
+    EventBus.publish(ENGINE_EVENTS.HERO_DEPLOYED, { heroId, instanceId: under?.id ?? null, typeId: under?.typeId ?? null });
     // Said after the plant, so the bubble finds the hero on the mat (B5 bad pin).
     if (refused) EventBus.publish(BOARD_EVENTS.PIN_REFUSED, { heroId, ...refused });
     return { success: true, pinnedTo: pinTo?.id ?? null, pinRefused: refused?.reason ?? null };
@@ -951,7 +952,7 @@ export function setRule(heroId, ruleId, { allowed, priority } = {}) {
 
     if (!next.allowed) releaseIfWorking(heroId, ruleId);
     markDirty();
-    EventBus.publish('heroes_updated', { source: 'flag_rules', heroId });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'flag_rules', heroId });
     return { success: true };
 }
 
@@ -965,7 +966,7 @@ export function resetRules(heroId) {
     }
     hero.flagRules = {};
     markDirty();
-    EventBus.publish('heroes_updated', { source: 'flag_rules', heroId });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'flag_rules', heroId });
     return { success: true };
 }
 
@@ -1117,7 +1118,7 @@ export function setDisallowed(instanceId, on = true) {
 
     markDirty();
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
-    EventBus.publish('state_changed');
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return { success: true };
 }
 
@@ -1267,7 +1268,7 @@ export function teardown() {
 export function init() {
     teardown();
     const dirty = () => markDirty();
-    for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, 'inventory_updated']) {
+    for (const event of [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_PLACED, ENGINE_EVENTS.INVENTORY_UPDATED]) {
         unsubscribers.push(EventBus.subscribe(event, dirty));
     }
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (payload = {}) => cycleCompleted(payload.heroId)));
@@ -1275,10 +1276,10 @@ export function init() {
         if (key == null || key === 'flagRadius') markDirty();
     }));
     // The Scouting Flags upgrade widens the radius too (FP-23).
-    unsubscribers.push(EventBus.subscribe('guild_upgrades_updated', ({ upgradeId } = {}) => {
+    unsubscribers.push(EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ({ upgradeId } = {}) => {
         if (upgradeId === 'flag_radius') markDirty();
     }));
-    unsubscribers.push(EventBus.subscribe('game_loaded', () => {
+    unsubscribers.push(EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
         reset();
         restoreWork();
     }));

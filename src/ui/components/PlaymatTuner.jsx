@@ -5,6 +5,7 @@ import {
     TUNABLES, tuning, setTuning, resetTuning, isTuned, tuningDefault
 } from '../../config/playmatTuning.js';
 import { artSet, setArtSet } from '../../config/registries/terrainRegistry.js';
+import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * PlaymatTuner — a developer panel for finding the playmat's look.
@@ -36,7 +37,7 @@ export const PlaymatTuner = React.memo(() => {
 
     const repaint = useCallback(() => {
         bump(n => n + 1);
-        engine?.EventBus.publish('terrain_art_set_changed');
+        engine?.EventBus.publish(UI_EVENTS.TERRAIN_ART_SET_CHANGED);
     }, [engine]);
 
     if (!engine) return null;

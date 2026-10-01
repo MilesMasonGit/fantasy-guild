@@ -5,9 +5,10 @@ import { useTokenEvent } from './tokenEvents.js';
 import {
     HIT_PERIOD_MS, STRIKE_DELAY_MS, buildHitKeyframes, hitAnimationFor, hitsOnAttack, knockbackDir, strikeStartTime
 } from './hitAnimations.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** The engine's one-per-attack combat event (`CombatAttackProcessor`). */
-export const COMBAT_ATTACK_EVENT = 'combat_hero_attack';
+export const COMBAT_ATTACK_EVENT = ENGINE_EVENTS.COMBAT_HERO_ATTACK;
 
 function prefersReducedMotion() {
     try {

@@ -26,6 +26,7 @@ import { SettingsManager } from './systems/core/SettingsManager.js';
 import { preloadGameArt } from './systems/core/AssetPreloader.js';
 import { loadSpriteFxManifest } from './ui/utils/spriteFx.js';
 import { logger } from './utils/Logger.js';
+import { ENGINE_EVENTS, UI_EVENTS } from './systems/core/engineEvents.js';
 
 /**
  * Fantasy Guild Idle - Bootstrap Lifecycle
@@ -80,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const allCapsPref = SettingsManager.get('ui.allCaps') !== false;
     document.body.dataset.allcaps = allCapsPref ? 'true' : 'false';
     SettingsManager.applyFontSizes();
-    EventBus.subscribe('settings_updated', (s) => {
+    EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, (s) => {
         if (s.ui?.fontFamily) document.body.dataset.font = s.ui.fontFamily;
         if (s.ui && s.ui.allCaps !== undefined) {
             document.body.dataset.allcaps = s.ui.allCaps ? 'true' : 'false';
@@ -124,7 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 7. Handle Post-UI Lifecycle Events
-    EventBus.subscribe('react:slot_selected', (data) => {
+    EventBus.subscribe(UI_EVENTS.REACT_SLOT_SELECTED, (data) => {
         EngineBootstrap.onSlotSelected(data.index, data.isNewGame);
     });
 

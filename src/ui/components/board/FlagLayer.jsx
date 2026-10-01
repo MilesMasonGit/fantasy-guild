@@ -27,6 +27,7 @@ import {
     GEAR_PX, GEAR_OFFSET,
     IDLE_CHIP_OFFSET, POLE_BASE, pinnedFlagPoint
 } from './flagGeometry.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * FlagLayer — **flags standing freely on the playmat** (Free Playmat slices 1.5
@@ -71,7 +72,7 @@ function useFlagRadius() {
     useEffect(() => {
         const refresh = () => setRadius(Flags.flagRadius());
         const offTuning = onMatTuningChanged(refresh);
-        const offUpgrade = EventBus.subscribe('guild_upgrades_updated', refresh);
+        const offUpgrade = EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, refresh);
         return () => { offTuning?.(); offUpgrade?.(); };
     }, []);
     return radius;
@@ -143,7 +144,7 @@ function useFlagDragPoint(matRef) {
 export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null, matRef = null, flagZ = null, yieldToTokens = false }) => {
     const flags = useGameState(
         projectFlags,
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, 'heroes_updated', 'state_changed']
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     ) || [];
     const radius = useFlagRadius();
     const mat = useMatSize();
@@ -352,7 +353,7 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
                 onMouseLeave={() => { setGearHovered(false); onHover?.(null); }}
                 onClick={(e) => {
                     e.stopPropagation();
-                    EventBus.publish('ui:open_flag_rules', { heroId: flag.heroId });
+                    EventBus.publish(UI_EVENTS.UI_OPEN_FLAG_RULES, { heroId: flag.heroId });
                 }}
                 className={cn(
                     'absolute flex items-center justify-center rounded p-0',

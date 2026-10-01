@@ -8,6 +8,7 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
 import { XpRateTracker } from './XpRateTracker.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * SkillSystem - Manages skill XP, levels, and requirements
@@ -185,7 +186,7 @@ export function addXP(heroId, skillId, amount) {
 
         // Publish level-up event for each level gained
         for (let i = oldLevel + 1; i <= newLevel; i++) {
-            EventBus.publish('hero_leveled', {
+            EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, {
                 heroId,
                 heroName: hero.name,
                 skillId: targetSkillId,
@@ -204,7 +205,7 @@ export function addXP(heroId, skillId, amount) {
     logger.debug('SkillSystem', `Hero ${hero.name} gained ${granted} XP in ${targetSkillId} (base ${amount}). New XP: ${skill.xp}`);
 
     // Always publish heroes_updated so UI refreshes with new XP
-    EventBus.publish('heroes_updated', { source: 'addXP', heroId, skillId: targetSkillId });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'addXP', heroId, skillId: targetSkillId });
 
     return {
         success: true,

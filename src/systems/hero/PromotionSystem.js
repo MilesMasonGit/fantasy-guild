@@ -9,6 +9,7 @@ import {
     getPromotionGateSkills, STARTING_JOB_ID
 } from '../../config/registries/jobRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * PromotionSystem — **the only way a hero's skills ever change shape.**
@@ -214,13 +215,13 @@ export function promote(heroId, jobId) {
     // being a non-combatant.
     HeroManager.updateHeroSkillModifiers(hero);
 
-    EventBus.publish('hero_promoted', {
+    EventBus.publish(ENGINE_EVENTS.HERO_PROMOTED, {
         heroId, heroName: hero.name,
         fromJobId: fromJob?.id || null, fromJobName: fromJob?.name || null,
         toJobId: jobId, toJobName: job.name,
         gained, banked, restored
     });
-    EventBus.publish('heroes_updated', { source: 'promote', heroId });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'promote', heroId });
 
     return { success: true, gained, banked, restored };
 }

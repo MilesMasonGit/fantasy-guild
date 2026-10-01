@@ -4,6 +4,7 @@ import { logger } from '../../../utils/Logger.js';
 import { generateHero } from '../HeroGenerator.js';
 import { rehydrateHero } from './HeroRehydration.js';
 import { rosterLimitForRank } from '../../../config/guildUpgrades.js';
+import { ENGINE_EVENTS } from '../../core/engineEvents.js';
 
 /**
  * Hero Lifecycle: Creation and Recruitment.
@@ -48,7 +49,7 @@ export function createHero(options = {}, silent = false) {
     GameState.heroes.push(hero);
 
     if (!silent) {
-        EventBus.publish('hero_recruited', {
+        EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, {
             heroId: hero.id,
             name: hero.name
         });
@@ -83,12 +84,12 @@ export function addHero(heroData) {
     GameState.heroes.push(heroData);
     logger.info('HeroLifecycle', `Added hero "${heroData.name}" to the roster`);
 
-    EventBus.publish('hero_recruited', {
+    EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, {
         heroId: heroData.id,
         name: heroData.name
     });
 
-    EventBus.publish('heroes_updated', { source: 'addHero' });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'addHero' });
     return heroData;
 }
 

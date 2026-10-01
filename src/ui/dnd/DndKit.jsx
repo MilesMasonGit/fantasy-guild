@@ -35,7 +35,7 @@ import { displayPointOf } from '../../systems/board/BoardState.js';
  * router to grow stale (a lesson from the retired grid pipeline).
  */
 
-const sfx = (clip) => EventBus.publish('audio:play', { clip });
+const sfx = (clip) => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip });
 
 /**
  * Collision: the pointer's containing targets, smallest-area first. This makes
@@ -192,6 +192,7 @@ export const useDragSurface = () => React.useContext(DragSurfaceContext);
 import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
 import { isDisallowMode } from '../hooks/useDisallowMode.js';
 import { isMatBankLocked } from '../hooks/useMatBankLock.js';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * CR3-404 — owns the per-frame cursor publish on its own, so a frame where

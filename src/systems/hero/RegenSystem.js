@@ -5,6 +5,7 @@ import * as HeroManager from './HeroManager.js';
 import { EventBus } from '../core/EventBus.js';
 import { REGEN_CONFIG } from '../../config/FormulaRegistry.js';
 import * as ConsumptionSystem from './ConsumptionSystem.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * RegenSystem - Handles HP and Energy regeneration for idle heroes
@@ -97,7 +98,7 @@ export function tick(delta) {
 
     // Notify UI to update if regen happened
     if (regenOccurred) {
-        EventBus.publish('heroes_updated', { source: 'regen' });
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'regen' });
     }
 }
 

@@ -7,6 +7,7 @@ import GuildUpgradeInspection from './GuildUpgradeInspection.jsx';
 import { getUpgradeDef } from '../../../config/guildUpgrades.js';
 import { SearchCheck, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * InspectionPanel — the drawer-wide shared inspection column (overhaul
@@ -30,7 +31,7 @@ export const InspectionPanel = ({
     const itemId = selection?.type === 'item' ? selection.id : null;
     const itemCount = useGameState(
         state => itemId ? (state.inventory?.items?.[itemId]?.quantity || 0) : 0,
-        ['inventory_updated'],
+        [ENGINE_EVENTS.INVENTORY_UPDATED],
         null,
         { deps: [itemId] }
     );

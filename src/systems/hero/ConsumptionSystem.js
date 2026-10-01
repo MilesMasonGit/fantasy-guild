@@ -7,6 +7,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getEquippedEntries, categoryIdsOfKind, CATEGORY_KINDS } from '../../config/registries/equipmentConstants.js';
 import { CONSUME_THRESHOLD } from '../../config/loopConstants.js';
 import { logger } from '../../utils/Logger.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * ConsumptionSystem — heroes feed themselves from their own loadout grid.
@@ -73,7 +74,7 @@ function consumeEquipped(hero, categoryId, vitalKey) {
         else HeroManager.modifyHeroHp(hero.id, amount);
     }
 
-    EventBus.publish('hero_consumed', {
+    EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
         heroId: hero.id, itemId: entry.itemId, category: categoryId, amount
     });
     return { itemId: entry.itemId, amount };
@@ -165,7 +166,7 @@ export function consumeLoopConsumables(heroId) {
         const item = getItem(entry.itemId);
         spent.push({ itemId: entry.itemId, item });
 
-        EventBus.publish('hero_consumed', {
+        EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
             heroId, itemId: entry.itemId, category: entry.category, amount: 0
         });
     }

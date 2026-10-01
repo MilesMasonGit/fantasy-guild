@@ -10,6 +10,7 @@ import { SLOT_ORDER, categoryOfItem, getCategoryInfo, CATEGORY_KINDS } from '../
 import { formatCompact } from '../../../utils/Formatters.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { equipOrAnnounce } from './dockEquip.js';
+import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * DockEquipmentGrid — the pinned card's loadout grid: NINE flexible slots in
@@ -33,8 +34,8 @@ export const DockEquipmentGrid = ({ heroId }) => {
             }
         };
 
-        const unsub1 = EventBus.subscribe('hero_equipment_changed', handleEquipped);
-        const unsub2 = EventBus.subscribe('hero_equipped', handleEquipped);
+        const unsub1 = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, handleEquipped);
+        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.HERO_EQUIPPED, handleEquipped);
 
         return () => {
             unsub1();
@@ -58,7 +59,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
             const qty = grid.map(id => (id ? (state.inventory?.items?.[id]?.quantity ?? 0) : '')).join('|');
             return `${ids}::${qty}`;
         },
-        ['heroes_updated', 'hero_equipment_changed', 'inventory_updated', 'state_changed'],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.STATE_CHANGED],
         null,
         { deps: [heroId] }
     );

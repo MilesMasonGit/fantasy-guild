@@ -13,6 +13,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as TileModifiers from '../board/TileModifiers.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * GuildUpgradeManager — the Guild Hall upgrade web (B9, TL-23).
@@ -29,7 +30,7 @@ import { logger } from '../../utils/Logger.js';
  */
 export const GuildUpgradeManager = {
     init() {
-        EventBus.subscribe('game_loaded', () => this.recompute());
+        EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => this.recompute());
         logger.info('GuildUpgradeManager', 'Guild upgrade tree ready');
     },
 
@@ -138,7 +139,7 @@ export const GuildUpgradeManager = {
             rehydrateHero(hero);
             GameState.heroes.push(hero);
             NotificationSystem.success(`New Hero Recruited: ${hero.name}! (${def.name} Level ${newRank})`);
-            EventBus.publish('hero_recruited', {
+            EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, {
                 heroId: hero.id,
                 name: hero.name
             });
@@ -146,8 +147,8 @@ export const GuildUpgradeManager = {
             NotificationSystem.success(`${def.name} upgraded — ${def.statLabel(newRank)}`);
         }
 
-        EventBus.publish('guild_upgrades_updated', { upgradeId, rank: newRank });
-        EventBus.publish('state_changed');
+        EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank });
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}`);
         return { success: true };
     },
@@ -201,8 +202,8 @@ export const GuildUpgradeManager = {
             TileModifiers.rebuildAll();
         }
 
-        EventBus.publish('inventory_updated');
-        EventBus.publish('heroes_updated');
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
         // `collection_updated` was published here to nobody and was deleted on
         // 2026-08-24 (CR2-092). `guild_upgrades_updated` is the one the UI and
         // the quest system actually listen for.

@@ -14,6 +14,7 @@ import * as RecipeResolver from '../board/RecipeResolver.js';
 // live in the leaf `questBounties.js` and are re-exported below.
 import * as QuestTokens from './QuestTokens.js';
 import { createRandomQuest } from './questBounties.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../core/engineEvents.js';
 
 export {
     BOUNTY_REWARD_ITEMS, copyReward, questReward, RANDOM_ITEMS, RANDOM_HUNTS
@@ -109,11 +110,11 @@ export const QuestManager = {
         unsubs.push(
             // A new game or a load: the mat is checked on the next tick too
             // (a new game's Guild Hall lands after this subscriber runs).
-            EventBus.subscribe('react:slot_selected', () => {
+            EventBus.subscribe(UI_EVENTS.REACT_SLOT_SELECTED, () => {
                 QuestTokens.requestCheck();
                 this.ensureQuests();
             }),
-            EventBus.subscribe('game_loaded', () => {
+            EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
                 QuestTokens.requestCheck();
                 this.ensureQuests();
             }),
@@ -146,7 +147,7 @@ export const QuestManager = {
             // A Shop purchase (Token Lifecycle 5.1). It also lands the Token
             // through `placeTokenAt`, which raised `TOKEN_PLACED` above: two
             // different targets, not one action counted twice.
-            EventBus.subscribe('token_purchased', (data) => {
+            EventBus.subscribe(ENGINE_EVENTS.TOKEN_PURCHASED, (data) => {
                 this.reportProgress('token_purchased', 1, { typeId: data?.typeId });
             }),
             // A Foundation became what it built, or Farmland what was planted
@@ -154,7 +155,7 @@ export const QuestManager = {
             EventBus.subscribe(BOARD_EVENTS.TOKEN_BUILT, (data) => {
                 this.reportProgress('token_built', 1, { typeId: data?.typeId, fromTypeId: data?.fromTypeId });
             }),
-            EventBus.subscribe('hero_deployed', () => this.reportProgress('hero_deployed')),
+            EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, () => this.reportProgress('hero_deployed')),
             // A finished cycle: gathering, crafting, exploring, a kill (D-129).
             // A failed cycle did nothing, so it counts for nothing. The Token's
             // type and skill, and each item it made, let a step ask for one
@@ -176,9 +177,9 @@ export const QuestManager = {
                     }
                 }
             }),
-            EventBus.subscribe('inventory_updated', () => this.syncInventoryQuests()),
-            EventBus.subscribe('hero_recruited', () => this.reportProgress('hero_recruited')),
-            EventBus.subscribe('guild_upgrades_updated', (data) => {
+            EventBus.subscribe(ENGINE_EVENTS.INVENTORY_UPDATED, () => this.syncInventoryQuests()),
+            EventBus.subscribe(ENGINE_EVENTS.HERO_RECRUITED, () => this.reportProgress('hero_recruited')),
+            EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, (data) => {
                 this.reportProgress('guild_upgrade_purchased');
                 if (data?.upgradeId === 'wishing_well') {
                     this.reportProgress('wishing_well_upgraded');
@@ -190,7 +191,7 @@ export const QuestManager = {
             // that any NEW route into the Bank or the Shop has to publish it
             // too, or these quest targets silently stall. The Shop is still the
             // `cartographer` pane. Do not rename these strings on one side only.
-            EventBus.subscribe('ui_modal:opened', (data) => {
+            EventBus.subscribe(UI_EVENTS.UI_MODAL_OPENED, (data) => {
                 if (data?.modalId === 'bank') this.reportProgress('open_bank');
                 else if (data?.modalId === 'cartographer') this.reportProgress('open_cartographer');
             }),
@@ -205,7 +206,7 @@ export const QuestManager = {
             // Equipping is announced as `hero_equipment_changed` with
             // `action: 'equip'` (EquipmentManager), which is what feeds the
             // `hero_equipped` quest target below.
-            EventBus.subscribe('hero_equipment_changed', (data) => {
+            EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
                 if (data?.action === 'equip') this.reportProgress('hero_equipped');
             }),
             // ⚠️ `token_exhausted` is a quest TARGET name and a tile-log entry
@@ -213,7 +214,7 @@ export const QuestManager = {
             // `BOARD_EVENTS.TOKEN_DEPLETED` is the real event and the only one
             // that should report here.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, () => this.reportProgress('token_exhausted')),
-            EventBus.subscribe('combat_victory', (data) => {
+            EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, (data) => {
                 this.reportProgress('combat_victory');
                 if (data?.enemyId) {
                     this.reportProgress('enemy_hunted', 1, { enemyId: data.enemyId });

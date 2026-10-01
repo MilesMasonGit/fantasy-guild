@@ -63,6 +63,7 @@ import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
 import JobChangeModal from './modals/JobChangeModal.jsx';
 import PromotionCeremonyModal from './modals/PromotionCeremonyModal.jsx';
+import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /**
  * The notifications column — the second of the play area's four (D-237).
@@ -172,7 +173,7 @@ export const ReactRoot = ({ engine }) => {
             if (!loaded) return;
         }
         ui.slotSelection.close();
-        engine.EventBus.publish('react:slot_selected', { index, isNewGame: isEmpty });
+        engine.EventBus.publish(UI_EVENTS.REACT_SLOT_SELECTED, { index, isNewGame: isEmpty });
     };
 
     // Dev only: the FPS counter stands down while the Perf HUD is up (CR3-358).
@@ -186,7 +187,7 @@ export const ReactRoot = ({ engine }) => {
     const [backgroundTile, setBackgroundTile] = React.useState(() => SettingsManager.get('ui.backgroundTile') ?? 'pm_table_wood_spruce');
 
     React.useEffect(() => {
-        const unsubscribe = EventBus.subscribe('settings_updated', (s) => {
+        const unsubscribe = EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, (s) => {
             setDebugMode(s.debugMode ?? false);
             setMenuRight(s.ui?.bubbleMenuRight ?? false);
             setBackgroundTile(s.ui?.backgroundTile ?? 'pm_table_wood_spruce');
@@ -200,7 +201,7 @@ export const ReactRoot = ({ engine }) => {
     const closeSlotSelection = ui.slotSelection.close;
     React.useEffect(() => {
         if (!import.meta.env.DEV) return undefined;
-        return EventBus.subscribe('dev:stress_started', () => closeSlotSelection());
+        return EventBus.subscribe(UI_EVENTS.DEV_STRESS_STARTED, () => closeSlotSelection());
     }, [closeSlotSelection]);
 
     // The Hall's upgrade web selects by upgrade id — it has no tiles (B9, TL-23).
@@ -229,9 +230,9 @@ export const ReactRoot = ({ engine }) => {
     }, [ui.fullscreen, ui.inspect]);
 
     useEffect(() => {
-        const unsub1 = EventBus.subscribe('ui:open_guild_hall', () => handleOpenGuildHall());
-        const unsub2 = EventBus.subscribe('ui:close_guild_hall', () => handleCloseGuildHall());
-        const unsub3 = EventBus.subscribe('ui:toggle_guild_hall', () => {
+        const unsub1 = EventBus.subscribe(ORPHAN_EVENTS.UI_OPEN_GUILD_HALL, () => handleOpenGuildHall());
+        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.UI_CLOSE_GUILD_HALL, () => handleCloseGuildHall());
+        const unsub3 = EventBus.subscribe(ORPHAN_EVENTS.UI_TOGGLE_GUILD_HALL, () => {
             if (ui.fullscreen.view === 'guild') handleCloseGuildHall();
             else handleOpenGuildHall();
         });
@@ -245,17 +246,17 @@ export const ReactRoot = ({ engine }) => {
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
 
     React.useEffect(() => {
-        const unsub1 = EventBus.subscribe('hero_equipment_changed', (data) => {
+        const unsub1 = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
             if (data?.action === 'equip' && data?.heroId) {
                 setInspectHeroId(data.heroId);
             }
         });
-        const unsub2 = EventBus.subscribe('hero_equipped', (data) => {
+        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.HERO_EQUIPPED, (data) => {
             if (data?.heroId) {
                 setInspectHeroId(data.heroId);
             }
         });
-        const unsub3 = EventBus.subscribe('inspect_hero', (data) => {
+        const unsub3 = EventBus.subscribe(UI_EVENTS.INSPECT_HERO, (data) => {
             if (data?.heroId) {
                 setInspectHeroId(data.heroId);
             }
@@ -324,7 +325,7 @@ export const ReactRoot = ({ engine }) => {
                                     >
                                         <button
                                             onClick={() => {
-                                                EventBus.publish('audio:play', { clip: 'button_click' });
+                                                EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
                                                 handleCloseGuildHall();
                                             }}
                                             className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
@@ -442,7 +443,7 @@ export const ReactRoot = ({ engine }) => {
                                     >
                                         <button
                                             onClick={() => {
-                                                EventBus.publish('audio:play', { clip: 'button_click' });
+                                                EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
                                                 handleCloseGuildHall();
                                             }}
                                             className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"

@@ -6,6 +6,7 @@ import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { GameState } from '../../../state/GameState.js';
 import { lootFlightTarget, lootSpriteScreenPx } from '../../utils/lootFlight.js';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** Gap between staggered particles from one collection burst. */
 const STAGGER_MS = 60;
@@ -416,7 +417,7 @@ class ParticleSystem {
 
             if (t >= 1) {
                 // Notify that the particle has landed for visual feedback (e.g., Vault flashes, Tray landings)
-                EventBus.publish('particle_landed', {
+                EventBus.publish(UI_EVENTS.PARTICLE_LANDED, {
                     itemId: p.itemId,
                     mode: p.mode,
                     destination: p.destination,

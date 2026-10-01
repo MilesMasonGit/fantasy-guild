@@ -8,6 +8,7 @@ import * as Shop from '../../../systems/board/Shop.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useEntityDrag, useActiveDrag, useDragSurface } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * ⭐ **The Shop drawer** (B4: FB-25, FB-27; was the Bank drawer's Shop pane,
@@ -86,7 +87,7 @@ export const shopRowPayload = (typeId) => ({ typeId, from: { shop: typeId } });
 
 /** What re-reads the catalogue: the Bank, the cap and the bin (binned Tokens count). */
 const SHOP_EVENTS = Object.freeze([
-    'token_purchased', 'inventory_updated', 'state_changed', 'game_loaded',
+    ENGINE_EVENTS.TOKEN_PURCHASED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.GAME_LOADED,
     BOARD_EVENTS.BIN_CHANGED, BOARD_EVENTS.TOKEN_PLACED, BOARD_EVENTS.TOKEN_DEPLETED
 ]);
 

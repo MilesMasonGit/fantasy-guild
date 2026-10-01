@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { TimeBankManager } from '../../../systems/core/TimeBankManager.js';
 import { TIME_BANK } from '../../../config/loopConstants.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * TimeBankWidget (Phase 8) — HUD control for the offline Time Bank.
@@ -37,8 +38,8 @@ export const TimeBankWidget = React.memo(() => {
         };
         // time_bank_updated covers accrual + spend ticks; state_changed covers
         // save loads that land before the widget mounts.
-        const subBank = EventBus.subscribe('time_bank_updated', sync);
-        const subState = EventBus.subscribe('state_changed', sync);
+        const subBank = EventBus.subscribe(ENGINE_EVENTS.TIME_BANK_UPDATED, sync);
+        const subState = EventBus.subscribe(ENGINE_EVENTS.STATE_CHANGED, sync);
         sync();
         return () => { subBank(); subState(); };
     }, []);

@@ -11,6 +11,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { announce } from './dropOnMat.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * ⭐ **The discard bin** (B3.2: FB-34, FB-35, TL-13) — the bin's UI, at the
@@ -38,7 +39,7 @@ export const BIN_DROP_ID = 'discard-bin';
 const SLOT_ART_PX = tokenSizeFor(TOKEN_SURFACE.TRAY, 1) / 2;
 
 /** What re-reads the bin. */
-const BIN_EVENTS = Object.freeze([BOARD_EVENTS.BIN_CHANGED, 'state_changed', 'game_loaded']);
+const BIN_EVENTS = Object.freeze([BOARD_EVENTS.BIN_CHANGED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.GAME_LOADED]);
 
 /** What the bin takes: a Token carried off the mat (not one already in the bin). */
 export function binAccepts(payload) {
@@ -136,7 +137,7 @@ export const DiscardBinPanel = ({ className }) => {
     const discardAll = () => {
         const res = DiscardBin.discardAll();
         if (!res?.discarded) return;
-        EventBus.publish('audio:play', { clip: 'button_click' });
+        EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
         NotificationSystem.info(`Discarded ${res.discarded} Token${res.discarded === 1 ? '' : 's'}`);
     };
 

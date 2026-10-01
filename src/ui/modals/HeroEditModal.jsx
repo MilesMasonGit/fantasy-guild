@@ -9,6 +9,7 @@ import { HeroSkillSheet } from '../components/hero/HeroSkillSheet.jsx';
 import { Check, Repeat } from 'lucide-react';
 import { FLAG_COLOURS, isFlagColour } from '../../systems/board/FlagColours.js';
 import { FlagMark } from '../components/board/FlagMark.jsx';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * HeroEditModal — **the hero's full sheet**, plus everything about them that
@@ -38,7 +39,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                 flagColour: isFlagColour(h.flagColour) ? h.flagColour : null
             } : null;
         },
-        ['heroes_updated'],
+        [ENGINE_EVENTS.HEROES_UPDATED],
         null,
         { deps: [heroId] }
     );

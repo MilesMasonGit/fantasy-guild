@@ -36,6 +36,7 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { centreOf } from './nearby.js';
 import { logger } from '../../utils/Logger.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Re-exported so `BoardRunner.ALERT` keeps working for the engine suites that
@@ -494,7 +495,7 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
             EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {
                 instanceId: built.id, typeId: buildTypeId, fromTypeId, heroId: heroId || null
             });
-            EventBus.publish('state_changed');
+            EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         } else {
             logger.warn('BoardRunner', `${def.name}: had room to build ${buildTypeId}, then did not`);
         }
@@ -786,7 +787,7 @@ export function init() {
     EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ points } = {}) => {
         if (Array.isArray(points)) TileModifiers.rebuildAround(points);
     });
-    EventBus.subscribe('game_loaded', () => {
+    EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
         TileModifiers.rebuildAll();
 
         /**
@@ -808,7 +809,7 @@ export function init() {
         }
         if (moved.length) {
             TileModifiers.rebuildAll();
-            EventBus.publish('state_changed');
+            EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
             logger.info('BoardRunner',
                 `${moved.length} Token(s) sat somewhere their rules forbid and were moved to a legal spot`);
         }

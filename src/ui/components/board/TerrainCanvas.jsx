@@ -8,6 +8,7 @@ import { buildSurface } from '../../../systems/board/TerrainSurface.js';
 import { propsForBoard } from '../../../systems/board/TerrainProps.js';
 import { substrateSprite, propSprite } from '../../../config/registries/terrainRegistry.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * The playmat's ground, drawn under everything else.
@@ -233,7 +234,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
         // The QA panel's art-set toggle and tuning sliders change what the
         // sprites mean without changing any game state, so nothing else would
         // prompt a repaint.
-        const unsubscribe = EventBus.subscribe('terrain_art_set_changed', () => {
+        const unsubscribe = EventBus.subscribe(UI_EVENTS.TERRAIN_ART_SET_CHANGED, () => {
             texelCache.clear();
             draw();
         });

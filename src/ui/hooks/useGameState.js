@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useEngine } from './useEngine';
 import isEqual from 'fast-deep-equal/es6';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * Subscribe to GameState via the EventBus.
@@ -43,7 +44,7 @@ import isEqual from 'fast-deep-equal/es6';
  * @param {Object} [options] - { shallow, deepClone, bypassClone, deps }
  * @returns {any} The selected slice
  */
-export const useGameState = (selector = (state) => state, events = ['state_changed'], eventFilter = null, options = {}) => {
+export const useGameState = (selector = (state) => state, events = [ENGINE_EVENTS.STATE_CHANGED], eventFilter = null, options = {}) => {
     const { GameState, EventBus } = useEngine();
 
     // Use refs to store the latest selector/events/filter without triggering useEffect re-runs

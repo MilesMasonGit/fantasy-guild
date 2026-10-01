@@ -12,6 +12,7 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import {
     CheckCircle, Lock, Zap, Check, ChevronUp, ChevronDown, X
 } from 'lucide-react';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
 
@@ -42,7 +43,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
             const price = GuildUpgradeManager.getNextCost(upgradeDef.id) || [];
             return price.map(p => `${p.itemId}:${InventoryManager.getItemCount(p.itemId)}`).join(',');
         },
-        ['inventory_updated', 'guild_upgrades_updated', 'state_changed']
+        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     );
     const haveCounts = Object.fromEntries(
         (haveSignature || '').split(',').filter(Boolean).map(pair => {
@@ -52,7 +53,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
     );
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
-        ['guild_upgrades_updated', 'state_changed']
+        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     );
 
     const checkScroll = useCallback(() => {
@@ -94,7 +95,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
 
     const handleUpgrade = () => {
         if (!accessible || isMax || !canAfford) return;
-        EventBus.publish('audio:play', { clip: 'button_click' });
+        EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
         GuildUpgradeManager.purchase(upgradeDef.id);
     };
 

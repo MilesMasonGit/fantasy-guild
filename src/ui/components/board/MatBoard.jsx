@@ -29,6 +29,7 @@ import * as Placement from '../../../systems/board/Placement.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * ⭐ **The playmat as it is actually drawn** (Free Playmat slice 1.6c-2).
@@ -114,7 +115,7 @@ export const MatBoard = ({
             // step, facing the way it goes. Null for everything standing still.
             walkFacing: EnemyMotion.walkFacingOf(t.id)
         })),
-        [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, BOARD_EVENTS.ENEMIES_WALKED, 'state_changed'],
+        [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, BOARD_EVENTS.ENEMIES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
         null
     );
     const tokens = useMemo(() => tokensRaw || [], [tokensRaw]);
@@ -182,8 +183,8 @@ export const MatBoard = ({
             BOARD_EVENTS.HEROES_WALKED,
             BOARD_EVENTS.TILE_CHANGED,
             BOARD_EVENTS.ALERT_CHANGED,
-            'heroes_updated',
-            'state_changed'
+            ENGINE_EVENTS.HEROES_UPDATED,
+            ENGINE_EVENTS.STATE_CHANGED
         ],
         null
     );
@@ -199,7 +200,7 @@ export const MatBoard = ({
             }
             return out;
         },
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, 'heroes_updated', 'state_changed'],
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED],
         null
     );
     const flagPoints = useMemo(() => flagsRaw || [], [flagsRaw]);
@@ -207,7 +208,7 @@ export const MatBoard = ({
     // The painted ground. Dormant while terrain is off (FP-10).
     const terrain = useGameState(
         state => (TERRAIN_ENABLED ? state.board?.terrain || NO_TERRAIN : NO_TERRAIN),
-        ['state_changed', BOARD_EVENTS.TILE_CHANGED]
+        [ENGINE_EVENTS.STATE_CHANGED, BOARD_EVENTS.TILE_CHANGED]
     );
 
     // ---------------------------------------------------------------------

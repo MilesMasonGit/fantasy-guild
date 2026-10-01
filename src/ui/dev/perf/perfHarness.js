@@ -32,6 +32,7 @@ import { reactCommits, PROFILED_SURFACES, ownRenders, SELF_COUNTED } from './Per
 import { HUD_STORAGE_KEY, profilingArmed, stressFromUrl, hudRemembered } from './perfFlags.js';
 import { mountHud, unmountHud, renderHud, hudStatus, hudNodeCount, hudMounted } from './perfHud.js';
 import { buildStress, resolveStress, STRESS_SCENARIOS, STRESS_STARTED_EVENT } from './stressScenarios.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 const REPORT_VERSION = 1;
 const THRESHOLDS = [6.06, 8.33, 16.7];
@@ -541,7 +542,7 @@ export async function drive(n = 100, chunk = 20) {
         const k = Math.min(chunk, n - done);
         for (let i = 0; i < k; i++) GameLoop.runHandlers(100);
         done += k;
-        EventBus.publish('state_changed');
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         await new Promise(r => setTimeout(r, 0));
     }
     return done;

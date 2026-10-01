@@ -12,6 +12,7 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { FlagMark } from '../board/FlagMark.jsx';
 import { flagTooltip } from '../board/flagText.js';
 import { STATE_TONE } from '../board/FlagLayer.jsx';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * FlagRulesPanel — **one hero's flag rules** (Free Playmat slice 1.5b-ii,
@@ -39,7 +40,7 @@ export const FlagRulesPanel = ({ heroId, onClose }) => {
     useEffect(() => {
         const bump = () => refresh(n => n + 1);
         const timer = setInterval(bump, 500);
-        const unsubs = ['heroes_updated', BOARD_EVENTS.HERO_MOVED, 'state_changed'].map(e => EventBus.subscribe(e, bump));
+        const unsubs = [ENGINE_EVENTS.HEROES_UPDATED, BOARD_EVENTS.HERO_MOVED, ENGINE_EVENTS.STATE_CHANGED].map(e => EventBus.subscribe(e, bump));
         return () => { clearInterval(timer); unsubs.forEach(u => u()); };
     }, []);
 

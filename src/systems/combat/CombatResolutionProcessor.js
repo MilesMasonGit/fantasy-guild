@@ -3,6 +3,7 @@ import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 export function handleHeroWounded(fight, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
@@ -67,7 +68,7 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     // BOARD (playmat rework Phase 6; by id since Free Playmat 1.6b). It is what
     // lets loot land as a sprite where the kill happened (D-40) rather than
     // teleporting into the Bank.
-    EventBus.publish('combat_victory', {
+    EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, {
         cardId: fight.id, heroId, instanceId: fight.instanceId ?? null,
         areaId: fight.areaId || 'area_guild_hall',
         enemyId: enemy.id, enemyName: enemy.name,

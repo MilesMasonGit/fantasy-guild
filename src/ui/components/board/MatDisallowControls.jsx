@@ -6,6 +6,7 @@ import {
     useDisallowMode, toggleDisallowMode, setDisallowMode, disallowedCount
 } from '../../hooks/useDisallowMode.js';
 import { cn } from '../../utils/cn.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** The bar's button look, shared with the Token cap and Upkeep badges. */
 const BUTTON_CLS = 'flex items-center gap-1 px-2 py-0.5 rounded border whitespace-nowrap cursor-pointer transition-colors';
@@ -13,7 +14,7 @@ const OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-gi-gol
 /** Disallow mode on: red-tinted, as in the owner's mockup. */
 const ON_CLS = 'bg-[#791F1F] border-[#E24B4A] text-red-50';
 
-const click = () => EventBus.publish('audio:play', { clip: 'button_click' });
+const click = () => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
 
 /**
  * ⭐ **Disallow mode toggle** (B2.3, FB-32). On: each click on a Token flips it

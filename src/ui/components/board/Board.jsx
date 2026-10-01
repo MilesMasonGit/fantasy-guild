@@ -18,6 +18,7 @@ import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
 import { StationRecipeModal } from './StationRecipeModal.jsx';
 import { isShopPayload, pointerOverShopDrawer } from '../drawer/ShopDrawer.jsx';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * The playmat: one drop surface, scaled to fit, with `MatBoard` drawing what is
@@ -104,7 +105,7 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
         // refuses any id outside this station's own pool (P2).
         if (!StationRecipe.setSelectedRecipe(instance, selectedRecipeId)) return;
         // The gear badge's tooltip re-reads the Token on `state_changed`.
-        EventBus?.publish('state_changed', {});
+        EventBus?.publish(ENGINE_EVENTS.STATE_CHANGED, {});
         setRecipeId(null);
     }, [recipeId, EventBus]);
 

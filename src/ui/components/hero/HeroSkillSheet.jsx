@@ -3,6 +3,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { getSkill, SKILL_LAYERS, SKILL_CATEGORIES } from '../../../config/registries/skillRegistry.js';
 import { getJob, getJobLineage } from '../../../config/registries/jobRegistry.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * HeroSkillSheet — a hero's job, the six skills they hold, and everything they
@@ -35,7 +36,7 @@ export const HeroSkillSheet = ({ heroId, className }) => {
             const banked = Object.entries(h.bankedSkills || {}).map(([id, s]) => `${id}:${s?.level ?? 1}`);
             return `${h.jobId || 'recruit'}|${held.join(',')}|${banked.join(',')}`;
         },
-        ['heroes_updated', 'hero_promoted'],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_PROMOTED],
         null,
         { deps: [heroId] }
     );

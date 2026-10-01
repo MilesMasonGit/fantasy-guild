@@ -46,6 +46,7 @@ import * as Hostiles from '../board/Hostiles.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 /**
  * The opening state of a new game (FP-44): the Guild Hall already standing on
@@ -191,7 +192,7 @@ export const EngineBootstrap = {
         // (CR2-120). The audit above sees only the authored content set, so a
         // Token that was renamed after this save was written is invisible to
         // it. This reports; it never repairs and never deletes.
-        EventBus.subscribe('game_loaded', () => reportSaveContent(GameState.state));
+        EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => reportSaveContent(GameState.state));
 
         logger.info('Engine', 'Core systems ready.');
     },
@@ -353,9 +354,9 @@ export const EngineBootstrap = {
         GameLoop.start();
 
         // 5. Trigger Initial UI Sync
-        EventBus.publish('state_changed');
-        EventBus.publish('heroes_updated');
-        EventBus.publish('inventory_updated');
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
         // `cards_updated` was published here too until 2026-08-26 (CR2-046).
         // It retired with the card system and had no subscribers left.
     }

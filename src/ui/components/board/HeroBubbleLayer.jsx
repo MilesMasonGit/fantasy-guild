@@ -11,6 +11,7 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** How often lines are re-read and expired ones cleared. */
 const REFRESH_MS = 500;
@@ -75,7 +76,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
     // Level-ups and arrivals arrive as events.
     useEffect(() => {
         const unsubs = [
-            EventBus.subscribe('hero_leveled', ({ heroId, skillName, newLevel }) => {
+            EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, skillName, newLevel }) => {
                 if (!heroId || !skillName) return;
                 sayRef.current(heroId, 'levelUp', { key: `level:${skillName}`, text: momentText.levelUp(skillName, newLevel) });
             }),

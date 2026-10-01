@@ -8,6 +8,7 @@ import {
 } from '../../config/registries/jobRegistry.js';
 import { PromotionTrade } from '../components/hero/PromotionTrade.jsx';
 import { ArrowRight, Lock, GraduationCap } from 'lucide-react';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * JobChangeModal — where a hero becomes someone else.
@@ -51,7 +52,7 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
             const skills = Object.entries(h.skills || {}).map(([k, v]) => `${k}:${v.level}`).join(',');
             return `${h.jobId}|${skills}`;
         },
-        ['heroes_updated', 'hero_promoted', 'state_changed'],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_PROMOTED, ENGINE_EVENTS.STATE_CHANGED],
         null,
         { deps: [heroId] }
     );

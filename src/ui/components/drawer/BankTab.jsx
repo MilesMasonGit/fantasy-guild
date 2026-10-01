@@ -11,6 +11,7 @@ import { formatCompact } from '../../../utils/Formatters.js';
 import { Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
 
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** Hard cap on bank tabs: 1 free + 15 via Guild Hall (max total 16). */
 const BANK_TAB_CAP = 16;
@@ -66,7 +67,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 maxSlots: inv.maxSlots ?? 20
             };
         },
-        ['inventory_updated']
+        [ENGINE_EVENTS.INVENTORY_UPDATED]
     );
 
     const stocked = useMemo(() => {
@@ -491,7 +492,7 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
             {showViewInBank && count > 0 && (
                 <div className="pt-2 border-t border-gi-border/40">
                     <button
-                        onClick={() => EventBus.publish('ui:open_drawer', { tab: 'bank' })}
+                        onClick={() => EventBus.publish(UI_EVENTS.UI_OPEN_DRAWER, { tab: 'bank' })}
                         className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs md:text-sm uppercase tracking-wide transition-colors border-gi-primary/60 bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25 cursor-pointer active:scale-[0.99]"
                     >
                         <Landmark size={14} className="text-gi-primary" /> View in Item Bank

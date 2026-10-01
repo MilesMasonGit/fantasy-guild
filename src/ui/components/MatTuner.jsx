@@ -4,6 +4,7 @@ import { useEngine } from '../hooks/useEngine.js';
 import {
     MAT_TUNABLES, matTuning, setMatTuning, resetMatTuning, isMatTuned, matTuningDefault
 } from '../../config/matTuning.js';
+import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * MatTuner — developer panel for the free playmat's rules (FP-66).
@@ -23,7 +24,7 @@ export const MatTuner = React.memo(() => {
 
     const refresh = useCallback(() => {
         bump(n => n + 1);
-        engine?.EventBus.publish('state_changed');
+        engine?.EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     }, [engine]);
 
     if (!engine) return null;

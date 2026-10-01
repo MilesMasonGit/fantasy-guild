@@ -11,6 +11,7 @@ import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { isGearOnlyAlert } from './centreAlert.js';
 import { placeUnder } from './tooltipPlacement.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * What changes the badge's number (FB-31, SP-67). Every route a Token takes
@@ -28,8 +29,8 @@ export const CAP_EVENTS = Object.freeze([
     BOARD_EVENTS.TOKEN_PLACED,
     BOARD_EVENTS.TOKEN_DEPLETED,
     BOARD_EVENTS.BIN_CHANGED,
-    'state_changed',
-    'game_loaded'
+    ENGINE_EVENTS.STATE_CHANGED,
+    ENGINE_EVENTS.GAME_LOADED
 ]);
 
 /** Also redraw the open popover when a Token's problem comes or goes (its red notes). */

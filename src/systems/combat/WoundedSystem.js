@@ -4,6 +4,7 @@
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { logger } from '../../utils/Logger.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * WoundedSystem - Handles hero wounded state and recovery
@@ -92,7 +93,7 @@ const WoundedSystem = {
 
         logger.info('WoundedSystem', `${hero.name} is wounded. Recovery in ${BASE_RECOVERY_TIME_MS / 1000}s of game time`);
 
-        EventBus.publish('hero_wounded', {
+        EventBus.publish(ENGINE_EVENTS.HERO_WOUNDED, {
             heroId,
             heroName: hero.name,
             recoveryTime: BASE_RECOVERY_TIME_MS
@@ -123,14 +124,14 @@ const WoundedSystem = {
 
         logger.info('WoundedSystem', `${hero.name} has recovered with ${recoveryHp} HP`);
 
-        EventBus.publish('hero_recovered', {
+        EventBus.publish(ENGINE_EVENTS.HERO_RECOVERED, {
             heroId,
             heroName: hero.name,
             recoveredHp: recoveryHp
         });
 
         // Trigger UI update
-        EventBus.publish('heroes_updated', { source: 'wounded_recovery' });
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'wounded_recovery' });
     },
 
     /**

@@ -9,6 +9,7 @@ import * as HeroEffects from '../hero/HeroEffects.js';
 import { STATUS_TICK_INTERVAL_MS } from '../../config/FormulaRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as HeroManager from '../hero/HeroManager.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * ⭐ **Any entity may carry live effect instances** (G-6).
@@ -104,7 +105,7 @@ export function heroBearer(hero) {
         name: hero?.name || hero?.id || 'hero',
         roles: { self: null, selfHeroId: hero?.id ?? null, actor: null, source: null },
         suspended: () => hero?.status === 'wounded',
-        notify: (source) => EventBus.publish('heroes_updated', { source, heroId: hero?.id })
+        notify: (source) => EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source, heroId: hero?.id })
     };
 }
 

@@ -17,6 +17,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { isRealAttack } from './hitAnimations.js';
 import { COMBAT_ATTACK_EVENT } from './TokenHitArt.jsx';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * When this hero's last real attack began (`performance.now()`), while
@@ -104,7 +105,7 @@ export const MatHero = memo(function MatHero({
             onClick={(e) => {
                 if (!opaque(e)) return;
                 e.stopPropagation();
-                EventBus.publish('inspect_hero', { heroId });
+                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
             }}
             onContextMenu={(e) => {
                 if (!opaque(e)) return;
