@@ -3,6 +3,8 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
+import { HeroManager } from '../../../systems/hero/HeroManager.js';
+import { reorderHeroInDock } from './dockReorder.js';
 
 export const BankHeroPanel = ({
     menuRight,
@@ -19,6 +21,13 @@ export const BankHeroPanel = ({
     ) || [];
 
     const isOpen = Boolean(selectedHeroId);
+
+    // CR3-457: wired the same as the bottom dock (BottomHeroDock.jsx's
+    // handleReorderHero) — this panel accepted and highlighted a hero-reorder
+    // drop already (HeroDockTab draws the insertion line on its own), but
+    // silently dropped it because no onReorder was ever passed in.
+    const handleReorderHero = (sourceHeroId, targetHeroId) =>
+        reorderHeroInDock(HeroManager, heroIds, sourceHeroId, targetHeroId);
 
     // If menu is on the right, the bank drawer slides from the right, so put this on the left.
     // If menu is on the left, the bank drawer slides from the left, so put this on the right.
@@ -55,6 +64,7 @@ export const BankHeroPanel = ({
                             onSelect={onSelectHero}
                             onDoubleClick={onDoubleClickHero}
                             onEdit={onEditHero}
+                            onReorder={handleReorderHero}
                             vertical={true}
                             isDockLeft={isDockLeft}
                         />

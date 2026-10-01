@@ -19,6 +19,8 @@ project's first tagged baseline — everything before it was untagged developmen
   playmat, the hero dock, the Bank panel, and the Bank and Shop drawers each now catch their own
   render errors and show a small "Something went wrong here" panel with a Reload button, while
   everything else keeps working.
+- **Reordering heroes in the Bank's side panel works now (CR3-457).** It already showed the drop
+  line; dragging a hero to reorder there now actually moves it, the same as the bottom dock.
 - **New ore vein art.** Copper, coal, iron, gold, silver, mythril, adamantine and darkmetal veins,
   and the Stone Outcrop, show their new vein pictures. New foundation, stone and plank art is
   ready to pick in the CMS.
