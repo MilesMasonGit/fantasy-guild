@@ -402,6 +402,7 @@ export const ReactRoot = ({ engine }) => {
                                 ) : (
                                     <Board
                                         inspectedHeroId={inspectHeroId}
+                                        inspectedTokenId={ui.inspect.selection?.type === 'token' ? (ui.inspect.selection.source?.instanceId ?? null) : null}
                                         onOpenGuildHall={handleOpenGuildHall}
                                         onInspectToken={onInspectToken}
                                         onClearInspect={onClearInspect}

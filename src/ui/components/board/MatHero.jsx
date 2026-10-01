@@ -53,7 +53,7 @@ export const MatHero = memo(function MatHero({
     left,
     top,
     z,
-    glow = null,
+    outline = null,
     hovered = false,
     onHover,
     onRecall,
@@ -99,6 +99,7 @@ export const MatHero = memo(function MatHero({
             data-alpha-test="true"
             data-board-hero={heroId}
             data-hero-limp={limp ? 'true' : undefined}
+            data-outline={outline || undefined}
             aria-label={name || 'Hero'}
             onClick={(e) => {
                 if (!opaque(e)) return;
@@ -132,7 +133,6 @@ export const MatHero = memo(function MatHero({
             className={cn(
                 'absolute p-0 m-0 bg-transparent border-0 outline-none',
                 'pointer-events-auto cursor-grab active:cursor-grabbing',
-                glow,
                 isThisHeroDragging && 'opacity-0 pointer-events-none'
             )}
         >
@@ -140,7 +140,7 @@ export const MatHero = memo(function MatHero({
                 <div
                     className={cn(
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                        hovered && !drag.isDragging && 'gi-token-hover-pulse'
+                        hovered && !drag.isDragging && 'gi-token-hover-hop'
                     )}
                     // A defeated hero limping home looks wounded (HM-6).
                     style={limp ? { filter: LIMP_FILTER } : undefined}
@@ -155,6 +155,7 @@ export const MatHero = memo(function MatHero({
                             attackAt={attackAt}
                             facingLeft={facingLeft}
                             frameMs={limp ? LIMP_FRAME_MS : undefined}
+                            outline={outline}
                             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                         />
                     ) : (
@@ -162,6 +163,7 @@ export const MatHero = memo(function MatHero({
                             src={staticArt}
                             alt={name || 'Hero'}
                             size={artPx}
+                            outline={outline}
                             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-transform duration-200"
                             style={{ transform: facingLeft ? 'scaleX(-1)' : 'none' }}
                         />

@@ -11,6 +11,7 @@ import { MatPointAlerts } from './MatPointAlerts.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
 import { FlagLayer } from './FlagLayer.jsx';
+import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { TERRAIN_ENABLED } from '../../../config/registries/terrainRegistry.js';
@@ -55,7 +56,8 @@ export const MatBoard = ({
     onInspectToken,
     onClearInspect,
     onOpenRecipes,
-    inspectedHeroId = null
+    inspectedHeroId = null,
+    inspectedTokenId = null
 }) => {
     // Dev only (an empty function in production): MatBoard's OWN renders for
     // the Perf HUD, beside Board.jsx's subtree Profiler (CR3-311).
@@ -323,6 +325,7 @@ export const MatBoard = ({
                     walkFacing={t.walkFacing}
                     z={zById.get(t.id)}
                     isHovered={hoveredId === t.id}
+                    selected={inspectedTokenId != null && inspectedTokenId === t.id}
                     hasHero={workedBy.has(t.id)}
                     onInspectToken={onInspectToken}
                     onClearInspect={onClearInspect}
@@ -348,7 +351,12 @@ export const MatBoard = ({
                         left={place.left}
                         top={place.top}
                         z={heroZ(h, order)}
-                        glow={h.state === 'working' && !h.stuck ? 'gi-glow-active' : null}
+                        outline={heroOutline({
+                            hovered: hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
+                            selected: inspectedHeroId === h.heroId,
+                            working: h.state === 'working',
+                            stuck: h.stuck
+                        })}
                         hovered={hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId)}
                         onHover={setHoverHeroId}
                         onRecall={handleRecallHero}

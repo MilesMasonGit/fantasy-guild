@@ -17,6 +17,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
+import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
 import { placeUnder } from './tooltipPlacement.js';
 import { pointerToMat } from './matPoint.js';
@@ -323,7 +324,13 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
                     zIndex: z
                 }}
             >
-                <FlagMark colour={flag.colour} size={artPx} alt={`${flag.name}’s flag`} className="absolute left-0 top-0" />
+                <FlagMark
+                    colour={flag.colour}
+                    size={artPx}
+                    alt={`${flag.name}’s flag`}
+                    outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}
+                    className="absolute left-0 top-0"
+                />
                 {idle && (
                     <span
                         data-flag-idle-chip
