@@ -45,3 +45,7 @@ scratch_*.txt
 
 # Benchmark output (npm run bench); bench/baseline.json is committed.
 bench/results/
+
+# Generated sprite shadows and outlines (scripts/spriteFx.mjs, Wave 5).
+# Rebuilt from public/assets by npm run dev / npm run build; never edit.
+public/_gen/
