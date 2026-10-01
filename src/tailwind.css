@@ -816,6 +816,22 @@
   .gi-gear-pulse { animation: none; }
 }
 
+/* A Token's charge floater, -1 or +50 (CR3-357): rises a few pixels and fades
+   over 3 s. It was a framer-motion keyframe animation on the JavaScript frame
+   loop; this is the same curve (stops at 0 / 8 / 82 / 100 %, ease-out on each
+   segment, as framer's `easeOut`) on the compositor. Only `opacity` and
+   `transform`: the ring anchor's centring is Tailwind's separate `translate`. */
+@keyframes gi-charge-float {
+  0%   { opacity: 0; transform: translateY(2px) scale(0.95); }
+  8%   { opacity: 1; transform: translateY(0) scale(1); }
+  82%  { opacity: 1; transform: translateY(-2px) scale(1); }
+  100% { opacity: 0; transform: translateY(-5px) scale(0.98); }
+}
+
+.gi-charge-float {
+  animation: gi-charge-float 3s ease-out both;
+}
+
 @keyframes gi-item-equipped-bob {
   0% {
     transform: translateY(0) scale(1);

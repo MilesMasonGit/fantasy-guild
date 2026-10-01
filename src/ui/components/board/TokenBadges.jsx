@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
@@ -61,35 +60,25 @@ export const TokenChargeDeltaFloater = ({ instanceId, anchor = 'corner' }) => {
                 "transition-all duration-150 ease-out"
             )}
         >
-            <AnimatePresence>
-                {deltas.map(d => (
-                    <motion.div
-                        key={d.id}
-                        initial={{ opacity: 0, y: 2, scale: 0.95 }}
-                        animate={{
-                            opacity: [0, 1, 1, 0],
-                            y: [2, 0, -2, -5],
-                            scale: [0.95, 1, 1, 0.98]
-                        }}
-                        exit={{ opacity: 0 }}
-                        transition={{
-                            duration: 3.0,
-                            times: [0, 0.08, 0.82, 1],
-                            ease: 'easeOut'
-                        }}
-                        className={cn(
-                            anchor === 'ring' ? "absolute left-0 bottom-0 -translate-x-1/2" : "absolute right-0 bottom-0",
-                            "font-mono font-bold text-[12px] tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
-                            d.delta > 0 ? "text-emerald-300" : "text-amber-200"
-                        )}
-                        style={{
-                            textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000'
-                        }}
-                    >
-                        {d.delta > 0 ? `+${d.delta.toLocaleString()}` : (d.delta < 0 ? `-${Math.abs(d.delta).toLocaleString()}` : `${d.delta}`)}
-                    </motion.div>
-                ))}
-            </AnimatePresence>
+            {/* ⭐ CR3-357: each number rises and fades by a CSS animation
+                (`gi-charge-float`, tailwind.css) on the compositor, not on
+                framer-motion's JavaScript frame loop. Same 3 s curve. */}
+            {deltas.map(d => (
+                <div
+                    key={d.id}
+                    className={cn(
+                        "gi-charge-float",
+                        anchor === 'ring' ? "absolute left-0 bottom-0 -translate-x-1/2" : "absolute right-0 bottom-0",
+                        "font-mono font-bold text-[12px] tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
+                        d.delta > 0 ? "text-emerald-300" : "text-amber-200"
+                    )}
+                    style={{
+                        textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000'
+                    }}
+                >
+                    {d.delta > 0 ? `+${d.delta.toLocaleString()}` : (d.delta < 0 ? `-${Math.abs(d.delta).toLocaleString()}` : `${d.delta}`)}
+                </div>
+            ))}
         </div>
     );
 };
