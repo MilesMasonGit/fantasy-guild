@@ -39,7 +39,7 @@ export default defineConfig({
         // Use jsdom for DOM testing
         environment: 'jsdom',
         // Heroes arrive instantly in tests unless a test says otherwise (Hero Movement M1).
-        setupFiles: ['./src/tests/setup/instantArrival.js'],
+        setupFiles: ['./src/tests/setup/instantArrival.js', './src/tests/setup/eventBusErrors.js'],
 
         // `zustand` lives only in `cms/node_modules`, and an externalised
         // dependency is loaded by Node directly — which bypasses the alias
