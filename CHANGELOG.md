@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Mat Tokens no longer stop the keyboard Tab key (CR3-411).** Tabbing through the page used to
+  walk through every one of the ~150 Tokens on the mat, one by one, and a screen reader would
+  read instructions for picking one up with the keyboard — which was never wired up. Tab now
+  skips the mat entirely.
 - **No stray reach ring while dragging (CR3-410).** Carrying a Token across a hero or a flag used
   to light up that hero's reach ring, even though the Token would not land there. Now, while
   dragging, only the rings of flags the Token would actually land in show.

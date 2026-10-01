@@ -258,7 +258,11 @@ export const MatToken = React.memo(function MatToken({
                 return null;
             } : undefined
         },
-        sourceSurface: DND_SURFACE.BOARD
+        sourceSurface: DND_SURFACE.BOARD,
+        // CR3-411: no keyboard sensor exists, so dnd-kit's tabIndex/role/
+        // "press space to pick up" text was dead on every one of the ~150
+        // mat Tokens. A plain div with neither is not a Tab stop.
+        keyboardAccessible: false
     });
 
     React.useEffect(() => {

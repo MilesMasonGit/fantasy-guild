@@ -495,15 +495,31 @@ export const DeckDndProvider = ({ children }) => {
 /**
  * Make a node a drag source. `payload` is merged into the drag data under the
  * given `kind`; `sourceSurface` seeds the ghost's compact/bold state at pickup.
+ *
+ * `keyboardAccessible` (default true): whether dnd-kit's own `attributes`
+ * (`role="button"`, `tabIndex={0}`, `aria-roledescription="draggable"`,
+ * `aria-describedby` pointing at its hidden "press space bar to pick up"
+ * text) are spread onto the node. **CR3-411**: there is no keyboard sensor
+ * registered (`DeckDndProvider` wires only `AlphaPointerSensor`), so that
+ * text describes a drag that cannot happen. `MatToken` passes `false` — a
+ * plain `<div>` with no `tabIndex` is not a Tab stop and carries no role, so
+ * this both drops the false instructions and removes the Tab stop in one
+ * change. Every other draggable (dock, Bank, Shop, the bin) is unaffected.
  */
-export function useEntityDrag({ id, kind, payload, sourceSurface = DND_SURFACE.DRAWER, disabled = false }) {
+export function useEntityDrag({
+    id, kind, payload, sourceSurface = DND_SURFACE.DRAWER, disabled = false, keyboardAccessible = true
+}) {
     const rid = useId();
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: id || `${kind}-${rid}`,
         disabled,
         data: { kind, sourceSurface, ...payload }
     });
-    return { setNodeRef, isDragging, handleProps: { ...listeners, ...attributes } };
+    return {
+        setNodeRef,
+        isDragging,
+        handleProps: keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }
+    };
 }
 
 /**
