@@ -9,7 +9,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { matW, matH, matSteps } from '../config/matGeometry.js';
 import { openingMat } from '../systems/core/EngineBootstrap.js';
 import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
-import { pointerToMat } from '../ui/components/board/matPoint.js';
+import { pointerToMat, matRectForDrag } from '../ui/components/board/matPoint.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { boardPointToScreen } from '../ui/components/base/ParticleOverlay.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
@@ -131,6 +131,47 @@ describe('pointerToMat — screen pointer → mat point', () => {
         expect(pointerToMat({ x: 10, y: 20 }, rect, { x: 5, y: -5 })).toEqual({ x: 15, y: 15 });
         expect(pointerToMat(null, rect)).toBeNull();
         expect(pointerToMat({ x: 1, y: 1 }, null)).toBeNull();
+    });
+});
+
+describe('matRectForDrag — the mat rect read once per drag, not once per frame (CR3-403)', () => {
+    const fakeMatEl = (rect) => ({ getBoundingClientRect: vi.fn(() => rect) });
+
+    it('reads the rect once, then answers the same object for the same element + session', () => {
+        const el = fakeMatEl({ left: 0, top: 0, width: 1760, height: 1126 });
+        const session = {};
+        const first = matRectForDrag(el, session);
+        const second = matRectForDrag(el, session);
+        expect(el.getBoundingClientRect).toHaveBeenCalledTimes(1);
+        expect(second).toBe(first);
+    });
+
+    it('a new session (the next drag) reads fresh', () => {
+        const el = fakeMatEl({ left: 0, top: 0, width: 1760, height: 1126 });
+        matRectForDrag(el, {});
+        matRectForDrag(el, {});
+        expect(el.getBoundingClientRect).toHaveBeenCalledTimes(2);
+    });
+
+    it('a different mat element reads fresh even with the same session', () => {
+        const session = {};
+        const a = fakeMatEl({ left: 0, top: 0, width: 1760, height: 1126 });
+        const b = fakeMatEl({ left: 0, top: 0, width: 960, height: 614 });
+        matRectForDrag(a, session);
+        matRectForDrag(b, session);
+        expect(a.getBoundingClientRect).toHaveBeenCalledTimes(1);
+        expect(b.getBoundingClientRect).toHaveBeenCalledTimes(1);
+    });
+
+    it('with no session, falls back to reading fresh (never caches wrongly)', () => {
+        const el = fakeMatEl({ left: 0, top: 0, width: 1760, height: 1126 });
+        matRectForDrag(el, null);
+        matRectForDrag(el, null);
+        expect(el.getBoundingClientRect).toHaveBeenCalledTimes(2);
+    });
+
+    it('a missing element answers null', () => {
+        expect(matRectForDrag(null, {})).toBeNull();
     });
 });
 

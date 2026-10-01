@@ -36,8 +36,7 @@ const engine = {
     GameState,
     EventBus,
     BoardPlacement: { recallHeroById: vi.fn() },
-    EquipmentManager: { equipItem: vi.fn() },
-    HeroAssignmentManager: { unassignHero: vi.fn() }
+    EquipmentManager: { equipItem: vi.fn() }
 };
 
 function mount(props = {}) {

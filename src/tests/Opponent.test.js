@@ -131,6 +131,11 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TriggerSystem.resetCascadeGuard();
     TriggerSystem.init();
+    // CR3-157: BoardCombat used to call LoadoutMoments.fire directly right
+    // after publishing COMBAT_ENGAGED; it now only subscribes to that event
+    // (LoadoutMoments.init, called after TriggerSystem.init as the game
+    // does), so a real engagement through BoardRunner.tick needs this started.
+    LoadoutMoments.init();
     LiveEffects.resetClock();
     GameState.state.heroes = [fighter('hero_1')];
     GameState.state.inventory.maxSlots = 50;
@@ -138,6 +143,7 @@ beforeEach(() => {
 
 afterEach(() => {
     TriggerSystem.teardown();
+    LoadoutMoments.teardown();
     TileModifiers.teardown();
     BoardCombat.clearAll();
 });
@@ -147,11 +153,20 @@ describe('1. an item says "deals N damage to the enemy", and a real fight feels 
         const item = carry(dealsToEnemy(7));
         place(MONSTER, 'fixture_enemy', 'hero_1');
 
-        // Snapshot inside the engagement publish: `BoardCombat` publishes, THEN
-        // fires the loadout, so this is the HP the item's blow lands on.
+        // Every engagement starts at full HP (BOARD_EVENTS.COMBAT_ENGAGED's own
+        // doc: "the enemy returns to full HP for the next fight"), so `.max` is
+        // the HP the item's blow lands on — read here rather than `.current`.
+        //
+        // CR3-157: `.current` would no longer work for this. LoadoutMoments now
+        // fires AS a COMBAT_ENGAGED subscriber (registered after TriggerSystem,
+        // same final order the old direct call ran in), so it runs INSIDE
+        // EventBus.publish's own subscriber loop rather than strictly after it
+        // returns. Since LoadoutMoments is registered before this test's own
+        // subscriber, `.current` would already reflect the item's damage by the
+        // time this callback runs. `.max` sidesteps that entirely.
         let before = null, after = null;
         const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, () => {
-            if (before == null) before = BoardCombat.getFight(idAt(MONSTER)).combat.enemyHp.current;
+            if (before == null) before = BoardCombat.getFight(idAt(MONSTER)).combat.enemyHp.max;
         });
         try {
             for (let t = 0; t < 1000 && after == null; t += 100) {

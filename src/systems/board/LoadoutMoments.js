@@ -8,6 +8,8 @@ import * as EffectActions from './EffectActions.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import { KEYWORD } from '../effects/statements.js';
+import { EventBus } from '../core/EventBus.js';
+import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
  * The rules a hero is carrying that asked for **this** moment.
@@ -21,10 +23,12 @@ import { KEYWORD } from '../effects/statements.js';
  * construction.
  *
  * ## Why this is its own module
- * Both `BoardRunner` (cycle start) and `BoardCombat` (engaging an enemy) fire
+ * Both `BoardRunner` (cycle start, a direct call) and `BoardCombat` (engaging
+ * an enemy, via `init`'s own `COMBAT_ENGAGED` subscription — CR3-157) fire
  * carried rules, and `BoardRunner` already imports `BoardCombat` — so putting
  * the shared function in either would make an import cycle. It lives here so
- * both can reach it and neither reaches the other.
+ * both can reach it and neither reaches the other, and this file imports
+ * neither of them.
  *
  * ## The order is check, act, pay
  * A potion spent on a roll that missed would teach the player the opposite of
@@ -96,4 +100,33 @@ export function fire(instanceId, heroId, eventId) {
     }
 
     return fired;
+}
+
+let unsubscribers = [];
+
+export function teardown() {
+    for (const off of unsubscribers) off();
+    unsubscribers = [];
+}
+
+/**
+ * CR3-157 — `BoardCombat` used to call `fire(id, heroId, 'COMBAT_ENGAGED')`
+ * directly, right after publishing `BOARD_EVENTS.COMBAT_ENGAGED` with the
+ * same data. That direct call was the one edge making `BoardCombat →
+ * LoadoutMoments → {StatusApplication, DealDamage, EffectActions} →
+ * BoardCombat` an import cycle (this file imports none of
+ * `BoardCombat`/`Flags`, so it stays a leaf).
+ *
+ * Subscribing instead gives the exact same order **only if this runs after**
+ * whatever else already subscribes to `COMBAT_ENGAGED` — the trigger moments,
+ * via `TriggerSystem.init()` (called from `BoardRunner.init()`). This is why
+ * `EngineBootstrap` calls this after `BoardRunner.init()`/`BoardCombat.init()`:
+ * registered later, so `EventBus.publish`'s synchronous, in-order subscriber
+ * loop reaches this one last — same as the direct call used to run last.
+ */
+export function init() {
+    teardown();
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, ({ instanceId, heroId }) => {
+        fire(instanceId, heroId, 'COMBAT_ENGAGED');
+    }));
 }

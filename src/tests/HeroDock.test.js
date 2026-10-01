@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { BANNER_WIDTH_DEFAULT } from '../ui/dev/cardSizeStore.js';
 import {
     DOCK_TAB_H, DOCK_TAB_W, DOCK_OVERLAP, DOCK_RESERVED_H, DOCK_Z, DOCK_PINNED_Z,
     DOCK_CARD_BODY_H, DOCK_MAX_PINNED, DOCK_TAB_W_SMALL, DOCK_OVERLAP_SMALL, DOCK_SFX,
@@ -102,12 +101,14 @@ describe('Hero Dock layout constants', () => {
         expect(expanded).toBeLessThanOrEqual(300);
     });
 
-    it('matches the md playmat card width, so a dock card reads as a hero card', () => {
-        // Was `CARD_TIERS.md.w` on the deleted `GICard`, a table nothing but
-        // this test read. `BANNER_WIDTH_DEFAULT` is the same 200px and is what
-        // the drag ghost actually sizes a banner card to, so the comparison is
-        // now against something live rather than against a dead constant.
-        expect(DOCK_TAB_W).toBe(BANNER_WIDTH_DEFAULT);
+    it('is 200px, the historical md playmat card width', () => {
+        // Was compared against `BANNER_WIDTH_DEFAULT`, a dev-tunable store
+        // (`cardSizeStore.js`) whose own comment said the drag ghost's card
+        // frame was its last reader — but that frame (`GhostCardFrame`) was
+        // never actually rendered, so the store had zero real readers and
+        // was deleted as dead code (CR3-407). DOCK_TAB_W is now just the
+        // literal its own comment explains.
+        expect(DOCK_TAB_W).toBe(200);
     });
 
     it('limits comparison to two cards', () => {

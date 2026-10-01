@@ -20,7 +20,7 @@ import { FlagMark } from './FlagMark.jsx';
 import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
 import { placeUnder } from './tooltipPlacement.js';
-import { pointerToMat } from './matPoint.js';
+import { pointerToMat, matRectForDrag } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
 import {
@@ -118,7 +118,7 @@ function useFlagDragPoint(matRef) {
     if (kind !== DRAG_KIND.FLAG && kind !== DRAG_KIND.HERO) return null;
     if (!activePayload?.heroId) return null;
 
-    const point = pointerToMat(pointer, matRef.current.getBoundingClientRect());
+    const point = pointerToMat(pointer, matRectForDrag(matRef.current, activePayload));
     if (!point) return null;
     // Off the mat entirely (over the Tray, the Dock): nothing to preview.
     if (point.x < 0 || point.y < 0 || point.x > matW() || point.y > matH()) return null;

@@ -4,7 +4,7 @@ import {
     useDraggable, useDroppable, pointerWithin
 } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
-import { CSS, getEventCoordinates } from '@dnd-kit/utilities';
+import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn.js';
 import { EventBus } from '../../systems/core/EventBus.js';
@@ -58,14 +58,8 @@ export function smallestWithin(args) {
         /**
          * ⚠️ Drawers beat the board where they overlap — the same rule
          * `surfaceAtPoint` states below, now applied to collision too.
-         * Miniboard tiles beat both drawers and board.
          */
-        const rank = (c) => {
-            const s = surfaceOf(c);
-            if (s === DND_SURFACE.MINIBOARD) return -1;
-            if (s === DND_SURFACE.DRAWER) return 0;
-            return 1;
-        };
+        const rank = (c) => (surfaceOf(c) === DND_SURFACE.DRAWER ? 0 : 1);
 
         return [...hits].sort((a, b) => rank(a) - rank(b) || area(a) - area(b));
     }
@@ -108,23 +102,44 @@ export function smallestWithin(args) {
  * containment against the big `data-dnd-region` containers. Geometric rather
  * than elementFromPoint (which was flaky over the board's stacked overlays and
  * made the bloom miss). Drawers win over the board where they overlap.
+ *
+ * Queries the DOM fresh every call — kept for CR3-413's tests and for any
+ * one-off caller. The provider's own per-pointer-move check does not call
+ * this (CR3-403, below): it reuses a snapshot taken once at drag start.
  */
 // Exported for tests only (CR3-413); nothing else imports it.
 export function surfaceAtPoint(x, y) {
     if (typeof document === 'undefined') return null;
-    for (const el of document.querySelectorAll('[data-dnd-region="miniboard"]')) {
-        const r = el.getBoundingClientRect();
-        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
-            return DND_SURFACE.MINIBOARD;
-        }
-    }
-    let board = null;
+    return surfaceWithinRegions(x, y, snapshotDndRegions());
+}
+
+// Exported for tests only (CR3-403); nothing else imports it.
+/** Every `[data-dnd-region]` element's surface and rect, read once. */
+export function snapshotDndRegions() {
+    if (typeof document === 'undefined') return [];
+    const out = [];
     for (const el of document.querySelectorAll('[data-dnd-region]')) {
-        const r = el.getBoundingClientRect();
+        out.push({ surface: el.getAttribute('data-dnd-region'), rect: el.getBoundingClientRect() });
+    }
+    return out;
+}
+
+/**
+ * CR3-403: the same priority rule `surfaceAtPoint` applies (a drawer over the
+ * board), against rects already measured instead of querying the DOM again.
+ * Nothing can open, close or resize a drawer while the pointer is down
+ * mid-drag, so a snapshot taken once at drag start stays exact for the
+ * drag's whole duration — unlike the old per-move query (two whole-document
+ * `querySelectorAll` calls plus a `getBoundingClientRect` per region, on
+ * every single pointer move).
+ */
+// Exported for tests only (CR3-403); nothing else imports it.
+export function surfaceWithinRegions(x, y, regions) {
+    let board = null;
+    for (const { surface, rect: r } of regions) {
         if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
-            const s = el.getAttribute('data-dnd-region');
-            if (s === DND_SURFACE.DRAWER) return DND_SURFACE.DRAWER;
-            if (s === DND_SURFACE.BOARD) board = DND_SURFACE.BOARD;
+            if (surface === DND_SURFACE.DRAWER) return DND_SURFACE.DRAWER;
+            if (surface === DND_SURFACE.BOARD) board = DND_SURFACE.BOARD;
         }
     }
     return board;
@@ -132,6 +147,10 @@ export function surfaceAtPoint(x, y) {
 
 const GLOW_BOLD = 'drop-shadow(0 10px 18px rgba(0,0,0,0.55))';
 const GLOW_COMPACT = 'drop-shadow(0 4px 8px rgba(0,0,0,0.45))';
+
+// CR3-404: static, so passing it to <DndContext> never counts as a changed
+// prop. It used to be a fresh object literal on every DeckDndProvider render.
+const AUTO_SCROLL = { enabled: true, threshold: { x: 0, y: 0.18 } };
 
 /**
  * ⭐ Wave 5 (owner rulings Z §11): a carried Token, hero or flag casts the hard
@@ -161,7 +180,7 @@ export const DragPointerContext = React.createContext(null);
 export const useDragPointer = () => React.useContext(DragPointerContext);
 
 /**
- * Which big region ('board' | 'drawer' | 'miniboard' | null) the pointer is
+ * Which big region ('board' | 'drawer' | null) the pointer is
  * over while a drag is live — the same `surface` state that drives the
  * ghost's bloom, now readable by a drawer that needs to react to it too
  * (the Shop's slide-aside, CR3-402). Changes only when the pointer crosses a
@@ -173,6 +192,58 @@ export const useDragSurface = () => React.useContext(DragSurfaceContext);
 import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
 import { isDisallowMode } from '../hooks/useDisallowMode.js';
 import { isMatBankLocked } from '../hooks/useMatBankLock.js';
+
+/**
+ * CR3-404 — owns the per-frame cursor publish on its own, so a frame where
+ * only the cursor moved re-renders just this component (and the context's
+ * consumers, `MatRings`/`FlagLayer`), not `DeckDndProvider` itself.
+ *
+ * Before this split, `dragPointer` lived in `DeckDndProvider`, so every
+ * per-frame update re-ran its whole render — recreating the `<DndContext>`
+ * element it returns, which made dnd-kit redo its own work (collision,
+ * overlay) a second time on top of the move it had already handled. Now
+ * `DeckDndProvider` only re-renders at drag start/end or a surface crossing,
+ * so the `children` it hands down (the `<DndContext>` tree) stays the exact
+ * same element across every in-between frame. React bails out of
+ * re-rendering an unchanged child element, so this component re-rendering
+ * does not propagate into `children` at all.
+ */
+// Exported for tests only (CR3-404); DeckDndProvider is its one real caller.
+export function DragPointerProvider({ activePayload, pointerRef, children }) {
+    const [dragPointer, setDragPointer] = useState(null);
+    const frameRef = useRef(0);
+
+    useEffect(() => {
+        if (!activePayload) {
+            setDragPointer(null);
+            return undefined;
+        }
+        // Seed immediately: handleDragStart already stamped pointerRef with
+        // the activator event's coordinates before this effect can run.
+        setDragPointer(pointerRef.current);
+        const onMove = (e) => {
+            pointerRef.current = { x: e.clientX, y: e.clientY };
+            if (!frameRef.current && typeof requestAnimationFrame === 'function') {
+                frameRef.current = requestAnimationFrame(() => {
+                    frameRef.current = 0;
+                    setDragPointer(pointerRef.current);
+                });
+            }
+        };
+        window.addEventListener('pointermove', onMove, { passive: true });
+        return () => {
+            window.removeEventListener('pointermove', onMove);
+            if (frameRef.current && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current);
+            frameRef.current = 0;
+        };
+    }, [activePayload, pointerRef]);
+
+    return (
+        <DragPointerContext.Provider value={dragPointer}>
+            {children}
+        </DragPointerContext.Provider>
+    );
+}
 
 export class AlphaPointerSensor extends PointerSensor {
     static activators = [
@@ -208,38 +279,28 @@ export class AlphaPointerSensor extends PointerSensor {
 export const DeckDndProvider = ({ children }) => {
     const [activePayload, setActivePayload] = useState(null);
     const [surface, setSurface] = useState(DND_SURFACE.BOARD);
-    const [isOverMiniboard, setIsOverMiniboard] = useState(false);
     const pointerRef = useRef({ x: 0, y: 0 });
     const glideTargetRef = useRef(null);
-
-    // The cursor, published at most once per frame so the range rings can
-    // follow the drag without a state update per pointermove event.
-    const [dragPointer, setDragPointer] = useState(null);
-    const frameRef = useRef(0);
+    // CR3-403: the drawer/board regions, snapshotted once when this drag
+    // starts (below) instead of queried from the DOM on every pointer move.
+    const regionsRef = useRef([]);
 
     const sensors = useSensors(
         useSensor(AlphaPointerSensor, { activationConstraint: { distance: 8 } })
     );
 
-    // While a drag is live, track the cursor and which surface it's over so the
+    // While a drag is live, track which surface the cursor is over so the
     // ghost can bloom bold over the board and stay compact over a drawer.
+    // CR3-404: the per-frame cursor publish itself lives in
+    // `DragPointerProvider` below, so this effect (and this component)
+    // re-renders only at drag start/end or a surface crossing — not once a
+    // frame.
     useEffect(() => {
         if (!activePayload) return;
+        regionsRef.current = snapshotDndRegions();
         const onMove = (e) => {
-            pointerRef.current = { x: e.clientX, y: e.clientY };
-            if (!frameRef.current && typeof requestAnimationFrame === 'function') {
-                frameRef.current = requestAnimationFrame(() => {
-                    frameRef.current = 0;
-                    setDragPointer(pointerRef.current);
-                });
-            }
-            const s = surfaceAtPoint(e.clientX, e.clientY);
-            if (s) {
-                setSurface(prev => (prev === s ? prev : s));
-                setIsOverMiniboard(s === DND_SURFACE.MINIBOARD);
-            } else {
-                setIsOverMiniboard(false);
-            }
+            const s = surfaceWithinRegions(e.clientX, e.clientY, regionsRef.current);
+            if (s) setSurface(prev => (prev === s ? prev : s));
         };
         window.addEventListener('pointermove', onMove, { passive: true });
         return () => window.removeEventListener('pointermove', onMove);
@@ -251,8 +312,6 @@ export const DeckDndProvider = ({ children }) => {
         if (a && 'clientX' in a) pointerRef.current = { x: a.clientX, y: a.clientY };
         setSurface(payload?.sourceSurface || DND_SURFACE.BOARD);
         setActivePayload(payload);
-        setDragPointer(pointerRef.current);
-        setIsOverMiniboard(false);
         glideTargetRef.current = null;
         if (typeof document !== 'undefined') document.body.classList.add('gi-dnd-active');
         sfx(DRAG_SFX.pickup);
@@ -282,18 +341,10 @@ export const DeckDndProvider = ({ children }) => {
         }
     }, []);
 
-    const handleDragOver = useCallback((event) => {
-        const overId = event.over?.id ? String(event.over.id) : '';
-        const isMini = overId.startsWith('miniboard-tile-') || event.over?.data?.current?.surface === DND_SURFACE.MINIBOARD;
-        if (isMini) setIsOverMiniboard(true);
-    }, []);
-
     const finishDrag = useCallback(() => {
         setActivePayload(null);
-        setIsOverMiniboard(false);
-        if (frameRef.current && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frameRef.current);
-        frameRef.current = 0;
-        setDragPointer(null);
+        // dragPointer itself is cleared by DragPointerProvider's own effect,
+        // which re-runs the moment activePayload goes null.
         if (typeof document !== 'undefined') document.body.classList.remove('gi-dnd-active');
     }, []);
 
@@ -352,7 +403,14 @@ export const DeckDndProvider = ({ children }) => {
 
     // Drop animation: on a MISS, spring the ghost back to where it came from.
     // On a SUCCESS, hand over to the destination instantly — see below.
-    const dropAnimation = {
+    //
+    // CR3-404: hoisted into a `useMemo` with no dependencies. `glideTargetRef`
+    // and `pointerRef` are refs — stable objects whose `.current` is read
+    // inside these closures at CALL time (when dnd-kit actually animates a
+    // drop), not captured now, so memoising never serves a stale value. A
+    // fresh object here every render was one more prop dnd-kit had to treat
+    // as changed on every re-render of this component.
+    const dropAnimation = React.useMemo(() => ({
         duration: 280,
         easing: 'cubic-bezier(0.2, 1.25, 0.5, 1)', // slight overshoot → settle
         keyframes({ transform }) {
@@ -385,7 +443,7 @@ export const DeckDndProvider = ({ children }) => {
             return [{ opacity: 0 }, { opacity: 0 }];
         },
         sideEffects() { return () => { glideTargetRef.current = null; }; }
-    };
+    }), []);
 
     const bold = surface === DND_SURFACE.BOARD;
 
@@ -399,15 +457,14 @@ export const DeckDndProvider = ({ children }) => {
     return (
         <DeckDndContext.Provider value={activeValue}>
             <DragSurfaceContext.Provider value={activePayload ? surface : null}>
-            <DragPointerContext.Provider value={dragPointer}>
+            <DragPointerProvider activePayload={activePayload} pointerRef={pointerRef}>
             <DndContext
                 sensors={sensors}
                 collisionDetection={smallestWithin}
                 onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
-                autoScroll={{ enabled: true, threshold: { x: 0, y: 0.18 } }}
+                autoScroll={AUTO_SCROLL}
             >
                 {children}
 
@@ -415,7 +472,7 @@ export const DeckDndProvider = ({ children }) => {
                     {activePayload ? (
                         <motion.div
                             initial={{ opacity: 0.6 }}
-                            animate={{ opacity: isOverMiniboard ? 0.3 : 1 }}
+                            animate={{ opacity: 1 }}
                             transition={{ duration: 0.15, ease: 'easeOut' }}
                             className="w-full h-full flex items-center justify-center origin-center will-change-transform"
                             style={{ filter: overlayFilter(activePayload.kind, bold) }}
@@ -425,7 +482,7 @@ export const DeckDndProvider = ({ children }) => {
                     ) : null}
                 </DragOverlay>
             </DndContext>
-            </DragPointerContext.Provider>
+            </DragPointerProvider>
             </DragSurfaceContext.Provider>
         </DeckDndContext.Provider>
     );
@@ -438,15 +495,31 @@ export const DeckDndProvider = ({ children }) => {
 /**
  * Make a node a drag source. `payload` is merged into the drag data under the
  * given `kind`; `sourceSurface` seeds the ghost's compact/bold state at pickup.
+ *
+ * `keyboardAccessible` (default true): whether dnd-kit's own `attributes`
+ * (`role="button"`, `tabIndex={0}`, `aria-roledescription="draggable"`,
+ * `aria-describedby` pointing at its hidden "press space bar to pick up"
+ * text) are spread onto the node. **CR3-411**: there is no keyboard sensor
+ * registered (`DeckDndProvider` wires only `AlphaPointerSensor`), so that
+ * text describes a drag that cannot happen. `MatToken` passes `false` — a
+ * plain `<div>` with no `tabIndex` is not a Tab stop and carries no role, so
+ * this both drops the false instructions and removes the Tab stop in one
+ * change. Every other draggable (dock, Bank, Shop, the bin) is unaffected.
  */
-export function useEntityDrag({ id, kind, payload, sourceSurface = DND_SURFACE.DRAWER, disabled = false }) {
+export function useEntityDrag({
+    id, kind, payload, sourceSurface = DND_SURFACE.DRAWER, disabled = false, keyboardAccessible = true
+}) {
     const rid = useId();
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: id || `${kind}-${rid}`,
         disabled,
         data: { kind, sourceSurface, ...payload }
     });
-    return { setNodeRef, isDragging, handleProps: { ...listeners, ...attributes } };
+    return {
+        setNodeRef,
+        isDragging,
+        handleProps: keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }
+    };
 }
 
 /**

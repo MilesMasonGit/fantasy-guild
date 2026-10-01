@@ -82,9 +82,25 @@ export const MatBoard = ({
 
     // dnd-kit owns the pointer during a drag, and a Token re-ordering itself
     // under the ghost made it flicker. Nothing is hovered while dragging.
+    //
+    // CR3-410 (owner ruling, Q3 = A): the drag ghost has pointer-events: none,
+    // so a hero or flag underneath it still gets onMouseEnter/onMouseLeave as
+    // the cursor crosses it — which used to show that hero's reach ring and
+    // force a full MatBoard commit, even though the carried Token would not
+    // land there. `FlagLayer` already rings exactly the flags the Token WOULD
+    // land in (`useTokenDragLanding`); that is the only ring that should show
+    // mid-drag, so hero hover is cleared here and ignored below for the
+    // drag's duration.
     React.useEffect(() => {
-        if (isDragging) { setHoveredId(null); setFlagsYield(false); }
+        if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); }
     }, [isDragging]);
+
+    // CR3-410: a no-op while dragging, so a hero/flag crossing mid-drag does
+    // not reinstate a stray hover ring (and the commit it would cost).
+    const handleHoverHero = useCallback(
+        (id) => { if (!isDragging) setHoverHeroId(id); },
+        [isDragging]
+    );
 
     /** Every Token on the mat: where it is, and nothing about how it is doing. */
     const tokensRaw = useGameState(
@@ -358,7 +374,7 @@ export const MatBoard = ({
                             stuck: h.stuck
                         })}
                         hovered={hoverHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId)}
-                        onHover={setHoverHeroId}
+                        onHover={handleHoverHero}
                         onRecall={handleRecallHero}
                         animationState={animState}
                         moving={h.moving}
@@ -382,7 +398,7 @@ export const MatBoard = ({
                 flagZ={order.flagZ}
                 inspectedHeroId={inspectedHeroId}
                 hoverHeroId={hoverHeroId}
-                onHoverHero={setHoverHeroId}
+                onHoverHero={handleHoverHero}
                 matRef={rootRef}
                 yieldToTokens={flagsYield}
             />

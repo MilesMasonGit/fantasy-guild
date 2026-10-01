@@ -37,7 +37,6 @@ describe('smallestWithin — which target gets the drop (CR3-413)', () => {
     const mat = container('mat', { left: 0, top: 0, width: 1000, height: 700 }, DND_SURFACE.BOARD);
     const drawer = container('drawer', { left: 600, top: 0, width: 400, height: 700 }, DND_SURFACE.DRAWER);
     const slot = container('slot', { left: 650, top: 100, width: 60, height: 60 }, DND_SURFACE.DRAWER);
-    const mini = container('mini', { left: 620, top: 300, width: 300, height: 300 }, DND_SURFACE.MINIBOARD);
 
     it('a drawer droppable beats the mat where they overlap, though it is not the smaller', () => {
         const bigDrawer = container('bigDrawer', { left: 0, top: 0, width: 2000, height: 2000 }, DND_SURFACE.DRAWER);
@@ -46,10 +45,6 @@ describe('smallestWithin — which target gets the drop (CR3-413)', () => {
 
     it('inside one surface, the smaller target wins (a slot over its drawer)', () => {
         expect(ids(smallestWithin(args([mat, drawer, slot], { x: 670, y: 120 })))).toEqual(['slot', 'drawer', 'mat']);
-    });
-
-    it('a miniboard beats both drawer and mat', () => {
-        expect(ids(smallestWithin(args([mat, drawer, mini], { x: 700, y: 400 })))[0]).toBe('mini');
     });
 
     it('a single hit is returned as it is', () => {
@@ -93,12 +88,5 @@ describe('surfaceAtPoint — which region the pointer is over (CR3-413)', () => 
         expect(surfaceAtPoint(700, 300)).toBe(DND_SURFACE.DRAWER);
         expect(surfaceAtPoint(100, 300)).toBe(DND_SURFACE.BOARD);
         expect(surfaceAtPoint(1500, 300)).toBeNull();
-    });
-
-    it('a miniboard wins over both', () => {
-        region(DND_SURFACE.BOARD, { left: 0, top: 0, width: 1000, height: 700 });
-        region(DND_SURFACE.DRAWER, { left: 600, top: 0, width: 400, height: 700 });
-        region(DND_SURFACE.MINIBOARD, { left: 650, top: 100, width: 200, height: 200 });
-        expect(surfaceAtPoint(700, 150)).toBe(DND_SURFACE.MINIBOARD);
     });
 });

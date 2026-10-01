@@ -4,6 +4,17 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Mat Tokens no longer stop the keyboard Tab key (CR3-411).** Tabbing through the page used to
+  walk through every one of the ~150 Tokens on the mat, one by one, and a screen reader would
+  read instructions for picking one up with the keyboard — which was never wired up. Tab now
+  skips the mat entirely.
+- **No stray reach ring while dragging (CR3-410).** Carrying a Token across a hero or a flag used
+  to light up that hero's reach ring, even though the Token would not land there. Now, while
+  dragging, only the rings of flags the Token would actually land in show.
+- **Escape during a drag now only cancels the drag (CR3-409).** Pressing Escape while carrying an
+  item out of a hero's sheet used to also close that sheet; pressing it while carrying something
+  out of the dock or Bank in disallow mode used to also turn disallow mode off. Now Escape cancels
+  the drag alone, and a second press is needed to close the sheet or end disallow mode.
 - **A crisp pixel look for shadows and highlights (Wave 5, CR3-350).** Tokens resting on the board
   no longer have a soft shadow. A Token you are dragging, and loot floating on the mat, cast a hard
   black pixel shadow instead. The soft green glow is gone too: a sharp coloured outline now shows a
