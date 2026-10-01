@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **No stray reach ring while dragging (CR3-410).** Carrying a Token across a hero or a flag used
+  to light up that hero's reach ring, even though the Token would not land there. Now, while
+  dragging, only the rings of flags the Token would actually land in show.
 - **Escape during a drag now only cancels the drag (CR3-409).** Pressing Escape while carrying an
   item out of a hero's sheet used to also close that sheet; pressing it while carrying something
   out of the dock or Bank in disallow mode used to also turn disallow mode off. Now Escape cancels
