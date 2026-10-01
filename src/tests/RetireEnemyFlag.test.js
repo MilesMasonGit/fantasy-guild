@@ -7,6 +7,7 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
+import * as LoadoutMoments from '../systems/board/LoadoutMoments.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as StatusApplication from '../systems/board/StatusApplication.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
@@ -100,6 +101,11 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TriggerSystem.resetCascadeGuard();
     TriggerSystem.init();
+    // CR3-157: BoardCombat used to call LoadoutMoments.fire directly right
+    // after publishing COMBAT_ENGAGED; it now only subscribes to that event
+    // (LoadoutMoments.init, called after TriggerSystem.init as the game
+    // does), so a real engagement through BoardRunner.tick needs this started.
+    LoadoutMoments.init();
     LiveEffects.resetClock();
     GameState.state.heroes = [fighter('hero_1')];
     GameState.state.inventory.maxSlots = 50;
@@ -107,6 +113,7 @@ beforeEach(() => {
 
 afterEach(() => {
     TriggerSystem.teardown();
+    LoadoutMoments.teardown();
     TileModifiers.teardown();
     BoardCombat.clearAll();
 });

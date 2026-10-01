@@ -16,8 +16,6 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
-import * as Flags from './Flags.js';
-import * as LoadoutMoments from './LoadoutMoments.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
 import { logger } from '../../utils/Logger.js';
@@ -424,12 +422,17 @@ export function tickToken(instance, delta, heroId) {
     const engaged = (fight.status === 'active' && !wasActive) || (wasResting && !resting());
 
     if (engaged) {
+        // CR3-157: `LoadoutMoments.fire(id, heroId, 'COMBAT_ENGAGED')` used to
+        // be called directly, right here, immediately after this same publish
+        // — the one edge making `BoardCombat → LoadoutMoments → … →
+        // BoardCombat` an import cycle. `LoadoutMoments.init` now subscribes
+        // to this event and fires itself, registered (in EngineBootstrap)
+        // after `TriggerSystem.init` so it still runs last, same as today.
         EventBus.publish(BOARD_EVENTS.COMBAT_ENGAGED, {
             instanceId: id,
             typeId: instance.typeId,
             heroId
         });
-        LoadoutMoments.fire(id, heroId, 'COMBAT_ENGAGED');
     }
 
     // The ring tracks the CURRENT FIGHT (D-129) — one kill is one cycle for
@@ -577,8 +580,14 @@ function resolveDefeat(instance, heroId) {
     // never on the tile — so the tile is immediately free for someone else,
     // and it simply idles until re-staffed. A defeated hero genuinely LEAVES,
     // unlike one whose Token merely ran dry: they are carried home, and their
-    // flag comes down with them (FP-42). `furl` announces the move.
-    Flags.furl(heroId, 'defeat');
+    // flag comes down with them (FP-42).
+    //
+    // CR3-157: this used to call `Flags.furl` directly, which was the one
+    // edge making `BoardCombat ↔ Flags` an import cycle. `Flags.init`
+    // subscribes to this event and furls — `EventBus.publish` is synchronous,
+    // so the furl still happens here, before the `TILE_CHANGED` /
+    // `COMBAT_RESOLVED` publishes below.
+    EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId });
     if (instance) {
         instance.cycleElapsedMs = 0;
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });

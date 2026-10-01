@@ -5,6 +5,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
+import * as LoadoutMoments from '../systems/board/LoadoutMoments.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
@@ -79,10 +80,11 @@ beforeEach(() => {
     SpriteLayer.init();
     LootSystem.init();
     BoardCombat.init();
-    // ⚠ CR3-557: when CR3-157's cycle cut gives LoadoutMoments its own
-    // COMBAT_ENGAGED subscriber (a `LoadoutMoments.init()`, which does not exist
-    // yet), start it here, confirm this file green, and only then cut: the
-    // flask case below fires a carried COMBAT_ENGAGED rule.
+    // CR3-557/CR3-157: LoadoutMoments now has its own COMBAT_ENGAGED
+    // subscriber (the cut moved this off a direct call from BoardCombat), so
+    // it must be started here too, as the game does — the flask case below
+    // fires a carried COMBAT_ENGAGED rule.
+    LoadoutMoments.init();
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     GameState.state.heroes = [makeHero('hero_1')];

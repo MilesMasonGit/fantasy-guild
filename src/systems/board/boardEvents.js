@@ -256,7 +256,20 @@ export const BOARD_EVENTS = {
      * engagement (idle → active) and each post-intermission respawn with one
      * rule rather than two.
      */
-    COMBAT_ENGAGED: 'board:combat_engaged'
+    COMBAT_ENGAGED: 'board:combat_engaged',
+
+    /**
+     * A hero was defeated (CR3-157) — `{ heroId }`.
+     *
+     * Published by `BoardCombat.resolveDefeat` in place of a direct call into
+     * `Flags` (the one remaining use `BoardCombat` had of it), which was the
+     * last edge in a dangerous `BoardCombat ↔ Flags` import cycle. `Flags.init`
+     * subscribes and furls the hero's flag — `EventBus.publish` is synchronous,
+     * so the furl still happens at exactly the same point it used to, before
+     * `TILE_CHANGED`/`COMBAT_RESOLVED`. Precedent: `hero_downed` already
+     * decouples `StatusEffectSystem` from `BoardCombat` the same way.
+     */
+    HERO_DEFEATED: 'board:hero_defeated'
 };
 
 /**

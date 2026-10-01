@@ -1282,4 +1282,11 @@ export function init() {
         reset();
         restoreWork();
     }));
+    // CR3-157: `BoardCombat.resolveDefeat` used to call `furl` directly, which
+    // was the one edge making `BoardCombat ↔ Flags` an import cycle (Flags
+    // already reaches into BoardCombat for `isEnemyToken`/`endFightOfHero`).
+    // `EventBus.publish` is synchronous, so this runs at exactly the same
+    // point `resolveDefeat` used to call `furl` — before its own
+    // `TILE_CHANGED`/`COMBAT_RESOLVED` publishes.
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId }) => furl(heroId, 'defeat')));
 }

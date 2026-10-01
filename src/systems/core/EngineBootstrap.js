@@ -31,6 +31,7 @@ import * as LiveEffects from '../effects/LiveEffects.js';
 import * as TriggerSystem from '../board/TriggerSystem.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 import * as BoardCombat from '../board/BoardCombat.js';
+import * as LoadoutMoments from '../board/LoadoutMoments.js';
 import * as BoardPromotion from '../board/BoardPromotion.js';
 import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
@@ -171,6 +172,11 @@ export const EngineBootstrap = {
         MatResize.init();
         BoardRunner.init();
         BoardCombat.init();
+        // CR3-157: subscribes to COMBAT_ENGAGED (BoardCombat used to call it
+        // directly). Must come after BoardRunner.init() — which calls
+        // TriggerSystem.init() internally — so this subscription registers
+        // LAST for that event, same order as the direct call used to run in.
+        LoadoutMoments.init();
         BoardPromotion.init();
         Flags.init();
         QuestManager.init();
