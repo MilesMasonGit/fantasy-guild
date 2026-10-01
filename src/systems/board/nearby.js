@@ -156,20 +156,71 @@ export function tokensAround(points, radius = nearRadius()) {
  *
  * `RecipeResolver` and `Charges` ask for a station's neighbours several times
  * per station per tick (context, tools, wear, providers) — the plan's only
- * per-tick O(n²) risk. The answer is cached per instance id and the whole cache
- * is dropped the moment the layout changes: any Token put on the mat, moved or
- * taken off (`BoardState.layoutVersion`), the board swapped (a load), or the
- * Near radius changed.
+ * per-tick O(n²) risk. The answer is cached per instance id.
+ *
+ * ## What drops it (CR3-200, round 3 review R2 §3.6)
+ * * **The whole cache** — a Token put on or taken off the mat
+ *   (`BoardState.membershipVersion`), the board swapped (a load), or the Near
+ *   radius changed.
+ * * **Only the entries a move can change** — on a move (`setTokenPoint`), read
+ *   back from `BoardState`'s move journal: the moved Token's own entry, and the
+ *   entry of every Token within `nearRadius() + 1` of where it left **or** where
+ *   it arrived (the same "both ends" rule as {@link tokensAround}). A Token's
+ *   Near set can change only if a Token crossed its Near circle, and a Token
+ *   that did was within Near of one end or the other. The `+ 1` is slack:
+ *   dropping an extra entry is harmless, keeping a stale one is a silently
+ *   wrong recipe or tool answer.
+ *
+ * Every entry is computed right after the journal is caught up, so a Token
+ * that has not moved since its entry was made stands where it stood then.
+ * Order inside a list is arrival order, which a move cannot change.
  *
  * ⚠️ The returned array is shared — iterate it, never mutate it.
  */
-let neighbourCache = { tokens: null, version: -1, radius: NaN, byId: new Map() };
+let neighbourCache = { tokens: null, version: -1, radius: NaN, moves: 0, byId: new Map() };
+
+/**
+ * Drop the cached entries a move from `(fx, fy)` to `(tx, ty)` can have
+ * changed. Reads the cache and slack set by {@link neighbourIds} just before
+ * the replay, so the replay allocates nothing per move.
+ */
+let replaySlackSq = 0;
+
+function forgetAroundMove(movedId, fx, fy, tx, ty) {
+    const byId = neighbourCache.byId;
+    byId.delete(movedId);
+    if (!byId.size) return;
+    const hasFrom = Number.isFinite(fx) && Number.isFinite(fy);
+    for (const id of byId.keys()) {
+        const instance = BoardState.getTokenById(id);
+        if (!instance || !Number.isFinite(instance.x) || !Number.isFinite(instance.y)) {
+            byId.delete(id);
+            continue;
+        }
+        let dx = instance.x - tx;
+        let dy = instance.y - ty;
+        if (dx * dx + dy * dy <= replaySlackSq) {
+            byId.delete(id);
+            continue;
+        }
+        if (!hasFrom) continue;
+        dx = instance.x - fx;
+        dy = instance.y - fy;
+        if (dx * dx + dy * dy <= replaySlackSq) byId.delete(id);
+    }
+}
 
 export function neighbourIds(instanceId) {
-    const { tokens, version } = BoardState.layoutVersion();
+    const { tokens, version } = BoardState.membershipVersion();
     const radius = nearRadius();
+    const moves = BoardState.moveCount();
     if (neighbourCache.tokens !== tokens || neighbourCache.version !== version || neighbourCache.radius !== radius) {
-        neighbourCache = { tokens, version, radius, byId: new Map() };
+        neighbourCache = { tokens, version, radius, moves, byId: new Map() };
+    } else if (neighbourCache.moves !== moves) {
+        const slack = radius + 1;
+        replaySlackSq = slack * slack;
+        if (!BoardState.eachMoveSince(neighbourCache.moves, forgetAroundMove)) neighbourCache.byId = new Map();
+        neighbourCache.moves = moves;
     }
     let ids = neighbourCache.byId.get(instanceId);
     if (!ids) {

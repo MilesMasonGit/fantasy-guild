@@ -332,6 +332,36 @@ describe('⭐ the per-instance neighbour cache drops on add, move, remove and a 
         expect(tiers()).toEqual({ ctx_fixture_tool: 1 });
     });
 
+    it('⭐ a move of an unrelated far Token keeps the cached list — the same array (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(0, 0));
+        at('fixture_tool', P(1, 0));
+        const far = at('fixture_producer', P(6, 5));
+        const first = neighbourIds(station.id);
+        expect(RecipeResolver.contextTiersAround(station.id)).toEqual({ ctx_fixture_tool: 1 });
+
+        BoardState.setTokenPoint(far.id, P(6, 4).x, P(6, 4).y);         // far → still far
+        expect(neighbourIds(station.id), 'an unrelated move dropped the entry').toBe(first);
+
+        // …but a move into Near still drops it, and the new list is right.
+        BoardState.setTokenPoint(far.id, P(0, 1).x, P(0, 1).y);
+        expect(neighbourIds(station.id)).not.toBe(first);
+        expect(sortedIds(neighbourIds(station.id))).toEqual(sortedIds(nearby(station.id)));
+    });
+
+    it('a reader that fell behind the kept journal starts over, and is still right (CR3-200)', () => {
+        const station = at('fixture_tool_gated', P(0, 0));
+        const tool = at('fixture_tool', P(6, 5));
+        const far = at('fixture_producer', P(6, 4));
+        expect(RecipeResolver.contextTiersAround(station.id)).toEqual({});
+
+        BoardState.setTokenPoint(tool.id, P(1, 0).x, P(1, 0).y);         // into Near…
+        for (let i = 0; i <= BoardState.MOVE_JOURNAL_SIZE; i++) {        // …then more moves than are kept
+            BoardState.setTokenPoint(far.id, P(6, 4).x + (i % 2), P(6, 4).y);
+        }
+        expect(BoardState.eachMoveSince(0, () => {})).toBe(false);
+        expect(RecipeResolver.contextTiersAround(station.id)).toEqual({ ctx_fixture_tool: 1 });
+    });
+
     it('a new board (a load) starts a fresh cache', () => {
         const station = at('fixture_tool_gated', P(2, 2));
         at('fixture_tool', P(3, 2));
