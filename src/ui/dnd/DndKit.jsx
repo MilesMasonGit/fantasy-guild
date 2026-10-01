@@ -108,23 +108,50 @@ export function smallestWithin(args) {
  * containment against the big `data-dnd-region` containers. Geometric rather
  * than elementFromPoint (which was flaky over the board's stacked overlays and
  * made the bloom miss). Drawers win over the board where they overlap.
+ *
+ * Queries the DOM fresh every call — kept for CR3-413's tests and for any
+ * one-off caller. The provider's own per-pointer-move check does not call
+ * this (CR3-403, below): it reuses a snapshot taken once at drag start.
  */
 // Exported for tests only (CR3-413); nothing else imports it.
 export function surfaceAtPoint(x, y) {
     if (typeof document === 'undefined') return null;
-    for (const el of document.querySelectorAll('[data-dnd-region="miniboard"]')) {
-        const r = el.getBoundingClientRect();
-        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+    return surfaceWithinRegions(x, y, snapshotDndRegions());
+}
+
+// Exported for tests only (CR3-403); nothing else imports it.
+/** Every `[data-dnd-region]` element's surface and rect, read once. */
+export function snapshotDndRegions() {
+    if (typeof document === 'undefined') return [];
+    const out = [];
+    for (const el of document.querySelectorAll('[data-dnd-region]')) {
+        out.push({ surface: el.getAttribute('data-dnd-region'), rect: el.getBoundingClientRect() });
+    }
+    return out;
+}
+
+/**
+ * CR3-403: the same priority rule `surfaceAtPoint` applies (miniboard first,
+ * then a drawer over the board), against rects already measured instead of
+ * querying the DOM again. Nothing can open, close or resize a drawer while
+ * the pointer is down mid-drag, so a snapshot taken once at drag start stays
+ * exact for the drag's whole duration — unlike the old per-move query (two
+ * whole-document `querySelectorAll` calls plus a `getBoundingClientRect` per
+ * region, on every single pointer move).
+ */
+// Exported for tests only (CR3-403); nothing else imports it.
+export function surfaceWithinRegions(x, y, regions) {
+    for (const { surface, rect: r } of regions) {
+        if (surface === DND_SURFACE.MINIBOARD && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
             return DND_SURFACE.MINIBOARD;
         }
     }
     let board = null;
-    for (const el of document.querySelectorAll('[data-dnd-region]')) {
-        const r = el.getBoundingClientRect();
+    for (const { surface, rect: r } of regions) {
+        if (surface === DND_SURFACE.MINIBOARD) continue;
         if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
-            const s = el.getAttribute('data-dnd-region');
-            if (s === DND_SURFACE.DRAWER) return DND_SURFACE.DRAWER;
-            if (s === DND_SURFACE.BOARD) board = DND_SURFACE.BOARD;
+            if (surface === DND_SURFACE.DRAWER) return DND_SURFACE.DRAWER;
+            if (surface === DND_SURFACE.BOARD) board = DND_SURFACE.BOARD;
         }
     }
     return board;
@@ -211,6 +238,9 @@ export const DeckDndProvider = ({ children }) => {
     const [isOverMiniboard, setIsOverMiniboard] = useState(false);
     const pointerRef = useRef({ x: 0, y: 0 });
     const glideTargetRef = useRef(null);
+    // CR3-403: the drawer/board regions, snapshotted once when this drag
+    // starts (below) instead of queried from the DOM on every pointer move.
+    const regionsRef = useRef([]);
 
     // The cursor, published at most once per frame so the range rings can
     // follow the drag without a state update per pointermove event.
@@ -225,6 +255,7 @@ export const DeckDndProvider = ({ children }) => {
     // ghost can bloom bold over the board and stay compact over a drawer.
     useEffect(() => {
         if (!activePayload) return;
+        regionsRef.current = snapshotDndRegions();
         const onMove = (e) => {
             pointerRef.current = { x: e.clientX, y: e.clientY };
             if (!frameRef.current && typeof requestAnimationFrame === 'function') {
@@ -233,7 +264,7 @@ export const DeckDndProvider = ({ children }) => {
                     setDragPointer(pointerRef.current);
                 });
             }
-            const s = surfaceAtPoint(e.clientX, e.clientY);
+            const s = surfaceWithinRegions(e.clientX, e.clientY, regionsRef.current);
             if (s) {
                 setSurface(prev => (prev === s ? prev : s));
                 setIsOverMiniboard(s === DND_SURFACE.MINIBOARD);

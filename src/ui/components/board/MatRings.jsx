@@ -6,7 +6,7 @@ import * as MatPlacement from '../../../systems/board/MatPlacement.js';
 import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
-import { pointerToMat } from './matPoint.js';
+import { pointerToMat, matRectForDrag } from './matPoint.js';
 import { MAT_Z } from './matLayers.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 
@@ -78,7 +78,7 @@ export function useTokenDragLanding(matRef) {
         return cachedResult;
     }
 
-    const point = pointerToMat(pointer, matEl.getBoundingClientRect());
+    const point = pointerToMat(pointer, matRectForDrag(matEl, activePayload));
     let result = null;
     if (point) {
         // Where this very Token would land, itself excluded so a Token being
