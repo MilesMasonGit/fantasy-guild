@@ -5,6 +5,7 @@ import { dropOnMat } from './dropOnMat.js';
 import { pointerToMat } from './matPoint.js';
 import { MatBoard } from './MatBoard.jsx';
 import { PerfProfiler } from '../../dev/perf/PerfProfiler.jsx';
+import { ErrorBoundary } from '../base/ErrorBoundary.jsx';
 import { MatFitProvider, setLiveMatFit } from './MatFitContext.jsx';
 import { useEngine } from '../../hooks/useEngine.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -127,18 +128,24 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null }
                         whole multiple of ART_PX through it. Nothing else on the
                         mat cares — the transform handles the rest. */}
                     <MatFitProvider value={fit.scale}>
-                        {/* Counts every React commit in the mat SUBTREE for the
-                            Perf HUD (a hero's frame step counts too; MatBoard's
-                            own renders are counted inside it, CR3-311) — dev
-                            builds only, and only when armed (P3). */}
-                        <PerfProfiler id="MatBoard">
-                            <MatBoard
-                                inspectedHeroId={inspectedHeroId}
-                                onInspectToken={onInspectToken}
-                                onClearInspect={onClearInspect}
-                                onOpenRecipes={handleOpenRecipes}
-                            />
-                        </PerfProfiler>
+                        {/* CR3-203: a render error on the mat used to unmount
+                            the whole app while the engine kept ticking and
+                            saving underneath it. Now only this box goes to a
+                            "Something went wrong here" panel. */}
+                        <ErrorBoundary label="MatBoard">
+                            {/* Counts every React commit in the mat SUBTREE for the
+                                Perf HUD (a hero's frame step counts too; MatBoard's
+                                own renders are counted inside it, CR3-311) — dev
+                                builds only, and only when armed (P3). */}
+                            <PerfProfiler id="MatBoard">
+                                <MatBoard
+                                    inspectedHeroId={inspectedHeroId}
+                                    onInspectToken={onInspectToken}
+                                    onClearInspect={onClearInspect}
+                                    onOpenRecipes={handleOpenRecipes}
+                                />
+                            </PerfProfiler>
+                        </ErrorBoundary>
                     </MatFitProvider>
                 </div>
             </div>

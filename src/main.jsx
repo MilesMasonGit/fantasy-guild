@@ -16,6 +16,7 @@ import './ui/styles/index.css';
 // === Core React & Rendering ===
 import { createRoot } from 'react-dom/client';
 import ReactRoot from './ui/ReactRoot.jsx';
+import { ErrorBoundary } from './ui/components/base/ErrorBoundary.jsx';
 
 // === System Orchestration ===
 import { EngineBootstrap } from './systems/core/EngineBootstrap.js';
@@ -93,7 +94,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const reactRootEl = document.getElementById('react-root');
     if (reactRootEl) {
         const root = createRoot(reactRootEl);
-        root.render(<ReactRoot engine={engine} />);
+        // CR3-203: the last-resort boundary. Everything that matters is
+        // already covered by its own named boundary inside ReactRoot; this
+        // one only catches whatever isn't under a named surface yet.
+        root.render(
+            <ErrorBoundary label="App">
+                <ReactRoot engine={engine} />
+            </ErrorBoundary>
+        );
         logger.info('main', 'React UI Engine online.');
     }
 

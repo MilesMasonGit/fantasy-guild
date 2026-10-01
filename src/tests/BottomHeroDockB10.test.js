@@ -220,6 +220,16 @@ describe('B10 horizontal hero dock', () => {
         expect(figure(view, 'h1').getAttribute('data-dock-deployed')).toBe('true');
     });
 
+    it('updates the HP bar when hp is mutated in place and heroes_updated fires (CR3-300)', async () => {
+        const view = mount();
+        expect(figure(view, 'h1').querySelector('[data-dock-hp]').getAttribute('data-dock-hp')).toBe('100');
+        // The engine mutates state IN PLACE: same hp object, new current value.
+        const h1 = GameState.state.heroes.find(h => h.id === 'h1');
+        h1.hp.current = 43;
+        await act(async () => { EventBus.publish('heroes_updated', {}); await Promise.resolve(); });
+        expect(figure(view, 'h1').querySelector('[data-dock-hp]').getAttribute('data-dock-hp')).toBe('43');
+    });
+
     it('is not shown on the Guild Hall screen (FB-47)', () => {
         expect(showsBottomHeroDock('guild')).toBe(false);
         expect(showsBottomHeroDock(null)).toBe(true);
@@ -232,5 +242,19 @@ describe('B10 horizontal hero dock', () => {
         );
         expect(view.container.querySelectorAll('[data-hero-dock-tab]').length).toBe(3);
         expect(view.container.querySelector('[data-dock-hero]')).toBeNull();
+    });
+
+    it('the Bank hero panel\'s HP bar also updates on an in-place mutation (CR3-300)', async () => {
+        const view = render(
+            h(EngineContext.Provider, { value: engine },
+                h(DeckDndProvider, null, h(BankHeroPanel, { menuRight: false })))
+        );
+        const tab = view.container.querySelector('[data-dock-hero-id="h1"]');
+        const fill = () => tab.querySelector('.bg-emerald-500, .bg-amber-500, .bg-red-500');
+        expect(fill().style.height).toBe('100%');
+        const h1 = GameState.state.heroes.find(h => h.id === 'h1');
+        h1.hp.current = 43;
+        await act(async () => { EventBus.publish('heroes_updated', {}); await Promise.resolve(); });
+        expect(fill().style.height).toBe('43%');
     });
 });

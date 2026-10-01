@@ -4,6 +4,28 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **The dock's HP bars keep up with a hero's health (CR3-300).** They used to only catch up when
+  something else about the hero changed; now a hit or a heal shows right away, in both the bottom
+  hero dock and the Bank's side panel.
+- **The hero sheet beside the Bank no longer closes itself the moment you click inside it
+  (CR3-450).** Clicking the Edit button, a skill row, or anywhere else in that panel now works as
+  expected. Clicking the playmat (or anywhere else outside) still closes it, as intended.
+- **The Guild Hall upgrade panel's Close button actually closes it now (CR3-451).** It used to
+  clear the panel and instantly put the same upgrade right back.
+- **A refused equip no longer pretends to succeed (CR3-405).** Dropping an item on a hero who
+  already carries it, has no free slot, or is out of stock now sends the item back where it came
+  from, plays no equip sound, and shows a short message saying why.
+- **A crash on one part of the screen no longer blacks out the whole game (CR3-203).** The
+  playmat, the hero dock, the Bank panel, and the Bank and Shop drawers each now catch their own
+  render errors and show a small "Something went wrong here" panel with a Reload button, while
+  everything else keeps working.
+- **Reordering heroes in the Bank's side panel works now (CR3-457).** It already showed the drop
+  line; dragging a hero to reorder there now actually moves it, the same as the bottom dock.
+- **Settings tidy-up (CR3-033).** Four controls naming things that no longer exist (Large Tray
+  Tokens, Card Badge Tooltips, Boost Tile Tooltips, Instant Pack Reveal) are gone. Nine more that
+  do nothing yet (Theme Mode, Zoom to Cursor, Animations, Notification Position, Master Tooltips,
+  Item Tooltips, System/Level Up/Loot Messages) are now shown disabled and marked "Coming soon"
+  instead of looking live.
 - **New ore vein art.** Copper, coal, iron, gold, silver, mythril, adamantine and darkmetal veins,
   and the Stone Outcrop, show their new vein pictures. New foundation, stone and plank art is
   ready to pick in the CMS.

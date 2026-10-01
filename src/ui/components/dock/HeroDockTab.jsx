@@ -13,6 +13,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Pencil, Backpack, Heart } from 'lucide-react';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
+import { equipOrAnnounce } from './dockEquip.js';
 import { dockStatusLine } from '../board/flagText.js';
 
 /** The status line's colour: working green, idle at a flag stone, in the Guild blue. */
@@ -67,8 +68,30 @@ export const HeroDockTab = ({
         prevDraggingRef.current = globalDragging;
     }, [globalDragging]);
 
+    // Flat projection per the useGameState selector contract (CR-044, CR3-300):
+    // `hp` is rebuilt fresh from primitives each evaluation, never the store's
+    // own nested object, so an in-place HP mutation is actually seen as a change.
     const hero = useGameState(
-        state => (state.heroes || []).find(h => h.id === heroId),
+        state => {
+            const h = (state.heroes || []).find(x => x.id === heroId);
+            if (!h) return null;
+            const equippedCount = Array.isArray(h.equipment)
+                ? h.equipment.filter(Boolean).length
+                : Object.values(h.equipment || {}).filter(Boolean).length;
+            return {
+                name: h.name,
+                spriteId: h.spriteId,
+                icon: h.icon,
+                heroSprite: h.heroSprite,
+                classId: h.classId,
+                status: h.status,
+                jobId: h.jobId,
+                className: h.className,
+                level: h.level,
+                equippedCount,
+                hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
+            };
+        },
         ['heroes_updated', 'hero_equipment_changed', 'hero:status_changed', 'state_changed'],
         null,
         { deps: [heroId] }
@@ -130,9 +153,9 @@ export const HeroDockTab = ({
             if (isRecallDrop(p)) {
                 recallFromDrop(engine.BoardPlacement, p);
             } else if (p.kind === DRAG_KIND.ITEM && p.itemId) {
+                if (!equipOrAnnounce(engine, heroId, p.itemId)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
-                engine.EquipmentManager.equipItem(heroId, p.itemId);
                 EventBus.publish('inspect_hero', { heroId });
             } else if (p.kind === DRAG_KIND.HERO && p.heroId && p.heroId !== heroId) {
                 onReorder?.(p.heroId, heroId);
@@ -149,10 +172,8 @@ export const HeroDockTab = ({
     const jobTitle = job ? job.name : (hero.className || 'Recruit');
     const level = Math.floor(hero.level || 1);
 
-    // Inventory count out of 9
-    const equippedCount = Array.isArray(hero.equipment)
-        ? hero.equipment.filter(Boolean).length
-        : Object.values(hero.equipment || {}).filter(Boolean).length;
+    // Inventory count out of 9 — computed in the selector's flat projection.
+    const equippedCount = hero.equippedCount;
 
     // Sprite & Icon paths
     const headshotPath = resolveSpritePath(hero.icon || 'icon_recruit_0') || resolveSpritePath(hero.spriteId || 'hero_recruit_0');

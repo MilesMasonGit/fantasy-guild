@@ -11,6 +11,7 @@ import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
+import { reorderHeroInDock } from './dockReorder.js';
 
 /**
  * Whether the horizontal hero dock shows under the main surface. It shows on
@@ -63,13 +64,8 @@ export const BottomHeroDock = ({
         ['heroes_updated', 'state_changed']
     ) || [];
 
-    const handleReorderHero = (sourceHeroId, targetHeroId) => {
-        if (sourceHeroId === targetHeroId) return;
-        const targetIndex = heroIds.indexOf(targetHeroId);
-        if (targetIndex !== -1) {
-            HeroManager.reorderHero(sourceHeroId, targetIndex);
-        }
-    };
+    const handleReorderHero = (sourceHeroId, targetHeroId) =>
+        reorderHeroInDock(HeroManager, heroIds, sourceHeroId, targetHeroId);
 
     const engine = useEngine();
 
@@ -82,7 +78,12 @@ export const BottomHeroDock = ({
                 e.target.closest('[data-dnd-surface="drawer"]') ||
                 e.target.closest('[data-dnd-region="drawer"]') ||
                 e.target.closest('[data-item-id]') ||
-                e.target.closest('[data-bank-tab]')
+                e.target.closest('[data-bank-tab]') ||
+                // The Bank-side hero panel (its tabs AND its own inspection
+                // sheet) is a separate aside this dock doesn't contain, but a
+                // click there is still "inside" (CR3-450). The playmat, or
+                // anywhere else, is genuinely outside and still closes it.
+                e.target.closest('[data-bank-hero-panel]')
             ) {
                 return;
             }

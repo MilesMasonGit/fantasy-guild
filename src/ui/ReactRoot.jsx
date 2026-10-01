@@ -28,6 +28,7 @@ import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx'
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
 import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
+import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 
@@ -35,6 +36,7 @@ import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
 import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
+import { ErrorBoundary } from './components/base/ErrorBoundary.jsx';
 import ToastContainer from './components/base/ToastContainer.jsx';
 import DiscardBinPanel from './components/board/DiscardBinPanel.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
@@ -258,11 +260,22 @@ export const ReactRoot = ({ engine }) => {
         };
     }, []);
 
-    const selectedUpgradeDef = selectedUpgradeId != null ? getUpgradeDef(selectedUpgradeId) : null;
     const guildPaneSelection = ui.inspect.getByPane ? ui.inspect.getByPane('guild') : null;
-    const guildInspectSelection = guildPaneSelection || (ui.inspect.selection?.type === 'guild_upgrade' 
-        ? ui.inspect.selection 
-        : (selectedUpgradeDef ? { type: 'guild_upgrade', id: selectedUpgradeDef.id, upgradeDef: selectedUpgradeDef, pane: 'guild' } : null));
+    const guildInspectSelection = selectGuildInspectSelection({
+        guildPaneSelection,
+        globalSelection: ui.inspect.selection,
+        selectedUpgradeId,
+        getUpgradeDefFn: getUpgradeDef
+    });
+
+    // CR3-451: Close must clear BOTH the pane's explicit selection and the
+    // web's own "last picked" id — clearing only the pane left the fallback
+    // chain above re-deriving the same selection on the next render, so the
+    // panel looked like it never closed.
+    const handleClearGuildInspect = React.useCallback(() => {
+        ui.inspect.clear('guild');
+        setSelectedUpgradeId(null);
+    }, [ui.inspect]);
 
     return (
         <EngineProvider engine={engine}>
@@ -316,7 +329,7 @@ export const ReactRoot = ({ engine }) => {
                                             <InspectionPanel
                                                 className="w-full h-full flex-1"
                                                 selection={guildInspectSelection}
-                                                onClear={() => ui.inspect.clear('guild')}
+                                                onClear={handleClearGuildInspect}
                                             />
                                         </div>
                                     </div>
@@ -327,14 +340,18 @@ export const ReactRoot = ({ engine }) => {
                                         style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
                                         className="shrink-0 h-full flex flex-col pointer-events-none relative z-[100]"
                                     >
-                                        <BankHeroPanel
-                                            menuRight={menuRight}
-                                            selectedHeroId={inspectHeroId}
-                                            onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                            onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                            onCloseHero={() => setInspectHeroId(null)}
-                                            onEditHero={(id) => ui.dock.openEdit(id)}
-                                        />
+                                        {/* CR3-203: a crash in the Bank's hero
+                                            panel stays local to this aside. */}
+                                        <ErrorBoundary label="BankHeroPanel">
+                                            <BankHeroPanel
+                                                menuRight={menuRight}
+                                                selectedHeroId={inspectHeroId}
+                                                onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                                onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                                onCloseHero={() => setInspectHeroId(null)}
+                                                onEditHero={(id) => ui.dock.openEdit(id)}
+                                            />
+                                        </ErrorBoundary>
                                     </aside>
                                 ) : (
                                     <NotificationColumn menuRight flagRules={ui.flagRules} />
@@ -390,16 +407,19 @@ export const ReactRoot = ({ engine }) => {
                             {/* Bottom Hero Dock: horizontal sliding tabs. Not on
                                 the Guild Hall upgrade screen (FB-47). */}
                             {showsBottomHeroDock(ui.fullscreen.view) && (
-                                <PerfProfiler id="HeroDock">
-                                    <BottomHeroDock
-                                        isBankOpen={isBankOpen}
-                                        selectedHeroId={inspectHeroId}
-                                        onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                        onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                        onCloseHero={() => setInspectHeroId(null)}
-                                        onEditHero={(id) => ui.dock.openEdit(id)}
-                                    />
-                                </PerfProfiler>
+                                // CR3-203: a crash in the bottom hero dock stays local to it.
+                                <ErrorBoundary label="HeroDock">
+                                    <PerfProfiler id="HeroDock">
+                                        <BottomHeroDock
+                                            isBankOpen={isBankOpen}
+                                            selectedHeroId={inspectHeroId}
+                                            onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                            onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                            onCloseHero={() => setInspectHeroId(null)}
+                                            onEditHero={(id) => ui.dock.openEdit(id)}
+                                        />
+                                    </PerfProfiler>
+                                </ErrorBoundary>
                             )}
                         </div>
                         {!menuRight && (
@@ -426,7 +446,7 @@ export const ReactRoot = ({ engine }) => {
                                             <InspectionPanel
                                                 className="w-full h-full flex-1"
                                                 selection={guildInspectSelection}
-                                                onClear={() => ui.inspect.clear('guild')}
+                                                onClear={handleClearGuildInspect}
                                             />
                                         </div>
                                     </div>
@@ -437,14 +457,18 @@ export const ReactRoot = ({ engine }) => {
                                         style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
                                         className="shrink-0 h-full flex flex-col pointer-events-none relative z-[100]"
                                     >
-                                        <BankHeroPanel
-                                            menuRight={menuRight}
-                                            selectedHeroId={inspectHeroId}
-                                            onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                            onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
-                                            onCloseHero={() => setInspectHeroId(null)}
-                                            onEditHero={(id) => ui.dock.openEdit(id)}
-                                        />
+                                        {/* CR3-203: a crash in the Bank's hero
+                                            panel stays local to this aside. */}
+                                        <ErrorBoundary label="BankHeroPanel">
+                                            <BankHeroPanel
+                                                menuRight={menuRight}
+                                                selectedHeroId={inspectHeroId}
+                                                onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                                onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
+                                                onCloseHero={() => setInspectHeroId(null)}
+                                                onEditHero={(id) => ui.dock.openEdit(id)}
+                                            />
+                                        </ErrorBoundary>
                                     </aside>
                                 ) : (
                                     <NotificationColumn flagRules={ui.flagRules} />
@@ -456,12 +480,18 @@ export const ReactRoot = ({ engine }) => {
                             than a child of the board column, because it has to
                             reach across the notifications column — which the
                             board column does not contain. */}
-                        {/* Perf HUD commit counting, dev only (P3). */}
-                        <PerfProfiler id="Drawer">
-                            <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
-                        </PerfProfiler>
-                        {/* The Shop drawer, from the left edge (B4: FB-25, FB-27). */}
-                        <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
+                        {/* Perf HUD commit counting, dev only (P3). CR3-203: a
+                            crash in the Bank drawer stays local to it. */}
+                        <ErrorBoundary label="BankDrawer">
+                            <PerfProfiler id="Drawer">
+                                <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
+                            </PerfProfiler>
+                        </ErrorBoundary>
+                        {/* The Shop drawer, from the left edge (B4: FB-25, FB-27).
+                            CR3-203: a crash here stays local to it too. */}
+                        <ErrorBoundary label="ShopDrawer">
+                            <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
+                        </ErrorBoundary>
                     </div>
                 </div>
 
