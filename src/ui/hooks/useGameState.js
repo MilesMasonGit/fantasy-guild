@@ -91,6 +91,12 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
         const initialSlice = selector(GameState);
         return initialSlice !== undefined ? safeClone(initialSlice) : undefined;
     });
+    // The value last handed to React. Compared HERE, before `setState`, so an
+    // event that changed nothing never asks React to render (CR3-008): an
+    // updater that returns the old state still made React call the component
+    // once before bailing out, which the Perf HUD counted as a MatBoard render
+    // on walking steps that changed nothing.
+    const lastRef = useRef(state);
 
     // Standard Subscription Effect
     useEffect(() => {
@@ -101,16 +107,13 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
             updateQueued = true;
             queueMicrotask(() => {
                 updateQueued = false;
-                setState(prevState => {
-                    const newStateSlice = selectorRef.current(GameState);
-                    if (prevState === newStateSlice) return prevState;
-                    if (newStateSlice !== null && typeof newStateSlice !== 'object') {
-                        if (prevState === newStateSlice) return prevState;
-                        return newStateSlice;
-                    }
-                    if (isEqual(prevState, newStateSlice)) return prevState;
-                    return safeClone(newStateSlice);
-                });
+                const prevState = lastRef.current;
+                const newStateSlice = selectorRef.current(GameState);
+                if (prevState === newStateSlice) return;
+                if (newStateSlice !== null && typeof newStateSlice === 'object' && isEqual(prevState, newStateSlice)) return;
+                const next = (newStateSlice !== null && typeof newStateSlice === 'object') ? safeClone(newStateSlice) : newStateSlice;
+                lastRef.current = next;
+                setState(next);
             });
         };
         const cleanupFns = eventsRef.current.map(event => EventBus.subscribe(event, handleStateChange));
@@ -121,8 +124,11 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
     // Runs when props like 'heroId' change, ensuring we don't wait for a Game Event.
     useEffect(() => {
         const currentSlice = selectorRef.current(GameState);
-        if (state !== currentSlice && !isEqual(state, currentSlice)) {
-            setState(safeClone(currentSlice));
+        const prev = lastRef.current;
+        if (prev !== currentSlice && !isEqual(prev, currentSlice)) {
+            const next = safeClone(currentSlice);
+            lastRef.current = next;
+            setState(next);
         }
     }, options.deps || []); 
 

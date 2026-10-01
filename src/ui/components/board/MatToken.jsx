@@ -39,6 +39,33 @@ import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
+/**
+ * ⭐ **A walking enemy's boxes follow the engine without React** (CR3-008).
+ * While `on`, each `ENEMIES_WALKED` writes the Token's current point straight
+ * into both boxes' `transform` (the same `translate` the render would write;
+ * the one-tick linear glide is already on them). MatBoard re-renders only when
+ * the walker's place in the stack changes, and any render writes the same live
+ * point, so React and this never disagree.
+ */
+function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
+    const half = React.useRef(boxHalf);
+    half.current = boxHalf;
+    // A layout effect, so it listens from the commit on, and catches up at
+    // once on any step taken between the render and now.
+    React.useLayoutEffect(() => {
+        if (!on) return undefined;
+        const follow = () => {
+            const t = BoardState.getTokenById(id);
+            if (!t) return;
+            const transform = `translate(${t.x - half.current}px, ${t.y - half.current}px)`;
+            if (artRef.current) artRef.current.style.transform = transform;
+            if (overlayRef.current) overlayRef.current.style.transform = transform;
+        };
+        follow();
+        return EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, follow);
+    }, [on, id, artRef, overlayRef]);
+}
+
 /** How long the Hall brightens when collected loot lands on it (FB-16). */
 const RECEIVED_MS = 350;
 
@@ -263,12 +290,18 @@ export const MatToken = React.memo(function MatToken({
     // ⭐ The Token stays exactly where it is (HM-2): its hero walks up and
     // stands beside it (`HeroMotion.standingSpot`). D-266's slide-apart went
     // with Hero Movement M1.
-    const left = x - boxHalf;
-    const top = y - boxHalf;
     // B7.1 (TL-16): an enemy walking by its spawner steps once a tick, so it
     // glides linearly over one tick, as a walking hero does (`MatHero`). The
     // art, the badges, the ring row and the alerts all ride in these boxes.
     const walking = walkFacing != null;
+    // ⭐ CR3-008: while it walks, MatBoard does not hand a walker its point
+    // (`x` is null, so its steps do not redraw the mat). It is read live here,
+    // and each step moves the boxes directly (`useWalkerFollow`, below).
+    const livePoint = walking && x == null ? BoardState.getTokenById(id) : null;
+    const px = livePoint ? livePoint.x : x;
+    const py = livePoint ? livePoint.y : y;
+    const left = px - boxHalf;
+    const top = py - boxHalf;
     // ⭐ CR3-007 (R6 rule 5): a Token that can walk — an enemy — is placed
     // and glides by `transform`; every other Token stays on left/top (a
     // transform on all 300 Tokens of a busy mat cost more in compositing than
@@ -300,14 +333,21 @@ export const MatToken = React.memo(function MatToken({
     };
     const hidden = drag.isDragging;
 
+    // The two boxes, for a walker's steps (CR3-008).
+    const artRef = React.useRef(null);
+    const overlayRef = React.useRef(null);
+    const setNodeRef = drag.setNodeRef;
+    const setArtRef = React.useCallback((el) => { artRef.current = el; setNodeRef(el); }, [setNodeRef]);
+    useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
+
     // B1.2 / TL-22: the ring row, centred under the pair once the hero has
     // arrived (`workerOf` answers only then, FP-26), at their STANDING spot —
     // not their walking position — so the row does not slide while they walk.
     const heroSide = detail?.heroSide ?? null;
     const heroX = heroId && heroSide != null
-        ? HeroMotion.standingSpot(typeId, { x, y }, heroSide).x
+        ? HeroMotion.standingSpot(typeId, { x: px, y: py }, heroSide).x
         : null;
-    const row = ringRowOffset({ x, half: boxHalf, heroX });
+    const row = ringRowOffset({ x: px, half: boxHalf, heroX });
 
     const token = React.useMemo(
         () => ({ typeId, instanceId: id, heroId, alert, usesRemaining }),
@@ -363,7 +403,7 @@ export const MatToken = React.memo(function MatToken({
         <>
             {/* The art, and the only thing the pointer can grab. */}
             <div
-                ref={drag.setNodeRef}
+                ref={setArtRef}
                 {...drag.handleProps}
                 data-token-id={id}
                 data-token-art="true"
@@ -477,6 +517,7 @@ export const MatToken = React.memo(function MatToken({
 
             {/* Everything written on the Token, in front of any hero on it. */}
             <div
+                ref={overlayRef}
                 data-token-id={id}
                 data-token-overlay={id}
                 data-quest-token={quest ? id : undefined}

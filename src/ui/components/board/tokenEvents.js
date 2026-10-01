@@ -128,6 +128,9 @@ export function useTokenState(id, selector, routesOf) {
     const live = useRef(selector);
     live.current = selector;
     const [state, setState] = useState(() => selector());
+    // Compared before `setState`, so an event that changed nothing never makes
+    // React call the component (an updater returning the old state still did).
+    const lastRef = useRef(state);
 
     const queued = useRef(false);
     const refresh = useCallback(() => {
@@ -135,10 +138,10 @@ export function useTokenState(id, selector, routesOf) {
         queued.current = true;
         queueMicrotask(() => {
             queued.current = false;
-            setState(prev => {
-                const next = live.current();
-                return isEqual(prev, next) ? prev : next;
-            });
+            const next = live.current();
+            if (isEqual(lastRef.current, next)) return;
+            lastRef.current = next;
+            setState(next);
         });
     }, []);
 

@@ -176,3 +176,31 @@ export function heroZ(hero, { tokenZ: tz, flagZ: fz }) {
     if (hero.tokenId && tz.has(hero.tokenId)) return tz.get(hero.tokenId) + 1;
     return MAT_Z.WAITING_HERO;
 }
+
+/**
+ * ⭐ **A walking Token's place in the stack, without its exact point** (CR3-008).
+ *
+ * The mat's order only needs to know which Tokens and flags a walker stands
+ * between, not where it is between them. This gives a stand-in `y` that sorts
+ * exactly as the real one does — the real `y` when it ties with something
+ * (the tie rules then apply unchanged), otherwise the midpoint of its two
+ * neighbours — and that stays the SAME value step after step until the walker
+ * crosses one of them. `MatBoard` sorts walkers by it, so a step that crosses
+ * nothing re-renders nothing; the walker's box follows the engine imperatively.
+ *
+ * @param {number} y the walker's real y
+ * @param {number[]} others every other Token's and flag's y
+ * @returns {number}
+ */
+export function walkerSortY(y, others) {
+    let below = -Infinity;
+    let above = Infinity;
+    for (const o of others) {
+        if (o === y) return y;
+        if (o < y) { if (o > below) below = o; } else if (o < above) above = o;
+    }
+    if (below === -Infinity && above === Infinity) return 0;
+    if (below === -Infinity) return above - 1;
+    if (above === Infinity) return below + 1;
+    return (below + above) / 2;
+}

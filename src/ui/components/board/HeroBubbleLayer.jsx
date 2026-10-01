@@ -7,6 +7,7 @@ import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.j
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
@@ -153,8 +154,19 @@ export const HeroBubbleLayer = ({ heroes }) => {
         if (!stack.length) continue;
         // The tail sits just above the head, read from the art's real size at
         // this mat scale (FB-20, `bubbleAnchorY`).
-        anchored.push({ h, stack, x: h.x, y: bubbleAnchorY(h.y, artPx) });
+        // A moving hero comes with no point (CR3-008): read it live.
+        const at = h.x == null ? HeroMotion.bodyView(h.heroId) : h;
+        if (!at) continue;
+        anchored.push({ h, stack, x: at.x, y: bubbleAnchorY(at.y, artPx), live: h.x == null });
     }
+
+    // While a moving hero is speaking, follow their steps here — the one place
+    // that still redraws per step, and only while a bubble is up (CR3-008).
+    const following = anchored.some(a => a.live);
+    useLayoutEffect(() => {
+        if (!following) return undefined;
+        return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, () => setNow(Date.now()));
+    }, [following]);
     const offsets = layoutStacks(
         anchored.map(a => ({ id: a.h.heroId, x: a.x, y: a.y, ...(sizesRef.current.get(a.h.heroId) || guessSize(a.stack)) })),
         mat

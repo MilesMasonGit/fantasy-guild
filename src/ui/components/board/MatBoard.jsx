@@ -1,11 +1,9 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { MAT_Z, matStackOrder, sameStackOrder, heroZ } from './matLayers.js';
-import { HERO_HIT_PX } from './boardConstants.js';
-import { FLAG_PX } from './flagGeometry.js';
+import { MAT_Z, matStackOrder, sameStackOrder, heroZ, walkerSortY } from './matLayers.js';
 import { pointerToMat } from './matPoint.js';
 import { MatToken } from './MatToken.jsx';
-import { MatHero } from './MatHero.jsx';
+import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
 import { MatPointAlerts } from './MatPointAlerts.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
@@ -103,18 +101,40 @@ export const MatBoard = ({
         [isDragging]
     );
 
-    /** Every Token on the mat: where it is, and nothing about how it is doing. */
+    /**
+     * Every Token on the mat: where it is, and nothing about how it is doing.
+     *
+     * ⭐ **A walking enemy's steps do not redraw the mat** (CR3-008). For a
+     * Token that is walking this tick, `x` is null and `y` is only its place
+     * in the stack (`walkerSortY`), which holds still until it crosses another
+     * Token or flag; its box follows the engine by itself (`MatToken`). So a
+     * step re-renders MatBoard only when it changes who is in front of whom,
+     * or the walk starts, stops or turns.
+     */
     const tokensRaw = useGameState(
-        () => BoardState.tokens().map(t => ({
-            id: t.id,
-            typeId: t.typeId,
-            x: t.x,
-            y: t.y,
-            placedAt: t.placedAt ?? 0,
-            // B7.1 (TL-16): an enemy walking by its spawner glides from step to
-            // step, facing the way it goes. Null for everything standing still.
-            walkFacing: EnemyMotion.walkFacingOf(t.id)
-        })),
+        () => {
+            const all = BoardState.tokens();
+            const facing = all.map(t => EnemyMotion.walkFacingOf(t.id));
+            if (!facing.some(f => f != null)) {
+                return all.map(t => ({ id: t.id, typeId: t.typeId, x: t.x, y: t.y, placedAt: t.placedAt ?? 0, walkFacing: null }));
+            }
+            const flagYs = [];
+            for (const [heroId] of BoardState.heroesOnBoard()) {
+                const flag = BoardState.flagOf(heroId);
+                if (flag) flagYs.push(flag.y);
+            }
+            return all.map((t, i) => {
+                // B7.1 (TL-16): an enemy walking by its spawner glides from step
+                // to step, facing the way it goes. Null for everything standing still.
+                const walkFacing = facing[i];
+                if (walkFacing == null) {
+                    return { id: t.id, typeId: t.typeId, x: t.x, y: t.y, placedAt: t.placedAt ?? 0, walkFacing };
+                }
+                const others = flagYs.slice();
+                for (const o of all) if (o !== t) others.push(o.y);
+                return { id: t.id, typeId: t.typeId, x: null, y: walkerSortY(t.y, others), placedAt: t.placedAt ?? 0, walkFacing };
+            });
+        },
         [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, BOARD_EVENTS.ENEMIES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
         null
     );
@@ -158,8 +178,11 @@ export const MatBoard = ({
                     heroId,
                     state: status.state,
                     tokenId: worked?.id || null,
-                    x: body.x,
-                    y: body.y,
+                    // ⭐ CR3-008: no point while moving — the figure follows
+                    // its steps by itself (`MatHero`), so a step redraws
+                    // nothing here. It comes back when they stop.
+                    x: body.moving ? null : body.x,
+                    y: body.moving ? null : body.y,
                     moving: body.moving,
                     facing: body.facing,
                     limp: body.limp,
@@ -274,7 +297,10 @@ export const MatBoard = ({
     // (owner, 2026-09-21) — `showsNearRing`.
     const hoveredCentre = useMemo(() => {
         const t = hoveredId ? tokens.find(k => k.id === hoveredId) : null;
-        return t && showsNearRing(t.typeId) ? { x: t.x, y: t.y } : null;
+        if (!t || !showsNearRing(t.typeId)) return null;
+        // A walker's own point is not in `tokens` (CR3-008): read it live.
+        const at = t.x == null ? BoardState.getTokenById(t.id) : t;
+        return at ? { x: at.x, y: at.y } : null;
     }, [hoveredId, tokens]);
 
     const workedBy = useMemo(() => {
@@ -354,7 +380,8 @@ export const MatBoard = ({
             ))}
 
             {heroes.map(h => {
-                const place = heroPlacement(h);
+                // A moving hero's point is MatHero's own (CR3-008).
+                const place = h.x == null ? { left: null, top: null } : heroPlacement(h);
                 const animState = heroAnimationState({
                     moving: h.moving, working: h.state === 'working', stuck: h.stuck, combat: h.combat
                 });
@@ -454,7 +481,7 @@ export function heroPlacement({ x, y }) {
     // Centred on the hero's own point (Hero Movement M1). A working hero's
     // point is already beside their Token (`HeroMotion.standingSpot`, HM-2),
     // so there is no per-state offset any more (D-266's pairing went).
-    return { left: x - HERO_HIT_PX / 2, top: y - FLAG_PX / 2 };
+    return heroBoxAt({ x, y });
 }
 
 export default MatBoard;
