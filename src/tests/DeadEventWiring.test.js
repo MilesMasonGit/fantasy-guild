@@ -212,7 +212,7 @@ describe('dead event wiring stays dead', () => {
         const hook = FILES.find(f => f.path === 'ui/hooks/useUIModals.js');
         const quests = FILES.find(f => f.path === 'systems/quests/QuestManager.js');
         expect(hook.text).toMatch(/Contract: `ui_modal:opened`/);
-        expect(quests.text).toMatch(/CR2-094/);
+        expect(quests.text).toMatch(/`ui_modal:opened` comes from the React layer/);
 
         // The hook is still the only publisher...
         // (Named by `UI_EVENTS.UI_MODAL_OPENED` since CR3-559.)
