@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Crunch prep: one backlog, a lean doc set, a real GDD (2026-10-06).** All open work now lives in
+  `docs/reference/TICKETS.md` (96 tickets); docs are split into `docs/active/` (start at `NOW.md`),
+  `docs/reference/` (GDD, tickets, testing) and one `docs/archive/`; CLAUDE.md describes director
+  mode; the GDD was rebuilt from code surveys. The dead tile-era terrain table and its 6 expected
+  test failures were deleted.
 - **Mat Tokens no longer stop the keyboard Tab key (CR3-411).** Tabbing through the page used to
   walk through every one of the ~150 Tokens on the mat, one by one, and a screen reader would
   read instructions for picking one up with the keyboard — which was never wired up. Tab now
