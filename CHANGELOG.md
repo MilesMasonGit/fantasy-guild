@@ -4,6 +4,8 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Crunch order updated (2026-10-06).** The Atlas joins the crunch after deep optimization,
+  followed by a terrain rework; markets stay undecided.
 - **Owner rulings on the GDD questions (2026-10-06).** Recorded in the GDD and as tickets
   T-097..T-100; skill & class rework v2 and real offline progress became crunch tracks; a
   comment-slimming pass is briefed in `docs/active/brief_comment_slimming.md`.

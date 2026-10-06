@@ -27,11 +27,14 @@ CRUNCH MONTH (Claude, Max plan)
   6b. Skill & class rework v2 (24 skills, 4 basic + 8 master classes, 4 Academies)
   6c. Real offline progress (replaces the Time Bank)
   7. Deep optimization — root-cause hunt, working from the cost log
-  8. Performance Envelope — write the real limits down as design rules
+  8. Atlas             — separate screen; gets its own light optimization pass
+                        (moved into the crunch, owner 2026-10-06)
+  9. Terrain rework    — painted ground returns for Atlas Regions; a major
+                        rework, only once the Atlas works (owner 2026-10-06)
+ 10. Performance Envelope — write the real limits down as design rules
 
 AFTER (back on Pro)
-  9. Atlas             — separate screen; gets its own light optimization pass
- 10. Content tiers     — Tier 1 complete, then Tier 2…; deep pass per milestone
+ 11. Content tiers     — Tier 1 complete, then Tier 2…; deep pass per milestone
 ```
 
 ### Why this order
