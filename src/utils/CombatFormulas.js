@@ -1,8 +1,6 @@
 // Fantasy Guild - Combat Formulas
-// 7-Stat Engine pass (combat_formula_spec.md §7 pipeline).
-// NOTE: Tunable constants live in FormulaRegistry.js. This file provides
-// hero/enemy-aware wrappers. Crit, Armor, and weapon-speed archetypes are
-// hooks only (they resolve to 0/neutral until their implementation pass).
+// Tunable constants live in FormulaRegistry.js; this file provides
+// hero/enemy-aware wrappers.
 
 import {
     growth,
@@ -38,11 +36,10 @@ export function clamp(value, min, max) {
 
 /**
  * The combat style a hero uses is determined entirely by the equipped
- * weapon's type (locked decision). Unarmed counts as Melee.
+ * weapon's type. Unarmed counts as Melee.
  *
- * With two hands the PRIMARY weapon decides — the first occupied hand — so a
- * sword in hand1 and a bow in hand2 fights melee. Single-weapon heroes behave
- * exactly as they did under the old one-slot model.
+ * With two hands the PRIMARY weapon decides (the first occupied hand), so a
+ * sword in hand1 and a bow in hand2 fights melee.
  * @param {Object} hero
  * @returns {'melee'|'ranged'|'magic'}
  */
@@ -54,9 +51,7 @@ export function getHeroCombatStyle(hero) {
         if (style === 'melee' || style === 'ranged' || style === 'magic') return style;
     }
     // Unarmed: fall back to the hero's own combat skill rather than assuming
-    // melee. The two can no longer disagree anyway — a weapon requires its
-    // style to equip, so a Ranged hero cannot be holding a sword — but an
-    // unarmed Ranger should still fight ranged.
+    // melee, so an unarmed Ranger fights ranged.
     return getHeroCombatSkillEntry(hero).id || 'melee';
 }
 
@@ -68,10 +63,9 @@ export function getHeroCombatStyle(hero) {
  * *and* defence, max HP and block. A Melee 30 hero attacks at 30 and defends
  * at 30.
  *
- * ⚠️ **A hero with no combat skill scores 0, not 1.** That is a Recruit, and a
- * Recruit cannot fight — see `canHeroFight`. Returning a floor of 1 here would
- * have quietly made them a weak fighter instead of a non-combatant, which is
- * the opposite of what the design asks for.
+ * ⚠️ **A hero with no combat skill scores 0, not 1.** That is a Recruit, who
+ * cannot fight (see `canHeroFight`); a floor of 1 would make them a weak
+ * fighter instead of a non-combatant.
  *
  * @param {Object} hero
  * @returns {{ id: string|null, level: number }}
@@ -97,30 +91,26 @@ export function canHeroFight(hero) {
 /**
  * Get the hero's combat skill level.
  *
- * ⚠️ The `selectedStyle` argument is **ignored** and kept only so the many
- * existing call sites keep compiling. A hero has one style; the equipped
- * weapon no longer selects between four skill bars, it only decides which
- * side of the rock-paper-scissors triangle they fight on.
+ * ⚠️ The `selectedStyle` argument is **ignored** and kept only so existing call
+ * sites keep compiling. A hero has one style; the equipped weapon only decides
+ * which side of the rock-paper-scissors triangle they fight on.
  */
 export function getHeroCombatSkill(hero, _selectedStyle = 'melee') {
     return getHeroCombatSkillEntry(hero).level;
 }
 
 /**
- * A hero's defensive number.
- *
- * *Was* the separate `defense` skill. That skill is deleted — the single
- * combat skill supplies both halves, so there is no way to build a tanky hero
- * distinct from a damaging one through skills. Defensive building moves
- * entirely to equipment, which is what gives the nine gear slots a job.
+ * A hero's defensive number. The single combat skill supplies both halves, so
+ * skills cannot build a tanky hero distinct from a damaging one; defensive
+ * building is equipment.
  */
 export function getHeroDefenseSkill(hero) {
     return getHeroCombatSkillEntry(hero).level;
 }
 
 /**
- * Hero max HP from skills: 30·G(Combat Level) + 20·G(Defence) (spec §3), where
- * both terms are now the same single combat skill.
+ * Hero max HP from skills; both terms of the formula use the single combat
+ * skill.
  *
  * ⚠️ **A Recruit floors at level 1 for HP only.** They cannot fight, but they
  * stand on the board, take environmental damage and can be healed, so a max HP
@@ -139,7 +129,7 @@ export function heroMaxHpFromSkills(skills) {
 
 /**
  * A hero's effective Block %: gear block amplified by their combat skill, plus
- * the innate block that skill grants (owner deviation 2026-07-12).
+ * the innate block that skill grants.
  */
 export function getHeroBlockChance(hero) {
     const gearBlock = hero?.aggregator?.query('BLOCK') || 0;
@@ -147,8 +137,8 @@ export function getHeroBlockChance(hero) {
 }
 
 /**
- * Calculate hit chance per the spec pipeline (§7 step 2):
- * 75 + 0.25·(attacker style skill − defender Defense) + Accuracy − Block ± RPS 7, clamped 5–95.
+ * Calculate hit chance (spec §7 step 2): skill difference, Accuracy, Block and
+ * the RPS shift, clamped.
  *
  * @param {number} attackerSkill - Attacker's active style skill level
  * @param {number} defenderDefense - Defender's Defense skill level (enemies: their level)
@@ -192,11 +182,9 @@ export function rollDamage(minDamage, maxDamage) {
 /**
  * The outgoing-damage multiplier a hero carries.
  *
- * ⚠️ Reads BOTH sources while the absorb is in progress: `damage_pct` from the
- * old status engine, and the `DAMAGE` percentage bucket that a carried library
- * effect registers (V7). Written as one function so the two cannot drift, and so
- * removing the first half later is a one-line edit in one place rather than the
- * two call sites it used to be.
+ * ⚠️ Reads BOTH sources: `damage_pct` from the old status engine, and the
+ * `DAMAGE` percentage bucket that a carried library effect registers. One
+ * function so the two cannot drift.
  */
 export function damageMultiplierOf(hero) {
     const fromStatuses = sumStatusEffect(hero?.statuses, 'damage_pct');
@@ -207,10 +195,9 @@ export function damageMultiplierOf(hero) {
 }
 
 /**
- * Compute damage dealt from hero to enemy (spec §7 steps 3-5).
- * Base = 4·G(style skill) + weapon damage (flat placeholder until the gear
- * pass prices weapons properly) + flat modifiers; ×0.85-1.15 spread; RPS ±10%;
- * crit hook (0 for now); minus enemy flat Armor (0 by default); min 1.
+ * Compute damage dealt from hero to enemy (spec §7 steps 3-5): base from the
+ * combat skill plus weapon damage and flat bonuses, spread, buffs, RPS shift,
+ * minus enemy flat Armor; min 1.
  */
 export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selectedStyle = 'melee', enemyStatuses = null) {
     const skill = getHeroCombatSkill(hero, selectedStyle);
@@ -218,19 +205,13 @@ export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selected
 
     let damage = rollDamageSpread(base);
 
-    // Damage buffs sum additively. ⚠️ Both sources during the absorb: the old
-    // status engine, and the aggregator that a carried library effect writes to
-    // (V7). The first half goes when the seven are re-authored.
+    // Damage buffs sum additively; `damageMultiplierOf` reads both sources.
     damage *= damageMultiplierOf(hero);
 
     const enemyStyle = enemy?.combatType || 'melee';
     damage *= 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
 
-    // Crit hook (spec §7 step 4): innate 5%/2× lands with the crit pass.
-
-    // Armor (spec §7 step 5): flat subtraction after crit — enemy budget
-    // deviations (later), whatever the enemy is carrying, and any Armor Shield
-    // status on it while the old engine still runs.
+    // Flat Armor subtracts after the spread and multipliers.
     const armor = enemyFlatArmor(enemy, enemyStatuses);
 
     return Math.max(1, Math.round(damage - armor));
@@ -238,20 +219,13 @@ export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selected
 
 
 /**
- * The flat damage reduction a hero carries — Armor, legacy DEFENSE, and any
- * armour a status is lending them.
+ * The flat damage reduction a hero carries: Armor, legacy DEFENSE, and any
+ * armour a status is lending them. One function so armour means one thing
+ * regardless of what hit you.
  *
- * ## Why this is a function and not three lines at each call site
- * It was three lines at each call site, twice, and Effects Grammar v2's `Deals`
- * verb needs it a third time. Armour must mean **one** thing regardless of what
- * hit you: a thorn and a goblin subtracting different numbers would be the kind
- * of parallel definition CR2-074 named, arriving by copy-paste instead of by
- * design.
- *
- * ⚠️ `DEFENSE` is summed in alongside `ARMOR` deliberately — existing armour
+ * ⚠️ `DEFENSE` is summed in alongside `ARMOR` deliberately: existing armour
  * items register their `defense` stat on that axis, and it is treated as flat
- * Armor until the gear pass prices them properly. That is also why the palette
- * offers `ARMOR` and not `DEFENSE`: two ways to say one thing.
+ * Armor.
  */
 export function heroFlatArmor(hero) {
     return (hero?.aggregator?.query('ARMOR') || 0)
@@ -262,14 +236,9 @@ export function heroFlatArmor(hero) {
 /**
  * The flat damage reduction an **enemy** carries.
  *
- * ⚠️ This was written out inline at two call sites and read `enemy.armor` plus a
- * status, with no aggregator — because until enemies became effect bearers there
- * was no aggregator to read. Making it a function is the same discipline
- * `heroFlatArmor` exists for: armour must mean one thing on both sides of a
- * fight, and a third copy arriving by paste is how it stops meaning one thing.
- *
- * `enemyStatuses` is the old engine's list and is summed in during the absorb,
- * exactly as `heroFlatArmor` still sums the hero's.
+ * One function so armour means the same thing on both sides of a fight.
+ * `enemyStatuses` is the old status engine's list, summed in as `heroFlatArmor`
+ * sums the hero's.
  */
 export function enemyFlatArmor(enemy, enemyStatuses = null) {
     return (enemy?.armor || 0)
@@ -284,14 +253,11 @@ export function heroFlatResist(hero) {
 }
 
 /**
- * Damage from a non-combat source, mitigated (Effects Grammar v2, G-23).
+ * Damage from a non-combat source, mitigated.
  *
- * ⚠️ **Floors at zero, where a combat hit floors at one**, and the difference is
- * deliberate. Combat's minimum of 1 exists so a fight always progresses — two
- * heavily armoured entities must not stand swinging forever. A thorn is not a
- * fight: if armour exceeds it, "respects Armor" can only honestly mean it does
- * nothing. A floor of 1 here would make heavy armour worth exactly as much as
- * none against every thorn in the game.
+ * ⚠️ **Floors at zero, where a combat hit floors at one**, deliberately.
+ * Combat's minimum of 1 exists so a fight always progresses; a thorn is not a
+ * fight, and a floor of 1 would make heavy armour worth nothing against it.
  */
 export function mitigateFlatDamage(hero, rawDamage) {
     const reduced = rawDamage - heroFlatArmor(hero) - heroFlatResist(hero);
@@ -299,10 +265,9 @@ export function mitigateFlatDamage(hero, rawDamage) {
 }
 
 /**
- * Compute damage dealt from enemy to hero (spec §7 steps 3-5).
- * Enemy min/max damage already carry the 0.85-1.15 spread (derived in the
- * enemy registry from the band budget); RPS ±10%; minus hero flat Armor
- * (gear pass later); min 1.
+ * Compute damage dealt from enemy to hero (spec §7 steps 3-5). Enemy min/max
+ * already carry the damage spread (derived from the band budget); RPS shift;
+ * minus hero flat Armor and Resist; min 1.
  */
 export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
     const base = rollDamage(enemy.minDamage ?? 1, enemy.maxDamage ?? 1);
@@ -310,10 +275,8 @@ export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
     const enemyStyle = enemy.combatType || 'melee';
     let damage = base * (1 + rpsOutcome(enemyStyle, heroStyle) * RPS_DAMAGE_SHIFT);
 
-    // Hero flat Armor (spec §7 step 5). Existing armor items register their
-    // `defense` stat as DEFENSE modifiers — treated as flat Armor until the
-    // gear pass introduces properly budgeted ARMOR values. Armor Shield
-    // status stacks add on top (they decay via notifyHitTaken after impact).
+    // Existing armor items register `defense` as DEFENSE modifiers, which
+    // `heroFlatArmor` treats as flat Armor.
     const armor = heroFlatArmor(hero);
     const flatResist = heroFlatResist(hero);
 
@@ -353,38 +316,29 @@ export function getEnemyDamageRange(enemy, hero = null, heroStyle = 'melee') {
 }
 
 /**
- * Crit chance hook (spec §7 step 4): resolves to 0 until the crit pass lands
- * (innate 5%/2× then).
+ * Crit chance hook: resolves to 0 until the crit pass lands (innate 5%/2× then).
  *
- * ⚠️ **Nothing reads this yet.** The comment here used to claim "the combat
- * info panels read this so they pick up the real value automatically" — there
- * are no combat info panels, and nothing in `src/ui/` imports this module at
- * all (CR2-078, corrected 2026-08-24). The same is true of
- * `getHeroDamageRange`, `getEnemyDamageRange` and `getHeroAttackSpeed` below:
- * they are kept deliberately as hooks for the deferred crit/armor/speed pass,
- * not because a display is already wired to them.
+ * ⚠️ Nothing reads this yet, nor `getHeroDamageRange`, `getEnemyDamageRange` or
+ * `getHeroAttackSpeed`. They are hooks for the deferred crit/armor/speed pass,
+ * not because a display is wired to them.
  */
 export function getCritChance(/* entity */) {
     return 0;
 }
 
 /**
- * Hero attack interval — fixed 2.5s this pass; weapon archetypes redefine it later (spec §5).
+ * Hero attack interval: a fixed value until weapon archetypes redefine it.
  */
 export function getHeroAttackSpeed() {
     return HERO_ATTACK_INTERVAL_MS;
 }
 
 /**
- * XP for defeating an enemy — derived onto the enemy stat block from its
- * band budget (12·G(level)^1.15, spec §6).
+ * XP for defeating an enemy, derived onto the enemy stat block from its
+ * band budget.
  */
 export function getCombatXpAward(enemy) {
     return enemy?.xpAwarded ?? 1;
 }
-
-// `calculateRpsMultiplier` and `calculateDefenceReduction` were deleted on
-// 2026-08-24 (CR2-078). Both were shims onto a "legacy combat path" that no
-// longer exists, and neither had a caller anywhere.
 
 export { growth };

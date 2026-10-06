@@ -1,26 +1,15 @@
 // Fantasy Guild - Game State
-// Auditor Pass 1: Efficiency & Intent Alignment
 
 import { createInitialState, GAME_VERSION } from './StateSchema.js';
 import { logger } from '../utils/Logger.js';
 
 /**
- * Runtime scratch that is left out of the save (CR2-023).
+ * Runtime scratch left out of the save.
  *
- * ⚠️ **Every entry here must be something `rehydrateHero` rebuilds
- * unconditionally on load** — a field stripped but not rebuilt is silent data
- * loss. Each was checked against `HeroRehydration.rehydrateHero` before being
- * added:
- *   aggregator  → replaced with `new ModifierAggregator(hero.id)` every load,
- *                 so whatever was saved was already discarded.
- *   className   → recomputed from `isVillager`.
- *   traitName   → set to '' (classes and traits are retired).
- *   level       → recomputed by `calculateHeroLevel(hero.skills)`.
- *   _rev        → a UI change counter, incremented on load.
- *
- * `hp`, `equipment`, `statuses`, `spriteId` and `icon` are deliberately NOT
- * here: rehydration only fills those in when they are missing, so the saved
- * value is the real one.
+ * ⚠️ Every entry must be something `rehydrateHero` rebuilds unconditionally on
+ * load; a field stripped but not rebuilt is silent data loss. `hp`, `equipment`,
+ * `statuses`, `spriteId` and `icon` are NOT here: rehydration only fills those
+ * in when missing, so the saved value is the real one.
  */
 const HERO_PROPS_TO_STRIP = ['aggregator', 'className', 'traitName', 'level', '_rev'];
 
@@ -52,19 +41,9 @@ class GameStateClass {
     async _rehydrateAll() {
         if (!this.state) return;
 
-        // Card rehydration removed with the card retirement (2026-08-18).
-        // It walked `state.cards.active` / `.library`, which StateSchema no
-        // longer declares — `state.cards` holds only `idCounter` — so both
-        // loops iterated nothing and the flyweight strip/re-derive pass was a
-        // no-op at runtime.
-
-        // Heroes
-        // ⚠️ These two imports are LOAD-BEARING cycle breakers: keep them
-        // dynamic (CR3-509). HeroManager and EquipmentManager, and the
-        // modules they import, import this one back; importing them statically
-        // re-forms the 16-module all-static cycle (`npm run cycles`, Cycle 1)
-        // and the build's two "dynamically imported … but also statically
-        // imported" warnings for them are expected.
+        // ⚠️ Keep these two imports dynamic: HeroManager and EquipmentManager
+        // (through the modules they import) import this one back, and static
+        // imports re-form the import cycle `npm run cycles` guards.
         const HM = await import('../systems/hero/HeroManager.js');
         const EM = await import('../systems/equipment/EquipmentManager.js');
         (this.state.heroes || []).forEach(hero => {
@@ -72,13 +51,12 @@ class GameStateClass {
             EM.recalculateEquipmentModifiers(hero);
         });
 
-        // 4. Quests
         if (!this.state.quests) {
             this.state.quests = {
                 active: [],
                 completedTutorials: [],
                 tutorialStep: 0,
-                // B6.1: quests run on the game-time `clockMs`, not the wall clock.
+                // quests run on the game-time `clockMs`, not the wall clock.
                 clockMs: 0,
                 nextQuestAt: null
             };
@@ -111,14 +89,12 @@ class GameStateClass {
     get recruitment() { return this.state?.recruitment || { candidates: [] }; }
     get quests() { return this.state?.quests || { active: [], tutorialStep: 0, nextQuestAt: null }; }
     get ui() { return this.state?.ui || {}; }
-    // The board (7×7 playmat). Selectors receive THIS object, not `state`, so a
-    // top-level slice is unreachable from the UI without a getter here — which
-    // is why the retired `areaStates` / `outposts` / `playmatOrder` getters had
-    // to exist too, and why they go with their systems.
+    // The board (7×7 playmat). Selectors receive this object, not `state`, so a
+    // top-level slice needs a getter here to be reachable from the UI.
     get board() { return this.state?.board || { tiles: {} }; }
 
     // ========================================
-    // === Board Accessors (Phase 2) ===
+    // === Board Accessors ===
     // ========================================
 
     /** The Token instance on a tile, or null. Tile 0 is valid — `== null` checks only. */
@@ -132,12 +108,6 @@ class GameStateClass {
         if (!heroId) return null;
         return (this.state?.heroes || []).find(h => h.id === heroId) || null;
     }
-
-    // The card lookup cache (`_cardById`, `rebuildCardCache`, `getCardById`,
-    // `cacheCard`, `uncacheCard`) was deleted on 2026-08-24 (CR2-013). It read
-    // `state.cards.active` / `.library`, which StateSchema stopped declaring
-    // with the card retirement, so it always rebuilt to zero entries and every
-    // lookup returned null. Nothing outside this file ever called it.
 
     // ========================================
     // === Write Mutators ===
@@ -154,16 +124,12 @@ class GameStateClass {
     // ========================================
 
     /**
-     * Serialize state for saving (Flyweight protocol)
+     * Serialize state for saving.
      */
     serialize() {
         const saveState = structuredClone(this.state);
 
-        // The flyweight strip pass that used to run here walked
-        // `cards.active` / `cards.library`, which no longer exist. Removed
-        // with the card retirement (2026-08-18).
-
-        // Heroes are saved whole, minus the runtime scratch below (CR2-023).
+        // Heroes are saved whole, minus the runtime scratch.
         for (const hero of saveState.heroes || []) {
             for (const prop of HERO_PROPS_TO_STRIP) delete hero[prop];
         }
@@ -179,7 +145,7 @@ class GameStateClass {
 
     /**
      * The save as a JSON string, byte for byte `JSON.stringify(this.serialize())`
-     * but without deep-copying the whole state first (CR3-109).
+     * but without deep-copying the whole state first.
      *
      * A `stringify` replacer does the two things `serialize()` does to its copy,
      * on the way out, and never touches the live state:
@@ -191,7 +157,6 @@ class GameStateClass {
      * Only the top-level `state.heroes` and `state.meta` are rewritten: the
      * replacer checks its holder is the state itself.
      *
-     * `SaveBytesIdentical.test.js` compares the two on S2- and S3-shaped boards.
      * @returns {string}
      */
     serializeJson() {

@@ -1,5 +1,4 @@
 // Fantasy Guild - RNG Utilities
-// Phase 3: Core Utilities
 
 /**
  * Random Number Generator utilities

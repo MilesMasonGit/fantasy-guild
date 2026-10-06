@@ -2,21 +2,12 @@
 // Centralized logging with dev/production modes
 
 /**
- * Logger - Centralized debug logging system
- * 
- * Features:
- * - Automatic dev/production mode detection
- * - Log levels (debug, info, warn, error)
- * - Module/category prefixes
- * - Conditional logging based on environment
- * - Performance-friendly (no-op in production)
+ * Logger - centralized debug logging with levels and module prefixes.
+ * Everything except `error` is a no-op in production.
  */
 
 class Logger {
     constructor() {
-        // Auto-detect environment
-        // In Vite: import.meta.env.DEV is true in development
-        // In production build: import.meta.env.PROD is true
         this.isDevelopment = import.meta.env?.DEV ?? true;
 
         // Log levels (lower number = more important)
@@ -39,13 +30,10 @@ class Logger {
      * @private
      */
     _shouldLog(level, module) {
-        // Never log in production
         if (!this.isDevelopment) return false;
 
-        // Check log level
         if (this.levels[level] < this.minLevel) return false;
 
-        // Check module filter (if set)
         if (this.moduleFilter.size > 0 && !this.moduleFilter.has(module)) {
             return false;
         }
@@ -100,7 +88,6 @@ class Logger {
      * @param {...any} args - Arguments to log
      */
     error(module, ...args) {
-        // Errors are always logged, even in production
         console.error(...this._format(module, ...args));
     }
 
@@ -138,8 +125,6 @@ class Logger {
     }
 }
 
-// Export singleton instance
 export const logger = new Logger();
 
-// Export class for testing
 export { Logger };

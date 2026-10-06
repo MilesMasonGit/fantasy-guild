@@ -1,4 +1,4 @@
-// Fantasy Guild — runtime warning for content that does not resolve (CR2-108c)
+// Fantasy Guild — runtime warning for content that does not resolve
 
 import { logger } from './Logger.js';
 
@@ -6,30 +6,17 @@ import { logger } from './Logger.js';
  * `warnMissingContent` — say it out loud, once, when a content id resolves to
  * nothing at runtime.
  *
- * ## Why this exists
  * The boot-time audit (`systems/core/ContentAudit.js`) walks the *authored*
- * content set and reports every reference that dangles. It cannot see the ids
- * that only appear while the game is running: a drop rolled from a table, a
- * Token dragged out of a save written before a rename, a sprite asked for by an
- * effect. Those arrive at four places that all do the same thing — look the id
- * up, get `null`, and carry on as if nothing happened.
+ * content set, so it cannot see ids that only appear while the game runs: a
+ * drop rolled from a table, a Token from a save written before a rename, a
+ * sprite asked for by an effect. Those lookups return `null` and carry on, so a
+ * missing definition looks like ordinary gameplay; this makes it a console line.
  *
- * That is why a missing definition has never looked like a fault. A drop that
- * never arrives, a sprite that never appears, a Token that will not sit down, a
- * Vault deposit that vanishes: every one of them looks exactly like ordinary
- * gameplay. This turns each of them into a line in the console instead.
+ * It WARNS and never blocks: the content set is deliberately half-authored, so
+ * a dangling reference is a normal mid-authoring state.
  *
- * ## It WARNS. It never blocks. (Owner ruling, 2026-08-19)
- * Nothing here changes what the game does next. The content set is deliberately
- * half-authored, so a dangling reference is a normal mid-authoring state rather
- * than a bug. The whole value is that the silence stops.
- *
- * ## Once per name, ever
- * These four sites sit on hot paths — one of them runs on every board tick. A
- * warning that fired sixty times a second would cost frames and be scrolled
- * past, which is worse than saying nothing. So each distinct name is reported
- * the first time it is seen and never again for the life of the page, the same
- * way the boot audit lists each unresolvable id once.
+ * Once per name for the life of the page: the call sites sit on hot paths, and a
+ * warning fired every tick would cost frames and be scrolled past.
  */
 
 /** Every `place|kind|id` already reported, so nothing is said twice. */
@@ -43,16 +30,11 @@ const alreadyWarned = new Set();
  * @param {string} id        The name that resolved to nothing.
  * @param {string} consequence  What happens instead, in plain words, finishing
  *                              the sentence "…so <consequence>".
- * @param {string} [whereToLookNext]  The closing sentence, telling the reader
- *                              where the rest of the story is. Defaults to
- *                              pointing at the boot-time content audit, which
- *                              is right for the four call sites that report an
- *                              id coming out of the *authored* content set.
- *                              ⚠️ It is NOT right for an id coming out of a
- *                              **save** — the boot audit walks authored content
- *                              only and cannot see a save's ids at all, which
- *                              is the whole of CR2-120. `ContentAudit`'s
- *                              save pass passes its own sentence for that reason.
+ * @param {string} [whereToLookNext]  The closing sentence. Defaults to pointing
+ *                              at the boot-time content audit.
+ *                              ⚠️ Not right for an id coming out of a **save**: the
+ *                              boot audit walks authored content only and cannot see
+ *                              a save's ids, so `ContentAudit`'s save pass passes its own.
  * @returns {boolean} Whether this call actually printed anything.
  */
 export function warnMissingContent(where, kind, id, consequence, whereToLookNext) {

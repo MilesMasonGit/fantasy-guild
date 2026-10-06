@@ -1,14 +1,7 @@
 // Fantasy Guild - Formatters
-// Phase 3: Core Utilities
 
 /**
  * Formatting utilities for display values.
- *
- * ⚠️ This is NOT a general-purpose kit — every export below has live callers.
- * Six that had none anywhere in `src/` or `cms/src/` (`formatTime`,
- * `formatNumber`, `formatPercent`, `titleCase`, `idToTitle`, `pluralize`)
- * were deleted on 2026-08-24 (CR2-102). If you need one, add it back here
- * rather than writing a twelfth formatter somewhere else.
  */
 
 /**
@@ -53,9 +46,8 @@ export function parseNotation(value) {
  * Where JavaScript stops counting exactly: 2^53 − 1 ≈ 9.007×10^15.
  *
  * Past this, integers lose precision silently — `x + 1 === x` becomes true and
- * totals drift with no error thrown. Nothing in the game should be *designed*
- * to cross it (watch item W-7); `isBeyondExactRange` exists so display and
- * diagnostics can flag it if content ever does.
+ * totals drift with no error thrown. `isBeyondExactRange` lets display and
+ * diagnostics flag it if content ever crosses it.
  */
 export const MAX_EXACT_INTEGER = Number.MAX_SAFE_INTEGER;
 
@@ -74,10 +66,8 @@ export function formatCompact(num, precision = 1) {
     if (!isFinite(num)) return '0';
     if (Math.abs(num) < 1000) return num.toString();
 
-    // The ladder runs past 'quadrillion' because an idle economy's totals climb
-    // faster than any single value does — a stack of 10^12 items at 10^3 gold
-    // each is already 10^15. Anything above the top rung falls through to
-    // exponential notation rather than printing 30 unreadable digits.
+    // The ladder runs past 'quadrillion' because idle-economy totals climb fast;
+    // anything above the top rung falls through to exponential notation.
     const suffixes = [
         { value: 1e33, suffix: 'dc' },   // decillion
         { value: 1e30, suffix: 'no' },   // nonillion
@@ -102,11 +92,8 @@ export function formatCompact(num, precision = 1) {
             const factor = Math.pow(10, precision);
             const truncated = Math.floor((absNum / value) * factor) / factor;
 
-            // Reapply sign and format string
             const formatted = (Math.sign(num) * truncated).toFixed(precision);
 
-            // Remove trailing zero only if we want it fully clean, 
-            // but typical "1.0k" is often preferred. The prompt requests "1.6k". If it's 1000, "1k" is fine.
             const cleaned = formatted.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
             return cleaned + suffix;
         }
@@ -139,8 +126,4 @@ export function formatTimeAgo(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleDateString();
 }
-
-// `formatLocation(biomeId)` lived here and turned a biome id into a display
-// name. It was exported but called from nowhere, and its only dependency was
-// the biome registry, retired 2026-08-18 with the card system.
 
