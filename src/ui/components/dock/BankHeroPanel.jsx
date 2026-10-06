@@ -23,31 +23,22 @@ export const BankHeroPanel = ({
 
     const isOpen = Boolean(selectedHeroId);
 
-    // CR3-457: wired the same as the bottom dock (BottomHeroDock.jsx's
-    // handleReorderHero) — this panel accepted and highlighted a hero-reorder
-    // drop already (HeroDockTab draws the insertion line on its own), but
-    // silently dropped it because no onReorder was ever passed in.
+    // Wired the same as the bottom dock (BottomHeroDock.jsx's handleReorderHero): this panel
+    // accepted and highlighted a hero-reorder drop (HeroDockTab draws the insertion line on
+    // its own), but would silently drop it if no onReorder were passed in.
     const handleReorderHero = (sourceHeroId, targetHeroId) =>
         reorderHeroInDock(HeroManager, heroIds, sourceHeroId, targetHeroId);
 
-    // If menu is on the right, the bank drawer slides from the right, so put this on the left.
-    // If menu is on the left, the bank drawer slides from the left, so put this on the right.
-    // BUT WAIT: The drawer actually slides from the nav's edge (which is left if menuRight is false).
-    // Let's just put it on the opposite side of the drawer.
-    // Drawer side: if menuRight=true, drawer is on the left. Wait!
-    // Drawer code: menuRight ? 'right-0 left-[416px]' (Drawer is on the left, stopping before tray on right)
-    // Wait, let's just place the Hero Panel on the side opposite the nav, which is the Tray's side.
-    // Tray is on the Right if menuRight=false. Tray is on the Left if menuRight=true.
-    // So dock should be on `menuRight ? 'left-0' : 'right-0'`.
+    // The panel sits on the side opposite the nav: with the menu on the right it is on the
+    // left, otherwise on the right.
     const isDockLeft = menuRight;
 
     return (
         <aside
             ref={asideRef}
-            // Exempts this whole panel (hero tabs + inspection sheet) from the
-            // bottom dock's outside-click listener (CR3-450): the bottom dock
-            // stays mounted under the Bank, so without this marker any click
-            // in here looked "outside" to it and closed the sheet early.
+            // Exempts this whole panel (hero tabs + inspection sheet) from the bottom dock's
+            // outside-click listener: the bottom dock stays mounted under the Bank, so without
+            // this marker any click in here looked 'outside' to it and closed the sheet early.
             data-bank-hero-panel="true"
             className={cn(
                 'absolute inset-y-0 z-[100] pointer-events-none flex flex-col justify-center gap-3 py-4 w-full',

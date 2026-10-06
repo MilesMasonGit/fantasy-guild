@@ -7,11 +7,9 @@ import { getJob } from '../../config/registries/jobRegistry.js';
 import { Check, X, ArrowRight, Sparkles } from 'lucide-react';
 
 /**
- * Why an acceptance was refused, in words a player can act on.
- *
- * `BoardPromotion.accept` re-checks everything at the moment of the click and
- * returns a reason code rather than prose (Promotes rule P3). The ceremony is
- * where the player reads it, beside the button they just pressed.
+ * Why an acceptance was refused, in words a player can act on. `BoardPromotion.accept`
+ * re-checks everything at the moment of the click and returns a reason code rather than prose.
+ * The ceremony is where the player reads it, beside the button they just pressed.
  */
 function refusalText(result) {
     if (result?.detail) return result.detail;
@@ -26,28 +24,17 @@ function refusalText(result) {
 
 /**
  * The moment a hero becomes someone else.
- *
- * Ported from the unmerged `promotion-tokens` branch (Promotes rule P4). The
- * offer now comes from a Token's **Promotes rule**; everything the player sees
- * and chooses is the branch's, as the owner approved it.
- *
- * ## Why this exists when the Change Job screen already shows the trade
- * The Change Job screen is for planning: a tree, a list, small text. This is
- * the payoff for a Token the player went and found, at the end of a training
- * cycle they watched run. Same information — the same component renders the
- * trade — but one answers "what would this cost?" and this answers "do it?".
- *
- * ## Two ways out, and neither is the corner X
- * Accept and Decline, both explicit. Declining is a real choice with a real
- * outcome (the tile holds, nothing is spent), not a dismissal — so it gets a
- * button that says what it does. `hideClose` removes the corner X and makes the
- * backdrop inert, so an accidental click outside never becomes an unrecorded
- * answer.
- *
- * ## Nothing has happened yet
- * When this opens, no skill has moved and no charge has been spent. The Token
- * holds the offer (`promotionPaused` on the instance, which is saved board
- * state), so the player can close the game mid-decision and be asked again.
+ * Why this exists when the Change Job screen already shows the trade: that screen is for
+ * planning (a tree, a list, small text). This is the payoff for a Token the player went and
+ * found, at the end of a training cycle they watched run. Same information (the same component
+ * renders the trade), but one answers 'what would this cost?' and this answers 'do it?'.
+ * Two ways out, and neither is the corner X: Accept and Decline, both explicit. Declining is a
+ * real choice with a real outcome (the tile holds, nothing is spent), not a dismissal, so it
+ * gets a button that says what it does. `hideClose` removes the corner X and makes the
+ * backdrop inert, so an accidental click outside never becomes an unrecorded answer.
+ * Nothing has happened yet when this opens: no skill has moved and no charge has been spent.
+ * The Token holds the offer (`promotionPaused` on the instance, which is saved board state),
+ * so the player can close the game mid-decision and be asked again.
  */
 export const PromotionCeremonyModal = ({ offer, onClose }) => {
     const engine = useEngine();
@@ -61,13 +48,12 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
     const job = getJob(offer.jobId);
     if (!job) return null;
 
-    // ⚠️ **Both of these must be SNAPSHOT before the promotion, not read after
-    // it.** `previewPromotion` diffs the hero's CURRENT sheet against the
-    // target, and `hero.jobId` is the job they hold right now — so the instant
-    // the promotion lands, the preview reports "nothing changes" and the arrow
-    // reads "Wizard → Wizard". The moment the player most wants to see what they
-    // gave up is the moment after they gave it up, so the answered state renders
-    // the frozen copy. (A bug found by playing, on the branch.)
+    // ⚠️ Both of these must be SNAPSHOT before the promotion, not read after it.
+    // `previewPromotion` diffs the hero's CURRENT sheet against the target, and `hero.jobId`
+    // is the job they hold right now, so the instant the promotion lands, the preview reports
+    // 'nothing changes' and the arrow reads 'Wizard → Wizard'. The moment the player most
+    // wants to see what they gave up is the moment after they gave it up, so the answered
+    // state renders the frozen copy.
     const livePreview = engine.PromotionSystem.previewPromotion(offer.heroId, offer.jobId);
     const preview = done?.preview || livePreview;
     const fromJob = done?.fromJob || getJob(hero.jobId);
@@ -77,8 +63,8 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
         const snapshot = { preview: livePreview, fromJob: getJob(hero.jobId) };
         const result = engine.BoardPromotion.accept(offer.instanceId);
         if (!result.success) {
-            // Re-checked at the last moment and refused — say so rather than
-            // closing silently, because the tile will still be holding.
+            // Re-checked at the last moment and refused: say so rather than closing silently,
+            // because the tile will still be holding.
             setDone({ ...snapshot, failed: true, detail: refusalText(result) });
             return;
         }
@@ -160,10 +146,11 @@ export const PromotionCeremonyModal = ({ offer, onClose }) => {
                             {/* Decline is a real answer, not a dismissal, so it
                                 says what happens: nothing is spent, and the
                                 hero stays put. */}
-                            {/* ⚠️ Named explicitly. With only a `title`, the
-                                button is announced by its tooltip ("Nothing is
-                                spent…") rather than by what it says — found in
-                                the browser, P4. */}
+                            {/**
+                             * ⚠️ Named explicitly. With only a `title`, the button is
+                             * announced by its tooltip ('Nothing is spent…') rather than by
+                             * what it says.
+                             */}
                             <button
                                 onClick={decline}
                                 aria-label="Not yet"

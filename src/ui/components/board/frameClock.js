@@ -1,18 +1,13 @@
-// Fantasy Guild — one animation-frame loop for everything on the mat that moves every frame (CR3-011)
 
 /**
- * ⭐ **The mat's one frame clock** (R6 rule 2: "one frame clock").
- *
- * Per-frame work — today the cycle rings sweeping between engine ticks
- * (`TokenBadgeRow`) — subscribes here instead of running its own
- * `requestAnimationFrame` loop. Seven worked Tokens used to be seven loops;
- * now they are one callback a frame that calls seven functions.
- *
- * The loop runs only while something is subscribed (R6 rule 1): the last
- * unsubscribe cancels the pending frame, and the next subscribe starts it.
- *
- * Each subscriber gets the frame's timestamp, exactly what its own
- * `requestAnimationFrame` used to pass it.
+ * The mat's one frame clock.
+ * Per-frame work (today the cycle rings sweeping between engine ticks, `TokenBadgeRow`)
+ * subscribes here instead of running its own `requestAnimationFrame` loop, so seven worked
+ * Tokens are one callback a frame that calls seven functions rather than seven loops.
+ * The loop runs only while something is subscribed: the last unsubscribe cancels the pending
+ * frame, and the next subscribe starts it.
+ * Each subscriber gets the frame's timestamp, exactly what its own `requestAnimationFrame`
+ * would pass it.
  */
 
 const subs = new Set();

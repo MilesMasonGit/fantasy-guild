@@ -8,25 +8,14 @@ import { artSet, setArtSet } from '../../config/registries/terrainRegistry.js';
 import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
- * PlaymatTuner — a developer panel for finding the playmat's look.
- *
- * Sits beside the QA tester and works the same way. The difference is what it is
- * for: QA spawns *state* to test against, this adjusts *appearance* with
- * nothing in the game changing underneath.
- *
- * ## It builds itself
- *
- * Every control comes from `TUNABLES` in `config/playmatTuning.js`. Adding a
- * knob is a row in that table and nothing here — which is the point, because
- * the terrain will grow a lot of these and hand-writing a slider each time is
- * how a panel stops being worth having.
- *
- * ## Redrawing
- *
- * A tuning change alters no game state, so nothing would repaint on its own.
- * The panel publishes `terrain_art_set_changed` — the event the canvas already
- * listens to for a "your sprites mean something different now" repaint, which
- * is exactly what this is.
+ * PlaymatTuner: a developer panel for finding the playmat's look. Sits beside the QA tester
+ * and works the same way; the difference is what it is for: QA spawns *state* to test against,
+ * this adjusts *appearance* with nothing in the game changing underneath.
+ * It builds itself: every control comes from `TUNABLES` in `config/playmatTuning.js`. Adding a
+ * knob is a row in that table and nothing here.
+ * Redrawing: a tuning change alters no game state, so nothing would repaint on its own. The
+ * panel publishes `terrain_art_set_changed`, the event the canvas already listens to for a
+ * 'your sprites mean something different now' repaint.
  */
 export const PlaymatTuner = React.memo(() => {
     const engine = useEngine();

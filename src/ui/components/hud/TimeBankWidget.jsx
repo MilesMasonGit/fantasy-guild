@@ -7,13 +7,10 @@ import { TIME_BANK } from '../../../config/loopConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * TimeBankWidget (Phase 8) — HUD control for the offline Time Bank.
- *
- * Shows how much offline time is banked and lets the player spend it by
- * fast-forwarding the live engine at a preset multiplier. Mounted in the
- * global HUD layer (provisional home — the TopBar it originally lived in
- * was retired). Minimal "essentials" UI — a polished treatment can come
- * with the later Time Bank pass.
+ * TimeBankWidget: control for the offline Time Bank. Shows how much offline time is banked and
+ * lets the player spend it by fast-forwarding the live engine at a preset multiplier. Placed
+ * by ReactRoot in the right slot of the mat's top bar, behind its `SHOW_TIME_BANK` flag
+ * (currently off). Minimal 'essentials' UI.
  */
 function formatBank(ms) {
     const totalSec = Math.max(0, Math.floor(ms / 1000));

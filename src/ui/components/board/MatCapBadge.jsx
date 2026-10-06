@@ -14,15 +14,13 @@ import { placeUnder } from './tooltipPlacement.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * What changes the badge's number (FB-31, SP-67). Every route a Token takes
- * onto or off the mat publishes `TILE_CHANGED` — a placement, a spawn
- * (`EffectActions.spawn`), a Token that ran dry (`Charges`), an enemy killed
- * (`BoardCombat`), a lift back to the Bank (`Placement`) — and the rest are
- * belt and braces: `TOKEN_PLACED` and `TOKEN_DEPLETED` for the player's own
- * actions, `state_changed` and `game_loaded` for a load or a new game. The cap
- * itself is a Mat Tuner number, heard through `onMatTuningChanged`.
- * `BIN_CHANGED` (B3.2): *Discard all* is what finally drops binned Tokens from
- * the count.
+ * What changes the badge's number. Every route a Token takes onto or off the mat publishes
+ * `TILE_CHANGED`: a placement, a spawn (`EffectActions.spawn`), a Token that ran dry
+ * (`Charges`), an enemy killed (`BoardCombat`), a lift back to the Bank (`Placement`). The
+ * rest are belt and braces: `TOKEN_PLACED` and `TOKEN_DEPLETED` for the player's own actions,
+ * `state_changed` and `game_loaded` for a load or a new game. The cap itself is a Mat Tuner
+ * number, heard through `onMatTuningChanged`. `BIN_CHANGED`: *Discard all* is what finally
+ * drops binned Tokens from the count.
  */
 export const CAP_EVENTS = Object.freeze([
     BOARD_EVENTS.TILE_CHANGED,
@@ -44,9 +42,8 @@ const POPOVER_EVENTS = Object.freeze([
 const POPOVER_WIDTH = 256;
 
 /**
- * Whether a Token has a live problem, the same one its centre mark shows
- * (B1.1, TL-22): an engine alert the gear does not say instead, or a
- * spawner's waiting alert.
+ * Whether a Token has a live problem, the same one its centre mark shows: an engine alert the
+ * gear does not say instead, or a spawner's waiting alert.
  */
 export function hasLiveProblem(instance) {
     if (!instance) return false;
@@ -54,23 +51,22 @@ export function hasLiveProblem(instance) {
     return !!SpawnerSystem.spawnerAlertOf(instance.id);
 }
 
-/** The mat's summary, read live (FB-31). */
+/** The mat's summary, read live. */
 export function liveMatSummary() {
     return summariseMat(BoardState.tokens(), {
         nameOf: tokenName,
         isGuildHall: MatCap.isGuildHall,
         isBlocked: hasLiveProblem,
         isOff: Flags.isDisallowed,
-        // B3.2 (TL-13): binned placed Tokens still count until discarded.
+        // Binned placed Tokens still count until discarded.
         binned: BoardState.binTokens()
     });
 }
 
 /**
- * Re-render whenever any of `events` fires (and the Mat Tuner changes), while
- * `on`. With `signatureOf`, only when that signature of what is drawn has
- * changed (CR3-309): a bare `state_changed` used to re-render the badge every
- * time whether or not anything it shows had moved.
+ * Re-render whenever any of `events` fires (and the Mat Tuner changes), while `on`. With
+ * `signatureOf`, only when that signature of what is drawn has changed: a bare `state_changed`
+ * would re-render the badge every time whether or not anything it shows had moved.
  */
 export function useRefreshOn(events, on = true, signatureOf = null) {
     const [, bump] = useState(0);
@@ -94,7 +90,7 @@ export function useRefreshOn(events, on = true, signatureOf = null) {
     }, [events, on]);
 }
 
-/** What the badge itself draws (CR3-309). */
+/** What the badge itself draws. */
 const capSignature = () => `${MatCap.placedCount()}|${MatCap.matCap()}`;
 
 /**
@@ -114,7 +110,7 @@ export const MatCapPopover = ({ anchor, summary, cap }) => {
             className="fixed z-[90] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
             style={{ width: POPOVER_WIDTH, ...placeUnder(anchor, POPOVER_WIDTH, height) }}
         >
-            {/* The total the badge shows: on the mat plus in the bin (B3.2). */}
+            {/* The total the badge shows: on the mat plus in the bin. */}
             <div className="font-bold text-gi-gold">Placed {placed.count + binned} of {cap}</div>
             {placed.groups.length ? (
                 <ul className="mt-1 flex flex-col gap-0.5">
@@ -148,13 +144,9 @@ export const MatCapPopover = ({ anchor, summary, cap }) => {
 };
 
 /**
- * ⭐ **The Token cap badge** (B2.1, FB-31): `Tokens 7/12` — placed Tokens
- * against the mat cap (SP-67; the Guild Hall never counts). Hover opens the
- * by-type summary.
- *
- * The number is read on the events in {@link CAP_EVENTS}, never per frame; the
- * summary is only worked out while the popover is open.
- *
+ * The Token cap badge: `Tokens 7/12`, placed Tokens against the mat cap (the Guild Hall never
+ * counts). Hover opens the by-type summary. The number is read on the events in {@link
+ * CAP_EVENTS}, never per frame; the summary is only worked out while the popover is open.
  * @param {{ readSummary?: () => object }} props  `readSummary` for tests
  */
 export const MatCapBadge = ({ readSummary = liveMatSummary }) => {

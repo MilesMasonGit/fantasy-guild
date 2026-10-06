@@ -17,7 +17,6 @@ import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) => {
     const [hasError, setHasError] = useState(false);
 
-    // If not discovered, show consistent question mark
     if (!isDiscovered) {
         const validSize = [16, 32, 64, 128].includes(Number(size)) ? Number(size) : 32;
         const sizeClass = `gi-icon-${validSize}`;
@@ -32,10 +31,9 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
         );
     }
 
-    // Resolve the item or Token object from its string ID to retrieve correct
-    // sprite properties. The fallback used to be `getEnemy`; enemies are Tokens
-    // now (2026-09-06), so it is `getTokenType` — which covers every enemy the
-    // old branch did, plus every other Token that reaches this icon by id.
+    // Resolve the item or Token object from its string ID to retrieve correct sprite
+    // properties. The fallback is `getTokenType`, which covers every enemy (enemies are
+    // Tokens) plus every other Token that reaches this icon by id.
     let resolvedItem = item;
     if (typeof item === 'string' && item.length > 4) {
         const itemDef = getItem(item);
@@ -45,14 +43,12 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
         }
     }
 
-    // Resolve sprite path via manifest-backed AssetManager
     const spritePath = resolveSpritePath(resolvedItem);
 
     // Constrain size to standards: 16, 32, 64, 128. Fast fallback to 32.
     const validSize = [16, 32, 64, 128].includes(Number(size)) ? Number(size) : 32;
     const sizeClass = `gi-icon-${validSize}`;
 
-    // Improve emoji resolution for string IDs
     let emoji = '📦';
     let name = '';
 
@@ -60,7 +56,6 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
         emoji = resolvedItem.icon || '📦';
         name = resolvedItem.name || '';
     } else if (typeof resolvedItem === 'string') {
-        // If it's a short string (like a raw emoji), use it directly
         if (resolvedItem.length <= 4) {
             emoji = resolvedItem;
         } else {
@@ -69,7 +64,6 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
         }
     }
 
-    // If no sprite path exists at all, go straight to placeholder SVG
     if (!spritePath || hasError) {
         return (
             <div

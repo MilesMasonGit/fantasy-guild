@@ -1,19 +1,15 @@
-// Fantasy Guild — the Perf HUD overlay (round-3 review, P3).
-//
+// The Perf HUD overlay.
 // ⚠️ DEV BUILDS ONLY (reached only through perfHarness.js).
-//
-// ## Not React, on purpose
-// The HUD must not become what it measures. It is a handful of plain DOM nodes
-// appended to <body>, outside the React tree, so it adds no React commits to
-// the numbers it shows. The harness calls `render()` at most twice a second and
-// each call writes `textContent` into fixed nodes — no nodes are created per
-// update, no layout is read.
+// Not React, on purpose: the HUD must not become what it measures. It is a handful of plain
+// DOM nodes appended to <body>, outside the React tree, so it adds no React commits to the
+// numbers it shows. The harness calls `render()` at most twice a second and each call writes
+// `textContent` into fixed nodes: no nodes are created per update, no layout is read.
 
 import { HUD_ROOT_ID, HUD_SHOWN_EVENT } from './perfFlags.js';
 
 const ROOT_ID = HUD_ROOT_ID;
 
-/** Tell the React side the HUD came or went (it hides the FPS counter, CR3-358). */
+/** Tell the React side the HUD came or went (it hides the FPS counter). */
 function announceShown(on) {
     try { globalThis.dispatchEvent?.(new CustomEvent(HUD_SHOWN_EVENT, { detail: { on } })); } catch { /* ignore */ }
 }

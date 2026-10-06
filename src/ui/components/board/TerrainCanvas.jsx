@@ -12,50 +12,29 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * The playmat's ground, drawn under everything else.
- *
- * ## Why a canvas and not 841 divs
- *
- * The lattice is 29×29, so a div-per-subtile would put **841 elements** under a
- * board that draws 53 today, and the whole page is 272. One canvas is one
- * element, and a redraw is a tight loop over a typed grid with no DOM work.
- *
- * The trade is that terrain cannot be hit-tested or hovered. It does not need to
- * be: dropping, hovering and inspection all belong to the tiles above, which are
- * still real elements. Terrain is scenery.
- *
- * ## ⚠️ One buffer, one blit
- *
- * This used to be five passes — flat fills, a clipped draw per ragged boundary
- * pixel, beaches, shore bands, ground patches — each compositing over the whole
- * 928×928 board. It cost **55–63ms per repaint**, with 2,455 `clip()` calls in
- * the boundary pass alone, and every new terrain feature added another 8–17ms.
- *
- * All five were answering one question: what is at this pixel. `buildSurface`
- * answers it once, and this writes the answer into a single art-resolution
- * buffer — 232×232, not 928×928 — which reaches the screen in one scaled blit.
- * A wandering coastline is a different value in that buffer rather than a
- * clipped draw, so the most expensive pass stopped existing rather than getting
- * faster.
- *
- * Props stay a separate pass. They are sprites standing *on* the ground rather
- * than part of it, they overlap each other, and there are only about eighty.
- *
- * ## Crispness
- *
- * The buffer is written at art resolution and scaled up with
- * `imageSmoothingEnabled = false`, an exact 2× or 4×. Nothing is drawn at a
- * fractional coordinate, which is the one thing pixel art cannot survive. The
- * board's fit-to-window scaling happens in CSS on an ancestor, so it scales the
- * finished picture rather than the arithmetic.
+ * One canvas rather than a div per subtile (the lattice is 29×29, so 841 elements): a redraw
+ * is a tight loop over a typed grid with no DOM work. The trade is that terrain cannot be
+ * hit-tested or hovered; it does not need to be, because dropping, hovering and inspection
+ * belong to the Tokens above. Terrain is scenery.
+ * ⚠️ One buffer, one blit. `buildSurface` answers 'what is at this pixel' once, and this
+ * writes the answer into a single art-resolution buffer, which reaches the screen in one
+ * scaled blit. A wandering coastline is a different value in that buffer rather than a clipped
+ * draw; separate passes (fills, clipped boundaries, beaches, shore bands) each composited over
+ * the whole board and were far slower.
+ * Props stay a separate pass: they are sprites standing on the ground rather than part of it,
+ * and they overlap each other.
+ * Crispness: the buffer is written at art resolution and scaled up with `imageSmoothingEnabled
+ * = false`, an exact 2× or 4×. Nothing is drawn at a fractional coordinate, which pixel art
+ * cannot survive. The board's fit-to-window scaling happens in CSS on an ancestor, so it
+ * scales the finished picture rather than the arithmetic.
  */
 
 /**
  * Sprite pixels, extracted once and kept as raw bytes.
- *
- * ⚠️ Reading a substrate through `drawImage` per subtile was most of the old
- * renderer's cost. The loop below needs the *numbers*, so each sprite is decoded
- * to an `ImageData` once and sampled from an array after that — and a tinted
- * variant is a second array computed once, rather than a blend per board pixel.
+ * ⚠️ Reading a substrate through `drawImage` per subtile was most of the old renderer's cost.
+ * The loop below needs the numbers, so each sprite is decoded to an `ImageData` once and
+ * sampled from an array after that; a tinted variant is a second array computed once, rather
+ * than a blend per board pixel.
  */
 const texelCache = new Map();
 const imageCache = new Map();
@@ -95,8 +74,7 @@ function texels(substrateId, variant, tint) {
     const data = ctx.getImageData(0, 0, size, size).data;
 
     if (tint) {
-        // Mixed in here rather than per board pixel: a tint is a property of the
-        // substrate, so this is 64 blends instead of fifty thousand.
+        // Mixed in here rather than per board pixel: a tint is a property of the substrate.
         const r = parseInt(tint.tint.slice(1, 3), 16);
         const g = parseInt(tint.tint.slice(3, 5), 16);
         const b = parseInt(tint.tint.slice(5, 7), 16);
@@ -138,9 +116,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 buildSurface(pixels, seed || 0);
             const artPx = subtileArtPx();
 
-            // The buffer is reused across redraws. Allocating a 232×232 image
-            // each time is cheap next to what this replaced, but it is also
-            // pointless — the board never changes size.
+            // The buffer is reused across redraws rather than reallocated.
             let buffer = bufferRef.current;
             if (!buffer || buffer.canvas.width !== size) {
                 const off = document.createElement('canvas');
@@ -154,15 +130,10 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             const out = buffer.image.data;
             out.fill(0);
 
-            // ⚠️ Every distinct (substrate, variant, tint) is resolved to a byte
-            // array **before** the loop, and the loop indexes an array.
-            //
-            // It used to call `texels()` per pixel, which built a template
-            // string and did a `Map.get` — 53,824 string concatenations and
-            // hash lookups per repaint, about 5ms, to fetch one of at most a
-            // couple of dozen arrays. The combinations are bounded by the art
-            // (five substrates, eight variants, a handful of tints); the pixels
-            // are not.
+            // ⚠️ Every distinct (substrate, variant, tint) is resolved to a byte array BEFORE
+            // the loop, and the loop indexes an array. Calling `texels()` per pixel built a
+            // template string and did a `Map.get` for every pixel, to fetch one of a couple of
+            // dozen arrays. The combinations are bounded by the art; the pixels are not.
             const tintCount = tints.length + 1;                 // +1 for "no tint"
             const lookup = new Array(substrates.length * 16 * tintCount).fill(undefined);
             const sourceFor = (substrate, variant, tintId) => {
@@ -206,21 +177,17 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             }
 
             buffer.ctx.putImageData(buffer.image, 0, 0);
-            // ⚠️ The canvas is the whole mat, but the lattice is still a fixed
-            // 928 u square (terrain is dormant, FP-10), so the finished picture
-            // is blitted **centred on the mat** — which follows the mat's live
-            // size rather than the old landing area's corner (slice 1.6d-3). At
-            // the shipped 11 steps that is the same (416, 99) it always was.
-            // STOPGAP: terrain is re-latticed over the mat when it is revived.
+            // ⚠️ The canvas is the whole mat, but the lattice is still a fixed 928 u square
+            // (terrain is dormant), so the finished picture is blitted centred on the mat,
+            // which follows the mat's live size. STOPGAP: terrain is re-latticed over the mat
+            // when it is revived.
             const originX = Math.round((mat.w - BOARD_PX) / 2);
             const originY = Math.round((mat.h - BOARD_PX) / 2);
             ctx.drawImage(buffer.canvas, 0, 0, size, size, originX, originY, BOARD_PX, BOARD_PX);
 
-            // --- Props, back to front ---------------------------------------
-            //
-            // Already sorted by where each stands, so painting the list in order
-            // is the whole depth rule: a tree lower on the board covers one
-            // behind it.
+            // Props, back to front. Already sorted by where each stands, so painting the list
+            // in order is the whole depth rule: a tree lower on the board covers one behind
+            // it.
             for (const prop of propsForBoard(grid, seed || 0, pixels)) {
                 const img = propImage(prop.propId);
                 if (!img) continue;

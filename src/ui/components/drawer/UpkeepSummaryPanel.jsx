@@ -5,7 +5,10 @@ import { computeUpkeepSummary, formatRate, formatRunsOut } from '../../../system
 import { cn } from '../../utils/cn.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
-/** Events after which the summary is worked out again (the top bar's Upkeep badge hears these too, B2.2). */
+/**
+ * Events after which the summary is worked out again (the top bar's Upkeep badge hears these
+ * too).
+ */
 export const REFRESH_EVENTS = [ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED];
 /** Spawner clocks and statement lapses move without an event; a slow poll catches them. */
 export const POLL_MS = 2000;
@@ -13,15 +16,11 @@ export const POLL_MS = 2000;
 const STATE_TEXT = { at_cap: 'at its cap', no_room: 'no room to spawn' };
 
 /**
- * The Upkeep Summary (Token Lifecycle slice 8.2, TL-4): every ongoing cost per
- * item per minute, what the Bank holds, a rough runs-out, and who is waiting
- * unpaid, plus the trickle's income. Plain and functional — restyled by the
- * Token UI rework later. The maths lives in `systems/board/UpkeepSummary.js`.
- *
- * Shown in the hover popover of the mat's top-bar Upkeep badge (B2.2, FB-29);
- * it used to fill the Bank drawer behind a toggle. `className` sizes it for
- * its host (the popover gives it a max height, so it scrolls on its own).
- *
+ * The Upkeep Summary: every ongoing cost per item per minute, what the Bank holds, a rough
+ * runs-out, and who is waiting unpaid, plus the trickle's income. Plain and functional. The
+ * maths lives in `systems/board/UpkeepSummary.js`.
+ * Shown in the hover popover of the mat's top-bar Upkeep badge. `className` sizes it for its
+ * host (the popover gives it a max height, so it scrolls on its own).
  * @param {{ className?: string }} props
  */
 export const UpkeepSummaryPanel = ({ className = 'h-full' } = {}) => {

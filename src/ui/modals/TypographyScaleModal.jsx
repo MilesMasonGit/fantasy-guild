@@ -60,7 +60,6 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
             <div className="w-[540px] max-w-full bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] text-gi-text animate-in fade-in zoom-in-95 duration-200">
-                {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gi-border bg-gi-base/60">
                     <span className="font-display font-bold text-base text-gi-primary uppercase tracking-widest">
                         Typography Scale
@@ -74,7 +73,6 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                {/* Body */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
                     <p className="text-xs text-gi-muted normal-case tracking-normal">
                         Drag the sliders to adjust typography sizing in real time. The entire game interface will immediately scale to preview your layout fit.
@@ -113,7 +111,6 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                {/* Actions */}
                 <div className="px-5 py-3 border-t border-gi-border bg-gi-base/40 flex items-center justify-between gap-3">
                     <button
                         onClick={handleReset}

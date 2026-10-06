@@ -1,27 +1,13 @@
-// Fantasy Guild — the in-game perf harness (round-3 review, Tier B, session P3).
-//
-// ⚠️ DEV BUILDS ONLY. `main.jsx` imports this behind `import.meta.env.DEV`, so
-// a production build never contains it.
-//
-// Plan §4.2 of docs/archive/review_v3/code_review_v3_master_plan.md. What it measures while running:
-//
-// | Metric | How |
-// |---|---|
-// | Frame interval | `requestAnimationFrame` deltas → a whole-window histogram (0.01 ms buckets) and a ring of the last 4,096 |
-// | Frame work (estimate) | from the frame's start (the rAF timestamp) to the first task after it — style, layout, paint and any script that landed in that frame. Refresh-rate independent, so it reads the 6.06 ms budget on a 60 Hz screen too (plan §2.B) |
-// | Long Animation Frames | `PerformanceObserver` type `long-animation-frame`, with its script attribution; falls back to `longtask` (no attribution) where unsupported |
-// | Engine tick | `GameLoop.runHandlers` wrapped at runtime, `performance.measure('fg-perf:tick')` per tick (visible in DevTools' Performance panel as User Timing) |
-// | React commits | `<PerfProfiler>` around MatBoard, the hero dock, the drawer and the top bar (only when armed at page load). ⚠ The "MatBoard" figure is every commit in the mat SUBTREE (a hero's frame step counts); MatBoard's own renders are counted separately by `usePerfRenderCount` (CR3-311) |
-// | Events | `EventBus.publish` wrapped at runtime: per second, by name, and subscriber calls |
-// | DOM nodes, EventBus listeners, JS heap | sampled every 2 s (heap: `performance.memory`, Chromium only) |
-//
-// ## The harness must not become what it measures
-// * Nothing is installed until `start()`; `stop()` removes every wrapper,
-//   observer, listener and timer. Off costs nothing.
-// * Per frame: one histogram increment, one ring write, one `postMessage`.
-// * The HUD updates at most twice a second, by `textContent`, outside React.
-// * Memory is fixed-size (histograms, rings); the report's by-name tables are
-//   bounded.
+// The in-game perf harness.
+// ⚠️ DEV BUILDS ONLY. `main.jsx` imports this behind `import.meta.env.DEV`, so a production
+// build never contains it.
+// It measures frame interval, frame work, long animation frames, engine ticks, React commits
+// (via `<PerfProfiler>`), EventBus traffic, DOM nodes, listeners and heap.
+// The harness must not become what it measures: nothing is installed until `start()`; `stop()`
+// removes every wrapper, observer, listener and timer, so off costs nothing. Per frame it does
+// one histogram increment, one ring write and one `postMessage`. The HUD updates at most twice
+// a second, by `textContent`, outside React. Memory is fixed-size, and the report's by-name
+// tables are bounded.
 
 import { GameLoop } from '../../../systems/core/GameLoop.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -40,9 +26,6 @@ const HUD_INTERVAL_MS = 500;
 const SLOW_SAMPLE_MS = 2000;
 const MAX_NAMED = 200;
 
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
 
 const frames = new MsHistogram(0.01, 250);
 const frameRing = new Ring(4096);
@@ -88,9 +71,6 @@ function freshLoaf() {
     return { count: 0, over100: 0, over200: 0, maxMs: 0, totalMs: 0, blockingMs: 0, scripts: new Map(), worst: [] };
 }
 
-// ---------------------------------------------------------------------------
-// Collectors
-// ---------------------------------------------------------------------------
 
 function onFrame(ts) {
     if (lastFrameTs) {
@@ -139,7 +119,6 @@ function onLoaf(list) {
             loaf.scripts.set(key, agg);
             scripts.push({ key: scriptKey(s), ms: round(s.duration, 1) });
         }
-        // The ten worst frames, kept whole.
         const item = {
             atS: round((e.startTime - windowStart) / 1000, 1),
             ms: round(e.duration, 1),
@@ -277,11 +256,7 @@ function hudTick() {
     if (hudMounted()) renderHud(snapshot());
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
 
-/** Zero every number and start a new window (the scenario label is kept). */
 export function reset() {
     frames.reset(); frameRing.reset(); frameWork.reset(); ticks.reset();
     loaf = freshLoaf();
@@ -302,7 +277,6 @@ export function reset() {
     if (running) slowSample();
 }
 
-/** Install every collector. Idempotent. */
 function startCollectors() {
     if (running) return;
     running = true;
@@ -317,7 +291,6 @@ function startCollectors() {
     slowTimer = setInterval(slowSample, SLOW_SAMPLE_MS);
 }
 
-/** Remove every collector: wrappers restored, observers and timers gone. Numbers are kept until the next start/reset. */
 export function stop() {
     if (!running) return;
     running = false;
@@ -352,7 +325,6 @@ export async function start(name) {
     return scenario;
 }
 
-/** The live numbers the HUD shows (cheap enough for twice a second). */
 export function snapshot() {
     const f = frames.summary(THRESHOLDS);
     const ring = frameRing.summary();
@@ -384,7 +356,6 @@ function tableTop(map, n, valueOf = (v) => v) {
     return [...map.entries()].sort((a, b) => valueOf(b[1]) - valueOf(a[1])).slice(0, n);
 }
 
-/** Everything, as a JSON-safe object (plan §4.2 "agent-readable"). */
 export function report() {
     const seconds = (performance.now() - windowStart) / 1000;
     const perS = (n) => (seconds > 0 ? round(n / seconds, 2) : null);
@@ -463,9 +434,8 @@ export function report() {
             worst: loaf.worst
         },
         tick: { ...ticks.summary(), perSecond: perS(ticks.count) },
-        // `surfaces` are Profiler subtree commits: "MatBoard" there is the mat
-        // SUBTREE (every hero frame step counts). `ownRenders` is the
-        // component's own committed renders (CR3-311).
+        // `surfaces` are Profiler subtree commits: 'MatBoard' there is the mat SUBTREE (every
+        // hero frame step counts). `ownRenders` is the component's own committed renders.
         react: { armed: profilingArmed(), surfaces: react, ownRenders: own },
         events: {
             total: eventsTotal,
@@ -484,14 +454,12 @@ export function report() {
     };
 }
 
-/** The report as a string, copied to the clipboard. Resolves true when copied. */
 export async function copyReport() {
     const text = JSON.stringify(report(), null, 2);
     try {
         await navigator.clipboard.writeText(text);
         return true;
     } catch {
-        // Clipboard API refused (no focus, no permission): the old way.
         const ta = document.createElement('textarea');
         ta.value = text;
         ta.style.cssText = 'position:fixed;left:-9999px;top:0';
@@ -504,7 +472,6 @@ export async function copyReport() {
     }
 }
 
-/** Show the HUD (and start measuring if not already). Remembered across reloads. */
 export function showHud() {
     try { globalThis.localStorage?.setItem(HUD_STORAGE_KEY, '1'); } catch { /* ignore */ }
     if (!running) {
@@ -519,7 +486,6 @@ export function showHud() {
     hudTick();
 }
 
-/** Hide the HUD and stop every collector. */
 export function hideHud() {
     try { globalThis.localStorage?.removeItem(HUD_STORAGE_KEY); } catch { /* ignore */ }
     unmountHud();
@@ -532,9 +498,9 @@ export function toggleHud() {
 }
 
 /**
- * Run `n` engine ticks of 100 ms, in chunks, yielding a frame between chunks.
- * For agents in a throttled preview pane, where the wall-clock loop barely
- * runs (plan §3.5). Ticks go through the (wrapped) `GameLoop.runHandlers`.
+ * Run `n` engine ticks of 100 ms, in chunks, yielding a frame between chunks. For agents in a
+ * throttled preview pane, where the wall-clock loop barely runs. Ticks go through the
+ * (wrapped) `GameLoop.runHandlers`.
  */
 export async function drive(n = 100, chunk = 20) {
     let done = 0;
@@ -548,7 +514,6 @@ export async function drive(n = 100, chunk = 20) {
     return done;
 }
 
-/** Wait until ReactRoot is listening for the stress-started event (it closes the slot picker). */
 function whenUiReady(timeoutMs = 10000) {
     const t0 = performance.now();
     return new Promise((resolve) => {

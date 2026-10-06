@@ -1,34 +1,28 @@
-// Fantasy Guild — stress scenarios in the running game (round-3 review, P3).
-//
-// ⚠️ DEV BUILDS ONLY — reached only through `perfHarness.js`, which is itself
-// only ever imported behind `import.meta.env.DEV`.
-//
-// ## One copy of each scenario
-// The boards are the headless benchmark's (`bench/scenarios/`, session P2),
+// Stress scenarios in the running game.
+// ⚠️ DEV BUILDS ONLY: reached only through `perfHarness.js`, which is itself only ever
+// imported behind `import.meta.env.DEV`.
+// One copy of each scenario: the boards are the headless benchmark's (`bench/scenarios/`),
 // imported as-is. Their builders only need `{ fixtures, setMatTuning }`, and
-// `bench/fixtures.mjs` only imports game modules, so Vite serves both to the
-// browser unchanged. Nothing here copies a layout: if S2 changes in the bench,
-// it changes here too. (The bench's Node-only parts — its seeded clock, its
-// fake `localStorage`, the harness — are NOT imported.)
-//
-// ## What starting one does to the player's things
-// * **Saves are never touched.** If a slot is loaded, it is saved once (the
-//   save autosave would have made), then the page is detached from it: no slot,
-//   no autosave, no save on unload. The stress board lives only in this tab.
-// * **Settings and Mat Tuner values are not kept.** The Mat Tuner is reset to
-//   its shipped defaults (as the bench runs), the bench turns loot
-//   auto-collect on, and S3/S4 resize the mat; all of those write to
-//   `localStorage`. The two keys are put back byte-for-byte after the build,
-//   so the change lasts for this page only. Reload to get your own back.
-// * **`data/*.json` is never read or written for this.** Fixture Tokens are
-//   registered in memory (`registerTokenTypes`), for this page only.
-//
-// ## Differences from the bench, on purpose
-// * No seeded `Math.random` and no virtual clock: this is the real game on the
-//   real wall clock, so two runs do not do identical work. The bench is the
-//   place for exact comparisons; this is the place for frames.
-// * S6 (long idle) is not offered: in game, "S2 left running for an hour" is
-//   the soak test (plan §4.3), and that is `?stress=realistic` plus time.
+// `bench/fixtures.mjs` only imports game modules, so Vite serves both to the browser
+// unchanged. Nothing here copies a layout: if S2 changes in the bench, it changes here too.
+// (The bench's Node-only parts, its seeded clock, fake `localStorage` and harness, are NOT
+// imported.)
+// What starting one does to the player's things:
+// * **Saves are never touched.** If a slot is loaded, it is saved once (the save autosave
+// would have made), then the page is detached from it: no slot, no autosave, no save on
+// unload. The stress board lives only in this tab.
+// * **Settings and Mat Tuner values are not kept.** The Mat Tuner is reset to its shipped
+// defaults (as the bench runs), the bench turns loot auto-collect on, and S3/S4 resize the
+// mat; all of those write to `localStorage`. The keys are put back byte-for-byte after the
+// build, so the change lasts for this page only. Reload to get your own back.
+// * **`data/*.json` is never read or written for this.** Fixture Tokens are registered in
+// memory (`registerTokenTypes`), for this page only.
+// Differences from the bench, on purpose:
+// * No seeded `Math.random` and no virtual clock: this is the real game on the real wall
+// clock, so two runs do not do identical work. The bench is the place for exact comparisons;
+// this is the place for frames.
+// * S6 (long idle) is not offered: in game, 'S2 left running for an hour' is the soak test,
+// and that is `?stress=realistic` plus time.
 
 import { GameLoop } from '../../../systems/core/GameLoop.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -44,7 +38,6 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js'
 /** Fired once a stress board is live, so ReactRoot can close the slot picker. */
 export const STRESS_STARTED_EVENT = UI_EVENTS.DEV_STRESS_STARTED;
 
-/** The localStorage keys a scenario build may write, restored afterwards. */
 const PROTECTED_KEYS = ['fantasy_guild_mat_tuning', 'fantasy_guild_settings'];
 
 /**
@@ -63,7 +56,6 @@ const ALIASES = {
     'quiet-hall': 'quiet', 'push-storm': 'push', 'rebuild-storm': 'rebuild', 'late': 'realistic'
 };
 
-/** The scenario entry for a name, id or alias (case-insensitive), or null. */
 export function resolveStress(name) {
     if (!name) return null;
     const key = String(name).trim().toLowerCase();
@@ -105,11 +97,9 @@ function detachFromSaves() {
 }
 
 /**
- * Build a stress scenario in the running game and start the loop.
- *
- * Mirrors the bench's `boot()` + `announceReady()` (bench/lib/harness.mjs),
- * then starts the real wall-clock loop as `onSlotSelected` does.
- *
+ * Build a stress scenario in the running game and start the loop. Mirrors the bench's `boot()`
+ * + `announceReady()` (bench/lib/harness.mjs), then starts the real wall-clock loop as
+ * `onSlotSelected` does.
  * @param {string} name see `STRESS_SCENARIOS`
  * @returns {Promise<object>} what was built, for the report
  */
@@ -129,8 +119,8 @@ export async function buildStress(name) {
     detachFromSaves();
     GameLoop.stop();
 
-    // A new game as `onSlotSelected(…, true)` makes one, minus
-    // `createDefaultGameData` — the board comes from the scenario.
+    // A new game as `onSlotSelected(…, true)` makes one, minus `createDefaultGameData`: the
+    // board comes from the scenario.
     GameState.initNew();
     DiscoveryManager.init();
     AudioSystem.init();
@@ -138,18 +128,18 @@ export async function buildStress(name) {
 
     const ctx = { fixtures, setMatTuning, now: () => performance.now() };
     let custom = null;
-    // The bench runs every Mat Tuner value at its shipped default, and so must
-    // this: a tuned walk speed or mat size on this device would make a
-    // different board. Reset for this page only (the stored values are put
-    // back below) — which also undoes a previous scenario's mat resize.
+    // The bench runs every Mat Tuner value at its shipped default, and so must this: a tuned
+    // walk speed or mat size on this device would make a different board. Reset for this page
+    // only (the stored values are put back below), which also undoes a previous scenario's mat
+    // resize.
     const matTuningWasCustom = isMatTuned();
     await withStorageKept(async () => {
         resetMatTuning();
         await scenario.build(ctx);
         // `announceReady()` in the bench harness.
         TileModifiers.rebuildAll();
-        // S4 is not a tick scenario: it times single operations (arrivals,
-        // drops, the mat shrink). Run them here, in the browser, and report.
+        // S4 is not a tick scenario: it times single operations (arrivals, drops, the mat
+        // shrink). Run them here, in the browser, and report.
         if (typeof scenario.custom === 'function') {
             custom = await scenario.custom(ctx);
         }

@@ -1,13 +1,9 @@
 import { cn } from '../../utils/cn.js';
 
 /**
- * VitalBar — a labelled HP/Energy bar with the raw number beside it.
- *
- * Rescued from the deleted `banner/bannerCards.jsx` in the 7×7 playmat rework
- * (Phase 1). It is generic and the Hero Dock — a survivor — is its only
- * remaining consumer, so it belongs in `base/` rather than in a feature folder.
- *
- * @param {string} label     short tag, e.g. "HP"
+ * VitalBar: a labelled HP/Energy bar with the raw number beside it. Generic; the Hero Dock is
+ * its only remaining consumer, so it lives in `base/` rather than in a feature folder.
+ * @param {string} label     short tag, e.g. 'HP'
  * @param {number} value     current value, already rounded by the caller
  * @param {number} max       maximum; guarded against 0 so the bar can't divide by zero
  * @param {string} barClass  fill colour class

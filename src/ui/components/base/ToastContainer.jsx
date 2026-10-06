@@ -9,26 +9,14 @@ import Toast from './Toast.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * ToastContainer — the notifications column (D-237).
- *
- * ## It used to float, and now it is a column
- * This was a `position: fixed` overlay portalled to `<body>` at `z-[9999]`,
- * parked in whichever corner `notifications.position` named. It occupied **zero
- * layout space** and floated over the board.
- *
- * The play area is now four columns — **nav · notifications · playmat · tray**
- * (owner decision 2026-08-11) — so notifications have a place of their own and
- * no longer sit on top of the game.
- *
- * ⚠️ **`notifications.position` no longer does anything in column mode.** Its
- * six corner options describe a floating overlay that no longer exists. The
- * setting is deliberately left in place rather than ripped out — the Settings
- * screen still offers it, and quietly deleting a control the player has used
- * would be worse than one that currently has no effect. **It needs either
- * removing from Settings or repurposing**; flagged rather than decided.
- *
- * `floating` keeps the old behaviour available for anything that still wants a
- * corner overlay, and is what the component does when it is not given a column.
+ * ToastContainer: the notifications column.
+ * It is an ordinary element in its own column (the play area is nav, notifications, playmat),
+ * so it needs no portal, no fixed positioning and no z-index arms race. `floating` keeps a
+ * corner-overlay mode available for anything that wants one, and is what the component does
+ * when it is not given a column.
+ * ⚠️ `notifications.position` does nothing in column mode: its six corner options describe a
+ * floating overlay. The setting is left in place because the Settings screen still offers it;
+ * it needs either removing from Settings or repurposing.
  */
 const ToastContainer = ({ floating = false }) => {
     const [toasts, setToasts] = useState([]);
@@ -40,13 +28,12 @@ const ToastContainer = ({ floating = false }) => {
 
     useEffect(() => {
         /**
-         * Mirror the engine's queue rather than keeping our own add/remove
-         * bookkeeping (CR-050). The old approach drifted — any dismissal the
-         * engine performed without publishing (e.g. a toast trimmed from the
-         * queue whose id no longer resolved) stranded a toast in the DOM
-         * forever, so a long session accumulated far more visible toasts than
-         * the engine's cap allowed. The queue is the single source of truth;
-         * re-snapshotting on every change makes drift structurally impossible.
+         * Mirror the engine's queue rather than keeping our own add/remove bookkeeping. Any
+         * dismissal the engine performed without publishing (e.g. a toast trimmed from the
+         * queue whose id no longer resolved) would strand a toast in the DOM forever, so a
+         * long session would accumulate more visible toasts than the engine's cap allowed. The
+         * queue is the single source of truth; re-snapshotting on every change makes drift
+         * structurally impossible.
          */
         const sync = () => setToasts(NotificationSystem.getQueue());
 
@@ -104,18 +91,16 @@ const ToastContainer = ({ floating = false }) => {
                     // otherwise hijack the fixed positioning, and parent
                     // stacking contexts would paint drawers and overlays on top.
                     ? cn('fixed z-[9999] w-full', getPositionClasses(position))
-                    // In column mode none of that applies — it is an ordinary
-                    // element in its own column, so it needs no portal, no fixed
-                    // positioning and no z-index arms race. Newest at the top.
+                    // In column mode none of that applies: it is an ordinary element in its
+                    // own column. Newest at the top.
                     : 'w-full flex flex-col items-stretch p-2 gap-1.5'
             )}
         >
-            {/* CR2-035. The collapse control was *removed* at some point, which
-                left `collapsed` permanently false and the crisis-only filter
-                below unreachable — the state, the filter and `hiddenCount` were
-                all still here, just with no way to switch them on. Restored per
-                owner decision 9. The row survives a collapse that leaves one
-                toast showing, or there would be no way back out of it. */}
+            {/**
+             * The collapse control drives the crisis-only filter below and `hiddenCount`. The
+             * row survives a collapse that leaves one toast showing, or there would be no way
+             * back out of it.
+             */}
             {(toasts.length > 1 || collapsed) && (
                 <div className="flex justify-end gap-1 mb-0.5">
                     <button
@@ -132,11 +117,12 @@ const ToastContainer = ({ floating = false }) => {
                     </button>
                 </div>
             )}
-            {/* NOTE (CR-050): exited toasts are not always removed from the
-                DOM here — they linger at opacity 0. Verified NOT caused by
-                `mode="popLayout"` or the child `layout` prop (both tested in
-                isolation and together). Suspected framer-motion/React 19
-                AnimatePresence issue; see the ticket before changing this. */}
+            {/**
+             * ⚠️ Exited toasts are not always removed from the DOM here: they linger at
+             * opacity 0. Verified NOT caused by `mode="popLayout"` or the child `layout` prop.
+             * Suspected framer-motion/React 19 AnimatePresence issue; see the ticket before
+             * changing this.
+             */}
             <AnimatePresence>
                 {visibleToasts.map(toast => (
                     <Toast

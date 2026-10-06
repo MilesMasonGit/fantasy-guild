@@ -2,10 +2,9 @@ import { createContext, useContext, useMemo } from 'react';
 import { useMotionValue } from 'framer-motion';
 
 /**
- * ViewportContext
- * Provides shared high-frequency motion values for the playmat and UI.
- * This allows the Dnd system to know the current zoom/pan of the viewport
- * without triggering React re-renders for every pixel of movement.
+ * ViewportContext: shared high-frequency motion values for the playmat and UI, so the Dnd
+ * system can know the current zoom/pan of the viewport without triggering React re-renders for
+ * every pixel of movement.
  */
 const ViewportContext = createContext(null);
 

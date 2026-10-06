@@ -36,7 +36,7 @@ export function outputSummary(recipe) {
         const max = o.maxQty ?? min;
         const qty = min === max ? `${min}` : `${min}–${max}`;
         const chance = (o.chance == null || o.chance >= 100) ? '' : ` (${o.chance}%)`;
-        // A building recipe outputs a Token (Token Lifecycle 6.1).
+        // A building recipe outputs a Token.
         const label = o.tokenId ? (tokenName(o.tokenId) || o.tokenId) : itemLabel(o.itemId);
         return `${qty}× ${label}${chance}`;
     });
@@ -108,13 +108,11 @@ const RecipeRow = ({ row, isSelected, onSelect }) => {
 };
 
 /**
- * The station recipe picker (concept §2.2).
- *
- * Rows come banded and level-ordered from `RecipeBands.bandStationRecipes`; the
- * two threshold markers are drawn between the bands regardless of whether the
- * bands around them have rows, so the worker's and the guild's levels are
- * always legible — with the three-recipe corpus most bands are empty, and a
- * marker that vanished with its band would leave nothing to read.
+ * The station recipe picker.
+ * Rows come banded and level-ordered from `RecipeBands.bandStationRecipes`; the two threshold
+ * markers are drawn between the bands regardless of whether the bands around them have rows,
+ * so the worker's and the guild's levels are always legible: with few recipes most bands are
+ * empty, and a marker that vanished with its band would leave nothing to read.
  */
 export const StationRecipeModal = ({ isOpen, onClose, tokenName, banding, selectedRecipeId, onSelect }) => {
     const { skill, workerLevel, guildLevel, rows } = banding || { rows: [] };

@@ -24,21 +24,17 @@ const timelineNow = () =>
         : performance.now();
 
 /**
- * ⭐ **The Token's art, reacting to its hero's blows** (feedback Q4, FB-10).
- *
- * A wrapper round the sprite and nothing else, so only the art moves: the
- * Token's point, its round hit area (the box around this), its badges and
- * its drag are untouched. Animated with the Web Animations API, transforms
- * and (for combat's red flash) a filter — no React render per hit.
- *
- * * **Work** (`skill` a work skill): while `heroId` works it and nothing is
- *   wrong (`active`), one looping animation whose every loop starts on the
- *   hero's strike frame (`strikeStartTime`).
- * * **Combat** (an enemy): one knockback per landed `combat_hero_attack`,
- *   away from the hero who struck. It waits {@link STRIKE_DELAY_MS}: the hero
- *   plays its attack row once from that same event (feedback Q6, FB-49), and
- *   the knockback lands on the strike frame. A miss plays no knockback.
- *
+ * The Token's art, reacting to its hero's blows.
+ * A wrapper round the sprite and nothing else, so only the art moves: the Token's point, its
+ * round hit area (the box around this), its badges and its drag are untouched. Animated with
+ * the Web Animations API, transforms and (for combat's red flash) a filter: no React render
+ * per hit.
+ * * **Work** (`skill` a work skill): while `heroId` works it and nothing is wrong (`active`),
+ * one looping animation whose every loop starts on the hero's strike frame
+ * (`strikeStartTime`).
+ * * **Combat** (an enemy): one knockback per landed `combat_hero_attack`, away from the hero
+ * who struck. It waits {@link STRIKE_DELAY_MS}: the hero plays its attack row once from that
+ * same event, and the knockback lands on the strike frame. A miss plays no knockback.
  * Reduced motion: no movement; combat keeps its red flash.
  */
 export function TokenHitArt({ instanceId, skill, heroId = null, active = false, tokenX = null, className, children }) {
@@ -58,7 +54,7 @@ export function TokenHitArt({ instanceId, skill, heroId = null, active = false, 
         return () => loop.cancel();
     }, [anim, onAttack, heroId, active]);
 
-    // Combat: one knockback per landed hit, on the hero's strike frame (FB-49).
+    // Combat: one knockback per landed hit, on the hero's strike frame.
     const tokenXRef = React.useRef(tokenX);
     tokenXRef.current = tokenX;
     const lastHit = React.useRef(null);

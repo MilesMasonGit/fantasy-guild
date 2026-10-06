@@ -11,40 +11,29 @@ import { ArrowRight, Lock, GraduationCap } from 'lucide-react';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
- * JobChangeModal — where a hero becomes someone else.
- *
- * ## Promotion and re-training are one screen, deliberately (D-248)
- * There is no "undo" button and no separate reversal flow. Every job the hero
- * could move to is listed the same way, at the same price, whether it is a step
- * forward, a step sideways between siblings, or a step back to something they
- * held before. Presenting reversal as its own mechanism would have implied it
- * is a correction — it isn't, it is just another job.
- *
- * ## The trade is shown BEFORE the click, not after
- * "You will lose Fishing 23" *is* the decision. Discovering it afterwards is
- * not a decision at all, which is why `previewPromotion` exists and why this
- * screen refuses to have a confirm button until a job is selected and its
- * consequences are on screen.
- *
- * ## ⚠️ This screen PLANS a promotion; it no longer performs one (PR-9)
- * A promotion is paid for with a charge of a Token whose Promotes rule names
- * the job, and it happens on that Token's tile (Promotes rule P3). A confirm
- * button here would be a second route to the same act with no Token at all —
- * and once gold stopped being charged, a free one. What it keeps is what the
- * board cannot give you: the whole tree at once, with every shortfall spelled
- * out, so a player knows which hero to train toward what.
- *
- * ## Ineligible jobs are shown, not hidden
- * With the reason, and the shortfall spelled out. A job that silently vanishes
- * from the list teaches nothing; one that says "Needs Mining 8/25" tells the
- * player exactly what to go and do.
+ * JobChangeModal: where a hero becomes someone else.
+ * Promotion and re-training are one screen, deliberately. There is no 'undo' button and no
+ * separate reversal flow. Every job the hero could move to is listed the same way, at the same
+ * price, whether it is a step forward, a step sideways between siblings, or a step back to
+ * something they held before. Presenting reversal as its own mechanism would have implied it
+ * is a correction; it isn't, it is just another job.
+ * The trade is shown BEFORE the click, not after. 'You will lose Fishing 23' IS the decision.
+ * Discovering it afterwards is not a decision at all, which is why `previewPromotion` exists.
+ * ⚠️ This screen PLANS a promotion; it does not perform one. A promotion is paid for with a
+ * charge of a Token whose Promotes rule names the job, and it happens on that Token's tile. A
+ * confirm button here would be a second route to the same act with no Token at all. What it
+ * keeps is what the board cannot give you: the whole tree at once, with every shortfall
+ * spelled out, so a player knows which hero to train toward what.
+ * Ineligible jobs are shown, not hidden, with the reason and the shortfall spelled out. A job
+ * that silently vanishes from the list teaches nothing; one that says 'Needs Mining 8/25'
+ * tells the player exactly what to go and do.
  */
 export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
     const engine = useEngine();
     const [selected, setSelected] = useState(null);
 
-    // Re-read on any hero change so the list reflects a promotion the moment
-    // it lands on the board.
+    // Re-read on any hero change so the list reflects a promotion the moment it lands on the
+    // board.
     const stamp = useGameState(
         state => {
             const h = (state.heroes || []).find(x => x.id === heroId);
@@ -79,12 +68,12 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
             maxWidth="max-w-3xl"
         >
             <div className="flex flex-col gap-3 p-4">
-                {/* ⚠️ This deliberately does NOT say "swaps two for two".
-                    A step down the tree does, but a lateral move across
-                    branches — Fighter to Rogue — swaps three, because the
-                    combat skill and the shared specialist change too. The
-                    per-job panel states the real trade; this line only has to
-                    be true every time. */}
+                {/**
+                 * ⚠️ This deliberately does NOT say 'swaps two for two'. A step down the tree
+                 * does, but a lateral move across branches (Fighter to Rogue) swaps three,
+                 * because the combat skill and the shared specialist change too. The per-job
+                 * panel states the real trade; this line only has to be true every time.
+                 */}
                 <p className="text-[10px] text-gi-muted italic">
                     Changing job rewrites which skills this hero can use. Nothing is lost —
                     what comes off the sheet is set aside at its level, and comes back if a
@@ -121,13 +110,16 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                             </span>
                         ) : (
                             <>
-                                {/* The same trade display the promotion ceremony
-                                    draws (P4), so the two screens can never
-                                    disagree about what a job costs a hero. */}
+                                {/**
+                                 * The same trade display the promotion ceremony draws, so the
+                                 * two screens can never disagree about what a job costs a
+                                 * hero.
+                                 */}
                                 <PromotionTrade preview={preview} />
-                                {/* Where the confirm button used to be (PR-9). The
-                                    price is a Token, so this says where to go
-                                    rather than offering a free way round it. */}
+                                {/**
+                                 * The price is a Token, so this says where to go rather than
+                                 * offering a free way round it.
+                                 */}
                                 <div
                                     data-promotion-hint
                                     className="mt-auto flex items-start gap-1.5 px-2 py-2 rounded border border-gi-border/40 text-[10px] text-gi-muted"
@@ -185,8 +177,8 @@ const JobRow = ({ jobId, verdict, isCurrent, isSelected, onSelect }) => {
     );
 };
 
-// The trade list that lived here moved to `components/hero/PromotionTrade.jsx`
-// (Promotes rule P4): the ceremony draws the same trade, and two copies of
-// "what this promotion costs you" is exactly the pair that drifts apart.
+// The trade list lives in `components/hero/PromotionTrade.jsx`: the ceremony draws the same
+// trade, and two copies of 'what this promotion costs you' is exactly the pair that drifts
+// apart.
 
 export default JobChangeModal;

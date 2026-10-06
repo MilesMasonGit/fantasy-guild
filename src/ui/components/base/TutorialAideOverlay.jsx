@@ -20,10 +20,10 @@ export function setTutorialAideTarget(questId) {
 }
 
 /**
- * ⭐ The tutorial step the player is on (B6.2): the tutorial quest Token on
- * the mat that is not yet done, as its live quest — or null. Since B6.1 the
- * steps are quest Tokens (TL-18); `state.quests.active` only ever holds an old
- * save's sidebar quests waiting to be converted, so it is always empty in play.
+ * The tutorial step the player is on: the tutorial quest Token on the mat that is not yet
+ * done, as its live quest, or null. The steps are quest Tokens; `state.quests.active` only
+ * ever holds an old save's sidebar quests waiting to be converted, so it is always empty in
+ * play.
  */
 export function activeTutorialQuest() {
     const token = QuestTokens.tutorialTokens().find(t => !t.quest.done);
@@ -32,8 +32,7 @@ export function activeTutorialQuest() {
 
 /**
  * Resolves the target DOM element for a given tutorial quest (the chain in
- * `tutorialQuests.js`, rewritten for the Token Lifecycle loop in slice 9.5).
- * Each case falls back to the orb that opens the right screen.
+ * `tutorialQuests.js`). Each case falls back to the orb that opens the right screen.
  */
 export function resolveTutorialTargetElement(questId) {
     if (typeof document === 'undefined' || !questId) return null;
@@ -115,8 +114,8 @@ export const TutorialBeacon = ({ target, keyId }) => {
                     y: r.top + r.height / 2,
                     radius: Math.max(40, Math.max(r.width, r.height) / 2 + 18)
                 };
-                // CR3-458: keep the rect we have when the target has not moved,
-                // so a still beacon is not re-rendered every animation frame.
+                // Keep the rect we have when the target has not moved, so a still beacon is
+                // not re-rendered every animation frame.
                 setTargetRect(prev => (prev && prev.x === next.x && prev.y === next.y && prev.radius === next.radius ? prev : next));
                 return;
             }
@@ -168,7 +167,6 @@ export const TutorialBeacon = ({ target, keyId }) => {
             }}
             className="flex items-center justify-center select-none"
         >
-            {/* Outer pulsating beacon ring */}
             <motion.div
                 animate={{
                     scale: [1, 1.25, 1],
@@ -183,7 +181,6 @@ export const TutorialBeacon = ({ target, keyId }) => {
                 className="absolute inset-0 rounded-full border-yellow-400 pointer-events-none shadow-[0_0_25px_rgba(250,204,21,0.9)]"
             />
 
-            {/* Inner secondary glowing accent ring */}
             <motion.div
                 animate={{
                     scale: [1.1, 0.95, 1.1],
@@ -204,8 +201,8 @@ export const TutorialBeacon = ({ target, keyId }) => {
 export const TutorialAideOverlay = () => {
     const [activeQuestId, setActiveQuestId] = useState(null);
 
-    // Standing beacons while the current tutorial step is "Recruit a Hero"
-    // and not done — read from the tutorial quest Token (B6.2).
+    // Standing beacons while the current tutorial step is 'Recruit a Hero' and not done, read
+    // from the tutorial quest Token.
     const isRecruitHeroQuestActive = useGameState(
         () => activeTutorialQuest()?.targetType === 'hero_recruited',
         [ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.QUESTS_UPDATED, ENGINE_EVENTS.HERO_RECRUITED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED]
@@ -228,7 +225,6 @@ export const TutorialAideOverlay = () => {
     return (
         <div className="fixed inset-0 z-[9990] pointer-events-none overflow-hidden select-none">
             <AnimatePresence>
-                {/* 1. Hover-based beacon for active hovered tutorial quest */}
                 {activeQuestId && (
                     <TutorialBeacon
                         key={`hover_${activeQuestId}`}
@@ -237,7 +233,6 @@ export const TutorialAideOverlay = () => {
                     />
                 )}
 
-                {/* 2. Standing beacons on Guild Hall Upgrade screen during Recruit a Hero */}
                 {isRecruitHeroQuestActive && (
                     <>
                         <TutorialBeacon

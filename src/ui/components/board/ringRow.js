@@ -1,34 +1,28 @@
-// Fantasy Guild — the ring row under a Token and its hero (Token Lifecycle feedback B1.2, TL-22)
 
 import { HERO_HIT_PX, TOKEN_BAR_GAP_U } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
 import { spawnerCountText } from './centreAlert.js';
 
 /**
- * ⭐ **Ring badges** (TL-22, FB-3, FB-4): a Token's live numbers are rings that
- * fill or empty with the number inside, in one row centred under the hero and
- * the Token together — or under the Token alone with no hero at work.
- *
- * Fixed order (owner, B1 rows): cycle, then charges, then the Token's own ring
- * (enemy HP, a spawner's count or a turn countdown — the last two since B1.3).
+ * Ring badges: a Token's live numbers are rings that fill or empty with the number inside, in
+ * one row centred under the hero and the Token together, or under the Token alone with no hero
+ * at work. Fixed order: cycle, then charges, then the Token's own ring (enemy HP, a spawner's
+ * count or a turn countdown).
  */
 
 /**
- * A ring's diameter in mat units: about a third of a 1×1 Token's 128 u art,
- * as in the owner-approved mockup. Fixed in mat units like the other badges,
- * so it scales with the mat, not with the art's pixel steps.
+ * A ring's diameter in mat units: about a third of a 1×1 Token's 128 u art. Fixed in mat units
+ * like the other badges, so it scales with the mat, not with the art's pixel steps.
  */
 export const RING_D_U = 42;
 
-/** The ring's stroke, 3/28 of the diameter (the mockup's proportion). */
 export const RING_STROKE_U = RING_D_U * 3 / 28;
 
-/** Space between two rings in the row, in mat units. */
 export const RING_GAP_U = 6;
 
 /**
- * Each ring's colour (owner-approved mockup). Cycle fills, charges and HP
- * empty; spawner fills to its cap and turn empties toward its roll (B1.3).
+ * Each ring's colour. Cycle fills, charges and HP empty; a spawner fills to its cap and a turn
+ * ring empties toward its roll.
  */
 export const RING_COLOUR = Object.freeze({
     cycle: '#f4f1e8',
@@ -36,15 +30,15 @@ export const RING_COLOUR = Object.freeze({
     hp: '#F09595',
     spawner: '#86efac',
     turn: '#7dd3fc',
-    // B6.2 (TL-18): a quest's progress, parchment — warmer and paler than
-    // the charges gold, so a done quest's full ring is not read as charges.
+    // A quest's progress, parchment: warmer and paler than the charges gold, so a done quest's
+    // full ring is not read as charges.
     quest: '#e8c98a'
 });
 
 /**
- * ⭐ The count rings that GLIDE to a new value instead of jumping (owner,
- * 2026-10-01): a Token's charges, and a spawner's count against its cap.
- * `RingBadge` gives them a CSS transition (`gi-ring-glide`, ~0.8 s).
+ * The count rings that GLIDE to a new value instead of jumping: a Token's charges, and a
+ * spawner's count against its cap. `RingBadge` gives them a CSS transition (`gi-ring-glide`,
+ * ~0.8 s).
  */
 export const GLIDING_RINGS = Object.freeze(new Set(['charges', 'spawner']));
 
@@ -116,10 +110,9 @@ export function ringCount(n) {
 }
 
 /**
- * A spawner's standing ring (FB-5, B1.3): its family's live count against its
- * cap, `3/5`, filling toward the cap. Null for a Token that is not a working
- * spawner (`SpawnerSystem.spawnerCounts` gave null).
- *
+ * A spawner's standing ring: its family's live count against its cap, `3/5`, filling toward
+ * the cap. Null for a Token that is not a working spawner (`SpawnerSystem.spawnerCounts` gave
+ * null).
  * @param {{count: number, cap: number}|null} counts
  * @returns {{kind: 'spawner', fraction: number, text: string, title: string}|null}
  */
@@ -131,10 +124,8 @@ export function spawnerRing(counts) {
 }
 
 /**
- * A quest Token's standing ring (B6.2, TL-18, "B6 + B8 displays"): its
- * progress, `3/10`, filling toward done. Null for anything that is not a
- * quest (`detail.quest` null).
- *
+ * A quest Token's standing ring: its progress, `3/10`, filling toward done. Null for anything
+ * that is not a quest (`detail.quest` null).
  * @param {{currentCount: number, requiredCount: number, title?: string}|null} quest
  * @returns {{kind: 'quest', fraction: number, text: string, title: string}|null}
  */
@@ -155,8 +146,8 @@ export function questRing(quest) {
 export const TURN_COUNTDOWN_REFRESH_MS = 250;
 
 /**
- * How full the turn ring is (FB-14, TL-12, B1.3): time left to the next roll
- * over the roll cycle, so it empties toward the roll. No cycle: empty.
+ * How full the turn ring is: time left to the next roll over the roll cycle, so it empties
+ * toward the roll. No cycle: empty.
  */
 export function turnFraction(inMs, everyMs) {
     if (!(everyMs > 0)) return 0;

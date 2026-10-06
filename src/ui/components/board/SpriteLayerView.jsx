@@ -16,22 +16,15 @@ import { useMatFit } from './MatFitContext.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * SpriteLayerView — item loot floating **above** the mat (D-40).
- *
- * An absolutely-positioned overlay over the mat and below the HUD.
- *
- * ## Loot has mass
- * Items pop out on an arc and **settle with a bounce** (UI §5).
- *
- * ## The gestures (UI §6, D-88, TL-9)
+ * SpriteLayerView: item loot floating **above** the mat. An absolutely-positioned overlay over
+ * the mat and below the HUD.
+ * Loot has mass: items pop out on an arc and **settle with a bounce**.
+ * The gestures:
  * | Gesture | Result |
  * | :-- | :-- |
- * | Hover an item | Collected on the way in — banked, and flies to the **Guild Hall** (FB-16) |
+ * | Hover an item | Collected on the way in: banked, and flies to the **Guild Hall** |
  * | Click it | Same as hovering |
- *
- * ⭐ **Items only** since Token Lifecycle 9.3. Token loot (drag it onto the mat,
- * or hover or right-click it into the Token Vault) went with the Vault: a
- * Token a recipe makes now stands on the mat beside its station (TL-8).
+ * Items only: a Token a recipe makes stands on the mat beside its station.
  */
 export const SpriteLayerView = () => {
     const mat = useMatSize();
@@ -63,11 +56,9 @@ export const SpriteLayerView = () => {
 };
 
 /**
- * Whether a drag is in flight anywhere.
- *
- * `DndKit` stamps `gi-dnd-active` on `<body>` for the life of a drag. Reading it
- * is what stops a Token being collected out from under a drag that has already
- * started — the pointer leaves the sprite on the very first movement, so without
+ * Whether a drag is in flight anywhere. `DndKit` stamps `gi-dnd-active` on `<body>` for the
+ * life of a drag. Reading it is what stops a Token being collected out from under a drag that
+ * has already started: the pointer leaves the sprite on the very first movement, so without
  * this guard grabbing a Token would send it to storage instead.
  */
 const isDragActive = () =>
@@ -75,15 +66,12 @@ const isDragActive = () =>
 
 /**
  * How long after a sprite is created its arc is still worth playing.
- *
- * ⚠️ **This is the guard that stops a loaded board re-throwing its entire
- * floor.** Sprites persist, `fromX`/`fromY` with them, and every one of them
- * mounts fresh on load — so without a check on age, opening a save would fling
- * forty pieces of loot across the grid at once. `bornAt` already existed for the
- * auto-collect clock; this reuses it rather than inventing new state.
- *
- * The same reasoning as the tile landing (D-230), which keys off the placement
- * event for exactly the same reason.
+ * ⚠️ This is the guard that stops a loaded board re-throwing its entire floor. Sprites
+ * persist, `fromX`/`fromY` with them, and every one of them mounts fresh on load, so without a
+ * check on age, opening a save would fling every piece of loot across the mat at once.
+ * `bornAt` already existed for the auto-collect clock; this reuses it rather than inventing
+ * new state.
+ * The same reasoning as the tile landing, which keys off the placement event.
  */
 const THROW_WINDOW_MS = 1000;
 const justThrown = (sprite) => Date.now() - (sprite.bornAt ?? 0) < THROW_WINDOW_MS;
@@ -136,8 +124,8 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
 
     const art = resolveSpritePath(getItem(sprite.refId) || sprite.refId);
     const label = getItem(sprite.refId)?.name || sprite.refId;
-    // Items come from 32px art and render at half a Token's board scale; the
-    // flight to the Hall draws at this same on-screen size (FB-17).
+    // Items come from 32px art and render at half a Token's board scale; the flight to the
+    // Hall draws at this same on-screen size.
     const spriteSize = lootSpriteMatPx(fit);
 
     const handlePointerMove = () => {

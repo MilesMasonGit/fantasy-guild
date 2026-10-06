@@ -12,20 +12,13 @@ import { FlagMark } from '../components/board/FlagMark.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
- * HeroEditModal — **the hero's full sheet**, plus everything about them that
- * isn't drag-and-drop (roadmap D8): rename, repick their portrait, change job.
- *
- * This is the home for the actions the old Hero side drawer used to own.
- * The dock handles deploying, recalling and equipping by drag; this handles
- * the rest, opened by the Edit button on a pinned dock card.
- *
- * Retiring a hero used to live here too; retirement was retired as a mechanic
- * (owner decision, 2026-08-19, CR2-086).
- *
- * ⚠️ **It is also the only place banked skills are visible** (D-250). The dock
- * card shows the six a hero can use *now* and nothing else, because it is a
- * glance surface; what someone used to be able to do belongs where the decision
- * to re-train is actually made, which is here.
+ * HeroEditModal: the hero's full sheet, plus everything about them that isn't drag-and-drop:
+ * rename, repick their portrait, change job.
+ * The dock handles deploying, recalling and equipping by drag; this handles the rest, opened
+ * by the Edit button on a pinned dock card.
+ * ⚠️ It is also the only place banked skills are visible. The dock card shows the six a hero
+ * can use *now* and nothing else, because it is a glance surface; what someone used to be able
+ * to do belongs where the decision to re-train is actually made, which is here.
  */
 export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     const engine = useEngine();
@@ -46,7 +39,7 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
 
     const [name, setName] = useState('');
     const [spriteId, setSpriteId] = useState(null);
-    // The hero's lasting flag colour (FP-82). Null until their first plant.
+    // The hero's lasting flag colour. Null until their first plant.
     const [flagColour, setFlagColour] = useState(null);
 
     // Seed the draft from the hero each time the modal opens on someone new.
@@ -82,14 +75,17 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     return (
         <GIModal isOpen={isOpen} onClose={onClose} title={`Edit ${hero.name}`} maxWidth="max-w-lg">
             <div className="flex flex-col gap-4 p-4">
-                {/* What this hero IS, before what you can change about them.
-                    This is the only surface in the game that shows banked
-                    skills (D-250) — the dock card deliberately does not — so
-                    it is also where a re-training decision gets made. */}
+                {/**
+                 * What this hero IS, before what you can change about them. This is the only
+                 * surface in the game that shows banked skills (the dock card deliberately
+                 * does not), so it is also where a re-training decision gets made.
+                 */}
                 <HeroSkillSheet heroId={heroId} />
 
-                {/* The one action that changes what this hero IS, kept next to
-                    the sheet it rewrites rather than buried with rename. */}
+                {/**
+                 * The one action that changes what this hero IS, kept next to the sheet it
+                 * rewrites rather than buried with rename.
+                 */}
                 <button
                     onClick={onChangeJob}
                     className={cn(
@@ -103,7 +99,6 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
 
                 <div className="border-t border-gi-border/40" />
 
-                {/* Name */}
                 <label className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Name</span>
                     <input
@@ -122,7 +117,6 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                     </span>
                 </label>
 
-                {/* Portrait */}
                 <div className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Portrait</span>
                     <div className="grid grid-cols-8 gap-1.5 max-h-56 overflow-y-auto custom-scrollbar p-1">
@@ -146,8 +140,10 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                     </div>
                 </div>
 
-                {/* Flag colour (FP-82): the hero's lasting flag, drawn with the
-                    flag sprite itself. Full hero recolouring is later. */}
+                {/**
+                 * Flag colour: the hero's lasting flag, drawn with the flag sprite itself.
+                 * Full hero recolouring is later.
+                 */}
                 <div className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Flag colour</span>
                     <div className="grid grid-cols-8 gap-1.5 p-1">
@@ -172,7 +168,6 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                     </div>
                 </div>
 
-                {/* Save */}
                 <div className="flex justify-end gap-2">
                     <button
                         onClick={onClose}

@@ -1,4 +1,3 @@
-// Fantasy Guild — where collected loot flies, and how big it is on the way (Q5: FB-16, FB-17)
 
 import { boardScaleAt } from '../components/base/TokenSprite.jsx';
 
@@ -14,8 +13,8 @@ export const lootSpriteMatPx = (fit = 1) => FLOOR_ITEM_PX * (boardScaleAt(fit) /
 
 /**
  * A loot sprite's size in SCREEN PIXELS at a mat fit: the mat-unit size through
- * the mat's transform. Always a whole multiple of 32 (FP-99), so a flying item
- * is exactly as big as the one that lay on the floor (FB-17).
+ * the mat's transform. Always a whole multiple of 32, so a flying item
+ * is exactly as big as the one that lay on the floor.
  */
 export const lootSpriteScreenPx = (fit = 1) => {
     const f = Number.isFinite(fit) && fit > 0 ? fit : 1;
@@ -24,13 +23,13 @@ export const lootSpriteScreenPx = (fit = 1) => {
 
 /** The Guild Hall's art on the mat (`MatToken` marks it). */
 export const HALL_SELECTOR = '[data-token-art][data-guild-hall="true"]';
-/** The old landing spot: the Item Bank bubble (D-232). */
+/** The fallback landing spot: the Item Bank bubble. */
 export const BANK_TARGET_ID = 'bank-bubble-target';
 
 const inViewport = (r, w, h) => r.right >= 0 && r.bottom >= 0 && r.left <= w && r.top <= h;
 
 /**
- * ⭐ **Where a collected item flies to** (FB-16): the Guild Hall Token on the
+ *  **Where a collected item flies to**: the Guild Hall Token on the
  * mat, read live from the DOM so a dragged Hall or a resized mat is followed.
  *
  * Falls back to the Bank bubble when the Hall cannot be the target: not on the

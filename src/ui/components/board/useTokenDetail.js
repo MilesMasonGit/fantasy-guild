@@ -1,4 +1,3 @@
-// Fantasy Guild — one mat Token's own details, by instance id (CR3-304)
 
 import { useTokenState } from './tokenEvents.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -12,9 +11,9 @@ import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 
 /**
- * A quest Token's quest as a flat projection for `detail` (B6.2): what the
- * ring, the glow and the tooltip draw. Rebuilt on every read, so the
- * projection's deep compare sees progress (CR-044). Null for any other Token.
+ * A quest Token's quest as a flat projection for `detail`: what the ring, the glow and the
+ * tooltip draw. Rebuilt on every read, so the projection's deep compare sees progress. Null
+ * for any other Token.
  */
 function questProjection(instance) {
     if (!QuestTokens.isQuestToken(instance)) return null;
@@ -42,15 +41,14 @@ function sideOfWorker(id) {
 }
 
 /**
- * This Token's own details as a flat projection (the CR-044 contract), or null
- * when it is not on the mat. ⚠️ Never anything `board:progress` changes: that
- * fires every tick for every working Token, and the ring row draws it
- * imperatively instead.
+ * This Token's own details as a flat projection (see `useGameState`'s selector contract), or
+ * null when it is not on the mat. ⚠️ Never anything `board:progress` changes: that fires every
+ * tick for every working Token, and the ring row draws it imperatively instead.
  */
 export function tokenDetailOf(id, def) {
     const instance = BoardState.getTokenById(id);
     if (!instance) return null;
-    // A Foundation picks its recipe like a station (Token Lifecycle 6.1).
+    // A Foundation picks its recipe like a station.
     const stationSkill = def ? (def.foundation?.skill || stationSkillOf(def)) : null;
     const isSpawner = !instance.turnedFrom && SpawnerSystem.isSpawner(def);
     return {
@@ -58,23 +56,21 @@ export function tokenDetailOf(id, def) {
         alert: instance.alert || null,
         disallowed: Flags.isDisallowed(instance),
         heroId: BoardState.workerOf(id),
-        // The side the working hero stands on (−1 left, 1 right), for
-        // the ring row (B1.2). `workerOf` is null until they arrive.
+        // The side the working hero stands on (-1 left, 1 right), for the ring row. `workerOf`
+        // is null until they arrive.
         heroSide: sideOfWorker(id),
         stationSkill,
         recipe: stationSkill ? StationRecipe.selectedRecipe(instance, def) : null,
-        // Something to choose from: a station with an empty pool is not
-        // waiting on the player, so it gets no gear (FB-7).
+        // Something to choose from: a station with an empty pool is not waiting on the player,
+        // so it gets no gear.
         hasPool: stationSkill ? StationRecipe.poolFor(def).length > 0 : false,
         isFoundation: !!def?.foundation,
         isSpawner,
-        // FB-5: the family's live count against its cap, `{ count, cap }`
-        // — the spawner ring (B1.3).
+        // The family's live count against its cap, `{ count, cap }`: the spawner ring.
         spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,
-        // FB-14: a Token that turns (or has turned) counts down to its next roll.
+        // A Token that turns (or has turned) counts down to its next roll.
         turns: !!TimedChanges.nextTurnRoll(instance),
-        // B6.2 (TL-18): a quest Token's quest — ring, glow, tooltip,
-        // click to claim.
+        // A quest Token's quest: ring, glow, tooltip, click to claim.
         quest: questProjection(instance)
     };
 }
@@ -95,18 +91,15 @@ const SPAWNER_BROADCAST = Object.freeze([
 ]);
 
 /**
- * ⭐ The hook: `tokenDetailOf`, woken only by events about this Token
- * (CR3-304) — never by the catch-all `state_changed` (CR3-305), and never by
- * `board:progress`.
- *
+ * The hook: `tokenDetailOf`, woken only by events about this Token, never by the catch-all
+ * `state_changed` and never by `board:progress`.
  * * by instance id: {@link BY_ID};
- * * by the hero working it: `HERO_MOVED` names the Token a hero went TO, so
- *   the one they LEFT hears it through their `heroId`;
- * * broadcast: `GAME_RESET` for every Token, and the family's comings and
- *   goings for a spawner. (A quest Token needs none: every change to a quest
- *   publishes `QUESTS_UPDATED { instanceId }`, and a quest Token subscribes
- *   exactly as often as a plain one — `QuestTokenUI.test.js`.)
- *
+ * * by the hero working it: `HERO_MOVED` names the Token a hero went TO, so the one they LEFT
+ * hears it through their `heroId`;
+ * * broadcast: `GAME_RESET` for every Token, and the family's comings and goings for a
+ * spawner. (A quest Token needs none: every change to a quest publishes `QUESTS_UPDATED {
+ * instanceId }`, and a quest Token subscribes exactly as often as a plain one; see
+ * `QuestTokenUI.test.js`.)
  * Each route is pinned by `TokenDetailRoutes.test.js`.
  */
 export function useTokenDetail(id, def) {
