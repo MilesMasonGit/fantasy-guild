@@ -18,11 +18,11 @@ changed, what's next. Keep it under one screen.*
 | Work | Doc | State |
 |---|---|---|
 | Crunch prep | [crunch_prep_plan.md](crunch_prep_plan.md) | Doc cleanup, tickets, CLAUDE.md, GDD rebuild and the owner's GDD rulings done 2026-10-06 |
+| Comment slimming | [brief_comment_slimming.md](brief_comment_slimming.md) | Done on branch `chore/comment-slimming`, not merged: bench exits 1 from machine drift (untouched `main` fails the same). Leftovers: T-101 |
 
 ## Next up
 
-1. **Comment slimming pass** (director-run, fresh session):
-   [brief_comment_slimming.md](brief_comment_slimming.md).
+1. Merge `chore/comment-slimming` into `main` (see the report in chat).
 2. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
    the certification run (T-003) and the CMS fixes (T-001, T-002).
 3. Crunch prep P3: drawing benchmark + per-system on/off switches.

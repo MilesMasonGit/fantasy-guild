@@ -161,4 +161,5 @@ first, when content that uses it is authored.*
 | T-090 | Stage 3 | Terrain can't be added through the CMS. | CR3-564 |
 | T-091 | Stage 3 | Tokens teleport; mat size is dev tuning. | CR3-565 |
 | T-092 | design | The free-playmat plan's "Map stays unopened" overflow rule (FP-46) is unbuilt; overflow drops as loot. | FMR |
+| T-101 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (held back, owner's Atlas edit uncommitted), 2 comments in `cms/src/components/editors/RulesLine.jsx`, `cms/src/engine/sim/dryRun.mjs` header, `filterTargetTiles` named in `reachRegistry.js:26,136` (now `filterTargets`), ~15 test comments clipped by the ID stripper (e.g. `AdjacencyEffects.test.js:82`), and trailing string text carrying IDs (`workSkillRule.js` WORK_SKILL_WHY, `lifecycleAudit.js`, `matTuning.js` hints). Also dead exports found: `PERSONALITY_TAGS`, the three tutorial selectors in T-095. | Slimming pass |
 | T-100 | before release | Master volume defaults to 0 so the owner can work in silence; set an audible default before shipping. | GDD §16.10 |
