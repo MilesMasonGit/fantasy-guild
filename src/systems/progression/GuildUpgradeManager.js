@@ -16,17 +16,10 @@ import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * GuildUpgradeManager — the Guild Hall upgrade web (B9, TL-23).
+ * GuildUpgradeManager — the Guild Hall upgrade web.
  *
  * Ranks persist in `state.progress.guildUpgrades` ({ upgradeId: rank }); every
- * derived stat is RECOMPUTED from ranks:
- *   bank_tabs        -> inventory.maxTabs      (1 + rank)
- *   bank_slots       -> inventory.maxSlots     (64 + 32·rank)
- *   roster_size      -> progress.rosterLimit   (rosterLimitForRank(rank), at most ROSTER_MAX = 8)
- *
- * (These figures were all wrong until 2026-08-25 — they described an
- * older cost curve. Read `recompute()` below, not this list. The two Token
- * Vault tracks went with the Vault, Token Lifecycle 9.3.)
+ * derived stat is RECOMPUTED from ranks in `recompute()`.
  */
 export const GuildUpgradeManager = {
     init() {
@@ -49,7 +42,7 @@ export const GuildUpgradeManager = {
         return ranks[upgradeId] || 0;
     },
 
-    /** Whether an upgrade's node is open on the web: a linked node bought, or linked to the Hall (TL-23). */
+    /** Whether an upgrade's node is open on the web: a linked node bought, or linked to the Hall. */
     isAccessible(upgradeId) {
         const def = getUpgradeDef(upgradeId);
         if (!def) return false;
@@ -58,7 +51,7 @@ export const GuildUpgradeManager = {
 
     /**
      * Item price of the next rank as `[{ itemId, quantity }]` (`[]` = free),
-     * or null when maxed. Hall upgrades cost items, never gold (SP-65).
+     * or null when maxed. Hall upgrades cost items, never gold.
      */
     getNextCost(upgradeId) {
         const def = getUpgradeDef(upgradeId);
@@ -165,10 +158,8 @@ export const GuildUpgradeManager = {
             this._ensureBankTabs(state.inventory);
         }
         if (state.progress) {
-            // One definition, in `guildUpgrades.js` (CR2-193) — `HeroLifecycle`
-            // falls back to the same function when a save has no rosterLimit
-            // written yet. The cap is ROSTER_MAX (8, owner 2026-09-21; D-251's
-            // twelve before that): ROSTER_BASE (0) plus the track's 8 ranks.
+            // One definition, in `guildUpgrades.js`; `HeroLifecycle` falls back to
+            // the same function when a save has no rosterLimit written yet.
             state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
             state.progress.flagRadiusBonus = (ranks.flag_radius || 0) * 40;
         }
@@ -204,17 +195,12 @@ export const GuildUpgradeManager = {
 
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
-        // `collection_updated` was published here to nobody and was deleted on
-        // 2026-08-24 (CR2-092). `guild_upgrades_updated` is the one the UI and
-        // the quest system actually listen for.
     },
 
     /**
-     * The ONLY way a Bank tab comes into existence (owner ruling 2026-08-25).
-     * Buying `bank_tabs` raises `maxTabs`; this tops `groupOrder` back up to it,
-     * so the new tab appears the moment the upgrade is bought. Players cannot
-     * create, name, delete or reorder tabs — the code that offered that was
-     * unreachable and was removed from `InventoryManager` (CR2-089).
+     * The ONLY way a Bank tab comes into existence. Buying `bank_tabs` raises
+     * `maxTabs`; this tops `groupOrder` back up to it, so the new tab appears the
+     * moment the upgrade is bought.
      */
     _ensureBankTabs(inv) {
         if (!inv.groupOrder) inv.groupOrder = [];
