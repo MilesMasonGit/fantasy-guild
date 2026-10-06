@@ -5,10 +5,8 @@ import { logger } from '../../utils/Logger.js';
  * InventoryStore - Raw State Management for the Inventory System.
  * Forces normalization of item data into the { quantity, dur } format.
  *
- * ⚠️ `dur` is an inert saved field. It held item durability, which was retired
- * (D-118) and cut entirely (owner decision 2026-08-19, CR2-096). Nothing reads
- * or writes it any more and it is always null, but it is normalized and kept
- * here on purpose so saves written before the cut keep their shape and load.
+ * ⚠️ `dur` is an inert saved field (always null), kept and normalized on purpose
+ * so saves written before durability was cut keep their shape and load.
  */
 export const InventoryStore = {
     /**
@@ -38,10 +36,9 @@ export const InventoryStore = {
             };
         }
         if (!inv.itemOverrides) inv.itemOverrides = {};
-        // Bank tab limit: groups double as the Bank's tabs. 1 free tab,
-        // raised further by Guild Hall upgrades (up to 16 total).
-        // GuildUpgradeManager.recompute() owns the authoritative value and
-        // pads the group list to match on every load/purchase.
+        // Groups double as the Bank's tabs. GuildUpgradeManager.recompute() owns
+        // the authoritative `maxTabs` and pads the group list to match on every
+        // load/purchase.
         if (inv.maxTabs === undefined || inv.maxTabs < 1) inv.maxTabs = 1;
         if (inv.maxSlots === undefined) inv.maxSlots = 64;
 
