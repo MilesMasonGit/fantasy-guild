@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Owner rulings on the GDD questions (2026-10-06).** Recorded in the GDD and as tickets
+  T-097..T-100; skill & class rework v2 and real offline progress became crunch tracks; a
+  comment-slimming pass is briefed in `docs/active/brief_comment_slimming.md`.
 - **Crunch prep: one backlog, a lean doc set, a real GDD (2026-10-06).** All open work now lives in
   `docs/reference/TICKETS.md` (96 tickets); docs are split into `docs/active/` (start at `NOW.md`),
   `docs/reference/` (GDD, tickets, testing) and one `docs/archive/`; CLAUDE.md describes director

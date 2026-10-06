@@ -8,8 +8,8 @@ changed, what's next. Keep it under one screen.*
 - **Version** 0.8.x on `main`. Code review round 3 is closed: 165 FPS reached on
   a realistic mat, ~4,000 tests. Its leftovers are tickets.
 - **Phase: crunch prep.** Plan: [crunch_prep_plan.md](crunch_prep_plan.md).
-  After prep comes the crunch month: UI rework (measure the cost of every
-  change), then deep optimization, then a written Performance Envelope.
+  Crunch tracks: UI rework (from fresh owner plans), skill & class rework v2,
+  real offline progress; then deep optimization and the Performance Envelope.
 - **Tests**: one known failure, `AssetManager` (Copper Rubble's missing art,
   ticket T-001). Anything else red is new.
 
@@ -17,29 +17,25 @@ changed, what's next. Keep it under one screen.*
 
 | Work | Doc | State |
 |---|---|---|
-| Crunch prep | [crunch_prep_plan.md](crunch_prep_plan.md) | Doc cleanup, tickets, CLAUDE.md and the GDD rebuild done 2026-10-06; owner to review the GDD and answer its §16; then P3 measurement tools, P4 crunch briefs |
+| Crunch prep | [crunch_prep_plan.md](crunch_prep_plan.md) | Doc cleanup, tickets, CLAUDE.md, GDD rebuild and the owner's GDD rulings done 2026-10-06 |
 
 ## Next up
 
-1. Owner: read the rebuilt [GDD](../reference/GDD.md) and answer its §16 open questions.
+1. **Comment slimming pass** (director-run, fresh session):
+   [brief_comment_slimming.md](brief_comment_slimming.md).
 2. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
-   the certification run (T-003) and the CMS fixes (T-001).
+   the certification run (T-003) and the CMS fixes (T-001, T-002).
 3. Crunch prep P3: drawing benchmark + per-system on/off switches.
-4. Crunch prep P4: ready-to-run crunch briefs (UI rework track + optimization
-   track).
+4. Crunch prep P4: ready-to-run crunch briefs, one per track (owner writes the
+   UI plans).
 
-## Planned, not started
+## Planned
 
+- **Skill & class rework v2** (crunch track):
+  [concept](concept_skill_and_class_rework_v2.md), approved, needs a roadmap.
+  Brings the 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone
+  Foundations.
+- **Real offline progress** (crunch track): simulate time away on return;
+  replaces the Time Bank. No design doc yet.
 - **Atlas** (after the crunch): [concept_atlas.md](concept_atlas.md). Some
   uncommitted Atlas code sits in the working folder (T-005).
-- **Skill and class rework v2**: [concept](concept_skill_and_class_rework_v2.md),
-  approved, needs a roadmap.
-
-## Open owner decisions (not tickets)
-
-- **UI rework source docs**: `ui_overhaul_spec.md` and `ui_bugfix_tracker.md`
-  were archived by the doc triage, but the crunch plan names them as inputs for
-  the UI rework. Bring them back to `active/`, or write fresh UI plans?
-- **History comments in code**: many source files carry long ticket and
-  decision histories in comments, which every agent reads. Slim them to short
-  "why" comments? (crunch plan §5.2)

@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-097**
+**Next free number: T-101**
 
 ---
 
@@ -33,7 +33,7 @@ here.
 | ID | What | Origin |
 |---|---|---|
 | T-001 | **CMS**: Wood Foundation → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, Stone item → `item_stone`; **retire Copper Rubble** (also clears the last failing test). Then Sync to Game. | CR3 summary |
-| T-002 | **CMS**: the Guild Hall Map's loot pool names a missing `token_fallen_oak_tree` (`data/maps.json`). | FB §5 |
+| T-002 | **CMS: retire the dormant Maps** (owner 2026-10-06): the 8 maps in `data/maps.json` and the six unsold Map Tokens. Keep the Oak Forest Map (it is an Explore producer sold in the Shop). Also clears the missing `token_fallen_oak_tree`. The Atlas gets fresh Map content. | FB §5, GDD |
 | T-003 | **Run the certification checklist** ([`docs/active/certification_checklist.md`](../active/certification_checklist.md), ~25 min, on your PC). Unblocks T-033, T-034, T-060, T-071. | CR3 summary |
 | T-004 | **Re-save the bench baseline on a quiet machine**: `npm run bench -- --save-baseline`. Current timings were taken under load. | CR3 summary |
 | T-005 | **Uncommitted Atlas work**: `src/state/StateSchema.js` adds a required `atlas` save section (check old saves still load); `data/items/maps.json` was written outside the CMS (a CMS sync may wipe it). Keep, finish or discard? | CR3 summary |
@@ -56,7 +56,7 @@ here.
 |---|---|---|---|---|
 | T-015 | P2 | open | Retire `state_changed`, stages 2–3 (stage 1 = `GAME_RESET`, merged). | CR3-305 |
 | T-016 | P2 | open | A loot sweep publishes one event per sprite; batch it. | CR3-255 |
-| T-017 | P2 | open | Kill loot ignores yield / double-loot / bonus-drop rules — reachable, `BONUS_DROP` and `LOOT_MULT` ship. Ruling (A): apply them. | CR3-256 |
+| T-017 | P2 | open | Kill loot ignores yield / double-loot / bonus-drop rules — reachable, `BONUS_DROP` and `LOOT_MULT` ship. **Owner 2026-10-06: yes, apply them exactly as for work.** | CR3-256 |
 | T-018 | P2 | open | A crafted Token can arrive with unlimited charges — reachable (Copper Woodaxe). Ruling (A) per R3-Q1. | CR3-045 |
 | T-019 | P2 | open | The engine starts a game only when React says so → add `Engine.startSlot`; reuse CR3-100's test as the headless boot test. | CR3-307 |
 | T-020 | P3 | open | Three small rules copied into UI components; move them to the engine, show refusals on screen. | CR3-308 |
@@ -67,6 +67,9 @@ here.
 | T-025 | P3 | open | `buyMap` ignores the Shop's `sourceRect`. *Unverified since 2026-09-21.* | FMR |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
+| T-097 | P2 | open | Move the Token cap, mat size and quest cap/interval out of the dev Mat Tuner into fixed game values (Hall upgrades may raise them later); hide Debug Mode and the QA tools in shipped builds. Owner 2026-10-06. | GDD §16.1 |
+| T-098 | P2 | open | Remove hero energy (dormant). Drinks heal like food: keep the separate food and drink slots, both eaten below 25 % HP. Owner 2026-10-06. | GDD §16.7 |
+| T-099 | P3 | open | Wishing Well water becomes passive, like the Hall trickle (no hero on the Hall). Owner 2026-10-06. | GDD §16.9 |
 
 ### UI
 
@@ -145,7 +148,7 @@ first, when content that uses it is authored.*
 | T-077 | latent | Timed effects lose combat numbers on reload; use game time, not the wall clock. | CR3-252 |
 | T-078 | latent | Loadout re-expanded on every axis read. | CR3-253 |
 | T-079 | latent | Loading rewrites the Guild Hall's definition. | CR3-257 |
-| T-080 | latent | Time Bank fast-forward doubles tick cost (spend UI is off). | CR3-104 |
+| T-080 | superseded | Time Bank fast-forward doubles tick cost. The Time Bank is being replaced by real offline progress (crunch track, owner 2026-10-06). | CR3-104 |
 | T-081 | latent | Engine init isn't safe to run twice — only matters with a "back to title" feature. | CR3-108 |
 | T-082 | latent | Shop's unreachable refund path skips mat events. | CR3-206 |
 | T-083 | re-check | Synchronous subscribers; several whole-mat rebuilds per tick. Probably closed by Wave 3b — re-measure before working on it. | CR3-102 |
@@ -158,3 +161,4 @@ first, when content that uses it is authored.*
 | T-090 | Stage 3 | Terrain can't be added through the CMS. | CR3-564 |
 | T-091 | Stage 3 | Tokens teleport; mat size is dev tuning. | CR3-565 |
 | T-092 | design | The free-playmat plan's "Map stays unopened" overflow rule (FP-46) is unbuilt; overflow drops as loot. | FMR |
+| T-100 | before release | Master volume defaults to 0 so the owner can work in silence; set an audible default before shipping. | GDD §16.10 |

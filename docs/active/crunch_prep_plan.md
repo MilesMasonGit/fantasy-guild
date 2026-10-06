@@ -22,7 +22,10 @@ PREP (this doc — Pro plan + Gemini)
   5. Go / no-go on the Max upgrade
 
 CRUNCH MONTH (Claude, Max plan)
-  6. UI rework         — "measure, don't fix": log the cost of every UI change
+  6. UI rework         — "measure, don't fix": log the cost of every UI change;
+                        fresh UI plans from the owner (old specs stay archived)
+  6b. Skill & class rework v2 (24 skills, 4 basic + 8 master classes, 4 Academies)
+  6c. Real offline progress (replaces the Time Bank)
   7. Deep optimization — root-cause hunt, working from the cost log
   8. Performance Envelope — write the real limits down as design rules
 
@@ -172,8 +175,10 @@ Each brief: what to do, which files/docs to read (and *only* those), what
 "done" looks like, how to verify it. One coherent slice per session.
 
 Two tracks:
-- **UI rework** — from the owner's UI plans and
-  [`ui_overhaul_spec.md`](ui_overhaul_spec.md) / [`ui_bugfix_tracker.md`](ui_bugfix_tracker.md).
+- **UI rework** — from the owner's fresh UI plans (ruled 2026-10-06; the old
+  `ui_overhaul_spec.md` / `ui_bugfix_tracker.md` stay archived).
+- **Skill & class rework v2** and **real offline progress** — added as crunch
+  tracks 2026-10-06.
 - **Optimization targets** — from the P3 baseline. First suspect: the
   notifications column (see §5).
 
@@ -186,6 +191,11 @@ backlog, and drop back to Pro afterwards (check plan terms first).
 
 ## 5. Open decisions (owner)
 
+0. **Ruled 2026-10-06**: UI rework starts from fresh owner plans (the archived
+   `ui_overhaul_spec.md` / `ui_bugfix_tracker.md` are not inputs); history
+   comments get one dedicated slimming pass before the crunch
+   ([brief](brief_comment_slimming.md)); skill & class rework v2 and real
+   offline progress are crunch tracks.
 1. **Toast leak (now ticket T-060) — fix now or in the crunch?** Dismissed notifications
    stay on the page invisibly (see
    [`ToastContainer.jsx`](src/ui/components/base/ToastContainer.jsx)), which
