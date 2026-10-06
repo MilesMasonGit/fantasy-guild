@@ -57,6 +57,9 @@ the checkout; read-only work (reviews, research) may run in parallel.
   sync overwrites anything written outside it. Use the CMS or a test fixture.
 - **A comment is a hypothesis, not evidence.** This codebase has many confident
   comments describing machinery that doesn't exist. Check the code.
+- **Comments keep only a non-obvious why or a ⚠️ warning.** No ticket IDs,
+  dates, ruling chains or change history; those belong in git and the
+  changelog.
 - **Green tests don't mean a working game.** Anything a player could see gets
   exercised in the running game (see TESTING).
 - **Git**: branch from `main` for every job (`fix/bank-overflow`); merge back

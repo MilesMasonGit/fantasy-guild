@@ -37,8 +37,8 @@ and grow on their own.
    make it. The CMS's economic simulator enforces this at authoring time.
 
 **How it's played.** Both ways: pleasant to leave open and watch (the living
-mat), and progress continues between check-ins. Offline time counts (see the
-Time Bank, §10, which is currently hidden).
+mat), and progress continues between check-ins. Time away will be **simulated
+on return** (real offline progress, a crunch track; see §10).
 
 **Long-term pull.** Exploring new Regions through the Atlas (§13): set up a
 Region, exhaust it, move the guild to a better one. **The Atlas is not built.**
@@ -153,8 +153,8 @@ nothing. Rounded down per item. The Hall and tutorial quests can't be binned.
 Map bursts and the Map shop are retired. The **Oak Forest Map** is an ordinary
 Explore producer sold in the Shop (5 Oak Wood + 1 Torch; each 20 s cycle eats
 1 Shrimp + 1 Torch and yields Oak Wood plus chance drops). Six other Map Tokens
-and `data/maps.json` (8 maps with pools and prices) are **Dormant**: nothing
-sells or bursts them.
+and `data/maps.json` (8 maps with pools and prices) are **Dormant** and will be
+**retired** (owner 2026-10-06, T-002); the Atlas gets fresh Map content.
 
 ---
 
@@ -202,8 +202,15 @@ Signature skills have no Token or recipe yet.
   they return if the hero comes back. The Change Job screen only plans; the
   act happens on the board.
 - **Content**: Fighter's Academy (buildable on a Stone Foundation) and Wizard
-  Academy (no source found) are the only promotion Tokens. Both are free to use
-  (`chargeDelta: 0`). The other 16 jobs have no Token.
+  Academy (no source found) are the only promotion Tokens. The other 16 jobs
+  have no Token. **Promotion stays free** (owner 2026-10-06); the Academies'
+  unused `uses` count can go.
+- **Being replaced** (crunch track, owner 2026-10-06): the approved
+  [skill & class rework v2](../active/concept_skill_and_class_rework_v2.md)
+  moves to **4 combat skills (melee, ranged, magic, stealth), 4 basic classes
+  (Fighter, Ranger, Wizard, Rogue) and 8 master classes**, 24 skills in all.
+  Its four Academies are built on Wood or Stone Foundations and arrive with the
+  rework, not before. Until then this section describes the old tree.
 
 ### Health, food, defeat — Built
 - Max HP from the combat skill: 50 at level 1, 144 at 25, ~3,700 at 99.
@@ -213,14 +220,16 @@ Signature skills have no Token or recipe yet.
   each carried food/drink stack (and 10 % chance per gear piece), and are
   **wounded for 5 minutes** of game time, returning at 50 % HP (*placeholder*
   numbers).
-- **Energy** exists on heroes but nothing spends it — **Dormant**. Drinks have
-  no drinking use.
+- **Energy** exists on heroes but nothing spends it — **Dormant**, to be
+  removed. **Drinks will heal like food** from their own slot (owner
+  2026-10-06, T-098); today they can't be drunk.
 
 ### Equipment — Partial
 A 3×3 loadout grid with category caps (hand 2, hat 1, chest 1, trinket 2,
-food 1, drink 1, consumable unlimited). **No gear ships**: 64 items are
+food 1, drink 1, consumable unlimited). **No gear ships yet**: 64 items are
 materials, food, drink and one potion. Weapons, armour and gear loss are
-**Latent**.
+**Latent**. **Gear is coming** (owner 2026-10-06): keep the system; weapons
+and armour will be authored as content.
 
 ### How heroes choose work — Built (the heart of the game)
 - A **flag** has no skill: the hero works every skill they hold within the
@@ -246,6 +255,9 @@ materials, food, drink and one potion. Weapons, armour and gear loss are
 - **Items are the only currency** *(`GoldRetired.test.js`)*. Every price is a
   list of items. Nothing can be sold. The Shrimp Market Token runs but pays
   nothing.
+- **Item sinks**: surplus and high-tier items are meant to be spent on
+  **upgrades and construction** (Hall upgrades, stations, recipes), not sold
+  (owner 2026-10-06).
 - **64 items** (`data/items.json`): 41 materials, 17 food, 5 drinks, 1 potion.
   An item's `value` is set by the CMS simulator for balancing; **the game never
   shows or spends it**.
@@ -354,7 +366,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 | Bank Slots | 10 | +32 Bank slots per rank |
 | Bank Tabs | 15 | +1 Bank tab per rank |
 | Scouting Flags | 5 | +40 u flag radius per rank |
-| Wishing Well | 10 | the Hall yields *rank* Water every 10 s, if a hero's flag is on it (rank 1 free) |
+| Wishing Well | 10 | the Hall yields *rank* Water every 10 s, if a hero's flag is on it (rank 1 free). To become passive (T-099) |
 | Notice Board | 3 | +1 bounty quest cap per rank |
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
@@ -406,11 +418,13 @@ drawers**. The menu can be flipped to the right.
 - **Game time** drives everything (cycles, spawns, quests). A tick is clamped
   to 1 s; longer gaps are banked.
 - **Time Bank** — **Built but hidden** (`SHOW_TIME_BANK = false`): time away
-  (up to 24 h) is banked on load and could be spent at 2×/5×/10× speed. There
-  is no offline simulation; banked time is the offline-progress design.
+  (up to 24 h) is banked on load and could be spent at 2×/5×/10× speed. **To be
+  replaced by real offline progress** — the game simulates time away when you
+  return (crunch track, owner 2026-10-06).
 - **Saves**: 3 slots in browser `localStorage` with a one-step backup;
   autosave every 10 min by default. **Saves from another version are refused,
-  not migrated** (`GAME_VERSION = '0.8.0'`). A new game is saved immediately.
+  not migrated** (`GAME_VERSION = '0.8.0'`), and that stays the policy **until
+  1.0** (owner 2026-10-06). A new game is saved immediately.
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview and saves stay in its storage.
 
@@ -461,9 +475,10 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   Modifiers, combine them in a Cartography screen to generate a Region, and
   relocate the guild to better Regions over time. Many Tokens become fixed
   geography. Some unfinished Atlas code sits uncommitted (ticket T-005).
-- **Skill and class rework v2 — Planned**:
+- **Skill and class rework v2 — Planned for the crunch**:
   [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md),
-  approved, no roadmap.
+  approved, needs a roadmap; brings the 4 Academies.
+- **Real offline progress — Planned for the crunch**, replacing the Time Bank.
 - **Dormant**: terrain, Time Bank widget, energy and drinking, Villager heroes,
   Map bursts and most Map Tokens, `data/stations.json` (nothing loads it).
 - **Latent** (code ready, no content): gear, statuses, ranged/magic enemies,
@@ -521,28 +536,27 @@ mechanics.
 
 ---
 
-## 16. Open questions for the owner
+## 16. Owner rulings and open questions
 
-Design questions the surveys raised, in rough order of impact. Answers go into
-the relevant section above; actionable ones become tickets.
+Ruled 2026-10-06 (folded into the sections above; work is in TICKETS or the
+crunch plan):
 
-1. **Mat Tuner numbers in the shipped game**: the Token cap, mat size and
-   quest cap live only in the dev Mat Tuner (per device), and Debug Mode makes
-   the tuner available in a built game. Should these move into content, and
-   should Debug Mode ship?
-2. **Time Bank**: bring the widget back (offline progress at launch), or cut it?
-3. **Gear**: will heroes wear weapons and armour, or is equipment food and
-   consumables only?
-4. **Item sinks**: with no selling, what is the long-term use of surplus and
-   high-tier items? Should the Shrimp Market pay out something?
-5. **Promotion content**: which of the 18 jobs get Tokens for the next
-   milestone? Where does the Wizard Academy come from? Should promotion cost
-   anything?
-6. **Kill loot**: should neighbour bonuses (double loot, bonus drops, yield)
-   apply to kills as they do to work? (T-017)
-7. **Energy and drinks**: remove, or keep as a future system?
-8. **Dormant Maps**: retire `data/maps.json` and the six unsold Map Tokens, or
-   revive them as Explore content?
-9. **Wishing Well**: should its water need a hero on the Hall, or come passively?
-10. **Silent by default**: should the game ship with master volume 0?
-11. **Saves**: is "refuse saves from another version" the long-term policy?
+| Question | Ruling |
+|---|---|
+| Mat Tuner numbers, Debug Mode | Move cap, mat size and quest numbers into the game; hide Debug Mode in shipped builds (T-097). |
+| Time Bank | Replace with real offline progress (crunch track). |
+| Gear | Coming; keep the system. |
+| Item sinks | Upgrades and construction; no selling. |
+| Promotion content | 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone Foundations, with skill & class rework v2 (crunch track). |
+| Promotion cost | Free. |
+| Kill loot | Neighbour bonuses apply to kills like work (T-017). |
+| Energy and drinks | Remove energy; drinks heal like food, separate slots (T-098). |
+| Dormant Maps | Retire (T-002). |
+| Wishing Well | Passive (T-099). |
+| Silent by default | Development convenience; audible default before shipping (T-100). |
+| Old saves | Refused until 1.0. |
+
+Still open:
+
+1. Terrain: revive on the free mat for the Atlas, or remove?
+2. What the Shrimp Market should do now that nothing is sold.
