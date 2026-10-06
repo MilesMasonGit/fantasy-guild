@@ -2,33 +2,13 @@ import { TEMPO_NAMES, bandFor } from '../../utils/constants';
 import { SIM_PURPOSES } from '../../utils/simVocabulary';
 
 /**
- * The **"you set" half** of the Simulator panel (economic simulator rework,
- * plan §15.1) — the two choices an author makes about a producer, shared by the
- * Token editor and the Recipe editor so there is one control, not two that
- * drift.
- *
- * ⚠️ **These are read now.** The TIME pass takes its cycle time from `tempo`,
- * the PRICE pass takes its earnings target from `purpose`, and the TUNE pass
- * judges the result against both. The band note below is still advice rather
- * than a rule — an authored cycle time outside its band is left exactly as
- * typed until a Recalculate derives a new one — but the tags themselves now
- * decide what this producer is worth. What the simulator decided is in the
- * panel's other half (`SimAnswer`).
- *
- * ## Where the two vocabularies come from
- *
- * Tempo is the game's word, imported across the boundary through
- * `constants.js` under CMS-5's game→CMS rule. Purpose is not — the game
- * declares no such list, because nothing in the game will ever read a purpose —
- * so it lives in `utils/simVocabulary.js` alongside the panel's title. That
- * split is deliberate; the reasoning is written down there.
- *
+ * The you set half of the Simulator panel: the two choices an author makes about a producer (tempo and purpose), shared by the Token and Recipe editors. The TIME pass takes cycle time from `tempo` and the PRICE pass its earnings target from `purpose`; the band note is advice, not a rule.
+ * ⚠️ Tempo is the game's word, imported through `constants.js`; Purpose is not (the game declares no such list), so it lives in `utils/simVocabulary.js`.
  * @param sim        the record's `sim` object, or undefined if it has none yet
  * @param onChange   called with a patch to merge into `sim`
  * @param cycleMs    this record's authored cycle time, for the band note
  * @param level      the level this record requires, for the band note
- * @param children   extra controls to render inside the same panel (the Recipe
- *                   editor's downcycle flag)
+ * @param children   extra controls to render inside the same panel (the Recipe editor's downcycle flag)
  */
 export default function SimIntentControls({ sim, onChange, cycleMs, level = 1, children }) {
   const tempo = sim?.tempo;
@@ -102,7 +82,6 @@ export default function SimIntentControls({ sim, onChange, cycleMs, level = 1, c
 
 /** The Simulator panel's icon. The title itself is in `simVocabulary.js`. */
 
-/** "8.1–12.2s" — the band in the units a person reads. */
 function describeBand(tempo, level) {
   const b = bandFor(tempo, level);
   if (!b) return '';

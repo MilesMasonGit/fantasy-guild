@@ -10,22 +10,7 @@ import { Field } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 
-/**
- * Pooled recipes — authoring and review on one screen (CMS-40).
- *
- * Rather than splitting "where recipes are edited" from "where gaps get
- * reviewed", one screen does both: the skill list on the left doubles as the
- * cross-skill review, showing how many recipes each pool holds and how many
- * stations actually draw it. A pool with recipes and no stations is authored
- * content nothing can ever make, and a station pooling from an empty skill is a
- * station that makes nothing — both are visible here without switching views.
- *
- * ## Not a sidebar entity
- * A recipe is owned by its skill rather than by any Token (CMS-39), so this is
- * a top-level screen rather than a fourth tab in the entity sidebar. It does
- * carry a stable global `id` — a placed station saves the recipe the player
- * picked — but the id is minted on create and never edited here.
- */
+/** Pooled recipes: authoring and review on one screen. A recipe is owned by its skill, not by any Token, so this is a top-level screen. It has a stable global `id`, minted on create and never edited here. */
 export default function RecipeEditor() {
   const recipePools = useEntityStore((s) => s.recipePools);
   const tokens = useEntityStore((s) => s.tokens);
@@ -40,14 +25,7 @@ export default function RecipeEditor() {
   // pool is an array and `updateRecipe` addresses it that way.
   const [activeIdx, setActiveIdx] = useState(0);
 
-  /**
-   * Which stations draw each pool — the review half of CMS-40.
-   *
-   * A Foundation counts as drawing its `foundation.skill` pool (Token Lifecycle
-   * §3.1): it is the station a building recipe runs on, even though it has no
-   * `Works as` statement. Without this the Construction pool would read
-   * "nothing can make these" while Stone Foundations exist.
-   */
+  /** A Foundation counts as drawing its `foundation.skill` pool even without a `Works as` statement; otherwise the Construction pool would read as nothing can make these. */
   const poolConsumers = useMemo(() => {
     const map = {};
     for (const t of Object.values(tokens)) {
@@ -58,19 +36,13 @@ export default function RecipeEditor() {
     return map;
   }, [tokens, effects]);
 
-  /**
-   * Context tags anything actually provides.
-   *
-   * Read from the Tokens' own `Acts as` rules rather than a hardcoded list —
-   * the pattern the rest of the CMS now copies.
-   */
+  /** Context tags are read from the Tokens' own `Acts as` rules, not a hardcoded list. */
   const availableContext = useMemo(() => {
     const tags = new Set();
     for (const t of Object.values(tokens)) {
       for (const s of statementsOf(expandBearer(t, effects))) {
         if (s?.keyword === KEYWORD.ACTS_AS && s.payload?.tag) tags.add(s.payload.tag);
       }
-      // Legacy: a top-level list, from before capabilities were statements.
       for (const p of t.provides || []) tags.add(typeof p === 'string' ? p : p?.tag);
     }
     tags.delete(undefined);
@@ -84,14 +56,12 @@ export default function RecipeEditor() {
   const activeRecipe = pool[idx];
   const building = buildsOnFoundation(activeRecipe);
 
-  /** Edit one side of the selected recipe's production. */
   const editSide = (key, mutate) =>
     updateRecipe(activeSkill, idx, { [key]: mutate([...(activeRecipe?.[key] || [])]) });
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      {/* Skill list — doubles as the cross-skill review */}
       <aside
         className="flex flex-col h-full border-r shrink-0 overflow-y-auto"
         style={{ width: 200, backgroundColor: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
@@ -102,12 +72,6 @@ export default function RecipeEditor() {
           </span>
         </div>
 
-        {/*
-          Grouped by the game's skill layers. The list was already in this
-          order — Foundation first — but 27 rows of which most read
-          "no stations · 0" scan as one undifferentiated wall, and the six a
-          designer actually authors against are the first six.
-        */}
         {skillsByLayer().map(([layer, group]) => (
         <div key={layer}>
         <div
@@ -157,15 +121,7 @@ export default function RecipeEditor() {
         ))}
       </aside>
 
-      {/*
-        Inputs and Outputs in side columns, the same shape and the same
-        `SupplyChainColumn` the Token editor uses (owner, 2026-09-05). They were
-        inline here and in the sidebars there, so the same idea had two homes
-        depending on which editor you happened to be in.
-
-        ⚠️ No currency button, unlike a Token's Outputs: a recipe paying gold is
-        not something the game reads — a Market is a Token config.
-      */}
+      {/* ⚠️ No currency button, unlike a Token's Outputs: a recipe paying gold is not something the game reads. */}
       {activeRecipe && (
         <SupplyChainColumn
           side="left"
@@ -179,7 +135,6 @@ export default function RecipeEditor() {
         />
       )}
 
-      {/* Pool editor */}
       <main className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar" style={{ background: '#0f0f12' }}>
         <div className="max-w-3xl mx-auto space-y-5">
           <div className="flex items-center justify-between">
@@ -214,14 +169,6 @@ export default function RecipeEditor() {
             </p>
           ) : (
             <>
-              {/*
-                One recipe at a time, chosen here.
-
-                The pool used to render every recipe as a stack of cards. Side
-                columns need a single subject — the Token editor has one because
-                the sidebar selects one Token — so the pool becomes a row of
-                chips and the chosen recipe is the one being edited.
-              */}
               {pool.length > 1 && (
                 <div className="flex flex-wrap gap-1.5">
                   {pool.map((r, i) => (
@@ -293,16 +240,7 @@ function buildsOnFoundation(recipe) {
   return Array.isArray(recipe?.foundationKinds) && recipe.foundationKinds.length > 0;
 }
 
-/**
- * The right-hand column for a recipe that builds (Token Lifecycle §3.1, slice
- * 4.3): one Token picker in place of the Outputs list, because a building
- * recipe outputs exactly one Token — the thing the Foundation becomes.
- *
- * Picking writes `outputs: [makeTokenOutputEntry(id)]`, replacing whatever was
- * there. Outputs that do not fit that shape (left over from before the recipe
- * was ticked as a building) are shown, not silently dropped, until the author
- * picks.
- */
+/** A building recipe outputs exactly one Token, so this is a single picker; picking replaces the outputs. Outputs of another shape are shown, not silently dropped, until the author picks. */
 function BuildsColumn({ recipe, tokens, onPick, onOpenToken }) {
   const outputs = recipe.outputs || [];
   const tokenOutputs = outputs.filter((o) => o?.tokenId);
@@ -363,7 +301,6 @@ function BuildsColumn({ recipe, tokens, onPick, onOpenToken }) {
   );
 }
 
-/** The review half: who draws this pool, and the two ways it can be wrong. */
 function PoolReview({ stations, recipeCount, skillLabel, onOpenToken }) {
   if (recipeCount > 0 && stations.length === 0) {
     return (
@@ -420,17 +357,8 @@ function Callout({ tone, children }) {
 }
 
 /**
- * "Builds on Foundation" — the switch between an ordinary recipe and one that
- * builds (Token Lifecycle §3.1, slices 4.1 and 4.3).
- *
- * Ticking any kind makes the recipe a building: it leaves every ordinary
- * station's pool, joins the pool of each ticked kind's Foundations of this
- * recipe's skill, and the editor swaps Outputs for a single Token picker.
- * None ticked removes the field, so an ordinary recipe syncs exactly as before.
- *
- * A Foundation's pool is filtered by its `foundation.skill` as well as its
- * kind, so a ticked kind whose Foundations are built with another skill would
- * never show this recipe. That is said here, where it is authored.
+ * None ticked removes the field.
+ * ⚠️ A Foundation's pool is filtered by its `foundation.skill` as well as its kind, so a ticked kind whose Foundations use another skill never shows this recipe.
  */
 function FoundationKindsRow({ recipe, tokens, skillName, onChange }) {
   const kinds = Array.isArray(recipe.foundationKinds) ? recipe.foundationKinds : [];
@@ -523,24 +451,11 @@ function RecipeCard({ recipe, tokens, skillName, availableContext, onChange, onD
         </button>
       </div>
 
-      {/*
-        SECTION ONE — what the simulator decided, at the top of the card.
-
-        Matches the Token editor (owner, 2026-09-05): the sim's answer is a
-        verdict on the whole recipe, so it reads before the fields rather than
-        after them. `SimAnswer` renders nothing until a Recalculate has run, so
-        an un-run recipe shows no panel at all.
-      */}
       <SimAnswer entityId={recipe.id} record={recipe} />
 
       <FoundationKindsRow recipe={recipe} tokens={tokens} skillName={skillName} onChange={onChange} />
 
-      {/* CMS-6: N context requirements, ALL of which must be present. Each is
-          `{ tag, minTier, chargeCost }` — the tag says what kind of Token, the
-          tier says how good it has to be (a higher tier satisfies a lower
-          requirement, R-17), and the charge cost is what running this recipe
-          takes off that adjacent Token per cycle. Separate from the station's
-          own charge cost below: both apply (R-8). */}
+      {/* N context requirements, ALL of which must be present. A higher tier satisfies a lower requirement. The charge cost comes off the adjacent Token per cycle; it is separate from the station's own charge cost, and both apply. */}
       <div>
         <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
           Requires context (all of)
@@ -612,15 +527,7 @@ function RecipeCard({ recipe, tokens, skillName, availableContext, onChange, onD
         )}
       </div>
 
-      {/*
-        Inputs and Outputs are in the side columns now, the same as a Token's
-        (owner, 2026-09-05). They were inline here and in the sidebars there,
-        which meant the same idea had two homes depending on which editor you
-        were in. `setInputs` / `setOutputs` stay — the columns call them.
-      */}
-
-      {/* CMS-70: timing belongs to the recipe, so a Feast can take longer than
-          Bread on the same station. */}
+      {/* Timing belongs to the recipe, so a Feast can take longer than Bread on the same station. */}
       <div className="grid grid-cols-2 gap-4">
         <Field label={building ? 'Build Time (ms)' : 'Cycle Time (ms)'} derived>
           <input
@@ -665,15 +572,7 @@ function RecipeCard({ recipe, tokens, skillName, availableContext, onChange, onD
         </Field>
       </div>
 
-      {/*
-        Tempo and Purpose sit with the timing they set, not in a section named
-        for the simulator (owner, 2026-09-05) — the same move as the Token
-        editor, so the two do not drift apart again.
-
-        ⚠️ A recipe states its level as `levelRequirement`; a Token states it as
-        `config.skillRequired` (finding B5). The two field names are not
-        interchangeable.
-      */}
+      {/* ⚠️ A recipe states its level as `levelRequirement`; a Token states it as `config.skillRequired`. The names are not interchangeable. */}
       <div className="pt-3 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
         <SimIntentControls
           sim={recipe.sim}

@@ -6,24 +6,9 @@ import InlineItemModal from './InlineItemModal';
 import { DerivedGroupLabel } from './EditorLayout';
 
 /**
- * **The** Input / Output list.
- *
- * The rows, the number cells and the search-or-create picker that the Token
- * editor's supply-chain columns have used since CMS-59, lifted out so the
- * Recipe editor renders the identical control instead of a second, shallower
- * copy of it (rework P6b, concept §4.1). `SupplyChainColumn` supplies the
- * column chrome around it and nothing else.
- *
- * Three kinds of entry live in one list, told apart by which id field they
- * carry — the same test `BoardRunner`'s output loop makes:
- *
- * * `itemId` — an item. Inputs are always this shape.
- * * `currency` — a payout (D-141). Outputs only.
- * * `tokenId` — a Token dropped on the floor (P5). Outputs only.
- *
- * ⚠️ **Inputs are always an exact item, never a tag** (CMS-43, R-17). Tools and
- * context are a separate axis with their own tier hierarchy; they are not
- * materials and are not authored here.
+ * The Input / Output list: the rows, number cells and search-or-create picker used by the Token and Recipe editors. `SupplyChainColumn` supplies the column chrome.
+ * Three kinds of entry, told apart by which id they carry: `itemId` (an item; inputs are always this), `currency` (a payout; outputs only), `tokenId` (a Token dropped on the floor; outputs only).
+ * ⚠️ Inputs are always an exact item, never a tag; tools and context are a separate axis and are not authored here.
  */
 export default function IOEntryList({
   entries = [],
@@ -60,8 +45,7 @@ export default function IOEntryList({
       .slice(0, 6);
   }, [query, tokens, onAddToken]);
 
-  // A search that finds nothing is not a dead end, it is the moment to create
-  // the thing you were looking for (CMS-63).
+  // A search that finds nothing offers to create the thing you were looking for.
   const exactExists = useMemo(() => {
     const q = query.trim().toLowerCase();
     return !!q && Object.values(items).some((i) => (i.name || '').toLowerCase() === q);
@@ -146,22 +130,7 @@ export default function IOEntryList({
             <>
               <OutputIntent entry={entry} onChange={(p) => onUpdate(i, p)} />
 
-              {/*
-                The DERIVED half. These three are what the simulator writes and
-                what the game reads; the intent above is what the author meant.
-
-                ⚠️ They stay hand-editable **by decision, not by omission**
-                (owner, 2026-09-05). An earlier note here said P5 would make
-                them read-only; P5 shipped and deliberately did not, because a
-                yield the sim has not tagged still has to be typed by hand and
-                the game reads these fields, so locking them would make
-                un-tagged content unauthorable.
-
-                What was actually wrong is fixed here: the authored pair had an
-                "Intended yield" heading and these three had **no heading at
-                all**, in identical styling, directly under near-identical
-                labels. They are now named as derived.
-              */}
+              {/* The derived half: what the simulator writes and the game reads. ⚠️ They stay hand-editable deliberately: a yield the sim has not tagged still has to be typed by hand, and the game reads these fields. */}
               <div
                 className="rounded-md p-1.5 space-y-1.5"
                 style={{ background: 'rgba(192,132,252,0.04)', border: '1px solid rgba(192,132,252,0.15)' }}
@@ -252,11 +221,7 @@ export default function IOEntryList({
           </div>
         )}
 
-        {/*
-          What makes a Market a Market (D-141). Its own button rather than a
-          toggle on an item row, because a payout has no item to pick first —
-          the search box above would have nothing to find.
-        */}
+        {/* What makes a Market a Market. Its own button rather than a toggle on an item row, because a payout has no item to pick first. */}
         {onAddCurrency && (
           <div className="mt-2 pt-2 border-t border-white/5 space-y-1">
             {OUTPUT_CURRENCIES.map((c) => (
@@ -289,24 +254,7 @@ export default function IOEntryList({
   );
 }
 
-/**
- * The **authored intent** for one output (economic simulator rework P2).
- *
- * Three fields, all additive and all optional, and ⚠️ **nothing reads any of
- * them yet** — the passes that will are P3 and P4, and P5 is where they start
- * driving the derived numbers underneath. Today they are a record of what the
- * author meant, sitting beside what the old engine happened to compute.
- *
- * * **`baseQty {min, max}`** — how many come out per cycle, before the engine
- *   touches anything. A metronome authors min = max.
- * * **`variable`** — whether the yield rolls at all. Seeded from `chance < 100`
- *   on existing content.
- * * **`anchor`** — see the caption. It is standing text rather than a tooltip
- *   because it is the one place the tool inverts a designer's instinct.
- *
- * `anchor` is offered on outputs only, and only where an item's value can
- * actually be set from a yield. There is nothing to anchor on an input.
- */
+/** The authored intent for one output: `baseQty {min, max}` (how many come out per cycle), `variable` (whether the yield rolls) and `anchor` (see the caption; standing text because it is the one place the tool inverts a designer's instinct). `anchor` is offered on outputs only, where an item's value can be set from a yield. */
 function OutputIntent({ entry, onChange }) {
   const base = entry.baseQty || {};
   const min = base.min ?? entry.minQty ?? 1;
@@ -362,7 +310,6 @@ function OutputIntent({ entry, onChange }) {
   );
 }
 
-/** A currency id in the words the game declares for it. */
 function currencyLabel(id) {
   return OUTPUT_CURRENCIES.find((c) => c.id === id)?.label || id;
 }

@@ -3,25 +3,8 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import IOEntryList from '../shared/IOEntryList';
 
 /**
- * One side column: what feeds the selected entity, or what it feeds.
- *
- * Two modes:
- *
- * * **Reference** (Items) — a read-only, clickable list of the Tokens and Maps
- *   on either side of this item. That is the dependency check CMS-9's backward
- *   chaining needs: is this ingredient actually reachable?
- * * **Editable** (Tokens) — CMS-59's literal Inputs and Outputs, authored here
- *   rather than in the middle of the screen, so the centre stays free for the
- *   effect blocks Phase 5 adds.
- *
- * The editable half is `IOEntryList`. This file is the column chrome around it.
- *
- * ⚠️ Both editors go through here now. The Recipe editor used to render
- * `IOEntryList` inline in the middle of its card while Tokens had it in these
- * columns, so the same idea had two homes; recipes moved into the columns on
- * 2026-09-05. That is why `onAddToken` is forwarded: only a **recipe** can
- * output a Token, and only a **Token** can pay out currency, so the column
- * forwards both and each caller passes the one that applies to it.
+ * One side column: what feeds the selected entity, or what it feeds. Reference mode (Items) is a read-only, clickable list of the Tokens and Maps on either side of the item; editable mode (Tokens and Recipes) is `IOEntryList` inside this column chrome.
+ * ⚠️ `onAddToken` is forwarded because only a recipe can output a Token and only a Token can pay out currency; each caller passes the one that applies.
  */
 const TYPE_META = {
   item: { icon: Package, collection: 'items', color: 'var(--color-item)' },

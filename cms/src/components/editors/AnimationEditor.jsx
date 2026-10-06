@@ -17,45 +17,38 @@ const FPS_PRESETS = [4, 6, 8, 10, 12, 16];
 const ZOOM_PRESETS = [1, 2, 3, 4, 6, 8];
 
 export default function AnimationEditor() {
-  // 1. Asset & Source State
   const [imageSrc, setImageSrc] = useState('/assets/heroes/animations/ani_recruit_0.png');
   const [imageName, setImageName] = useState('ani_recruit_0');
   const [sheetDims, setSheetDims] = useState({ width: 512, height: 192 });
-  const [archetype, setArchetype] = useState('hero'); // 'hero' | 'enemy' | 'custom'
+  const [archetype, setArchetype] = useState('hero');
 
-  // 2. Playback State
-  const [action, setAction] = useState('active'); // Hero: 'active' | 'walk' | 'idle' | 'all' ; Enemy: 'active' | 'idle' | 'all'
+  const [action, setAction] = useState('active');
   const [frame, setFrame] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [fps, setFps] = useState(8);
   const [flipH, setFlipH] = useState(false);
 
-  // 3. Guides & Camera (OFF by default)
   const [zoom, setZoom] = useState(4);
   const [showGrid, setShowGrid] = useState(false);
   const [showCenter, setShowCenter] = useState(false);
   const [showFloor, setShowFloor] = useState(false);
   const [floorY, setFloorY] = useState(58);
   const [showOnion, setShowOnion] = useState(false);
-  const [bgMode, setBgMode] = useState('dark'); // 'dark' | 'grid' | 'wood'
+  const [bgMode, setBgMode] = useState('dark');
 
-  // 4. Motion Runway
   const [motionRunway, setMotionRunway] = useState(false);
   const [runwayPos, setRunwayPos] = useState(50);
-  const [runwayDir, setRunwayDir] = useState('right'); // 'right' | 'left'
+  const [runwayDir, setRunwayDir] = useState('right');
 
-  // 5. Drag & Drop Overlay State
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounter = useRef(0);
   const fileInputRef = useRef(null);
 
-  // Compute cell dimensions based on archetype
   const cols = archetype === 'enemy' ? 4 : 8;
   const rows = archetype === 'enemy' ? 4 : 3;
   const cellW = sheetDims.width ? Math.round(sheetDims.width / cols) : 64;
   const cellH = sheetDims.height ? Math.round(sheetDims.height / rows) : 64;
 
-  // Auto-detect dimensions and archetype when image loads
   const handleLoadImageFromUrl = (url, name = 'sprite_sheet', forcedType = null) => {
     const img = new Image();
     img.onload = () => {
@@ -82,7 +75,6 @@ export default function AnimationEditor() {
     img.src = url;
   };
 
-  // Drag & drop loading
   const handleDragEnter = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -137,7 +129,7 @@ export default function AnimationEditor() {
     setSheetDims({ width: 0, height: 0 });
   };
 
-  // Window drag listeners to ensure drag & drop works everywhere in the tab
+  // Listeners on window so drag and drop works anywhere in the tab.
   useEffect(() => {
     const onWindowDragOver = (e) => {
       e.preventDefault();
@@ -158,7 +150,6 @@ export default function AnimationEditor() {
     };
   }, []);
 
-  // Playback timer
   useEffect(() => {
     if (!imageSrc || !isPlaying) return;
     const interval = 1000 / fps;
@@ -168,7 +159,6 @@ export default function AnimationEditor() {
     return () => clearInterval(timer);
   }, [imageSrc, isPlaying, fps]);
 
-  // Motion runway translation loop
   useEffect(() => {
     if (!imageSrc || !isPlaying || !motionRunway) return;
     let animId;
@@ -192,7 +182,6 @@ export default function AnimationEditor() {
     return () => cancelAnimationFrame(animId);
   }, [imageSrc, isPlaying, motionRunway, runwayDir]);
 
-  // Global Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT') return;
@@ -216,12 +205,7 @@ export default function AnimationEditor() {
   const currentFrame = frame % 8;
   const prevFrame = (currentFrame - 1 + 8) % 8;
 
-  // Frame coordinate resolver
-  // For Hero (8 cols x 3 rows):
-  //   row 0: Active, row 1: Walk, row 2: Idle
-  // For Enemy (4 cols x 4 rows, 2 rows per animation):
-  //   Active: rows 0 & 1 (frames 0..3 on row 0, frames 4..7 on row 1)
-  //   Idle: rows 2 & 3 (frames 0..3 on row 2, frames 4..7 on row 3)
+  // Hero sheet: 8 cols x 3 rows (Active, Walk, Idle). Enemy sheet: 4 cols x 4 rows, two rows per animation.
   const getFrameCoords = (actKey, fIdx) => {
     if (archetype === 'enemy') {
       const baseRow = actKey === 'active' ? 0 : 2;
@@ -238,7 +222,6 @@ export default function AnimationEditor() {
     }
   };
 
-  // Render single animation cell
   const renderFrameView = (actKey, customZoom = zoom) => {
     const { col, row } = getFrameCoords(actKey, currentFrame);
     const { col: prevCol, row: prevRow } = getFrameCoords(actKey, prevFrame);
@@ -262,7 +245,6 @@ export default function AnimationEditor() {
           transform: flipH ? 'scaleX(-1)' : 'none'
         }}
       >
-        {/* Onion Skin */}
         {showOnion && (
           <img
             src={imageSrc}
@@ -282,7 +264,6 @@ export default function AnimationEditor() {
           />
         )}
 
-        {/* Primary Sprite Frame */}
         <img
           src={imageSrc}
           alt=""
@@ -298,7 +279,6 @@ export default function AnimationEditor() {
           }}
         />
 
-        {/* Guides Overlay */}
         <div className="absolute inset-0 pointer-events-none">
           {showGrid && (
             <div className="absolute inset-0 border border-white/20 ring-1 ring-black/40" />
@@ -335,7 +315,6 @@ export default function AnimationEditor() {
       className="relative flex flex-col h-[calc(100vh-68px)] gap-3 overflow-hidden text-sm select-none"
       style={{ color: 'var(--color-text-primary)' }}
     >
-      {/* Hidden file input always available */}
       <input
         type="file"
         ref={fileInputRef}
@@ -344,7 +323,6 @@ export default function AnimationEditor() {
         className="hidden"
       />
 
-      {/* Full-screen drag-and-drop overlay */}
       {isDraggingOver && (
         <div className="absolute inset-0 z-[100] bg-indigo-950/85 border-4 border-dashed border-indigo-400 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center pointer-events-none gap-4 shadow-2xl">
           <div className="w-20 h-20 rounded-full bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-300 animate-bounce">
@@ -357,7 +335,6 @@ export default function AnimationEditor() {
         </div>
       )}
 
-      {/* Top Header / Bar */}
       <div
         className="flex items-center justify-between px-4 py-2.5 rounded-xl border shrink-0"
         style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
@@ -390,10 +367,8 @@ export default function AnimationEditor() {
           </div>
         </div>
 
-        {/* Archetype & Action Tabs */}
         {imageSrc && (
           <div className="flex items-center gap-3">
-            {/* Format Toggle */}
             <div className="flex items-center p-0.5 rounded-lg border" style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border-subtle)' }}>
               <button
                 onClick={() => {
@@ -419,7 +394,6 @@ export default function AnimationEditor() {
               </button>
             </div>
 
-            {/* Animation Cycle Tabs */}
             <div className="flex items-center p-0.5 rounded-lg border gap-1" style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border-subtle)' }}>
               <button
                 onClick={() => setAction('active')}
@@ -449,7 +423,6 @@ export default function AnimationEditor() {
               </button>
             </div>
 
-            {/* Upload / Replace Button */}
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20 transition-all"
@@ -459,7 +432,6 @@ export default function AnimationEditor() {
               <span>Upload Sheet</span>
             </button>
 
-            {/* Clear Button */}
             <button
               onClick={clearImage}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-all"
@@ -472,11 +444,8 @@ export default function AnimationEditor() {
         )}
       </div>
 
-      {/* Main Workspace Area */}
       {!imageSrc ? (
-        /* Empty State: Drag & Drop + Gallery Viewer */
         <div className="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
-          {/* Dropzone */}
           <div
             onDragOver={handleDragOver}
             onDrop={handleDrop}
@@ -498,7 +467,6 @@ export default function AnimationEditor() {
             </button>
           </div>
 
-          {/* Quick Preset Viewer */}
           <div
             className="w-full md:w-96 flex flex-col p-4 rounded-xl border overflow-y-auto"
             style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
@@ -581,15 +549,12 @@ export default function AnimationEditor() {
           </div>
         </div>
       ) : (
-        /* Active Stage & Control Workspace */
         <div className="flex-1 flex gap-4 overflow-hidden">
           
-          {/* Left Visual Stage */}
           <div
             className="flex-1 flex flex-col rounded-xl border relative overflow-hidden"
             style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
           >
-            {/* Stage Bar: Surface & Zoom */}
             <div
               className="flex items-center justify-between px-4 py-2 border-b shrink-0 text-xs"
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border-subtle)' }}
@@ -630,7 +595,6 @@ export default function AnimationEditor() {
               </div>
             </div>
 
-            {/* Animation Canvas */}
             <div
               className={`flex-1 relative flex items-center justify-center overflow-auto p-6 transition-colors ${
                 bgMode === 'dark' ? 'bg-[#0f1115]' :
@@ -639,7 +603,6 @@ export default function AnimationEditor() {
               }`}
             >
               {motionRunway && action !== 'all' ? (
-                /* Motion Runway Simulator */
                 <div className="w-full max-w-2xl h-64 border border-white/10 rounded-xl relative overflow-hidden bg-black/40 flex items-center">
                   <div className="absolute bottom-12 left-0 right-0 h-1 bg-white/20 border-b border-amber-400/50" />
                   <div
@@ -678,7 +641,6 @@ export default function AnimationEditor() {
                   </div>
                 </div>
               ) : action === 'all' ? (
-                /* Multi-View: Trio for Hero or Duo for Enemy */
                 <div className="flex items-center justify-center gap-8 flex-wrap">
                   {(archetype === 'hero' ? ['active', 'walk', 'idle'] : ['active', 'idle']).map((act) => (
                     <div key={act} className="flex flex-col items-center gap-3">
@@ -699,7 +661,6 @@ export default function AnimationEditor() {
                   ))}
                 </div>
               ) : (
-                /* Focused Single Action View */
                 <div className="flex flex-col items-center gap-4">
                   <div className="p-4 bg-black/50 rounded-2xl border border-white/10 shadow-2xl relative">
                     {renderFrameView(action, zoom)}
@@ -721,7 +682,6 @@ export default function AnimationEditor() {
               )}
             </div>
 
-            {/* Runway & Shortcut Bar */}
             <div
               className="px-4 py-2 border-t shrink-0 flex items-center justify-between text-xs"
               style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border-subtle)' }}
@@ -777,12 +737,10 @@ export default function AnimationEditor() {
             </div>
           </div>
 
-          {/* Right Controls Panel */}
           <div
             className="w-80 flex flex-col p-4 gap-4 overflow-y-auto rounded-xl border"
             style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
           >
-            {/* Playback Box */}
             <div className="p-3.5 rounded-xl border flex flex-col gap-3" style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border-subtle)' }}>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
@@ -793,7 +751,6 @@ export default function AnimationEditor() {
                 </span>
               </div>
 
-              {/* Transport Buttons */}
               <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => {
@@ -828,7 +785,6 @@ export default function AnimationEditor() {
                 </button>
               </div>
 
-              {/* Scrubber Bar */}
               <div className="flex flex-col gap-1.5 pt-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Frame Scrubber</span>
@@ -861,7 +817,6 @@ export default function AnimationEditor() {
                 </div>
               </div>
 
-              {/* FPS presets */}
               <div className="flex flex-col gap-1.5 pt-2 border-t border-white/5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Speed (FPS)</span>
@@ -890,7 +845,6 @@ export default function AnimationEditor() {
               </div>
             </div>
 
-            {/* Alignment Guides Box */}
             <div className="p-3.5 rounded-xl border flex flex-col gap-3" style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border-subtle)' }}>
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Alignment Guides
@@ -950,7 +904,6 @@ export default function AnimationEditor() {
                 </label>
               </div>
 
-              {/* Floor Baseline Calibration */}
               <div className="pt-2 border-t border-white/5 flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <label className="flex items-center gap-2 cursor-pointer font-bold text-amber-400">
@@ -979,7 +932,6 @@ export default function AnimationEditor() {
               </div>
             </div>
 
-            {/* Quick Presets Drawer */}
             <div className="p-3.5 rounded-xl border flex flex-col gap-2" style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border-subtle)' }}>
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Switch Sheet
@@ -1010,7 +962,6 @@ export default function AnimationEditor() {
         </div>
       )}
 
-      {/* Footer: Master Sprite Sheet Map */}
       {imageSrc && (
         <div
           className="p-3 rounded-xl border shrink-0 flex flex-col gap-2"
@@ -1043,7 +994,6 @@ export default function AnimationEditor() {
               }}
             />
 
-            {/* Interactive Grid Overlay */}
             <div
               className="absolute inset-0 grid pointer-events-auto"
               style={{
@@ -1055,7 +1005,6 @@ export default function AnimationEditor() {
                 Array.from({ length: cols }).map((__, cIdx) => {
                   const isCurrent = currentCoords.row === rIdx && currentCoords.col === cIdx;
                   
-                  // Derive action label for this cell
                   let cellLabel = '';
                   if (archetype === 'enemy') {
                     if (rIdx <= 1) cellLabel = `Active ${rIdx * 4 + cIdx}`;

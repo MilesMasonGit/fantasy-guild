@@ -6,16 +6,8 @@ import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
 
 /**
- * The Token Lifecycle blocks (roadmap v1 §3.1, slice 4.1).
- *
- * Six optional blocks — `spawner`, `grows`, `turns`, `foundation`, `shop`,
- * `trickle` — each added or removed as a whole. Plain and functional on
- * purpose: this slice exists so Sync carries the blocks instead of destroying
- * them; polish comes later.
- *
- * ⚠️ Removing a block writes `undefined`, which `JSON.stringify` leaves out of
- * the file — so a Token that never had a block, or had it removed, syncs
- * without the key at all. That is the "absent stays absent" rule.
+ * The Token Lifecycle blocks: spawner, grows, turns, foundation, shop and trickle, each added or removed as a whole.
+ * ⚠️ Removing a block writes `undefined`, which JSON.stringify omits, so an absent block stays absent in the file.
  */
 
 const BLOCK_INFO = {
@@ -97,8 +89,6 @@ export default function LifecycleBlocks({ token, onChange }) {
   );
 }
 
-// === Blocks ==================================================================
-
 function SpawnerBlock({ block, tokenOptions, items, onChange }) {
   const patch = (p) => onChange({ ...block, ...p });
   return (
@@ -136,12 +126,7 @@ function GrowsBlock({ block, tokenOptions, onChange }) {
   );
 }
 
-/**
- * TL-12: once per cycle the Token rolls its chance to turn; the turned Token
- * rolls the SAME cycle and chance to turn back. `lastsMs` (the old fixed
- * "stays turned for") is retired: any edit here drops it, and a block without
- * a cycle or chance shows (and runs on) the game's defaults.
- */
+/** Once per cycle the Token rolls its chance to turn; the turned Token rolls the same cycle and chance to turn back. A block without a cycle or chance runs on the game's defaults. */
 function TurnsBlock({ block, tokenOptions, onChange }) {
   const rest = { ...block };
   delete rest.lastsMs;
@@ -230,9 +215,6 @@ function TrickleBlock({ lines, items, onChange }) {
   );
 }
 
-// === Controls ================================================================
-
-/** Rows of `{ typeId, weight }`. Weights are relative. */
 function WeightedTokenList({ label, entries, tokenOptions, onChange }) {
   const patchRow = (i, p) => onChange(entries.map((e, idx) => (idx === i ? { ...e, ...p } : e)));
   return (

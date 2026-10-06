@@ -1,67 +1,21 @@
-/**
- * Economic simulator — pass 2 of 5: **ANCHOR** (phase P3+4).
- *
- * ```
- * 2. ANCHOR   Elect exactly one anchor source per item.        (no values needed)
- * ```
- *
- * The rule (plan §3.2, CMS-119):
- *
- * > **An item's anchor is its lowest-level source; ties break to the more
- * > common rarity, then Token before Recipe. A designer can override with an
- * > explicit Anchor flag on one output. Passive and deferred Token kinds can
- * > never anchor.**
- *
- * In plain language: *an item is worth what its everyday source makes it
- * worth.* The lowest-level, commonest producer is the one most players meet
- * first, and the one that must never be net-negative to run. Anchoring there
- * preserves that Token's authored feel exactly, and pushes the tuning burden
- * onto the rarer, higher-level sources — which are the ones with room to be
- * tuned.
- *
- * Like the TIME pass, this is **value-independent**: nothing here asks what
- * anything is worth. That is deliberate — CMS-45's "cheapest acquisition path"
- * was struck precisely because it was circular.
- *
- * An election is written back to the item's `valueSource` by
- * `sim/writeBack.js`, which is also what makes the next run's stickiness work.
- * This pass itself writes nothing — a caller gets a Map.
- */
+/** Economic simulator, pass 2 of 5: ANCHOR. Elects exactly one anchor source per item: the lowest-level source, ties breaking to the more common rarity, then Token before Recipe. A designer can override with an explicit Anchor flag on one output; passive and deferred Token kinds never anchor. Value-independent: nothing here asks what anything is worth. An election is written back to the item's `valueSource` by `sim/writeBack.js`; this pass itself writes nothing, a caller gets a Map. */
 
 import { TOKEN_RARITIES } from '../../../../src/config/registries/tokenConstants.js';
 import { isDeferredKind } from './fieldAdapter.js';
 import { makeRow, SEVERITY } from './rows.js';
 import { makeRefusal } from './refusals.js';
 
-/**
- * Where a rarity sits on the ladder — lower is commoner. `TOKEN_RARITIES` is
- * imported from the game because **the array order is the tier order**
- * (common → uncommon → rare → epic → mythic).
- *
- * A source with no rarity — every Recipe — ranks as `common`. That keeps the
- * stated tie-break order intact: a Recipe only ever loses to a Token of the
- * same rarity through the *next* tie-break, "Token before Recipe", rather than
- * through an invented rarity.
- */
+/** Where a rarity sits on the ladder; lower is commoner. `TOKEN_RARITIES` is imported from the game because the array order is the tier order. A source with no rarity (every Recipe) ranks as common, so a Recipe loses to a Token only through the Token-before-Recipe tie-break. */
 export function rarityRank(entity) {
     const index = TOKEN_RARITIES.indexOf(entity?.rarity);
     return index === -1 ? 0 : index;
 }
 
-/** Token before Recipe (plan §3.2's third tie-break). */
 function kindRank(entity) {
     return entity?.kind === 'recipe' ? 1 : 0;
 }
 
-/**
- * The election comparator, in the plan's stated order:
- * level → rarity → kind → id.
- *
- * The final id comparison is not in the plan; it is there so that two
- * genuinely indistinguishable candidates always elect the same one. Without it
- * the result would depend on iteration order and re-running the simulator
- * could churn (plan §11 requires byte-identical re-runs).
- */
+/** The election comparator: level, rarity, kind, then id. The id comparison makes indistinguishable candidates elect the same one, so re-runs are byte-identical. */
 export function compareCandidates(a, b) {
     if (a.entity.level !== b.entity.level) return a.entity.level - b.entity.level;
     const rarity = rarityRank(a.entity) - rarityRank(b.entity);
@@ -71,7 +25,6 @@ export function compareCandidates(a, b) {
     return a.entity.id < b.entity.id ? -1 : a.entity.id > b.entity.id ? 1 : 0;
 }
 
-/** "lowest level (1) · common · Token" — the reason shown beside an election. */
 function describeReason(candidate, viaFlag) {
     if (viaFlag) return 'explicit anchor flag';
     const kindWord = candidate.entity.kind === 'recipe' ? 'Recipe' : 'Token';
@@ -79,7 +32,6 @@ function describeReason(candidate, viaFlag) {
     return `lowest level (${candidate.entity.level}) · ${rarity} · ${kindWord}`;
 }
 
-/** Accept a keyed object or an array of records, and yield `[id, def]`. */
 function itemEntries(items) {
     if (!items) return [];
     if (Array.isArray(items)) return items.map((def, i) => [def?.id ?? String(i), def]);
@@ -100,16 +52,8 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
     const rows = [];
     const refused = new Set();
 
-    // ── The Token-output refusal (plan §3.3 / CMS-128) ───────────────────────
-    // Pricing a Token-as-product needs its *productive lifetime value*, which
-    // is not known until after the tuning pass — that would tangle the one-way
-    // ordering this design's convergence rests on. So it is refused as a named
-    // deferral.
-    //
-    // ⚠️ The plan files this refusal under pricing, but it has to be decided
-    // *here*: a refused recipe must not be allowed to anchor anything either.
-    // ⚠️ No shipped recipe outputs a Token (finding S15), so this path is
-    // fixture-proven only.
+    // The Token-output refusal: pricing a Token-as-product needs its productive lifetime value, which is not known until after the tuning pass, so it is refused as a named deferral.
+    // ⚠️ It must be decided here, not in pricing: a refused recipe must not anchor anything either.
     for (const entity of entities) {
         if (skipped.has(entity.id)) continue;
         const tokenOutputs = entity.outputs.filter(o => tokenIds.has(o.itemId));
@@ -122,8 +66,7 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
         }
     }
 
-    // ── Gather candidates, per item ──────────────────────────────────────────
-    const candidates = new Map();   // itemId → [{ entity, output, eligible, reason }]
+    const candidates = new Map();
     const noteCandidate = (itemId, record) => {
         if (!candidates.has(itemId)) candidates.set(itemId, []);
         candidates.get(itemId).push(record);
@@ -131,24 +74,11 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
 
     for (const entity of entities) {
         const skipReason = skipped.get(entity.id);
-        // Inert entities produce nothing, so they are not sources at all and
-        // are not mentioned anywhere — the silent skip (finding B11/S21).
+        // Inert entities produce nothing, so they are not sources and are not mentioned anywhere.
         if (skipReason === 'inert') continue;
         for (const output of entity.outputs) {
             if (!output.itemId) continue;
-            // ⚠️ An output that can never drop is not a source. A quantity
-            // range of 0–0, or a chance of 0, means the entity produces this
-            // item exactly never — so letting it anchor would set a price from
-            // a supply that does not exist, and the item would look sourced
-            // while nothing in the game could ever make it. Treated as absent
-            // rather than as a new refusal: the item falls through to the
-            // orphan Critical, which already says the true thing ("nothing
-            // produces it") and offers the remedy that fixes it.
-            //
-            // Found 2026-09-01 on a half-authored Token whose yield was still
-            // 0–0; it was anchoring its item at the 1g floor while earning
-            // nothing. Flagged as a latent gap by the P3+4 verification pass
-            // before any content had hit it.
+            // ⚠️ An output that can never drop (a quantity range of 0-0, or a chance of 0) is not a source: letting it anchor would price an item from a supply that does not exist. It is treated as absent, so the item falls through to the orphan Critical, which says the true thing and offers the remedy.
             if (output.abundance <= 0) continue;
             let ineligible = null;
             if (skipReason === 'untagged') ineligible = 'untagged';
@@ -159,10 +89,8 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
         }
     }
 
-    // ── Elect, per item ──────────────────────────────────────────────────────
     const itemRecords = new Map(itemEntries(items).map(([id, def]) => [def?.id ?? id, def]));
-    // Every item in the corpus, plus anything an output references that the
-    // corpus does not contain.
+    // Every item in the corpus, plus anything an output references that the corpus does not contain.
     const allItemIds = [...new Set([...itemRecords.keys(), ...candidates.keys()])].sort();
 
     const elections = new Map();
@@ -171,8 +99,7 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
         const all = candidates.get(itemId) || [];
         const eligible = all.filter(c => !c.ineligible);
 
-        // A deferred-kind producer never anchors, but must not be silently
-        // forgotten either — the "Wind Trap wrinkle" (plan §3.2).
+        // A deferred-kind producer never anchors, but must not be silently forgotten either.
         for (const c of all.filter(c => c.ineligible === 'deferred')) {
             rows.push(makeRow(
                 SEVERITY.INFO,
@@ -184,14 +111,12 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
 
         if (eligible.length === 0) {
             if (all.length === 0) {
-                // Orphan: no source at all (CMS-86).
                 rows.push(makeRefusal('orphan-item', {
                     what: `${itemId} has no source at all.`,
                     why: 'Nothing produces it, so nothing derives its value and it stays unpriced.',
                 }, { itemId }));
             } else if (all.every(c => c.ineligible === 'untagged')) {
-                // A10: every source skipped as untagged is an **Info** row
-                // during the transition, not the Critical an orphan gets.
+                // Every source skipped as untagged is an Info row during the transition, not the Critical an orphan gets.
                 rows.push(makeRow(
                     SEVERITY.INFO,
                     'untagged-only-item',
@@ -199,7 +124,6 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
                     { itemId, remedies: ['Tag one of its sources with a Tempo and a Purpose.'] }
                 ));
             } else {
-                // Deferred-only (or refused-only): no derivation chain at all.
                 rows.push(makeRefusal('deferred-only-item', {
                     what: `${itemId} is produced only by out-of-scope sources (${all.map(c => `${c.entity.id}: ${c.ineligible}`).join(', ')}).`,
                     why: 'None of them can anchor, so there is no derivation chain and the item stays unpriced.',
@@ -208,7 +132,6 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
             continue;
         }
 
-        // The explicit flag overrides the rule (plan §3.2).
         const flagged = eligible.filter(c => c.output.anchor);
         const pool = flagged.length > 0 ? flagged : eligible;
         if (flagged.length > 1) {
@@ -222,15 +145,8 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
         const winner = [...pool].sort(compareCandidates)[0];
         const reason = describeReason(winner, flagged.length > 0);
 
-        // ── Stickiness (plan §3.2, problem P9) ───────────────────────────────
-        // An existing election is read from the item's `valueSource` and kept,
-        // even when a newer source would now out-rank it. A different winner
-        // becomes an Info row and a one-click re-election, never a silent
-        // re-price: adding one Token must not quietly re-price a chain.
-        //
-        // ⚠️ This is the single deliberate exception to "the simulator never
-        // reads its own output". Everything else is regenerated from authored
-        // intent on every run.
+        // Stickiness: an existing election is read from the item's `valueSource` and kept even when a newer source would now out-rank it; a different winner becomes an Info row and a one-click re-election, never a silent re-price.
+        // ⚠️ The single deliberate exception to the simulator never reading its own output.
         const stored = itemRecords.get(itemId)?.valueSource ?? null;
         const storedCandidate = stored ? eligible.find(c => c.entity.id === stored) : null;
 

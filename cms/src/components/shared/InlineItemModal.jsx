@@ -3,22 +3,7 @@ import { X, Plus } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { ITEM_TYPES } from '../../utils/constants';
 
-/**
- * Create an Item without leaving the Token you are authoring (CMS-63).
- *
- * ## Why this exists
- * It serves CMS-9/CMS-12's backward chaining directly: you start from "I want a
- * Strawberry Pie" and work down to what it needs, and every step down hits an
- * ingredient that does not exist yet. The old CMS's own design document named
- * this exact workflow — create a new ingredient without losing your place — and
- * never built it, so authoring stalled every time you needed a leaf node.
- *
- * ## Deliberately smaller than the Item editor
- * Name and type only. Everything else on an Item (sprite, tags, consumable
- * fields) can be filled in later from the Items tab, and asking for it here
- * would turn a two-second detour back into leaving the screen. There is no
- * value field at all — values are derived, never typed (CMS-86).
- */
+/** Create an Item without leaving the Token you are authoring, so backward chaining does not stall on a missing ingredient. Deliberately smaller than the Item editor: name and type only, and no value field because values are derived. */
 export default function InlineItemModal({ isOpen, initialName = '', onClose, onCreated }) {
     const addItem = useEntityStore((s) => s.addItem);
     const items = useEntityStore((s) => s.items);

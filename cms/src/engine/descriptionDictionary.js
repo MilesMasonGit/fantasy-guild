@@ -1,11 +1,6 @@
 import { statementsOf, stationSkillOf, renderStatement, derivedTokenType } from '../utils/constants';
 
-/**
- * Description Dictionary Engine — Implements Phase 9 (CMS-66, CMS-67, CMS-81, CMS-87)
- *
- * Automatically composes clean, accurate, human-readable mechanical descriptions
- * for Tokens based on their production, recipes, effect blocks, triggers, and lifecycle.
- */
+/** Description Dictionary Engine: composes mechanical descriptions for Tokens from their production, recipes, effects, triggers and lifecycle. */
 
 /**
  * Formats an item quantity or min-max range for display.
@@ -53,7 +48,7 @@ function formatItemList(list = [], items = {}) {
 }
 
 /**
- * Generates the production or gathering clause for a Token (CMS-81).
+ * Generates the production or gathering clause for a Token.
  * @param {object} token
  * @param {Record<string, object>} items
  * @param {Record<string, Array>} recipePools - unused; kept so the two callers keep one signature
@@ -62,17 +57,9 @@ function formatItemList(list = [], items = {}) {
 export function getProductionClause(token, items = {}, recipePools = {}) {
   if (!token) return null;
 
-  // ⚠️ **A station gets no clause here, deliberately** (rework P2.5).
-  //
-  // This used to say "Crafts recipes from the Smithing pool." off the Token's
-  // `recipePool` field. Station-ness is now a `Works as` statement, and the
-  // rules clause below already renders every statement into a sentence — so
-  // keeping this branch made a station's description say the same thing twice,
-  // in two different wordings, from two different places. `stationSkillOf`
-  // marks the case so the omission reads as a decision rather than an oversight.
+  // ⚠️ A station gets no clause here, deliberately: station-ness is a `Works as` statement and the rules clause below already renders every statement, so a branch here would say the same thing twice. `stationSkillOf` marks the case.
   if (stationSkillOf(token)) return null;
 
-  // Standard Token outputs / gathering resource
   const inputs = token.inputs || [];
   const outputs = token.outputs || [];
   const timeSec = token.cycleTime || (token.baseTickTime ? token.baseTickTime / 1000 : 12);
@@ -91,25 +78,7 @@ export function getProductionClause(token, items = {}, recipePools = {}) {
   return null;
 }
 
-/**
- * A Token's rules, as sentences.
- *
- * ## ⚠️ What used to be here
- * A generator that read `mod.axis`, `mod.isPercent`, `mod.targetMode`,
- * `block.convert` and `block.bonusDrop` — **five fields that have never
- * existed**. Real effects carried `type`, `bucket` and `value`. So every number
- * effect came out described as "Speed" (a literal fallback string), every item
- * effect came out as `NaN%`, and the Forge Altar's saved description read
- * *"Matching tokens gain +20% Speed"* for an authored value that makes its
- * Forge 20% **slower**.
- *
- * It was green in the tests because the tests asserted against the same wrong
- * idea of the data.
- *
- * There is now exactly one renderer, in the game's `statementText.js`, shared
- * by the editor row, the rules panel here and the in-game tooltip. A
- * description cannot disagree with an effect when it is the effect, in words.
- */
+/** A Token's rules, as sentences. ⚠️ There is exactly one renderer, in the game's `statementText.js`, shared by the editor row, the rules panel here and the in-game tooltip, so a description cannot disagree with an effect. */
 export function getEffectBlockClauses(token, items = {}) {
   if (!token) return [];
   return statementsOf(token).map((statement) =>
@@ -141,18 +110,14 @@ export function getAcceptedTokensClause(token) {
 }
 
 /**
- * Generates combat loot clauses for enemies (CMS-51).
+ * Generates combat loot clauses for enemies.
  * @param {object} token
  * @param {Record<string, object>} items
  * @returns {string|null}
  */
 export function getCombatLootClause(token, items = {}) {
   if (!token || derivedTokenType(token) !== 'enemy') return null;
-  // ⚠️ Neither `token.drops` nor `token.outputs` has ever existed at the top
-  // level: outputs live at `config.outputs`. This read both and always got an
-  // empty array, so every enemy's description said only "Can be fought by
-  // heroes in combat" and never named a single drop. Fixed 2026-09-06, when
-  // enemy drops became outputs in fact as well as in the editor's labelling.
+  // ⚠️ Enemy drops live at `config.outputs`; neither `token.drops` nor a top-level `token.outputs` exists.
   const drops = token.config?.outputs || [];
   if (drops.length === 0) return 'Can be fought by heroes in combat.';
 
@@ -169,11 +134,7 @@ export function getTraitClauses(token) {
   if (!token) return [];
   const clauses = [];
 
-  // ⚠️ There used to be a clause here promising that any Token typed
-  // `manager` "automatically restocks nearby stations from the Guild Bank".
-  // Nothing made that true — a Manager is decided by what it restocks, and no
-  // field wrote it. A **Restocks** statement now says so, and says which
-  // Tokens, so the sentence comes from the rule rather than from the label.
+  // ⚠️ No clause promises that a `manager` Token restocks stations: a Manager is decided by what it restocks, and a Restocks statement says so.
 
   if (token.requiresHero === false) {
     clauses.push('Operates passively without requiring a hero.');
@@ -192,35 +153,26 @@ export function getTraitClauses(token) {
 export function composeTokenDescription(token, items = {}, recipePools = {}) {
   if (!token) return '';
 
-  // ⚠️ There is no manual override any more (owner decision Q3). An override
-  // is exactly how a description drifts from the effect it describes, which is
-  // the problem this whole redesign is solving.
+  // ⚠️ There is no manual override: an override is how a description drifts from the effect it describes.
 
   const clauses = [];
 
-  // 1. Accepted Tokens / Requirements Clause
   const acceptedClause = getAcceptedTokensClause(token);
   if (acceptedClause) clauses.push(acceptedClause);
 
-  // 2. Production / Gathering Clause (CMS-81)
   const prodClause = getProductionClause(token, items, recipePools);
   if (prodClause) clauses.push(prodClause);
 
-  // 3. Combat Loot Clause (if enemy)
   const lootClause = getCombatLootClause(token, items);
   if (lootClause) clauses.push(lootClause);
 
-  // 4. Effect Blocks & Modifiers Clauses
   const effectClauses = getEffectBlockClauses(token, items);
   clauses.push(...effectClauses);
 
-  // 5. Trait Clauses
   const traitClauses = getTraitClauses(token);
   clauses.push(...traitClauses);
 
-  // Fallback if empty. Deliberately NOT the old description — a Token with no
-  // rules should read as having none, not keep quoting text from before its
-  // rules were cleared.
+  // Fallback if empty. Deliberately NOT the old description: a Token with no rules should read as having none.
   if (clauses.length === 0) {
     return 'A token for the guild playmat.';
   }

@@ -1,49 +1,15 @@
 /**
- * Economic simulator — the refusal catalogue (phase P6).
- *
- * Plan §12 sets one bar, and it is this phase's acceptance criterion rather
- * than decoration:
- *
- * > *A designer who reads no formulas knows which tag or dial to change next.*
- *
- * So every card here has three parts — **what**, **why in game terms**, and
- * **remedies, ranked** — and **every remedy names a tag or a dial, never a raw
- * number**. "Set its chance to 17%" is a forbidden remedy; "tag it a slower
- * Tempo" is the shape. The one thing a remedy may quote is a *band* or a
- * *ratio* as context inside the `why`, because that is the observation, not the
- * instruction.
- *
- * ## Why the catalogue is a module and not prose scattered across passes
- *
- * Four of these refusals are raised in `anchorPass.js` and `pricingPass.js`,
- * three in `tuningPass.js`. Before this file existed each pass carried its own
- * remedy strings, so the same refusal could acquire two different vocabularies
- * depending on which pass noticed it first. The passes now write only the
- * *observation* — the numbers they saw — and take severity and remedies from
- * here.
- *
- * ## The Map cards (phase P7)
- *
- * The plan's table lists **Map underwater** and **Map scrap-rich**; the Map
- * pass adds three more of its own shape — an item-heavy burst, an unlimited
- * Token in an ordinary pool, and an enemy whose loot does not match what the
- * burst charged for it. Every one of them is a **refusal, never an
- * adjustment**: each input to the Map check is authored (a price, a pool, a
- * rarity tag, a charge count), so there is nothing the simulator may quietly
- * move on the author's behalf.
+ * Economic simulator: the refusal catalogue. Every card has three parts: what, why in game terms, and ranked remedies.
+ * ⚠️ Every remedy names a tag or a dial, never a raw number (tag it a slower Tempo, not set its chance to 17%); a band or ratio may appear in the `why` as observation. The catalogue is one module so the same refusal cannot carry different remedy strings in different passes.
  */
 
 import { makeRow, SEVERITY } from './rows.js';
 
 /**
- * The catalogue. Each entry is `{ severity, remedies }`, where `remedies` is
- * either a fixed list or a function of the row's context.
- *
- * ⚠️ Ranked, most-likely-to-be-what-you-meant first. The ranking is the plan's
- * (§12's table reads left to right), not an alphabet.
+ * The catalogue: each entry is `{ severity, remedies }`, where `remedies` is a fixed list or a function of the row's context.
+ * ⚠️ Ranked most-likely-to-be-what-you-meant first.
  */
 export const REFUSAL_CATALOGUE = Object.freeze({
-    // ── §5 step 4: the levers ran out ────────────────────────────────────────
     'levers-exhausted': {
         severity: SEVERITY.WARNING,
         remedies: ({ tooFast = false, hasRange = false } = {}) => [
@@ -58,7 +24,6 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
-    // ── §5 budget rule: r worse than 3× ──────────────────────────────────────
     'correction-too-large': {
         severity: SEVERITY.WARNING,
         remedies: ({ purpose } = {}) => [
@@ -71,7 +36,6 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
-    // ── §6 / CMS-122: training costs money, but not this much ────────────────
     'training-loss-over-cap': {
         severity: SEVERITY.WARNING,
         remedies: () => [
@@ -82,7 +46,6 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
-    // ── §5, F2: the character guard is off here, and that must be visible ────
     'iph-quantity-exemption': {
         severity: SEVERITY.WARNING,
         remedies: () => [
@@ -92,7 +55,6 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
-    // ── §3.2 stickiness ──────────────────────────────────────────────────────
     'anchor-candidate-changed': {
         severity: SEVERITY.INFO,
         remedies: () => [
@@ -101,7 +63,6 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
-    // ── §13.6 / CMS-48: the Map check's two sides ────────────────────────────
     'map-scrap-rich': {
         severity: SEVERITY.WARNING,
         remedies: () => [
@@ -162,10 +123,7 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
-    // ── §13.5 / F1: the one refusal aimed at the developer's dials ───────────
-    // Every other card here is about content. This one says the dial set itself
-    // has broken criterion 4 — ten levels of progress must be worth more than
-    // the spread inside one level — so every remedy names a dial.
+    // The one refusal aimed at the developer's dials: it says the dial set itself has broken the progression guard, so every remedy names a dial.
     'progression-guard': {
         severity: SEVERITY.CRITICAL,
         remedies: () => [
@@ -175,7 +133,6 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
-    // ── Unpriceable content (Critical) ───────────────────────────────────────
     'orphan-item': {
         severity: SEVERITY.CRITICAL,
         remedies: () => ['Give it a producer (a Token cycle or a recipe output).'],

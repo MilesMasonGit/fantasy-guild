@@ -1,45 +1,11 @@
 import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks } from '../utils/constants';
 
-/**
- * Connectivity & Graph Auditor — Audits the Token, Recipe, and Item graph
- * (CMS-10, CMS-86, CMS-115)
- *
- * Groups issues into 3 clear design pillars:
- * 1. Data Integrity (Missing References / Invalid IDs / Solver Refusals)
- * 2. Economic Blockers (Orphaned Inputs / Unreachable Items CMS-86 / Dead-Ends)
- * 3. Pacing Gaps (Level gaps in skills)
- */
+/** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
 
-/**
- * A Token's inputs/outputs live on `token.config`, not at the top level.
- *
- * This auditor read `token.outputs`/`token.inputs` from its first version until
- * 2026-09-01, so it saw **no Token producers at all** and filed "Unreachable
- * Item (CMS-86)" Criticals against items Tokens produce and the simulator
- * prices perfectly well (6 false Criticals on the shipped corpus). The data
- * shape did not change at the economic simulator's cutover — this was always
- * wrong, it was simply never checked against real content.
- *
- * Recipes genuinely do carry `inputs`/`outputs` at the top level, so only the
- * Token branch needed this. The top-level form is tolerated as a fallback so a
- * fixture written in either shape still audits.
- */
+/** A Token's inputs/outputs live on `token.config`; recipes carry them at the top level. The top-level form is tolerated as a fallback for Tokens so a fixture in either shape still audits. */
 const tokenIO = (token, field) => token?.config?.[field] || token?.[field] || [];
 
-/**
- * The same correction, for the fields Pillar 3 reads.
- *
- * ⚠️ Pacing Gaps was inert for exactly the same reason and was found while
- * fixing the one above: it filtered on `t.skill`/`t.skillId` and read
- * `t.skillRequirement`, but a Token keeps those at `config.skill` and
- * `config.skillRequired` — and `OneRuleOnePlace` separately asserts that no
- * Token carries a top-level `skill`. So the filter matched nothing, every
- * skill's token list was empty, and **no pacing gap has ever been reported**.
- *
- * Fixing half of one bug and leaving the other half inert would have been
- * worse than either, so it is corrected here. On the shipped corpus it reports
- * two true gaps, both in logging.
- */
+/** ⚠️ A Token keeps its skill and level at `config.skill` and `config.skillRequired`, and no Token carries a top-level `skill` (`OneRuleOnePlace` asserts it), so Pillar 3 must read the config. */
 const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.skillId ?? null;
 const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
 
@@ -52,9 +18,8 @@ export function auditConnectivity(entities, solverRefusals = []) {
   const allRecipes = Object.values(recipes || {});
   const allEnemies = Object.values(enemies || {});
 
-  // Build lookup: which items are produced / consumed by which entities
-  const producedBy = {}; // itemId → [{ id, type }]
-  const consumedBy = {}; // itemId → [{ id, type }]
+  const producedBy = {};
+  const consumedBy = {};
 
   for (const token of allTokens) {
     for (const output of tokenIO(token, 'outputs')) {
@@ -100,9 +65,6 @@ export function auditConnectivity(entities, solverRefusals = []) {
     }
   }
 
-  // --- PILLAR 1: DATA INTEGRITY (Hard Breaks & Missing References) ---
-
-  // Check for tokens referencing non-existent items
   for (const token of allTokens) {
     for (const input of tokenIO(token, 'inputs')) {
       const iid = input.id || input.itemId;
@@ -132,10 +94,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
     }
   }
 
-  // FP-47 (Free Playmat slice 1.0): a hero-worked Token must name a skill.
-  // The rule is the game's own (`workSkillRule.js`), so this tab and the boot
-  // audit name the same Tokens. Expanded first: a Promotion Token is only
-  // recognisable by its Promotes rule, which lives in the effect library.
+  // A hero-worked Token must name a skill. The rule is the game's own (`workSkillRule.js`), so this tab and the boot audit name the same Tokens. Expanded first: a Promotion Token is only recognisable by its Promotes rule, which lives in the effect library.
   for (const token of allTokens) {
     if (!isWorkedWithoutSkill(expandBearer(token, effects))) continue;
     issues.push({
@@ -148,10 +107,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
     });
   }
 
-  // Token Lifecycle slice 4.2: spawner / grows / turns / foundation / shop /
-  // trickle, and recipes that build on a Foundation. The game's own checker, so
-  // this tab and the boot audit report the same problems. Expanded first: the
-  // shop warning recognises a station by its Station rule.
+  // The game's own lifecycle checker (spawner / grows / turns / foundation / shop / trickle, and recipes that build on a Foundation), so this tab and the boot audit report the same problems. Expanded first: the shop warning recognises a station by its Station rule.
   const expandedTokens = {};
   for (const [id, token] of Object.entries(tokens || {})) {
     expandedTokens[id] = expandBearer(token, effects);
@@ -167,7 +123,6 @@ export function auditConnectivity(entities, solverRefusals = []) {
     });
   }
 
-  // Check for recipes referencing non-existent items
   for (const recipe of allRecipes) {
     for (const input of (recipe.inputs || [])) {
       const iid = input.id || input.itemId;
@@ -198,32 +153,13 @@ export function auditConnectivity(entities, solverRefusals = []) {
   }
 
   /*
-    Record simulator refusals as audit rows (CMS-115).
-
-    ⚠️ A refusal may arrive as a **string** (the original channel, which meant
-    "this is a Warning") or as an **object** carrying its own severity, entity
-    and text. The object form exists because forcing every simulator row to
-    `Warning` hid real Criticals among Info notes — see `describeRow` in
-    `useEntityStore`. Strings are still accepted so any other caller keeps
-    working, and they keep the old meaning.
-  */
+   * Record simulator refusals as audit rows.
+   * ⚠️ A refusal may be a string (meaning Warning) or an object carrying its own severity, entity and text; forcing every row to Warning hid real Criticals among Info notes (see `describeRow` in `useEntityStore`).
+   */
   /*
-    Items the simulator has already reported as having no source at all.
-
-    ⚠️ Two checks below — "Unreachable Item" and "Orphaned Input" — say the
-    same thing as the simulator's `orphan-item` row, in older and vaguer words.
-    Over the real corpus one unproduced item raised **three** Criticals: the
-    simulator's, this file's unreachable row, and one orphaned-input row per
-    recipe that wanted it. Water managed exactly that.
-
-    They are suppressed **only for items the simulator has already named**, so
-    nothing goes unreported — the item still raises a Critical, once, from the
-    check that carries remedies. Where the simulator says nothing (it is not
-    running, or it skipped the item) both checks behave exactly as before. The
-    reverse case is real too: a bush declaring an output it never actually
-    yields is invisible here and caught there, which is why neither check is
-    simply deleted.
-  */
+   * Items the simulator has already reported as having no source at all.
+   * ⚠️ The Unreachable Item and Orphaned Input checks below say the same thing in vaguer words, so they are suppressed only for items the simulator has already named; where it says nothing, both behave as before.
+   */
   const simReportedOrphans = new Set(
     solverRefusals
       .filter((r) => r && typeof r === 'object' && r.code === 'orphan-item' && r.itemId)
@@ -242,9 +178,6 @@ export function auditConnectivity(entities, solverRefusals = []) {
     });
   }
 
-  // --- PILLAR 2: ECONOMIC BLOCKERS (Orphans, Unreachable Items CMS-86, Dead-Ends) ---
-
-  // Unreachable Items (CMS-86): Items that have no producing source anywhere in the game
   for (const item of allItems) {
     const producers = producedBy[item.id] || [];
     if (producers.length === 0 && !item.isRoot && !simReportedOrphans.has(item.id)) {
@@ -259,7 +192,6 @@ export function auditConnectivity(entities, solverRefusals = []) {
     }
   }
 
-  // Orphaned Inputs: Required by a recipe/token but unproduced
   for (const recipe of allRecipes) {
     for (const input of (recipe.inputs || [])) {
       const iid = input.id || input.itemId;
@@ -279,7 +211,6 @@ export function auditConnectivity(entities, solverRefusals = []) {
     }
   }
 
-  // Dead-End Items: Produced in the game, but never consumed by any recipe/token
   for (const item of allItems) {
     const isProduced = producedBy[item.id];
     const isConsumed = consumedBy[item.id];
@@ -305,7 +236,6 @@ export function auditConnectivity(entities, solverRefusals = []) {
     }
   }
 
-  // --- PILLAR 3: PACING GAPS (Level Progression Spacing) ---
   for (const skill of SKILLS) {
     const skillTokens = allTokens.filter((t) => tokenSkill(t) === skill.id);
     if (skillTokens.length === 0) continue;
@@ -329,7 +259,6 @@ export function auditConnectivity(entities, solverRefusals = []) {
     }
   }
 
-  // Deduplicate issues by entityId + issueType + details hash
   const seen = new Set();
   return issues.filter((issue) => {
     const key = `${issue.entityId}:${issue.issueType}:${issue.details}`;

@@ -5,28 +5,9 @@ import { StatementList } from './Statements';
 import { rulesLinesOf, effectRefsOf, hasWorkingStatements } from '../../utils/constants';
 
 /**
- * The Effect editor — one named entry in the library (Unified Effects P1).
- *
- * ## Why effects have a screen of their own
- * A rule used to live on the Token that used it, which meant it had no name, no
- * identity, and no way to be shared. An entry here is the same statements it
- * always was, plus the two things they lacked: **a name**, which is what the
- * player will be shown when it fires (P3), and **a place**, so a second bearer
- * can point at it rather than re-authoring it (UE-3, UE-5).
- *
- * ## ⚠️ The name is a title, never a description (UE-8)
- * The generated sentences below the name stay the body, the validation loop and
- * the only description this effect has. There is no free-text description field
- * on this screen, deliberately and permanently: an override is how a
- * description drifts from behaviour, which is the failure the whole effect
- * redesign exists to have removed. A name may be evocative precisely *because*
- * it never appears without its sentences underneath it.
- *
- * ## The used-by panel is not a nicety
- * Editing an entry changes every bearer using it — that is the feature, and it
- * is also the only way this can hurt. The panel is what turns a blind
- * cross-content edit into an informed one, so it sits above the rules rather
- * than below them.
+ * The Effect editor: one named entry in the effect library.
+ * ⚠️ The name is a title, never a description: there is deliberately no free-text description field, because an override lets a description drift from behaviour. The generated sentences under the name are the only description.
+ * ⚠️ Editing an entry changes every bearer using it, so the used-by panel sits above the rules.
  */
 export default function EffectEditor() {
   const activeId = useEntityStore((s) => s.activeEntityId);
@@ -98,9 +79,7 @@ export default function EffectEditor() {
                   title={ref.scale > 1 ? `Carries this at scale ${ref.scale}` : undefined}
                 >
                   <Boxes size={11} /> {t.name}
-                  {/* Each bearer may carry its own strength (UE-6), so the list
-                      says which — otherwise "used by 4 Tokens" hides the fact
-                      that they are not all the same effect in practice. */}
+                  {/* Bearers may carry their own strength, so the list shows which. */}
                   {ref.scale > 1 && (
                     <span style={{ color: 'var(--color-accent-hover)' }}>x{ref.scale}</span>
                   )}

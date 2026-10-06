@@ -8,17 +8,8 @@ import Statements from './Statements';
 import ChainInspector from '../shared/ChainInspector';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
-/**
- * The Item editor — simplified field set.
- *
- * ## What is deliberately absent
- * **Any way to type a value.** Value is derived by the balance engine (CMS-86).
- * **Tags.** Item inputs and recipes match on exact item IDs (CMS-43/91).
- * **Stacks in Bank toggle.** All items inherently stack in the Bank.
- * **Redundant Restore Types/Regen.** Food and Drink consumables restore a flat HP amount.
- */
+/** The Item editor: simplified field set. Value is derived by the balance engine and cannot be typed; inputs and recipes match on exact item IDs, so there are no tags. */
 
-/** Category kinds that restore HP when consumed. */
 const RESTORING_CATEGORIES = new Set(['food', 'drink', 'consumable']);
 
 /** Maps equipSlot to standard item type for game registry compatibility */
@@ -152,11 +143,6 @@ export default function ItemEditor() {
         </div>
       </Section>
 
-      {/*
-        Items are bearers (Unified Effects P4): the same named library effects a
-        Token carries, reaching the hero holding them, the Token that hero is
-        working, or the enemy they are fighting.
-      */}
       <Section title="Rules" icon={<Sparkles size={14} />}>
         <Statements item={item} />
       </Section>
@@ -180,15 +166,12 @@ export default function ItemEditor() {
             </div>
           </div>
         </div>
-        {/* CMS-86: values are derived and cannot be typed. */}
         <p className="text-[10px] text-gray-600 leading-relaxed">
           Worked out from a Map's price, down through whatever produces this — so it
           cannot be typed. An item nothing produces stays blank, and Recalculate raises
           it as a Critical.
         </p>
 
-        {/* The chain inspector (plan §15.2) — the answer to "why is it worth
-            that?", beside the number it is explaining. */}
         <div className="mt-4">
           <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
             Where this value comes from

@@ -1,48 +1,4 @@
-/**
- * Economic simulator — the write-back (phase P5, the cutover).
- *
- * The passes in `simRunner` return Maps and write nothing. This file is the one
- * place that turns those Maps back into the shapes the **game** reads, so that
- * `data/items.json`, `data/tokens.json` and `data/tokenRecipes.json` keep the
- * field names they have always had (plan §16).
- *
- * ```
- * authored intent  →  the passes  →  here  →  today's fields
- * ```
- *
- * ## Two jobs, and the second one is the load-bearing half
- *
- * 1. **Land the derived numbers** — an item's `value` and `valueSource`, an
- *    entity's cycle length, and each output's `minQty`/`maxQty`/`chance`.
- * 2. **Delete the retired fields, wherever they are found, on every run.** The
- *    old balance engine wrote `trueCost` and `sellPrice` onto items and nine EV
- *    fields onto recipes. Those are gone from `data/`, but a browser workspace
- *    saved before this change still holds them — and Sync writes from the
- *    *store*, not from `data/`. Without the stripping below, one Sync from a
- *    stale workspace would put every deleted field straight back into the game
- *    files. The migration of `data/` was a single edit; this is what keeps it
- *    migrated.
- *
- * ## ⚠️ XP, and the one field that looks derived but is dead
- *
- * As of P8, `xp` **is** derived: a recipe's `xp` and a Token's `config.xp` are
- * written from the XP pass, because those are the two fields the *runtime*
- * reads. `BoardRunner.js:353` awards `io.xp ?? config.xp`, and `io.xp` is the
- * active recipe's `xp` (`RecipeResolver.js:197`: `xp: recipe?.xp ?? def?.config?.xp`).
- *
- * ⚠️ **A Token's *top-level* `xp` is dead at runtime** — nothing reads it — and
- * it is now **deleted on every run**, along with `charges` and `recipePool`.
- * That sitting has happened: see `RETIRED_TOKEN_FIELDS`. `data/` was cleaned of
- * all three in `0b6f258`, but nothing stripped them here, so any Sync from a
- * browser saved before the rework put them straight back.
- *
- * Inputs, skill, level and identity are authored, and are untouched. `uses` is
- * authored and is the one charge field; `charges` is its retired twin.
- *
- * **A Map's price, materials and pool membership are authored** and are never
- * written. The one derived thing a Map carries is each pool entry's `weight`
- * (CMS-124) — see `applyMapResults`.
- */
+/** Economic simulator: the write-back. The passes in `simRunner` return Maps and write nothing; this is the one place that turns them back into the field names the game reads in `data/items.json`, `tokens.json` and `tokenRecipes.json`. Two jobs: land the derived numbers (item `value` and `valueSource`, cycle length, each output's `minQty`/`maxQty`/`chance`), and ⚠️ delete the retired fields wherever they are found, on every run. Sync writes from the store, not from `data/`, so a browser workspace saved before a field was retired would otherwise put it straight back. */
 
 import { quantityRange } from './fieldAdapter.js';
 import { deriveTokenType } from '../../utils/constants';
@@ -52,41 +8,22 @@ import { slugify } from '../../utils/idGenerator';
 export const RETIRED_ITEM_FIELDS = Object.freeze(['trueCost', 'sellPrice']);
 
 /**
- * The nine EV / auto-balance fields recipes carried for the retired engine
- * (plan §16). Deleted on every run.
+ * The nine EV / auto-balance fields recipes carried for the retired engine.
+ * Deleted on every run.
  */
 export const RETIRED_RECIPE_FIELDS = Object.freeze([
     'targetEV', 'calculatedEV', 'autoBalance', 'fieldLocks', 'profitSplit',
     'liquidityEV', 'progressionEV', 'goldPerMinute', 'xpPerMinute',
 ]);
 
-/**
- * `isPrimarySource` was the struck CMS-110 era's anchor flag. It is migrated to
- * the `anchor` intent flag where true (see `migrateLegacyIntent`) and deleted
- * either way, so the old vocabulary does not survive as a second, dead way to
- * say "anchor".
- */
+/** `isPrimarySource` is the old anchor flag. It is migrated to the `anchor` intent flag where true (see `migrateLegacyIntent`) and deleted either way. */
 export const RETIRED_OUTPUT_FIELDS = Object.freeze(['isPrimarySource']);
 
 /**
- * Token fields the **recipe & charges rework** retired. Deleted on every run.
- *
- * ⚠️ These are a different generation from `RETIRED_ITEM_FIELDS`. Those came
- * from the old balance engine; these came from the rework that made `uses` the
- * one charge field and moved a station's skill onto its `station` statement.
- * `data/` was cleaned of all three in `0b6f258` — but the write-back was never
- * taught to strip them, so the very next Sync from any browser put them
- * straight back. That is the half this completes.
- *
- * * `xp` — a Token's **top-level** xp. Dead at runtime: the engine awards
- *   `io.xp ?? config.xp`, so a top-level `xp` is a second, disagreeing number
- *   that made the drawer promise XP no cycle could award (CR2-192).
- * * `charges` — retired in favour of `uses` (CR2-121). `liveCharges` reads
- *   `uses` and nothing reads `charges`, so a workspace where the two disagree
- *   is carrying a number that already does nothing.
- * * `recipePool` — retired in favour of the skill named in the Token's
- *   `station` statement (`recipePoolRegistry`).
- *
+ * Token fields the recipe and charges rework retired. Deleted on every run, because the write-back is what stops a stale workspace putting them back.
+ * * `xp`: a Token's top-level xp. Dead at runtime (the engine awards `io.xp ?? config.xp`), so it is a second, disagreeing number.
+ * * `charges`: retired in favour of `uses`; `liveCharges` reads `uses` and nothing reads `charges`.
+ * * `recipePool`: retired in favour of the skill named in the Token's `station` statement (`recipePoolRegistry`).
  * ⚠️ `config.xp` is NOT here and must never be: that one is derived and live.
  */
 export const RETIRED_TOKEN_FIELDS = Object.freeze(['xp', 'charges', 'recipePool']);
@@ -100,20 +37,9 @@ function without(record, fields) {
     return next;
 }
 
-// === Legacy intent migration =================================================
-
 /**
  * Move `isPrimarySource: true` onto the `anchor` intent flag.
- *
- * ⚠️ **This runs BEFORE the passes, not after.** The anchor election reads
- * `output.anchor`, so migrating on the way out would mean the first
- * Recalculate elected without the flag and the second elected with it — the
- * same content pricing two different ways on two consecutive runs. Migrating
- * first makes one run enough.
- *
- * Idempotent: an output already carrying `anchor: true` is left alone, so a
- * corpus where the migration has already happened cannot be double-flagged, and
- * one where only the legacy flag survives cannot lose it.
+ * ⚠️ This runs BEFORE the passes: the anchor election reads `output.anchor`, so migrating on the way out would price the same content two different ways on consecutive runs. Idempotent: an output already carrying `anchor: true` is left alone.
  */
 function migrateOutput(output) {
     if (!output || typeof output !== 'object') return output;
@@ -139,33 +65,8 @@ function migrateOutputs(outputs) {
  * stay meaningful and an already-migrated workspace costs nothing.
  */
 /**
- * Bring a recipe authored before the recipe & charges rework up to today's shape.
- *
- * ⚠️ **This runs BEFORE the passes, for the same reason the anchor migration
- * does.** A recipe with no `id` was flattened under a synthetic
- * `pooled_<skill>_<index>` key (`useEntityStore.flatten`), so every pass keyed
- * its results under a name the pool entry did not carry — and the write-back
- * then looked those results up by `recipe.id`, found `undefined`, and wrote
- * none of them. The recipe came out of a Recalculate exactly as it went in.
- * Giving it a real id here means the sim and the write-back agree on one name.
- *
- * Three fields, all of them identity or gates rather than economics:
- *
- * * **`id`** — slugified from the name, so it reads like the ids a person would
- *   have typed (`recipe_copper_ingot`) rather than a counter. Uniqueness is
- *   enforced across every pool, since the flattened map is global.
- * * **`durationMs`** — renamed from the old `cycleTimeMs`. The adapter reads
- *   `durationMs` for a recipe and `config.cycleTimeMs` for a Token; an
- *   un-migrated recipe therefore read as having no cycle at all.
- * * **`levelRequirement`** — defaulted to 1, which is what the adapter already
- *   assumes for a missing level. Writing it makes the assumption visible.
- * * **`stationChargeCost`** — defaulted to 1, matching both `makeRecipe`'s
- *   shape for a newly authored recipe and `Charges.js`'s
- *   `DEFAULT_STATION_CHARGE_COST` fallback at runtime. Writing it therefore
- *   changes no behaviour; it only stops the field being absent.
- *
- * Idempotent: a recipe that already carries all three is returned unchanged, by
- * reference, so an up-to-date workspace costs nothing and two runs agree.
+ * Bring a recipe authored before the recipe and charges rework up to today's shape.
+ * ⚠️ This runs BEFORE the passes, for the same reason as the anchor migration: a recipe with no `id` was flattened under a synthetic `pooled_<skill>_<index>` key, so the passes keyed their results under a name the pool entry did not carry and the write-back found none of them. Giving it a real id here means the sim and the write-back agree. The `id` is slugified from the name and kept unique across every pool, since the flattened map is global; `durationMs` is renamed from the old `cycleTimeMs`.
  */
 function migrateRecipeSchema(recipe, skillId, usedIds) {
     if (!recipe || typeof recipe !== 'object') return recipe;
@@ -191,8 +92,7 @@ function migrateRecipeSchema(recipe, skillId, usedIds) {
     usedIds.add(next.id);
 
     if (needsDuration) next.durationMs = recipe.cycleTimeMs;
-    // The old field goes either way: kept, it is a second cycle length that
-    // nothing reads and the next author would reasonably believe.
+    // The old field goes either way: kept, it is a second cycle length that nothing reads and the next author would reasonably believe.
     delete next.cycleTimeMs;
 
     if (needsLevel) next.levelRequirement = 1;
@@ -201,12 +101,7 @@ function migrateRecipeSchema(recipe, skillId, usedIds) {
     return next;
 }
 
-/**
- * Every retired field gone from one Token, wherever it sits.
- *
- * `recipePool` was written at the top level on some Tokens and inside `config`
- * on others, so both are checked rather than assuming the shape.
- */
+/** Every retired field gone from one Token, wherever it sits: `recipePool` was written at the top level on some Tokens and inside `config` on others, so both are checked. */
 function stripRetiredTokenFields(token) {
     if (!token || typeof token !== 'object') return token;
     let next = without(token, RETIRED_TOKEN_FIELDS);
@@ -225,38 +120,18 @@ export function migrateLegacyIntent({ tokens = {}, recipePools = {} } = {}) {
             ? token
             : { ...token, config: { ...token.config, outputs: migrated } };
 
-        // ⚠️ **`tokenType` is derived here, BEFORE the passes read it.**
-        //
-        // It is a derived field with no override (owner decision Q3, redesign
-        // §1.2), and `recalculateEconomy` has always re-derived it on the way
-        // *out*. But the ANCHOR pass reads `tokenType` on the way *in*, to
-        // decide which kinds can never anchor — so a record whose authored type
-        // disagreed with its own rules was a deferred kind on run one and an
-        // ordinary producer on run two, and the same content priced two
-        // different ways on two consecutive runs. It converged, but plan §11's
-        // "two runs are byte-identical" was only true from the second run on,
-        // and every workspace saved before the derivation landed is in exactly
-        // that shape.
-        //
-        // Deriving it here — the same place and for the same reason as the
-        // `isPrimarySource` → `anchor` migration above — makes the first run
-        // agree with the second. Found by P9's adversarial set, which was the
-        // first thing to run the whole pipeline twice over content whose
-        // authored type lied about its rules.
+        // ⚠️ `tokenType` is derived here, BEFORE the passes read it. The ANCHOR pass reads `tokenType` on the way in to decide which kinds can never anchor, so a record whose authored type disagreed with its own rules was a deferred kind on run one and an ordinary producer on run two. Deriving it here, like the `isPrimarySource` migration above, makes the first run agree with the second.
         const derived = deriveTokenType(withOutputs)?.type;
         const typed = derived && derived !== withOutputs.tokenType
             ? { ...withOutputs, tokenType: derived }
             : withOutputs;
 
-        // The retired fields go here rather than on the way out, so that a
-        // single pre-rework workspace cannot reach the passes carrying two
-        // disagreeing charge counts.
+        // The retired fields go here rather than on the way out, so a pre-rework workspace cannot reach the passes carrying two disagreeing charge counts.
         nextTokens[id] = stripRetiredTokenFields(typed);
     }
 
     const nextPools = {};
-    // Ids already spoken for, so a generated one cannot collide with an
-    // authored one in another pool — the flattened recipe map is global.
+    // Ids already spoken for, so a generated one cannot collide with an authored one in another pool: the flattened recipe map is global.
     const usedIds = new Set();
     for (const pool of Object.values(recipePools)) {
         if (Array.isArray(pool)) pool.forEach(r => { if (r?.id) usedIds.add(r.id); });
@@ -275,27 +150,9 @@ export function migrateLegacyIntent({ tokens = {}, recipePools = {} } = {}) {
     return { tokens: nextTokens, recipePools: nextPools };
 }
 
-// === Derived write-back ======================================================
-
 /**
- * One output, with its derived fields written from authored intent.
- *
- * `baseQty {min,max}` is the intent; `minQty`/`maxQty` are the derived pair the
- * game reads. Where an output has no `baseQty` — an entity authored before the
- * intent fields existed — `quantityRange` falls back to the derived pair
- * itself, so this is a no-op rather than a reset to 1.
- *
- * ## Seeding intent, and why it is not an edit
- *
- * When the lever policy moves an output, the derived pair stops agreeing with
- * the authored one. If the author never wrote a `baseQty`, the *only* record of
- * what they wanted is the pair we are about to overwrite — so this seeds
- * `baseQty` (and, for a tuned chance, `baseChance`) from the pre-tuning values
- * first. Without that, one Recalculate would quietly become the new intent and
- * the next would tune away from it again: a ratchet, not a derivation.
- *
- * Seeding happens **only on an output the sim actually tuned**. Untouched
- * content keeps exactly the shape it has always had.
+ * One output, with its derived fields written from authored intent. `baseQty {min,max}` is the intent; `minQty`/`maxQty` are the derived pair the game reads.
+ * ⚠️ When the lever policy moves an output and the author never wrote a `baseQty`, the only record of what they wanted is the pair about to be overwritten, so `baseQty` (and `baseChance` for a tuned chance) is seeded from the pre-tuning values first; otherwise one Recalculate would become the new intent and the next would tune away from it, a ratchet. Seeding happens only on an output the sim actually tuned.
  */
 function deriveOutput(output, override) {
     if (!output || typeof output !== 'object') return output;
@@ -329,15 +186,7 @@ function deriveOutput(output, override) {
     return next;
 }
 
-/**
- * A downcycle recipe's derived quantities (CMS-130).
- *
- * The pricing pass caps what a return leg gives back and reports the capped
- * average per output. A capped output becomes a metronome at that average —
- * min and max both equal to it — because the cap is stated as one number and
- * inventing a spread around it would be inventing intent. An uncapped output
- * keeps its authored range.
- */
+/** A downcycle recipe's derived quantities. A capped output becomes a metronome at the capped average (min and max both equal to it), because the cap is stated as one number and inventing a spread would be inventing intent. An uncapped output keeps its authored range. */
 function downcycleOverrides(entry) {
     const overrides = new Map();
     (entry?.outputs ?? []).forEach((output, index) => {
@@ -347,17 +196,7 @@ function downcycleOverrides(entry) {
     return overrides;
 }
 
-/**
- * What the lever policy moved, as per-output overrides (phase P6).
- *
- * A tuning record's `after.outputs` is index-parallel to the authored outputs
- * array — the adapter preserves order and never drops an entry — so the index
- * is the join, not the item id. That matters for the rare entity that lists the
- * same item twice.
- *
- * An entity the policy left alone (`lever: 'none'`), or one it refused, yields
- * no overrides: a refusal changes nothing, which is the point of refusing.
- */
+/** What the lever policy moved, as per-output overrides. A tuning record's `after.outputs` is index-parallel to the authored outputs array, so the index is the join, not the item id (it matters for an entity that lists the same item twice). An entity the policy left alone or refused yields no overrides. */
 function tuningOverrides(tuning) {
     const overrides = new Map();
     if (!tuning?.after || !tuning.lever || tuning.lever === 'none') return overrides;
@@ -392,12 +231,7 @@ function deriveOutputs(outputs, downcycleEntry, tuning) {
 
 /**
  * Items: derived `value` and `valueSource`, retired fields gone.
- *
- * ⚠️ An item the passes could not price keeps `value: null` and gains
- * `valueSource: null` rather than being skipped. Null is CMS-86's "not yet
- * computed", which is what an unreachable item genuinely is and what the audit
- * raises as Critical. Writing the key regardless means the game and the tests
- * can read one field for provenance instead of two shapes.
+ * ⚠️ An item the passes could not price keeps `value: null` and gains `valueSource: null` rather than being skipped: null means not yet computed, which is what an unreachable item is and what the audit raises as Critical.
  */
 export function applyItemResults(items = {}, sim) {
     const next = {};
@@ -414,14 +248,7 @@ export function applyItemResults(items = {}, sim) {
     return next;
 }
 
-/**
- * Tokens: derived `config.cycleTimeMs` and per-output quantities.
- *
- * A Token the passes skipped — inert, or untagged — has no derived cycle time,
- * and its authored one is left exactly as typed. That is the whole point of the
- * untagged rule: the simulator does not guess a tag, so it does not touch the
- * numbers that would follow from one.
- */
+/** Tokens: derived `config.cycleTimeMs` and per-output quantities. A Token the passes skipped (inert or untagged) keeps its authored cycle time exactly as typed: the simulator does not guess a tag, so it does not touch the numbers that would follow from one. */
 export function applyTokenResults(tokens = {}, sim) {
     const next = {};
     for (const [id, token] of Object.entries(tokens)) {
@@ -433,13 +260,8 @@ export function applyTokenResults(tokens = {}, sim) {
         const config = { ...token.config, outputs };
         if (Number.isFinite(cycleTimeMs)) config.cycleTimeMs = cycleTimeMs;
 
-        // Derived XP (P8). A Token the XP pass had no answer for — skipped,
-        // untagged, no solved cycle — keeps its authored `config.xp` exactly as
-        // typed, the same rule the cycle time follows above.
-        //
-        // ⚠️ `token.xp` (top level) is never WRITTEN here — it is deleted
-        // instead, in `migrateLegacyIntent`, before the passes run. Only
-        // `config.xp` is derived; see the header note.
+        // Derived XP. A Token the XP pass had no answer for keeps its authored `config.xp` exactly as typed, the same rule as the cycle time.
+        // ⚠️ `token.xp` (top level) is never written here: it is deleted in `migrateLegacyIntent` before the passes run.
         const xp = sim.xp?.get(tokenId);
         if (Number.isFinite(xp)) config.xp = xp;
 
@@ -449,14 +271,8 @@ export function applyTokenResults(tokens = {}, sim) {
 }
 
 /**
- * A Token's derived scrap value (CMS-48, phase P7) — what one full copy sells
- * for, allocated out of the scrap budget of the richest Map that hands it over.
- *
- * ⚠️ A Token **no Map's pool contains** gets no `scrapValue` at all, rather
- * than a zero. `TokenBank.sellValue` falls back to its rarity table for exactly
- * that case, and a written zero would make an unreachable Token unsellable
- * instead of merely unpriced — the difference between "the sim has not said"
- * and "the sim says nothing".
+ * A Token's derived scrap value: what one full copy sells for, allocated out of the scrap budget of the richest Map that hands it over.
+ * ⚠️ A Token no Map's pool contains gets no `scrapValue` at all, rather than a zero: a written zero would read as the sim saying the Token is worth nothing, instead of the sim not having said.
  */
 function withScrapValue(token, sim, tokenId) {
     const value = sim?.scrapValues?.get(tokenId);
@@ -469,14 +285,7 @@ function withScrapValue(token, sim, tokenId) {
     return { ...token, scrapValue: value };
 }
 
-/**
- * Tokens whose config is null still take a scrap value.
- *
- * `applyTokenResults` returns a config-less Token untouched, because there is
- * no cycle to derive — but a Map Token, a pickaxe or a buff is exactly the kind
- * of thing a burst hands over and a player then sells. This runs over the
- * result of `applyTokenResults` so the two concerns stay separable.
- */
+/** Tokens whose config is null still take a scrap value: `applyTokenResults` returns a config-less Token untouched, but a Map Token, a pickaxe or a buff is the kind of thing a player sells. This runs over its result so the two concerns stay separable. */
 export function applyScrapValues(tokens = {}, sim) {
     if (!sim?.scrapValues) return tokens;
     const next = {};
@@ -486,19 +295,7 @@ export function applyScrapValues(tokens = {}, sim) {
     return next;
 }
 
-/**
- * Maps: derived pool **weights** (CMS-124, phase P7).
- *
- * A pool entry's draw weight comes from the referenced Token's rarity through
- * one global table, so it is sim-written from here on and the Map editor's
- * weight column is read-only-derived. Everything else about a Map — its price,
- * its materials, which entries are in its pool — is authored and untouched:
- * the Map check refuses rather than adjusts, precisely because it has nothing
- * of its own to move.
- *
- * A Map the pass skipped (a guild-hall map, an empty pool) keeps its authored
- * weights exactly as typed.
- */
+/** Maps: derived pool weights. A pool entry's draw weight comes from the referenced Token's rarity through one global table, so it is sim-written and the Map editor's weight column is read-only-derived. Everything else about a Map is authored and untouched. A Map the pass skipped keeps its authored weights exactly as typed. */
 export function applyMapResults(maps = {}, sim) {
     const weights = sim?.mapWeights;
     if (!weights) return maps;
@@ -518,14 +315,7 @@ export function applyMapResults(maps = {}, sim) {
     return next;
 }
 
-/**
- * Recipes: derived `durationMs` and per-output quantities, EV fields gone.
- *
- * Recipes go through the same write-back as Tokens because they go through the
- * same passes. The bypass that used to route them around the economy pass —
- * built to protect the nine EV fields from a solver that rewrote them — has
- * nothing left to protect and is retired (plan §16).
- */
+/** Recipes: derived `durationMs` and per-output quantities, with the retired EV fields gone. Recipes go through the same write-back as Tokens because they go through the same passes. */
 export function applyRecipePoolResults(recipePools = {}, sim) {
     const next = {};
     for (const [skillId, pool] of Object.entries(recipePools)) {
@@ -537,8 +327,7 @@ export function applyRecipePoolResults(recipePools = {}, sim) {
             const durationMs = sim.cycleTimes.get(recipe.id);
             const result = { ...stripped, outputs };
             if (Number.isFinite(durationMs)) result.durationMs = durationMs;
-            // Derived XP (P8) — the field the runtime prefers over the Token's
-            // `config.xp` when a recipe is the active one.
+            // Derived XP: the field the runtime prefers over the Token's `config.xp` when a recipe is the active one.
             const xp = sim.xp?.get(recipe.id);
             if (Number.isFinite(xp)) result.xp = xp;
             return result;

@@ -7,56 +7,17 @@ import {
 import { visibleOptions, visibleSuggestions } from './rulesLineModel';
 
 /**
- * ⭐ **The Rules Line** — a rule is a line of prose you write into (E-1, E-2).
- *
- * The line on screen is `renderSegments`' own output: the exact sentence the
- * game prints, with every word that stands for a decision made clickable. There
- * is no second copy of the sentence and no row of chips — the words ARE the
- * controls.
- *
- * > *"I write the rules text with support, and it builds the effect from that."*
- *
- * ## ⭐ Click a word, retype that word (E-3)
- * Clicking a decision turns *that word* into a typing box, in place. Typing
- * narrows the panel to what is legal there; Enter takes the highlighted option;
- * Escape leaves the word as it was. Nothing else in the sentence moves.
- *
- * ## ⭐ Tab walks the words (Q3, owner ruling 2026-09-12)
- * Tab moves to the next underlined word and opens it; Shift+Tab goes back. What
- * was typed is committed on the way if it is valid, and simply dropped if it is
- * not — Tab never guesses. Up/Down move through the panel's list. Past the last
- * word, Tab leaves the sentence and the browser carries on as normal.
- *
- * ## ⚠️ The line does not own its cursor
- * Which word is being edited lives in `StatementList`, because there is ONE
- * panel for the whole list (E-5) and it has to follow the author from one rule
- * to the next. The line reports clicks and keys; the list decides what is open.
- *
- * ## ⚠️ There is still no parser
- * Enter commits an option the slot already offers, or a number, or a tag. An
- * unrecognised word inserts nothing (E-4) — the panel offers the nearest real
- * words, and only an author explicitly arrowing onto one can pick it.
- *
- * ## ⚠️ A number keeps its direction
- * "work 5% faster" stores −5. Retyping the 5 as 20 must not silently produce
- * "work 20% slower", so a typed number inherits the current sign unless the
- * author types one.
- *
- * ## ⚠️ Decisions with no word still get a control
- * `slotsWithoutWords` names every slot the sentence never mentions, and a quiet
- * row beneath the line offers each — so no decision becomes unauthorable by
- * quietly losing its only control.
+ * The Rules Line: a rule is the sentence the game prints (`renderSegments` output), with every decision word clickable and retyped in place; there is no second copy of the sentence.
+ * ⚠️ The line does not own its cursor: which word is open lives in `StatementList`, because one panel serves the whole list.
+ * ⚠️ There is no parser: Enter commits only an option the slot offers, a number or a tag; an unrecognised word inserts nothing.
+ * ⚠️ A number keeps its direction: work 5% faster stores -5, so retyping the 5 must not flip the sign.
  */
 
-/** Slot kinds retyped in place, inside the sentence. */
 const INLINE = new Set([SLOT_KIND.VOCABULARY, SLOT_KIND.NUMBER, SLOT_KIND.TEXT]);
 
-// The lists themselves (what is shown, capped at LIST_CAP) live in
-// `rulesLineModel.js`, shared by the line and the panel.
 const listFor = (slot, query) =>
   slot.kind === SLOT_KIND.TEXT ? visibleSuggestions(slot, query) : visibleOptions(slot, query);
 
-/** Which option in a list is highlighted: the one arrowed to, else the top hit. */
 const highlightOf = (list, cursor) => (cursor?.moved ? cursor.active : list.near ? -1 : 0);
 
 /**
@@ -71,13 +32,7 @@ function numberAsTyped(slot, statement, text) {
   return (Number(statement?.payload?.value) || 0) < 0 ? `-${bare}` : bare;
 }
 
-/**
- * The change committing what was typed would make — or null.
- *
- * ⚠️ Never guesses. An arrowed-to option is an explicit choice; the top hit is
- * taken only when the typed text genuinely matches; the nearest words to a
- * non-word are offered in the panel but never committed on their own (E-4).
- */
+/** The change committing the typed text would make, or null. ⚠️ Never guesses: an arrowed-to option is explicit, the top hit is taken only on a genuine match, and nearest-word suggestions are never committed on their own. */
 function typedPatch(slot, statement, cursor) {
   const text = (cursor?.query || '').trim();
   if (slot.kind === SLOT_KIND.VOCABULARY || slot.kind === SLOT_KIND.TEXT) {
@@ -95,7 +50,6 @@ function typedPatch(slot, statement, cursor) {
   return null;
 }
 
-/** A decision word: dashed underline at rest, highlighted while it is the focus. */
 function Word({ text, slot, active, focusNow, onClick, onKeyDown }) {
   const ref = useRef(null);
   // Reached by Tab but not retyped in place (a flag, a filter stack, a form):
@@ -131,7 +85,6 @@ function Word({ text, slot, active, focusNow, onClick, onKeyDown }) {
   );
 }
 
-/** The typing box that stands in for a word while it is being retyped. */
 function WordInput({ word, slot, query, listId, onQuery, onKey, onBlur }) {
   return (
     <input
@@ -161,13 +114,7 @@ function WordInput({ word, slot, query, listId, onQuery, onKey, onBlur }) {
   );
 }
 
-/**
- * The stacked filters (G-9), opened from their words in the line.
- *
- * ⚠️ Every row carries its own **negate** toggle, because negation doubles what
- * each filter can say for the cost of one checkbox. The wording flips with it,
- * because each filter owns both readings.
- */
+/** ⚠️ Every row carries its own negate toggle; the wording flips with it, because each filter owns both readings. */
 function FilterStack({ slot, onChange }) {
   const rows = slot.value || [];
   const write = (next) => onChange(slot.patch(next));
@@ -226,7 +173,6 @@ function FilterStack({ slot, onChange }) {
   );
 }
 
-/** One option in the panel. Mouse-down keeps the line's typing box focused. */
 function OptionButton({ option, current, highlighted, onPick }) {
   return (
     <button
@@ -250,10 +196,6 @@ function OptionButton({ option, current, highlighted, onPick }) {
   );
 }
 
-/**
- * A narrowed list, with the nearest words when nothing matches (E-4) and a count
- * when there is more than fits.
- */
 function OptionList({ list, query, current, highlight, onPick, onCreate }) {
   return (
     <div className="max-h-80 overflow-y-auto space-y-0.5">
@@ -289,16 +231,7 @@ function OptionList({ list, query, current, highlight, onPick, onCreate }) {
   );
 }
 
-/**
- * "Create …" for a typed name that is not in the list — or null.
- *
- * ⚠️ The retired item picker could create an item from its search, and
- * deleting it must not quietly take that away (P4). Offered only on a slot that
- * declares it creates (`creates: 'item'`), only when a real name was typed that
- * does not already exist, and only when the list was given a way to create at
- * all — a list handed its own `content` has none, because creating writes to
- * the persisted store.
- */
+/** Create for a typed name that is not in the list, or null. Offered only on a slot that declares `creates: 'item'`, for a name that does not exist, and when the list was given a way to create: a list handed its own `content` has none, because creating writes to the persisted store. */
 function createFor(slot, query, onCreate) {
   const typed = (query || '').trim();
   if (!onCreate || !slot?.creates || !typed) return null;
@@ -306,13 +239,6 @@ function createFor(slot, query, onCreate) {
   return exists ? null : () => onCreate(typed);
 }
 
-/**
- * ⭐ **Pick several** — the Tokens a Manager restocks (P4).
- *
- * A set with no per-row numbers, so E-8 gives it a slot rather than a form: a
- * search, and a checkbox per Token. Ticking writes straight back; there is
- * nothing to commit, because every state of the list is a valid rule.
- */
 function ListPicker({ slot, onPatch }) {
   const [query, setQuery] = useState('');
   const chosen = slot.value || [];
@@ -356,7 +282,6 @@ function ListPicker({ slot, onPatch }) {
   );
 }
 
-/** A panel search for a vocabulary slot that has no word in the line to retype. */
 function PanelSearch({ slot, onPick, onCreate }) {
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState({ active: 0, moved: false });
@@ -387,19 +312,7 @@ function PanelSearch({ slot, onPick, onCreate }) {
   );
 }
 
-/**
- * ⭐ **The panel — one for the whole list, on the left (E-5).**
- *
- * Shows everything legal for whichever word the author is on, in whichever rule.
- * It is how an author meets a word they did not know existed, and it keeps the
- * editor fully usable by clicking alone.
- *
- * @param {object|null} slot       the focused slot, resolved by the list
- * @param {object|null} cursor     `{ mode, query, active, moved }`
- * @param {object|null} statement  the rule the slot belongs to
- * @param {(patch: object) => void} onPatch        change that rule
- * @param {(id: string) => void} onPickRetyped     commit a picked option
- */
+/** The panel: one for the whole list, showing everything legal for whichever word the author is on. */
 export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped, onCreate = null }) {
   const retyping = !!slot && cursor?.mode === 'retype';
   const shown = slot ? slotDisplay(slot) : '';
@@ -498,13 +411,7 @@ export function RulesPanel({ slot, cursor, statement, onPatch, onPickRetyped, on
   );
 }
 
-/**
- * A number typed in the panel, written back as soon as it is a number.
- *
- * ⚠️ Holds what was typed until then. Writing every keystroke straight through
- * turned a lone "-" into 0 before the 2 could follow, so "give 2 charges back"
- * could not be typed at all.
- */
+/** ⚠️ Holds what was typed until it is a number: writing every keystroke through turned a lone minus into 0, so give 2 charges back could not be typed. */
 function NumberField({ slot, onPatch }) {
   const [draft, setDraft] = useState(null);
   return (
@@ -527,7 +434,6 @@ function NumberField({ slot, onPatch }) {
   );
 }
 
-/** A word in the cost strip: opens its slot in the panel. */
 function StripWord({ slot, text, active, onOpen }) {
   return (
     <button
@@ -552,19 +458,7 @@ function StripWord({ slot, text, active, onOpen }) {
   );
 }
 
-/**
- * ⭐ **Cost and cadence, beside the sentence** (E-6, Rules Line P5).
- *
- * > spends 1 charge each time it fires · no cooldown · consumes 1 Coal every 30 seconds
- *
- * Owner ruling 2026-09-12: **only what the sentence leaves unsaid.** The charge
- * cost and the upkeep are said nowhere in the rules text, so they live here. A
- * cooldown is a word in the sentence once there is one, so the strip offers it
- * only while there is none — never in two places at once. Chance is always a
- * word in the sentence and never appears here.
- *
- * Replaces the "Charge cost" and "Costing" boxes that sat under every rule.
- */
+/** Cost and cadence beside the sentence: only what the sentence leaves unsaid. Charge cost and upkeep live here; a cooldown shows only while there is none (otherwise it is a word in the sentence); chance never appears here. */
 function CostStrip({ statement, costs, cooldown, upkeepAllowed, names, cursor, actions, onChange }) {
   const byId = Object.fromEntries(costs.map((s) => [s.id, s]));
   const open = (slot) => actions.set({ slotId: slot.id, occurrence: 0, mode: 'panel' });
@@ -641,28 +535,13 @@ function CostStrip({ statement, costs, cooldown, upkeepAllowed, names, cursor, a
   );
 }
 
-/** How a decision with no word in the sentence is offered. */
 function affordanceLabel(slot) {
   if (slot.kind === SLOT_KIND.FLAG || slot.kind === SLOT_KIND.FILTERS) return `+ ${slot.label}`;
   const shown = slotDisplay(slot);
   return `${slot.label}: ${shown && shown !== '…' ? shown : '—'}`;
 }
 
-/**
- * One statement, edited as the sentence it is.
- *
- * @param {object} statement
- * @param {(patch: object) => void} onChange  merged into the statement
- * @param {object} names  id → display name, for the rendered sentence
- * @param {React.ReactNode} form  a conversion's item table (E-8's one exception)
- * @param {React.ReactNode} upkeepTable  the upkeep's items, beneath the cost strip
- * @param {object} ctx  the content a slot may pick from
- * @param {object|null} cursor  this rule's share of the list's cursor, or null
- *   when the author is working in another rule
- * @param {object} actions  cursor moves, bound to this rule by the list
- * @param {boolean} lockKeyword  the verb is not retypeable — a Token's Requires
- *   row, which is not a rule and must not be turned into one (P6)
- */
+/** One statement, edited as the sentence it is. `form` is a conversion's item table; `upkeepTable` sits beneath the cost strip; `lockKeyword` stops the verb being retyped (a Token's Requires row is not a rule). */
 export default function RulesLine({ statement, onChange, names, form, upkeepTable, ctx, cursor, actions, lockKeyword = false }) {
   const slots = useMemo(
     () => slotsOf(statement, ctx).filter((s) => !(lockKeyword && s.id === 'keyword')),
@@ -679,18 +558,12 @@ export default function RulesLine({ statement, onChange, names, form, upkeepTabl
   const formRef = useRef(null);
   const idBase = useId();
 
-  // Every clickable word's position, in reading order — what Tab walks.
   const words = useMemo(
     () => segments.reduce((acc, s, i) => (s.slot && byId.has(s.slot) ? [...acc, i] : acc), []),
     [segments, byId]
   );
 
-  /**
-   * ⚠️ A word is remembered by its slot and which occurrence of it, never by
-   * position alone. Committing a word re-renders the sentence, and positions can
-   * shift ("On Cycle" → "On Neighbour Produces …" adds words), so the cursor is
-   * re-resolved against the CURRENT segments every render.
-   */
+  /** ⚠️ A word is remembered by its slot and occurrence, never by position: committing re-renders the sentence and positions shift, so the cursor is re-resolved against the current segments every render. */
   const occurrenceOf = (i) => segments.slice(0, i).filter((s) => s.slot === segments[i].slot).length;
   const indexOf = (slotId, occurrence = 0) => {
     let n = 0;
@@ -708,7 +581,6 @@ export default function RulesLine({ statement, onChange, names, form, upkeepTabl
   const retypingSlot = retypingAt != null ? byId.get(segments[retypingAt].slot) : null;
   const listIdFor = (slot) => (slot.kind === SLOT_KIND.TEXT && slot.suggestions?.length ? `${idBase}-${slot.id}` : undefined);
 
-  /** Where the cursor goes for the word at position `i`. */
   const targetAt = (i, { keyboard }) => {
     const slot = byId.get(segments[i].slot);
     const mode = INLINE.has(slot.kind) ? 'retype' : keyboard ? 'word' : 'panel';
@@ -721,7 +593,6 @@ export default function RulesLine({ statement, onChange, names, form, upkeepTabl
     if (byId.get(target.slotId).kind === SLOT_KIND.FORM) formRef.current?.scrollIntoView?.({ block: 'nearest' });
   };
 
-  /** Tab / Shift+Tab: commit what is valid, then move to the neighbouring word. */
   const walk = (fromIndex, e) => {
     if (e.key !== 'Tab') return;
     const patch = retypingSlot && fromIndex === retypingAt ? typedPatch(retypingSlot, statement, cursor) : null;
@@ -736,7 +607,6 @@ export default function RulesLine({ statement, onChange, names, form, upkeepTabl
     actions.set(targetAt(next, { keyboard: true }));
   };
 
-  /** Keys inside the typing box. */
   const keyInBox = (e) => {
     const slot = retypingSlot;
     if (!slot) return;
@@ -753,7 +623,7 @@ export default function RulesLine({ statement, onChange, names, form, upkeepTabl
       const patch = typedPatch(slot, statement, cursor);
       if (patch) { onChange(patch); actions.close(); return; }
       // Nothing typed and nothing chosen: keep what was there. Otherwise the
-      // text is not a word here — insert nothing, keep the suggestions open (E-4).
+      // text is not a word here — insert nothing, keep the suggestions open.
       if (!cursor.query.trim() && !cursor.moved) actions.close();
     }
   };
@@ -829,18 +699,12 @@ export default function RulesLine({ statement, onChange, names, form, upkeepTabl
         </div>
       )}
 
-      {/* Tag suggestions, for typing a tag straight into the line. */}
       {slots.filter((s) => listIdFor(s)).map((s) => (
         <datalist key={s.id} id={listIdFor(s)}>
           {s.suggestions.map((t) => <option key={t} value={t} />)}
         </datalist>
       ))}
 
-      {/*
-        A slot's own note or warning — the buff-or-penalty reading and the
-        unknown-tag catch. Computed by the slot model, so they are testable in
-        the game's suite rather than only visible on screen.
-      */}
       {slots.filter((s) => s.note || s.warning).map((s) => (
         <p
           key={s.id}

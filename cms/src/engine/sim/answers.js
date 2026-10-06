@@ -1,38 +1,12 @@
 /**
- * Economic simulator — "the sim answered", per entity (phase P6, plan §15.1).
- *
- * The Simulator panel has two halves. `SimIntentControls` is the half an author
- * *sets*; this module builds the half the simulator *answers* — one small,
- * plain record per Token and per Recipe, so the editor can render it without
- * knowing anything about passes, Maps or dials.
- *
- * Keeping it here rather than in the component is what stops the CMS growing a
- * second, drifting copy of the engine's vocabulary.
- *
- * ## The stale badge, and why it is a fingerprint
- *
- * §15.1 wants a grey "stale — recalculate" badge when the entity has been
- * edited since the last run. Rather than tracking edit timestamps across every
- * store action — a change in a dozen places, each of which can be forgotten —
- * each answer carries a **fingerprint of the record as the run left it**. The
- * panel fingerprints the live record and compares. Any edit at all makes them
- * differ.
- *
- * ⚠️ That is deliberately over-eager: renaming a Token or changing its sprite
- * marks its answer stale too, though neither changes a number. "Something about
- * this changed since the run" is honest and cheap; "exactly the economically
- * relevant fields changed" is a second model of what matters, and it would rot.
+ * Economic simulator: the sim answered, per entity. Builds the half of the Simulator panel that the simulator answers, one plain record per Token and Recipe, so the editor needs no knowledge of passes, Maps or dials.
+ * ⚠️ The stale badge is a fingerprint: each answer carries a fingerprint of the record as the run left it, and the panel compares it with the live record. Deliberately over-eager (renaming a Token marks it stale), because a second model of which fields matter would rot.
  */
 
 import { bandFor } from '../../../../src/config/registries/tempoBands.js';
 import { isRefusal } from './refusals.js';
 
-/**
- * A short, stable fingerprint of a record.
- *
- * djb2 over the record's JSON. Not a cryptographic hash and not trying to be:
- * it only has to change when the record does, within one browser session.
- */
+/** A short, stable fingerprint of a record: djb2 over its JSON. It only has to change when the record does, within one browser session. */
 export function fingerprint(record) {
     const json = JSON.stringify(record ?? null);
     let hash = 5381;
@@ -107,21 +81,8 @@ export function buildSimAnswers(sim, { tokens = {}, recipes = {} } = {}, ranAt =
 }
 
 /**
- * The lifetime line, **hours first** (plan §15.1, CMS-135 ruled 2026-08-28).
- *
- * > "lives ~3.1h · returns ~14× its find cost"
- *
- * Two numbers and no arithmetic for the reader to do. *Lives* is what the check
- * pass computed from `uses` and the settled cycle — **never `charges`** (S6).
- * *Returns* compares what one copy earns over that life against what a Map's
- * burst charged for it, which is the Token's `scrapValue`: the acquisition slice
- * the Map pass allocated (CMS-48).
- *
- * ⚠️ Both halves are optional and independently so. A Recipe has no copies to
- * spend, so it has no lifetime at all; a Token no Map hands over has a lifetime
- * but no find cost, and prints the hours alone rather than inventing a
- * denominator. `null` in either place means "the sim has not said", which the
- * panel renders as silence.
+ * The lifetime line, hours first. Lives is what the check pass computed from `uses` and the settled cycle, never `charges`. Returns compares what one copy earns over that life against what a Map's burst charged for it (the Token's `scrapValue`).
+ * ⚠️ Both halves are optional: a Recipe has no lifetime, and a Token no Map hands over prints hours alone. `null` means the sim has not said, which the panel renders as silence.
  */
 function lifetimeLine(sim, entity, tuning) {
     if (entity.kind !== 'token') return null;

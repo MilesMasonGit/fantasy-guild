@@ -25,7 +25,6 @@ export default function SettingsModal({ isOpen, onClose }) {
           borderColor: 'var(--color-border-subtle)',
         }}
       >
-        {/* Header */}
         <header
           className="flex items-center justify-between px-6 py-4 border-b shrink-0"
           style={{
@@ -47,13 +46,11 @@ export default function SettingsModal({ isOpen, onClose }) {
           </button>
         </header>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           <PaceDials />
           <MapDials />
           <DialInteractions />
 
-          {/* Section 1: Global Dials */}
           <Section title="Economy Dials & Macro Pacing">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Map Target ROI Multiplier">
@@ -181,7 +178,6 @@ export default function SettingsModal({ isOpen, onClose }) {
             </div>
           </Section>
 
-          {/* Section 2: Wealth & XP Velocity Curves */}
           <Section title="Wealth & XP Velocity Curves">
             <div className="space-y-4">
               <p className="text-xs text-gray-400">
@@ -233,7 +229,6 @@ export default function SettingsModal({ isOpen, onClose }) {
             </div>
           </Section>
 
-          {/* Section 3: Item Type Sell Modifiers */}
           <Section title="Item Category Sell Modifiers">
             <div className="grid grid-cols-2 gap-3">
               {ITEM_TYPES.map((type) => (
@@ -255,7 +250,6 @@ export default function SettingsModal({ isOpen, onClose }) {
           </Section>
         </div>
 
-        {/* Footer */}
         <footer
           className="flex items-center justify-between px-6 py-4 border-t shrink-0"
           style={{
@@ -282,16 +276,7 @@ export default function SettingsModal({ isOpen, onClose }) {
   );
 }
 
-/**
- * **Interactions worth knowing** (plan §14, phase P9) — printed on the
- * Dashboard, exactly as the plan asks.
- *
- * A dial's own caption says what that dial does. These three say what happens
- * when two of them are turned together, which is where a dial set stops being
- * predictable and where a designer who is not holding the whole model in their
- * head gets surprised. §3.2 makes that predictability an acceptance test, so
- * this block is part of the deliverable rather than help text.
- */
+/** Interactions worth knowing: what happens when two dials are turned together, which is where a dial set stops being predictable. Printed on the Dashboard as part of the deliverable, not help text. */
 function DialInteractions() {
   const note = 'text-[11px] leading-relaxed';
   return (
@@ -323,17 +308,8 @@ function DialInteractions() {
 }
 
 /**
- * The Map check's dials (plan §13.6 / §14, phase P7).
- *
- * These edit `simDials`, the simulator's own dial set — **not** the legacy
- * `mapTargetROI` / `mapBurstSellRatio` globals below, which belonged to the
- * retired balance engine and no pass reads. The two are deliberately in
- * separate sections rather than merged: merging them would imply the old ones
- * still do something.
- *
- * ⚠️ Turning any of these changes what the Map check *says*, never what it
- * writes to a Map. A Map's price, materials, pool and rarity tags are authored;
- * these move the bounds those authored numbers are judged against.
+ * The Map check's dials. These edit `simDials`, not the legacy `mapTargetROI` / `mapBurstSellRatio` globals below, which no pass reads.
+ * ⚠️ They change what the Map check says, never what it writes to a Map.
  */
 function MapDials() {
   const globals = useGlobalStore();

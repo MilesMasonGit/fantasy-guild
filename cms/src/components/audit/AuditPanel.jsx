@@ -16,7 +16,7 @@ export default function AuditPanel({ openGenerate }) {
   const auditResults = useSimulationStore((s) => s.auditResults);
   const lastRun = useSimulationStore((s) => s.lastRunTimestamp);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
-  const [activeTab, setActiveTab] = useState('audit'); // 'audit' | 'maps' | 'sprites'
+  const [activeTab, setActiveTab] = useState('audit');
   const mapReports = useSimulationStore((s) => s.mapReports);
 
   const [sortField, setSortField] = useState('severity');
@@ -49,10 +49,7 @@ export default function AuditPanel({ openGenerate }) {
     }
   };
 
-  // Only the three collections the store actually holds can be selected. A row
-  // about a Recipe or from the simulator names something the editor router has
-  // no screen for, and jumping there would replace the editor with "Unknown
-  // entity type".
+  // Only the three collections the store holds can be selected: a row about a Recipe or the simulator has no screen in the editor router.
   const SELECTABLE = ['item', 'token', 'map'];
 
   const handleRowClick = (issue) => {
@@ -63,7 +60,6 @@ export default function AuditPanel({ openGenerate }) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Tab Switcher */}
       <div className="flex gap-4 border-b mb-4" style={{ borderColor: 'var(--color-border-subtle)' }}>
         <button
           onClick={() => setActiveTab('audit')}
@@ -142,23 +138,7 @@ export default function AuditPanel({ openGenerate }) {
   );
 }
 
-/**
- * The Map table (plan §13.6, phase P7) — the Map check's whole verdict.
- *
- * One row per Map: its **derived** level (the pool-share-weighted mean of what
- * its entries ask of a hero), what it costs, what its burst scraps for against
- * the scrap bound, what its burst earns against the productive bound, and
- * pass/fail.
- *
- * ⚠️ **This is a read-out, not a lever.** Every input to the check is authored
- * — the price, the materials, the pool, each entry's rarity tag, each Token's
- * charges — so a failing Map is a refusal on the Audit Issues tab naming the
- * gap and the remedies, never a number this screen quietly moved.
- *
- * It lives here, beside the audit rows it explains, because that is where a
- * designer already goes after a Recalculate. (The panel itself was unrouted
- * until P6 gave it the Economy Audit tab.)
- */
+/** The Map check's whole verdict, one row per Map. ⚠️ A read-out, not a lever: every input is authored, so a failing Map is a refusal on the Audit Issues tab, never a number this screen moved. */
 function MapEconomicsTable({ reports, lastRun }) {
   if (!lastRun || reports.length === 0) {
     return (
@@ -249,19 +229,7 @@ function MapEconomicsTable({ reports, lastRun }) {
   );
 }
 
-/**
- * The churn report (plan §15.2, phase P6) — the Dashboard zone's first tenant.
- *
- * After every Recalculate: how many values moved, the largest movers, which
- * sources the lever policy re-tuned, and which refusals are new or cleared
- * since the previous run. This is criterion 6 — *adding one Token must not
- * silently re-price half the game* — made visible; without it that promise is
- * only a claim.
- *
- * ⚠️ The first run of a session has nothing to diff against, so it reports a
- * refusal *total* and claims nothing new. That is stated on screen rather than
- * left for someone to wonder about.
- */
+/** The churn report after each Recalculate. ⚠️ The first run of a session has nothing to diff against, so it reports a refusal total and claims nothing new. */
 function ChurnReport() {
   const churn = useSimulationStore((s) => s.churnReport);
   if (!churn) return null;
@@ -320,7 +288,6 @@ function AuditListView({
 }) {
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>
@@ -329,8 +296,6 @@ function AuditListView({
           <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
             {auditResults.length} issues identified • Last calculation: {new Date(lastRun).toLocaleTimeString()}
           </p>
-          {/* The Dashboard caption (plan §14/§15.2): what a severity means here,
-              so a row reads as an instruction rather than as a complaint. */}
           <p className="text-[10px] max-w-xl leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
             <strong>Critical</strong> is content the simulator could not price at all;{' '}
             <strong>Warning</strong> is priced but outside its band, with the levers exhausted;{' '}
@@ -338,7 +303,6 @@ function AuditListView({
             Every row names the tag or the dial to change next — nothing here is a number to type.
           </p>
         </div>
-        {/* Filter chips */}
         <div className="flex items-center gap-1">
           <Filter size={14} style={{ color: 'var(--color-text-muted)' }} />
           <button
@@ -371,7 +335,6 @@ function AuditListView({
         </div>
       </div>
 
-      {/* Table */}
       <div className="flex-1 overflow-auto rounded-lg border" style={{ borderColor: 'var(--color-border-subtle)' }}>
         <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
           <thead>

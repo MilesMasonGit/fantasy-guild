@@ -10,39 +10,9 @@ import { fingerprint } from '../../engine/sim/answers';
 import { progressionRows, groupBySkill, filterRows, recordPatch, undoSnapshot, NO_SKILL } from '../../engine/progressionRows';
 
 /**
- * The **Progression** screen — every Token and recipe that has a work cycle, in
- * one list, grouped by skill and ordered by level.
- *
- * ## Why it exists
- *
- * The per-entity editors are the wrong shape for a question about *pacing*. The
- * shipped ladder is 36 Tokens on level 1, one on 70 and one on 90; seeing that
- * requires holding 45 records in your head, and fixing it requires opening 45
- * screens. This is the screen where a skill's ladder is one column you can read
- * top to bottom.
- *
- * ## Editing
- *
- * Level, Tempo and Purpose are editable inline and land **live**, like every
- * other field in the CMS. Which field an edit actually writes to depends on the
- * record — see `recordPatch`, which is where that decision lives and is tested.
- *
- * ⚠️ **The derived columns go stale the moment you edit**, and a stale number
- * read as a current one is this screen's worst failure. Staleness is not
- * tracked here: a row is stale when the record's fingerprint no longer matches
- * the one the simulator answered against, which is the **same mechanism**
- * `SimAnswer` already uses. One definition of stale, in one place.
- *
- * ## Bulk edits
- *
- * Tick rows, then set one field across all of them. 37 producers ship untagged,
- * so tagging a skill's worth of Purpose in one action is most of that backlog;
- * doing it row by row is the thing this screen exists to avoid.
- *
- * ⚠️ A bulk action lands **live and immediately**, so it gets a one-step undo.
- * The undo is a snapshot taken before the action, not an inverse operation: the
- * rows it touched held different values beforehand, and "set 20 rows to level 5"
- * has no arithmetic inverse.
+ * The Progression screen: every Token and recipe with a work cycle, in one list grouped by skill and ordered by level. Level, Tempo and Purpose are editable inline and land live; `recordPatch` decides which field an edit writes.
+ * ⚠️ Derived columns go stale the moment you edit: a row is stale when the record's fingerprint no longer matches the one the simulator answered against, the same mechanism `SimAnswer` uses.
+ * ⚠️ A bulk action lands live, so it gets a one-step undo; the undo is a snapshot taken before the action, because setting rows to a value has no arithmetic inverse.
  */
 export default function ProgressionPanel() {
     const tokens = useEntityStore((s) => s.tokens);
@@ -170,8 +140,7 @@ export default function ProgressionPanel() {
     const shown = groups.reduce((n, [, group]) => n + group.length, 0);
     const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 
-    // Only skills the content actually uses, so the filter offers real choices
-    // rather than the registry's 27.
+    // Only skills the content actually uses, so the filter offers real choices.
     const usedSkills = useMemo(() => {
         const used = new Set(rows.map((r) => r.skill || NO_SKILL));
         return SKILLS.filter((s) => used.has(s.id)).map((s) => s.id)
@@ -214,8 +183,6 @@ export default function ProgressionPanel() {
                     <span className="text-[11px] text-gray-600 whitespace-nowrap">
                         {shown} of {rows.length}
                     </span>
-                    {/* The same Recalculate as the top bar, within reach of the
-                        edits that make its numbers wrong. */}
                     <button
                         onClick={handleRecalculate}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap"
@@ -290,8 +257,6 @@ function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf, selected, o
         <section className="rounded-xl border bg-[#1a1a1e] border-white/10 overflow-hidden">
             <div className="px-4 py-2 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2" style={{ color: noSkill ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
-                    {/* Tick a whole skill at once — the unit a Purpose or a
-                        Tempo is usually decided for. */}
                     <input
                         type="checkbox"
                         checked={allOn}
@@ -380,8 +345,6 @@ function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf, selected, o
                                     {SIM_PURPOSES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
                                 </select>
                             </td>
-                            {/* Derived, and dimmed with a dot once the record
-                                has moved on from the answer they came from. */}
                             <td style={{ ...cell, textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-text-muted)', opacity: stale ? 0.4 : 1 }}>
                                 {stale && <span title="Out of date — Recalculate" style={{ color: 'var(--color-warning)', opacity: 1 }}>• </span>}
                                 {Number.isFinite(row.cycleTimeMs) ? `${Math.round(row.cycleTimeMs / 1000)}s` : '—'}
@@ -400,15 +363,7 @@ function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf, selected, o
 
 /**
  * Set one field across every ticked row.
- *
- * ⚠️ **One field per action, deliberately.** A form that set level, Tempo and
- * Purpose together would make "set Purpose on these twenty" impossible to
- * express without also stating a level for them, and the undo — a single step —
- * would then cover three changes the author thought of as separate.
- *
- * Each control fires on change and then resets itself, so the bar never shows a
- * value that looks like the selection's current state. It has none: the twenty
- * rows ticked may hold twenty different levels.
+ * ⚠️ One field per action, deliberately: a form setting level, Tempo and Purpose together could not express set Purpose on these twenty without also stating a level, and the single-step undo would cover three changes. Each control resets itself after firing, because the ticked rows may hold different values.
  */
 /** The "untagged" choice, kept distinct from "nothing picked yet". */
 const CLEAR = '__clear';

@@ -1,28 +1,4 @@
-/**
- * Economic simulator — the **chain inspector** (plan §15.2, phase P9).
- *
- * Criterion 11 is explainability: *"why is this worth that?"* must have an
- * answer a designer can read. The plan asks for the answer as a sentence trail
- * rather than a table:
- *
- * > "Oak Wood 3g ← anchors: Oakwood Grove (L1, Medium, GPH) → Charcoal 6g =
- * > 4×3g inputs ÷ 2 + margin…"
- *
- * So this module turns a `runSim` result into one small record per item: what
- * set its value, out of what, and what is priced downstream of it. The rendering
- * is a component's job; every word of economics is decided here, so the CMS
- * cannot grow a second vocabulary for the same numbers.
- *
- * ## Why it reads `details` rather than recomputing anything
- *
- * `pricingPass` already records, per priced item, the source that set it, that
- * source's level and Purpose, the input value it started from, whether the
- * craft-margin floor engaged, and the ideal it rounded off. Recomputing any of
- * that here would be a second implementation of the pricing rule, and the two
- * would drift. Everything below is a re-reading of what the pass already said.
- *
- * Pure: it writes nothing and reads no store.
- */
+/** Economic simulator: the chain inspector. Turns a `runSim` result into one record per item: what set its value, out of what, and what is priced downstream. Every word of economics is decided here so the CMS has one vocabulary; rendering is a component's job. It re-reads the `details` that `pricingPass` records rather than recomputing, because a recomputation would be a second pricing rule. Pure: it writes nothing and reads no store. */
 
 /** `3g`, or `—` for an item that has no value. */
 function gold(value) {
@@ -37,16 +13,7 @@ function sourceTag(entity) {
     return `L${entity.level}, ${tempo}, ${purpose}`;
 }
 
-/**
- * The arithmetic clause — the "= 4×3g inputs ÷ 2 + margin" half of the sentence.
- *
- * Three shapes, because there are three ways a value gets set:
- * - out of nothing (a gathering source): the target and the yield decide it;
- * - out of inputs, with the Purpose target on top;
- * - out of inputs, with the **craft-margin floor** deciding instead — which is
- *   worth saying out loud, because it is the case where re-tagging the Purpose
- *   would change nothing.
- */
+/** The arithmetic clause, in three shapes: out of nothing (a gathering source, where target and yield decide it); out of inputs with the Purpose target on top; out of inputs with the craft-margin floor deciding instead, where re-tagging the Purpose would change nothing. */
 function arithmetic(detail, inputs, values) {
     if (!detail) return null;
     const parts = [];
@@ -75,15 +42,10 @@ function arithmetic(detail, inputs, values) {
 }
 
 /**
- * Build one trail per item the run saw — priced or not.
- *
+ * Build one trail per item the run saw, priced or not.
  * @param {object} sim  a `runSim` result
  * @returns {Map<string, object>} itemId → `{ itemId, value, sentence, … }`
- *
- * An unpriced item still gets a record, carrying the row that explains why
- * rather than a blank: "no source at all" is an answer to "why is this worth
- * that?", and the inspector that goes quiet on exactly the items a designer is
- * puzzling over is the one that fails criterion 11.
+ * An unpriced item still gets a record carrying the row that explains why: no source at all is an answer to why is this worth that.
  */
 export function buildChainTrails(sim) {
     const trails = new Map();
@@ -93,7 +55,7 @@ export function buildChainTrails(sim) {
     const values = sim.values ?? new Map();
 
     // Which items feed which sources, so a trail can point downstream.
-    const consumedBy = new Map();       // itemId → [entityId]
+    const consumedBy = new Map();
     for (const entity of sim.entities ?? []) {
         for (const input of entity.inputs ?? []) {
             if (!input.itemId) continue;
@@ -105,7 +67,7 @@ export function buildChainTrails(sim) {
 
     // What each source anchors, so "→ Charcoal 6g" can name the item rather
     // than the recipe that makes it.
-    const anchoredBy = new Map();       // entityId → [itemId]
+    const anchoredBy = new Map();
     for (const election of (sim.elections ?? new Map()).values()) {
         if (!anchoredBy.has(election.sourceId)) anchoredBy.set(election.sourceId, []);
         anchoredBy.get(election.sourceId).push(election.itemId);
@@ -177,10 +139,7 @@ export function buildChainTrails(sim) {
             arithmetic: clause,
             upstream,
             downstream,
-            // The loudest thing the run said about this item. `what` where the
-            // row is a catalogued refusal, the whole line otherwise — a plain
-            // row carries no `what`, and reading only that field left the
-            // inspector silent about items a Warning had already explained.
+            // The loudest thing the run said about this item: `what` for a catalogued refusal, the whole line otherwise, since a plain row carries no `what`.
             unpricedReason: value === null
                 ? (() => {
                     const row = (rowsByItem.get(itemId) ?? []).find((r) => r.severity !== 'info');

@@ -11,9 +11,7 @@ import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
-/**
- * The Token editor — CMS-71's header clusters (Phase 2).
- */
+/** The Token editor. */
 export default function TokenEditor() {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const token = useEntityStore((s) => s.tokens[activeId]);
@@ -29,9 +27,7 @@ export default function TokenEditor() {
   const update = (key, value) => updateToken(activeId, { [key]: value });
   const updateConfig = (patch) =>
     updateToken(activeId, { config: { ...(token.config || makeTokenConfig()), ...patch } });
-  // The simulator's authoring intent (P2). Merged rather than replaced so the
-  // per-output intent in the IO list and the Tempo/Purpose here cannot clobber
-  // one another.
+  // Merged rather than replaced so the per-output intent in the IO list and the Tempo/Purpose here cannot clobber one another.
   const updateSim = (patch) => updateToken(activeId, { sim: { ...(token.sim || {}), ...patch } });
 
   const config = token?.config;
@@ -42,23 +38,11 @@ export default function TokenEditor() {
   const isUnlimited = token?.uses == null;
   const spritePath = token?.sprite ? resolveSpritePath(token.sprite) : null;
 
-  // ⚠️ The type is DERIVED, and so is the rules text. Neither is typed by hand
-  // any more (§1.2, owner decision Q3): a picker can disagree with the thing it
-  // classifies, and a hand-written description can disagree with the effect it
-  // describes. Both disagreements were live bugs.
-  //
-  // ⚠️ Both read the Token's STATEMENTS, and a Token stores references to the
-  // named effect library (Unified Effects P1). So it is expanded first — an
-  // unexpanded Token has no rules at all, which would show every station as an
-  // untyped resource and every rules panel as empty.
+  // ⚠️ The type and the rules text are DERIVED, never typed: a picker can disagree with what it classifies. Both read the Token's statements, which are references to the effect library, so the Token is expanded first; an unexpanded Token would show every station as an untyped resource and every rules panel as empty.
   const expanded = useMemo(() => expandBearer(token, effects), [token, effects]);
   const derived = useMemo(() => deriveTokenType(expanded), [expanded]);
 
-  // ⚠️ Read the DERIVED type, not the stored `tokenType`. The stored one is
-  // only rewritten by Recalculate, so keying the Enemy section off it meant
-  // ticking "a hero can fight this" changed nothing on screen until the author
-  // ran a recalculation — and the section that sets the field would have been
-  // hidden behind the field it sets.
+  // ⚠️ Read the DERIVED type, not the stored `tokenType`: the stored one is only rewritten by Recalculate, so ticking a hero can fight this would change nothing until a recalculation, and the section that sets the field would be hidden behind it.
   const isEnemy = derived.type === 'enemy';
   const enemy = token?.enemy || null;
   const enemyBudget = useMemo(
@@ -72,20 +56,7 @@ export default function TokenEditor() {
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
       <Header name={token.name} id={token.id} sprite={token.sprite} size={token.size} onDelete={() => deleteToken(activeId)} />
 
-      {/*
-        SECTION ONE — what the simulator decided.
-
-        The editor is two sections (owner, 2026-09-05): this read-only summary,
-        and everything you author below it. This used to sit inside a
-        "Simulator" section, below the Tempo and Purpose controls and a long way
-        down the page — a verdict on the whole record, filed as a footnote to
-        the two tags it happened to sit beneath.
-
-        ⚠️ Renders **nothing at all** when there is nothing to say: no answer, no
-        derivation warning and no scrap value means no heading either. An
-        always-present empty panel at the top of every un-run Token is the thing
-        this layout is trying to avoid.
-      */}
+      {/* Read-only summary of what the simulator decided. ⚠️ Renders nothing at all when there is nothing to say, heading included. */}
       <TokenSummary token={token} derived={derived} needsSkill={isWorkedWithoutSkill(expanded)} />
 
       <Section title="Identity" icon={<Settings2 size={14} />}>
@@ -94,25 +65,7 @@ export default function TokenEditor() {
             <input type="text" value={token.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
           </Field>
 
-          {/* The Entity ID field and its Auto-Sync checkbox were removed here
-              (owner, 2026-09-05): ids are handled automatically and are not
-              something to author.
-
-              ⚠️ **Nothing about the data changed.** `autoSyncId` already
-              defaults to true, every shipped entity already had it, and the
-              store still slugs the id from the name on rename, de-duplicates
-              collisions (`uniqueId`) and rewrites every reference
-              (`performRename`). Only the escape hatch is gone. The flag is
-              deliberately **not** forced to true on load — doing so would
-              rename an entity whose id carries a collision suffix and churn
-              every reference to it for no reason. */}
-
-          {/* The derived "what this Token is" sentence was removed here
-              (owner, 2026-09-05): the type is derived and correct without being
-              narrated, and it is not a lever. ⚠️ It also carried the warning
-              for a Token with no rules and no work cycle — one the game treats
-              as doing nothing. That case is worth keeping and belongs in the
-              simulator's summary rather than in Identity. */}
+          {/* ⚠️ There is no Entity ID field: ids are automatic. The store slugs the id from the name on rename, de-duplicates collisions (`uniqueId`) and rewrites references (`performRename`). `autoSyncId` is deliberately not forced to true on load, because that would rename an entity whose id carries a collision suffix and churn every reference to it. */}
 
           <Field label="Sprite" className="col-span-2">
             <div className="flex gap-2 items-center">
@@ -141,10 +94,6 @@ export default function TokenEditor() {
             </div>
           </Field>
 
-          {/* Rarity and Grid Size used to sit in a separate "Classification"
-              section. They are part of what a Token *is* — how often it drops
-              and how much board it takes — so they live with the rest of its
-              identity. */}
           <Field label="Rarity">
             <select
               value={token.rarity ?? ''}
@@ -158,24 +107,19 @@ export default function TokenEditor() {
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
-            {/* D-175: rarity is drop frequency, not power. */}
+            {/* Rarity is drop frequency, not power. */}
             <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
               How often it drops — not how strong it is.
             </p>
           </Field>
 
-          {/* "Bursts into a Map" used to live here. A Map Token still carries
-              `mapId` (D-155) and nothing about the data changed — but the link
-              is authored from the **Map** editor now (owner, 2026-09-05), which
-              is where a Map is being built and where the "no Token points at
-              this Map" warning already was. Authoring it from this side meant
-              creating the Map first, then leaving to find the Token. */}
+          {/* The Map link is authored from the Map editor, not here; a Map Token still carries `mapId`. */}
           <Field label="Grid Size">
             <select
               value={token.size ?? 1}
               onChange={(e) => {
                 const size = Number(e.target.value);
-                // TL-19 (B8.1): only a 1×1 may be small, so going 2×2 clears it.
+                // Only a 1×1 may be small, so going 2×2 clears it.
                 updateToken(activeId, size === 1 ? { size } : { size, artSize: undefined });
               }}
               className="w-full"
@@ -188,12 +132,7 @@ export default function TokenEditor() {
             </p>
           </Field>
 
-          {/* TL-19 / FB-18 (B8.1): standard (64 px art at 128 px) or small
-              (32 px art at 64 px, with a half-size hit area and spacing) —
-              the game reads `artSize` (`matGeometry.isSmallToken`). Written
-              ONLY when Small: choosing Standard removes the key, so every
-              standard Token's record stays exactly as it was. 1×1 only; the
-              control is disabled on a 2×2 (and the game ignores it there). */}
+          {/* Standard (64 px art at 128 px) or small (32 px art at 64 px); the game reads `artSize` (`matGeometry.isSmallToken`). Written ONLY when Small, so every standard Token's record stays unchanged. 1×1 only; disabled on a 2×2. */}
           <Field label="Token Size">
             <select
               aria-label="Token Size"
@@ -214,7 +153,7 @@ export default function TokenEditor() {
       </Section>
 
       <Section title={isEnemy ? 'Fight' : 'Work Cycle'} icon={<Timer size={14} />}>
-        {/* CMS-58: a Token is not single-purpose. */}
+        {/* A Token is not single-purpose. */}
         {!config ? (
           <p className="text-[11px] text-gray-500 leading-relaxed">
             No production. Add an input or output in the sidebars to give this Token a
@@ -245,8 +184,7 @@ export default function TokenEditor() {
                   className="w-full"
                 />
               </Field>
-              {/* CMS-79 vs CMS-70: a private station carries flat timing here;
-                  a pooled one has none, because each recipe defines its own. */}
+              {/* A private station carries flat timing here; a pooled one has none, because each recipe defines its own. */}
               {isPooled ? (
                 <Field label="Cycle Time">
                   <div
@@ -289,7 +227,6 @@ export default function TokenEditor() {
                 </Field>
               )}
             </div>
-            {/* D-164's flat 10–30s band for untagged content. */}
             {!isPooled && (config.cycleTimeMs < 10000 || config.cycleTimeMs > 30000) && (
               <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
                 ⚠️ Outside the 10–30s band. That band keeps the board at roughly one
@@ -297,14 +234,6 @@ export default function TokenEditor() {
                 where every drop still registers.
               </p>
             )}
-            {/*
-              Tempo and Purpose are things **you** author, so they sit with the
-              cycle they set rather than in a section named for the simulator
-              (owner, 2026-09-05). The old "Simulator" section held these two
-              controls and the sim's answer; the answer is now the summary at
-              the top of the editor, and these are here, which leaves that
-              section with nothing of its own to hold.
-            */}
             <div className="pt-4 mt-4 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
               <SimIntentControls
                 sim={token.sim}
@@ -319,18 +248,7 @@ export default function TokenEditor() {
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">
-          {/*
-            ⚠️ The label is "Charges" and the field is `uses`, and that is
-            correct rather than a leftover. "Charges" is the game's own word —
-            `TokenInspection` shows a Charges badge reading `def.uses`, and the
-            system is `Charges.js` — while `uses` is only what the field is
-            called. Renaming the label to match the field would make the CMS
-            disagree with the game a designer is authoring for.
-
-            Not to be confused with the retired top-level `charges` field, which
-            disagreed with `uses` on 33 Tokens and is stripped on every
-            Recalculate (`RETIRED_TOKEN_FIELDS`).
-          */}
+          {/* ⚠️ The label is Charges and the field is `uses`, deliberately: Charges is the game's own word (the TokenInspection badge, `Charges.js`). Not the retired top-level `charges` field, which is stripped on every Recalculate (`RETIRED_TOKEN_FIELDS`). */}
           <Field label="Charges">
             <div className="flex items-center gap-2">
               <input
@@ -366,7 +284,6 @@ export default function TokenEditor() {
             </label>
           </div>
         </div>
-        {/* D-116, asserted by ContentRules.test.js. */}
         {token.requiresHero === false && (
           <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
             ⚠️ An unstaffed Token must be strictly worse per tile than the staffed
@@ -437,9 +354,7 @@ export default function TokenEditor() {
         <Statements token={token} />
       </Section>
 
-      {/* Station-ness is a `Works as` statement (R-14/R-15). This checkbox is a
-          shortcut that writes that statement using the config's skill; the Rules
-          list edits the same sentence and can name a different skill. */}
+      {/* Station-ness is a `Works as` statement. This checkbox is a shortcut that writes it using the config's skill; the Rules list edits the same sentence and can name a different skill. */}
       {config && (
         <Section title="Recipes" icon={<BookOpen size={14} />}>
           <label className="flex items-start gap-2.5 cursor-pointer select-none">
@@ -498,9 +413,7 @@ export default function TokenEditor() {
         </Section>
       )}
 
-      {/* The Enemy section. Always present, never conditional on `isEnemy` —
-          it is what MAKES a Token an enemy, so hiding it behind that flag
-          would hide the only control that can set it. */}
+      {/* Always present, never conditional on `isEnemy`: it is what makes a Token an enemy, so hiding it would hide the only control that sets it. */}
       <Section title="Enemy" icon={<Swords size={14} />}>
         <label className="flex items-center gap-2.5 cursor-pointer select-none">
           <input
@@ -560,11 +473,7 @@ export default function TokenEditor() {
               </Field>
             </div>
 
-            {/* TL-16 / FB-23 (B7.2): a hostile enemy attacks a hero who comes
-                inside the flag radius around its spawner; a peaceful one fights
-                only when a hero attacks it. Written ONLY when ticked — unticking
-                removes the key, so a peaceful enemy's block stays exactly as it
-                was (missing = peaceful, which is what the game reads). */}
+            {/* A hostile enemy attacks a hero who comes inside the flag radius around its spawner; a peaceful one fights only when attacked. Written ONLY when ticked; missing means peaceful, which is what the game reads. */}
             <label className="flex items-center gap-2.5 cursor-pointer select-none mt-3">
               <input
                 type="checkbox"
@@ -609,8 +518,6 @@ export default function TokenEditor() {
         )}
       </Section>
 
-      {/* Token Lifecycle blocks (roadmap v1 §3.1). Each is optional and added
-          or removed as a whole; an absent block stays absent in the file. */}
       <LifecycleBlocks token={token} onChange={update} />
 
       <SpritePickerModal
@@ -622,26 +529,7 @@ export default function TokenEditor() {
   );
 }
 
-/**
- * SECTION ONE — what the last Recalculate decided about this Token.
- *
- * Three things, in the order they matter:
- *
- * 1. **A derivation warning**, when the Token's own shape is wrong — it has no
- *    rules and no work cycle, so the game treats it as doing nothing, or it was
- *    authored as a Market that pays out no currency. This is the half of the
- *    deleted "what this Token is" sentence worth keeping: the type itself is
- *    derived and correct without narration, but `deriveTokenType` also returns
- *    `warn` for shapes that are simply broken, and nothing else surfaced it.
- * 2. **The simulator's answer** — cycle in band, anchors, tuning, earnings,
- *    refusals, the stale badge. Unchanged; it just lives here now.
- * 3. **The derived scrap value**, which the sim has always written and this
- *    editor has never shown.
- *
- * ⚠️ Returns `null` when it has nothing to say, heading included. A Token that
- * has never been recalculated shows no panel at all rather than an empty one,
- * which is the whole point of putting this at the top.
- */
+/** What the last Recalculate decided about this Token: a derivation warning when its shape is broken (no rules and no work cycle, or a Market paying no currency), the simulator's answer, and the derived scrap value. ⚠️ Returns null when it has nothing to say, heading included. */
 function TokenSummary({ token, derived, needsSkill }) {
   const answer = useSimulationStore((s) => s.simAnswers[token.id]);
   const scrap = token.scrapValue;
@@ -656,8 +544,7 @@ function TokenSummary({ token, derived, needsSkill }) {
           ⚠️ {derived.why}.
         </p>
       )}
-      {/* FP-47 (Free Playmat slice 1.0): the game's own rule, read live, so it
-          clears the moment a skill is picked — no Recalculate needed. */}
+      {/* The game's own rule, read live, so it clears the moment a skill is picked; no Recalculate needed. */}
       {needsSkill && (
         <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
           ⚠️ This Token is worked by a hero but names no skill. {WORK_SKILL_WHY}

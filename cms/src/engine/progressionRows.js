@@ -1,30 +1,8 @@
 import { SKILLS } from '../utils/constants';
 
 /**
- * The Progression screen's rows — one shape from two different records.
- *
- * ## ⚠️ The level is not one field
- *
- * A **Token** states its level as `config.skillRequired`; a **recipe** states it
- * as `levelRequirement`. `fieldAdapter.js` says outright that the two are not
- * interchangeable (finding B5), and a list that reads one name for both would
- * look right while silently showing — and writing — the wrong thing for half
- * its rows. The same is true of the cycle length: `config.cycleTimeMs` on a
- * Token, `durationMs` on a recipe.
- *
- * So the reconciliation happens **here, once, at the edge**, and every consumer
- * above this file sees one row. That is deliberately the same trick
- * `fieldAdapter.js` plays for the simulator's passes, for the same reason.
- *
- * Tempo and Purpose are the exception: both records keep them on `sim`, so they
- * need no adapting.
- *
- * ## What a row carries
- *
- * Besides the display fields, each row carries **where to write back to**:
- * `kind` says which store action applies, and a recipe adds the `poolSkill` and
- * `index` that `updateRecipe(skillId, index, patch)` addresses it by. A Token is
- * addressed by `id`. Nothing above this file has to know either rule.
+ * The Progression screen's rows: one shape from two different records.
+ * ⚠️ The level is not one field: a Token keeps it at `config.skillRequired`, a recipe at `levelRequirement`; likewise cycle length is `config.cycleTimeMs` on a Token and `durationMs` on a recipe. The reconciliation happens here, once, so every consumer sees one row. Tempo and Purpose are on `sim` for both. Each row also carries where to write back to: `kind` picks the store action, and a recipe adds the `poolSkill` and `index` that `updateRecipe(skillId, index, patch)` addresses it by.
  */
 
 /** The level a record gates on, whichever field it keeps it in. */
@@ -34,11 +12,7 @@ export function levelOf(row) {
 
 /**
  * Every Token and recipe that has a work cycle, as rows.
- *
- * ⚠️ "Has a work cycle" means **has a config**, not "has inputs or outputs". A
- * pooled station draws its recipes from a skill pool and so carries no I/O of
- * its own, while still having exactly the skill and level this screen edits.
- * Filtering on I/O would drop it.
+ * ⚠️ Has a work cycle means has a config, not has inputs or outputs: a pooled station carries no I/O of its own but still has the skill and level this screen edits.
  */
 export function progressionRows({ tokens = {}, recipePools = {} } = {}) {
     const rows = [];
@@ -89,19 +63,7 @@ export function progressionRows({ tokens = {}, recipePools = {} } = {}) {
 /** Rows with no skill sort last, under this key. */
 export const NO_SKILL = '';
 
-/**
- * Rows grouped by skill, in the game's own skill order, level-ordered within.
- *
- * ⚠️ Skills with no rows are dropped. The skill registry has 27 entries and the
- * shipped corpus uses six of them, so keeping the empties would bury the list
- * under twenty-one headings for nothing — the same noise the Recipes sidebar
- * carries because it is a list *of skills* rather than of content.
- *
- * The **No skill** group sorts last rather than first. 16 of the shipped Tokens
- * with a cycle have no skill at all, so it is a large group, and it is a group
- * of things that are not on any ladder — the opposite of what this screen is
- * for reading top to bottom.
- */
+/** Rows grouped by skill, in the game's own skill order, level-ordered within. Skills with no rows are dropped. The No skill group sorts last, because it holds things that are not on any ladder. */
 export function groupBySkill(rows) {
     const order = SKILLS.map((s) => s.id);
     const bySkill = new Map();
@@ -145,26 +107,7 @@ export function filterRows(rows, { search = '', skill = '' } = {}) {
 
 /**
  * The record patch for one inline edit.
- *
- * ⚠️ **This is the write half of the field-name problem**, and the dangerous
- * half. Reading the wrong field shows a wrong number; writing it puts an
- * authored value somewhere nothing reads, leaves the real field untouched, and
- * looks like it worked. So the same `kind` that chose where to read chooses
- * where to write, in one place, with tests.
- *
- * * A **Token**'s level is `config.skillRequired`, and the config is **merged**
- *   rather than replaced — `updateToken` shallow-merges its patch, so passing a
- *   bare `{ config: { skillRequired } }` would drop the skill, the cycle time,
- *   the XP and both I/O lists.
- * * A **recipe**'s level is `levelRequirement`, top level.
- * * Tempo and Purpose sit on `sim` for both, and are merged the same way so
- *   setting one does not clear the other.
- *
- * Clearing a tag (choosing "untagged") **deletes the key** rather than writing
- * an empty string: `tempoPass` treats a missing tag as untagged and skips the
- * entity, and an empty string is not the same thing — it would read as an
- * unknown tempo and file an `unknown-tempo` row instead.
- *
+ * ⚠️ The write half of the field-name problem: writing the wrong field puts an authored value where nothing reads it and looks like it worked, so the same `kind` that chose where to read chooses where to write. A Token's level is `config.skillRequired`, and the config is MERGED because `updateToken` shallow-merges its patch; a recipe's is `levelRequirement`. Tempo and Purpose sit on `sim` and are merged the same way. Clearing a tag DELETES the key: `tempoPass` treats a missing tag as untagged, whereas an empty string would file an `unknown-tempo` row.
  * @param row     the row being edited, for its `kind`
  * @param current the live record, so merges keep what they are not changing
  * @param edit    any of `{ level, tempo, purpose }`
@@ -199,20 +142,8 @@ export function recordPatch(row, current, edit = {}) {
 }
 
 /**
- * A patch that puts one record back the way it was.
- *
- * The undo for a bulk edit is not "subtract what we added" — a bulk action sets
- * an absolute value, and the rows it touched had different values before it. So
- * the snapshot is taken **before** the action and is simply the fields
- * `recordPatch` is capable of changing, as they stood.
- *
- * ⚠️ Deep-copied, not referenced. The store replaces records on write rather
- * than mutating them, but a snapshot holding a live reference would be one
- * refactor away from silently undoing to the *current* value — which would look
- * exactly like undo doing nothing.
- *
- * A `sim` that did not exist snapshots as `undefined`, which restores the
- * record to having no `sim` rather than to an empty one.
+ * A patch that puts one record back the way it was. The undo for a bulk edit is a snapshot taken before the action, because a bulk action sets an absolute value over rows that held different values.
+ * ⚠️ Deep-copied, not referenced: a snapshot holding a live reference would silently undo to the current value. A `sim` that did not exist snapshots as `undefined`, restoring no `sim` rather than an empty one.
  */
 export function undoSnapshot(row, current) {
     const sim = current?.sim ? { ...current.sim } : undefined;

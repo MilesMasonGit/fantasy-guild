@@ -6,31 +6,8 @@ import InlineItemModal from '../shared/InlineItemModal';
 import { derivedWeight } from '../../engine/sim/mapPass';
 
 /**
- * The Map editor — the Cartographer's catalogue (Phase 7).
- *
- * A Map is the game's progression system and its primary gold sink (D-99,
- * D-96), which are deliberately the same thing. Buying one bursts it into 3–6
- * things from its pool (D-167).
- *
- * ## What this screen deliberately does NOT do
- * **No pass/fail on price** (CMS-57). Map price is the one hand-authored
- * anchor the whole economy hangs from — every downstream value is *derived*
- * from it, so there is nothing to validate it against. The screen's job after a
- * recalculate is to show what the price produced, not to grade it.
- *
- * **No live ROI feedback** (CMS-55). Recalculation is on demand everywhere in
- * the CMS (CMS-16); this screen gets no exception, so there is one mental model
- * rather than some screens updating live and others not.
- *
- * **No category filter on the pool picker** (CMS-56). One flat searchable list
- * of every Token — you filter by eye. A Token may appear in several Maps'
- * pools; a common resource legitimately belonging to more than one Map is
- * normal.
- *
- * **No kit-completeness check.** D-139 says a pool should be a complete kit —
- * producers, their context, their buffs, their Manager, a Market, the enemies
- * that belong there — but CMS-10 explicitly deferred validating that. The
- * composition tally below is a read-out, not a verdict.
+ * The Map editor.
+ * ⚠️ Deliberately no pass/fail on price: price is the one hand-authored anchor everything else derives from, so there is nothing to grade it against. There is also no category filter on the pool picker and no kit-completeness check; the composition tally is a read-out, not a verdict.
  */
 export default function MapEditor() {
   const activeId = useEntityStore((s) => s.activeEntityId);
@@ -48,7 +25,7 @@ export default function MapEditor() {
   const update = (key, value) => updateMap(activeId, { [key]: value });
   const pool = map.pool || [];
 
-  /** Which Token bursts into this Map — a Map Token carries `mapId` (D-155). */
+  /** A Map Token carries `mapId`. */
   const mapTokens = Object.values(tokens).filter((t) => t.mapId === activeId);
 
   return (
@@ -60,9 +37,6 @@ export default function MapEditor() {
           <Field label="Display Name" className="col-span-2">
             <input type="text" value={map.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
           </Field>
-          {/* The "Theme" dropdown that sat here was removed 2026-08-24
-              (CR2-125). `theme` was never a feature (`concept_audit.md` §A);
-              nothing in the game read it, and every shipped Map had it blank. */}
         </div>
 
         {mapTokens.length > 0 && (
@@ -80,20 +54,7 @@ export default function MapEditor() {
             ))}
           </p>
         )}
-        {/*
-          Which Token buys this Map.
-
-          The same link used to be authored from the Token editor's "Bursts into
-          a Map" dropdown and moved here (owner, 2026-09-05). The data is
-          unchanged — a Map Token still carries `mapId` (D-155) — but this is
-          where a Map is being built, and where the "nothing points at this Map"
-          warning already lived, so setting it from the other side meant leaving
-          the screen to finish the job.
-
-          A Token points at one Map, so choosing one here clears the link from
-          whatever held it before rather than leaving two Tokens claiming the
-          same Map.
-        */}
+        {/* A Token points at one Map, so choosing one here clears the link from whatever held it before. */}
         <Field label="Bought as" className="col-span-2">
           <select
             value={mapTokens[0]?.id || ''}
@@ -132,8 +93,7 @@ export default function MapEditor() {
             className="w-full"
           />
         </Field>
-        {/* CMS-57: price is the hand-authored anchor, so there is nothing to
-            check it against. D-166: it must never rise with repeat purchases. */}
+        {/* Price is the hand-authored anchor, so there is nothing to check it against. */}
         <p className="text-[10px] text-gray-600 leading-relaxed">
           Every other value in the game is derived from this one, so nothing checks
           it — you are setting the anchor, not answering to it.
@@ -148,8 +108,7 @@ export default function MapEditor() {
           items={items}
           onChange={(materials) => update('materials', materials)}
         />
-        {/* D-150: taken from the Bank on purchase, as Token inputs are.
-            CMS-108: counts toward the value anchor alongside gold. */}
+        {/* Taken from the Bank on purchase, and counts toward the value anchor alongside gold. */}
         <p className="text-[10px] text-gray-600 leading-relaxed">
           Taken from the Bank when the Map is bought, exactly as a Token takes its
           inputs. Counts toward the price anchor alongside the gold.
@@ -167,7 +126,6 @@ export default function MapEditor() {
   );
 }
 
-/** The weighted burst pool. */
 function PoolSection({ pool, tokens, items, onChange, onOpen }) {
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('token');
@@ -175,9 +133,7 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
 
   const source = kind === 'token' ? tokens : items;
 
-  // The weights the next Recalculate will write, and the shares they imply.
-  // Computed here rather than read off the records so the screen shows the
-  // consequence of a rarity edit immediately, without a recalculation.
+  // The weights the next Recalculate will write, computed here so a rarity edit shows its consequence immediately.
   const derivedWeights = pool.map((entry) => {
     const ref = entry.kind === 'item' ? items[entry.refId] : tokens[entry.refId];
     return derivedWeight(ref?.rarity);
@@ -205,7 +161,6 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
   };
   const patch = (i, p) => onChange(pool.map((e, idx) => (idx === i ? { ...e, ...p } : e)));
 
-  /** Read-out only — a tally of what is in here, not a verdict (CMS-10). */
   const composition = useMemo(() => {
     const counts = {};
     for (const e of pool) {
@@ -230,7 +185,6 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
       </div>
 
       <div className="space-y-1.5">
-        {/* D-139: a pool should be a complete, self-contained kit. */}
         {pool.length === 0 && (
           <p className="text-[11px] text-gray-600">
             Empty pool. A Map should hand over everything needed to use what is in it —
@@ -284,15 +238,7 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
                 </label>
               )}
 
-              {/* ⚠️ **Read-only-derived** (CMS-124, economic simulator P7).
-                  This used to be a free numeric input under CMS-54 — "full
-                  author control over this Map's specific pool". It is now the
-                  referenced Token's rarity read through one global table, and
-                  the number below is what the next Recalculate will write. The
-                  lever a designer has here is the **rarity tag**, one screen
-                  over; shares still renormalise within the pool, so pool
-                  composition — not tier — sets what a burst actually feels
-                  like. */}
+              {/* ⚠️ Read-only: weight is derived from the Token's rarity, and this number is what the next Recalculate will write. Edit the rarity tag to change it. */}
               <label className="flex items-center gap-1" title={`Derived from rarity: ${ref?.rarity ?? 'common'}`}>
                 <span className="text-[9px] uppercase tracking-wider text-gray-600">wt</span>
                 <span
@@ -319,7 +265,6 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
         })}
       </div>
 
-      {/* CMS-56: one flat searchable list, no category filter. */}
       <div>
         <div className="flex gap-2">
           <select
@@ -376,8 +321,6 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
 
       <div className="flex items-start gap-2 pt-1">
         <Percent size={12} className="text-gray-600 mt-0.5 flex-shrink-0" />
-        {/* CMS-124 weights are derived from rarity; CMS-129 the first of three
-            draws is always a Token; CMS-57 no pass/fail on price. */}
         <p className="text-[10px] text-gray-600 leading-relaxed">
           Percentages are each entry's share of one draw. Weights are
           <strong> derived from rarity</strong> — to change how often something turns
@@ -400,7 +343,6 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
   );
 }
 
-/** The Map's material cost — a simple {itemId, quantity} list. */
 function MaterialList({ label, entries, items, onChange }) {
   const [query, setQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);

@@ -1,27 +1,9 @@
 /**
- * The simulator's authoring vocabulary that the **game does not declare**
- * (economic simulator rework P2).
- *
- * ⚠️ Tempo lives game-side, in `src/config/registries/tempoBands.js`, and is
- * re-exported from `constants.js` under CMS-5's game→CMS rule. Purpose does
- * not, and that is deliberate rather than an oversight: nothing in the game
- * will ever read a purpose. It is an input to the balancing engine, and the
- * engine lives here in `cms/`. The passes import this list; if the engine ever
- * moves game-side, this moves with it.
- *
- * Both fields are read by the engine now — `tempoPass` takes the cycle
- * time from Tempo, `pricingPass` takes the earnings target from Purpose, and
- * `tuningPass` judges the result against both.
+ * The simulator's authoring vocabulary that the game does not declare.
+ * ⚠️ Tempo lives game-side (`src/config/registries/tempoBands.js`) and is re-exported from `constants.js`; Purpose does not, deliberately: nothing in the game reads a purpose, it is an input to the balancing engine, which lives in `cms/`. The passes import this list; if the engine ever moves game-side, this moves with it.
  */
 
-/**
- * What a producer is *for*, in the three shapes the plan recognises.
- *
- * The captions are the plan's meanings written as sentences a designer reads.
- * The purpose **factors** (1.0 / 0.35 / 0.10) are deliberately not shown: they
- * are the engine's dial, and printing them here invites authoring against the
- * number instead of against the intent.
- */
+/** What a producer is for, in three shapes. The captions are the meanings written as sentences a designer reads. The purpose factors are deliberately not shown: they are the engine's dial, and printing them invites authoring against the number instead of the intent. */
 export const SIM_PURPOSES = [
   {
     id: 'gph',
@@ -42,15 +24,7 @@ export const SIM_PURPOSES = [
   },
 ];
 
-/** Is `value` one of the three purposes? */
 export function isSimPurpose(value) {
   return SIM_PURPOSES.some((p) => p.id === value);
 }
-
-/*
-  `SIM_SECTION_TITLE` lived here — the heading both editors gave the Simulator
-  panel, so the two could not drift. Removed 2026-09-05 with the section itself:
-  Tempo and Purpose moved into each editor's Work Cycle / timing block, because
-  they are authored rather than derived, and the sim's answer moved to a summary
-  at the top. There is no shared heading left to keep in step.
-*/
+

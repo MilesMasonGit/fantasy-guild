@@ -1,58 +1,6 @@
 /**
- * Economic simulator — pass 4 of 5: **TUNE**, the lever policy (phase P6).
- *
- * ```
- * 4. TUNE     A source that inherits a value it did not set is nudged into
- *             its earnings band by ONE legible lever — or refused.
- * ```
- *
- * ## The one sentence that matters
- *
- * **The band judges a source's *total* profit per hour, never one output at a
- * time** (plan §5, clarification F2). A level-40 Token whose main output
- * carries its earnings is *in band* even though the cheap level-1 material it
- * also drops would look absurd judged alone. Implementing this per-output is
- * the easy mistake, and it would make the tool wrong in exactly the way that
- * annoys a designer most: correct arithmetic, nonsense conclusion.
- *
- * ## The levers, in order, one at a time
- *
- * | # | Lever | Available when |
- * | :- | :--- | :--- |
- * | 0 | the band forgives it | a non-anchor gets **twice** the anchor band |
- * | 1 | quantity range | always — slide the midpoint, spread preserved |
- * | 2 | chance | the author made this output variable *and* under 100% |
- * | 3 | cycle time | whole seconds, never outside the Tempo band |
- * | 4 | refuse | §12, naming tags and dials |
- *
- * **Each lever is tried from the untouched baseline**, and the first one that
- * lands the source in band is the only one applied. That is what makes a diff
- * read as *one change per Token* — the whole point of the policy. Two levers
- * are never moved when one suffices, and a lever is never moved "a bit" to help
- * the next one along.
- *
- * ## Two rules that are firm
- *
- * - **A 100%-chance output is never made random.** The simulator may turn a
- *   dial the author created; it may never install one. There is no dial, no
- *   threshold and no special case that relaxes this.
- * - **A correction worse than 3× refuses instead of tuning.** Grinding the
- *   levers to their stops would land the number and destroy the Token's
- *   authored character. The single exemption is a quantity move on an
- *   **IPH**-tagged source — volume is an IPH Token's character — and any
- *   exempted move past 3× files a **Warning**, so the one place the guard is
- *   off is always visible.
- *
- * ## What this pass does NOT do
- *
- * **It never re-opens a price.** Item values are settled by the PRICE pass and
- * are read here, never written. Tuning changes how *much* a source produces and
- * how *often*, which changes what that source earns — not what its items are
- * worth. That is what keeps the assembly line one-way (plan §3.4) and is why
- * this pass can run after pricing without anything having to iterate.
- *
- * Like every pass in this directory it writes nothing: a caller gets Maps, and
- * `sim/writeBack.js` is the one place a result reaches stored fields.
+ * Economic simulator, pass 4 of 5: TUNE, the lever policy. A source that inherits a value it did not set is nudged into its earnings band by ONE legible lever, or refused.
+ * ⚠️ The band judges a source's total profit per hour, never one output at a time: a level-40 Token whose main output carries its earnings is in band even though the cheap material it also drops would look absurd judged alone. Levers run in order, one at a time: the band forgives it (a non-anchor gets twice the anchor band), quantity range, chance, cycle time, then refuse.
  */
 
 import { bandFor } from '../../../../src/config/registries/tempoBands.js';
@@ -62,22 +10,15 @@ import { speedAt } from './tempoPass.js';
 import { makeRow, SEVERITY } from './rows.js';
 import { makeRefusal } from './refusals.js';
 
-/**
- * The correction the policy refuses rather than grinds out (plan §5's budget
- * rule). Read as a factor in both directions: worse than 3× up, or worse than
- * ⅓ down.
- */
+/** The correction the policy refuses rather than grinds out: a factor worse than 3× up or ⅓ down. */
 export const CORRECTION_CAP = 3;
 
-/** The lowest chance the policy will snap a primary output to (plan §5 step 2). */
+/** The lowest chance the policy will snap a primary output to. */
 export const PRIMARY_CHANCE_FLOOR = 5;
 
 /** A cap on how far the quantity search walks, so a pathological r cannot hang it. */
 const MAX_QUANTITY_STEPS = 100000;
 
-// === Small shared arithmetic =================================================
-
-/** Cycles completed per hour by a worker at exactly the required level. */
 export function cyclesPerHour(cycleTimeMs, level) {
     if (!Number.isFinite(cycleTimeMs) || cycleTimeMs <= 0) return 0;
     return (3600 / (cycleTimeMs / 1000)) * speedAt(level);
@@ -89,21 +30,7 @@ export function inBand(profit, target, band) {
     return Math.abs(profit - target) / target <= band;
 }
 
-/**
- * The 10% → 5% → 1% chance ladder, **ported from the retired
- * `cms/src/engine/taskSolver.js`** (its `snapDropChance`), which is deleted in
- * this phase.
- *
- * What survived the port is the *ladder*: try the coarsest legible step first
- * and only get finer when it misses, so a designer reading a diff sees "30%"
- * far more often than "27%". What did not survive is the old function's shape —
- * it took a target EV, a variance and a callback, all of which belonged to the
- * struck EV engine. Here the caller decides which rung lands, because only the
- * caller knows the source's *total* earnings.
- *
- * Returns the rungs in order, de-duplicated, clamped, and never zero — a 0%
- * output produces nothing at all, which is a deletion, not a tuning.
- */
+/** The 10% → 5% → 1% chance ladder: try the coarsest legible step first and only get finer when it misses, so a designer reading a diff sees 30% far more often than 27%. The caller decides which rung lands, because only it knows the source's total earnings. Returns the rungs in order, de-duplicated, clamped and never zero: a 0% output produces nothing, which is a deletion, not a tuning. */
 export function snapChanceLadder(raw, { floor = PRIMARY_CHANCE_FLOOR, ceiling = 100 } = {}) {
     if (!Number.isFinite(raw) || raw <= 0) return [];
     const clamp = (v) => Math.max(floor, Math.min(ceiling, v));
@@ -115,13 +42,7 @@ export function snapChanceLadder(raw, { floor = PRIMARY_CHANCE_FLOOR, ceiling = 
     return [...new Set(rungs)].filter((v) => v > 0);
 }
 
-// === The state a lever moves =================================================
-
-/**
- * One output as the levers see it. `abundance` — average quantity × chance — is
- * the number every rate in the simulator is built from, so it is recomputed
- * here rather than carried, and it stays the adapter's definition exactly.
- */
+/** One output as the levers see it. `abundance` (average quantity × chance) is recomputed here rather than carried, and stays the adapter's definition exactly. */
 function outputState(o) {
     const avgQty = (o.minQty + o.maxQty) / 2;
     return {
@@ -135,26 +56,16 @@ function outputState(o) {
     };
 }
 
-/** A baseline state: the authored outputs at the TIME pass's chosen cycle. */
 function baselineState(entity, cycleTimeMs) {
     return { cycleTimeMs, outputs: entity.outputs.map(outputState) };
 }
 
-/** A copy of `state` with output `index` replaced. */
 function withOutput(state, index, patch) {
     const outputs = state.outputs.map((o, i) => (i === index ? outputState({ ...o, ...patch }) : o));
     return { ...state, outputs };
 }
 
-/**
- * What a source earns per hour in a given state: everything its outputs are
- * worth, less everything its inputs cost, at the rate its cycle implies.
- *
- * An output or input whose item has no value contributes nothing. That is only
- * ever reached for outputs — an entity with an unpriced *input* is not judged
- * at all, because its costs would be understated and the verdict would be a
- * confident lie.
- */
+/** What a source earns per hour in a given state: everything its outputs are worth, less everything its inputs cost, at the rate its cycle implies. An output or input whose item has no value contributes nothing; an entity with an unpriced input is not judged at all, because its costs would be understated. */
 export function earningsPerHour(entity, state, values) {
     const cph = cyclesPerHour(state.cycleTimeMs, entity.level);
     let revenue = 0;
@@ -170,28 +81,10 @@ export function earningsPerHour(entity, state, values) {
     return { cyclesPerHour: cph, revenuePerHour: revenue, costPerHour: cost, profitPerHour: revenue - cost };
 }
 
-// === The levers ==============================================================
-
 /**
- * **Lever 1 — quantity range.** Slide the midpoint, keep the authored spread.
- *
- * ⚠️ **A note on "half-unit steps of expected value" (plan §5 step 1).** The
- * game rolls integers — `tokenRegistry.rollOutputQuantity` is
- * `min + floor(random × (max − min + 1))` — so `minQty` and `maxQty` must stay
- * whole numbers. With the spread held fixed, a whole-number midpoint slide
- * moves expected value by whole units; half-units are unreachable *while the
- * spread is preserved*, and preserving the spread is the authored character the
- * plan asks for. What a range does buy is that its expected value sits on a
- * half-unit when the spread is odd (1–2 is 1.5), which is the resolution a
- * fixed integer cannot reach — that is the relief §5 is describing, and it is
- * real. A fixed integer output (min = max) steps the integer, which is the same
- * code path.
- *
- * ⚠️ **The floor is 1, not 0**, for an output whose author wrote at least 1.
- * Sliding a "2–5" down to "0–3" would make a guaranteed drop sometimes yield
- * nothing — installing a failure mode the author did not write, which is the
- * same objection as installing a chance dial. An output already authored to
- * allow 0 keeps that floor.
+ * Lever 1: quantity range. Slide the midpoint, keep the authored spread.
+ * ⚠️ The game rolls integers (`min + floor(random × (max − min + 1))`), so `minQty` and `maxQty` must stay whole numbers; with the spread held fixed, a whole-number midpoint slide moves expected value by whole units.
+ * ⚠️ The floor is 1, not 0, for an output whose author wrote at least 1: sliding 2–5 down to 0–3 would make a guaranteed drop sometimes yield nothing.
  */
 export function quantityCandidates(output, ratio) {
     const spread = output.maxQty - output.minQty;
@@ -204,14 +97,13 @@ export function quantityCandidates(output, ratio) {
 
     const candidates = [];
     for (let min = floorMin; min <= top; min++) {
-        if (min === output.minQty) continue;      // the authored range is the miss
+        if (min === output.minQty) continue;
         const max = min + spread;
-        if (max < 1) continue;                    // an output that can never yield
+        if (max < 1) continue;
         candidates.push({ minQty: min, maxQty: max, avgQty: (min + max) / 2 });
     }
 
-    // Closest to what the correction asks for first; on a tie, the smaller move
-    // from what the author wrote. Deterministic, which §11 requires.
+    // Closest to what the correction asks for first; on a tie, the smaller move from what the author wrote. Deterministic, so re-runs are byte-identical.
     candidates.sort((a, b) => {
         const d = Math.abs(a.avgQty - idealAvg) - Math.abs(b.avgQty - idealAvg);
         if (Math.abs(d) > 1e-9) return d;
@@ -220,15 +112,7 @@ export function quantityCandidates(output, ratio) {
     return candidates;
 }
 
-/**
- * **Lever 3 — cycle time.** Whole seconds, never outside the Tempo band.
- *
- * The band is the Token's authored feel — a Slow token stays slow — so this
- * lever's travel is exactly the band's width and not a millisecond more. Heavy's
- * top is advisory for an *author* (`topIsSoft`), but the simulator will not
- * install a cycle past it: an advisory ceiling is permission for a person, not
- * for a machine.
- */
+/** Lever 3: cycle time. Whole seconds, never outside the Tempo band: the band is the Token's authored feel, so this lever's travel is exactly the band's width. Heavy's top is advisory for an author (`topIsSoft`), but the simulator will not install a cycle past it. */
 export function cycleCandidates(tempo, level, currentMs, desiredMs) {
     const band = bandFor(tempo, level);
     if (!band) return [];
@@ -244,23 +128,17 @@ export function cycleCandidates(tempo, level, currentMs, desiredMs) {
     return out;
 }
 
-// === Prose helpers ===========================================================
-
 const PURPOSE_WORD = Object.freeze({ gph: 'gold', iph: 'item', xph: 'XP' });
 
 const purposeWord = (p) => PURPOSE_WORD[p] ?? p;
 
-/** "2.4× more" / "2.4× less" — a correction said the way a person says it. */
 const factor = (r) => (r >= 1 ? `${r.toFixed(2)}× more` : `${(1 / r).toFixed(2)}× less`);
 
-/** "earns 2.4× too much" / "earns 2.4× too little" — the miss, not the fix. */
 const gapText = (r) => (r < 1 ? `${(1 / r).toFixed(2)}× too much` : `${r.toFixed(2)}× too little`);
 
 const rangeText = (o) => (o.minQty === o.maxQty ? `${o.minQty}` : `${o.minQty}–${o.maxQty}`);
 
 const seconds = (ms) => `${Math.round(ms / 1000)}s`;
-
-// === The pass ================================================================
 
 /**
  * Run the TUNE pass.
@@ -293,7 +171,6 @@ export function runTuningPass(entities, {
     const tunings = new Map();
     const cycleTimes = new Map();
 
-    // Which items does each entity anchor, and did any of them land off-ideal?
     const anchoredBy = new Map();
     for (const election of elections.values()) {
         if (!anchoredBy.has(election.sourceId)) anchoredBy.set(election.sourceId, []);
@@ -304,8 +181,8 @@ export function runTuningPass(entities, {
     for (const entity of entities) {
         if (skipped.has(entity.id)) continue;
         if (refused.has(entity.id)) continue;
-        if (entity.downcycle) continue;         // its quantities come from the recovery cap
-        if (isDeferredKind(entity)) continue;   // out of scope for v1, so never tuned
+        if (entity.downcycle) continue;
+        if (isDeferredKind(entity)) continue;
         const t = timing.get(entity.id);
         if (!t) continue;
 
@@ -319,10 +196,7 @@ export function runTuningPass(entities, {
             cycleTimes.set(entity.id, tuning.after.cycleTimeMs);
         }
 
-        // One Info row per lever moved. Not a refusal — the sim exercised
-        // judgement, which is exactly what Info is for (plan §12) — and it is
-        // what makes "one change per Token" checkable by reading the audit
-        // panel rather than by trusting this file.
+        // One Info row per lever moved. Not a refusal: the sim exercised judgement, and this is what makes one change per Token checkable by reading the audit panel.
         if (tuning.lever !== 'none') {
             rows.push(makeRow(
                 SEVERITY.INFO,
@@ -378,9 +252,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
         skippedReason: null,
     };
 
-    // ── Cases the policy declines to judge ───────────────────────────────────
-    // An unpriced input understates the cost, so any verdict would be a
-    // confident lie. The unpriced item has its own Critical row already.
+    // Cases the policy declines to judge: an unpriced input understates the cost, so any verdict would be a confident lie; the unpriced item has its own Critical row already.
     if (entity.inputs.some((i) => i.itemId && !values.has(i.itemId))) {
         return { ...record, skippedReason: 'unpriced-inputs' };
     }
@@ -388,17 +260,12 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
     if (!before.outputs.some((o) => o.itemId && values.has(o.itemId))) {
         return { ...record, skippedReason: 'no-priced-output' };
     }
-    // The craft-margin floor deliberately overrode this source's Purpose target
-    // when it priced (plan §6). Tuning it back toward that target would undo,
-    // by another route, the decision the floor just made. The floor already has
-    // its own Info row saying it did the work.
+    // The craft-margin floor deliberately overrode this source's Purpose target when it priced. Tuning it back toward that target would undo the decision the floor just made; the floor already has its own Info row.
     if (anchoredItemIds.some((id) => details.get(id)?.floorEngaged)) {
         return { ...record, skippedReason: 'craft-margin-floor' };
     }
 
-    // ── Training losses (plan §6, CMS-122) ───────────────────────────────────
-    // An XP source is allowed to cost the player money. It is not allowed to eat
-    // a level's whole income.
+    // Training losses: an XP source is allowed to cost the player money, but not to eat a level's whole income.
     if (entity.purpose === 'xph' && baseEarnings.profitPerHour < 0) {
         const loss = -baseEarnings.profitPerHour;
         const cap = dials.trainingLossCap * gphAt(entity.level, dials);
@@ -418,12 +285,10 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
         return { ...record, refusalCode: 'training-loss-over-cap' };
     }
 
-    // ── Step 0: the band may already forgive it ──────────────────────────────
     if (inBand(baseEarnings.profitPerHour, targetPerHour, band)) {
         return { ...record, after: { ...before, ...baseEarnings }, inBand: true };
     }
 
-    // ── The output that contributes most, and the correction it must carry ───
     const cph = baseEarnings.cyclesPerHour;
     let dominant = -1;
     let dominantRevenue = 0;
@@ -436,10 +301,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
     const missText = `${entity.name} earns ${baseEarnings.profitPerHour.toFixed(0)}g an hour, and a level ${entity.level} ${purposeWord(entity.purpose)} source should earn about ${targetPerHour.toFixed(0)}g.`;
 
     if (dominant < 0 || dominantRevenue <= 0) {
-        // Either nothing it makes is priced, or every output's quantity is
-        // zero — a placeholder producer. Scaling zero is not a lever, and
-        // inventing a quantity where the author wrote none would be authoring,
-        // not tuning.
+        // Either nothing it makes is priced, or every output's quantity is zero (a placeholder producer). Scaling zero is not a lever, and inventing a quantity where the author wrote none would be authoring, not tuning.
         const producesNothing = before.outputs.every((o) => o.abundance <= 0);
         rows.push(makeRefusal('correction-too-large', {
             what: `${entity.name} can't be tuned toward its band.`,
@@ -466,9 +328,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
     }
 
     const overCap = ratio > CORRECTION_CAP || ratio < 1 / CORRECTION_CAP;
-    // The one exemption (F2): volume is an IPH Token's character, so its
-    // quantity range may travel as far as it needs. Chance and cycle stay
-    // capped even here.
+    // Volume is an IPH Token's character, so its quantity range may travel as far as it needs; chance and cycle stay capped even here.
     const quantityExempt = overCap && entity.purpose === 'iph';
 
     if (overCap && !quantityExempt) {
@@ -479,7 +339,6 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
         return { ...record, refusalCode: 'correction-too-large' };
     }
 
-    // ── Step 1: quantity range ───────────────────────────────────────────────
     for (const candidate of quantityCandidates(output, ratio)) {
         const state = withOutput(before, dominant, candidate);
         const earned = earningsPerHour(entity, state, values);
@@ -514,10 +373,8 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
         return { ...record, refusalCode: 'correction-too-large' };
     }
 
-    // ── Step 2: chance, only where the author made this output variable ──────
-    // ⚠️ FIRM: a 100%-chance output is never made random. Both conditions are
-    // required — the `variable` intent flag (plan §16) says the author meant
-    // this to be a dial, and a chance under 100% says the dial already exists.
+    // Step 2: chance, only where the author made this output variable.
+    // ⚠️ A 100%-chance output is never made random: the `variable` intent flag says the author meant this to be a dial, and a chance under 100% says the dial already exists. Both are required.
     if (output.variable && output.chancePercent < 100) {
         for (const rung of snapChanceLadder(output.chancePercent * ratio)) {
             if (rung === output.chancePercent) continue;
@@ -534,7 +391,6 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
         }
     }
 
-    // ── Step 3: cycle time, inside the Tempo band ────────────────────────────
     const desiredMs = cycleTimeMs / ratio;
     for (const ms of cycleCandidates(entity.tempo, entity.level, cycleTimeMs, desiredMs)) {
         const state = { ...before, cycleTimeMs: ms };
@@ -549,7 +405,6 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
         };
     }
 
-    // ── Step 4: refuse ───────────────────────────────────────────────────────
     const tooFast = ratio < 1;
     rows.push(makeRefusal('levers-exhausted', {
         what: `${entity.name} can't reach its earnings band.`,
@@ -566,16 +421,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
     return { ...record, refusalCode: 'levers-exhausted' };
 }
 
-/**
- * The standing Purpose-mismatch row (plan §5, F3).
- *
- * Two sources of one item carrying different Purpose tags aim at targets ~3×
- * apart before any yield difference, which is the commonest reason tuning
- * strains. The simulator does not forbid it — a gold gatherer and an XP
- * training recipe on the same item is a legitimate design — it names it, once
- * per item, so the cause is already written down when a refusal shows up
- * nearby.
- */
+/** The standing Purpose-mismatch row. Two sources of one item with different Purpose tags aim at targets about 3× apart before any yield difference, the commonest reason tuning strains. The simulator does not forbid it; it names it once per item so the cause is already written down when a refusal shows up nearby. */
 export function purposeMismatchRows(candidates) {
     const rows = [];
     for (const itemId of [...candidates.keys()].sort()) {

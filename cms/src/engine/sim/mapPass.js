@@ -1,52 +1,6 @@
 /**
- * Economic simulator — pass 5, the MAP check (phase P7).
- *
- * ```
- * adapt → 1. TIME → 2. ANCHOR → 3. PRICE → 4. TUNE → 5. MAP
- * ```
- *
- * A Map is the one thing in the game the player buys *blind*: a price up front
- * for a burst of three things drawn from a pool. This pass asks the two
- * questions that makes fair, and answers them in gold:
- *
- * 1. **Scrap side** — if the player sells everything the burst hands over, do
- *    they get back more than a Map is supposed to be worth as salvage? A Map
- *    that pays for itself in scrap is a gold printer.
- * 2. **Productive side** — if the player *uses* everything the burst hands
- *    over, does it earn back a sensible multiple of what the Map cost? A Map
- *    that never pays back is a trap.
- *
- * ## ⚠️ This pass writes nothing back to a Map's authored fields
- *
- * Every input to the check — the price, the material list, the pool, each
- * entry's rarity tag, each Token's charge count — is **authored**. There is no
- * derived number the simulator could quietly move to bring a Map into line, so
- * a Map outside its bounds is a **refusal naming the gap and the remedies**,
- * never an adjustment. That is the opposite of the TUNE pass, and deliberately
- * so.
- *
- * Two things it *does* derive, because nobody authors them:
- *
- * - **Pool weights** (CMS-124) — a pool entry's draw weight comes from the
- *   referenced Token's rarity through one global table (§13.4), so the Map
- *   editor's weight column is read-only from here on. Shares renormalise inside
- *   each pool: **pool composition, not tier, sets the actual experience.**
- * - **Per-Token scrap values** (CMS-48) — see the allocation note below.
- *
- * ## Aggregate first, allocate second (CMS-48)
- *
- * The scrap total is a property of the **Map**: its cost times the scrap ratio.
- * Only then is that total split across the pool's entries by rarity. Doing it
- * the other way round — pricing each Token and summing — is the bug CMS-48
- * exists to fix: the sum then depends on how many entries a pool happens to
- * have, so adding one more Token to a pool silently made the Map richer. Here
- * the slices always add up to the anchored total no matter how long the pool
- * is, and `EconSimMaps.test.js` pins that sum exactly.
- *
- * ⚠️ **Sell value is deliberately low-stakes** (CMS-103, the owner's framing):
- * the sell side exists to make a rare find *feel* right, not to be accurate.
- * The precision effort in this simulator belongs on the usage side. Nothing
- * here should grow a second decimal place.
+ * Economic simulator, pass 5: the MAP check. A Map is the one thing the player buys blind: a price up front for a burst drawn from a pool. The pass asks two questions in gold: the scrap side (selling everything the burst hands over must not return more than a Map is worth as salvage, or it is a gold printer) and the productive side (using everything must earn back a sensible multiple of the cost, or it is a trap).
+ * ⚠️ It writes nothing back to a Map's authored fields: every input is authored, so its findings are refusals, not adjustments.
  */
 
 import {
@@ -55,38 +9,17 @@ import {
 import { isDeferredKind, isInert, liveCharges } from './fieldAdapter.js';
 
 /**
- * How many things a Map burst dealt (CMS-129).
- *
- * ⚠️ The game no longer bursts Maps (Token Lifecycle 9.1): `Cartographer.js`,
- * where this constant used to live, was deleted, and a Map Token that is still
- * used is an ordinary Explore producer. The CMS still models Maps and this
- * pass still prices them, so the number is kept here, frozen at the last value
- * the game dealt, until the CMS's Map model is retired.
+ * How many things a Map burst deals.
+ * ⚠️ The game no longer bursts Maps, but the CMS still models and prices them, so the number is frozen here at the last value the game dealt.
  */
 export const BURST_SIZE = 3;
 import { cyclesPerHour, earningsPerHour, CORRECTION_CAP } from './tuningPass.js';
 import { makeRefusal } from './refusals.js';
 
-/**
- * Token types whose **acquisition slice is their productive value**
- * (CMS-138, ruled): a Context tool, and the kinds v1 defers. They are neutral
- * in the verdict — they neither rescue an underwater Map nor sink a healthy
- * one — and each files an Info row naming itself, so a pool that is all
- * scaffolding reads as such rather than as a mystery.
- *
- * `isDeferredKind` covers buff / manager / market / passive / enemy; `context`
- * is the addition, and it is the one the ruling names first.
- */
+/** Token types whose acquisition slice is their productive value: a Context tool and the kinds v1 defers. They are neutral in the verdict, and each files an Info row naming itself, so a pool that is all scaffolding reads as such. `isDeferredKind` covers buff / manager / market / passive / enemy; `context` is the addition. */
 const SUPPORT_TOKEN_TYPES = Object.freeze(['context']);
 
-/**
- * Guild-hall maps are skipped (owner ruling 24).
- *
- * ⚠️ Mirrors `Cartographer.rollBurst`'s own two id checks exactly, and must
- * keep mirroring them: that branch drops a **scripted ten-step tutorial
- * sequence**, not a weighted burst, so nothing this pass computes about a pool
- * describes what a player actually receives from one.
- */
+/** Guild-hall maps are skipped. */
 export function isGuildHallMap(mapId) {
     return mapId === 'map_guild_hall'
         || (typeof mapId === 'string' && mapId.startsWith('map_guild_hall'));
@@ -94,8 +27,6 @@ export function isGuildHallMap(mapId) {
 
 /** A pool entry's gold face value, for the kinds that have one. */
 function goldAmount(entry) {
-    // Mirrors `Cartographer.openMap`'s own reading, 2000 default included, so
-    // the check prices exactly what the runtime pays out.
     return entry?.amount || entry?.quantity || 2000;
 }
 
@@ -103,38 +34,13 @@ function isGoldEntry(entry) {
     return entry?.kind === 'gold' || entry?.kind === 'currency';
 }
 
-/**
- * The draw weight a pool entry derives from its rarity tag (CMS-124, §13.4).
- *
- * One global table, no per-pool override: **the entry's weight column in the
- * Map editor is derived from here.** A referenced record with no rarity — every
- * enemy, every gold entry, most items — reads as Common, which is the table's
- * neutral row rather than a judgement about the entry.
- */
+/** The draw weight a pool entry derives from its rarity tag. One global table, no per-pool override: the entry's weight column in the Map editor is derived from here. A referenced record with no rarity reads as Common, the table's neutral row. */
 export function derivedWeight(rarity, dials = DEFAULT_DIALS) {
     const weights = dials.rarityWeights || RARITY_WEIGHTS;
     return weights[rarity] ?? weights.common ?? 100;
 }
 
-/**
- * Split `total` across `weights` by `weight^(−premium)`, in whole gold.
- *
- * The premium dial is the whole shape of the split (plan §14 item 10):
- *
- * - `0` — every exponent is 1, so every entry takes an equal slice. Rarity
- *   stops mattering to price entirely.
- * - `1` — a hard inverse: a slice is proportional to how *rarely* the entry is
- *   drawn, so the expected scrap of one draw is identical for every entry and
- *   a Mythic is worth exactly as much as the Common it displaced.
- * - `0.8` (default) — between the two, which is what §13.4's column shows: a
- *   rare find is worth much more, but not so much more that the burst's
- *   expected value stops caring what came out.
- *
- * Whole gold, by largest remainder, because the slices are prices and a price
- * with a fraction in it is not a price. Largest-remainder is what makes the
- * sum **exact**: the rounded slices are handed the leftover pennies one at a
- * time, biggest remainder first, so `Σ slices === Math.round(total)` always.
- */
+/** Split `total` across `weights` by `weight^(−premium)`, in whole gold by largest remainder so the slices sum exactly. Premium 0 gives every entry an equal slice (rarity stops mattering); 1 is a hard inverse, so one draw's expected scrap is identical for every entry; the default sits between. */
 export function allocateByRarity(total, weights, premium = 0.8) {
     const n = weights.length;
     const budget = Math.max(0, Math.round(total));
@@ -151,8 +57,7 @@ export function allocateByRarity(total, weights, premium = 0.8) {
     const floors = ideal.map((v) => Math.floor(v));
     let left = budget - floors.reduce((a, b) => a + b, 0);
 
-    // Biggest fractional part first; ties by index, so the split is stable
-    // across runs (plan §11 — two runs must be byte-identical).
+    // Biggest fractional part first; ties by index, so the split is stable across runs.
     const order = ideal
         .map((v, i) => ({ i, frac: v - Math.floor(v) }))
         .sort((a, b) => (b.frac - a.frac) || (a.i - b.i));
@@ -166,22 +71,12 @@ export function allocateByRarity(total, weights, premium = 0.8) {
 
 /**
  * How many of each pool entry one burst is expected to contain.
- *
- * ⚠️ **Slot one is not a free draw** (CMS-129). It draws over the pool's
- * `kind === 'token'` entries *only*, with their weights renormalised among
- * themselves; slots two onwards are free draws over the whole pool. Modelling
- * that renormalisation is not a nicety — in a pool that is half raw items, it
- * roughly doubles how often the Tokens turn up, which is exactly what the rule
- * was written to guarantee.
- *
- * The burst length is {@link BURST_SIZE}, which used to be read live from the
- * game's `Cartographer.BURST_SIZE` (deleted in Token Lifecycle 9.1).
+ * ⚠️ Slot one is not a free draw: it draws over the pool's `kind === 'token'` entries only, with weights renormalised among themselves, and later slots draw over the whole pool. In a pool that is half raw items this roughly doubles how often Tokens turn up. The burst length is `BURST_SIZE`.
  */
 export function burstExpectation(shares, isToken, burstSize = BURST_SIZE) {
     const n = shares.length;
     const tokenTotal = shares.reduce((sum, s, i) => sum + (isToken[i] ? s : 0), 0);
-    // A pool with no Token entries (or whose Tokens are all undrawable) falls
-    // back to three free draws — `rollBurst` does the same, and warns nowhere.
+    // A pool with no Token entries (or whose Tokens are all undrawable) falls back to free draws for every slot.
     const slotOne = tokenTotal > 0
         ? shares.map((s, i) => (isToken[i] ? s / tokenTotal : 0))
         : [...shares];
@@ -189,7 +84,6 @@ export function burstExpectation(shares, isToken, burstSize = BURST_SIZE) {
     return new Array(n).fill(0).map((_, i) => slotOne[i] + free * shares[i]);
 }
 
-/** What a Map costs the player: its price plus the value of its materials (CMS-108). */
 export function mapCost(map, values) {
     const price = Number.isFinite(map?.price) ? map.price : 0;
     const materials = (map?.materials || []).reduce((sum, m) => {
@@ -200,17 +94,7 @@ export function mapCost(map, values) {
     return price + materials;
 }
 
-/**
- * What an enemy's lifetime loot is worth (CMS-51, owner ruling 2026-09-01).
- *
- * > **One kill = one charge.** An enemy is consumed by being killed, so its
- * > lifetime loot is the expected drops from one kill.
- *
- * No time dimension, therefore, and no new field: the ruling matches D-129,
- * which already counts a kill as one cycle for every board system outside the
- * combat engine. `drops[]` is `{ itemId, minQty, maxQty, chance }` with `chance`
- * a percentage — verified against `data/enemies.json`.
- */
+/** What an enemy's lifetime loot is worth: one kill is one charge, so its lifetime loot is the expected drops from one kill. No time dimension and no new field. `drops[]` is `{ itemId, minQty, maxQty, chance }` with `chance` a percentage. */
 export function enemyLootValue(enemy, values) {
     return (enemy?.drops || []).reduce((sum, drop) => {
         const value = values.get(drop?.itemId);
@@ -223,18 +107,8 @@ export function enemyLootValue(enemy, values) {
 }
 
 /**
- * What one copy of a Token earns over its whole life, in gold.
- *
- * Profit per hour comes from the solved cycle the TUNE pass left behind, and
- * the lifetime is `charges ÷ cycles per hour` — how long the copy lasts, not
- * how long the player owns it. A Token with no charge count never runs out, so
- * the `unlimitedLifetimeHours` dial stands in for a lifetime it does not have.
- *
- * ⚠️ Charges are read through `liveCharges`, i.e. **`uses`, never `charges`**
- * (finding S6): `charges` was dead data left by the retired balance engine,
- * disagreeing with `uses` on most of the corpus, twentyfold in places. The
- * field was deleted from `data/tokens.json` on 2026-09-01; the rule stands in
- * case the CMS coins the name again.
+ * What one copy of a Token earns over its whole life, in gold: profit per hour from the solved cycle the TUNE pass left behind, over a lifetime of `charges ÷ cycles per hour` (how long the copy lasts, not how long the player owns it). A Token with no charge count never runs out, so the `unlimitedLifetimeHours` dial stands in.
+ * ⚠️ Charges are read through `liveCharges`: `uses`, never `charges`.
  */
 export function lifetimeValue(entity, { cycleTimeMs, values, dials }) {
     if (!entity || isInert(entity) || !Number.isFinite(cycleTimeMs) || cycleTimeMs <= 0) {
@@ -268,8 +142,7 @@ export function lifetimeValue(entity, { cycleTimeMs, values, dials }) {
  *                            enemies, dials }`
  * @returns {{ reports: Map, scrapValues: Map, weights: Map, rows: Array }}
  *
- * `scrapValues` is the only thing here the game reads: one derived sell price
- * per Token id, which `TokenBank.sellValue` prefers over its rarity table.
+ * `scrapValues` is one derived sell price per Token id.
  */
 export function runMapPass(maps = {}, {
     entities = [],
@@ -287,7 +160,6 @@ export function runMapPass(maps = {}, {
     const scrapValues = new Map();
     const premium = Number.isFinite(dials.rarityPremium) ? dials.rarityPremium : 0.8;
 
-    // Sorted, because two runs must be byte-identical (plan §11).
     for (const mapId of Object.keys(maps).sort()) {
         const map = maps[mapId];
         const id = map?.id ?? mapId;
@@ -303,7 +175,6 @@ export function runMapPass(maps = {}, {
             continue;
         }
 
-        // ── 1. Derived weights and shares ────────────────────────────────────
         const entries = pool.map((entry, index) => {
             const kind = isGoldEntry(entry) ? 'gold' : (entry?.kind ?? 'token');
             const refId = entry?.refId ?? null;
@@ -336,10 +207,7 @@ export function runMapPass(maps = {}, {
         );
         entries.forEach((e, i) => { e.expectedCount = expected[i]; });
 
-        // ── 2. Derived Map level ─────────────────────────────────────────────
-        // The pool-share-weighted mean of what its entries ask of a hero,
-        // renormalised over the entries that ask anything at all — a pile of
-        // gold has no skill requirement and must not drag the mean to zero.
+        // Derived Map level: the pool-share-weighted mean of what its entries ask of a hero, renormalised over the entries that ask anything at all, so a pile of gold does not drag the mean to zero.
         let levelWeight = 0;
         let levelSum = 0;
         for (const e of entries) {
@@ -350,15 +218,11 @@ export function runMapPass(maps = {}, {
         }
         const level = levelWeight > 0 ? levelSum / levelWeight : 1;
 
-        // ── 3. Scrap, aggregate first ────────────────────────────────────────
         const cost = mapCost(map, values);
         const scrapRatio = scrapRatioAt(level, dials);
         const budget = Math.round(cost * scrapRatio);
 
-        // Raw items (F10) and gold (A7) stand OUTSIDE the rarity allocation and
-        // count at face value on BOTH sides. ⚠️ The gold arm is an
-        // implementation default extending F10's ruling to the one entry kind
-        // the plan never named — see this phase's report.
+        // Raw items and gold stand outside the rarity allocation and count at face value on both sides.
         const outsideOf = (e) => {
             if (e.kind === 'gold') return e.amount;
             if (e.kind === 'item') {
@@ -387,7 +251,6 @@ export function runMapPass(maps = {}, {
             }, { entityId: id, detail: { cost, budget, outsideTotal } }));
         }
 
-        // ── 4. Productive value, entry by entry ──────────────────────────────
         for (const e of entries) {
             if (e.outside !== null) {
                 // Face value on both sides: a raw item or a pile of gold is
@@ -401,10 +264,7 @@ export function runMapPass(maps = {}, {
                 const loot = enemyLootValue(e.enemy, values);
                 e.productiveValue = loot;
                 e.basis = 'lifetime loot (one kill)';
-                // CMS-128: band-check the loot against what the burst charged
-                // for it. Wildly generous or a rip-off, not off-by-a-fraction —
-                // the factor is the lever policy's own correction cap, reused
-                // here because the project already means "too far" by it.
+                // Band-check the loot against what the burst charged for it: wildly generous or a rip-off, not off-by-a-fraction. The factor is the lever policy's own correction cap, reused because the project already means too far by it.
                 if (e.scrapValue > 0 && loot > 0) {
                     const ratio = loot / e.scrapValue;
                     if (ratio > CORRECTION_CAP || ratio < 1 / CORRECTION_CAP) {
@@ -423,8 +283,7 @@ export function runMapPass(maps = {}, {
             const support = e.kind === 'token'
                 && (SUPPORT_TOKEN_TYPES.includes(e.token?.tokenType) || isDeferredKind(e.entity));
             if (support) {
-                // CMS-138, ruled: acquisition slice IS the productive value, so
-                // the entry is neutral in the verdict either way.
+                // Acquisition slice is the productive value, so the entry is neutral in the verdict either way.
                 e.productiveValue = e.scrapValue;
                 e.basis = 'support — counted at its slice';
                 rows.push(makeRefusal('map-support-entry', {
@@ -452,8 +311,7 @@ export function runMapPass(maps = {}, {
                 }, { entityId: id, detail: { refId: e.refId } }));
             }
 
-            // CMS-131: an unlimited Token quietly opts out of the supply-line
-            // loop this whole check protects.
+            // An unlimited Token quietly opts out of the supply-line loop this whole check protects.
             if (e.kind === 'token' && e.entity && !isInert(e.entity)
                 && !Number.isFinite(liveCharges(e.token))) {
                 rows.push(makeRefusal('map-unlimited-token', {
@@ -463,7 +321,6 @@ export function runMapPass(maps = {}, {
             }
         }
 
-        // ── 5. The two sides ─────────────────────────────────────────────────
         const scrapSide = entries.reduce((s, e) => s + e.expectedCount * e.scrapValue, 0);
         const productiveSide = entries.reduce((s, e) => s + e.expectedCount * e.productiveValue, 0);
         const scrapBound = budget;
@@ -486,11 +343,7 @@ export function runMapPass(maps = {}, {
             }, { entityId: id, detail: { productiveSide, productiveBound, cost, level } }));
         }
 
-        // A Token in several pools takes the **best** price it earns anywhere.
-        // ⚠️ Implementation default: the plan says a Token has one scrap value
-        // and does not say which pool sets it. The highest is the reading a
-        // player can actually verify — "this is what it is worth" — where an
-        // average would price a Token by Maps the player may never have seen.
+        // A Token in several pools takes the best price it earns anywhere: the reading a player can verify, where an average would price a Token by Maps the player may never have seen.
         for (const e of entries) {
             if (e.kind !== 'token' || !e.refId) continue;
             const best = Math.max(scrapValues.get(e.refId) ?? 0, e.scrapValue);
