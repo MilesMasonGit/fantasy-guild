@@ -73,8 +73,7 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
 
     return (
         <aside
-            // FP-100: gives way on a narrow window so the mat keeps a readable
-            // size. Floored at the width `Toast`'s own min-width needs.
+            // Gives way on a narrow window so the mat keeps a readable size; floored at `Toast`'s min-width.
             style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
             className={cn(
                 "shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto transition-[width] duration-150 relative z-10 select-none",

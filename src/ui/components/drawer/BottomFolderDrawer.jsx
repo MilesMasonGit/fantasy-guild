@@ -64,23 +64,7 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: slideOffset, opacity: 0 }}
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    /**
-                     * A SIDE drawer (D-238), not a bottom one.
-                     *
-                     * It slides from the nav's edge and spans inward, **covering the
-                     * notifications column and the playmat** and stopping before the
-                     * Tray. The offsets are the nav's width on one side and the Tray's
-                     * on the other.
-                     *
-                     * ⚠️ **The Tray is excluded deliberately and it is not cosmetic.**
-                     * D-107 makes the Tray load-bearing *because* an open Bank covers
-                     * the board: the only route from storage to a tile is
-                     * **Bank → Tray → Board**. Cover the Tray and there is nowhere to
-                     * drag a Token to.
-                     *
-                     * ⚠️ **z-[90] sits UNDER the nav and OVER everything else.** The
-                     * BubbleMenu carries `z-[110]` for exactly this.
-                     */
+                    // ⚠️ z-[90] sits under the nav (BubbleMenu is z-[110]) and over everything else.
                     className={cn(
                         'pointer-events-auto flex bg-gi-surface overflow-hidden',
                         'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',

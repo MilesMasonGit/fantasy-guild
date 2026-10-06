@@ -142,11 +142,9 @@ export const MatHero = memo(function MatHero({
             }}
             onMouseEnter={() => onHover?.(heroId)}
             onMouseLeave={() => onHover?.(null)}
-            // ⭐ A walker moves by `transform` (CR3-007, R6 rule 5): a step
-            // costs no layout, and the graphics side does not redraw the
-            // ground under the hero. Always this style, walking or not — a
-            // box switching from left/top to a transform would slide in from
-            // the mat's corner. ⚠️ Never add `will-change` here (R6: 3× slower).
+            // A walker moves by `transform`: a step costs no layout and the ground under the hero
+            // is not redrawn. Always this style, walking or not, so a box switching from left/top
+            // to a transform would not slide in from the mat corner. ⚠️ Never add `will-change` here: it measured 3× slower.
             style={{
                 left: 0,
                 top: 0,
@@ -170,7 +168,6 @@ export const MatHero = memo(function MatHero({
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         hovered && !drag.isDragging && 'gi-token-hover-hop'
                     )}
-                    // A defeated hero limping home looks wounded (HM-6).
                     style={limp ? { filter: LIMP_FILTER } : undefined}
                 >
                     {animArt ? (
