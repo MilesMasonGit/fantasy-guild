@@ -1,4 +1,4 @@
-// Fantasy Guild — Quest Tokens: quests live on the mat (B6.1: FB-41, FB-42, FB-43, TL-18)
+// Fantasy Guild — Quest Tokens: quests live on the mat
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
@@ -18,15 +18,15 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { TUTORIAL_QUESTS, tutorialTemplate } from './tutorialQuests.js';
 // The bounty and reward helpers come from the leaf `questBounties.js`, not
-// QuestManager, so this module does not import QuestManager (CR3-023 group 3).
+// QuestManager, so this module does not import QuestManager.
 import { createRandomQuest, questReward, copyReward } from './questBounties.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 export { QUEST_TOKEN_TYPE };
 
 /**
- * ⭐ **Quests are Tokens** (TL-18). The quest sidebar's slots are retired: the
- * Guild Hall spawns quest Tokens beside itself, and each carries its quest.
+ * Quests are Tokens. The Guild Hall spawns quest Tokens beside itself, and each
+ * carries its quest.
  *
  * ## The instance (saved with the board)
  * A quest Token is an ordinary instance of the engine-owned type
@@ -39,48 +39,42 @@ export { QUEST_TOKEN_TYPE };
  *   targetType, match?, enemyId?, itemId?,   // what it counts (QuestManager's matching)
  *   requiredCount, currentCount,
  *   rewardItems: [{ itemId, quantity }],
- *   tutorial: boolean, step?,         // a tutorial step (FB-42)
+ *   tutorial: boolean, step?,         // a tutorial step
  *   done: boolean                     // currentCount >= requiredCount
  * }
  * ```
  *
- * It is `origin: 'spawned'` (the Hall makes it, B6 quest spots), so it never
- * counts toward the mat's Token cap (`MatCap.placedCount`), and the player can
- * drag it like any Token. No hero works it (FB-41: no hero involved).
+ * It is `origin: 'spawned'`, so it never counts toward the mat's Token cap
+ * (`MatCap.placedCount`), and the player can drag it like any Token. No hero
+ * works it.
  *
  * ## Two kinds, two rules
- * * **Tutorial quests** (FB-42) — one at a time, a hidden cap of its own: the
- *   first stands on the mat in a new game, and claiming one brings the next.
- *   They ignore the bounty cap and the timer, and cannot be binned
+ * * **Tutorial quests**: one at a time, a hidden cap of its own. The first
+ *   stands on the mat in a new game, and claiming one brings the next. They
+ *   ignore the bounty cap and the timer, and cannot be binned
  *   (`DiscardBin.canBin`).
- * * **Bounties** (FB-41, FB-43) — QuestManager's random hunts and collections.
- *   At most {@link questCap} on the mat (2, +1 per Notice Board rank, to 5);
- *   below the cap a new one arrives every `questEverySec` of game time (3 min).
- *   Binning and discarding one (B3's bin, no refund: it was spawned) frees its
- *   place, so the timer can bring another.
+ * * **Bounties**: QuestManager's random hunts and collections. At most
+ *   {@link questCap} on the mat; below the cap a new one arrives every
+ *   {@link questIntervalMs} of game time. Binning one (no refund: it was
+ *   spawned) frees its place, so the timer can bring another.
  *
- * ## ⚠️ The clock runs on the tick's `delta` (roadmap §0.3)
+ * ## ⚠️ The clock runs on the tick's `delta`
  * `state.quests.clockMs`, saved, advanced by {@link tick} from the game loop's
  * `quest_manager` handler, so the time bank and `DevTools.advanceTime` speed it
  * up. It **only runs below the cap**: at the cap it holds, and filling the cap
  * drops any leftover, so a freed place gets its next quest one full interval
- * later (director default, B6.1). The sidebar's `Date.now()` cooldowns are gone.
+ * later.
  *
- * ## Claiming (FB-41: click to claim, then it vanishes)
+ * ## Claiming
  * {@link claimQuest}: only when done. The reward drops as floating loot beside
- * the quest Token, exactly as the Hall's trickle pays (FB-53,
- * `SpriteLayer.addSprite` with the Token's id), and is banked when collected
- * through `InventoryManager` (D-138). The Token is then **removed** — not a
- * depletion: no `TOKEN_DEPLETED`, so no restock spot and no "when depleted"
- * rule.
+ * the quest Token and is banked when collected through `InventoryManager`. The
+ * Token is then **removed**, not depleted: no `TOKEN_DEPLETED`, so no restock
+ * spot and no "when depleted" rule.
  */
 
 /**
- * Whether bounties arrive while the tutorial is still running. ⭐ Director
- * default for B6.1 (the brief: "tutorial quests don't use the 2-cap … after
- * the last tutorial step, only bounties remain"): yes, alongside. The old
- * sidebar offered no bounty until every tutorial step was done or offered;
- * set this to false to go back to that.
+ * Whether bounties arrive while the tutorial is still running. Set to false to
+ * hold them back until every tutorial step is done.
  */
 export const BOUNTIES_DURING_TUTORIAL = true;
 
@@ -113,8 +107,8 @@ export function tutorialTokens() {
 }
 
 /**
- * ⭐ How many bounties the Hall keeps on the mat (TL-18): the Mat Tuner's
- * `questCap` (2) plus one per Notice Board rank, never above `questCapMax` (5).
+ * How many bounties the Hall keeps on the mat: the Mat Tuner's `questCap` plus
+ * one per Notice Board rank, never above `questCapMax`.
  */
 export function questCap() {
     const base = Math.round(matTuning('questCap'));
@@ -123,7 +117,7 @@ export function questCap() {
     return Math.max(0, Math.min(max, base + rank));
 }
 
-/** The bounty interval in game ms (Mat Tuner `questEverySec`, 3 min). */
+/** The bounty interval in game ms (Mat Tuner `questEverySec`). */
 export function questIntervalMs() {
     return Math.max(1000, Math.round(matTuning('questEverySec') * 1000));
 }
@@ -196,8 +190,8 @@ function tutorialQuest(template, from = null) {
 
 /**
  * A quest object from one of QuestManager's bounties, or a saved sidebar
- * bounty (B6.1 migration). The sidebar's bookkeeping (`status`, `createdAt`,
- * `isTutorial`, a pre-2.2 reward Map) is left behind.
+ * bounty. The sidebar's bookkeeping (`status`, `createdAt`, `isTutorial`, an
+ * old reward Map) is left behind.
  */
 function bountyQuest(source) {
     const quest = {
@@ -221,9 +215,9 @@ function bountyQuest(source) {
 }
 
 /**
- * ⭐ **Put a quest on the mat**: the Guild Hall spawns a `token_quest` beside
+ * **Put a quest on the mat**: the Guild Hall spawns a `token_quest` beside
  * itself, through the same `EffectActions.spawn` (`nearest_free`) a spawner
- * uses — so it lands like any spawn, pushes only spawned Tokens, and is
+ * uses, so it lands like any spawn, pushes only spawned Tokens, and is
  * `origin: 'spawned'`. Returns the new instance, or null when there is no Hall
  * or no room (the caller retries on a later tick).
  */
@@ -240,8 +234,8 @@ export function spawnQuest(quest, random = Math.random) {
     instance.quest = quest;
     if (quest.type === 'collection') syncCollection(quest);
 
-    // A green notice, as a spawner's new Token gets (FB-48); not while the time
-    // bank replays time away.
+    // A green notice, as a spawner's new Token gets; not while the time bank
+    // replays time away.
     if (!TimeBankManager.isSpending) TokenNotices.raiseNotice(instance.id, {
         type: 'token_spawned',
         title: quest.tutorial ? 'New tutorial quest' : 'New quest',
@@ -268,9 +262,9 @@ export function nextTutorialTemplate() {
 }
 
 /**
- * ⭐ **The tutorial chain's hidden cap** (FB-42): while a step is left and no
- * tutorial quest stands on the mat, the next step arrives. So a new game
- * starts with the first, and claiming one brings the next.
+ * **The tutorial chain's hidden cap**: while a step is left and no tutorial
+ * quest stands on the mat, the next step arrives. So a new game starts with the
+ * first, and claiming one brings the next.
  *
  * @returns {boolean} false when a step is owed but could not land (no Hall,
  *          no room) — the caller retries
@@ -283,14 +277,13 @@ export function ensureTutorial() {
 }
 
 // ---------------------------------------------------------------------------
-// Saves: the sidebar's quests become Tokens (B6.1 migration)
+// Saves: the sidebar's quests become Tokens
 // ---------------------------------------------------------------------------
 
 /**
  * Re-read every tutorial quest Token from its template (a save keeps a copy,
- * which would keep a step's old wording and target for ever — as the sidebar
- * did in `refreshTutorialCopies`). A tutorial Token whose step the chain no
- * longer has is taken off the mat.
+ * which would keep a step's old wording and target for ever). A tutorial Token
+ * whose step the chain no longer has is taken off the mat.
  */
 export function refreshTutorialTokens() {
     let changed = false;
@@ -305,23 +298,22 @@ export function refreshTutorialTokens() {
         instance.quest = tutorialQuest(template, instance.quest);
         refreshed.push(instance.id);
     }
-    // Each refreshed copy says so by id (CR3-304: a quest Token hears its own
-    // QUESTS_UPDATED, not the catch-all state_changed).
+    // Each refreshed copy says so by id: a quest Token hears its own
+    // QUESTS_UPDATED, not the catch-all state_changed.
     for (const instanceId of refreshed) EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId });
     if (changed) publishChanged();
 }
 
 /**
- * ⭐ **Convert a save's sidebar quests into quest Tokens** (B6.1). Each active
- * quest in `state.quests.active` — tutorial or bounty — lands beside the Hall
- * as a quest Token **with its progress**; an abandoned slot (a cooldown
- * placeholder) is dropped, and so is a tutorial step the chain no longer has.
- * A quest that finds no room stays in `active` and is tried again later.
+ * **Convert a save's sidebar quests into quest Tokens.** Each active quest in
+ * `state.quests.active`, tutorial or bounty, lands beside the Hall as a quest
+ * Token **with its progress**; an abandoned slot (a cooldown placeholder) is
+ * dropped, and so is a tutorial step the chain no longer has. A quest that
+ * finds no room stays in `active` and is tried again later.
  *
- * A save made mid-tutorial therefore carries its current step (and any other
- * steps the sidebar had offered alongside it — up to three) onto the mat.
- * Claiming them does not bring a new step until the last one is claimed, so
- * the chain settles back to one at a time.
+ * A save made mid-tutorial carries every step the sidebar had offered onto the
+ * mat. Claiming them does not bring a new step until the last one is claimed,
+ * so the chain settles back to one at a time.
  *
  * @returns {boolean} true once `active` is empty
  */
@@ -383,16 +375,14 @@ export function ensure() {
 }
 
 /**
- * ⭐ **One tick** (`quest_manager`, with the loop's time-scaled `delta`).
+ * **One tick** (`quest_manager`, with the loop's time-scaled `delta`).
  *
- * 1. Anything owed (see {@link ensure}) is retried — only while something is.
+ * 1. Anything owed (see {@link ensure}) is retried, only while something is.
  * 2. The bounty clock: below the cap it advances by `delta`, and each full
  *    interval brings one bounty (closed form, so one big tick equals many
  *    small ones). A bounty with nowhere to land holds the clock full and is
  *    retried next tick. At the cap the clock holds; reaching it drops the
  *    leftover.
- *
- * Cost per tick: one pass over the mat's Tokens to count bounties.
  */
 export function tick(delta, random = Math.random) {
     if (GameState.state !== checkedState) pending = true;
@@ -426,8 +416,7 @@ export function tick(delta, random = Math.random) {
 /**
  * Whether a report's metadata satisfies a quest. A quest narrows its target
  * with `match` (tutorial steps), `enemyId` (hunts) or `itemId` (collections);
- * every value it names must be present and equal in the report. (Moved here
- * from QuestManager with the sidebar, unchanged.)
+ * every value it names must be present and equal in the report.
  */
 export function reportMatches(quest, metadata) {
     const wanted = { ...(quest.match || {}) };
@@ -437,8 +426,8 @@ export function reportMatches(quest, metadata) {
 }
 
 /**
- * Advance every quest Token on the mat that counts `targetType` (the same
- * reports QuestManager has always made). A done quest stops counting.
+ * Advance every quest Token on the mat that counts `targetType`. A done quest
+ * stops counting.
  */
 export function reportProgress(targetType, amount = 1, metadata = {}) {
     let changed = null;
@@ -457,7 +446,7 @@ export function reportProgress(targetType, amount = 1, metadata = {}) {
     if (changed !== null) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
-/** A collection bounty's count is what the Bank holds, capped (unchanged rule). */
+/** A collection bounty's count is what the Bank holds, capped. */
 function syncCollection(quest) {
     if (quest?.type !== 'collection' || !quest.itemId) return false;
     const held = InventoryStore.getItems()?.[quest.itemId]?.quantity || 0;
@@ -495,10 +484,10 @@ function removeQuestToken(instance) {
 }
 
 /**
- * ⭐ **Claim quest Token `instanceId`** (FB-41). Only when done. A collection
- * bounty hands its items over from the Bank first. The reward drops as loot
- * beside the Token (FB-53), then the Token vanishes. Claiming a tutorial step
- * records it and brings the next (FB-42).
+ * **Claim quest Token `instanceId`.** Only when done. A collection bounty hands
+ * its items over from the Bank first. The reward drops as loot beside the
+ * Token, then the Token vanishes. Claiming a tutorial step records it and
+ * brings the next.
  *
  * @returns {{success: boolean, reason?: string, rewardItems?: object[]}}
  */
@@ -517,9 +506,9 @@ export function claimQuest(instanceId) {
         InventoryManager.removeItem(quest.itemId, quest.requiredCount);
     }
 
-    // The reward floats beside the quest, as the Hall's trickle does (FB-53):
-    // collected on hover, banked through InventoryManager (D-138). Dropped
-    // before the Token leaves, since the drop is placed at its point.
+    // The reward floats beside the quest, as the Hall's trickle does: collected
+    // on hover, banked through InventoryManager. Dropped before the Token
+    // leaves, since the drop is placed at its point.
     const rewardItems = questReward(quest);
     for (const r of rewardItems) SpriteLayer.addSprite('item', r.itemId, r.quantity, instance.id);
 
@@ -538,8 +527,8 @@ export function claimQuest(instanceId) {
 }
 
 /**
- * Advance the bounty clock by `ms` of game time, as the loop would (probe for
- * the director and tests; one call, closed form).
+ * Advance the bounty clock by `ms` of game time, as the loop would (one call,
+ * closed form).
  */
 export function advanceClock(ms) {
     tick(ms);
