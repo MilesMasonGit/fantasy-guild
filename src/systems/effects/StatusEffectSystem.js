@@ -1,19 +1,8 @@
-// Fantasy Guild - Status Effect System
-// First pass of the unified buff & debuff engine (status_effects_concept.md).
+// Heroes carry statuses on `hero.statuses` (persisted); enemies on `card.combat.enemyStatuses`
+// (ephemeral). Same instance shape: { id, stacks, remaining? }, `remaining` only for layered buffs.
 //
-// Heroes carry statuses on `hero.statuses` (persisted with the save).
-// Enemies carry them on `card.combat.enemyStatuses` (ephemeral, dies with
-// the encounter). Both use the same registry and the same instance shape:
-//   { id, stacks, remaining? }   — 'remaining' only for layered buffs.
-//
-// Periodic effects tick on one global 5s clock (§1B), whether the hero is
-// fighting, drawing cards, or working. DoT ticks are true damage — they
-// bypass Armor/Block and CAN drop a hero to 0 (owner-locked 2026-07-12).
-//
-// A DoT that empties a hero's HP bar publishes `hero_downed`; `BoardCombat`
-// subscribes and runs the ordinary defeat — wounded, cleansed, gear rolled,
-// carried off the board. (Between the playmat rework deleting `LoopRunner` and
-// 2026-08-25 nothing did this at all and the hero worked on at 0 HP: CR2-070.)
+// Periodic effects tick on one global 5s clock. DoT ticks are true damage: they bypass
+// Armor/Block and CAN drop a hero to 0, which publishes `hero_downed` for `BoardCombat`.
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
@@ -29,13 +18,8 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 let heroTickTimer = 0;
 
-// ---------------------------------------------------------------------------
-// Application
-// ---------------------------------------------------------------------------
-
 /**
- * Apply a status to a hero. Checks passive immunity (aggregator hook — no
- * gear grants it yet; §4C: immunity blocks NEW stacks only).
+ * Apply a status to a hero. Immunity (aggregator hook) blocks NEW stacks only.
  * @returns {{ success: boolean, blocked?: boolean }}
  */
 export function applyToHero(heroId, statusId, stacks = 1) {
@@ -43,9 +27,7 @@ export function applyToHero(heroId, statusId, stacks = 1) {
     const def = getStatusEffect(statusId);
     if (!hero || !def) return { success: false };
 
-    // ⚠️ The axis name comes from `EFFECT_TYPES`, not from a string literal here.
-    // It was a bare literal until P4 — the same parallel vocabulary CR2-074 named
-    // and P7 closed for the combat axes, and the reason nothing could write it.
+    // ⚠️ Axis name from `EFFECT_TYPES`, not a string literal, so every writer and this reader spell it the same.
     const immunity = hero.aggregator?.query(EFFECT_TYPES.STATUS_IMMUNITY, statusId) || 0;
     if (immunity > 0) {
         EventBus.publish(ENGINE_EVENTS.STATUS_BLOCKED, { targetId: heroId, statusId });
@@ -75,7 +57,7 @@ export function applyToEnemy(card, statusId, stacks = 1) {
     return { success: true };
 }
 
-/** Shared stacking rules (§4A decrement merge / §4B independent layers). */
+/** Shared stacking rules: decrement merge, or independent layers. */
 function _applyToList(statuses, def, stacks) {
     if (def.stackModel === 'layered') {
         // Each application is its own layer with an independent lifetime.
@@ -92,10 +74,6 @@ function _applyToList(statuses, def, stacks) {
         statuses.push({ id: def.id, stacks: Math.min(stacks, def.maxStacks ?? 99) });
     }
 }
-
-// ---------------------------------------------------------------------------
-// The global 5-second clock (§1B) — hero-side periodic effects
-// ---------------------------------------------------------------------------
 
 /**
  * Called every frame by GameLoop. Fires the global status tick every 5s:
@@ -118,17 +96,9 @@ export function tick(delta) {
 
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'status_tick', heroId: hero.id });
         if (died) {
-            // Fixed 2026-08-25 (CR2-070). For months this branch was a log line
-            // and nothing else, so a hero poisoned to 0 HP off an enemy tile
-            // carried on working at zero health forever.
-            //
-            // **Dying to poison now costs exactly what dying to an enemy costs**
-            // (owner decision 11): wounded, cleansed, gear rolled, carried off
-            // the board. Deliberately announced rather than done here — the
-            // whole of that is already implemented once, in
-            // `BoardCombat.resolveDefeat`, and this module must not import
-            // BoardCombat (it imports this one; a static cycle). So the status
-            // clock names the death and `BoardCombat.init` owns the response.
+            // Announced rather than resolved here: the whole cost of dying is implemented once, in
+            // `BoardCombat.resolveDefeat`, and this module must not import BoardCombat (a static
+            // cycle). `BoardCombat.init` owns the response.
             // ⚠️ There must never be a second subscriber that also kills.
             logger.info('StatusEffect', `${hero.name} was downed by status damage`);
             EventBus.publish(ENGINE_EVENTS.HERO_DOWNED, { heroId: hero.id, cause: 'status' });
@@ -172,10 +142,6 @@ function _fireStatusTick(statuses, dealDamage) {
     return died;
 }
 
-// ---------------------------------------------------------------------------
-// Event-based decay (§4A) + combat lifecycle (§3)
-// ---------------------------------------------------------------------------
-
 /**
  * Roll the attack-fail chance (Stun) for an attacker, then decay
  * attack-attempt statuses by 1 — every attempt spends a stack, hit or miss.
@@ -192,7 +158,7 @@ export function rollAttackFailure(statuses) {
 
 /**
  * A successful hit landed on this entity — decay hit-taken statuses
- * (Armor Shield). Misses and blocks do NOT call this (§4A).
+ * (Armor Shield). Misses and blocks do NOT call this.
  */
 export function notifyHitTaken(statuses) {
     if (!statuses || statuses.length === 0) return;
@@ -201,7 +167,7 @@ export function notifyHitTaken(statuses) {
 
 /**
  * A combat encounter resolved for this hero: combat-only statuses clear
- * (§3A) and combat-duration buff layers (Well Fed) lose a duration point.
+ * and combat-duration buff layers (Well Fed) lose a duration point.
  */
 export function notifyCombatResolved(heroId) {
     const hero = HeroManager.getHero(heroId);
@@ -212,13 +178,9 @@ export function notifyCombatResolved(heroId) {
 }
 
 /**
- * A work cycle resolved for this hero — cycle-duration buff layers (Cookout)
- * lose a duration point.
- *
- * The unit used to be a resolved deck slot; on the board it is one completed
- * Token cycle, which D-129 makes the same thing for combat too (one kill = one
- * cycle). The decay trigger keeps its authored name `slot_resolved` so no status
- * content has to be re-authored.
+ * A work cycle resolved for this hero: cycle-duration buff layers (Cookout) lose a duration
+ * point. The decay trigger keeps its authored name `slot_resolved` so no status content
+ * has to be re-authored.
  */
 export function notifySlotResolved(heroId) {
     const hero = HeroManager.getHero(heroId);
@@ -246,20 +208,14 @@ function _decay(statuses, decayTrigger) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Clearing & cleansing (§3B, §4C, §6)
-// ---------------------------------------------------------------------------
-
-/** Remove combat-only statuses (fight resolved, §3A). */
+/** Remove combat-only statuses. */
 export function clearCombatOnly(heroOrId) {
     const hero = typeof heroOrId === 'string' ? HeroManager.getHero(heroOrId) : heroOrId;
     if (!hero?.statuses?.length) return;
     hero.statuses = hero.statuses.filter(s => !getStatusEffect(s.id)?.combatOnly);
 }
 
-/**
- * Clear ALL statuses — Forced Retreat cleanse (§6) and loop exit (§3B).
- */
+/** Clear ALL statuses (the defeat cleanse). */
 export function clearAll(heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero?.statuses?.length) return;
@@ -268,8 +224,7 @@ export function clearAll(heroId) {
 }
 
 /**
- * Active cleansing (§4C-2): purge a specific status, or every debuff when
- * statusId is omitted. The hook for Antidote/Curative Broth style cards.
+ * Active cleansing: purge a specific status, or every debuff when statusId is omitted.
  * @returns {number} instances removed
  */
 export function purge(heroId, statusId = null) {
@@ -288,41 +243,23 @@ export function purge(heroId, statusId = null) {
     return removed;
 }
 
-// ---------------------------------------------------------------------------
-// Queries
-// ---------------------------------------------------------------------------
-
 /** Task-output multiplier from yield buffs (Cookout): 1.0 = no bonus. */
 export function getYieldMultiplier(heroId) {
     const hero = HeroManager.getHero(heroId);
     return 1 + sumStatusEffect(hero?.statuses, 'yield_pct');
 }
 
-// ---------------------------------------------------------------------------
-// Wiring
-// ---------------------------------------------------------------------------
-
 /**
- * Subscribe to loop lifecycle events. Called once from EngineBootstrap.
+ * Subscribe to board cycle events. Called once from EngineBootstrap.
  */
 export function init() {
-    // Every completed Token cycle decays cycle-duration buffs for the hero who
-    // worked it. The payload carries `heroId` directly — the old area version
-    // had to look it up through `areaStates`, and a tile has no such registry.
-    //
-    // ⚠️ Corrected 2026-08-24 (CR2-081). This used to say "nothing publishes
-    // BOARD_EVENTS.CYCLE_COMPLETE until the board runner lands in Phase 4, so
-    // this subscriber is inert". Phase 4 landed: **`BoardRunner` and
-    // `BoardCombat` both publish it**, so this subscriber is live and buff
-    // decay does happen.
+    // Every completed Token cycle decays cycle-duration buffs for the hero who worked it.
     EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ heroId }) => {
         if (heroId) notifySlotResolved(heroId);
     });
 
-    // Statuses used to be cleared on leaving an area. There are no areas, and a
-    // hero moving between tiles is now the game's most frequent action — so
-    // clearing on every move would delete a buff the player just bought. The
-    // surviving clear points are defeat (`handleHeroWounded` → `clearAll`) and
+    // Statuses are NOT cleared when a hero moves between tiles (the most frequent action) or a
+    // buff the player just bought would vanish. The clear points are defeat (`clearAll`) and
     // the per-fight clear in `notifyCombatResolved`.
 
     logger.info('StatusEffect', 'Status engine ready (5s global clock)');

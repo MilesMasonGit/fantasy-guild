@@ -1,26 +1,10 @@
-/**
- * Effect & Modifier Engine Constants
- */
-
 export const EFFECT_TYPES = {
     SPEED: 'SPEED',           // Task tick speed, combat attack speed
     DAMAGE: 'DAMAGE',         // Melee, Ranged, Magic damage
     DEFENSE: 'DEFENSE',       // Damage reduction
 
-    /**
-     * ## Combat axes the fight ALREADY reads (Unified Effects P7)
-     *
-     * ⚠️ These four are not new behaviour — they are names for strings the
-     * combat code has been querying off `hero.aggregator` all along, typed as
-     * bare literals rather than imported from here (the parallel vocabulary
-     * CR2-074 named). Declaring them closes that gap: the palette can now offer
-     * them, and every reader and writer spells them the same way.
-     *
-     * All four are read as **flat** sums by `ModifierAggregator.query`, which
-     * skips percentage and multiplier buckets — so the palette offers only the
-     * flat bucket for them. A percentage of "armour" has no base to be a
-     * percentage of.
-     */
+    // Combat axes read as flat sums by `ModifierAggregator.query` (percentage and
+    // multiplier buckets are skipped), so the palette offers only the flat bucket.
     ARMOR: 'ARMOR',           // flat damage subtracted — CombatFormulas.computeEnemyDamage
     ACCURACY: 'ACCURACY',     // hit chance — CombatFormulas.calculateHitChance
     BLOCK: 'BLOCK',           // block chance — CombatFormulas.getHeroBlockChance
@@ -28,69 +12,34 @@ export const EFFECT_TYPES = {
     XP_BONUS: 'XP_BONUS',     // Bonus XP gain
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff
-    HP_REGEN: 'HP_REGEN',     // Health regeneration
-    THORNS_REFLECT: 'THORNS_REFLECT', // Reflect damage to attacker
+    HP_REGEN: 'HP_REGEN',
+    THORNS_REFLECT: 'THORNS_REFLECT',
 
-    /**
-     * ## Immunity to ONE named status (Effects Robustness P4)
-     *
-     * ⚠️ Another axis that was **readable and unwritable**, exactly as the five
-     * combat axes were before Unified Effects P7 — `StatusEffectSystem.applyToHero`
-     * has queried it since the status engine was built, spelled as a bare string,
-     * and nothing has ever written it.
-     *
-     * ⚠️ **The Unified Effects roadmap deferred this on a false premise.** It
-     * recorded that immunity "needs category-scoped targeting the grammar has
-     * never had". The grammar does not need anything new: the aggregator's
-     * `mod.target.category` has always existed, `query('STATUS_IMMUNITY', statusId)`
-     * already passes the status id as that category, and the only thing missing
-     * was a field in the editor.
-     *
-     * A positive value blocks NEW applications of that status (§4C); it never
-     * strips stacks already carried.
-     */
+    // Blocks NEW applications of the named status (its id is the aggregator category);
+    // never strips stacks already carried.
     STATUS_IMMUNITY: 'STATUS_IMMUNITY',
-    STAT_BONUS: 'STAT_BONUS', // Generic stat bonus (for skills/combat)
+    STAT_BONUS: 'STAT_BONUS',
     LOGIC_OVERRIDE: 'LOGIC_OVERRIDE', // Complex logic triggers (e.g., ignore_defense)
 
-    // --- Card Mutator axes (§15.8, Phase 3 plumbing) --------------------
-    // The three v1 Token effect axes. Stamped Tokens register against these;
-    // the CONSUMERS land in Phase 5 (yield → loot generation, work time →
-    // currentTickTime, input cost → consumeInputs). Nothing reads them yet.
-    //
-    // WORK_TIME is deliberately separate from SPEED. SPEED is a work *rate*,
-    // so a Token adding Work Time expressed as SPEED would be read with its
-    // sign inverted and would make the card faster instead of slower.
+    // WORK_TIME is deliberately separate from SPEED. SPEED is a work *rate*, so a Token
+    // adding Work Time expressed as SPEED would be read with its sign inverted.
     YIELD: 'YIELD',           // units of output a Card produces
     WORK_TIME: 'WORK_TIME',   // milliseconds of Work Time a Card takes
     INPUT_COST: 'INPUT_COST', // units of input a Card consumes
 
     /**
-     * A chance to yield an extra, **different** item on top of a Token's normal
-     * output (CMS-27).
+     * A chance to yield an extra, **different** item on top of a Token's normal output.
      *
-     * ⚠️ Distinct from `LOOT_MULT`, which multiplies the Token's *own* output.
-     * BONUS_DROP adds something unrelated — the Masonry Wheelbarrow yielding
-     * Stone beside an Ore Vein.
-     *
-     * ⚠️ It carries an **item payload**, not a number:
-     * `{ type, itemId, chance, quantity }`. It therefore does NOT go through the
-     * three-bucket aggregator, which resolves scalars — see
-     * `TileModifiers.collectItemGrants`.
+     * ⚠️ Carries an item payload `{ type, itemId, chance, quantity }`, not a number, so it
+     * does NOT go through the three-bucket aggregator; see `TileModifiers.collectItemGrants`.
      */
     BONUS_DROP: 'BONUS_DROP',
 
     /**
-     * Consumes item(s) from the Bank and produces item(s) onto the board
-     * (CMS-72) — the Stoneshaper Sigil turning Stone into something else.
+     * Consumes item(s) from the Bank and produces item(s) onto the board.
      *
-     * ⚠️ **Only meaningful inside a triggered block.** Without a trigger to
-     * fire it, "consume these, produce those" is exactly what a production
-     * recipe already is, which is why this waited for Phase 6 rather than
-     * shipping alongside `BONUS_DROP` (CMS-99).
-     *
-     * Payload shape: `{ type, consumes: [{itemId, quantity}],
-     * produces: [{itemId, quantity}], chance }`.
+     * ⚠️ Only meaningful inside a triggered block; without a trigger it is just a recipe.
+     * Payload: `{ type, consumes: [{itemId, quantity}], produces: [{itemId, quantity}], chance }`.
      */
     CONVERT: 'CONVERT'
 };

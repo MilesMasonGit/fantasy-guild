@@ -1,50 +1,23 @@
-// Fantasy Guild — inline statements → the named library (Unified Effects, P1)
-
 import { KEYWORD, statementsOf, makeStatement } from './statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { EFFECT_ID_PREFIX } from './effectLibrary.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 
 /**
- * The one-time move of every inline statement into a named library entry.
+ * Moves every inline statement into a named library entry. A shared module rather than a
+ * script because it must run over two copies of the same content: `scripts/
+ * migrate-effects-library.mjs` rewrites `data/`, and `cms/src/stores/useEntityStore.js`
+ * rewrites the CMS workspace in the author's browser localStorage. If the two produced
+ * different libraries, the next "Sync to Game" would silently unwind the migration.
  *
- * ## Why this is a shared module and not a script
- * It has to run **twice, over two different copies of the same content**:
+ * ⚠️ Pure, because the CMS imports it.
  *
- * 1. `scripts/migrate-effects-library.mjs` rewrites `data/tokens.json` and
- *    writes `data/effects.json`, so the game loads the new shape.
- * 2. `cms/src/stores/useEntityStore.js` rewrites the CMS's own workspace, which
- *    lives in the author's **browser localStorage** and cannot be reached from
- *    a script at all.
+ * Identical statements (everything but `id`) become ONE entry, so shared capability grants
+ * become one named effect many Tokens share. One entry per distinct statement: grouping is
+ * left to the owner, since a wrong grouping silently changes a rule's meaning.
  *
- * If those two produced different libraries, the next "Sync to Game" would
- * overwrite the migrated data files with the CMS's divergent version and the
- * work would silently unwind. One function, called from both, is the only way
- * that cannot happen.
- *
- * ⚠️ Pure, for the same reason `effectLibrary.js` is: the CMS imports it.
- *
- * ## Identical statements become ONE entry
- * This is the migration's whole value beyond bookkeeping. Nine of the twenty-one
- * shipped statements are `Acts as` capability grants and several are
- * character-for-character identical, so deduplicating turns them into one named
- * *Pickaxe* that four Tokens share — which is the state the library exists to
- * make possible, reached without the owner re-authoring anything.
- *
- * Two statements are the same when everything except their `id` matches.
- *
- * ## One statement, one entry
- * UE-4 allows an entry to hold several statements, but nothing here can guess
- * which of a Token's two statements were meant as one named idea. So the
- * migration makes one entry per distinct statement and leaves grouping to the
- * owner, who can merge them in the CMS. A conservative split is undoable; a
- * wrong grouping is a rule that silently means something else.
- *
- * ## The names are provisional and the owner is expected to rename them
- * A generated name is honest about the mechanism and dull about everything else
- * — *Pickaxe*, *Yield Bonus*, *Mining Station*. It is a starting point, not a
- * judgement about what the effect should be called, and renaming one in the CMS
- * updates every bearer at once (UE-5).
+ * Generated names describe the mechanism and are provisional; renaming one in the CMS
+ * updates every bearer.
  */
 
 /** `Copper Ore` → `copper_ore`. Local and tiny; the CMS's own slug is not pure. */
@@ -66,16 +39,11 @@ function titleCase(text) {
 }
 
 /**
- * A provisional name for one statement.
- *
- * Deliberately describes the **mechanism**, not the fiction: this cannot know
- * that a Token's Bonus Drop is "the Shrimp Trawler", and a generated name that
- * guessed at flavour would be a hand-written description by the back door —
- * the exact thing UE-8 exists to prevent. Dull and true, then renamed by a
- * person who knows what it is.
+ * A provisional name for one statement. Deliberately describes the mechanism, not the
+ * fiction: a generated name that guessed at flavour would be a hand-written description.
  *
  * @param {object} statement
- * @param {(id: string) => string} nameOf — resolves an item/token id to its name
+ * @param {(id: string) => string} nameOf resolves an item/token id to its name
  */
 export function provisionalName(statement, nameOf = titleCase) {
     const payload = statement?.payload || {};
@@ -94,9 +62,8 @@ export function provisionalName(statement, nameOf = titleCase) {
         case KEYWORD.PROVIDES: {
             const entry = getPaletteEntry(payload.type);
             const label = entry?.label || titleCase(payload.type) || 'Effect';
-            // `inverted` axes (Work Time) run backwards — a negative value is
-            // the buff — so the direction word is read off the palette rather
-            // than off the sign, which would label half of them wrongly.
+            // `inverted` axes (Work Time) run backwards (a negative value is the buff), so the
+            // direction word is read off the palette rather than the sign.
             const positive = Number(payload.value) >= 0;
             const good = entry?.inverted ? !positive : positive;
             return `${label} ${good ? 'Bonus' : 'Penalty'}`;
@@ -125,15 +92,13 @@ function fingerprint(statement) {
 }
 
 /**
- * Migrate a set of bearers.
+ * Migrate a set of bearers. Bearers that already carry `effects` refs are passed through
+ * untouched, so running this twice is a no-op rather than a second library.
  *
- * Bearers that already carry `effects` refs are passed through untouched, so
- * running this twice is a no-op rather than a second library.
- *
- * @param {Record<string, object>} bearers — tokens (or, from P4, items)
+ * @param {Record<string, object>} bearers tokens or items
  * @param {object} options
- * @param {Record<string, object>} options.existing — a library to add to
- * @param {(id: string) => string} options.nameOf — id → display name
+ * @param {Record<string, object>} options.existing a library to add to
+ * @param {(id: string) => string} options.nameOf id to display name
  * @returns {{ effects: Record<string, object>, bearers: Record<string, object>, moved: number }}
  */
 export function migrateBearers(bearers = {}, { existing = {}, nameOf = titleCase } = {}) {
@@ -141,9 +106,7 @@ export function migrateBearers(bearers = {}, { existing = {}, nameOf = titleCase
     const out = {};
     let moved = 0;
 
-    // fingerprint → the entry id already created for it, so an identical
-    // statement on a second Token reuses the first entry rather than making a
-    // twin with a `_2` suffix.
+    // fingerprint -> entry id, so an identical statement on a second Token reuses the entry.
     const byFingerprint = new Map();
     for (const [id, entry] of Object.entries(effects)) {
         for (const statement of statementsOf(entry)) {
@@ -204,36 +167,25 @@ export function migrateBearers(bearers = {}, { existing = {}, nameOf = titleCase
 }
 
 /**
- * ⭐ **A Token's `promotion` field → a library effect holding a Promotes rule**
- * (Promotes rule P2 — `docs/promotes_rule_roadmap.md`).
+ * A Token's `promotion` field becomes a library effect holding a Promotes rule, so nothing
+ * already authored under the old field is lost.
  *
- * The unmerged `promotion-tokens` branch authored *Wizard Academy* and
- * *Fighter's Academy* as `promotion: { jobId }`, and a CMS sync carried both
- * into `data/` on `main`, where nothing reads the field. The owner then ruled
- * that promotion is a rule (PR-1). This moves those Tokens onto the rule so
- * nothing already authored is lost.
+ * ⚠️ Called from two places like `migrateBearers` (`scripts/migrate-promotion-rules.mjs`
+ * for `data/`, `useEntityStore` for the CMS workspace); if they disagreed, the next
+ * "Sync to Game" would overwrite one with the other.
  *
- * ## ⚠️ Called from two places, like `migrateBearers`, for the same reason
- * `scripts/migrate-promotion-rules.mjs` moves `data/`; `useEntityStore` moves
- * the CMS workspace in the author's browser storage. If the two disagreed, the
- * next "Sync to Game" would overwrite one with the other.
+ * ⚠️ Deterministic ids, not random ones: both copies run this independently, so anything
+ * random (`newStatementId`) would give the same rule two ids and churn every sync. The
+ * statement id comes from the job; the effect id from its name, made unique against the
+ * library it is added to.
  *
- * ## ⚠️ Deterministic ids, not random ones
- * Both copies run this independently, so anything random — `newStatementId` —
- * would give the same rule two different ids and churn every sync afterwards.
- * The statement id comes from the job; the effect id from its name, made unique
- * against the library it is added to.
- *
- * ## The rules
- * * A Token whose `promotion` names a job loses the field and gains a reference.
- * * Every Token promoting to the **same job shares one effect**, and an effect
- *   already in the library holding exactly one Promotes rule for that job is
- *   reused rather than duplicated.
- * * A Token whose field names no job is **left exactly as it is** — there is
- *   nothing to convert, and deleting it would lose whatever it was meant to be.
- * * An unknown job still converts. The rule then reads "Promotes the hero to
- *   not_a_job." on screen, which is louder than a silently dropped field.
- * * Idempotent: a Token with no `promotion` field passes through untouched.
+ * Rules:
+ * - A Token whose `promotion` names a job loses the field and gains a reference.
+ * - Every Token promoting to the same job shares one effect; an existing effect holding
+ *   exactly one Promotes rule for that job is reused.
+ * - A Token whose field names no job is left exactly as it is.
+ * - An unknown job still converts (the rule then reads loudly on screen).
+ * - Idempotent: a Token with no `promotion` field passes through untouched.
  *
  * @param {Record<string, object>} tokens
  * @param {object} [options]
@@ -289,31 +241,21 @@ export function migratePromotionFields(tokens = {}, { existing = {} } = {}) {
 }
 
 /**
- * ⭐ **The retired `target: 'enemy'` flag → the enemy role** (Effects Grammar
- * V10b, G-40…G-43).
+ * The retired `payload.target` flag on `Applies` becomes the enemy role.
  *
- * Before V10a, an `Applies` could reach the creature a hero fights only through
- * a one-off `payload.target` flag (UE-24). V10a added `target: { role:
- * 'opponent' }`; this makes the role the only way, so there is one way to name
- * the enemy rather than two.
+ * - `target === 'enemy'` becomes `target: { role: 'opponent' }`, flag removed.
+ * - `target === 'hero'` flag removed (with no role the rule already means the hero).
+ * - No flag, another keyword, or any other value: returned as is. An unknown value is left
+ *   in place on purpose; `ContentAudit` names it, which is louder than a guess.
+ * - A statement that already names a role keeps it; only the flag goes.
+ * - Idempotent, and returns the SAME object when there is nothing to change.
  *
- * * `payload.target === 'enemy'` → `target: { role: 'opponent' }`, flag removed.
- * * `payload.target === 'hero'` → flag removed. With no role the rule already
- *   reads as the hero working the tile, which is what the flag said.
- * * No flag, another keyword, or a value the flag never had → returned as is.
- *   An unknown value is left in place on purpose: `ContentAudit` names it,
- *   which is louder than a guess.
- * * A statement that already names a role keeps it; only the flag goes.
- * * Idempotent, and returns the SAME object when there is nothing to change.
+ * ⚠️ On a Token rule the old flag preferred the enemy on the filtered tiles; migrated, it
+ * means what the role means everywhere: the creature the hero in this moment is fighting.
  *
- * ⚠️ On a **Token** rule the old flag preferred the enemy on the filtered
- * tiles. Migrated, it means what the role means everywhere (G-41): the
- * creature the hero in this moment is fighting. No shipped content used it.
- *
- * ## ⚠️ Called from two places, like `migrateBearers`, for the same reason
- * The game's registries run it on load (`effectRegistry`, `tokenRegistry`) and
- * the CMS store runs it on every load path. If only the game converted, the next
- * "Sync to Game" would write the old flag straight back into `data/`.
+ * ⚠️ Called from two places like `migrateBearers`: the game registries on load
+ * (`effectRegistry`, `tokenRegistry`) and the CMS store on every load path. If only the game
+ * converted, the next "Sync to Game" would write the old flag back into `data/`.
  *
  * @param {object} statement
  * @returns {object}
