@@ -254,7 +254,7 @@ and armour will be authored as content.
 
 - **Items are the only currency** *(`GoldRetired.test.js`)*. Every price is a
   list of items. Nothing can be sold. The Shrimp Market Token runs but pays
-  nothing.
+  nothing; what markets become is undecided (§16).
 - **Item sinks**: surplus and high-tier items are meant to be spent on
   **upgrades and construction** (Hall upgrades, stations, recipes), not sold
   (owner 2026-10-06).
@@ -470,7 +470,7 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
 
 ## 13. Planned and dormant
 
-- **Atlas — Planned** (after the crunch):
+- **Atlas — Planned for the crunch** (after deep optimization):
   [`docs/active/concept_atlas.md`](../active/concept_atlas.md). Loot Maps and
   Modifiers, combine them in a Cartography screen to generate a Region, and
   relocate the guild to better Regions over time. Many Tokens become fixed
@@ -479,7 +479,9 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md),
   approved, needs a roadmap; brings the 4 Academies.
 - **Real offline progress — Planned for the crunch**, replacing the Time Bank.
-- **Dormant**: terrain, Time Bank widget, energy and drinking, Villager heroes,
+- **Terrain — Dormant, returns in the crunch** after the Atlas works, as a
+  major rework (owner 2026-10-06).
+- **Dormant**: Time Bank widget, energy and drinking, Villager heroes,
   Map bursts and most Map Tokens, `data/stations.json` (nothing loads it).
 - **Latent** (code ready, no content): gear, statuses, ranged/magic enemies,
   rule upkeep, most statement verbs and moments.
@@ -556,7 +558,10 @@ crunch plan):
 | Silent by default | Development convenience; audible default before shipping (T-100). |
 | Old saves | Refused until 1.0. |
 
+| Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
+| Atlas timing | Moves into the crunch, after deep optimization. |
+
 Still open:
 
-1. Terrain: revive on the free mat for the Atlas, or remove?
-2. What the Shrimp Market should do now that nothing is sold.
+1. **Markets** (Shrimp Market): undecided. Options the owner is weighing:
+   trade for items, or pay a new "gold coin" item. Not essential; may be cut.
