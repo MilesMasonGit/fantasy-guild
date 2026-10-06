@@ -24,22 +24,16 @@ function rollStatusOnHit(source, applyFn) {
 }
 
 /**
- * Live combat attack handlers (7-stat engine pass, combat_formula_spec.md §7).
- * No energy cost in combat (owner-locked F4) — HP/food is the attrition currency.
+ * No energy cost in combat: HP/food is the attrition currency.
  *
- * `combat_hero_attack` names the enemy Token (`instanceId`, a board fight's own
- * key) so the mat can route it to that Token: a landed hit knocks it back
- * (feedback Q4, FB-10).
+ * `combat_hero_attack` names the enemy Token (`instanceId`) so the mat can
+ * route a landed hit's knockback to it.
  */
 
 export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
-    // Eating mid-fight (D-27): the hero stops to eat while the fight carries
-    // on, so this attack never happens and the enemy — whose own timer is
-    // untouched — effectively gets a free swing. That price is what keeps HP
-    // management tense and makes Rest cards and healing worth building for.
-    //
-    // Uncapped by design (D-31): no cooldown, no per-fight limit. A hero who
-    // can't out-heal the damage is meant to lose.
+    // Eating mid-fight: the hero skips this attack while the enemy's timer keeps
+    // running, so the enemy gets a free swing. That price keeps HP management
+    // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose.
     const meal = ConsumptionSystem.tryEat(hero.id);
     if (meal) {
         EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {
@@ -60,19 +54,9 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
     }
 
     const stats = fight.combat?.stats || {};
-    /**
-     * The fight's own bonus, plus whatever the hero's gear and the enemy's own
-     * rules say (Unified Effects P7).
-     *
-     * `DAMAGE` had no reader at all before this line: the deleted gear pipeline
-     * wrote it and nothing ever asked for it (CR2-074). It is read here so a
-     * `Provides Damage` rule means something — which is the condition this
-     * project puts on offering an effect at all.
-     */
     const damageBonus = (stats.damageBonus || 0) + (hero?.aggregator?.query('DAMAGE') || 0);
     const heroSkill = CombatFormulas.getHeroCombatSkill(hero, combatStyle);
 
-    // Hit roll (§7 step 2): attacker style skill vs the enemy's Defense (= its level)
     const didHit = CombatFormulas.rollHit(
         heroSkill, enemy.defenceSkill,
         combatStyle, enemy.combatType || 'melee',
@@ -83,11 +67,9 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
         const damage = CombatFormulas.computeHeroDamage(hero, enemy, weapon, damageBonus, combatStyle, fight.combat.enemyStatuses);
         fight.combat.enemyHp.current = Math.max(0, fight.combat.enemyHp.current - damage);
 
-        // Weapon on-hit statuses (Poisonous Dagger etc.), then hit-taken decay
         rollStatusOnHit(weapon, (statusId, stacks) => StatusEffectSystem.applyToEnemy(fight, statusId, stacks));
         StatusEffectSystem.notifyHitTaken(fight.combat.enemyStatuses);
 
-        // Thorns handling
         if (enemy.traits) {
             const thorns = enemy.traits.find(t => t.id === 'thorns');
             if (thorns) {
@@ -101,8 +83,8 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
         EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, enemyHpRemaining: fight.combat.enemyHp.current });
     }
 
-    // Carry the overshoot instead of resetting (CR-002): at 10x time-scale a
-    // reset quantized every attack up to a whole engine tick slower.
+    // Carry the overshoot instead of resetting; a reset would quantize every
+    // attack up to a whole engine tick.
     fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
 }
 
@@ -124,9 +106,6 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
                 return;
             }
 
-            // Defender: hero's Defense skill shifts the enemy's hit chance;
-            // the hero's Block (innate from Defense + gear later) is applied
-            // inside the hit roll via the defender entity.
             const heroStyle = CombatFormulas.getHeroCombatStyle(targetHero);
             const heroDefense = CombatFormulas.getHeroDefenseSkill(targetHero);
 
@@ -140,8 +119,6 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
                 const dmg = CombatFormulas.computeEnemyDamage(enemy, targetHero, heroStyle);
                 HeroManager.modifyHeroHp(targetHeroId, -dmg);
 
-                // Enemy on-hit statuses (Spider Bite → Poison), then hit-taken
-                // decay for the hero's Armor Shield stacks.
                 rollStatusOnHit(enemy, (statusId, stacks) => StatusEffectSystem.applyToHero(targetHeroId, statusId, stacks));
                 StatusEffectSystem.notifyHitTaken(targetHero.statuses);
 
@@ -155,7 +132,7 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
             }
 
         }
-        // Carry the overshoot instead of resetting (CR-002).
+        // Carry the overshoot instead of resetting.
         fight.combat.enemyTickProgress -= enemyAttackSpeed;
     }
 }

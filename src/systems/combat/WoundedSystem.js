@@ -1,5 +1,4 @@
 // Fantasy Guild - Wounded System
-// Phase 31: Combat System - Wounded State Handling
 
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -7,25 +6,15 @@ import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * WoundedSystem - Handles hero wounded state and recovery
- * 
- * When a hero is defeated in combat (HP = 0):
- * - Hero enters "wounded" status
- * - Cannot be assigned to any cards
- * - Recovers after a set time (5 minutes base)
- * - Recovers at 50% HP
+ * WoundedSystem - drains wounded heroes' recovery timers; a recovered hero
+ * returns to idle at 50% HP.
  */
 
-// Recovery time in milliseconds (5 minutes)
 const BASE_RECOVERY_TIME_MS = 5 * 60 * 1000;
 
 const WoundedSystem = {
-    /** Track if system is initialized */
     initialized: false,
 
-    /**
-     * Initialize the wounded system
-     */
     init() {
         if (this.initialized) return;
         this.initialized = true;
@@ -33,13 +22,10 @@ const WoundedSystem = {
     },
 
     /**
-     * Main tick function - called by GameLoop
-     * @param {number} deltaTime - Time since last tick in SECONDS
+     * Main tick function - called by the engine each tick
+     * @param {number} deltaMs - Time-scaled game time in milliseconds
      */
     tick(deltaMs) {
-        // Delta is already in milliseconds from GameLoop
-
-        // Get all wounded heroes
         const woundedHeroes = this.getWoundedHeroes();
 
         for (const hero of woundedHeroes) {
@@ -50,17 +36,16 @@ const WoundedSystem = {
     /**
      * Process recovery tick for a wounded hero.
      *
-     * Recovery counts GAME time (the already time-scaled tick delta), not
-     * wall-clock time (owner decision 2026-07-17, CR-033): every feature
-     * must speed up under Time Bank fast-forward, and offline time reaches
-     * heroes by replaying the bank through the live engine.
+     * Recovery counts game time (the time-scaled tick delta), not wall-clock
+     * time, so it speeds up under Time Bank fast-forward and offline time
+     * reaches heroes by replaying the bank through the live engine.
      * @param {Object} hero - Wounded hero object
      * @param {number} deltaMs - Time-scaled game time in milliseconds
      */
     processWoundedTick(hero, deltaMs) {
         if (typeof hero.woundedRemainingMs !== 'number') {
-            // Legacy saves stored a wall-clock deadline in woundedUntil —
-            // convert whatever is left on it; fresh wounds get the full timer.
+            // Legacy saves stored a wall-clock deadline in woundedUntil: convert
+            // whatever is left on it; fresh wounds get the full timer.
             const legacyRemaining = hero.woundedUntil ? hero.woundedUntil - Date.now() : BASE_RECOVERY_TIME_MS;
             hero.woundedRemainingMs = Math.max(0, Math.min(BASE_RECOVERY_TIME_MS, legacyRemaining));
             hero.woundedUntil = null;
@@ -74,8 +59,8 @@ const WoundedSystem = {
     },
 
     /**
-     * Wound a hero (called by CombatSystem on defeat)
-     * @param {string} heroId 
+     * Wound a hero and start the recovery timer. ⚠️ No caller in `src/`.
+     * @param {string} heroId
      */
     woundHero(heroId) {
         const hero = HeroManager.getHero(heroId);
@@ -84,10 +69,7 @@ const WoundedSystem = {
             return;
         }
 
-        // Set hero to wounded status
         HeroManager.setHeroStatus(heroId, 'wounded');
-
-        // Set recovery timer (game-time ms, drained by processWoundedTick)
         hero.woundedRemainingMs = BASE_RECOVERY_TIME_MS;
         hero.woundedUntil = null;
 
@@ -111,14 +93,11 @@ const WoundedSystem = {
             return;
         }
 
-        // Set hero back to idle
         HeroManager.setHeroStatus(heroId, 'idle');
 
-        // Recover at 50% HP
         const recoveryHp = Math.floor(hero.hp.max * 0.5);
         hero.hp.current = recoveryHp;
 
-        // Clear recovery timer
         hero.woundedUntil = null;
         hero.woundedRemainingMs = null;
 
@@ -130,7 +109,6 @@ const WoundedSystem = {
             recoveredHp: recoveryHp
         });
 
-        // Trigger UI update
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'wounded_recovery' });
     },
 

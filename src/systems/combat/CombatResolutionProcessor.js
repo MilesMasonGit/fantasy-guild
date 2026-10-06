@@ -7,33 +7,18 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 export function handleHeroWounded(fight, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
-    // Forced Retreat cleanses every status, buff or debuff (concept doc §6)
+    // Forced Retreat cleanses every status, buff or debuff
     StatusEffectSystem.clearAll(heroId);
-    // ⚠️ Corrected 2026-08-24 (CR2-081). This used to say the hero↔area binding
-    // was "owned by LoopRunner._forcedRetreat, which runs on the next tick".
-    // **`LoopRunner` was deleted by the playmat rework, and there are no areas.**
-    // Getting the hero off the board is `BoardCombat.resolveDefeat`, which sees
-    // the wounded status this function just set and furls the hero's flag
-    // (`Flags.furl`) — but only for a hero fighting an enemy Token. (CR-028's point still holds: unassigning here was a no-op
-    // on ephemeral cards, so this function deliberately does not try.)
-    //
-    // No notification here any more (Free Playmat FP-42): `resolveDefeat` sends
-    // the one message for a defeat, naming the hero and what was lost.
+    // ⚠️ Does not unassign the hero: that is a no-op on ephemeral fight objects.
+    // `BoardCombat.resolveDefeat` sees the wounded status set here, furls the
+    // hero's flag and sends the one defeat notification.
 }
 
 export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     if (!fight.combat) return;
 
-    // Award combat XP on kill.
-    //
-    // ⚠️ **The award is now the FULL amount into one skill**, where it used to
-    // be the full amount into the style plus a third again into Defense — 4/3
-    // of the award spread over two bars. Defence folded into the combat skill,
-    // so there is no second bar to feed, and paying 4/3 into the single one
-    // would have silently accelerated combat levelling by a third.
-    //
-    // A hero who holds no combat skill is a Recruit: `addXP` refuses, which is
-    // correct, and they should not have been fighting in the first place.
+    // The full award goes into the hero's single combat skill (Defence is folded
+    // into it, so there is no second bar). A hero holding no combat skill gets nothing.
     assignedHeroIds.forEach(id => {
         const h = HeroManager.getHero(id);
         if (h) {
@@ -42,32 +27,18 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
                 SkillSystem.addXP(id, combatSkillId, CombatFormulas.getCombatXpAward(enemy));
             }
         }
-        // Fight resolved: combat-only statuses clear; Well Fed layers decay (§3A)
         StatusEffectSystem.notifyCombatResolved(id);
     });
 
-    // What a kill is worth is the enemy Token's OUTPUTS, resolved by
-    // `LootSystem` off the `combat_victory` event below. There is no second
-    // path: the horde, dungeon and `unifiedreward`-trait branches that used to
-    // sit here were card-era code that `BoardCombat.createFight` can never
-    // satisfy — it never sets `hordeCount`, `cardType`, `enemyQueue`,
-    // `finalRewards` or `originalTraits`, and builds `traits` empty on purpose.
-    // Deleted 2026-08-24 (CR2-077).
-    //
-    // ⚠️ It used to be the enemy's inline `drops[]` from `data/enemies.json`.
-    // That file is gone (2026-09-06): a kill is a cycle (D-129), so a kill's
-    // loot is the cycle's output, and `BoardCombat` reads it off the Token.
-    // The shape `LootSystem` receives is unchanged — output entries already
-    // carried `{ itemId, chance, minQty, maxQty }` — so only the source moved.
+    // A kill's loot is the enemy Token's outputs, carried as `fight.drops` and
+    // resolved by `LootSystem` off the `combat_victory` event below.
 
     fight.combat.state.intermissionTimer = 2000;
     fight.status = 'victory';
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, 'idle'));
 
-    // `instanceId` — the enemy Token — is forwarded when the fight is on the
-    // BOARD (playmat rework Phase 6; by id since Free Playmat 1.6b). It is what
-    // lets loot land as a sprite where the kill happened (D-40) rather than
-    // teleporting into the Bank.
+    // `instanceId` (the enemy Token) is forwarded so loot lands as a sprite where
+    // the kill happened instead of teleporting into the Bank.
     EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, {
         cardId: fight.id, heroId, instanceId: fight.instanceId ?? null,
         areaId: fight.areaId || 'area_guild_hall',
@@ -75,8 +46,3 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
         drops: fight.drops || []
     });
 }
-
-// (CR-028) The old combat-quest listener here looked the card up through the
-// never-populated card cache and could never fire. The dormant quest board it
-// fed was removed on 2026-08-18; the live quest system (systems/quests) listens
-// on the EventBus instead.
