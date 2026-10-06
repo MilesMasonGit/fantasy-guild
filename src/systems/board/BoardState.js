@@ -87,8 +87,7 @@ function board() {
  * `terrain` is the Map's stamp (D-T6): the terrain of whichever Map burst this
  * Token into existence. It is set only when there is one, so the field is
  * absent on the great majority of Tokens rather than being null on all of them.
- * A Token that never came from a Map falls back to its own authored terrain —
- * see `terrainForToken`.
+ * Dormant: terrain is switched off and nothing reads the stamp today.
  */
 function newTokenId() {
     return `tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;

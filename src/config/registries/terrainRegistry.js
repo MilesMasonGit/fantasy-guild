@@ -4,9 +4,9 @@
  * What terrain a playmat tile can be painted with.
  *
  * This is the vocabulary half of the dynamic terrain system (roadmap P0). It
- * says what a "forest" or a "shore" *is*; `terrainAssignments.js` says which
- * Maps and Tokens paint which one. Nothing renders from this yet — the base
- * layer lands in P2.
+ * says what a "forest" or a "shore" *is*. Terrain is switched off since the free
+ * playmat (`TERRAIN_ENABLED` below); the tile-era table of which Map or Token
+ * paints which terrain was deleted 2026-10-06.
  *
  * ## A terrain type is a substrate plus a prop table (D-T8)
  *

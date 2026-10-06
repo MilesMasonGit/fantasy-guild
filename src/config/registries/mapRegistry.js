@@ -3,9 +3,8 @@
 /**
  * The Map catalogue, authored in the CMS. ⚠️ Since Token Lifecycle 9.1 no Map
  * bursts and none is sold: a Map Token that is still in the game is an ordinary
- * Explore producer (slice 7.6). What still reads this file: the terrain
- * assignment (`terrainAssignments.js`), the boot content audit, and the random
- * quest bounties. It was the Cartographer's catalogue (D-99).
+ * Explore producer (slice 7.6). What still reads this file: the boot
+ * content audit and the random quest bounties. It was the Cartographer's catalogue (D-99).
  *
  * ## Definitions live in `data/`, not here (CMS rework Phase 0, CMS-82)
  * Map definitions used to be a hand-authored object literal in this file. They

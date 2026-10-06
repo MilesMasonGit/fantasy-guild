@@ -1,6 +1,6 @@
 # Session C: runtime certification, the owner's checklist
 
-*Round-3 code review, Session C (plan `code_review_v3_master_plan.md` §4.2–4.4, §5 "C", §10).
+*Round-3 code review, Session C (plan `docs/archive/review_v3/code_review_v3_master_plan.md` §4.2–4.4, §5 "C", §10).
 Prepared 2026-09-29 by a subagent for the director. **The owner runs it on their own PC**
 (owner ruling, §10). Nothing in this file was run in a browser; see "What I could not
 check" at the end.*

@@ -75,13 +75,13 @@ Two safeguards:
 
 | # | Step | Owner | Status |
 |---|---|---|---|
-| P1 | Doc triage | Gemini → owner approves | ✅ Done |
-| P2 | GDD rewrite | Gemini drafts → Claude reviews | ✅ Drafted |
+| P1 | Doc triage | Gemini → owner approves | ✅ Done; finished by Claude 2026-10-06 (docs/active, docs/reference, one archive, TICKETS.md) |
+| P2 | GDD rewrite | Gemini drafts → Claude reviews | 🟡 Drafted; Claude review 2026-10-06 |
 | P3 | Performance baseline + tools | Gemini / Claude | ⬜ Not started |
 | P4 | Crunch backlog | Gemini drafts → owner approves | ⬜ Not started |
 | P5 | Max go / no-go | Owner | ⬜ Not started |
 
-Kickoff prompt for P1 + P2: [`docs/KICKOFF_doc_triage_gdd.md`](docs/KICKOFF_doc_triage_gdd.md)
+Kickoff prompt for P1 + P2 (archived): `docs/archive/KICKOFF_doc_triage_gdd.md`
 
 ---
 
@@ -186,7 +186,7 @@ backlog, and drop back to Pro afterwards (check plan terms first).
 
 ## 5. Open decisions (owner)
 
-1. **Toast leak (CR-050) — fix now or in the crunch?** Dismissed notifications
+1. **Toast leak (now ticket T-060) — fix now or in the crunch?** Dismissed notifications
    stay on the page invisibly (see
    [`ToastContainer.jsx`](src/ui/components/base/ToastContainer.jsx)), which
    likely makes lag build up over a session. It's a bug, not a design choice,

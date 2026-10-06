@@ -1,40 +1,72 @@
 # Fantasy Guild — Working Notes for Claude Code
 
-## How to work with me
+## The owner
 
-- **I don't code.** Explain things in plain language — especially git and
-  GitHub. Say what a command does and why, not just the command.
-- **Ask, don't assume — as multiple choice.** When a design decision isn't
-  already made somewhere, stop and ask me. Give me labelled options with the
-  trade-offs spelled out and your recommendation first, rather than an
-  open-ended question or a guess.
-- **Verify before saying it's done.** Run `npm test` and, for anything I'd
-  see on screen, run the game (`npm run dev`) and actually exercise it.
-  Report what you observed, not just that code was written.
-- **Stay in scope.** If you spot something unrelated worth fixing, tell me
-  about it — don't fold it into the current change.
-- **Work in small slices.** One coherent chunk per session, committed at the
-  end, so there's always a clean point to roll back to.
+- **I don't code.** Explain in plain language, especially git and GitHub: what
+  a command does and why. Lead with what matters, never a ticket dump.
+- **Ask, don't assume, as multiple choice.** When a design decision isn't
+  already recorded, give labelled options with trade-offs and your
+  recommendation first. Make routine calls yourself. Batch questions.
+- **Stay in scope.** Something unrelated worth fixing becomes a ticket in
+  [`docs/reference/TICKETS.md`](docs/reference/TICKETS.md), not part of the
+  current change.
 
-## Repo conventions
+## How work runs: director mode
 
-- `main` is canonical. Start new work from `main` on a short-lived branch
-  named for the job (`quest-polish`, `fix/bank-overflow`), then merge back
-  when it's verified.
-- Tag baselines (`v0.3.1`, `v0.4.0`, …) as permanent rollback points rather
-  than leaving branches around.
-- Version numbers live in **five files** and must be bumped together:
-  `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`,
-  `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`.
-- Log changes in [`CHANGELOG.md`](CHANGELOG.md) under `## [Unreleased]` as
-  they land; rename that heading to the version at release time.
+For any project bigger than a quick fix, the main session is the **director**.
+It does not write the code itself. It:
+
+1. Reads the project's docs, splits the work into phases, and briefs each
+   phase: the ticket or plan section, the file paths, the verification bar,
+   and permission to **stop and report rather than guess**.
+2. Picks a tier for each phase (definitions in
+   `.claude/agents/`):
+   - **runner** (Haiku): tests, bench, builds, mechanical edits.
+   - **builder** (Sonnet): fixes whose design is already written down.
+   - **engineer** (Opus): risky refactors, performance work, turning a new
+     design into code, diagnosing unexplained failures.
+3. **Verifies every subagent's claims itself** before merging. Subagent reports
+   here have been confidently wrong often enough that checking has repeatedly
+   changed the outcome.
+4. **Merges to `main` once the merge gate passes**, except anything that
+   changes how the game looks or plays: that waits for the owner's eye-check.
+   Never pushes unless asked.
+5. Parks owner questions as multiple choice and keeps working on what isn't
+   blocked.
+
+Cheapest tier first, but during the crunch the engineer tier may be used
+whenever a phase genuinely needs judgement. Code changes run one at a time in
+the checkout; read-only work (reviews, research) may run in parallel.
 
 ## Where things are written down
 
-Big features each have a concept doc (the vision) and a roadmap doc (the
-authoritative plan, with locked decisions and an implementation status table).
-I'll point you at the relevant ones at the start of a session — read those
-before touching that area, and don't re-litigate decisions marked locked.
+- **`docs/active/NOW.md`**: what's in flight and what's next. Start here; update
+  it at the end of a session.
+- **`docs/reference/`**: [GDD](docs/reference/GDD.md) (what the game is),
+  [TICKETS](docs/reference/TICKETS.md) (the only backlog),
+  [TESTING](docs/reference/TESTING.md) (merge gate, verifying in the game), and
+  other standing references.
+- **`docs/active/`**: the concept and roadmap docs of current projects. Roadmaps
+  hold locked decisions; don't re-litigate them.
+- **`docs/archive/`**: finished work. Don't read it unless asked or a live doc
+  points there.
 
-Past finished work is archived in
-[`PROJECT_HISTORY.md`](PROJECT_HISTORY.md) — background only, not current.
+## Hard rules
+
+- **Never hand-edit `data/`.** The CMS is the only authoring surface, and its
+  sync overwrites anything written outside it. Use the CMS or a test fixture.
+- **A comment is a hypothesis, not evidence.** This codebase has many confident
+  comments describing machinery that doesn't exist. Check the code.
+- **Green tests don't mean a working game.** Anything a player could see gets
+  exercised in the running game (see TESTING).
+- **Git**: branch from `main` for every job (`fix/bank-overflow`); merge back
+  only after the merge gate passes. Stage files by name, never `git add -A` or
+  `git add .`. Never commit the owner's uncommitted art under `public/assets/`.
+  No force-push, no `--no-verify`. No double quotes in commit messages
+  (PowerShell mangles them).
+- **Versions**: stay in 0.8.x until the owner says otherwise. The number lives
+  in five files, bumped together: `package.json`, `package-lock.json`,
+  `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`.
+  Tag baselines (`v0.8.1`) as rollback points.
+- **Changelog**: log changes in [`CHANGELOG.md`](CHANGELOG.md) under
+  `## [Unreleased]`.

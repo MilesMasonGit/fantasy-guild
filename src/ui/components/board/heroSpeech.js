@@ -65,7 +65,7 @@ export const momentText = {
  * FB-21): bubbles are for unusual events, not the everyday. Arriving at a job
  * happens every few seconds on a busy mat, so it is silent; the wording above
  * stays so the owner can turn it back on here. The full list of every line,
- * with its status, is `docs/speech_bubble_lines.md` — keep the two in step.
+ * with its status, is `docs/reference/speech_bubble_lines.md` — keep the two in step.
  *
  * * `arrived` — dropped (routine: the owner's own example).
  * * `idle` — kept, owner to decide: a hero with nothing to do is worth

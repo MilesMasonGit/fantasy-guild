@@ -70,7 +70,7 @@ export function blockedText(alert, { token, missing = null, skill = null }) {
  * the owner ruled after Q1 that it shows only its gear (FB-7), with no alert,
  * so its hero says nothing either. The wording in `blockedText` stays, so the
  * owner can reinstate a line by taking it out of this set. Every line and its
- * status: `docs/speech_bubble_lines.md`.
+ * status: `docs/reference/speech_bubble_lines.md`.
  */
 export const SILENT_BLOCKS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
 
@@ -103,7 +103,7 @@ export function blockedLineFor(tokenId, alert) {
 /**
  * ⭐ What a hero says when their flag, dropped on a Token, could not be pinned
  * to it (B5 bad pin, FB-45) — the **same sentence** they would say stuck on
- * that Token for that reason (lines 7 and 8 of `docs/speech_bubble_lines.md`:
+ * that Token for that reason (lines 7 and 8 of `docs/reference/speech_bubble_lines.md`:
  * level too low, skill not held). Null for a reason with no wording (a Token
  * the player disallowed, or the hero's own rule switched off): the flag's hover
  * still says it. Spoken as a moment (`heroSpeech.MOMENT_SPOKEN.pinRefused`).

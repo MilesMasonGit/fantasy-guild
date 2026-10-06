@@ -3,7 +3,7 @@
 `npm run bench` boots the real game engine in plain Node — no React, no browser,
 no jsdom — builds a board, runs thousands of game ticks as fast as it can, and
 reports how long each tick took. It answers "how much of a frame does one engine
-tick steal?" (plan §2.A, §4.1 of `code_review_v3_master_plan.md`).
+tick steal?" (plan §2.A, §4.1 of `docs/archive/review_v3/code_review_v3_master_plan.md`).
 
 It does **not** measure drawing. Frame times, React commits and the browser's
 layout/paint cost are Tier B (the in-game Perf HUD).
