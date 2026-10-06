@@ -17,11 +17,11 @@ changed, what's next. Keep it under one screen.*
 
 | Work | Doc | State |
 |---|---|---|
-| Crunch prep | [crunch_prep_plan.md](crunch_prep_plan.md) | Doc cleanup, tickets and CLAUDE.md done 2026-10-06; GDD review next; then P3 measurement tools, P4 crunch briefs |
+| Crunch prep | [crunch_prep_plan.md](crunch_prep_plan.md) | Doc cleanup, tickets, CLAUDE.md and the GDD rebuild done 2026-10-06; owner to review the GDD and answer its §16; then P3 measurement tools, P4 crunch briefs |
 
 ## Next up
 
-1. Finish the GDD review ([GDD](../reference/GDD.md)).
+1. Owner: read the rebuilt [GDD](../reference/GDD.md) and answer its §16 open questions.
 2. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
    the certification run (T-003) and the CMS fixes (T-001).
 3. Crunch prep P3: drawing benchmark + per-system on/off switches.

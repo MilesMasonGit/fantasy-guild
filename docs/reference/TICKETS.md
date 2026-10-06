@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-093**
+**Next free number: T-097**
 
 ---
 
@@ -46,6 +46,7 @@ here.
 | T-012 | **Transforms now push neighbouring Tokens** (the playmat plan said only bursts and spawns push). Keep or change? | FMR |
 | T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? | CR3 summary |
 | T-014 | **Starting and quest content is written in engine code**, not the CMS. Move it to content? (Design call, never asked.) | CR3-515 |
+| T-096 | **`data/stations.json`** (7 old station definitions) is loaded by nothing. Delete it? (It is under `data/`, so it needs your OK.) | GDD survey |
 
 ## 2. Open work
 
@@ -113,6 +114,9 @@ here.
 | T-062 | P3 | open | `statementText.js` contains a literal NUL byte, so git treats it as binary (no diffs). | FMR (still true 2026-10-06) |
 | T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |
 | T-064 | P3 | open | Dead clock surfaces and write-only fields (R1-Q4 ruling A). | CR3-105 |
+| T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `TimeBankWidget` says it is mounted; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
+| T-094 | P3 | open | More dead code from the GDD survey: `Placement.removePlacedToken` (replaced by the bin), `LootSystem` legacy cluster functions, `WoundedSystem.woundHero`, the enemy thorns-trait branch in `CombatAttackProcessor`, `HeroGenerator.generateCandidates`/`generateVillager`, declared-but-unread axes `HP_REGEN`, `THORNS_REFLECT`, `STAT_BONUS`. Three-way grep before deleting. | GDD survey |
+| T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
 
 ### Build, tests, docs
 
