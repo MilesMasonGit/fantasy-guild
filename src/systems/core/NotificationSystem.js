@@ -1,6 +1,3 @@
-// Fantasy Guild - Notification System
-// Phase 10: Notification System
-
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
@@ -11,7 +8,7 @@ let notificationId = 0;
 
 // Configuration
 const config = {
-    groupingWindow: 5000     // Group matching items within 5 seconds (to catch separate card loops)
+    groupingWindow: 5000     // Group matching items within 5 seconds
 };
 
 /**
@@ -115,8 +112,7 @@ export function notify(message, type = 'info', options = {}) {
     queue.push(notification);
 
     // Trim if over max (respect dynamic setting). The oldest non-crisis toast
-    // goes first; crisis/invasion toasts are never auto-trimmed. (CR-017: the
-    // loop used to test a `normalToasts` snapshot taken before any removals.)
+    // goes first; crisis/invasion toasts are never auto-trimmed.
     while (queue.length > maxVisible) {
         const oldestNormalIndex = queue.findIndex(n => n.type !== 'crisis' && n.aggregationKey !== 'invasion_alert');
         if (oldestNormalIndex === -1) break;   // only crisis toasts left
@@ -230,8 +226,3 @@ export function error(message, options) {
 export function crisis(message, options) {
     return notify(message, 'crisis', { ...options, duration: 0 });
 }
-
-// `getIcon(type)` and `dismissByAggregationKey(key)` lived here until
-// 2026-08-26 (CR2-046). Neither had a single caller anywhere in `src/` or
-// `cms/` — `ToastContainer` draws its own icons — so they were API surface
-// nobody had ever asked for. Aggregation keys are still honoured by `notify`.

@@ -1,4 +1,4 @@
-// Fantasy Guild — boot-time content-integrity audit (CR2-108)
+// Boot-time content-integrity audit: warns about content references that do not resolve.
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
@@ -28,43 +28,22 @@ import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
  * ContentAudit — one pass over every cross-reference in the content set,
  * reporting the ones that do not resolve.
  *
- * ## Why this exists
- * The game is built so that missing content is *quiet*. Every registry
- * accessor ends `return X[id] || null`, and every caller is written to survive
- * a null — individually sensible defensive code, collectively meaning a
- * definition that does not exist is indistinguishable from one that does
- * nothing. A drop that never arrives, a bounty that never advances, a Token
- * with no definition sitting in the tray: all look exactly like ordinary
- * gameplay.
+ * Registry accessors end `return X[id] || null` and every caller survives a
+ * null, so a missing definition looks like ordinary gameplay. This makes it
+ * visible.
  *
- * Content is authored in a separate tool and is being re-authored constantly,
- * so ids move all the time. Five separate review findings turned out to be the
- * same defect — a reference to content that had been renamed — and every one
- * of them was found by a person playing, never by a test.
- *
- * ## It WARNS. It never blocks. (Owner ruling, 2026-08-19)
- * Nothing in here changes how the game runs, refuses to boot, throws, or
- * repairs anything. The content set is deliberately half-authored, so a
- * dangling reference is a normal mid-authoring state, not a fault. The whole
- * value is that the information stops being invisible.
- *
- * Every step is wrapped so that a malformed definition produces a report line
- * rather than an exception: an audit that can crash the boot it is auditing
- * would be worse than no audit.
- *
- * ## Reading the output
- * It is written for the person authoring the content, not for a programmer.
- * Each line says what is broken, where it is, and what it points at. There is
- * no stack trace, because there is no bug in the code — there is a name in a
- * data file that nothing answers to.
+ * It only WARNS: nothing here blocks boot, throws or repairs, because the
+ * content set is deliberately half-authored. Every step is wrapped so a
+ * malformed definition produces a report line, never an exception.
+ * Output is written for the content author: what is broken, where, and what
+ * it points at.
  */
 
 /** Every reference kind the audit knows how to follow, and how to resolve it. */
 const RESOLVERS = {
     Token: id => !!getTokenType(id),
     item: id => !!getItem(id),
-    // `enemy` resolves through the Token registry: an enemy IS a Token
-    // (2026-09-06), so its id is a Token id and there is nothing else to check.
+    // `enemy` resolves through the Token registry: an enemy IS a Token, so its id is a Token id.
     enemy: id => !!getTokenType(id),
     map: id => !!getMap(id),
     sprite: id => !!SPRITE_MANIFEST[id],
@@ -105,12 +84,8 @@ function checkRef(out, where, kind, value, role) {
 }
 
 /**
- * Items: their effect references (Unified Effects P4).
- *
- * An item is a bearer now, so it can dangle exactly the way a Token can — a
- * reference to an entry that was renamed or deleted, or one entry named twice.
- * Both fail the same silent way: the item equips, the hero carries it, and one
- * of its rules simply is not there.
+ * Items: their effect references. An item is a bearer, so it can dangle
+ * like a Token: a renamed or deleted entry, or one entry named twice.
  */
 function auditItemEffects(out) {
     for (const [itemId, def] of Object.entries(ITEMS || {})) {
@@ -146,8 +121,7 @@ function auditTokens(out) {
         checkRef(out, where, 'map', def.mapId, 'The Map it opens');
         checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
 
-        // FP-47 (Free Playmat slice 1.0): a hero-worked Token must name a
-        // skill. Reported only — nothing about how the Token runs changes yet.
+        // A hero-worked Token must name a skill. Reported only.
         if (isWorkedWithoutSkill(def)) {
             out.push(finding(where, `is worked by a hero but names no skill. ${WORK_SKILL_WHY}`));
         }
@@ -156,7 +130,7 @@ function auditTokens(out) {
             checkRef(out, where, 'item', input?.itemId, 'An ingredient it consumes');
         }
         for (const output of def.config?.outputs || []) {
-            // An output pays in an item OR in currency (D-141) — never both,
+            // An output pays in an item OR in currency — never both,
             // never neither. A row with neither is an authoring slip that reads
             // as a real payout and quietly produces nothing.
             if (!output?.itemId && !output?.currency) {
@@ -181,12 +155,9 @@ function auditTokens(out) {
 }
 
 /**
- * A bearer's references into the named effect library (Unified Effects P1).
- *
- * Both failures here are the library's own version of the silence this whole
- * file exists to break. A ref naming an entry that has been renamed or deleted
- * resolves to nothing and the Token simply has one rule fewer — it still loads,
- * still plays, and looks exactly like a Token that never had the rule.
+ * A bearer's references into the named effect library. A ref naming a renamed
+ * or deleted entry resolves to nothing: the Token still loads and plays, with
+ * one rule fewer.
  */
 function auditEffectRefs(out, where, def) {
     for (const { effectId } of effectRefsOf(def)) {
@@ -241,19 +212,9 @@ function auditCombatAxes(out, where, def) {
 }
 
 /**
- * The library itself: UE-10, and entries nothing uses.
- *
- * ⭐ **UE-10 is the rule the deleted 56 needed and did not have.** The card-era
- * `data/effects.json` held 56 named effects with no mechanism behind them — a
- * name, a description, and nothing that read either — which is why it could be
- * deleted outright without changing how the game played. A named effect that
- * wraps no working statement is that failure starting again, so it is reported
- * by name every boot.
- *
- * An unreferenced entry is a much softer finding: content mid-authoring is the
- * normal state here, and an effect written today for a Token being built
- * tomorrow is not a fault. It is reported because the library is the one place
- * where "I forgot I made that" costs the owner navigability.
+ * The library itself: a named effect that wraps no working statement is
+ * reported by name every boot. An unreferenced entry is a softer finding
+ * (mid-authoring content is normal), reported so forgotten entries can be found.
  */
 function auditEffects(out) {
     for (const [effectId, entry] of Object.entries(EFFECTS || {})) {
@@ -268,7 +229,7 @@ function auditEffects(out) {
         }
 
         // Items carry their rules here, not inline, so the target-shape
-        // tripwires have to read the library too (V10b).
+        // tripwires have to read the library too.
         auditAppliesTargetShape(out, where, entry);
 
         if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0) {
@@ -279,15 +240,10 @@ function auditEffects(out) {
 }
 
 /**
- * ⭐ **The one that matters most right now.**
- *
- * Effect blocks were replaced by statements, and old-shape effect data is
- * deliberately **not** migrated and **not** reinterpreted — a half-translation
- * that quietly does something slightly different is the exact failure this
- * redesign exists to remove. So a Token still carrying `effectBlocks` keeps its
- * data in the file, loads fine, plays fine, and simply has no rules.
- *
- * That is only acceptable if it is impossible to miss. This is how it is said.
+ * Old-shape effect data (`effectBlocks`) is deliberately not migrated and not
+ * reinterpreted: a half-translation that quietly does something slightly
+ * different is worse. Such a Token loads and plays with no rules, so this
+ * must be impossible to miss.
  */
 function auditRetiredEffectShape(out, where, def) {
     if (!hasRetiredEffectData(def)) return;
@@ -314,7 +270,7 @@ function auditRetiredEffectShape(out, where, def) {
 }
 
 /**
- * ⚠️ **Two tripwires on how a rule names who it reaches** (Effects Grammar V10b).
+ * ⚠️ **Two tripwires on how a rule names who it reaches**.
  *
  * 1. **A leftover `payload.target`.** The retired `target: 'enemy'` flag is
  *    converted to the enemy role on load, by the game and the CMS alike, and
@@ -322,7 +278,7 @@ function auditRetiredEffectShape(out, where, def) {
  *    that skipped the conversion, or a value the flag never had — either way it
  *    is stored and read by nothing, which is exactly what this file names.
  * 2. **An `Applies` with a role AND a filter or reach.** A role replaces the
- *    filter and the reach (G-42), so an authored Coast filter or a board-wide
+ *    filter and the reach, so an authored Coast filter or a board-wide
  *    reach beside it is silently ignored. The blank defaults every new
  *    statement is born with (`mode: 'all'`, nearby) say nothing and are not
  *    reported.
@@ -391,19 +347,11 @@ function auditStatements(out, where, def) {
         }
 
         /**
-         * ⚠️ **A filter on a keyword that cannot aim** (Effects Robustness P1).
+         * ⚠️ **A filter on a keyword that cannot aim.**
          *
-         * This is the shape of the bug P1 fixed, caught structurally so the next
-         * one cannot last as long. A triggered `Grants` carried a filter that
-         * `TriggerSystem` discarded for the whole of Unified Effects — the
-         * sentence promised a neighbour and the item landed on the source. It
-         * survived because nothing compared the two.
-         *
-         * The check is deliberately about *legality*, not about the runtime: a
-         * `to` on a keyword whose grammar declares `filter: false` is data no
-         * reader will ever honour, whoever wrote it and whenever. That is the
-         * invariant, and it holds without this file knowing which system
-         * consumes which keyword.
+         * Checked structurally by *legality*, not by runtime: a `to` on a keyword
+         * whose grammar declares `filter: false` is data no reader will ever
+         * honour, whichever system consumes the keyword.
          */
         const keyword = getKeyword(statement?.keyword);
         if (statement?.to?.mode && keyword && !keyword.filter) {
@@ -412,8 +360,7 @@ function auditStatements(out, where, def) {
                 `the filter is stored, shown in the sentence, and read by nothing. Clear it, or use a keyword that targets.`));
         }
 
-        // The same invariant on the other targeting axis (ER-6). A reach on a
-        // keyword that cannot carry one is read by nothing, exactly as above.
+        // The same invariant on the reach axis: a reach on a keyword that cannot carry one is read by nothing.
         if (statement?.reach && keyword && !keyword.reach) {
             out.push(finding(where,
                 `one of its rules is a "${keyword.label}" carrying a reach, and that keyword has no reach to vary — ` +
@@ -421,7 +368,7 @@ function auditStatements(out, where, def) {
         }
 
         /**
-         * ⚠️ **G-2: a target may only name a role its moment supplies.**
+         * ⚠️ **A target may only name a role its moment supplies.**
          *
          * The rule that keeps the targeting vocabulary bounded, enforced here so
          * that content authored before a moment's roles narrowed — or through a
@@ -441,7 +388,7 @@ function auditStatements(out, where, def) {
         }
 
         /**
-         * ⚠️ **G-42: a keyword may only aim at the roles it allows.** The same
+         * ⚠️ **A keyword may only aim at the roles it allows.** The same
          * allowlist the role picker reads, so a "Restores … to the enemy" that
          * arrived by hand-edit or import is named rather than silently inert.
          */
@@ -532,11 +479,9 @@ function auditDerivedType(out, where, def) {
 }
 
 /**
- * Capability tags with no provider (bug B4).
- *
- * `acceptedTokens[].tag` is a free string matched against provided tags. A
- * Token asking for a `pikaxe` never runs — no audit line, no test failure, no
- * in-game message beyond a generic alert. This is that line.
+ * Capability tags with no provider. `acceptedTokens[].tag` is a free string
+ * matched against provided tags; a Token asking for a `pikaxe` never runs and
+ * nothing else says so.
  */
 function auditCapabilityTags(out) {
     const provided = new Set();
@@ -573,9 +518,7 @@ function auditItems(out) {
             out.push(finding(where, 'has no definition behind it'));
             continue;
         }
-        // CR2-184: `data/items.json` carries an entry whose id is literally
-        // "item" with every field left blank — an authoring slip that reads as
-        // a real item everywhere it is referenced. A blank name is the tell.
+        // An item whose id is literally "item" with every field blank is an authoring slip that reads as a real item; a blank name is the tell.
         if (!def.name) {
             out.push(finding(where, 'has no name — it looks like a half-finished entry that was saved by accident'));
         }
@@ -583,20 +526,12 @@ function auditItems(out) {
     }
 }
 
-/**
- * Enemies: their drops.
- *
- * ⚠️ **Gone, and deliberately not replaced** (2026-09-06). This used to walk
- * `ENEMIES` from `enemyRegistry` and check each inline drop table. Enemies are
- * Tokens now, their drops are their `config.outputs`, and the Token walk above
- * already checks every output's `itemId` and every Token's sprite. Auditing
- * them again here would report each finding twice.
- */
+// Enemy drops are not audited here: enemies are Tokens, so the Token walk
+// already checks their outputs, and a second pass would report each finding twice.
 
 /** Maps: everything in their loot pools. */
 function auditMaps(out) {
-    // Every authored Map, the Guild Hall ones included. (Its code-side aliases
-    // and scripted drop list went with the Map bursts, Token Lifecycle 9.1.)
+    // Every authored Map, the Guild Hall ones included.
     for (const [mapId, def] of Object.entries(allMaps())) {
         const where = `Map "${mapId}"`;
         if (!def) {
@@ -636,10 +571,9 @@ function auditHardcodedLists(out, openingTray) {
 }
 
 /**
- * Token Lifecycle blocks (slice 4.2): spawner, grows, turns, foundation, shop,
- * trickle, and recipes that build on a Foundation. The rules live in
- * `lifecycleAudit.js`, shared with the CMS Economy Audit so both name the same
- * problems in the same words. A warning is allowed content and says so.
+ * Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle, and
+ * recipes that build on a Foundation. The rules live in `lifecycleAudit.js`,
+ * shared with the CMS Economy Audit so both name the same problems in the same words.
  */
 function auditLifecycle(out) {
     const findings = auditLifecycleBlocks({
@@ -655,7 +589,7 @@ function auditLifecycle(out) {
 }
 
 /**
- * Walk everything and return the findings, newest content problems first.
+ * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
 export function auditContent({ openingTray = [] } = {}) {
@@ -718,31 +652,20 @@ export function reportContentIntegrity(options) {
 }
 
 // ---------------------------------------------------------------------------
-// The same pass, over a loaded SAVE rather than over the authored content set
-// (CR2-120)
+// The same pass, over a loaded SAVE rather than the authored content set
 // ---------------------------------------------------------------------------
 
 /**
- * ## Why a second pass exists
- * Everything above walks the *authored* content — the files the CMS writes. A
- * save is the other half, and nothing has ever looked at it. When a Token is
- * renamed or deleted, every save that was holding one keeps its old name
- * forever: a tray slot occupied by something that will not sit down, a Vault
- * row that cannot be withdrawn into anything. Loading such a save produces a
- * completely clean console, which is how all three of the owner's live slots
- * came to be carrying five ghost Tokens without anyone noticing.
+ * A save can hold ids of Tokens that were later renamed or deleted, and
+ * loading it is otherwise silent.
  *
- * ## It REPORTS. It never repairs, and it never deletes. (Owner decision,
- * 2026-08-26)
- * The obvious follow-on — drop the unresolvable entries during rehydration —
- * was considered and **refused**. It would delete the player's property on the
- * strength of the registry being complete, and content here is re-authored
- * continuously, so a Token that looks missing this morning may simply be
- * halfway through a rename. Nothing in this section writes to the save.
+ * It REPORTS only: it never repairs or deletes. Dropping unresolvable entries
+ * would delete the player's property on the strength of the registry being
+ * complete, and a Token that looks missing may be halfway through a rename.
+ * Nothing in this section writes to the save.
  *
- * ## Once per name, for the life of the page
- * This goes through `warnMissingContent`, so loading slot 0 and then slot 1 —
- * which hold the same four ghosts — says it once, not twice.
+ * Reporting goes through `warnMissingContent`, so each name is said once per
+ * page life, not once per slot loaded.
  */
 
 /**
@@ -756,8 +679,6 @@ function collectSaveRefs(state, note) {
     for (const token of Object.values(board.tokens || {})) {
         note('Token', token?.typeId, 'on the playmat');
     }
-    // (The Token tray and the Token Vault were two more places until both
-    // retired in Token Lifecycle 9.3; `migrateState` drops them.)
 
     for (const itemId of Object.keys(state?.inventory?.items || {})) {
         note('item', itemId, 'in the Bank');

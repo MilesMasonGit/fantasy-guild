@@ -1,4 +1,4 @@
-// Fantasy Guild — content audit for the Token Lifecycle blocks (slice 4.2)
+// Content audit for the Token Lifecycle blocks.
 
 import { FOUNDATION_KINDS, TURN_DEFAULTS } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
@@ -223,7 +223,7 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 }
                 checkPositive(err, `turns.into[${i}].weight`, `turns weight for ${show(target ?? '?')}`, entry?.weight);
             });
-            // TL-12: a roll every `everyMs` with `chance` percent, both ways.
+            // A roll every `everyMs` with `chance` percent, both ways.
             checkTime(err, 'turns.everyMs', 'turns every', t.everyMs);
             if (hasValue(t.chance)) {
                 if (!(typeof t.chance === 'number' && Number.isFinite(t.chance) && t.chance > 0 && t.chance <= 100)) {
@@ -270,13 +270,13 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             }
 
             // A Token that `turns` into a workable Token (the Coast → Shrimp
-            // Coast, slice 7.3) is worked while it is turned, so it counts.
+            // Coast) is worked while it is turned, so it counts.
             const worksDirectly = (d) => !!d?.config || !!stationSkillOf(d);
             const turnsWorkable = Array.isArray(def.turns?.into)
                 && def.turns.into.some((entry) => worksDirectly(tokens[entry?.typeId]));
-            // A context provider (the Copper Anvil, slice 7.5: an `Acts as`
+            // A context provider (the Copper Anvil: an `Acts as`
             // rule or a legacy `provides` list) is used by sitting beside a
-            // station, so it counts too (slice 7.5a). Read through the same
+            // station, so it counts too. Read through the same
             // helper the engine gates recipes with.
             const providesContext = Object.keys(getProvidedTagsWithTiers(def)).length > 0;
             const workable = worksDirectly(def) || !!def.foundation || !!def.spawner || turnsWorkable || providesContext;

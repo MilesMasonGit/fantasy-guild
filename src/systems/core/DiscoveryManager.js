@@ -1,5 +1,4 @@
-// Fantasy Guild - Discovery Manager
-// Part of the Collection System (Codex)
+// Discovery Manager: records enemies as encountered, for the Codex (Bestiary).
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
@@ -15,10 +14,6 @@ import { ENGINE_EVENTS } from './engineEvents.js';
  * - Listen for combat attacks and record the enemy as encountered
  * - Update `GameState.collection.discoveredEnemies`
  * - Notify the player of a new Bestiary entry
- *
- * ⚠️ This header used to claim it also listened for item gains and kept
- * lifetime counts for Items. **It does neither** — `RegistryManager` owns both
- * (corrected 2026-08-26, CR2-046).
  */
 export const DiscoveryManager = {
     initialized: false,
@@ -28,10 +23,6 @@ export const DiscoveryManager = {
      */
     init() {
         if (this.initialized) return;
-
-        // A third subscription — to `card_spawned` — sat here until 2026-08-26
-        // (CR2-046). Cards are retired and nothing published it, so that branch
-        // was unreachable. The Bestiary works from the two combat events below.
 
         // Discover enemies when active combat starts/ticks
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, (data) => {
@@ -64,10 +55,7 @@ export const DiscoveryManager = {
         if (!collection.discoveredEnemies[enemyId]) {
             collection.discoveredEnemies[enemyId] = true;
 
-            // An enemy id IS a Token id now (2026-09-06), so the name comes
-            // from the Token registry. Nothing about the Bestiary, the kill
-            // counts or these notifications had to migrate: they only ever
-            // needed an id and a name.
+            // An enemy id IS a Token id, so the name comes from the Token registry.
             const template = getTokenType(enemyId);
             const enemyName = template?.name || enemyId;
 

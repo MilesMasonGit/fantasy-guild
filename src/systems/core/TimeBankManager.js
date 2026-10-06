@@ -1,14 +1,7 @@
-// Fantasy Guild - Time Bank Manager (Deck Loop rework, Phase 8)
-//
-// Replaces the deferred offline-progress SIMULATOR. Instead of math-modelling
-// the world while the game is closed, time spent away is banked (capped) and
-// later "played out" by accelerating the LIVE engine via TimeManager's
-// time-scale. Because it's the real engine running faster, combat, crafting,
-// RNG and every other system just work — there is no parallel simulation to
-// keep in sync.
-//
-// See loopConstants.TIME_BANK for the cap, presets, and the drain/accounting
-// model. Registered on the game loop by EngineBootstrap.
+// Time Bank Manager: time spent away is banked (capped) and later played out by
+// accelerating the LIVE engine via TimeManager's time-scale, so there is no
+// parallel simulation to keep in sync. See loopConstants.TIME_BANK for the cap,
+// presets and the drain model. Registered on the game loop by EngineBootstrap.
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from './EventBus.js';
@@ -38,10 +31,8 @@ export const TimeBankManager = {
         // the game_loaded event). A brand-new game emits no meaningful gap.
         EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, ({ savedAt }) => this.accrueOffline(savedAt));
 
-        // Lid-shut accrual: time the tick clamp refused to deliver (CR2-041).
-        // A sleeping machine with the game OPEN used to be worse than closing
-        // it — the gap was counted as playtime and produced nothing. Now it
-        // lands here, exactly as a closed game's gap does.
+        // Lid-shut accrual: time the tick clamp refused to deliver, banked here
+        // exactly as a closed game's gap is.
         EventBus.subscribe(ENGINE_EVENTS.TIME_OVERFLOW, ({ overflowMs }) => this.accrue(overflowMs));
 
         logger.info('TimeBankManager', 'Time bank initialized');
@@ -51,7 +42,7 @@ export const TimeBankManager = {
     // Bank storage (persisted on state.time.timeBankMs)
     // ------------------------------------------------------------------
 
-    /** Read the bank, defensively defaulting for pre-Phase-8 saves. */
+    /** Read the bank, defensively defaulting for saves without the field. */
     getBankedMs() {
         const time = GameState.state?.time;
         if (!time) return 0;
@@ -112,7 +103,7 @@ export const TimeBankManager = {
 
     /**
      * Begin fast-forwarding at a preset multiplier. The live engine simply
-     * runs faster; _tick() drains the bank as game-time advances.
+     * runs faster; tick() drains the bank as game-time advances.
      * @param {number} multiplier - one of TIME_BANK.PRESETS
      */
     startSpending(multiplier) {

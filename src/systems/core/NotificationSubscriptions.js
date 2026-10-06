@@ -6,7 +6,7 @@ import * as BoardState from '../board/BoardState.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 
-// (CR-017) There is no module-level queue snapshot here: getQueue() returns a
+// There is no module-level queue snapshot here: getQueue() returns a
 // COPY, so a cached one goes stale immediately. Handlers below re-fetch.
 
 // === Event Subscriptions for Auto-Notifications ===
@@ -30,7 +30,7 @@ EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, heroName, skillId, ski
     });
 
     // Where the hero is drawn: the Token they work (by instance id) and the mat
-    // point (slice 1.6b). A hero in the Dock has neither.
+    // point. A hero in the Dock has neither.
     const point = BoardState.displayPointOf(heroId);
     if (point) {
         EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
@@ -74,8 +74,6 @@ EventBus.subscribe(ENGINE_EVENTS.INVENTORY_UPDATED, (data) => {
         });
     }
 });
-
-// 2. Currency changes: gone with gold (Token Lifecycle 9.4, SP-65).
 
 // --- PERFORMANCE OPTIMIZED HEARTBEAT (10s) ---
 let heartbeatIntervalId = null;

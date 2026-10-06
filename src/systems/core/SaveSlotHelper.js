@@ -3,10 +3,6 @@ const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 
 /**
  * Get localStorage key for a slot.
- *
- * (CR-013: these keys used to carry a stray trailing space. It was dropped
- * 2026-07-18 with no migration — the owner confirmed pre-existing saves are
- * expendable, and saves below the current schema version are refused anyway.)
  * @param {number} slotIndex
  * @returns {string}
  */
@@ -16,7 +12,7 @@ export function getSlotKey(slotIndex) {
 
 /**
  * Key holding the previous save for a slot — the rolling backup written
- * before each overwrite (CR-054). One generation deep: enough to survive a
+ * before each overwrite. One generation deep: enough to survive a
  * corrupt/truncated write, cheap enough to keep in localStorage.
  */
 export function getBackupKey(slotIndex) {

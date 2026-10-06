@@ -1,6 +1,3 @@
-// Fantasy Guild - GameLoop
-// Phase 4: Core Systems
-
 import { TimeManager } from './TimeManager.js';
 import { EventBus } from './EventBus.js';
 import { logger } from '../../utils/Logger.js';
@@ -8,10 +5,7 @@ import { TICK_INTERVAL_MS } from '../../config/loopConstants.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 
 /**
- * GameLoop - Main game tick loop
- * 
- * Runs at configurable interval (default 100ms = 10 ticks/second).
- * Calls registered tick handlers in order each tick.
+ * GameLoop - Main game tick loop. Calls registered tick handlers in order each tick.
  */
 
 class GameLoopClass {
@@ -39,9 +33,6 @@ class GameLoopClass {
 
         this.intervalId = setInterval(() => this.tick(), this.tickInterval);
 
-        // `game_loop_started` / `game_loop_stopped` were published here and in
-        // stop() until 2026-08-26; neither ever had a subscriber (CR2-046). The
-        // log line below is the record of the loop's state.
         logger.info('GameLoop', `Started (${1000 / this.tickInterval} ticks/second)`);
     }
 
@@ -69,14 +60,11 @@ class GameLoopClass {
         // Update time tracking. `delta` is clamped to MAX_TICK_DELTA_MS.
         const delta = TimeManager.update();
 
-        // Skip processing if paused
         if (TimeManager.getIsPaused()) return;
 
-        // Time the clamp refused to deliver goes to the Time Bank rather than
-        // being discarded (CR2-041, owner decision 4). Published rather than
-        // called directly so the clock keeps no dependency on the bank;
-        // `TimeBankManager.init()` is the subscriber. Fires only after a real
-        // gap — a sleep, a suspend, a throttled timer — not every tick.
+        // Time the clamp refused to deliver goes to the Time Bank rather than being
+        // discarded. Published, not called, so the clock keeps no dependency on the
+        // bank. Fires only after a real gap (a sleep, a suspend, a throttled timer).
         const overflow = TimeManager.consumeOverflow();
         if (overflow > 0) {
             EventBus.publish(ENGINE_EVENTS.TIME_OVERFLOW, { overflowMs: overflow });
@@ -97,7 +85,6 @@ class GameLoopClass {
     runHandlers(delta) {
         this.tickCount++;
 
-        // Call all tick handlers in priority order
         // Note: delta is in MILLISECONDS for consistency across all systems
         for (const { name, handler } of this.tickHandlers) {
             try {
@@ -116,7 +103,6 @@ class GameLoopClass {
      */
     onTick(name, handler, priority = 100) {
         this.tickHandlers.push({ name, handler, priority });
-        // Sort by priority (lower first)
         this.tickHandlers.sort((a, b) => a.priority - b.priority);
     }
 
@@ -133,9 +119,8 @@ class GameLoopClass {
      * @param {number} ms - Milliseconds between ticks
      */
     setTickInterval(ms) {
-        this.tickInterval = Math.max(16, Math.min(1000, ms)); // Clamp 16ms-1000ms
+        this.tickInterval = Math.max(16, Math.min(1000, ms));
 
-        // Restart if running
         if (this.isRunning) {
             this.stop();
             this.start();

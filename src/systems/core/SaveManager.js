@@ -1,6 +1,3 @@
-// Fantasy Guild - Save Manager
-// Phase 21: Save System
-
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
@@ -119,11 +116,11 @@ export const SaveManager = {
 
         try {
             // The same bytes as `JSON.stringify(GameState.serialize())`, without
-            // deep-copying the state first (CR3-109).
+            // deep-copying the state first.
             const json = GameState.serializeJson();
             const slotKey = this.getSlotKey(this.currentSlot);
 
-            // Roll the previous save into the backup key first (CR-054), so a
+            // Roll the previous save into the backup key first, so a
             // failed/truncated write can't leave the player with nothing.
             const previous = localStorage.getItem(slotKey);
             if (previous) {
@@ -138,17 +135,12 @@ export const SaveManager = {
 
             if (showNotification) {
                 logger.info('SaveManager', `Game Saved to Slot ${this.currentSlot + 1}`);
-                // A `game_saved` event with a {slot, timestamp, autoSaveInterval}
-                // payload was published here for a save-status indicator that was
-                // never built. Nothing subscribed. Removed 2026-08-26 by owner
-                // decision (CR2-046 option A) — re-add it in one line if the
-                // indicator is ever wanted.
             }
             return true;
         } catch (err) {
             console.error('[SaveManager] Failed to save:', err);
             // Quota exhaustion is the realistic failure here and it will keep
-            // recurring — say so plainly instead of a generic error (CR-054).
+            // recurring — say so plainly instead of a generic error.
             const isQuota = err?.name === 'QuotaExceededError'
                 || err?.name === 'NS_ERROR_DOM_QUOTA_REACHED'
                 || /quota/i.test(err?.message || '');
@@ -163,9 +155,8 @@ export const SaveManager = {
     },
 
     /**
-     * Export the current save as a JSON string for the player to keep
-     * (CR-054). Until the Tauri wrap gives us real files, this is the only
-     * way a player can back a save up or move it between machines.
+     * Export the current save as a JSON string for the player to keep, to back
+     * a save up or move it between machines.
      * @returns {string|null}
      */
     exportSave() {
@@ -174,7 +165,7 @@ export const SaveManager = {
     },
 
     /**
-     * Load a save from an exported JSON string into a slot (CR-054).
+     * Load a save from an exported JSON string into a slot.
      * Validated exactly like a stored save; refuses anything malformed.
      * @returns {Promise<{ success: boolean, error?: string }>}
      */
@@ -223,14 +214,14 @@ export const SaveManager = {
             // Migrate to fill in missing properties and handle logic changes
             state = this.migrateState(state, savedVersion);
 
-            // Structural check before anything touches the state (CR-008).
+            // Structural check before anything touches the state.
             // Migration has already backfilled missing sections, so a failure
             // here means genuinely malformed data (truncated write, hand-edit)
             // — refuse it rather than half-loading into a broken game.
             const validation = validateSaveData({ version: savedVersion, state });
             if (!validation.valid) {
                 console.error(`[SaveManager] Slot ${slotIndex}${fromBackup ? ' backup' : ''} failed validation:`, validation.errors);
-                // One automatic retry from the rolling backup (CR-054) before
+                // One automatic retry from the rolling backup before
                 // telling the player their save is damaged.
                 if (!fromBackup && localStorage.getItem(SlotHelper.getBackupKey(slotIndex))) {
                     console.warn(`[SaveManager] Retrying slot ${slotIndex} from its backup`);
@@ -249,7 +240,7 @@ export const SaveManager = {
             localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();
 
-            // savedAt is when this save was written — the Time Bank (Phase 8)
+            // savedAt is when this save was written — the Time Bank
             // uses it to accrue closed-only offline time on load.
             EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: slotIndex, savedAt: data.savedAt });
             return true;
@@ -281,8 +272,6 @@ export const SaveManager = {
         this.save(false);
         this.startAutoSave();
 
-        // The player is told directly; a `game_started` event was published
-        // alongside this until 2026-08-26 and never had a subscriber (CR2-046).
         NotificationSystem.notify(`New game started in Slot ${slotIndex + 1}`, 'success');
     },
 

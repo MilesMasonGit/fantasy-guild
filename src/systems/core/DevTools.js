@@ -1,8 +1,5 @@
-// Fantasy Guild - Developer tools (Token Lifecycle slice 0.2, DP-11)
-//
-// Engine-side helpers behind the QA panel (`ui/components/TestDashboard.jsx`).
-// Kept out of the component so they can be unit-tested and called from the
-// console (`window.Game` exposes the managers they drive).
+// Developer tools: engine-side helpers behind the QA panel (`ui/components/TestDashboard.jsx`),
+// kept out of the component so they can be unit-tested and called from the console.
 
 import { GameLoop } from './GameLoop.js';
 import { EventBus } from './EventBus.js';
@@ -11,10 +8,6 @@ import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
 import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
-
-// ---------------------------------------------------------------------------
-// Give item
-// ---------------------------------------------------------------------------
 
 /**
  * Every live item id, sorted. Only `item_*` ids: the registry also holds
@@ -31,7 +24,7 @@ export function listGivableItemIds() {
 /**
  * Put `amount` of `itemId` into the Bank through `InventoryManager.addItem`,
  * the one real add path. Whatever the Bank cannot hold follows that path's
- * normal overflow (D-138: it becomes a sprite on the mat), so nothing is lost.
+ * normal overflow (it becomes a sprite on the mat), so nothing is lost.
  *
  * @param {string} itemId
  * @param {number} amount - whole number, at least 1
@@ -52,13 +45,9 @@ export function giveItem(itemId, amount, { inventory = InventoryManager } = {}) 
     return { ok: true, added, overflow: n - added };
 }
 
-// ---------------------------------------------------------------------------
-// Advance timers
-// ---------------------------------------------------------------------------
-
 /**
  * Game time each fast-forward step delivers. Equal to the largest delta the
- * live loop itself ever delivers (`MAX_TICK_DELTA_MS`, the CR2-041 clamp), so
+ * live loop itself ever delivers (`MAX_TICK_DELTA_MS`), so
  * no system sees a delta it could not also see in real play. `BoardRunner`
  * completes at most one work cycle per tick and floors cycles at 1000 ms, so a
  * larger step would silently lose cycles.
@@ -120,10 +109,6 @@ export function advanceTime(minutes, {
     EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return { ok: true, advancedMs, steps, capped };
 }
-
-// ---------------------------------------------------------------------------
-// Spawner kind counts (Token Lifecycle slice 3.3)
-// ---------------------------------------------------------------------------
 
 /**
  * Live Spawner family counts for the QA panel, as `[{ kind, count, cap }]` —

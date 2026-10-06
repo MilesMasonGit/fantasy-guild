@@ -1,5 +1,4 @@
-// Fantasy Guild - Settings Manager
-// Handles player configuration and persistence to localStorage
+// Settings Manager: player configuration, persisted to localStorage.
 
 import { EventBus } from './EventBus.js';
 import { logger } from '../../utils/Logger.js';
@@ -19,11 +18,8 @@ const defaultSettings = {
         // ⚠️ Only the categories with a key here can be switched off. `notify()`
         // maps category → key for `hero` and `item` only; anything else falls
         // through to an `undefined` lookup, which is not `false`, so it always
-        // shows. `questEvents` was declared here and read by nothing — no
-        // notification is ever published with `category: 'quest'` — so it
-        // promised the player a switch that did nothing. Removed 2026-08-26
-        // (CR2-047). Adding a key back means adding the mapping AND publishing
-        // with that category.
+        // shows. Adding a key means adding the mapping AND publishing with that
+        // category.
         defaultDuration: 5000,
         systemDuration: 15000,      // 15 seconds
         discoveryDuration: 15000,   // 15 seconds
@@ -33,7 +29,7 @@ const defaultSettings = {
         position: 'top_right'
     },
     ui: {
-        largeTrayTokens: true, // Default to 128px on Tray (false for compact 64px)
+        largeTrayTokens: true,
         tooltipsEnabled: true,
         tooltipsCardBadges: true,
         tooltipsBoostTiles: true,
@@ -59,9 +55,9 @@ const defaultSettings = {
         bubbleMenuRight: false
     },
     audio: {
-        // Silent by default while the game is in development (owner request
-        // 2026-08-02). Music and SFX keep their own levels, so raising the
-        // master alone brings everything back at the intended mix.
+        // Silent by default while the game is in development. Music and SFX keep
+        // their own levels, so raising the master alone brings everything back at
+        // the intended mix.
         masterVolume: 0,
         musicVolume: 50,
         sfxVolume: 50
@@ -70,24 +66,21 @@ const defaultSettings = {
         autoSaveIntervalMinutes: 10,
         enableAnimations: true,
         themeMode: 'dark',
-        // Loot sprites (D-41, D-88). Collection confers NO mechanical
-        // advantage — manual and automatic pickup are identical in outcome —
-        // so this is purely about feel and can be turned off entirely.
-        // ⚠️ OFF by default (D-233). Hovering is the verb that collects loot
-        // (D-88); a 2.5s sweep beat the player to it every time, so a Map burst
-        // tidied itself away before it could be read. The stack cap in
-        // `SpriteLayer.tick` still trims at `maxItemStacks` regardless — that is
-        // a rendering guard, not a convenience — so an unattended board still
-        // cannot bury itself.
+        // Loot sprites. Collection confers NO mechanical advantage — manual and
+        // automatic pickup are identical in outcome — so this is purely about feel.
+        // ⚠️ OFF by default: hovering is the verb that collects loot, and a 2.5s
+        // sweep beat the player to it. The stack cap in `SpriteLayer.tick` still
+        // trims at `maxItemStacks` regardless — a rendering guard, not a
+        // convenience — so an unattended board cannot bury itself.
         autoCollectLoot: false,
         autoCollectDelayMs: 2500,
-        // Max visible item stacks (D-41). Above this the game auto-collects the
+        // Max visible item stacks. Above this the game auto-collects the
         // oldest first. **0 disables the visual mechanic entirely**, sending
         // everything straight to storage.
         maxItemStacks: 40
     },
     dev: {
-        enabled: false // Only used if we want to hide the dev tab in production later
+        enabled: false
     }
 };
 
@@ -117,12 +110,6 @@ class SettingsManagerClass {
             const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
             if (stored) {
                 const parsed = JSON.parse(stored);
-
-                // The migration that used to live here pushed stored
-                // 'top_right' positions onto the then-new 'center_bottom'
-                // default. 'top_right' is the default again (owner request
-                // 2026-08-02), so it has been removed rather than left to
-                // fight the very value it now rewrites to.
 
                 // One-time dev mute: dropping the stored master volume lets the
                 // new 0 default apply to browsers that already have settings

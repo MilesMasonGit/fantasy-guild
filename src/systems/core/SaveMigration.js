@@ -2,14 +2,8 @@ import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
- * Thrown when a save was created under an incompatible schema version.
- *
- * Every rework so far has intentionally broken save compatibility: older saves
- * are refused rather than migrated. The current break is Free Playmat slice
- * 1.6a (schema '0.8.0', FP-85): Tokens are stored by point, not by tile.
- *
- * ⚠️ The archived `playmat_rework_roadmap_v*.md` files this comment used to
- * cite document the **Area Deck Loop**, not the playmat, despite their names.
+ * Thrown when a save was created under an incompatible schema version. Reworks
+ * intentionally break save compatibility: older saves are refused, not migrated.
  */
 export class IncompatibleSaveError extends Error {
     constructor(savedVersion) {
@@ -39,12 +33,6 @@ export function migrateState(state, savedVersion) {
     // Backfill missing keys from INITIAL_STATE, two levels deep: the top-level
     // sections, and each section's own fields.
     //
-    // It used to fill top-level keys ONLY, which meant a save whose `board` was
-    // wholly absent came back complete but a save whose `board` held a single
-    // field came back still missing every other board field (CR2-042,
-    // confirmed at runtime). Five separate helpers were each re-creating what
-    // they needed on first read to cover that gap.
-    //
     // ⚠️ It stops at two levels on purpose. Going deeper would reach inside
     // things like `inventory.groupDefs` and resurrect entries a save has
     // deliberately dropped. Existing values are never overwritten — only keys
@@ -71,14 +59,11 @@ export function migrateState(state, savedVersion) {
         migrated[key] = section;
     }
 
-    // Gold is retired and its code deleted (Token Lifecycle 9.4, SP-65): the
-    // `currency` section an older save still carries is dropped, not kept.
+    // Retired: the `currency` section an older save still carries is dropped, not kept.
     if ('currency' in migrated) delete migrated.currency;
 
-    // The Map bursts and the Map purchase are retired (Token Lifecycle 9.1):
-    // an older save's unopened Maps lying on the mat, its purchase list and
-    // its burst bookkeeping are dropped, not kept. Nothing can open a Map now,
-    // so a Map box left on the mat would be a thing nothing can use.
+    // Retired Map bursts and Map purchase: an older save's unopened Maps on the
+    // mat, its purchase list and its burst bookkeeping are dropped, not kept.
     if ('cartographer' in migrated) delete migrated.cartographer;
     if (isPlainObject(migrated.board) && 'maps' in migrated.board) {
         migrated.board = { ...migrated.board };
@@ -90,11 +75,9 @@ export function migrateState(state, savedVersion) {
         delete migrated.progress.guildHallMapOpens;
     }
 
-    // The Token Vault and the dormant Tray are retired (Token Lifecycle 9.3,
-    // goal 1: Tokens spend their whole life on the mat). An older save's Vault
-    // and Tray contents, their tab and cap fields, its Token loot lying on the
-    // floor and its ranks in the two Vault upgrade tracks are dropped, not
-    // kept: nothing can pick them up or place them now. Item loot stays.
+    // Retired Token Vault and Tray: an older save's Vault and Tray contents, tab
+    // and cap fields, Token loot on the floor and ranks in the two Vault upgrade
+    // tracks are dropped, not kept. Item loot stays.
     if (isPlainObject(migrated.board)) {
         const board = { ...migrated.board };
         let changed = false;
@@ -114,15 +97,10 @@ export function migrateState(state, savedVersion) {
         migrated.progress = { ...migrated.progress, guildUpgrades: kept };
     }
 
-    // The station recipe backfill (Recipe & Charges P2) and the hero-tiles →
-    // flags conversion (Free Playmat 1.4b) were deleted in slice 1.6a. Both
-    // only carried pre-0.8.0 boards forward, and those saves are now refused
-    // by the check above.
-
     return migrated;
 }
 
-/** Board fields of the Token Vault and the Tray (Token Lifecycle 9.3). */
+/** Board fields of the Token Vault and the Tray. */
 export const RETIRED_BOARD_FIELDS = Object.freeze([
     'tokenBank', 'tray', 'nextTrayZ', 'tokenBankSlots', 'tokenTabsUnlocked', 'tokenGroups'
 ]);
@@ -130,7 +108,7 @@ export const RETIRED_BOARD_FIELDS = Object.freeze([
 /** The Guild Hall upgrade tracks that only ever served the Token Vault. */
 export const RETIRED_UPGRADES = Object.freeze(['token_bank_slots', 'token_bank_tabs']);
 
-/** A loose Token lying on the floor — the Token loot that 9.3 retired. */
+/** A loose Token lying on the floor — the retired Token loot. */
 function isTokenSprite(sprite) {
     return sprite?.kind === 'token';
 }

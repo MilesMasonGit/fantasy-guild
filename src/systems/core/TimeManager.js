@@ -1,6 +1,3 @@
-// Fantasy Guild - Time Manager
-// Phase 4: Core Systems
-
 import { logger } from '../../utils/Logger.js';
 import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
 
@@ -21,11 +18,11 @@ class TimeManagerClass {
         this.gameTime = 0;        // Total game time in milliseconds
         this.isPaused = false;
         this.pausedAt = null;
-        this.timeScale = 1.0;     // For speed adjustments (future feature)
+        this.timeScale = 1.0;     // Speed multiplier; set by the Time Bank
         /**
          * Game-time this tick could not deliver because it exceeded
          * MAX_TICK_DELTA_MS. Read and zeroed by `GameLoop` via
-         * `consumeOverflow()`, which hands it to the Time Bank (CR2-041).
+         * `consumeOverflow()`, which hands it to the Time Bank.
          */
         this.overflowMs = 0;
     }
@@ -35,7 +32,7 @@ class TimeManagerClass {
      * @param {number} savedGameTime - Game time from save data (optional)
      */
     init(savedGameTime = 0) {
-        // CR3-101: `performance.now()`, not `Date.now()` — see `update()`.
+        // `performance.now()`, not `Date.now()` — see `update()`.
         this.lastTickTime = performance.now();
         this.gameTime = savedGameTime;
         this.deltaTime = 0;
@@ -46,35 +43,18 @@ class TimeManagerClass {
     /**
      * Update time tracking - called at start of each tick.
      *
-     * ⭐ **CR3-101 (round 3 review R1, owner ruling: "a clock the PC can't
-     * move").** This used to read `Date.now()`, the wall clock the player's OS
-     * can step in either direction (a manual clock change, NTP sync, a
-     * timezone/DST edge). Stepping it back a few seconds made every working
-     * Token's `cycleElapsedMs` go negative, and `BoardRunner` treats "not above
-     * zero" as "a new cycle is beginning" — so it replayed `CYCLE_START` (and
-     * paid its carried costs) once a tick until the clock climbed back above
-     * zero. Stepping it forward dumped the whole jump into the Time Bank.
-     * `performance.now()` is monotonic and immune to the player's wall clock,
-     * so the in-session delta can no longer move backwards or jump forwards
-     * for that reason. The wall clock (`Date.now()`) stays exactly where it
-     * was for *time away* — `SaveManager`'s `savedAt` stamp and
-     * `TimeBankManager.accrueOffline` — because that really is "how long was
-     * the game closed", a question only the wall clock can answer.
+     * Reads `performance.now()`, not `Date.now()`: the OS can step the wall clock
+     * (manual change, NTP, DST), which made working Tokens' `cycleElapsedMs` go
+     * negative so `BoardRunner` replayed `CYCLE_START` every tick. The wall clock
+     * stays for *time away* (`SaveManager`'s `savedAt`,
+     * `TimeBankManager.accrueOffline`), which only it can answer.
      *
-     * The returned delta is CLAMPED to `MAX_TICK_DELTA_MS` (CR2-041) and
-     * FLOORED at 0 (CR3-101). Without the clamp a sleeping laptop, a
-     * suspended tab or a throttled timer hands the next tick the whole gap,
-     * and every handler treats it as time played: an 8-hour lid-shut added 8
-     * hours to both `meta.totalPlaytime` and `time.gameTimeMs` in one tick
-     * while the board produced nothing. The floor exists because a negative
-     * delta must never reach a handler — in practice `performance.now()`
-     * cannot go backwards, but nothing here should assume it.
-     *
-     * The clipped remainder is not thrown away — it is parked on
-     * `overflowMs` for `GameLoop` to route into the Time Bank (owner decision
-     * 4, 2026-08-19). ⚠ The Bank's spend UI is switched off today (CR2-141),
-     * so this earns the player nothing yet, deliberately: the accounting is
-     * correct for when the Bank returns.
+     * The returned delta is CLAMPED to `MAX_TICK_DELTA_MS` (a sleeping laptop or
+     * suspended tab would otherwise hand the next tick the whole gap as time
+     * played) and FLOORED at 0 (a negative delta must never reach a handler).
+     * The clipped remainder is parked on `overflowMs` for `GameLoop` to route
+     * into the Time Bank. ⚠ The Bank's spend UI is switched off today
+     * (`SHOW_TIME_BANK` in `ReactRoot.jsx`), so this earns the player nothing yet.
      *
      * @returns {number} Delta time in milliseconds, at most MAX_TICK_DELTA_MS, at least 0
      */
@@ -88,8 +68,8 @@ class TimeManagerClass {
 
         // Clamp in GAME time, after the time-scale, because the 1000 ms ceiling
         // is a property of the board's cycle floor, not of the wall clock.
-        // Floor at 0 first (CR3-101) so a backward step can neither produce a
-        // negative delta nor subtract from `overflowMs` below.
+        // Floor at 0 first so a backward step can neither produce a negative delta
+        // nor subtract from `overflowMs` below.
         const scaled = Math.max(0, (now - this.lastTickTime) * this.timeScale);
         this.deltaTime = Math.min(scaled, MAX_TICK_DELTA_MS);
         this.overflowMs += scaled - this.deltaTime;
@@ -152,7 +132,7 @@ class TimeManagerClass {
         if (this.isPaused) {
             this.isPaused = false;
             // Adjust lastTickTime to prevent time jump. Must match update()'s
-            // clock (CR3-101) — Date.now() here would hand the next update() a
+            // clock — Date.now() here would hand the next update() a
             // huge or negative gap between two different clocks.
             if (this.pausedAt) {
                 this.lastTickTime = performance.now();
@@ -188,7 +168,7 @@ class TimeManagerClass {
      * @param {number} scale - Time multiplier (1.0 = normal)
      */
     setTimeScale(scale) {
-        this.timeScale = Math.max(0, scale); // Allow up to x100 for dev tools
+        this.timeScale = Math.max(0, scale);
     }
 
     /**

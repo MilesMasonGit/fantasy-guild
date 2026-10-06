@@ -1,9 +1,6 @@
-// Fantasy Guild - EventBus
-// Phase 4: Core Systems
-
 /**
- * EventBus - Central pub/sub system for game events
- * 
+ * EventBus - Central pub/sub system for game events.
+ *
  * Events are for NOTIFICATIONS and SIDE EFFECTS, not core game logic.
  * Systems publish events after state changes; UI subscribes to update.
  */
@@ -28,7 +25,6 @@ class EventBusClass {
         }
         this.subscribers.get(eventName).add(callback);
 
-        // Return unsubscribe function
         return () => this.unsubscribe(eventName, callback);
     }
 
@@ -104,13 +100,10 @@ class EventBusClass {
     /**
      * Enable/disable event logging (for debugging)
      *
-     * ⚠️ **No code calls this, and that is deliberate** (kept 2026-08-26,
-     * CR2-046). It is a console affordance: `main.jsx` puts the engine on
-     * `window.Game`, so from the browser console you can run
-     * `Game.EventBus.setLogging(true)` and then `Game.EventBus.getEventLog()`
-     * to see what actually fired. `hasSubscribers()` above is there for the
-     * same reason — "is anything listening for this?" is the single most
-     * common question on this codebase. Do not delete these as dead code.
+     * ⚠️ No code calls this, and that is deliberate: it is a console affordance.
+     * `main.jsx` puts the engine on `window.Game`, so `Game.EventBus.setLogging(true)`
+     * then `Game.EventBus.getEventLog()` shows what actually fired. `hasSubscribers()`
+     * is kept for the same reason. Do not delete these as dead code.
      *
      * @param {boolean} enabled
      */
