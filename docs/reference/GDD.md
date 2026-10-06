@@ -554,12 +554,14 @@ crunch plan):
 | Kill loot | Neighbour bonuses apply to kills like work (T-017). |
 | Energy and drinks | Remove energy; drinks heal like food, separate slots (T-098). |
 | Dormant Maps | Retire (T-002). |
-| Wishing Well | Passive (T-099). |
+| Wishing Well | Passive, part of Passive Production (T-099). |
 | Silent by default | Development convenience; audible default before shipping (T-100). |
 | Old saves | Refused until 1.0. |
 
 | Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
 | Atlas timing | Moves into the crunch, after deep optimization. |
+| Token cap | 80 for testing, and spawned Tokens count too; binned Tokens count toward spawner caps (T-101, T-102). |
+| Trickle | Renamed **Passive Production**, one 5-minute timer; the Wishing Well joins it, about 10 Water per 5 min (T-099). |
 
 Still open:
 

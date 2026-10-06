@@ -26,9 +26,11 @@ changed, what's next. Keep it under one screen.*
    `chore/comment-slimming` ([brief](brief_comment_slimming.md)).
 2. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
    the certification run (T-003) and the CMS fixes (T-001, T-002).
-3. Crunch prep P3: drawing benchmark + per-system on/off switches.
-4. Crunch prep P4: ready-to-run crunch briefs, one per track (owner writes the
-   UI plans).
+3. **Crunch prep P3** (after the comment pass merges): perf build, per-system
+   switches, `bench:draw`, `bench:drag`, baseline. Plan:
+   [p3_measurement_plan.md](p3_measurement_plan.md).
+4. Crunch prep P4: ready-to-run crunch briefs, one per track. UI input: the
+   owner's [ui_rework_list.md](ui_rework_list.md).
 
 ## Planned
 

@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-101**
+**Next free number: T-103**
 
 ---
 
@@ -69,7 +69,9 @@ here.
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 | T-097 | P2 | open | Move the Token cap, mat size and quest cap/interval out of the dev Mat Tuner into fixed game values (Hall upgrades may raise them later); hide Debug Mode and the QA tools in shipped builds. Owner 2026-10-06. | GDD §16.1 |
 | T-098 | P2 | open | Remove hero energy (dormant). Drinks heal like food: keep the separate food and drink slots, both eaten below 25 % HP. Owner 2026-10-06. | GDD §16.7 |
-| T-099 | P3 | open | Wishing Well water becomes passive, like the Hall trickle (no hero on the Hall). Owner 2026-10-06. | GDD §16.9 |
+| T-099 | P3 | open | **Passive Production** replaces "trickle": all Guild Hall passive income on one 5-minute timer, renamed everywhere; the Wishing Well joins it (about 10 Water per 5 min, scaling with rank), no hero needed. Owner 2026-10-06, `docs/active/ui_rework_list.md`. | owner |
+| T-101 | P2 | open | **Bug**: binned Tokens don't count toward their spawner's family cap, so keeping spawned Tokens in the bin lets a spawner exceed its cap. Binned Tokens must count toward spawner caps and Token counts. | owner UI list |
+| T-102 | P2 | open | **Token cap 80, and spawned Tokens count too** (today only placed Tokens count). Base 80 for testing; a Guild Hall upgrade raises it later. Decide with the owner how this interacts with spawner family caps. Owner 2026-10-06. | owner UI list |
 
 ### UI
 
