@@ -1,23 +1,21 @@
-// Fantasy Guild — Token geometry on the free playmat (Free Playmat slice 1.6b)
+// Fantasy Guild — Token geometry on the free playmat
 
 import { getTokenType } from './registries/tokenRegistry.js';
 import { matTuning } from './matTuning.js';
 
 /**
- * A Token on the free playmat is a **circle at a point** (plan §A, §C). This
+ * A Token on the free playmat is a **circle at a point**. This
  * file holds the one table of how big that circle is, by Token size.
  *
  * * **Art radius** — half the drawn art: a 1×1 Token is 128 u across (64 u
  *   radius), a 2×2 Token 288 u across (144 u radius). A point inside it is
  *   "on" the Token (`Flags.pointOnToken`).
- * * The **hitbox** (art radius × hitbox %) and the spacing rules that use it
- *   arrive with free placement in slice 1.6d.
  *
  * Mat units: 1 u = one natural board pixel.
  */
 
 /**
- * ## ⭐ The mat's own size — **live** (Free Playmat slice 1.6d-3, FP-92)
+ * ## The mat's own size — live
  *
  * The mat is `matSteps()` of today's 160 u steps wide, at a fixed 0.64 aspect.
  * At the shipped 11 steps that is **1760 × 1126 u**; its top-left is always
@@ -25,11 +23,8 @@ import { matTuning } from './matTuning.js';
  * the game runs.
  *
  * ## ⚠️ Functions, not constants — and nothing may cache them
- * These used to be the module constants `MAT_STEPS`, `MAT_W` and `MAT_H`, read
- * by about fifteen files. A constant is captured at import, so a file holding one
- * would go on measuring a mat that no longer exists the moment the owner moved
- * the slider — the mat would resize and that file's edge, clamp or canvas would
- * not. So: **call `matW()` / `matH()` at the point of use, every time.** Never
+ * A constant would be captured at import and go on measuring a mat that no longer exists once the Mat Tuner slider moves.
+ * So: **call `matW()` / `matH()` at the point of use, every time.** Never
  * lift one into a module constant, a default argument, a frozen object or a
  * `useMemo` with no dependency on the size.
  *
@@ -37,8 +32,7 @@ import { matTuning } from './matTuning.js';
  * mat and every layer on it when the tuner changes (`onMatTuningChanged`).
  *
  * ⚠️ This is the mat's size in **mat units**, not on screen. How much the mat is
- * then shrunk to fit the window is `useBoardScale`'s, and is a separate question
- * (slice 1.7 makes the mat grow to fill the window instead).
+ * then shrunk to fit the window is `useBoardScale`'s, a separate question.
  */
 export const MAT_STEP_U = 160;
 export const MAT_ASPECT = 0.64;
@@ -67,12 +61,10 @@ export function clampToMat(point) {
 }
 
 /**
- * ## How big a Token is drawn (Free Playmat slice 1.6d-2)
+ * ## How big a Token is drawn
  *
- * Token art is authored at 64px and shown at exactly 2× (D-216), so a 1×1 Token
- * is drawn 128 u across. These used to be `ART_PX` and `TILE_PX` in the deleted
- * `boardGeometry.js`; `TOKEN_PX` is the same number under a name that does not
- * claim there is a tile under it.
+ * Token art is authored at 64px and shown at exactly 2×, so a 1×1 Token
+ * is drawn 128 u across.
  *
  * ⚠️ The 2× is an integer ratio on purpose. Deriving either number from the
  * space available breaks it and makes every sprite blurry — the mat is scaled
@@ -98,7 +90,7 @@ export function artRadius(size = 1) {
 }
 
 /**
- * ## ⭐ Two Token sizes — standard and small (TL-19, FB-18, B8.1)
+ * ## Two Token sizes — standard and small
  *
  * A Token type may carry **`artSize: 'small'`** (authored in the CMS Token
  * editor's *Token Size* control). A small Token is drawn at **half size** —
@@ -108,10 +100,7 @@ export function artRadius(size = 1) {
  * hero stands beside it.
  *
  * ⚠️ **`artSize`, not `size`.** `size` is the Token's *footprint* (1 = 1×1,
- * 2 = 2×2) and has been since the grid; the older comments in this file and in
- * `MatPlacement` still call a 1×1 "small" and a 2×2 "large" in that sense.
- * A missing `artSize` (or `'standard'`) is a standard Token, so every shipped
- * Token reads exactly as it did.
+ * 2 = 2×2). A missing `artSize` (or `'standard'`) is a standard Token.
  *
  * ⚠️ **Small applies to 1×1 Tokens only.** A 2×2 marked small is drawn and
  * spaced as a normal 2×2 — the game ignores the field there, and the CMS
@@ -122,11 +111,11 @@ export function artRadius(size = 1) {
  */
 export const TOKEN_ART_SIZE = Object.freeze({ STANDARD: 'standard', SMALL: 'small' });
 
-/** How much of a standard body a small Token has (TL-19: exactly half). */
+/** How much of a standard body a small Token has: exactly half. */
 export const SMALL_TOKEN_SCALE = 0.5;
 
 /**
- * Whether a Token type (id or definition) is a **small** Token (TL-19): marked
+ * Whether a Token type (id or definition) is a **small** Token: marked
  * `artSize: 'small'` and 1×1. Unknown types are standard.
  */
 export function isSmallToken(typeIdOrDef) {
@@ -136,7 +125,7 @@ export function isSmallToken(typeIdOrDef) {
 }
 
 /**
- * ⭐ The single helper for a Token's body size (B8.1): **0.5 for a small Token,
+ * ⭐ The single helper for a Token's body size: **0.5 for a small Token,
  * 1 for everything else.** `artRadiusOf` (so every hit test, gap, clamp and
  * standing spot) and `TokenSprite.tokenSizeFor` (so every on-mat drawing and
  * the drag ghost) both multiply by it.
@@ -147,7 +136,7 @@ export function tokenBodyScale(typeIdOrDef) {
 
 /**
  * The art radius of a Token type — its footprint's radius, halved for a small
- * Token (TL-19: 32 u rather than 64 u). ⭐ Every engine consumer of a Token's
+ * Token (32 u rather than 64 u). ⭐ Every engine consumer of a Token's
  * body goes through this: `Flags.pointOnToken` / `tokenAtPoint` (hover, click,
  * flag pins), `MatPlacement` (hitbox, `minGap`, the mat edge, restock,
  * `findSpot` and so every drop, nudge, spawn and `MatResize` clamp),

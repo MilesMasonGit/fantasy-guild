@@ -1,34 +1,25 @@
-// Fantasy Guild — The authorable modifier palette (CMS rework Phase 4)
+// Fantasy Guild — The authorable modifier palette
 //
-// ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (CR2-010).
-// `cms/src/utils/constants.js` re-exports nine names from here by relative
-// path. The CMS is a separate app: it is not compiled by `npm run build`, it
-// has no test suite of its own, and the reachability tool does not know it
-// exists. So some of what is below has **no reader in the running game** and
-// every dead-code tool will offer it up for deletion. As of 2026-08-26 the
-// exports with no game-side consumer are `MODIFIER_BUCKETS`,
-// `isAuthorableModifier` and `TARGET_MODES` (plus `RETIRED_TARGET_MODES`,
-// which nothing reads anywhere — see the note at its declaration).
-//
-// Do not take a tool's word for it. `src/tests/CMSBoundary.test.js` scans the
-// CMS for these imports and fails if a named export goes missing; that test is
-// the guard, and this comment is only here to explain it when it fires.
+// ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY. `cms/src/utils/constants.js`
+// re-exports ten names from here by relative path. The CMS is a separate app that `npm run
+// build` does not compile, so some exports (`MODIFIER_BUCKETS`, `isAuthorableModifier`) have no
+// reader in the running game and must not be deleted as dead code. `src/tests/CMSBoundary.test.js`
+// scans the CMS for these imports and fails if a named export goes missing.
 
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
 
 /**
  * Which effect axes content may be authored against, and in what shape.
  *
- * ## Why this is declared in the game (CMS-5)
+ * ## Why this is declared in the game
  * `EFFECT_TYPES` is a bag of every axis the engine has ever had, including
  * several with **no consumer anywhere**. Offering that list in the CMS would
- * let an author build a Token whose effect silently does nothing — precisely
- * the old CMS's 56 placeholder Effects problem, which CMS-36 deleted outright.
+ * let an author build a Token whose effect silently does nothing.
  *
  * An axis appears here only once something reads it. Adding a consumer and
  * adding a row here should be the same commit.
  *
- * ## Two shapes (CMS-25)
+ * ## Two shapes
  * * `deterministic` — `{ type, bucket, value }`, always applies, resolved
  *   through the three-bucket formula.
  * * `proc` — resolved through the same formula to produce a **percentage**,
@@ -36,24 +27,6 @@ import { EFFECT_TYPES } from '../../systems/effects/constants.js';
  *   chances ("chance for double loot", "chance for failure"); giving them their
  *   own shape stops an author building a modifier that is ambiguous about which
  *   maths path resolves it.
- *
- * ## Deliberately absent
- * * **SPEED** — CMS-21 wanted it split into WORK_SPEED/COMBAT_SPEED, but the
- *   ambiguity it feared no longer exists: work rate is `WORK_TIME`, combat
- *   attack speed comes from `FormulaRegistry` and is not modifier-driven, and
- *   `SPEED`'s only reader is the retired card-era `StatProcessor`. Offering
- *   `WORK_TIME` and omitting `SPEED` achieves CMS-21's goal with no rename
- *   (CMS-94).
- * * **DAMAGE / DEFENSE / THORNS_REFLECT** — combat balancing is deferred as its
- *   own project (CMS-2).
- * * **HP_REGEN / STAT_BONUS** — named as wanted by CMS-20, but they belong to
- *   the hero rather than the tile and have no consumer yet. They join when one
- *   is built.
- * * **LOGIC_OVERRIDE** — arbitrary code triggers cannot be a form field
- *   (CMS-24); such Tokens get a notes field and a developer, not a dropdown.
- * * **BONUS_DROP / CHARGE_EXTEND / SELL_BONUS** — CMS-27's additions, which
- *   grant items, extend charges and change Market prices rather than scaling an
- *   axis. They arrive with their consumers in Phase 5.
  */
 
 /** Modifier shapes. */
@@ -66,9 +39,9 @@ export const MODIFIER_SHAPES = {
      *
      * These cannot go through the three-bucket aggregator — resolving an item
      * id as a scalar is meaningless — so they are collected and rolled by their
-     * consumer instead (`TileModifiers.collectItemGrants`). CMS-72 routes
-     * item-granting through Modifiers rather than giving it its own block
-     * section, which is why it is a shape here instead of a separate concept.
+     * consumer instead (`TileModifiers.collectItemGrants`). Item-granting goes
+     * through Modifiers rather than its own block section, which is why it is a
+     * shape here instead of a separate concept.
      */
     ITEM: 'item',
     /**
@@ -86,15 +59,12 @@ export const MODIFIER_SHAPES = {
 export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
 
 /**
- * ## ⚠️ `when` — the legality flag, and why it is one-sided no longer
+ * ## ⚠️ `when` — the legality flag
  *
- * `triggeredOnly` used to say "hide Convert until the block has a trigger". It
- * had no mirror image, so the editor happily offered **Yield** on a triggered
- * block — where `TileModifiers` skipped it for having a trigger and
- * `TriggerSystem` ignored it for not being an item grant. Authored, saved,
- * loaded, and read by nobody.
- *
- * Every entry now declares which side of that line it lives on:
+ * An effect on the wrong side of the line is authored, saved, loaded and read by
+ * nobody: **Yield** on a triggered block is skipped by `TileModifiers` (it has a
+ * trigger) and ignored by `TriggerSystem` (it is not an item grant). So every
+ * entry declares which side of that line it lives on:
  *
  * * `never`    — only meaningful while the effect applies continuously.
  * * `optional` — works ambiently *and* on an event.
@@ -103,7 +73,7 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * The statement grammar reads this (`statements.js`), so an impossible
  * combination is not something the editor can be talked into.
  *
- * ## `scales` — what a reference's scale multiplies (Unified Effects UE-7)
+ * ## `scales` — what a reference's scale multiplies
  *
  * A bearer points at a named effect and may carry a **scale**: an integer 1–5
  * that says "the same effect, stronger". What "stronger" means is not the same
@@ -122,7 +92,7 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * ⚠️ A proc's scaled value is clamped by `clampModifierValue` like any other,
  * so a 40% chance at scale 3 is 100%, not 120%.
  *
- * ## `categories` — what a row's optional narrowing field picks from (P4)
+ * ## `categories` — what a row's optional narrowing field picks from
  *
  * `ModifierAggregator` has always matched on `mod.target.category`, and two
  * different readers pass two different vocabularies into it:
@@ -132,8 +102,7 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * * `'status'` — `StatusEffectSystem` passes a status id, which is how
  *   `STATUS_IMMUNITY` names the one status it blocks.
  *
- * Both were live and unwritable: the machinery matched a field no editor
- * offered. Declaring the vocabulary per row is what lets the CMS show a skill
+ * Declaring the vocabulary per row is what lets the CMS show a skill
  * picker on Yield and a status picker on Immunity without knowing either list.
  *
  * A row without `categories` offers no narrowing at all, which is right for the
@@ -144,9 +113,8 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *
  * Read off a **hero's** aggregator, so only an item (to its carrier) or an enemy
  * (to its opponent) can write it. A plain Token carrying one reaches nobody, and
- * both the sentence and `ContentAudit` say so. This was a hardcoded
- * `group === 'Combat'` check in three places until P4; `STATUS_IMMUNITY` has the
- * same property and is not combat, so the property is now declared rather than
+ * both the sentence and `ContentAudit` say so. `STATUS_IMMUNITY` has the
+ * same property and is not combat, so the property is declared rather than
  * inferred from a label.
  *
  * @type {Array<{type: string, label: string, shape: string, group: string, hint: string, inverted?: boolean, when: string, scales?: string}>}
@@ -228,13 +196,10 @@ export const MODIFIER_PALETTE = [
         hint: 'Percent chance the cycle produces nothing. Inputs and charges are still spent.'
     },
 
-    // --- Combat (Unified Effects P7) ----------------------------------------
+    // --- Combat ---------------------------------------------------------
     //
     // ⚠️ Every row here has a live reader in `CombatFormulas` or
-    // `CombatAttackProcessor`, queried off `hero.aggregator`. They were readable
-    // and unwritable for months (CR2-074): combat asked for them, the deleted
-    // gear pipeline was the only thing that ever wrote them, and it wrote mostly
-    // into axes nothing read. Content can feed them now.
+    // `CombatAttackProcessor`, queried off `hero.aggregator`.
     //
     // `buckets: ['flat']` on all of them because `ModifierAggregator.query` —
     // which is what combat calls — sums flats and SKIPS percentage and
@@ -290,7 +255,7 @@ export const MODIFIER_PALETTE = [
         when: 'never',
         scales: 'value',
         /**
-         * ⚠️ **The one combat axis with a percentage reader** (V7).
+         * ⚠️ **The one combat axis with a percentage reader.**
          *
          * Every other combat row is `flat` only, because `query` sums flats and
          * silently skips the rest — offering a percentage there would offer
@@ -305,15 +270,8 @@ export const MODIFIER_PALETTE = [
         hint: 'Flat damage added to every hit the hero lands.'
     },
 
-    // --- Protection (Effects Robustness P4) ---------------------------------
-    //
-    // ⚠️ Readable and unwritable since the status engine was built:
-    // `StatusEffectSystem.applyToHero` has always asked the hero's aggregator
-    // whether they are immune, and nothing has ever been able to say yes.
-    //
-    // It needed no new grammar. `query('STATUS_IMMUNITY', statusId)` passes the
-    // status id as the aggregator's **category**, which `_forEachMatching` has
-    // matched on all along — so the whole gap was a missing field in the editor.
+    // --- Protection ---------------------------------------------------------
+    // `query('STATUS_IMMUNITY', statusId)` passes the status id as the aggregator's **category**.
     {
         type: EFFECT_TYPES.STATUS_IMMUNITY,
         label: 'Status Immunity',
@@ -354,8 +312,8 @@ export const MODIFIER_PALETTE = [
  * The numeric range a modifier's value may take, decided by its **shape**.
  *
  * ## Why this is here and not in the editor
- * The CMS used to clamp every value to 0–100, which made a negative value
- * impossible to type — and negatives are the normal case for half this palette.
+ * A blanket 0–100 clamp would make a negative value impossible to type — and
+ * negatives are the normal case for half this palette.
  * `WORK_TIME` and `INPUT_COST` carry `inverted: true` precisely because a
  * *reduction* is the buff: "−5% work time" is the effect an author wants most
  * often, and the three-bucket formula handles a negative percentage perfectly
@@ -402,8 +360,7 @@ export function clampModifierValue(entry, value) {
  *
  * The sign alone does not say: `+5%` on Yield is a gift and `+5%` on Work Time
  * is a punishment, because Work Time is milliseconds-per-cycle. `inverted` is
- * already in the palette for exactly this, but until now only the hint text
- * carried it, so authors had to remember which axis ran backwards.
+ * already in the palette for exactly this.
  *
  * Returns `null` when there is nothing to say (no value yet, or a shape whose
  * value is not a signed magnitude).
@@ -438,7 +395,7 @@ export function isAuthorableModifier(type) {
 }
 
 /**
- * How a targeted buff may name its target (CMS-18).
+ * How a targeted buff may name its target.
  *
  * Chosen per Token rather than fixed once, because different buffs want
  * different precision — see `TileModifiers.matchesTokenTarget`.
@@ -450,7 +407,7 @@ export const TARGET_MODES = [
 ];
 
 /**
- * ⚠️ **`by category` was retired from the editor** (owner decision, Q2).
+ * ⚠️ **`by category` was retired from the editor.**
  *
  * It aimed at `tokenType`, which is now *derived* from what a Token has rather
  * than chosen — so authoring against it would mean targeting a value the CMS
@@ -463,11 +420,6 @@ export const TARGET_MODES = [
  * tagging those Tokens. `matchesTokenTarget` still understands `tokenType` so
  * that nothing already authored changes behaviour; it is simply not offered.
  *
- * ⚠️ **Nothing imports this constant** — not the game, not the tests, not the
- * CMS (verified 2026-08-26, CR2-010). The retirement it records is real and
- * lives in `matchesTokenTarget`; this export is only a label for it. Left in
- * place rather than deleted because that is the owner's call, not a cleanup's,
- * but do not mistake it for machinery: unlike the rest of this file, deleting
- * it would break nothing.
+ * ⚠️ **Nothing imports this constant.** The retirement it records lives in `matchesTokenTarget`; this export is only a label for it. Do not mistake it for machinery: deleting it would break nothing.
  */
 export const RETIRED_TARGET_MODES = ['tokenType'];

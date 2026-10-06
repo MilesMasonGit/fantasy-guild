@@ -1,18 +1,12 @@
-// Fantasy Guild — Live tuning for the free playmat's rules (developer tool, FP-66).
+// Fantasy Guild — Live tuning for the free playmat's rules (developer tool).
 
 /**
- * The numbers the Free Playmat rework will need to feel out, adjustable while
- * the game runs — the **Mat Tuner** panel builds itself from this table.
+ * The numbers that decide how the mat *plays*, adjustable while the game runs — the **Mat Tuner** panel builds itself from this table.
  *
  * ## Not the Playmat Tuner
- * `playmatTuning.js` tunes how the *terrain looks* and is hidden while terrain
- * is dormant (FP-10). This one tunes how the mat *plays*: a value here changes
- * what a Token reaches. It is a separate panel by owner ruling (FP-66).
- *
- * ## Each slice adds its own row
- * Slice 1.2 adds **Near radius**. Later slices add flag radius (1.4), hitbox,
- * overlap and mat size (1.6). The values the owner settles on are written into
- * `def` at slice 1.11.
+ * `playmatTuning.js` tunes how the terrain *looks*.
+ * This one tunes how the mat *plays*: a value here changes
+ * what a Token reaches. It is a separate panel.
  *
  * ## ⚠️ Developer tool, persisted per device — like the Playmat Tuner
  * Values live in `localStorage` (same behaviour as `playmatTuning.js`), never in
@@ -74,7 +68,6 @@ export const MAT_TUNABLES = Object.freeze([
         min: 0, max: 240, step: 1, def: 80,
         format: (v) => (Math.round(v) === 0 ? 'off' : `${Math.round(v)} u`)
     },
-    // Enemies potter by their spawner (B7.1, TL-16, FB-23, owner's "B7 range").
     {
         key: 'enemyWalkSpeed',
         group: 'Enemies',
@@ -131,8 +124,6 @@ export const MAT_TUNABLES = Object.freeze([
         min: 1, max: 200, step: 1, def: 40,
         format: (v) => `${Math.round(v)} placed Tokens`
     },
-    // Quest Tokens (B6.1, TL-18, FB-41): the Guild Hall spawns bounties up to
-    // a cap the Notice Board upgrade raises. Tutorial quests are not counted.
     {
         key: 'questCap',
         group: 'Quests',

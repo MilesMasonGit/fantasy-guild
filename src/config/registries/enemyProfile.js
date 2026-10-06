@@ -6,41 +6,30 @@ import { enemyCombatBudget } from '../FormulaRegistry.js';
 /**
  * The combat stat block for an enemy Token.
  *
- * ## Why there is no longer an enemy registry
- * `data/enemies.json` and `enemyRegistry.js` were the last of the card era.
- * They described a creature as a separate entity that a Token then pointed at
- * through `enemyId` — except **nothing ever wrote `enemyId`**. The CMS had no
- * field for it, `deriveTokenType` keyed the whole `enemy` rung off it, and so
- * the game shipped four enemies that no Token could reference and zero enemy
- * Tokens. The combat engine underneath was finished and tested; it simply had
- * no content it could reach.
- *
- * D-104 already said an enemy is just a Token. This makes that true of the
- * data as well: the creature and the Token are one entity, authored in one
- * editor, written to one file. `enemies.json`, `encounters.json` and the
- * registry were deleted with this change (owner decision, 2026-09-06).
+ * ## Why there is no enemy registry
+ * An enemy is a Token: the creature and the Token are one entity, authored in one
+ * editor and written to one file.
  *
  * ## What an author actually types
- * Two fields, in the Token editor's Enemy section:
+ * Fields, in the Token editor's Enemy section:
  *
  * ```json
  * "enemy": { "level": 2, "style": "melee", "budgetScale": 1.0 }
  * ```
  *
  * `level` is the single difficulty dial — HP, damage, attack speed, attack and
- * defence skill and XP all derive from it through `enemyCombatBudget`, exactly
- * as they did before. This mirrors the hero side, which is also one number now
+ * defence skill and XP all derive from it through `enemyCombatBudget`.
+ * This mirrors the hero side, which is also one number
  * (a hero holds one combat skill supplying attack, defence, HP and block), so
  * a level-5 enemy and a Melee-5 hero are directly comparable.
  *
  * `budgetScale` is the optional thumb on the scale: it multiplies HP, damage
  * and XP together, so a tutorial pushover can sit below its band without
  * pretending to be a lower level. Per-stat deviation — tanky-but-weak, glass
- * cannon — is deliberately still absent; it wants a budget-trade rule, and
- * that belongs with the status-system pass.
+ * cannon — is deliberately absent; it wants a budget-trade rule.
  *
  * ## Drops
- * Not here. A kill is a cycle (D-129), so a kill's loot is the cycle's output:
+ * Not here. A kill is a cycle, so a kill's loot is the cycle's output:
  * `BoardCombat` resolves it from the Token's `config.outputs`, which already
  * carry the `{ itemId, chance, minQty, maxQty }` shape the old inline drop
  * table used. One drop mechanism for the whole board, and the economy
@@ -64,11 +53,11 @@ export function isEnemyDef(def) {
 }
 
 /**
- * Whether an enemy Token type is **hostile** (B7.2, TL-16, FB-23): it attacks
+ * Whether an enemy Token type is **hostile**: it attacks
  * a hero who comes inside the flag radius around its spawner
  * (`board/Hostiles.js`). Authored in the CMS as `enemy.hostile`; only a literal
  * `true` counts, and a missing field is peaceful — such an enemy fights only
- * when a hero attacks it, as every enemy did before B7.2.
+ * when a hero attacks it.
  */
 export function isHostileEnemy(def) {
     return isEnemyDef(def) && def.enemy.hostile === true;
@@ -82,12 +71,11 @@ export function isHostileEnemy(def) {
  * to `undefined` three calls deep inside the attack processor.
  *
  * ⚠️ `armor` is deliberately absent. `CombatFormulas` reads `enemy?.armor`,
- * but it is a documented hook for the armour pass that resolves to 0; the old
- * registry never set it either, so adding it here would invent a number.
+ * but it is a documented hook that resolves to 0, so adding it here would
+ * invent a number.
  *
- * `id` is the **Token's** id. That is what makes the Bestiary, the kill counts
- * and the discovery notifications keep working with no migration: they key on
- * an id and look up a name, and the id they now get is one that exists.
+ * `id` is the **Token's** id: the Bestiary, kill counts and discovery
+ * notifications key on an id and look up a name.
  *
  * @param {Object} def A Token definition
  * @returns {Object|null} The stat block, or null if this Token is not an enemy
@@ -119,7 +107,7 @@ export function enemyProfileOf(def) {
         xpAwarded: budget.xp,
         // `traits` is read by the attack processor's thorns branch and must be
         // present. Enemy traits are not authorable yet; an empty array is the
-        // honest answer, not a stub for one that is coming.
+        // right value.
         traits: []
     };
 }

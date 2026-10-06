@@ -1,9 +1,9 @@
-// Fantasy Guild — the filters a selector may stack (Effects Grammar v2, V4)
+// Fantasy Guild — the filters a selector may stack
 
 /**
  * **Which** of the things in range a rule actually picks.
  *
- * ## Filter, not guard (G-8)
+ * ## Filter, not guard
  * A filter narrows **who** a rule hits: *"every nearby Token with fewer than
  * three charges"*. A **guard** would decide **whether** the rule fires at all:
  * *"only if the hero is below half health"*. The first renders as one honest
@@ -13,7 +13,7 @@
  * That distinction is the whole line between a vocabulary and a rules engine,
  * and it is the line the owner drew.
  *
- * ## Composable, AND-only (G-9)
+ * ## Composable, AND-only
  * A selector stacks any number of these and every one must pass. There is no OR
  * and no nesting — those are the shapes with no sentence. *"Not tagged Coast,
  * and being worked"* is two rows that read as one clause.
@@ -79,7 +79,7 @@ export const FILTER_KINDS = Object.freeze([
         value: 'number',
         match: ({ instance }, value) => {
             const left = instance?.usesRemaining;
-            // ⚠️ `null` is UNLIMITED (R-4), not zero. A Token that can never run
+            // ⚠️ `null` is UNLIMITED, not zero. A Token that can never run
             // down is never "running low", and reading its null as 0 would make
             // every unlimited Token match a rule aimed at exhausted ones.
             if (left == null) return false;
@@ -94,11 +94,10 @@ export const FILTER_KINDS = Object.freeze([
     },
     {
         /**
-         * ⭐ **Effects can see each other** (V6). Deferred from V4 until live
-         * instances existed for it to look at.
+         * ⭐ **Effects can see each other.**
          *
          * ⚠️ Reads the **hero standing there**, not the Token. Live instances
-         * sit on people; a Token cannot yet carry one (roadmap Q3). So *"every
+         * sit on people; a Token cannot yet carry one. So *"every
          * nearby Token not already poisoned"* is really "…whose hero is not
          * poisoned", and the sentence says the honest version.
          */
@@ -136,7 +135,7 @@ export function filtersOf(spec) {
 }
 
 /**
- * Whether every stacked filter passes (G-9: AND, always).
+ * Whether every stacked filter passes (AND, always).
  *
  * @param {object} spec     the `to` selector
  * @param {object} ctx      `{ def, instance, tile, heroOnTile }` — whatever the
@@ -186,7 +185,7 @@ export function filterPhrase(entry, names = {}) {
  * "tagged Coast and being worked" — the stacked clause, attached directly.
  *
  * ## ⚠️ Why these are modifiers and not a relative clause
- * The first version wrote "that is …", which forced a number agreement the
+ * A relative clause ("that is …") forces a number agreement the
  * renderer cannot win: the frame in front may be singular (*"every nearby
  * Token"*, *"this Token"*) or plural (*"nearby Coast Tokens"*), so it produced
  * "Tokens that is being worked". Phrases that attach directly — *"nearby Coast
@@ -194,7 +193,7 @@ export function filterPhrase(entry, names = {}) {
  * after either, and need no agreement at all.
  *
  * Returns an empty string when there is nothing to say, so a caller concatenates
- * without checking, and every sentence authored before V4 is unchanged.
+ * without checking.
  */
 export function filtersPhrase(spec, names = {}) {
     const entries = filtersOf(spec);

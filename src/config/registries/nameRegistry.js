@@ -1,5 +1,4 @@
 // Fantasy Guild - Name Registry
-// Phase 6: Hero Registries
 
 /**
  * NameRegistry - Name pools for hero generation

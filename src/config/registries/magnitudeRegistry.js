@@ -1,9 +1,9 @@
-// Fantasy Guild — where a number comes from (Effects Grammar v2, V5)
+// Fantasy Guild — where a number comes from
 
 import { ROLE, getRole } from './roleRegistry.js';
 
 /**
- * A magnitude that is **computed** rather than typed (G-13).
+ * A magnitude that is **computed** rather than typed.
  *
  * ## Why this is a closed list and not arithmetic
  * The owner asked for scaling effects — *"damage equal to 10% of the target's
@@ -19,19 +19,17 @@ import { ROLE, getRole } from './roleRegistry.js';
  * count     1% per nearby Coast Token a per-match amount over a counted selector
  * ```
  *
- * ## ⚠️ `count` reads a SECOND selector, and that is the whole point (G-14)
+ * ## ⚠️ `count` reads a SECOND selector, and that is the whole point
  * *"+1% yield to every nearby Token, per nearby Coast Token"* counts one set
  * and affects another. They are genuinely different sets, and conflating them
  * would make the commonest shape of this effect unsayable — so a statement
  * carries a separate `counted` selector used only to produce the number.
  *
  * ## ⚠️ A stat says whose it is, and means it
- * These read the **actor** — the hero who caused the moment — and are named for
- * them. They were labelled *"the target's max HP"* and read the actor anyway,
- * which is only the same entity when the rule happens to aim at the actor too.
- * A rule dealing *"50% of the target's max HP"* **to the entity that caused
- * this** took its number off one hero and its damage to another, and the
- * sentence described neither.
+ * These read the **actor** — the hero who caused the moment — and are named for them.
+ * Otherwise a rule dealing *"50% of the target's max HP"* **to the entity that caused
+ * this** would take its number off one hero and its damage to another, and the
+ * sentence would describe neither.
  *
  * ⚠️ A live effect ticks with no actor at all, so an actor stat resolves to
  * nothing there. `statsForRoles` is what keeps it off that moment's picker.
@@ -52,7 +50,7 @@ export const MAGNITUDE_KIND = Object.freeze({
  * The stats a magnitude may take a percentage of, and how to read each.
  *
  * `role` says whose stat it is, so the editor can refuse a stat whose role the
- * moment does not supply — the same G-2 rule the target vocabulary runs on.
+ * moment does not supply — the same rule the target vocabulary runs on.
  *
  * @type {ReadonlyArray<{id: string, label: string, role: string, hint: string,
  *   read: (entities: object) => number|null}>}
@@ -84,7 +82,7 @@ export const MAGNITUDE_STATS = Object.freeze([
         label: "this Token's remaining charges",
         role: ROLE.SELF,
         hint: 'How much it has left. A Token with unlimited charges reads as nothing.',
-        // ⚠️ `null` is UNLIMITED (R-4), and an unlimited Token has no "amount
+        // ⚠️ `null` is UNLIMITED, and an unlimited Token has no "amount
         // remaining" to be a percentage of. Reading it as a big number would
         // make an unlimited Token the strongest possible version of the effect.
         read: ({ selfInstance }) => selfInstance?.usesRemaining ?? null
@@ -96,7 +94,7 @@ export function getMagnitudeStat(id) {
     return MAGNITUDE_STATS.find(s => s.id === id) || null;
 }
 
-/** The stats whose role a given moment actually supplies (G-2). */
+/** The stats whose role a given moment actually supplies. */
 export function statsForRoles(availableRoles) {
     return MAGNITUDE_STATS.filter(s => availableRoles.includes(s.role));
 }
@@ -160,7 +158,7 @@ export function magnitudePhrase(payload, countedPhrase = '') {
  * "10%" and "the hero's max HP" — a stat magnitude's two decisions, apart.
  *
  * ⚠️ The ONE definition of how a stat magnitude reads. `magnitudePhrase` joins
- * these for the string, and the renderer's segment form (Rules Line P1) keeps
+ * these for the string, and the renderer's segment form keeps
  * them apart so the number and the stat can be clicked separately. Two copies
  * of "N% of X" would be free to drift, and the drift would be invisible until a
  * sentence and its clickable words disagreed.
@@ -173,7 +171,7 @@ export function magnitudeParts(payload) {
     return { amount: `${Number(payload.amount) || 0}%`, stat: stat ? stat.label : '…' };
 }
 
-/** Whether a payload's magnitude needs the second, counted selector (G-14). */
+/** Whether a payload's magnitude needs the second, counted selector. */
 export function usesCountedSelector(payload) {
     return payload?.magnitude === MAGNITUDE_KIND.COUNT;
 }

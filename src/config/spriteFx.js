@@ -1,8 +1,7 @@
-// Fantasy Guild — the ready-made shadow and outline images (Wave 5, CR3-350).
+// Fantasy Guild — the ready-made shadow and outline images.
 
 /**
- * ⭐ **Shadows and outlines are pictures, not filters** (owner rulings, Z §11,
- * "Shadows and outlines — owner rulings after the spike", 2026-09-30).
+ * ⭐ **Shadows and outlines are pictures, not filters.**
  *
  * - **Hard shadow:** a solid black silhouette of the sprite, 2 art-pixels down
  *   and to the right, shown ONLY on a Token being dragged and on floating loot.
@@ -26,8 +25,8 @@ export const SPRITE_FX_DIR = '_gen/sprite-fx';
 export const SPRITE_FX_VERSION = 2;
 
 /**
- * The outline colours, as RGB. `work` is `--color-gi-success` (#09b554, the
- * old working glow's green); `alert` is Tailwind red-500, the alert badges' red.
+ * The outline colours, as RGB. `work` is `--color-gi-success` (#09b554);
+ * `alert` is Tailwind red-500, the alert badges' red.
  */
 export const OUTLINE_COLOURS = Object.freeze({
     work: [9, 181, 84],
@@ -36,8 +35,7 @@ export const OUTLINE_COLOURS = Object.freeze({
 });
 
 /**
- * ⭐ **The outline is one art pixel, on the art's own grid, cardinal only**
- * (owner ruling, 2026-10-01, after Wave 5's first look). An outline pixel sits
+ * ⭐ **The outline is one art pixel, on the art's own grid, cardinal only**. An outline pixel sits
  * where a clear pixel touches the art EDGE TO EDGE — up, down, left or right —
  * never where it only touches it corner to corner. That is a plus-shaped
  * (4-connected) dilation of the full alpha mask (the art's own black border
@@ -93,8 +91,8 @@ export const silhouetteFolder = () => 'sil';
 export const outlineFolder = (colour) => `ol-${colour}`;
 
 /**
- * The hard shadow's offset, in whole screen pixels: 2 art pixels (owner
- * ruling), where one art pixel is `k` screen pixels — never less than one.
+ * The hard shadow's offset, in whole screen pixels: 2 art pixels, where one
+ * art pixel is `k` screen pixels — never less than one.
  */
 export const SHADOW_ART_PX = 2;
 export function shadowScreenPx(k) {

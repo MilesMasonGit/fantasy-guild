@@ -1,7 +1,5 @@
 // Fantasy Guild - Status Effect Registry
-// Status Effects first pass (status_effects_concept.md).
 // Every status is data: the engine (StatusEffectSystem) reads this registry;
-// no status has one-off code scattered elsewhere. SCB-discoverable.
 
 /**
  * === Status Schema ===
@@ -30,12 +28,12 @@
  *        | 'hit_taken'        // −1 stack per successful hit received (not on miss/block)
  *        | 'attack_attempt'   // −1 stack per attack attempt
  *        | 'combat_resolved'  // layered: −1 duration per combat encounter resolved
- *        | 'slot_resolved'    // layered: −1 duration per loop slot resolved
+ *        | 'slot_resolved'    // layered: −1 duration per work cycle resolved
  * }
  */
 
 export const STATUS_EFFECTS = {
-    // === Damage over Time (persist from combat into the loop, §3A) ===
+    // === Damage over Time (persist after combat, §3A) ===
     poison: {
         id: 'poison',
         name: 'Poison',
@@ -138,7 +136,7 @@ export function getAllStatusEffects() {
  * The statuses content may put on someone, as a list — the vocabulary behind
  * the `Applies` keyword.
  *
- * Declared in the game rather than typed into the CMS (CMS-5): adding a status
+ * Declared in the game rather than typed into the CMS: adding a status
  * here makes it available in the Rules editor with no CMS-side change, and the
  * CMS can never offer one the engine has never heard of.
  *

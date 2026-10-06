@@ -1,4 +1,4 @@
-// Fantasy Guild — when a statement spends its charges (Unified Effects P2)
+// Fantasy Guild — when a statement spends its charges
 
 /**
  * The moments at which a rule may spend the charges of the Token carrying it.
@@ -8,25 +8,17 @@
  * in the CMS with **no CMS change**, and the game consumes the same list. The
  * editor renders whatever is declared.
  *
- * ## ⚠️ Only moments that something actually spends on (owner ruling, Q5)
+ * ## ⚠️ Only moments that something actually spends on
  * Two moments exist today because two readers exist today.
  *
- * ⚠️ **P5 added `CYCLE_START` and deliberately did NOT add a row here**, which
- * is worth saying because the plan expected one. `CYCLE_START` turned out to be
- * a *firing* moment rather than a spending one: a rule that reacts to it carries
- * a `When` clause, so it already spends through `on_fire` when it fires. A row
- * reading "at the start of the cycle" would sit beside `per_cycle` as a second
- * way to spend once per cycle — exactly the two-ways-to-say-one-thing this
- * registry exists to prevent. P6's engagement deserves the same look before it
- * assumes it needs a row.
+ * ⚠️ `CYCLE_START` has no row on purpose: it is a *firing* moment, and a rule that reacts to it already spends through `on_fire`. A row for it would be a second way to spend once per cycle.
  *
  * They are deliberately **not** listed in advance. An authorable option that
- * nothing reads is the "authored but inert" failure the effect system map named
- * as this project's most expensive recurring bug — the author writes a rule, the
+ * nothing reads is "authored but inert": the author writes a rule, the
  * CMS accepts it, the game stores it, and nothing ever asks for it. A row
  * arrives with its reader or not at all.
  *
- * ## Zero is the always-on setting (UE-20)
+ * ## Zero is the always-on setting
  * A rule that costs nothing wears nothing, whatever moment it names. That is how
  * a permanent aura is authored, and it is the default for every rule that does
  * not fire — see `DEFAULT_CHARGE_DELTA_BY_MOMENT` below.
@@ -67,9 +59,7 @@ export const CHARGE_MOMENTS = Object.freeze([
     },
     {
         /**
-         * ⭐ **The price of a promotion** (Promotes rule P3).
-         *
-         * Arrived with its reader, as this registry requires:
+ * ⭐ **The price of a promotion.**
          * `BoardPromotion.accept` spends it, and nothing else does. It belongs
          * to the `promotes` keyword alone (`keyword`), so no other rule is
          * offered it and a `Promotes` rule is offered nothing else.
@@ -101,15 +91,14 @@ export function chargeMomentsFor(hasTrigger, keywordId = null) {
 /**
  * ## ⚠️ The default cost depends on the moment, and that is load-bearing
  *
- * Every statement authored before P2 carries no `chargeWhen` and most carry no
+ * Most statements carry no `chargeWhen`, and most carry no
  * `chargeDelta` either. Giving both a single default would change what shipped
  * content does:
  *
  * * A **firing** rule has always spent 1 when its `chargeDelta` was absent
- *   ("charge burns on service", CMS-26). Defaulting `on_fire` to anything else
+ *   ("charge burns on service"). Defaulting `on_fire` to anything else
  *   would silently make every triggered Token in the game free to run.
- * * A **per-cycle** rule has never spent anything, because the moment did not
- *   exist. Defaulting it to −1 would silently start wearing down every Token
+ * * A **per-cycle** rule has never spent anything. Defaulting it to −1 would silently start wearing down every Token
  *   carrying an aura — content the owner authored on the understanding that an
  *   aura is free.
  *
@@ -120,8 +109,7 @@ export function chargeMomentsFor(hasTrigger, keywordId = null) {
 export const DEFAULT_CHARGE_DELTA_BY_MOMENT = Object.freeze({
     [CHARGE_MOMENT.ON_FIRE]: -1,
     [CHARGE_MOMENT.PER_CYCLE]: 0,
-    // A promotion costs its Token one charge unless the author says otherwise
-    // (PR-6: the Token is the whole price).
+    // A promotion costs its Token one charge unless the author says otherwise.
     [CHARGE_MOMENT.ON_PROMOTE]: -1
 });
 
@@ -130,7 +118,7 @@ export const DEFAULT_CHARGE_DELTA_BY_MOMENT = Object.freeze({
  *
  * Derived from the statement's own shape when unauthored: a rule with a `When`
  * clause fires, and a rule without one does not. That inference is what lets
- * every statement written before this phase keep behaving exactly as it did.
+ * every statement without `chargeWhen` keeps its behaviour.
  */
 export function chargeMomentOf(statement) {
     // A Promotes rule spends at one moment only, whatever else it carries.
@@ -148,15 +136,7 @@ export function chargeMomentOf(statement) {
  * An authored `chargeDelta` wins, `0` included — with one exception.
  *
  * ## ⚠️ A Promotes rule's number counts only once its moment is authored
- * `makeStatement` stamps `chargeDelta: 0` on every keyword that cannot fire,
- * and the P2 migration built both shipped Academies through it. Reading that 0
- * as authored would make every Academy promote heroes for free, forever — the
- * opposite of PR-6. Nothing before P3 could author a promotion price, so an
- * absent `chargeWhen` means "never set": the default, one charge. Typing a cost
- * in the strip writes `chargeWhen` beside it, and from then on the number is
- * the author's — an unlimited academy is a deliberately written 0. This is the
- * same opt-in rule `Charges.statementCycleCost` already applies to per-cycle
- * costs, for the same reason.
+ * `makeStatement` stamps `chargeDelta: 0` on every keyword that cannot fire. Reading that 0 as authored would make every Academy promote heroes for free, forever, so an absent `chargeWhen` means "never set": the default, one charge. Typing a cost in the strip writes `chargeWhen` beside it, and from then on the number is the author's — an unlimited academy is a deliberately written 0. `Charges.statementCycleCost` applies the same opt-in rule to per-cycle costs.
  *
  * @param {object} statement
  * @param {number} fallback  used when a moment declares no default

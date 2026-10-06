@@ -1,18 +1,12 @@
 // Fantasy Guild - Formula Registry
-// Centralized game math for easy tuning and hot-swapping.
-// All balance-tunable formulas and constants live here.
-// Change a value → reload → every system picks it up. No save migration needed.
 
-// =============================================================================
 // SKILL & TASK FORMULAS
-// =============================================================================
 
 /**
  * Skill speed factor: how much each skill level contributes to work speed.
  * Written by `HeroRehydration.updateHeroSkillModifiers` (one SPEED modifier per
  * held skill); read by `BoardRunner.heroSpeedFactor`, which divides the tile's
- * WORK_TIME by it. ⚠️ This line used to name `CombatFormulas` as a second
- * reader; it has never read SPEED (CR2-072). Attack speed is not on this axis.
+ * WORK_TIME by it. Attack speed is not on this axis.
  * Example: Level 10 → 10 * 0.005 = 0.05 = +5% speed
  */
 export const SKILL_SPEED_FACTOR = 0.005;
@@ -23,17 +17,6 @@ export const SKILL_SPEED_FACTOR = 0.005;
  *
  * **A flat per-level ramp, and that is all it is.** Every level is worth the
  * same 0.5%; there are no steps, thresholds or breakpoints anywhere in it.
- *
- * 📌 **FUTURE WORK, NOT IMPLEMENTED — recorded from the owner 2026-08-25:**
- *
- * > *"Eventually there will be milestones — getting a skill to 25, 50, 75 and
- * > 99 each give a 5% speed boost. Not being implemented today."*
- *
- * ⚠️ **That is a plan, not a description of this function.** No milestone code
- * exists here or anywhere else, and a level-25 hero is not 5% faster than a
- * level-24 one. Do not read the quote above as documentation of current
- * behaviour. Whoever builds it should decide deliberately whether the
- * milestones replace this ramp or stack on top of it — stacked, they compound.
  *
  * @param {number} level - Skill level
  * @returns {number} Additive speed bonus (e.g. 0.05 for level 10)
@@ -54,15 +37,10 @@ export function toolSpeedMultiplier(speedBonus) {
     return 1 / (1 - reduction);
 }
 
-// =============================================================================
-// COMBAT FORMULAS — 7-Stat Engine (combat_formula_spec.md)
-// Structures are owner-locked; ⚠ constants are first-calibration values
-// verified by tools/curve_explorer.html. Crit, Armor, and weapon-speed
-// archetypes are hooks only for now (later implementation pass).
-// =============================================================================
+// COMBAT FORMULAS — 7-Stat Engine. ⚠ marks first-calibration values (tools/curve_explorer.html).
 
 /**
- * The growth curve — one dial for the whole game (spec §1).
+ * The growth curve — one dial for the whole game.
  * G(L) = 1.045^(L−1); G(1) = 1.0, G(99) ≈ 75×.
  */
 export const GROWTH_RATE = 1.045;
@@ -93,9 +71,8 @@ export const HERO_ATTACK_INTERVAL_MS = 2500;
 export const ENEMY_ATTACK_INTERVAL_MS = 3000;
 
 /**
- * Innate Block from Defense skill (owner-approved deviation 2026-07-12:
- * spec has Block as gear-only; owner chose a small innate chance so Block
- * exists before the gear pass). 0.125%/level → ~12.4% at Defense 99.
+ * Innate Block from Defense skill (the spec has Block gear-only).
+ * 0.125%/level → ~12.4% at Defense 99.
  * Gear block will slot into the same term, amplified ×(1 + Defense/200).
  */
 export const INNATE_BLOCK_PER_DEFENSE = 0.125;
@@ -149,7 +126,7 @@ export const RPS_HIT_SHIFT = 7;
 export const RPS_DAMAGE_SHIFT = 0.10;
 
 /**
- * Rock-Paper-Scissors matchup table (owner-locked 2026-07-10):
+ * Rock-Paper-Scissors matchup table:
  * Melee > Ranged > Magic > Melee — warriors close on archers,
  * archers pick off mages, mages melt armored warriors.
  */
@@ -203,34 +180,18 @@ export function enemyCombatBudget(level, budgetScale = 1.0) {
 }
 
 /**
- * ⚠️ **RETIRED with the Defence skill** (Skill & Class rework, Phase 2).
- *
- * On kill, the weapon skill used to take the full award and Defence a third
- * again — 4/3 of the award spread across two bars. There is one bar now, and
- * it takes exactly the award. Left here as a tombstone so the old 4/3 pacing
- * is findable if combat levelling ever reads slow.
- */
-// export const DEFENSE_XP_SHARE = 1 / 3;
-
-/**
  * The global status-effect clock (status_effects_concept.md §1B): every
  * periodic status ticks once per interval, in combat and out of it.
  */
 export const STATUS_TICK_INTERVAL_MS = 5000;
 
-// --- Legacy combat constants (dormant pre-rework combat path only) ---
+// --- Legacy combat constants (read only by utils/CombatFormulas.js) ---
 
 /** @deprecated legacy attack-speed model; live combat uses fixed intervals */
 export const BASE_ATTACK_SPEED_MS = 3000;
 export const MIN_ATTACK_SPEED_MS = 500;
 
-// `heroAttackSpeed()`, `defenceReduction()` and `rpsMultiplier()` were deleted
-// on 2026-08-24 (CR2-078). All three were shims naming a "legacy combat path"
-// that no longer exists; none had a caller.
-
-// =============================================================================
 // REGEN
-// =============================================================================
 
 /** Regen configuration: amount healed per interval */
 export const REGEN_CONFIG = {
@@ -238,20 +199,14 @@ export const REGEN_CONFIG = {
     energy: { amount: 1, interval: 5.0 },   // 1 Energy every 5 seconds
 };
 
-// =============================================================================
-// XP FORMULAS (delegates to XPCurve.js — kept there for pre-computed table)
-// =============================================================================
+// XP FORMULAS
 
-/** Global modifier to scale combat XP awards based directly on the enemy's Combat Stat. */
+/** Unread: nothing multiplies combat XP by this. */
 export const GLOBAL_COMBAT_XP_MULTIPLIER = 1.0;
 
 /** Max skill level */
 export const MAX_SKILL_LEVEL = 99;
 
-/** XP curve formula constant: floor(level + 300 * 2^(level/7)) / 4 cumulative */
-// The actual XP curve implementation lives in XPCurve.js, which builds a
-// pre-computed table at module load; `levelFromXp` reads it (CR3-258, which
-// closed CR2-082). These two constants are documentation only; nothing
-// imports them.
+/** XP curve formula constant: floor(level + 300 * 2^(level/7)) / 4 cumulative. Documentation only: nothing imports XP_CURVE_*; XPCurve.js builds the table. */
 export const XP_CURVE_BASE = 300;
 export const XP_CURVE_EXPONENT_DIVISOR = 7;

@@ -1,4 +1,4 @@
-// Fantasy Guild — Guild Hall upgrade definitions & the upgrade web (B9, TL-23).
+// Fantasy Guild — Guild Hall upgrade definitions & the upgrade web.
 
 /**
  * Heroes a guild starts with, before any Roster Size rank is bought.
@@ -9,39 +9,23 @@
  */
 export const ROSTER_BASE = 0;
 
-/**
- * ⭐ The most heroes a guild can have: **8** (owner, 2026-09-21 — replaces
- * D-251's twelve). Matches the eight flag colours (FP-82). A save that already
- * holds more keeps every one of them; it just cannot recruit (owner).
- */
+/** The most heroes a guild can have. A save already holding more keeps them all but cannot recruit. */
 export const ROSTER_MAX = 8;
 
 /**
- * The roster cap for a given `roster_size` rank — the ONE definition (CR2-193).
- *
- * Two places used to work this out independently: `GuildUpgradeManager.recompute`
- * (which writes `progress.rosterLimit`) and `HeroLifecycle.getRosterLimit`'s
- * fallback for a save with no `rosterLimit` written yet. The fallback left
- * `ROSTER_BASE` out entirely, so the moment ROSTER_BASE stops being 0 the two
- * disagree by the whole base and `isRosterFull()` refuses a recruit the player
- * has already paid for. Both now call this.
+ * The roster cap for a given `roster_size` rank. `GuildUpgradeManager.recompute` and
+ * `HeroLifecycle.getRosterLimit` both call this so they cannot disagree about ROSTER_BASE.
  */
 export function rosterLimitForRank(rank) {
-    // Clamped: a save that bought ranks 9–12 under the old twelve-hero track
-    // still caps at ROSTER_MAX.
+    // Clamped: a save with ranks above ROSTER_MAX still caps at ROSTER_MAX.
     return Math.min(ROSTER_MAX, ROSTER_BASE + (rank || 0));
 }
 
 /**
  * The art each upgrade track draws on the Guild Hall screen.
  *
- * ⚠️ Token art lives in per-family folders under `public/assets/tokens/`
- * (`upgrade/`, `chest/`, …). These paths used to point at the old flat
- * folder, so every upgrade but the Hall drew a broken image (Token Lifecycle
- * feedback Q7, FB-40). `UpgradeSprites.test.js` checks each file exists.
- *
- * `flag_radius` has no art of its own (`token_banner_wood.png` exists
- * nowhere): it borrows the plain hero flag the mat draws.
+ * ⚠️ Token art lives in per-family folders under `public/assets/tokens/`; `UpgradeSprites.test.js` checks each file exists.
+ * `flag_radius` has no art of its own: it borrows the plain hero flag the mat draws.
  */
 export const UPGRADE_SPRITES = {
     roster_size: '/assets/tokens/upgrade/token_bunk_bed.png',
@@ -50,18 +34,11 @@ export const UPGRADE_SPRITES = {
     guild_hall: '/assets/tokens/token_guildhall.png',
     wishing_well: '/assets/tokens/upgrade/token_well_wishing.png',
     flag_radius: '/assets/ui/flag/hero_flag_base.png',
-    // The quest Token's own art (B6.1): the board that makes the quests.
     notice_board: '/assets/ui/quest_board.png'
 };
 
 /**
- * ⭐ **The Guild Hall upgrades are a web around the Hall** (B9, TL-23, FB-39).
- *
- * The Hall sits at the centre of its screen; every upgrade is a node placed
- * freely around it, joined to other nodes by lines. There are no squares and no
- * tile indices any more — the 7×7 upgrade grid and its cardinal-neighbour
- * unlock went with this slice. An upgrade is addressed by its id, everywhere.
- *
+ * The upgrades are a web around the Hall (`HALL_NODE`), addressed by id.
  * Each upgrade carries:
  *   `node`  — `{ x, y }` in a unit space centred on the Hall (0, 0); +x is
  *             right, +y is down. The first ring sits about 0.5 out. The screen
@@ -69,19 +46,15 @@ export const UPGRADE_SPRITES = {
  *   `links` — ids of the nodes it is joined to, or `HALL_NODE` for the Hall.
  *             A link is a line, so it counts from both ends (see
  *             {@link getUpgradeLinks}); each is written once, on the outer node.
- *
- * Links and positions are set here in code for now; the CMS gets them later
- * (B9 web unlock).
  */
 export const HALL_NODE = 'hall';
 
 /**
- * Guild Hall upgrades are paid in items, never gold (SP-65, slice 2.1).
+ * Guild Hall upgrades are paid in items, never gold.
  *
  * Each upgrade carries `prices`: one entry per rank, where `prices[n - 1]` is
  * what rank n costs, as a list of `{ itemId, quantity }`. An empty list is
- * free. Every track uses the same placeholder today (TL-5: low and simple,
- * rank n costs 10·n Oak Wood), but the shape lets any track ask for its own
+ * free. Every track uses the same placeholder today (rank n costs 10·n Oak Wood), but the shape lets any track ask for its own
  * items later.
  */
 export const PLACEHOLDER_PRICE_ITEM = 'item_oak_wood';
@@ -106,8 +79,7 @@ export function placeholderPrices(maxRank, {
 }
 
 /**
- * Notice Board ranks (B6.1, TL-18): +1 quest per rank from the base of 2 to
- * the owner's 5, so three ranks. A rank past the ceiling would buy nothing.
+ * Notice Board ranks: +1 quest per rank from the base of 2 to 5, so three ranks.
  */
 export const NOTICE_BOARD_MAX_RANK = 3;
 
@@ -116,7 +88,6 @@ export const GUILD_UPGRADES = [
         id: 'bank_tabs',
         name: 'Bank Tabs',
         description: 'Unlock another Bank tab for organizing items in storage.',
-        // Beyond Bank Slots on the left, as it sat beyond it on the old grid.
         node: { x: -0.95, y: 0 },
         links: ['bank_slots'],
         maxRank: 15,
@@ -143,7 +114,7 @@ export const GUILD_UPGRADES = [
         description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
         node: { x: 0, y: -0.5 },
         links: [HALL_NODE],
-        // One hero per rank, 0 to ROSTER_MAX (8 since 2026-09-21; was 12).
+        // One hero per rank, 0 to ROSTER_MAX.
         maxRank: ROSTER_MAX - ROSTER_BASE,
         prices: placeholderPrices(ROSTER_MAX - ROSTER_BASE, { freeFirstRank: true }),
         statLabel: rank => rank === 1 ? '1 hero' : `${rank} heroes`,
@@ -154,8 +125,7 @@ export const GUILD_UPGRADES = [
         id: 'flag_radius',
         name: 'Scouting Flags',
         description: 'Increases the radius heroes look for work from their flags.',
-        // Between Bunk Beds and Bank Slots: either one bought opens it, as
-        // either grid neighbour did before B9.
+        // Between Bunk Beds and Bank Slots: either one bought opens it.
         node: { x: -0.55, y: -0.55 },
         links: ['roster_size', 'bank_slots'],
         maxRank: 5,
@@ -177,9 +147,8 @@ export const GUILD_UPGRADES = [
         sprite: UPGRADE_SPRITES.wishing_well
     },
     {
-        // B6.1 (TL-18, FB-41): each rank lets the Guild Hall keep one more
-        // bounty quest on the mat. The base and the ceiling are Mat Tuner rows
-        // (`questCap`, `questCapMax`: 2 and 5), read by `QuestTokens.questCap`.
+        // Each rank lets the Guild Hall keep one more bounty quest on the mat.
+        // The base and the ceiling are Mat Tuner rows (`questCap`, `questCapMax`), read by `QuestTokens.questCap`.
         id: 'notice_board',
         name: 'Notice Board',
         description: 'The Guild Hall keeps one more quest on the mat at a time.',
@@ -231,7 +200,7 @@ function rankIn(ranks, id) {
 
 /**
  * Every node joined to an upgrade by a line: the ones it names in `links`,
- * plus every upgrade that names it (a line counts from both ends, TL-23). May
+ * plus every upgrade that names it (a line counts from both ends). May
  * include {@link HALL_NODE}.
  */
 export function getUpgradeLinks(upgradeId) {
@@ -264,13 +233,10 @@ export function getUpgradeWebLinks() {
 }
 
 /**
- * The kinds of lock an upgrade can carry. The owner intends skill gates later
- * ("Requires Blacksmithing 5"), which is why the kind is carried alongside the
- * text rather than left implicit — the UI shows some kinds and deliberately
- * stays quiet about others.
+ * The kinds of lock an upgrade can carry. The kind rides alongside the text because the UI shows some kinds and stays quiet about others.
  */
 export const LOCK_KIND = {
-    /** No linked node bought yet — the web already shows this (TL-23). */
+    /** No linked node bought yet — the web already shows this. */
     LINK: 'link',
     /**
      * A gate an upgrade sets itself through `gate(ranks)` — meant for skill
@@ -285,7 +251,7 @@ export const LOCK_KIND = {
  * can be (rank and price aside).
  *
  * Its own `gate(ranks)` is asked first — an upgrade may refuse however its
- * links stand. Then the web rule (TL-23): it opens once **any** node linked to
+ * links stand. Then the web rule: it opens once **any** node linked to
  * it has rank ≥ 1, or straight away when it is linked to the Hall.
  */
 export function getLockDetail(upgradeId, ranks = {}) {
@@ -308,7 +274,7 @@ export function getLockDetail(upgradeId, ranks = {}) {
     return { kind: LOCK_KIND.LINK, text: 'Path to this upgrade is locked' };
 }
 
-/** True when an upgrade may be bought, rank and price aside (TL-23). */
+/** True when an upgrade may be bought, rank and price aside. */
 export function isUpgradeAccessible(upgradeId, ranks = {}) {
     return getLockDetail(upgradeId, ranks) === null;
 }

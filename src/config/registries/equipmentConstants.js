@@ -1,21 +1,17 @@
 // Fantasy Guild - Equipment Constants
 //
-// [C-7] This file used to hardcode six named slot instances (hand1, hand2,
-// hat, chest, trinket1, trinket2). It is now a thin FACADE over the authored
-// category table in `equipmentCategories.js` — the tables that used to live
-// here were exactly the thing D-54 forbids, because adding a gear type meant
-// editing the engine.
+// A thin FACADE over the authored category table in `equipmentCategories.js`.
 //
-// The model in two layers, unchanged in spirit:
+// The model in two layers:
 //
 //  - **Categories** are what an ITEM declares via its `equipSlot` field
 //    (hand / hat / chest / trinket / food / drink / consumable). An item knows
 //    what kind of thing it is.
-//  - **The grid** is what a HERO carries: nine generic slots (D-7), any item
-//    in any slot. What constrains a loadout is the per-category cap (D-55),
+//  - **The grid** is what a HERO carries: nine generic slots, any item
+//    in any slot. What constrains a loadout is the per-category cap,
 //    never the slot's position.
 //
-// A "slot" is therefore an INDEX (0-8) now, not a name.
+// A "slot" is an INDEX (0-8), not a name.
 
 import { getItem } from './itemRegistry.js';
 import {
@@ -97,10 +93,8 @@ export function slotsInCategory(hero, categoryId) {
  * The slot holding the hero's primary weapon — the FIRST grid slot holding a
  * weapon-category item, or null when unarmed.
  *
- * Combat needs to name a single weapon to know which style an attack uses. The
- * old rule was "the first occupied hand"; with generic slots the equivalent is
- * "the first weapon in grid order", which keeps single-weapon behaviour
- * identical and stays well-defined with two.
+ * Combat needs to name a single weapon to know which style an attack uses.
+ * With two weapons the choice stays well-defined: the first in grid order.
  */
 export function getPrimaryWeaponSlot(hero) {
     const entry = getEquippedEntries(hero).find(e => isWeaponCategory(e.category));

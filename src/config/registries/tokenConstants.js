@@ -1,6 +1,6 @@
 // Fantasy Guild — Token vocabulary
 //
-// ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (CR2-010).
+// ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY.
 // `cms/src/utils/constants.js` takes `TOKEN_TYPES` and `TOKEN_RARITIES`, and
 // `cms/src/components/layout/SupplyChainColumn.jsx` takes `OUTPUT_CURRENCIES`,
 // by relative path. The CMS is a separate app: `npm run build` does not
@@ -16,44 +16,25 @@
 /**
  * The canonical sets a Token's classification fields may draw from.
  *
- * ## Why this exists (CMS rework Phase 0, CMS-89)
- * `tokenType` and `rarity` were free strings: every value in
- * `data/tokens.json` was authored by hand with nothing declaring which values
- * are legal. That was survivable while Tokens were hand-edited JavaScript and
- * one person held the list in their head. It stops being survivable the moment
- * the CMS offers these as dropdowns — CMS-5 requires the CMS to read its
- * vocabulary **from the game**, never to keep a second copy, because a second
- * copy is exactly how the old CMS ended up offering skills (`industry`,
+ * ## Why this exists
+ * `tokenType` and `rarity` are closed vocabularies. The CMS must read its vocabulary **from the game**,
+ * never keep a second copy — a second copy is how the old CMS ended up offering skills (`industry`,
  * `culinary`, `nautical`) that the game had never heard of.
  *
  * ## Extending it
  * Adding a value here makes it immediately available in the CMS's Token editor
  * with no CMS-side change — the same game-defines / CMS-provides-content split
- * CMS-32 sets out for trigger events. A Token category that does not exist yet
- * (Triggered Tokens, CMS-29) is deliberately absent until the runtime supports
- * it, so the CMS can never offer a category the board cannot run.
+ * as trigger events. A Token category the runtime does not support yet is
+ * deliberately absent, so the CMS can never offer a category the board cannot run.
  */
 
 /**
  * What a Token *is*, mechanically.
  *
- * ⚠️ **Corrected 2026-08-20 (CR2-039).** This comment used to say the list was
- * "load-bearing at runtime", naming `BoardCombat.js` and `RecipeResolver.js` as
- * readers. **Neither imports this file, and nothing in the running game does.**
- * The engine compares bare strings instead (`def.tokenType === 'enemy'`).
- *
- * ⚠️ **Re-checked 2026-08-26 (CR2-010).** The correction above is still true of
- * `TOKEN_TYPES` — the only readers of *this constant* are the CMS and
- * `ContentRules.test.js`. But its last sentence used to generalise that to the
- * whole file ("the only consumers of this file are…") and that is now wrong:
- * `systems/core/ContentAudit.js` imports `isOutputCurrency` from here at
- * runtime. Deleting this file would break the game's build today. Scope the
- * claim to the constant, not the file.
- *
- * So treat it as **authoring vocabulary**: the closed list the CMS offers and
- * the test validates `data/tokens.json` against. Whether the engine ought to
- * import these constants — so a mistyped `'enemey'` fails loudly rather than
- * silently — is a real open question, but it is not what happens today.
+ * ⚠️ **Nothing in the running game imports this constant** — the engine compares bare strings
+ * (`def.tokenType === 'enemy'`). Its only readers are the CMS and `ContentRules.test.js`.
+ * Treat it as **authoring vocabulary**: the closed list the CMS offers and the test validates
+ * `data/tokens.json` against.
  */
 export const TOKEN_TYPES = Object.freeze([
     'resource',   // creates from nothing (D-51)
@@ -70,26 +51,17 @@ export const TOKEN_TYPES = Object.freeze([
 ]);
 
 /**
- * How valuable a Token is meant to feel — **real, but essentially cosmetic**
- * (owner, 2026-08-18). It signals a more valuable drop to the player, and is
+ * How valuable a Token is meant to feel — **real, but essentially cosmetic**.
+ * It signals a more valuable drop to the player, and is
  * *not* necessarily connected to drop chance.
  *
- * ⚠️ Corrected 2026-08-18. This comment used to claim rarity was "drop
- * frequency and nothing more". That was false: nothing anywhere connects
- * rarity to drop chance. What it actually does, verified, is exactly two
- * things:
- *   - set a Token's sell value — `SELL_VALUE` by rarity in `TokenBank.js`,
- *     deleted with gold (Token Lifecycle 9.4), so this is gone
- *   - gates the one-Mythic-placed-at-a-time rule in `Placement.js` (D-177)
+ * ⚠️ Rarity is **not** drop frequency: nothing connects rarity to drop chance. What it does is gate the
+ * one-Mythic-placed-at-a-time rule in `Placement.js`.
  *
  * Rarity is still not a power tier: a Common producer may well outproduce a
  * Rare one, and charges are an independent axis.
  *
- * ⚠️ **The array order IS the tier order** — common → mythic, cheapest to most
- * valuable. `epic` was inserted between `rare` and `mythic` on 2026-08-28
- * (economic simulator rework P2; owner ruling 5, plan §13.4) to make the ladder
- * five tiers. No shipped Token is `epic` yet — the vocabulary exists so the CMS
- * can offer it; tagging content is a separate authoring pass.
+ * ⚠️ **The array order IS the tier order** — common → mythic, cheapest to most valuable.
  */
 export const TOKEN_RARITIES = Object.freeze([
     'common',
@@ -99,35 +71,16 @@ export const TOKEN_RARITIES = Object.freeze([
     'mythic',
 ]);
 
-/*
- * ⚠️ **`TOKEN_THEMES` / `isTokenTheme` were removed here on 2026-08-24
- * (CR2-125, CR2-039).** `theme` was never a feature — `concept_audit.md` §A
- * rules it NOT REAL — but it survived as a two-value vocabulary
- * (`woodland`, `riverlands`) that no authored content ever used, plus a CMS
- * dropdown offering those values. Every Token and Map in `data/` carried
- * `theme: ""`.
- *
- * Before removing it, all three sites that read the field were checked and
- * each was found inert: `mapRegistry.listMaps()` and `Cartographer.rollBurst()`
- * tested for `theme === 'guild_hall'`, and both tests were already covered by
- * the conditions beside them (`price > 0`, and the `map_guild_hall` id checks);
- * `TokenInspection.jsx` folded the value into its tag chips, where an empty
- * string never rendered.
- *
- * Do not reintroduce this field. If Maps ever need to be grouped, group them
- * by something the engine actually reads.
- */
-
 /**
- * What a production output may pay out **instead of an item** (D-141).
+ * What a production output may pay out **instead of an item**.
  *
- * ⚠️ Gold is retired (SP-65) and `CurrencyManager` deleted (Token Lifecycle
- * 9.4): `BoardRunner` now pays nothing for an output carrying `currency`. The
+ * ⚠️ Gold is retired: `BoardRunner` now pays nothing for an output carrying
+ * `currency`. The
  * list stays because the CMS Outputs column, the content audit and the
  * `market` type derivation still read it.
  *
- * Gold is the only entry because gold is the only currency the game has —
- * Influence was cut (owner decision 2026-08-19, CR2-093). Adding a currency
+ * Gold is the only entry.
+ * Adding a currency
  * later is one row here plus a starting balance in `StateSchema`.
  *
  * @type {ReadonlyArray<{id: string, label: string}>}
@@ -152,7 +105,7 @@ export function isTokenRarity(value) {
 }
 
 /**
- * The kinds of Foundation a Token can be (Token Lifecycle, roadmap v1 §3.1).
+ * The kinds of Foundation a Token can be.
  *
  * A Token with `foundation: { kind, skill }` is bought at the Shop and built on
  * with a recipe whose `foundationKinds` includes its `kind`. This is the one
@@ -168,8 +121,8 @@ export function isFoundationKind(value) {
 }
 
 /**
- * ⭐ **A self-transforming Token rolls a chance** (owner decision TL-12,
- * feedback FB-15). `turns: { into, everyMs, chance }` on the Token type:
+ * ⭐ **A self-transforming Token rolls a chance.**
+ * `turns: { into, everyMs, chance }` on the Token type:
  *
  * * `everyMs` — the roll cycle. Once per `everyMs` the Token rolls.
  * * `chance`  — the percent chance (0 < chance ≤ 100, like every other
@@ -180,8 +133,7 @@ export function isFoundationKind(value) {
  * the Coast's numbers to turn back. Authored once, on the Coast.
  *
  * An absent field reads as its default here: 1 minute and 30%, so a Coast
- * flips roughly every three minutes each way. `lastsMs` (the old fixed "stays
- * turned for") is retired: nothing reads it.
+ * flips roughly every three minutes each way.
  *
  * This is the one place the defaults live: the engine (`TimedChanges`), the
  * inspection lines, the content audit and the CMS's new-block factory all read

@@ -11,7 +11,7 @@ import {
 /**
  * JobRegistry — **the class tree is the skill unlock tree.**
  *
- * ## ⭐ Promotion keeps every foundation skill (TL-7, owner 2026-09-25)
+ * ## ⭐ Promotion keeps every foundation skill
  * A hero on any job holds **all nine foundation skills plus the job's own
  * non-foundation skills** (`getJobSheet`). Promotion only ever adds (and,
  * when re-training across branches, swaps) non-foundation skills:
@@ -27,16 +27,13 @@ import {
  * ```
  *
  * ## ⚠️ The `skills` arrays below are still six wide
- * They are the job's authored LIST — the old two-out-two-in design — kept
- * because the promotion gate reads its foundation picks (a Knight gates on the
- * Mining and Smithing it lists, D-262) and `JobTree.test.js` checks its layer
- * shape. A listed foundation skill is no longer the only one a hero holds:
- * every foundation skill is. This is the least invasive form of TL-7; the
- * promotion overhaul (SP-58) is where the lists themselves get redesigned.
+ * They are the job's authored LIST, kept because the promotion gate reads its
+ * foundation picks (a Knight gates on the Mining and Smithing it lists) and
+ * `JobTree.test.js` checks its layer shape. A listed foundation skill is no
+ * longer the only one a hero holds: every foundation skill is.
  *
- * ⚠️ *Slice 1.1 leftover:* the **Warlord** still lists `construction`, which
- * moved from its signature to the foundation layer, so it has no signature
- * skill until SP-58.
+ * ⚠️ The **Warlord** still lists `construction`, which is a foundation skill,
+ * so it has no signature skill.
  *
  * ## Each job declares its LIST, not its deltas
  * What a promotion *grants* and *removes* is derived by diffing the held sheets
@@ -45,8 +42,7 @@ import {
  * This is deliberately the opposite of storing the deltas. Deltas are what the
  * player experiences, but sheets are what everything else needs to know, and a
  * sheet cannot silently drift out of agreement with its own parent. **Re-parent
- * a job and its deltas recompute themselves** — which is the property the
- * owner's "the content is a first draft" constraint asks for.
+ * a job and its deltas recompute themselves**.
  *
  * ## ⚠️ Everything else is derived
  * Which skill is the combat one, which is the signature, which are foundation —
@@ -55,7 +51,7 @@ import {
  * array**, so moving a skill between layers needs no edit in this file at all.
  *
  * ## ⚠️ This list is a first draft
- * *(Owner, 2026-08-12.)* Which jobs exist, what each holds, and the shape of
+ * Which jobs exist, what each holds, and the shape of
  * the tree are all expected to change. `JobTree.test.js` asserts the structural
  * rules — every promoted list exactly 6, foundation pairs subset of the parent's,
  * signatures unique, coverage even — so the tree can be rearranged freely and
@@ -70,17 +66,17 @@ export const JOB_TIERS = { RECRUIT: 0, BASE: 1, ADVANCED: 2 };
  *
  * ⚠️ **Every number here is a placeholder for the balance pass.**
  * `skillLevel` is the threshold each *carried-forward* skill must reach
- * (D-262): to become a Knight you need the Mining and Smithing a Knight keeps,
+ * to become a Knight you need the Mining and Smithing a Knight keeps,
  * not an arbitrary hero level. That shape is settled; the values are not.
  *
- * ⚠️ **Re-training uses the same cost as entering the job.** D-248 makes
- * re-training the only respec the player has, so its price is the single most
+ * ⚠️ **Re-training uses the same cost as entering the job.** It is
+ * the only respec the player has, so its price is the single most
  * important balance dial in the rework — and the roadmap's advice is to ship it
  * cheap and raise it, because a forgiving system is far easier to tighten than
  * a punishing one is to recover from.
  */
 export const PROMOTION_COSTS = {
-    // ⚠️ Gold and materials retired (Promotes rule P3, PR-6): a promotion is
+    // ⚠️ Gold and materials are retired: a promotion is
     // paid for with a charge of the Token whose Promotes rule names the job.
     // The skill threshold — the qualification — is all this table holds now.
     [JOB_TIERS.BASE]: { skillLevel: 10 },
@@ -159,9 +155,6 @@ export const JOBS = {
     },
     paladin: {
         id: 'paladin', name: 'Paladin', tier: JOB_TIERS.ADVANCED, parent: 'cleric',
-        // D-268 moved this job's second shared skill from `leadership` to
-        // `enchanting` — consecrating gear reads at least as well, and
-        // Leadership was being granted by more than half the tree.
         description: 'Scribed scrolls, consecrated gear, and scripture that holds.',
         icon: '📜',
         skills: ['smithing', 'cooking', 'melee', 'faith', 'enchanting', 'inscription']
@@ -174,15 +167,13 @@ export const JOBS = {
     },
     scout: {
         id: 'scout', name: 'Scout', tier: JOB_TIERS.ADVANCED, parent: 'ranger',
-        // D-268: second shared moved `leadership` → `crime`. Scouting is a
-        // stealth job, so this reads better than the skill it replaced.
         description: 'Forward camps and towers that supercharge whatever they sit beside.',
         icon: '⛺',
         skills: ['logging', 'crafting', 'ranged', 'nature', 'crime', 'survival']
     },
     merchant: {
         id: 'merchant', name: 'Merchant', tier: JOB_TIERS.ADVANCED, parent: 'rogue',
-        // ⚠️ The only job that can run a Market (D-259), which makes this
+        // ⚠️ The only job that can run a Market, which makes this
         // promotion an economic turning point rather than a stat change.
         description: 'Markets and charters that turn surplus goods into gold.',
         icon: '💰',
@@ -202,8 +193,6 @@ export const JOBS = {
     },
     astromancer: {
         id: 'astromancer', name: 'Astromancer', tier: JOB_TIERS.ADVANCED, parent: 'wizard',
-        // D-268: second shared moved `leadership` → `nature`. Celestial cycles
-        // and seasons sit closer to Nature than to banners and drills.
         description: 'Lenses, star-charts and beacons that bend what the world drops.',
         icon: '🔭',
         skills: ['crafting', 'cooking', 'magic', 'enchanting', 'nature', 'astrology']
@@ -248,7 +237,7 @@ export function getPromotionsFrom(jobId) {
  * The job's **listed** skills — its `skills` array as authored (nine for a
  * Recruit, six for a promoted job).
  *
- * ⚠️ Since TL-7 this is NOT everything a hero on the job holds; that is
+ * ⚠️ This is NOT everything a hero on the job holds; that is
  * `getJobSheet`. The list still matters: its layer shape is what the tree's
  * design rules check, and its foundation picks are what the promotion gate
  * asks for (`getPromotionGateSkills`).
@@ -259,11 +248,11 @@ export function getJobSkills(jobId) {
 
 /**
  * Every skill a hero on this job **holds**: all the foundation skills, plus the
- * job's own non-foundation skills (TL-7, owner 2026-09-25).
+ * job's own non-foundation skills.
  *
  * Promotion never removes a foundation skill, so a promoted hero can still
  * build, farm and explore. The sheet widens with each tier — 9 for a Recruit,
- * 11 for a base class, 13 for an advanced job. Derived, so a job's list needs
+ * 11 for a base class, 13 for an advanced job (12 for the Warlord). Derived, so a job's list needs
  * no edit when the foundation layer grows; a foundation skill a job lists is
  * simply already held.
  */
@@ -288,7 +277,7 @@ export function getJobSignatureSkill(jobId) {
     return getJobSkillsByLayer(jobId, SKILL_LAYERS.SIGNATURE)[0] || null;
 }
 
-/** Whether a hero on this job can fight at all (D-249). */
+/** Whether a hero on this job can fight at all. */
 export function jobCanFight(jobId) {
     return getJobCombatSkill(jobId) !== null;
 }
@@ -305,12 +294,12 @@ export function grantsOf(jobId) {
 }
 
 /**
- * What that promotion **removes**, diffing the held sheets. Since TL-7 this is
+ * What that promotion **removes**, diffing the held sheets. This is
  * empty for every promotion down the tree: no foundation skill is ever
  * removed, and every advanced job keeps its parent's combat and shared skills.
  * Re-training ACROSS branches (a Knight becoming a Druid) still removes
  * non-foundation skills; `PromotionSystem.promote` banks those at their level
- * (D-71).
+ * level.
  */
 export function removesOf(jobId) {
     const job = JOBS[jobId];
@@ -326,12 +315,12 @@ export function getPromotionCost(jobId) {
 
 /**
  * The skills a promotion gates on: those carried forward from the parent
- * (D-262). To become a Knight you need the Mining and Smithing a Knight keeps.
+ * To become a Knight you need the Mining and Smithing a Knight keeps.
  *
- * ⚠️ Deliberately diffs the LISTED skills, not the held sheets (TL-7). Every
+ * ⚠️ Deliberately diffs the LISTED skills, not the held sheets. Every
  * sheet now holds all nine foundation skills, so diffing sheets would gate
  * every promotion on all nine; the listed foundation picks keep the gate
- * asking for the job's own trades, exactly as before TL-7.
+ * asking for the job's own trades.
  */
 export function getPromotionGateSkills(jobId) {
     const job = JOBS[jobId];
@@ -351,5 +340,5 @@ export function getJobLineage(jobId) {
     return chain;
 }
 
-/** How many skills a promoted job LISTS (not holds, since TL-7). Re-exported so consumers need one import. */
+/** How many skills a promoted job LISTS (not how many it holds). Re-exported so consumers need one import. */
 export { HERO_SKILL_SLOTS };
