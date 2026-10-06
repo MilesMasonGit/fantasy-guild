@@ -9,7 +9,7 @@ import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.
  * `foundationKinds`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
- * The rules are the "Validation" list of `docs/token_lifecycle_roadmap_v1.md`
+ * The rules are the "Validation" list of `docs/archive/token_lifecycle_roadmap_v1.md`
  * §3.1, one message per problem.
  *
  * ⚠️ **It only reports.** Nothing here changes how the game runs.

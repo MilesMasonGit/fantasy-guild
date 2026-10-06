@@ -9,7 +9,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
 
 /**
- * ⭐ **Heroes live on the mat** (`docs/hero_movement_roadmap_v1.md`). `Flags.js`
+ * ⭐ **Heroes live on the mat** (`docs/archive/hero_movement_roadmap_v1.md`). `Flags.js`
  * decides what a hero works; this file decides **where the hero is**, and walks
  * them there.
  *

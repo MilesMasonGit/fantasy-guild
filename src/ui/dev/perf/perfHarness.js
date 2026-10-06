@@ -3,7 +3,7 @@
 // ⚠️ DEV BUILDS ONLY. `main.jsx` imports this behind `import.meta.env.DEV`, so
 // a production build never contains it.
 //
-// Plan §4.2 of code_review_v3_master_plan.md. What it measures while running:
+// Plan §4.2 of docs/archive/review_v3/code_review_v3_master_plan.md. What it measures while running:
 //
 // | Metric | How |
 // |---|---|

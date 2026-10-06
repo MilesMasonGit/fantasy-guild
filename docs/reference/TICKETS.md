@@ -1,0 +1,160 @@
+# Tickets — the one backlog
+
+**This is the only place open work is tracked.** Bugs, performance, cleanup,
+tests, owner to-dos and pending design questions all live here. Feature plans
+live in their roadmap docs; when a plan leaves loose ends, they become tickets
+here.
+
+## Rules
+
+- **Add**: next free `T-` number (see the counter), one row, one line. Put
+  detail in the row or link a section of a live doc; never start a new list
+  somewhere else.
+- **Close**: delete the row here and append one line to
+  [`docs/archive/tickets_done.md`](../archive/tickets_done.md):
+  `T-NNN — summary — commit hash — date`.
+- **Status**: `open` (anyone may take it) · `owner` (blocked on the owner —
+  say on what) · `blocked` (say on what) · `ride-along` (do only while already
+  editing that code).
+- **Priority**: **P1** a player can hit it, or a measured miss of a target ·
+  **P2** real cost or risk · **P3** tidy-up.
+- **Origin**: the old ID, so the full write-up can be found in
+  `docs/archive/` (CR3 = code review round 3, `docs/archive/review_v3/`;
+  FB = token lifecycle feedback; FMR = free playmat review, 2026-09-21).
+- **Before closing a batch**: the merge gate in
+  [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
+
+**Next free number: T-097**
+
+---
+
+## 1. Waiting on the owner
+
+| ID | What | Origin |
+|---|---|---|
+| T-001 | **CMS**: Wood Foundation → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, Stone item → `item_stone`; **retire Copper Rubble** (also clears the last failing test). Then Sync to Game. | CR3 summary |
+| T-002 | **CMS**: the Guild Hall Map's loot pool names a missing `token_fallen_oak_tree` (`data/maps.json`). | FB §5 |
+| T-003 | **Run the certification checklist** ([`docs/active/certification_checklist.md`](../active/certification_checklist.md), ~25 min, on your PC). Unblocks T-033, T-034, T-060, T-071. | CR3 summary |
+| T-004 | **Re-save the bench baseline on a quiet machine**: `npm run bench -- --save-baseline`. Current timings were taken under load. | CR3 summary |
+| T-005 | **Uncommitted Atlas work**: `src/state/StateSchema.js` adds a required `atlas` save section (check old saves still load); `data/items/maps.json` was written outside the CMS (a CMS sync may wipe it). Keep, finish or discard? | CR3 summary |
+| T-006 | **Two edited map PNGs** (`map_frozenpeak`, `map_volcano`) uncommitted — commit or discard? | CR3 summary |
+| T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
+| T-008 | **Flag Radius upgrade art**: keep borrowing the plain hero flag, or use the red banner art? | FB §5.2 |
+| T-009 | **Shop price format**: full item row (icon, name, have/need) or the compact icon-and-number pills of the Hall's Upgrade button? | FB §5.3 |
+| T-010 | **Speech bubble audit**: add/remove list for `docs/reference/speech_bubble_lines.md`. | FB §5.5 |
+| T-011 | **Watch by eye** (no agent has seen these on screen): Token hit animations + transform glow, loot flight to the Hall, Shop drawer, countdown badge. | FB §5.6 |
+| T-012 | **Transforms now push neighbouring Tokens** (the playmat plan said only bursts and spawns push). Keep or change? | FMR |
+| T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? | CR3 summary |
+| T-014 | **Starting and quest content is written in engine code**, not the CMS. Move it to content? (Design call, never asked.) | CR3-515 |
+| T-096 | **`data/stations.json`** (7 old station definitions) is loaded by nothing. Delete it? (It is under `data/`, so it needs your OK.) | GDD survey |
+
+## 2. Open work
+
+### Engine
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-015 | P2 | open | Retire `state_changed`, stages 2–3 (stage 1 = `GAME_RESET`, merged). | CR3-305 |
+| T-016 | P2 | open | A loot sweep publishes one event per sprite; batch it. | CR3-255 |
+| T-017 | P2 | open | Kill loot ignores yield / double-loot / bonus-drop rules — reachable, `BONUS_DROP` and `LOOT_MULT` ship. Ruling (A): apply them. | CR3-256 |
+| T-018 | P2 | open | A crafted Token can arrive with unlimited charges — reachable (Copper Woodaxe). Ruling (A) per R3-Q1. | CR3-045 |
+| T-019 | P2 | open | The engine starts a game only when React says so → add `Engine.startSlot`; reuse CR3-100's test as the headless boot test. | CR3-307 |
+| T-020 | P3 | open | Three small rules copied into UI components; move them to the engine, show refusals on screen. | CR3-308 |
+| T-021 | P3 | open | Two ways into the engine; settle on one (R5-Q2 ruling A). | CR3-512 |
+| T-022 | P3 | open | Rate trackers never cleared on load (clear only; "count at drop time" is a separate design call). | CR3-263 |
+| T-023 | P3 | open | `GLOBAL_COMBAT_XP_MULTIPLIER` wired to nothing (value is 1.0, so wiring it is invisible). | CR3-261 |
+| T-024 | P3 | open | `map_burst` and `map_opened` both report `map_burst` (double count, hidden by the cap). *Unverified since 2026-09-21.* | FMR |
+| T-025 | P3 | open | `buyMap` ignores the Shop's `sourceRect`. *Unverified since 2026-09-21.* | FMR |
+| T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
+| T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
+
+### UI
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-028 | P2 | open | Toast types look alike and "×N" never shows. Ruling: a coloured edge per type, "×3" for merged repeats. | CR3-452 |
+| T-029 | P2 | open | Every surface closes differently. Ruling: Escape closes the top layer only; click-outside closes light pop-ups only; drawers never close on a stray click. | CR3-454 |
+| T-030 | P2 | open | Five tooltip implementations. Ruling: one shared gold-bordered tooltip; plain browser tips only on icon buttons. | CR3-455 |
+| T-031 | P2 | open | z-index: one table for the mat, ~20 literal values elsewhere; unify. | CR3-456 |
+| T-032 | P2 | open | Typography window is boxed inside Settings; Escape leaves its preview applied. *Suspected.* | CR3-453 |
+| T-033 | P2 | blocked (T-003) | Picking up / dropping re-renders every draggable → a memoised Token grab. Measure in certification items 1–2 first. | CR3-400 |
+| T-034 | P3 | blocked (T-003) | A quick flick drops the Token short of the cursor (second cursor tracker). Check certification item 13 first. | CR3-412 |
+| T-035 | P2 | open | A push shoves overlapping Tokens anywhere on the mat. Ruling: move only what the newcomer crowds (and what that pushes into). ⚠ The bench will report WORK CHANGED for S4 — expected, accept it here. | CR3-151 |
+| T-036 | P3 | open | One close-button look: the red pixel-art cancel icon everywhere. | R8-Q3 |
+| T-037 | P3 | open | Two ways to hide notifications; keep only "Collapse". | R8-Q8 |
+| T-038 | P3 | open | Text sizes / fonts written in code aren't what renders; rewrite them to match (no visible change). | CR3-460 |
+| T-039 | P3 | open | Sci-fi words on screen ("Protocol Settings", "SYSTEM BOOT", "neural sync") and other retired vocabulary → plain words. | CR3-464 |
+| T-040 | P3 | open | Rules text says "tile". Ruling: "where this one stands", "on the nearest / a random free spot"; Nearby hint = "Tokens within reach of this one". Regenerate RenderGolden and read its diff. | CR3-500 |
+| T-041 | P3 | open | A newly recruited hero's class reads "Adventurer", not "Recruit" (`HeroRehydration.js:50`). | FB §5 |
+| T-042 | P3 | open | Settings toggle "Item Fly Particles" still says "between cards and inventory". | FB §5 |
+| T-043 | P3 | open | Empty-string duplicate React key logged on save load. *Unverified since 2026-09-21.* | FMR |
+
+### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-044 | P3 | open | Two dead dock components (+ `HeroDockTab`'s ignored props). Update `Promotion.test.js:351,387` comments. | CR3-024, 463 |
+| T-045 | P3 | open | Dead combat, wound and loot code. | CR3-036 |
+| T-046 | P3 | open | A second hero-creation route. | CR3-037 |
+| T-047 | P3 | open | 8 retired `collection` fields in the save schema (keep `TOKEN_TYPES`). | CR3-038 |
+| T-048 | P3 | open | Small UI leftovers incl. the `ui:open_drawer` chain; events subscribed with no publisher. | CR3-043, 461 |
+| T-049 | P3 | open | Computed-and-never-read values; unused reset functions. | CR3-205 |
+| T-050 | P3 | open | Stale comments in board-state files; `hitRadiusOf` doc claims whole-number centres. | CR3-154, FMR |
+| T-051 | P3 | open | Four copies of "is this the Guild Hall?"; a second `clampToMat`. | CR3-155 |
+| T-052 | P3 | open | Dead drag CSS; retired vocabulary in drag code. | CR3-406, 408 |
+| T-053 | P3 | open | Nav "rise above my own modal" can't work; `useUIModals` controls nobody uses. | CR3-459, 462 |
+| T-054 | P3 | open | Stylesheets loaded but unused / used but never loaded. Check `modals.css` for global selectors before deleting. | CR3-465 |
+| T-055 | P3 | open | Equip-flash timer cleanup never runs. | CR3-466 |
+| T-056 | P3 | open | Dead tile/Tray-era code; Tray names and Tray-as-current comments; card/deck-era names; Tray dormant storage in `BoardState`/save. | CR3-502, 503, 504, FMR |
+| T-057 | P3 | open | Rename tile-named engine vocabulary — code names and event strings together, one slice. | CR3-501 |
+| T-058 | P3 | open | Lint residue (~74 old errors), per area: engine, combat (keep `MERGE_GRACE_MS` at 1100), UI↔engine (don't add hook deps blindly), renderer, UI. | CR3-110, 265, 312, 359, 467 |
+| T-059 | P3 | open | The CMS imports `itemRegistry` for one constant. | CR3-511 |
+| T-060 | P3 | blocked (T-003) | Toasts may leave page elements behind — the certification soak decides. | CR3-039 |
+| T-061 | P3 | open | `cardSizeStore` is half dead (the drag ghost still reads it); unreachable Shop branches in `InspectionPanel.jsx`. | FB §5 |
+| T-062 | P3 | open | `statementText.js` contains a literal NUL byte, so git treats it as binary (no diffs). | FMR (still true 2026-10-06) |
+| T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |
+| T-064 | P3 | open | Dead clock surfaces and write-only fields (R1-Q4 ruling A). | CR3-105 |
+| T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `TimeBankWidget` says it is mounted; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
+| T-094 | P3 | open | More dead code from the GDD survey: `Placement.removePlacedToken` (replaced by the bin), `LootSystem` legacy cluster functions, `WoundedSystem.woundHero`, the enemy thorns-trait branch in `CombatAttackProcessor`, `HeroGenerator.generateCandidates`/`generateVillager`, declared-but-unread axes `HP_REGEN`, `THORNS_REFLECT`, `STAT_BONUS`. Three-way grep before deleting. | GDD survey |
+| T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
+
+### Build, tests, docs
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-065 | P2 | open | 3 of 7 test fixtures still borrow real `item_` ids — their rename changes the bench fingerprint, so land it as its own accepted commit. | CR3-551 |
+| T-066 | P2 | open | 19 CMS-importing test files can't run in a worktree: link `cms/node_modules` too; remove both links before removing the copy. | CR3-552 |
+| T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
+| T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |
+| T-069 | P2 | open | Write a mat-era performance guide (draft in `docs/archive/review_v3/R6.md` §8 + `R7.md` §4), as `docs/reference/PERFORMANCE.md`. | CR3-021 |
+| T-070 | P3 | open | Document `window.Game` — agents rely on ~30 entries the game never reads. | CR3-040 |
+
+## 3. Parked — don't work on these without a reason
+
+*Latent = the code is wrong but no shipped content triggers it. Fix it, test
+first, when content that uses it is authored.*
+
+| ID | Why parked | Summary | Origin |
+|---|---|---|---|
+| T-071 | after T-003 | Canvas mat — very likely unnecessary now; confirm after certification. | CR3-355 |
+| T-072 | after the crunch | `@ts-check` trial on the contract layer. | CR3-560 |
+| T-073 | latent | Input-cost discount applied when paying, not when checking. | CR3-028 |
+| T-074 | latent | Item rules can be given moments that never fire. | CR3-202 |
+| T-075 | latent | Rule upkeep pays from the Bank only (spawner upkeep is fixed by TL-20). | CR3-204, FB §5.4 |
+| T-076 | latent | Each cure reaches only one of the two effect systems. | CR3-251 |
+| T-077 | latent | Timed effects lose combat numbers on reload; use game time, not the wall clock. | CR3-252 |
+| T-078 | latent | Loadout re-expanded on every axis read. | CR3-253 |
+| T-079 | latent | Loading rewrites the Guild Hall's definition. | CR3-257 |
+| T-080 | latent | Time Bank fast-forward doubles tick cost (spend UI is off). | CR3-104 |
+| T-081 | latent | Engine init isn't safe to run twice — only matters with a "back to title" feature. | CR3-108 |
+| T-082 | latent | Shop's unreachable refund path skips mat events. | CR3-206 |
+| T-083 | re-check | Synchronous subscribers; several whole-mat rebuilds per tick. Probably closed by Wave 3b — re-measure before working on it. | CR3-102 |
+| T-084 | not needed | Push solver all-pairs (S4 worst push ~15 ms vs 8). Only matters past ~250 Tokens; T-035 may make it moot. | CR3-152 |
+| T-085 | contract note | Loot timing uses the wall clock. | CR3-014 |
+| T-086 | needs a Codex screen | Enemy kill counts never recorded. | CR3-035 |
+| T-087 | owner-deferred | Desktop-shell group (save export, `src-tauri`). | CR3-046 |
+| T-088 | Stage 2 | Randomness is unseeded and has no injectable source. | CR3-044 |
+| T-089 | Stage 2 | Hero state lives in seven stores. | CR3-561 |
+| T-090 | Stage 3 | Terrain can't be added through the CMS. | CR3-564 |
+| T-091 | Stage 3 | Tokens teleport; mat size is dev tuning. | CR3-565 |
+| T-092 | design | The free-playmat plan's "Map stays unopened" overflow rule (FP-46) is unbuilt; overflow drops as loot. | FMR |

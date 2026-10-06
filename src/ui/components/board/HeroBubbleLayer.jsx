@@ -46,7 +46,7 @@ const guessSize = (stack) => ({
  *
  * Only unusual events are spoken (feedback Q6, FB-21): routine lines are
  * filtered out by `speaksMoment` / `speaksBlock`, and every line with its
- * status is listed in `docs/speech_bubble_lines.md`.
+ * status is listed in `docs/reference/speech_bubble_lines.md`.
  *
  * Stacks are kept off each other and inside the mat (SB-4, `bubbleLayout.js`);
  * a nudged stack's little tail still points at its hero.

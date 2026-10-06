@@ -4,7 +4,7 @@
 // compile-time `import.meta.env.DEV` check, so a production build (`vite build`)
 // folds the check to `false` and drops the harness entirely — no HUD, no
 // `window.__perf`, no `<React.Profiler>`. `npx vite build` then grepping
-// `dist/assets/*.js` for `fg-perf-hud` proves it (see docs/review_v3/P3.md).
+// `dist/assets/*.js` for `fg-perf-hud` proves it (see docs/archive/review_v3/P3.md).
 //
 // This module must stay free of side effects at import time: ReactRoot and
 // Board import `PerfProfiler`, which imports this, in every build.

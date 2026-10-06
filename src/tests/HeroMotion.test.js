@@ -26,7 +26,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **Heroes walk** (Hero Movement slice M1, `docs/hero_movement_roadmap_v1.md`).
+ * ⭐ **Heroes walk** (Hero Movement slice M1, `docs/archive/hero_movement_roadmap_v1.md`).
  *
  * Every other test file runs with instant arrival (`src/tests/setup/`); these
  * switch it OFF, so the walk is real: 120 u a second, ten ticks a second.

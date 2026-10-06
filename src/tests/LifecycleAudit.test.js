@@ -15,7 +15,7 @@ import { expandBearer } from '../systems/effects/effectLibrary.js';
 /**
  * Token Lifecycle slice 4.2 — the content audit for the new Token blocks.
  *
- * Every rule in `docs/token_lifecycle_roadmap_v1.md` §3.1 "Validation" is
+ * Every rule in `docs/archive/token_lifecycle_roadmap_v1.md` §3.1 "Validation" is
  * tested on its own: a clean fixture produces nothing, and each deliberately
  * broken copy produces exactly one message, naming the Token and the field.
  * Then the same checker is shown to reach both the game's boot audit and the
