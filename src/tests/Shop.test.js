@@ -16,7 +16,7 @@ import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 
 /**
- * Token Lifecycle slice 5.1 — **the Shop** (SP-12, SP-13, SP-65, SP-67).
+ * Token Lifecycle slice 5.1 — **the Shop**.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -203,8 +203,8 @@ describe('buying', () => {
 
 
 /**
- * ⭐ B4 (FB-25): **buy by dragging onto the mat** — pay on drop, placed at the
- * drop point, nothing taken when the spot, the cap or the Bank says no.
+ * ⭐ B4: **buy by dragging onto the mat** — pay on drop, placed at the drop
+ * point, nothing taken when the spot, the cap or the Bank says no.
  */
 describe('buying at a point (B4)', () => {
     const SPOT = { x: 400, y: 300 };

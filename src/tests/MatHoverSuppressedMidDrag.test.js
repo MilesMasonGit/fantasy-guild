@@ -25,13 +25,13 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ CR3-410 — owner ruling (R7-Q3 = A, Z §11): no hover during a drag. The
- * drag ghost has `pointer-events: none`, so a hero or flag underneath it
- * still fires `onMouseEnter` as the cursor crosses it — which used to show
- * that hero's reach ring and force a full `MatBoard` commit, even though the
- * carried Token would not land there. Only the rings of flags the Token
- * would actually land in (`FlagLayer`'s own `useTokenDragLanding` check)
- * should show mid-drag.
+ * ⭐ owner ruling (R7-Q3 = A, Z §11): no hover during a drag. The drag ghost
+ * has `pointer-events: none`, so a hero or flag underneath it still fires
+ * `onMouseEnter` as the cursor crosses it — which used to show that hero's
+ * reach ring and force a full `MatBoard` commit, even though the carried
+ * Token would not land there. Only the rings of flags the Token would
+ * actually land in (`FlagLayer`'s own `useTokenDragLanding` check) should
+ * show mid-drag.
  */
 
 const h = React.createElement;

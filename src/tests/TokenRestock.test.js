@@ -66,9 +66,8 @@ describe('Token Restocking on Same-Type Drop', () => {
     });
 
     /**
-     * ⭐ FP-87 (slice 1.6d-1): the leftover charges **stay on the mat**, nudged
-     * beside the copy they just filled. They used to be pushed onto the next
-     * tile along, which is the same idea without the tile.
+     * They used to be pushed onto the next tile along, which is the same idea
+     * without the tile.
      */
     it('fills the on-board Token to its cap and leaves the leftover beside it (FP-87)', () => {
         const onBoard = token('fixture_producer', 4980);

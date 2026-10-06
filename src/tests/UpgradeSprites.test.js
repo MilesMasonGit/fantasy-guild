@@ -7,9 +7,9 @@ const PUBLIC = resolve(__dirname, '../../public');
 const onDisk = (webPath) => existsSync(`${PUBLIC}${webPath}`);
 
 /**
- * ⭐ **Every Guild Hall upgrade draws real art** (Token Lifecycle feedback Q7,
- * FB-40). The Token art moved into per-family folders and these paths were
- * left pointing at the old flat folder, so the screen drew broken images.
+ * ⭐ **Every Guild Hall upgrade draws real art** (Token Lifecycle feedback
+ * Q7). The Token art moved into per-family folders and these paths were left
+ * pointing at the old flat folder, so the screen drew broken images.
  *
  * `public/assets` is untracked, so a checkout without the art (a fresh
  * worktree) skips the file check rather than failing it.

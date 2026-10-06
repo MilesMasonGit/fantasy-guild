@@ -133,8 +133,8 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             expect(ghDef.config.outputs[0].minQty).toBe(1);
             expect(ghDef.config.outputs[0].maxQty).toBe(1);
 
-            // Upgrade to rank 3 (3 water). Paid in items since slice 2.1
-            // (SP-65); this used to add 5000 gold.
+            // Upgrade to rank 3 (3 water). Paid in items since slice 2.1;
+            // this used to add 5000 gold.
             for (let i = 0; i < 2; i++) {
                 GuildUpgradeManager.getNextCost('wishing_well')
                     .forEach(p => InventoryManager.addItem(p.itemId, p.quantity));

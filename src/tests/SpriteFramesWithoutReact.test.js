@@ -9,13 +9,7 @@ vi.mock('../systems/board/BoardState.js', () => ({
 }));
 
 /**
- * ⭐ **A sprite's frame is a clock, not React state** (CR3-301, R6 rule 4).
- *
- * Eight heroes flipping frames 8 times a second each, through React, were ~42
- * mat and ~43 dock commits a second with the game stopped (R5). The frame is
- * now written straight to the element; React renders the sprite when its
- * props change and never on a frame step. Which frame shows is pinned in
- * `SpriteFrameSequence.test.js`.
+ * ⭐ **A sprite's frame is a clock, not React state** (R6 rule 4).
  */
 
 const h = React.createElement;

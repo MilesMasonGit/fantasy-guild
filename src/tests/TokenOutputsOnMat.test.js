@@ -15,14 +15,8 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
- * ⭐ TL-8 (owner, 2026-09-26, Token Lifecycle slice 9.3): **a Token a recipe
- * makes lands straight on the mat beside the station that made it**, like a
- * Shop purchase. It is `placed`, carries its starting charges, counts toward
- * the mat cap, and if there is no room the cycle waits. No Token loot, no
- * Vault.
- *
- * Replaces `TokenOutputDrops.test.js`, which pinned the retired behaviour
- * (the Token dropped on the floor as a loot sprite bound for the Vault).
+ * It is `placed`, carries its starting charges, counts toward the mat cap,
+ * and if there is no room the cycle waits. No Token loot, no Vault.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -67,7 +61,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 'skill_mining',
         requiresHero: false
     },
-    /** An unlimited Token to be crafted — `uses: null` (R-4). */
+    /** An unlimited Token to be crafted — `uses: null`. */
     fixture_dropped_eternal: {
         id: 'fixture_dropped_eternal', name: 'Fixture Dropped Eternal', tokenType: 'support',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_mining',

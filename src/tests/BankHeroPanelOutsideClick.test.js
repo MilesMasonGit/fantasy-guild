@@ -39,8 +39,8 @@ const engine = {
 /**
  * Both `BottomHeroDock` and `BankHeroPanel` are mounted together, as they are
  * on screen with the Bank open: the bottom dock never unmounts just because
- * the Bank drawer is covering it (CR3-450's finding), so its outside-click
- * listener is live the whole time.
+ * the Bank drawer is covering it ( finding), so its outside-click listener is
+ * live the whole time.
  */
 function mount({ onCloseHero } = {}) {
     return render(

@@ -160,7 +160,7 @@ export function buildCorpus() {
         addS(`role:restores-many:${role}`, S(KEYWORD.RESTORES, { payload: { amount: 3 }, target }));
         addS(`role:removes:${role}`, S(KEYWORD.REMOVES, { payload: { effectId: FIX.effect }, target }), { effect: () => 'Thorns' });
         addS(`role:removes-all:${role}`, S(KEYWORD.REMOVES, { payload: {}, target }));
-        // V10a (G-42): `Applies` with an optional role target, on a moment that supplies the enemy.
+        // V10a: `Applies` with an optional role target, on a moment that supplies the enemy.
         const fight = { event: 'COMBAT_ENGAGED', scope: 'nearby' };
         addS(`role:applies:${role}`, S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, durationMs: 30000 }, target, when: fight }), { effect: () => 'Thorns' });
         addS(`role:applies-status:${role}`, S(KEYWORD.APPLIES, { payload: { statusId: 'poison', stacks: 2 }, target, when: fight }));

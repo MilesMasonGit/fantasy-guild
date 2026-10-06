@@ -31,12 +31,6 @@ const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 /**
  * Two new trigger events, and the guard the second one needed.
  *
- * 1. **"A neighbour produces a specific item"** — finer than the existing "a
- *    neighbour completes a cycle", which fires on any completion including one
- *    that made nothing.
- * 2. **"On Cycle"** — the first trigger that listens
- *    *inward*. Every other one watches a neighbour or the Bank.
- *
  * ⚠️ **The second is the risky one.** A Token reacting to its own completion is
  * the shape that can recurse, and a runaway loop in the tick path would freeze
  * the game. The guard is asserted here directly rather than reasoned about,
@@ -272,11 +266,11 @@ describe('⚠️ The loop guard', () => {
     /**
      * A **real** cascade through the real code path, not a simulated one.
      *
-     * A triggered Token spends a charge when it serves (CMS-26), and spending
-     * its last one publishes `TOKEN_DEPLETED` — **from inside the statement it
-     * is in the middle of firing**. `TOKEN_DEPLETED` is itself a trigger event.
-     * So a line of one-charge Tokens that each react to a neighbour running dry
-     * sets each other off, each nested inside the last.
+     * A triggered Token spends a charge when it serves, and spending its last
+     * one publishes `TOKEN_DEPLETED` — **from inside the statement it is in the
+     * middle of firing**. `TOKEN_DEPLETED` is itself a trigger event. So a line
+     * of one-charge Tokens that each react to a neighbour running dry sets each
+     * other off, each nested inside the last.
      *
      * That is the only genuine re-entrant path in the engine today, and it is
      * exactly the shape a self-trigger could grow, so the guard is measured

@@ -16,19 +16,6 @@ import { TOKENS } from '../config/registries/tokenRegistry.js';
 
 /**
  * The named effect library — Unified Effects P1.
- *
- * P1 is a **pure refactor**: rules moved out of the Tokens that owned them and
- * into a library those Tokens reference, and nothing a player can see changed.
- * These tests hold the four claims that makes:
- *
- * 1. **A reference resolves to the same statements the Token used to carry.**
- * 2. **Statement ids survive the move**, so a live save's upkeep and cooldown
- *    state still lands on the rule it was recorded against.
- * 3. **The migration is idempotent and deduplicating** — running it twice does
- *    nothing, and two identical rules become one shared entry.
- * 4. **The shipped content is internally consistent**: every reference resolves,
- *    every entry is backed by a working statement (UE-10), and no bearer names
- *    one entry twice.
  */
 
 const statementFor = (keyword, payload) => ({ ...makeStatement(keyword), payload });
@@ -67,8 +54,7 @@ describe('UE-10 — a named effect cannot exist without a statement that works',
 
     it('accepts a statement that names a keyword, even half-authored', () => {
         // A blank payload is a normal mid-authoring state — the generated
-        // sentence shows the author its own blanks. UE-10 is about names with
-        // no mechanism, not about unfinished numbers.
+        // sentence shows the author its own blanks.
         const entry = { statements: [statementFor(KEYWORD.ACTS_AS, { tag: '', tier: 1 })] };
         expect(hasWorkingStatements(entry)).toBe(true);
     });
@@ -280,11 +266,11 @@ describe('shipped Tokens and the library agree', () => {
 
     it('gives every Token that references an effect its rules', () => {
         /**
-         * ⚠️ This asserted a **count** (19 Tokens) until 2026-09-07, which was
-         * the wrong shape of test: it pinned the content set, so authoring one
-         * Token in the CMS turned the engine suite red for no engine reason.
-         * `tokenRegistry` is explicit that content should be free to be retuned
-         * without the suite noticing.
+         * ⚠️ This asserted a **count** (19 Tokens), which was the wrong shape
+         * of test: it pinned the content set, so authoring one Token in the CMS
+         * turned the engine suite red for no engine reason. `tokenRegistry` is
+         * explicit that content should be free to be retuned without the suite
+         * noticing.
          *
          * The invariant that actually matters is content-independent: a Token
          * carrying references resolves to real statements. If expansion broke,

@@ -30,11 +30,6 @@ const idAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0]?.id ?? null;
 
 /**
  * One rule, one place.
- *
- * Every case here is a rule that used to be computed in more than one place,
- * with the copies quietly disagreeing. Each test is written to fail if the
- * second copy comes back — not merely to assert today's answer, which the
- * divergent versions also produced most of the time.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -53,10 +48,9 @@ beforeEach(() => {
     resetMissingContentWarnings();
 });
 
-// CR2-054 (Tray capacity is one rule) went with the Tray (Token Lifecycle 9.3).
 
 // ---------------------------------------------------------------------------
-// CR2-059 / CR2-060 — the tile alert vocabulary
+// the tile alert vocabulary
 // ---------------------------------------------------------------------------
 
 describe('CR2-060: every alert value comes from one enum', () => {
@@ -149,17 +143,15 @@ describe('CR2-107: the inventory sort survives half-authored content', () => {
 });
 
 // ---------------------------------------------------------------------------
-// CR2-196 — a Map's materials come from one projection
+// a Map's materials come from one projection
 // ---------------------------------------------------------------------------
 
 describe('CR2-196: Map materials have one display shape', () => {
     const withMaterials = listMaps().filter(m => (m.materials || []).length > 0);
 
-    // ⚠ CR3-553 EXPECTED FAILURE (owner ruling 2026-09-30: "mark them as
-    // expected"). A retired premise: Map bursts were retired (`ac88c99`), and
-    // no authored Map has materials any more (R10 section 4.2, row 4).
-    // `it.fails` goes red the day a Map has materials again: then make it a
-    // plain `it`.
+    // A retired premise: Map bursts were retired (`ac88c99`), and no authored
+    // Map has materials any more (R10 section 4.2, row 4). `it.fails` goes
+    // red the day a Map has materials again: then make it a plain `it`.
     it.fails('at least one authored Map still has materials to draw', () => {
         expect(withMaterials.length).toBeGreaterThan(0);
     });
@@ -175,29 +167,12 @@ describe('CR2-196: Map materials have one display shape', () => {
 });
 
 // ---------------------------------------------------------------------------
-// CR2-192 / CR2-121 — the Token fields the engine actually reads
+// the Token fields the engine actually reads
 // ---------------------------------------------------------------------------
 
 describe('CR2-192: a Token\'s XP lives on config, nowhere else', () => {
     /**
-     * ## ⚠️ This test was inverted on 2026-09-01, and here is why
-     *
-     * It used to require that **at least one** config-less Token carried a
-     * top-level `xp` (`length > 0`), and then prove the drawer promised nothing
-     * for it. The hazard was real: `xp: 10` at the top level is read by nothing
-     * — the engine awards `io.xp ?? config.xp` — so a config-less Token with
-     * one made the drawer offer XP that could never be awarded.
-     *
-     * The dead field has now been deleted from all 37 Tokens that carried it,
-     * which removes the hazard rather than the protection. Left as it was, the
-     * `length > 0` guard would fail for the best possible reason, and the
-     * obvious "fixes" are both wrong: deleting the test loses the rule, and
-     * relaxing it to `>= 0` makes it assert nothing at all.
-     *
-     * So it asserts the opposite fact — **no** Token carries a top-level `xp`,
-     * so the CMS cannot quietly reintroduce it — and keeps the drawer assertion
-     * running over every config-less Token there is, so the promise rule still
-     * has teeth if the field ever does come back.
+     * ## ⚠️ This test was inverted on and here is why
      */
     const allTokenDefs = Object.values(getAllTokenTypes()).filter(
         d => String(d.id).startsWith('token_')
@@ -265,12 +240,12 @@ describe('CR2-121: `uses` is the charge field, `charges` is not read', () => {
 
         // Prove it is `uses` and not `charges` doing the work.
         //
-        // `charges` was deleted from `data/tokens.json` on 2026-09-01, so no
-        // authored Token carries it any more — this plants one, which is now
-        // the only way the disagreement can be staged at all. `delete` (not
-        // reassignment) restores the def: writing `undefined` back would leave
-        // the key present and quietly defeat the `no top-level charges` reading
-        // of the corpus elsewhere.
+        // `charges` was deleted from `data/tokens.json` on so no authored Token
+        // carries it any more — this plants one, which is now the only way the
+        // disagreement can be staged at all. `delete` (not reassignment)
+        // restores the def: writing `undefined` back would leave the key
+        // present and quietly defeat the `no top-level charges` reading of the
+        // corpus elsewhere.
         const original = def.uses;
         expect(def.charges, 'the dead `charges` field is back in the corpus').toBeUndefined();
         def.uses = 7;

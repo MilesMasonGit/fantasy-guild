@@ -24,16 +24,9 @@ import { pickRecipe } from './fixtures/stations.js';
 /**
  * Adjacency — the spatial half of the game.
  *
- * **Adjacency governs *what*, not *how much*.** Context Tokens define what a
- * station makes, which is binary and decisive (D-18); numerical effects are
- * deliberately small (D-119/D-120). These tests hold both halves apart, because
- * the failure mode is drift toward the second — bigger buff numbers are an easy
- * lever and the wrong one (risk 2).
- *
  * ⚠️ This file also covers the thing the gap analysis found broken: **only
  * `SPEED` crossed scopes in the old engine**, so a Context Token could never
- * actually change a neighbour's yield or input cost. Widening those axes is
- * decision `G-5`.
+ * actually change a neighbour's yield or input cost.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -46,7 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * How long an authored `base`-ms cycle actually takes for a hero at `level`.
- * Skill speed is live from 2026-08-25 (CR2-072) — see `TokenCycle.test.js`.
+ * Skill speed is live — see `TokenCycle.test.js`.
  */
 function cycleMs(base, level = 50) {
     return base / (1 + level * SKILL_SPEED_FACTOR);
@@ -64,7 +57,7 @@ function place(point, typeId, heroId = null, uses = undefined) {
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
     Placement.placeTokenAt(instance, point);
-    pickRecipe(instance);   // the player picks a station's recipe (TL-15)
+    pickRecipe(instance);   // the player picks a station's recipe
     TileModifiers.rebuildAround([instance]);
     if (heroId) Placement.plantFlagAt(heroId, point);
     return instance;
@@ -86,7 +79,7 @@ beforeEach(() => {
     InputAllocator.resetStarvationStats();
     // ⚠️ Stacking and context combinations here are laid out on the 8-tile ring
     // (diagonal neighbours), so Near is pinned at 272 u. The shipped default has
-    // been 164 u — side neighbours only — since FP-75.
+    // been 164 u — side neighbours only.
     resetMatTuning();
     setMatTuning('nearRadius', 272);
     GameState.state.heroes = [makeHero('hero_1'), makeHero('hero_2'), makeHero('hero_3')];
@@ -117,8 +110,8 @@ const RING = [
 
 describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)', () => {
     it('a Sawmill beside a Forest raises its output', () => {
-        // The whole point of D-119. Previously YIELD was card-local, so the
-        // Sawmill parsed, registered cleanly, and did nothing.
+        // The whole point. Previously YIELD was card-local, so the Sawmill
+        // parsed, registered cleanly, and did nothing.
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
 
@@ -223,9 +216,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
     });
 
     it('⚠️ swapping the schematic alone does NOT change what it makes any more', () => {
-        // The reversal, stated as a test. Under D-18 this swap re-keyed the
-        // station; now the station keeps the recipe it is set to, and pulling
-        // that recipe's context away simply stops it.
+        // The reversal, stated as a test.
         InventoryManager.addItem('item_coal', 10);
         InventoryManager.addItem('fixture_oak_wood', 10);
         const forge = place(A, 'fixture_station', 'hero_1');
@@ -254,8 +245,8 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
     });
 
     it('two context Tokens are no longer a conflict — the selection decides', () => {
-        // D-20 is deleted (rework §2). An explicit selection cannot be
-        // ambiguous, so both schematics beside one Forge is a fine board.
+        // An explicit selection cannot be ambiguous, so both schematics
+        // beside one Forge is a fine board.
         InventoryManager.addItem('item_coal', 10);
         InventoryManager.addItem('fixture_oak_wood', 10);
         const forge = place(A, 'fixture_station', 'hero_1');
@@ -363,7 +354,7 @@ describe('Block upkeep — its own clock, and OFF when unpaid (CMS-60, CMS-97)',
     });
 
     it('comes back on by itself once stock returns', () => {
-        // Reversible, unlike depletion. An aura is off, not destroyed (CMS-97).
+        // Reversible, unlike depletion. An aura is off, not destroyed.
         InventoryManager.addItem('item_coal', 1);
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_upkeep_aura');
@@ -421,12 +412,10 @@ describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)'
 describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', () => {
     /**
      * Three axes that existed as constants with **no consumer anywhere** until
-     * Phase 4. The CMS may only offer what the board can actually do (CMS-5),
-     * so the palette's support half needed building rather than exposing.
+     * Phase 4. The CMS may only offer what the board can actually do, so the
+     * palette's support half needed building rather than exposing.
      *
-     * FAIL_CHANCE and LOOT_MULT are CMS-25's **proc** shape: resolved through
-     * the same three-bucket formula as every other axis, then rolled once per
-     * cycle. Fixtures use 100 so the roll is deterministic.
+     * Fixtures use 100 so the roll is deterministic.
      */
     it('widens XP the way YIELD widens output', () => {
         place(A, 'fixture_producer', 'hero_1');
@@ -490,11 +479,10 @@ describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', (
 
 describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
     /**
-     * D-119/D-120 keep untargeted buffs tiny because they touch everything
-     * nearby. A **targeted** buff cannot be stacked onto everything
-     * indiscriminately — you need the named target beside it for it to matter
-     * at all — so it gets its own, larger effect budget (CMS-17). These
-     * fixtures use +100% to make that unambiguous.
+     * A **targeted** buff cannot be stacked onto everything indiscriminately
+     * — you need the named target beside it for it to matter at all — so it
+     * gets its own, larger effect budget. These fixtures use +100% to make
+     * that unambiguous.
      *
      * Filtering happens when the tile's modifiers are rebuilt, not when an axis
      * is read: read time only knows the skill category, which cannot express
@@ -535,8 +523,6 @@ describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
     });
 
     it('leaves an UNTARGETED buff applying to everything, as before', () => {
-        // D-119/D-120 are unchanged — CMS-17 added a separate rule for targeted
-        // buffs rather than amending the old one.
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
         expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
@@ -583,8 +569,8 @@ describe('Skill-pooled recipes (CMS-39, CMS-76, CMS-77)', () => {
      * where the old model — every station carrying its own `recipes[]` — would
      * mean copying the entire library into each new Cooking station by hand.
      *
-     * Pooling is opt-in per station (CMS-76): Charcoal Kiln and Deep Kiln are
-     * also smithing and stay simple fixed producers.
+     * Pooling is opt-in per station: Charcoal Kiln and Deep Kiln are also
+     * smithing and stay simple fixed producers.
      */
 
     it('a pooled station with no context makes nothing, exactly like a private one', () => {
@@ -737,10 +723,10 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
     });
 
     it('⚠️ serving TWO stations wears it twice as fast — a rate trade, not free value', () => {
-        // This is D-157's whole point: one Token serving three stations gives
-        // the same TOTAL benefit as one serving a single station, three times
-        // faster and wearing out three times sooner. Clustering buys throughput
-        // now at the cost of restocking sooner. It is not strictly better.
+        // This is whole point: one Token serving three stations gives the same
+        // TOTAL benefit as one serving a single station, three times faster and
+        // wearing out three times sooner. Clustering buys throughput now at the
+        // cost of restocking sooner. It is not strictly better.
         InventoryManager.addItem('item_coal', 40);
         place(P(2, 2), 'fixture_station', 'hero_1');
         place(P(2, 4), 'fixture_station', 'hero_2');

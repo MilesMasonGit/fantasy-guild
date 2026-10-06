@@ -27,7 +27,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Building in place (Token Lifecycle 6.1, DP-6, SP-42, SP-47, SP-49).
+ * ⭐ Building in place (Token Lifecycle 6.1).
  *
  * A Foundation is a station whose recipes output a Token. The player picks the
  * recipe; a hero with the Foundation's skill works it; when the one cycle ends
@@ -157,8 +157,8 @@ describe('building in place (DP-6)', () => {
         expect(SpriteLayer.getSprites().filter(s => s.kind === 'token')).toHaveLength(0); // not a dropped sprite
         expect(GameState.state.heroes[0].skills.construction.xp).toBeGreaterThan(0);
 
-        // The hero moves on (SP-52): a construction-only hero has nothing
-        // left to work, and the Furnace is not theirs.
+        // The hero moves on: a construction-only hero has nothing left to
+        // work, and the Furnace is not theirs.
         run(1000);
         expect(BoardState.workTokenOf('h1')).not.toBe(f.id);
         expect(onMat('fixture_bip_furnace')).toHaveLength(1);

@@ -12,18 +12,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * CR2-056 — a sprite sweep used to publish about eight events per sprite.
- *
- * Measured on `main` 2026-08-26: one `collectAll()` over 40 sprites published
- * **322 events**, of which `state_changed` ×120 and `board:sprites_changed`
- * ×40. Worse, a sweep that collected *nothing* — a full Bank with litter on the
- * floor, which is D-138's designed steady state — published the same 322, every
- * tick, forever, having changed nothing.
- *
- * These tests pin the two things that fixed it: a refusal announces nothing,
- * and a sweep announces once. They deliberately do NOT pin the per-sprite
- * events that come from `InventoryManager` and the registry — that is a
- * different territory, and `board:sprite_collected` is per-sprite by design.
+ * a sprite sweep used to publish about eight events per sprite.
  */
 
 /** Count every event published during `fn`, by name. */
@@ -56,7 +45,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
 
     it('still publishes board:sprite_collected once per sprite', () => {
         // Not batched, and must never be: it carries the position the particle
-        // flies from (D-236) and `QuestManager` counts it.
+        // flies from and `QuestManager` counts it.
         for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.collectAll());
@@ -74,9 +63,9 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     });
 
     it('⚠️ a sweep that collects NOTHING publishes nothing at all', () => {
-        // D-138's designed steady state. This used to publish the full 322,
-        // every tick, having changed nothing — because the `state_changed`
-        // publish sat in a `finally` block.
+        // This used to publish the full 322, every tick, having changed
+        // nothing — because the `state_changed` publish sat in a `finally`
+        // block.
         GameState.state.inventory.maxSlots = 0;
         for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', `item_ghost_${i}`, 1, null);
 

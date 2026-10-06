@@ -12,11 +12,6 @@ import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 /**
  * ⭐ **The Academies become rules** (Promotes rule P2).
- *
- * `promotion: { jobId }` → a library effect holding "Promotes the hero to …",
- * referenced by the Token. The same pure function runs over `data/` (by script)
- * and over the CMS workspace (on load), so both copies must convert identically
- * — which is why determinism and idempotence are tested as hard as the result.
  */
 
 const academy = (id, jobId, extra = {}) => ({

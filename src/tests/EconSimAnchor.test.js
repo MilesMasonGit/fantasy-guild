@@ -1,10 +1,6 @@
 /**
  * Economic simulator — the ANCHOR pass (phase P3+4).
  *
- * Covers `cms/src/engine/sim/anchorPass.js`: the election rule (plan §3.2,
- * CMS-119), each tie-break on its own, the explicit override flag, the
- * exclusions, and stickiness.
- *
  * ⚠️ **Fixture-proven only:** no shipped recipe outputs a Token and no shipped
  * Token of a deferred kind has a work cycle, so the Token-output refusal and
  * the deferred-source path are exercised by fixtures alone (finding S15). The

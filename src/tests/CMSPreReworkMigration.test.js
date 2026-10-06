@@ -8,26 +8,6 @@ import { RETIRED_TOKEN_FIELDS } from '../../cms/src/engine/sim/writeBack';
 /**
  * A browser workspace saved before the **recipe & charges rework** heals on its
  * first Recalculate.
- *
- * ## Why this needed its own file
- *
- * `CMSEconomyCutover` already proves a workspace from before the *economic
- * simulator* heals. This is the generation before that one, and the two retire
- * different fields: that rework dropped `trueCost`/`sellPrice` and the nine EV
- * fields; this one dropped a Token's top-level `xp`, its `charges` and its
- * `recipePool`, and gave recipes a real `id`.
- *
- * `data/` was cleaned of all of those in `0b6f258`, but nothing taught the
- * write-back to strip them — so the next Sync from any pre-rework browser put
- * them back, and the content-rule tests went red against a corpus nobody had
- * edited.
- *
- * The fields are only half of it. An id-less recipe was flattened under a
- * synthetic `pooled_<skill>_<index>` key, so every derived result was filed
- * under a name the pool entry did not carry, and the write-back — which looks
- * results up by `recipe.id` — wrote none of them back at all.
- *
- * Fixtures only, no shipped ids: these assert the rule, not the corpus.
  */
 
 /** A workspace as a browser that predates the recipe & charges rework holds it. */

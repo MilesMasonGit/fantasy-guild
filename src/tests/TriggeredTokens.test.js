@@ -16,12 +16,7 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 /**
- * Triggered Tokens — the fifth category (CMS-29).
- *
- * These do not run a work cycle and need no hero. They listen, and act on a
- * cooldown. The suite is built around the two worked examples the design was
- * derived from: the Masonry Wheelbarrow (reacts to a neighbour's cycle) and the
- * Stoneshaper Sigil (watches the Bank globally and converts).
+ * Triggered Tokens — the fifth category.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -269,8 +264,7 @@ describe('Purely-triggered Tokens (CMS-31, CMS-80)', () => {
     });
 
     it('does NOT exempt a Token that also produces (CMS-80)', () => {
-        // D-116's carve-out applies only to Tokens with no production side at
-        // all. A mixed Token is held to the normal standard.
+        // A mixed Token is held to the normal standard.
         expect(TriggerSystem.isPurelyTriggered(getTokenType('fixture_producer'))).toBe(false);
     });
 });

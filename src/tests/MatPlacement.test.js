@@ -37,12 +37,6 @@ vi.mock('../systems/board/Restrictions.js', async (importOriginal) => {
 /**
  * ⭐ **Free placement** (Free Playmat slice 1.6d-1) — a Token lands exactly
  * where the player lets go.
- *
- * The numbers here are the owner's, from the Stage 0 feel trial (FP-63): at an
- * 80% hitbox with 40% overlap allowed, two small Tokens may sit **61.2 u**
- * apart, a small and a large **99.6 u**, two larges **138 u**. They are asserted
- * as the boundary they are — just inside is legal, just outside is refused —
- * because a spacing rule that is merely "about right" is one nobody can tune.
  */
 
 /** A Coast that will not sit beside ANY other Coast — the sharpest `Cannot` to test with. */
@@ -88,7 +82,7 @@ const instance = (typeId, uses = 100) => BoardState.createTokenInstance(typeId, 
 const gap = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
 // ---------------------------------------------------------------------------
-// How close two Tokens may sit (FP-63)
+// How close two Tokens may sit
 // ---------------------------------------------------------------------------
 
 describe('how close two Tokens may sit (FP-63)', () => {
@@ -223,7 +217,7 @@ describe('where a dropped Token actually lands', () => {
 });
 
 // ---------------------------------------------------------------------------
-// FP-88 — a spot that breaks a Cannot rule is not a spot
+// a spot that breaks a Cannot rule is not a spot
 // ---------------------------------------------------------------------------
 
 describe('a Cannot rule is obeyed by the nudge, not just by the refusal (FP-88)', () => {
@@ -262,7 +256,7 @@ describe('a Cannot rule is obeyed by the nudge, not just by the refusal (FP-88)'
 });
 
 // ---------------------------------------------------------------------------
-// FP-87 — restocking beats nudging
+// restocking beats nudging
 // ---------------------------------------------------------------------------
 
 describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
@@ -322,7 +316,7 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Arrivals push (FP-17, slice 1.8)
+// Arrivals push
 // ---------------------------------------------------------------------------
 
 describe('an arrival pushes instead of falling back (FP-17)', () => {

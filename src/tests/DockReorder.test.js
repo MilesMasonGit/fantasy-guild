@@ -1,7 +1,7 @@
-// CR3-457 — BankHeroPanel accepted and highlighted a hero-reorder drop
-// (HeroDockTab draws the insertion line on its own, regardless of whether
-// anyone is listening) and then silently dropped it: no onReorder was ever
-// passed in, unlike BottomHeroDock which already wired one.
+// BankHeroPanel accepted and highlighted a hero-reorder drop (HeroDockTab
+// draws the insertion line on its own, regardless of whether anyone is
+// listening) and then silently dropped it: no onReorder was ever passed
+// in, unlike BottomHeroDock which already wired one.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';

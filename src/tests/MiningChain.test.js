@@ -8,14 +8,6 @@ import { SKILLS } from '../config/registries/skillRegistry.js';
 /**
  * Token Lifecycle slice 7.2 — the Mining chain, pinned from the SHIPPED data
  * (authored through the CMS, never by hand).
- *
- * Three mines, each sold at the Shop for Oak Wood, each spawning one kind of
- * workable Token: Copper Mine → Copper Ore Vein, Coal Mine → Coal Vein, Quarry →
- * Stone Outcrop (giving Stone, the item Stone Foundations need). No growth
- * stage, no upkeep for the first build (SP-70 is decided per Token), no pickaxe
- * (TL-2). A vein runs out and its mine spawns again.
- *
- * The numbers are placeholders (TL-5); this pins the shape of the chain.
  */
 
 const DATA = path.resolve(__dirname, '../../data');
@@ -74,7 +66,7 @@ describe('The Mining chain in shipped data (7.2)', () => {
                 expect(vein.config.outputs.map((o) => o.itemId)).toEqual([item]);
                 expect(vein.config.outputs[0].chance).toBe(100);
                 expect(vein.acceptedTokens || []).toEqual([]);
-                expect(vein.uses).toBe(5);   // Q9 pacing (FB-19): was 10
+                expect(vein.uses).toBe(5);   // Q9 pacing: was 10
             });
 
             it('what it spawns is not sold at the Shop itself', () => {
@@ -87,7 +79,7 @@ describe('The Mining chain in shipped data (7.2)', () => {
         const ids = new Set(CHAIN.flatMap((c) => [c.mine, c.worked]));
         const findings = auditLifecycleBlocks({ tokens, items, recipes, skills: SKILLS })
             .filter((f) => f.severity === 'error' || ids.has(f.entityId));
-        // Only the allowed "spawns for free" warning (SP-70 is decided per Token).
+        // Only the allowed "spawns for free" warning ( is decided per Token).
         expect(findings.map((f) => [f.severity, f.entityId, f.field]).sort()).toEqual(
             ['token_coal_mine', 'token_copper_mine', 'token_quarry']
                 .map((id) => ['warning', id, 'spawner.upkeep']));

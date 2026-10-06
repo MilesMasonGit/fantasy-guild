@@ -1,5 +1,5 @@
-// B9 (TL-23, FB-38, FB-39): the Guild Hall screen draws its upgrades as a web
-// around the Hall — nodes joined by lines — with the Effects list on the left.
+// B9: the Guild Hall screen draws its upgrades as a web around the Hall —
+// nodes joined by lines — with the Effects list on the left.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'node:fs';

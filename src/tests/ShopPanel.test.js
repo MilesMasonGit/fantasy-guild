@@ -66,7 +66,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); resetMatTuning(); });
 
 /** The drawer inside a drag system, optionally with a drag in the hand and
- *  over a given surface (CR3-402: the lip/open state now depends on it). */
+ * over a given surface (the lip/open state now depends on it). */
 function mountDrawer({ isOpen = true, carrying = null, surface = undefined } = {}) {
     let inner = h(ShopDrawer, { isOpen, onClose: () => {} });
     if (surface !== undefined) {
@@ -81,7 +81,7 @@ function mountDrawer({ isOpen = true, carrying = null, surface = undefined } = {
 const row = (view, typeId) => view.container.querySelector(`[data-shop-row="${typeId}"]`);
 
 /**
- * ⭐ **B4: the Shop leaves the Bank drawer** (FB-25, FB-27).
+ * ⭐ **B4: the Shop leaves the Bank drawer**.
  */
 describe('the Bank drawer keeps the Bank only (B4)', () => {
     it('has no Shop pane: asking for the old pane draws nothing', () => {
@@ -104,7 +104,7 @@ describe('the Bank drawer keeps the Bank only (B4)', () => {
         await waitFor(() => expect(result.current.shop.isOpen).toBe(true));
         expect(result.current.drawer.panes).toEqual([]);
         expect(result.current.nav.isActive('cartographer')).toBe(true);
-        // The quest wiring still hears the Shop open (CR2-094).
+        // The quest wiring still hears the Shop open.
         expect(opened).toHaveBeenCalledWith({ modalId: 'cartographer' });
 
         act(() => result.current.nav.toggle('cartographer'));

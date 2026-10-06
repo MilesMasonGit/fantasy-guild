@@ -4,17 +4,11 @@ import { render, cleanup, act } from '@testing-library/react';
 import { DragPointerProvider, useDragPointer } from '../ui/dnd/DndKit.jsx';
 
 /**
- * ⭐ CR3-404 — the per-frame cursor used to live in `DeckDndProvider` itself,
- * so publishing it re-ran that whole component's render on every pointer
- * move, recreating the `<DndContext>` element dnd-kit was given — which made
+ * ⭐ the per-frame cursor used to live in `DeckDndProvider` itself, so
+ * publishing it re-ran that whole component's render on every pointer move,
+ * recreating the `<DndContext>` element dnd-kit was given — which made
  * dnd-kit redo its own collision/overlay work a second time on top of the
  * move it had already handled.
- *
- * `DragPointerProvider` now owns that state alone. This pins the property the
- * fix depends on: a sibling subtree that does NOT read `useDragPointer` is
- * not re-rendered just because the provider around it re-rendered — only the
- * actual context consumer is. `requestAnimationFrame` is replaced by a queue
- * this test flushes by hand (the house pattern, see ParticleOverlaySleep.test.js).
  */
 
 let queue;

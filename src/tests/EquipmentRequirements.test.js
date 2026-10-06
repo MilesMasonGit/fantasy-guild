@@ -83,12 +83,12 @@ describe('Equipment Multivariable Skill Gating', () => {
 });
 
 describe('Equipment content coverage (Hero Dock Phase 2)', () => {
-    // Every equippable item in the game, read from the real registry.
-    // Food and drink count again: they are hero equipment once more (D-4/D-7),
-    // sharing the loadout grid with gear.
+    // Every equippable item in the game, read from the real registry. Food and
+    // drink count again: they are hero equipment once more, sharing the
+    // loadout grid with gear.
     const equippables = Object.values(ItemRegistry.ITEMS).filter(item => item?.equipSlot);
 
-    // The `consumable` class (potions, scrolls, runes — D-56), authored in C-8.
+    // The `consumable` class (potions, scrolls, runes), authored.
     it('should not leave any equippable item on a retired slot name', () => {
         const valid = Object.values(EQUIPMENT_CATEGORIES);
         const strays = equippables

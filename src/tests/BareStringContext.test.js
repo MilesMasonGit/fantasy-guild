@@ -15,11 +15,6 @@ import { pickRecipe } from './fixtures/stations.js';
 
 /**
  * Slice 7.5a — a bare-string `requiresContext` must never crash the game.
- *
- * The CMS writes `["anvil"]` before the author picks a tier. The game screen
- * used to die in `RecipeResolver.getMissingRequirements` (`req.tag.split` on
- * undefined). Every reader now goes through `contextRequirementsOf`, which
- * reads a bare string as that tag at tier 1 with no charge cost.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -56,7 +51,7 @@ const BESIDE = { x: 560, y: 300 };
 function place(point, typeId) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     Placement.placeTokenAt(instance, point);
-    return pickRecipe(instance);   // the player picks a station's recipe (TL-15)
+    return pickRecipe(instance);   // the player picks a station's recipe
 }
 
 beforeEach(() => {

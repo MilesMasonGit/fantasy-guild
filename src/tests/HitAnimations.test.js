@@ -40,9 +40,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ Token Lifecycle feedback, slice **Q4 — animations**.
  *
- * * FB-10: a hit animation on the Token each time its hero strikes it, one
+ * * a hit animation on the Token each time its hero strikes it, one
  *   per skill (owner-approved list), knocked back away from the hero in combat.
- * * FB-11: a glow on the Token a transform has just made — under its NEW id.
+ * * a glow on the Token a transform has just made — under its NEW id.
  */
 
 registerTokenTypes({
@@ -107,7 +107,7 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// FB-10: which skill plays which animation
+// which skill plays which animation
 // ---------------------------------------------------------------------------
 
 describe('skill → hit animation (FB-10, the owner-approved list)', () => {
@@ -231,7 +231,7 @@ describe('the strike clock (hero sprite and Token share it)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// FB-10: the wrapper plays it
+// the wrapper plays it
 // ---------------------------------------------------------------------------
 
 describe('TokenHitArt', () => {
@@ -301,7 +301,7 @@ describe('TokenHitArt', () => {
 
             act(() => EventBus.publish(COMBAT_ATTACK_EVENT, { instanceId: 'enemy_1', heroId: 'hero_1', hit: true }));
             expect(anim.calls).toHaveLength(1);
-            // It waits for the hero's strike frame (FB-49).
+            // It waits for the hero's strike frame.
             expect(anim.calls[0].options).toEqual({ duration: HIT_ANIMATIONS.knockback.ms, delay: STRIKE_DELAY_MS });
             // Hero to the right (x 700 > 600): knocked left.
             expect(anim.calls[0].keyframes[1].transform).toMatch(/^translate\(-10%/);
@@ -317,7 +317,7 @@ describe('TokenHitArt', () => {
 });
 
 // ---------------------------------------------------------------------------
-// FB-11: the transform glow
+// the transform glow
 // ---------------------------------------------------------------------------
 
 describe('transform glow (FB-11)', () => {
@@ -343,7 +343,7 @@ describe('transform glow (FB-11)', () => {
         const shrimp = BoardState.tokens().find(t => t.typeId === 'fixture_q4_shrimp');
         expect(shrimp).toBeTruthy();
         expect(TokenGlows.glowOf(shrimp.id)).not.toBeNull();
-        TimedChanges.tick(1000);   // the turn back rolls on the Coast's cycle (TL-12)
+        TimedChanges.tick(1000);   // the turn back rolls on the Coast's cycle
         const coast = BoardState.tokens().find(t => t.typeId === 'fixture_q4_coast');
         expect(coast).toBeTruthy();
         expect(TokenGlows.glowOf(coast.id)).not.toBeNull();
@@ -389,7 +389,7 @@ describe('transform glow (FB-11)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Feedback Q6 — FB-49 combat attacks once, FB-50 stuck heroes idle
+// Feedback Q6 combat attacks once stuck heroes idle
 // ---------------------------------------------------------------------------
 
 describe('which row a hero plays (FB-49, FB-50)', () => {
@@ -483,7 +483,7 @@ describe('MatHero in a fight (FB-49)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Feedback Q6 — FB-51 a Token left in another's place glows
+// Feedback Q6 a Token left in another's place glows
 // ---------------------------------------------------------------------------
 
 describe('spawn in place glows like a transform (FB-51)', () => {

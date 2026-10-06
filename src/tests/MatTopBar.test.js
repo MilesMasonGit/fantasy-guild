@@ -17,7 +17,7 @@ import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
  * Token Lifecycle feedback **B2.1** — the mat's top bar and the Token cap
- * badge (FB-28, FB-31, SP-67).
+ * badge.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

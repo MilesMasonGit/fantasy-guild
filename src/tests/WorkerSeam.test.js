@@ -19,17 +19,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * The worker seam (Free Playmat slices 1.4a, 1.4b).
- *
- * `workerOf`, `workTokenOf` and `displayPointOf` are the only way anything
- * outside `BoardState` learns where a hero is. Slice 1.4a pinned what they
- * answered from `heroTiles`; slice 1.4b swapped flags and claims in behind them,
- * and these tests pin the flag answers (roadmap §2).
- *
- * ## ⭐ Three questions, no tiles (Free Playmat slice 1.6d-2)
- * The seam used to have tile-shaped twins — `workerOfTile` and `workTileOf` —
- * for the placement code that still spoke in indices. Both are gone with the
- * grid: a Token is named by its **instance id** and a hero is drawn at a **mat
- * point**, and those are the only two currencies left.
  */
 
 /** The scene, in mat units. */

@@ -3,18 +3,6 @@
 /**
  * **For tests only.** `MatHelperGuard.test.js` fails if any file outside
  * `src/tests/` imports this.
- *
- * Tokens sit at points on the mat (mat units: 1 u = one natural board pixel).
- * These helpers put them there with **no rules applied** — no spacing, no
- * `Cannot`, no events — so a test can build exactly the layout it means.
- *
- * `SPACING` is **test layout**, not a game concept: the game has no tiles. It
- * exists so a test can lay Tokens out at a familiar, readable step.
- *
- * ⭐ The tile-shaped helpers here — `tileCentre`, `idAt`, `pointAt` and
- * `anchorOf` — were deleted with the grid in slice 1.6d-2. A test that wants a
- * lattice declares its own, which keeps the layout it means visible in the file
- * that depends on it.
  */
 
 import * as BoardState from '../../systems/board/BoardState.js';

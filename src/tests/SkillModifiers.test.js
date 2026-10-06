@@ -8,20 +8,6 @@ import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 
 /**
  * **The two hero-side modifier wires that were connected at one end only.**
- *
- * Both were live for months, both were silent, and both were the same shape: a
- * value produced and filed under a name nothing could look up.
- *
- * - **CR2-072** — every skill level registers a `SPEED` modifier, filed under
- *   `skillId.toUpperCase()` (`'MINING'`). Categories are lower-case everywhere
- *   else and `_forEachMatching` compares them case-sensitively, so the query
- *   returned 0. Nothing read `SPEED` at all either.
- * - **CR2-073** — `getXpMultiplier` read `EFFECT_TYPES.XP_GAIN`, which does not
- *   exist (the axis is `XP_BONUS`), so it always returned exactly 1 — and it
- *   had no callers, so even a corrected name would have changed nothing.
- *
- * A modifier that resolves to "no change" looks identical to a modifier that
- * was never written. That is why both ends are pinned here.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

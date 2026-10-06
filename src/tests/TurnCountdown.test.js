@@ -28,11 +28,10 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Token Lifecycle feedback, slice **Q8 — FB-14**: a Token that turns on its
- * own shows a countdown to its next roll (TL-12), on the Coast and on the
- * Shrimp Coast it became. Since B1.3 it is a sky ring in the row under the
- * Token (TL-22), emptying toward the roll, always shown; the corner badge is
- * gone.
+ * ⭐ Token Lifecycle feedback, slice **Q8**: a Token that turns on its own
+ * shows a countdown to its next roll, on the Coast and on the Shrimp Coast it
+ * became. Since B1.3 it is a sky ring in the row under the Token, emptying
+ * toward the roll, always shown; the corner badge is gone.
  */
 
 registerTokenTypes({

@@ -2,20 +2,7 @@
  * Economic simulator — the lever policy, the refusal catalogue and the churn
  * report (phase P6).
  *
- * Covers `cms/src/engine/sim/tuningPass.js`, `refusals.js` and `churn.js`.
- *
  * ## ⚠️ Why nothing here names a shipped Token, item or recipe
- *
- * The content in `data/` is the owner's live workspace and it moves under the
- * tests: on 2026-09-01 twenty-five Tokens arrived, twenty items arrived, six
- * recipes were authored and one Token was deleted — mid-phase. Several tests
- * broke *while nothing was wrong*, because they named specific content.
- *
- * So: behaviour is proven on **fixtures**, and the real corpus is asserted
- * against **rules** that hold whatever it contains ("no source ever has two
- * levers moved") rather than against any particular source's numbers. Three of
- * the owner's recipes are deliberately unfinished with no outputs at all; the
- * passes must tolerate that, and the corpus sweep below is what says so.
  *
  * ⚠️ Every number in the fixtures comes from the plan's curves and dials
  * (§13.1, §13.3, §13.5) via the engine's own helpers, never from `data/`.
@@ -55,13 +42,6 @@ const recipe = (id, { level = 1, tempo = 'medium', purpose = 'gph', inputs = [],
 
 /**
  * Run the TUNE pass alone, over hand-made values.
- *
- * Driving the pass directly rather than through `runSim` is what makes these
- * tests readable: an item's value is stated, not reverse-engineered out of an
- * anchor's curve, so a fixture says what it means.
- *
- * `anchors` maps an item id to the source that anchors it; anything absent is
- * inherited, which is the case the policy exists for.
  */
 function tune({ tokens = {}, recipes = {}, values = {}, anchors = {}, dials } = {}) {
     const entities = adaptCorpus({ tokens, recipes });
@@ -165,7 +145,7 @@ describe('EconSim — the lever policy (plan §5)', () => {
                         outputs: [out('item_x', { minQty: 1, maxQty: 1, chance: 95, variable: true })],
                     }),
                 },
-                values: { item_x: 6 },   // 6, not 8, since TL-21 moved Fast's middle from 10s to 8s,
+                values: { item_x: 6 },   // 6, not 8, moved Fast's middle from 10s to 8s,
             });
 
             const record = tunings.get('token_second');
@@ -193,7 +173,7 @@ describe('EconSim — the lever policy (plan §5)', () => {
                         outputs: [out('item_x', { minQty: 1, maxQty: 1, chance: 100, variable: true })],
                     }),
                 },
-                values: { item_x: 6 },   // 6, not 8, since TL-21 moved Fast's middle from 10s to 8s,
+                values: { item_x: 6 },   // 6, not 8, moved Fast's middle from 10s to 8s,
             });
 
             const record = tunings.get('token_second');
@@ -316,7 +296,7 @@ describe('EconSim — the lever policy (plan §5)', () => {
             expect(record.after.outputs[0].maxQty - record.after.outputs[0].minQty).toBe(1);
 
             const row = rows.find(r => r.code === 'iph-quantity-exemption');
-            expect(row.severity).toBe('warning');   // Warning, not Info (ruled 2026-08-28)
+            expect(row.severity).toBe('warning');   // Warning, not Info
         });
 
         it('does not extend the exemption to a Gold-tagged source', () => {

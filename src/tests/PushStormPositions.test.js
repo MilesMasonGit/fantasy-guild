@@ -30,25 +30,8 @@ vi.mock('../../bench/lib/fingerprint.mjs', async (importOriginal) => {
 });
 
 /**
- * ⭐ A position golden for the push solver and the nudge search (CR3-003,
- * CR3-150), taken on `main` BEFORE either is made faster.
- *
- * Both fixes must be exact: every Token has to land on the very same point,
- * to the last bit, or the mat looks different after the change. Behaviour
- * tests (MatPlacement, MatResize) prove pushes and nudges happen; none pins
- * coordinates. This does, in the suite, beside the bench's own identity gate.
- *
- * It runs the bench's S4 "push storm" (`bench/scenarios/s4-push-storm.mjs`,
- * the same module the bench and the Perf HUD run) on the bench's fixtures,
- * booted as the bench boots: 60 placed Tokens on a 20-step mat, a Forest
- * packed round with 24 trees, 50 spawned arrivals (they push once the free
- * spots are gone), 50 refused drops, 50 landing drops round the rim (all
- * nudged), then the mat shrunk to 6. Each checkpoint is a hash of every
- * Token's arrival order, type and exact point.
- *
- * The random source is the bench's seeded generator (seed 1). A deliberate,
- * ruled change of placement behaviour (CR3-151, say) re-takes these literals
- * in its own commit and says so.
+ * ⭐ A position golden for the push solver and the nudge search, taken on
+ * `main` BEFORE either is made faster.
  */
 
 /** The bench's seeded generator (bench/lib/prelude.mjs, mulberry32). */
@@ -102,8 +85,8 @@ describe('⭐ the S4 push storm lands every Token on the same point (CR3-003, CR
         expect(id.rimRadius).toBe(310.8058415243332);
     });
 
-    // Literals taken on 2026-09-30 from main (cbaa58f) plus this branch's
-    // test-only commits, before CR3-003 / CR3-150.
+    // Literals taken on from main (cbaa58f) plus this branch's test-only
+    // commits,.
     it('after the 50 arrivals (the push solver, CR3-003)', () => {
         expect(seen.identity.positionsAfterArrivals).toBe('3d42fba4');
     });

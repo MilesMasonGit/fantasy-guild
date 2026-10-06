@@ -17,28 +17,9 @@ import {
 /**
  * Effect-engine rules, inherited from the Card Mutators & Tokens pass.
  *
- * ## Trimmed by the 7×7 playmat rework, Phase 1
- * The **card-mutator system this file was written for is deleted** — it stamped
- * modifiers onto deck slot indices and wiped them at the Cycle boundary, and
- * both concepts are gone. Removing it is what frees the name "Token" for board
- * objects (grid concept §10.3).
- *
- * What survived is the machinery underneath it, which the board depends on:
- *
  *   Phase 1 — **Three-Bucket math** (§15.3). The single most load-bearing set of
  *             rules in the effect engine, and the reason a stack of small
- *             adjacency buffs (D-120) stays small.
- *   Phase 5 — **the yield / time / cost axes and their hard floors** (§15.8/§10),
- *             now `systems/effects/EffectAxes.js`. ⚠️ These are the ONLY
- *             consumer path in the game for YIELD, WORK_TIME and INPUT_COST —
- *             the board's whole economy resolves through them.
- *   Phase 7 — **the combat axis**, routed into StatusEffectSystem (§15.13).
- *
- * Deleted with the mutator system: Phase 0 scaffolding, Phase 3 slot-token
- * lifecycle, Phase 4 stamping, Phase 8 Area Anchor, Phase 9 badge data.
- *
- * Scope rules (additive stacking, source ids, rehydration) live in
- * `ModifierScopes.test.js`; card work failure states in `CardFailure.test.js`.
+ *             adjacency buffs stays small.
  */
 describe('Phase 1 — Three-Bucket math (§15.3)', () => {
     describe('combineMultipliers', () => {

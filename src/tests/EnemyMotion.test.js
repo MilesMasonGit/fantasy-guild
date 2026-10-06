@@ -28,9 +28,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * B7.1 — **enemies move, tethered to their spawner** (TL-16, FB-23, owner's
- * "B7 range"). A small camp's art radius is 64 u, so with the default wander
- * of 128 u an enemy potters between 64 u and 192 u from the camp's centre.
+ * B7.1 — **enemies move, tethered to their spawner** (owner's "B7 range"). A
+ * small camp's art radius is 64 u, so with the default wander of 128 u an
+ * enemy potters between 64 u and 192 u from the camp's centre.
  */
 
 registerTokenTypes({

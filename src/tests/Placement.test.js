@@ -9,25 +9,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
- * Placement — D-134, D-143, D-147, plus the forfeited-cycle rule (D-54 / D-131).
- *
- * These are pure-logic rules with no engine behind them, which makes them cheap
- * to pin and unusually worth pinning: on a branch with no feature flag there is
- * no flag-off build to compare against, so board tests are the only thing that
- * will catch collateral damage.
- *
- * ## Under flags (Free Playmat slice 1.4b)
- * Dropping a hero plants their flag, and the flag claims the nearest Token the
- * hero can run. Heroes are never displaced any more: one hero per Token is a
- * claim (FP-25), a moved Token carries its hero and progress (FP-68), and a
- * Token leaving the board just ends the claim. The heroes here hold every
- * skill, because a hero only works a Token whose skill they hold (FP-48).
- *
- * ## ⭐ By mat point and instance id (Free Playmat slice 1.6d-2)
- * There are no tiles. Every scene below names **mat points** and every answer is
- * an **instance id**, so nothing here can outlive the grid it used to describe.
- * The old index-taking adapters and the tests that only pinned index arithmetic
- * (a falsy tile 0, an index off the board, counting empty tiles) went with it.
+ * Placement — plus the forfeited-cycle rule.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -92,9 +74,8 @@ describe('Placing a Token', () => {
 /**
  * ⭐ **Nothing is displaced any more** (Free Playmat slice 1.6d-1).
  *
- * D-134's "the incoming thing wins" was an answer to "two Tokens cannot share a
- * tile". There are no tiles, so the question is gone with them: a Token dropped
- * where there is no room moves **itself** to the nearest spot that fits. The
+ * There are no tiles, so the question is gone with them: a Token dropped where
+ * there is no room moves **itself** to the nearest spot that fits. The
  * arrangement the player built is never rearranged behind their back, nothing is
  * bumped to the Tray, and no hero is parted from their work by someone else's
  * drop.
@@ -297,8 +278,8 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
     });
 
     it('a Token placed under a planted flag is worked without re-placing them', () => {
-        // The same courtesy a Manager extends (D-151), arrived at from the
-        // player's side: drop a Forest under a flag and its hero starts on it.
+        // The same courtesy a Manager extends, arrived at from the player's
+        // side: drop a Forest under a flag and its hero starts on it.
         GameState.state.heroes = [makeHero('hero_1', ['logging'])];
         Placement.plantFlagAt('hero_1', A);
         const forest = place('fixture_producer', A);
@@ -376,9 +357,9 @@ describe('Recalling a hero', () => {
     });
 });
 
-// Was 'Returning a Token to the Vault (right-click, FP-45)'. Right-click to the
-// Vault went in Token Lifecycle 9.3; Remove (5.2) is the one way off the mat,
-// and these pin that it behaves as the Vault route did for the mat and the hero.
+// Was 'Returning a Token to the Vault (right-click)'. Right-click to the Vault
+// went in Token Lifecycle 9.3; Remove (5.2) is the one way off the mat, and
+// these pin that it behaves as the Vault route did for the mat and the hero.
 describe('Taking a Token off the mat (removePlacedToken)', () => {
     it('lifts it off the mat and leaves the ground clear', () => {
         const forest = place('fixture_producer', A);
@@ -390,10 +371,8 @@ describe('Taking a Token off the mat (removePlacedToken)', () => {
     });
 
     it('leaves the hero’s flag standing there, idle', () => {
-        // Lifting a Token is a statement about the Token. Scattering the
-        // workforce back to the Dock every time the mat is rearranged would make
-        // reorganising expensive in exactly the way D-54 says it must not be.
-        // `recallHero` is how a hero goes to the Dock.
+        // Lifting a Token is a statement about the Token. `recallHero` is how a
+        // hero goes to the Dock.
         const forest = place('fixture_producer', A);
         Placement.plantFlagAt('hero_1', A);
 
@@ -415,7 +394,7 @@ describe('Taking a Token off the mat (removePlacedToken)', () => {
     });
 });
 
-// 'The Token Bank (D-137, D-77)' went with the Vault (Token Lifecycle 9.3).
+// 'The Token Bank' went with the Vault (Token Lifecycle 9.3).
 
 describe('Board queries', () => {
     it('lists the Tokens on the mat in arrival order', () => {

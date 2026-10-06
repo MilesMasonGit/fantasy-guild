@@ -9,23 +9,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import { matW, matH } from '../config/matGeometry.js';
 
 /**
- * Bank overflow — D-138: **nothing is ever lost to a full Bank.**
- *
- * Written in Phase 0 as a skipped spec, **enabled in Phase 3** when the sprite
- * layer arrived. It supersedes `CardFailure.test.js`'s bank-capacity cases,
- * which encoded the exact behaviour this reverses.
- *
- * ## What changed
- * | Before                                          | Now                          |
- * | :--                                             | :--                          |
- * | `addItem` warned and destroyed the overflow     | It becomes a board sprite    |
- * | Preflight refused a cycle with nowhere to put it| The cycle runs; loot lands   |
- *
- * The reasoning: a full Bank should announce itself the way every other problem
- * on this board does — **visibly**, as litter piling up across the grid —
- * rather than by silently stopping production in a way that looks identical to
- * a supply shortage. It is also the only thing protecting a one-copy-ever
- * Mythic drop.
+ * Bank overflow — **nothing is ever lost to a full Bank.**
  */
 
 vi.mock('../config/registries/itemRegistry.js', () => ({
@@ -114,16 +98,13 @@ describe('D-138 — a full Bank never destroys anything', () => {
     });
 });
 
-// D-138 ("a cycle with nowhere to put its output still completes") was asserted
-// here against `CardPreflight`, which the card retirement deleted: the board
-// reimplemented that rule for itself in `BoardRunner`/`InputAllocator`, and the
-// card-era copy had no live caller left. The rule itself is still covered on the
-// live path — see `TokenCycle.test.js` ("waits when inputs are missing, D-114")
-// and `Risk13Allocation.test.js` for starvation behaviour.
+// The rule itself is still covered on the live path — see `TokenCycle.test.js`
+// ("waits when inputs are missing") and `Risk13Allocation.test.js` for
+// starvation behaviour.
 
 // 'Tokens collect into the Token Vault, or wait on the floor' went with Token
 // loot and the Vault (Token Lifecycle 9.3): a Token a recipe makes now stands
-// on the mat beside its station (TL-8, `TokenOutputsOnMat.test.js`).
+// on the mat beside its station (`TokenOutputsOnMat.test.js`).
 
 describe('Sprites feed Tokens directly (D-42)', () => {
     it('loot on the ground never starves a chain', () => {
@@ -170,10 +151,6 @@ describe('Sprite behaviour', () => {
 });
 
 
-// ---------------------------------------------------------------------------
-// CR3-254 (round 3 review R4, test from R10): the sweeps skip a pile the Bank
-// would refuse, read live — so room made with no event at all is still seen.
-// ---------------------------------------------------------------------------
 
 describe('⭐ a full Bank under a loot flood (CR3-254)', () => {
     /** 30 refused piles of distinct items, over a stack cap of 10. */

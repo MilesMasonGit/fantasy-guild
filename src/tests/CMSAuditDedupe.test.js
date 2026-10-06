@@ -5,17 +5,10 @@ import { auditConnectivity } from '../../cms/src/engine/connectivityAuditor';
 /**
  * One problem, one row.
  *
- * An item nothing produces used to raise **three** Criticals on the Economy
- * Audit tab: the simulator's `orphan-item` row, this auditor's "Unreachable
- * Item", and one "Orphaned Input" per recipe that wanted it. All three say the
- * same thing; only the simulator's carries remedies.
- *
  * ⚠️ The suppression is conditional on the simulator having actually named the
  * item, which is the part worth pinning. The two checks are not redundant in
  * general — each catches things the other misses — so neither may be deleted,
  * and neither may go quiet when the other is silent.
- *
- * Fixtures only, per the house rule.
  */
 
 /** An item with no producer anywhere, wanted by one recipe. */

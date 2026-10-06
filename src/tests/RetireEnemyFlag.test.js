@@ -47,11 +47,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **The `target: 'enemy'` flag is retired** — Effects Grammar V10b.
- *
- * V10a gave `Applies` the enemy role. The one-off flag it replaces (UE-24) is
- * converted on load by the game's registries AND the CMS store — the same pure
- * function in both, so a "Sync to Game" can never write it back — and the
- * runtime, the editor and the sentence no longer read it.
  */
 
 const MONSTER = 16;
@@ -101,10 +96,10 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TriggerSystem.resetCascadeGuard();
     TriggerSystem.init();
-    // CR3-157: BoardCombat used to call LoadoutMoments.fire directly right
-    // after publishing COMBAT_ENGAGED; it now only subscribes to that event
-    // (LoadoutMoments.init, called after TriggerSystem.init as the game
-    // does), so a real engagement through BoardRunner.tick needs this started.
+    // BoardCombat used to call LoadoutMoments.fire directly right after
+    // publishing COMBAT_ENGAGED; it now only subscribes to that event
+    // (LoadoutMoments.init, called after TriggerSystem.init as the game does),
+    // so a real engagement through BoardRunner.tick needs this started.
     LoadoutMoments.init();
     LiveEffects.resetClock();
     GameState.state.heroes = [fighter('hero_1')];

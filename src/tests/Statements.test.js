@@ -29,16 +29,6 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /**
  * The statement grammar — the shape that replaced effect blocks.
- *
- * These tests hold the three claims the redesign rests on:
- *
- * 1. **The sentence is the rule.** A statement renders to words, and a wrong
- *    statement renders to wrong words rather than to nothing.
- * 2. **Position no longer means anything.** Reordering a Token's rules must not
- *    move a live save's upkeep or cooldown state onto a different rule.
- * 3. **Illegal combinations cannot be authored.** The palette declares which
- *    effects survive a trigger, so the six that used to be silently dropped
- *    inside a Reaction are simply not offered there.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -110,10 +100,10 @@ describe('The rules text is the rule, rendered', () => {
             upkeep: { items: [{ itemId: 'item_coal', quantity: 1 }], cadenceMs: 30000 }
         };
         /**
-         * ⚠️ Upkeep is its OWN line now (owner, 2026-09-12), and says "consumes"
-         * rather than "costing". It used to be a trailing clause on a sentence
-         * about something else entirely, which buried an ongoing drain on the
-         * Bank at the tail of a yield buff.
+         * ⚠️ Upkeep is its OWN line now, and says "consumes" rather than
+         * "costing". It used to be a trailing clause on a sentence about
+         * something else entirely, which buried an ongoing drain on the Bank at
+         * the tail of a yield buff.
          */
         expect(renderStatement(costed, names)).toBe(
             'Provides 10% more yield to every nearby Token.'
@@ -249,8 +239,8 @@ describe('The Token type is read off the rules, never picked', () => {
 
     it('walks the ladder in order', () => {
         // The enemy rung reads `enemy.level`, not the retired `enemyId`:
-        // enemies fold into Tokens (2026-09-06), so there is no separate
-        // creature entity left to point at.
+        // enemies fold into Tokens, so there is no separate creature
+        // entity left to point at.
         expect(derive({ enemy: { level: 3, style: 'melee' } })).toBe('enemy');
         expect(derive({ mapId: 'map_x' })).toBe('map');
         expect(derive({ statements: [{ keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }] })).toBe('station');

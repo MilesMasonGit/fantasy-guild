@@ -35,17 +35,11 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 
 /**
  * ⭐ Free Playmat slice 1.5b-i — **a hero works anything they can in range, by
- * their own rules** (FP-71, FP-72, FP-74, FP-79, FP-80, FPP-17…FPP-19).
+ * their own rules** (…).
  *
  * ⚠️ Everything here runs at the **shipped reaches**: flag radius and Near both
- * 164 u (FP-75). A flag at tile 14 reaches the Token under it (0 u) and its four
- * side neighbours 8, 13, 15, 20 (160 u) — never a diagonal (226 u).
- * ```
- *    0  1  2  3  4  5
- *    6  7  8  9 10 11
- *   12 13 14 15 16 17
- *   18 19 20 21 22 23
- * ```
+ * 164 u. A flag at tile 14 reaches the Token under it (0 u) and its four side
+ * neighbours 8, 13, 15, 20 (160 u) — never a diagonal (226 u).
  */
 
 registerTokenTypes({
@@ -177,7 +171,7 @@ describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-
         expect(reasons(hungry)).toEqual([ALERT.INPUTS]);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
 
-        run(30000);                                   // several cycles, each one looking again (FP-80)
+        run(30000);                                   // several cycles, each one looking again
 
         expect(workTileOf('h1')).toBe(13);
         expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
@@ -272,8 +266,8 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         const east = put(15, FOREST);
         plant('h1', 14);
         // Both Forests are one step from the flag; "nearest" is measured from
-        // the hero (HM-4), who walks out of the Guild Hall — so which one they
-        // take depends on where the Hall stands. This test is about the rule
+        // the hero, who walks out of the Guild Hall — so which one they take
+        // depends on where the Hall stands. This test is about the rule
         // change, not the tie, so it follows whichever they chose.
         const first = BoardState.getTokenById(BoardState.workTokenOf('h1'));
         const other = first === west ? east : west;
@@ -337,11 +331,11 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
                 h.skills[s].level = cost.skillLevel;
             }
         };
-        // ⚠️ Rewritten for TL-7 (slice 1.2). This used to bank a foundation skill
-        // on Recruit → Fighter; promotion keeps every foundation skill now, so
-        // the bank-and-restore round trip runs on a re-training across
-        // branches instead: Fighter → Cleric banks Leadership, Cleric → Fighter
-        // restores it.
+        // ⚠️ Rewritten (slice 1.2). This used to bank a foundation skill on
+        // Recruit → Fighter; promotion keeps every foundation skill now, so the
+        // bank-and-restore round trip runs on a re-training across branches
+        // instead: Fighter → Cleric banks Leadership, Cleric → Fighter restores
+        // it.
         qualify('fighter');
         const toFighter = PromotionSystem.promote(h.id, 'fighter');
         expect(toFighter.success).toBe(true);

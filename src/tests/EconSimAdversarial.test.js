@@ -1,31 +1,7 @@
 /**
  * Economic simulator — **the adversarial content set** (phase P9).
  *
- * Every hard case in the design, in **one workspace**, run through the **whole
- * pipeline** — `recalculateEconomy`: the passes, the write-back, the audit, the
- * churn report and the sync payload — and asked three questions:
- *
- * 1. does it **terminate**?
- * 2. does it **refuse each case correctly**?
- * 3. is it **idempotent** — two runs byte-identical?
- *
  * ## ⚠️ Why this file exists, and why it is not nine small tests
- *
- * Several of these paths were **fixture-proven only** for the entire rework, and
- * each was exercised alone:
- *
- * | Path | Why it never met real content |
- * | :--- | :--- |
- * | Token-output refusal | no shipped recipe outputs a Token (S15) |
- * | Downcycle chain | no shipped recipe is a return leg |
- * | Enemy pool entries | the CMS store never loads `data/enemies.json` (S12) |
- * | Gold and raw-item pool entries | unauthorable in the Map editor today |
- * | Sticky re-election | no item carried a `valueSource` before the P5 cutover |
- *
- * A pass that is right about one hard case at a time can still be wrong about
- * two of them together: a cycle beside a downcycle, an orphan feeding a blocked
- * chain, a Map pool with no Token in it at all. This is the workspace where they
- * meet.
  *
  * ⚠️ Nothing here names a shipped id. Every id is `*_adv_*`, so the owner can
  * author freely without breaking this file.
@@ -51,19 +27,6 @@ function tok(id, name, config, extra = {}) {
 
 /**
  * Every adversarial case at once.
- *
- * ```
- *  healthy       ore ──► bar          (anchor, then a crafted step)
- *  downcycle     bar ──► ore          (return leg: exempt from the cycle refusal)
- *  cycle         cyc_a ⇄ cyc_b        (genuine ring: refused, not iterated)
- *  orphan        adv_orphan           (nothing produces it)
- *  deferred      adv_relic            (a passive produces it, and passives never anchor)
- *  untagged      adv_scrap            (its only source has no Tempo/Purpose)
- *  token-output  recipe outputs a Token id
- *  extreme tags  level 99 · heavy · XPH · mythic · 100,000 charges
- *  pools         one with no Token at all; one that is all gold and raw items
- *  enemy         a pool entry that is an enemy, priced off its drop table
- * ```
  */
 function adversarialWorkspace() {
     return {
@@ -131,7 +94,7 @@ function adversarialWorkspace() {
         },
         maps: {
             // A pool with no Token entry at all: slot one has nothing to draw
-            // from and falls back to a free draw (CMS-129's renormalisation).
+            // from and falls back to a free draw ( renormalisation).
             map_adv_tokenless: {
                 id: 'map_adv_tokenless', name: 'Adv Tokenless', price: 400, materials: [],
                 pool: [
@@ -533,23 +496,6 @@ describe('⚠️ The adversarial content set — every hard case in one workspac
 
 /**
  * ⚠️ **A real non-idempotence, found by the adversarial set and pinned here.**
- *
- * `tokenType` is **derived** from a Token's own rules on the way out of every
- * Recalculate (`deriveTokenType`), and the ANCHOR pass reads `tokenType` to
- * decide which kinds can never anchor. So a record whose *authored* type
- * disagrees with what its rules say — the shape any workspace saved before the
- * derivation landed is in — is a **deferred kind on run one and an ordinary
- * producer on run two**, and the same content prices two different ways on two
- * consecutive runs.
- *
- * It converges: run two and run three agree, because by then the stored type is
- * the derived one. That is what keeps it a wrinkle rather than a hole, and it is
- * the same self-healing shape as the retired-field stripping. But "two runs are
- * byte-identical" (plan §11) is only true from the second run on, and that is
- * worth knowing rather than discovering.
- *
- * Reported to the director, not fixed here: the fix is a decision about which
- * field wins, and that is the owner's call, not a build agent's.
  */
 describe('authored tokenType is corrected before the passes read it', () => {
     beforeEach(() => {
@@ -575,14 +521,6 @@ describe('authored tokenType is corrected before the passes read it', () => {
         // authored type on the way in (a passive can never anchor, so the item
         // went unpriced), while `recalculateEconomy` re-derived the type on the
         // way out — so run two saw a resource and priced it. It converged, but
-        // plan §11's "two runs are byte-identical" was only true from run two
-        // on, and every workspace saved before the derivation landed is in
-        // exactly that shape.
-        //
-        // `tokenType` is derived with no override (owner decision Q3), so there
-        // was never a question of which field wins. The fix was to derive it in
-        // `migrateLegacyIntent`, BEFORE the passes read it — the same place and
-        // for the same reason as the `isPrimarySource` → `anchor` migration.
         const first = useEntityStore.getState().recalculateEconomy();
         expect(first.tokens.token_adv_liar.tokenType).toBe('resource');
         // The lie is corrected before the anchor election, so the item is

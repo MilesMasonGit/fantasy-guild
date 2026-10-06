@@ -20,9 +20,6 @@ import recipeData from '../../data/tokenRecipes.json';
  * both would render a plausible table in which half the rows showed a default
  * instead of the authored value — and, once editing lands, wrote to a field
  * nothing reads. These tests exist mostly to pin that.
- *
- * Fixtures for the shapes; the shipped corpus is asserted against **rules
- * only**, never by id (house rule).
  */
 
 function workspace() {

@@ -23,8 +23,7 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { spawnerAlertData } from '../ui/components/board/TokenEventAlert.jsx';
 
 /**
- * Token Lifecycle slice 3.3 — **spawners** (roadmap §3.1, DP-4, DP-5, SP-5,
- * SP-6, SP-46/SP-68).
+ * Token Lifecycle slice 3.3 — **spawners** (roadmap §3.1).
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -126,7 +125,7 @@ afterEach(() => {
     resetMatTuning();
 });
 
-// --- Cap (DP-4, SP-5) -------------------------------------------------------
+// --- Cap -------------------------------------------------------
 
 describe('⭐ a Forest spawns its family up to its allowance', () => {
     it('one attempt per interval, a seed each, and at most 5 of the family', () => {
@@ -214,12 +213,10 @@ describe('⭐ a Forest spawns its family up to its allowance', () => {
     });
 });
 
-// --- CR3-047 (test first): the census a faster spawner pass must keep ------
 
 describe('⭐ the family census is exact within one tick (CR3-047)', () => {
-    // CR3-047 counts each family once per tick instead of per spawner. That is
-    // only right if a spawn earlier in the same pass is counted by the next
-    // spawner, and if the family follows a re-registered spawner type.
+    // That is only right if a spawn earlier in the same pass is counted by the
+    // next spawner, and if the family follows a re-registered spawner type.
 
     it('two Forests one short of their shared cap, both due in the same tick, spawn exactly once', () => {
         give(SEED, 100);
@@ -262,7 +259,6 @@ describe('⭐ the family census is exact within one tick (CR3-047)', () => {
     });
 });
 
-// --- SP-6 -------------------------------------------------------------------
 
 describe('⭐ removing a spawner lowers the cap and removes nothing (SP-6)', () => {
     it('the other Forest\'s Trees stay; the family is over its new cap and nothing spawns', () => {
@@ -290,7 +286,7 @@ describe('⭐ removing a spawner lowers the cap and removes nothing (SP-6)', () 
     });
 });
 
-// --- Upkeep (DP-5) ----------------------------------------------------------
+// --- Upkeep ----------------------------------------------------------
 
 describe('⭐ TL-20: upkeep is also paid from item loot lying on the mat', () => {
     const onFloor = (id) => SpriteLayer.countOnBoard(id);
@@ -392,7 +388,7 @@ describe('⭐ upkeep is paid per spawn, all or nothing (DP-5)', () => {
     });
 });
 
-// --- Landing (SP-46, SP-68, FP-46) -------------------------------------------
+// --- Landing -------------------------------------------
 
 describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', () => {
     /** A ring of 8 Tokens 100 u around the spawner, so no spot is free within nudge reach 0. */

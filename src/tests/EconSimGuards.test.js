@@ -1,16 +1,6 @@
 /**
  * Economic simulator — the check pass (phase P9).
  *
- * Three things this covers:
- *
- * 1. **The progression guard** (plan §13.5, correction F1) — the one refusal
- *    aimed at the developer's dials. Ten levels of progress must be worth more
- *    than the spread inside one level, or a player can level up and earn less.
- * 2. **Hours-first charge scale** (CMS-135) — the lifetime translation and its
- *    two soft outlier heuristics.
- * 3. **Sticky-anchor re-election** (plan §3.2) — the one click that accepts a
- *    new anchor, and the churn it is required to report.
- *
  * ⚠️ Every case here is a fixture. Nothing names a shipped Token, item, recipe
  * or Map id: the owner authors continuously, and a test that names content
  * breaks when they do.
@@ -110,7 +100,7 @@ describe('The progression guard (§13.5, F1)', () => {
     });
 });
 
-// ── Hours-first charge display (CMS-135) ─────────────────────────────────────
+// ── Hours-first charge display ─────────────────────────────────────
 
 /** One Token, with the fields the adapter reads. */
 function token({ id, uses, cycleTimeMs = 10000, rarity = 'common', tempo = 'fast' }) {

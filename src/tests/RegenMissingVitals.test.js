@@ -2,19 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 /**
  * Regen must survive a hero with a missing vital.
- *
- * ## Why this is worth a test rather than a one-line guard and a shrug
- * `RegenSystem.tick` runs inside a **GameLoop tick handler**. An exception there
- * does not fail once and stop — it is raised on every frame, forever, and the
- * loop swallows it into the console. The symptom is an endlessly repeating
- * `Cannot read properties of undefined (reading 'current')` rather than anything
- * that looks like a hero bug.
- *
- * `HeroGenerator` always supplies `hp` and `energy`, so a hero without one is
- * legacy or test-shaped save data. That is precisely the shape a tick handler
- * has to tolerate, and the rest of the codebase already assumes it can happen —
- * `ConsumptionSystem` and `HeroDockTab` both read `hero.energy?.current`.
- * `RegenSystem` was the only reader that did not.
  */
 
 const heroes = [];

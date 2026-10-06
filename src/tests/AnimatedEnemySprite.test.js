@@ -10,9 +10,9 @@ vi.mock('../systems/board/BoardState.js', () => ({
 import * as BoardState from '../systems/board/BoardState.js';
 
 /**
- * ⭐ Enemy Animations EA-A. `AnimatedEnemySprite` is pure presentation
- * (EAP-1) — no board, no engine, no events — so these mock `BoardState`
- * entirely rather than booting a board just to read one hero's `side`.
+ * ⭐ Enemy Animations EA-A. `AnimatedEnemySprite` is pure presentation —
+ * no board, no engine, no events — so these mock `BoardState` entirely
+ * rather than booting a board just to read one hero's `side`.
  */
 
 const sprite = (container) => container.querySelector('[role="img"]');
@@ -67,8 +67,8 @@ describe('⭐ which cycle plays (EAP-2)', () => {
 });
 
 // Frame advance — which cell shows, in what order — is pinned as an exact
-// sequence in `SpriteFrameSequence.test.js` (CR3-301), which does not care
-// whether the frame is held in React state or written to the element.
+// sequence in `SpriteFrameSequence.test.js`, which does not care whether
+// the frame is held in React state or written to the element.
 describe('⭐ frame advance', () => {
     it('shows a different cell for each of the 8 frames of the active cycle', () => {
         const { container } = render(

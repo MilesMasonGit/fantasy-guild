@@ -72,12 +72,7 @@ vi.mock('../ui/utils/alphaHitTest.js', async (importOriginal) => {
 
 /**
  * ⭐ Free Playmat slice 1.5b-ii — **dragging a hero moves the flag, the owner's
- * flag sprites and colours, the gear badge and the rules panel** (FP-73,
- * FP-76, FP-77, FP-81, FP-82, FPP-20, FPP-21).
- *
- * Since slice 1.6c-2 the board is `MatBoard`, drawing each Token and hero at
- * its mat point by instance id, and every drop goes through `dropOnMat` at the
- * point the player let go — so the drops here are made the same way.
+ * flag sprites and colours, the gear badge and the rules panel**.
  */
 
 /**
@@ -183,7 +178,7 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         const deployed = counting('hero_deployed', () => dropOnMat(payload, C(21)));
 
         expect(deployed).toBe(1);
-        // The flag stands exactly where it was let go (FP-94).
+        // The flag stands exactly where it was let go.
         expect(BoardState.flagOf('h1')).toMatchObject(C(21));
         // Bare ground at 21: the hero appears at the nearest job in reach, the Forest on 22.
         expect(workTileOf('h1')).toBe(22);
@@ -351,10 +346,10 @@ describe('the flag answers clicks on its round area (owner, 2026-09-21)', () => 
     /**
      * The flag used to answer only on its opaque pixels (alpha hit-testing).
      * The slice 1.9 work swapped that for a round hit area the size of the
-     * drawn art, and the owner kept it: easier to grab a thin flag.
-     * ⚠️ Its old cost — the circle catching clicks meant for a Token just
-     * behind it — is gone since B5 (FB-44): over a Token's art circle every
-     * flag lets the pointer through (`MatLayering.test.js`, `B5Flags.test.js`).
+     * drawn art, and the owner kept it: easier to grab a thin flag. ⚠️ Its old
+     * cost — the circle catching clicks meant for a Token just behind it — is
+     * gone since B5: over a Token's art circle every flag lets the pointer
+     * through (`MatLayering.test.js`, `B5Flags.test.js`).
      */
     it('is round, the size of its art, and no longer opts into alpha hit-testing', () => {
         Flags.plant('h1', C(20));

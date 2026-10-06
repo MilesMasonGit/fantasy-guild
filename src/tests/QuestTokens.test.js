@@ -24,11 +24,11 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ B6.1 — quests are Tokens on the mat (TL-18, FB-41–FB-43). The Guild Hall
- * spawns them beside itself: bounties up to a cap (2, +1 per Notice Board rank,
- * to 5) on a 3-minute game-time clock; tutorial steps one at a time under a
- * hidden cap of their own. Claiming drops the reward as loot and removes the
- * Token; bounties may be binned, tutorial steps may not.
+ * ⭐ B6.1 — quests are Tokens on the mat. The Guild Hall spawns them beside
+ * itself: bounties up to a cap (2, +1 per Notice Board rank, to 5) on a
+ * 3-minute game-time clock; tutorial steps one at a time under a hidden cap of
+ * their own. Claiming drops the reward as loot and removes the Token; bounties
+ * may be binned, tutorial steps may not.
  */
 
 const HALL = { x: 880, y: 560 };
@@ -151,7 +151,7 @@ describe('the Guild Hall spawns bounties up to the cap on a game-time clock (TL-
 describe('the Notice Board raises the cap by one a rank, to 5', () => {
     it('is linked to the Hall on the upgrade web and costs items', () => {
         const def = getUpgradeDef('notice_board');
-        expect(def.links).toContain(HALL_NODE);   // the B9 web (TL-23); tile 25 before
+        expect(def.links).toContain(HALL_NODE);   // the B9 web; tile 25 before
         expect(isUpgradeAccessible('notice_board', {})).toBe(true);
         expect(def.maxRank).toBe(NOTICE_BOARD_MAX_RANK);
         expect(matTuning('questCap') + NOTICE_BOARD_MAX_RANK).toBe(matTuning('questCapMax'));

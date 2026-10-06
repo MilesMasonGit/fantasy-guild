@@ -82,7 +82,7 @@ describe('⭐ walking costs work time (FP-26)', () => {
         const tok = put({ x: 800, y: 500 });
         Flags.plant('h1', { x: 500, y: 500 });
 
-        // Claimed at once (HMP-2) — but walking, so nobody works it yet.
+        // Claimed at once — but walking, so nobody works it yet.
         expect(BoardState.claimOfHero('h1')?.instanceId).toBe(tok.id);
         expect(Flags.statusOf('h1')).toMatchObject({ state: 'walking', instanceId: tok.id });
         expect(BoardState.workerOf(tok.id)).toBeNull();

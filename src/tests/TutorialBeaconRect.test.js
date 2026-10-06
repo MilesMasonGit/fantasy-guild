@@ -4,12 +4,7 @@ import { render, cleanup, act } from '@testing-library/react';
 import { TutorialBeacon } from '../ui/components/base/TutorialAideOverlay.jsx';
 
 /**
- * ⭐ **A tutorial beacon re-renders only when its target moves** (CR3-458).
- *
- * The beacon follows its target every animation frame (the target may be
- * sliding: a drawer, the dock). It used to set a brand-new rect object every
- * frame, so React re-rendered the beacon 60–165 times a second for as long as
- * it showed. It now keeps the rect it has when nothing changed.
+ * ⭐ **A tutorial beacon re-renders only when its target moves**.
  */
 
 const h = React.createElement;

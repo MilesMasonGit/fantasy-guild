@@ -33,16 +33,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * A hero's loadout as a bearer — Unified Effects P4.
- *
- * Items carry the same named library effects Tokens carry. What differs is the
- * two things this file is about:
- *
- * 1. **The loadout is one bearer, not nine.** Two items naming one effect merge,
- *    their scales add, and the total is capped at 5 (UE-19).
- * 2. **The inventory stack is the charge pool** (UE-21). An item has no
- *    `usesRemaining` and cannot have one — it is a fungible id in a shared
- *    stack — so a rule's authored cost is spent as units of the item itself. A
- *    rule costing 0 is never consumed, which is how weapons and armour are built.
  */
 
 const YIELD_STATEMENT = {
@@ -62,7 +52,7 @@ function heroCarrying(...itemIds) {
 beforeEach(() => {
     // The Bank has slot capacity only once a game exists — a fresh GameState
     // starts with none, so `addItem` would hand every fixture item to the board
-    // as litter (D-138) instead of banking it.
+    // as litter instead of banking it.
     GameState.initNew();
     InventoryManager.init();
 
@@ -225,7 +215,7 @@ describe('a carried rule reaches the Token its hero is working', () => {
         GameState.state.heroes = [{
             id: 'hero_1', name: 'hero_1', status: 'idle',
             equipment: ['fixture_sword', null, null, null, null, null, null, null, null],
-            // Holds the Token's skill: a hero only works what they can run (FP-48).
+            // Holds the Token's skill: a hero only works what they can run.
             hp: { current: 100, max: 100 }, skills: { logging: { level: 5, xp: 0 } },
         }];
 
@@ -247,7 +237,7 @@ describe('a carried rule reaches the Token its hero is working', () => {
         GameState.state.heroes = [{
             id: 'hero_1', name: 'hero_1', status: 'idle',
             equipment: ['fixture_sword', null, null, null, null, null, null, null, null],
-            // Holds the Token's skill: a hero only works what they can run (FP-48).
+            // Holds the Token's skill: a hero only works what they can run.
             hp: { current: 100, max: 100 }, skills: { logging: { level: 5, xp: 0 } },
         }];
 

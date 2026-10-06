@@ -3,22 +3,11 @@ import { surfaceAtPoint, snapshotDndRegions, surfaceWithinRegions } from '../ui/
 import { DND_SURFACE } from '../ui/dnd/dragConstants.js';
 
 /**
- * ⭐ CR3-403 — the provider used to call `surfaceAtPoint` (two whole-document
+ * ⭐ the provider used to call `surfaceAtPoint` (two whole-document
  * `querySelectorAll` calls plus a `getBoundingClientRect` per region) on
  * EVERY pointer move during a drag. The regions cannot move mid-drag (a
  * window resize cancels the drag), so the fix snapshots them once, at drag
  * start, and checks the cached array on every move instead.
- *
- * `surfaceWithinRegions` is the same containment rule as `surfaceAtPoint`,
- * against a pre-fetched array rather than the DOM. This pins:
- *   1. it reproduces `surfaceAtPoint`'s exact priority (a drawer over the
- *      board, as `DragChain.test.js` already pins for `surfaceAtPoint`
- *      itself);
- *   2. a snapshot answers from the array alone — no `querySelectorAll` call —
- *      so checking it on every pointer move costs no DOM query;
- *   3. the snapshot does not see a region added, removed or moved after it
- *      was taken, which is exactly what makes "once per drag" safe: nothing
- *      can change a drawer's geometry while the pointer is down mid-drag.
  */
 
 const made = [];

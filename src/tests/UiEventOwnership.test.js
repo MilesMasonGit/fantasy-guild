@@ -20,10 +20,8 @@ import { EngineContext } from '../ui/context/EngineContext';
 import { TokenCentreAlert } from '../ui/components/board/TokenEventAlert.jsx';
 
 /**
- * CR3-306 (R5-Q2 = A): **an engine command announces its own change; the UI
- * never publishes an engine event.** The UI may publish `UI_EVENTS` and ask
- * for a sound (`audio:play`). The dev panels below are the only exception:
- * they fake engine changes on purpose.
+ * The dev panels below are the only exception: they fake engine changes on
+ * purpose.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));

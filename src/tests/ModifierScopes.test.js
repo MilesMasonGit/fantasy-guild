@@ -24,7 +24,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
  *     GlobalModifiers      →       GuildModifiers  (Phase 1 rename)
  *
  * ## The three rules, and what each one prevents
- *  1. **Duplicate sources stack additively** (D-23). Two +20% give +40%, never
+ *  1. **Duplicate sources stack additively**. Two +20% give +40%, never
  *     +44%. The Guild Hall's Aura upgrades hit this the moment two ranks apply.
  *  2. **Distinct source ids per copy.** Sharing a source means removing one copy
  *     silently strips the other — the recurring bug in this system.
@@ -198,7 +198,7 @@ describe('Rule 3 — runtime aggregators rebuild from state', () => {
 
 describe('Scope composition — the rule Phase 5 must not get wrong', () => {
     /**
-     * ⚠️ This is the crux of the adjacency work (G-5, roadmap Phase 5 §B).
+     * ⚠️ This is the crux of the adjacency work (roadmap Phase 5 §B).
      *
      * When a Token resolves an axis it will consult THREE scopes: its own
      * aggregator, its 8 neighbours', and the guild's. Those contributions must
@@ -239,8 +239,8 @@ describe('Scope composition — the rule Phase 5 must not get wrong', () => {
         const compounded = factor(self) * factor(neighbour) * factor(guild);
 
         // 1.25³ = 1.953…, not 1.75. The gap is small at three sources and grows
-        // fast — this is exactly how "small adjacency nudges" (D-120) would
-        // quietly become large ones.
+        // fast — this is exactly how "small adjacency nudges" would quietly
+        // become large ones.
         expect(compounded).toBeCloseTo(1.953125);
         expect(compounded).not.toBeCloseTo(1.75);
     });

@@ -7,18 +7,7 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 
 /**
- * ⚠️ **A Token's description said every rule twice** (fixed 2026-09-12).
- *
- * 24 shipped Tokens were saved reading "Works as a Smithing station. Works as a
- * Smithing station." — every one of them a Token that references a library
- * effect. The CMS's Recalculate expands each Token against the library for the
- * simulator, then expands that result AGAIN before composing its description.
- * `expandBearer` kept a bearer's existing statements as "inline" rules, and the
- * already-expanded statements counted, so the library's rules went in twice.
- *
- * The fix is at the source: expanding is idempotent. Statements an expansion
- * added carry `sourceEffectId`, and a later expansion drops those before adding
- * the library's rules afresh. Hand-authored inline statements still survive.
+ * ⚠️ **A Token's description said every rule twice** (fixed).
  */
 
 const library = {

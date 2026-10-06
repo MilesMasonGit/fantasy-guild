@@ -30,7 +30,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * **Computed magnitudes** (Effects Grammar v2, V5 — G-13, G-14).
+ * **Computed magnitudes** (Effects Grammar v2, V5).
  *
  * A number may be typed, taken as a percentage of a named stat, or counted from
  * a second selector. A closed list of three, not arithmetic — so it still reads
@@ -153,9 +153,9 @@ describe('⭐ a percentage of a named stat', () => {
     });
 
     it('⚠️ reads unlimited charges as nothing, not as a large number', () => {
-        // `null` is UNLIMITED (R-4). An unlimited Token has no "amount
-        // remaining" to be a percentage of, and treating it as huge would make
-        // it the strongest possible version of the effect.
+        // `null` is UNLIMITED. An unlimited Token has no "amount remaining" to
+        // be a percentage of, and treating it as huge would make it the
+        // strongest possible version of the effect.
         expect(resolveMagnitude(
             { amount: 50, magnitude: MAGNITUDE_KIND.STAT, stat: 'self_charges' },
             { selfInstance: { usesRemaining: null } }

@@ -13,16 +13,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 
 /**
- * Token Lifecycle slice 9.1 — **the Map bursts are retired** (DP-7).
- *
- * A Map is an ordinary producer Token worked with Explore (slice 7.6). The
- * burst (`Cartographer.openMap` / `rollBurst`), the Guild Hall drop sequence,
- * the Oak-Wood-priced Map purchase, the Shop's Maps section, the Map
- * inspection panel and Maps lying loose on the mat (`board.maps`) are gone.
- *
- * The Map data itself stays: the CMS still models Maps, and the terrain
- * assignment, the boot content audit and the random quest bounties still read
- * `mapRegistry.js`.
+ * Token Lifecycle slice 9.1 — **the Map bursts are retired**.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

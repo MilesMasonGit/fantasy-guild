@@ -1,24 +1,9 @@
 /**
  * Economic simulator — pass 5's XP half (phase P8).
  *
- * Covers `cms/src/engine/sim/xpPass.js`: the §13.2 curve and its reconciliation
- * against the plan's stated 7.5%/level growth, the §8 per-cycle formula, the
- * Purpose seesaw, the min-1 floor and F8's accepted granularity wobble, the
- * mastery integration against the game's own thresholds, the day-in-reach
- * ladder, the non-finite guard, and idempotence.
- *
  * ## ⚠️ No test here names a shipped Token, item, recipe or Map id
  *
- * The owner authors in this workspace continuously and content-naming tests
- * have broken a dozen times. Everything specific is a fixture; everything
- * asserted against the real corpus is a **rule** that holds whatever the corpus
- * happens to contain.
- *
  * ## ⚠️ Bands, not points, wherever the claim is about shape
- *
- * "One focused skill reaches 99 in 50–60 hours" is a shape claim. Asserting it
- * to a decimal would be fragile theatre that breaks the first time a pin moves
- * by a percent, and would tell nobody anything when it did.
  */
 
 import { describe, it, expect } from 'vitest';

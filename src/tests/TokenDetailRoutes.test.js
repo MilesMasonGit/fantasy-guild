@@ -32,10 +32,10 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ CR3-304 — **one test per `MatToken` detail field, each driven by the real
- * engine command that changes it**, and none of them publishing anything by
- * hand. A Token's details are routed to it alone (by its instance id, by the
- * hero working it, or — for the few Tokens that read other Tokens — by a
+ * ⭐ **one test per `MatToken` detail field, each driven by the real engine
+ * command that changes it**, and none of them publishing anything by hand. A
+ * Token's details are routed to it alone (by its instance id, by the hero
+ * working it, or — for the few Tokens that read other Tokens — by a
  * broadcast); a route lost here is a Token that silently stops updating, the
  * CR-044 trap. Each test reads the probe AFTER the command, so a missing route
  * shows as the old value.

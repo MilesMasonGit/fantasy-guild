@@ -70,10 +70,10 @@ describe('GuildUpgradeInspection', () => {
 
     it('offers a way out of the panel', () => {
         // This only proves the X calls whatever `onClose` it was given — it
-        // passed while CR3-451 was live, because the bug was never in this
-        // leaf component. It is ReactRoot's fallback chain that resurrected
-        // the same upgrade after `onClose` ran. See the CR3-451 block below
-        // for the test that actually covers the bug.
+        // passed while was live, because the bug was never in this leaf
+        // component. It is ReactRoot's fallback chain that resurrected the
+        // same upgrade after `onClose` ran. See block below for the test
+        // that actually covers the bug.
         const onClose = vi.fn();
         const { container } = render(
             withEngine(React.createElement(GuildUpgradeInspection, { upgradeDef: def, onClose }))
@@ -152,7 +152,7 @@ describe('The Guild Hall panel actually closes on Close (CR3-451)', () => {
 
         const handleClose = () => {
             setPaneSelection(null);
-            setSelectedUpgradeId(null); // the CR3-451 fix
+            setSelectedUpgradeId(null); // fix
         };
 
         return selection

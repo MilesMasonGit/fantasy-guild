@@ -44,15 +44,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ Token Lifecycle feedback, slice **Q2 — corner and centre badges**.
- *
- * * FB-6: no green plus on a workable Token.
- * * FB-7: the gear, top-left, on a Token with something to choose; with
- *   nothing chosen it pulses and nothing else (no red alert, no button).
- * * FB-33: a disallowed Token shows the red disallow sprite top-right.
- * * FB-8 / TL-14: alerts at the centre; problems stay, green notices fade.
- * * FB-48: a freshly spawned Token shows a green notice for ~10 s.
- * * FB-5: a spawner shows its live count against its cap — since B1.3 as a
- *   green ring in the row under it (TL-22), not a corner badge.
  */
 
 registerItems({
@@ -155,7 +146,7 @@ describe('alert classification (TL-14)', () => {
         expect(alertKindOf({ severity: 'yellow', type: 'anything_else' })).toBe(ALERT_KIND.PROBLEM);
         // Green: a notice that fades.
         expect(alertKindOf({ severity: 'green', type: 'token_restocked' })).toBe(ALERT_KIND.NOTICE);
-        // Said by the hero in a speech bubble (SB-2), never drawn on the Token.
+        // Said by the hero in a speech bubble, never drawn on the Token.
         for (const type of ['out_of_item', 'out_of_token', 'out_of_charges', 'hero_level_up']) {
             expect(alertKindOf({ severity: 'yellow', type })).toBe(ALERT_KIND.SPOKEN);
         }
@@ -220,7 +211,7 @@ describe('spawner count text (FB-5)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Notices (FB-48)
+// Notices
 // ---------------------------------------------------------------------------
 
 describe('TokenNotices — the ten-second notice', () => {

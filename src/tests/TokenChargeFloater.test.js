@@ -6,8 +6,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { act } from '@testing-library/react';
 
-// TokenChargeBadge (the hover charge chip) went with B1.2 (TL-22): charges are a
-// ring in the row under the Token now — see TokenBadgeRow.test.js.
+// TokenChargeBadge (the hover charge chip) went with B1.2: charges are a ring in
+// the row under the Token now — see TokenBadgeRow.test.js.
 
 describe('TokenChargeDeltaFloater', () => {
     // The event names the Token by instance id (slice 1.6b); the floater is
@@ -91,4 +91,4 @@ describe('TokenNameBadge', () => {
     });
 });
 
-// AddHeroBadge (the green plus) was removed with FB-6; see CornerCentreBadges.test.js.
+// AddHeroBadge (the green plus) was removed; see CornerCentreBadges.test.js.

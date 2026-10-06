@@ -1,12 +1,9 @@
-// CR3-033 — the Settings screen had 13 controls that did nothing. Four named
-// retired concepts (Tray, cards, boost tiles, packs) and are deleted outright.
-// Four were already ruled "disabled + coming soon" in round 2 (Theme Mode,
-// Zoom to Cursor, Animations, Notification Position). The remaining five are
-// simply unwired (the setting is read nowhere) and are now disabled the same
-// way, until a later wave wires them.
-//
-// GIModal force-portals its content to document.body (Headless UI's Dialog),
-// so every query here reads `document`, not the local render container.
+// the Settings screen had 13 controls that did nothing. Four named retired
+// concepts (Tray, cards, boost tiles, packs) and are deleted outright. Four
+// were already ruled "disabled + coming soon" in round 2 (Theme Mode, Zoom to
+// Cursor, Animations, Notification Position). The remaining five are simply
+// unwired (the setting is read nowhere) and are now disabled the same way,
+// until a later wave wires them.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
@@ -23,8 +20,8 @@ function openTab(label) {
 const mount = () => render(h(SettingsModal, { isOpen: true, onClose: () => {} }));
 
 beforeEach(() => {
-    // Injected by Vite's `define` (CR2-145) in the real build; vitest runs its
-    // own config without it, so the modal's version footer needs a stand-in.
+    // Injected by Vite's `define` in the real build; vitest runs its own
+    // config without it, so the modal's version footer needs a stand-in.
     vi.stubGlobal('__APP_VERSION__', '0.0.0-test');
     localStorage.clear();
     SettingsManager.settings = SettingsManager._deepMerge({}, SettingsManager.getAll());

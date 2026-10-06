@@ -19,12 +19,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ **Effects that stay on you** (Effects Grammar v2, V6 — G-6, G-16, G-17).
- *
- * The only genuinely new runtime concept in the rework, and it is what a status
- * always secretly was: a rule with a clock, attached to somebody. A live
- * instance is a reference into the same library everything else references —
- * nothing here knows what Poison *is*.
+ * ⭐ **Effects that stay on you** (Effects Grammar v2, V6).
  */
 
 function makeHero(id, hp = 100) {
@@ -178,8 +173,8 @@ describe('taking one off again', () => {
 
 describe('⚠️ a lethal tick announces, and never resolves the death', () => {
     it('publishes hero_downed rather than killing in place', () => {
-        // The whole of what dying costs lives once, in `BoardCombat`. CR2-070:
-        // this branch was a no-op for months and a poisoned hero worked on at 0.
+        // The whole of what dying costs lives once, in `BoardCombat`. this
+        // branch was a no-op for months and a poisoned hero worked on at 0.
         const downed = [];
         const un = EventBus.subscribe('hero_downed', p => downed.push(p));
 

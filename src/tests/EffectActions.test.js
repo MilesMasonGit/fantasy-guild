@@ -28,12 +28,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * **`Heals`, `Restores` and `Removes`** (Effects Grammar v2, V8 — G-11).
- *
- * Each ships with a reader that already existed. Two of them finally give a home
- * to things this project has been carrying unused for a long time: `Restores`
- * is what `CHARGE_EXTEND` was named for and never got, and `Removes` is the
- * first caller `purge()` has ever had.
+ * **`Heals`, `Restores` and `Removes`** (Effects Grammar v2, V8).
  */
 
 const A = { x: 400, y: 300 };

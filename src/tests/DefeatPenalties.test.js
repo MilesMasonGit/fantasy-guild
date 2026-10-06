@@ -3,16 +3,7 @@ import { GameState } from '../state/GameState.js';
 import { applyDefeatPenalties } from '../systems/combat/DefeatPenalties.js';
 import { DEFEAT_PENALTY } from '../config/loopConstants.js';
 
-// Locks D-74: what losing a fight costs.
-//
-// Re-homed by the playmat rework (Phase 1). These rules lived in
-// `LoopRunner._applyDeathPenalties`; the loop is deleted, the rules are not, so
-// they moved to `systems/combat/DefeatPenalties.js` and this suite followed.
-//
-// The old "retreat path" block went with the loop — it asserted that a defeated
-// hero left the AREA in a re-deployable state, and there are no areas. Its
-// board successor (the hero leaves the tile, the tile idles until re-staffed)
-// is Phase 6's to pin.
+// Locks what losing a fight costs.
 
 // `vi.hoisted` because vi.mock factories are hoisted above normal top-level
 // consts — without it the item factory runs before TABLE exists and the card
@@ -91,8 +82,7 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
     it('destroys a share of every carried consumable stack', () => {
         applyDefeatPenalties('hero_1');
 
-        // 25% of each banked stack — and it finds them on the grid. Walking
-        // deckSlots (the pre-C-7 behaviour) would have destroyed nothing.
+        // 25% of each banked stack — and it finds them on the grid.
         expect(bank.c_pie).toBe(75);
         expect(bank.c_ale).toBe(30);
     });
@@ -105,10 +95,10 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
         expect(bank.c_ale).toBe(40);        // not carried, so untouched
     });
 
-    // Owner decision 2026-08-25 (CR2-079). The Consumable class is dormant:
-    // nothing calls `consumeLoopConsumables` and nothing reads `loopEffect`, so
-    // an equipped potion is never spent. Until the Prep Phase is wired, the slot
-    // must not cost the player anything.
+    // Owner decision. The Consumable class is dormant: nothing calls
+    // `consumeLoopConsumables` and nothing reads `loopEffect`, so an equipped
+    // potion is never spent. Until the Prep Phase is wired, the slot must not
+    // cost the player anything.
     it('exempts the dormant Consumable class from stack loss', () => {
         applyDefeatPenalties('hero_1');
 
@@ -119,7 +109,7 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
         applyDefeatPenalties('hero_1');
 
         expect(bank.c_pie).toBe(75);        // eaten for real by tryEat
-        expect(bank.c_ale).toBe(30);        // dormant, but by its own D-183/184 decision
+        expect(bank.c_ale).toBe(30);        // dormant, but by its own 184 decision
     });
 
     it('uses the tunable ratio rather than a hardcoded quarter', () => {

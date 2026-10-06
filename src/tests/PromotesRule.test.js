@@ -15,9 +15,9 @@ import Statements from '../../cms/src/components/editors/Statements.jsx';
 /**
  * ⭐ **The Promotes rule — the vocabulary** (Promotes rule P1).
  *
- * Owner rulings 2026-09-12: promotion is a rule, reading "Promotes the hero to
- * Knight.", on Tokens only. P1 makes it writable and readable; nothing in the
- * engine reads it until P3.
+ * Owner rulings promotion is a rule, reading "Promotes the hero to Knight.",
+ * on Tokens only. P1 makes it writable and readable; nothing in the engine
+ * reads it until P3.
  */
 
 const promotes = (jobId) => ({ ...makeStatement(KEYWORD.PROMOTES), payload: { jobId } });

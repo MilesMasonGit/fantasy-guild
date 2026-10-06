@@ -8,12 +8,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 /**
- * ⭐ **A charge floater (-1, +50) is a CSS animation** (CR3-357).
- *
- * It used to be a framer-motion keyframe animation, which runs on framer's
- * JavaScript frame loop — every display frame of every 3 s floater. The same
- * curve as a CSS `@keyframes` of `opacity` and `transform` runs on the
- * compositor. Same timing: 3 s, stops at 0 / 8 / 82 / 100 %, ease-out.
+ * ⭐ **A charge floater (-1, +50) is a CSS animation**.
  */
 
 const CSS = fs.readFileSync(path.resolve(__dirname, '../tailwind.css'), 'utf8');

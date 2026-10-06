@@ -7,27 +7,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 /**
- * ⭐ Since B1.2 (TL-22) the progress bar is the ring row (`TokenBadgeRow`),
- * and every guarantee below carries over to it unchanged.
- *
- * CR2-168 item 1 — hovering a Token used to tear down and rebuild the bar's
- * four EventBus subscriptions and cancel its animation frame.
- *
- * The effect that owned the subscriptions listed `isHovered` and `missingReqs`
- * in its dependency array, and `missingReqs` is a fresh object whenever `token`
- * changes identity. So moving the cursor across a working Token dropped the
- * `board:progress` subscription and reset the interpolation to inactive, and
- * the bar stayed frozen until the next progress event — up to ~300ms.
- *
- * ## And since slice 1.6c-2, the count stops growing with the board
- * Bars no longer talk to the bus at all: they go through `tokenEvents.js`,
- * which holds **one subscription per event type** and dispatches by instance
- * id. Eighty Tokens on a free mat used to mean 320 subscriptions, every one of
- * them woken by every progress tick to compare an id and return.
- *
- * These tests measure the churn directly: they count `EventBus.subscribe`
- * calls. They cannot see the visual hitch — that needs eyes on a running game —
- * but they pin the mechanism that causes it.
+ * ⭐ Since B1.2 the progress bar is the ring row (`TokenBadgeRow`), and
+ * every guarantee below carries over to it unchanged.
  */
 
 /**

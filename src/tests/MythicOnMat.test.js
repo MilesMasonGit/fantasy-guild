@@ -7,12 +7,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 
 /**
- * The one-Mythic-on-the-mat rule (D-177) and the Roster track's recompute.
- *
- * These are the tests from `TokenBank.test.js` that were about kept code. The
- * rest of that file pinned the Token Vault — its slot cap (D-137), overflow
- * into it (D-138), consolidation, its Storage upgrade track and its deposit
- * announcements — and went with the Vault (Token Lifecycle 9.3).
+ * The one-Mythic-on-the-mat rule and the Roster track's recompute.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

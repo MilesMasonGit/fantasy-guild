@@ -18,18 +18,6 @@ import { pickRecipe } from './fixtures/stations.js';
 
 /**
  * The charges engine (Recipe & Charges rework, P1).
- *
- * Three of these are load-bearing beyond their own assertion, because each
- * covers a bug that would be **invisible until it had corrupted a save**:
- *
- * 1. **Atomicity.** A cycle that cannot be paid in full must deduct nothing —
- *    not an item, not a station charge, not a context charge. A partial
- *    deduction silently drains the player's Bank and their Tokens for no output.
- * 2. **The unlimited no-op (R-4).** `usesRemaining === null` is *unlimited*, not
- *    zero. Getting the comparison backwards destroys the Tokens a player
- *    considers permanent, and the destruction is not undoable.
- * 3. **The positive-delta ceiling.** A `+charges` effect that overshoots the
- *    Token's starting charges inflates a save's value permanently.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -79,7 +67,7 @@ function place(tile, typeId, heroId = null, uses = undefined) {
         typeId, uses === undefined ? tokenStartingUses(typeId) : uses
     );
     Placement.placeTokenAt(instance, C(tile));
-    pickRecipe(instance);   // the player picks a station's recipe (TL-15)
+    pickRecipe(instance);   // the player picks a station's recipe
     TileModifiers.rebuildAround([instance]);
     if (heroId) Placement.plantFlagAt(heroId, C(tile));
     return instance;
@@ -304,7 +292,7 @@ describe('Nearby context Tokens are chosen and shared', () => {
     /**
      * First-come, first-served (concept §3.3). One context Token between two
      * stations serves both, and the charges simply run out sooner — sharing is a
-     * rate trade, not free value (D-157).
+     * rate trade, not free value.
      */
     it('serves several stations from one Token until it runs dry', () => {
         InventoryManager.addItem('item_coal', 20);

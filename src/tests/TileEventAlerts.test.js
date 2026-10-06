@@ -13,8 +13,8 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 /**
  * A gatherer that still needs an axe nearby. The shipped Oak Tree used to be
  * this case, but tool requirements were dropped from content (Token Lifecycle
- * TL-2, slice 7.0) while the engine path they exercise stays, so the test
- * keeps its own copy of the old requirement.
+ * slice 7.0) while the engine path they exercise stays, so the test keeps its
+ * own copy of the old requirement.
  */
 registerTokenTypes({
     fixture_axe_tree: {
@@ -40,7 +40,7 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 const tokenAt = (i) => BoardState.tokensAtPoint(C(i).x, C(i).y)[0] ?? null;
 
 /** Put a Token on spot `i`, and plant a hero's flag there. */
-// The player picks a station's recipe (TL-15); a non-station is untouched.
+// The player picks a station's recipe; a non-station is untouched.
 const put = (i, instance) => {
     const res = Placement.placeTokenAt(instance, C(i));
     pickRecipe(instance);
@@ -112,7 +112,7 @@ describe('On-Board Tile Event Alerts', () => {
     /**
      * A hero already working a Token that then goes stuck (Free Playmat 1.4b).
      *
-     * A flag never claims a Token it cannot run (FP-48), so the runner's
+     * A flag never claims a Token it cannot run, so the runner's
      * staffed-but-stuck alerts only ever describe a claim made while the Token
      * could run. That claim is staged directly here, so the alert — not the
      * chooser — is what each test below exercises.
@@ -146,10 +146,8 @@ describe('On-Board Tile Event Alerts', () => {
     });
 
     /**
-     * CR3-005 (owner, Z §11 Q12: "say it once"): a stuck station announces its
-     * problem once, and again only if it clears and comes back. It used to
-     * re-publish every tick (ten times a second) while the red mark, which
-     * already shows the problem, stayed up.
+     * It used to re-publish every tick (ten times a second) while the red
+     * mark, which already shows the problem, stayed up.
      */
     it('a stalled station says it once, and again only after it clears and stalls again (CR3-005)', () => {
         const events = [];
@@ -262,15 +260,13 @@ describe('On-Board Tile Event Alerts', () => {
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
         // Place 3 plain coasts beside tile 9 (tiles 8, 10, 3). Side neighbours
-        // only: Near has reached no diagonal since FP-75 (164 u).
+        // only: Near has reached no diagonal (164 u).
         put(8, BoardState.createTokenInstance('fixture_plain_coast'));
         put(10, BoardState.createTokenInstance('fixture_plain_coast'));
         put(3, BoardState.createTokenInstance('fixture_plain_coast'));
 
-        // ⚠️ Since FP-88 a drop that would break a rule is NUDGED to the nearest
-        // spot that obeys it, and flies back only when there is nowhere within
-        // nudge reach. With the reach at zero there is nowhere by definition —
-        // which is the refusal path, and the only one that raises this mark.
+        // With the reach at zero there is nowhere by definition — which is the
+        // refusal path, and the only one that raises this mark.
         setMatTuning('nudgeReach', 0);
 
         // Attempt to drop fixture_coast on tile 9 (it allows at most 2 nearby Coasts)

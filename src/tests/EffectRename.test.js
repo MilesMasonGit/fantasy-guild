@@ -9,12 +9,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 /**
  * Renaming a named effect (Unified Effects).
  *
- * An entry's id is slugged from its name, so **renaming an effect changes its
- * id** — and every bearer pointing at the old id has to be repointed in the same
- * breath. Miss one and that bearer silently loses the rule: it still lists a
- * reference, the reference resolves to nothing, and the only sign is a line in
- * the boot audit.
- *
  * ⚠️ This is a regression test for a real bug. The rename walked Tokens only,
  * which was complete until P4 made items bearers too.
  */

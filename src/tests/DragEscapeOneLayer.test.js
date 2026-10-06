@@ -3,19 +3,10 @@ import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 
 /**
- * ⭐ CR3-409 — owner ruling (Z §11, Q16): "one Escape, one layer." During a
- * drag, Escape must only cancel the drag — not also close the hero sheet or
- * end disallow mode, even though both of those ALSO listen for Escape on
+ * ⭐ owner ruling (Z §11, Q16): "one Escape, one layer." During a drag,
+ * Escape must only cancel the drag — not also close the hero sheet or end
+ * disallow mode, even though both of those ALSO listen for Escape on
  * `document`.
- *
- * This drives a REAL dnd-kit drag (pointerdown + pointermove past the 8px
- * activation threshold) rather than asserting against the isolated fix,
- * because correctness here depends on real listener ORDERING: dnd-kit's own
- * Escape-to-cancel listener attaches at pointerdown time (inside the sensor's
- * constructor, `@dnd-kit/core`'s `AbstractPointerSensor.attach`), which is
- * AFTER our app listeners (registered when the sheet opened / disallow mode
- * turned on) — so by the time dnd-kit's handler runs, `gi-dnd-active` is
- * still on `document.body` for ours to see.
  */
 
 const STATUS = new Map();

@@ -21,23 +21,6 @@ import {
 
 /**
  * A smoke test for the CMS.
- *
- * ## Why this exists
- * `cms/src` had **no tests at all**, while carrying the 990-line
- * `EffectBlocks.jsx` and the Token editor the whole content pipeline goes
- * through. A typo in a component there broke nothing the suite could see: the
- * game's tests never import the CMS, and `npm run build` only builds the game.
- * The first symptom was a blank screen while authoring.
- *
- * ## What it does and does not claim
- * This is deliberately **shallow**. It asserts that the CMS's screens mount and
- * render without throwing, that the Token editor puts its sections on the page,
- * and that the effect editor can render every modifier shape the palette
- * declares. It does not test behaviour — that is a suite this file is not.
- *
- * Its job is to catch gross breakage (a bad import, a renamed export from the
- * game's registries, a component that throws on a normal Token) at the point
- * the change is made rather than in front of the author.
  */
 
 // The CMS talks to its Vite dev plugin for file listings and sync. Nothing in

@@ -8,19 +8,6 @@ import { LootSystem } from '../systems/combat/LootSystem.js';
 import { logger } from '../utils/Logger.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
 
-/**
- * CR2-108(c) — the four places that used to swallow an unresolvable content id
- * in silence now say so once.
- *
- * Each case asks the same two questions, because both halves matter equally:
- * a good id must stay silent (or the warnings become noise nobody reads), and
- * a bad id must be reported exactly once (or a hot path floods the console).
- *
- * These assert on *warning behaviour only*. Nothing here checks that the game
- * changed course, because by the owner's ruling of 2026-08-19 it deliberately
- * does not: the audit and these warnings make silence visible and change
- * nothing else.
- */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),

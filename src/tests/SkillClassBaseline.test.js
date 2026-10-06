@@ -20,26 +20,6 @@ import {
 
 /**
  * **The Skill & Class rework's moving parts, pinned.**
- *
- * Written in Phase 0 to capture behaviour *before* it moved, so the move would
- * be visible rather than silent. Updated in Phase 1 as each rule flipped.
- *
- * | What | Was | Now | Phase |
- * | :-- | :-- | :-- | :-- |
- * | Hero shape | all 15 skills | ✅ the Foundation six — a Recruit | 1 |
- * | Access gate | level only; possession never checked | ✅ possession first, then level | 1 |
- * | `skillRequired: 0` | no check at all — any hero worked it | ✅ possession still checked | 1 |
- * | `calculateHeroLevel` | average of 4 combat skills incl. `defense` | ✅ average of the skills **held** (D-260) | 1 |
- * | `CombatFormulas` `defense` reads | reads `skills.defense` | ✅ the single combat skill | 2 |
- * | Combat XP | style award **plus** a third into Defence | ✅ the whole award, one skill | 2 |
- * | Fighting | any hero could fight | ✅ possession of a combat skill (D-249) | 2 |
- *
- * Every row has now flipped. The suite stays as the record of what moved and
- * when — a failure here after an *unrelated* change means something moved that
- * should not have.
- *
- * Nothing below names a skill by hand — every id comes from the registry,
- * because the skill list is a first draft and expected to change.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -116,9 +96,9 @@ describe('The gate is possession first, then level', () => {
     /**
      * ⚠️ Under flags (Free Playmat 1.4b) a hero who cannot run a Token does not
      * stand on it with a red mark: their flag skips it and records why, for
-     * hover (FP-48, FP-60). Where the hero lacks the skill, the flag is planted
-     * with the Token's skill directly — a drop would keep the hero's own skill
-     * (FPP-3) and the Token would not even be a candidate.
+     * hover. Where the hero lacks the skill, the flag is planted with the
+     * Token's skill directly — a drop would keep the hero's own skill and the
+     * Token would not even be a candidate.
      */
     const plantFor = (heroId, tile, skill) => Flags.plant(heroId, C(tile), { skill });
     const skipReasons = (token) => Flags.skipsOf(token.id).map(s => s.reason);
@@ -247,7 +227,7 @@ describe('A hero holds some skills, not all of them', () => {
         // naming one of these must fail loudly, not resolve to something
         // approximate — which is why the sub-skill funnel went with them.
         // `explore` was the sixth; Token Lifecycle slice 1.1 reuses the id for
-        // a NEW foundation skill (SP-74), asserted below.
+        // a NEW foundation skill, asserted below.
         const { SKILLS } = require('../config/registries/skillRegistry.js');
         for (const dead of ['labor', 'aquatic', 'forge', 'defense', 'social']) {
             expect(SKILLS[dead]).toBeUndefined();

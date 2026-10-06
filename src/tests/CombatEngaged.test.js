@@ -37,16 +37,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * Engaging an enemy — Unified Effects P6.
- *
- * Two claims, and the second is the one that has never been exercised in this
- * project before:
- *
- * 1. **An engagement is every engagement** (UE-15). An enemy Token holds
- *    charges, each kill spends one, and the enemy returns at full HP for the
- *    next fight — so a hero parked on one must not proc only once.
- * 2. **A status can land on the enemy.** `StatusApplication.applyToEnemy` has
- *    been written and routed since the grammar's Phase 2 and has *never run*:
- *    nothing could author a rule that reached a creature. An item can now.
  */
 
 const TILE = 10;
@@ -80,10 +70,10 @@ beforeEach(() => {
     SpriteLayer.init();
     LootSystem.init();
     BoardCombat.init();
-    // CR3-557/CR3-157: LoadoutMoments now has its own COMBAT_ENGAGED
-    // subscriber (the cut moved this off a direct call from BoardCombat), so
-    // it must be started here too, as the game does — the flask case below
-    // fires a carried COMBAT_ENGAGED rule.
+    // LoadoutMoments now has its own COMBAT_ENGAGED subscriber (the cut
+    // moved this off a direct call from BoardCombat), so it must be started
+    // here too, as the game does — the flask case below fires a carried
+    // COMBAT_ENGAGED rule.
     LoadoutMoments.init();
     BoardCombat.clearAll();
     TileModifiers.clearAll();

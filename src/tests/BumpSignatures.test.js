@@ -22,10 +22,10 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * CR3-309 — the "bump" subscribers re-render only when what they draw has
- * changed. R5 measured `MatCapBadge`, `AllowAllButton` and `DiscardBinPanel`
- * (with its nine empty slots) re-rendering on all 10 of 10 bare
- * `state_changed` publishes, with nothing changed.
+ * the "bump" subscribers re-render only when what they draw has changed. R5
+ * measured `MatCapBadge`, `AllowAllButton` and `DiscardBinPanel` (with its
+ * nine empty slots) re-rendering on all 10 of 10 bare `state_changed`
+ * publishes, with nothing changed.
  */
 
 const h = React.createElement;

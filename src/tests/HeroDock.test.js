@@ -7,18 +7,6 @@ import {
 
 /**
  * Hero Dock status pip.
- *
- * Unit-tested rather than driven through the UI because tile status is owned by
- * the board runner and rewritten every tick, so the in-combat state cannot be
- * staged from outside the engine.
- *
- * Four colours, no words (owner design 2026-08-02): red injured, yellow
- * placed-but-stopped, green working, blue available. The yellow one is D-172's
- * idle-hero mark — the counterpart to the red "staffed but stuck" mark that
- * lives on the Token.
- *
- * Re-pointed from areas to tiles by the playmat rework (Phase 1). The rules are
- * unchanged; only what they name has moved.
  */
 /**
  * The pin reducer, mirroring useUIModals' `dock.togglePin`. Extracted here so
@@ -106,8 +94,8 @@ describe('Hero Dock layout constants', () => {
         // (`cardSizeStore.js`) whose own comment said the drag ghost's card
         // frame was its last reader — but that frame (`GhostCardFrame`) was
         // never actually rendered, so the store had zero real readers and
-        // was deleted as dead code (CR3-407). DOCK_TAB_W is now just the
-        // literal its own comment explains.
+        // was deleted as dead code. DOCK_TAB_W is now just the literal its
+        // own comment explains.
         expect(DOCK_TAB_W).toBe(200);
     });
 

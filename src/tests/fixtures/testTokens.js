@@ -9,40 +9,6 @@ import { KEYWORD } from '../../systems/effects/statements.js';
 /**
  * Stable Tokens with known numbers, for testing **engine behaviour**.
  *
- * ## Why these exist
- * Engine tests need to assert things like "a Token produces exactly 2 of its
- * output after exactly one cycle" and "the deep consumer starves while the
- * shallow one runs". Those assertions need *fixed* numbers.
- *
- * Before Phase 10 they used shipped content for that, and the result was that
- * **retuning a Token broke tests that were not about that Token** — changing
- * the Oakwood Grove's yield failed assertions in `TokenCycle`, `Managers` and
- * `AdjacencyEffects` alike. Phase 9 reported that as the real shape of risk 17:
- * hand-authored numbers do not scale, and they scale far worse when touching
- * one breaks twenty tests across three files.
- *
- * The split is now:
- *
- * | Suite | Runs against | Asks |
- * | :-- | :-- | :-- |
- * | Engine suites | **these fixtures** | does the machinery work? |
- * | `ContentRules.test.js` | **shipped content** | is the content well-formed? |
- *
- * So the balance pass can retune every number in `tokenRegistry.js` freely, and
- * the only suite that should react is the one whose job is to react.
- *
- * ## Conventions
- * * Every id is prefixed **`fixture_`** — it can never collide with content,
- *   and content validation filters the prefix defensively.
- * * Numbers here are chosen to be *legible in an assertion*, not balanced.
- *   A 12s cycle and a 2-unit yield exist so `run(13000)` means "one cycle" at
- *   a glance. **Do not tune these for game feel; they are instruments.**
- * * Item ids are registered through `registerItems` below rather than borrowed
- *   from content. `InventoryManager` and the sprite layer key off item ids, so
- *   the ids have to *resolve* — they do not have to be real. (Until 2026-08-26
- *   three of them were real, and renaming one in the CMS broke 24 assertions
- *   across 10 suites. See CR2-004.)
- *
  * ⚠️ **Changing a number here changes what the engine tests mean.** If a test
  * starts failing after an edit to this file, the fixture is the suspect, not
  * the engine.
@@ -61,7 +27,7 @@ export const FIXTURE_TOKENS = {
     },
 
     /**
-     * Yields a RANGE rather than a fixed amount (CMS-41).
+     * Yields a RANGE rather than a fixed amount.
      *
      * 1–5 is deliberately wide: a narrow range would let a broken roll (always
      * min, always max, off-by-one bounds) pass by luck across a few cycles.
@@ -101,9 +67,9 @@ export const FIXTURE_TOKENS = {
     /**
      * Deep consumer: needs 5 where the shallow one needs 2.
      *
-     * ⚠️ This pair is the instrument for **risk 13** — under D-127's first-come
-     * allocation the *expensive* chain starves first, which is the opposite of
-     * the pressure the design intends. The 2-vs-5 gap is what makes that
+     * ⚠️ This pair is the instrument for **risk 13** —'s first-come allocation
+     * the *expensive* chain starves first, which is the opposite of the
+     * pressure the design intends. The 2-vs-5 gap is what makes that
      * measurable, so keep it.
      */
     fixture_deep_consumer: {
@@ -116,7 +82,7 @@ export const FIXTURE_TOKENS = {
         }
     },
 
-    /** Skill-gated, for Access (D-67). Requires 25; nothing else does. */
+    /** Skill-gated, for Access. Requires 25; nothing else does. */
     fixture_gated: {
         id: 'fixture_gated', name: 'Fixture Gated', tokenType: 'resource',
         rarity: 'rare', theme: 'fixture', uses: 2000, sprite: 'skill_crime',
@@ -158,13 +124,13 @@ export const FIXTURE_TOKENS = {
     },
 
     /**
-     * Context-gated station with two recipes, for D-18 and D-20.
+     * Context-gated station with two recipes,.
      *
      * Its pool is `fixture_station_skill` — a skill id no shipped recipe uses,
      * so the two recipes below belong to this fixture alone. Sharing a real
      * skill with `fixture_charge_station` would put both stations' recipes in
-     * one pool and make the test pick (`fixtures/stations.js`, which stands in
-     * for R-5's retired default) depend on authoring order.
+     * one pool and make the test pick (`fixtures/stations.js`, which stands
+     * in's retired default) depend on authoring order.
      */
     fixture_station: {
         id: 'fixture_station', name: 'Fixture Station', tokenType: 'station',
@@ -175,10 +141,10 @@ export const FIXTURE_TOKENS = {
         ]
     },
 
-    // --- Skill-pooled stations (CMS-39/76/77) -------------------------------
-    // Two stations of the same skill, both drawing the SHARED pool below rather
-    // than carrying recipes of their own. Authoring a recipe into the pool makes
-    // it available to both at once, which is the whole point.
+    // --- Skill-pooled stations ------------------------------- Two stations of
+    // the same skill, both drawing the SHARED pool below rather than carrying
+    // recipes of their own. Authoring a recipe into the pool makes it available
+    // to both at once, which is the whole point.
 
     fixture_kitchen: {
         id: 'fixture_kitchen', name: 'Fixture Kitchen', tokenType: 'station',
@@ -197,7 +163,7 @@ export const FIXTURE_TOKENS = {
         ]
     },
 
-    /** The Kitchen mechanic's two axes (CMS-7): a Tool and a Cookbook. */
+    /** The Kitchen mechanic's two axes: a Tool and a Cookbook. */
     fixture_pie_tin: {
         id: 'fixture_pie_tin', name: 'Fixture Pie Tin', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
@@ -238,7 +204,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'common', theme: 'fixture', uses: 6, sprite: 'skill_industry',
         provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
     },
-    /** The same tag, forever. Charges deltas do not touch it at all (R-4). */
+    /** The same tag, forever. Charges deltas do not touch it at all. */
     fixture_charged_context_unlimited: {
         id: 'fixture_charged_context_unlimited', name: 'Fixture Endless Context',
         tokenType: 'context', rarity: 'mythic', theme: 'fixture', uses: null,
@@ -274,7 +240,7 @@ export const FIXTURE_TOKENS = {
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
-    /** A `+charges` effect on an unlimited Token is a no-op (R-4). */
+    /** A `+charges` effect on an unlimited Token is a no-op. */
     fixture_trigger_unlimited: {
         id: 'fixture_trigger_unlimited', name: 'Fixture Endless Trigger', tokenType: 'buff',
         rarity: 'mythic', theme: 'fixture', uses: null, sprite: 'skill_occult',
@@ -285,7 +251,7 @@ export const FIXTURE_TOKENS = {
         }]
     },
 
-    /** A TOOL context (D-213): gates whether, not what. */
+    /** A TOOL context: gates whether, not what. */
     fixture_tool: {
         id: 'fixture_tool', name: 'Fixture Tool', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 80, sprite: 'skill_industry',
@@ -320,7 +286,7 @@ export const FIXTURE_TOKENS = {
               payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.10 } }
         ]
     },
-    /** Unlimited use, and duplicates deliberately do not stack (D-82). */
+    /** Unlimited use, and duplicates deliberately do not stack. */
     fixture_buff_unique: {
         id: 'fixture_buff_unique', name: 'Fixture Unique Buff', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
@@ -330,10 +296,10 @@ export const FIXTURE_TOKENS = {
               payload: { type: 'YIELD', bucket: 'percentage', value: 0.10 } }
         ]
     },
-    // --- Targeted buffs (CMS-17/18/23) --------------------------------------
-    // Narrow target, large effect. A buff that only reaches one kind of Token
-    // cannot be stacked onto everything indiscriminately, so it can afford real
-    // weight — unlike the deliberately tiny untargeted buffs above.
+    // --- Targeted buffs -------------------------------------- Narrow target,
+    // large effect. A buff that only reaches one kind of Token cannot be
+    // stacked onto everything indiscriminately, so it can afford real weight —
+    // unlike the deliberately tiny untargeted buffs above.
 
     /** "Double all nearby seafood" — targets by TAG. */
     fixture_buff_tag: {
@@ -389,7 +355,7 @@ export const FIXTURE_TOKENS = {
         }
     },
 
-    // --- Support axes (CMS-20). Probability axes use 100 so the roll is
+    // --- Support axes. Probability axes use 100 so the roll is
     //     deterministic and the test asserts behaviour, not luck.
     fixture_buff_xp: {
         id: 'fixture_buff_xp', name: 'Fixture XP Buff', tokenType: 'buff',
@@ -418,7 +384,7 @@ export const FIXTURE_TOKENS = {
 
     // --- Statements (the effect-authoring grammar) ---------------------------
 
-    /** TWO statements on one Token, aimed at different targets (CMS-58/65). */
+    /** TWO statements on one Token, aimed at different targets. */
     fixture_two_blocks: {
         id: 'fixture_two_blocks', name: 'Fixture Two Blocks', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
@@ -430,7 +396,7 @@ export const FIXTURE_TOKENS = {
         ]
     },
 
-    /** A statement with upkeep on its own clock (CMS-60): 1 Coal every 5s. */
+    /** A statement with upkeep on its own clock: 1 Coal every 5s. */
     fixture_upkeep_aura: {
         id: 'fixture_upkeep_aura', name: 'Fixture Upkeep Aura', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_flask',
@@ -443,7 +409,7 @@ export const FIXTURE_TOKENS = {
         ]
     },
 
-    /** Grants an item the neighbour does not make itself (CMS-27/72). */
+    /** Grants an item the neighbour does not make itself. */
     fixture_bonus_drop: {
         id: 'fixture_bonus_drop', name: 'Fixture Bonus Drop', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
@@ -453,8 +419,8 @@ export const FIXTURE_TOKENS = {
         ]
     },
 
-    // --- Triggered Tokens (CMS-29/30/33/35) ---------------------------------
-    // The two worked examples the category was designed against.
+    // --- Triggered Tokens --------------------------------- The two worked
+    // examples the category was designed against.
 
     /**
      * **Masonry Wheelbarrow.** Reacts to a NEIGHBOUR completing a cycle and
@@ -500,7 +466,7 @@ export const FIXTURE_TOKENS = {
 
     /**
      * **Stoneshaper Sigil.** No config and no hero — it does not cycle at all.
-     * Watches the Bank globally (CMS-35) and converts on a cooldown.
+     * Watches the Bank globally and converts on a cooldown.
      */
     fixture_sigil: {
         id: 'fixture_sigil', name: 'Fixture Sigil', tokenType: 'buff',
@@ -520,7 +486,7 @@ export const FIXTURE_TOKENS = {
         }]
     },
 
-    /** A triggered Token with finite charges, for CMS-26's wear rule. */
+    /** A triggered Token with finite charges,'s wear rule. */
     fixture_trigger_wearing: {
         id: 'fixture_trigger_wearing', name: 'Fixture Wearing Trigger', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_industry',
@@ -528,7 +494,7 @@ export const FIXTURE_TOKENS = {
             id: 'stm_wearing', keyword: 'grants',
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             // 0% chance: it serves but never hits, which is exactly the case
-            // CMS-26 pins — the charge burns on service, not on luck.
+            // pins — the charge burns on service, not on luck.
             payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 0, quantity: 1 }
         }]
     },
@@ -549,7 +515,7 @@ export const FIXTURE_TOKENS = {
         }
     },
 
-    /** Manager over the fixture producer, for D-151 — the legacy `manages` field. */
+    /** Manager over the fixture producer, — the legacy `manages` field. */
     fixture_manager: {
         id: 'fixture_manager', name: 'Fixture Manager', tokenType: 'manager',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
@@ -564,7 +530,7 @@ export const FIXTURE_TOKENS = {
             { id: 'stm_restock', keyword: 'restocks', payload: { tokenIds: ['fixture_producer'] } }
         ]
     },
-    /** A manager for the enemy fixture, proving D-104's one economic model. */
+    /** A manager for the enemy fixture, proving one economic model. */
     fixture_enemy_manager: {
         id: 'fixture_enemy_manager', name: 'Fixture Enemy Manager', tokenType: 'manager',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_crime',
@@ -574,16 +540,12 @@ export const FIXTURE_TOKENS = {
     /**
      * Enemy fixture.
      *
-     * ⚠️ **Self-contained as of 2026-09-06.** It used to carry
-     * `enemyId: 'enemy_thorn_elemental'`, pointing into `data/enemies.json` —
-     * so the combat tests silently depended on a shipped content file, and a
-     * content edit could turn them red. Enemies are Tokens now: the level is
-     * here, and so is the drop, as an ordinary output. Nothing outside this
-     * file decides what a fixture fight is worth.
-     *
-     * Level 2 to match the enemy it replaces. `item_blackberry` is defined as a
-     * fixture item below — without a real item the sprite layer has nothing to
-     * place and the board-loot guarantee (D-40) cannot be asserted at all.
+     * ⚠️ **Self-contained as.** It used to carry `enemyId:
+     * 'enemy_thorn_elemental'`, pointing into `data/enemies.json` — so the
+     * combat tests silently depended on a shipped content file, and a content
+     * edit could turn them red. Enemies are Tokens now: the level is here,
+     * and so is the drop, as an ordinary output. Nothing outside this file
+     * decides what a fixture fight is worth.
      */
     fixture_enemy: {
         id: 'fixture_enemy', name: 'Fixture Enemy', tokenType: 'enemy',
@@ -599,17 +561,6 @@ export const FIXTURE_TOKENS = {
     /**
      * Promotion fixtures (Promotes rule P3) — Tokens whose Promotes rule makes a
      * hero a Fighter.
-     *
-     * `fighter` rather than an advanced job: its gate is the tier-1 threshold,
-     * which a test hero reaches without walking the whole tree. The 20-second
-     * cycle is short enough to drive in a loop and long enough that "the offer
-     * only comes after the training" is actually observable.
-     *
-     * Three prices, because the price is now the rule's:
-     * - `fixture_promotion` — the migrated shape: `chargeDelta: 0` with no
-     *   `chargeWhen`, which must still cost the default ONE charge.
-     * - `fixture_promotion_costly` — an authored price of 2.
-     * - `fixture_promotion_free` — an authored price of 0: unlimited training.
      */
     fixture_promotion: {
         id: 'fixture_promotion', name: 'Fixture Training Yard', tokenType: 'promotion',
@@ -639,7 +590,7 @@ export const FIXTURE_TOKENS = {
         config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
     },
 
-    /** Mythic, for D-177's one-placed rule. */
+    /** Mythic,'s one-placed rule. */
     fixture_mythic: {
         id: 'fixture_mythic', name: 'Fixture Mythic', tokenType: 'resource',
         rarity: 'mythic', theme: 'fixture', uses: 8000, sprite: 'skill_occult',
@@ -651,18 +602,12 @@ export const FIXTURE_TOKENS = {
     },
 
     /**
-     * A Market, for the currency-output path (D-141).
+     * A Market, for the currency-output path.
      *
-     * ⚠️ **Its numbers encode the owner's rule** (2026-08-20): *a Market pays
-     * roughly a 20% premium over the Bank's sell price.* `fixture_market_goods`
-     * is worth 10, so 10 of them sell raw for 100 and this Market pays 120 —
-     * exactly `MARKET_PREMIUM`.
-     *
-     * It used to consume `item_oak_wood`, a **live content** item, and pay 34
-     * against a raw value of 10. That 3.4× came from a comment claiming a
-     * "3× / limit of 30" rule the owner never set. Both the fabricated ratio
-     * and the dependence on shipped content are gone: the input is a fixture
-     * with a fixed price, so retuning real content cannot move this instrument.
+     * ⚠️ **Its numbers encode the owner's rule**: *a Market pays roughly a 20%
+     * premium over the Bank's sell price.* `fixture_market_goods` is worth 10,
+     * so 10 of them sell raw for 100 and this Market pays 120 — exactly
+     * `MARKET_PREMIUM`.
      */
     fixture_market: {
         id: 'fixture_market', name: 'Fixture Market', tokenType: 'market',
@@ -736,21 +681,10 @@ export const FIXTURE_TOKENS = {
 };
 
 /**
- * The shared Cooking pool both fixture stations draw from (CMS-39).
+ * The shared Cooking pool both fixture stations draw from.
  *
- * `pie` needs TWO context tags at once — the Tool × Cookbook mechanic CMS-7
- * settled on — so it also exercises CMS-6's combination gating, which no
- * shipped content uses yet.
- *
- * Cycle times differ per recipe (CMS-70): the pie takes longer than the stew,
- * even though both run on the same station.
- *
- * ⚠️ **The levels are instruments too, from P2 on.** Since TL-15 a station
- * starts with no recipe; tests that need one pick the lowest level of the pool
- * (`fixtures/stations.js`), so `pooled_stew` at 5 is what that pick lands on and
- * `pooled_pie` at 20 has to be selected deliberately. They are spread rather
- * than tied so a pick that fell back to "first authored" would be visible
- * instead of accidentally right.
+ * They are spread rather than tied so a pick that fell back to "first authored"
+ * would be visible instead of accidentally right.
  */
 export const FIXTURE_RECIPE_POOLS = {
     /**
@@ -810,9 +744,7 @@ export const FIXTURE_RECIPE_POOLS = {
     ],
 
     /**
-     * The charges-engine pool (rework P1). One recipe, costing on **both** axes
-     * R-8 keeps separate: 3 charges off the station itself, and 2 more off an
-     * nearby context Token named as an input.
+     * The charges-engine pool (rework P1).
      */
     smithing: [
         {
@@ -831,44 +763,7 @@ export const FIXTURE_RECIPE_POOLS = {
 /**
  * The items the fixture Tokens move around.
  *
- * ## Why this block exists
- * The fixture split (Phase 10) gave Tokens and recipe pools a registration seam
- * so engine suites stop depending on shipped content — but items never got one,
- * so the fixtures above went on naming *real* item ids. When content was
- * re-authored in the CMS the ids emptied out from under them, `getItem` started
- * returning null, and ~25 assertions across six suites broke — the precise
- * coupling the split was built to prevent. `registerItems` closes that gap.
- *
- * ## Scope
- * ⚠️ **Corrected 2026-08-26 (CR2-004).** This used to say only ids the content
- * set does *not* define are registered here, and that `item_oak_wood`,
- * `item_charcoal` and `item_copper_ore` were held back so `Market` and
- * `RosterAndMarkets` could keep measuring real values. Both halves were wrong:
- *
- * - Those three are now insulated as `fixture_oak_wood`, `fixture_charcoal` and
- *   `fixture_copper_ore`. Neither named suite ever referenced them.
- * - The "only ids content does not define" rule is not what this list does.
- *   `item_coal`, `item_blueberry` and `item_blueberry_pie` **are** in
- *   `data/items.json` today and are shadowed here. Content moved under the
- *   comment; the comment did not follow.
- *
- * The remaining `item_*` ids in this list are a pre-existing inconsistency with
- * the `fixture_` convention above — harmless while they are shadowed, but they
- * are the same tripwire in miniature. Not changed here; left as its own job.
- *
- * ⭐ CR3-551 (round-3 review): four of the seven ids that content does NOT
- * define moved to the `fixture_` prefix: `fixture_fish`, `fixture_carrot`,
- * `fixture_market_goods`, `fixture_leek_potato_stew`. The other three
- * (`item_yew_log`, `item_glowcap`, `item_spider_silk`) stay for now because
- * the headless bench (`bench/fixtures.mjs`) makes them: renaming them changes
- * the bench's work fingerprint (Bank and loot hashes), so it needs a ruled
- * `--accept-work-change` and its own commit.
- *
- * Numbers are instruments, not balance: a `value` of 1 keeps any economy
- * assertion that touches them arithmetically obvious. (It replaced `trueCost`
- * and `sellPrice`, which the retired balance engine wrote and nothing read;
- * `CommerceSystem.getItemPrice` reads `value`, and 1 is what these priced at
- * before through its fallback.)
+ * Both halves were wrong:
  */
 const FIXTURE_ITEM_DEFAULTS = {
     description: '', tags: [], stackable: true, restoreAmount: 0,
@@ -889,15 +784,15 @@ export const FIXTURE_ITEMS = {
 
     /**
      * The last three content-coupled ids — `item_oak_wood`, `item_charcoal` and
-     * `item_copper_ore` — are insulated as of 2026-08-26 (CR2-004). Their
-     * stand-ins live in `fixtureItems.js`, imported above, because five of the
-     * affected suites need a resolvable item id without the fixture Tokens.
+     * `item_copper_ore` — are insulated as. Their stand-ins live in
+     * `fixtureItems.js`, imported above, because five of the affected suites
+     * need a resolvable item id without the fixture Tokens.
      *
      * ⚠️ **The stated reason for leaving them real was wrong.** Both this file
-     * and CR2-004 said they had to stay pointing at content so `Market` and
-     * `RosterAndMarkets` "keep measuring real values". Neither suite mentions
-     * any of the three; neither failed when the rename was simulated against
-     * the whole suite; and Market's premium rule is already asserted against
+     * said they had to stay pointing at content so `Market` and
+     * `RosterAndMarkets` "keep measuring real values". Neither suite mentions any
+     * of the three; neither failed when the rename was simulated against the
+     * whole suite; and Market's premium rule is already asserted against
      * `fixture_market_goods` below, precisely because content prices were useless
      * for it. Nothing was lost: all three were worth 1g in `data/items.json`,
      * which is what the fixture defaults already give.
@@ -905,7 +800,7 @@ export const FIXTURE_ITEMS = {
 
     // `fixture_enemy`'s one drop. Without it a kill yields a drop entry for an
     // item that does not exist, the sprite layer has nothing to place, and the
-    // board-loot guarantee (D-40) cannot be asserted at all.
+    // board-loot guarantee cannot be asserted at all.
     item_blackberry: fixtureItem('item_blackberry', 'Blackberry', 'ingredient', 'wood_oak'),
 
     /**
@@ -945,11 +840,8 @@ registerItems(FIXTURE_ITEMS);
 export const FIXTURE_IDS = Object.keys(FIXTURE_TOKENS);
 
 /**
- * **The owner's Market rule, 2026-08-20:** a Market pays roughly a **20%
- * premium** over the Bank's sell price for the same goods.
- *
- * That premium is what buys the tile and the hero — without it a Market is
- * strictly worse than the sell button and nobody would ever place one.
+ * **The owner's Market rule, ** a Market pays roughly a **20% premium**
+ * over the Bank's sell price for the same goods.
  *
  * ⚠️ A comment in the old fixture claimed a "3× payout, limit of 30" rule.
  * **The owner never set that**; it was invented and then quoted back as if it

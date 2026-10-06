@@ -39,12 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * **`Spawns` and `Transforms`** (Effects Grammar v2, V9 — G-15).
- *
- * ⭐ The placement vocabulary is the owner's own answer, and it is better than
- * any of the options offered: *"bearer's tile, nearest tile, and random tile"* —
- * a **choice** rather than a hidden fallback. Every option I proposed buried
- * "nearest" as a rule the author could not see or control.
+ * **`Spawns` and `Transforms`** (Effects Grammar v2, V9).
  */
 
 const A = 15;

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// D-17/D-27/D-31/D-56: heroes feed themselves from their own loadout grid.
-// Food and drink are NEED-driven (the 25% rule); Consumables are not need
-// driven at all and fire at the head of every loop.
+// heroes feed themselves from their own loadout grid. Food and drink are
+// NEED-driven (the 25% rule); Consumables are not need driven at all and
+// fire at the head of every loop.
 
 const { bank, ITEMS, hero } = vi.hoisted(() => ({
     bank: new Map(),

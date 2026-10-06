@@ -20,8 +20,8 @@ import {
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
- * Token Lifecycle feedback **B2.2** — the mat top bar's Upkeep badge (FB-29):
- * the total items per minute every ongoing cost takes, with the full Upkeep
+ * Token Lifecycle feedback **B2.2** — the mat top bar's Upkeep badge: the
+ * total items per minute every ongoing cost takes, with the full Upkeep
  * Summary (slice 8.2) on hover. The summary moved here from the Bank drawer.
  */
 

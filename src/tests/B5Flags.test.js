@@ -40,15 +40,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **B5 — flags: no hitbox, pinned flags** (Token Lifecycle feedback,
- * FB-44, FB-45, TL-17).
- *
- * * FB-44: a flag never blocks, pushes or nudges a Token; a Token dropped on
- *   a flag's spot lands exactly there. (The pointer half — flags letting the
- *   pointer through over a Token — is in `MatLayering.test.js`.)
- * * FB-45 / TL-17: a flag dropped on a Token its hero can work is pinned to
- *   it: the hero works only that Token, the flag rides along when the Token
- *   is moved, and when the Token is used up the flag stays as an area flag.
+ * ⭐ **B5 — flags: no hitbox, pinned flags** (Token Lifecycle
+ * feedback).
  */
 
 registerTokenTypes({
@@ -106,7 +99,7 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 // ---------------------------------------------------------------------------
-// FB-44 — no hitbox
+// no hitbox
 // ---------------------------------------------------------------------------
 
 describe('FB-44 — a flag has no footprint', () => {
@@ -147,7 +140,7 @@ describe('FB-44 — a flag has no footprint', () => {
 });
 
 // ---------------------------------------------------------------------------
-// FB-45 / TL-17 — pinned flags
+// pinned flags
 // ---------------------------------------------------------------------------
 
 describe('FB-45 — dropping a flag on a Token the hero can work pins it', () => {
@@ -166,14 +159,14 @@ describe('FB-45 — dropping a flag on a Token the hero can work pins it', () =>
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 600, y: 600 });
         expect(worked('h1')).toBe(pinned.id);
 
-        // Cycles end (FP-80 looks for better work) — still only the pinned Token.
+        // Cycles end ( looks for better work) — still only the pinned Token.
         run(40000);
         expect(worked('h1')).toBe(pinned.id);
         expect([nearer.id, better.id]).not.toContain(worked('h1'));
     });
 
     it('a pinned hero never seeks other work, even when their Token cannot run', () => {
-        // A station with no recipe chosen (TL-15) — fixable, so the pin is allowed.
+        // A station with no recipe chosen — fixable, so the pin is allowed.
         const station = put(P(600, 600), 'fixture_kitchen');
         put(P(760, 600), 'fixture_producer');
         GameState.state.heroes = [hero('h1', { logging: 50, cooking: 50 })];

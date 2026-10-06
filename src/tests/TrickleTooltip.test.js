@@ -15,9 +15,9 @@ import {
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
- * Feedback slice Q5b, FB-52 — **the Guild Hall's live trickle tooltip**: the
- * FB-30 hover text, drawn like the flag's tooltip, with a "next in" that ticks
- * while it is shown and never catches the pointer.
+ * Feedback slice Q5b — **the Guild Hall's live trickle tooltip**: hover text,
+ * drawn like the flag's tooltip, with a "next in" that ticks while it is shown
+ * and never catches the pointer.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -69,7 +69,7 @@ describe('⭐ FB-52: the Hall tooltip', () => {
         expect(tip.textContent).toContain('Tooltip Hall');
         expect(tip.textContent).toContain('Trickle income:');
         expect(tip.textContent).toContain('1 Tooltip Seed every 5 min (next in 5 min)');
-        // The same wording as the FB-30 hover lines: nothing re-derived here.
+        // The same wording as hover lines: nothing re-derived here.
         expect(liveTrickleLines(hall.id)).toEqual(['Trickle income:', '1 Tooltip Seed every 5 min (next in 5 min)']);
     });
 

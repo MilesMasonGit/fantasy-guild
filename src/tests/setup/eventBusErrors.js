@@ -1,18 +1,9 @@
-// CR3-555 — EventBus.publish swallows subscriber errors in production (it
-// catches, logs via console.error, and keeps going — that stays unchanged,
-// see EventBus.js:67-71). In tests that is dangerous: a fix that moves work
-// *into* a subscriber (CR3-157, CR3-102, CR3-305) can throw on every run and
-// the suite stays green, because the assertion only checks the outcome, not
-// whether every subscriber ran cleanly.
-//
-// This setup file makes a subscriber throw fail the test that produced it,
-// test-environment only. Production behaviour is untouched.
-//
-// Counted 2026-10-01 against the full suite on a clean baseline (1 known
-// failure / 3984 passed / 27 skipped, src/tests/AssetManager.test.js's sprite
-// check): **zero** subscriber errors were produced by any test. The
-// allow-list below is therefore empty — add an entry only for a specific
-// test, with the owner's go-ahead and a one-line reason.
+// EventBus.publish swallows subscriber errors in production (it catches,
+// logs via console.error, and keeps going — that stays unchanged, see
+// EventBus.js:67-71). In tests that is dangerous: a fix that moves work
+// *into* a subscriber can throw on every run and the suite stays green,
+// because the assertion only checks the outcome, not whether every
+// subscriber ran cleanly.
 import { afterEach, beforeEach } from 'vitest';
 
 /**

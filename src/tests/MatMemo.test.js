@@ -49,13 +49,7 @@ vi.mock('../ui/components/base/TokenSprite.jsx', async (orig) => {
 });
 
 /**
- * ⭐ **A MatBoard render redraws only what changed** (CR3-303, R6 rule 8).
- *
- * `MatBoard` renders on every hover change and every walking step. Heroes,
- * flags and loot whose props did not change used to be redrawn with it
- * (~1.2 ms of each 3.2 ms MatBoard render at S2, R5 §3.3). They are
- * `React.memo` now, and the stacking maps they read stay the same objects when
- * no rank changed.
+ * ⭐ **A MatBoard render redraws only what changed** (R6 rule 8).
  */
 
 const h = React.createElement;

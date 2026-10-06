@@ -48,19 +48,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * * **An enemy is an effect bearer** (Effects Grammar v2, V7b).
  *
- * V6's own header claimed "heroes and live enemies are what V6 ships". Only the
- * first half was true. A monster could be *hurt* by a rule but could not
- * **carry** one - no `effects` list, no aggregator - so half the effect surface
- * in the game was unreachable from the new grammar, and "poison the monster" or
- * "this monster has Armor Shield" were sayable only in the engine being retired.
- *
- * Four things had to become true together, and each has a test below:
- *
- * 1. A fight holds a list and an aggregator, with the fight's lifetime.
- * 2. `Deals` at an enemy respects its armour, the way it does at a hero.
- * 3. The clock reaches enemies, so a carried effect ticks.
- * 4. `self` on a carried effect means the **monster**, not the hero standing on it.
- *
  * WARNING: (4) is the one that would have been invisible. Every other reading of
  * a tile in the game resolves through the occupant rule - hero first - so a
  * poison authored on a monster would have quietly damaged its attacker instead,
@@ -186,8 +173,8 @@ describe('a fight is a bearer', () => {
         LiveEffects.applyTo(bearer(), { effectId: 'effect_enemy_shield', durationMs: 60000 });
         expect(BoardCombat.getFight(idAt(MONSTER)).effects).toHaveLength(1);
 
-        // The hero leaves; `tickTile` drops the fight (G-4). Nothing extra had
-        // to be written to make a poison die with the creature carrying it.
+        // The hero leaves; `tickTile` drops the fight. Nothing extra had to be
+        // written to make a poison die with the creature carrying it.
         Placement.recallHeroById('hero_1');
         run(200);
 

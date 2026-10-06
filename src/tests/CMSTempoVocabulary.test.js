@@ -5,10 +5,9 @@ import { runTempoPass, bandMiddleMs } from '../../cms/src/engine/sim/tempoPass.j
 import { cycleCandidates } from '../../cms/src/engine/sim/tuningPass.js';
 
 /**
- * The CMS offers the game's tempo vocabulary (CMS-5): its Tempo buttons
+ * The CMS offers the game's tempo vocabulary: its Tempo buttons
  * (`SimIntentControls`) and the Progression panel's dropdowns both map over
- * `TEMPO_NAMES` from `cms/src/utils/constants.js`. TL-21 added Quick; these
- * pin that the CMS side offers it and the simulator's passes accept it.
+ * `TEMPO_NAMES` from `cms/src/utils/constants.js`.
  */
 describe('the CMS tempo vocabulary (TL-21)', () => {
     it('is the game\'s list, Quick first', () => {
@@ -19,7 +18,7 @@ describe('the CMS tempo vocabulary (TL-21)', () => {
     });
 
     it('the TIME pass places a tagged Quick producer instead of filing an unknown-tempo row', () => {
-        expect(bandMiddleMs('quick', 1)).toBe(3000);   // TL-21: the 3s gathering target
+        expect(bandMiddleMs('quick', 1)).toBe(3000);   // the 3s gathering target
         const entity = {
             id: 't', name: 'T', kind: 'token', tempo: 'quick', purpose: 'iph', level: 1,
             outputs: [{ itemId: 'item_x', abundance: 1 }],

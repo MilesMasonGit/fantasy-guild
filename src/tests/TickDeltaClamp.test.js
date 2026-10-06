@@ -16,23 +16,10 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import './fixtures/testTokens.js';
 
-// CR2-041: a single tick used to carry the whole gap since the last one, so a
-// sleeping laptop added its entire sleep to `meta.totalPlaytime` and
-// `time.gameTimeMs` while producing nothing. The delta is now clamped, and the
-// remainder is routed to the Time Bank (owner decision 4, 2026-08-19) rather
-// than discarded.
-//
-// CR3-101 (round 3 review R1, owner ruling: "a clock the PC can't move"):
-// `TimeManager.update()` used to measure the in-session delta with `Date.now()`
-// — the wall clock, which the player's OS can step in either direction. A
-// backward step made every working Token's progress go negative and replayed
-// `CYCLE_START` (paying its carried costs) once a tick until it climbed back
-// above zero; a forward step dumped the jump into the Time Bank. The fix reads
-// `performance.now()` instead, which the OS clock cannot move, and floors the
-// delta at 0 as a last-resort guard. So the spy below moves from `Date.now` to
-// `performance.now` — that is the clock `TimeManager` now actually reads — and
-// a SEPARATE `Date.now` spy is used to prove a wall-clock jump, by itself, no
-// longer does anything while the game is open.
+// a single tick used to carry the whole gap since the last one, so a sleeping
+// laptop added its entire sleep to `meta.totalPlaytime` and `time.gameTimeMs`
+// while producing nothing. The delta is now clamped, and the remainder is
+// routed to the Time Bank rather than discarded.
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(),
@@ -41,7 +28,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000;
 
-/** The monotonic clock `TimeManager` measures the delta with (CR3-101). */
+/** The monotonic clock `TimeManager` measures the delta with. */
 let perfClock = 0;
 const advancePerf = ms => { perfClock += ms; };
 
@@ -122,7 +109,7 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
     });
 
     // ------------------------------------------------------------------
-    // CR3-101: the monotonic clock itself cannot go backwards
+    // the monotonic clock itself cannot go backwards
     // ------------------------------------------------------------------
 
     describe('a monotonic read that goes backward (CR3-101 safety floor)', () => {
@@ -145,8 +132,8 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
     });
 
     // ------------------------------------------------------------------
-    // CR3-101: the WALL clock (Date.now, the one the player's OS can move)
-    // must have no effect on the in-session delta at all
+    // the WALL clock (Date.now, the one the player's OS can move) must
+    // have no effect on the in-session delta at all
     // ------------------------------------------------------------------
 
     describe('the wall clock cannot move the game while it is open (CR3-101)', () => {
@@ -174,8 +161,8 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
     });
 
     // ------------------------------------------------------------------
-    // CR3-101: the player-visible symptom — replayed CYCLE_START, and a
-    // forward jump feeding the Time Bank while playing
+    // the player-visible symptom — replayed CYCLE_START, and a forward
+    // jump feeding the Time Bank while playing
     // ------------------------------------------------------------------
 
     describe('the board does not notice a moved wall clock while playing (CR3-101)', () => {

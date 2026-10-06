@@ -18,14 +18,6 @@ import { derivedTokenType } from '../config/registries/tokenTypeDerivation.js';
 /**
  * Token Lifecycle slice 7.6 — Explore, pinned from the SHIPPED data (authored
  * through the CMS, never by hand).
- *
- * The Oak Forest Map is no longer a Map that bursts: it is an ordinary
- * producer Token (DP-7, SP-54, SP-74). It is bought at the Shop, an Explore
- * hero works it, and each cycle SPENDS 1 Shrimp and 1 Torch from the Bank and
- * rolls a themed loot table. It has 5 charges and vanishes when they run out,
- * so it is bought again. No tool is needed.
- *
- * The numbers are placeholders (TL-5); this pins the shape of the chain.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

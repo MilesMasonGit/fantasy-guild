@@ -3,14 +3,7 @@ import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 
 /**
- * CR3-010 — the loot particle canvas sleeps when it has nothing to draw.
- *
- * It used to ask for an animation frame every frame for the whole session,
- * clearing an empty full-screen canvas sixty times a second. Now the loop
- * stops after the frame that draws nothing, and a collected sprite wakes it.
- *
- * `requestAnimationFrame` is replaced by a queue this test flushes by hand, so
- * "a frame was requested" is simply "the queue is not empty".
+ * the loot particle canvas sleeps when it has nothing to draw.
  */
 
 vi.mock('../systems/core/SettingsManager.js', () => ({

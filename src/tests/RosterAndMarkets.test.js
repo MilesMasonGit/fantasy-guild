@@ -149,12 +149,12 @@ describe('A Market demands Commerce (D-259)', () => {
     });
 
     it('refuses a hero without Commerce, however good they are otherwise', () => {
-        // The whole point of D-259: a Market is not a thing any hero can run.
+        // The whole point: a Market is not a thing any hero can run.
         GameState.state.heroes = [makeHero('hero_1', FOUNDATION_SKILL_IDS, 99)];
         const token = place(10, 'fixture_market');
         // A Commerce flag, so the Market is a candidate; the flag skips it as
-        // UNSKILLED for hover rather than raising a red mark (Free Playmat 1.4b,
-        // FP-48, FP-60).
+        // UNSKILLED for hover rather than raising a red mark (Free Playmat
+        // 1.4b).
         Flags.plant('hero_1', C(10), { skill: 'commerce' });
         InventoryManager.addItem('fixture_market_goods', 100);
         run(20000);
@@ -164,9 +164,9 @@ describe('A Market demands Commerce (D-259)', () => {
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
-    // ⚠️ Changed in slice 2.2 (SP-65). This used to assert the Market paid
-    // out gold. Gold is retired, so it now proves the Market still RUNS for a
-    // Commerce hero (it eats its goods) while crediting no gold.
+    // ⚠️ Changed in slice 2.2. This used to assert the Market paid out gold.
+    // Gold is retired, so it now proves the Market still RUNS for a Commerce
+    // hero (it eats its goods) while crediting no gold.
     it('runs for a hero who holds Commerce, and pays no gold (SP-65)', () => {
         GameState.state.heroes = [makeHero('hero_1', ['commerce'], 50)];
         place(10, 'fixture_market', 'hero_1');
@@ -186,6 +186,6 @@ describe('A Market demands Commerce (D-259)', () => {
     });
 });
 
-// 'Raw selling carries the opening economy (D-263)' and the Market premium
-// over raw selling were deleted with `CommerceSystem` (Token Lifecycle 9.4):
-// there is no raw selling any more.
+// 'Raw selling carries the opening economy' and the Market premium over raw
+// selling were deleted with `CommerceSystem` (Token Lifecycle 9.4): there is
+// no raw selling any more.

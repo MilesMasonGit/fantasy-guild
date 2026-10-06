@@ -1,17 +1,6 @@
 /**
  * Where an element is drawn, in its parent's units: the top-left corner of its
- * box, as `{ x, y }` (CR3-556).
- *
- * Mat Tokens, heroes and flags are placed with `left`/`top` today. R6's CR3-007
- * moves the walkers to a `transform` so a step costs no layout. Assertions that
- * read `style.left`/`style.top` directly would all go red on that change while
- * nothing a player sees had moved, so they read this instead, and this reads
- * both: `left`/`top`, plus any pixel `translate(…)`, `translate3d(…)`,
- * `translateX(…)` or `translateY(…)` in the element's own `transform`.
- *
- * A missing `left`/`top` with no translate reads as `NaN`, exactly as
- * `parseFloat(style.left)` did, so an element that is not positioned at all
- * still fails an equality check rather than passing as 0.
+ * box, as `{ x, y }`.
  */
 export function drawnPoint(el) {
     const style = el.style;

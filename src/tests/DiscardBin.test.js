@@ -32,7 +32,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * B3.1 — **the discard bin and its refunds** (FB-34, FB-35, TL-13).
+ * B3.1 — **the discard bin and its refunds**.
  *
  * Fixtures are instruments: their prices copy the owner's worked examples
  * (a 15-wood Wood Foundation and a 5-wood Workbench build = 7 + 2 = 9 back;

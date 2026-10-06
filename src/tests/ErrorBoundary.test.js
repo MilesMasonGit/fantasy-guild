@@ -1,9 +1,9 @@
-// CR3-203 — there was no error boundary anywhere: a render exception on any
-// surface unmounted the WHOLE React app while the engine kept ticking and
-// saving underneath it, so the player saw a black screen with no sign their
-// game was still alive. The fix is one boundary per surface (owner ruling):
-// only the crashed area is replaced by a small "Something went wrong here"
-// panel with a Reload button; everything else keeps working.
+// there was no error boundary anywhere: a render exception on any surface
+// unmounted the WHOLE React app while the engine kept ticking and saving
+// underneath it, so the player saw a black screen with no sign their game
+// was still alive. The fix is one boundary per surface (owner ruling): only
+// the crashed area is replaced by a small "Something went wrong here" panel
+// with a Reload button; everything else keeps working.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';

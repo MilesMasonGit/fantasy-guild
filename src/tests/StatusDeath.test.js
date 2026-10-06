@@ -33,18 +33,7 @@ function workTileOf(heroId) {
 }
 
 /**
- * **Dying to poison (CR2-070).**
- *
- * For months a hero taken to 0 HP by a damage-over-time effect while working an
- * ordinary Token was never wounded: the status clock noticed the death, wrote a
- * log line, and the hero carried on working at zero health forever. The code
- * that used to handle it was `LoopRunner`, deleted by the playmat rework, and
- * nothing replaced it — the only surviving zero-HP check lived on the enemy-tile
- * path in `BoardCombat.tickTile`.
- *
- * Owner decision 11 (2026-08-19): *"Poison death costs equipment, like combat
- * death. One rule for dying however it happens, so it cannot be dodged by dying
- * to a damage-over-time effect."*
+ * **Dying to poison.**
  *
  * ⚠️ **The point of this suite is that there is exactly ONE way to die.** The
  * gear test below asserts the shared `applyDefeatPenalties` actually ran, not
@@ -83,9 +72,7 @@ beforeAll(() => {
     // Subscribes `hero_downed` → `resolveStatusDefeat`. Once per file: the
     // EventBus is a singleton, so re-subscribing per test would stack handlers.
     BoardCombat.init();
-    // CR3-557: Flags' subscribers too, as the game starts them. CR3-157's cycle
-    // cut moves the defeat's flag furl onto an event Flags subscribes to, and
-    // this suite asserts the furl; started here first, green before the cut.
+    // Flags' subscribers too, as the game starts them.
     Flags.init();
 });
 afterAll(() => Flags.teardown());

@@ -1,20 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 /**
- * CR2-193 — the roster cap must be computed in exactly ONE place.
- *
- * Two places used to work it out independently: `GuildUpgradeManager.recompute`,
- * which writes `progress.rosterLimit`, and `HeroLifecycle.getRosterLimit`'s
- * fallback for a save that has no `rosterLimit` yet. The fallback read the bare
- * `roster_size` rank and left `ROSTER_BASE` out, so the two answers differed by
- * the whole base — and `isRosterFull()` then refused a recruit the player had
- * already paid for.
- *
- * ROSTER_BASE is 0 today, which hides the divergence behind arithmetic that
- * happens to agree. Comparing the two numbers would therefore pass whether or
- * not the bug is present, and prove nothing. So this replaces the shared
- * definition with a sentinel instead: if either path ever goes back to doing its
- * own arithmetic, that path stops returning the sentinel and this fails.
+ * the roster cap must be computed in exactly ONE place.
  */
 const SENTINEL = 4242;
 

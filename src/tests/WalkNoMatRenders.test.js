@@ -37,12 +37,12 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ CR3-008 — **walking does not re-render the mat.** A walking enemy's or
- * hero's box follows the engine by itself; `MatBoard` re-renders for a walker
- * only when it changes who is in front of whom (it crosses another Token or a
- * flag), or starts, stops or turns. Before this, every step of every walker
- * re-rendered the whole mat (R5: 8.8 a game-second at S2, 239 of 265 from
- * enemy steps alone).
+ * ⭐ **walking does not re-render the mat.** A walking enemy's or hero's box
+ * follows the engine by itself; `MatBoard` re-renders for a walker only when
+ * it changes who is in front of whom (it crosses another Token or a flag), or
+ * starts, stops or turns. Before this, every step of every walker re-rendered
+ * the whole mat (R5: 8.8 a game-second at S2, 239 of 265 from enemy steps
+ * alone).
  */
 
 registerTokenTypes({

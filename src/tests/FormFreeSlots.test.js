@@ -6,28 +6,6 @@ import { renderSegments, renderStatement } from '../systems/effects/statementTex
 
 /**
  * ⭐ **Every decision the retired forms held has a slot** (Rules Line P4).
- *
- * P4 deletes the forms beneath each rule. The roadmap said where the danger was,
- * in as many words: *"a decision that was only ever authorable through a form
- * will be found — expect more, and expect them to be silent."* The last code
- * review found one already (`Works as` became unauthorable).
- *
- * So before a single form is deleted, this file walks what each form edited and
- * proves the grammar can reach it without the form — with the same clamps the
- * form applied, and a clickable word wherever the sentence mentions it.
- *
- * The inventory was read off the forms themselves:
- *
- * | Keyword   | The form edited                          |
- * | --------- | ---------------------------------------- |
- * | Provides  | effect, combine, amount, direction, skill|
- * | Grants    | item (+ create), how many, chance        |
- * | Works as  | skill                                    |
- * | Acts as   | capability, tool tier                    |
- * | Restocks  | the Tokens                               |
- * | Cannot    | kind, limit                              |
- * | Applies   | status/effect, stacks, chance            |
- * | Deals     | damage, ignores armour                   |
  */
 
 const ctx = {

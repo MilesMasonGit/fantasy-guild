@@ -6,12 +6,6 @@ import {
 
 /**
  * The tempo band table (economic simulator rework, plan §13.3).
- *
- * The interesting test in here is the last one. §13.3 prints three columns —
- * level 1, 40 and 90 — and the whole point of `tempoBands.js` is that those are
- * one rule seen three times, not three hand-authored tables. If someone later
- * "fixes" a band by special-casing a level, the reconciliation below is what
- * fails.
  */
 
 /** The band a tempo covers, in whole seconds, for readable expectations. */
@@ -40,11 +34,11 @@ describe('the tempo vocabulary', () => {
 
 describe('scaling', () => {
     it('is the ruled rule: 1 + (level - 1)/70, exact at level 1', () => {
-        // ⚠️ Owner ruling 2026-08-28. Plan §13.3 writes the factor as
-        // `1 + level/70` but also prints the level-1 bands as round numbers,
-        // and those two statements disagree by 1.4%. The printed table wins:
-        // a Token authored at a round 12s and tagged Medium must be IN its
-        // band, not 171ms outside it. See the note atop `tempoBands.js`.
+        // ⚠️ Owner ruling. Plan §13.3 writes the factor as `1 + level/70`
+        // but also prints the level-1 bands as round numbers, and those two
+        // statements disagree by 1.4%. The printed table wins: a Token
+        // authored at a round 12s and tagged Medium must be IN its band, not
+        // 171ms outside it. See the note atop `tempoBands.js`.
         expect(LEVEL_SCALE_DIVISOR).toBe(70);
         expect(levelScale(1)).toBe(1);
         expect(levelScale(36)).toBeCloseTo(1.5, 10);
@@ -83,7 +77,7 @@ describe('the bands stay ordered Quick < Fast < Medium < Slow < Heavy', () => {
             expect(bands[i].minMs).toBeGreaterThan(bands[i - 1].minMs);
             expect(bands[i].maxMs).toBeGreaterThan(bands[i - 1].maxMs);
             // Contiguous, all five: each band starts where the one before it
-            // ends. TL-21 widened Fast down to 4s to keep Quick joined on.
+            // ends.
             expect(bands[i].minMs).toBe(bands[i - 1].maxMs);
         }
     });
@@ -179,17 +173,14 @@ describe('isInBand', () => {
 
 describe('⚠️ the table reproduces plan §13.3\'s printed columns', () => {
     /**
-     * §13.3 as printed, in seconds. If this ever disagrees with the plan, the
-     * plan wins and this table is the thing that is wrong — with one ruled
-     * exception: Fast's floor is TL-21's 4s (owner, 2026-09-27), not the plan's
-     * 8s, so its three floors below are that rule's output. Quick is not in
-     * the plan at all and is pinned in its own block above.
+     * §13.3 as printed, in seconds. Quick is not in the plan at all and is
+     * pinned in its own block above.
      *
-     *   | Tempo  | Level 1 | Level 40 | Level 90 |
-     *   | Fast   | 4–12    | 6–19     | 9–28     |   ← floor is TL-21's, not the plan's
-     *   | Medium | 12–20   | 19–31    | 27–46    |
-     *   | Slow   | 20–30   | 31–47    | 46–69    |
-     *   | Heavy  | 30–120  | 47–188   | 69–274   |
+     *   | Tempo | Level 1 | Level 40 | Level 90 |
+     *   | Fast | 4–12 | 6–19 | 9–28 | ← floor is, not the plan's
+     *   | Medium | 12–20 | 19–31 | 27–46 |
+     *   | Slow | 20–30 | 31–47 | 46–69 |
+     *   | Heavy | 30–120 | 47–188 | 69–274 |
      */
     const PRINTED = {
         1: { fast: [4, 12], medium: [12, 20], slow: [20, 30], heavy: [30, 120] },
@@ -200,25 +191,6 @@ describe('⚠️ the table reproduces plan §13.3\'s printed columns', () => {
     /**
      * How far a computed value may sit from the printed one: one second, or 1.5%
      * for the big numbers, whichever is larger.
-     *
-     * The slack is needed for two honest reasons and no others.
-     *
-     * 1. **The plan rounds by hand and not always the same way.** The clearest
-     *    proof is level 90: Fast's top and Medium's floor are the *same*
-     *    underlying number, and §13.3 prints it as 28 in one row and 27 in the
-     *    next. No formula produces both; the printing is the imprecise part,
-     *    not the rule.
-     * 2. **The scaling rule carries the owner's level-1 correction.** §13.3
-     *    writes the factor as `1 + level/70` but prints round level-1 bands,
-     *    and the two disagree by 1.4%. Ruled 2026-08-28 in favour of the
-     *    printed table, so the rule is `1 + (level - 1)/70` and level 1 is now
-     *    **exact** — see the note atop `tempoBands.js`. The cost is a slightly
-     *    looser fit further up: worst gap across the sixteen level-40 and
-     *    level-90 numbers is 1.43s, where the literal formula managed 0.57s.
-     *
-     * That is still a real check rather than a tolerance wide enough to hide a
-     * wrong mechanism: the rejected `(70 + level)/71` reading misses by 3.58s
-     * and fails the aggregate assertion below.
      */
     const tolerance = (printed) => Math.max(1, printed * 0.015);
 

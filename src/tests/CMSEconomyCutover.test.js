@@ -11,19 +11,7 @@ import { RETIRED_ITEM_FIELDS } from '../../cms/src/engine/sim/writeBack';
 /**
  * The economic simulator's cutover, from the store's side.
  *
- * `recalculateEconomy` is the seam the whole rework turns on: it runs the
- * passes, lands their results in the fields the game reads, and — the part with
- * the sharpest edge — **deletes the retired fields on the way past**.
- *
  * ## ⚠️ Why the stale-workspace cases are the important ones
- *
- * The CMS has no game → CMS import path. Content lives in a browser's
- * localStorage until someone presses Sync, and Sync writes **from the store**.
- * So migrating `data/` was never the hard half: a browser still holding a
- * pre-cutover workspace — items with `trueCost`/`sellPrice`, recipes with the
- * nine EV fields — would put every one of those fields straight back into the
- * game files on its next Sync. The write-back strips them instead, so a stale
- * workspace heals on its first Recalculate. These cases are that guarantee.
  */
 
 /** A workspace as a browser that predates the cutover holds it. */
@@ -157,7 +145,7 @@ describe('What Recalculate writes', () => {
         const result = useEntityStore.getState().recalculateEconomy();
         const cycle = result.tokens.token_grove.config.cycleTimeMs;
         expect(cycle % 1000).toBe(0);
-        // Fast at level 1 is 4–12s (TL-21); the pass takes the middle.
+        // Fast at level 1 is 4–12s; the pass takes the middle.
         expect(cycle).toBe(8000);
         expect(recipeOf(result).durationMs).toBe(16000);
     });
@@ -195,22 +183,7 @@ describe('What Recalculate writes', () => {
 
     it('⚠️ DELETES the Token’s dead top-level `xp` rather than preserving it', () => {
         /**
-         * ## This assertion was reversed on 2026-09-05, deliberately
-         *
-         * It used to require that a top-level `xp` survived Recalculate
-         * untouched, on the reasoning that deleting it was a content migration
-         * deserving its own sitting rather than something smuggled into a
-         * derivation phase. That reasoning was sound and the sitting has now
-         * happened.
-         *
-         * Leaving it as it was is not an option: `data/` was cleaned of the
-         * field in `0b6f258`, so a write-back that preserves it means the next
-         * Sync from any pre-rework browser puts it straight back — which is
-         * exactly what happened, and what took `OneRuleOnePlace`'s CR2-192
-         * guard red against a corpus nobody had edited.
-         *
-         * `config.xp` is untouched by this and stays derived: only the dead
-         * twin goes. See `RETIRED_TOKEN_FIELDS`.
+         * ## This assertion was reversed on deliberately
          */
         useEntityStore.getState().hydrate({
             ...staleWorkspace(),

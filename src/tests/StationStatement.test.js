@@ -11,16 +11,7 @@ import { SKILLS } from '../config/registries/skillRegistry.js';
 const SKILL_IDS = Object.keys(SKILLS);
 
 /**
- * Station is an authored statement (rework P2.5, R-14/R-15).
- *
- * Before this phase a Token became a station by accident of shape — "it has a
- * work cycle and at least one input" — and its recipe pool came from a separate
- * `recipePool` field that nothing in the statement grammar knew about. The two
- * could disagree, and they did: `token_ceramics_kiln` pooled `crafting`, which
- * has no recipes, and derived as a `buff` because its input list was empty.
- *
- * These tests hold the two halves together: the statement decides the type, and
- * the same statement decides the pool.
+ * Station is an authored statement (rework P2.5).
  */
 
 const station = skill => ({ id: 's1', keyword: KEYWORD.STATION, payload: { skill } });
@@ -101,10 +92,10 @@ describe('the statement is also the recipe pool (R-14)', () => {
 
     it('gives an unauthored skill an empty pool rather than throwing', () => {
         // ⚠️ This used to ask for `crafting`, on the assumption nothing
-        // authored crafting recipes. The owner authored one (2026-09-01) and
-        // the test failed without anything being wrong. It needs a skill that
-        // is real but genuinely unauthored, so it keeps testing "empty pool,
-        // no throw" rather than testing what the corpus happens to contain.
+        // authored crafting recipes. The owner authored one and the test
+        // failed without anything being wrong. It needs a skill that is real
+        // but genuinely unauthored, so it keeps testing "empty pool, no
+        // throw" rather than testing what the corpus happens to contain.
         const unauthored = Object.keys(SKILLS).find(
             (skill) => recipesForToken({ statements: [station(skill)] }).length === 0
         );
@@ -118,8 +109,8 @@ describe('the shipped Tokens that declare themselves stations', () => {
      * ⚠️ **This suite used to name three specific Tokens** — `token_forge`,
      * `token_campfire` and `token_windmill` — and assert each was a station of
      * a particular skill. That pinned the test to one snapshot of the content:
-     * the moment the owner deleted the Forge and re-authored the Campfire
-     * (2026-09-01), three tests failed without anything being wrong.
+     * the moment the owner deleted the Forge and re-authored the Campfire,
+     * three tests failed without anything being wrong.
      *
      * Content is disposable in this project and the owner authors freely. So
      * the suite now asserts **the rule** against whatever stations exist: every

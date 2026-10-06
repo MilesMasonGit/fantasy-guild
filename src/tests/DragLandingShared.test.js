@@ -7,7 +7,7 @@ import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 
 /**
- * ⭐ CR3-401 — while a Token is carried, `MatRings` and `FlagLayer` both ask
+ * ⭐ while a Token is carried, `MatRings` and `FlagLayer` both ask
  * `useTokenDragLanding(matRef)` for the same answer every frame (same
  * `matRef`, same pointer, same payload). Before the fix each call re-did
  * `pointerToMat` + `MatPlacement.findSpot` from scratch; this pins that the

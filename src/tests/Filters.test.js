@@ -25,13 +25,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * **Composable filters** (Effects Grammar v2, V4 — G-9).
- *
- * A selector picks a source set and then stacks any number of filters on it, all
- * AND-composed. This is the expressiveness the owner said was the actual pain —
- * *"I can't express the effects I'm imagining"* — and it is bounded by two
- * things: G-8 refuses guards, and every filter declares what it needs to look at
- * so a caller that cannot evaluate one refuses rather than guessing.
+ * **Composable filters** (Effects Grammar v2, V4).
  */
 
 /**
@@ -153,8 +147,8 @@ describe('a filter narrows who a rule reaches', () => {
 
 describe('state filters read the live board, not the definition', () => {
     it('⚠️ treats unlimited charges as never running low, not as zero', () => {
-        // `null` is UNLIMITED (R-4). Reading it as 0 would make every unlimited
-        // Token match a rule aimed at exhausted ones — the whole board.
+        // `null` is UNLIMITED. Reading it as 0 would make every unlimited Token
+        // match a rule aimed at exhausted ones — the whole board.
         const kind = getFilterKind('charges_below');
         expect(kind.match({ instance: { usesRemaining: null } }, 3)).toBe(false);
         expect(kind.match({ instance: { usesRemaining: 2 } }, 3)).toBe(true);

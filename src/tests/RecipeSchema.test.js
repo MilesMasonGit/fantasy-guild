@@ -37,14 +37,14 @@ describe('Recipe schema — P0', () => {
     it('keys every recipe on a skill the game actually has', () => {
         // The source file was keyed on `culinary` and `industry`, which are not
         // skills — tokenConstants.js:26 records the CMS episode that produced
-        // them. Skill was recovered from the subskill's parent instead (R-9).
+        // them. Skill was recovered from the subskill's parent instead.
         for (const r of recipes) {
             expect(SKILL_IDS.has(r.skill), `${r.id} has unknown skill "${r.skill}"`).toBe(true);
         }
     });
 
     it('carries no retired field', () => {
-        // subskillId → skill (R-2); energyCost → gone with the vital (R-3);
+        // subskillId → skill; energyCost → gone with the vital;
         // baseTickTime/cycleTimeMs → durationMs; xpAwarded → xp;
         // skillRequirement duplicated levelRequirement on all 18 that had both.
         const RETIRED = [
@@ -105,11 +105,10 @@ describe('Recipe schema — P0', () => {
     it('gives every output exactly one of itemId, tokenId or currency', () => {
         // ⚠️ A recipe with NO outputs is unfinished authoring, not malformed
         // authoring, and this is a live workspace — the owner creates a recipe
-        // and fills it in over several sittings. Asserting "every recipe has an
-        // output" here turned a normal intermediate state into a red build on
-        // 2026-09-01. The simulator is the right channel for it: an outputless
-        // recipe produces nothing, so it files an audit row where the author
-        // will see it. This test's job is the *shape* of outputs that exist.
+        // and fills it in over several sittings. The simulator is the right
+        // channel for it: an outputless recipe produces nothing, so it files an
+        // audit row where the author will see it. This test's job is the
+        // *shape* of outputs that exist.
         for (const r of recipes.filter(r => r.outputs.length)) {
             for (const o of r.outputs) {
                 const kinds = ['itemId', 'tokenId', 'currency'].filter(k => o[k] != null);
@@ -133,11 +132,8 @@ describe('Recipe schema — P0', () => {
     /**
      * The nine EV fields are **gone** (plan §16).
      *
-     * ⚠️ This test used to assert the opposite. R-6 / R-11 put the fields off
-     * limits to the Recipe & Charges rework because they belonged to the
-     * *next* rework — and that rework has now happened: the machinery that read
-     * them was deleted, so the fields went with it. Carrying them forward
-     * unchanged was always a holding position, not a permanent rule.
+     * ⚠️ This test used to assert the opposite. Carrying them forward unchanged
+     * was always a holding position, not a permanent rule.
      *
      * The snapshot is kept and inverted. It is the list of exactly which
      * fields used to be there, so this now checks that none of them came back
@@ -148,9 +144,9 @@ describe('Recipe schema — P0', () => {
         // ⚠️ The snapshot is a record of what the retired fields WERE, not a
         // census of which recipes exist. It used to require every shipped
         // recipe to appear in it, which quietly meant "the corpus may never
-        // change" — and it broke the moment the owner authored new recipes
-        // (2026-09-01). The invariant that matters is that no retired field
-        // comes back, on any recipe, however new.
+        // change" — and it broke the moment the owner authored new recipes.
+        // The invariant that matters is that no retired field comes back, on
+        // any recipe, however new.
         const RETIRED = new Set(Object.values(legacyEV).flatMap(Object.keys));
         expect(RETIRED.size, 'the snapshot should still name the retired fields').toBeGreaterThan(0);
         for (const r of recipes) {
@@ -161,10 +157,10 @@ describe('Recipe schema — P0', () => {
     });
 
     /**
-     * `isPrimarySource` was the struck CMS-110 era's anchor flag. It is
-     * migrated to the `anchor` intent flag where true and deleted otherwise, so
-     * the old vocabulary does not survive as a second, dead way to say the same
-     * thing (plan §16).
+     * `isPrimarySource` was the struck era's anchor flag. It is migrated to the
+     * `anchor` intent flag where true and deleted otherwise, so the old
+     * vocabulary does not survive as a second, dead way to say the same thing
+     * (plan §16).
      */
     it('says "anchor" with the anchor flag and nothing else', () => {
         for (const r of recipes) {
@@ -173,11 +169,10 @@ describe('Recipe schema — P0', () => {
             }
         }
         // ⚠️ This used to name the two recipes that carried the old flag
-        // (`recipe_charcoal`, `recipe_flour`). Both were re-authored away on
-        // 2026-09-01 and the assertion failed while nothing was wrong. What
-        // must hold is the *translation*: `anchor` is a boolean where present,
-        // and the dead vocabulary never comes back. Which recipes choose to
-        // anchor is content, and content moves.
+        // (`recipe_charcoal`, `recipe_flour`). What must hold is the
+        // *translation*: `anchor` is a boolean where present, and the dead
+        // vocabulary never comes back. Which recipes choose to anchor is
+        // content, and content moves.
         for (const r of recipes) {
             for (const o of r.outputs) {
                 if ('anchor' in o) expect(typeof o.anchor, `${r.id} anchor flag`).toBe('boolean');
@@ -187,9 +182,9 @@ describe('Recipe schema — P0', () => {
 
     /**
      * P0 recorded 30 unauthored item ids across the migrated corpus, and P2.6's
-     * prune (R-16) cleared every one of them — so this is now a real guard
-     * rather than the tally it started as. A recipe referencing an item nobody
-     * has authored fails here instead of being counted.
+     * prune cleared every one of them — so this is now a real guard rather than
+     * the tally it started as. A recipe referencing an item nobody has authored
+     * fails here instead of being counted.
      *
      * ⚠️ `item_copper_sword` is still unauthored and still dropped by a loot
      * table (`data/enemies.json:36`). It left this list because the recipe that

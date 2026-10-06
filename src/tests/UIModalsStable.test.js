@@ -3,10 +3,9 @@ import { renderHook, act } from '@testing-library/react';
 import { useUIModals } from '../ui/hooks/useUIModals.js';
 
 /**
- * CR3-302 (the `useUIModals` half) — `ReactRoot`'s Guild Hall effects depend
- * on `ui.fullscreen` and `ui.inspect`. Those groups used to be rebuilt on
- * every render, so every ReactRoot render unsubscribed and resubscribed three
- * events. They are memoised now: the same object until their own state moves.
+ * Those groups used to be rebuilt on every render, so every ReactRoot render
+ * unsubscribed and resubscribed three events. They are memoised now: the same
+ * object until their own state moves.
  */
 describe('useUIModals keeps fullscreen and inspect stable (CR3-302)', () => {
     it('an unrelated change (a window opening) leaves both groups the same object', () => {

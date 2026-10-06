@@ -57,13 +57,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **`the enemy`** — Effects Grammar v2, V10a (G-40…G-43).
- *
- * A rule on an item could not name the creature its hero is fighting; only
- * `Applies` could, through a one-off flag. V10a adds the role, lets Deals /
- * Heals / Removes / Applies aim at it, and finds the creature **by hero, never
- * by tile** — so Free Playmat flags (FP-67), which separate where a hero is
- * recorded from where they fight, cannot quietly redirect a blow.
+ * ⭐ **`the enemy`** — Effects Grammar v2, V10a (…).
  */
 
 const MONSTER = 16, BUSH = 15, OTHER_MONSTER = 22;
@@ -131,10 +125,10 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TriggerSystem.resetCascadeGuard();
     TriggerSystem.init();
-    // CR3-157: BoardCombat used to call LoadoutMoments.fire directly right
-    // after publishing COMBAT_ENGAGED; it now only subscribes to that event
-    // (LoadoutMoments.init, called after TriggerSystem.init as the game
-    // does), so a real engagement through BoardRunner.tick needs this started.
+    // BoardCombat used to call LoadoutMoments.fire directly right after
+    // publishing COMBAT_ENGAGED; it now only subscribes to that event
+    // (LoadoutMoments.init, called after TriggerSystem.init as the game does),
+    // so a real engagement through BoardRunner.tick needs this started.
     LoadoutMoments.init();
     LiveEffects.resetClock();
     GameState.state.heroes = [fighter('hero_1')];
@@ -157,9 +151,9 @@ describe('1. an item says "deals N damage to the enemy", and a real fight feels 
         // doc: "the enemy returns to full HP for the next fight"), so `.max` is
         // the HP the item's blow lands on — read here rather than `.current`.
         //
-        // CR3-157: `.current` would no longer work for this. LoadoutMoments now
-        // fires AS a COMBAT_ENGAGED subscriber (registered after TriggerSystem,
-        // same final order the old direct call ran in), so it runs INSIDE
+        // `.current` would no longer work for this. LoadoutMoments now fires AS
+        // a COMBAT_ENGAGED subscriber (registered after TriggerSystem, same
+        // final order the old direct call ran in), so it runs INSIDE
         // EventBus.publish's own subscriber loop rather than strictly after it
         // returns. Since LoadoutMoments is registered before this test's own
         // subscriber, `.current` would already reflect the item's damage by the
@@ -193,9 +187,9 @@ describe('2. ⭐ found by HERO, never by tile (G-43)', () => {
         // working the bush.
         //
         // Was: re-planting the flag on the bush. Since Free Playmat 1.4c a hero
-        // letting go of an enemy ends that fight in the same call (FP-43,
-        // FP-49), so a re-plant can no longer leave this state behind. The
-        // claim is set directly so the lookup-by-hero rule is still exercised.
+        // letting go of an enemy ends that fight in the same call, so a
+        // re-plant can no longer leave this state behind. The claim is set
+        // directly so the lookup-by-hero rule is still exercised.
         BoardState.setClaim('hero_1', { instanceId: bush.id, typeId: bush.typeId });
         expect(BoardState.workerOf(idAt(BUSH))).toBe('hero_1');
         expect(BoardCombat.fightOfHero('hero_1')).toBe(fight);

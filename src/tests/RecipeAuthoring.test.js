@@ -13,13 +13,8 @@ import { statementChargeDelta } from '../systems/board/Charges.js';
 /**
  * CMS authoring for what this rework added (Recipe & Charges rework, P6b).
  *
- * Three things had engine support and no way to author them: a recipe's context
- * requirements past their tag, a Token output, and a statement's `chargeDelta`.
- * This file is about the authoring, not the engines — the engines are pinned by
- * `ChargesEngine.test.js`, `ContextToolTiers.test.js` and `TokenOutputDrops.test.js`.
- *
  * ⚠️ The EV / auto-balance fields are deliberately absent from every assertion
- * here. Nothing in this phase reads or writes them (R-6, R-11), and
+ * here. Nothing in this phase reads or writes them, and
  * `RecipeSyncRoundTrip.test.js` is what would notice if that changed.
  */
 
@@ -43,9 +38,9 @@ function poolOf(skillId) {
  * ⚠️ Finds the column by climbing from its heading rather than assuming a
  * shape. Inputs and Outputs used to be a `<label>` over an `IOEntryList`
  * rendered inline in the recipe card, so the heading's parent *was* the column;
- * they now render through `SupplyChainColumn` (2026-09-05), whose title is an
- * `<h3>` inside a header bar, one level above the list. Neither the test's
- * intent nor what it asserts changes — only where the markup puts the box.
+ * they now render through `SupplyChainColumn`, whose title is an `<h3>` inside
+ * a header bar, one level above the list. Neither the test's intent nor what it
+ * asserts changes — only where the markup puts the box.
  */
 function searchIn(container, label, text) {
     const heading = [...container.querySelectorAll('label, h3')]
@@ -253,7 +248,7 @@ describe('Charge delta authoring — P6b', () => {
     it('still reads an unauthored delta as −1 for a rule that FIRES', () => {
         // The rule every older statement relies on, unchanged: a triggered
         // statement with no authored delta spends one charge per firing
-        // ("charge burns on service", CMS-26).
+        // ("charge burns on service").
         const firing = { id: 'stm_old', keyword: 'grants', when: { event: 'CYCLE_COMPLETE' } };
         expect(statementChargeDelta(firing)).toBe(-1);
         expect(statementChargeDelta({ ...firing, chargeDelta: 0 })).toBe(0);
@@ -317,9 +312,9 @@ describe('Charge delta authoring — P6b', () => {
             onChange: () => {},
         }));
 
-        // The cost is offered on every rule now (UE-20) — what changes is the
-        // moment list. A `Works as` statement has no When clause, so "each time
-        // it fires" is not a moment it could ever reach and is not offered.
+        // The cost is offered on every rule now — what changes is the moment
+        // list. A `Works as` statement has no When clause, so "each time it
+        // fires" is not a moment it could ever reach and is not offered.
         fireEvent.click(container.querySelector('[data-cost-strip] [data-slot="chargeWhen"]'));
         const panel = container.querySelector('[data-rules-panel]');
         expect(panel.textContent).toContain('Every cycle of this Token');

@@ -6,11 +6,6 @@ import { setTuning, resetTuning } from '../config/playmatTuning.js';
 
 /**
  * Biome tones, and the fade that stops two of them meeting in a line.
- *
- * The property that matters is the one that is hard to see and easy to lose:
- * **the fade is symmetric**. Each side computes its own ramp independently, so
- * if they disagreed about the mix at the boundary there would be a step there —
- * which is the exact thing this feature exists to remove.
  */
 
 afterEach(() => resetTuning());

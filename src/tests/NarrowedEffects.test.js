@@ -30,22 +30,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * **Two axes that were readable and unwritable** (Effects Robustness P4).
- *
- * `ModifierAggregator._forEachMatching` has matched on `mod.target.category`
- * since it was written, and two live readers pass two different vocabularies
- * into it:
- *
- * * `BoardRunner` passes the Token's `config.skill` on **every** `resolveAxis`
- *   call — so *"+10% yield to Mining only"* has been resolvable all along.
- * * `StatusEffectSystem.applyToHero` passes a status id as
- *   `query('STATUS_IMMUNITY', statusId)` — so immunity has been queryable since
- *   the status engine was built.
- *
- * Neither had a field in the editor, so neither could ever be true. This is the
- * same condition the five combat axes were in before Unified Effects P7, and the
- * Unified Effects roadmap deferred immunity on the false premise that it needed
- * "category-scoped targeting the grammar has never had". The grammar needed
- * nothing; the editor needed a dropdown.
  */
 
 /**

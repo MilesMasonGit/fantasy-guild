@@ -11,13 +11,6 @@ import { syncFiles } from '../../cms/src/engine/recipeSync.js';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 
 /**
- * FP-47 made visible (Free Playmat slice 1.0).
- *
- * Every hero-worked Token must name a skill; on the free playmat a Token with no
- * skill will not be workable. This slice changes nothing at runtime — it only
- * makes a blank skill show up in the game's boot audit, the CMS Economy Audit
- * tab and the Token editor, so the owner can author the missing skills.
- *
  * ⚠️ **Fixtures only.** There is deliberately no test that the shipped content
  * has zero blank skills: it has 17 today, and that is the owner's authoring job,
  * not a failure of this suite.

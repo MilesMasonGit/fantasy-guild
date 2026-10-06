@@ -29,12 +29,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **Stations start with no recipe** (TL-15, owner feedback FB-13).
- *
- * "Every station, however it arrives, is idle until the player picks a recipe;
- * heroes don't work it until then. A picked recipe stays." Before this, a
- * station took its pool's lowest-level recipe on placement (R-5), so a hero in
- * range started working it the instant it was built.
+ * ⭐ **Stations start with no recipe** (owner feedback).
  */
 
 registerTokenTypes({

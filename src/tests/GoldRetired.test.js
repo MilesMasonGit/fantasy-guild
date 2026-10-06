@@ -11,17 +11,8 @@ import { QuestManager } from '../systems/quests/QuestManager.js';
 import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 
 /**
- * Slice 2.2 — gold removed from play (SP-65: gold is retired, items are the
- * only price).
- *
- * Every action that used to earn or spend gold is exercised here and gold must
- * stay at 0. The Market Token's currency output is covered in `Market.test.js`
- * and `RosterAndMarkets.test.js`; coin loot below (it moved here from
- * `MapBurst.test.js` when the Map bursts were deleted, Token Lifecycle 9.1).
- *
- * Two cases went with the Map code in 9.1: the Oak-Wood-priced Map purchase
- * (there is no Map purchase now) and a gold entry in a burst (there are no
- * bursts).
+ * Slice 2.2 — gold removed from play (gold is retired, items are the only
+ * price).
  */
 
 beforeEach(() => {
@@ -44,8 +35,8 @@ describe('No action earns or spends gold (SP-65)', () => {
     });
 
     it('claiming every tutorial quest leaves gold at 0 and puts no Map on the mat', () => {
-        // Quests are Tokens the Guild Hall spawns (B6.1, TL-18); a claimed
-        // reward drops as loot beside the quest, banked when collected.
+        // Quests are Tokens the Guild Hall spawns (B6.1); a claimed reward
+        // drops as loot beside the quest, banked when collected.
         BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
         QuestManager.init();
         for (const t of TUTORIAL_QUESTS) {
@@ -71,8 +62,8 @@ describe('No action earns or spends gold (SP-65)', () => {
 });
 
 describe('Coins floor loot collection', () => {
-    // ⚠️ Changed in slice 2.2 (SP-65). This used to assert the pile credited
-    // 2000 gold. Gold is retired: the coins are swept off the floor and pay
+    // ⚠️ Changed in slice 2.2. This used to assert the pile credited 2000
+    // gold. Gold is retired: the coins are swept off the floor and pay
     // nothing, and they are not banked as an item either.
     it('sweeps coins off the floor without crediting gold or banking them (SP-65)', () => {
         const sprite = SpriteLayer.addSprite('item', 'item_coins', 2000, { x: 0.5, y: 0.5 });

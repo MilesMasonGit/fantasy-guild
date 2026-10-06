@@ -25,13 +25,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **CR3-250 (round 3 review, R4), engine-only form.** `TileModifiers`'
- * `HERO_MOVED` handler rebuilds around a hero only when the Token they work
- * (still on the mat) changed. The publish stays for its UI subscribers.
- *
- * The first case is why the skip is NOT "the hero's point is unchanged": a
- * pinned flag stands on its Token's centre, so arriving there keeps the point
- * and still has to switch on a `being worked` buff.
+ * The publish stays for its UI subscribers.
  */
 
 const WORKED_BUFF = 'fixture_cr250_worked_buff';

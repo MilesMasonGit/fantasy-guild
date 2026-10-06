@@ -25,10 +25,6 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
  * carry. Before any content uses the new blocks (roadmap Phase 7), a Token with
  * every block has to come out of a sync exactly as it went in — and today's
  * content, which uses none of them, has to come out byte for byte unchanged.
- *
- * Nothing here touches `data/`: the files are READ, loaded into the store the
- * way `/api/load-game-data` builds its payload, and the sync payload is built
- * in memory with `syncFiles` and compared. No request is sent.
  */
 
 const DATA = path.resolve(__dirname, '../../data');

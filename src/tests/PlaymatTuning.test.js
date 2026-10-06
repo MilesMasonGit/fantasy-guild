@@ -12,11 +12,6 @@ import { buildToneMap } from '../systems/board/TerrainTones.js';
 
 /**
  * The playmat tuning store — the developer panel's sliders.
- *
- * The failure worth guarding is a **dead slider**: a knob that moves, saves, and
- * changes nothing on the board. It looks like it works, so it is only found by
- * someone tuning for a while and wondering why nothing helps. The last test in
- * this file drives every tunable to both ends and insists the picture changes.
  */
 
 afterEach(() => resetTuning());

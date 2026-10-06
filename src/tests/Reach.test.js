@@ -39,24 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * **How far a rule reaches** (Effects Robustness P2, ER-1).
- *
- * ## The gap this closes
- * Reach was the neighbour set written into three readers and choosable by
- * nobody, and that set **never contained the Token it was asked about** — a
- * Token was never its own neighbour. So a Token could not buff its own yield,
- * put a status on the hero working *it*, or grant an item to itself, at any
- * strength, however it was authored. That was the owner's own example when this
- * project started.
- *
- * ## The two invariants that matter most
- * 1. **Absence means `nearby`** (ER-5). Every rule authored before this phase
- *    carries no `reach` field, and must behave exactly as it always did. Half
- *    these tests exist to pin that, because a migration that silently changed 20
- *    Tokens would be far worse than the gap it closed.
- * 2. **Reach and filter are different questions.** Reach is *how far*, the
- *    filter is *which*. "Every Coast Token on the board" needs both, and neither
- *    substitutes for the other.
+ * **How far a rule reaches** (Effects Robustness P2).
  */
 
 // 15 and 16 are neighbours. 33 is near neither.

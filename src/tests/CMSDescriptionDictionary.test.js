@@ -107,14 +107,13 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
   });
 
   /**
-   * ⚠️ **Rewritten 2026-09-06**, and it was asserting a shape that has never
-   * existed. The fixture used a top-level `drops` array and an authored
-   * `tokenType: 'enemy'`; real Tokens carry neither. `getCombatLootClause`
-   * read `token.drops || token.outputs`, both always undefined on real
-   * content, so every shipped enemy would have been described as "Can be
-   * fought by heroes in combat" with its drops never named — and this test
-   * passed throughout, because the fixture supplied the field the code
-   * expected instead of the field the data has.
+   * The fixture used a top-level `drops` array and an authored `tokenType:
+   * 'enemy'`; real Tokens carry neither. `getCombatLootClause` read
+   * `token.drops || token.outputs`, both always undefined on real content,
+   * so every shipped enemy would have been described as "Can be fought by
+   * heroes in combat" with its drops never named — and this test passed
+   * throughout, because the fixture supplied the field the code expected
+   * instead of the field the data has.
    *
    * Enemies are Tokens now: the type derives from `enemy.level`, and the
    * drops ARE the outputs.

@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { lifecycleLines, formatDuration, TONE, trickleHoverLines } from '../ui/components/drawer/lifecycleLines.js';
 
 /**
- * Token Lifecycle slice 8.1 — the inspection panel's lifecycle lines (TL-4).
- * The module is pure, so every engine read is a stub here.
+ * Token Lifecycle slice 8.1 — the inspection panel's lifecycle lines. The
+ * module is pure, so every engine read is a stub here.
  */
 
 const TYPES = {
@@ -24,7 +24,7 @@ const TYPES = {
         name: 'Coast',
         turns: { into: [{ typeId: 'shrimp', weight: 1 }, { typeId: 'crab', weight: 1 }], everyMs: 60000, chance: 30 }
     },
-    /** A turns block with neither cycle nor chance: the defaults, 1 min and 30% (TL-12). */
+    /** A turns block with neither cycle nor chance: the defaults, 1 min and 30%. */
     bay: { name: 'Bay', turns: { into: [{ typeId: 'shrimp', weight: 1 }] } },
     shrimp: { name: 'Shrimp Coast' },
     crab: { name: 'Crab Coast' },

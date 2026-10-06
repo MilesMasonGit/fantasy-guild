@@ -16,19 +16,6 @@ import { stationSkillOf, promotedJobOf } from '../systems/effects/statements.js'
 /**
  * Token Lifecycle slices 7.5 (Processing) and 6.2 (Academies), pinned from the
  * SHIPPED data (authored through the CMS, never by hand).
- *
- * Two Foundations are sold at the Shop (Construction section). A Construction
- * hero builds on them with a recipe picked on the Foundation, and the
- * Foundation BECOMES the building in place (DP-6):
- *   Wood Foundation  → Workbench (Crafting) or Cooking Pot (Cooking)
- *   Stone Foundation → Furnace (Smithing) or Fighter's Academy (SP-62)
- * Crafting burns no fuel (SP-26): Oak Wood → Charcoal, Oak Wood + Charcoal →
- * Torch. Cooking and Smithing do: Shrimp and Apple Juice take a Charcoal,
- * Copper Ingot a Coal. A Copper Anvil, bought with Copper Ingots, is a context
- * Token with charges (DP-8, SP-30): beside a Furnace it lets Copper Nails be
- * smithed, and each cycle wears it by one.
- *
- * The numbers are placeholders (TL-5); this pins the shape of the chain.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -92,7 +79,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
                 expect(r.skill).toBe('construction');
                 expect(r.foundationKinds).toEqual([kind]);
                 expect(r.levelRequirement).toBe(1);
-                expect(r.durationMs).toBe(30000);   // Q9 pacing (FB-19): was 15000
+                expect(r.durationMs).toBe(30000);   // Q9 pacing: was 15000
                 expect(r.inputs).toEqual(inputs);
                 expect(r.outputs.map((o) => o.tokenId)).toEqual([builds]);
             });
@@ -254,7 +241,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(anvil.usesRemaining).toBe(20);
             const plan = Charges.planCycle(furnace.id, furnace, { recipe: verdict.recipe });
             expect(plan.ok).toBe(true);
-            // The Furnace is unlimited (SP-23), so the Anvil is the only debit.
+            // The Furnace is unlimited, so the Anvil is the only debit.
             expect(plan.debits.map((d) => [d.id, d.amount])).toEqual([[anvil.id, 1]]);
             Charges.commitPlan(plan);
             expect(anvil.usesRemaining).toBe(19);

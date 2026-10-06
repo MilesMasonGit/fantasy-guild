@@ -64,8 +64,8 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 /**
  * ⭐ **B10: the horizontal hero dock is a dark strip with the heroes standing
- * in it** (FB-46). Full-size idle art cut at the waist, a name and HP bar over
- * each head, deployed heroes darkened and sunk while their labels stay put.
+ * in it**. Full-size idle art cut at the waist, a name and HP bar over each
+ * head, deployed heroes darkened and sunk while their labels stay put.
  */
 describe('B10 horizontal hero dock', () => {
     it('draws one figure per hero, each with a name and an HP bar', () => {
