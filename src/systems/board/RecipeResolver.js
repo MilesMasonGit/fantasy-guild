@@ -1,4 +1,4 @@
-// Fantasy Guild — Context crafting (7×7 Playmat rework, Phase 5)
+// context crafting
 
 import { neighbourIds } from './nearby.js';
 import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
@@ -11,45 +11,25 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
- * The player chooses what a station makes; **adjacency decides whether it can**.
+ * The player chooses what a station makes; adjacency decides whether it can.
  *
- * ⚠️ This file used to assert the opposite, and said so in a signed comment
- * block: adjacency *defined* the product (D-18), a station with nothing beside
- * it had no recipe at all, two matching context sets were an error state (D-20),
- * and "there is deliberately no recipe dropdown". The Recipe & Charges rework
- * reverses that deliberately (roadmap §2). **Do not restore it.** What replaced
- * it:
+ * A station carries `selectedRecipeId`, which the player sets (`StationRecipe.js` owns that field).
+ * A new station has none and waits, saying Choose a recipe. This module validates that selection
+ * rather than discovering one: are its context requirements met? (Items are `InputAllocator`'s
+ * answer and charges are `Charges`'; `BoardRunner` asks all three in turn.) A context Token is a
+ * plain recipe input, and an unmet one is a missing input like any other.
  *
- *  - A station carries `selectedRecipeId`, which the player sets. A new
- *    station has none and waits, saying "Choose a recipe" (TL-15; R-5's
- *    lowest-level default is gone). `StationRecipe.js` owns that field.
- *  - This module **validates** that selection rather than discovering one: are
- *    its context requirements met? (Items are `InputAllocator`'s answer and
- *    charges are `Charges`'; `BoardRunner` asks all three in turn.)
- *  - `RECIPE.CONFLICT` is gone. An explicit selection cannot be ambiguous, so
- *    the state was unreachable rather than merely rare.
- *  - A context Token is no longer a selector. Under R-10 it is a plain recipe
- *    input, and an unmet one is a missing input like any other.
+ * A context Token with nothing relevant nearby is inert: it costs a tile and does nothing until
+ * something it can use arrives. A context Token serves EVERY nearby station: one rack between two
+ * Forges serves both, and wears twice as fast for it. Numerical buffs remain a light layer on top,
+ * deliberately small.
  *
- * ## What survived unchanged
- *  - **A context Token with nothing relevant nearby is inert** (D-19). It
- *    costs a tile and does nothing until something it can use arrives.
- *  - **A context Token serves EVERY nearby station** (D-113). One rack
- *    between two Forges serves both — and wears twice as fast for it (D-157).
- *  - Numerical buffs (D-119/D-120) remain a light layer on top, deliberately
- *    small.
- *
- * ## "Beside" means Near (Free Playmat 1.3, FP-41; by instance id since 1.6b)
- * Every "nearby" question here — the context around a station, the tools it
- * accepts, which stations a context Token serves, and whom it wears for — is
- * `nearby.neighbourIds()`: Tokens whose centres are within the Near radius,
- * measured centre to centre, named by **instance id**. "Acts as" and recipe
- * context carry no reach field of their own; they are Near.
- *
- * Every function here takes the station's (or context Token's) instance id and
- * answers in instance ids. The neighbour list is cached per instance and
- * dropped on any Token add, move or removal or a Near change, because this
- * module asks it several times per station per tick.
+ * Beside means Near. Every nearby question here (the context around a station, the tools it
+ * accepts, which stations a context Token serves, and whom it wears for) is
+ * `nearby.neighbourIds()`: Tokens whose centres are within the Near radius, named by instance id.
+ * Acts as and recipe context carry no reach field of their own; they are Near. The neighbour list
+ * is cached per instance and dropped on any Token add, move or removal or a Near change, because
+ * this module asks it several times per station per tick.
  */
 
 /** Resolution outcomes for a station. */
@@ -61,10 +41,8 @@ export const RECIPE = {
 };
 
 /**
- * Context tags and highest provided tiers supplied by the Tokens near a Token.
- *
- * Presence only, highest tier per tag wins — unchanged. Each Token is named
- * once, by instance id.
+ * Context tags and highest provided tiers supplied by the Tokens near a Token. Presence only,
+ * highest tier per tag wins. Each Token is named once, by instance id.
  */
 export function contextTiersAround(instanceId) {
     const tiers = {};
@@ -122,12 +100,12 @@ export function checkAcceptedTokens(instanceId, def) {
 /**
  * Which context tags a recipe still wants, at the tier it wants them.
  *
- * ⚠️ EVERY requirement must be met, not any — this is what lets a recipe be
- * gated on a COMBINATION of context (CMS-6), e.g. a Pie Tin *and* a Berry
- * Cookbook together being what a Kitchen needs to bake a pie.
+ * ⚠️ EVERY requirement must be met, not any: this is what lets a recipe be gated on a COMBINATION
+ * of context, e.g. a Pie Tin and a Berry Cookbook together being what a Kitchen needs to bake a
+ * pie.
  *
- * Tier is compared rather than mere presence, so a Tier 2 Anvil satisfies a
- * requirement for Tier 1 and a Tier 1 does not satisfy Tier 2 (concept §2.4).
+ * Tier is compared rather than mere presence, so a Tier 2 Anvil satisfies a requirement for Tier 1
+ * and a Tier 1 does not satisfy Tier 2.
  */
 export function unmetContext(instanceId, recipe) {
     const required = contextRequirementsOf(recipe);
@@ -139,21 +117,18 @@ export function unmetContext(instanceId, recipe) {
 /**
  * Whether a station can run the recipe it is set to.
  *
- * **Validation, not discovery.** The recipe is whatever `selectedRecipeId` says
- * (the player's pick; nothing is picked for them, TL-15); this only answers
- * whether the board around it currently satisfies it.
+ * Validation, not discovery: the recipe is whatever `selectedRecipeId` says (nothing is picked for
+ * the player); this only answers whether the board around it currently satisfies it.
  *
- * A Token with no recipes at all is not a station — a Forest makes Wood
- * regardless of its neighbours — so it resolves `OK` with a null recipe and its
- * own authored outputs stand.
+ * A Token with no recipes at all is not a station (a Forest makes Wood regardless of its
+ * neighbours), so it resolves `OK` with a null recipe and its own authored outputs stand.
  *
- * ## The pool is the station's declared skill (P2.5, R-14)
- * The candidate list comes from `recipesForToken`, which returns every recipe of
- * the skill named in the Token's `Works as` statement. A Token without that
- * statement gets an empty list, which is the "not a station" case above.
+ * The pool is the station's declared skill: `recipesForToken` returns every recipe of the skill
+ * named in the Token's `Works as` statement. A Token without that statement gets an empty list, the
+ * not-a-station case above.
  *
- * The selected recipe is returned even when it cannot run, so callers can say
- * *what* is missing rather than only that something is.
+ * The selected recipe is returned even when it cannot run, so callers can say what is missing
+ * rather than only that something is.
  *
  * @returns {{status: string, recipe: object|null, reason?: string, missingContext?: object[]}}
  */
@@ -170,8 +145,7 @@ export function resolveRecipe(instanceId, instance) {
     // Not a station: its config's own inputs/outputs apply.
     if (!recipes.length) return { status: RECIPE.OK, recipe: null };
 
-    // Nothing is ever picked for the player (TL-15; for a Foundation, Token
-    // Lifecycle 6.1): until they choose, a station has nothing to run. A
+    // Nothing is ever picked for the player: until they choose, a station has nothing to run. A
     // selection no longer in the pool is dropped here and reads the same way.
     const recipe = StationRecipe.validateSelection(instance, def);
     if (!recipe) {
@@ -187,19 +161,14 @@ export function resolveRecipe(instanceId, instance) {
 }
 
 /**
- * What a Token is actually running with right now — inputs, outputs, and how
- * long the cycle takes.
+ * What a Token is actually running with right now: inputs, outputs, and how long the cycle takes.
+ * Collapses authored on the Token and decided by nearby context into one answer, so callers never
+ * have to know which kind of Token they hold.
  *
- * Collapses "authored on the Token" and "decided by nearby context" into one
- * answer, so callers never have to know which kind of Token they hold.
- *
- * ## Cycle time and XP come from the recipe when it defines them (CMS-70)
- * A recipe carries its own `durationMs`, so a Feast can plausibly take longer
- * than Bread and recipe complexity can correlate with time. A Token running no
- * recipe falls back to the flat `config.cycleTimeMs` on its own definition
- * (CMS-79). The returned key stays `cycleTimeMs` because it is the station's
- * cycle either way, and `BoardRunner` and `TileProgressBar` read it by that
- * name for both kinds of Token.
+ * Cycle time and XP come from the recipe when it defines them (its own `durationMs`); a Token
+ * running no recipe falls back to the flat `config.cycleTimeMs` on its own definition. The returned
+ * key stays `cycleTimeMs` because `BoardRunner` and `TileProgressBar` read it by that name for both
+ * kinds of Token.
  */
 export function effectiveIO(instanceId, instance) {
     const def = getTokenType(instance?.typeId);
@@ -209,9 +178,8 @@ export function effectiveIO(instanceId, instance) {
 
     return {
         status,
-        // A Foundation is not spent by building on it: it is replaced by what
-        // it builds (Token Lifecycle 6.1, DP-6). So its own per-cycle charge is
-        // zero, or a one-charge Foundation would be destroyed by the very cycle
+        // A Foundation is not spent by building on it: it is replaced by what it builds. So its own
+        // per-cycle charge is zero, or a one-charge Foundation would be destroyed by the very cycle
         // that builds on it.
         recipe: def?.foundation && recipe ? { ...recipe, stationChargeCost: 0 } : recipe,
         inputs: recipe?.inputs ?? def?.config?.inputs ?? [],
@@ -222,17 +190,11 @@ export function effectiveIO(instanceId, instance) {
 }
 
 /**
- * Every nearby Token (by instance id, arrival order) that is a station this
- * context Token serves.
+ * Every nearby Token (by instance id, arrival order) that is a station this context Token serves.
  *
- * This is what D-126 charges wear against: a Context Token loses one use per
- * cycle **each nearby station completes**, so one Tool Rack serving three
- * Forges wears three times as fast (D-157).
- *
- * > Sharing is a **rate trade, not free value**. One Token serving three
- * > stations delivers the same *total* benefit as one serving a single station
- * > — three times faster, and wearing out three times sooner. Clustering buys
- * > throughput now at the cost of restocking sooner.
+ * Charges wear against this: a Context Token loses one use per cycle each nearby station completes,
+ * so one Tool Rack serving three Forges wears three times as fast. Sharing is a rate trade, not
+ * free value: the same total benefit, three times faster, wearing out three times sooner.
  */
 export function servesFrom(contextId) {
     const instance = BoardState.getTokenById(contextId);
@@ -250,11 +212,10 @@ export function servesFrom(contextId) {
 
         const neighbourDef = getTokenType(nInstance.typeId);
 
-        // "Runs" means a work cycle OR a fight. **One kill is one cycle**
-        // (D-129), so a Weapon Rack beside an enemy Token must wear exactly as a
-        // Tool Rack beside a Forge does. Checking only for `config` silently
-        // exempted combat from the economy, because enemy Tokens carry an
-        // `enemyId` instead.
+        // Runs means a work cycle OR a fight. One kill is one cycle, so a Weapon Rack beside an
+        // enemy Token must wear exactly as a Tool Rack beside a Forge does. Checking only for
+        // `config` would exempt combat from the economy, because enemy Tokens carry an `enemyId`
+        // instead.
         const runs = !!neighbourDef?.config || neighbourDef?.tokenType === 'enemy';
         if (!runs) continue;                      // inert things aren't served
 
@@ -285,19 +246,16 @@ export function servesFrom(contextId) {
 }
 
 /**
- * Charge every Context and Buff Token near a Token that just completed a cycle
- * (D-126).
+ * Charge every Context and Buff Token near a Token that just completed a cycle.
  *
- * **Wear is per cycle served**, which is what makes shared context a rate trade
- * rather than free value (D-157). Called from the cycle engine on completion —
- * and because one kill counts as one cycle (D-129), a Weapon Rack beside an
- * enemy Token burns down as it is used, exactly like a Tool Rack beside a Forge.
+ * Wear is per cycle served, which is what makes shared context a rate trade rather than free value.
+ * Called from the cycle engine on completion; because one kill counts as one cycle, a Weapon Rack
+ * beside an enemy Token burns down as it is used, like a Tool Rack beside a Forge.
  *
- * ## `exclude` — the Tokens this cycle has already billed (P1)
- * A recipe can name a nearby context Token's charges as an explicit input
- * and pay them through `Charges.planCycle`. Their ids are passed in here so
- * D-126's flat per-cycle wear does not bill them a second time for the same
- * cycle. A Token nobody's recipe named still wears exactly as it always did.
+ * `exclude`: the Tokens this cycle has already billed. A recipe can name a nearby context Token's
+ * charges as an explicit input and pay them through `Charges.planCycle`; their ids are passed in so
+ * the flat per-cycle wear does not bill them a second time. A Token nobody's recipe named wears as
+ * usual.
  *
  * @param {string} instanceId the Token that completed the cycle
  * @param {(supportId: string, support: object) => void} [onDeplete] removes a worn-out support Token
@@ -307,8 +265,8 @@ export function servesFrom(contextId) {
 export function wearNearbySupport(instanceId, onDeplete, exclude = null) {
     const depleted = [];
 
-    // Still −1 per station per cycle (D-113/D-157); only "beside" became Near.
-    // Iterates a copy: `onDeplete` takes Tokens off the mat, which drops the cache.
+    // Still -1 per station per cycle. Iterates a copy: `onDeplete` takes Tokens off the mat, which
+    // drops the cache.
     for (const supportId of [...neighbourIds(instanceId)]) {
         const support = BoardState.getTokenById(supportId);
         if (!support) continue;
@@ -316,7 +274,7 @@ export function wearNearbySupport(instanceId, onDeplete, exclude = null) {
 
         if (!servesFrom(supportId).includes(instanceId)) continue;
 
-        // Unlimited-use support never wears (D-176) — `null` is not a number.
+        // Unlimited-use support never wears: `null` is not a number.
         if (support.usesRemaining == null) continue;
 
         support.usesRemaining -= 1;
@@ -375,12 +333,9 @@ export function getMissingRequirements(instanceId, instance) {
         }
     }
 
-    // 2. Check the context the SELECTED recipe asks for.
-    //
-    // Only that one recipe's requirements are listed. Naming every tag every
-    // candidate recipe could want was the right answer while adjacency chose
-    // the recipe; now the station has already chosen, and listing the rest
-    // would tell the player to fetch Tokens for work they did not ask for.
+    // 2. Check the context the SELECTED recipe asks for. Only that one recipe's requirements are
+    // listed: the station has already chosen, and listing the rest would tell the player to fetch
+    // Tokens for work they did not ask for.
     const { recipe } = resolveRecipe(instanceId, instance);
     const missingContext = unmetContext(instanceId, recipe);
     if (missingContext.length) {
@@ -410,4 +365,3 @@ export function getMissingRequirements(instanceId, instance) {
 
     return { type: null, items: [] };
 }
-

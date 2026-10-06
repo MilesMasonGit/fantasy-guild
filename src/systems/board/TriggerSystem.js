@@ -1,4 +1,4 @@
-// Fantasy Guild — Triggered Tokens (CMS rework Phase 6)
+// triggered Tokens
 
 import { EventBus } from '../core/EventBus.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -21,77 +21,54 @@ import * as EffectFeedback from './EffectFeedback.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
- * The fifth Token category: things that **wait and react** (CMS-29).
+ * The fifth Token category: things that wait and react.
  *
- * A Producer runs a cycle. A Context Token defines what a neighbour makes. A
- * Buff Token nudges numbers. A Triggered Token does none of those — it listens
- * for something to happen and acts, rate-limited by a cooldown rather than a
- * cycle time, with no hero and no work of its own.
+ * A Producer runs a cycle. A Context Token defines what a neighbour makes. A Buff Token nudges
+ * numbers. A Triggered Token does none of those: it listens for something to happen and acts,
+ * rate-limited by a cooldown rather than a cycle time, with no hero and no work of its own.
  *
- * ## Two worked examples this was built to
- * * **Masonry Wheelbarrow** — reacts to a *neighbour's* cycle completing (an
- *   Ore Vein being mined) and grants an extra item. Everything before Phase 6
- *   assumed a Token reacts to its *own* cycle.
- * * **Stoneshaper Sigil** — no work cycle and no hero at all. Watches for a
- *   condition (Stone existing in the Bank) and converts on a cooldown.
+ * Two worked examples: Masonry Wheelbarrow reacts to a neighbour's cycle completing (an Ore Vein
+ * being mined) and grants an extra item; Stoneshaper Sigil has no work cycle and no hero, watches
+ * for a condition (Stone existing in the Bank) and converts on a cooldown.
  *
- * ## The rules that shape this file
- * * **Success only** (CMS-34). A failed cycle does not fire a listener: a chain
- *   reaction should cascade because something actually happened, and reacting
- *   to a stuck neighbour reads as a bug rather than a feature.
- * * **The charge burns on service, not on luck** (D-126/CMS-26). A Triggered
- *   Token that fires spends its charge whether or not its proc rolled a hit, so
- *   a Token serving 100 events wears out in 100 events regardless of luck. One
- *   predictable rule for every support Token.
- * * **How much it burns is per statement** (rework P1, concept §3.2). Each
- *   statement carries its own `chargeDelta`: negative spends and gates the
- *   effect, zero is free, positive restores up to the Token's starting charges.
- *   The arithmetic is `Charges.applyDelta`; an unauthored delta spends 1.
- * * **Scope is per Token** (CMS-30), not a single global rule — the Sigil wants
- *   adjacency, other Tokens legitimately want the whole economy.
+ * Rules that shape this file:
+ * - Success only: a failed cycle does not fire a listener. A chain reaction should cascade because
+ * something actually happened, and reacting to a stuck neighbour reads as a bug.
+ * - The charge burns on service, not on luck: a Triggered Token that fires spends its charge
+ * whether or not its proc rolled a hit, so a Token serving 100 events wears out in 100 events
+ * regardless of luck.
+ * - How much it burns is per statement: each statement carries its own `chargeDelta` (negative
+ * spends and gates the effect, zero is free, positive restores up to the Token's starting charges).
+ * The arithmetic is `Charges.applyDelta`; an unauthored delta spends 1.
+ * - Scope is per Token, not a single global rule: the Sigil wants adjacency, other Tokens want the
+ * whole economy.
  */
 
 /** Live subscriptions, so `init` is idempotent across reloads and tests. */
 let unsubscribers = [];
 
 /**
- * ## ⚠️ The loop guard, and why cooldowns were not enough
+ * ⚠️ The loop guard, and why cooldowns are not enough.
  *
- * Every trigger before Phase 2 listened **outward** — at a neighbour, or at the
- * Bank. `SELF_CYCLE_COMPLETE` lets a Token react to its own completion, which
- * is the shape that can eat itself: a Token whose reaction causes a cycle to
- * complete would fire again, and again.
+ * `SELF_CYCLE_COMPLETE` lets a Token react to its own completion, which is the shape that can eat
+ * itself: a Token whose reaction causes a cycle to complete would fire again, and again. A cooldown
+ * is only a rate limit, and `statement.when.cooldownMs` may be left at zero, which is no rate limit
+ * at all.
  *
- * **Is the cooldown sufficient?** No, and the reason is worth writing down
- * rather than discovering later. A cooldown is a *rate* limit. It is set from
- * `statement.when.cooldownMs`, which an author may leave at **zero** — the
- * editor's own default for a fresh trigger is 5000ms but nothing forces it, and
- * a zero-cooldown self-trigger has no rate limit at all. Relying on it would
- * mean a runaway loop in the tick path is one empty number box away.
- *
- * As it happens nothing a statement can *do* today publishes `CYCLE_COMPLETE`
- * — item grants, conversions and status applications all publish something
- * else — so the loop is currently unreachable. That is safety by accident, and
- * it lasts exactly until someone adds an action that completes a cycle.
- *
- * So the guard is structural and does not depend on either fact:
- *
- * 1. **Re-entrancy.** A statement already in flight on a Token cannot be
- *    re-entered. This alone makes a Token-eats-itself loop impossible.
- * 2. **Cascade depth.** A chain of *different* Tokens setting each other off
- *    is bounded, so a long ring cannot spin either. When the cap is reached the
- *    cascade stops and says so once, loudly, rather than freezing the game.
+ * So the guard is structural:
+ * 1. Re-entrancy: a statement already in flight on a Token cannot be re-entered. This alone makes a
+ * Token-eats-itself loop impossible.
+ * 2. Cascade depth: a chain of different Tokens setting each other off is bounded, so a long ring
+ * cannot spin either. When the cap is reached the cascade stops and says so once, loudly, rather
+ * than freezing the game.
  *
  * Both are cheap: a `Set` add and a counter per fire.
  */
 const inFlight = new Set();
 
 /**
- * How deep one board event may cascade.
- *
- * Eight is far past anything a real board does — the longest authored chain is
- * a Vein feeding a Wheelbarrow — and far short of a stack overflow. It is a
- * circuit breaker, not a design limit.
+ * How deep one board event may cascade. A circuit breaker, not a design limit: far past anything a
+ * real board does and far short of a stack overflow.
  */
 export const MAX_CASCADE_DEPTH = 8;
 
@@ -99,16 +76,14 @@ let cascadeDepth = 0;
 let warnedAboutDepth = false;
 
 /**
- * Run one statement carried by a **live effect instance** (V6).
+ * Run one statement carried by a live effect instance.
  *
- * ⚠️ Deliberately NOT routed through `fireStatement`. That path is about a Token
- * *instance* — it is where the cooldown lives and the charge delta is spent, and
- * a live effect on a person has neither. It ticks on its own clock, which is
- * already once every five seconds, so a cooldown would be redundant. The same
- * reasoning P5 of Unified Effects recorded for carried item rules.
+ * ⚠️ Deliberately NOT routed through `fireStatement`: that path is about a Token instance, where
+ * the cooldown lives and the charge delta is spent, and a live effect on a person has neither. It
+ * ticks on its own clock, so a cooldown would be redundant.
  *
- * The cascade guard still applies, because a live effect firing another effect
- * is exactly the shape G-17 allows and therefore exactly the shape that can spin.
+ * The cascade guard still applies, because a live effect firing another effect can chain and
+ * therefore spin.
  */
 export function fireLiveStatement(statement, roles) {
     if (cascadeDepth >= MAX_CASCADE_DEPTH) return;
@@ -118,12 +93,9 @@ export function fireLiveStatement(statement, roles) {
         if (statement.keyword === KEYWORD.HEALS) EffectActions.heal(statement, roles);
         if (statement.keyword === KEYWORD.RESTORES) EffectActions.restore(statement, roles);
         if (statement.keyword === KEYWORD.REMOVES) EffectActions.remove(statement, roles);
-        /**
-         * ⭐ The other half of chaining (G-17): a live effect applying another.
-         * Without this the dispatch covered only the four damage-ish verbs, so
-         * the combo mechanism the editor advertises did not exist.
-         */
-        // G-42: an `Applies` aimed at a role goes to that role, not to the bearer.
+        // The other half of chaining: a live effect applying another. Without this the dispatch
+        // covers only the damage-ish verbs.
+        // An `Applies` aimed at a role goes to that role, not to the bearer.
         if (statement.keyword === KEYWORD.APPLIES && statement.target?.role) {
             StatusApplication.applyToRole(statement, roles);
         } else if (statement.keyword === KEYWORD.APPLIES && roles?.selfHeroId && statement.payload?.effectId) {
@@ -145,10 +117,10 @@ export function resetCascadeGuard() {
 /**
  * Per-instance cooldown state, created on first use.
  *
- * ⚠️ Keyed by the statement's **stable id**, not by its position in the array.
- * Positional keys meant reordering a Token's rules in the CMS silently remapped
- * a live save's cooldowns onto the wrong rule. Numeric leftovers from the old
- * shape are dropped rather than remapped — see the note in `BlockUpkeep.js`.
+ * ⚠️ Keyed by the statement's stable id, not by its position in the array: positional keys meant
+ * reordering a Token's rules in the CMS silently remapped a live save's cooldowns onto the wrong
+ * rule. Numeric leftovers from the old shape are dropped rather than remapped (see
+ * `BlockUpkeep.js`).
  */
 function cooldowns(instance) {
     if (!instance.blockCooldowns) instance.blockCooldowns = {};
@@ -164,11 +136,9 @@ function triggeredStatements(def, triggerId) {
 }
 
 /**
- * Advance every cooldown on one Token.
- *
- * Called from the board tick. Cooldowns count DOWN in real time rather than
- * being compared against a timestamp, so they behave identically whether the
- * game ran continuously or was resumed.
+ * Advance every cooldown on one Token. Called from the board tick. Cooldowns count DOWN rather than
+ * being compared against a timestamp, so they behave identically whether the game ran continuously
+ * or was resumed.
  */
 export function tickCooldowns(instance, delta) {
     const state = instance.blockCooldowns;
@@ -184,35 +154,24 @@ function isReady(instance, statementId) {
 }
 
 /**
- * Run one triggered statement's action.
- *
- * Returns true if the statement actually fired, which is what spends the charge —
- * see CMS-26 above. A statement that was on cooldown, or whose condition was not
- * met, has not served and costs nothing.
+ * Run one triggered statement's action. Returns true if the statement actually fired, which is what
+ * spends the charge. A statement that was on cooldown, or whose condition was not met, has not
+ * served and costs nothing.
  */
 function fireStatement(instance, statement, payload = null, { settled = false } = {}) {
     if (!instance || !isReady(instance, statement.id)) return false;
 
-    /**
-     * A statement's own charge cost gates it (concept §3.2). An effect that
-     * costs more charges than the Token has left **cannot fire at all** — it
-     * does not fire and go into debt, and it does not fire for free. Checked
-     * before the cooldown is set below, so a blocked effect is not also put on
-     * cooldown for a firing that never happened.
-     *
-     * An unlimited Token passes this unconditionally (R-4).
-     */
-    /**
-     * ⚠️ **A settled moment neither pays nor is gated** — see
-     * `SELF_TOKEN_DEPLETED`. The Token has already spent its last charge and
-     * left the board, so asking it to afford one more would refuse every rule
-     * on the moment, and taking one would run a delta against a discarded
-     * object sitting where its replacement now is.
-     */
+    // A statement's own charge cost gates it. An effect that costs more charges than the Token has
+    // left cannot fire at all: it does not fire and go into debt, and it does not fire for free.
+    // Checked before the cooldown is set below, so a blocked effect is not also put on cooldown for
+    // a firing that never happened. An unlimited Token passes this unconditionally.
+    // ⚠️ A settled moment neither pays nor is gated (see `SELF_TOKEN_DEPLETED`). The Token has
+    // already spent its last charge and left the board, so asking it to afford one more would
+    // refuse every rule on the moment, and taking one would run a delta against a discarded object
+    // sitting where its replacement now is.
     if (!settled && !Charges.canFireStatement(instance, statement)) return false;
 
-    // --- The loop guard (see the note at the top of this file) --------------
-    // Keyed by the Token's instance id (slice 1.6b).
+    // The loop guard (see the note at the top of this file), keyed by the Token's instance id.
     const key = `${instance.id}:${statement.id}`;
     if (inFlight.has(key)) return false;
     if (cascadeDepth >= MAX_CASCADE_DEPTH) {
@@ -243,9 +202,8 @@ function fireStatement(instance, statement, payload = null, { settled = false } 
         cascadeDepth -= 1;
     }
 
-    // The statement served, so its name is said — the same moment and the same
-    // rule as the charge delta above it (CMS-26): what is announced is that the
-    // Token acted, not that every proc inside it happened to hit.
+    // The statement served, so its name is said: what is announced is that the Token acted, not
+    // that every proc inside it happened to hit.
     EffectFeedback.announce(instance.id, statement);
 
     return true;
@@ -254,14 +212,12 @@ function fireStatement(instance, statement, payload = null, { settled = false } 
 /**
  * What a fired statement actually does. Split out so the guard can wrap it.
  *
- * ⚠️ `payload` is the **board event's** payload, threaded through from the
- * handler so `Deals` can resolve its roles (Effects Grammar v2 V2). A verb that
- * acts on a *participant* needs to know who was involved, and only the event
- * knows that.
+ * ⚠️ `payload` is the board event's payload, threaded through from the handler so `Deals` can
+ * resolve its roles: a verb that acts on a participant needs to know who was involved, and only the
+ * event knows that.
  *
- * By instance id (Free Playmat slice 1.6b): the bearer is `instance`, which may
- * already have left the mat (a rule on its own depletion) — its `x`, `y` is then
- * where it stood.
+ * The bearer is `instance`, which may already have left the mat (a rule on its own depletion); its
+ * `x`, `y` is then where it stood.
  */
 function runStatementActions(instance, statement, payload = null, { settled = false } = {}) {
     // Whether this statement swapped the bearer for a new Token. See the note
@@ -270,18 +226,15 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
     const bearerPoint = centreOf(instance);
     const roles = () => resolveRoles(payload, instance.id, bearerPoint);
 
-    /**
-     * ⭐ `Deals` — damage to somebody the moment named.
-     *
-     * Handled first because it is the one keyword whose target is a **role**
-     * rather than a filter, so none of the filter machinery below applies to it.
-     */
+    // `Deals`: damage to somebody the moment named. Handled first because it is the one keyword
+    // whose target is a role rather than a filter, so none of the filter machinery below applies to
+    // it.
     if (statement.keyword === KEYWORD.DEALS) {
         DealDamage.deal(statement, roles());
     }
 
-    // The rest of the action set (V8). Same shape, same role resolution — each
-    // one is a verb that does something to a participant.
+    // The rest of the action set: same shape, same role resolution, each one a verb that does
+    // something to a participant.
     if (statement.keyword === KEYWORD.HEALS) {
         EffectActions.heal(statement, roles());
     }
@@ -299,14 +252,11 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
     }
 
 
-    /**
-     * `Applies` — a status on the people working the neighbours the filter
-     * names. Handled before the item-shaped payloads below because it is the
-     * one keyword whose payload carries no `type` at all, and because its own
-     * targeting question is answered by `StatusApplication` rather than here.
-     */
+    // `Applies`: a status on the people working the neighbours the filter names. Handled before the
+    // item-shaped payloads below because its payload carries no `type` at all, and because its own
+    // targeting question is answered by `StatusApplication` rather than here.
     if (statement.keyword === KEYWORD.APPLIES) {
-        // G-42: a role, when set, replaces the filter and the reach.
+        // A role, when set, replaces the filter and the reach.
         if (statement.target?.role) StatusApplication.applyToRole(statement, roles());
         else StatusApplication.applyToNeighbours(instance.id, statement, Math.random, bearerPoint);
     }
@@ -316,19 +266,10 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
         const hit = chance >= 100 || Math.random() * 100 < chance;
         if (!hit) continue;
 
-        /**
-         * ⚠️ **A firing rule lands where its sentence says it lands**
-         * (Effects Robustness P1).
-         *
-         * Both payloads below used to drop on the Token that fired no matter
-         * what filter the author wrote. `Grants` declares
-         * `filter: true`, so *"grant 1 Copper to any nearby Forge"* was a
-         * sentence the editor generated, the CMS saved, the game loaded, and
-         * the runtime then ignored. That is the exact failure the statement
-         * grammar exists to make impossible, and the ambient path never had it:
-         * `applicableStatements` has matched the filter since the grammar
-         * shipped. Only the triggered path was missing the loop.
-         */
+        // ⚠️ A firing rule lands where its sentence says it lands. `Grants` declares `filter:
+        // true`, so grant 1 Copper to any nearby Forge is a sentence the editor generates and the
+        // CMS saves; the runtime must honour the filter rather than drop on the Token that fired
+        // (`applicableStatements` does the same for the ambient path).
         if (modifier.type === EFFECT_TYPES.BONUS_DROP && modifier.itemId) {
             const quantity = Math.max(1, modifier.quantity || 1);
             // An unfiltered grant is about the Token that fired, which is what
@@ -357,83 +298,47 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
                 InventoryManager.removeItem(c.itemId, c.quantity || 1);
             }
 
-            /**
-             * ⚠️ **A conversion has ONE destination, not a broadcast** (ER-14).
-             *
-             * `Grants` above may name several neighbours because it is a bonus:
-             * granting to four Forges is four bonuses, which is what the
-             * sentence says and what the author priced. A conversion is an
-             * **exchange** — it consumes a fixed input — so producing onto every
-             * matching neighbour would multiply the output side while the input
-             * side stayed fixed. That is precisely the "scaling only the output
-             * turns a scale into free money" trap UE-7 names, arriving through
-             * the filter instead of through the scale.
-             *
-             * So the filter picks a **destination**, and the owner's own example
-             * is singular: *a Sigil that turns Stone into Bricks and puts them
-             * on the nearby Kiln.* ⭐ **The nearest matching Token wins, then
-             * the earliest placed** (FP-89) — deterministic rather than
-             * arbitrary, the same tie-break Managers and flags use when they
-             * have to choose one Token. It used to be the lowest tile index,
-             * which a free mat does not have.
-             */
-            /**
-             * ⚠️ **`all` means the FIRING TOKEN here, not "any neighbour"**
-             * (ER-14).
-             *
-             * `makeStatement` stamps `to: { mode: 'all' }` on every keyword that
-             * can aim, so a conversion authored in the CMS and otherwise
-             * untouched arrives with one. Treating that as "pick a neighbour"
-             * made the commonest possible conversion produce onto whichever
-             * Token happened to sit at the lowest nearby index — while its
-             * sentence named no destination at all, and the CMS hint said the
-             * output "lands on this Token itself".
-             *
-             * The renderer and the editor were both right; this was the half
-             * that lied. An unaimed conversion produces where it was made (D-40).
-             */
+            // ⚠️ A conversion has ONE destination, not a broadcast. `Grants` above may name several
+            // neighbours because it is a bonus: granting to four Forges is four bonuses, which is
+            // what the sentence says and what the author priced. A conversion is an exchange: it
+            // consumes a fixed input, so producing onto every matching neighbour would multiply the
+            // output while the input stayed fixed (scaling only the output turns a scale into free
+            // money). So the filter picks a destination: the nearest matching Token wins, then the
+            // earliest placed, deterministic rather than arbitrary.
+            // ⚠️ `all` means the FIRING TOKEN here, not any neighbour. `makeStatement` stamps `to:
+            // { mode: 'all' }` on every keyword that can aim, so a conversion authored in the CMS
+            // and otherwise untouched arrives with one. Treating that as pick a neighbour would
+            // make the commonest conversion produce onto whichever Token sat at the lowest nearby
+            // index, while its sentence names no destination. An unaimed conversion produces where
+            // it was made.
             const aimed = statement.to?.mode && statement.to.mode !== 'all';
             const destination = aimed
                 ? nearestTargetOf(instance, statement)
                 : bearerSource(instance);
-            // A filter that named nothing produces nothing — the inputs are
-            // still spent, exactly as a failed cycle still costs its inputs.
+            // A filter that named nothing produces nothing: the inputs are still spent, exactly as
+            // a failed cycle still costs its inputs.
             if (destination === undefined) continue;
 
             for (const p of modifier.produces || []) {
-                // Onto the board, not into the Bank (D-40) — the same place
-                // every other yield lands, so it reads as one economy.
+                // Onto the board, not into the Bank: the same place every other yield lands, so it
+                // reads as one economy.
                 SpriteLayer.addSprite('item', p.itemId, Math.max(1, p.quantity || 1), destination);
             }
         }
     }
 
-    /**
-     * The statement's charge delta, applied because the Token SERVED —
-     * regardless of whether any proc above actually hit (CMS-26).
-     *
-     * The delta is per statement, not per Token (concept §3.2): one Token can
-     * carry an effect that costs 2, an effect that is free, and an effect that
-     * gives 1 back. A statement that authors no `chargeDelta` spends one charge,
-     * which is what every statement did before this field existed.
-     *
-     * A positive delta is ceilinged at the Token's starting charges and an
-     * unlimited Token ignores the delta entirely (R-4); both live in
-     * `Charges.applyDelta`, along with the destroy-at-zero that used to be
-     * written out here.
-     */
-    /**
-     * ⚠️ **A Token that replaced itself does not pay.**
-     *
-     * `Transforms`, and `Spawns ... here`, put a NEW instance where this one
-     * stood. Charging the old one is charging a discarded object: the delta
-     * lands on nothing, `TOKEN_CHARGES_CHANGED` announces a Token that is no
-     * longer there, and a `uses: 1` Sapling hitting zero would announce a
-     * depletion for a Token that has already become an Oak.
-     *
-     * The intended use is the broken one: "leave a Stump behind when this
-     * depletes" is exactly a one-charge Token that transforms.
-     */
+    // The statement's charge delta, applied because the Token SERVED, regardless of whether any
+    // proc above actually hit.
+    // The delta is per statement, not per Token: one Token can carry an effect that costs 2, an
+    // effect that is free, and an effect that gives 1 back. A statement that authors no
+    // `chargeDelta` spends one charge.
+    // A positive delta is ceilinged at the Token's starting charges and an unlimited Token ignores
+    // the delta entirely; both live in `Charges.applyDelta`.
+    // ⚠️ A Token that replaced itself does not pay. `Transforms`, and `Spawns ... here`, put a NEW
+    // instance where this one stood. Charging the old one is charging a discarded object: the delta
+    // lands on nothing, `TOKEN_CHARGES_CHANGED` announces a Token that is no longer there, and a
+    // `uses: 1` Sapling hitting zero would announce a depletion for a Token that has already become
+    // an Oak.
     if (bearerReplaced || settled) return true;
 
     Charges.applyDelta(instance, Charges.statementChargeDelta(statement));
@@ -441,18 +346,16 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
 }
 
 /**
- * The Tokens a firing rule's filter names, as instance ids in arrival order —
- * measured from the bearer, or from the point it stood on when it has already
- * left the mat.
+ * The Tokens a firing rule's filter names, as instance ids in arrival order, measured from the
+ * bearer, or from the point it stood on when it has already left the mat.
  */
 function targetsOf(instance, statement) {
     return filterTargets(instance?.id, statement, centreOf(instance));
 }
 
 /**
- * The one Token a conversion lands on: of those its filter names, the **nearest**
- * to the bearer, then the **earliest placed** (FP-89). `undefined` when the
- * filter names nothing.
+ * The one Token a conversion lands on: of those its filter names, the nearest to the bearer, then
+ * the earliest placed. `undefined` when the filter names nothing.
  */
 function nearestTargetOf(instance, statement) {
     const from = centreOf(instance);
@@ -485,22 +388,18 @@ function bearerSource(instance) {
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
 function sourceMatches(when, sourceTypeId) {
-    if (!when.source?.mode) return true;                // any neighbour
+    if (!when.source?.mode) return true;
     return matchesTokenTarget(when.source, getTokenType(sourceTypeId));
 }
 
 /**
- * Does this trigger care about *what* the source made?
+ * Does this trigger care about what the source made? Only `ITEM_PRODUCED` asks. Everything else
+ * ignores the list entirely, so the coarse a-neighbour-completed-a-cycle trigger keeps firing on
+ * every completion, including one that produced nothing.
  *
- * Only `ITEM_PRODUCED` asks. Everything else ignores the list entirely, so the
- * coarse "a neighbour completed a cycle" trigger keeps firing on every
- * completion including one that produced nothing at all.
- *
- * ⚠️ An `ITEM_PRODUCED` with no item named matches **nothing**, not everything.
- * A half-authored trigger that fired on every cycle would be indistinguishable
- * from the coarse trigger sitting right above it in the picker, which is
- * exactly the kind of quiet wrong behaviour the audit exists to catch — and it
- * does, by name.
+ * ⚠️ An `ITEM_PRODUCED` with no item named matches NOTHING, not everything: a half-authored trigger
+ * that fired on every cycle would be indistinguishable from the coarse trigger sitting right above
+ * it in the picker.
  */
 function producedMatches(definition, when, payload) {
     if (!definition?.needsItem) return true;
@@ -511,13 +410,12 @@ function producedMatches(definition, when, payload) {
 /**
  * Handle an adjacency-scoped board event.
  *
- * ## "Neighbour" means Near (Free Playmat 1.3, FP-41; by id and point since 1.6b)
- * Listeners are every Token whose centre is within Near of the source's centre,
- * named by instance id, in arrival order.
+ * Neighbour means Near: listeners are every Token whose centre is within Near of the source's
+ * centre, named by instance id, in arrival order.
  *
- * ⚠️ The source may already have left: `TOKEN_DEPLETED` fires after it is taken
- * off the mat. It is then heard from the point its departing instance still
- * carries, or the point the event names (`x`, `y`).
+ * ⚠️ The source may already have left: `TOKEN_DEPLETED` fires after it is taken off the mat. It is
+ * then heard from the point its departing instance still carries, or the point the event names
+ * (`x`, `y`).
  */
 function handleNearby(triggerId, payload) {
     const sourceId = payload?.instanceId ?? null;
@@ -555,15 +453,10 @@ function handleNearby(triggerId, payload) {
  * as any other statement does.
  */
 function handleSelf(triggerId, payload, { settled = false } = {}) {
-    /**
-     * ⚠️ The bearer may have **already left the mat**, and for one moment that
-     * is the normal case rather than an error: `SELF_TOKEN_DEPLETED` fires from
-     * `destroyToken`, after the Token has been taken off. So the departing
-     * instance rides on the payload, and this is the only place that reads it.
-     *
-     * Falling back rather than preferring it: while a Token is still on the mat,
-     * the board is the authority on it.
-     */
+    // ⚠️ The bearer may have already left the mat, and for one moment that is the normal case:
+    // `SELF_TOKEN_DEPLETED` fires from `destroyToken`, after the Token has been taken off. So the
+    // departing instance rides on the payload, and this is the only place that reads it. It is a
+    // fallback, not preferred: while a Token is still on the mat, the board is the authority on it.
     const instance = BoardState.getTokenById(payload?.instanceId) || payload?.instance;
     if (!instance) return;
 
@@ -575,10 +468,8 @@ function handleSelf(triggerId, payload, { settled = false } = {}) {
 }
 
 /**
- * Handle a global-scoped condition (CMS-35).
- *
- * Evaluated against the Bank each time the coarse `inventory_updated` fires.
- * Every Triggered Token on the board is considered, wherever it sits.
+ * Handle a global-scoped condition. Evaluated against the Bank each time the coarse
+ * `inventory_updated` fires. Every Triggered Token on the board is considered, wherever it sits.
  */
 function handleGlobalItemThreshold() {
     for (const instance of BoardState.tokens()) {
@@ -616,7 +507,7 @@ export function init() {
         const isSelf = scopes.includes(TRIGGER_SCOPES.SELF);
 
         unsubscribers.push(EventBus.subscribe(event, (payload) => {
-            // CMS-34: a failed cycle produced nothing, so nothing reacts to it.
+            // A failed cycle produced nothing, so nothing reacts to it.
             if (payload?.failed) return;
             // COMBAT_RESOLVED fires on defeat too; only a win is an event worth
             // cascading from — a lost fight is the same "nothing happened".
@@ -636,7 +527,7 @@ export function teardown() {
     resetCascadeGuard();
 }
 
-/** Whether a Token is purely triggered — no staffed production at all (CMS-80). */
+/** Whether a Token is purely triggered: no staffed production at all. */
 export function isPurelyTriggered(def) {
     if (!def) return false;
     const hasTrigger = statementsOf(def).some(s => s?.when?.event);

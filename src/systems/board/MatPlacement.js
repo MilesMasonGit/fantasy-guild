@@ -1,4 +1,4 @@
-// Fantasy Guild — Where a Token may stand on the free playmat (Free Playmat slice 1.6d)
+// where a Token may stand on the free playmat
 
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { artRadiusOf, matW, matH, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
@@ -9,29 +9,24 @@ import * as BoardState from './BoardState.js';
 import * as Restrictions from './Restrictions.js';
 
 /**
- * ⭐ **A Token lands exactly where the player lets go** (Free Playmat slice
- * 1.6d, FP-6). There are no tiles and nothing snaps: this file is the whole
- * answer to "may a Token of this type stand at this point, and if not, where is
- * the nearest place it may?".
+ * A Token lands exactly where the player lets go: there are no tiles and nothing snaps. This file
+ * is the whole answer to may a Token of this type stand at this point, and if not, where is the
+ * nearest place it may?
  *
- * ## The three rules a spot has to pass
- * 1. **It fits on the mat** — the *art* circle, not the hitbox, stays fully
- *    inside (director's pick). A Token half off the edge would be half
- *    unclickable, and the art is what the player sees.
- * 2. **It is not crowding anything** — centre to centre, against the invisible
- *    hitbox (FP-63, FP-64). See {@link minGap}.
- * 3. **It breaks no `Cannot` rule** (FP-88) — and a spot that would is simply
- *    not a spot, so the search carries on past it rather than refusing the drop.
+ * The three rules a spot has to pass:
+ * 1. It fits on the mat: the art circle, not the hitbox, stays fully inside. A Token half off the
+ * edge would be half unclickable, and the art is what the player sees.
+ * 2. It is not crowding anything: centre to centre, against the invisible hitbox. See {@link
+ * minGap}.
+ * 3. It breaks no `Cannot` rule: a spot that would is simply not a spot, so the search carries on
+ * past it rather than refusing the drop.
  *
- * ## ⚠️ This file decides, it does not act
- * Nothing here moves a Token, publishes an event or transfers a charge.
- * {@link dropAt} returns **what should happen**; `Placement.js` is what makes it
- * happen and announces it. That is the same split `BoardState` (shape) and
- * `Placement` (rules) already keep, and it is what lets the drag preview
- * (`MatRings`) ask "where would this land?" without the asking placing anything.
+ * ⚠️ This file decides, it does not act. Nothing here moves a Token, publishes an event or
+ * transfers a charge. {@link dropAt} returns what should happen; `Placement.js` makes it happen and
+ * announces it. That split is what lets the drag preview (`MatRings`) ask where would this land?
+ * without placing anything.
  *
- * ## Mat units
- * 1 u = one natural board pixel, as everywhere else on the mat.
+ * Mat units: 1 u = one natural board pixel, as everywhere else on the mat.
  */
 
 /**
@@ -44,40 +39,35 @@ import * as Restrictions from './Restrictions.js';
  */
 const EPS = 1e-6;
 
-/** Ring spacing of the nudge search, in mat units (plan §B). */
+/** Ring spacing of the nudge search, in mat units. */
 const RING_STEP = 4;
 
 /** Arc between candidates on a ring, in mat units — `n = ceil(2πd / ARC)`. */
 const RING_ARC = 6;
 
 /**
- * The invisible collision radius of a Token type: a percentage of its art
- * radius (FP-63), **rounded to whole mat units**.
+ * The invisible collision radius of a Token type: a percentage of its art radius, rounded to whole
+ * mat units.
  *
- * ⚠️ The rounding is deliberate and load-bearing. Centres are whole numbers,
- * and the owner's numbers are stated as whole gaps — 61 u between two small
- * Tokens. Unrounded, `64 × 80% = 51.2` makes that gap `61.44`, so two Tokens
- * placed 61.4 u apart (a gap the owner called legal) would be refused by four
- * hundredths of a pixel nobody can see. Rounded, the small hitbox is 51 u and
- * the three gaps come out at **61.2 / 99.6 / 138.0**.
+ * ⚠️ The rounding is deliberate and load-bearing. Centres are whole numbers, and gaps are stated as
+ * whole gaps (61 u between two small Tokens). Unrounded, `64 × 80% = 51.2` makes that gap `61.44`,
+ * so two Tokens placed 61.4 u apart would be refused by four hundredths of a pixel nobody can see.
+ * Rounded, the small hitbox is 51 u.
  */
 export function hitRadiusOf(typeId) {
     return Math.round(artRadiusOf(typeId) * matTuning('hitboxPct') / 100);
 }
 
 /**
- * The smallest centre-to-centre distance two Token types may sit at (FP-63).
- *
- * Both hitboxes, less the overlap the Mat Tuner allows. At the shipped 80%
- * hitbox and 40% overlap: **small–small 61.2 u**, small–large 99.6 u,
- * large–large 138 u. Read live, every time — a Mat Tuner change has to take
- * effect on the very next drop.
+ * The smallest centre-to-centre distance two Token types may sit at: both hitboxes, less the
+ * overlap the Mat Tuner allows. Read live, every time: a Mat Tuner change has to take effect on the
+ * very next drop.
  */
 export function minGap(typeA, typeB) {
     return (hitRadiusOf(typeA) + hitRadiusOf(typeB)) * (1 - matTuning('overlapPct') / 100);
 }
 
-/** How far a refused drop may be nudged before it flies back instead (FP-46). */
+/** How far a refused drop may be nudged before it flies back instead. */
 export function nudgeReach() {
     return matTuning('nudgeReach');
 }
@@ -89,19 +79,18 @@ export function nudgeReach() {
 export function insideMat(typeId, point) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return false;
     const r = artRadiusOf(typeId);
-    // ⚠️ The mat's size is read LIVE (slice 1.6d-3): the owner can resize the mat
-    // while the game runs, and a spot that fitted a moment ago may not now.
+    // ⚠️ The mat's size is read LIVE: the mat can be resized while the game runs, and a spot that
+    // fitted a moment ago may not now.
     return point.x >= r && point.y >= r && point.x <= matW() - r && point.y <= matH() - r;
 }
 
 /**
- * The nearest point to `point` at which a Token of `typeId` sits **fully on the
- * mat** — its art circle inside every edge. Says nothing about neighbours.
+ * The nearest point to `point` at which a Token of `typeId` sits fully on the mat: its art circle
+ * inside every edge. Says nothing about neighbours.
  *
- * This is the first half of what a shrinking mat does to a stranded Token
- * (FP-98, `MatResize`): pull it back inside the edge, then ask {@link findSpot}
- * from there where it can actually stand. Whole mat units, because Token centres
- * are whole numbers everywhere else.
+ * This is the first half of what a shrinking mat does to a stranded Token (`MatResize`): pull it
+ * back inside the edge, then ask {@link findSpot} from there where it can actually stand. Whole mat
+ * units, because Token centres are whole numbers everywhere else.
  */
 export function clampInside(typeId, point) {
     const at = clampOnto(typeId, point);
@@ -113,9 +102,8 @@ function clampOnto(typeId, point) {
     const r = artRadiusOf(typeId);
     const w = matW();
     const h = matH();
-    // A Token wider than the mat cannot be fully inside it at all; the middle is
-    // the least wrong place for it. Defensive — the smallest mat (6 steps,
-    // 960 × 614 u) still swallows the largest art (288 u across) easily.
+    // A Token wider than the mat cannot be fully inside it at all; the middle is the least wrong
+    // place for it. Defensive.
     return {
         x: w >= 2 * r ? Math.max(r, Math.min(w - r, point.x)) : w / 2,
         y: h >= 2 * r ? Math.max(r, Math.min(h - r, point.y)) : h / 2
@@ -128,21 +116,19 @@ function hasCannot(typeId) {
 }
 
 /**
- * Neighbours too many to scan one by one (round 3 review CR3-003, R2 §4.3
- * item 3a) are bucketed into square cells **as wide as the widest gap any of
- * them could have** (`largestGap`, already the bound used to prefilter them
- * in the first place: no real neighbour's own gap can exceed it). A neighbour
- * closer than its own gap to `point` is therefore never more than one cell
- * away on either axis, so {@link clearOf} only has to look at the 3×3 cells
- * round the candidate's own cell — same answer, far fewer comparisons. Below
- * the threshold the plain scan is already cheap, so nothing is bucketed.
+ * Neighbours too many to scan one by one are bucketed into square cells as wide as the widest gap
+ * any of them could have (`largestGap`, already the bound used to prefilter them: no real
+ * neighbour's own gap can exceed it). A neighbour closer than its own gap to `point` is therefore
+ * never more than one cell away on either axis, so {@link clearOf} only has to look at the 3×3
+ * cells round the candidate's own cell: same answer, far fewer comparisons. Below the threshold the
+ * plain scan is already cheap, so nothing is bucketed.
  */
 const BUCKET_THRESHOLD = 16;
 
 function bucketNeighbours(neighbours, cell) {
     if (neighbours.length < BUCKET_THRESHOLD || !(cell > 0)) return null;
-    // Column index → row index → bucket (CR3-201): a lookup builds no string,
-    // and every integer index is its own key, so no two cells can collide.
+    // Column index → row index → bucket: a lookup builds no string, and every integer index is its
+    // own key, so no two cells can collide.
     const cells = new Map();
     for (const n of neighbours) {
         const ix = Math.floor(n.x / cell);
@@ -157,22 +143,16 @@ function bucketNeighbours(neighbours, cell) {
 }
 
 /**
- * Everything one drop needs to know, worked out **once** before the search
- * starts rather than per candidate.
+ * Everything one drop needs to know, worked out once before the search starts rather than per
+ * candidate.
  *
- * ## Why this exists (plan §B, §G)
- * A fully blocked drop tries on the order of a thousand candidate points. Doing
- * the two expensive things per candidate — scanning every Token on the mat, and
- * building `Restrictions`' projected board view — is what would turn a crowded
- * drop into a visible stutter. So:
- *
- * * **Neighbours are prefiltered once** to those close enough to block *any*
- *   candidate (`reach` + the largest gap this type can have), with their gap
- *   pre-squared. A typical candidate then costs a handful of subtractions.
- * * **`Cannot` is gated once.** If neither the Token being placed nor anything
- *   within reach of the drop carries a `Cannot`, no candidate can break one, and
- *   the projected view is never built at all — which is the overwhelmingly
- *   common case and the performance gate in the tests.
+ * A fully blocked drop tries on the order of a thousand candidate points. Doing the two expensive
+ * things per candidate, scanning every Token on the mat and building `Restrictions`' projected
+ * board view, would turn a crowded drop into a visible stutter. So neighbours are prefiltered once
+ * to those close enough to block any candidate (`reach` + the largest gap this type can have), with
+ * their gap pre-squared, and `Cannot` is gated once: if neither the Token being placed nor anything
+ * within reach of the drop carries a `Cannot`, no candidate can break one, and the projected view
+ * is never built at all.
  */
 function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach() } = {}) {
     const hit = hitRadiusOf(typeId);
@@ -188,9 +168,8 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
     const cannotSpan = reach + nearRadius() + LARGEST_ART_RADIUS;
     const cannotSpanSq = cannotSpan * cannotSpan;
 
-    // The mat edge, read once per search rather than once per candidate
-    // (CR3-150, R2 §4.3 item 3b): `insideBounds` below uses this instead of
-    // `insideMat` recomputing `artRadiusOf`/`matW`/`matH` every time.
+    // The mat edge, read once per search rather than once per candidate: `insideBounds` below uses
+    // this instead of `insideMat` recomputing `artRadiusOf`/`matW`/`matH` every time.
     const bounds = { r: artRadiusOf(typeId), w: matW(), h: matH() };
 
     const neighbours = [];
@@ -217,10 +196,8 @@ function insideBounds(point, { r, w, h }) {
 }
 
 /**
- * Whether `point` is clear of every Token that could crowd it.
- *
- * Exported for tests and for `1.6d-3`'s resize pass; ordinary callers want
- * {@link isLegal}, which also checks the mat edge and `Cannot`.
+ * Whether `point` is clear of every Token that could crowd it. Exported for tests and for
+ * `MatResize`; ordinary callers want {@link isLegal}, which also checks the mat edge and `Cannot`.
  */
 export function isClear(typeId, point, excludeId = null) {
     return clearOf(point, contextFor(typeId, point, { excludeId, reach: 0 }));
@@ -262,8 +239,8 @@ function clearAt(x, y, ctx) {
 }
 
 /**
- * Whether a Token of `typeId` may stand at `point` — on the mat, clear of its
- * neighbours, and breaking no `Cannot` rule (FP-88).
+ * Whether a Token of `typeId` may stand at `point`: on the mat, clear of its neighbours, and
+ * breaking no `Cannot` rule.
  *
  * @param {object} [options]
  * @param {string} [options.excludeId] a Token to ignore — itself, when moving
@@ -287,24 +264,20 @@ function legalIn(typeId, point, ctx) {
 }
 
 /**
- * ⭐ **Searches that found nothing, remembered while nothing they read changed**
- * (CR3-201, round 3 review R3).
+ * Searches that found nothing, remembered while nothing they read changed.
  *
- * A spawner with nowhere to land, a Foundation with no room to build and a
- * recipe whose Token has nowhere to go all ask the same failing question every
- * tick until room appears. A search reads only the board (which Tokens, where
- * — `BoardState`'s membership counter and move journal), the Mat Tuner (any
- * change bumps `tuningGeneration`) and the Token registry (`registryVersion`).
- * While all three are exactly as they were, the same question has the same
- * answer, so a remembered failure is returned without searching again.
+ * A spawner with nowhere to land, a Foundation with no room to build and a recipe whose Token has
+ * nowhere to go all ask the same failing question every tick until room appears. A search reads
+ * only the board (which Tokens, where: `BoardState`'s membership counter and move journal), the Mat
+ * Tuner (any change bumps `tuningGeneration`) and the Token registry (`registryVersion`). While all
+ * three are exactly as they were, the same question has the same answer, so a remembered failure is
+ * returned without searching again.
  *
- * Only failures are remembered — a success is acted on at once and changes
- * the board — and never for a search that consulted a `Cannot` rule or was
- * given a `plan` (a projected board): those read more than the three above.
- * Any change at all forgets everything, so this is exact, and it pays off
- * exactly while the board is still — which is when a stuck search would
- * otherwise repeat. (A move anywhere forgets: a fallback search reaches 640 u,
- * most of the default mat, so keying by region would rarely keep anything.)
+ * Only failures are remembered (a success is acted on at once and changes the board), and never for
+ * a search that consulted a `Cannot` rule or was given a `plan` (a projected board): those read
+ * more than the three above. Any change at all forgets everything, so this is exact. A move
+ * anywhere forgets: a fallback search reaches far across the mat, so keying by region would rarely
+ * keep anything.
  */
 let tuningGeneration = 0;
 let tuningWatched = false;
@@ -325,41 +298,35 @@ function failureMemo() {
 }
 
 /**
- * ⭐ The nearest point to `point` where a Token of `typeId` may legally stand,
- * or **null** when there is none within nudge reach (FP-46 — it flies back).
+ * The nearest point to `point` where a Token of `typeId` may legally stand, or null when there is
+ * none within nudge reach (it flies back).
  *
- * The drop point itself is tried first, so a drop with room lands exactly where
- * it was let go and reports a nudge of 0. Otherwise the search walks outward in
- * rings 4 u apart, ~6 u between candidates around each ring — close enough that
- * the spot it finds is the nearest one to within a few mat units, and about a
- * tenth of the candidates a 2 u search would need.
+ * The drop point itself is tried first, so a drop with room lands exactly where it was let go and
+ * reports a nudge of 0. Otherwise the search walks outward in rings `RING_STEP` apart with
+ * `RING_ARC` between candidates around each ring: close enough that the spot it finds is the
+ * nearest one to within a few mat units, and far fewer candidates than a finer search would need.
  *
- * Reused by slice 1.6d-3, which pulls Tokens in when the mat shrinks (FP-98):
- * clamp the point onto the smaller mat, then ask this where it can actually go.
- *
+ * Also used by `MatResize`, which clamps the point onto the smaller mat and asks this where it can
+ * actually go.
  * @returns {{x: number, y: number, nudge: number}|null}
  */
 export function findSpot(typeId, point, options = {}) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
 
-    // ⚠️ A Token whose type has no definition is placed anyway, at a 1×1's size
-    // — warn-only, per the owner's ruling (CR2-108c / CR2-044). Refusing it here
-    // would turn a renamed CMS id from "a Token that sits there doing nothing"
-    // into "a Token that cannot be put down at all", which is a far harder
-    // failure to recognise and is not this file's call to make.
+    // ⚠️ A Token whose type has no definition is placed anyway, at a 1×1's size (warn-only).
+    // Refusing it here would turn a renamed CMS id from a Token that sits there doing nothing into
+    // a Token that cannot be put down at all, a harder failure to recognise and not this file's
+    // call to make.
     const memo = options.plan ? null : failureMemo();
     const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}` : null;
     if (memo?.has(key)) return null;
 
     const ctx = contextFor(typeId, point, options);
 
-    // ⭐ `candidatesAround`'s walk, inlined (CR3-201): the same candidates in
-    // the same order, from the same expressions, each put through the same
-    // three tests `legalIn` makes (mat edge, crowding, then `Cannot`), but on
-    // bare coordinates — so a search that fails, tens of thousands of
-    // candidates every tick something waits for room, allocates nothing per
-    // candidate. A point object is made only for a candidate that gets as far
-    // as `Cannot`, which needs one. `whyRefused` still walks the generator.
+    // `candidatesAround`'s walk, inlined: the same candidates in the same order, each put through
+    // the same three tests `legalIn` makes (mat edge, crowding, then `Cannot`), but on bare
+    // coordinates, so a search that fails allocates nothing per candidate. A point object is made
+    // only for a candidate that gets as far as `Cannot`. `whyRefused` still walks the generator.
     const { r, w, h } = ctx.bounds;
     const at = (x, y) => x >= r && y >= r && x <= w - r && y <= h - r
         && clearAt(x, y, ctx)
@@ -381,21 +348,17 @@ export function findSpot(typeId, point, options = {}) {
 const ANYWHERE_STEP = 8;
 
 /**
- * ⭐ The nearest legal free spot to `point` **anywhere on the mat**, or null
- * only when the whole mat has no legal spot for a Token of `typeId`.
+ * The nearest legal free spot to `point` anywhere on the mat, or null only when the whole mat has
+ * no legal spot for a Token of `typeId`.
  *
- * For arrivals with no hand to fly back to and no reason to push — a Shop
- * purchase, a Token a recipe makes (Token Lifecycle 5.3). Tries
- * {@link findSpot} within nudge reach first, so an arrival with room nearby
- * lands exactly where it always did; only when that fails does it scan the
- * whole mat.
+ * For arrivals with no hand to fly back to and no reason to push: a Shop purchase, a Token a recipe
+ * makes. Tries {@link findSpot} within nudge reach first, so an arrival with room nearby lands
+ * exactly where it always did; only when that fails does it scan the whole mat.
  *
- * The scan is a grid 8 u apart, sorted nearest first, rather than
- * {@link candidatesAround} out to the mat's diagonal: that ring walk would be
- * ~half a million candidates on the default mat; the grid is ~30 000, and each
- * is checked by the same {@link legalIn} (mat edge, crowding, `Cannot`), so a
- * spot it returns is exactly as legal as a nudge. Nothing is pushed.
- *
+ * The scan is a coarse grid sorted nearest first, rather than {@link candidatesAround} out to the
+ * mat's diagonal, which would be far more candidates; each is checked by the same {@link legalIn}
+ * (mat edge, crowding, `Cannot`), so a spot it returns is exactly as legal as a nudge. Nothing is
+ * pushed.
  * @param {object} [options] as {@link findSpot} (`excludeId`, `plan`)
  * @returns {{x: number, y: number, nudge: number}|null}
  */
@@ -438,10 +401,9 @@ export function findSpotAnywhere(typeId, point, options = {}) {
 }
 
 /**
- * How far an arrival that cannot push looks for free space instead (FP-17), in
- * mat units. Director's pick: wider than a player's nudge reach, because an
- * arrival has no hand to fly back to, but bounded — an unbounded ring search on
- * a nearly full mat is ~half a million candidates.
+ * How far an arrival that cannot push looks for free space instead, in mat units: wider than a
+ * player's nudge reach, because an arrival has no hand to fly back to, but bounded, since an
+ * unbounded ring search on a nearly full mat is a great many candidates.
  */
 const ARRIVAL_FALLBACK_REACH = 640;
 
@@ -452,18 +414,17 @@ const PUSH_PASSES = 30;
 const PUSH_MARGIN = 0.5;
 
 /**
- * ⭐ Where an **arrival** lands — a Map burst, a spawn, a transform (FP-16,
- * FP-17). Unlike a player's drop, an arrival **may push**: it stands at `point`
- * and shoves the Tokens it overlaps outward, and they shove theirs.
+ * Where an arrival (a spawn, a transform) lands. Unlike a player's drop, an arrival may push: it
+ * stands at `point` and shoves the Tokens it overlaps outward, and they shove theirs.
  *
- * FP-17's guard rails:
- * * a pushed Token **stays on the mat** (clamped to the edge);
- * * nothing is pushed into a spot that breaks a `Cannot` rule;
- * * when the push cannot be solved, the arrival lands in the **nearest free
- *   space** instead, and nothing is pushed.
+ * Guard rails:
+ * - a pushed Token stays on the mat (clamped to the edge);
+ * - nothing is pushed into a spot that breaks a `Cannot` rule;
+ * - when the push cannot be solved, the arrival lands in the nearest free space instead, and
+ * nothing is pushed.
  *
- * Returns null only when there is no free space within
- * {@link ARRIVAL_FALLBACK_REACH} either — the mat is full (FP-46).
+ * Returns null only when there is no free space within {@link ARRIVAL_FALLBACK_REACH} either: the
+ * mat is full.
  *
  * Decides only: `BoardState.applyPushes` moves the pushed Tokens.
  *
@@ -496,10 +457,9 @@ export function forceSpot(typeId, point, options = {}) {
  * clamped back onto the mat. Positions are not rounded (see the loop).
  */
 function relax(typeId, at, excludeId, fixedIds) {
-    // Hit radius per body, once (CR3-003, R2 §4.3 item 1), and the overlap
-    // factor read once for this push (`minGap`'s own expression, hoisted —
-    // still read live, so a Mat Tuner change takes effect on the very next
-    // push, just not candidate by candidate within this one).
+    // Hit radius per body, once, and the overlap factor read once for this push (`minGap`'s own
+    // expression, hoisted; still read live, so a Mat Tuner change takes effect on the very next
+    // push).
     const factor = 1 - matTuning('overlapPct') / 100;
     const bodies = BoardState.tokens()
         .filter(t => t.id !== excludeId && Number.isFinite(t.x) && Number.isFinite(t.y))
@@ -520,9 +480,8 @@ function relax(typeId, at, excludeId, fixedIds) {
                 const gap = (a.h + b.h) * factor;
                 const dx = b.x - a.x;
                 const dy = b.y - a.y;
-                // Axis rejection before `hypot` (item 2): if either axis is
-                // already ≥ the gap, the hypot would be too, so the pair is
-                // not overlapping and the original test would `continue` too.
+                // Axis rejection before `hypot`: if either axis is already at or past the gap, the
+                // hypot would be too, so the pair is not overlapping.
                 if (dx >= gap || dx <= -gap || dy >= gap || dy <= -gap) continue;
                 const d = Math.hypot(dx, dy);
                 if (d * d >= gap * gap - EPS) continue;
@@ -541,12 +500,10 @@ function relax(typeId, at, excludeId, fixedIds) {
                 if (shareB) b.pushed = true;
             }
         }
-        // ⚠️ Only Tokens this push has touched, and WITHOUT rounding.
-        // Rounding made pushed Tokens jitter by half a unit every pass, so a
-        // packed block never settled (measured: 11 overlaps left after 300
-        // passes, against 0 after 10 unrounded); rounding once at the end
-        // turned a 61.25 u gap into 61.13. Points stay fractional, as the ones
-        // `findSpot` returns already are.
+        // ⚠️ Only Tokens this push has touched, and WITHOUT rounding. Rounding makes pushed Tokens
+        // jitter by half a unit every pass so a packed block never settles, and rounding once at
+        // the end shrinks a 61.25 u gap. Points stay fractional, as the ones `findSpot` returns
+        // already are.
         for (const t of bodies) {
             if (t.fixed || !t.pushed) continue;
             const c = clampOnto(t.typeId, t);
@@ -556,10 +513,9 @@ function relax(typeId, at, excludeId, fixedIds) {
         if (!moved) break;
     }
 
-    // Every pair the push is answerable for must now be clear: the newcomer's,
-    // and every moved Token's. Two Tokens that were already overlapping before
-    // (a mat shrink can leave them so, FP-98) are not this push's business —
-    // counting them would make every push on that mat fail.
+    // Every pair the push is answerable for must now be clear: the newcomer's, and every moved
+    // Token's. Two Tokens that were already overlapping before (a mat shrink can leave them so) are
+    // not this push's business; counting them would make every push on that mat fail.
     const answerable = (t) => t === newcomer || t.pushed;
     for (let i = 0; i < bodies.length; i++) {
         for (let j = i + 1; j < bodies.length; j++) {
@@ -591,11 +547,9 @@ function relax(typeId, at, excludeId, fixedIds) {
 }
 
 /**
- * A ring's unit offsets, `{ cos, sin }` per candidate — the same expression
- * `candidatesAround` always computed, just worked out once per ring distance
- * and reused (CR3-150, R2 §4.3 item 3c). A ring's shape depends only on `d`
- * (and the fixed `RING_ARC`), never on the drop point, so it is identical on
- * every search and safe to cache for the module's lifetime.
+ * A ring's unit offsets, `{ cos, sin }` per candidate, worked out once per ring distance and
+ * reused. A ring's shape depends only on `d` (and the fixed `RING_ARC`), never on the drop point,
+ * so it is identical on every search and safe to cache for the module's lifetime.
  */
 const ringTrigCache = new Map();
 
@@ -630,17 +584,13 @@ function* candidatesAround(point, reach) {
 }
 
 /**
- * ⭐ What should happen when `instance` is dropped at `point` — the one
- * decision every drop on the mat goes through.
+ * What should happen when `instance` is dropped at `point`: the one decision every drop on the mat
+ * goes through. Nothing is moved here; `Placement.placeTokenAt` carries the answer out.
  *
- * Nothing is moved here; `Placement.placeTokenAt` carries the answer out.
- *
- * ## Restock-on-copy comes first (FP-50, FP-87)
- * Dropping a Token onto a matching copy that has room for charges **tops it up**
- * rather than looking for a spot beside it — otherwise a crowded board would
- * nudge the Token away from the very copy the player aimed at, and the gesture
- * would stop working exactly when it is most wanted. Whatever charges are left
- * over stay on the mat, nudged beside the copy (FP-87).
+ * Restock-on-copy comes first: dropping a Token onto a matching copy that has room for charges tops
+ * it up rather than looking for a spot beside it, otherwise a crowded board would nudge the Token
+ * away from the very copy the player aimed at. Whatever charges are left over stay on the mat,
+ * nudged beside the copy.
  *
  * @returns {{status: 'placed'|'nudged'|'restocked'|'full', x?: number, y?: number,
  *            nudge?: number, reason?: string, targetId?: string, transferred?: number,
@@ -653,7 +603,7 @@ export function dropAt(instance, point, options = {}) {
         return { status: 'full', reason: 'Nowhere to drop that' };
     }
 
-    // `noRestock`: a Token a recipe makes is always its own Token (TL-8).
+    // `noRestock`: a Token a recipe makes is always its own Token.
     const restock = options.noRestock ? null : restockTargetAt(instance, point, options.excludeId);
     if (restock) {
         const maxCap = restock.cap;
@@ -666,7 +616,7 @@ export function dropAt(instance, point, options = {}) {
             return { status: 'restocked', targetId: restock.target.id, transferred, absorbed: true };
         }
 
-        // FP-87: the leftover stays on the mat, beside the copy it just filled.
+        // The leftover stays on the mat, beside the copy it just filled.
         const spot = findSpot(typeId, { x: restock.target.x, y: restock.target.y }, {
             ...options,
             excludeId: instance.id
@@ -691,21 +641,19 @@ export function dropAt(instance, point, options = {}) {
     };
 }
 
-/** The note a drop with nowhere to go flies back with (FP-46). */
+/** The note a drop with nowhere to go flies back with. */
 export const NO_ROOM = 'No room there.';
 
 /**
- * Why a drop found nowhere to go — run **only** once the search has already
- * failed, so its cost falls on the rare fly-back and never on a normal drop.
+ * Why a drop found nowhere to go: run only once the search has already failed, so its cost falls on
+ * the rare fly-back and never on a normal drop.
  *
- * ## Why this is not just "No room there."
- * Under FP-88 a spot breaking a `Cannot` rule is simply not a spot, so a Token
- * boxed in by a restriction and one boxed in by its neighbours both come back
- * with `findSpot` returning null. They are not the same thing to a player: one
- * is "shuffle something along", the other is "that rule will never let this sit
- * here". If the drop point itself was physically clear and only the rule
- * refused it, the rule's own sentence is the honest answer — and it is the
- * message `TILE_EVENT_ALERT`'s refused-drop mark was built to carry.
+ * Why this is not just No room there: a spot breaking a `Cannot` rule is simply not a spot, so a
+ * Token boxed in by a restriction and one boxed in by its neighbours both come back with `findSpot`
+ * returning null. They are not the same thing to a player: one is shuffle something along, the
+ * other is that rule will never let this sit here. If the drop point itself was physically clear
+ * and only the rule refused it, the rule's own sentence is the honest answer, and it is the message
+ * `TILE_EVENT_ALERT`'s refused-drop mark was built to carry.
  */
 function whyRefused(typeId, point, options = {}) {
     const ctx = contextFor(typeId, point, options);
@@ -717,15 +665,10 @@ function whyRefused(typeId, point, options = {}) {
     const plan = { ...(options.plan || {}) };
     if (options.excludeId && plan.id == null) plan.id = options.excludeId;
 
-    /**
-     * ⚠️ The first spot that was **physically fine and refused only by a rule**
-     * is the honest answer, not merely the drop point.
-     *
-     * A player aiming at a Token they are not allowed to sit beside hits a spot
-     * that is both occupied AND against the rule. Reporting on that one point
-     * alone would say "No room there." and hide the rule entirely — when the
-     * rule is precisely what stopped the Token finding a home nearby.
-     */
+    // ⚠️ The first spot that was physically fine and refused only by a rule is the honest answer,
+    // not merely the drop point. A player aiming at a Token they are not allowed to sit beside hits
+    // a spot that is both occupied AND against the rule; reporting on that one point alone would
+    // say No room there and hide the rule.
     for (const candidate of candidatesAround(point, ctx.reach)) {
         if (!insideBounds(candidate, ctx.bounds) || !clearOf(candidate, ctx)) continue;
         const verdict = Restrictions.checkPlacement(candidate, typeId, plan);
@@ -743,11 +686,10 @@ function whyRefused(typeId, point, options = {}) {
 /**
  * The matching copy under `point` that this Token could top up, or null.
  *
- * "Under the point" is the Token's **art circle** — the same test the pointer
- * uses to decide what it is hovering (`Flags.pointOnToken`), so restocking
- * happens exactly when the player let go over the copy. Deliberately not
- * imported from `Flags.js`: that module is the flag/claim rules and importing it
- * here would tie placement to the hero system for one circle test.
+ * Under the point is the Token's art circle: the same test the pointer uses to decide what it is
+ * hovering (`Flags.pointOnToken`). Deliberately not imported from `Flags.js`: that module is the
+ * flag/claim rules and importing it here would tie placement to the hero system for one circle
+ * test.
  */
 function restockTargetAt(instance, point, excludeId = null) {
     const def = getTokenType(instance.typeId);

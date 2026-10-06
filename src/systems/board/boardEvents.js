@@ -1,67 +1,47 @@
-// Fantasy Guild — Board Event Names (7×7 Playmat rework, Phase 1)
+// board event names
 
 /**
- * Board event naming convention: `board:<event_name>`.
+ * Board event naming convention: `board:<event_name>`. Every event names the thing it happened to,
+ * so subscribers can filter on it and ignore the rest rather than recalculating the whole board.
  *
- * The successor to the deleted `core/areaEvents.js`. The convention it carried
- * is worth keeping and is kept: **every event names the thing it happened to**,
- * so subscribers can filter on it and ignore the rest rather than recalculating
- * the whole board.
+ * Events are by Token instance id and mat point, never by tile. An event about a Token names it by
+ * `instanceId`. An event with no Token to name (a spot that ran dry, a refused drop) names the mat
+ * point `x`, `y`; so does an event about a Token that has just left the mat, beside its
+ * `instanceId`. A `tile` field in any payload published from `src/systems` fails
+ * `FreeMatGuards.test.js`.
  *
- * ## ⭐ By Token instance id and mat point — never by tile (Free Playmat 1.6b)
- * There are no tiles on the free playmat. An event about a Token names it by
- * **`instanceId`**. An event with no Token to name — a spot that ran dry, a
- * refused drop — names the **mat point** `x`, `y`; so does an event about a
- * Token that has just left the mat, beside its `instanceId`. A `tile` field in
- * any payload published from `src/systems` fails `FreeMatGuards.test.js`.
+ * Truly global changes (`inventory_updated`, `state_changed`, …) keep their global names. Those
+ * must never trigger per-tile stat recalculation: only the events below do that.
  *
- * Truly global changes (`inventory_updated`, `state_changed`, …) keep their
- * existing global names. Those must never trigger per-tile stat recalculation —
- * only the events below do that.
- *
- * ## Always by constant, never by raw string (CR3-106)
- * Every publisher and subscriber names these constants. A raw `'board:…'`
- * string outside this file fails `BoardEventNames.test.js`, because a typo in
- * one is a subscription that silently never fires.
- *
- * Every event here has a publisher (the old "declared ahead of their
- * publishers" status ended long ago; the one that never got one, `TILE_PUSHED`,
- * was deleted). The payloads below are what the publishers actually send.
- *
- * @see playmat_roadmap_v1.md Phase 1 §A, Phase 4 §B
+ * Always by constant, never by raw string: a raw `'board:…'` string outside this file fails
+ * `BoardEventNames.test.js`, because a typo in one is a subscription that silently never fires. The
+ * payloads below are what the publishers actually send.
  */
 export const BOARD_EVENTS = {
     /**
-     * A Token completed one work cycle. **This is the board's universal unit of
-     * work** — one kill counts as one cycle too (D-129), so combat feeds this
-     * exactly as production does.
+     * A Token completed one work cycle. This is the board's universal unit of work: one kill counts
+     * as one cycle too, so combat feeds this exactly as production does.
      *
-     * Everything that "happens per cycle" hangs off this: context and buff Token
-     * wear (D-126), status decay, and cycle counting.
+     * Everything that happens per cycle hangs off this: context and buff Token wear, status decay,
+     * and cycle counting.
      *
-     * Payload: `{ instanceId, typeId, heroId, failed, produced }`. ⚠️ Only the
-     * work runner (`BoardRunner`) sends `produced`; combat's kill and a
-     * promotion's training cycle omit it, so a reader must default it.
+     * Payload: `{ instanceId, typeId, heroId, failed, produced }`. ⚠️ Only the work runner
+     * (`BoardRunner`) sends `produced`; combat's kill and a promotion's training cycle omit it, so
+     * a reader must default it.
      */
     CYCLE_COMPLETE: 'board:cycle_complete',
 
     /**
-     * A Token began a new cycle — `{ instanceId, typeId, heroId }`.
+     * A Token began a new cycle: `{ instanceId, typeId, heroId }`.
      *
-     * ⚠️ **The moment work actually starts, not the moment a tick runs.** Fired
-     * when `cycleElapsedMs` is still zero and every guard above it has already
-     * passed: a hero is present, the inputs are in the Bank, and the charges are
-     * affordable. A Token stalled for want of ore is not starting a cycle, and
-     * does not say it is — it fires once when it genuinely resumes.
+     * ⚠️ The moment work actually starts, not the moment a tick runs. Fired when `cycleElapsedMs`
+     * is still zero and every guard above it has already passed: a hero is present, the inputs are
+     * in the Bank, and the charges are affordable. A Token stalled for want of ore does not say it
+     * is starting; it fires once when it genuinely resumes.
      *
-     * Its mirror, `CYCLE_COMPLETE`, is what a rule wants when it cares that work
-     * *happened*. This one is for rules that want to act on the work about to be
-     * done — the buff that should already be up while the hero swings.
-     *
-     * ⚠️ `heroId` was added by Effects Grammar v2 V1. It was in scope at the
-     * publish site all along and simply not passed, which meant a rule reacting
-     * to work STARTING could not name the hero doing it while the same rule on
-     * work COMPLETING could.
+     * Its mirror, `CYCLE_COMPLETE`, is for rules that care that work happened. This one is for
+     * rules that act on the work about to be done: the buff that should already be up while the
+     * hero swings.
      */
     CYCLE_START: 'board:cycle_start',
 
@@ -69,18 +49,14 @@ export const BOARD_EVENTS = {
     TILE_CHANGED: 'board:tile_changed',
 
     /**
-     * A Token **was placed on the mat** — the player action, as opposed to
-     * `TILE_CHANGED`, which is every redraw reason a Token has (cleared,
-     * depleted, pushed, restocked). Payload: `{ instanceId, typeId }`
+     * A Token was placed on the mat: the player action, as opposed to `TILE_CHANGED`, which is
+     * every redraw reason a Token has (cleared, depleted, pushed, restocked). Payload: `{
+     * instanceId, typeId }`
      *
-     * ⚠️ **This one deliberately keeps a global name rather than the
-     * `board:` prefix**, because the event already existed as the bare string
-     * `'token_placed'` with four publishers in `Placement.js` and five
-     * subscribers across the UI. Naming it here connects the constant to the
-     * event that is really raised; inventing `board:token_placed` alongside it
-     * would have meant **two announcements of one action**, which is exactly
-     * the double-count CR2-085 is about. Added 2026-08-25 (CR2-055/CR2-177's
-     * sibling). The Tray's `TRAY_CHANGED` went with the Tray, Token Lifecycle 9.3.
+     * ⚠️ This one deliberately keeps a global name rather than the `board:` prefix: the event
+     * already existed as the bare string `'token_placed'` with publishers in `Placement.js` and
+     * subscribers across the UI. A second `board:token_placed` would mean two announcements of one
+     * action.
      */
     TOKEN_PLACED: 'token_placed',
 
@@ -88,84 +64,83 @@ export const BOARD_EVENTS = {
     HERO_MOVED: 'board:hero_moved',
 
     /**
-     * Heroes took a step (Hero Movement M1). No payload — read positions from
-     * `HeroMotion.heroPointOf`. Published at most once per engine tick, and only
-     * when somebody moved. ⚠️ Deliberately NOT `HERO_MOVED`: that one makes
-     * `TileModifiers` rebuild neighbourhoods, which must happen when a hero's
-     * job changes or they arrive — never on every step of a walk.
+     * Heroes took a step. No payload: read positions from `HeroMotion.heroPointOf`. Published at
+     * most once per engine tick, and only when somebody moved.
+     *
+     * ⚠️ Deliberately NOT `HERO_MOVED`: that one makes `TileModifiers` rebuild neighbourhoods,
+     * which must happen when a hero's job changes or they arrive, never on every step of a walk.
      */
     HEROES_WALKED: 'board:heroes_walked',
 
     /**
-     * Enemies took a step by their spawner (B7.1, TL-16, FB-23). No payload —
-     * read positions off the Tokens, or `EnemyMotion.bodyOf`. Published at
-     * most once per engine tick, and only when an enemy moved, set off or
-     * stopped. ⚠️ Deliberately NOT `TILE_CHANGED` (every Token redraws and
-     * bounces, idle flags look again) nor `ADJACENCY_DIRTY` (rebuilds
-     * neighbourhoods): `EnemyMotion` raises that one once per walk, when the
-     * enemy stops.
+     * Enemies took a step by their spawner. No payload: read positions off the Tokens, or
+     * `EnemyMotion.bodyOf`. Published at most once per engine tick, and only when an enemy moved,
+     * set off or stopped.
+     *
+     * ⚠️ Deliberately NOT `TILE_CHANGED` (every Token redraws and bounces, idle flags look again)
+     * nor `ADJACENCY_DIRTY` (rebuilds neighbourhoods): `EnemyMotion` raises that one once per walk,
+     * when the enemy stops.
      */
     ENEMIES_WALKED: 'board:enemies_walked',
 
     /**
-     * A flag dropped on a Token was NOT pinned to it because its hero cannot
-     * work it (B5, FB-45) — it stands there as a normal area flag instead.
-     * Payload: `{ heroId, instanceId, reason }`, `reason` a skip reason
-     * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `disallowed`, `rule_off`). The hero's
-     * speech bubble says why (`HeroBubbleLayer`). Published by `Flags.plant`.
+     * A flag dropped on a Token was NOT pinned to it because its hero cannot work it: it stands
+     * there as a normal area flag instead. Payload: `{ heroId, instanceId, reason }`, `reason` a
+     * skip reason (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `disallowed`, `rule_off`). The hero's speech
+     * bubble says why (`HeroBubbleLayer`). Published by `Flags.plant`.
      */
     PIN_REFUSED: 'board:pin_refused',
 
     /**
-     * A Foundation finished its build and became the Token it built, in place
-     * (Token Lifecycle 6.1, DP-6) — Farmland planted by Farming included.
-     * Payload: `{ instanceId, typeId, fromTypeId, heroId }`: the new Token, what
+     * A Foundation finished its build and became the Token it built, in place (Farmland planted by
+     * Farming included). Payload: `{ instanceId, typeId, fromTypeId, heroId }`: the new Token, what
      * it was built as, the Foundation's type, and the hero who built it.
      *
-     * Published once by `BoardRunner`, after the transform has succeeded (slice
-     * 9.5, for the tutorial's "build a Workbench"). `TILE_CHANGED` fires for the
-     * same transform, but also for grows, turns and every redraw, so it cannot
-     * say "something was built".
+     * Published once by `BoardRunner`, after the transform has succeeded. `TILE_CHANGED` fires for
+     * the same transform, but also for grows, turns and every redraw, so it cannot say something
+     * was built.
      */
     TOKEN_BUILT: 'board:token_built',
 
     /**
-     * The discard bin changed (B3.1, FB-34): a Token went in, came back out,
-     * or the bin was emptied by *Discard all*. Payload: `{ action, instanceId?,
-     * typeId?, count, refunded? }` — `action` is `'binned'`, `'unbinned'` or
-     * `'discarded'`; `count` is how many Tokens the bin holds now; `refunded`
-     * (on `'discarded'`) is what was paid, `[{ itemId, quantity }]`.
+     * The discard bin changed: a Token went in, came back out, or the bin was emptied by Discard
+     * all. Payload: `{ action, instanceId?, typeId?, count, refunded? }`. `action` is `'binned'`,
+     * `'unbinned'` or `'discarded'`; `count` is how many Tokens the bin holds now; `refunded` (on
+     * `'discarded'`) is what was paid, `[{ itemId, quantity }]`.
      */
     BIN_CHANGED: 'board:bin_changed',
 
-    /** A Token ran out of charges and left the board (D-176). Payload: `{ instanceId, x, y, typeId, instance?, heroId? }` */
+    /**
+     * A Token ran out of charges and left the board. Payload: `{ instanceId, x, y, typeId,
+     * instance?, heroId? }`
+     */
     TOKEN_DEPLETED: 'board:token_depleted',
 
     /** A neighbourhood changed, so modifiers need recomputing. Payload: `{ points }` — the mat points the change touched. */
     ADJACENCY_DIRTY: 'board:adjacency_dirty',
 
-    /** A Token's alert state changed — staffed-but-stuck, or resolved (D-114, D-149). Payload: `{ instanceId, alert }`. */
+    /**
+     * A Token's alert state changed: staffed-but-stuck, or resolved. Payload: `{ instanceId, alert
+     * }`.
+     */
     ALERT_CHANGED: 'board:alert_changed',
 
     /**
-     * A spawner's waiting alert changed (Token Lifecycle 8.3) — `{ instanceId,
-     * alert, needs }`, where `alert` is `ALERT.SPAWN_NEEDS_ITEM`,
-     * `ALERT.SPAWN_NO_ROOM` or null, and `needs` lists the item ids the Bank
-     * is short of. Published by `SpawnerSystem.syncAlerts` on a change only.
+     * A spawner's waiting alert changed: `{ instanceId, alert, needs }`, where `alert` is
+     * `ALERT.SPAWN_NEEDS_ITEM`, `ALERT.SPAWN_NO_ROOM` or null, and `needs` lists the item ids the
+     * Bank is short of. Published by `SpawnerSystem.syncAlerts` on a change only.
      *
-     * ⚠️ Deliberately NOT `ALERT_CHANGED`: that one carries a hero-worked
-     * Token's `instance.alert`, which the runner rewrites every tick, and its
-     * progress-bar subscriber draws a red bar for any value it is given. A
-     * spawner has no hero, and a spawner a hero also works would have the two
+     * ⚠️ Deliberately NOT `ALERT_CHANGED`: that one carries a hero-worked Token's `instance.alert`,
+     * which the runner rewrites every tick, and its progress-bar subscriber draws a red bar for any
+     * value it is given. A spawner has no hero, and a spawner a hero also works would have the two
      * marks fighting over one field.
      */
     SPAWNER_ALERT_CHANGED: 'board:spawner_alert_changed',
 
     /**
-     * A Token's green notice went up or was taken down early (`TokenNotices`,
-     * TL-14, FB-48) — `{ instanceId }`. The notice itself is read from
-     * `TokenNotices.noticeOf`, because a freshly spawned Token is not drawn yet
-     * when its notice is raised.
+     * A Token's green notice went up or was taken down early (`TokenNotices`): `{ instanceId }`.
+     * The notice itself is read from `TokenNotices.noticeOf`, because a freshly spawned Token is
+     * not drawn yet when its notice is raised.
      */
     NOTICE_CHANGED: 'board:notice_changed',
 
@@ -184,22 +159,19 @@ export const BOARD_EVENTS = {
     SPRITES_CHANGED: 'board:sprites_changed',
 
     /**
-     * A sprite was **successfully** taken off the floor and into storage
-     * (D-236). Payload: `{ kind, refId, quantity, x, y, destination }`, where
-     * `x`/`y` are board coordinates — the point it flew from — and
-     * `destination` is where it went (`'bank'` for an item; `'dock'` for a
-     * recalled hero). A hero picked up off the mat by drag (`DndKit`, a UI
-     * publisher) adds `heroId`, `toScreenX`, `toScreenY` and
-     * `destination: 'cursor'`; a hero recall adds `heroId`.
+     * A sprite was successfully taken off the floor and into storage. Payload: `{ kind, refId,
+     * quantity, x, y, destination }`, where `x`/`y` are board coordinates (the point it flew from)
+     * and `destination` is where it went (`'bank'` for an item; `'dock'` for a recalled hero). A
+     * hero picked up off the mat by drag (`DndKit`, a UI publisher) adds `heroId`, `toScreenX`,
+     * `toScreenY` and `destination: 'cursor'`; a hero recall adds `heroId`.
      *
-     * ⚠️ **Fires on success only, and that is load-bearing.** Collection can
-     * legitimately fail: a full Bank leaves the item on the floor as D-138's
-     * visible-litter signal, and a Token with nowhere to go waits. A particle
-     * that flew away while the sprite stayed put would be a lie about where the
+     * ⚠️ Fires on success only, and that is load-bearing. Collection can legitimately fail: a full
+     * Bank leaves the item on the floor as a visible-litter signal, and a Token with nowhere to go
+     * waits. A particle that flew away while the sprite stayed put would be a lie about where the
      * player's things are.
      *
-     * `SPRITES_CHANGED` cannot serve this purpose — it also fires on drops,
-     * merges and partial fits, and carries no position.
+     * `SPRITES_CHANGED` cannot serve this purpose: it also fires on drops, merges and partial fits,
+     * and carries no position.
      */
     SPRITE_COLLECTED: 'board:sprite_collected',
 
@@ -220,14 +192,12 @@ export const BOARD_EVENTS = {
     TOKEN_CHARGES_CHANGED: 'board:token_charges_changed',
 
     /**
-     * A hero finished training on a Token with a Promotes rule, and the game is
-     * asking whether to go through with it (Promotes rule P3).
-     * Payload: `{ instanceId, heroId, jobId, typeId }`
+     * A hero finished training on a Token with a Promotes rule, and the game is asking whether to
+     * go through with it. Payload: `{ instanceId, heroId, jobId, typeId }`
      *
-     * ⚠️ **Nothing has happened yet when this fires.** No skills have moved and
-     * nothing has been spent — the tile is holding. `BoardPromotion.accept` and
-     * `.decline` are the two ways out, and the offer survives a reload because
-     * it lives on the Token instance.
+     * ⚠️ Nothing has happened yet when this fires. No skills have moved and nothing has been spent:
+     * the tile is holding. `BoardPromotion.accept` and `.decline` are the two ways out, and the
+     * offer survives a reload because it lives on the Token instance.
      */
     PROMOTION_READY: 'board:promotion_ready',
 
@@ -244,43 +214,37 @@ export const BOARD_EVENTS = {
     EFFECT_FIRED: 'board:effect_fired',
 
     /**
-     * A hero engaged an enemy — `{ instanceId, typeId, heroId }`.
+     * A hero engaged an enemy: `{ instanceId, typeId, heroId }`.
      *
-     * ⚠️ **Every engagement, including the ones after a kill** (UE-15). An enemy
-     * Token holds charges, each kill spends one, and the enemy returns to full
-     * HP for the next fight — so one engagement is one fight in the same sense
-     * that one cycle is one piece of work. Firing only on arrival would mean a
-     * hero parked on a Bear for twenty kills procs once, which reads as broken.
+     * ⚠️ Every engagement, including the ones after a kill. An enemy Token holds charges, each kill
+     * spends one, and the enemy returns to full HP for the next fight, so one engagement is one
+     * fight in the same sense that one cycle is one piece of work. Firing only on arrival would
+     * mean a hero parked on a Bear for twenty kills procs once, which reads as broken.
      *
-     * Detected as a transition INTO `active`, which catches the first
-     * engagement (idle → active) and each post-intermission respawn with one
-     * rule rather than two.
+     * Detected as a transition INTO `active`, which catches the first engagement (idle → active)
+     * and each post-intermission respawn with one rule rather than two.
      */
     COMBAT_ENGAGED: 'board:combat_engaged',
 
     /**
-     * A hero was defeated (CR3-157) — `{ heroId }`.
+     * A hero was defeated: `{ heroId }`.
      *
-     * Published by `BoardCombat.resolveDefeat` in place of a direct call into
-     * `Flags` (the one remaining use `BoardCombat` had of it), which was the
-     * last edge in a dangerous `BoardCombat ↔ Flags` import cycle. `Flags.init`
-     * subscribes and furls the hero's flag — `EventBus.publish` is synchronous,
-     * so the furl still happens at exactly the same point it used to, before
-     * `TILE_CHANGED`/`COMBAT_RESOLVED`. Precedent: `hero_downed` already
-     * decouples `StatusEffectSystem` from `BoardCombat` the same way.
+     * Published by `BoardCombat.resolveDefeat` instead of a direct call into `Flags`, which would
+     * make a `BoardCombat ↔ Flags` import cycle. `Flags.init` subscribes and furls the hero's flag;
+     * `EventBus.publish` is synchronous, so the furl happens before
+     * `TILE_CHANGED`/`COMBAT_RESOLVED`. `hero_downed` decouples `StatusEffectSystem` from
+     * `BoardCombat` the same way.
      */
     HERO_DEFEATED: 'board:hero_defeated'
 };
 
 /**
- * Why a staffed Token cannot work — the payload vocabulary of `ALERT_CHANGED`,
- * and what drives a tile's single alert mark (D-85).
+ * Why a staffed Token cannot work: the payload vocabulary of `ALERT_CHANGED`, and what drives a
+ * tile's single alert mark.
  *
- * Lives beside `BOARD_EVENTS` rather than in `BoardRunner` because it is not
- * only the runner's (CR2-060): other board systems publish it too, and the
- * enum could not live in the runner without either a cycle or a second
- * hardcoded copy of the string. Every publisher and every reader names the
- * same constant.
+ * Lives beside `BOARD_EVENTS` rather than in `BoardRunner` because other board systems publish it
+ * too, and the enum could not live in the runner without either a cycle or a second hardcoded copy
+ * of the string.
  */
 export const ALERT = {
     INPUTS: 'inputs',
@@ -292,53 +256,42 @@ export const ALERT = {
      */
     UNSKILLED: 'unskilled',
     /**
-     * The station cannot run the recipe it is set to, because the context
-     * Tokens that recipe names are not beside it. (A station with nothing
-     * picked says `CHOOSE_RECIPE` instead, TL-15.)
-     *
-     * ⚠️ Its meaning changed with the Recipe & Charges rework (P2). It used to
-     * mean "nothing beside this station tells it what to make", which stopped
-     * being possible when stations gained an explicit selection (R-5). Its
-     * sibling `CONFLICT` — two context Tokens wanting different things (D-20) —
-     * was deleted in the same phase: an explicit selection cannot be ambiguous.
+     * The station cannot run the recipe it is set to, because the context Tokens that recipe names
+     * are not beside it. (A station with nothing picked says `CHOOSE_RECIPE` instead.)
      */
     NO_RECIPE: 'no_recipe',
     /**
-     * The cycle is affordable in items but not in charges — the station itself,
-     * or a nearby context Token the recipe draws on, holds fewer charges than
-     * one cycle costs. Nothing is deducted while this is showing (concept §3.3).
+     * The cycle is affordable in items but not in charges: the station itself, or a nearby context
+     * Token the recipe draws on, holds fewer charges than one cycle costs. Nothing is deducted
+     * while this is showing.
      */
     CHARGES: 'charges',
     /**
-     * A Foundation with no recipe picked (Token Lifecycle 6.1). A Foundation is
-     * never given a default: the player chooses what it becomes, and until
-     * they do nobody works it.
+     * A Foundation with no recipe picked. A Foundation is never given a default: the player chooses
+     * what it becomes, and until they do nobody works it.
      */
     CHOOSE_BUILD: 'choose_build',
     /**
-     * A station with no recipe picked (TL-15, owner feedback FB-13). Every
-     * station, however it arrives, waits for the player to choose; until
-     * they do nobody works it. The station twin of `CHOOSE_BUILD`.
+     * A station with no recipe picked. Every station, however it arrives, waits for the player to
+     * choose; until they do nobody works it. The station twin of `CHOOSE_BUILD`.
      */
     CHOOSE_RECIPE: 'choose_recipe',
     /**
-     * A finished cycle's Token has nowhere to go: a Foundation's build has
-     * nowhere legal to stand (Token Lifecycle 6.1), or a station's recipe makes
-     * a Token and the mat is full or crowded around it (TL-8, 9.3). It keeps
-     * its full progress and nothing is spent; it tries again every tick.
+     * A finished cycle's Token has nowhere to go: a Foundation's build has nowhere legal to stand,
+     * or a station's recipe makes a Token and the mat is full or crowded around it. It keeps its
+     * full progress and nothing is spent; it tries again every tick.
      */
     NO_ROOM: 'no_room',
     /**
-     * A spawner cannot pay one spawn's upkeep from the Bank (Token Lifecycle
-     * 8.3). Carried by `SPAWNER_ALERT_CHANGED`, never by `instance.alert`: no
-     * hero is involved, so it is an on-Token icon and never a speech bubble.
+     * A spawner cannot pay one spawn's upkeep from the Bank. Carried by `SPAWNER_ALERT_CHANGED`,
+     * never by `instance.alert`: no hero is involved, so it is an on-Token icon and never a speech
+     * bubble.
      */
     SPAWN_NEEDS_ITEM: 'spawn_needs_item',
     /**
-     * A spawner's last attempt found nowhere free to land, and it is waiting
-     * with its clock full (Token Lifecycle 8.3). Same channel as
-     * `SPAWN_NEEDS_ITEM`. A spawner at its cap raises nothing: that is its
-     * normal resting state, not a problem.
+     * A spawner's last attempt found nowhere free to land, and it is waiting with its clock full.
+     * Same channel as `SPAWN_NEEDS_ITEM`. A spawner at its cap raises nothing: that is its normal
+     * resting state, not a problem.
      */
     SPAWN_NO_ROOM: 'spawn_no_room'
 };

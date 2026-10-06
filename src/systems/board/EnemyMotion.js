@@ -1,4 +1,4 @@
-// Fantasy Guild — enemies potter by their spawner (B7.1, TL-16, FB-23)
+// enemies potter by their spawner
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
@@ -13,57 +13,43 @@ import * as TimedChanges from './TimedChanges.js';
 import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
 
 /**
- * ⭐ **Enemies move again** (B7.1, TL-16, FB-23; owner's "B7 range").
+ * Each enemy is tethered to the spawner that made it, as a hero is to a flag, and this file walks
+ * it.
  *
- * Each enemy is **tethered to the spawner that made it**, as a hero is to a
- * flag, and this file walks it:
+ * Potters near its spawner: a pause, a stroll to a random spot in the ring between the spawner's
+ * art edge and Enemy wander beyond it (Mat Tuner), another pause. This is the heroes' idle potter,
+ * with the step itself shared (`walking.js`). Follows its spawner: where it stands is kept as an
+ * offset from the spawner's live centre, so a moved spawner is walked after, never jumped to. Walks
+ * back when the player drops it outside that ring, at full Enemy walk speed; strolls inside it go
+ * at half, as a hero's do. Holds still while fought (a live fight via `BoardCombat.getFight`, or a
+ * hero's claim on it) and while it is in the player's hand. A dragged enemy keeps its fight through
+ * the move; nothing here touches fights.
  *
- * * **Potters** near its spawner: a pause of 2–6 s, a stroll to a random spot
- *   in the ring between the spawner's art edge and *Enemy wander* beyond it
- *   (Mat Tuner, 128 u ≈ one Token's width), another pause — the heroes' idle
- *   potter (HM-1), with the step itself shared (`walking.js`).
- * * **Follows its spawner**: where it stands is kept as an offset from the
- *   spawner's live centre, so a moved spawner is walked after, never jumped to.
- * * **Walks back** when the player drops it outside that ring, at full
- *   *Enemy walk speed*; strolls inside it go at half, as a hero's do.
- * * **Holds still while fought** — a live fight (`BoardCombat.getFight`) or a
- *   hero's claim on it (that hero is walking up to fight it) — and while it is
- *   in the player's hand. A dragged enemy keeps its fight through the move
- *   (FPP-4); nothing here touches fights.
+ * An enemy with no live spawner (placed by hand, or its spawner gone) stands still.
  *
- * An enemy with no live spawner (placed by hand, or its spawner gone) stands
- * still, as every enemy did before B7.1.
+ * The tether: `instance.tether` is the spawner's instance id, written by
+ * `SpawnerSystem.attemptSpawn` when it spawns an enemy, and saved with the Token. An enemy with no
+ * `tether` (an older save) is attached once, on its first tick, to the nearest live spawner whose
+ * family (`SpawnerSystem.familyOf`) holds its type; `board.enemyTethers` records that it has been
+ * done, so an enemy the player later places by hand is never attached by a reload.
  *
- * ## The tether (saved)
- * `instance.tether` is the spawner's **instance id**, written by
- * `SpawnerSystem.attemptSpawn` when it spawns an enemy, and saved with the
- * Token. A save from before B7.1 is attached once, on its first tick: each
- * enemy with no `tether` goes to the nearest live spawner whose family
- * (`SpawnerSystem.familyOf`) holds its type, and `board.enemyTethers` records
- * that it has been done — so an enemy the player later places by hand is never
- * attached by a reload.
+ * Everything advances on the tick's `delta`, so the time bank speeds it up. A step moves at most
+ * {@link MAX_STEP_MS} worth of walking, so one very long tick cannot fling an enemy across the mat.
  *
- * ## Clocks and cost
- * Everything advances on the tick's `delta`, so the time bank speeds it up.
- * A step moves at most {@link MAX_STEP_MS} worth of walking, so one very long
- * tick cannot fling an enemy across the mat.
- *
- * ⚠️ **A step publishes no Token events.** The point is written with
- * `BoardState.setTokenPoint`, which publishes nothing (it journals the move,
- * so `nearby.neighbourIds` drops only the cached entries within Near of either
- * end next time it is asked, CR3-200). The screen hears one `ENEMIES_WALKED` per tick at most. The Near
- * neighbourhood is rebuilt (`ADJACENCY_DIRTY`, both ends) once per walk, when
- * the enemy stops — never per step. No shipped enemy carries an ambient rule
- * today, so that rebuild is insurance, not load-bearing.
+ * ⚠️ A step publishes no Token events. The point is written with `BoardState.setTokenPoint`, which
+ * publishes nothing (it journals the move, so `nearby.neighbourIds` drops only the cached entries
+ * within Near of either end). The screen hears one `ENEMIES_WALKED` per tick at most. The Near
+ * neighbourhood is rebuilt (`ADJACENCY_DIRTY`, both ends) once per walk, when the enemy stops,
+ * never per step.
  */
 
-/** A step walks at most this much game time, however long the tick (B7.1). */
+/** A step walks at most this much game time, however long the tick. */
 export const MAX_STEP_MS = 1000;
 
-/** An enemy pauses between strolls for this long, in game ms (as heroes do, HM-1). */
+/** An enemy pauses between strolls for this long, in game ms. */
 export const POTTER_PAUSE_MS = Object.freeze({ min: 2000, max: 6000 });
 
-/** Strolls inside the ring go at this fraction of walking speed (as heroes' do, HM-1). */
+/** Strolls inside the ring go at this fraction of walking speed, as heroes' do. */
 export const STROLL_FACTOR = 0.5;
 
 /** Walking speed, mat units a second (Mat Tuner "Enemy walk speed"). */
@@ -83,10 +69,6 @@ export function setRandomForTests(fn = Math.random) {
     random = fn;
 }
 
-// ---------------------------------------------------------------------------
-// Bodies — runtime only, per board
-// ---------------------------------------------------------------------------
-
 /**
  * `instanceId → { x, y, potter: {dx, dy}, pauseLeft, moving, facing, from }`.
  * `x`, `y` are exact; the Token's own point is the rounded copy (centres stay
@@ -105,10 +87,6 @@ function bodies() {
     }
     return map;
 }
-
-// ---------------------------------------------------------------------------
-// The tether
-// ---------------------------------------------------------------------------
 
 /** Whether a Token type is an enemy. */
 function isEnemyTypeId(typeId) {
@@ -148,7 +126,8 @@ export function nearestFamilySpawner(typeId, point) {
 }
 
 /**
- * Attach a pre-B7.1 save's enemies, once per board (`board.enemyTethers`).
+ * Attach an older save's enemies, once per board (`board.enemyTethers`).
+ *
  * @returns {number} how many were attached (tests)
  */
 export function attachUntethered() {
@@ -163,10 +142,6 @@ export function attachUntethered() {
     board.enemyTethers = 1;
     return attached;
 }
-
-// ---------------------------------------------------------------------------
-// Reading
-// ---------------------------------------------------------------------------
 
 /**
  * What enemy `instanceId`'s body is doing, for the screen and probes:
@@ -200,10 +175,6 @@ export function isHeld(instanceId) {
         || !!BoardState.heroOfInstance(instanceId)
         || TimedChanges.isInHand(instanceId);
 }
-
-// ---------------------------------------------------------------------------
-// Walking
-// ---------------------------------------------------------------------------
 
 /** The ring an enemy potters in around `spawner`: `{ centre, inner, outer }`. */
 export function areaOf(spawner) {
@@ -279,7 +250,7 @@ function step(instance, spawner, body, delta) {
 
     if (!body.moving) {
         endWalk(instance, body);
-        // Standing: count the pause down, then set off on a stroll (HM-1).
+        // Standing: count the pause down, then set off on a stroll.
         if (enemyPotterRadius() > 0) {
             if (body.pauseLeft == null) body.pauseLeft = randomPauseMs(POTTER_PAUSE_MS, random);
             body.pauseLeft -= Math.max(0, delta);

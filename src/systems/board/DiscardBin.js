@@ -1,4 +1,4 @@
-// Fantasy Guild — The discard bin and its refunds (B3.1: FB-34, FB-35, TL-13)
+// the discard bin and its refunds
 
 import { EventBus } from '../core/EventBus.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -13,35 +13,25 @@ import * as TimedChanges from './TimedChanges.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * ⭐ **The discard bin** — how Tokens leave the mat for good (FB-34, TL-13,
- * replacing TL-1 and 5.2's inline Remove). Engine only; the bin's UI is B3.2.
+ * The discard bin: how Tokens leave the mat for good. Engine only.
  *
- * ## Holding (B3 interview, 2026-09-27)
- * * Up to {@link BIN_SIZE} Tokens. {@link binToken} lifts one off the mat:
- *   heroes stop working it and its spot frees, exactly as 5.2's Remove did —
- *   the instance leaves `board.tokens`, so the hero's claim names a Token that
- *   is not there and `Flags` releases it (SP-52). It is **not** a depletion: no
- *   `TOKEN_DEPLETED`, so no "when depleted" rule fires and no restock spot is
- *   left behind.
- * * The instance itself is kept, whole, in `board.bin` (`BoardState.binTokens`)
- *   and saved with the game: its charges, its selected recipe, its origin and
- *   any `builtFrom`. Only its in-flight cycle is forfeited, as any
- *   interruption forfeits it (D-54).
- * * **Binned Tokens still count toward the mat cap** (`MatCap.placedCount`
- *   counts placed Tokens in the bin): the bin cannot dodge the cap.
- * * Spawned Tokens may be binned too. Leaving the mat is enough for their
- *   spawner: its family count is taken from the mat, so it has room again and
- *   simply makes another.
- * * {@link unbinToken} puts one back through normal placement, unchanged.
- * * {@link discardAll} is the one confirm (B3 confirm): everything in the bin
- *   goes for good, and the refund is paid through `InventoryManager`, so a
- *   full Bank drops the rest as loot on the mat (D-138).
+ * Up to {@link BIN_SIZE} Tokens. {@link binToken} lifts one off the mat: heroes stop working it and
+ * its spot frees. The instance leaves `board.tokens`, so the hero's claim names a Token that is not
+ * there and `Flags` releases it. It is not a depletion: no `TOKEN_DEPLETED`, so no when-depleted
+ * rule fires and no restock spot is left behind. The instance is kept whole in `board.bin`
+ * (`BoardState.binTokens`) and saved with the game: its charges, selected recipe, origin and any
+ * `builtFrom`. Only its in-flight cycle is forfeited.
  *
- * ## Refunds (TL-13) — see {@link refundFor}
- * All rounded **down, per item**.
+ * Binned Tokens still count toward the mat cap (`MatCap.placedCount`), so the bin cannot dodge it.
+ * Spawned Tokens may be binned too; their spawner's family count is taken from the mat, so it
+ * simply makes another. {@link unbinToken} puts one back through normal placement, unchanged.
+ * {@link discardAll} is the one confirm: everything goes for good and the refund is paid through
+ * `InventoryManager`, so a full Bank drops the rest as loot on the mat.
+ *
+ * Refunds, see {@link refundFor}: all rounded down, per item.
  */
 
-/** How many Tokens the bin holds (FB-34). */
+/** How many Tokens the bin holds. */
 export const BIN_SIZE = 9;
 
 const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
@@ -56,10 +46,6 @@ function binChanged(payload) {
     EventBus.publish(BOARD_EVENTS.BIN_CHANGED, { ...payload, count: BoardState.binTokens().length });
 }
 
-// ---------------------------------------------------------------------------
-// Refunds (TL-13) — pure
-// ---------------------------------------------------------------------------
-
 /** Merge `[{ itemId, quantity }]` lists per item, dropping zero lines, in first-seen order. */
 function mergeLines(...lists) {
     const merged = new Map();
@@ -72,20 +58,19 @@ function mergeLines(...lists) {
     return [...merged].map(([itemId, quantity]) => ({ itemId, quantity }));
 }
 
-/** Half of each line, rounded down per item (TL-13). */
+/** Half of each line, rounded down per item. */
 function halfOf(lines) {
     return mergeLines((lines || []).map(l => ({ itemId: l.itemId, quantity: Math.floor((Number(l.quantity) || 0) / 2) })));
 }
 
 /**
- * The share of its charges a **consumable** Token has left, as
- * `{ left, starting }`, or null when it is not consumable.
+ * The share of its charges a consumable Token has left, as `{ left, starting }`, or null when it is
+ * not consumable.
  *
- * A Token is consumable when its type starts with a finite, positive number of
- * charges (`uses`, e.g. an Anvil's 20) and the instance still holds a finite
- * count. Unlimited Tokens (`uses: null`, D-176) are not. `left` is capped at
- * `starting`, so a Token restocked above its start (FP-50) refunds no more
- * than a full one.
+ * Consumable means the type starts with a finite, positive number of charges (`uses`, e.g. an
+ * Anvil's 20) and the instance still holds a finite count. Unlimited Tokens (`uses: null`) are not.
+ * `left` is capped at `starting`, so a Token restocked above its start refunds no more than a full
+ * one.
  */
 export function chargeShare(instance) {
     const starting = tokenStartingUses(instance?.typeId);
@@ -96,10 +81,9 @@ export function chargeShare(instance) {
 }
 
 /**
- * The Foundation type a built Token could have been built on, read from
- * content — for a station built before B3.1, which carries no `builtFrom`.
- * The first Foundation type (by id) whose build recipes output `typeId`, or
- * null.
+ * The Foundation type a built Token could have been built on, read from content: for a station
+ * built before `builtFrom` was recorded. The first Foundation type (by id) whose build recipes
+ * output `typeId`, or null.
  */
 export function foundationFromContent(typeId) {
     if (!typeId) return null;
@@ -113,25 +97,20 @@ export function foundationFromContent(typeId) {
 }
 
 /**
- * ⭐ **What discarding this Token pays back** (TL-13, FB-35), as
- * `[{ itemId, quantity }]`, each line rounded down on its own:
- *
- * * **The Guild Hall** and **spawned** Tokens: nothing. The Hall is never
- *   binned; a spawner simply makes another.
- * * **Built on a Foundation** (`instance.builtFrom`): half the Foundation's
- *   price **plus** half the build cost it paid, each halved and rounded down
- *   separately, then added (owner's example: Workbench = ⌊15/2⌋ + ⌊5/2⌋ =
- *   7 + 2 = 9 Oak Wood). Takes precedence over any shop price of its own.
- * * **Bought** (`Shop.priceOf` is not empty), unlimited charges: half the
- *   price.
- * * **Bought and consumable** (see {@link chargeShare}): per item,
- *   `⌊price × left / (starting × 2)⌋` — the price scaled by the share of
- *   charges left, then halved, rounded down once at the end. Anvil at
- *   10 Copper Ingots with 30 of 60 charges: ⌊10 × 30 / 120⌋ = 2.
- * * **A built station from an older save** (no `builtFrom`, no shop price):
- *   half the price of the Foundation {@link foundationFromContent} finds; the
- *   build cost it paid is not known, so it is not refunded.
- * * Anything else (a Token a recipe made that is not sold): nothing.
+ * What discarding this Token pays back, as `[{ itemId, quantity }]`, each line rounded down on its
+ * own:
+ * - The Guild Hall and spawned Tokens: nothing. The Hall is never binned; a spawner simply makes
+ * another.
+ * - Built on a Foundation (`instance.builtFrom`): half the Foundation's price plus half the build
+ * cost it paid, each halved and rounded down separately, then added. Takes precedence over any shop
+ * price of its own.
+ * - Bought (`Shop.priceOf` is not empty), unlimited charges: half the price.
+ * - Bought and consumable (see {@link chargeShare}): per item `⌊price × left / (starting × 2)⌋`,
+ * rounded down once at the end.
+ * - A built station from an older save (no `builtFrom`, no shop price): half the price of the
+ * Foundation {@link foundationFromContent} finds; the build cost it paid is not known, so it is not
+ * refunded.
+ * - Anything else (a Token a recipe made that is not sold): nothing.
  */
 export function refundFor(instance) {
     if (!instance?.typeId) return [];
@@ -165,10 +144,6 @@ export function binRefundTotal() {
     return mergeLines(...BoardState.binTokens().map(refundFor));
 }
 
-// ---------------------------------------------------------------------------
-// The bin
-// ---------------------------------------------------------------------------
-
 /** The Tokens in the bin, in the order they went in (a copy of the list; the instances are live). */
 export function binContents() {
     return BoardState.binTokens().slice();
@@ -182,17 +157,16 @@ export function isBinned(instanceId) {
 /**
  * Whether Token `instanceId` on the mat may go in the bin, and why not.
  *
- * `options.fromHand` is for the drag that drops a Token INTO the bin (B3.2):
- * that Token is in the player's hand until the drop has been handled
- * (`MatToken`'s clean-up runs after it). Without it, a Token in the hand is
- * refused, so no other route pulls a Token out from under the cursor.
+ * `options.fromHand` is for the drag that drops a Token INTO the bin: that Token is in the player's
+ * hand until the drop has been handled (`MatToken`'s clean-up runs after it). Without it, a Token
+ * in the hand is refused, so no other route pulls a Token out from under the cursor.
  */
 export function canBin(instanceId, options = {}) {
     const instance = BoardState.getTokenById(instanceId);
     if (!instance) return refuse('No Token there');
     if (Placement.isPermanentToken(instance.typeId, instance)) return refuse('The Guild Hall cannot be discarded.');
-    // B6.1 (FB-42, FB-43): a tutorial quest Token stays until it is claimed;
-    // only bounties may be discarded (spawned, so no refund).
+    // A tutorial quest Token stays until it is claimed; only bounties may be discarded (spawned, so
+    // no refund).
     if (instance.quest?.tutorial) return refuse('Tutorial quests cannot be discarded.');
     if (BoardState.binTokens().length >= BIN_SIZE) return refuse(`The bin is full (${BIN_SIZE} Tokens)`);
     if (!options.fromHand && TimedChanges.isInHand(instanceId)) return refuse('That Token is being carried');
@@ -200,13 +174,11 @@ export function canBin(instanceId, options = {}) {
 }
 
 /**
- * ⭐ **Lift Token `instanceId` off the mat into the bin** (FB-34).
+ * Lift Token `instanceId` off the mat into the bin.
  *
- * Handled as 5.2's Remove handles a Token leaving (`Placement.removePlacedToken`):
- * its cycle is forfeited, it leaves `board.tokens`, and `TILE_CHANGED`,
- * `HERO_MOVED` (for a hero working it, SP-52), `ADJACENCY_DIRTY` and
- * `state_changed` go out. Unlike Remove, its recipe selection is **kept**, and
- * the instance goes into the bin rather than nowhere.
+ * Its cycle is forfeited, it leaves `board.tokens`, and `TILE_CHANGED`, `HERO_MOVED` (for a hero
+ * working it), `ADJACENCY_DIRTY` and `state_changed` go out. Its recipe selection is kept, and the
+ * instance goes into the bin.
  *
  * @returns {{success: boolean, reason?: string, idledHeroId?: string|null}}
  */
@@ -232,12 +204,11 @@ export function binToken(instanceId, options = {}) {
 }
 
 /**
- * ⭐ **Put binned Token `instanceId` back on the mat at `point`**, unchanged —
- * the same instance, id, charges, recipe, origin and `builtFrom`. Through
- * `Placement.placeTokenAt` like any drop, with `noRestock` so it stands as
- * itself rather than pouring its charges into a copy it lands on. Refused, and
- * left in the bin, whenever placement refuses (no room within reach, a
- * Mythic already out). No cap check: it was counted while it was binned.
+ * Put binned Token `instanceId` back on the mat at `point`, unchanged: the same instance, id,
+ * charges, recipe, origin and `builtFrom`. Goes through `Placement.placeTokenAt` like any drop,
+ * with `noRestock` so it stands as itself rather than pouring its charges into a copy it lands on.
+ * Refused, and left in the bin, whenever placement refuses (no room within reach, a Mythic already
+ * out). No cap check: it was counted while binned.
  *
  * @returns the placement result, or a refusal
  */
@@ -260,11 +231,10 @@ export function unbinToken(instanceId, point) {
 }
 
 /**
- * ⭐ ***Discard all*** (B3 confirm): every binned Token goes for good and
- * {@link binRefundTotal} is paid through `InventoryManager.addItem`, which
- * drops whatever a full Bank cannot take as loot on the mat (D-138) — the same
- * route a quest reward takes. Publishes `BIN_CHANGED` and `state_changed` (the
- * mat cap badge's refresh), since binned Tokens stop counting toward the cap.
+ * Discard all: every binned Token goes for good and {@link binRefundTotal} is paid through
+ * `InventoryManager.addItem`, which drops whatever a full Bank cannot take as loot on the mat (the
+ * route a quest reward takes). Publishes `BIN_CHANGED` and `state_changed` (the mat cap badge's
+ * refresh), since binned Tokens stop counting toward the cap.
  *
  * An empty bin does nothing and publishes nothing.
  *

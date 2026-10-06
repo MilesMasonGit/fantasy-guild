@@ -1,20 +1,14 @@
-// Fantasy Guild — the transform glow on a Token (Token Lifecycle feedback Q4: FB-11)
+// the transform glow on a Token
 
 /**
- * ⭐ **A Token that has just become another one glows** (FB-11): a sapling
- * grown into a tree, a Coast turned into a Shrimp Coast and back, a Foundation
- * built into its station — every path through `EffectActions.transformInstance`.
+ * A Token that has just become another one glows: every path through
+ * `EffectActions.transformInstance`.
  *
- * ## Why a store and not an event
- * A transform replaces the Token with a **new instance, with a new id**, in
- * the middle of an engine tick; React draws that new Token afterwards, so an
- * event would reach nobody. The glow is kept here under the NEW id, and the
- * Token reads it when it mounts (the same pattern as `TokenNotices`).
+ * Kept in a store, not an event: a transform makes a NEW instance and React draws it after the
+ * tick, so an event would reach nobody. The Token reads the glow when it mounts.
  *
- * ## Which clock
- * Wall clock (`Date.now()`): a glow is presentation, not game state — never
- * saved, and it does not speed up with the time bank. Nothing is raised while
- * the time bank replays time away (the caller checks), like spawn notices.
+ * Wall clock (`Date.now()`): a glow is presentation, never saved, and does not speed up with the
+ * time bank.
  */
 
 /** How long the glow plays, in ms. */

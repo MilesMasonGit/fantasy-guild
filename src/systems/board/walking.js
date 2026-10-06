@@ -1,13 +1,11 @@
-// Fantasy Guild — the one step of a walk, shared by heroes and enemies (B7.1)
+// the one step of a walk, shared by heroes and enemies
 
 /**
- * ⭐ **How a body on the mat takes a step** — the part of walking that heroes
- * (`HeroMotion.js`, Hero Movement M1/M4) and enemies (`EnemyMotion.js`, B7.1,
- * TL-16, FB-23) share. Moved out of `HeroMotion` in B7.1 rather than copied,
- * unchanged: what each walker is heading for stays in its own file.
+ * How a body on the mat takes a step, shared by `HeroMotion` and `EnemyMotion`. What each walker
+ * heads for stays in its own file.
  *
- * A body is any object with `x`, `y`, `moving` and `facing` (−1 left, 1 right).
- * Straight lines, no pathfinding (HM-3).
+ * A body is any object with `x`, `y`, `moving` and `facing` (-1 left, 1 right). Straight lines, no
+ * pathfinding.
  */
 
 /** Closer than this to a destination counts as there, in mat units. */
@@ -42,9 +40,8 @@ export function stepToward(body, dest, reach) {
 }
 
 /**
- * A random offset uniform over the ring between `inner` and `outer` (a disc
- * when `inner` is 0). Draws `random()` twice — distance, then angle — which is
- * the order `HeroMotion`'s strolls always drew in, so seeded tests are unchanged.
+ * A random offset uniform over the ring between `inner` and `outer` (a disc when `inner` is 0).
+ * Draws `random()` twice, distance then angle: the order seeded tests depend on.
  */
 export function randomOffset(outer, random, inner = 0) {
     const lo = Math.max(0, Math.min(inner, outer));

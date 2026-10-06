@@ -1,4 +1,4 @@
-// Fantasy Guild — Placement on the free playmat (Free Playmat slice 1.6d)
+// placement on the free playmat
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -13,49 +13,37 @@ import { warnMissingContent } from '../../utils/missingContent.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * ⭐ **Putting things on the playmat** — where the rules live, on top of
- * `BoardState`'s storage and `MatPlacement`'s geometry.
+ * Putting things on the playmat: where the rules live, on top of `BoardState`'s storage and
+ * `MatPlacement`'s geometry.
  *
- * ## Free placement (slice 1.6d): a Token lands where it was let go
- * The owner's framing rule is that there are no Tiles, and from this slice
- * nothing snaps. {@link placeTokenAt} takes a **mat point**, asks
+ * A Token lands where it was let go; nothing snaps. {@link placeTokenAt} takes a mat point, asks
  * `MatPlacement.dropAt` what should happen there, and carries the answer out:
+ * - placed: exactly on the point.
+ * - nudged: the nearest legal point within nudge reach, because the point itself was crowded or
+ * would have broken a `Cannot` rule.
+ * - restocked: the point was on a matching copy with room for charges; any leftover charges stand
+ * beside it.
+ * - full: nowhere within reach, so the caller puts it back where it came from and says so. Nothing
+ * is ever lost.
  *
- * * **placed** — exactly on the point.
- * * **nudged** — the nearest legal point within nudge reach, because the point
- *   itself was crowded or would have broken a `Cannot` rule (FP-88).
- * * **restocked** — the point was on a matching copy with room for charges
- *   (FP-50); any leftover charges stand beside it (FP-87).
- * * **full** — nowhere within reach, so the caller puts it back where it came
- *   from and says so (FP-46). Nothing is ever lost.
+ * ⚠️ Nothing displaces anything: a drop that does not fit moves itself rather than shoving whatever
+ * was already there, so the player's existing arrangement is never rearranged behind their back.
  *
- * ## ⚠️ Nothing displaces anything any more
- * The 2×2 cascade, the occupant push and the Guild Hall shove were all answers
- * to "two things cannot share a tile". There are no tiles, so a drop that does
- * not fit moves **itself** rather than shoving whatever was already there —
- * which is also the only version where the player's existing arrangement is
- * never rearranged behind their back. `TILE_PUSHED` went with them.
- *
- * ## ⭐ Every route takes a mat point (slice 1.6d-2)
- * The six index-taking adapters that stood at the bottom of this file —
- * `placeToken`, `moveToken`, `returnTokenToTray`, `returnTokenToVault`
- * (its by-id successor went with the Vault, Token Lifecycle 9.3),
- * `placeHero` and `moveFlag` — were deleted with the grid. Nothing on the mat is
- * addressed by anything but a point or an instance id.
+ * Nothing on the mat is addressed by anything but a mat point or an instance id.
  */
 
-/** Wipe in-flight cycle progress. The forfeit in D-54 / D-131, in one place. */
+/** Wipe in-flight cycle progress: the forfeit of an interrupted cycle, in one place. */
 function forfeitCycle(instance) {
     if (instance) instance.cycleElapsedMs = 0;
 }
 
 /**
- * Tell the board that something changed at these **mat points**, so every Token
- * whose neighbourhood they touch rebuilds its modifiers.
+ * Tell the board that something changed at these mat points, so every Token whose neighbourhood
+ * they touch rebuilds its modifiers.
  *
- * Both ends of a move are named — where the Token left and where it landed —
- * because the Tokens that gained or lost it are within Near of one or the other.
- * Naming only the destination is how a buff goes stale (slice 1.3's top risk).
+ * Both ends of a move are named, where the Token left and where it landed, because the Tokens that
+ * gained or lost it are within Near of one or the other. Naming only the destination is how a buff
+ * goes stale.
  */
 function markAdjacencyDirty(points) {
     const list = (Array.isArray(points) ? points : [points])
@@ -72,7 +60,7 @@ function announceHeroMoved(heroId) {
     if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, Flags.heroMovedPayload(heroId));
 }
 
-/** Standard refusal shape, so callers can show the reason (UI §3). */
+/** Standard refusal shape, so callers can show the reason. */
 const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
 
 /** A Token's own point, or null if it is not on the mat. */
@@ -81,10 +69,7 @@ const pointOf = (instance) =>
         ? { x: instance.x, y: instance.y }
         : null;
 
-/**
- * Whether a Mythic of this type is already on the mat (D-177), ignoring `exceptId`.
- * By instance id since slice 1.6d — there is no tile to name.
- */
+/** Whether a Mythic of this type is already on the mat, ignoring `exceptId`. */
 function mythicAlreadyPlaced(typeId, exceptId = null) {
     if (getTokenType(typeId)?.rarity !== 'mythic') return false;
     for (const instance of BoardState.tokens()) {
@@ -105,12 +90,9 @@ function isGuildHall(t) {
 }
 
 /**
- * Where a bought or withdrawn Token is aimed: the **Guild Hall's point**, the
- * one Token guaranteed to be on the mat. With no Hall (a hand-built test board)
- * it is the mat's centre, read live since the mat can be resized.
- *
- * Moved here from `Cartographer.js` when the Map bursts retired (Token
- * Lifecycle 9.1); the Shop lands what it sells beside the Hall.
+ * Where a bought or withdrawn Token is aimed: the Guild Hall's point, the one Token guaranteed to
+ * be on the mat. With no Hall (a hand-built test board) it is the mat's centre, read live since the
+ * mat can be resized.
  */
 export function centreOfBoard() {
     const hall = BoardState.tokens().find(isGuildHall);
@@ -118,7 +100,7 @@ export function centreOfBoard() {
     return { x: matW() / 2, y: matH() / 2 };
 }
 
-/** Flash the refused-drop mark at a point, and refuse (UI §3). */
+/** Flash the refused-drop mark at a point, and refuse. */
 function refuseWithAlert(point, typeId, decision) {
     const vName = tokenName(decision.violatingTypeId) || tokenName(typeId) || 'Token';
     EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
@@ -133,20 +115,16 @@ function refuseWithAlert(point, typeId, decision) {
     return refuse(decision.reason, { full: true });
 }
 
-// ---------------------------------------------------------------------------
-// Tokens — by mat point (Free Playmat slice 1.6d)
-// ---------------------------------------------------------------------------
-
 /**
- * ⭐ **Put a Token on the mat at a point.** The one route every drop takes.
+ * Put a Token on the mat at a point. The one route every drop takes.
  *
  * @param {object} instance the Token being placed (not yet on the mat, or being moved)
  * @param {{x: number, y: number}} point where the player let go, in mat units
- * @param {{excludeId?: string, keepCycle?: boolean, noRestock?: boolean}} [options]
- *        `noRestock` skips restock-on-copy (FP-50): a Token a recipe makes
- *        always stands as a Token of its own (TL-8), never tops up a copy.
- * @returns {{success: boolean, reason?: string, x?: number, y?: number,
- *            nudged?: boolean, restocked?: boolean, full?: boolean}}
+ * @param {{excludeId?: string, keepCycle?: boolean, noRestock?: boolean}} [options] `noRestock`
+ * skips restock-on-copy: a Token a recipe makes always stands as a Token of its own, never tops up
+ * a copy.
+ * @returns {{success: boolean, reason?: string, x?: number, y?: number, nudged?: boolean,
+ * restocked?: boolean, full?: boolean}}
  */
 export function placeTokenAt(instance, point, options = {}) {
     if (!instance?.typeId) return refuse('Not a valid Token');
@@ -156,18 +134,16 @@ export function placeTokenAt(instance, point, options = {}) {
 
     const def = getTokenType(instance.typeId);
 
-    // CR2-108c / CR2-044. Placement still goes ahead — warn-only, per the
-    // owner's ruling — but a Token with no definition has no size, no rules and
-    // no artwork, so it sits there doing nothing. That is exactly what a Token
-    // whose id was renamed in the CMS looks like, and it is how four starting
-    // Tokens went unnoticed.
+    // Placement still goes ahead (warn-only), but a Token with no definition has no size, no rules
+    // and no artwork, so it sits there doing nothing: what a Token whose id was renamed in the CMS
+    // looks like.
     if (!def) {
         warnMissingContent('Placement', 'Token', instance.typeId,
             'the Token being placed has no rules, no artwork and will never do anything');
     }
 
-    // A station arrives with no recipe (TL-15): the player picks one. A Token
-    // that already carries a valid selection keeps it; a stale one is dropped.
+    // A station arrives with no recipe: the player picks one. A Token that already carries a valid
+    // selection keeps it; a stale one is dropped.
     StationRecipe.validateSelection(instance, def);
 
     const excludeId = options.excludeId || instance.id || null;
@@ -205,21 +181,18 @@ export function placeTokenAt(instance, point, options = {}) {
     };
 }
 
-/** Why an arrival with nowhere at all to go is refused (Token Lifecycle 5.3). */
+/** Why an arrival with nowhere at all to go is refused. */
 export const MAT_FULL = 'The mat is full';
 
 /**
- * ⭐ **Put a new Token on the mat as near to `aim` as it will go** — for
- * arrivals that are nobody's drop: a Shop purchase (aimed at the Hall) and a
- * Token a recipe makes (aimed at its station). Token Lifecycle 5.3.
+ * Put a new Token on the mat as near to `aim` as it will go, for arrivals that are nobody's drop: a
+ * Shop purchase (aimed at the Hall) and a Token a recipe makes (aimed at its station).
  *
- * A player's drop that finds no room within nudge reach flies back to their
- * hand (FP-46). These have no hand to fly back to, so instead of refusing they
- * land on the nearest legal free spot **anywhere on the mat**
- * (`MatPlacement.findSpotAnywhere`): the nudge-reach search first, exactly as
- * before, then the whole mat. Nothing is pushed, and no spot breaking a
- * `Cannot` rule is ever chosen. Refused only when the whole mat has no legal
- * spot — {@link MAT_FULL}. It never restocks a copy.
+ * A player's drop that finds no room within nudge reach flies back to their hand. These have no
+ * hand to fly back to, so instead of refusing they land on the nearest legal free spot anywhere on
+ * the mat (`MatPlacement.findSpotAnywhere`): the nudge-reach search first, then the whole mat.
+ * Nothing is pushed, and no spot breaking a `Cannot` rule is ever chosen. Refused only when the
+ * whole mat has no legal spot ({@link MAT_FULL}). It never restocks a copy.
  *
  * @returns {{success: boolean, reason?: string, x?: number, y?: number, nudged?: boolean, full?: boolean}}
  */
@@ -240,12 +213,11 @@ export function placeArrivalNear(instance, aim) {
 }
 
 /**
- * Carry out a restock-on-copy (FP-50): the charges move, and whatever is left
- * over stands beside the copy it just filled (FP-87).
+ * Carry out a restock-on-copy: the charges move, and whatever is left over stands beside the copy
+ * it just filled.
  *
- * When even that has nowhere to go, the leftover is refused and flies back to
- * wherever it came from (FP-46) — the charges it gave stay given, and nothing
- * is lost. It used to fall back to the Tray, which slice 1.9 retired.
+ * When even that has nowhere to go, the leftover is refused and flies back to wherever it came
+ * from: the charges it gave stay given, and nothing is lost.
  */
 function restock(instance, decision) {
     const target = BoardState.getTokenById(decision.targetId);
@@ -282,7 +254,7 @@ function restock(instance, decision) {
         return { success: true, restocked: true, absorbed: true, addedCharges: decision.transferred };
     }
 
-    // FP-87: the leftover stays on the mat, nudged beside the copy.
+    // The leftover stays on the mat, nudged beside the copy.
     if (decision.x != null) {
         const from = pointOf(BoardState.getTokenById(instance.id));
         forfeitCycle(instance);
@@ -297,19 +269,18 @@ function restock(instance, decision) {
         };
     }
 
-    // Nowhere beside it either: the leftover flies back to its source (FP-46).
+    // Nowhere beside it either: the leftover flies back to its source.
     return refuse('Restocked, but there is no room beside it — the leftover went back', {
         full: true, restocked: true, addedCharges: decision.transferred
     });
 }
 
 /**
- * ⭐ Move the Token with id `id` to a mat point.
+ * Move the Token with id `id` to a mat point.
  *
- * **A moved Token keeps its progress and carries its hero** (FP-68). The hero's
- * claim is keyed by the Token instance, so it follows on its own — even outside
- * their flag's radius — and this only has to stop the forfeit and say that the
- * hero moved.
+ * A moved Token keeps its progress and carries its hero. The hero's claim is keyed by the Token
+ * instance, so it follows on its own, even outside their flag's radius; this only has to stop the
+ * forfeit and say that the hero moved.
  */
 export function moveTokenTo(id, point) {
     const moving = BoardState.getTokenById(id);
@@ -326,24 +297,18 @@ export function moveTokenTo(id, point) {
     return result;
 }
 
-// ---------------------------------------------------------------------------
-// A Token a recipe makes (Token Lifecycle 9.3, TL-8)
-// ---------------------------------------------------------------------------
-
 /**
- * Whether `count` copies of `typeId`, made by the Token `stationId`, can land
- * on the mat beside it right now. Pure: asked BEFORE the cycle pays, so a full
- * mat holds the cycle rather than spending its inputs on a Token with nowhere
- * to go (TL-8, "if the mat is full the cycle waits").
+ * Whether `count` copies of `typeId`, made by the Token `stationId`, can land on the mat beside it
+ * right now. Pure: asked BEFORE the cycle pays, so a full mat holds the cycle rather than spending
+ * its inputs on a Token with nowhere to go.
  *
- * Three things must hold: the mat cap has room for every copy (they are
- * `placed`, SP-67); a Mythic of that type is not already on the mat (D-177);
- * and there is a legal spot somewhere on the mat, nearest the station first —
- * the same search {@link placeArrivalNear} makes (Token Lifecycle 5.3).
+ * Three things must hold: the mat cap has room for every copy (they are `placed`); a Mythic of that
+ * type is not already on the mat; and there is a legal spot somewhere on the mat, nearest the
+ * station first, by the same search {@link placeArrivalNear} makes.
  *
- * ⚠️ The spot is checked for the first copy only. Every shipped recipe that
- * makes a Token makes exactly one; a recipe making several could, on a very
- * crowded mat, find room for the first and not a later one.
+ * ⚠️ The spot is checked for the first copy only. Every shipped recipe that makes a Token makes
+ * exactly one; a recipe making several could, on a very crowded mat, find room for the first and
+ * not a later one.
  */
 export function hasRoomForProduct(stationId, typeId, count = 1) {
     if (!typeId || count <= 0) return true;
@@ -356,12 +321,10 @@ export function hasRoomForProduct(stationId, typeId, count = 1) {
 }
 
 /**
- * ⭐ Put one Token a recipe made on the mat beside the station that made it
- * (TL-8): a fresh `placed` instance at its starting charges, through
- * {@link placeArrivalNear} aimed at the station's own point, so it lands on the
- * nearest legal spot around it — or, when that area is crowded, the nearest
- * one anywhere on the mat (Token Lifecycle 5.3), as a Shop purchase does
- * around the Hall. It never restocks a copy. No Token loot sprite is made any more.
+ * Put one Token a recipe made on the mat beside the station that made it: a fresh `placed` instance
+ * at its starting charges, through {@link placeArrivalNear} aimed at the station's own point, so it
+ * lands on the nearest legal spot around it or, when that area is crowded, the nearest one anywhere
+ * on the mat. It never restocks a copy.
  *
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */
@@ -378,19 +341,13 @@ export function placeProduct(stationId, typeId) {
 }
 
 /**
- * ⭐ **Remove** a placed Token for good (Token Lifecycle slice 5.2).
+ * Remove a placed Token for good: no refund and no `TOKEN_DEPLETED`, so when-depleted rules do not
+ * fire. Spawned Tokens it left behind stay where they are. A hero working it lets go: its claim
+ * names an instance that no longer exists, so `Flags` releases it on its next assignment. Only
+ * placed Tokens; the Guild Hall never leaves the mat.
  *
- * * **TL-1, no refunds.** Nothing is credited — the Token is simply gone.
- *   That is why this is not `Charges.destroyToken`: that path is *depletion*,
- *   which publishes `TOKEN_DEPLETED` (so "when depleted" rules would fire and could
- *   pay out or spawn).
- * * **SP-6.** Spawned Tokens it leaves behind stay where they are; only this
- *   instance leaves the mat.
- * * **SP-52.** A hero working it lets go: its claim names an instance that no
- *   longer exists, so `Flags` releases it and finds other work on its next
- *   assignment (`TILE_CHANGED` marks the flags dirty).
- * * Only **placed** Tokens (DP-3). A spawned Token is worked out, not removed,
- *   and the Guild Hall never leaves the mat.
+ * ⚠️ The game does not call this: the discard bin (`DiscardBin.binToken`) is the player's route.
+ * Tests exercise it.
  *
  * @returns {{success: boolean, reason?: string, idledHeroId?: string|null}}
  */
@@ -417,34 +374,28 @@ export function removePlacedToken(id) {
     return { success: true, idledHeroId: heroId };
 }
 
-// ---------------------------------------------------------------------------
-// Heroes — the bridge to flags (Free Playmat slice 1.4b)
-// ---------------------------------------------------------------------------
-
 /**
- * ⭐ Plant `heroId`'s flag **exactly at a mat point** (FP-94) — the point the
- * player let go of it, clamped onto the mat. **The only route a flag moves by.**
+ * Plant `heroId`'s flag exactly at a mat point: the point the player let go of it, clamped onto the
+ * mat. The only route a flag moves by.
  *
- * The flag chooses at once by the hero's rules (FP-71), so dropping on a Token
- * the hero can work works it unless a better-priority Token is runnable in
- * range; otherwise the hero works something else in range, or idles at the flag.
+ * The flag chooses at once by the hero's rules, so dropping on a Token the hero can work works it
+ * unless a better-priority Token is runnable in range; otherwise the hero works something else in
+ * range, or idles at the flag.
  *
- * ⚠️ **Nobody is displaced.** Two heroes can plant on one spot; only one works
- * the Token (FP-25). Flags never nudge each other or Tokens (FP-83), and have
- * no footprint at all: nothing in placement ever reads a flag (FB-44, TL-17).
+ * ⚠️ Nobody is displaced. Two heroes can plant on one spot; only one works the Token. Flags never
+ * nudge each other or Tokens, and have no footprint at all: nothing in placement ever reads a flag.
  *
- * `{ pin: true }` is the player's drop (`dropOnMat`): a drop on a Token the
- * hero can work **pins** the flag to it (B5, FB-45 — see `Flags.plant`), and
- * the result names it (`pinnedTo`) or why it was refused (`pinRefused`). Off
- * by default, so the many callers that plant on a Token to set a scene keep
- * the area-flag behaviour they were written for.
+ * `{ pin: true }` is the player's drop (`dropOnMat`): a drop on a Token the hero can work pins the
+ * flag to it (see `Flags.plant`), and the result names it (`pinnedTo`) or why it was refused
+ * (`pinRefused`). Off by default, so callers that plant on a Token to set a scene keep the
+ * area-flag behaviour.
  */
 export function plantFlagAt(heroId, point, { pin = false } = {}) {
     if (!heroId) return refuse('No hero');
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return refuse('Nowhere to plant a flag');
     const at = clampToMat(point);
 
-    // `Flags.plant` announces `hero_deployed` itself, for every route (1.5).
+    // `Flags.plant` announces `hero_deployed` itself, for every route.
     const planted = Flags.plant(heroId, at, { pin });
     if (!planted.success) return planted;
     const pinInfo = { pinnedTo: planted.pinnedTo ?? null, pinRefused: planted.pinRefused ?? null };

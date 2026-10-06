@@ -1,4 +1,4 @@
-// Fantasy Guild — recipe modal banding (Recipe & Charges rework, P3)
+// recipe modal banding
 
 import { poolFor, recipeLevel } from './StationRecipe.js';
 import { stationSkillOf } from '../effects/statements.js';
@@ -7,20 +7,13 @@ import * as SkillSystem from '../hero/SkillSystem.js';
 /**
  * Which of the recipe modal's three bands a recipe falls into.
  *
- * ## Bands key on skill level and nothing else (R-12)
- * Whether the station currently holds the inputs, or has the context Token a
- * recipe names beside it, is not computed here. That state already reaches the
- * player as an alert on the station tile itself, and duplicating it in the
- * modal was ruled out. A recipe's band answers one question: who in the guild
- * is skilled enough to run it.
+ * Bands key on skill level and nothing else: whether the station holds the inputs or has the
+ * context Token is not computed here, since that already reaches the player as an alert on the
+ * tile. A band answers one question: who in the guild is skilled enough to run it.
  *
- * ## Two of the three bands are selectable
- * `LOCKED` is the only band the modal disables. A recipe in `GUILD` names a
- * level no one is standing at the station with, but someone in the roster has
- * it — concept §2.2 asks for a hint there, not a lock, and setting the station
- * ahead of swapping the worker in is the point of the hint. A station with no
- * worker at all therefore still selects: its worker level is 0, so its whole
- * pool sits in `GUILD` or `LOCKED` rather than becoming unreachable.
+ * Only `LOCKED` is disabled in the modal. A `GUILD` recipe names a level no one at the station has
+ * but someone in the roster does, so it gets a hint, not a lock. A station with no worker has
+ * worker level 0, so its pool sits in `GUILD` or `LOCKED` rather than being unreachable.
  */
 export const BAND = {
     /** At or below the assigned worker's level in the station's skill. */
@@ -56,17 +49,14 @@ export function bandForLevel(level, workerLevel, guildLevel) {
 }
 
 /**
- * The banded, level-ordered rows the modal renders for one station instance.
- *
- * Ties on `levelRequirement` keep pool order, so the list is stable between
- * openings. (It used to match `defaultRecipeFor`'s tie-break; that default
- * went with TL-15, and a station now starts with no recipe.)
+ * The banded, level-ordered rows the modal renders for one station instance. Ties on
+ * `levelRequirement` keep pool order, so the list is stable between openings.
  *
  * @returns {{skill: string|null, workerLevel: number, guildLevel: number, rows: object[]}}
  */
 export function bandStationRecipes(def, heroId, heroes) {
-    // A Foundation's pool is its `foundation.skill` (Token Lifecycle 6.1):
-    // Construction, or Farming for farmland. It has no `Works as` statement.
+    // A Foundation's pool is its `foundation.skill`: Construction, or Farming for farmland. It has
+    // no `Works as` statement.
     const skill = def?.foundation?.skill || stationSkillOf(def);
     const workerLevel = workerLevelFor(heroId, skill);
     const guildLevel = Math.max(workerLevel, guildLevelFor(heroes, skill));

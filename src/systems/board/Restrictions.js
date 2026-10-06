@@ -1,4 +1,4 @@
-// Fantasy Guild — placement restrictions, the `Cannot` keyword (effect grammar Phase 2)
+// placement restrictions, the `Cannot` keyword
 
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
@@ -9,40 +9,24 @@ import * as BoardState from './BoardState.js';
 import { renderStatement } from '../effects/statementText.js';
 
 /**
- * `Cannot` — the only rule in the game that says **no** to a placement.
+ * `Cannot`: the only rule in the game that says no to a placement.
  *
- * ## What a violation does (owner ruling, 2026-08-20)
- * > *"Refuse, token flies back to it's last location. We will have a warning
- * > that will flash to show the player that it was rejected and why."*
+ * A violation refuses: the Token flies back to its last location and a warning flashes saying why.
+ * The board never sits in a violating state and nothing is destroyed. The refusal goes out through
+ * the same channel as the one-Mythic-placed rule: `Placement.js` returns `{ success: false, reason
+ * }` and every caller puts the Token back where it came from and flashes the reason. That is why
+ * this file exports checks, not actions.
  *
- * So the board never sits in a violating state and nothing is ever destroyed.
- * The refusal goes out through the same channel the one-Mythic-placed rule
- * already uses — `Placement.js` returns `{ success: false, reason }` and every
- * caller already puts the Token back exactly where it came from (the Tray slot,
- * the Vault, the sprite it was dragged from, the spot it was moved off) and
- * flashes the reason. That is why this file exports checks and not actions:
- * **the fly-back was already built**, and inventing a second refusal path
- * beside it would have been the wrong shape.
+ * ⚠️ A restriction is symmetric. If a Coast says no more than 2 nearby Coasts, dropping a third
+ * beside it breaks the existing Coast's rule, not the newcomer's. So every check considers the
+ * board as it would be and asks the question of every Token in the affected neighbourhood.
  *
- * ## ⚠️ A restriction is symmetric — the trap
- * If a Coast says *"no more than 2 nearby Coasts"*, then dropping a **third**
- * Coast beside it breaks **the existing Coast's** rule, not the newcomer's. So
- * every check considers the board as it *would* be and asks the question of
- * every Token in the affected neighbourhood, not only of the one being placed.
+ * A placement that shoves other Tokens is refused as a whole: `Placement` hands the moves to {@link
+ * checkPlacement}, so the shoved Tokens are checked where they would land. An old save loading into
+ * a now-illegal board has no last location to fly back to; {@link reconcile} fixes it.
  *
- * ## The paths that have no "last location"
- * * **A Map burst** — not a placement at all; its contents are sprites, and
- *   putting one down is an ordinary placement this refuses like any other.
- * * **A placement that shoves other Tokens** — handled by **refusing the whole
- *   placement**: `Placement` hands the moves to {@link checkPlacement}, so the
- *   shoved Tokens are checked where they would land.
- * * **An old save loading into a now-illegal board** — the one case with
- *   genuinely no origin to fly back to. {@link reconcile} lifts the offenders
- *   into the Vault, the owner's fallback.
- *
- * ## By instance id and mat point (Free Playmat slice 1.6b)
- * A board view is a `Map` of **instance id → `{ typeId, x, y }`**, and "Near"
- * is a distance between those points. There are no tiles here.
+ * A board view is a `Map` of instance id to `{ typeId, x, y }`, and Near is a distance between
+ * those points.
  */
 
 /**
@@ -103,10 +87,8 @@ export function project(plan = {}) {
 /**
  * The ids near one Token on a board view, never including itself, in view order.
  *
- * ## Near, measured on the view — not on the live board
- * Every check here is about the board as it **would** be, so the same
- * centre-to-centre measurement (FP-41) is taken from the view's own points.
- * Only for Tokens that carry a `Cannot` — cheap enough to run on every drop.
+ * Near is measured on the view, not on the live board: every check here is about the board as it
+ * would be. Only for Tokens that carry a `Cannot`, which is cheap enough to run on every drop.
  */
 function nearIds(view, id, radius = nearRadius()) {
     const origin = view.get(id);
@@ -162,10 +144,8 @@ export function violationAt(view, id) {
 /**
  * The filter as a noun, for the refusal message.
  *
- * Deliberately its own small function rather than an import from
- * `statementText.js`: that module renders **authoring** text for the CMS and
- * the tooltip, and this is a one-line message flashed at a player mid-drag. A
- * shared renderer would tie a game-facing string to an editor-facing one.
+ * Its own small function rather than an import from `statementText.js`: that renders authoring text
+ * for the CMS and the tooltip, and this is a game-facing string flashed mid-drag.
  */
 function subjectOf(statement) {
     const to = statement?.to;
@@ -235,20 +215,13 @@ export function checkPlacement(point, typeId, plan = {}) {
 }
 
 /**
- * Bring a board that is *already* violating back into legality.
+ * Bring a board that is already violating back into legality: a save authored before a restriction
+ * existed, loading into a board the rule now forbids. Offenders are moved to a legal spot on the
+ * mat that `relocate` finds. Nothing is destroyed.
  *
- * The one case with no last location: a save authored before a restriction
- * existed, loading into a board the rule now forbids. Offenders are moved to a
- * legal spot on the mat that `relocate` finds. (They used to be lifted into
- * the Vault, the owner's stated fallback; the Vault went in Token Lifecycle
- * 9.3, and Tokens now live on the mat.) Nothing is destroyed, and the board is
- * legal by the time anyone looks at it.
- *
- * ⚠️ **Re-checked after every move, one at a time.** A row of four Coasts
- * breaks the rule in several places at once, but moving one Coast can fix
- * three of those findings, and moving all four would rearrange Tokens the
- * player never had to lose from where they put them. The earliest-arrived
- * offender is moved and the question asked again.
+ * ⚠️ Re-checked after every move, one at a time: moving one Coast can fix several findings at once,
+ * and moving all of them would rearrange Tokens the player did not need to lose. The
+ * earliest-arrived offender is moved and the question asked again.
  *
  * @param {(instance: object) => ({x: number, y: number}|null)} relocate —
  *   where the offender may stand instead, or null when there is nowhere.

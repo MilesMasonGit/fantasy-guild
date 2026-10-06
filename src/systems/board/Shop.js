@@ -1,4 +1,4 @@
-// Fantasy Guild — The Shop (Token Lifecycle slice 5.1, SP-12 / SP-13 / SP-65 / SP-67)
+// the Shop: buying Tokens
 
 import { EventBus } from '../core/EventBus.js';
 import {
@@ -16,22 +16,16 @@ import { matW, matH } from '../../config/matGeometry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * The Shop — the reworked Cartographer (SP-12).
+ * Sells every Token type that carries a `shop` block: `shop: { price: [{ itemId, quantity }],
+ * section: '<skill id>' | 'general' }`.
  *
- * Sells every Token type that carries a `shop` block (roadmap §3.1):
- * `shop: { price: [{ itemId, quantity }], section: '<skill id>' | 'general' }`.
+ * Everything with a `shop` block is listed from the start; the price is the only gate. Items are
+ * the only price, paid all or nothing through `InputAllocator` (Bank first, then loot on the
+ * floor). A purchase is refused once placed Tokens reach `MatCap.matCap()`.
  *
- * * **No unlocks** (SP-13): everything with a `shop` block is listed from the
- *   start; the price is the only gate.
- * * **Items are the only price** (SP-65). Payment is all or nothing through
- *   `InputAllocator` (Bank first, then loot on the floor).
- * * **The mat cap** (SP-67): a purchase is refused once the placed Tokens
- *   reach `MatCap.matCap()`.
- * * A bought Token lands **beside the Guild Hall** (FP-18), created with
- *   `origin: 'placed'`, through `Placement.placeArrivalNear` aimed at
- *   `Placement.centreOfBoard()`. When the area around the Hall is crowded it
- *   lands on the nearest legal free spot anywhere on the mat instead (Token
- *   Lifecycle 5.3); only a mat with no legal spot at all refuses.
+ * A bought Token is created with `origin: 'placed'`, beside the Guild Hall via
+ * `Placement.placeArrivalNear` aimed at `Placement.centreOfBoard()`. When that area is crowded it
+ * lands on the nearest legal free spot on the mat; only a mat with no legal spot refuses.
  */
 
 /** The section every Token without a skill section falls under. */
@@ -57,9 +51,8 @@ export function sectionName(section) {
 }
 
 /**
- * The price shaped for display, with what the Bank holds against each line:
- * `[{ itemId, name, need, have, enough }]`. `have` counts loot on the floor
- * too, since payment takes that as well (D-42).
+ * The price shaped for display, with what the Bank holds against each line: `[{ itemId, name, need,
+ * have, enough }]`. `have` counts loot on the floor too, since payment takes that as well.
  */
 export function priceLines(typeId) {
     return priceOf(typeId).map(({ itemId, quantity }) => {
@@ -97,13 +90,13 @@ export function canBuy(typeId) {
 }
 
 /**
- * Buy one Token: check the cap and the price, put it on the mat beside the
- * Guild Hall (or the nearest free spot to it), then take the items. Placing first means a mat with no room
- * refuses the purchase without taking anything; nothing runs between the check
- * and the payment, so the payment cannot then fall short.
+ * Buy one Token: check the cap and the price, put it on the mat beside the Guild Hall (or the
+ * nearest free spot to it), then take the items. Placing first means a mat with no room refuses the
+ * purchase without taking anything; nothing runs between the check and the payment, so the payment
+ * cannot then fall short.
  *
- * The Shop drawer no longer calls this: since B4 a row is dragged onto the
- * mat and bought there ({@link buyAt}). The tutorial and chain tests still do.
+ * The Shop drawer does not call this: a row is dragged onto the mat and bought there ({@link
+ * buyAt}). Only tests call it.
  *
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */
@@ -112,17 +105,13 @@ export function buy(typeId) {
 }
 
 /**
- * ⭐ **Buy one Token where the player let it go** (B4, FB-25): a Shop row
- * dragged onto the mat pays on drop. The same checks as {@link buy}, but the
- * Token goes through `Placement.placeTokenAt` at `point` (exactly there, or
- * nudged to the nearest legal spot, like any Token dropped on the mat) rather
- * than beside the Hall.
+ * Buy one Token where the player let it go: a Shop row dragged onto the mat pays on drop. The same
+ * checks as {@link buy}, but the Token goes through `Placement.placeTokenAt` at `point` (exactly
+ * there, or nudged to the nearest legal spot) rather than beside the Hall.
  *
- * * A point off the mat is refused with `offMat`: the drop is a plain cancel.
- * * A placement refusal charges nothing and keeps its `full` flag, so the drag
- *   flies back (FP-46).
- * * `noRestock`: a bought Token is always a new Token, never charges poured
- *   into a copy it was dropped on.
+ * A point off the mat is refused with `offMat`: the drop is a plain cancel. A placement refusal
+ * charges nothing and keeps its `full` flag, so the drag flies back. `noRestock`: a bought Token is
+ * always a new Token, never charges poured into a copy it was dropped on.
  *
  * @param {string} typeId
  * @param {{x:number, y:number}} point mat units

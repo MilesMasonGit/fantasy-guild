@@ -1,4 +1,4 @@
-// Fantasy Guild — Distance on the playmat (Free Playmat slices 1.2, 1.6b)
+// distance on the playmat
 
 import { LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
 import { REACH } from '../../config/registries/reachRegistry.js';
@@ -6,32 +6,21 @@ import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 
 /**
- * `nearby()` — reach as a **distance**, measured centre to centre (FP-41, A-5).
+ * `nearby()`: reach as a distance, measured centre to centre.
  *
- * ## By Token instance id and mat point (slice 1.6b)
- * The owner's framing rule: *there are no Tiles.* Every Token on the mat has a
- * centre (`instance.x`, `instance.y`), and every question here is asked of an
- * **instance id** or a **mat point** and answers with **instance ids**.
+ * There are no Tiles. Every Token on the mat has a centre (`instance.x`, `instance.y`), and every
+ * question here is asked of an instance id or a mat point and answers with instance ids. Near is
+ * the Mat Tuner's Near radius.
  *
- * ## Near (FP-65, FP-75)
- * The Mat Tuner's Near radius — 164 u shipped — reaches a Token 160 u away but
- * not one 226 u away, the two distances the old grid's sides and diagonals had.
+ * Where an ordering is needed, ids come back in arrival order (`placedAt` ascending). `nearby` is
+ * the stored reach id and means Near; `self_and_nearby` likewise; `self` and `board` are unchanged.
  *
- * ## Ties go to the earlier arrival
- * Where an ordering is needed, ids come back in **arrival order** (`placedAt`
- * ascending), which replaced "lower anchor tile" as every tie-break (plan §A).
- *
- * ## Reach ids are unchanged
- * `nearby` stays the stored id and means **Near**; `self_and_nearby`
- * likewise; `self` and `board` are unchanged. No Close/Far rows (FP-53).
- *
- * ## Tokens that are not (or no longer) on the mat
- * A Manager restocking a spot, a neighbour trigger whose source has just left,
- * and a `Cannot` check on a layout that has not happened yet all measure from a
- * point with {@link tokensWithin} or {@link isWithin} — the same measurement.
+ * Tokens not (or no longer) on the mat (a Manager restocking a spot, a neighbour trigger whose
+ * source has just left, a `Cannot` check on a layout that has not happened yet) measure from a
+ * point with {@link tokensWithin} or {@link isWithin}.
  */
 
-/** The live Near radius, in mat units (Mat Tuner, FP-66). */
+/** The live Near radius, in mat units. */
 export function nearRadius() {
     return matTuning('nearRadius');
 }
@@ -119,18 +108,14 @@ export function nearby(instanceId, reach = REACH.NEARBY, radius = nearRadius()) 
 }
 
 /**
- * The Tokens whose modifiers can change when something changes at `points` —
- * every Token whose centre is within **Near + the largest art radius** of any
- * of them, in arrival order.
+ * The Tokens whose modifiers can change when something changes at `points`: every Token whose
+ * centre is within Near + the largest art radius of any of them, in arrival order.
  *
- * ## Why the margin
- * A Token's buffs depend on every Token within Near of it. When a Token leaves
- * point A for point B, the Tokens that gained or lost it are within Near of A
- * or of B, so rebuilding around **both** points is what keeps buffs from going
- * stale (the slice's top risk). The extra `LARGEST_ART_RADIUS` (144 u) covers a
- * caller that can only name a point near the change rather than the centre that
- * moved. Rebuilding an extra Token is harmless; missing one is a silently stale
- * buff.
+ * Why the margin: a Token's buffs depend on every Token within Near of it. When a Token leaves A
+ * for B, the Tokens that gained or lost it are within Near of A or of B, so rebuilding around both
+ * points keeps buffs from going stale. `LARGEST_ART_RADIUS` covers a caller that can only name a
+ * point near the change rather than the centre that moved. Rebuilding an extra Token is harmless;
+ * missing one is a silently stale buff.
  *
  * @param {Array<{x:number,y:number}|null>} points
  * @returns {string[]}
@@ -147,35 +132,22 @@ export function tokensAround(points, radius = nearRadius()) {
     return out;
 }
 
-// ---------------------------------------------------------------------------
-// The neighbour-id cache (slice 1.6b)
-// ---------------------------------------------------------------------------
-
 /**
- * `nearby(id)` at the live Near radius, **cached per instance**.
+ * `nearby(id)` at the live Near radius, cached per instance. `RecipeResolver` and `Charges` ask for
+ * a station's neighbours several times per station per tick, which would otherwise be the one
+ * per-tick O(n²) cost.
  *
- * `RecipeResolver` and `Charges` ask for a station's neighbours several times
- * per station per tick (context, tools, wear, providers) — the plan's only
- * per-tick O(n²) risk. The answer is cached per instance id.
+ * What drops it: the whole cache when a Token is put on or taken off the mat
+ * (`BoardState.membershipVersion`), the board is swapped (a load), or the Near radius changes. On a
+ * move (`setTokenPoint`), only the entries it can change, read back from `BoardState`'s move
+ * journal: the moved Token's own entry and that of every Token within `nearRadius() + 1` of where
+ * it left or arrived (the same both-ends rule as {@link tokensAround}). The `+ 1` is slack:
+ * dropping an extra entry is harmless, keeping a stale one is a silently wrong recipe or tool
+ * answer.
  *
- * ## What drops it (CR3-200, round 3 review R2 §3.6)
- * * **The whole cache** — a Token put on or taken off the mat
- *   (`BoardState.membershipVersion`), the board swapped (a load), or the Near
- *   radius changed.
- * * **Only the entries a move can change** — on a move (`setTokenPoint`), read
- *   back from `BoardState`'s move journal: the moved Token's own entry, and the
- *   entry of every Token within `nearRadius() + 1` of where it left **or** where
- *   it arrived (the same "both ends" rule as {@link tokensAround}). A Token's
- *   Near set can change only if a Token crossed its Near circle, and a Token
- *   that did was within Near of one end or the other. The `+ 1` is slack:
- *   dropping an extra entry is harmless, keeping a stale one is a silently
- *   wrong recipe or tool answer.
- *
- * Every entry is computed right after the journal is caught up, so a Token
- * that has not moved since its entry was made stands where it stood then.
  * Order inside a list is arrival order, which a move cannot change.
  *
- * ⚠️ The returned array is shared — iterate it, never mutate it.
+ * ⚠️ The returned array is shared: iterate it, never mutate it.
  */
 let neighbourCache = { tokens: null, version: -1, radius: NaN, moves: 0, byId: new Map() };
 

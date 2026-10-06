@@ -1,4 +1,4 @@
-// Fantasy Guild — Spawners and the Guild Hall trickle (Token Lifecycle slices 3.3 and 3.4)
+// spawners and the Guild Hall trickle
 
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
@@ -8,8 +8,8 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
-// TimedChanges imports this module for its handler table; this one does not
-// import TimedChanges back (CR3-023 group 2), only the leaf pick it used.
+// ⚠️ TimedChanges imports this module for its handler table; importing TimedChanges back would be a
+// cycle, so this takes the leaf `weightedPick` instead.
 import { pickWeighted } from './weightedPick.js';
 import * as TokenNotices from './TokenNotices.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -17,47 +17,38 @@ import * as InputAllocator from './InputAllocator.js';
 import { TimeBankManager } from '../core/TimeBankManager.js';
 
 /**
- * ⭐ **Spawners** (roadmap §3.1, DP-4, DP-5, SP-5, SP-6, SP-46/SP-68).
+ * Spawners.
  *
- * ## How it runs
- * It rides `TimedChanges.tick`, which `BoardRunner.tick(delta)` calls — one
- * clock system (DP-2), advanced by the tick's `delta` only, so the time bank
- * and the dev *Advance* fast-forward it with everything else.
+ * How it runs: it rides `TimedChanges.tick`, which `BoardRunner.tick(delta)` calls, advanced by the
+ * tick's `delta` only, so the time bank and the dev Advance fast-forward it with everything else.
+ * The spawner is one row of `TimedChanges.HANDLERS` (clock `spawnMs`, due at `intervalMs`). Its
+ * `fire` is {@link attemptSpawn}, which returns the SAME instance after a spawn (the clock starts
+ * its next lap, and a big tick can spawn several times) or null when blocked (the clock is held
+ * full and the attempt is retried next tick, never looped within one).
  *
- * The spawner is one row of `TimedChanges.HANDLERS` (clock `spawnMs`, due at
- * `intervalMs`). Its `fire` is {@link attemptSpawn}, which returns the SAME
- * instance after a spawn (the clock starts its next lap, and a big tick can
- * spawn several times) or null when blocked (the clock is held full and the
- * attempt is retried next tick — never looped within one).
+ * The trickle rides the same tick. It has one clock per line (`clocks.trickle[i]`), which the
+ * handler table's single key per clock cannot hold, so `TimedChanges.tick` calls {@link
+ * advanceTrickle} for every Token beside the handler table.
  *
- * The **trickle** (slice 3.4, SP-66) rides the same tick. It has one clock per
- * line (`clocks.trickle[i]`), which the handler table's single key per clock
- * cannot hold, so `TimedChanges.tick` calls {@link advanceTrickle} for every
- * Token beside the handler table.
+ * One attempt, in order:
+ * 1. Cap: the family's live count must be below its cap.
+ * 2. Upkeep: the Bank and the item loot lying on the mat must hold all of it between them (checked,
+ * not yet taken).
+ * 3. Pick: a weighted pick from `spawns`.
+ * 4. Land: `EffectActions.spawn` with `nearest_free` around the spawner; placed Tokens are fixed.
+ * 5. Pay: only once the Token has landed, so a spawn with no room costs nothing and there is never
+ * a refund to make. Bank first, then loot on the mat, through the same
+ * `InputAllocator.consumeInputs` a Token's recipe inputs use.
  *
- * ## One attempt, in order
- * 1. **Cap** — the family's live count must be below its cap.
- * 2. **Upkeep** — the Bank and the item loot lying on the mat must hold all of
- *    it between them (checked, not yet taken; TL-20).
- * 3. **Pick** — a weighted pick from `spawns`.
- * 4. **Land** — `EffectActions.spawn` with `nearest_free` around the spawner;
- *    placed Tokens are fixed (SP-68).
- * 5. **Pay** — only once the Token has landed, so a spawn with no room costs
- *    nothing and there is never a refund to make (all or nothing, DP-5).
- *    ⭐ **Bank first, then loot on the mat** (TL-20), through the same
- *    `InputAllocator.consumeInputs` a Token's recipe inputs use (D-42): any
- *    matching loot anywhere on the mat counts, as it does there.
- *
- * ## State
- * Clocks are saved on the instance. Nothing else is: the reported state is
- * worked out live from the mat and the Bank, except "no room", which is only
- * known by trying — that one is remembered in memory until the next attempt.
+ * State: clocks are saved on the instance. Nothing else is: the reported state is worked out live
+ * from the mat and the Bank, except no room, which is only known by trying; that one is remembered
+ * in memory until the next attempt.
  */
 
-/** Shortest spawn interval the engine honours (§3.1: `intervalMs ≥ 1000`). */
+/** Shortest spawn interval the engine honours (`intervalMs ≥ 1000`). */
 export const MIN_INTERVAL_MS = 1000;
 
-/** What a spawner reports (§3.1). */
+/** What a spawner reports. */
 export const SPAWNER_STATE = Object.freeze({
     SPAWNING: 'spawning',
     AT_CAP: 'at_cap',
@@ -67,10 +58,6 @@ export const SPAWNER_STATE = Object.freeze({
 
 /** Spawner instance ids whose last attempt found no room — cleared by the next success. */
 const noRoom = new Set();
-
-// ---------------------------------------------------------------------------
-// Families and caps (DP-4, SP-5)
-// ---------------------------------------------------------------------------
 
 /** The `spawner` block of a type, when it can actually spawn something; else null. */
 function spawnerBlock(def) {
@@ -95,18 +82,16 @@ function allowanceOf(def) {
 }
 
 /**
- * ⭐ **The family memo (CR3-047, round 3 review R3 §3.1).** A spawner type's
- * family never changes without a content reload (`registerTokenTypes`), so it
- * is memoised per type id, keyed on {@link registryVersion} — a test that
- * re-registers a type mid-file sees the new family on its very next call.
+ * The family memo: a spawner type's family never changes without a content reload
+ * (`registerTokenTypes`), so it is memoised per type id, keyed on {@link registryVersion}; a test
+ * that re-registers a type mid-file sees the new family on its very next call.
  */
 const familyCache = new Map();
 let familyCacheRegVersion = -1;
 
 /**
- * A spawner type's **family**: every type in its `spawns` list plus everything
- * they grow into, following `grows.into` until it stops (§3.1). An Oak
- * Forest's is `{Oak Sapling, Oak Tree}`.
+ * A spawner type's family: every type in its `spawns` list plus everything they grow into,
+ * following `grows.into` until it stops. An Oak Forest's is `{Oak Sapling, Oak Tree}`.
  *
  * @returns {string[]} in discovery order (the first spawned type first)
  */
@@ -138,12 +123,9 @@ export function familyOf(spawnerTypeId) {
 }
 
 /**
- * ⭐ **The census (CR3-047, round 3 review R3 §3.1).** One pass over the mat,
- * rebuilt lazily only when membership changes (an add or remove — the same
- * counter CR3-001's cached `tokens()` keys on, `BoardState.membershipVersion`)
- * or the Token registry does. `attemptSpawn`'s cap check and `syncAlerts`'
- * once-a-tick rescan of every spawner used to each walk the whole mat;
- * now they share one scan per tick (or per spawn, since a spawn earlier in
+ * The census: one pass over the mat, rebuilt lazily only when membership changes
+ * (`BoardState.membershipVersion`) or the Token registry does. `attemptSpawn`'s cap check and
+ * `syncAlerts`' once-a-tick rescan share one scan per tick (or per spawn, since a spawn earlier in
  * the same pass bumps membership and the next spawner re-counts).
  */
 let census = { tokens: null, version: -1, regVersion: -1, spawners: [], countByType: new Map(), capsByKey: new Map() };
@@ -179,10 +161,9 @@ function countOf(family) {
 }
 
 /**
- * A family's cap: the sum of `allowance` over every live spawner whose family
- * shares a type with it (DP-4). Two Forests make 10; removing one makes 5 and
- * removes nothing (SP-6). Memoised per family key inside the census, so
- * `spawnerStatus`'s own call and `syncAlerts`' rescan of the same spawner
+ * A family's cap: the sum of `allowance` over every live spawner whose family shares a type with
+ * it. Two Forests double it; removing one halves it and removes nothing. Memoised per family key
+ * inside the census, so `spawnerStatus`'s own call and `syncAlerts`' rescan of the same spawner
  * share one answer.
  */
 function capOf(family, spawners = liveSpawners()) {
@@ -206,10 +187,6 @@ function familyLabel(family) {
     return first ? (getTokenType(first)?.name || first) : '';
 }
 
-// ---------------------------------------------------------------------------
-// Upkeep (DP-5)
-// ---------------------------------------------------------------------------
-
 /** `upkeep` summed by item, so a list naming one item twice is checked as one. */
 function upkeepOf(def) {
     const total = new Map();
@@ -222,10 +199,9 @@ function upkeepOf(def) {
 }
 
 /**
- * The item ids one spawn's upkeep is short of, in upkeep order — counting the
- * Bank **and** matching loot on the mat (TL-20, `InputAllocator.availableOf`),
- * so the status, the alert and the Upkeep Summary never say "needs Oak Seed"
- * while seeds that would be paid lie on the floor.
+ * The item ids one spawn's upkeep is short of, in upkeep order, counting the Bank and matching loot
+ * on the mat (`InputAllocator.availableOf`), so the status, the alert and the Upkeep Summary never
+ * say needs Oak Seed while seeds that would be paid lie on the floor.
  */
 function missingUpkeep(def) {
     return upkeepOf(def)
@@ -233,12 +209,8 @@ function missingUpkeep(def) {
         .map(({ itemId }) => itemId);
 }
 
-// ---------------------------------------------------------------------------
-// The attempt
-// ---------------------------------------------------------------------------
-
 /**
- * One spawn attempt — `TimedChanges`' handler `fire` for a spawner.
+ * One spawn attempt: `TimedChanges`' handler `fire` for a spawner.
  *
  * @param {object} instance the spawner on the mat
  * @param {object} def its type
@@ -266,28 +238,26 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
         random
     );
     if (!landed) {
-        // FP-46: nowhere to go. Nothing was paid; the clock waits full.
+        // Nowhere to go. Nothing was paid; the clock waits full.
         noRoom.add(instance.id);
         return null;
     }
     noRoom.delete(instance.id);
 
-    // Paid only now that the Token is down — checked above, so this cannot fail
-    // part-way (the tick is single-threaded). Bank first, then loot on the mat
-    // (TL-20, D-42).
+    // Paid only now that the Token is down; checked above, so this cannot fail part-way (the tick
+    // is single-threaded). Bank first, then loot on the mat.
     InputAllocator.consumeInputs(upkeepOf(def));
 
     const spawned = BoardState.getTokenById(landed.instanceId);
-    // B7.1 (TL-16, FB-23): an enemy is tethered to the spawner that made it —
-    // this instance, not its type — and potters by it (`EnemyMotion`). Saved.
+    // An enemy is tethered to the spawner that made it (this instance, not its type) and potters by
+    // it (`EnemyMotion`). Saved.
     if (spawned && isEnemyDef(getTokenType(spawned.typeId))) spawned.tether = instance.id;
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
 
-    // A green notice on the new Token (FB-48): news, not a problem, so it goes
-    // on its own. Raised on the id that landed; a Token that grew during the
-    // leftover time above is a new instance and simply has no notice.
-    // ⭐ None while the time bank replays time away (owner, after Q2): the
-    // player comes back to a calm mat, not a field of green marks.
+    // A green notice on the new Token: news, not a problem, so it goes on its own. Raised on the id
+    // that landed; a Token that grew during the leftover time above is a new instance and simply
+    // has no notice. None while the time bank replays time away, so the player comes back to a calm
+    // mat, not a field of green marks.
     const spawnedName = getTokenType(typeId)?.name || typeId;
     if (!TimeBankManager.isSpending && BoardState.getTokenById(landed.instanceId)) TokenNotices.raiseNotice(landed.instanceId, {
         type: 'token_spawned',
@@ -299,18 +269,13 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     return instance;
 }
 
-// ---------------------------------------------------------------------------
-// What a spawner reports (§3.1, for the UI in Phase 8)
-// ---------------------------------------------------------------------------
-
 /**
  * A spawner's state, worked out live:
- *
- * * `at_cap` — its family is at or over its cap;
- * * `needs_item` — the Bank and the loot on the mat cannot pay one spawn's
- *   upkeep between them (`needs`: item ids);
- * * `no_room` — its last attempt found nowhere to land, and it is waiting;
- * * `spawning` — otherwise, with `nextInMs` to the next attempt.
+ * - `at_cap`: its family is at or over its cap;
+ * - `needs_item`: the Bank and the loot on the mat cannot pay one spawn's upkeep between them
+ * (`needs`: item ids);
+ * - `no_room`: its last attempt found nowhere to land, and it is waiting;
+ * - `spawning`: otherwise, with `nextInMs` to the next attempt.
  *
  * Checked in that order, which is the order an attempt checks them.
  *
@@ -335,9 +300,8 @@ export function spawnerStatus(instanceId) {
 }
 
 /**
- * A spawner's live family count against its cap — `{ count, cap }` — or null
- * when it is not a working spawner. The cheap half of {@link spawnerStatus}
- * (no Bank check), for the count badge on the mat (FB-5).
+ * A spawner's live family count against its cap, `{ count, cap }`, or null when it is not a working
+ * spawner. The cheap half of {@link spawnerStatus} (no Bank check), for the count badge on the mat.
  */
 export function spawnerCounts(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
@@ -348,8 +312,8 @@ export function spawnerCounts(instanceId) {
 }
 
 /**
- * Every family with a live spawner, once each: `[{ kind, typeIds, count, cap }]`,
- * where `kind` is the family's readable name. Feeds the QA panel.
+ * Every family with a live spawner, once each: `[{ kind, typeIds, count, cap }]`, where `kind` is
+ * the family's readable name. Feeds the dev tools.
  */
 export function familyCounts() {
     const spawners = liveSpawners();
@@ -367,10 +331,6 @@ export function familyCounts() {
     }
     return [...byKey.values()];
 }
-
-// ---------------------------------------------------------------------------
-// The on-mat alert (slice 8.3)
-// ---------------------------------------------------------------------------
 
 /**
  * Which waiting states raise an on-Token alert. Only the two the player can
@@ -395,13 +355,10 @@ const sameList = (a = [], b = []) => a.length === b.length && a.every((v, i) => 
 
 /**
  * Bring every spawner's alert in line with {@link spawnerStatus}, publishing
- * `SPAWNER_ALERT_CHANGED` for each one that changed — and only those.
- *
- * Called at the end of `TimedChanges.tick`, after this tick's attempts, so an
- * alert goes up the tick a spawner starts waiting and comes down the tick the
- * cause is gone (a seed lands in the Bank or on the mat, a tree is cut and
- * frees room).
- * Worked out from the engine's own state, never polled from React.
+ * `SPAWNER_ALERT_CHANGED` for each one that changed, and only those. Called at the end of
+ * `TimedChanges.tick`, after this tick's attempts, so an alert goes up the tick a spawner starts
+ * waiting and comes down the tick the cause is gone. Worked out from the engine's own state, never
+ * polled from React.
  */
 export function syncAlerts() {
     const live = new Set();
@@ -431,29 +388,22 @@ export function resetAlerts() {
     noRoom.clear();
 }
 
-// ---------------------------------------------------------------------------
-// The trickle (slice 3.4, SP-66)
-// ---------------------------------------------------------------------------
-
 /**
- * Advance a Token's `trickle` lines by `delta`, paying each line's items as its
- * clock comes round — no hero needed. Worked out in closed form (whole laps of
- * `everyMs`), so one big tick grants exactly what many small ones do.
+ * Advance a Token's `trickle` lines by `delta`, paying each line's items as its clock comes round,
+ * no hero needed. Worked out in closed form (whole laps of `everyMs`), so one big tick grants
+ * exactly what many small ones do.
  *
- * ⭐ **The pay drops as loot beside the Token** (FB-53), exactly as a gathered
- * output does (`BoardRunner` → `SpriteLayer.addSprite` with the Token's id):
- * it floats on the mat, is collected on hover (TL-9) or by auto-collect, and
- * flies to the Hall (Q5). Nothing reaches the Bank until it is collected, so a
- * full Bank simply leaves it on the floor (D-138) — `collectSprite` banks
- * through `InventoryManager` and never destroys what does not fit.
+ * The pay drops as loot beside the Token, as a gathered output does (`BoardRunner` →
+ * `SpriteLayer.addSprite` with the Token's id): it floats on the mat, is collected on hover or by
+ * auto-collect, and flies to the Hall. Nothing reaches the Bank until it is collected, so a full
+ * Bank simply leaves it on the floor; `collectSprite` banks through `InventoryManager` and never
+ * destroys what does not fit.
  *
- * **In bulk** (a time-bank replay or a long `advanceTime`), each line drops
- * ONE sprite per call holding every lap it completed (`laps × quantity`), and
- * `addSprite` folds same-item drops near an existing stack into that stack, as
- * it does for every other source; the floor's stack cap still applies.
+ * In bulk (a time-bank replay or a long `advanceTime`), each line drops ONE sprite per call holding
+ * every lap it completed (`laps × quantity`), and `addSprite` folds same-item drops near an
+ * existing stack into that stack, as for every other source; the floor's stack cap still applies.
  *
- * Lines with no item, no positive quantity or no positive `everyMs` are skipped
- * (the content audit reports them).
+ * Lines with no item, no positive quantity or no positive `everyMs` are skipped.
  *
  * @returns {number} how many items were granted (tests)
  */

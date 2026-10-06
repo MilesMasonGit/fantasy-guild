@@ -1,38 +1,22 @@
-// Fantasy Guild — Shore bands: a terrain shading differently near its own edge.
+// shore bands: a terrain shading differently near its own edge
 
 import { distanceFromSeeds } from './TerrainLattice.js';
 import { bandOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * The shallows at the edge of the sea, and the wet sand at the edge of a beach.
+ * The shallows at the edge of the sea, and the wet sand at the edge of a beach. Each terrain shades
+ * its own outer edge, so neither has to know the other exists. Nothing here is written in terms of
+ * water or sand: any terrain that declares a band gets one.
  *
- * Concept §6B asks for concentric bands — deep ocean → shallow → wet sand → dry
- * sand — built from "the same contour at different insets". This is that, from
- * the other direction: rather than one terrain drawing four nested shapes,
- * **each terrain shades its own outer edge**. Ocean pales to shallows where it
- * meets land; sand darkens where it meets water. Put them side by side and the
- * four tiers fall out, with neither terrain having to know the other exists.
+ * ⚠️ A band is caused by a neighbour, not by having an edge. Each band names the terrains that
+ * trigger it (`against`); the default, any painted neighbour, is right for shallows and wrong for
+ * almost everything else (sand banded against everything put wet sand where the beach met the
+ * forest).
  *
- * Nothing here is written in terms of water or sand — any terrain that declares
- * a band gets one.
- *
- * ## ⚠️ A band is caused by a neighbour, not by having an edge
- *
- * Each band names the terrains that trigger it. That distinction is not
- * academic: banding sand against *everything* put wet sand where the beach met
- * the forest, because nothing had said that wet sand is caused by water. The
- * default — trigger on any painted neighbour — is right for shallows and wrong
- * for almost everything else, so `against` is usually worth spelling out.
- *
- * ## Distance, not insets
- *
- * A band is "within N art pixels of a triggering terrain", measured on the
- * **drawn** coastline from `resolveArtPixels` — so it follows the ragged edge
- * exactly rather than the subtile grid the edge wandered away from. Computed
- * with a two-pass chamfer transform, which is one sweep forward and one back
- * over the board; checking a neighbourhood per pixel would be 81 lookups
- * against 53,000 pixels and far too slow to run on every repaint.
+ * A band is within N art pixels of a triggering terrain, measured on the drawn coastline from
+ * `resolveArtPixels`. It uses a two-pass chamfer transform, one sweep forward and one back:
+ * checking a neighbourhood per pixel would be far too slow to run on every repaint.
  */
 
 /**
@@ -56,10 +40,8 @@ function triggerSeeds(at, self, triggers) {
 /**
  * Which pixels of each banded terrain fall inside its own band.
  *
- * ⚠️ Takes the resolved map rather than the lattice. It used to resolve its own,
- * which meant the art-pixel map was built twice on every repaint — about five
- * milliseconds of the sixty the renderer was costing, spent computing an answer
- * the caller already had.
+ * ⚠️ Takes the resolved map rather than the lattice, so the art-pixel map is not built twice per
+ * repaint.
  *
  * @param {object} artPixels A resolved map from `resolveArtPixels`.
  * @param {number} seed The save's terrain seed.
@@ -70,7 +52,6 @@ function triggerSeeds(at, self, triggers) {
 export function buildBandMasks(artPixels, seed = 0) {
     const { size, palette, at } = artPixels;
 
-    // Which palette entries want a band at all, resolved once.
     const bands = [];
 
     for (let p = 0; p < palette.length; p++) {
@@ -79,19 +60,15 @@ export function buildBandMasks(artPixels, seed = 0) {
         const width = Math.max(0, band.width * tuning('bandWidth'));
         if (width <= 0) continue;
 
-        // ⚠️ Which neighbours actually cause this band. Without it a band is a
-        // property of *having an edge*, which is wrong the moment a terrain has
-        // more than one kind of neighbour: sand banded against everything put
-        // wet sand where the beach met the forest, 486 pixels of it, because
-        // nothing had ever told it that wet sand is caused by water.
+        // ⚠️ Which neighbours actually cause this band. Without it a band is a property of having
+        // an edge, which is wrong once a terrain has more than one kind of neighbour.
         const triggers = band.against
             ? new Set(band.against.map(id => palette.indexOf(id)).filter(i => i >= 0))
             : null;
-        if (triggers && triggers.size === 0) continue;   // nothing here to band against
+        if (triggers && triggers.size === 0) continue;
 
-        // Distances come back multiplied by 3 by the chamfer weights, and the
-        // transform is told the limit so it can stop rather than measuring the
-        // whole board and having it thrown away.
+        // Distances come back multiplied by 3 by the chamfer weights; the transform is told the
+        // limit so it can stop early.
         const limit = width * 3;
         const dist = distanceFromSeeds(triggerSeeds(at, p, triggers), size, limit);
         const mask = new Uint8ClampedArray(size * size);
@@ -114,10 +91,8 @@ export function buildBandMasks(artPixels, seed = 0) {
 /**
  * How a terrain's band should be coloured, with the tuning applied.
  *
- * ⚠️ Lives here rather than in the renderer so it can be tested. The strength
- * slider changes only the tint, not the mask — so with this inside the canvas
- * there was nothing outside it that could tell whether the slider did anything
- * at all, and the dead-slider test correctly refused to pass.
+ * ⚠️ Lives here rather than in the renderer so it can be tested: the strength slider changes only
+ * the tint, not the mask.
  *
  * @returns {{tint: string, amount: number}|null} Null when the terrain has no
  *   band, or when the strength has been turned down to nothing.
