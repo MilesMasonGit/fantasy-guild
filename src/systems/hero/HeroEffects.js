@@ -1,5 +1,3 @@
-// Fantasy Guild — what a hero's loadout does (Unified Effects P4)
-
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { EFFECTS } from '../../config/registries/effectRegistry.js';
 import { getGrid } from '../../config/registries/equipmentConstants.js';
@@ -11,39 +9,24 @@ import { KEYWORD } from '../effects/statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 
 /**
- * A hero's equipped items are **bearers**, exactly like a Token (UE-1).
+ * A hero's equipped items are bearers, like a Token: the same grammar and effect
+ * library, but a rule reaches the hero and its cost is spent from the item stack.
  *
- * The grammar, the library and the sentence are unchanged; what differs is what
- * a rule reaches and what its cost is spent from.
+ * ⚠️ The loadout is ONE bearer, not nine. Two items referencing the same effect
+ * apply it once: scales add, capped at MAX_SCALE. Expanding the same entry twice
+ * would produce two statements with the same statement id, and per-statement state
+ * (an upkeep clock, a cooldown) is keyed by that id, so it would be shared between
+ * two rules meant to be separate. A Token naming one entry twice is refused for this
+ * reason (`duplicateRefsOf`); a loadout can't refuse, so it merges.
  *
- * ## ⚠️ The loadout is ONE bearer, not nine
- * Two items referencing the same effect do **not** apply it twice. Their scales
- * add and the total is capped at 5 (UE-19), and the effect is applied once.
- *
- * That is not only a balance rule, it is the only version that works. Expanding
- * the same entry twice produces two statements carrying the **same statement
- * id**, and per-statement state is keyed by that id — so an upkeep clock or a
- * cooldown would be shared between two rules meant to be separate. A Token
- * naming one entry twice is refused for exactly this reason (`duplicateRefsOf`);
- * a loadout cannot refuse it, because the player is holding two different
- * things, so it merges instead.
- *
- * ## ⚠️ The inventory stack is the charge pool (UE-21)
- * An item has no `usesRemaining`, and cannot: `EquipmentManager`'s Shared
- * Reference model keeps items in one fungible stack and a hero's slot holds only
- * an **id**. So a statement's authored charge cost is spent as units of the item
- * itself — a potion costing 1 eats one potion per firing, and a sword costing 0
- * is never consumed. No per-copy state exists, and none is needed.
- *
- * An item whose stack has run dry contributes nothing (UE-22). It stays in the
- * slot, greyed, rather than being taken out of a loadout the player arranged.
+ * ⚠️ The inventory stack is the charge pool. A hero's slot holds only an item id and
+ * items live in one fungible stack, so a statement's charge cost is spent as units of
+ * the item itself (cost 0 means never consumed). An item whose stack is empty
+ * contributes nothing but stays in its slot, greyed.
  */
 
 /**
- * Whether an equipped item can currently do anything.
- *
- * Mirrors `EquipmentManager.syncEquipmentModifiers`, which switches a hero's
- * gear bonus off when the shared stack runs out. An item that is not in the
+ * Whether an equipped item can currently do anything: one that is not in the
  * Bank is not really in the hero's hands.
  */
 function inStock(itemId) {
@@ -67,8 +50,7 @@ export function loadoutRefs(hero) {
         for (const { effectId, scale } of effectRefsOf(def)) {
             const current = merged.get(effectId);
             if (current) {
-                // UE-19: scales add, and the cap is what stops a build maxing
-                // one effect by carrying six of a thing.
+                // Scales add; the cap stops a build maxing one effect by carrying six of a thing.
                 current.scale = Math.min(MAX_SCALE, current.scale + scale);
                 current.itemIds.push(itemId);
             } else {
@@ -83,9 +65,8 @@ export function loadoutRefs(hero) {
 /**
  * The statements a hero's loadout contributes, already scaled and stamped.
  *
- * Each statement carries `sourceItemIds` on top of the usual stamps, because
- * paying a statement's cost means consuming one of the items that granted it —
- * and by the time a rule fires, which items those were is no longer derivable.
+ * Each carries `sourceItemIds` because paying its cost consumes one of those
+ * items, and by the time a rule fires which items they were is no longer derivable.
  */
 export function loadoutStatements(hero) {
     const out = [];
@@ -107,33 +88,18 @@ export function loadoutStatementsWith(hero, keyword) {
 }
 
 /**
- * Pay a loadout statement's cost, in units of the items that granted it (UE-21).
+ * Pay a loadout statement's cost, in units of the items that granted it. A rule
+ * costing 0 (every weapon and armour piece) spends nothing.
  *
- * ## What "cost" means here
- * The same authored number P2 gave every statement. On a Token it comes out of
- * the charge pool; on an item it comes out of the **stack**, because that is the
- * only pool an item has. A rule costing 0 — every weapon and every piece of
- * armour — spends nothing and this returns immediately.
+ * When two items granted the merged effect only the first in grid order pays;
+ * charging both would make carrying a spare worse than carrying none.
  *
- * ## Why only one item pays
- * When two items granted the merged effect, exactly one of them is consumed, not
- * both. The player is holding two of something that does one thing; charging
- * them twice for one firing would make carrying a spare strictly worse than
- * carrying none.
+ * ⚠️ Nothing is unequipped when the stack empties: the last unit fires normally
+ * and `inStock` silences the item from the next firing, so it stays in its slot, greyed.
  *
- * The **first in grid order** pays, so consumption is deterministic rather than
- * arbitrary, and a player who wants a particular one spent first can arrange it.
- *
- * ## ⚠️ Nothing is unequipped when the stack empties (UE-22)
- * The last unit fires normally and the slot keeps the item, greyed — `inStock`
- * is what silences it from the next firing onward. A loadout the player arranged
- * is not rearranged under them.
- *
- * ## ⚠️ Pay only once the rule has actually done something
- * `canPayLoadoutCost` answers the same question without spending, so a caller
- * whose roll happens inside another function can check first, act, and pay only
- * on success. A potion spent on a chance that missed would teach the player the
- * opposite of how often it works — the same reason P3 announces after the roll.
+ * ⚠️ Pay only once the rule has actually done something. `canPayLoadoutCost`
+ * answers the same question without spending, so a caller whose roll happens
+ * inside another function can check first, act, and pay only on success.
  *
  * @returns {boolean} whether the cost was paid (a free rule is always paid)
  */
@@ -154,32 +120,23 @@ export function payLoadoutCost(statement) {
         }
     }
 
-    // Nothing left to spend: the rule does not fire, and it does not fire on
-    // credit either — the same gate `Charges.canFireStatement` applies to a
-    // Token that cannot afford its own effect.
+    // Nothing left to spend: the rule does not fire on credit.
     return false;
 }
 
 /**
- * The combat-axis numbers a set of statements contributes (Unified Effects P7).
+ * The combat-axis numbers a set of statements contributes.
  *
- * ## Why combat reads an aggregator and the board reads live
- * The board resolves a hero's loadout live at `resolveAxis`, because a loadout
- * is not the board and a cached tile contribution goes stale. Combat cannot do
- * the same: `CombatFormulas` is a pure calculation module that already queries
+ * Combat reads an aggregator rather than resolving the loadout live like the
+ * board: `CombatFormulas` is a pure calculation module that already queries
  * `hero.aggregator`, and reaching from it into item registries and the Bank
- * would both invert that dependency and risk an import cycle.
+ * would invert that dependency and risk an import cycle. `EquipmentManager`
+ * refreshes the registration whenever equipment changes.
  *
- * So combat axes are **registered onto the hero's aggregator** instead, which is
- * the seam combat already reads and which `EquipmentManager` already refreshes
- * whenever equipment changes. The old gear pipeline did this too — the
- * difference is that what gets registered now comes from named library effects
- * rather than a hardcoded switch over eight legacy ids.
- *
- * ⚠️ **Flat bucket only.** `ModifierAggregator.query` sums flats and skips
+ * ⚠️ Flat bucket only. `ModifierAggregator.query` sums flats and skips
  * percentage and multiplier entries, so anything else would be registered and
- * never read. The palette refuses to author the other buckets on these axes
- * (`buckets: ['flat']`), and this mirrors that refusal rather than trusting it.
+ * never read. The palette refuses to author other buckets on these axes, and
+ * this mirrors that refusal.
  *
  * @param {Array<object>} statements expanded statements from any bearer
  * @returns {Array<{type: string, value: number}>}
@@ -192,19 +149,17 @@ export function combatContributions(statements) {
 
         const payload = statement.payload || {};
         const entry = getPaletteEntry(payload.type);
-        // ⚠️ `heroOnly`, not `group === 'Combat'` (P4). `STATUS_IMMUNITY` has
-        // exactly the same property — read off a hero's aggregator, writable
-        // only by an item or an enemy — and is not combat. Keying on a group
-        // label would have left it registered by nobody.
+        // ⚠️ `heroOnly`, not `group === 'Combat'`: `STATUS_IMMUNITY` is read off a
+        // hero's aggregator too and is not combat, so keying on a group label would
+        // leave it registered by nobody.
         if (!entry?.heroOnly) continue;
         if (payload.bucket && payload.bucket !== 'flat') continue;
 
         const value = Number(payload.value);
         if (!Number.isFinite(value) || value === 0) continue;
 
-        // The optional narrowing field, in the shape the aggregator matches on.
-        // `STATUS_IMMUNITY` is meaningless without it — an immunity that names
-        // no status would block everything.
+        // `STATUS_IMMUNITY` is meaningless without it: an immunity naming no status
+        // would block everything.
         out.push(payload.category
             ? { type: payload.type, value, category: payload.category }
             : { type: payload.type, value });

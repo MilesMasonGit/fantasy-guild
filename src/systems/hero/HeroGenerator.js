@@ -1,12 +1,7 @@
-// Fantasy Guild - Hero Generator
-// Phase 7: Hero Generation
-
 import { nanoid } from 'nanoid';
 import { FOUNDATION_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 import { STARTING_JOB_ID, getJobSheet } from '../../config/registries/jobRegistry.js';
-// ⚠️ `nameRegistry` reaches the game only through this import and the one in
-// `getRandomName`'s other call site below. It looks like an orphan and has been
-// misjudged as dead before — it names every hero and villager in the game.
+// ⚠️ `nameRegistry` is imported only here. It looks like an orphan; it names every hero.
 import { getRandomName } from '../../config/registries/nameRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
@@ -14,33 +9,16 @@ import { createEmptyEquipment } from '../../config/registries/equipmentConstants
 import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
 
 /**
- * HeroGenerator - Creates new heroes with procedural generation
- * 
- * Heroes are generated with:
- * - Random name
- * - Random icon from pool
- * - **Every Foundation skill (nine), at level 1. Nothing else.**
+ * HeroGenerator - creates new heroes.
  *
- * ## Every hero starts as a Recruit
- * A hero no longer holds every skill in the world — they hold the Foundation
- * skills, which are the complete skill vocabulary of the opening game. The rest
- * are work this person **cannot do**, and the only way to gain one is a
- * promotion.
+ * Every hero starts as a Recruit: the Foundation skills at level 1 and nothing
+ * else, so an unpromoted hero holds no combat skill and cannot fight. The way to
+ * gain one is promotion.
  *
- * ⚠️ **A Recruit therefore holds no combat skill**, which is the intended end
- * state: an unpromoted hero cannot fight. Until the job tree and promotion land
- * (Phases 4–5) there is no in-game way to grant one, so the QA dashboard has a
- * temporary **"Grant combat skill"** action to keep combat exercisable. That
- * button is scaffolding and goes when promotion arrives.
- *
- * ## Classes and traits are retired (owner decision 2026-08-18)
- * Both registries are deleted. Heroes are no longer rolled a class or a trait —
- * their job is their identity. `classId` and `traitId` are still written, as
- * `null`, purely to keep the saved hero shape unchanged; nothing reads them.
- * Villagers have set them to `null` this way all along.
+ * `classId` and `traitId` are still written as `null` only to keep the saved
+ * hero shape unchanged.
  */
 
-// Pool of hero portrait emojis (fallback source)
 export const HERO_ICONS = [
     '🧑', '👨', '👩', '🧔', '🧔‍♂️', '🧔‍♀️',
     '🧓', '🧓‍♂️', '🧓‍♀️', '👦', '👧', '👴', '👵',
@@ -51,7 +29,6 @@ export const HERO_ICONS = [
     '🦐', '🐕'
 ];
 
-// Pool of hero portrait sprites (future implementation)
 export const HERO_SPRITES = [
     'hero_adventure',
     'hero_knight',
@@ -69,9 +46,8 @@ export const HERO_SPRITES = [
 export function generateHero(options = {}) {
     const name = options.name || getRandomName();
 
-    // A new hero is a Recruit, and **the job tree decides what that means** —
-    // this reads the job's sheet rather than the Foundation list directly, so
-    // changing what a Recruit holds is a `jobRegistry.js` edit and nothing else.
+    // The job's sheet decides what a Recruit holds, so changing that is a
+    // `jobRegistry.js` edit and nothing else.
     const jobId = options.jobId || STARTING_JOB_ID;
     const skills = {};
     for (const skillId of getJobSheet(jobId)) {
@@ -81,17 +57,15 @@ export function generateHero(options = {}) {
         };
     }
 
-    // Default icon and sprite for new recruits
     const icon = options.icon || 'icon_recruit_0';
     const spriteId = options.spriteId || 'hero_recruit_0';
 
-    // Max HP derives from combat skills: 30·G(CL) + 20·G(Defense) — 50 at level 1
+    // Max HP derives from the combat skill, floored at level 1 for a Recruit.
     const maxHp = heroMaxHpFromSkills(skills);
 
     const hero = {
         id: `hero_${nanoid(8)}`,
         name,
-        // **The hero's job — now the source of truth for what they can do.**
         jobId,
         // Retired concepts, kept as null so the saved hero shape is unchanged.
         classId: null,
@@ -99,60 +73,38 @@ export function generateHero(options = {}) {
         icon,
         spriteId, 
 
-        // NEW: Centralized modifier pool
-        aggregator: new ModifierAggregator(null), // ID will be set to hero.id in a moment
+        aggregator: new ModifierAggregator(null),
 
-        // Display info (REMOVED: Rehydrated from registry)
-
-        // Current stats
         hp: { current: maxHp, max: maxHp },
         energy: { current: 100, max: 100 },
-        status: 'idle',  // 'idle', 'working', 'combat', 'wounded'
+        status: 'idle',
         woundedUntil: null,
 
-        // Skills
         skills,
 
-        // Flag rules — per skill (and Fight): allowed, priority 1–5. Sparse; a
-        // missing entry is allowed at priority 3 (Free Playmat FPP-17).
+        // Per skill (and Fight): allowed, priority 1–5. Sparse; a missing entry
+        // is the default.
         flagRules: {},
 
-        // Active status effects (StatusEffectSystem) — persisted with the save
         statuses: [],
 
-        // Perks (choices made at milestones)
         perks: {},
 
-        // ⚠️ Corrected 2026-08-24 (CR2-081). This used to read "Six equipment
-        // slots: hand1, hand2, hat, chest, trinket1, trinket2". There are
-        // **nine generic numbered slots**, not six named ones:
-        // `createEmptyEquipment` returns an array of `GRID_SLOT_COUNT` (9)
-        // nulls, indexed 0..8, and a slot has no type of its own.
         equipment: createEmptyEquipment(),
 
-        // Assignment
         assignedCardId: null,
 
-        // Timestamps
         createdAt: Date.now()
     };
 
-    // Set aggregator ID. A fresh hero carries no modifiers at all.
     hero.aggregator.id = hero.id;
 
     return hero;
 }
 
 /**
- * Generate a complete Villager object
- *
- * A villager holds **two Foundation skills** and nothing else — they are a
- * narrower Recruit, never promoted and never gaining XP.
- *
- * *Changed this phase:* they used to be seeded with every non-combat skill at
- * level 0 plus two specialities. Level 0 no longer means "has it but is bad at
- * it" — an absent skill is now the way to say *cannot do this* — so seeding
- * eleven zeroes would have handed every villager the whole production world.
+ * Generate a complete Villager object: two Foundation skills and nothing else.
+ * Not called outside tests.
  *
  * @returns {Object} Complete villager object
  */
@@ -165,7 +117,6 @@ export function generateVillager() {
 
     const pool = [...FOUNDATION_SKILL_IDS];
 
-    // Two Foundation skills, at level 1–3. Nothing else is held at all.
     const skills = {};
     const skill1 = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
     const skill2 = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
@@ -185,7 +136,6 @@ export function generateVillager() {
         icon,
         sprite,
 
-        // NEW: Centralized modifier pool
         aggregator: new ModifierAggregator(null),
 
         className: 'Villager',
@@ -209,21 +159,9 @@ export function generateVillager() {
 }
 
 /**
- * Generate hero candidates for recruitment.
- *
- * ⚠️ **The class/trait reveal is gone**, and so now are classes and traits
- * themselves. It used to show one rolled attribute per candidate and hide the
- * other, which made hiring a small gamble. There is nothing left to gamble on:
- * every recruit is a Recruit, holding the same Foundation skills at level 1.
- *
- * **Candidates are therefore interchangeable, and that is the design** (D-73):
- * every difference between two heroes is *earned*, never rolled. Recruitment is
- * a question of **how many**, never **which** — what a hero becomes is entirely
- * the player's doing, through promotion.
- *
- * The choice-of-three is kept because the flow and its cost machinery are built
- * around it, but it is now a formality. If that reads as a pointless click, the
- * honest fix is to hire directly rather than to re-roll differences back in.
+ * Generate hero candidates for recruitment. Every candidate is an interchangeable
+ * Recruit: differences between heroes are earned through promotion, never rolled.
+ * Not called outside tests.
  *
  * @param {number} count - Number of candidates to generate
  * @returns {Array} Array of partial hero info for display
@@ -247,9 +185,9 @@ export function generateCandidates(count = 3) {
 }
 
 /**
- * Finalize a candidate into a full hero
- * Called when player selects a candidate from Recruit card
- * @param {Object} candidate - Candidate from generateCandidates
+ * Unwrap a candidate from generateCandidates into its full hero.
+ * Not called outside tests.
+ * @param {Object} candidate
  * @returns {Object} Full hero object
  */
 export function finalizeCandidate(candidate) {
@@ -257,22 +195,12 @@ export function finalizeCandidate(candidate) {
 }
 
 /**
- * **Hero Level = the average of the skills the hero actually holds.**
+ * Hero Level: the average of the skills the hero actually holds. A summary for
+ * sorting and comparing the roster; there is no hero XP independent of skill XP.
  *
- * A summary for sorting and comparing the roster, not a separate grind — there
- * is no hero XP independent of skill XP.
- *
- * *Changed this phase.* It used to average the four combat skills, including
- * `defense`. Both halves of that broke at once: `defense` no longer exists, and
- * a Recruit holds **no** combat skill, so the old formula returned 0 for every
- * new hero. Averaging held skills also makes the number mean something for a
- * production hero — a master smith now reads as a high-level hero, which the
- * combat-only version could never say.
- *
- * ⚠️ **This is NOT the combat number.** The engine reads the hero's single
- * combat skill for HP, block and hit rolls; if it read this, a hero would gain
- * max HP by mining. Repointing those reads is Phase 2 — until it lands they
- * still look for `defense` and fall back to 1.
+ * ⚠️ This is NOT the combat number. The engine reads the hero's single combat
+ * skill for HP, block and hit rolls; reading this would let a hero gain max HP
+ * by mining.
  */
 export function calculateHeroLevel(skills) {
     if (!skills) return 0;

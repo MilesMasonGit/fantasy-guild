@@ -1,5 +1,3 @@
-// Fantasy Guild — Consumption Engine (Area Deck Rework, C-8)
-
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -12,32 +10,12 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 /**
  * ConsumptionSystem — heroes feed themselves from their own loadout grid.
  *
- * Three item classes, three different rhythms (D-56):
+ * Food fires whenever HP drops below the threshold, in or out of combat
+ * (`tryEat`). `tryDrink` and `consumeLoopConsumables` are dormant: nothing
+ * outside tests calls them.
  *
- *   **Drink** — fires at the DRAW. Energy is what pays to draw the next Task
- *   card, so a hero below the threshold drinks *first*, then draws (D-27).
- *   It slots into the gap between cards where energy is actually spent.
- *
- *   **Food** — fires whenever HP drops below the threshold, anywhere (D-27).
- *   A hero on a fight-free gathering loop is never stranded by hazard chip
- *   damage. What changes in combat is the *price*: eating pauses the attack
- *   cycle while the fight continues, so the enemy gets a free swing.
- *
- *   **Consumable** — potions, scrolls, runes. Not need-driven at all: one of
- *   each equipped Consumable is spent at the head of every loop (D-20), which
- *   the Prep Phase renders (C-6).
- *
- * ## Supply chain, not timing
- * Nothing here is scheduled or micro-managed. A slot in the grid names an item;
- * consuming draws one unit from the Guild Bank. Keep the bank stocked and a
- * hero runs unattended indefinitely; let it run dry and they visibly falter.
- * That is deliberately a *supply* problem rather than a *timing* one.
- *
- * ## Eating is uncapped (D-31)
- * No cooldown, no per-fight limit. A hero who cannot out-heal the damage is
- * supposed to lose. The known cost is that the failure mode looks like a
- * spiral — eat, get hit, eat — which is watch item W-2; a meal cooldown is the
- * fix if it reads badly rather than reading as losing.
+ * Consuming draws one unit from the Guild Bank; an equipped item with no stock
+ * is skipped and the hero goes without. Eating has no cooldown or per-fight limit.
  */
 
 /** Fraction of max HP/Energy below which a hero reaches for supplies. */
@@ -93,19 +71,14 @@ export function needsDrink(heroId) {
 }
 
 /**
- * Drink if energy is low. Called before energy is charged (D-27).
+ * Drink if energy is low. Called before energy is charged.
  *
- * Two rules, deliberately both here rather than in the callers:
- *
- *   **Ambient** — below `CONSUME_THRESHOLD` of max, top up. This is the idle
- *   rhythm: keep the bank stocked and the hero never runs dry.
- *
- *   **On demand** (`need`) — the caller is about to charge exactly this much
- *   and the hero cannot pay. Threshold is irrelevant here: a craft costing more
- *   than a quarter of max energy would otherwise stall *forever* with a full
- *   waterskin in the grid, because the hero never gets "low" enough to drink.
- *   Nothing authored today costs that much, so this is a trap being closed
- *   before content walks into it, not a live bug.
+ * Two rules:
+ *   **Ambient**: below `CONSUME_THRESHOLD` of max, top up.
+ *   **On demand** (`need`): the caller is about to charge exactly this much
+ *   and the hero cannot pay. Threshold is irrelevant here, or a craft costing
+ *   more than a quarter of max energy would stall forever with a full
+ *   waterskin in the grid.
  *
  * One drink may not cover a large `need`; callers tick again and this converges.
  *
@@ -124,8 +97,7 @@ export function tryDrink(heroId, { need = null } = {}) {
 }
 
 /**
- * Eat if HP is low. Works anywhere — the combat *price* is charged by the
- * caller, not here, so this stays a single rule (D-27).
+ * Eat if HP is low. Works anywhere; the combat cost is charged by the caller.
  * @returns {{itemId: string, amount: number}|null} what was eaten, if anything.
  */
 export function tryEat(heroId) {
@@ -135,19 +107,12 @@ export function tryEat(heroId) {
 }
 
 /**
- * Spend one of EACH equipped Consumable — the Prep Phase firing (D-20).
+ * Spend one of EACH equipped Consumable, uncapped. Returns every item spent in grid order.
  *
- * Uncapped by design (D-56): a hero may carry six scrolls and fire all six.
- * The only brake is the time each costs at the head of the loop, which is why
- * this returns every item spent — the Prep Phase renders one card per entry.
- *
- * ⚠️ **DORMANT ON PURPOSE — owner decision 2026-08-25 (CR2-079).** This has no
- * callers, and it is not meant to have any yet: nothing anywhere reads an
- * item's `loopEffect`, and no authored item declares one, so firing this today
- * would destroy a potion per work cycle for zero benefit. It stays in place,
- * unwired, until the Prep Phase is designed for the board. Because of that,
- * `DefeatPenalties` also exempts the Consumable class from defeat loss — see
- * the note there. **This is a recorded decision, not an oversight to "fix".**
+ * ⚠️ DORMANT ON PURPOSE: no caller, because nothing reads an item's `loopEffect`
+ * and no authored item declares one, so firing this would destroy a potion per
+ * cycle for no benefit. `DefeatPenalties` exempts the Consumable class from
+ * defeat loss for the same reason. Not an oversight to "fix".
  *
  * @returns {Array<{itemId: string, item: object}>} in grid order.
  */
@@ -160,7 +125,7 @@ export function consumeLoopConsumables(heroId) {
 
     for (const entry of getEquippedEntries(hero)) {
         if (!consumableCategories.has(entry.category)) continue;
-        if (!InventoryManager.hasItem(entry.itemId, 1)) continue;   // out of stock, run unbuffed
+        if (!InventoryManager.hasItem(entry.itemId, 1)) continue;
 
         InventoryManager.removeItem(entry.itemId, 1);
         const item = getItem(entry.itemId);

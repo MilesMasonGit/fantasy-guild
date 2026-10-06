@@ -1,6 +1,3 @@
-// Fantasy Guild - Promotion System
-// Skill & Class rework, Phase 5 (skill_class_rework_roadmap_v1.md).
-
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
@@ -12,47 +9,30 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * PromotionSystem — **the only way a hero's skills ever change shape.**
+ * PromotionSystem — the only way a hero's skills ever change shape.
  *
  * A hero holds every foundation skill plus their job's own non-foundation
- * skills (`getJobSheet`), and their job decides the latter. There is no free
- * re-slotting and no partial respec (D-248): changing what a hero can do means
- * moving them to a different job.
+ * skills (`getJobSheet`). Changing what a hero can do means moving them to a
+ * different job; there is no free re-slotting or partial respec.
  *
- * ## ⭐ Foundation skills are never banked (TL-7, owner 2026-09-25)
- * Every job's sheet contains all nine foundation skills, so the bank step below
- * can only ever take combat, shared or signature skills — and only when
- * re-training across branches, since every job down the tree keeps its
- * parent's. A hero who banked foundation skills under the old rule gets them
- * back from the bank on their next promotion (the fill step restores anything
- * the target sheet wants), and on load (`HeroRehydration.restoreBankedFoundation`).
+ * Foundation skills are never banked: every job's sheet contains all nine, so
+ * the bank step can only take combat, shared or signature skills, and only when
+ * re-training across branches. A hero who banked foundation skills under an
+ * older rule gets them back on their next promotion (the fill step restores
+ * anything the target sheet wants) and on load
+ * (`HeroRehydration.restoreBankedFoundation`).
  *
- * ## ⚠️ This module charges nothing (Promotes rule P3, PR-6)
- * Promotion used to take gold and materials. It is paid for now with a charge
- * of the Token whose **Promotes rule** names the job, spent by
- * `BoardPromotion.accept` — which is the only thing in a position to know which
- * Token the hero is standing on. What survives here is the *qualification*:
- * the skill gate of D-262. The owner decided this on 2026-09-06 with the
- * unmerged `promotion-tokens` branch; P3 is where it reached `main`.
+ * ⚠️ This module charges nothing. Promotion is paid for by a charge of the
+ * Token whose Promotes rule names the job, spent by `BoardPromotion.accept`,
+ * which is the only thing that knows which Token the hero is standing on. What
+ * lives here is the skill gate.
  *
- * ## Promotion and re-training are the same act
- * Deliberately. **Re-training is not an undo** — it is entering a job, priced
- * exactly like entering it the first time. Treating it as a special reversal
- * would have made "go forward" and "go back" two systems with two sets of
- * rules; this way there is one, and a Knight becoming a Warlord is the same
- * operation as a Recruit becoming a Fighter.
+ * Promotion and re-training are the same act: re-training is entering a job,
+ * priced exactly like the first time, not an undo.
  *
- * ⚠️ D-248 called the re-training price the single most important balance
- * number in the rework — the line between "meaningfully specialised" and
- * "punished for experimenting". That dial still exists; it moved. It is now how
- * often a job's Promotes Token drops and what its rule charges, tunable per Map
- * pool rather than one global number.
- *
- * ## Nothing is ever lost, only banked (D-71)
- * A skill a promotion removes goes **dormant at its level**, not to zero. Come
- * back to a job that uses it and it returns exactly as it was. That is what
- * makes promotion a reconfiguration rather than a gamble — and it is why the
- * gate below counts banked skills as known.
+ * Nothing is ever lost, only banked: a skill a promotion removes goes dormant
+ * at its level and returns exactly as it was if the hero comes back to a job
+ * that uses it. The gate therefore counts banked skills as known.
  */
 
 /** Why a promotion cannot happen. */
@@ -62,9 +42,7 @@ export const REFUSAL = {
     SAME_JOB: 'SAME_JOB',
     VILLAGER: 'VILLAGER',
     SKILL_TOO_LOW: 'SKILL_TOO_LOW'
-    // ⚠️ `NOT_ENOUGH_GOLD` and `SHORT_ON_MATERIALS` are gone (P3). Whether the
-    // Token can pay is `BoardPromotion`'s question, not this module's; keeping
-    // dead refusals here would imply a price this system still charges.
+    // Whether the Token can pay is `BoardPromotion`'s question, not this module's.
 };
 
 /** A hero's banked skills, created lazily. */
@@ -74,13 +52,9 @@ function bankOf(hero) {
 }
 
 /**
- * What a hero knows about a skill, held **or banked**.
- *
- * Banked skills count. A hero who reached Cooking 30 and gave it up at a
- * promotion has not forgotten how to cook — so re-training into a job that
- * wants Cooking should not demand they earn it twice. Without this, D-71's
- * "banked, not lost" would be true of the number and false of everything that
- * matters.
+ * What a hero knows about a skill, held **or banked**. Banked skills count: a
+ * hero who gave up Cooking 30 at a promotion should not have to earn it twice
+ * when re-training into a job that wants it.
  *
  * @returns {number|null} the level, or null if never learned
  */
@@ -112,12 +86,10 @@ export function getSkillSheet(heroId) {
 /**
  * Whether a hero may take a job, and why not.
  *
- * One gate, from D-262: the skills the job **carries forward** must each reach
- * its tier threshold. Gating on the carried skills is what makes promotion the
- * payoff for work already done — the hero you trained toward a job is the one
- * who can take it.
+ * One gate: the skills the job carries forward must each reach its tier
+ * threshold, so promotion pays off work already done.
  *
- * ⚠️ This answers "is this hero QUALIFIED", and nothing more. Whether the Token
+ * ⚠️ This answers "is this hero QUALIFIED" and nothing more. Whether the Token
  * the hero stands on can pay is `BoardPromotion`'s half.
  *
  * @returns {{ ok: boolean, reason?: string, detail?: string, missing?: Array }}
@@ -165,10 +137,9 @@ export function getAvailablePromotions(heroId) {
 /**
  * Move a hero to a job — promotion and re-training alike.
  *
- * ⚠️ **This does not check for a Token, and callers must.** It is the raw
- * skill-sheet swap; `BoardPromotion.accept` is what makes it cost something.
- * Call this directly and you have granted a free promotion — which is why the
- * Change Job screen no longer calls it (PR-9).
+ * ⚠️ This does not check for a Token, and callers must. It is the raw
+ * skill-sheet swap; `BoardPromotion.accept` is what makes it cost something, so
+ * calling it directly grants a free promotion.
  *
  * @returns {{ success: boolean, reason?: string, detail?: string,
  *             gained?: string[], banked?: string[], restored?: string[] }}
@@ -187,7 +158,7 @@ export function promote(heroId, jobId) {
     const restored = [];
     const gained = [];
 
-    // 1. Bank everything the new sheet does not want, AT ITS LEVEL (D-71).
+    // 1. Bank everything the new sheet does not want, at its level.
     for (const skillId of Object.keys(hero.skills || {})) {
         if (target.has(skillId)) continue;
         bank[skillId] = { ...hero.skills[skillId] };
@@ -210,9 +181,7 @@ export function promote(heroId, jobId) {
 
     hero.jobId = jobId;
 
-    // Max HP and hero level both derive from skills, and both just changed —
-    // a promotion that grants a combat skill is the moment a Recruit stops
-    // being a non-combatant.
+    // Max HP and hero level both derive from skills.
     HeroManager.updateHeroSkillModifiers(hero);
 
     EventBus.publish(ENGINE_EVENTS.HERO_PROMOTED, {
@@ -227,11 +196,8 @@ export function promote(heroId, jobId) {
 }
 
 /**
- * What a promotion would do, without doing it.
- *
- * The UI needs this to show the trade before the player commits — "you will
- * lose Fishing 12 and Cooking 8" is the whole decision, and finding out
- * afterwards is not a decision at all.
+ * What a promotion would do, without doing it, so the UI can show the trade
+ * before the player commits.
  */
 export function previewPromotion(heroId, jobId) {
     const hero = HeroManager.getHero(heroId);

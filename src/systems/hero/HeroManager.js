@@ -1,6 +1,3 @@
-// Fantasy Guild - Hero Manager (Dispatcher)
-// Refactored to delegate logic to specialized processors in logic/
-
 import * as Lifecycle from './logic/HeroLifecycle.js';
 import * as Lookup from './logic/HeroLookup.js';
 import * as Roster from './logic/HeroRoster.js';

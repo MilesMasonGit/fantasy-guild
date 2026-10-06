@@ -1,6 +1,3 @@
-// Fantasy Guild - Skill System
-// Phase 8: Skill System + ModifierAggregator
-
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
@@ -11,30 +8,19 @@ import { XpRateTracker } from './XpRateTracker.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * SkillSystem - Manages skill XP, levels, and requirements
+ * SkillSystem - skill XP, levels and requirements.
  *
- * Responsibilities:
- * - Add XP to hero skills
- * - Calculate effective skill levels (with modifiers)
- * - Check **possession** and level requirements
- * - Handle level-up events
- *
- * ## Possession is now a real state
- * A hero holds 6 of the world's 27 skills. `hero.skills[id]` being **absent**
- * is no longer a bug or an edge case — it is the ordinary way of saying *this
- * hero cannot do that work, at any level*. Every read here distinguishes it
- * from "holds it, at level 0", and callers must too.
- *
- * There is no subskill layer (R-2): an id passed to any function here is a
- * skill id or it resolves to nothing.
+ * Possession is a real state: `hero.skills[id]` being absent means this hero
+ * cannot do that work at any level, which is different from "holds it at level
+ * 0". Every read here distinguishes them, and callers must too. An id that is
+ * not a skill id resolves to nothing.
  */
 
 /**
  * Whether a hero holds a skill at all — the possession half of the gate.
  *
- * This is deliberately separate from `getSkillLevel`: a level of `null` and a
- * level of 0 mean different things, and collapsing them is what produced the
- * `skillRequired: 0` hole the Phase 0 baseline pinned.
+ * Separate from `getSkillLevel` on purpose: a level of `null` and a level of 0
+ * mean different things, and collapsing them produced the `skillRequired: 0` hole.
  *
  * @param {string} heroId
  * @param {string} skillId
@@ -84,16 +70,8 @@ export function getSkillXp(heroId, skillId) {
 }
 
 /**
- * Get XP multiplier for a skill based on Unified Modifiers — the HERO's own
- * scope (gear, statuses, guild perks attached to the person).
- *
- * ⚠️ This read named `EFFECT_TYPES.XP_GAIN` until 2026-08-25. There is no such
- * constant; the axis is `XP_BONUS`. `undefined` matches no modifier, so this
- * returned exactly 1 forever, and it had no callers either (CR2-073). Both ends
- * are now connected: `addXP` below applies it.
- *
- * Not a double-count with `BoardRunner`'s `XP_BONUS` resolve — that one merges
- * the TILE and GUILD aggregators, which are different scopes from this one.
+ * Get XP multiplier for a skill from the HERO's own scope (gear, statuses and
+ * guild perks attached to the person). Applied in `addXP`.
  *
  * @param {string} heroId
  * @param {string} skillId
@@ -105,11 +83,8 @@ export function getXpMultiplier(heroId, skillId) {
 
     const targetSkillId = skillId;
 
-    // Use unified aggregator for all bonuses (Class, Trait, Equipment, etc.).
-    // Three-Bucket (§15.3): resolve the multiplier and percentage buckets in
-    // sequence. XP bonuses are authored as percentages (a class bonus of 0.10
-    // means +10%), so in practice the percentage bucket does the work here and
-    // several of them SUM — +10% and +10% give +20%, not ×1.21.
+    // XP bonuses are authored as percentages, which SUM (+10% and +10% give
+    // +20%, not ×1.21).
     return hero.aggregator.getMultiplierBucket(EFFECT_TYPES.XP_BONUS, targetSkillId)
          * hero.aggregator.getPercentageBucket(EFFECT_TYPES.XP_BONUS, targetSkillId);
 }
@@ -124,18 +99,15 @@ export function getEffectiveLevel(heroId, skillId) {
     const baseLevel = getSkillLevel(heroId, skillId);
     if (baseLevel === null) return null;
 
-    // For now, just return base level
-    // ModifierAggregator will add bonuses from equipment, perks, etc.
-    // TODO: Integrate with ModifierAggregator when those systems exist
+    // Effective level is currently just the base level; no modifiers are applied.
     return baseLevel;
 }
 
 /**
  * Add XP to a hero's skill.
  *
- * A hero only gains XP in a skill they **hold**. Awarding XP to a skill a hero
- * does not have is not an error to swallow silently — it means something tried
- * to make them do work they cannot do, and the caller should have checked.
+ * A hero only gains XP in a skill they **hold**; awarding XP for one they lack
+ * means the caller should have checked.
  *
  * @param {string} heroId
  * @param {string} skillId
@@ -156,35 +128,30 @@ export function addXP(heroId, skillId, amount) {
 
     const skill = hero.skills[targetSkillId];
     if (!skill) {
-        // The hero does not hold this skill (or the id does not exist).
         return { success: false, error: 'SKILL_NOT_HELD' };
     }
 
-    // The hero's own XP bonuses land here, and ONLY here — one place, so a
-    // "+10% Cooking XP" is worth the same however the XP was earned (a work
-    // cycle, a kill, a debug grant). Rounded, and never rounded away: a bonus
-    // must not be able to turn a 1 XP award into 0.
+    // The hero's own XP bonuses land here, and ONLY here, so +10% Cooking XP is
+    // worth the same however the XP was earned. Never rounded to 0: a bonus must
+    // not turn a 1 XP award into 0.
     const scaled = Math.round(amount * getXpMultiplier(heroId, targetSkillId));
     const granted = amount > 0 ? Math.max(1, scaled) : scaled;
 
     const oldLevel = skill.level;
     skill.xp += granted;
 
-    // Track rolling XP throughput — what the hero actually banked, not the
-    // pre-bonus figure, so the rate readout matches the bar it describes.
+    // Record what the hero actually banked, not the pre-bonus figure, so the
+    // rate readout matches the bar it describes.
     XpRateTracker.recordGain(heroId, targetSkillId, granted);
 
-    // Calculate new level from total XP
     const newLevel = levelFromXp(skill.xp);
     const levelsGained = newLevel - oldLevel;
 
     if (levelsGained > 0) {
         skill.level = newLevel;
 
-        // NEW: Update hero's aggregator with new skill modifiers
         HeroManager.updateHeroSkillModifiers(hero);
 
-        // Publish level-up event for each level gained
         for (let i = oldLevel + 1; i <= newLevel; i++) {
             EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, {
                 heroId,
@@ -199,12 +166,10 @@ export function addXP(heroId, skillId, amount) {
         }
     }
 
-    // Fires on EVERY XP grant, so every work cycle of every staffed tile. As a
-    // raw console.log this shipped to production and ran a template literal per
-    // grant; logger.debug no-ops when import.meta.env.DEV is false.
+    // ⚠️ Fires on every XP grant; logger.debug no-ops outside DEV, where a raw
+    // console.log would run a template literal per grant in production.
     logger.debug('SkillSystem', `Hero ${hero.name} gained ${granted} XP in ${targetSkillId} (base ${amount}). New XP: ${skill.xp}`);
 
-    // Always publish heroes_updated so UI refreshes with new XP
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'addXP', heroId, skillId: targetSkillId });
 
     return {
@@ -212,20 +177,17 @@ export function addXP(heroId, skillId, amount) {
         levelsGained,
         newLevel: skill.level,
         totalXp: skill.xp,
-        granted,          // what was actually banked, after the hero's XP bonuses
+        granted,
         targetSkillId
     };
 }
 
 /**
- * Why a hero cannot satisfy a skill requirement — or `null` if they can.
+ * Why a hero cannot satisfy a skill requirement, or `null` if they can.
  *
- * Two failures, deliberately distinguished. They are different problems and
- * the player fixes them in completely different ways:
- *
- * * `POSSESSION` — *this hero can never do this work.* The fix is a different
- *   hero, or promoting this one into a job that grants the skill.
- * * `LEVEL` — *this hero isn't good enough yet.* The fix is time.
+ * `POSSESSION`: this hero can never do this work (fix: a different hero, or a
+ * promotion into a job that grants the skill).
+ * `LEVEL`: not good enough yet (fix: time).
  *
  * @param {string} heroId
  * @param {{ skill: string, level: number }} requirement

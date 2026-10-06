@@ -3,10 +3,6 @@ import { rehydrateHero } from './HeroRehydration.js';
 import { calculateHeroLevel } from '../HeroGenerator.js';
 
 /**
- * Hero Lookup: High-performance finding and filtering of heroes.
- */
-
-/**
  * Get a hero by ID (O(N) across the roster)
  * @param {string} heroId
  * @returns {Object|null}
@@ -50,7 +46,3 @@ export function getHeroLevel(heroId) {
     if (!hero) return null;
     return calculateHeroLevel(hero.skills);
 }
-
-// `getHeroClass` is retired with the class registry (owner decision
-// 2026-08-18). Nothing called it; a hero's identity is their job, and
-// `getJob(hero.jobId)` is the lookup that replaces it.

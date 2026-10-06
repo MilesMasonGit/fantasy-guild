@@ -69,7 +69,7 @@ export const XpRateTracker = {
 
     /**
      * Estimated time in seconds to gain `xpRemaining` at current XP/hr rate.
-     * Returns null if rate is 0 or xpRemaining <= 0.
+     * Returns 0 if xpRemaining <= 0, and null if the rate is 0.
      * @param {string} heroId
      * @param {string} skillId
      * @param {number} xpRemaining
