@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -11,6 +11,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { announce } from './dropOnMat.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * ⭐ **The discard bin** (B3.2: FB-34, FB-35, TL-13) — the bin's UI, at the
@@ -38,7 +39,7 @@ export const BIN_DROP_ID = 'discard-bin';
 const SLOT_ART_PX = tokenSizeFor(TOKEN_SURFACE.TRAY, 1) / 2;
 
 /** What re-reads the bin. */
-const BIN_EVENTS = Object.freeze([BOARD_EVENTS.BIN_CHANGED, 'state_changed', 'game_loaded']);
+const BIN_EVENTS = Object.freeze([BOARD_EVENTS.BIN_CHANGED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.GAME_LOADED]);
 
 /** What the bin takes: a Token carried off the mat (not one already in the bin). */
 export function binAccepts(payload) {
@@ -72,11 +73,24 @@ export function refundText(lines) {
     return list.length ? list.map(l => `${l.quantity}× ${l.name}`).join(', ') : 'No refund';
 }
 
-/** Re-render on the bin's events. */
+/** What the panel draws: the binned Tokens, in order (CR3-309). */
+const binSignature = () => DiscardBin.binContents().map(t => t.id).join('|');
+
+/**
+ * Re-render on the bin's events — only when what is in the bin changed
+ * (CR3-309). A bare `state_changed` used to redraw the panel and its nine
+ * empty slots every time.
+ */
 function useBinRefresh() {
     const [, bump] = useState(0);
+    const sig = useRef(binSignature());
     useEffect(() => {
-        const refresh = () => bump(n => n + 1);
+        const refresh = () => {
+            const next = binSignature();
+            if (next === sig.current) return;
+            sig.current = next;
+            bump(n => n + 1);
+        };
         const unsubs = BIN_EVENTS.map(e => EventBus.subscribe(e, refresh));
         return () => unsubs.forEach(u => u?.());
     }, []);
@@ -136,7 +150,7 @@ export const DiscardBinPanel = ({ className }) => {
     const discardAll = () => {
         const res = DiscardBin.discardAll();
         if (!res?.discarded) return;
-        EventBus.publish('audio:play', { clip: 'button_click' });
+        EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
         NotificationSystem.info(`Discarded ${res.discarded} Token${res.discarded === 1 ? '' : 's'}`);
     };
 

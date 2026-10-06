@@ -2,6 +2,7 @@
 
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { ROLE, AMBIENT_ROLES } from './roleRegistry.js';
+import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * What a Triggered Token can react to, and how far it listens.
@@ -264,7 +265,7 @@ export const TRIGGER_EVENTS = [
          */
         id: 'EFFECT_TICK',
         roles: [ROLE.SELF],
-        event: 'effect_tick',
+        event: ORPHAN_EVENTS.EFFECT_TICK,
         /**
          * ⚠️ Phrased to follow the word **"When"**, because every moment's label
          * does. "Every few seconds, while carried" read as *"When every few
@@ -287,7 +288,7 @@ export const TRIGGER_EVENTS = [
          */
         id: 'ITEM_THRESHOLD',
         roles: [ROLE.SELF],
-        event: 'inventory_updated',
+        event: ENGINE_EVENTS.INVENTORY_UPDATED,
         label: 'On Bank Holds',
         scopes: [TRIGGER_SCOPES.GLOBAL],
         hint: 'Fires while the Bank holds at least the given quantity. Rate-limited by its cooldown.'

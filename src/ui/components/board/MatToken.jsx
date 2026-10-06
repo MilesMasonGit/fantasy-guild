@@ -4,7 +4,6 @@ import { artRadiusOf, isSmallToken } from '../../../config/matGeometry.js';
 import { ALERT_HINT } from './boardConstants.js';
 import { tokenSkipLines } from './flagText.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, boardScaleAt, tokenSizeFor } from '../base/TokenSprite.jsx';
@@ -15,11 +14,9 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
-import * as StationRecipe from '../../../systems/board/StationRecipe.js';
-import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
-import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { useTokenEvent } from './tokenEvents.js';
+import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBadgeRow } from './TokenBadgeRow.jsx';
 import { ringRowOffset, spawnerRing, questRing } from './ringRow.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
@@ -40,35 +37,33 @@ import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * A quest Token's quest as a flat projection for `detail` (B6.2): what the
- * ring, the glow and the tooltip draw. Rebuilt on every read, so the
- * projection's deep compare sees progress (CR-044). Null for any other Token.
+ * ⭐ **A walking enemy's boxes follow the engine without React** (CR3-008).
+ * While `on`, each `ENEMIES_WALKED` writes the Token's current point straight
+ * into both boxes' `transform` (the same `translate` the render would write;
+ * the one-tick linear glide is already on them). MatBoard re-renders only when
+ * the walker's place in the stack changes, and any render writes the same live
+ * point, so React and this never disagree.
  */
-function questProjection(instance) {
-    if (!QuestTokens.isQuestToken(instance)) return null;
-    const q = instance.quest;
-    return {
-        id: q.id,
-        title: q.title,
-        instruction: q.instruction || null,
-        type: q.type || null,
-        itemId: q.itemId || null,
-        enemyId: q.enemyId || null,
-        currentCount: q.currentCount || 0,
-        requiredCount: q.requiredCount || 1,
-        rewardItems: (q.rewardItems || []).map(r => ({ itemId: r.itemId, quantity: r.quantity })),
-        tutorial: !!q.tutorial,
-        done: !!q.done
-    };
-}
-
-/** The side the hero working `id` stands on (−1 / 1), or null. */
-function sideOfWorker(id) {
-    const heroId = BoardState.workerOf(id);
-    const side = heroId ? BoardState.heroBodyOf(heroId)?.side : null;
-    return side === -1 || side === 1 ? side : null;
+function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
+    const half = React.useRef(boxHalf);
+    half.current = boxHalf;
+    // A layout effect, so it listens from the commit on, and catches up at
+    // once on any step taken between the render and now.
+    React.useLayoutEffect(() => {
+        if (!on) return undefined;
+        const follow = () => {
+            const t = BoardState.getTokenById(id);
+            if (!t) return;
+            const transform = `translate(${t.x - half.current}px, ${t.y - half.current}px)`;
+            if (artRef.current) artRef.current.style.transform = transform;
+            if (overlayRef.current) overlayRef.current.style.transform = transform;
+        };
+        follow();
+        return EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, follow);
+    }, [on, id, artRef, overlayRef]);
 }
 
 /** How long the Hall brightens when collected loot lands on it (FB-16). */
@@ -161,55 +156,9 @@ export const MatToken = React.memo(function MatToken({
     // keeps the plain static sprite (EAP-4).
     const enemyAnimSrc = def?.enemy ? resolveEnemyAnimationPath(def.sprite) : null;
 
-    /**
-     * This Token's own details, read by id and refreshed only on the events that
-     * can change them. ⚠️ Never `board:progress`: that fires every tick for
-     * every working Token, and the bar below draws it imperatively instead.
-     */
-    const detail = useGameState(
-        () => {
-            const instance = BoardState.getTokenById(id);
-            if (!instance) return null;
-            // A Foundation picks its recipe like a station (Token Lifecycle 6.1).
-            const stationSkill = def ? (def.foundation?.skill || stationSkillOf(def)) : null;
-            const isSpawner = !instance.turnedFrom && SpawnerSystem.isSpawner(def);
-            return {
-                usesRemaining: instance.usesRemaining ?? null,
-                alert: instance.alert || null,
-                disallowed: Flags.isDisallowed(instance),
-                heroId: BoardState.workerOf(id),
-                // The side the working hero stands on (−1 left, 1 right), for
-                // the ring row (B1.2). `workerOf` is null until they arrive.
-                heroSide: sideOfWorker(id),
-                stationSkill,
-                recipe: stationSkill ? StationRecipe.selectedRecipe(instance, def) : null,
-                // Something to choose from: a station with an empty pool is not
-                // waiting on the player, so it gets no gear (FB-7).
-                hasPool: stationSkill ? StationRecipe.poolFor(def).length > 0 : false,
-                isFoundation: !!def?.foundation,
-                isSpawner,
-                // FB-5: the family's live count against its cap, `{ count, cap }`
-                // — the spawner ring (B1.3).
-                spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,
-                // FB-14: a Token that turns (or has turned) counts down to its next roll.
-                turns: !!TimedChanges.nextTurnRoll(instance),
-                // B6.2 (TL-18): a quest Token's quest — ring, glow, tooltip,
-                // click to claim. Progress publishes `state_changed`, so this
-                // needs no subscription of its own.
-                quest: questProjection(instance)
-            };
-        },
-        [
-            BOARD_EVENTS.TILE_CHANGED,
-            BOARD_EVENTS.ALERT_CHANGED,
-            BOARD_EVENTS.HERO_MOVED,
-            BOARD_EVENTS.TOKEN_CHARGES_CHANGED,
-            BOARD_EVENTS.TOKEN_PLACED,
-            'state_changed'
-        ],
-        null,
-        { deps: [id] }
-    );
+    // This Token's own details, by id, refreshed only on the events that
+    // can change them (CR3-304: routed to this Token alone).
+    const detail = useTokenDetail(id, def);
 
     // The turn ring polls this (B1.3); stable per Token so its timer is not
     // reset. `everyMs` is the roll cycle it empties over — on a turned Token
@@ -246,7 +195,8 @@ export const MatToken = React.memo(function MatToken({
             typeId,
             from: { instanceId: id },
             onMiss: isPermanent ? () => {
-                EventBus?.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                // A UI-only alert: TILE_EVENT_ALERT is the engine's (CR3-306).
+                EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
                     instanceId: id,
                     severity: 'disallow',
                     type: 'drop_rejected',
@@ -340,12 +290,18 @@ export const MatToken = React.memo(function MatToken({
     // ⭐ The Token stays exactly where it is (HM-2): its hero walks up and
     // stands beside it (`HeroMotion.standingSpot`). D-266's slide-apart went
     // with Hero Movement M1.
-    const left = x - boxHalf;
-    const top = y - boxHalf;
     // B7.1 (TL-16): an enemy walking by its spawner steps once a tick, so it
     // glides linearly over one tick, as a walking hero does (`MatHero`). The
     // art, the badges, the ring row and the alerts all ride in these boxes.
     const walking = walkFacing != null;
+    // ⭐ CR3-008: while it walks, MatBoard does not hand a walker its point
+    // (`x` is null, so its steps do not redraw the mat). It is read live here,
+    // and each step moves the boxes directly (`useWalkerFollow`, below).
+    const livePoint = walking && x == null ? BoardState.getTokenById(id) : null;
+    const px = livePoint ? livePoint.x : x;
+    const py = livePoint ? livePoint.y : y;
+    const left = px - boxHalf;
+    const top = py - boxHalf;
     // ⭐ CR3-007 (R6 rule 5): a Token that can walk — an enemy — is placed
     // and glides by `transform`; every other Token stays on left/top (a
     // transform on all 300 Tokens of a busy mat cost more in compositing than
@@ -377,14 +333,21 @@ export const MatToken = React.memo(function MatToken({
     };
     const hidden = drag.isDragging;
 
+    // The two boxes, for a walker's steps (CR3-008).
+    const artRef = React.useRef(null);
+    const overlayRef = React.useRef(null);
+    const setNodeRef = drag.setNodeRef;
+    const setArtRef = React.useCallback((el) => { artRef.current = el; setNodeRef(el); }, [setNodeRef]);
+    useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
+
     // B1.2 / TL-22: the ring row, centred under the pair once the hero has
     // arrived (`workerOf` answers only then, FP-26), at their STANDING spot —
     // not their walking position — so the row does not slide while they walk.
     const heroSide = detail?.heroSide ?? null;
     const heroX = heroId && heroSide != null
-        ? HeroMotion.standingSpot(typeId, { x, y }, heroSide).x
+        ? HeroMotion.standingSpot(typeId, { x: px, y: py }, heroSide).x
         : null;
-    const row = ringRowOffset({ x, half: boxHalf, heroX });
+    const row = ringRowOffset({ x: px, half: boxHalf, heroX });
 
     const token = React.useMemo(
         () => ({ typeId, instanceId: id, heroId, alert, usesRemaining }),
@@ -420,7 +383,7 @@ export const MatToken = React.memo(function MatToken({
     const isHall = isGuildHallToken || !!def?.isGuildHall;
     React.useEffect(() => {
         if (!isHall) return undefined;
-        const unsub = EventBus.subscribe('particle_landed', (p) => {
+        const unsub = EventBus.subscribe(UI_EVENTS.PARTICLE_LANDED, (p) => {
             if (p?.landsOn !== 'hall') return;
             setReceived(true);
             clearTimeout(receivedTimer.current);
@@ -440,7 +403,7 @@ export const MatToken = React.memo(function MatToken({
         <>
             {/* The art, and the only thing the pointer can grab. */}
             <div
-                ref={drag.setNodeRef}
+                ref={setArtRef}
                 {...drag.handleProps}
                 data-token-id={id}
                 data-token-art="true"
@@ -554,6 +517,7 @@ export const MatToken = React.memo(function MatToken({
 
             {/* Everything written on the Token, in front of any hero on it. */}
             <div
+                ref={overlayRef}
                 data-token-id={id}
                 data-token-overlay={id}
                 data-quest-token={quest ? id : undefined}

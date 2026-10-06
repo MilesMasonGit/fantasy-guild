@@ -25,6 +25,7 @@ import {
     sumStatusEffect,
 } from '../../config/registries/statusRegistry.js';
 import { EFFECT_TYPES } from './constants.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 let heroTickTimer = 0;
 
@@ -47,7 +48,7 @@ export function applyToHero(heroId, statusId, stacks = 1) {
     // and P7 closed for the combat axes, and the reason nothing could write it.
     const immunity = hero.aggregator?.query(EFFECT_TYPES.STATUS_IMMUNITY, statusId) || 0;
     if (immunity > 0) {
-        EventBus.publish('status_blocked', { targetId: heroId, statusId });
+        EventBus.publish(ENGINE_EVENTS.STATUS_BLOCKED, { targetId: heroId, statusId });
         return { success: true, blocked: true };
     }
 
@@ -55,8 +56,8 @@ export function applyToHero(heroId, statusId, stacks = 1) {
     _applyToList(hero.statuses, def, stacks);
 
     logger.debug('StatusEffect', `${hero.name} gains [${def.name}] x${stacks}`);
-    EventBus.publish('status_applied', { targetType: 'hero', targetId: heroId, statusId, stacks });
-    EventBus.publish('heroes_updated', { source: 'status_applied', heroId });
+    EventBus.publish(ENGINE_EVENTS.STATUS_APPLIED, { targetType: 'hero', targetId: heroId, statusId, stacks });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'status_applied', heroId });
     return { success: true };
 }
 
@@ -70,7 +71,7 @@ export function applyToEnemy(card, statusId, stacks = 1) {
     if (!card.combat.enemyStatuses) card.combat.enemyStatuses = [];
     _applyToList(card.combat.enemyStatuses, def, stacks);
 
-    EventBus.publish('status_applied', { targetType: 'enemy', targetId: card.id, statusId, stacks });
+    EventBus.publish(ENGINE_EVENTS.STATUS_APPLIED, { targetType: 'enemy', targetId: card.id, statusId, stacks });
     return { success: true };
 }
 
@@ -111,11 +112,11 @@ export function tick(delta) {
 
         const died = _fireStatusTick(hero.statuses, dmg => {
             HeroManager.modifyHeroHp(hero.id, -dmg);
-            EventBus.publish('status_dot_tick', { targetType: 'hero', targetId: hero.id, damage: dmg });
+            EventBus.publish(ENGINE_EVENTS.STATUS_DOT_TICK, { targetType: 'hero', targetId: hero.id, damage: dmg });
             return hero.hp.current <= 0;
         });
 
-        EventBus.publish('heroes_updated', { source: 'status_tick', heroId: hero.id });
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'status_tick', heroId: hero.id });
         if (died) {
             // Fixed 2026-08-25 (CR2-070). For months this branch was a log line
             // and nothing else, so a hero poisoned to 0 HP off an enemy tile
@@ -130,7 +131,7 @@ export function tick(delta) {
             // clock names the death and `BoardCombat.init` owns the response.
             // ⚠️ There must never be a second subscriber that also kills.
             logger.info('StatusEffect', `${hero.name} was downed by status damage`);
-            EventBus.publish('hero_downed', { heroId: hero.id, cause: 'status' });
+            EventBus.publish(ENGINE_EVENTS.HERO_DOWNED, { heroId: hero.id, cause: 'status' });
         }
     }
 }
@@ -150,7 +151,7 @@ export function tickEnemyStatuses(card, delta) {
 
     return _fireStatusTick(combat.enemyStatuses, dmg => {
         combat.enemyHp.current = Math.max(0, combat.enemyHp.current - dmg);
-        EventBus.publish('status_dot_tick', { targetType: 'enemy', targetId: card.id, damage: dmg });
+        EventBus.publish(ENGINE_EVENTS.STATUS_DOT_TICK, { targetType: 'enemy', targetId: card.id, damage: dmg });
         return combat.enemyHp.current <= 0;
     });
 }
@@ -207,7 +208,7 @@ export function notifyCombatResolved(heroId) {
     if (!hero?.statuses?.length) return;
     clearCombatOnly(hero);
     _decay(hero.statuses, 'combat_resolved');
-    EventBus.publish('heroes_updated', { source: 'status_combat_resolved', heroId });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'status_combat_resolved', heroId });
 }
 
 /**
@@ -263,7 +264,7 @@ export function clearAll(heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero?.statuses?.length) return;
     hero.statuses = [];
-    EventBus.publish('heroes_updated', { source: 'status_cleared', heroId });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'status_cleared', heroId });
 }
 
 /**
@@ -281,8 +282,8 @@ export function purge(heroId, statusId = null) {
     });
     const removed = before - hero.statuses.length;
     if (removed > 0) {
-        EventBus.publish('status_purged', { heroId, statusId, removed });
-        EventBus.publish('heroes_updated', { source: 'status_purged', heroId });
+        EventBus.publish(ENGINE_EVENTS.STATUS_PURGED, { heroId, statusId, removed });
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'status_purged', heroId });
     }
     return removed;
 }

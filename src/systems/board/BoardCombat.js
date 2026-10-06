@@ -20,6 +20,7 @@ import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Combat on the board — **a porting job, not a design-and-build job** (D-136).
@@ -595,7 +596,7 @@ function resolveDefeat(instance, heroId) {
             instanceId: instance.id, outcome: 'defeat', heroId: heroId || null, typeId: instance.typeId || null
         });
     }
-    EventBus.publish('heroes_updated', { source: 'board_combat_defeat' });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'board_combat_defeat' });
 
     // ⭐ **One notification for the whole defeat** (FP-42): who fell and what it
     // cost. The wound and each lost item used to announce themselves
@@ -637,13 +638,13 @@ export function init() {
     // calling `endFightOfHero` when a hero lets go — NOT by an event.
     // `HERO_MOVED` on a recall names where the hero WENT (the Dock), not the
     // Token they left.
-    EventBus.subscribe('game_loaded', () => clearAll());
+    EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => clearAll());
 
     // The status clock cannot call us directly — `StatusEffectSystem` is
     // imported by this file, so importing it back would be a static cycle. It
     // announces the death instead and this is the single subscriber that acts
     // on it (CR2-070).
-    EventBus.subscribe('hero_downed', ({ heroId }) => resolveStatusDefeat(heroId));
+    EventBus.subscribe(ENGINE_EVENTS.HERO_DOWNED, ({ heroId }) => resolveStatusDefeat(heroId));
 
     logger.info('BoardCombat', 'Board combat ready');
 }

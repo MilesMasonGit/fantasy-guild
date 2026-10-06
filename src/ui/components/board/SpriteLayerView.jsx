@@ -13,6 +13,7 @@ import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * SpriteLayerView — item loot floating **above** the mat (D-40).
@@ -41,7 +42,7 @@ export const SpriteLayerView = () => {
             fromX: s.fromX, fromY: s.fromY, bornAt: s.bornAt,
             targetStackId: s.targetStackId, absorbAt: s.absorbAt
         })),
-        [BOARD_EVENTS.SPRITES_CHANGED, 'state_changed'],
+        [BOARD_EVENTS.SPRITES_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null
     );
 

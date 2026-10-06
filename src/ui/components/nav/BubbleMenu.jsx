@@ -5,6 +5,7 @@ import {
     Settings
 } from 'lucide-react';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * BubbleMenu — UI Overhaul Phase 1 (ui_overhaul_spec.md §COL-01).
@@ -54,7 +55,7 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                 return; // Transparent corner outside the orb: ignore click
             }
         }
-        EventBus.publish('audio:play', { clip: 'button_click' });
+        EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
         onClick?.(e);
     };
 

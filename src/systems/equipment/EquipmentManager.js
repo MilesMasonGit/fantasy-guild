@@ -13,6 +13,7 @@ import {
 } from '../../config/registries/equipmentConstants.js';
 import * as EquipmentValidator from './EquipmentValidator.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * EquipmentManager - Hub for Hero equipment state and modifier syncing.
@@ -107,8 +108,8 @@ export function equipItem(heroId, itemId, preferredSlot = null) {
     hero.equipment[slot] = itemId;
     recalculateEquipmentModifiers(hero);
 
-    EventBus.publish('hero_equipment_changed', { heroId, slot, itemId, action: 'equip' });
-    EventBus.publish('heroes_updated', { source: 'equipItem', heroId });
+    EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { heroId, slot, itemId, action: 'equip' });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'equipItem', heroId });
     
     logger.info('EquipmentManager', `${hero.name} equipped ${template.name} to ${slot}`);
     return { success: true };
@@ -127,8 +128,8 @@ export function unequipItem(heroId, slot) {
     // Recalculate all equipment modifiers
     recalculateEquipmentModifiers(hero);
 
-    EventBus.publish('hero_equipment_changed', { heroId, slot, itemId: null, previousItemId: itemId, action: 'unequip' });
-    EventBus.publish('heroes_updated', { source: 'unequipItem', heroId });
+    EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { heroId, slot, itemId: null, previousItemId: itemId, action: 'unequip' });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'unequipItem', heroId });
     
     logger.info('EquipmentManager', `${hero.name} unequipped ${itemId} from ${slot}`);
     return { success: true };

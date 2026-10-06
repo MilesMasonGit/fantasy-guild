@@ -1,6 +1,7 @@
 import { EventBus } from '../../core/EventBus.js';
 import { getHero } from './HeroLookup.js';
 import { isFlagColour } from '../../board/FlagColours.js';
+import { ENGINE_EVENTS } from '../../core/engineEvents.js';
 
 /**
  * Hero State: Status and Resource (HP/Energy) mutations.
@@ -28,7 +29,7 @@ export function setAssignment(heroId, cardId) {
         hero.status = cardId ? 'working' : 'idle';
     }
 
-    EventBus.publish('heroes_updated', { heroId, source: 'setAssignment' });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { heroId, source: 'setAssignment' });
     return { success: true };
 }
 
@@ -55,7 +56,7 @@ export function updateHeroProfile(heroId, updates = {}) {
         hero.flagColour = updates.flagColour;
     }
 
-    EventBus.publish('heroes_updated', { source: 'updateHeroProfile', heroId });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'updateHeroProfile', heroId });
     return { success: true };
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as TokenNotices from '../../../systems/board/TokenNotices.js';
@@ -448,6 +449,8 @@ export const TokenCentreAlert = ({ instanceId, isSpawner = false, token = null, 
     }, [instanceId, show]);
 
     useTokenEvent(BOARD_EVENTS.TILE_EVENT_ALERT, instanceId, onEvent);
+    // The same, raised by the screen itself (the Guild Hall dragged off, CR3-306).
+    useTokenEvent(UI_EVENTS.UI_TOKEN_ALERT, instanceId, onEvent);
     useTokenEvent(BOARD_EVENTS.TILE_CHANGED, instanceId, dismiss);
 
     // Picked up: the news goes with the Token leaving the spot.

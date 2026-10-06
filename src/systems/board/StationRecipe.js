@@ -2,6 +2,8 @@
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
+import { EventBus } from '../core/EventBus.js';
+import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
  * Which recipe a station is set to — the one place `selectedRecipeId` is read
@@ -70,13 +72,21 @@ export function selectedRecipe(instance, def = null) {
  * that assigns `selectedRecipeId` by hand can set a station to a recipe it
  * cannot run, which the engine would then read as "no recipe" forever.
  *
+ * ⭐ **It announces its own change** (CR3-306): a new selection publishes
+ * `TILE_CHANGED { instanceId, typeId }`, which is what the Token's gear badge
+ * and its inspection panel re-read on. The screen used to announce it instead,
+ * with a `state_changed` of its own; the rule now is that an engine command
+ * says what it changed and the UI never publishes engine events.
+ *
  * @returns {boolean} whether the selection was accepted
  */
 export function setSelectedRecipe(instance, recipeId, def = null) {
     if (!instance) return false;
     const inPool = poolFor(defOf(instance, def)).some(r => r.id === recipeId);
     if (!inPool) return false;
+    if (instance.selectedRecipeId === recipeId) return true;
     instance.selectedRecipeId = recipeId;
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
     return true;
 }
 

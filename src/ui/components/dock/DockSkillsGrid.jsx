@@ -2,6 +2,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getSkill, isCombatSkill } from '../../../config/registries/skillRegistry.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * DockSkillsGrid — the pinned card's stats section: **the skills this hero
@@ -32,7 +33,7 @@ export const DockSkillsGrid = ({ heroId }) => {
                 .map(([id, s]) => `${id}:${s?.level ?? 1}`)
                 .join(',');
         },
-        ['heroes_updated'],
+        [ENGINE_EVENTS.HEROES_UPDATED],
         null,
         { deps: [heroId] }
     );

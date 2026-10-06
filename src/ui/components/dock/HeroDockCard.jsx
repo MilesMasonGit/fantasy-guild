@@ -120,6 +120,7 @@ export const HeroDockCard = ({
 };
 
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * DockBodyToggle — the card body's one control row: a two-segment Gear/Skills
@@ -147,7 +148,7 @@ const DockBodyToggle = ({ view, onToggle, onEdit }) => (
                     // never notices, and this keeps the switch a single piece
                     // of state rather than a setter with an invalid third value.
                     onClick={active ? undefined : (e) => {
-                        EventBus.publish('audio:play', { clip: 'button_click' });
+                        EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
                         onToggle?.(e);
                     }}
                     aria-pressed={active}
@@ -172,7 +173,7 @@ const DockBodyToggle = ({ view, onToggle, onEdit }) => (
         <button
             type="button"
             onClick={(e) => {
-                EventBus.publish('audio:play', { clip: 'button_click' });
+                EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
                 onEdit?.(e);
             }}
             title="Edit this hero — name, portrait, job"

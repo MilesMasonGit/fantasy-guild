@@ -13,6 +13,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { Pencil, X, ChevronUp, ChevronDown, Clock, TrendingUp } from 'lucide-react';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import { formatCompact } from '../../../utils/Formatters.js';
+import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * HeroInspectionSheet — full detailed hero inspection sheet that neatly covers the Token Tray.
@@ -35,7 +36,7 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
 
     const hero = useGameState(
         state => (state.heroes || []).find(h => h.id === heroId),
-        ['heroes_updated', 'hero_equipment_changed', 'hero:status_changed', 'hero_leveled', 'state_changed'],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.STATE_CHANGED],
         null,
         { deepClone: true, deps: [heroId] }
     );

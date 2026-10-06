@@ -10,6 +10,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
 import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 // ---------------------------------------------------------------------------
 // Give item
@@ -115,7 +116,8 @@ export function advanceTime(minutes, {
         steps++;
     }
 
-    EventBus.publish('state_changed');
+    EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_time_skip' });
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return { ok: true, advancedMs, steps, capped };
 }
 

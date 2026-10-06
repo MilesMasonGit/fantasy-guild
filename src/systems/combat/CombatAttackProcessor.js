@@ -6,6 +6,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getPrimaryWeapon } from '../../config/registries/equipmentConstants.js';
 import { handleHeroWounded } from './CombatResolutionProcessor.js';
 import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Roll `statusOnHit` entries (on enemies or weapons):
@@ -41,7 +42,7 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
     // can't out-heal the damage is meant to lose.
     const meal = ConsumptionSystem.tryEat(hero.id);
     if (meal) {
-        EventBus.publish('combat_hero_ate', {
+        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {
             cardId: fight.id, heroId: hero.id, itemId: meal.itemId, healed: meal.amount
         });
         fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
@@ -53,7 +54,7 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
 
     // Stun check: the attempt itself spends a stack, success or failure.
     if (StatusEffectSystem.rollAttackFailure(hero.statuses)) {
-        EventBus.publish('combat_hero_attack', { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, stunned: true, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, stunned: true, enemyHpRemaining: fight.combat.enemyHp.current });
         fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
         return;
     }
@@ -92,12 +93,12 @@ export function handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed) {
             if (thorns) {
                 const reflex = thorns.level || 1;
                 HeroManager.modifyHeroHp(hero.id, -reflex);
-                EventBus.publish('combat_enemy_trait_trigger', { cardId: fight.id, heroId: hero.id, traitId: 'thorns', damage: reflex });
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_TRAIT_TRIGGER, { cardId: fight.id, heroId: hero.id, traitId: 'thorns', damage: reflex });
             }
         }
-        EventBus.publish('combat_hero_attack', { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, enemyHpRemaining: fight.combat.enemyHp.current });
     } else {
-        EventBus.publish('combat_hero_attack', { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, enemyHpRemaining: fight.combat.enemyHp.current });
+        EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, enemyHpRemaining: fight.combat.enemyHp.current });
     }
 
     // Carry the overshoot instead of resetting (CR-002): at 10x time-scale a
@@ -118,7 +119,7 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
         if (targetHero && targetHero.status !== 'wounded') {
             // Stun check for the enemy: the attempt spends a stack either way.
             if (StatusEffectSystem.rollAttackFailure(fight.combat.enemyStatuses)) {
-                EventBus.publish('combat_enemy_attack', { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, stunned: true, heroHpRemaining: targetHero.hp.current });
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, stunned: true, heroHpRemaining: targetHero.hp.current });
                 fight.combat.enemyTickProgress -= enemyAttackSpeed;
                 return;
             }
@@ -144,13 +145,13 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
                 rollStatusOnHit(enemy, (statusId, stacks) => StatusEffectSystem.applyToHero(targetHeroId, statusId, stacks));
                 StatusEffectSystem.notifyHitTaken(targetHero.statuses);
 
-                EventBus.publish('combat_enemy_attack', { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: dmg, hit: true, heroHpRemaining: targetHero.hp.current });
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: dmg, hit: true, heroHpRemaining: targetHero.hp.current });
 
                 if (targetHero.hp.current <= 0) {
                     handleHeroWounded(fight, targetHeroId);
                 }
             } else {
-                EventBus.publish('combat_enemy_attack', { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, heroHpRemaining: targetHero.hp.current });
+                EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, heroHpRemaining: targetHero.hp.current });
             }
 
         }

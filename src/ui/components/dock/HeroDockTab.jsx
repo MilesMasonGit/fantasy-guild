@@ -15,6 +15,7 @@ import { Pencil, Backpack, Heart } from 'lucide-react';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { dockStatusLine } from '../board/flagText.js';
+import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** The status line's colour: working green, idle at a flag stone, in the Guild blue. */
 const STATUS_TONE = {
@@ -92,7 +93,7 @@ export const HeroDockTab = ({
                 hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
             };
         },
-        ['heroes_updated', 'hero_equipment_changed', 'hero:status_changed', 'state_changed'],
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null,
         { deps: [heroId] }
     );
@@ -108,7 +109,7 @@ export const HeroDockTab = ({
             return { state: s.state, instanceId: s.instanceId, typeId: s.typeId, limping: !!s.limping };
         },
         // HEROES_WALKED: a hero walking home arrives without any other event.
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, 'state_changed'],
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
         null,
         { deps: [heroId] }
     );
@@ -117,7 +118,7 @@ export const HeroDockTab = ({
     const token = useGameState(
         // The Token they work, by instance id (Free Playmat slice 1.6b).
         () => workId == null ? null : BoardState.getTokenById(workId),
-        [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
+        [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null,
         { deps: [workId] }
     );
@@ -156,7 +157,7 @@ export const HeroDockTab = ({
                 if (!equipOrAnnounce(engine, heroId, p.itemId)) return false;
                 justDroppedRef.current = true;
                 setTimeout(() => { justDroppedRef.current = false; }, 250);
-                EventBus.publish('inspect_hero', { heroId });
+                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
             } else if (p.kind === DRAG_KIND.HERO && p.heroId && p.heroId !== heroId) {
                 onReorder?.(p.heroId, heroId);
             }

@@ -6,6 +6,7 @@ import {
 } from '../../../config/guildUpgrades.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * The web's natural drawing space, in pixels, before it is scaled to fit the
@@ -63,13 +64,13 @@ export const GuildHallBoard = ({
     const [hovered, setHovered] = useState(null);
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
-        ['guild_upgrades_updated', 'state_changed']
+        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     );
     // Which upgrades the Bank can pay for right now (Hall upgrades cost items,
     // SP-65). A flat id list as a string, per the useGameState selector contract.
     const affordableSignature = useGameState(
         () => GUILD_UPGRADES.filter(u => GuildUpgradeManager.canAfford(u.id)).map(u => u.id).join(','),
-        ['inventory_updated', 'guild_upgrades_updated', 'state_changed']
+        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     );
     const affordable = new Set((affordableSignature || '').split(',').filter(Boolean));
 

@@ -6,6 +6,7 @@ import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 /**
  * DiscoveryManager - Centralized discovery tracking for the Codex
@@ -33,13 +34,13 @@ export const DiscoveryManager = {
         // was unreachable. The Bestiary works from the two combat events below.
 
         // Discover enemies when active combat starts/ticks
-        EventBus.subscribe('combat_hero_attack', (data) => {
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, (data) => {
             if (data.enemyId) {
                 this.discoverEnemy(data.enemyId);
             }
         });
 
-        EventBus.subscribe('combat_enemy_attack', (data) => {
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, (data) => {
             if (data.enemyId) {
                 this.discoverEnemy(data.enemyId);
             }
@@ -71,8 +72,8 @@ export const DiscoveryManager = {
             const enemyName = template?.name || enemyId;
 
             NotificationSystem.notify(`Unlock: ${enemyName}`, 'info', { category: 'discovery' });
-            EventBus.publish('enemy_discovered', { enemyId, enemyName });
-            EventBus.publish('state_changed', { source: 'enemy_discovery' });
+            EventBus.publish(ENGINE_EVENTS.ENEMY_DISCOVERED, { enemyId, enemyName });
+            EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, { source: 'enemy_discovery' });
             logger.info('DiscoveryManager', `Encountered new enemy: ${enemyId}`);
         }
     },

@@ -3,9 +3,10 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { computeUpkeepSummary, formatRate, formatRunsOut } from '../../../systems/board/UpkeepSummary.js';
 import { cn } from '../../utils/cn.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** Events after which the summary is worked out again (the top bar's Upkeep badge hears these too, B2.2). */
-export const REFRESH_EVENTS = ['inventory_updated', BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED];
+export const REFRESH_EVENTS = [ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED];
 /** Spawner clocks and statement lapses move without an event; a slow poll catches them. */
 export const POLL_MS = 2000;
 

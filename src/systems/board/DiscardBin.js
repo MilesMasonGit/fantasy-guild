@@ -10,6 +10,7 @@ import * as Placement from './Placement.js';
 import * as Shop from './Shop.js';
 import * as Foundations from './Foundations.js';
 import * as TimedChanges from './TimedChanges.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * ⭐ **The discard bin** — how Tokens leave the mat for good (FB-34, TL-13,
@@ -225,7 +226,7 @@ export function binToken(instanceId, options = {}) {
     if (heroId && at) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
     if (at) EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [at] });
     binChanged({ action: 'binned', instanceId, typeId: instance.typeId });
-    EventBus.publish('state_changed');
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
     return { success: true, idledHeroId: heroId };
 }
@@ -254,7 +255,7 @@ export function unbinToken(instanceId, point) {
     if (at >= 0) now.splice(at, 1);
 
     binChanged({ action: 'unbinned', instanceId, typeId: instance.typeId });
-    EventBus.publish('state_changed');
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return res;
 }
 
@@ -282,6 +283,6 @@ export function discardAll() {
     }
 
     binChanged({ action: 'discarded', refunded });
-    EventBus.publish('state_changed');
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     return { success: true, discarded, refunded };
 }

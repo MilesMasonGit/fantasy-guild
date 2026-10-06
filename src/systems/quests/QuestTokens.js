@@ -20,6 +20,7 @@ import { TUTORIAL_QUESTS, tutorialTemplate } from './tutorialQuests.js';
 // The bounty and reward helpers come from the leaf `questBounties.js`, not
 // QuestManager, so this module does not import QuestManager (CR3-023 group 3).
 import { createRandomQuest, questReward, copyReward } from './questBounties.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 export { QUEST_TOKEN_TYPE };
 
@@ -166,8 +167,8 @@ function guildHall() {
 }
 
 function publishChanged(instanceId = null) {
-    EventBus.publish('quests_updated', instanceId ? { instanceId } : {});
-    EventBus.publish('state_changed', {});
+    EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, instanceId ? { instanceId } : {});
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 // ---------------------------------------------------------------------------
@@ -246,7 +247,7 @@ export function spawnQuest(quest, random = Math.random) {
         title: quest.tutorial ? 'New tutorial quest' : 'New quest',
         rulesText: quest.title
     });
-    EventBus.publish('quest_spawned', { instanceId: instance.id, questId: quest.id, tutorial: !!quest.tutorial });
+    EventBus.publish(ENGINE_EVENTS.QUEST_SPAWNED, { instanceId: instance.id, questId: quest.id, tutorial: !!quest.tutorial });
     publishChanged(instance.id);
     return instance;
 }
@@ -293,6 +294,7 @@ export function ensureTutorial() {
  */
 export function refreshTutorialTokens() {
     let changed = false;
+    const refreshed = [];
     for (const instance of tutorialTokens()) {
         const template = tutorialTemplate(instance.quest.id);
         if (!template) {
@@ -301,7 +303,11 @@ export function refreshTutorialTokens() {
             continue;
         }
         instance.quest = tutorialQuest(template, instance.quest);
+        refreshed.push(instance.id);
     }
+    // Each refreshed copy says so by id (CR3-304: a quest Token hears its own
+    // QUESTS_UPDATED, not the catch-all state_changed).
+    for (const instanceId of refreshed) EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId });
     if (changed) publishChanged();
 }
 
@@ -446,9 +452,9 @@ export function reportProgress(targetType, amount = 1, metadata = {}) {
         quest.currentCount = next;
         quest.done = next >= quest.requiredCount;
         changed = changed === null ? instance.id : changed;
-        EventBus.publish('quests_updated', { instanceId: instance.id });
+        EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId: instance.id });
     }
-    if (changed !== null) EventBus.publish('state_changed', {});
+    if (changed !== null) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 /** A collection bounty's count is what the Bank holds, capped (unchanged rule). */
@@ -469,10 +475,10 @@ export function syncCollections() {
     for (const instance of questTokens()) {
         if (syncCollection(instance.quest)) {
             changed = true;
-            EventBus.publish('quests_updated', { instanceId: instance.id });
+            EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId: instance.id });
         }
     }
-    if (changed) EventBus.publish('state_changed', {});
+    if (changed) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED, {});
 }
 
 // ---------------------------------------------------------------------------
@@ -526,7 +532,7 @@ export function claimQuest(instanceId) {
         if (!ensureTutorial()) pending = true;
     }
 
-    EventBus.publish('quest_claimed', { questId: quest.id, instanceId, tutorial: !!quest.tutorial, rewardItems });
+    EventBus.publish(ENGINE_EVENTS.QUEST_CLAIMED, { questId: quest.id, instanceId, tutorial: !!quest.tutorial, rewardItems });
     publishChanged(instanceId);
     return { success: true, rewardItems };
 }

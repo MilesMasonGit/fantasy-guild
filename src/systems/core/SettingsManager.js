@@ -3,6 +3,7 @@
 
 import { EventBus } from './EventBus.js';
 import { logger } from '../../utils/Logger.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 const SETTINGS_STORAGE_KEY = 'fantasy_guild_settings';
 
@@ -162,7 +163,7 @@ class SettingsManagerClass {
         try {
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(this.settings));
             this.applyFontSizes();
-            EventBus.publish('settings_updated', this.settings);
+            EventBus.publish(ENGINE_EVENTS.SETTINGS_UPDATED, this.settings);
             logger.debug('SettingsManager', 'Settings saved');
         } catch (e) {
             logger.error('SettingsManager', 'Failed to save settings', e);

@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { HERO_HIT_PX } from './boardConstants.js';
 import { FLAG_PX } from './flagGeometry.js';
@@ -17,6 +17,9 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { isRealAttack } from './hitAnimations.js';
 import { COMBAT_ATTACK_EVENT } from './TokenHitArt.jsx';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 
 /**
  * When this hero's last real attack began (`performance.now()`), while
@@ -46,6 +49,15 @@ function useLastAttackAt(heroId, listening) {
  * next job; dropped on the Dock it recalls. The hero stays drawn where they are
  * while the flag is in the hand.
  */
+/**
+ * Where a hero's 64 × 128 box goes for a point, in mat units: centred on it
+ * (Hero Movement M1). Null for no point. `MatBoard.heroPlacement` is this.
+ */
+export function heroBoxAt(point) {
+    if (!point || point.x == null || point.y == null) return null;
+    return { left: point.x - HERO_HIT_PX / 2, top: point.y - FLAG_PX / 2 };
+}
+
 export const MatHero = memo(function MatHero({
     heroId,
     name,
@@ -88,12 +100,33 @@ export const MatHero = memo(function MatHero({
     const isWalking = moving;
     const facingLeft = facing < 0;
 
+    // ⭐ CR3-008: a moving hero is handed no point (so their steps do not
+    // redraw the mat). Read it live, and let each step move the box directly.
+    const followsItself = left == null || top == null;
+    const live = followsItself ? heroBoxAt(HeroMotion.bodyView(heroId)) : null;
+    const boxLeft = live ? live.left : (left ?? 0);
+    const boxTop = live ? live.top : (top ?? 0);
+    const boxRef = useRef(null);
+    const setNodeRef = drag.setNodeRef;
+    const setBoxRef = useCallback((el) => { boxRef.current = el; setNodeRef(el); }, [setNodeRef]);
+    // A layout effect, so it is listening from the commit on, and it catches
+    // up at once on any step taken between the render and now.
+    useLayoutEffect(() => {
+        if (!followsItself) return undefined;
+        const follow = () => {
+            const at = heroBoxAt(HeroMotion.bodyView(heroId));
+            if (at && boxRef.current) boxRef.current.style.transform = `translate(${at.left}px, ${at.top}px)`;
+        };
+        follow();
+        return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, follow);
+    }, [followsItself, heroId]);
+
     const activeAnimation = isWalking ? 'walk' : animationState;
     const attackAt = useLastAttackAt(heroId, activeAnimation === 'combat');
 
     return (
         <button
-            ref={drag.setNodeRef}
+            ref={setBoxRef}
             {...drag.handleProps}
             type="button"
             data-alpha-test="true"
@@ -104,7 +137,7 @@ export const MatHero = memo(function MatHero({
             onClick={(e) => {
                 if (!opaque(e)) return;
                 e.stopPropagation();
-                EventBus.publish('inspect_hero', { heroId });
+                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
             }}
             onContextMenu={(e) => {
                 if (!opaque(e)) return;
@@ -122,7 +155,7 @@ export const MatHero = memo(function MatHero({
             style={{
                 left: 0,
                 top: 0,
-                transform: `translate(${left}px, ${top}px)`,
+                transform: `translate(${boxLeft}px, ${boxTop}px)`,
                 width: HERO_HIT_PX,
                 height: FLAG_PX,
                 zIndex: z,

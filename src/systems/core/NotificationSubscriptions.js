@@ -4,17 +4,18 @@ import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import * as NotificationSystem from './NotificationSystem.js';
 import * as BoardState from '../board/BoardState.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 // (CR-017) There is no module-level queue snapshot here: getQueue() returns a
 // COPY, so a cached one goes stale immediately. Handlers below re-fetch.
 
 // === Event Subscriptions for Auto-Notifications ===
 
-EventBus.subscribe('hero_recruited', ({ name }) => {
+EventBus.subscribe(ENGINE_EVENTS.HERO_RECRUITED, ({ name }) => {
     NotificationSystem.success(`${name} joined the guild!`, { category: 'hero' });
 });
 
-EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newLevel, oldLevel, startLevel: pStartLevel }) => {
+EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, heroName, skillId, skillName, newLevel, oldLevel, startLevel: pStartLevel }) => {
     const key = `levelup_${heroId}_${skillId}`;
     const currentQueue = NotificationSystem.getQueue();
     const existing = currentQueue.find(n => n.aggregationKey === key);
@@ -52,7 +53,7 @@ EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newL
 });
 
 // 1. Loot Gain (Inventory Updates)
-EventBus.subscribe('inventory_updated', (data) => {
+EventBus.subscribe(ENGINE_EVENTS.INVENTORY_UPDATED, (data) => {
     const item = getItem(data.itemId);
     const itemName = item ? item.name : data.itemId;
 
@@ -97,7 +98,7 @@ export function checkHeartbeat() {
                         const newRate = ItemRateTracker.getRate(n.itemId);
                         if (Math.abs(n.rate - newRate) > (Math.abs(n.rate) * 0.01) || (n.rate === 0 && newRate !== 0)) {
                             n.rate = newRate;
-                            EventBus.publish('notification_updated', { 
+                            EventBus.publish(ENGINE_EVENTS.NOTIFICATION_UPDATED, { 
                                 id: n.id, 
                                 rate: n.rate,
                                 count: n.count
@@ -116,5 +117,5 @@ export function checkHeartbeat() {
 }
 
 // Decoupled triggers for heartbeat checks to prevent circular imports
-EventBus.subscribe('notification_added', () => checkHeartbeat());
-EventBus.subscribe('notification_dismissed', () => checkHeartbeat());
+EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, () => checkHeartbeat());
+EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_DISMISSED, () => checkHeartbeat());

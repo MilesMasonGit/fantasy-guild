@@ -3,6 +3,7 @@
 
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 // Notification queue
 const queue = [];
@@ -80,7 +81,7 @@ export function notify(message, type = 'info', options = {}) {
                 recent.timeoutId = setTimeout(() => dismiss(recent.id), recent.duration);
             }
 
-            EventBus.publish('notification_updated', { 
+            EventBus.publish(ENGINE_EVENTS.NOTIFICATION_UPDATED, { 
                 id: recent.id, 
                 count: recent.count,
                 added: recent.added,
@@ -121,10 +122,10 @@ export function notify(message, type = 'info', options = {}) {
         if (oldestNormalIndex === -1) break;   // only crisis toasts left
         const trimmed = queue.splice(oldestNormalIndex, 1)[0];
         if (trimmed.timeoutId) clearTimeout(trimmed.timeoutId);
-        EventBus.publish('notification_dismissed', { id: trimmed.id });
+        EventBus.publish(ENGINE_EVENTS.NOTIFICATION_DISMISSED, { id: trimmed.id });
     }
 
-    EventBus.publish('notification_added', notification);
+    EventBus.publish(ENGINE_EVENTS.NOTIFICATION_ADDED, notification);
 
     // Auto-dismiss if duration is > 0
     if (duration > 0) {
@@ -148,7 +149,7 @@ export function dismiss(id) {
     }
 
     queue.splice(index, 1);
-    EventBus.publish('notification_dismissed', { id });
+    EventBus.publish(ENGINE_EVENTS.NOTIFICATION_DISMISSED, { id });
 }
 
 /**
@@ -160,7 +161,7 @@ export function dismissAll() {
         if (notification.timeoutId) {
             clearTimeout(notification.timeoutId);
         }
-        EventBus.publish('notification_dismissed', { id: notification.id });
+        EventBus.publish(ENGINE_EVENTS.NOTIFICATION_DISMISSED, { id: notification.id });
     }
 }
 

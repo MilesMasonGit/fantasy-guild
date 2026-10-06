@@ -215,9 +215,10 @@ describe('dead event wiring stays dead', () => {
         expect(quests.text).toMatch(/CR2-094/);
 
         // The hook is still the only publisher...
-        expect(sitesFor(/publish\(\s*['"]ui_modal:opened['"]/)).toEqual(['ui/hooks/useUIModals.js']);
+        // (Named by `UI_EVENTS.UI_MODAL_OPENED` since CR3-559.)
+        expect(sitesFor(/publish\(\s*UI_EVENTS\.UI_MODAL_OPENED\b/)).toEqual(['ui/hooks/useUIModals.js']);
         // ...and QuestManager the only subscriber.
-        expect(sitesFor(/subscribe\(\s*['"]ui_modal:opened['"]/)).toEqual(['systems/quests/QuestManager.js']);
+        expect(sitesFor(/subscribe\(\s*UI_EVENTS\.UI_MODAL_OPENED\b/)).toEqual(['systems/quests/QuestManager.js']);
 
         // Both ends must still agree on the modal ids. `vault` went with the
         // Token Vault (Token Lifecycle 9.3); its quest mapping went in 9.5.

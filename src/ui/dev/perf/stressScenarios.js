@@ -39,9 +39,10 @@ import { InventoryManager } from '../../../systems/inventory/InventoryManager.js
 import { GameState } from '../../../state/GameState.js';
 import * as TileModifiers from '../../../systems/board/TileModifiers.js';
 import { setMatTuning, resetMatTuning, isMatTuned } from '../../../config/matTuning.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** Fired once a stress board is live, so ReactRoot can close the slot picker. */
-export const STRESS_STARTED_EVENT = 'dev:stress_started';
+export const STRESS_STARTED_EVENT = UI_EVENTS.DEV_STRESS_STARTED;
 
 /** The localStorage keys a scenario build may write, restored afterwards. */
 const PROTECTED_KEYS = ['fantasy_guild_mat_tuning', 'fantasy_guild_settings'];
@@ -154,9 +155,10 @@ export async function buildStress(name) {
         }
     });
 
-    EventBus.publish('state_changed');
-    EventBus.publish('heroes_updated');
-    EventBus.publish('inventory_updated');
+    EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_stress' });
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
+    EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
     GameLoop.start();
 
     const buildMs = performance.now() - t0;

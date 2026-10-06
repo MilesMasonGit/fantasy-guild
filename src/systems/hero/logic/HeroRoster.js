@@ -1,5 +1,6 @@
 import { GameState } from '../../../state/GameState.js';
 import { EventBus } from '../../core/EventBus.js';
+import { ENGINE_EVENTS } from '../../core/engineEvents.js';
 
 /**
  * Hero Roster: ordering of the roster.
@@ -21,6 +22,6 @@ export function reorderHero(heroId, targetIndex) {
     const finalIndex = Math.max(0, Math.min(targetIndex, heroes.length));
     heroes.splice(finalIndex, 0, hero);
 
-    EventBus.publish('heroes_updated', { source: 'reorderHero' });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'reorderHero' });
     return { success: true };
 }

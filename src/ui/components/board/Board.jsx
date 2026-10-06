@@ -7,7 +7,6 @@ import { MatBoard } from './MatBoard.jsx';
 import { PerfProfiler } from '../../dev/perf/PerfProfiler.jsx';
 import { ErrorBoundary } from '../base/ErrorBoundary.jsx';
 import { MatFitProvider, setLiveMatFit } from './MatFitContext.jsx';
-import { useEngine } from '../../hooks/useEngine.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { GameState } from '../../../state/GameState.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
@@ -46,8 +45,6 @@ export function matAccepts(p) {
 }
 
 export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, inspectedTokenId = null }) => {
-    const { EventBus } = useEngine();
-
     // How big the mat is (slice 1.6d-3 — the Mat Tuner can change it live), and
     // how much it is then shrunk to fit this window (CR2-179).
     const mat = useMatSize();
@@ -102,11 +99,10 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
         const instance = BoardState.getTokenById(recipeId);
         // `setSelectedRecipe` is the only writer of `selectedRecipeId`, and it
         // refuses any id outside this station's own pool (P2).
+        // It announces its own change (`TILE_CHANGED`, CR3-306).
         if (!StationRecipe.setSelectedRecipe(instance, selectedRecipeId)) return;
-        // The gear badge's tooltip re-reads the Token on `state_changed`.
-        EventBus?.publish('state_changed', {});
         setRecipeId(null);
-    }, [recipeId, EventBus]);
+    }, [recipeId]);
 
     return (
         // `min-w-0` / `min-h-0` are load-bearing: without them this box grows to

@@ -5,6 +5,7 @@ import { TimeManager } from './TimeManager.js';
 import { EventBus } from './EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import { TICK_INTERVAL_MS } from '../../config/loopConstants.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 /**
  * GameLoop - Main game tick loop
@@ -78,7 +79,7 @@ class GameLoopClass {
         // gap — a sleep, a suspend, a throttled timer — not every tick.
         const overflow = TimeManager.consumeOverflow();
         if (overflow > 0) {
-            EventBus.publish('time_overflow', { overflowMs: overflow });
+            EventBus.publish(ENGINE_EVENTS.TIME_OVERFLOW, { overflowMs: overflow });
         }
 
         this.runHandlers(delta);

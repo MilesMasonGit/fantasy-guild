@@ -16,6 +16,7 @@ import { TimeManager } from './TimeManager.js';
 import * as NotificationSystem from './NotificationSystem.js';
 import { TIME_BANK } from '../../config/loopConstants.js';
 import { logger } from '../../utils/Logger.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 /** How often (in drain ticks) to push a UI refresh while fast-forwarding. */
 const UI_REFRESH_EVERY_TICKS = 10;
@@ -35,13 +36,13 @@ export const TimeBankManager = {
         // Closed-only accrual: when a save loads, bank the time since it was
         // written (SaveManager stamps `savedAt` on the save and forwards it on
         // the game_loaded event). A brand-new game emits no meaningful gap.
-        EventBus.subscribe('game_loaded', ({ savedAt }) => this.accrueOffline(savedAt));
+        EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, ({ savedAt }) => this.accrueOffline(savedAt));
 
         // Lid-shut accrual: time the tick clamp refused to deliver (CR2-041).
         // A sleeping machine with the game OPEN used to be worse than closing
         // it — the gap was counted as playtime and produced nothing. Now it
         // lands here, exactly as a closed game's gap does.
-        EventBus.subscribe('time_overflow', ({ overflowMs }) => this.accrue(overflowMs));
+        EventBus.subscribe(ENGINE_EVENTS.TIME_OVERFLOW, ({ overflowMs }) => this.accrue(overflowMs));
 
         logger.info('TimeBankManager', 'Time bank initialized');
     },
@@ -171,7 +172,7 @@ export const TimeBankManager = {
     },
 
     _publish() {
-        EventBus.publish('time_bank_updated', {
+        EventBus.publish(ENGINE_EVENTS.TIME_BANK_UPDATED, {
             bankedMs: this.getBankedMs(),
             isSpending: this.isSpending,
             multiplier: this.activeMultiplier

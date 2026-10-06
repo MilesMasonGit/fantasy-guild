@@ -7,6 +7,7 @@ import { renderStatement } from '../../../systems/effects/statementText.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { Package, Sparkles } from 'lucide-react';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * GuildHallEffectsPanel — the Guild Hall's active outputs and boosts, shown
@@ -25,7 +26,7 @@ export const GuildHallEffectsPanel = () => {
             const statements = def?.statements || [];
             return { outputs, statements };
         },
-        ['guild_upgrades_updated', 'state_changed', BOARD_EVENTS.TOKEN_PLACED]
+        [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED, BOARD_EVENTS.TOKEN_PLACED]
     );
 
     const outputs = guildHallData?.outputs || [];

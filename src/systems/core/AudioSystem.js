@@ -4,6 +4,7 @@
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { logger } from '../../utils/Logger.js';
+import { ENGINE_EVENTS, ORPHAN_EVENTS } from './engineEvents.js';
 
 export const BGM_PLAYLIST = [
     { id: 'gentle_pause', title: 'Gentle Pause', file: 'Gentle Pause.m4a' },
@@ -89,24 +90,24 @@ class AudioSystemClass {
         if (this.initialized) return;
 
         // Subscribe to Core Events
-        EventBus.subscribe('audio:play', (data) => this.playSfx(data.clip, data.options));
+        EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (data) => this.playSfx(data.clip, data.options));
         
         // Subscribe to Global SFX
-        EventBus.subscribe('hero_leveled', () => this.playSfx('levelup'));
-        EventBus.subscribe('skill_leveled', () => this.playSfx('levelup'));
-        EventBus.subscribe('invasion_started', () => this.playSfx('invasion'));
-        EventBus.subscribe('combat_victory', () => this.playSfx('victory'));
-        EventBus.subscribe('combat_defeat', () => this.playSfx('defeat'));
-        EventBus.subscribe('quest_claimed', () => this.playSfx('quest_claim'));
-        EventBus.subscribe('hero_deployed', () => this.playSfx('hero_assign'));
-        EventBus.subscribe('hero_assigned', () => this.playSfx('hero_assign'));
+        EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, () => this.playSfx('levelup'));
+        EventBus.subscribe(ORPHAN_EVENTS.SKILL_LEVELED, () => this.playSfx('levelup'));
+        EventBus.subscribe(ORPHAN_EVENTS.INVASION_STARTED, () => this.playSfx('invasion'));
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => this.playSfx('victory'));
+        EventBus.subscribe(ORPHAN_EVENTS.COMBAT_DEFEAT, () => this.playSfx('defeat'));
+        EventBus.subscribe(ENGINE_EVENTS.QUEST_CLAIMED, () => this.playSfx('quest_claim'));
+        EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, () => this.playSfx('hero_assign'));
+        EventBus.subscribe(ORPHAN_EVENTS.HERO_ASSIGNED, () => this.playSfx('hero_assign'));
         
         // Subscribe to Contextual SFX
-        EventBus.subscribe('combat_hero_attack', () => this.playContextualSfx('hit'));
-        EventBus.subscribe('combat_enemy_attack', () => this.playContextualSfx('hit'));
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, () => this.playContextualSfx('hit'));
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, () => this.playContextualSfx('hit'));
 
         // Subscribe to Settings updates
-        EventBus.subscribe('settings_updated', () => this.updateVolumes());
+        EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, () => this.updateVolumes());
 
         // Unlock audio on first user gesture if blocked by browser autoplay policy
         this._setupAutoplayUnlock();
@@ -214,7 +215,7 @@ class AudioSystemClass {
             });
         }
 
-        EventBus.publish('bgm:track_changed', { track: nextTrack });
+        EventBus.publish(ENGINE_EVENTS.BGM_TRACK_CHANGED, { track: nextTrack });
     }
 
     /**

@@ -6,6 +6,7 @@ import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { GameState } from '../../../state/GameState.js';
 import { lootFlightTarget, lootSpriteScreenPx } from '../../utils/lootFlight.js';
+import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /** Gap between staggered particles from one collection burst. */
 const STAGGER_MS = 60;
@@ -97,15 +98,19 @@ export const ParticleOverlay = ({ disabled }) => {
          *   being consumed" animation, belonging to the retired hero food/drink
          *   model. Nothing has ever published it.
          */
-        const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
+        const onCollected = (data) => {
             if (disabledRef.current) return;
             system.spawnCollected(data);
             if (system.particles.length) wakeRef.current?.();
-        });
+        };
+        const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, onCollected);
+        // The same flight for the eye only (a hero lifted from the dock, CR3-306).
+        const subFly = EventBus.subscribe(UI_EVENTS.UI_PARTICLE_FLY, onCollected);
 
         return () => {
             window.removeEventListener('resize', handleResize);
             subCollected();
+            subFly();
         };
     }, []);
 
@@ -416,7 +421,7 @@ class ParticleSystem {
 
             if (t >= 1) {
                 // Notify that the particle has landed for visual feedback (e.g., Vault flashes, Tray landings)
-                EventBus.publish('particle_landed', {
+                EventBus.publish(UI_EVENTS.PARTICLE_LANDED, {
                     itemId: p.itemId,
                     mode: p.mode,
                     destination: p.destination,

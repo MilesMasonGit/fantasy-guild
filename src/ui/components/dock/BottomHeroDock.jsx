@@ -12,6 +12,7 @@ import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { reorderHeroInDock } from './dockReorder.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * Whether the horizontal hero dock shows under the main surface. It shows on
@@ -61,7 +62,7 @@ export const BottomHeroDock = ({
 
     const heroIds = useGameState(
         state => (state.heroes || []).map(h => h.id),
-        ['heroes_updated', 'state_changed']
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     ) || [];
 
     const handleReorderHero = (sourceHeroId, targetHeroId) =>

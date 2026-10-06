@@ -13,6 +13,7 @@ import {
 } from '../../systems/core/DevTools.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
+import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
@@ -59,7 +60,7 @@ export const TestDashboard = React.memo(() => {
 
     React.useEffect(() => {
         if (!engine) return;
-        const unsub = engine.EventBus.subscribe('dev:open-animation-studio', () => {
+        const unsub = engine.EventBus.subscribe(ORPHAN_EVENTS.DEV_OPEN_ANIMATION_STUDIO, () => {
             setShowAnimationStudio(true);
         });
         const handleKeyDown = (e) => {
@@ -132,7 +133,7 @@ export const TestDashboard = React.memo(() => {
             // as already wounded.
             if (hero.hp) hero.hp.current = hero.hp.max;
         });
-        engine.EventBus.publish('heroes_updated', { source: 'dev_spawn_party' });
+        engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_spawn_party' });
         console.log(`[Dev] Spawned a party of ${added} hero(es) at level 50`);
     };
 
@@ -152,7 +153,7 @@ export const TestDashboard = React.memo(() => {
                 hero.skills[skillId] = { xp: xpForLevel(1), level: 1 };
             }
         });
-        engine.EventBus.publish('heroes_updated', { source: 'dev_grant_combat' });
+        engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_grant_combat' });
         console.log(`[Dev] Granted ${skillId} to ${heroes.length} hero(es)`);
     };
 
@@ -226,7 +227,7 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🛠️ Toggle Layout Sandbox",
             onClick: () => {
-                engine.EventBus.publish('dev:toggle-sandbox');
+                engine.EventBus.publish(UI_EVENTS.DEV_TOGGLE_SANDBOX);
             }
         },
         // The deck-loop dev buttons (buy pack, unlock areas, world map,
@@ -265,7 +266,7 @@ export const TestDashboard = React.memo(() => {
                 const state = engine.GameState.state;
                 state.board.tokens = {};
                 state.board.sprites = [];
-                engine.EventBus.publish('state_changed');
+                engine.EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
                 console.log('[Dev] Board cleared');
             }
         },
@@ -278,7 +279,7 @@ export const TestDashboard = React.memo(() => {
                         h.hp.current = Math.max(0, h.hp.current - 9);
                     }
                 });
-                engine.EventBus.publish('heroes_updated');
+                engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
                 console.log('[Dev] Drained 9 HP from all heroes');
             }
         },
@@ -291,7 +292,7 @@ export const TestDashboard = React.memo(() => {
                         h.energy.current = Math.max(0, h.energy.current - 9);
                     }
                 });
-                engine.EventBus.publish('heroes_updated');
+                engine.EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
                 console.log('[Dev] Drained 9 Energy from all heroes');
             }
         },

@@ -9,6 +9,7 @@ import { logger } from '../../utils/Logger.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * ⭐ **The first rule in the game that does something to a person.**
@@ -153,7 +154,7 @@ function heroTarget(heroId) {
             if (hero.hp.current <= 0) {
                 // Announced, never resolved here — see the note at the top.
                 logger.info('DealDamage', `${hero.name} was downed by an effect`);
-                EventBus.publish('hero_downed', { heroId, cause: 'effect' });
+                EventBus.publish(ENGINE_EVENTS.HERO_DOWNED, { heroId, cause: 'effect' });
             }
             return dealt;
         }

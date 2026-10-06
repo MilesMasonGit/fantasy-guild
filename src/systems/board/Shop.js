@@ -13,6 +13,7 @@ import * as MatCap from './MatCap.js';
 import * as Placement from './Placement.js';
 import { logger } from '../../utils/Logger.js';
 import { matW, matH } from '../../config/matGeometry.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * The Shop — the reworked Cartographer (SP-12).
@@ -157,12 +158,12 @@ function purchase(typeId, place) {
         // Unreachable in practice (checked above); undo the placement so a
         // Token is never handed out for free.
         BoardState.removeToken(instance.id);
-        EventBus.publish('state_changed');
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
         return refuse('Not enough items');
     }
 
-    EventBus.publish('token_purchased', { typeId, instanceId: instance.id, price });
-    EventBus.publish('state_changed');
+    EventBus.publish(ENGINE_EVENTS.TOKEN_PURCHASED, { typeId, instanceId: instance.id, price });
+    EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     logger.info('Shop', `Bought ${tokenName(typeId)}`);
     return { success: true, instance, x: placed.x, y: placed.y, nudged: !!placed.nudged };
 }

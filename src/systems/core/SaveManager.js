@@ -9,6 +9,7 @@ import * as NotificationSystem from './NotificationSystem.js';
 import { migrateState, IncompatibleSaveError } from './SaveMigration.js';
 import * as SlotHelper from './SaveSlotHelper.js';
 import { validateSaveData } from '../../state/StateSchema.js';
+import { ENGINE_EVENTS } from './engineEvents.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 const MAX_SLOTS = 3;
@@ -44,7 +45,7 @@ export const SaveManager = {
 
         // 1. Sync with SettingsManager
         this.syncSettings();
-        this._settingsUnsubscribe = EventBus.subscribe('settings_updated', () => this.syncSettings());
+        this._settingsUnsubscribe = EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, () => this.syncSettings());
 
         // 3. Check for reset signal from previous session
         if (sessionStorage.getItem('resetting')) {
@@ -250,7 +251,7 @@ export const SaveManager = {
 
             // savedAt is when this save was written — the Time Bank (Phase 8)
             // uses it to accrue closed-only offline time on load.
-            EventBus.publish('game_loaded', { slot: slotIndex, savedAt: data.savedAt });
+            EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: slotIndex, savedAt: data.savedAt });
             return true;
         } catch (err) {
             if (err instanceof IncompatibleSaveError) {

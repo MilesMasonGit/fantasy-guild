@@ -18,6 +18,7 @@ import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { lifecycleLines } from './lifecycleLines.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * TokenInspection — a Token's full detail, styled consistently with ItemInspection.
@@ -276,7 +277,7 @@ const HeroesMayWork = ({ instanceId }) => {
             if (!instance || !Flags.isHeroWorkable(instance)) return null;
             return { id: instance.id, allowed: !Flags.isDisallowed(instance) };
         },
-        [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
+        [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null,
         { deps: [instanceId] }
     );

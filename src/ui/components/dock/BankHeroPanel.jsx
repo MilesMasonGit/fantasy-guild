@@ -5,6 +5,7 @@ import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { reorderHeroInDock } from './dockReorder.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 export const BankHeroPanel = ({
     menuRight,
@@ -17,7 +18,7 @@ export const BankHeroPanel = ({
     const asideRef = useRef(null);
     const heroIds = useGameState(
         state => (state.heroes || []).map(h => h.id),
-        ['heroes_updated', 'state_changed']
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     ) || [];
 
     const isOpen = Boolean(selectedHeroId);

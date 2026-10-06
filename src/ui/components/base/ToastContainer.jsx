@@ -6,6 +6,7 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { cn } from '../../utils/cn.js';
 import Toast from './Toast.jsx';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
  * ToastContainer — the notifications column (D-237).
@@ -58,16 +59,16 @@ const ToastContainer = ({ floating = false }) => {
 
         sync();
 
-        EventBus.subscribe('notification_added', sync);
-        EventBus.subscribe('notification_updated', sync);
-        EventBus.subscribe('notification_dismissed', sync);
-        EventBus.subscribe('settings_updated', handleSettings);
+        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, sync);
+        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_UPDATED, sync);
+        EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_DISMISSED, sync);
+        EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, handleSettings);
 
         return () => {
-            EventBus.unsubscribe('notification_added', sync);
-            EventBus.unsubscribe('notification_updated', sync);
-            EventBus.unsubscribe('notification_dismissed', sync);
-            EventBus.unsubscribe('settings_updated', handleSettings);
+            EventBus.unsubscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, sync);
+            EventBus.unsubscribe(ENGINE_EVENTS.NOTIFICATION_UPDATED, sync);
+            EventBus.unsubscribe(ENGINE_EVENTS.NOTIFICATION_DISMISSED, sync);
+            EventBus.unsubscribe(ENGINE_EVENTS.SETTINGS_UPDATED, handleSettings);
         };
     }, []);
 

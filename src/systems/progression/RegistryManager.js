@@ -4,6 +4,7 @@ import { logger } from '../../utils/Logger.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * RegistryManager - Manages discoveries, collection log, and navigation history for the Library.
@@ -57,11 +58,11 @@ export const RegistryManager = {
             const itemName = template?.name || itemId;
             NotificationSystem.notify(`Unlock: ${itemName}`, 'info', { category: 'discovery' });
 
-            EventBus.publish('item_discovered', { itemId, itemName });
+            EventBus.publish(ENGINE_EVENTS.ITEM_DISCOVERED, { itemId, itemName });
         }
         
-        EventBus.publish('registry_updated', { type: 'item', id: itemId });
-        EventBus.publish('state_changed');
+        EventBus.publish(ENGINE_EVENTS.REGISTRY_UPDATED, { type: 'item', id: itemId });
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     },
 
     /**
@@ -112,11 +113,11 @@ export const RegistryManager = {
             const enemyName = template?.name || enemyId;
             NotificationSystem.notify(`Unlock: ${enemyName}`, 'info', { category: 'discovery' });
 
-            EventBus.publish('enemy_discovered', { enemyId, enemyName });
+            EventBus.publish(ENGINE_EVENTS.ENEMY_DISCOVERED, { enemyId, enemyName });
         }
 
-        EventBus.publish('registry_updated', { type: 'enemy', id: enemyId });
-        EventBus.publish('state_changed');
+        EventBus.publish(ENGINE_EVENTS.REGISTRY_UPDATED, { type: 'enemy', id: enemyId });
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     },
 
     /**

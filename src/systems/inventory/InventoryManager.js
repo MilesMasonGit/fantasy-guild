@@ -6,6 +6,7 @@ import { logger } from '../../utils/Logger.js';
 import { GameState } from '../../state/GameState.js';
 import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
 import { RegistryManager } from '../progression/RegistryManager.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * InventoryManager - Transaction Hub for player inventory.
@@ -61,7 +62,7 @@ export const InventoryManager = {
         //    subscriber away from being silently untrue — if items ever start
         //    vanishing, check `SpriteLayer.init()` is running first.
         if (this.lacksSlotFor(itemId)) {
-            EventBus.publish('inventory_overflow', { itemId, amount });
+            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount });
             return 0;
         }
 
@@ -89,16 +90,16 @@ export const InventoryManager = {
             // — but "almost never" is not "never", and this is the path a
             // Mythic-equivalent quantity would take.
             if (spaceRemaining <= 0) {
-                EventBus.publish('inventory_overflow', { itemId, amount });
+                EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount });
                 return 0;
             }
 
             if (amount > spaceRemaining) {
                 addedCount = spaceRemaining;
-                EventBus.publish('inventory_overflow', { itemId, amount: amount - spaceRemaining });
+                EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount: amount - spaceRemaining });
             }
         } else if (entry.quantity >= 1) {
-            EventBus.publish('inventory_overflow', { itemId, amount });
+            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount });
             return 0;
         }
 
@@ -109,8 +110,8 @@ export const InventoryManager = {
 
         // 3. Side Effects
         RegistryManager.recordItemGain(itemId, addedCount, sourceId);
-        EventBus.publish('inventory_updated', { itemId, amount: entry.quantity, added: addedCount });
-        EventBus.publish('state_changed');
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId, amount: entry.quantity, added: addedCount });
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
         logger.debug('InventoryManager', `Added ${addedCount}x ${itemId} (Total: ${entry.quantity})`);
         return addedCount;
@@ -133,8 +134,8 @@ export const InventoryManager = {
         }
 
         InventoryFormatter.invalidate();
-        EventBus.publish('inventory_updated', { itemId, amount: entry.quantity, removed: amount });
-        EventBus.publish('state_changed');
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId, amount: entry.quantity, removed: amount });
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
 
         logger.debug('InventoryManager', `Removed ${amount}x ${itemId} (Remaining: ${entry.quantity})`);
         return true;
@@ -199,7 +200,7 @@ export const InventoryManager = {
         const def = GameState.inventory.groupDefs[groupId];
         if (!def || !Array.isArray(orderedIds)) return false;
         def.orderedItems = [...orderedIds];
-        EventBus.publish('inventory_updated');
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
         return true;
     },
 
@@ -230,7 +231,7 @@ export const InventoryManager = {
             }
         }
 
-        EventBus.publish('inventory_updated');
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
         return true;
     }
 };
