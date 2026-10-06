@@ -64,7 +64,7 @@ export const DisallowModeToggle = () => {
  * `TILE_CHANGED` — so it follows a panel switch or a flip in the mode too.
  */
 export const AllowAllButton = () => {
-    useRefreshOn(CAP_EVENTS);
+    useRefreshOn(CAP_EVENTS, true, disallowedCount);
     const count = disallowedCount();
     return (
         <button

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { DOCK_MAX_PINNED } from '../components/dock/dockConstants.js';
 import { EventBus } from '../../systems/core/EventBus.js';
@@ -227,6 +227,58 @@ export const useUIModals = (engine) => {
     }, [isNavActive]);
 
     // --- Memoized Controls ---
+    // CR3-302: the groups ReactRoot's effects depend on are memoised, so a
+    // ReactRoot render no longer unsubscribes and resubscribes them.
+    const fullscreenOpen = useCallback((view) => setFullscreenView(view), []);
+    const fullscreenToggle = useCallback((view) => setFullscreenView(v => (v === view ? null : view)), []);
+    const fullscreenClose = useCallback(() => setFullscreenView(null), []);
+    const fullscreen = useMemo(() => ({
+        view: fullscreenView,
+        isOpen: fullscreenView !== null,
+        open: fullscreenOpen,
+        toggle: fullscreenToggle,
+        close: fullscreenClose
+    }), [fullscreenView, fullscreenOpen, fullscreenToggle, fullscreenClose]);
+
+    const inspectGetByPane = useCallback((pane) => inspectByPane[pane] || null, [inspectByPane]);
+    const inspectSet = useCallback((type, id, source = null, pane = null) => {
+        const effectivePane = pane || (
+            type === 'guild_upgrade' ? 'guild' :
+            type === 'token' ? 'cartographer' :
+            type === 'item' ? 'bank' : null
+        );
+        const nextSelection = { type, id, source, pane: effectivePane };
+
+        setInspectSelection(prev => (
+            prev && prev.type === type && prev.id === id && prev.source?.rect?.top === source?.rect?.top && prev.pane === effectivePane
+                ? prev
+                : nextSelection
+        ));
+
+        if (effectivePane) {
+            setInspectByPane(prev => (
+                prev[effectivePane] && prev[effectivePane].type === type && prev[effectivePane].id === id
+                    ? prev
+                    : { ...prev, [effectivePane]: nextSelection }
+            ));
+        }
+    }, []);
+    const inspectClear = useCallback((pane = null) => {
+        if (pane) {
+            setInspectByPane(prev => ({ ...prev, [pane]: null }));
+            setInspectSelection(prev => (prev?.pane === pane ? null : prev));
+        } else {
+            setInspectSelection(null);
+        }
+    }, []);
+    const inspect = useMemo(() => ({
+        selection: inspectSelection,
+        byPane: inspectByPane,
+        getByPane: inspectGetByPane,
+        set: inspectSet,
+        clear: inspectClear
+    }), [inspectSelection, inspectByPane, inspectGetByPane, inspectSet, inspectClear]);
+
     const controls = {
         settings: {
             open: useCallback(() => setIsSettingsOpen(true), []),
@@ -242,13 +294,7 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setIsSandboxOpen(false), []),
             isOpen: isSandboxOpen
         },
-        fullscreen: {
-            view: fullscreenView,
-            isOpen: fullscreenView !== null,
-            open: useCallback((view) => setFullscreenView(view), []),
-            toggle: useCallback((view) => setFullscreenView(v => (v === view ? null : view)), []),
-            close: useCallback(() => setFullscreenView(null), [])
-        },
+        fullscreen,
         drawer: {
             ...drawerState,
             isOpen: drawerState.panes.length > 0,
@@ -319,41 +365,7 @@ export const useUIModals = (engine) => {
             open: useCallback((heroId) => setFlagRulesHeroId(heroId || null), []),
             close: useCallback(() => setFlagRulesHeroId(null), [])
         },
-        inspect: {
-            selection: inspectSelection,
-            byPane: inspectByPane,
-            getByPane: useCallback((pane) => inspectByPane[pane] || null, [inspectByPane]),
-            set: useCallback((type, id, source = null, pane = null) => {
-                const effectivePane = pane || (
-                    type === 'guild_upgrade' ? 'guild' :
-                    type === 'token' ? 'cartographer' :
-                    type === 'item' ? 'bank' : null
-                );
-                const nextSelection = { type, id, source, pane: effectivePane };
-
-                setInspectSelection(prev => (
-                    prev && prev.type === type && prev.id === id && prev.source?.rect?.top === source?.rect?.top && prev.pane === effectivePane
-                        ? prev
-                        : nextSelection
-                ));
-
-                if (effectivePane) {
-                    setInspectByPane(prev => (
-                        prev[effectivePane] && prev[effectivePane].type === type && prev[effectivePane].id === id
-                            ? prev
-                            : { ...prev, [effectivePane]: nextSelection }
-                    ));
-                }
-            }, []),
-            clear: useCallback((pane = null) => {
-                if (pane) {
-                    setInspectByPane(prev => ({ ...prev, [pane]: null }));
-                    setInspectSelection(prev => (prev?.pane === pane ? null : prev));
-                } else {
-                    setInspectSelection(null);
-                }
-            }, [])
-        },
+        inspect,
         nav: {
             // 'guild' | 'bank' | 'cartographer' | 'areas' | 'settings'
             //

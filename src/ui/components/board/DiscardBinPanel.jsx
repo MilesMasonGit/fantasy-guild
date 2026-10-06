@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -73,11 +73,24 @@ export function refundText(lines) {
     return list.length ? list.map(l => `${l.quantity}× ${l.name}`).join(', ') : 'No refund';
 }
 
-/** Re-render on the bin's events. */
+/** What the panel draws: the binned Tokens, in order (CR3-309). */
+const binSignature = () => DiscardBin.binContents().map(t => t.id).join('|');
+
+/**
+ * Re-render on the bin's events — only when what is in the bin changed
+ * (CR3-309). A bare `state_changed` used to redraw the panel and its nine
+ * empty slots every time.
+ */
 function useBinRefresh() {
     const [, bump] = useState(0);
+    const sig = useRef(binSignature());
     useEffect(() => {
-        const refresh = () => bump(n => n + 1);
+        const refresh = () => {
+            const next = binSignature();
+            if (next === sig.current) return;
+            sig.current = next;
+            bump(n => n + 1);
+        };
         const unsubs = BIN_EVENTS.map(e => EventBus.subscribe(e, refresh));
         return () => unsubs.forEach(u => u?.());
     }, []);

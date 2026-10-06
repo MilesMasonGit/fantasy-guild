@@ -66,17 +66,36 @@ export function liveMatSummary() {
     });
 }
 
-/** Re-render whenever any of `events` fires (and the Mat Tuner changes), while `on`. */
-export function useRefreshOn(events, on = true) {
+/**
+ * Re-render whenever any of `events` fires (and the Mat Tuner changes), while
+ * `on`. With `signatureOf`, only when that signature of what is drawn has
+ * changed (CR3-309): a bare `state_changed` used to re-render the badge every
+ * time whether or not anything it shows had moved.
+ */
+export function useRefreshOn(events, on = true, signatureOf = null) {
     const [, bump] = useState(0);
+    const sig = useRef(null);
+    const live = useRef(signatureOf);
+    live.current = signatureOf;
+    sig.current = signatureOf ? signatureOf() : null;
     useEffect(() => {
         if (!on) return undefined;
-        const refresh = () => bump(n => n + 1);
+        const refresh = () => {
+            if (live.current) {
+                const next = live.current();
+                if (next === sig.current) return;
+                sig.current = next;
+            }
+            bump(n => n + 1);
+        };
         const unsubs = events.map(e => EventBus.subscribe(e, refresh));
         unsubs.push(onMatTuningChanged(refresh));
         return () => unsubs.forEach(u => u?.());
     }, [events, on]);
 }
+
+/** What the badge itself draws (CR3-309). */
+const capSignature = () => `${MatCap.placedCount()}|${MatCap.matCap()}`;
 
 /**
  * The hover popover: `Placed n of cap`, the placed Tokens by type with a red
@@ -139,7 +158,7 @@ export const MatCapPopover = ({ anchor, summary, cap }) => {
  * @param {{ readSummary?: () => object }} props  `readSummary` for tests
  */
 export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
-    useRefreshOn(CAP_EVENTS);
+    useRefreshOn(CAP_EVENTS, true, capSignature);
     const [open, setOpen] = useState(false);
     useRefreshOn(POPOVER_EVENTS, open);
     const ref = useRef(null);
