@@ -14,7 +14,7 @@ import { logger } from '../utils/Logger.js';
 const HERO_PROPS_TO_STRIP = ['aggregator', 'className', 'traitName', 'level', '_rev'];
 
 /**
- * GameState - Central "Clean Vault" for game data.
+ * GameState - Central store for game data.
  */
 class GameStateClass {
     constructor() {

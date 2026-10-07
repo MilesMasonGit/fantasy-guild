@@ -95,7 +95,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                         <span className="ml-2 text-[10px] text-gray-500 font-normal uppercase tracking-tighter">ver {version}</span>
                     </span>
                     <div className="flex items-center gap-4 text-xs text-gray-400">
-                        <span className="flex items-center gap-1" title="Heroes in Vault">
+                        <span className="flex items-center gap-1" title="Heroes">
                             <span className="text-blue-400">🦸</span> {heroCount || 0}
                         </span>
                         <span className="flex items-center gap-1" title="Total Playtime">
