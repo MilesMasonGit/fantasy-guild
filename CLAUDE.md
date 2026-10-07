@@ -30,7 +30,8 @@ It does not write the code itself. It:
    changed the outcome.
 4. **Merges to `main` once the merge gate passes**, except anything that
    changes how the game looks or plays: that waits for the owner's eye-check.
-   Never pushes unless asked.
+   After each merge it **pushes `main`** to GitHub (an off-PC backup); feature
+   branches stay local, and nothing is ever force-pushed.
 5. Parks owner questions as multiple choice and keeps working on what isn't
    blocked.
 
@@ -62,14 +63,27 @@ the checkout; read-only work (reviews, research) may run in parallel.
   changelog.
 - **Green tests don't mean a working game.** Anything a player could see gets
   exercised in the running game (see TESTING).
+- **Unfinished content isn't a bug.** Half-authored Tokens and items are
+  expected; don't report them as defects.
 - **Git**: branch from `main` for every job (`fix/bank-overflow`); merge back
   only after the merge gate passes. Stage files by name, never `git add -A` or
-  `git add .`. Never commit the owner's uncommitted art under `public/assets/`.
-  No force-push, no `--no-verify`. No double quotes in commit messages
-  (PowerShell mangles them).
+  `git add .` (the owner keeps uncommitted work in the folder). Never commit
+  the owner's uncommitted art under `public/assets/`. No force-push, no
+  `--no-verify`. No double quotes in commit messages (PowerShell mangles them).
+  - A **pre-commit hook** refuses a commit that mixes `data/` with code; that
+    is deliberate (`scripts/check-content-code-split.mjs`). Commit them apart.
+  - The CMS's **Sync to Game commits `data/` onto whatever branch is checked
+    out.** Before merging a branch, check `git log main..<branch>` for
+    `CMS sync:` commits and mention them.
+  - `public/assets/**` is in **Git LFS**; the LFS hooks need `git-lfs`
+    installed.
+  - Several sessions may share this checkout: run `git branch --show-current`
+    right before any commit or merge.
 - **Versions**: stay in 0.8.x until the owner says otherwise. The number lives
-  in five files, bumped together: `package.json`, `package-lock.json`,
+  in five files, bumped together: `package.json`, `package-lock.json` (two
+  fields: the top `version` and `packages[""].version`),
   `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`.
   Tag baselines (`v0.8.1`) as rollback points.
-- **Changelog**: log changes in [`CHANGELOG.md`](CHANGELOG.md) under
-  `## [Unreleased]`.
+- **Changelog**: add entries at the top of `## [Unreleased]` in
+  [`CHANGELOG.md`](CHANGELOG.md); history before 0.8 is in
+  `docs/archive/CHANGELOG_pre_0.8.md`.

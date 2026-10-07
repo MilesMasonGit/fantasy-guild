@@ -3,7 +3,7 @@
 > **Document Type:** Canonical Game Design Specification  
 > **Status:** Approved / Ready for Roadmap & Implementation Planning  
 > **Previous Architecture:** 27 Skills (6 Foundation, 3 Combat, 6 Shared, 12 Signature) across 19 Jobs  
-> **Target Architecture:** 24 Skills (8 Starting, 4 Combat, 4 Advanced, 8 Master) across 13 Jobs  
+> **Target Architecture:** 25 Skills (9 Starting, 4 Combat, 4 Advanced, 8 Master) across 13 Jobs, per the 2026-10-07 amendments below  
 
 ---
 

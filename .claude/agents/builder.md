@@ -20,5 +20,6 @@ prove them.
   say why** — don't force it.
 - Git: one commit per ticket on the branch the brief names; stage by name only; print
   `git diff --cached --name-status` before each commit; no double quotes in messages;
-  end messages with `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`; never
-  push; never merge. Never touch `public/assets/`; never hand-edit `data/*.json`.
+  end messages with the Co-Authored-By line your session's instructions give you; never
+  push; never merge (the director merges and pushes). Run the test suite in the main
+  folder, not a worktree (TESTING.md). Never touch `public/assets/`; never hand-edit `data/*.json`.
