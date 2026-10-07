@@ -60,11 +60,11 @@ function solveShippedCorpus() {
  * design has already identified, and each is the kind of thing the eye stops
  * catching somewhere around the thirtieth Token.
  *
- * ## ⚠️ Why 3 cases below are skipped
+ * ## ⚠️ Why 2 cases below are skipped
  *
- * Each one still guards something live: Resources having an input-free route
- * (fails today on a Resource with no recipe yet), Markets paying in goods, and the
- * closed vocabulary the CMS dropdowns rely on (the last two pass if un-skipped).
+ * Resources having an input-free route fails today on a Resource with no recipe
+ * yet (unfinished content). The Market rule assumes Markets pay in currency, which
+ * is retired; what Markets become is an open owner question.
  */
 
 /**
@@ -388,7 +388,7 @@ describe('Registry integrity', () => {
      * that drift in either direction: content inventing a value, or the
      * constants dropping one that content still uses.
      */
-    it.skip('classifies every Token with vocabulary the game declares', () => {
+    it('classifies every Token with vocabulary the game declares', () => {
         for (const id of ALL_IDS) {
             const def = TOKENS[id];
             expect(isTokenType(def.tokenType), `${id} has unknown tokenType "${def.tokenType}"`).toBe(true);
