@@ -71,7 +71,6 @@ const SHOP_TARGET = 'cartographer';
 export const useUIModals = (engine) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
-    const [isSandboxOpen, setIsSandboxOpen] = useState(false);
 
     // `filters` is a fresh object per open so panes can re-apply the same filter twice.
     const [drawerState, setDrawerState] = useState({ panes: [], filters: {}, maximized: null });
@@ -231,11 +230,6 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setIsSlotSelectionOpen(false), []),
             isOpen: isSlotSelectionOpen
         },
-        sandbox: {
-            toggle: useCallback(() => setIsSandboxOpen(prev => !prev), []),
-            close: useCallback(() => setIsSandboxOpen(false), []),
-            isOpen: isSandboxOpen
-        },
         fullscreen,
         drawer: {
             ...drawerState,
@@ -308,7 +302,6 @@ export const useUIModals = (engine) => {
 
         // ⚠️ Every subscription below must have a publisher somewhere.
         const subs = [
-            engine.EventBus.subscribe(UI_EVENTS.DEV_TOGGLE_SANDBOX, () => setIsSandboxOpen(prev => !prev)),
             engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_DRAWER, (data) => {
                 const tab = data?.tab;
                 if (!tab || tab === 'heroes') return;
@@ -344,7 +337,6 @@ export const useUIModals = (engine) => {
     }, [engine]);
 
     const isAnyModalOpen = isSettingsOpen ||
-                           isSandboxOpen ||
                            fullscreenView !== null;
 
     return { ...controls, isAnyModalOpen };

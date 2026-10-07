@@ -175,8 +175,6 @@ export const UI_EVENTS = Object.freeze({
     /** The playmat tuner swapped the terrain art. Payload: none. */
     TERRAIN_ART_SET_CHANGED: 'terrain_art_set_changed',
 
-    /** Dev panel only. Payload: none. */
-    DEV_TOGGLE_SANDBOX: 'dev:toggle-sandbox',
     /** Dev stress harness. Payload: `{ name, id }`. */
     DEV_STRESS_STARTED: 'dev:stress_started',
 });

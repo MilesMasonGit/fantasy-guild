@@ -578,7 +578,7 @@ function seedEffectLibrary(state = {}) {
 
 /**
  * A Token's retired `promotion: { jobId }` field becomes a Promotes rule in the library.
- * ⚠️ Runs after `seedEffectLibrary` on the same three load paths, and calls the same pure function as `scripts/migrate-promotion-rules.mjs`, so this workspace and `data/` convert identically. Idempotent.
+ * ⚠️ Runs after `seedEffectLibrary` on the same three load paths, and calls the shared pure function in `effectMigration.js`, so this workspace and `data/` convert identically. Idempotent.
  */
 function seedPromotionRules(state = {}) {
     const tokens = state.tokens || {};

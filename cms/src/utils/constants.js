@@ -78,7 +78,7 @@ export {
   usedBy,
 } from '../../../src/systems/effects/effectLibrary.js';
 
-// ⚠️ The migration is imported, never reimplemented: it runs once by `scripts/migrate-effects-library.mjs` over `data/` and once by `useEntityStore` over the workspace in the browser, and a second implementation would let the two produce different libraries.
+// ⚠️ The migration is imported, never reimplemented: it runs over `data/` and over the workspace in the browser (`useEntityStore`), and a second implementation would let the two produce different libraries.
 export {
   migrateBearers,
   migratePromotionFields,

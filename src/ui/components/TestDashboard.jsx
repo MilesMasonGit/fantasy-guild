@@ -13,7 +13,7 @@ import {
 } from '../../systems/core/DevTools.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
-import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
@@ -216,12 +216,6 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🎞️ Sprite Animation Studio",
             onClick: () => setShowAnimationStudio(true)
-        },
-        {
-            label: "🛠️ Toggle Layout Sandbox",
-            onClick: () => {
-                engine.EventBus.publish(UI_EVENTS.DEV_TOGGLE_SANDBOX);
-            }
         },
         {
             label: "✨ Scatter Loot (burst)",

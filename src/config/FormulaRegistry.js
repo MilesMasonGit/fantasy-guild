@@ -25,7 +25,7 @@ export function skillSpeedBonus(level) {
     return level * SKILL_SPEED_FACTOR;
 }
 
-// COMBAT FORMULAS — 7-Stat Engine. ⚠ marks first-calibration values (tools/curve_explorer.html).
+// COMBAT FORMULAS — 7-Stat Engine. ⚠ marks first-calibration values.
 
 /**
  * The growth curve — one dial for the whole game.

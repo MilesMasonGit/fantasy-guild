@@ -27,7 +27,6 @@ import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
 import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, columnWidthCss } from './components/board/boardConstants.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { selectGuildInspectSelection } from './guildInspectSelection.js';
-import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 
 import { FPSCounter } from './components/base/FPSCounter.jsx';
@@ -556,18 +555,6 @@ export const ReactRoot = ({ engine }) => {
                     />
                 )}
 
-
-                {ui.sandbox.isOpen && (
-                    <div className="pointer-events-auto absolute inset-0 z-[1000] bg-gi-background">
-                        <LayoutSandbox />
-                        <button
-                            onClick={ui.sandbox.toggle}
-                            className="absolute top-4 right-4 p-2 bg-gi-danger/20 text-gi-danger rounded hover:bg-gi-danger hover:text-white pointer-events-auto z-50 transition-colors shadow-lg"
-                        >
-                            Close Sandbox
-                        </button>
-                    </div>
-                )}
                 </DeckDndProvider>
             </ViewportProvider>
         </EngineProvider>

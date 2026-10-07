@@ -4,11 +4,10 @@ import { EFFECT_ID_PREFIX } from './effectLibrary.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 
 /**
- * Moves every inline statement into a named library entry. A shared module rather than a
- * script because it must run over two copies of the same content: `scripts/
- * migrate-effects-library.mjs` rewrites `data/`, and `cms/src/stores/useEntityStore.js`
- * rewrites the CMS workspace in the author's browser localStorage. If the two produced
- * different libraries, the next "Sync to Game" would silently unwind the migration.
+ * Moves every inline statement into a named library entry. A shared module because it must run over two copies of the same content:
+ * the game's `data/` and the CMS workspace (`cms/src/stores/useEntityStore.js`) in the
+ * author's browser localStorage. If the two produced different libraries, the next
+ * "Sync to Game" would silently unwind the migration.
  *
  * ⚠️ Pure, because the CMS imports it.
  *
@@ -170,9 +169,8 @@ export function migrateBearers(bearers = {}, { existing = {}, nameOf = titleCase
  * A Token's `promotion` field becomes a library effect holding a Promotes rule, so nothing
  * already authored under the old field is lost.
  *
- * ⚠️ Called from two places like `migrateBearers` (`scripts/migrate-promotion-rules.mjs`
- * for `data/`, `useEntityStore` for the CMS workspace); if they disagreed, the next
- * "Sync to Game" would overwrite one with the other.
+ * ⚠️ Run on the CMS workspace by `useEntityStore` like `migrateBearers`; if the CMS and `data/`
+ * disagreed, the next "Sync to Game" would overwrite one with the other.
  *
  * ⚠️ Deterministic ids, not random ones: both copies run this independently, so anything
  * random (`newStatementId`) would give the same rule two ids and churn every sync. The
