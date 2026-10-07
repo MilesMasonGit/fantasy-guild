@@ -476,7 +476,10 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   [`docs/active/concept_atlas.md`](../active/concept_atlas.md). Loot Maps and
   Modifiers, combine them in a Cartography screen to generate a Region, and
   relocate the guild to better Regions over time. Many Tokens become fixed
-  geography. Some unfinished Atlas code sits uncommitted (ticket T-005).
+  geography. Owner decisions (2026-10-07, top of the concept): resource nodes
+  respawn in place, the Shop sells buildings and tools only, demolition is a
+  Construction job with no refund, everything counts toward the cap, and a
+  hand-made Starter Camp opens the game. Some unfinished Atlas code sits uncommitted (ticket T-005).
 - **Skill and class rework v2 — Planned for the crunch**:
   [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md),
   approved, needs a roadmap; brings the 4 Academies.

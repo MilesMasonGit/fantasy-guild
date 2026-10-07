@@ -4,6 +4,38 @@ This document expands on the **Map System & Region Generation Concept** to provi
 
 ---
 
+## ⚠️ Owner decisions, 2026-10-07 (these override the sections below)
+
+The concept was written by another tool on 2026-10-05; the owner reviewed it
+against the current game and decided:
+
+| Topic | Decision |
+|---|---|
+| **Resource nodes** | **Respawning fixtures** (as §3.3): the map places permanent nodes that deplete and come back in place. Spawners remain **only for enemies and lures**. |
+| **Respawn** | Time **set per Token in the CMS** (10–15 s is a starting value). Each node type also chooses **refill or regrow**: an ore vein refills; a tree comes back as a sapling that grows (today's growth system), keeping the mat visibly alive. |
+| **The Shop** | Sells **buildings and tools only** (Foundations, anvils, tools, lures). Resources come from the Region. |
+| **Removing buildings** | **Demolition is a low-level Construction job**: the player marks a Token for demolition and a hero with Construction removes it. **No refund.** Replaces the discard bin. (Replaces the concept's "hold to deconstruct".) |
+| **Token cap** | **Everything on the mat counts**, generated nodes included, so a map's budget must fit the cap; Guild upgrades raise it. |
+| **New game** | A **hand-made Starter Camp** Region: fixed nodes for the tutorial, a few enemies, safe. The tutorial ends by giving the first Maps. |
+| **Guild Hall** | **On every Region, in the centre**; each Region is generated around it. Its upgrades are global. |
+| **Ambushes** | Kept, as a **per-Token rule** authored in the CMS (a chance to spawn an enemy when worked; the effect grammar's "spawns"). |
+| **Map sources** | **Rare enemy drops and quest rewards**. Maps are special items (owner, 2026-10-07); the old Map Tokens retire. |
+| **Biomes and terrain** | **The terrain rework paints each Region's biome** from its Base Maps, blending hybrids; it follows the Atlas in the crunch. |
+| **Offline** | Only the active Region runs; offline catch-up (`concept_offline_progress.md`) applies to it alone. |
+
+**What this changes in today's game** (for the roadmap):
+- The **Spawner System** narrows to enemies and lures; forests and mines stop
+  being Shop purchases.
+- **Charges become "until depleted"**: a node at 0 charges depletes and
+  respawns instead of being removed.
+- The **discard bin and its refunds** are replaced by demolition (T-101's bin
+  bug matters only until then).
+- The **Token cap** (T-102) covers generated nodes; map budgets are sized to it.
+- The **opening mat** (Hall, Oak Forest, Copper Mine bought from the Shop)
+  becomes the Starter Camp.
+
+---
+
 ## 1. Executive Summary
 The Atlas System replaces a linear or purely procedural world map with a player-driven, chemistry-style crafting system. Players loot base Maps and Modifiers, combine them in the Cartography interface to define a "generation budget," and generate a custom Region layout. They can infinitely reroll the spatial layout before "Settling" the region permanently into their Atlas. Traveling to a Region relocates all Heroes to that screen, where they can build Foundations and interact with organic nodes and integrated combat threats.
 
