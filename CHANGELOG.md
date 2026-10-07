@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Performance baseline recorded (2026-10-07).** Engine and drawing baselines saved on the owner's
+  PC; results, the per-system cost table and the drag success rates are in
+  `docs/reference/PERFORMANCE.md`. The rings are over half the drawing cost of a realistic mat.
 - **Measurement tools, part 2 (2026-10-07).** `npm run bench:draw` measures what drawing costs:
   each stress board, and S2 with the Bank, the Shop or a hero sheet open or with notification and
   loot bursts, in headless Chrome on the real GPU at CPU 1× and 4×, with a cost table per drawing
