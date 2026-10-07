@@ -14,27 +14,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * 2×2 Tokens on the free playmat.
- *
- * ## ⭐ What went with the grid (Free Playmat slice 1.6d-2)
- * Most of this file used to describe a **footprint**: four tiles a large Token
- * covered, the anchor among them, the twelve tiles around the outside, and the
- * board edges it could overflow. None of that exists any more — a 2×2 Token is
- * one circle at one point, 288 u across — so three blocks were deleted rather
- * than migrated, because each only pinned the shape of the deleted grid:
- *
- * * **Geometry & Bounds Checks** — `tileFootprint`, `isFootprintInBounds` and a
- *   placement refused for overflowing the board's right or bottom edge. A Token
- *   is now kept on the mat by its art circle (`MatPlacement.insideMat`), which
- *   `MatFrameDrops.test.js` pins.
- * * **the footprint query test** — `getOccupyingToken`, `hasToken` and
- *   `emptyTiles`, the whole "four tiles answer for one Token" view.
- * * **12-Tile Perimeter Adjacency** — `adjacency.neighboursOfFootprint`, from
- *   the deleted `adjacency.js`. What a 2×2 actually reaches is a distance now,
- *   and `Nearby.test.js` pins it (FP-41).
- *
- * What survives is what a large Token still does: it moves **itself** rather
- * than displacing what it lands on, only one hero works it, and a passive one is
- * never worked at all.
  */
 
 /** Test layout only: a spot on a 160 u lattice, and the centre of a 2×2 over it. */
@@ -54,7 +33,7 @@ describe('2×2 Large Token Mechanics', () => {
                 maps: []
             },
             // Both hold mining: a hero only works a Token whose skill they
-            // hold, and a Token with no skill is not workable (FP-47, FP-48).
+            // hold, and a Token with no skill is not workable.
             heroes: [
                 { id: 'hero_1', name: 'Althea', skills: { mining: { level: 5, xp: 0 } }, level: 1 },
                 { id: 'hero_2', name: 'Brom', skills: { mining: { level: 5, xp: 0 } }, level: 1 }

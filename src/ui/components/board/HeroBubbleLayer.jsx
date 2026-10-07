@@ -28,28 +28,21 @@ const guessSize = (stack) => ({
 });
 
 /**
- * ⭐ **Speech bubbles, above every hero's head.**
- *
- * One layer over the whole mat, so a bubble is never hidden by a Token, a flag
- * or another hero. Each stack is placed from the same point `MatHero` uses and
- * glides with it for one tick while the hero walks, so it stays over the head.
- * Bubbles are not clickable: the pointer passes straight through to whatever is
- * beneath, so dragging a hero or their flag is never blocked.
- *
- * Up to three bubbles per hero (SB-3):
- *
- * * **blocked** (`hero.alert`, the alert on the Token they hold) — says what is
- *   wrong for as long as it is wrong, re-read twice a second so it names what
- *   is missing *now*; a shortage of items waits first (SB-6);
- * * **moments** — arriving at a job, going idle, a level-up, a flag that
- *   could not be pinned (B5) — timed, and gone by themselves (`heroSpeech.js`).
- *
- * Only unusual events are spoken (feedback Q6, FB-21): routine lines are
- * filtered out by `speaksMoment` / `speaksBlock`, and every line with its
- * status is listed in `docs/reference/speech_bubble_lines.md`.
- *
- * Stacks are kept off each other and inside the mat (SB-4, `bubbleLayout.js`);
- * a nudged stack's little tail still points at its hero.
+ * Speech bubbles, above every hero's head.
+ * One layer over the whole mat, so a bubble is never hidden by a Token, a flag or another
+ * hero. Each stack is placed from the same point `MatHero` uses and glides with it for one
+ * tick while the hero walks, so it stays over the head. Bubbles are not clickable: the pointer
+ * passes straight through to whatever is beneath, so dragging a hero or their flag is never
+ * blocked.
+ * Per hero: **blocked** (`hero.alert`, the alert on the Token they hold) says what is wrong
+ * for as long as it is wrong, re-read twice a second so it names what is missing NOW; a
+ * shortage of items waits first. **moments** (arriving at a job, going idle, a level-up, a
+ * flag that could not be pinned) are timed, and gone by themselves (`heroSpeech.js`).
+ * Only unusual events are spoken: routine lines are filtered out by `speaksMoment` /
+ * `speaksBlock`, and every line with its status is listed in
+ * `docs/reference/speech_bubble_lines.md`.
+ * Stacks are kept off each other and inside the mat (`bubbleLayout.js`); a nudged stack's
+ * little tail still points at its hero.
  */
 export const HeroBubbleLayer = ({ heroes }) => {
     const [now, setNow] = useState(() => Date.now());
@@ -59,12 +52,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const sizesRef = useRef(new Map());     // heroId → measured {w, h} of its stack
     const [, setSizeTick] = useState(0);
     const mat = useMatSize();
-    // The hero's art size in mat units, as `MatHero` draws it (FB-20).
+    // The hero's art size in mat units, as `MatHero` draws it.
     const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, boardScaleAt(useMatFit()));
     const wasIdleRef = useRef(null);        // heroId → was idle last render (null until the first look)
 
     // `kind` is the moment's entry in `MOMENT_SPOKEN`: routine ones stay
-    // silent (FB-21).
+    // silent.
     const say = (heroId, kind, moment) => {
         if (!speaksMoment(kind)) return;
         const at = Date.now();
@@ -88,8 +81,8 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 const name = getTokenType(token.typeId)?.name || tokenName(token.typeId) || token.typeId;
                 sayRef.current(p.heroId, 'arrived', { key: 'arrived', text: momentText.arrived(name) });
             }),
-            // B5 bad pin (FB-45): the flag could not be pinned to the Token it
-            // was dropped on, so the hero says why in their stuck-line words.
+            // The flag could not be pinned to the Token it was dropped on, so the hero says
+            // why in their stuck-line words.
             EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, (p) => {
                 if (!p?.heroId) return;
                 const text = pinRefusedLineFor(p.instanceId, p.reason);
@@ -152,16 +145,15 @@ export const HeroBubbleLayer = ({ heroes }) => {
             : null;
         const stack = stackOf(momentsRef.current.get(h.heroId) || [], blocked, t);
         if (!stack.length) continue;
-        // The tail sits just above the head, read from the art's real size at
-        // this mat scale (FB-20, `bubbleAnchorY`).
-        // A moving hero comes with no point (CR3-008): read it live.
+        // The tail sits just above the head, read from the art's real size at this mat scale
+        // (`bubbleAnchorY`). A moving hero comes with no point: read it live.
         const at = h.x == null ? HeroMotion.bodyView(h.heroId) : h;
         if (!at) continue;
         anchored.push({ h, stack, x: at.x, y: bubbleAnchorY(at.y, artPx), live: h.x == null });
     }
 
-    // While a moving hero is speaking, follow their steps here — the one place
-    // that still redraws per step, and only while a bubble is up (CR3-008).
+    // While a moving hero is speaking, follow their steps here: the one place that still
+    // redraws per step, and only while a bubble is up.
     const following = anchored.some(a => a.live);
     useLayoutEffect(() => {
         if (!following) return undefined;
@@ -172,10 +164,9 @@ export const HeroBubbleLayer = ({ heroes }) => {
         mat
     );
 
-    // Measure what was drawn, so the next pass spaces real sizes, not guesses.
-    // ⭐ Only when what the stacks SAY changes (CR3-353): a stack's size is its
-    // lines, and this layer re-renders on every walking step, where measuring
-    // forced a layout inside each commit.
+    // Measure what was drawn, so the next pass spaces real sizes, not guesses. Only when what
+    // the stacks SAY changes: a stack's size is its lines, and this layer re-renders on every
+    // walking step, where measuring forced a layout inside each commit.
     const measureKey = anchored
         .map(({ h, stack }) => `${h.heroId}:${stack.map(b => `${b.id}=${b.text}`).join('|')}`)
         .join('||');
@@ -212,9 +203,8 @@ export const HeroBubbleLayer = ({ heroes }) => {
                         key={h.heroId}
                         data-hero-bubble-stack={h.heroId}
                         className="absolute flex flex-col items-center justify-end gap-1 pointer-events-none"
-                        // Moved by `transform`, as its hero is (CR3-007); the
-                        // second translate keeps the stack centred over the
-                        // point, tail down.
+                        // Moved by `transform`, as its hero is; the second translate keeps the
+                        // stack centred over the point, tail down.
                         style={{
                             left: 0,
                             top: 0,

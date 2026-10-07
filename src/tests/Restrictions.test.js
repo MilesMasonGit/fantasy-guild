@@ -14,23 +14,6 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 /**
  * `Cannot` — the only rule in the game that says **no** to a placement.
- *
- * The owner's ruling, verbatim: *"Refuse, token flies back to it's last
- * location. We will have a warning that will flash to show the player that it
- * was rejected and why."* And: *"There should always be a last location, but we
- * can make it fly to the vault as a fallback in case."*
- *
- * So there are three things worth pinning, and they are the three things that
- * could each go quietly wrong:
- *
- * 1. **It refuses, and it says why.** A silent no on a drag is the worst
- *    possible outcome — the player learns nothing and blames the game.
- * 2. **It is symmetric.** Dropping a third Coast beside two others breaks the
- *    *existing* Coast's rule, not the newcomer's. A check that only asked the
- *    incoming Token would let that through, and it is the single easiest thing
- *    to get wrong here.
- * 3. **Nothing is ever destroyed.** Every refusal path leaves the Token
- *    somewhere the player can still reach it.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -103,7 +86,7 @@ beforeEach(() => {
     InventoryManager.init();
     SpriteLayer.init();
     // ⚠️ The Coast layouts count diagonal neighbours, so Near is pinned at the
-    // 8-tile ring (272 u); the shipped default is 164 u since FP-75.
+    // 8-tile ring (272 u); the shipped default is 164 u.
     resetMatTuning();
     setMatTuning('nearRadius', 272);
 });
@@ -117,7 +100,6 @@ describe('A `Cannot` refuses the placement, and says why', () => {
     });
 
     /**
-     * ⭐ **FP-88 changed what a broken rule does to a drop** (slice 1.6d-1).
      * It used to refuse and fly the Token back. The owner's ruling is that the
      * drop is **nudged to the nearest spot that obeys the rule**, and flies back
      * only when no such spot is within nudge reach. The rule itself is unchanged

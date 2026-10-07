@@ -40,18 +40,17 @@ import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * ⭐ **A walking enemy's boxes follow the engine without React** (CR3-008).
- * While `on`, each `ENEMIES_WALKED` writes the Token's current point straight
- * into both boxes' `transform` (the same `translate` the render would write;
- * the one-tick linear glide is already on them). MatBoard re-renders only when
- * the walker's place in the stack changes, and any render writes the same live
+ * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
+ * writes the Token's current point straight into both boxes' `transform` (the same `translate`
+ * the render would write; the one-tick linear glide is already on them). MatBoard re-renders
+ * only when the walker's place in the stack changes, and any render writes the same live
  * point, so React and this never disagree.
  */
 function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
     const half = React.useRef(boxHalf);
     half.current = boxHalf;
-    // A layout effect, so it listens from the commit on, and catches up at
-    // once on any step taken between the render and now.
+    // A layout effect, so it listens from the commit on, and catches up at once on any step
+    // taken between the render and now.
     React.useLayoutEffect(() => {
         if (!on) return undefined;
         const follow = () => {
@@ -66,39 +65,27 @@ function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
     }, [on, id, artRef, overlayRef]);
 }
 
-/** How long the Hall brightens when collected loot lands on it (FB-16). */
 const RECEIVED_MS = 350;
 
 
-/** How long a Token takes to slide to a point the game moved it to (a push). */
 const SLIDE_MS = 220;
 const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
 
 /**
- * ⭐ **One Token on the free playmat** (slice 1.6c-2) — a circle of art at a
- * point, drawn by its **instance id**. It replaced `BoardTile`, which drew a
- * square of the grid and asked a stopgap adapter which tile each event meant.
- *
- * * **A box at `(x − r, y − r)`, `2r` across**, where `r` is the art radius for
- *   its size (1×1: 64 u, 2×2: 144 u, a small 1×1: 32 u — `matGeometry`, TL-19). A move the game makes (a
- *   push) is a CSS `left`/`top` slide; a move the player makes is not — the
- *   Token is simply where it was let go.
- * * **A drag source and nothing else.** The whole mat is the one drop target
- *   (`dropOnMat`), so a Token no longer accepts drops on itself; dropping a
- *   copy "on" it still restocks it, because the drop point lands on its spot.
- * * **Hit-tested as a circle** (`border-radius`, not `clip-path`, so art that
- *   spills past the circle is drawn rather than cropped), so the corners of the
- *   box belong to whatever is underneath. Which Token the pointer is on is decided once by
- *   `MatBoard` (nearest centre, `Flags.tokenAtPoint`) — this just draws.
- *
- * ## Two boxes, not one
- * The art and the badges are **siblings with explicit z**, not parent and
- * child. A hero stands between them (D-266: hero left, Token right, 48 px
- * apart), and the badges — the progress bar especially — have to stay readable
- * in front of that hero, exactly as they did on the grid. A single box would
- * make its own stacking context and bury the bar under the hero's feet. The
- * bar is the ring row now (B1.2, TL-22), and it lives in the badge box for the
- * same reason.
+ * One Token on the free playmat: a circle of art at a point, drawn by its instance id.
+ * - **A box at `(x - r, y - r)`, `2r` across**, where `r` is the art radius for its size
+ * (`matGeometry`). A move the game makes (a push) is a CSS `left`/`top` slide; a move the
+ * player makes is not: the Token is simply where it was let go.
+ * - **A drag source and nothing else.** The whole mat is the one drop target (`dropOnMat`);
+ * dropping a copy on a Token still restocks it, because the drop point lands on its spot.
+ * - **Hit-tested as a circle** (`border-radius`, not `clip-path`, so art that spills past the
+ * circle is drawn rather than cropped), so the corners of the box belong to whatever is
+ * underneath. Which Token the pointer is on is decided once by `MatBoard` (nearest centre,
+ * `Flags.tokenAtPoint`); this just draws.
+ * Two boxes, not one: the art and the badges are siblings with explicit z, not parent and
+ * child. A hero stands beside the Token, and the badges (the ring row especially) have to stay
+ * readable in front of that hero. A single box would make its own stacking context and bury
+ * them under the hero's feet.
  */
 export const MatToken = React.memo(function MatToken({
     id,
@@ -117,28 +104,21 @@ export const MatToken = React.memo(function MatToken({
     disallowMode = false,
     onFlipDisallow
 }) {
-    // TL-19 (B8.1): the radius and the art both come from the type (footprint
-    // and `artSize` alike), so a small Token is half size here exactly as it
-    // is to the engine (`artRadiusOf`).
+    // The radius and the art both come from the type (footprint and `artSize` alike), so a
+    // small Token is half size here exactly as it is to the engine (`artRadiusOf`).
     const r = artRadiusOf(typeId);
     const small = isSmallToken(typeId);
 
     /**
-     * ⭐ FP-99 — how big this Token's art is drawn, in mat units.
-     *
-     * The mat's transform turns `artPx` mat units into exactly
-     * `boardArtSteps(fit) × ART_PX` screen pixels, so the sprite is always a
-     * whole multiple of its 64px art and never resampled.
-     *
-     * ⚠️ The **box** grows to hold the art when the art is the larger of the two,
-     * which below 1× it is: the box is the Token's round hit area, and it was
-     * once `clip-path`ed, so a box left at the Token's own radius cropped the
-     * very spill FPR-6 accepts. A 2×2's
-     * 288 u circle is already wider than its 256 u art, and `max` leaves that —
-     * and every 1:1 case — exactly as it was.
-     *
-     * ⚠️ This moves nothing in the engine. `x`/`y`, `hitRadiusOf` and `minGap`
-     * are untouched; this is only how much art is painted at the same point.
+     * How big this Token's art is drawn, in mat units. The mat's transform turns `artPx` mat
+     * units into exactly `boardArtSteps(fit) × ART_PX` screen pixels, so the sprite is always
+     * a whole multiple of its 64px art and never resampled.
+     * ⚠️ The box grows to hold the art when the art is the larger of the two, which below 1×
+     * it is: the box is the Token's round hit area, so a box left at the Token's own radius
+     * would crop the very spill the art step accepts. A 2×2's 288 u circle is already wider
+     * than its 256 u art, and `max` leaves that, and every 1:1 case, as it was.
+     * ⚠️ This moves nothing in the engine: `x`/`y`, `hitRadiusOf` and `minGap` are untouched;
+     * this is only how much art is painted at the same point.
      */
     const fit = useMatFit();
     const artScale = boardScaleAt(fit);
@@ -151,26 +131,23 @@ export const MatToken = React.memo(function MatToken({
     const isGuildHallToken = typeId === 'token_guild_hall';
     const isPermanent = !!(def?.cannotLeaveBoard || def?.isGuildHall || isGuildHallToken);
 
-    // ⭐ Enemy Animations EA-A: a Token with a registered sheet animates on
-    // the board only (EA-5); everything else, and every other surface,
-    // keeps the plain static sprite (EAP-4).
+    // A Token with a registered sheet animates on the board only; everything else, and every
+    // other surface, keeps the plain static sprite.
     const enemyAnimSrc = def?.enemy ? resolveEnemyAnimationPath(def.sprite) : null;
 
-    // This Token's own details, by id, refreshed only on the events that
-    // can change them (CR3-304: routed to this Token alone).
+    // This Token's own details, by id, refreshed only on the events that can change them
+    // (routed to this Token alone).
     const detail = useTokenDetail(id, def);
 
-    // The turn ring polls this (B1.3); stable per Token so its timer is not
-    // reset. `everyMs` is the roll cycle it empties over — on a turned Token
-    // the ORIGINAL's, as the roll itself uses (TL-12, `turnTimingOf`).
+    // The turn ring polls this; stable per Token so its timer is not reset. `everyMs` is the
+    // roll cycle it empties over, on a turned Token the ORIGINAL's, as the roll itself uses
+    // (`turnTimingOf`).
     const readTurn = React.useCallback(() => {
         const instance = BoardState.getTokenById(id);
         const roll = TimedChanges.nextTurnRoll(instance);
         return roll ? { ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
     }, [id]);
 
-    // The spawner's standing ring (FB-5, B1.3), after cycle and charges; a
-    // quest's progress ring (B6.2, TL-18) stands in the same place.
     const spawnerCounts = detail?.spawnerCounts ?? null;
     const quest = detail?.quest ?? null;
     const standingRings = React.useMemo(
@@ -195,7 +172,7 @@ export const MatToken = React.memo(function MatToken({
             typeId,
             from: { instanceId: id },
             onMiss: isPermanent ? () => {
-                // A UI-only alert: TILE_EVENT_ALERT is the engine's (CR3-306).
+                // A UI-only alert: TILE_EVENT_ALERT is the engine's.
                 EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
                     instanceId: id,
                     severity: 'disallow',
@@ -209,9 +186,8 @@ export const MatToken = React.memo(function MatToken({
             } : undefined
         },
         sourceSurface: DND_SURFACE.BOARD,
-        // CR3-411: no keyboard sensor exists, so dnd-kit's tabIndex/role/
-        // "press space to pick up" text was dead on every one of the ~150
-        // mat Tokens. A plain div with neither is not a Tab stop.
+        // No keyboard sensor exists, so dnd-kit's tabIndex/role/press-space text would be dead
+        // on every mat Token. A plain div with neither is not a Tab stop.
         keyboardAccessible: false
     });
 
@@ -219,21 +195,20 @@ export const MatToken = React.memo(function MatToken({
         if (drag.isDragging) onClearInspect?.();
     }, [drag.isDragging, onClearInspect]);
 
-    // While it is in the player's hand, a Token does not grow or turn into
-    // something else: that would swap it for a new instance mid-drag and lose
-    // the move (FB-12). The change waits and happens where it is put down.
-    // Released after the drop has been handled, which runs before this clean-up.
+    // While it is in the player's hand, a Token does not grow or turn into something else:
+    // that would swap it for a new instance mid-drag and lose the move. The change waits and
+    // happens where it is put down. Released after the drop has been handled, which runs
+    // before this clean-up.
     React.useEffect(() => {
         if (!drag.isDragging) return undefined;
         TimedChanges.setInHand(id, true);
         return () => TimedChanges.setInHand(id, false);
     }, [drag.isDragging, id]);
 
-    // ⭐ A Token the player moved simply IS where they let it go (owner,
-    // 2026-09-21). The `left`/`top` slide exists for moves the game makes — a
-    // push — and used to play on a drop too, so the Token visibly bounced over
-    // from its old spot. It is switched off from the moment a drag starts until
-    // just after it ends, which covers the drop's own re-render.
+    // A Token the player moved simply IS where they let it go. The `left`/`top` slide exists
+    // for moves the game makes (a push); on a drop it would make the Token visibly bounce over
+    // from its old spot. It is switched off from the moment a drag starts until just after it
+    // ends, which covers the drop's own re-render.
     const [skipSlide, setSkipSlide] = React.useState(false);
     React.useEffect(() => {
         if (drag.isDragging) {
@@ -244,7 +219,6 @@ export const MatToken = React.memo(function MatToken({
         return () => clearTimeout(timer);
     }, [drag.isDragging]);
 
-    // The landing beat: something arrived here (D-230).
     const [landing, setLanding] = React.useState(false);
     const landingTimer = React.useRef(null);
     useTokenEvent(BOARD_EVENTS.TILE_CHANGED, id, (p) => {
@@ -256,9 +230,9 @@ export const MatToken = React.memo(function MatToken({
     React.useEffect(() => () => clearTimeout(landingTimer.current), []);
 
     /**
-     * FP-60: hovering a Token also says which flags passed it over, and why.
-     * Skips change without an event (a flag re-checks every second), so they
-     * are read when the pointer arrives rather than kept in the projection.
+     * Hovering a Token also says which flags passed it over, and why. Skips change without an
+     * event (a flag re-checks every second), so they are read when the pointer arrives rather
+     * than kept in the projection.
      */
     const [skipLines, setSkipLines] = React.useState([]);
     React.useEffect(() => {
@@ -266,13 +240,12 @@ export const MatToken = React.memo(function MatToken({
         setSkipLines(tokenSkipLines(id));
     }, [isHovered, id]);
 
-    // FB-30 → FB-52: a Token with a trickle (the Guild Hall) shows what it pays
-    // in a game-styled tooltip with a live "next in", not the native title.
+    // A Token with a trickle (the Guild Hall) shows what it pays in a game-styled tooltip with
+    // a live next-in, not the native title.
     const showTrickle = isHovered && hasTrickle(def);
 
-    // B6.2 (TL-18): hovering a quest Token reads it (`QuestTooltip`), and a
-    // tutorial step still to do lights its target, as hovering its sidebar
-    // card did (`TutorialAideOverlay`).
+    // Hovering a quest Token reads it (`QuestTooltip`), and a tutorial step still to do lights
+    // its target (`TutorialAideOverlay`).
     const showQuestTip = isHovered && !!quest;
     const aideStep = isHovered && quest?.tutorial && !questDone ? quest.id : null;
     React.useEffect(() => {
@@ -287,27 +260,24 @@ export const MatToken = React.memo(function MatToken({
         ...(isHovered ? skipLines : [])
     ].filter(Boolean).join('\n') || undefined;
 
-    // ⭐ The Token stays exactly where it is (HM-2): its hero walks up and
-    // stands beside it (`HeroMotion.standingSpot`). D-266's slide-apart went
-    // with Hero Movement M1.
-    // B7.1 (TL-16): an enemy walking by its spawner steps once a tick, so it
-    // glides linearly over one tick, as a walking hero does (`MatHero`). The
-    // art, the badges, the ring row and the alerts all ride in these boxes.
+    // The Token stays exactly where it is: its hero walks up and stands beside it
+    // (`HeroMotion.standingSpot`). An enemy walking by its spawner steps once a tick, so it
+    // glides linearly over one tick, as a walking hero does (`MatHero`). The art, the badges,
+    // the ring row and the alerts all ride in these boxes.
     const walking = walkFacing != null;
-    // ⭐ CR3-008: while it walks, MatBoard does not hand a walker its point
-    // (`x` is null, so its steps do not redraw the mat). It is read live here,
-    // and each step moves the boxes directly (`useWalkerFollow`, below).
+    // While it walks, MatBoard does not hand a walker its point (`x` is null, so its steps do
+    // not redraw the mat). It is read live here, and each step moves the boxes directly
+    // (`useWalkerFollow`, below).
     const livePoint = walking && x == null ? BoardState.getTokenById(id) : null;
     const px = livePoint ? livePoint.x : x;
     const py = livePoint ? livePoint.y : y;
     const left = px - boxHalf;
     const top = py - boxHalf;
-    // ⭐ CR3-007 (R6 rule 5): a Token that can walk — an enemy — is placed
-    // and glides by `transform`; every other Token stays on left/top (a
-    // transform on all 300 Tokens of a busy mat cost more in compositing than
-    // it saved). Decided once, at mount, by kind: a box switching styles
+    // A Token that can walk (an enemy) is placed and glides by `transform`; every other Token
+    // stays on left/top, because a transform on every Token of a busy mat cost more in
+    // compositing than it saved. Decided once, at mount, by kind: a box switching styles
     // mid-life would slide in from the mat's corner.
-    // ⚠️ Never add `will-change` to these boxes (R6: 3× slower).
+    // ⚠️ Never add `will-change` to these boxes (3x slower).
     const [walker] = React.useState(() => !!def?.enemy);
     const boxStyle = walker ? {
         left: 0,
@@ -333,16 +303,15 @@ export const MatToken = React.memo(function MatToken({
     };
     const hidden = drag.isDragging;
 
-    // The two boxes, for a walker's steps (CR3-008).
     const artRef = React.useRef(null);
     const overlayRef = React.useRef(null);
     const setNodeRef = drag.setNodeRef;
     const setArtRef = React.useCallback((el) => { artRef.current = el; setNodeRef(el); }, [setNodeRef]);
     useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
 
-    // B1.2 / TL-22: the ring row, centred under the pair once the hero has
-    // arrived (`workerOf` answers only then, FP-26), at their STANDING spot —
-    // not their walking position — so the row does not slide while they walk.
+    // The ring row, centred under the pair once the hero has arrived (`workerOf` answers only
+    // then), at their STANDING spot rather than their walking position, so the row does not
+    // slide while they walk.
     const heroSide = detail?.heroSide ?? null;
     const heroX = heroId && heroSide != null
         ? HeroMotion.standingSpot(typeId, { x: px, y: py }, heroSide).x
@@ -357,18 +326,16 @@ export const MatToken = React.memo(function MatToken({
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // B2.3: in disallow mode a Token only flips; nothing is recalled.
+        // In disallow mode a Token only flips; nothing is recalled.
         if (disallowMode) return;
-        // Recalls the hero working it. (A Token without one used to go to the
-        // Vault; the Vault went in Token Lifecycle 9.3.)
         if (heroId) onRecallHero?.(heroId);
     };
 
-    // FB-10: the skill whose hit animation this Token plays when struck.
+    // The skill whose hit animation this Token plays when struck.
     const hitSkill = React.useMemo(() => hitSkillOf(def), [def]);
 
-    // FB-11: a Token that has just become this one glows as it appears. The
-    // glow was raised under this (new) id before it was drawn (`TokenGlows`).
+    // A Token that has just become this one glows as it appears. The glow was raised under
+    // this (new) id before it was drawn (`TokenGlows`).
     const [transformGlow, setTransformGlow] = React.useState(() => TokenGlows.glowOf(id));
     React.useEffect(() => {
         if (!transformGlow) return undefined;
@@ -377,7 +344,6 @@ export const MatToken = React.memo(function MatToken({
     }, [transformGlow]);
     const glowDelay = transformGlow ? `-${TokenGlows.GLOW_MS - transformGlow.remainingMs}ms` : undefined;
 
-    // FB-16: collected loot flies to the Hall; a subtle brighten as it lands.
     const [received, setReceived] = React.useState(false);
     const receivedTimer = React.useRef(null);
     const isHall = isGuildHallToken || !!def?.isGuildHall;
@@ -392,16 +358,13 @@ export const MatToken = React.memo(function MatToken({
         return () => { unsub?.(); clearTimeout(receivedTimer.current); };
     }, [isHall]);
 
-    // ⭐ Wave 5 (owner rulings Z §11): a sharp coloured outline replaces the
-    // breathing green glow and the hover brightening — white hovered or
-    // selected, red in alert, green worked (`spriteOutline.js`). It is a
-    // generated picture under the art, not a filter.
+    // A sharp coloured outline: white hovered or selected, red in alert, green worked
+    // (`spriteOutline.js`). It is a generated picture under the art, not a filter.
     const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed });
     const gear = gearStateOf(detail || {});
 
     return (
         <>
-            {/* The art, and the only thing the pointer can grab. */}
             <div
                 ref={setArtRef}
                 {...drag.handleProps}
@@ -421,14 +384,12 @@ export const MatToken = React.memo(function MatToken({
                 onContextMenu={handleContextMenu}
                 onClick={(e) => {
                     if (drag.isDragging) return;
-                    // B2.3 (FB-32): in disallow mode a click flips the Token
-                    // allowed ⇄ disallowed (FP-35) and does nothing else —
-                    // it never claims a quest.
+                    // In disallow mode a click flips the Token allowed/disallowed and does
+                    // nothing else; it never claims a quest.
                     if (disallowMode) { onFlipDisallow?.(id); return; }
-                    // B6.2 (TL-18, FB-41): click a done quest to claim it. The
-                    // engine drops the reward as loot and removes the Token.
-                    // `skipSlide` is still on just after a drop, so the drop's
-                    // own click never claims. A quest not yet done inspects.
+                    // Click a done quest to claim it. The engine drops the reward as loot and
+                    // removes the Token. `skipSlide` is still on just after a drop, so the
+                    // drop's own click never claims. A quest not yet done inspects.
                     if (questDone) {
                         if (skipSlide) return;
                         const result = QuestTokens.claimQuest(id);
@@ -446,9 +407,8 @@ export const MatToken = React.memo(function MatToken({
                 style={{
                     ...boxStyle,
                     zIndex: z,
-                    // Rounded, not clipped: the corners of the box do not catch
-                    // the pointer, and art that spills past the circle is not
-                    // cropped (owner feedback, slice 1.9 work).
+                    // Rounded, not clipped: the corners of the box do not catch the pointer,
+                    // and art that spills past the circle is not cropped.
                     borderRadius: '50%',
                     visibility: hidden ? 'hidden' : 'visible'
                 }}
@@ -457,9 +417,10 @@ export const MatToken = React.memo(function MatToken({
                     disallowMode || questDone ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 )}
             >
-                {/* B6.2 (TL-18): a done quest glows until claimed — the
-                    transform glow's gold (FB-11), held as a halo behind the
-                    art that breathes (`gi-quest-ready`), spilling past it. */}
+                {/**
+                 * A done quest glows until claimed: the transform glow's gold, held as a halo
+                 * behind the art that breathes (`gi-quest-ready`), spilling past it.
+                 */}
                 {questDone && (
                     <div
                         aria-hidden="true"
@@ -515,7 +476,6 @@ export const MatToken = React.memo(function MatToken({
                 )}
             </div>
 
-            {/* Everything written on the Token, in front of any hero on it. */}
             <div
                 ref={overlayRef}
                 data-token-id={id}
@@ -527,9 +487,10 @@ export const MatToken = React.memo(function MatToken({
             >
                 <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} small={small} />
 
-                {/* FB-7: the recipe gear, top-left, on every Token with something
-                    to choose. Nothing chosen: it pulses, and that is all — no
-                    alert (owner, after Q1). Heroes still pass it over. */}
+                {/**
+                 * The recipe gear, top-left, on every Token with something to choose. Nothing
+                 * chosen: it pulses, and that is all, no alert. Heroes still pass it over.
+                 */}
                 {gear.show && (
                     <StationGearBadge
                         isDragging={hidden}
@@ -541,16 +502,15 @@ export const MatToken = React.memo(function MatToken({
                     />
                 )}
 
-                {/* FB-33: disallowed (FP-35), top-right, always shown. */}
                 {detail?.disallowed && <DisallowBadge isDragging={hidden} small={small} />}
 
-                {/* TL-22: cycle, charges and the Token's own ring, in one row
-                    under the Token and its hero (B1.2). It carries the -1 floater.
-                    B1.3: a spawner's count (FB-5) and a turning Token's
-                    countdown (FB-14 / TL-12) stand in it always.
-                    TL-19 (B8.1): a small Token keeps FULL-size rings (owner) —
-                    `RING_D_U` is fixed in mat units; only the row's anchor
-                    (`boxHalf`) follows the smaller Token. */}
+                {/**
+                 * Cycle, charges and the Token's own ring, in one row under the Token and its
+                 * hero. It carries the -1 floater. A spawner's count and a turning Token's
+                 * countdown stand in it always. A small Token keeps FULL-size rings:
+                 * `RING_D_U` is fixed in mat units; only the row's anchor (`boxHalf`) follows
+                 * the smaller Token.
+                 */}
                 <TokenBadgeRow
                     instanceId={id}
                     token={isGuildHallToken ? { ...token, usesRemaining: null } : token}
@@ -562,9 +522,10 @@ export const MatToken = React.memo(function MatToken({
                     readTurn={detail?.turns ? readTurn : null}
                 />
 
-                {/* FB-8 / TL-14: the one mark at the centre — a spawner's or a
-                    worked Token's live problem (B1.1), news of a problem, or a
-                    green notice that fades. */}
+                {/**
+                 * The one mark at the centre: a spawner's or a worked Token's live problem,
+                 * news of a problem, or a green notice that fades.
+                 */}
                 <TokenCentreAlert
                     instanceId={id}
                     isSpawner={!!detail?.isSpawner}

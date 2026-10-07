@@ -4,15 +4,11 @@ import { DND_SURFACE } from '../ui/dnd/dragConstants.js';
 
 /**
  * ⭐ The drag chain's target choice, pinned before R7's fixes touch it
- * (CR3-413, test first for CR3-400/402/403).
+ * (test first/402/403).
  *
- * `smallestWithin` is the collision rule: of the drop targets under the
- * pointer, which one gets the drop. `surfaceAtPoint` says which big region the
- * pointer is over, for the ghost's bloom. Neither had a test.
- *
- * ⚠ Not here: "a drop over a drawer resolves to a miss" (CR3-402). That is red
- * today (a drop over a drawer lands on the mat under it) and lands with the
- * owner's Shop slide-back ruling.
+ * ⚠ Not here: "a drop over a drawer resolves to a miss". That is red today (a
+ * drop over a drawer lands on the mat under it) and lands with the owner's
+ * Shop slide-back ruling.
  */
 
 /** A dnd-kit droppable container with a rect, as `pointerWithin` reads it. */

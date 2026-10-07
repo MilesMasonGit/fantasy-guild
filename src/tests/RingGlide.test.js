@@ -7,14 +7,9 @@ import { RingBadge, RING_CIRCUMFERENCE, glideOffset } from '../ui/components/boa
 import { GLIDING_RINGS, spawnerRing } from '../ui/components/board/ringRow.js';
 
 /**
- * ⭐ Count rings glide (owner, 2026-10-01). A Token's charges ring and a
- * spawner's count ring used to jump when their number changed; now the arc
- * slides to the new value over ~0.8 s with a slow ease-out.
- *
- * How, and why it is cheap: the arc is one full-length dash pushed back by
- * `stroke-dashoffset`, and a CSS transition on that one property moves it.
- * No JavaScript runs during the glide, only the ring whose value changed
- * animates, and a ring at rest has nothing running at all.
+ * ⭐ Count rings glide. A Token's charges ring and a spawner's count ring
+ * used to jump when their number changed; now the arc slides to the new
+ * value over ~0.8 s with a slow ease-out.
  */
 
 const h = React.createElement;

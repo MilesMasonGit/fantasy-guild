@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// D-27: food fires whenever HP is low, in combat or out — but eating DURING a
-// fight pauses the attack cycle while the fight carries on, so the enemy gets
-// a free swing. That price is the whole reason HP management stays tense.
+// food fires whenever HP is low, in combat or out — but eating DURING a fight
+// pauses the attack cycle while the fight carries on, so the enemy gets a
+// free swing. That price is the whole reason HP management stays tense.
 
 const { state } = vi.hoisted(() => ({ state: { meal: null } }));
 
@@ -106,9 +106,9 @@ describe('eating mid-combat (D-27)', () => {
         expect(eating.combat.heroTickProcesses.h1).toBe(fighting.combat.heroTickProcesses.h1);
     });
 
-    // W-2: uncapped eating (D-31) means the spiral — eat, get hit, eat — is
-    // reachable. It is working as designed (a hero who can't out-heal the
-    // damage should lose), but it must be OBSERVABLE rather than silent.
+    // uncapped eating means the spiral — eat, get hit, eat — is reachable.
+    // It is working as designed (a hero who can't out-heal the damage
+    // should lose), but it must be OBSERVABLE rather than silent.
     it('announces the meal so the spiral is visible rather than mysterious', async () => {
         const { EventBus } = await import('../systems/core/EventBus.js');
         const seen = [];

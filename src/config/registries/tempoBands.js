@@ -1,19 +1,16 @@
 /**
  * Tempo — the five speeds a producing Token or recipe is allowed to run at.
  *
- * Added 2026-08-28 for the economic simulator rework (phase P2). This module is
- * **vocabulary and arithmetic only**. Nothing reads a Token's tempo yet: the
- * passes that will place cycle times inside these bands are P3 and P4, and the
- * CMS write-back that will act on them is P5. What exists today is the table,
- * so that the CMS can offer the tempo names and `ContentRules` can check a
- * Token that has been given one.
+ * This module is **vocabulary and arithmetic only**. The game never reads a Token's tempo: the CMS
+ * (`cms/src/engine/sim/tempoPass.js` and friends) offers the names and snaps tagged producers to a
+ * band's middle, and `ContentRules` checks a Token that has been given one.
  *
  * It lives game-side rather than in `cms/` for the same reason `tokenConstants`
- * does (CMS-5): the CMS imports the game's vocabulary across the project
+ * does: the CMS imports the game's vocabulary across the project
  * boundary, one direction only, so the two apps cannot disagree about what
  * `slow` means. `src/tests/CMSBoundary.test.js` guards that seam.
  *
- * ## The table (plan §13.3, transcribed)
+ * ## The table
  *
  * | Tempo  | Level 1  | Level 40 | Level 90 |
  * | :----- | :------- | :------- | :------- |
@@ -26,36 +23,27 @@
  * ⚠️ **Those are three views of one rule, not three tables.** The level-1
  * column is the base band; every other column is that base scaled by level.
  *
- * ## Quick, and Fast's lower floor (owner ruling TL-21, 2026-09-27)
- *
- * The plan's table had four rows, with Fast at 8–12s. The owner added
- * **Quick, 2–4s at level 1** (middle 3s), for early gathering, and **widened
- * Fast down to 4–12s** (middle 8s) so the bands still join up. Medium, Slow
- * and Heavy are the plan's numbers, unchanged.
- *
- * The middles matter because every CMS sync snaps a tagged producer (tempo
+ * ## Band middles
+ * Every CMS sync snaps a tagged producer (tempo
  * *and* purpose) to its band's middle (`tempoPass.bandMiddleMs`): a Quick
  * gatherer runs at 3s and a Fast recipe the simulator tunes runs at 8s.
  *
  * Both scale by exactly the same rule as the other bands — no special case.
  * The Quick row and Fast's floors at level 40 and 90 above are that rule's
- * output, not printed plan numbers.
+ * output, not printed numbers.
  *
- * ## ⚠️ The scaling rule is `1 + (level - 1)/70`, not the plan's `1 + level/70`
- *
- * **Owner ruling, 2026-08-28.** Plan §13.3 states the factor as `1 + level/70`
- * and *also* prints the level-1 column as 8–12 / 12–20 / 20–30 / 30–120s. Those
- * two statements contradict each other: `1 + 1/70` is 1.0143, so the literal
+ * ## ⚠️ The scaling rule is `1 + (level - 1)/70`, not `1 + level/70`
+ * The literal `1 + level/70` is wrong at level 1: `1 + 1/70` is 1.0143, so the literal
  * formula inflates every level-1 band by 1.4% and Medium's floor becomes
  * 12,171ms rather than 12,000ms. A Token authored at a round 12s and tagged
  * Medium then reads as *outside its own band* — a false warning in the CMS and,
  * because `ContentRules` calls the same function, a red test the first time
  * anyone tags round-numbered content.
  *
- * The owner ruled the printed table wins at level 1: authoring a round number
+ * The printed table wins at level 1: authoring a round number
  * must land inside the band. Subtracting one from the level makes level 1 exact
  * and costs a little fit at the top — worst error against the plan's printed
- * level-40 and level-90 columns goes from 0.57s to **1.43s**, on bands tens of
+ * level-40 and level-90 columns is **1.43s**, on bands tens of
  * seconds wide.
  *
  * A third reading (`(70 + level)/71`) was evaluated and rejected: exact at
@@ -69,7 +57,6 @@
  * Quick's top is Fast's floor, Fast's top is Medium's floor, and so on. A
  * cycle time from 2s up therefore always falls in exactly one band (bar the
  * shared endpoints, which are inclusive on both sides — see `isInBand`).
- * TL-21 widened Fast down to 4s precisely to keep this true.
  *
  * ## ⚠️ Heavy has no hard top
  *
@@ -93,8 +80,7 @@
 export const TEMPO_NAMES = Object.freeze(['quick', 'fast', 'medium', 'slow', 'heavy']);
 
 /**
- * The divisor in the scaling rule `1 + (level - 1)/70` (plan §13.3, with the
- * owner's 2026-08-28 level-1 correction). Named rather
+ * The divisor in the scaling rule `1 + (level - 1)/70`. Named rather
  * than inlined so the test can assert against the rule instead of a magic
  * number buried in a multiplication.
  */
@@ -121,7 +107,7 @@ export function isTempo(value) {
 /**
  * The scaling factor at a given level: `1 + (level - 1)/70`.
  *
- * ⚠️ **The `- 1` is deliberate and is an owner ruling** — see the note at the
+ * ⚠️ **The `- 1` is deliberate** — see the note at the
  * head of this file. It makes level 1 exactly the printed base band, so a
  * round authored cycle time lands inside its band instead of 1.4% outside it.
  * Do not "correct" this to the plan's literal `1 + level/70`.

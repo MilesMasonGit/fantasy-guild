@@ -36,17 +36,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Wave 5 (CR3-350; owner rulings Z §11, 2026-09-30) — the hard pixel shadow
- * and the coloured outlines, as drawn:
- *
- * - a Token RESTING on the board has no shadow at all, and no filter;
- * - a dragged (lifted) Token and floating loot cast a hard black silhouette,
- *   2 art pixels down-right;
- * - green = working, white = hovered or selected, red = alert;
- * - the dev Mat Tuner's "Outline thickness" switches between the 1-screen-
- *   pixel and 1-art-pixel images.
- *
- * Every layer is a generated picture; nothing here may be a CSS filter.
+ * ⭐ Wave 5 (owner rulings Z §11) — the hard pixel shadow and the coloured
+ * outlines, as drawn:
  */
 
 const h = React.createElement;

@@ -70,8 +70,8 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         expect(migrated.board.tokens.tok_a.placedAt).toBe(0);
         expect(migrated.board.nextTokenOrder).toBe(2);
 
-        // An unlimited-use Token stores null charges (D-176) and must not come
-        // back as 0, which would read as depleted.
+        // An unlimited-use Token stores null charges and must not come back as
+        // 0, which would read as depleted.
         expect(migrated.board.tokens.tok_b.usesRemaining).toBeNull();
         // (It also round-tripped the Token Vault and the Tray, which went in
         // Token Lifecycle 9.3 — see the old-save suite below.)
@@ -178,13 +178,10 @@ describe('A save from before the Vault went still loads (Token Lifecycle 9.3)', 
 });
 
 /**
- * ⭐ A hero comes back from a save exactly as they went in (CR3-266, test
- * first for CR3-251/252). Through the real load route: serialize → JSON →
- * `migrateState` → `GameState.initFromSave` (which rehydrates each hero and
- * re-registers their gear on the aggregator, the route CR2-040 was found on).
+ * ⭐ A hero comes back from a save exactly as they went in (test first/252).
  *
  * ⚠ Not here: a live effect (`hero.effects`) reaching the aggregator after a
- * load. That fails today (CR3-252) and lands, red first, with its fix.
+ * load. That fails today and lands, red first, with its fix.
  */
 describe('a hero round-trips through a save (CR3-266)', () => {
     beforeAll(() => {
@@ -233,7 +230,7 @@ describe('a hero round-trips through a save (CR3-266)', () => {
         expect(la.statuses).toEqual([{ id: 'poison', stacks: 2, remaining: 3 }, { id: 'well_fed', stacks: 1 }]);
         expect(getStatusStacks(la.statuses, 'poison')).toBe(2);
         // A non-foundation skill stays banked: only banked foundation skills go
-        // back on the sheet at load (TL-7).
+        // back on the sheet at load.
         expect(la.bankedSkills).toEqual({ [banked]: { level: 7, xp: 123 } });
         expect(la.flagColour).toBe(FLAG_COLOURS[3]);
         expect(lb.status).toBe('wounded');

@@ -11,12 +11,7 @@ import {
 import { KEYWORD } from '../systems/effects/statements.js';
 
 /**
- * Token Lifecycle slice 4.3 — recipes that build (roadmap v1 §3.1, DP-6).
- *
- * A Foundation's recipe pool is the recipes of its `foundation.skill` whose
- * `foundationKinds` include its `kind`. Recipes with `foundationKinds` never
- * appear on an ordinary station; recipes without it never appear on a
- * Foundation. Building in place (slice 6.1) is not tested here.
+ * Token Lifecycle slice 4.3 — recipes that build (roadmap v1 §3.1).
  */
 
 registerTokenTypes({

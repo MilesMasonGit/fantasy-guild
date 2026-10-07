@@ -5,26 +5,19 @@ import { useTokenEvent } from './tokenEvents.js';
 import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
 
 /**
- * The small things drawn **on** a Token: its name, the recipe gear (top-left),
- * the disallow mark (top-right). Its charges are a ring in the row under it
- * since B1.2 (`TokenBadgeRow`, TL-22), which replaced the hover charge chip;
- * a spawner's count and a turn countdown joined that row in B1.3.
- *
- * ⚠️ The green assign-a-hero plus is gone (FB-6): heroes find work through
- * their flags.
- *
- * They used to live in `BoardTile.jsx` and be keyed by tile index; since the mat
- * renderer (slice 1.6c-2) a Token is a circle at a point, so what they are about
- * is its **instance id** — and everything they need to draw arrives as a prop
- * from `MatToken`, which already reads the Token's details by id. Only the
- * charge floater still listens for itself, because a `-1` is a moment rather
- * than a state.
+ * The small things drawn **on** a Token: its name, the recipe gear (top-left), the disallow
+ * mark (top-right). Its charges are a ring in the row under it (`TokenBadgeRow`); a spawner's
+ * count and a turn countdown are in that row too.
+ * A Token is a circle at a point, so what these badges are about is its **instance id**, and
+ * everything they need to draw arrives as a prop from `MatToken`, which already reads the
+ * Token's details by id. Only the charge floater still listens for itself, because a `-1` is a
+ * moment rather than a state.
  */
 
 /**
- * TokenChargeDeltaFloater — floating numbers (-1, +50) when this Token's charges
- * change. `anchor="ring"`: just above the charges ring it is drawn inside
- * (B1.2); `"corner"`: the Token's bottom-right, when no charges ring shows.
+ * TokenChargeDeltaFloater: floating numbers (-1, +50) when this Token's charges change.
+ * `anchor="ring"`: just above the charges ring it is drawn inside; `"corner"`: the Token's
+ * bottom-right, when no charges ring shows.
  */
 export const TokenChargeDeltaFloater = ({ instanceId, anchor = 'corner' }) => {
     const [deltas, setDeltas] = useState([]);
@@ -60,9 +53,10 @@ export const TokenChargeDeltaFloater = ({ instanceId, anchor = 'corner' }) => {
                 "transition-all duration-150 ease-out"
             )}
         >
-            {/* ⭐ CR3-357: each number rises and fades by a CSS animation
-                (`gi-charge-float`, tailwind.css) on the compositor, not on
-                framer-motion's JavaScript frame loop. Same 3 s curve. */}
+            {/**
+             * Each number rises and fades by a CSS animation (`gi-charge-float`, tailwind.css)
+             * on the compositor, not on framer-motion's JavaScript frame loop. Same 3 s curve.
+             */}
             {deltas.map(d => (
                 <div
                     key={d.id}
@@ -93,8 +87,8 @@ export const TokenNameBadge = ({ name, isDragging, isHovered, small = false }) =
     return (
         <div
             className={cn(
-                // TL-19 (B8.1): a small Token's box is half as wide, so its
-                // name may run past the box's sides rather than wrap per word.
+                // A small Token's box is half as wide, so its name may run past the box's
+                // sides rather than wrap per word.
                 small ? "absolute top-1 -left-8 -right-8 z-30 pointer-events-none" : "absolute top-1 left-1 right-1 z-30 pointer-events-none",
                 "flex items-start justify-center text-center select-none",
                 "transition-opacity ease-out",
@@ -114,17 +108,13 @@ export const TokenNameBadge = ({ name, isDragging, isHovered, small = false }) =
 };
 
 /**
- * StationGearBadge — the recipe picker's handle, **top-left** of a Token that
- * has something to choose (FB-7): a Foundation, or a station whose pool is not
- * empty (`centreAlert.gearStateOf` decides).
- *
- * Always shown, not only on hover. While nothing is chosen it **pulses
- * gently** and that is all — no red alert (owner, after Q1): the Token is
- * waiting, not broken, and heroes pass it over until the player picks. Once a
- * recipe is chosen it stays, still, so the player can change it.
- *
- * Hovering previews the selected recipe (concept §2.1) — outputs first, then
- * what it consumes.
+ * StationGearBadge: the recipe picker's handle, **top-left** of a Token that has something to
+ * choose: a Foundation, or a station whose pool is not empty (`centreAlert.gearStateOf`
+ * decides).
+ * Always shown, not only on hover. While nothing is chosen it **pulses gently** and that is
+ * all, with no red alert: the Token is waiting, not broken, and heroes pass it over until the
+ * player picks. Once a recipe is chosen it stays, still, so the player can change it.
+ * Hovering previews the selected recipe: outputs first, then what it consumes.
  */
 export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, small = false, onClick }) => {
     if (isDragging) return null;
@@ -138,8 +128,8 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
         <div
             data-station-gear={pulsing ? 'unset' : 'set'}
             data-badge-corner={small ? 'small' : undefined}
-            // TL-19 (B8.1): on a small Token the gear hangs off the corner
-            // instead of covering the top half of 64 u of art.
+            // On a small Token the gear hangs off the corner instead of covering the top half
+            // of 64 u of art.
             className={cn('absolute z-30 group pointer-events-auto', small ? '-left-3 -top-3' : 'left-1 top-1')}
         >
             <button
@@ -180,9 +170,8 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
 };
 
 /**
- * DisallowBadge — the red disallow sprite, **top-right** of a Token heroes
- * may not work (FP-35 per-Token disallow, FB-33). Always shown. It replaced the
- * dim ⊘ that sat bottom-left (FPP-8).
+ * DisallowBadge: the red disallow sprite, **top-right** of a Token heroes may not work. Always
+ * shown.
  */
 export const DisallowBadge = ({ isDragging, small = false }) => {
     if (isDragging) return null;
@@ -191,7 +180,7 @@ export const DisallowBadge = ({ isDragging, small = false }) => {
             data-tile-disallowed="true"
             aria-label="Heroes may not work this"
             data-badge-corner={small ? 'small' : undefined}
-            // TL-19 (B8.1): off the corner on a small Token, as the gear is.
+            // Off the corner on a small Token, as the gear is.
             className={cn(
                 'absolute z-30 pointer-events-none select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
                 small ? '-right-3 -top-3' : 'right-1 top-1'

@@ -1,19 +1,6 @@
 /**
  * Economic simulator — the TIME pass (phase P3+4).
  *
- * Covers `cms/src/engine/sim/tempoPass.js` and the field adapter beneath it.
- *
- * ## Where these tests live, and why
- * The CMS has no test runner of its own, so CMS engine code is tested across
- * the project boundary from `src/tests/` — the precedent set by
- * `CMSBalanceEngine.test.js` (finding S13).
- *
- * ## The pin that matters most
- * `yield agreement` imports the *game's* `expectedOutputQuantity` and pins the
- * simulator's average-quantity arithmetic against it. If the two formulas ever
- * diverge, every units/hour figure — and therefore every band, every price — is
- * quietly wrong (finding S17/A6).
- *
  * ⚠️ **What it compares changed at P6.** The simulator reads authored *intent*
  * (`baseQty`); the game reads the *derived* `minQty`/`maxQty`. Before the
  * tuning pass existed those were always the same numbers, so the pin could
@@ -21,11 +8,6 @@
  * tuned output has derived values deliberately different from its intent —
  * that difference IS the tuning — so comparing them on shipped data would fail
  * on exactly the outputs the simulator did its job on.
- *
- * The invariant that matters survives and is what is pinned below: given the
- * same numbers, both sides compute the same expected quantity. Alongside it, a
- * corpus check that any divergence between intent and derived is explained by
- * a recorded tuning move, never by drift.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -105,8 +87,8 @@ describe('EconSim — TIME pass', () => {
         it('is the middle of the tempo band, snapped to whole seconds', () => {
             const band = bandFor('medium', 1);
             expect(bandMiddleMs('medium', 1)).toBe(16000);   // (12000 + 20000) / 2
-            expect(bandMiddleMs('quick', 1)).toBe(3000);     // (2000 + 4000) / 2, TL-21
-            expect(bandMiddleMs('fast', 1)).toBe(8000);      // (4000 + 12000) / 2, TL-21
+            expect(bandMiddleMs('quick', 1)).toBe(3000);     // (2000 + 4000) / 2
+            expect(bandMiddleMs('fast', 1)).toBe(8000);      // (4000 + 12000) / 2
             expect(bandMiddleMs('medium', 1)).toBe(Math.round(((band.minMs + band.maxMs) / 2) / 1000) * 1000);
 
             // Every band middle, at a spread of levels, is a whole number of seconds.
@@ -162,12 +144,11 @@ describe('EconSim — TIME pass', () => {
             expect(result.rows).toHaveLength(0);
         });
 
-        // ⚠ CR3-553 EXPECTED FAILURE (owner ruling 2026-09-30: "mark them as
-        // expected"). The sim files 23 info rows for the config-less Tokens that
-        // this test calls a structural skip. A test-vs-sim disagreement, and
-        // the one known failure that MIGHT be a real economic-simulator bug:
-        // that lane's owner should rule (R10 section 4.2, row 3).
-        // `it.fails` goes red the day this passes: then make it a plain `it`.
+        // The sim files 23 info rows for the config-less Tokens that this test
+        // calls a structural skip. A test-vs-sim disagreement, and the one known
+        // failure that MIGHT be a real economic-simulator bug: that lane's owner
+        // should rule (R10 section 4.2, row 3). `it.fails` goes red the day this
+        // passes: then make it a plain `it`.
         it.fails('the shipped corpus files no row for its 23 config-less Tokens', () => {
             const entities = adaptCorpus({ tokens: tokenData, recipes: recipeData });
             const result = runTempoPass(entities);

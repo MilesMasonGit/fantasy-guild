@@ -102,7 +102,6 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                 <X size={13} />
             </button>
 
-            {/* Dynamic Outward Glow for aggregated gains/losses */}
             {(added > 1 || removed > 0) && (
                 <motion.div
                     key={`glow-${id}-${added}-${removed}`}
@@ -120,7 +119,6 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                 />
             )}
 
-            {/* Subtle glow layer (stationary) */}
             <div className={`absolute inset-0 rounded-md pointer-events-none ${config.bg} opacity-20 z-[-1]`} />
         </motion.div>
     );

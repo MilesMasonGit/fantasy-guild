@@ -11,20 +11,6 @@ import { slotsOf, SLOT_KIND } from '../systems/effects/statementSlots.js';
 
 /**
  * ⭐ **The Rules Line, driven the way an author drives it** (Rules Line P2–P3).
- *
- * Mounted as the real list the CMS mounts — `StatementList`, with its one shared
- * panel — holding its rules in state, so a commit re-renders the sentence
- * exactly as it does for the author. The vocabulary comes in through `content`,
- * never through the store: the CMS store persists itself, and a test must not
- * write there.
- *
- * Every locked decision has a test here:
- *
- * * E-1/E-2 — the line reads exactly as the game prints it, once.
- * * E-3 — clicking a word retypes that word, and nothing else moves.
- * * E-4 — an unrecognised word inserts nothing and offers the nearest.
- * * E-5 — one panel, on the left, following the author between rules.
- * * Q3  — Tab walks the words; arrows move through the panel.
  */
 
 const content = {

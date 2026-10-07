@@ -41,7 +41,6 @@ export default function SpriteAuditDashboard() {
     const is32px = type === 'item';
     const cleanTypeName = type.charAt(0).toUpperCase() + type.slice(1);
     
-    // Auto outline styling matching item-gen.md
     let outlineStr = "solid black";
     if (is32px) {
       const isOrganic = ['food', 'potion', 'material'].includes(type) || entityName.toLowerCase().includes('shrimp') || entityName.toLowerCase().includes('fruit') || entityName.toLowerCase().includes('vegetable');
@@ -86,7 +85,6 @@ MANDATORY: Distinct dark charcoal colored border outline around the asset silhou
 
   return (
     <div className="flex-1 flex flex-col gap-6 min-h-0 overflow-y-auto pr-1">
-      {/* Overview stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="p-4 rounded-xl border flex flex-col gap-1" style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}>
           <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Unassigned Sprites</span>
@@ -102,10 +100,8 @@ MANDATORY: Distinct dark charcoal colored border outline around the asset silhou
         </div>
       </div>
 
-      {/* Main grids */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
-        {/* Missing / Art To-Do List */}
         <div className="flex flex-col gap-3 p-5 rounded-xl border bg-black/10" style={{ borderColor: 'var(--color-border-subtle)' }}>
           <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
             <h3 className="text-sm font-bold flex items-center gap-2">
@@ -148,7 +144,6 @@ MANDATORY: Distinct dark charcoal colored border outline around the asset silhou
           </div>
         </div>
 
-        {/* Duplicate assignments */}
         <div className="flex flex-col gap-3 p-5 rounded-xl border bg-black/10" style={{ borderColor: 'var(--color-border-subtle)' }}>
           <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
             <h3 className="text-sm font-bold flex items-center gap-2">
@@ -185,7 +180,6 @@ MANDATORY: Distinct dark charcoal colored border outline around the asset silhou
 
       </div>
 
-      {/* Unassigned physical assets library */}
       <div className="flex flex-col gap-3 p-5 rounded-xl border bg-black/10" style={{ borderColor: 'var(--color-border-subtle)' }}>
         <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
           <h3 className="text-sm font-bold flex items-center gap-2">

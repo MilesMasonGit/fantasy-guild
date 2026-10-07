@@ -6,17 +6,14 @@ import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 
-// Providers & Context
 import { EngineProvider } from './context/EngineContext.jsx';
 import { DeckDndProvider } from './dnd/DndKit.jsx';
 import { ViewportProvider } from './context/ViewportContext.jsx';
 import { setMatBankLocked } from './hooks/useMatBankLock.js';
 
-// Hooks
 import { useUIModals } from './hooks/useUIModals.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 
-// Components
 import Board from './components/board/Board.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 import ShopDrawer from './components/drawer/ShopDrawer.jsx';
@@ -33,7 +30,6 @@ import { selectGuildInspectSelection } from './guildInspectSelection.js';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 
-// Base Components / HUD
 import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
 import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
@@ -51,13 +47,12 @@ import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
 import MatDisallowControls from './components/board/MatDisallowControls.jsx';
 import { PerfProfiler, usePerfHudShowing } from './dev/perf/PerfProfiler.jsx';
 
-/** Time Bank widget visibility — parked, not deleted (owner request
- *  2026-08-02). The widget and its manager are untouched; only its placement
- *  is switched off, so restoring it is this one flag. It lives at the right
- *  end of the mat's top bar (B2 Time Bank, FB-28). */
+/**
+ * Time Bank widget visibility: parked, not deleted. Only its placement is switched off, so
+ * restoring it is this one flag. It lives at the right end of the mat's top bar.
+ */
 const SHOW_TIME_BANK = false;
 
-// Overlays & Modals
 import SettingsModal from './modals/SettingsModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
@@ -66,26 +61,11 @@ import PromotionCeremonyModal from './modals/PromotionCeremonyModal.jsx';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 
 /**
- * The notifications column — the second of the play area's four (D-237).
- *
- * The play area reads **nav · notifications · playmat · tray**, left to right
- * (owner decision 2026-08-11), mirroring to **tray · playmat · notifications ·
- * nav** when the bubble menu is flipped to the right, so notifications always
- * sit beside the nav rather than swapping to the far side.
- *
- * ⚠️ **It reserves its width whether or not anything is in it.** A column that
- * only appeared when a toast arrived would shove the board sideways every time
- * the game said something, which is worse than the space it costs — and the
- * board cannot absorb the movement, since D-171 fixes it at 896px.
- *
- * ⚠️ **This is width the play area did not need before.** Nav (150) + this (256)
- * + board (896) + tray (256) wants ~1558px before the board starts clipping,
- * against ~1302px previously. Narrow windows are "small mode" (roadmap G-20),
- * which is the agreed answer rather than shrinking anything here.
- *
- * The width is a placeholder matching the Tray, for symmetry either side of the
- * board. Refining it is expected — but note the floor: `Toast` carries
- * `min-w-[220px]`, so under about 240px the toasts overflow their own column.
+ * The notifications column. It sits beside the nav, so it mirrors with the bubble menu when
+ * that is flipped to the right, rather than swapping to the far side.
+ * ⚠️ It reserves its width whether or not anything is in it. A column that only appeared when
+ * a toast arrived would shove the board sideways every time the game said something, which is
+ * worse than the space it costs.
  */
 export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
     const [notificationsHidden, setNotificationsHidden] = React.useState(false);
@@ -93,8 +73,7 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
 
     return (
         <aside
-            // FP-100: gives way on a narrow window so the mat keeps a readable
-            // size. Floored at the width `Toast`'s own min-width needs.
+            // Gives way on a narrow window so the mat keeps a readable size; floored at `Toast`'s min-width.
             style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
             className={cn(
                 "shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto transition-[width] duration-150 relative z-10 select-none",
@@ -105,10 +84,11 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
                 className="w-full relative shrink-0 flex flex-col justify-between"
                 style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             >
-                {/* A hero's flag rules (Free Playmat 1.5b-ii, FP-81): a narrow
-                    panel over this column, so the board stays in view. A
-                    dedicated panel rather than the Bank drawer, which spans the
-                    board too (D-238). */}
+                {/**
+                 * A hero's flag rules: a narrow panel over this column, so the board stays in
+                 * view. A dedicated panel rather than the Bank drawer, which spans the board
+                 * too.
+                 */}
                 <AnimatePresence>
                     {flagRules?.heroId && (
                         <motion.div
@@ -123,7 +103,6 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
                         </motion.div>
                     )}
                 </AnimatePresence>
-                {/* Top: Notifications */}
                 <div className="flex-1 min-h-0 flex flex-col">
                     <button
                         type="button"
@@ -139,10 +118,10 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
                     )}
                 </div>
 
-                {/* Bottom-most: the discard bin (B3.2, FB-34, TL-13). Fixed
-                    size at the foot of the column; notifications above take
-                    whatever is left. The Quests section that sat between
-                    them went in B6.2: quests are Tokens on the mat (TL-18). */}
+                {/**
+                 * Bottom-most: the discard bin. Fixed size at the foot of the column;
+                 * notifications above take whatever is left.
+                 */}
                 <div className="shrink-0 pt-2 border-t border-gi-border/30">
                     <DiscardBinPanel />
                 </div>
@@ -152,16 +131,13 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
 };
 
 /**
- * ReactRoot - The definitive entry point for the React UI layer.
- * Manages the top-level layout, provides the Engine/DnD context,
- * and orchestrates global modal overlays.
+ * ReactRoot: the entry point for the React UI layer. Manages the top-level layout, provides
+ * the Engine/DnD context, and orchestrates global modal overlays.
  */
 export const ReactRoot = ({ engine }) => {
-    // --- Modular State Management ---
     const ui = useUIModals(engine);
     const { onInspectToken, onClearInspect } = useInspectTokenHandlers(ui.inspect);
 
-    // --- Core Actions ---
     const handleSlotSelect = async (index) => {
         const isEmpty = !engine.SaveManager.hasSlot(index);
         if (isEmpty) {
@@ -176,13 +152,11 @@ export const ReactRoot = ({ engine }) => {
         engine.EventBus.publish(UI_EVENTS.REACT_SLOT_SELECTED, { index, isNewGame: isEmpty });
     };
 
-    // Dev only: the FPS counter stands down while the Perf HUD is up (CR3-358).
+    // Dev only: the FPS counter stands down while the Perf HUD is up.
     const perfHudShowing = usePerfHudShowing();
 
-    // Dynamic Debug Mode Subscription ---
     const [debugMode, setDebugMode] = React.useState(() => SettingsManager.get('debugMode') ?? false);
-    // Bubble menu side (UI overhaul Phase 1 §COL-01): left by default,
-    // right via the Settings toggle.
+    // Bubble menu side: left by default, right via the Settings toggle.
     const [menuRight, setMenuRight] = React.useState(() => SettingsManager.get('ui.bubbleMenuRight') ?? false);
     const [backgroundTile, setBackgroundTile] = React.useState(() => SettingsManager.get('ui.backgroundTile') ?? 'pm_table_wood_spruce');
 
@@ -195,23 +169,22 @@ export const ReactRoot = ({ engine }) => {
         return () => unsubscribe();
     }, []);
 
-    // A stress scenario from the perf harness (`?stress=…`, round-3 review P3)
-    // builds its own board, so the slot picker has nothing left to ask. Dev
-    // builds only; the event is published by src/ui/dev/perf/stressScenarios.js.
+    // A stress scenario from the perf harness (`?stress=…`) builds its own board, so the slot
+    // picker has nothing left to ask. Dev builds only; the event is published by
+    // src/ui/dev/perf/stressScenarios.js.
     const closeSlotSelection = ui.slotSelection.close;
     React.useEffect(() => {
         if (!import.meta.env.DEV) return undefined;
         return EventBus.subscribe(UI_EVENTS.DEV_STRESS_STARTED, () => closeSlotSelection());
     }, [closeSlotSelection]);
 
-    // The Hall's upgrade web selects by upgrade id — it has no tiles (B9, TL-23).
+    // The Hall's upgrade web selects by upgrade id; it has no tiles.
     const [selectedUpgradeId, setSelectedUpgradeId] = React.useState('roster_size');
     const isGuildView = ui.fullscreen.view === 'guild';
     const isBankOpen = ui.drawer.panes.includes('bank');
 
-    // CR3-402 (owner ruling): while the Bank is open the mat is not
-    // interactive at all. `useMatBankLock` is the one place that reaches
-    // outside React (the drag sensor) to enforce it, so this is its only
+    // While the Bank is open the mat is not interactive at all. `useMatBankLock` is the one
+    // place that reaches outside React (the drag sensor) to enforce it, so this is its only
     // writer, kept in step with the Bank's own open/closed state.
     React.useEffect(() => { setMatBankLocked(isBankOpen); }, [isBankOpen]);
 
@@ -276,10 +249,9 @@ export const ReactRoot = ({ engine }) => {
         getUpgradeDefFn: getUpgradeDef
     });
 
-    // CR3-451: Close must clear BOTH the pane's explicit selection and the
-    // web's own "last picked" id — clearing only the pane left the fallback
-    // chain above re-deriving the same selection on the next render, so the
-    // panel looked like it never closed.
+    // Close must clear BOTH the pane's explicit selection and the web's own 'last picked' id:
+    // clearing only the pane left the fallback chain above re-deriving the same selection on
+    // the next render, so the panel looked like it never closed.
     const handleClearGuildInspect = React.useCallback(() => {
         ui.inspect.clear('guild');
         setSelectedUpgradeId(null);
@@ -291,9 +263,7 @@ export const ReactRoot = ({ engine }) => {
                 <DeckDndProvider>
                 <ParticleOverlay disabled={ui.isAnyModalOpen} />
                 <TutorialAideOverlay />
-                {/* 1. Main Application Layout */}
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
-                    {/* Overhaul layout: bubble column flanking playmat and rightmost dock */}
                     <div 
                         className="flex-1 relative flex overflow-hidden bg-black"
                         style={{
@@ -304,7 +274,6 @@ export const ReactRoot = ({ engine }) => {
                             backgroundColor: '#0a0a0a'
                         }}
                     >
-                        {/* Smooth darkening overlay for Guild Hall view and Item Bank view */}
                         <div
                             className={cn(
                                 "absolute inset-0 bg-black/45 pointer-events-none transition-opacity duration-300 z-0",
@@ -348,8 +317,10 @@ export const ReactRoot = ({ engine }) => {
                                         style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
                                         className="shrink-0 h-full flex flex-col pointer-events-none relative z-[100]"
                                     >
-                                        {/* CR3-203: a crash in the Bank's hero
-                                            panel stays local to this aside. */}
+                                        {/**
+                                         * A crash in the Bank's hero panel stays local to this
+                                         * aside.
+                                         */}
                                         <ErrorBoundary label="BankHeroPanel">
                                             <BankHeroPanel
                                                 menuRight={menuRight}
@@ -368,20 +339,22 @@ export const ReactRoot = ({ engine }) => {
                         )}
                         <div className="flex-1 relative flex flex-col overflow-hidden z-10">
                             <div className="flex-1 flex min-h-0 relative">
-                            {/* The Guild Hall Effects list: always LEFT of the
-                                upgrade web, whichever side the nav is on (B9,
-                                FB-38). With the nav flipped right it sits
-                                between the inspection column and the web. */}
+                            {/**
+                             * The Guild Hall Effects list: always LEFT of the upgrade web,
+                             * whichever side the nav is on. With the nav flipped right it sits
+                             * between the inspection column and the web.
+                             */}
                             {isGuildView && <GuildHallEffectsPanel />}
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
                                 className="flex-1 min-w-0 overflow-hidden pointer-events-auto relative z-0 min-h-0 flex flex-col"
                             >
-                                {/* The mat's top bar (B2, FB-28): above the Board
-                                    in this column, never over it, so the box Board
-                                    measures for its fit is the bar's height
-                                    shorter and the mat shrinks to match. */}
+                                {/**
+                                 * The mat's top bar: above the Board in this column, never
+                                 * over it, so the box Board measures for its fit is the bar's
+                                 * height shorter and the mat shrinks to match.
+                                 */}
                                 {showsMatTopBar(ui.fullscreen.view) && (
                                     <PerfProfiler id="TopBar">
                                         <MatTopBar
@@ -413,10 +386,12 @@ export const ReactRoot = ({ engine }) => {
                             </div>
                             </div>
 
-                            {/* Bottom Hero Dock: horizontal sliding tabs. Not on
-                                the Guild Hall upgrade screen (FB-47). */}
+                            {/**
+                             * Bottom Hero Dock: horizontal sliding tabs. Not on the Guild Hall
+                             * upgrade screen.
+                             */}
                             {showsBottomHeroDock(ui.fullscreen.view) && (
-                                // CR3-203: a crash in the bottom hero dock stays local to it.
+                                // A crash in the bottom hero dock stays local to it.
                                 <ErrorBoundary label="HeroDock">
                                     <PerfProfiler id="HeroDock">
                                         <BottomHeroDock
@@ -466,8 +441,10 @@ export const ReactRoot = ({ engine }) => {
                                         style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
                                         className="shrink-0 h-full flex flex-col pointer-events-none relative z-[100]"
                                     >
-                                        {/* CR3-203: a crash in the Bank's hero
-                                            panel stays local to this aside. */}
+                                        {/**
+                                         * A crash in the Bank's hero panel stays local to this
+                                         * aside.
+                                         */}
                                         <ErrorBoundary label="BankHeroPanel">
                                             <BankHeroPanel
                                                 menuRight={menuRight}
@@ -485,41 +462,45 @@ export const ReactRoot = ({ engine }) => {
                             )
                         )}
                         {menuRight && <BubbleMenu ui={ui} side="right" />}
-                        {/* The bank drawer (D-238). A sibling of the nav rather
-                            than a child of the board column, because it has to
-                            reach across the notifications column — which the
-                            board column does not contain. */}
-                        {/* Perf HUD commit counting, dev only (P3). CR3-203: a
-                            crash in the Bank drawer stays local to it. */}
+                        {/**
+                         * The bank drawer: a sibling of the nav rather than a child of the
+                         * board column, because it has to reach across the notifications
+                         * column, which the board column does not contain.
+                         */}
+                        {/**
+                         * Perf HUD commit counting, dev only. A crash in the Bank drawer stays
+                         * local to it.
+                         */}
                         <ErrorBoundary label="BankDrawer">
                             <PerfProfiler id="Drawer">
                                 <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
                             </PerfProfiler>
                         </ErrorBoundary>
-                        {/* The Shop drawer, from the left edge (B4: FB-25, FB-27).
-                            CR3-203: a crash here stays local to it too. */}
+                        {/**
+                         * The Shop drawer, from the left edge. A crash here stays local to it
+                         * too.
+                         */}
                         <ErrorBoundary label="ShopDrawer">
                             <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
                         </ErrorBoundary>
                     </div>
                 </div>
 
-                {/* 2. Global HUD Components */}
                 {(import.meta.env.DEV || debugMode) && (
                     <>
                         <TestDashboard />
-                        {/* Tunes terrain only, so hidden while it is dormant (FP-10). */}
+                        {/* Tunes terrain only, so hidden while it is dormant. */}
                         {TERRAIN_ENABLED && <PlaymatTuner />}
-                        {/* Tunes the free playmat's rules (FP-66). */}
                         <MatTuner />
-                        {/* Hidden while the Perf HUD is on: its own frame loop
-                            and per-second commit would be measured by the HUD,
-                            and the HUD shows frames already (CR3-358). */}
+                        {/**
+                         * Hidden while the Perf HUD is on: its own frame loop and per-second
+                         * commit would be measured by the HUD, and the HUD shows frames
+                         * already.
+                         */}
                         {!perfHudShowing && <FPSCounter />}
                     </>
                 )}
 
-                {/* 3. Modal Layer Overlays */}
                 {ui.inspect.selection?.type === 'token' && (ui.inspect.selection.source?.rect || ui.inspect.selection.source?.instanceId != null) && (
                     <TokenInspectPopup
                         typeId={ui.inspect.selection.id}
@@ -530,8 +511,6 @@ export const ReactRoot = ({ engine }) => {
                 )}
                 <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
                 <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
-                {/* Hero Edit — name, portrait, job (Hero Dock Phase 7).
-                    Opened by the Edit button on a pinned dock card. */}
                 {ui.dock.editHeroId && (
                     <HeroEditModal
                         heroId={ui.dock.editHeroId}
@@ -540,8 +519,6 @@ export const ReactRoot = ({ engine }) => {
                         onChangeJob={() => { ui.dock.closeEdit(); ui.dock.openJob(ui.dock.editHeroId); }}
                     />
                 )}
-                {/* Promotion and re-training — one screen, because they are one
-                    act (D-248). Opened from the hero sheet. */}
                 {ui.dock.jobHeroId && (
                     <JobChangeModal
                         heroId={ui.dock.jobHeroId}
@@ -550,10 +527,11 @@ export const ReactRoot = ({ engine }) => {
                     />
                 )}
 
-                {/* The ceremony, at the end of a Promotes Token's training cycle
-                    (Promotes rule P4). Opened by the board, not by a menu — the
-                    player did not ask for this window, they finished the work
-                    that earns it. */}
+                {/**
+                 * The ceremony, at the end of a Promotes Token's training cycle. Opened by the
+                 * board, not by a menu: the player did not ask for this window, they finished
+                 * the work that earns it.
+                 */}
                 {ui.dock.promotionOffer && (
                     <PromotionCeremonyModal
                         // ⚠️ Keyed on the offer, so a NEW offer gets a NEW
@@ -569,13 +547,7 @@ export const ReactRoot = ({ engine }) => {
                     />
                 )}
 
-                {/* The pack-opening overlay is deleted with the pack economy
-                    (D-153: "There is no pack system. Maps absorbed it"). The
-                    Map burst that replaces it is a physical scatter of sprites
-                    onto the board (D-142), not a pick-one modal, so it is built
-                    fresh in Phase 8 rather than adapted. */}
 
-                {/* 4. Development Tooling */}
                 {ui.sandbox.isOpen && (
                     <div className="pointer-events-auto absolute inset-0 z-[1000] bg-gi-background">
                         <LayoutSandbox />

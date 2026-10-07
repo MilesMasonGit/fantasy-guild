@@ -18,18 +18,16 @@ changed, what's next. Keep it under one screen.*
 
 | Work | Doc | State |
 |---|---|---|
-| Crunch prep | [crunch_prep_plan.md](crunch_prep_plan.md) | Doc cleanup, tickets, CLAUDE.md, GDD rebuild and the owner's GDD rulings done 2026-10-06 |
+| Crunch prep | [crunch_prep_plan.md](crunch_prep_plan.md) | Doc cleanup, tickets, CLAUDE.md, GDD rebuild and the owner's GDD rulings and the comment-slimming pass done 2026-10-06 (leftovers T-103) |
 
 ## Next up
 
-1. **Comment slimming pass**: running in another session on
-   `chore/comment-slimming` ([brief](brief_comment_slimming.md)).
-2. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
+1. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
    the certification run (T-003) and the CMS fixes (T-001, T-002).
-3. **Crunch prep P3** (after the comment pass merges): perf build, per-system
+2. **Crunch prep P3** (in progress): perf build, per-system
    switches, `bench:draw`, `bench:drag`, baseline. Plan:
    [p3_measurement_plan.md](p3_measurement_plan.md).
-4. Crunch prep P4: ready-to-run crunch briefs, one per track. UI input: the
+3. Crunch prep P4: ready-to-run crunch briefs, one per track. UI input: the
    owner's [ui_rework_list.md](ui_rework_list.md).
 
 ## Planned

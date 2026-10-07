@@ -41,22 +41,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ **All seven statuses, as ordinary library effects** (V7).
  *
- * The owner's goal, in their words: *"My goal is to be able to author these
- * effects and others like it using our new effects system."* ER-13 is retired;
- * a status is a library entry with a clock, authored in the CMS like anything
- * else.
- *
- * This file is the proof that the **system can express all seven** — not that
- * the seven have been authored. Authoring is the owner's, in the CMS, and it is
- * what has to happen before the old engine can be deleted.
- *
- * The seven turn out to be two shapes and nothing more:
- *
- * | Today                                   | Really is                          |
- * | --------------------------------------- | ---------------------------------- |
- * | Poison, Burning, Bleed                  | `Deals N` on a clock, for a while  |
- * | Armor Shield, Well Fed, Cookout, Stun   | `Provides …` **with a duration**   |
- *
  * ⚠️ The second shape is what V7 built. Until now a carried effect could hurt
  * you but could not make you tougher — `LiveEffects` fired `EFFECT_TICK`
  * statements and contributed no modifiers at all, so four of the seven were
@@ -185,12 +169,11 @@ describe('⭐ the four that linger — and the capability V7 had to build', () =
 
     it('Stun: a hit-chance penalty, re-authored rather than translated', () => {
         /**
-         * ⚠️ G-7 calls this a **re-authoring**, and it matters here more than
-         * anywhere. The old `attack_fail` was "25% chance per stack, capped at
-         * 80%"; a negative `ACCURACY` against a 5–95 clamp is not the same
-         * arithmetic. The shape is expressible; the numbers are the owner's to
-         * choose, and pretending otherwise would be the quiet half-translation
-         * this whole line of work exists to refuse.
+         * The old `attack_fail` was "25% chance per stack, capped at 80%"; a
+         * negative `ACCURACY` against a 5–95 clamp is not the same arithmetic.
+         * The shape is expressible; the numbers are the owner's to choose, and
+         * pretending otherwise would be the quiet half-translation this whole
+         * line of work exists to refuse.
          */
         authored('effect_stun', 'Stun', lasting(EFFECT_TYPES.ACCURACY, -25));
 

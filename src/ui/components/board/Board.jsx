@@ -19,23 +19,17 @@ import { isShopPayload, pointerOverShopDrawer } from '../drawer/ShopDrawer.jsx';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
 
 /**
- * The playmat: one drop surface, scaled to fit, with `MatBoard` drawing what is
- * on it.
- *
- * Since slice 1.6c-2 this file owns only three things — **how big the mat is
- * drawn**, **that the whole mat is a single drop target**, and the station
- * recipe picker. Everything drawn on the mat is `MatBoard`'s, and everything
- * that happens on a drop is `dropOnMat`'s.
+ * The playmat: one drop surface, scaled to fit, with `MatBoard` drawing what is on it.
+ * This file owns only three things: **how big the mat is drawn**, **that the whole mat is a
+ * single drop target**, and the station recipe picker. Everything drawn on the mat is
+ * `MatBoard`'s, and everything that happens on a drop is `dropOnMat`'s.
  */
 
 /**
- * What the playmat's own drop target takes: any Token, and a hero or a flag
- * with a hero.
- *
- * ⭐ **CR3-402** (owner ruling): while the Bank is open the mat takes nothing
- * at all — the Bank covers it, and dnd-kit never calls `onDrop` for a target
- * whose `accepts` refuses the payload, so this one check is enough to make
- * every drop onto the mat a miss while the Bank is open.
+ * What the playmat's own drop target takes: any Token, and a hero or a flag with a hero.
+ * While the Bank is open the mat takes nothing at all: the Bank covers it, and dnd-kit never
+ * calls `onDrop` for a target whose `accepts` refuses the payload, so this one check is enough
+ * to make every drop onto the mat a miss while the Bank is open.
  */
 export function matAccepts(p) {
     if (isMatBankLocked()) return false;
@@ -45,32 +39,32 @@ export function matAccepts(p) {
 }
 
 export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, inspectedTokenId = null }) => {
-    // How big the mat is (slice 1.6d-3 — the Mat Tuner can change it live), and
-    // how much it is then shrunk to fit this window (CR2-179).
+    // How big the mat is (the Mat Tuner can change it live), and how much it is then shrunk to
+    // fit this window.
     const mat = useMatSize();
     const fit = useBoardScale(mat.w, mat.h);
-    // The hero dock under the mat draws heroes at the mat's art size (B10, FB-46).
+    // The hero dock under the mat draws heroes at the mat's art size.
     useEffect(() => { setLiveMatFit(fit.scale); }, [fit.scale]);
 
     // The mat's own element: every screen pointer is measured against it.
     const matRef = useRef(null);
 
     /**
-     * ⭐ The whole mat is one drop target. There are no tiles to aim at, so a
-     * drop is a **point**: where the player let go, in mat units.
+     * The whole mat is one drop target. There are no tiles to aim at, so a drop is a
+     * **point**: where the player let go, in mat units.
      */
     const matDrop = useEntityDrop({
         id: 'mat',
         surface: DND_SURFACE.BOARD,
         accepts: matAccepts,
         onDrop: (p, info) => {
-            // B4 (FB-27): a Shop Token let go over the Shop drawer's lip, which
-            // covers the mat's left edge, is a plain cancel, not a purchase.
+            // A Shop Token let go over the Shop drawer's lip, which covers the mat's left
+            // edge, is a plain cancel, not a purchase.
             if (isShopPayload(p) && pointerOverShopDrawer(info?.pointer)) return false;
             const el = matRef.current;
             const point = el ? pointerToMat(info?.pointer, el.getBoundingClientRect()) : null;
             const result = dropOnMat(p, point);
-            // A Token dropped well outside the landing area flies back (FP-93).
+            // A Token dropped well outside the landing area flies back.
             return result?.flyBack ? false : undefined;
         }
     });
@@ -97,9 +91,8 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
     const handleSelectRecipe = useCallback((selectedRecipeId) => {
         if (!recipeId) return;
         const instance = BoardState.getTokenById(recipeId);
-        // `setSelectedRecipe` is the only writer of `selectedRecipeId`, and it
-        // refuses any id outside this station's own pool (P2).
-        // It announces its own change (`TILE_CHANGED`, CR3-306).
+        // `setSelectedRecipe` is the only writer of `selectedRecipeId`, and it refuses any id
+        // outside this station's own pool. It announces its own change (`TILE_CHANGED`).
         if (!StationRecipe.setSelectedRecipe(instance, selectedRecipeId)) return;
         setRecipeId(null);
     }, [recipeId]);
@@ -129,20 +122,23 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
                         transformOrigin: 'top left'
                     }}
                 >
-                    {/* ⭐ FP-99: the sprites on the mat need to know what this
-                        transform is about to do to them, so they can step to a
-                        whole multiple of ART_PX through it. Nothing else on the
-                        mat cares — the transform handles the rest. */}
+                    {/**
+                     * The sprites on the mat need to know what this transform is about to do
+                     * to them, so they can step to a whole multiple of ART_PX through it.
+                     * Nothing else on the mat cares: the transform handles the rest.
+                     */}
                     <MatFitProvider value={fit.scale}>
-                        {/* CR3-203: a render error on the mat used to unmount
-                            the whole app while the engine kept ticking and
-                            saving underneath it. Now only this box goes to a
-                            "Something went wrong here" panel. */}
+                        {/**
+                         * A render error on the mat goes to a 'Something went wrong here'
+                         * panel in this box only, rather than unmounting the whole app while
+                         * the engine keeps ticking and saving underneath it.
+                         */}
                         <ErrorBoundary label="MatBoard">
-                            {/* Counts every React commit in the mat SUBTREE for the
-                                Perf HUD (a hero's frame step counts too; MatBoard's
-                                own renders are counted inside it, CR3-311) — dev
-                                builds only, and only when armed (P3). */}
+                            {/**
+                             * Counts every React commit in the mat SUBTREE for the Perf HUD (a
+                             * hero's frame step counts too; MatBoard's own renders are counted
+                             * inside it): dev builds only, and only when armed.
+                             */}
                             <PerfProfiler id="MatBoard">
                                 <MatBoard
                                     inspectedHeroId={inspectedHeroId}

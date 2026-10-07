@@ -10,16 +10,6 @@ import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
 /**
  * Token Lifecycle slice 7.4 — the Farming chain, pinned from the SHIPPED data
  * (authored through the CMS, never by hand).
- *
- * Farmland (shop, a Foundation of kind `farmland`) → a Farming hero plants it
- * with a recipe picked on it, spending one seed, and it BECOMES a Wheat Field or
- * an Apple Orchard in place (DP-6). The Field spawns Wheat Sprouts, paying 1
- * Wheat Seed each; a sprout grows into Ripe Wheat, harvested a few times for
- * Wheat and sometimes a Wheat Seed, then gone. The Orchard does the same with
- * Apple Saplings → Apple Trees (SP-73: fruit is Farming). The Guild Hall
- * trickles both seeds so a new game can start and never stalls for good.
- *
- * The numbers are placeholders (TL-5); this pins the shape of the chain.
  */
 
 const DATA = path.resolve(__dirname, '../../data');
@@ -76,7 +66,7 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(r.skill).toBe('farming');
             expect(r.foundationKinds).toEqual(['farmland']);
             expect(r.levelRequirement).toBe(1);
-            expect(r.durationMs).toBe(30000);   // Q9 pacing (FB-19): was 15000
+            expect(r.durationMs).toBe(30000);   // Q9 pacing: was 15000
             expect(r.inputs).toEqual([{ itemId: seed, quantity: 1 }]);
             expect(r.outputs.map((o) => o.tokenId)).toEqual([builds]);
         });
@@ -149,7 +139,7 @@ describe('The Farming chain in shipped data (7.4)', () => {
 
         it('an Apple Tree is Farming, has 3 charges and drops Apples and a 30% Apple Seed', () => {
             expect(appleTree.config.skill).toBe('farming');
-            expect(appleTree.uses).toBe(3);   // Q9 pacing (FB-19): was 5
+            expect(appleTree.uses).toBe(3);   // Q9 pacing: was 5
             const out = byItem(appleTree);
             expect(out.item_apple.chance).toBe(100);
             expect(out.item_apple_seed).toMatchObject({ chance: 30, minQty: 1, maxQty: 1 });

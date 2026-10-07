@@ -9,19 +9,15 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { Pencil } from 'lucide-react';
 
 /**
- * HeroDockCard — one hero's card in the dock, in both of its states
- * (concept §3, State A and State B).
- *
- * The card is a bottom-anchored column: the header sits on top, the body
- * (equipment + skills) hangs below it. Unpinned, the body simply isn't there,
- * so the card is exactly the header sitting on the dock line. Pinning mounts
- * the body, and because the column is anchored to its bottom edge the whole
- * card grows UPWARD — the "pull the card up out of your hand" motion, without
- * any transform juggling.
- *
- * The header is the very same `HeroDockTab` component in both states, which is
- * what makes the pull read as one continuous object rather than two different
- * widgets swapping places.
+ * HeroDockCard: one hero's card in the dock, in both of its states (collapsed header; pinned
+ * header + body).
+ * The card is a bottom-anchored column: the header sits on top, the body (equipment + skills)
+ * hangs below it. Unpinned, the body simply isn't there, so the card is exactly the header
+ * sitting on the dock line. Pinning mounts the body, and because the column is anchored to its
+ * bottom edge the whole card grows UPWARD, the 'pull the card up out of your hand' motion,
+ * without any transform juggling.
+ * The header is the very same `HeroDockTab` component in both states, which is what makes the
+ * pull read as one continuous object rather than two different widgets swapping places.
  */
 export const HeroDockCard = ({
     heroId, pinned = false, small = false, vertical = false, onToggle, onEdit,
@@ -33,15 +29,11 @@ export const HeroDockCard = ({
     // pinned cards carry the highest z-index in the strip.
     const slotWidth = small && !pinned ? DOCK_TAB_W_SMALL : DOCK_TAB_W;
 
-    // The header (HeroDockTab) is its own drop target for equipping while
-    // COLLAPSED — but once pinned, the header is a thin strip sitting above
-    // the equipment grid a player is actually aiming at, and the grid's own
-    // slots don't register drops (equipItem always resolves its own target
-    // slot, so per-slot precision isn't needed — just *a* drop zone over the
-    // grid). Without this, dropping an item onto the visibly-open grid
-    // silently did nothing (found 2026-08-02: reported as "can't equip food",
-    // but the gap applies to every category — food was just the item being
-    // tested by hand at the time).
+    // The header (HeroDockTab) is its own drop target for equipping while COLLAPSED, but once
+    // pinned the header is a thin strip above the equipment grid a player is actually aiming
+    // at, and the grid's own slots don't register drops (`equipItem` always resolves its own
+    // target slot, so per-slot precision isn't needed, just *a* drop zone over the grid).
+    // Without this, dropping an item onto the visibly-open grid silently did nothing.
     const bodyDrop = useEntityDrop({
         id: `dock-card-body-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
@@ -96,13 +88,12 @@ export const HeroDockCard = ({
                         style={{ height: DOCK_CARD_BODY_H }}
                         {...bodyDrop.droppableProps}
                     >
-                        {/* One section at a time. Rendering both stacked
-                            overflowed the body and silently clipped the last
-                            rows of skills (found 2026-08-02), and making the
-                            card tall enough for both would have swallowed the
-                            screen — so they share the space and the player
-                            picks. The toggle is dock-wide, so two open cards
-                            always compare like with like. */}
+                        {/**
+                         * One section at a time: rendering both stacked overflowed the body
+                         * and silently clipped the last rows of skills, and making the card
+                         * tall enough for both would have swallowed the screen. The toggle is
+                         * dock-wide, so two open cards always compare like with like.
+                         */}
                         <DockBodyToggle
                             view={bodyView}
                             onToggle={onToggleBodyView}
@@ -123,17 +114,14 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * DockBodyToggle — the card body's one control row: a two-segment Gear/Skills
- * switch plus the Edit button.
- *
- * Both labels stay visible with the active one filled, rather than a single
- * button naming the *other* side: at this size a lone "Skills" button is
- * genuinely ambiguous about whether it names what you're looking at or what
- * you'd get by pressing it.
- *
- * Edit sits here rather than floating over the bottom-right of the grid, where
- * it used to cover the ninth equipment slot. Putting every control in one row
- * also keeps the whole body below the concept's 300px expanded-card ceiling.
+ * DockBodyToggle: the card body's one control row: a two-segment Gear/Skills switch plus the
+ * Edit button.
+ * Both labels stay visible with the active one filled, rather than a single button naming the
+ * *other* side: at this size a lone 'Skills' button is genuinely ambiguous about whether it
+ * names what you're looking at or what you'd get by pressing it.
+ * Edit sits here rather than floating over the bottom-right of the grid, where it would cover
+ * the ninth equipment slot. One row of controls also keeps the whole body below the
+ * expanded-card height ceiling.
  */
 const DockBodyToggle = ({ view, onToggle, onEdit }) => (
     <div className="flex items-stretch gap-0.5 px-2 pt-1.5 pb-0.5">
@@ -168,8 +156,9 @@ const DockBodyToggle = ({ view, onToggle, onEdit }) => (
             );
         })}
 
-        {/* Everything that isn't drag-and-drop lives behind this button
-            (roadmap D8): rename, portrait, job. */}
+        {/**
+         * Everything that isn't drag-and-drop lives behind this button: rename, portrait, job.
+         */}
         <button
             type="button"
             onClick={(e) => {

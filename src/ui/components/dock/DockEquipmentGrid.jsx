@@ -13,12 +13,10 @@ import { equipOrAnnounce } from './dockEquip.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * DockEquipmentGrid — the pinned card's loadout grid: NINE flexible slots in
- * 3 rows of 3 (D-7), as 64px item sprites. Gear and consumables share the
- * grid, and any item may sit in any slot.
- *
- * Supports drag-to-equip directly onto any slot, right-click to unequip back
- * to bank, and drag to transfer / bank.
+ * DockEquipmentGrid: the pinned card's loadout grid: NINE flexible slots in 3 rows of 3, as
+ * 64px item sprites. Gear and consumables share the grid, and any item may sit in any slot.
+ * Supports drag-to-equip directly onto any slot, right-click to unequip back to bank, and drag
+ * to transfer / bank.
  */
 export const DockEquipmentGrid = ({ heroId }) => {
     const [justEquippedSlot, setJustEquippedSlot] = useState(null);
@@ -43,12 +41,11 @@ export const DockEquipmentGrid = ({ heroId }) => {
         };
     }, [heroId]);
 
-    // Flat projection of the grid — see the useGameState selector contract;
-    // returning `hero.equipment` itself would share the live object and this
-    // would silently stop updating. Bank quantity rides along in the same
-    // signature (rather than a second useGameState call) so a slot's badge
-    // updates the moment a Consumable/Food/Drink is spent from the bank —
-    // that's a supply-chain mechanic (ConsumptionSystem.js), not a hero stat,
+    // Flat projection of the grid (see the useGameState selector contract): returning
+    // `hero.equipment` itself would share the live object and this would silently stop
+    // updating. Bank quantity rides along in the same signature (rather than a second
+    // useGameState call) so a slot's badge updates the moment a Consumable/Food/Drink is spent
+    // from the bank. That is a supply-chain mechanic (ConsumptionSystem.js), not a hero stat,
     // so it lives in `inventory`, not on the equipped item itself.
     const gridState = useGameState(
         state => {

@@ -3,16 +3,13 @@ import * as BoardState from '../../systems/board/BoardState.js';
 import * as Flags from '../../systems/board/Flags.js';
 
 /**
- * ⭐ **Disallow mode** (Token Lifecycle feedback B2.3, FB-32) — the one place
- * its on/off lives.
- *
- * While on, a click on a Token flips it allowed ⇄ disallowed (FP-35) instead of
- * inspecting it, and no drag can start (`AlphaPointerSensor` asks
- * {@link isDisallowMode}). The bar's toggle (`MatDisallowControls`) and the mat
- * (`MatBoard`, which hands it to each `MatToken` as a prop) read it.
- *
- * UI state only: never saved, and off again whenever the mat's bar goes away
- * (the Guild Hall screen).
+ * Disallow mode: the one place its on/off lives.
+ * While on, a click on a Token flips it allowed/disallowed instead of inspecting it, and no
+ * drag can start (`AlphaPointerSensor` asks {@link isDisallowMode}). The bar's toggle
+ * (`MatDisallowControls`) and the mat (`MatBoard`, which hands it to each `MatToken` as a
+ * prop) read it.
+ * UI state only: never saved, and off again whenever the mat's bar goes away (the Guild Hall
+ * screen).
  */
 let on = false;
 const listeners = new Set();

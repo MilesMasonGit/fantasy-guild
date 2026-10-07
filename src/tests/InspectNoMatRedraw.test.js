@@ -38,15 +38,6 @@ import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { useUIModals } from '../ui/hooks/useUIModals.js';
 import { useInspectTokenHandlers } from '../ui/hooks/useInspectTokenHandlers.js';
 
-/**
- * CR3-302 (the callback half) — inspecting a hero does not redraw every Token.
- *
- * `ReactRoot` passed `onInspectToken` / `onClearInspect` to the mat as inline
- * arrows, so each of its renders gave every `MatToken` new props and
- * `React.memo` let none of them skip. The harness here is `ReactRoot`'s part
- * of that path: the real `useUIModals`, the handlers, and the hero being
- * inspected, over the real `MatBoard`.
- */
 
 const h = React.createElement;
 const engine = { GameState, EventBus };

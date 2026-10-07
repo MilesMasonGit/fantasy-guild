@@ -23,7 +23,6 @@ export const RegistryManager = {
         const collection = GameState.state.collection;
         if (!collection) return;
 
-        // 1. Discovery (Global Knowledge)
         let isNew = false;
         if (!collection.discoveredItems[itemId]) {
             collection.discoveredItems[itemId] = true;
@@ -31,7 +30,6 @@ export const RegistryManager = {
             logger.info('Registry', `New item discovered: ${itemId}`);
         }
 
-        // 2. Provenance (Source Discovery)
         if (sourceId) {
             if (!collection.provenance) collection.provenance = {};
             if (!collection.provenance[sourceId]) collection.provenance[sourceId] = {};
@@ -42,15 +40,12 @@ export const RegistryManager = {
             }
         }
 
-        // 3. Lifetime Count
         const counts = collection.itemLifetimeCounts || {};
         const currentCount = counts[itemId] || 0;
         counts[itemId] = currentCount + amount;
         collection.itemLifetimeCounts = counts;
 
-        // 4. Side Effects
         if (isNew) {
-            // Track "New!" badge state (dismissed on hover in UI)
             if (!GameState.state.ui.newDiscoveries) GameState.state.ui.newDiscoveries = {};
             GameState.state.ui.newDiscoveries[itemId] = true;
             
@@ -86,7 +81,6 @@ export const RegistryManager = {
         const collection = GameState.state.collection;
         if (!collection) return;
 
-        // 1. Discovery (Global Knowledge)
         let isNew = false;
         if (!collection.discoveredEnemies[enemyId]) {
             collection.discoveredEnemies[enemyId] = true;
@@ -94,21 +88,16 @@ export const RegistryManager = {
             logger.info('Registry', `New enemy discovered: ${enemyId}`);
         }
 
-        // 2. Kill Count
         const counts = collection.enemyKillCounts || {};
         const currentCount = counts[enemyId] || 0;
         counts[enemyId] = currentCount + 1;
         collection.enemyKillCounts = counts;
 
-        // 3. Side Effects
         if (isNew) {
             if (!GameState.state.ui.newDiscoveries) GameState.state.ui.newDiscoveries = {};
             GameState.state.ui.newDiscoveries[enemyId] = true;
 
-            // An enemy id IS a Token id now (2026-09-06), so the name comes
-            // from the Token registry. Nothing about the Bestiary, the kill
-            // counts or these notifications had to migrate: they only ever
-            // needed an id and a name.
+            // An enemy id IS a Token id, so the name comes from the Token registry.
             const template = getTokenType(enemyId);
             const enemyName = template?.name || enemyId;
             NotificationSystem.notify(`Unlock: ${enemyName}`, 'info', { category: 'discovery' });
@@ -127,14 +116,13 @@ export const RegistryManager = {
     markAsSeen(entityId) {
         if (GameState.state?.ui?.newDiscoveries?.[entityId]) {
             delete GameState.state.ui.newDiscoveries[entityId];
-            // No event: `discovery_seen` had no subscriber anywhere and was
-            // deleted on 2026-08-24 (CR2-092). Badges re-read state on render.
+            // No event is published; badges re-read state on render.
         }
     },
 
     /**
-     * Navigation History (Session-based, not persisted in GameState)
-     * Supports the "Browser-style" back/forward buttons requested by the user.
+     * Navigation History (session-based, not persisted in GameState), supporting
+     * the browser-style back/forward buttons.
      */
     _history: [],
     _historyIndex: -1,

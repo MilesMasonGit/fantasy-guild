@@ -43,15 +43,6 @@ function workTileOf(heroId) {
 
 /**
  * ⭐ **The promotion ceremony** (Promotes rule P4).
- *
- * The window that asks "become a Fighter?" at the end of training — ported from
- * the unmerged `promotion-tokens` branch — driven the way a player drives it,
- * against the real engine modules (only `useEngine` is stood in, to hand them
- * over without booting the whole game).
- *
- * The branch found two bugs only by playing; both have a test here:
- * the answered window going blank ("Fighter → Fighter, sets aside nothing"),
- * and a previous answer surviving into the next offer.
  */
 
 const TILE = 24;
@@ -144,11 +135,8 @@ describe('accepting', () => {
 
         expect(document.body.querySelector('[data-from-job]').textContent).toBe('Recruit');
         expect(document.body.querySelector('[data-promotion-trade]').textContent).toBe(aside);
-        // ⚠️ TL-7 (slice 1.2): a Recruit → Fighter promotion now sets nothing
-        // aside, so "keeps everything" is the correct text and can no longer
-        // be the blank-window tell. A re-read AFTER the promotion would say
-        // "nothing new" in the Takes up column; the snapshot still lists the
-        // two skills that arrived.
+        // A re-read AFTER the promotion would say "nothing new" in the Takes
+        // up column; the snapshot still lists the two skills that arrived.
         expect(document.body.textContent).toContain('nothing — this hero keeps everything');
         expect(document.body.textContent).not.toContain('nothing new');
     });

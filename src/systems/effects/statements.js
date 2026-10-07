@@ -1,48 +1,25 @@
-// Fantasy Guild — the statement grammar (effect authoring redesign, Phase 1)
-
 import { MODIFIER_PALETTE, getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { blankRestriction } from '../../config/registries/restrictionPalette.js';
 import { DEFAULT_REACH, REACH, reachOf } from '../../config/registries/reachRegistry.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 
 /**
- * A Token's rules are **statements**, and a statement is one sentence.
+ * A Token's rules are statements, and a statement is one sentence:
  *
  * ```
  * [ When <event>, ]  KEYWORD  <payload>  [ to <filter> ]  [ , costing <upkeep> ]
  *      optional       always    always      some keywords      optional
  * ```
  *
- * ## Why this replaced `effectBlocks`
- * A block was one flexible container holding five unrelated mechanics — target,
- * capability provision, trigger, upkeep and a *list* of modifiers. Five
- * mechanics in one box means the editor shows all five whether or not they
- * apply, and a block carrying three modifiers is three sentences pretending to
- * be one, which is why no honest description of it could ever be generated.
+ * A statement carries exactly one thing it does, so the rules text is the statements
+ * rendered in words and a wrong statement makes a wrong sentence.
  *
- * A statement carries **exactly one** thing it does. The rules text is then the
- * statements rendered in words, and a wrong statement makes a wrong sentence —
- * the validation loop the old pipeline never had.
+ * ⚠️ Every statement has a stable `id`: per-copy state (`BlockUpkeep`, `TriggerSystem`) is
+ * keyed by id, never array position, so reordering a Token's rules in the CMS cannot remap
+ * a live save's state onto the wrong rule.
  *
- * ## ⚠️ Two things this shape fixes that the old one could not
- *
- * 1. **A stable `id` on every statement.** `BlockUpkeep` and `TriggerSystem`
- *    keyed their save-resident per-copy state by **position in the array**, so
- *    reordering a Token's rules in the CMS silently remapped a live save's
- *    upkeep and cooldown state onto the wrong rule. Statements are sentences;
- *    reordering them is the normal thing to want. Keying by id makes reordering
- *    free.
- * 2. **Legality is declared, not hoped for.** A number effect inside a
- *    triggered block was read by *neither* system — `TileModifiers` skipped
- *    triggered blocks and `TriggerSystem` only handled item grants and
- *    conversions. `KEYWORDS` below says which keywords accept a trigger and
- *    which accept upkeep, so the editor cannot offer the combination at all.
- *
- * ## Phase 2 added three keywords
- * `Cannot` (a placement restriction, enforced in `Placement.js`) and `Applies`
- * (a status effect landing on the heroes working the Tokens the filter names).
- * Both fit the same four slots; neither needed a new concept bolted on beside
- * the grammar.
+ * ⚠️ Legality is declared: `KEYWORDS` says which keywords accept a trigger and which accept
+ * upkeep, so the editor cannot offer a combination no system reads.
  */
 
 /** The keywords a statement may start with. */
@@ -65,7 +42,7 @@ export const KEYWORD = Object.freeze({
     PROMOTES: 'promotes'
 });
 
-/** Whether a keyword may carry a `When …` clause. */
+/** Whether a keyword may carry a `When ...` clause. */
 export const WHEN = Object.freeze({
     NEVER: 'never',
     OPTIONAL: 'optional',
@@ -75,32 +52,17 @@ export const WHEN = Object.freeze({
 /**
  * Every keyword, with what it accepts.
  *
- * `filter` says whether the statement may name *which* neighbours it reaches.
- * `Acts as`, `Requires` and `Restocks` have none: a capability is handed to
- * every neighbour without discrimination, a requirement is about this Token, and
- * a restock list *is* its own filter.
+ * `filter` says whether the statement may name which neighbours it reaches. `Acts as`,
+ * `Requires` and `Restocks` have none: a capability goes to every neighbour, a requirement
+ * is about this Token, and a restock list is its own filter.
  *
- * ⚠️ `Converts` gained one in ER-14, and it is the one filter that names a
- * **single** destination rather than a set — see the note on its row.
+ * ⚠️ `Converts` has a filter that names a SINGLE destination, not a set; see its row.
  *
- * ## `reach` — how far the statement carries (Effects Robustness P2)
- *
- * A second, independent axis: `filter` says *which* Tokens, `reach` says *how
- * far*. `reachRegistry.js` holds the vocabulary. Three keywords declare it, and
- * the omissions are all deliberate (ER-6):
- *
- * * **`Requires` and `Works as`** are statements *about this Token*. There is
- *   nothing for a reach to vary.
- * * **`Acts as` and `Restocks`** hand things to neighbours with no filter at
- *   all; giving them a reach without a filter would be half a targeting
- *   vocabulary, and `Acts as` reaching further is a real balance change that the
- *   concept declined for items on exactly those grounds.
- * * **`Converts`** already names a *single destination* through its filter.
- *   "How far" adds nothing coherent on top of "which one".
- * * **`Cannot`** is a placement restriction read once by `Placement.js`, not an
- *   effect that carries. A board-wide restriction — *"no more than three of
- *   these anywhere"* — is a genuinely useful idea and a genuinely different
- *   feature, so it waits for its own slice rather than arriving as fallout.
+ * `reach` says how far the statement carries (`reachRegistry.js`), independent of `filter`.
+ * It is omitted on purpose for: `Requires` and `Works as` (about this Token), `Acts as` and
+ * `Restocks` (no filter, and reach alone would be half a targeting vocabulary and a real
+ * balance change), `Converts` (already names one destination) and `Cannot` (a placement
+ * restriction read once by `Placement.js`).
  */
 export const KEYWORDS = Object.freeze([
     {
@@ -123,13 +85,9 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * ⚠️ **Deliberately does not scale** (UE-7).
-         *
-         * `tier` looks like a magnitude and is not one: it is which capability
-         * this is, and `RecipeResolver` gates on it with `>= minTier`. A Tier 3
-         * pickaxe is a *different tool*, not a stronger one, which is why the
-         * shipped content models Iron/Mythril/Adamantium as their own library
-         * entries rather than one entry at three scales.
+         * ⚠️ Deliberately does not scale: `tier` is which capability this is (`RecipeResolver`
+         * gates on `>= minTier`), not a magnitude. A Tier 3 pickaxe is a different tool, so each
+         * tier is its own library entry.
          */
         id: KEYWORD.ACTS_AS,
         label: 'Acts as',
@@ -156,21 +114,10 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * ⚠️ **The filter picks ONE destination, not a set** (ER-14).
-         *
-         * Every other filtered keyword broadcasts: `Provides` reaches each
-         * neighbour it names, `Grants` gives each of them an item, `Applies`
-         * puts a status on each of their heroes. A conversion cannot, because it
-         * is an **exchange** with a fixed input — producing onto four Kilns
-         * would quadruple the output while the Bank paid once.
-         *
-         * So `TriggerSystem` takes the lowest-indexed match and the sentence
-         * says *"onto the nearest"* in as many words. The owner's own example is
-         * singular: a Sigil turning Stone into Bricks and putting them on the
-         * nearby Kiln.
-         *
-         * An absent filter still means the firing tile (D-40), so nothing
-         * authored before this changed behaviour.
+         * ⚠️ The filter picks ONE destination, not a set: a conversion is an exchange with a fixed
+         * input, so producing onto several Kilns would multiply the output while the Bank paid
+         * once. `TriggerSystem` takes the lowest-indexed match. An absent filter means the firing
+         * tile.
          */
         id: KEYWORD.CONVERTS,
         label: 'Converts',
@@ -181,11 +128,8 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * ⚠️ **No trigger and no upkeep, both deliberately** (design §3.7).
-         *
-         * A restriction is not a thing that *happens*, so it has no firing
-         * moment; and a rule that lapses when you run out of coal is a trap
-         * rather than a rule, so it cannot be bought off with upkeep either.
+         * ⚠️ No trigger and no upkeep, both deliberately: a restriction is not a thing that
+         * happens, and a rule that lapses when you run out of coal would be a trap.
          */
         id: KEYWORD.CANNOT,
         label: 'Cannot',
@@ -196,28 +140,21 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * ⚠️ **The filter names Tokens; the status lands on people.**
-         *
-         * The owner ruled that `Applies` uses the same filter as every other
-         * keyword, so there is one targeting concept in the grammar rather than
-         * two. A filter selecting Tokens therefore resolves to **the heroes
-         * working those Tokens** — and `statementText.js` says so in the
-         * sentence, in those words, so the reading is never ambiguous.
+         * ⚠️ The filter names Tokens; the status lands on the heroes working those Tokens, and
+         * `statementText.js` says so in the sentence.
          */
         id: KEYWORD.APPLIES,
         label: 'Applies',
         reach: true,
         /**
-         * A scale multiplies the **stacks** applied (UE-7). `Applies` is the
-         * one scalable keyword whose payload has no palette row behind it —
-         * a status is not an axis — so it declares its own field here.
+         * A scale multiplies the stacks applied. `Applies` has no palette row behind it, so it
+         * declares its own scaled field here.
          */
         scales: 'stacks',
         blurb: 'Puts a status on the heroes working nearby Tokens — Well Fed, Poison, and the rest.',
         /**
-         * ⭐ An OPTIONAL role target (G-42). Unset, `Applies` reads its filter
-         * and reach exactly as before; set, the role replaces both. Only the
-         * enemy is on offer — the one participant a filter of Tokens cannot name.
+         * An OPTIONAL role target: set, the role replaces the filter and reach. Only the enemy is
+         * on offer, the one participant a filter of Tokens cannot name.
          */
         optionalRole: true,
         roles: [ROLE.OPPONENT],
@@ -227,24 +164,12 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * ⭐ **The first keyword that DOES something to a person**
-         * (Effects Grammar v2, V2).
+         * The first keyword that acts on a person.
          *
-         * Nine keywords and not one of them acted: `Provides` scales a number,
-         * `Grants` drops an item, `Applies` attaches a status. Nothing dealt
-         * damage, which is why Thorns was unauthorable.
+         * ⚠️ A moment is REQUIRED: damage happens at an instant. The default is
+         * `SELF_CYCLE_COMPLETE` (the Thorns case; one kill is one cycle).
          *
-         * ⚠️ **A moment is REQUIRED.** Damage happens at an instant; a
-         * continuously-dealt 1 damage has no meaning and no reader. The default
-         * moment is `SELF_CYCLE_COMPLETE` because that is the Thorns case and
-         * the one this verb was built for — *"a cycle completed targeting this
-         * entity"* — which covers a hero harvesting a bush and a hero killing a
-         * monster alike, since one kill is one cycle (D-129).
-         *
-         * ⚠️ **It targets a ROLE, not a tile.** `to` filters Tokens by tag or
-         * id; damage is dealt to a *participant* — the actor, or the bearer.
-         * The two are different questions and this keyword asks the second, so
-         * it declares no `filter` and no `reach`.
+         * ⚠️ It targets a ROLE, not a tile, so it declares no `filter` and no `reach`.
          */
         id: KEYWORD.DEALS,
         label: 'Deals',
@@ -258,9 +183,8 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * The mirror of `Deals`, and it shares its whole shape — a magnitude, a
-         * role, a moment. ⚠️ It never overheals: `modifyHeroHp` clamps to max,
-         * which is what every other heal in the game does.
+         * The mirror of `Deals`, sharing its shape. ⚠️ It never overheals: `modifyHeroHp` clamps
+         * to max.
          */
         id: KEYWORD.HEALS,
         label: 'Heals',
@@ -274,13 +198,9 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * ⭐ Gives a Token charges back — and gives `CHARGE_EXTEND` the reader it
-         * has been named for and waited on since CMS-27.
-         *
-         * ⚠️ Targets a **tile**, not a person: charges belong to a Token. An
-         * unlimited Token ignores it (R-4), and `Charges.applyDelta` ceilings it
-         * at what the Token was authored to hold, so this is not a way to push
-         * one past its own maximum.
+         * Gives a Token charges back. ⚠️ Targets a tile, not a person: charges belong to a Token.
+         * An unlimited Token ignores it, and `Charges.applyDelta` ceilings it at the authored
+         * maximum.
          */
         id: KEYWORD.RESTORES,
         label: 'Restores',
@@ -290,19 +210,15 @@ export const KEYWORDS = Object.freeze([
         blurb: 'Gives a Token some of its charges back.',
         filter: false,
         targetsRole: true,
-        // G-42: never the enemy — a creature has no charges to give back.
+        // Never the enemy: a creature has no charges to give back.
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         when: WHEN.REQUIRED,
         upkeep: true
     },
     {
         /**
-         * ⭐ The cleanse. `StatusEffectSystem.purge` has existed, complete and
-         * correct, since the status engine was built and has been called by
-         * **nothing** — one of the four written-but-unreachable features the v1
-         * sweep named. This is what calls it.
-         *
-         * Naming no effect removes everything, which is the "cure all ills" case.
+         * The cleanse: takes live effects off a bearer (`LiveEffects.removeFrom`). Naming no effect
+         * removes everything.
          */
         id: KEYWORD.REMOVES,
         label: 'Removes',
@@ -315,9 +231,8 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * Puts a Token on the board. ⚠️ Where it lands is an authored **choice**
-         * from a short list (G-15), never a hidden fallback — see
-         * `placementRegistry.js` for why that distinction mattered.
+         * Puts a Token on the board. ⚠️ Where it lands is an authored choice from a short list,
+         * never a hidden fallback; see `placementRegistry.js`.
          */
         id: KEYWORD.SPAWNS,
         label: 'Spawns',
@@ -340,21 +255,17 @@ export const KEYWORDS = Object.freeze([
         blurb: 'This Token becomes a different Token, where it stands.',
         filter: false,
         targetsRole: true,
-        // G-42: never the enemy — a transform acts on a Token's square.
+        // Never the enemy: a transform acts on a Token's square.
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE],
         when: WHEN.REQUIRED,
         upkeep: true
     },
     {
         /**
-         * ⚠️ **This statement is the only thing that makes a Token a Station**
-         * (rework P2.5, R-15), and its skill is the Token's whole recipe pool
-         * (R-14). `deriveTokenType` reads the keyword; `recipesForToken` reads
-         * the payload. There is no second field either of them consults.
-         *
-         * No filter (the statement is about this Token), no trigger (being a
-         * station is not a thing that happens) and no upkeep (a Token that
-         * stopped being a station when it ran out of coal would be a trap).
+         * ⚠️ This statement is the only thing that makes a Token a Station, and its skill is the
+         * Token's whole recipe pool: `deriveTokenType` reads the keyword, `recipesForToken` the
+         * payload. No filter, trigger or upkeep (a Token that stopped being a station when it ran
+         * out of coal would be a trap).
          */
         id: KEYWORD.STATION,
         label: 'Works as',
@@ -365,22 +276,12 @@ export const KEYWORDS = Object.freeze([
     },
     {
         /**
-         * ⭐ **A Token that trains the hero standing on it into one job**
-         * (Promotes rule, P1 — `docs/promotes_rule_roadmap.md`).
+         * Trains the hero standing on this Token into one job. Tokens only (`tokensOnly`): an item
+         * has no cycle to train in.
          *
-         * Owner rulings 2026-09-12: promotion is a RULE, not the Token field
-         * the unmerged `promotion-tokens` branch used; it reads "Promotes the
-         * hero to Knight."; and it goes on **Tokens only** (`tokensOnly`) —
-         * training is a hero standing on a tile for a cycle, and an item has no
-         * cycle to train in.
-         *
-         * No `When` (the training cycle is implied, as `Works as` implies a
-         * station's work), no filter or reach (it is about the hero on THIS
-         * tile), no upkeep. "the hero" is fixed wording rather than a role slot:
-         * it is always whoever stands here, so offering other roles would offer
-         * rules that cannot happen.
-         *
-         * ⚠️ P1 is vocabulary only. Nothing in the engine reads this until P3.
+         * No `When` (the training cycle is implied), no filter or reach (it is about the hero on
+         * THIS tile), no upkeep. "the hero" is fixed wording rather than a role slot, since it is
+         * always whoever stands here.
          */
         id: KEYWORD.PROMOTES,
         label: 'Promotes',
@@ -398,44 +299,35 @@ export function getKeyword(id) {
 }
 
 /**
- * The roles a keyword may aim at, whatever the moment (G-42).
+ * The roles a keyword may aim at, whatever the moment.
  *
- * ⭐ One allowlist, read by the role picker (`statementSlots`) and by
- * `ContentAudit`, so the editor cannot offer what the audit would flag.
- * A keyword with no role target has none.
+ * One allowlist, read by the role picker (`statementSlots`) and by `ContentAudit`, so the
+ * editor cannot offer what the audit would flag. A keyword with no role target has none.
  */
 export function rolesForKeyword(keywordId) {
     return getKeyword(keywordId)?.roles || [];
 }
 
-/** Whether a keyword may aim at a role at all (G-42). */
+/** Whether a keyword may aim at a role at all. */
 export function keywordAllowsRole(keywordId, role) {
     return rolesForKeyword(keywordId).includes(role);
 }
 
 /**
- * Whether an `Applies` aims at a role instead of its filter (G-42).
+ * Whether an `Applies` aims at a role instead of its filter.
  *
- * Set, the role replaces the filter and the reach; unset, nothing changes.
  */
 export function appliesByRole(statement) {
     return statement?.keyword === KEYWORD.APPLIES && !!statement?.target?.role;
 }
 
 /**
- * Which number effects may sit inside a statement with a `When` clause.
- *
- * This is the mirror image the old `triggeredOnly` flag never had. `Convert` was
- * hidden until a block had a trigger; nothing hid Yield from a block that *did*,
- * so six of the eight palette entries could be authored into a statement where
- * neither system would ever read them.
+ * The palette entries a keyword offers (`hasTrigger` is currently unused).
  */
 export function paletteForKeyword(keywordId, hasTrigger) {
     if (keywordId === KEYWORD.PROVIDES) {
-        // Provides changes a **number**. The item-carrying shapes have their own
-        // keywords — Grants and Converts — so offering them here too would be
-        // two ways to author one thing, which is how the old editor's five
-        // sections started.
+        // Provides changes a number; the item-carrying shapes have their own keywords (Grants,
+        // Converts), so offering them here would be two ways to author one thing.
         return MODIFIER_PALETTE.filter(e => e.shape === 'deterministic' || e.shape === 'proc');
     }
     if (keywordId === KEYWORD.GRANTS) {
@@ -451,14 +343,11 @@ export function paletteForKeyword(keywordId, hasTrigger) {
 /**
  * What a triggered statement spends when it does not author a `chargeDelta`.
  *
- * -1. `Charges.statementChargeDelta` applies this when the field is absent, and
- * `Charges` imports the constant from here rather than declaring its own: the
- * CMS authoring control needs the same number, and the CMS reads the statement
- * grammar (this file) without pulling in the board runtime.
+ * -1. `Charges` imports the constant from here rather than declaring its own: the CMS
+ * authoring control needs the same number and reads this file without the board runtime.
  *
- * ⚠️ The absence of the field is **not** `chargeDelta: 0`. An author who wants a
- * free effect writes a zero; that is why `makeStatement` stamps an explicit
- * value on the keywords that can carry a trigger.
+ * ⚠️ The absence of the field is NOT `chargeDelta: 0`. An author who wants a free effect
+ * writes a zero, which is why `makeStatement` stamps an explicit value.
  */
 export const DEFAULT_STATEMENT_CHARGE_DELTA = -1;
 
@@ -496,26 +385,12 @@ export function blankPayload(keywordId) {
             // Blank means "everything", which is the cure-all case.
             return { effectId: '' };
         case KEYWORD.DEALS:
-            // `ignoresArmor` is written out rather than left absent so the
-            // editor shows a real state and G-23's default — damage RESPECTS
-            // armour — is visible rather than implied.
+            // `ignoresArmor` is written out rather than left absent so the editor shows a real
+            // state: damage RESPECTS armour by default.
             return { amount: 1, ignoresArmor: false };
         case KEYWORD.APPLIES:
-            // `target` is read only when an ITEM carries this rule (UE-24): a
-            // Token's `Applies` uses its filter and ignores the field. Defaulted
-            // to the hero because that is the reading a Token already has, so an
-            // effect moved from a Token to an item keeps meaning the same thing.
-            /**
-             * ⚠️ **Two shapes during V6, one after V7.**
-             *
-             * `effectId` attaches a **library effect** for a while — the shape
-             * that deletes the status registry. `statusId` is the old shape and
-             * still works, so nothing authored breaks on the day this lands.
-             * V7 re-authors the seven statuses and removes the second half.
-             *
-             * A `durationMs` of 0 means **fire it once, now** — which is how
-             * chaining works (G-17). One verb, both shapes.
-             */
+            // `effectId` attaches a library effect for a while. A `durationMs` of 0 means fire
+            // it once, now (how chaining works).
             return { effectId: '', scale: 1, durationMs: 0, chance: 100, target: 'hero' };
         case KEYWORD.STATION:
             return { skill: '' };
@@ -527,35 +402,22 @@ export function blankPayload(keywordId) {
 }
 
 /**
- * The moment a keyword that REQUIRES one is born with.
- *
- * ⚠️ This used to be a single hardcoded `ITEM_THRESHOLD`, which was the right
- * default for the only keyword that then required a moment (`Converts` watches
- * the Bank). `Deals` requires one too and wants a completely different answer,
- * so the default became a per-keyword question rather than a constant.
- *
- * A born-with-a-moment statement is never an unfireable rule the editor can sit
- * in, even for an instant — the reason `Converts` got a default in the first
- * place.
+ * The moment a keyword that REQUIRES one is born with. Per keyword because `Deals` and
+ * `Converts` want different answers; a statement born with a moment is never an unfireable
+ * rule the editor can sit in.
  */
 function defaultMoment(keywordId) {
     if ([KEYWORD.DEALS, KEYWORD.HEALS, KEYWORD.RESTORES, KEYWORD.REMOVES,
         KEYWORD.SPAWNS, KEYWORD.TRANSFORMS].includes(keywordId)) {
-        // ⭐ The Thorns case: "a cycle completed targeting this entity", which
-        // is a hero harvesting a bush and a hero killing a monster alike
-        // (D-129). The moment this verb exists for, so it is the moment it
-        // starts on.
+        // The Thorns case: a cycle completed targeting this entity (a hero harvesting a bush
+        // and a hero killing a monster alike).
         return { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 };
     }
     return { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 };
 }
 
 /**
- * A new statement, legal by construction.
- *
- * A `Converts` statement is born with its trigger because the keyword requires
- * one — an unfireable conversion should not be a state the editor can be in,
- * even for a moment.
+ * A new statement, legal by construction: a keyword that requires a `When` is born with one.
  */
 export function makeStatement(keywordId, data = {}) {
     const keyword = getKeyword(keywordId);
@@ -564,56 +426,28 @@ export function makeStatement(keywordId, data = {}) {
         keyword: keywordId,
         payload: blankPayload(keywordId),
         /**
-         * Written out, not left absent, on the keywords that can fire.
-         *
-         * `TriggerSystem.fireStatement` is the only caller that reads a charge
-         * delta, and it only ever sees statements carrying a `when` clause, so
-         * a keyword that can never carry one gets no field. On the ones that
-         * can, the value is stamped so the editor shows a real number and an
-         * author's `0` is distinguishable from a blank.
-         */
-        /**
-         * ⚠️ Stamped on **every** keyword since P2, and the number differs.
-         *
-         * A rule that can fire is born costing 1 per firing, which is what such
-         * rules have always cost. A rule that cannot fire is born costing
-         * **nothing**, because "every cycle of this Token" is a new moment and
-         * an aura that suddenly started wearing its Token down would re-cost
-         * content the owner authored on the opposite understanding (UE-20).
-         *
-         * Written out rather than left absent so the editor shows a real number
-         * and an author's explicit `0` stays distinguishable from a blank.
+         * Stamped on every keyword. A rule that can fire is born costing 1 per firing; one that
+         * cannot is born costing NOTHING, so an aura never starts wearing its Token down.
+         * Written out rather than absent so the editor shows a real number and an explicit 0
+         * stays distinguishable from a blank.
          */
         chargeDelta: keyword?.when !== WHEN.NEVER ? DEFAULT_STATEMENT_CHARGE_DELTA : 0,
         to: keyword?.filter ? { mode: 'all', value: '' } : null,
         /**
-         * Written out on the keywords that can carry one, the same way `to` is,
-         * so the editor shows a real value rather than a blank.
+         * Written out on the keywords that can carry one, like `to`.
          *
-         * ⚠️ Its **absence** still means `nearby` (ER-5) — that is what makes
-         * every statement authored before P2 keep its behaviour without a
-         * migration touching a single file. `reachOf` owns that default; this
-         * only decides what a *new* statement starts as.
+         * ⚠️ Its absence still means `nearby`: `reachOf` owns that default; this only decides
+         * what a NEW statement starts as.
          */
         reach: keyword?.reach ? DEFAULT_REACH : null,
         /**
-         * Who the statement acts on, as a **role** rather than a tile filter
-         * (Effects Grammar v2). Only the keywords that act on a participant
-         * carry one; everything else aims with `to` and `reach`.
-         *
-         * ⚠️ V4 folds `to`, `reach` and this into one selector shape. It is
-         * introduced separately here so the new verb is not blocked on
-         * migrating four old ones, and so the migration happens once, later,
-         * with filters arriving at the same time.
+         * Who the statement acts on, as a role rather than a tile filter. Only the keywords
+         * that act on a participant carry one; everything else aims with `to` and `reach`.
          */
         /**
-         * ⚠️ **The default target is per keyword, not one for all of them.**
-         *
-         * Stamping `actor` on everything meant `Restores` and `Transforms` were
-         * born aiming at the hero — and both resolve a *tile* from that role, so
-         * an unstaffed Token (a passive generator, D-116) could never transform
-         * or repair itself on any board. "Restores 1 charge to the actor" is not
-         * even a sentence that means anything: charges belong to a Token.
+         * ⚠️ The default target is per keyword: `Restores` and `Transforms` resolve a TILE from
+         * the role, so defaulting to the hero would leave an unstaffed Token unable to transform
+         * or repair itself.
          */
         target: keyword?.targetsRole ? { role: keyword.defaultRole || ROLE.ACTOR } : null,
         when: keyword?.when === WHEN.REQUIRED ? defaultMoment(keywordId) : null,
@@ -626,10 +460,8 @@ export function makeStatement(keywordId, data = {}) {
 /**
  * A Token's statements.
  *
- * ⚠️ **`effectBlocks` is not read here, deliberately.** Content authored in the
- * old shape is not migrated and not silently reinterpreted — it simply has no
- * statements, and `ContentAudit` says so by name at boot. A quiet
- * half-translation is the failure mode this redesign exists to remove.
+ * ⚠️ `effectBlocks` is not read here, deliberately: old-shape content is not migrated or
+ * reinterpreted. It simply has no statements and `ContentAudit` names it at boot.
  */
 export function statementsOf(def) {
     return Array.isArray(def?.statements) ? def.statements : [];
@@ -644,17 +476,16 @@ export function statementsWith(def, keywordId) {
 const NEIGHBOUR_KEYWORDS = new Set([KEYWORD.ACTS_AS, KEYWORD.REQUIRES, KEYWORD.RESTOCKS, KEYWORD.CANNOT]);
 
 /**
- * ⭐ Whether any of a Token's rules act on, or depend on, what is **near** it —
- * the rule for showing its Near ring (owner, 2026-09-21: "only Tokens that care
- * about reach should show their reach").
+ * Whether any of a Token's rules act on, or depend on, what is NEAR it (the rule for showing
+ * its Near ring).
  *
- * Yes for: `Acts as`, `Requires`, `Restocks` and `Cannot` (neighbours are the
- * whole point of each); `Provides`, `Grants` and `Applies` reaching past the
- * Token itself; a "when a nearby Token…" moment; and a "for each nearby…" count.
+ * Yes for: `Acts as`, `Requires`, `Restocks` and `Cannot`; `Provides`, `Grants` and `Applies`
+ * reaching past the Token itself; a "when a nearby Token..." moment; a "for each nearby..."
+ * count.
  *
- * ⚠️ Not for a `board` reach: it covers the whole mat, so a Near-sized ring
- * would misstate it. Not for an `Applies` aimed at a role (G-42): the role
- * replaces the reach. Spawns land by their own placement rule, not by reach.
+ * ⚠️ Not for a `board` reach: it covers the whole mat, so a Near-sized ring would misstate
+ * it. Not for an `Applies` aimed at a role: the role replaces the reach. Spawns land by their
+ * own placement rule, not by reach.
  */
 export function caresAboutNeighbours(def) {
     const near = (reachId) => reachId !== REACH.SELF && reachId !== REACH.BOARD;
@@ -671,9 +502,7 @@ export function caresAboutNeighbours(def) {
 }
 
 /**
- * The job a Token's `Promotes` rule names, or null.
- *
- * The first one with a job wins. One rule names one job (PR-4), and a Token
+ * The job a Token's `Promotes` rule names, or null. The first one with a job wins; a Token
  * carrying two is an authoring mistake the engine should not guess about.
  */
 export function promotedJobOf(def) {
@@ -701,20 +530,8 @@ export function stationSkillOf(def) {
 /**
  * The capabilities a Token hands its neighbours, as `{ [tag]: highestTier }`.
  *
- * ## One channel now, not two (bug B2)
- * There used to be `def.provides` — read by the board's connection lines and
- * the inspection drawer, but with **no CMS field to write it** — and
- * `block.provides`, which the CMS could write but those five UI readers ignored.
- * So a Copper Pickaxe worked mechanically (the Ore Vein found it, wore its
- * charges, produced ore) while the board drew no line between them and the
- * drawer showed no tool panel. The relationship was real and invisible.
- *
- * The authored channel is now the **`Acts as` statement**, and everything —
- * engine, board UI, drawer — reads this one helper. `def.provides` survives as a
- * read-only fallback for fixtures and any Token not yet re-authored, so nothing
- * that worked stops working.
- *
- * Tier comes from the statement's own **Tool Tier**, falling back to the
+ * The authored channel is the `Acts as` statement; `def.provides` survives as a read-only
+ * fallback for fixtures. Tier comes from the statement's own Tool Tier, falling back to the
  * Token's `tier`, then 1.
  *
  * @param {object} def

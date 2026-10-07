@@ -6,23 +6,16 @@ import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { handleVictory } from './CombatResolutionProcessor.js';
 import { handleHeroAttack, processEnemyAttack } from './CombatAttackProcessor.js';
 
-/**
- * Combat Module Processor
- */
+/** Advance one fight by `deltaTime`: hero attacks, enemy attack, enemy DoTs. */
 export function processCombat(fight, trait, deltaTime) {
-    // Resolve Enemy.
-    //
-    // The stat block is CARRIED on the fight now, not looked up by id: enemies
-    // are Tokens, so `enemyProfile.js` builds this from the Token def and
-    // `BoardCombat` hands it over. `trait.enemy` is how the caller passes it
-    // on the tick; `fight.enemy` is the copy stored at fight creation, which
-    // is what the intermission respawn reads.
+    // The stat block is carried on the fight, not looked up by id: `trait.enemy`
+    // is the per-tick handoff, `fight.enemy` the stored copy the intermission
+    // respawn reads.
     const enemy = trait?.enemy || fight.enemy;
     if (!enemy) return;
 
-    // Granular Namespace Initialization
     const combat = fight.combat || {};
-    fight.combat = combat; // Assign back if created
+    fight.combat = combat;
 
     if (!combat.enemyHp) combat.enemyHp = { current: enemy.hp, max: enemy.hp };
     if (!combat.state) combat.state = { intermissionTimer: 0 };
@@ -33,8 +26,7 @@ export function processCombat(fight, trait, deltaTime) {
     if (!heroId) {
         let changed = false;
         if (fight.status !== 'idle') {
-            // Ephemeral loop cards aren't in any registry — write directly
-            // (CR-028: the old CardManager route silently no-opped).
+            // Ephemeral fight objects aren't in any registry, so write directly.
             fight.status = 'idle';
             changed = true;
         }
@@ -58,7 +50,6 @@ export function processCombat(fight, trait, deltaTime) {
 
     const assignedHeroIds = [heroId];
 
-    // Intermission Timer
     if (combat.state.intermissionTimer > 0) {
         combat.state.intermissionTimer -= deltaTime;
         if (combat.state.intermissionTimer <= 0) {
@@ -71,7 +62,7 @@ export function processCombat(fight, trait, deltaTime) {
     }
 
     if (fight.status === 'idle') {
-        fight.status = 'active';   // CR-028: direct write on the ephemeral card
+        fight.status = 'active';
         bumpFightRev(fight);
     }
 
@@ -88,7 +79,7 @@ export function processCombat(fight, trait, deltaTime) {
         combat.heroTickProcesses[heroId] = (combat.heroTickProcesses[heroId] || 0) + deltaTime;
         combat.heroTickProgress = combat.heroTickProcesses[heroId];
 
-        // Combat style is determined by the equipped weapon (unarmed = melee)
+        // Style comes from the equipped weapon; unarmed falls back to the hero's combat skill.
         const combatStyle = CombatFormulas.getHeroCombatStyle(hero);
         const stats = combat.stats || {};
         const attackSpeed = stats.attackSpeed || CombatFormulas.HERO_ATTACK_INTERVAL_MS;
@@ -115,8 +106,7 @@ export function processCombat(fight, trait, deltaTime) {
     // 2. Enemy Attacks
     processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime);
 
-    // 3. Periodic enemy statuses (DoTs on the global 5s clock). A DoT tick
-    // can finish the enemy off — that's a victory like any other.
+    // 3. Periodic enemy statuses. A DoT tick can finish the enemy off, which is a victory like any other.
     StatusEffectSystem.tickEnemyStatuses(fight, deltaTime);
     if (fight.combat.enemyHp.current <= 0 && fight.status !== 'victory') {
         const firstHeroId = assignedHeroIds[0];

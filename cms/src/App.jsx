@@ -13,11 +13,6 @@ import ProgressionPanel from './components/progression/ProgressionPanel';
 import { useEntityStore } from './stores/useEntityStore';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
 
-/**
- * Editors, by the entity type the sidebar selected.
- *
- * All three editors are real as of Phase 7.
- */
 const EDITOR_MAP = {
   item: ItemEditor,
   token: TokenEditor,
@@ -30,15 +25,10 @@ function App() {
     <AppShell>
       {({ currentView, openGenerate }) => {
         if (currentView === 'recipes') return <RecipeEditor />;
-        // The bulk-authoring view: one list of everything with a work cycle,
-        // by skill and level (docs/progression_screen_plan_v1.md).
         if (currentView === 'progression') return <ProgressionPanel />;
         if (currentView === 'recolor') return <RecolorEditor />;
         if (currentView === 'animation') return <AnimationEditor />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
-        // ⚠️ `AuditPanel` had no route at all until P6 — it was written for
-        // CMS-74 and then never mounted, so the economy audit and the churn
-        // report had nowhere to appear. This is that route.
         if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel openGenerate={openGenerate} /></div>;
         return (
           <SupplyChainLayout>

@@ -1,10 +1,6 @@
 /**
  * Economic simulator — the PRICE pass (phase P3+4).
  *
- * Covers `cms/src/engine/sim/pricingPass.js`: the topological walk, the integer
- * problem, multi-output splits, the craft-margin floor, the downcycle cap, and
- * the two refusals.
- *
  * ⚠️ **Fixture-proven only:** no shipped recipe is flagged `downcycle` and none
  * outputs a Token (finding S15), so the downcycle path and the cycle refusal
  * are exercised by fixtures alone.
@@ -57,11 +53,11 @@ describe('EconSim — PRICE pass', () => {
 
     describe('a worked single-output anchor', () => {
         it('lands on a neighbouring integer', () => {
-            // Level 1, fast (band middle 8s since TL-21, 4–12s), GPH (factor
+            // Level 1, fast (band middle 8s, 4–12s), GPH (factor
             // 1.0), one unit a cycle.
-            //   units/hour = 1 ÷ 8s × 3600 × 1.005       = 452.25
-            //   target     = GPH(1) × 1.0                = 1,200/h
-            //   ideal      = 1200 ÷ 452.25               = 2.65g
+            //   units/hour = 1 ÷ 8s × 3600 × 1.005 = 452.25
+            //   target = GPH(1) × 1.0 = 1,200/h
+            //   ideal = 1200 ÷ 452.25 = 2.65g
             // Band at level 1 is ±25%, so both 2 and 3 land; 3 is closer.
             const result = runSim({ tokens: { a: token('token_grove') }, items: itemsFor('item_a') });
 
@@ -294,28 +290,15 @@ describe('EconSim — PRICE pass', () => {
     describe('⚠️ co-outputs are dependency edges, not just inputs', () => {
         /**
          * Regression test for a defect found by the P3+4 verification pass.
-         *
-         * `priceEntity` subtracts the value of the outputs it does NOT anchor
-         * from its target before splitting the rest. That makes a co-output a
-         * dependency, exactly like an input — but the topological walk's
-         * readiness test originally waited on inputs alone. So whether the
-         * co-output happened to be priced first came down to sorted-id order,
-         * and **two economically identical corpora priced differently
-         * depending on what the entities were named.**
-         *
-         * The build was invisible on the shipped corpus (no shipped producer
-         * mixes anchored and non-anchored outputs) and idempotence still held,
-         * because the wrong ordering was a *stable* wrong ordering. Only a
-         * rename would have revealed it.
          */
         const buildPair = (mixedId) => {
             // `mixed` anchors item_p and also drops item_q, which it does not
             // anchor. `other` anchors item_q via an explicit flag.
             //
             // Medium (16s), not the file's default Fast: at Fast's 8s middle
-            // (TL-21) item_q alone is worth more per hour than the whole
-            // target, so item_p's share clamps to zero and the subtraction
-            // below has nothing to measure.
+            // item_q alone is worth more per hour than the whole target, so
+            // item_p's share clamps to zero and the subtraction below has
+            // nothing to measure.
             const mixed = token(mixedId, {
                 tempo: 'medium',
                 outputs: [out('item_p'), out('item_q')],

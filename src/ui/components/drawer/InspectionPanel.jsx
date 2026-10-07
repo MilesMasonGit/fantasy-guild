@@ -10,9 +10,8 @@ import { cn } from '../../utils/cn.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * InspectionPanel — the drawer-wide shared inspection column (overhaul
- * Phase 2, spec §COMP-INSPECT). A fixed-width column on the far right of
- * the Bottom Drawer, always visible while the drawer is open.
+ * InspectionPanel: the shared inspection column, a fixed-width column shown while its drawer
+ * is open.
  */
 export const InspectionPanel = ({
     selection,
@@ -96,14 +95,12 @@ export const InspectionPanel = ({
 
     return (
         <div className={cn("w-80 shrink-0 bg-gi-base/40 flex flex-col min-h-0 relative", className)}>
-            {/* Top header matching the main pane title header */}
             <div className="shrink-0 flex items-center px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/80">
                 <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
                     <SearchCheck size={18} className="text-gi-primary" /> Inspect
                 </span>
             </div>
 
-            {/* Search bar for the Bank */}
             {activePane === 'bank' && (
                 <div className="shrink-0 flex items-center gap-2 px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/50 focus-within:bg-gi-base/80 transition-colors">
                     <Search size={14} className="text-gi-muted shrink-0" />
@@ -124,7 +121,6 @@ export const InspectionPanel = ({
                 </div>
             )}
 
-            {/* Flat Scroll Arrow: Top */}
             {canScrollUp && (
                 <button
                     onClick={scrollUp}
@@ -135,7 +131,6 @@ export const InspectionPanel = ({
                 </button>
             )}
 
-            {/* Scrollable Body (Scrollbar hidden) */}
             <div
                 ref={scrollRef}
                 className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
@@ -151,7 +146,6 @@ export const InspectionPanel = ({
                 )}
             </div>
 
-            {/* Flat Scroll Arrow: Bottom */}
             {canScrollDown && (
                 <button
                     onClick={scrollDown}

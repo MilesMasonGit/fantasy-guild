@@ -5,22 +5,17 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * DockSkillsGrid — the pinned card's stats section: **the skills this hero
- * actually holds**, three to a row.
- *
- * ⚠️ **This used to render a fixed 15-cell grid of every skill in the world.**
- * A hero now holds 6 of 27, and which 6 changes with their job, so the grid is
- * driven by the hero's own skill map and nothing else. It must never read the
- * registry for its cell list — a hero showing a skill they do not hold is
- * exactly the confusion possession exists to remove.
- *
- * At the card's 200px width there is no room for names, so each cell is the
- * skill's icon plus its level, with the full name in the hover tooltip. The
- * combat skill is tinted to separate it from the production skills at a glance.
- *
- * ⚠️ **Banked skills are deliberately NOT shown here.** The card is a glance
- * surface; what a hero *used* to be able to do belongs on the inspection modal
- * (D-250), which is Phase 7.
+ * DockSkillsGrid: the pinned card's stats section: **the skills this hero actually holds**,
+ * three to a row.
+ * ⚠️ It is driven by the hero's own skill map and nothing else. It must never read the
+ * registry for its cell list: a hero holds only some of the registry's skills, which change
+ * with their job, and showing a skill they do not hold is exactly the confusion possession
+ * exists to remove.
+ * At the card's 200px width there is no room for names, so each cell is the skill's icon plus
+ * its level, with the full name in the hover tooltip. The combat skill is tinted to separate
+ * it from the production skills at a glance.
+ * ⚠️ Banked skills are deliberately NOT shown here. The card is a glance surface; what a hero
+ * *used* to be able to do belongs on the Hero Edit modal.
  */
 export const DockSkillsGrid = ({ heroId }) => {
     // Held ids AND levels in one flat projection — the hero's own map is the

@@ -27,9 +27,9 @@ beforeEach(() => {
 });
 
 /**
- * B9 (TL-23): the Hall's upgrades are a web. An upgrade opens once ANY node
- * linked to it has rank >= 1, or straight away when it is linked to the Hall.
- * Before B9 they sat on a 7x7 grid and opened by cardinal neighbour.
+ * B9: the Hall's upgrades are a web. An upgrade opens once ANY node linked to
+ * it has rank >= 1, or straight away when it is linked to the Hall. Before B9
+ * they sat on a 7x7 grid and opened by cardinal neighbour.
  */
 describe('Guild Hall upgrade web', () => {
     it('gives every upgrade a node position and at least one link, and no tile index', () => {
@@ -147,15 +147,14 @@ describe('Guild Hall upgrade web', () => {
         expect(res.success).toBe(true);
         expect(GuildUpgradeManager.getRank('roster_size')).toBe(1);
         expect(GameState.heroes.length).toBe(1);
-        // D-251: the cap is ROSTER_BASE + rank, not the raw rank. This used to
-        // assert `1` against the drifted `Math.max(1, rank)` formula, which
+        // the cap is ROSTER_BASE + rank, not the raw rank. This used to assert
+        // `1` against the drifted `Math.max(1, rank)` formula, which
         // contradicted the roster-of-twelve tests in RosterAndMarkets.
         expect(GameState.progress.rosterLimit).toBe(ROSTER_BASE + 1);
     });
 
-    // Was 'charges gold' until slice 2.1 (2026-09-25): Hall upgrades now cost
-    // items (SP-65), so the second recruit is paid from the Bank and gold is
-    // left alone.
+    // Was 'charges gold' until slice 2.1: Hall upgrades now cost items, so
+    // the second recruit is paid from the Bank and gold is left alone.
     it('recruits another hero on subsequent roster_size upgrades by paying items', () => {
         GuildUpgradeManager.purchase('roster_size'); // Rank 1 (free)
         expect(GameState.heroes.length).toBe(1);
@@ -191,10 +190,8 @@ describe('Guild Hall upgrade web', () => {
 });
 
 /**
- * Slice 2.1 (Token Lifecycle roadmap v1, 2026-09-25): every Guild Hall upgrade
- * track costs a list of items per rank, never gold (SP-65). TL-5 placeholder:
- * rank n costs 10·n Oak Wood; Bunk Beds and the Wishing Well keep a free first
- * rank.
+ * Slice 2.1 (Token Lifecycle roadmap v1): every Guild Hall upgrade track costs
+ * a list of items per rank, never gold.
  */
 describe('Guild Hall upgrades are paid in items', () => {
     it('uses the live Oak Wood id, which exists in the item registry', () => {

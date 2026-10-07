@@ -12,15 +12,7 @@ vi.mock('../systems/board/BoardState.js', () => ({
 import * as BoardState from '../systems/board/BoardState.js';
 
 /**
- * ⭐ **Which frame a sprite sheet shows, over time** (CR3-301, R10 §2).
- *
- * These pin the frame *sequence* — given the clock, which cell of the sheet is
- * on screen — and say nothing about HOW the frame gets there. They pass with
- * the frame held in React state (before CR3-301) and with the frame written
- * straight to the element (after), so the change can be judged on look alone.
- *
- * The clock is faked (`performance.now` and the timers move together), so a
- * hero's frame can be checked against `heroSpriteFrame` at every step.
+ * ⭐ **Which frame a sprite sheet shows, over time** (R10 §2).
  */
 
 const h = React.createElement;

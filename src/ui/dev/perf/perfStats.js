@@ -1,9 +1,7 @@
-// Fantasy Guild — fixed-size statistics for the Perf HUD (round-3 review, P3).
-//
-// ⚠️ Bounded memory by construction. The 60-minute soak (plan §4.3) is a leak
-// detector, so the tool running it must not grow: a whole-window histogram with
-// fixed buckets, and a ring buffer of the most recent samples, both allocated
-// once.
+// Fixed-size statistics for the Perf HUD.
+// ⚠️ Bounded memory by construction. A long soak is a leak detector, so the tool running it
+// must not grow: a whole-window histogram with fixed buckets, and a ring buffer of the most
+// recent samples, both allocated once.
 
 /**
  * A histogram of millisecond samples in fixed-width buckets, plus an overflow

@@ -6,17 +6,6 @@ import {
     isMatBankLocked, setMatBankLocked
 } from '../ui/hooks/useMatBankLock.js';
 
-/**
- * ⭐ CR3-402 (round 3 review R7, owner ruling 2026-09-30): "while the Bank is
- * open, the playmat cannot be interacted with at all — the Bank covers it."
- *
- * Two halves, each enforced at its own call site:
- * - No Token, flag or hero drag can START from the mat
- *   (`AlphaPointerSensor`'s activator, the same box disallow mode already
- *   refuses — `DndKit.jsx`).
- * - Nothing can be DROPPED onto the mat (`Board.jsx`'s `matAccepts`, which
- *   dnd-kit consults before it will ever call the mat's `onDrop`).
- */
 
 /** The pointer-down activator every drag source goes through (mirrors DisallowMode.test.js). */
 const activates = (target = null) => AlphaPointerSensor.activators[0].handler({

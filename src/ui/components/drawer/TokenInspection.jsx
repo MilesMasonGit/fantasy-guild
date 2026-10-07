@@ -21,25 +21,19 @@ import { lifecycleLines } from './lifecycleLines.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * TokenInspection — a Token's full detail, styled consistently with ItemInspection.
- *
- * ## Why this is load-bearing rather than a nicety (D-145)
- * Hero-time is the scarce resource. A player must never have to spend a
- * tile and a hero to discover what something does — planning happens before
- * placement, so the same sheet has to be reachable from the Shop and the
- * board alike. (It was also reachable from the Token Vault, and offered Place
- * on Mat from there, until the Vault went in Token Lifecycle 9.3.)
+ * TokenInspection: a Token's full detail, styled consistently with ItemInspection.
+ * Hero-time is the scarce resource. A player must never have to spend a hero to discover what
+ * something does: planning happens before placement, so the same sheet has to be reachable
+ * from the Shop and the board alike.
  */
 export const TokenInspection = ({
     typeId,
     hideSprite = false,
-    // Still accepted, now ignored: nothing sells since gold was retired
-    // (SP-65, slice 2.2).
+    // Still accepted, now ignored: nothing sells.
     // eslint-disable-next-line no-unused-vars
     showSell = true,
-    // The board Token this panel was opened from, by instance id (slice
-    // 1.6c-2). Only a Token on the board can be marked "heroes may not work
-    // this".
+    // The board Token this panel was opened from, by instance id. Only a Token on the board
+    // can be marked 'heroes may not work this'.
     instanceId = null
 }) => {
     const def = getTokenType(typeId);
@@ -49,22 +43,15 @@ export const TokenInspection = ({
     const routes = productionRoutes(typeId);
     const enemy = enemyProfileOf(def);
 
-    // (The line naming the Maps that burst into this Token went with the Map
-    // bursts, Token Lifecycle 9.1.)
 
-    // Tags extraction
     const rawTags = Array.isArray(def.tags)
         ? def.tags
         : typeof def.tags === 'string'
             ? def.tags.split(',').map(t => t.trim())
             : [];
-    // The Token's own tags, and nothing else. A `...(def.theme ? [def.theme] : [])`
-    // spread used to add the retired `theme` field as an extra chip; it was
-    // removed 2026-08-24 (CR2-173). It could never have rendered — every Token
-    // and Map in `data/` carries `theme: ""`, which is falsy.
+    // The Token's own tags, and nothing else.
     const allTags = [...new Set(rawTags)].filter(Boolean);
 
-    // Rules text: left-adjusted, not in quotes, each rule on its own line, filter out filler
     const isFillerText = (text) => {
         if (!text) return true;
         const lower = text.toLowerCase().trim();
@@ -83,27 +70,12 @@ export const TokenInspection = ({
             .filter(r => Boolean(r) && !isFillerText(r))
         : [];
 
-    // Core Skill & XP information.
-    //
-    // `config` is the ONE place these live (CR2-192). This panel used to fall
-    // back to top-level `def.xp` / `def.skill` / `def.skillRequired`, which the
-    // engine has never read — `BoardRunner.completeCycle` takes XP from
-    // `config.xp` (widened by the active recipe) and the skill gate from
-    // `config.skill` / `config.skillRequired`, and nothing anywhere reads a
-    // top-level copy.
-    //
-    // The CMS used to write a top-level `xp: 10` onto authored Tokens, and the
-    // ones with no `config` at all promised "+10 XP" for work the engine cannot
-    // award any XP for. (A Token WITH `config.xp: 0` was always shown
-    // correctly: `??` stops at 0, which is not nullish. The lie was confined to
-    // the Tokens with nothing to stop at.) The dead field was deleted from
-    // `data/tokens.json` on 2026-09-01, so there is nothing left to lie with —
-    // but this panel still reads `config` and only `config`, because the fix
-    // was never "the field happens to be absent", it was "the panel and the
-    // engine must read the same one".
-    //
-    // The top-level `skill` / `skillRequired` / `xpAwarded` fallbacks were
-    // inert: no authored Token carries any of them.
+    // Core skill and XP information. `config` is the ONE place these live:
+    // `BoardRunner.completeCycle` takes XP from `config.xp` (widened by the active recipe) and
+    // the skill gate from `config.skill` / `config.skillRequired`, and nothing reads a
+    // top-level copy. This panel must read `config` and only `config`, so that it and the
+    // engine read the same field; a top-level fallback would promise XP the engine cannot
+    // award. (`??` stops at 0, so a Token with `config.xp: 0` shows correctly.)
     const skillId = def.config?.skill;
     const skillDef = skillId ? getSkill(skillId) : null;
     const skillName = skillDef?.name || (skillId ? skillId.charAt(0).toUpperCase() + skillId.slice(1) : null);
@@ -113,7 +85,6 @@ export const TokenInspection = ({
 
     return (
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
-            {/* Header: Centered 128px sprite, name, found in/rarity, tags */}
             <div className="flex flex-col items-center text-center">
                 {!hideSprite && (
                     <div className="relative group flex items-center justify-center w-32 h-32 mb-1 rounded-lg overflow-hidden">
@@ -132,7 +103,6 @@ export const TokenInspection = ({
                     )}
                 </div>
 
-                {/* Tags underneath */}
                 {allTags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 justify-center mt-2">
                         {allTags.map(tag => (
@@ -147,7 +117,6 @@ export const TokenInspection = ({
                 )}
             </div>
 
-            {/* Rules Text: Left-adjusted, not in quotes, each rule on its own line (omitted if filler/empty) */}
             {rules.length > 0 && (
                 <div className="flex flex-col gap-1 text-left py-1">
                     {rules.map((rule, idx) => (
@@ -158,9 +127,7 @@ export const TokenInspection = ({
                 </div>
             )}
 
-            {/* Core Details Table */}
             <div className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
-                {/* Skill Requirement Badge: Skill Req (Sprite, name, number) */}
                 {skillName && (
                     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
                         <div className="flex items-center gap-1.5 text-gi-muted">
@@ -174,7 +141,6 @@ export const TokenInspection = ({
                     </div>
                 )}
 
-                {/* Split XP and Time badges next to each other */}
                 {(xpAmount > 0 || cycleSec) && (
                     <div className="flex items-center gap-2 text-xs">
                         {xpAmount > 0 && (
@@ -192,7 +158,6 @@ export const TokenInspection = ({
                     </div>
                 )}
 
-                {/* Charges Badge: full width badge */}
                 <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
                     <span className="text-gi-muted">Charges</span>
                     <div className="font-bold text-gi-text font-mono tabular-nums">
@@ -219,10 +184,7 @@ export const TokenInspection = ({
                 {instanceId != null && <LifecycleLines instanceId={instanceId} />}
             </div>
 
-            {/* 5.2's inline Remove went with B3.2 (TL-13): a Token leaves the
-                mat by being dragged into the discard bin. */}
 
-            {/* Production Routes */}
             {routes.length > 0 && (
                 <div className="flex flex-col gap-2 pt-1">
                     <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
@@ -234,7 +196,6 @@ export const TokenInspection = ({
                 </div>
             )}
 
-            {/* Buffs describe themselves */}
             {def.buff && (
                 <div className="rounded border border-gi-border/40 bg-gi-base/40 p-2.5">
                     <Label>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'nearby Tokens'}</Label>
@@ -262,13 +223,11 @@ export const TokenInspection = ({
 };
 
 /**
- * ⭐ The disallow toggle (FP-35, FP-36, FPP-8) — "Heroes may work this".
- *
- * Shown only for a board Token a hero could work: a work cycle that needs a
- * hero and names a skill, an enemy, a Promotion Token, or the Guild Hall
- * (`Flags.isHeroWorkable`). Unticking lets go of any hero working it and every
- * flag skips it from then on; the Token itself keeps running its rules. A
- * Token a Manager restocks arrives allowed (FPP-13).
+ * The disallow toggle: 'Heroes may work this'. Shown only for a board Token a hero could work:
+ * a work cycle that needs a hero and names a skill, an enemy, a Promotion Token, or the Guild
+ * Hall (`Flags.isHeroWorkable`). Unticking lets go of any hero working it and every flag skips
+ * it from then on; the Token itself keeps running its rules. A Token a Manager restocks
+ * arrives allowed.
  */
 const HeroesMayWork = ({ instanceId }) => {
     const view = useGameState(
@@ -336,11 +295,9 @@ function liveLifecycleSources() {
 }
 
 /**
- * ⭐ **Lifecycle lines** (Token Lifecycle slice 8.1, TL-4): a spawner's family,
- * next spawn and upkeep; time to grow, turn or turn back; a Foundation's build;
- * a trickle's pay; origin in dev mode. Plain rows; the wording lives in
- * `lifecycleLines.js`. Clocks move without events, so it re-reads every second
- * while open.
+ * Lifecycle lines: a spawner's family, next spawn and upkeep; time to grow, turn or turn back;
+ * a Foundation's build; a trickle's pay; origin in dev mode. Plain rows; the wording lives in
+ * `lifecycleLines.js`. Clocks move without events, so it re-reads every second while open.
  */
 const LifecycleLines = ({ instanceId }) => {
     const [, setNow] = useState(0);
@@ -413,8 +370,7 @@ const RouteBlock = ({ route }) => {
                 </div>
             )}
 
-            {/* A currency output pays nothing since gold was retired (SP-65,
-                slice 2.2), so it is not listed. */}
+            {/* A currency output pays nothing, so it is not listed. */}
             {route.outputs.some(o => !o.currency) && (
                 <div className="flex flex-col gap-1">
                     <span className="text-[9px] font-bold gi-caps tracking-wider text-gi-success/80">
@@ -452,7 +408,7 @@ const DrivesBlock = ({ def }) => {
                 {driven.length ? driven.map(id => tokenName(id)).join(', ') : 'Nothing yet'}
             </p>
             <p className="mt-1 text-[9px] text-gi-muted">
-                {/* D-113 + D-157: sharing is a rate trade, not free value. */}
+                {/* Sharing is a rate trade, not free value. */}
                 Serves every nearby station, and wears once per cycle it serves.
             </p>
         </div>

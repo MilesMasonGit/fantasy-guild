@@ -1,4 +1,4 @@
-// Fantasy Guild — global event names (CR3-559)
+// Global EventBus event names, declared once.
 
 /**
  * ⭐ **Every global EventBus event, declared once.** The board's own events
@@ -9,22 +9,22 @@
  *
  * Two groups, split by **who may publish**:
  *
- * * `ENGINE_EVENTS` — published by the engine (`src/systems`). The rule
- *   (R5-Q2 = A, CR3-306): **an engine command announces its own change; the
+ * * `ENGINE_EVENTS` — published by the engine (`src/systems`). The rule:
+ *   **an engine command announces its own change; the
  *   UI never publishes an engine event.** The only exceptions are the dev
  *   panels listed in `UiEventOwnership.test.js` (they fake engine changes
  *   on purpose).
  * * `UI_EVENTS` — published by the UI. Most are UI-to-UI (`ui:*`, `dev:*`,
  *   `inspect_hero`). Two are **declared UI → engine notices**, facts the
  *   engine cannot observe for itself: `react:slot_selected` (a slot was
- *   chosen; the engine boots on it, CR3-307) and `ui_modal:opened` (the
+ *   chosen; the engine boots on it) and `ui_modal:opened` (the
  *   tutorial counts "open the Bank").
  *
  * `audio:play` is shared: the engine and the UI both ask for a sound.
  *
  * Payloads below are what the publishers actually send.
  *
- * ## Announced with no listener (CR3-107)
+ * ## Announced with no listener
  * Some engine events have no subscriber today. Each is listed in
  * `NO_LISTENER` with the reason it is kept; the guard test fails if an event
  * gains or loses a listener without that list changing, so "sent to nobody" is
@@ -35,13 +35,13 @@
 export const ENGINE_EVENTS = Object.freeze({
     /**
      * "Something changed, everyone re-check." Payload: none. Being retired in
-     * stages (CR3-305): every engine publisher now sends a specific event
+     * stages: every engine publisher now sends a specific event
      * first, so a new subscriber should listen to that instead.
      */
     STATE_CHANGED: 'state_changed',
 
     /**
-     * ⭐ **The one "everything may have changed" event** (CR3-305 stage 1):
+     * ⭐ **The one "everything may have changed" event**:
      * a new game or a load has finished booting, a stress scenario was built,
      * or the dev time-skip ran. Payload: `{ reason }` — `'new_game'`,
      * `'load'`, `'dev_time_skip'` or `'dev_stress'`. A surface that reads
@@ -143,7 +143,7 @@ export const ENGINE_EVENTS = Object.freeze({
 });
 
 export const UI_EVENTS = Object.freeze({
-    /** ⭐ UI → engine notice: a save slot was chosen. Payload: `{ index, isNewGame }`. The engine boots on it (CR3-307). */
+    /** ⭐ UI → engine notice: a save slot was chosen. Payload: `{ index, isNewGame }`. The engine boots on it. */
     REACT_SLOT_SELECTED: 'react:slot_selected',
     /** ⭐ UI → engine notice: a window opened. Payload: `{ modalId }`. The tutorial counts it. */
     UI_MODAL_OPENED: 'ui_modal:opened',
@@ -156,15 +156,14 @@ export const UI_EVENTS = Object.freeze({
      * A flying sprite for the eye only — a hero picked up from the dock flies
      * from their mat point to the cursor. Same payload as the board's
      * `SPRITE_COLLECTED` (`{ kind, refId, quantity, x, y, toScreenX, toScreenY,
-     * destination }`), which the UI used to publish for it; that event is the
-     * engine's, and quests count it (CR3-306).
+     * destination }`). That event is the
+     * engine's; quests count it.
      */
     UI_PARTICLE_FLY: 'ui:particle_fly',
     /**
      * A message on one Token that the engine did not raise — the Guild Hall
      * dragged off the mat. Same payload as the board's `TILE_EVENT_ALERT`
-     * (`{ instanceId, severity, type, title, message, … }`), which the UI used
-     * to publish for it (CR3-306, CR3-013).
+     * (`{ instanceId, severity, type, title, message, … }`).
      */
     UI_TOKEN_ALERT: 'ui:token_alert',
     /** Payload: `{ tab }`. */
@@ -191,34 +190,33 @@ export const UI_EVENTS = Object.freeze({
  * live code is tempted to publish them.
  */
 export const ORPHAN_EVENTS = Object.freeze({
-    /** ⚠ No publisher (CR3-461): `ReactRoot` listens. */
+    /** ⚠ No publisher: `ReactRoot` listens. */
     UI_OPEN_GUILD_HALL: 'ui:open_guild_hall',
-    /** ⚠ No publisher (CR3-461): `ReactRoot` listens. */
+    /** ⚠ No publisher: `ReactRoot` listens. */
     UI_CLOSE_GUILD_HALL: 'ui:close_guild_hall',
-    /** ⚠ No publisher (CR3-461): `ReactRoot` listens. */
+    /** ⚠ No publisher: `ReactRoot` listens. */
     UI_TOGGLE_GUILD_HALL: 'ui:toggle_guild_hall',
-    /** ⚠ No publisher (CR3-461): `TestDashboard` listens. */
+    /** ⚠ No publisher: `TestDashboard` listens. */
     DEV_OPEN_ANIMATION_STUDIO: 'dev:open-animation-studio',
-    /** ⚠ No publisher (CR3-461): `ReactRoot`, `DockEquipmentGrid`. The live event is `hero_equipment_changed`. */
+    /** ⚠ No publisher: `ReactRoot`, `DockEquipmentGrid`. The live event is `hero_equipment_changed`. */
     HERO_EQUIPPED: 'hero_equipped',
-    /** ⚠ No publisher (CR3-461): the dock and inspection sheet list it. Statuses announce through `heroes_updated`. */
+    /** ⚠ No publisher: the dock and inspection sheet list it. Statuses announce through `heroes_updated`. */
     HERO_STATUS_CHANGED: 'hero:status_changed',
-    /** ⚠ No publisher (R9, `AudioSystem`). */
+    /** ⚠ No publisher: `AudioSystem` listens. */
     COMBAT_DEFEAT: 'combat_defeat',
-    /** ⚠ No publisher (R9, `AudioSystem`). */
+    /** ⚠ No publisher: `AudioSystem` listens. */
     INVASION_STARTED: 'invasion_started',
-    /** ⚠ No publisher (R9, `AudioSystem`). */
+    /** ⚠ No publisher: `AudioSystem` listens. */
     HERO_ASSIGNED: 'hero_assigned',
-    /** ⚠ No publisher (R9, `AudioSystem`). */
+    /** ⚠ No publisher: `AudioSystem` listens. */
     SKILL_LEVELED: 'skill_leveled',
-    /** ⚠ No publisher (CR3-107): the On Tick trigger's bus name. `LiveEffects` fires its statements directly, so `TriggerSystem`'s subscription to it is inert. */
+    /** ⚠ No publisher: the On Tick trigger's bus name. `LiveEffects` fires its statements directly, so `TriggerSystem`'s subscription to it is inert. */
     EFFECT_TICK: 'effect_tick',
 });
 
 /**
- * CR3-107: engine events published with **no subscriber**, and why each is
- * kept rather than deleted. They cost ~12 ns a publish with nobody listening
- * (R1 §4.2), and each marks a moment a rule, the Perf HUD or the console
+ * Engine events published with **no subscriber**, and why each is kept rather
+ * than deleted: each marks a moment a rule, the Perf HUD or the console
  * (`Game.EventBus.setLogging(true)`) can hook without touching the engine.
  */
 export const NO_LISTENER = Object.freeze({

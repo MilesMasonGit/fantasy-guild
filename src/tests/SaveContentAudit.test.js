@@ -6,26 +6,11 @@ import { resetMissingContentWarnings } from '../utils/missingContent.js';
 // A control item that resolves, so the tests below can prove the audit stays
 // quiet about content it recognises. `fixtures/testTokens.js` is deliberately
 // NOT imported: this suite audits *authored* content, and the fixture Tokens
-// would become part of what it walks. See `fixtures/fixtureItems.js` (CR2-004).
+// would become part of what it walks. See `fixtures/fixtureItems.js`.
 import './fixtures/fixtureItems.js';
 
 /**
- * CR2-120 — the ghosts a save carries after a rename.
- *
- * The boot-time audit (`ContentAudit.test.js`) walks the *authored* content set.
- * It has no way of seeing what a **save** is holding, so a Token that was
- * renamed after a save was written stayed completely invisible: all three of
- * the owner's live slots were carrying five ghost Tokens, and loading one
- * produced a clean console. This is the pass that makes that audible.
- *
- * ## Two things are being locked down here, and the second is the important one
- * 1. That a stale id in a save is named, once, in words the owner can act on.
- * 2. That **nothing is deleted**. The owner explicitly refused the pruning
- *    option (2026-08-26): content is re-authored continuously, so an id that
- *    looks missing this morning may be halfway through a rename, and deleting
- *    the player's Tokens on the strength of the registry being complete is not
- *    a trade worth making. The state must come out of this byte-for-byte
- *    identical to how it went in.
+ * the ghosts a save carries after a rename.
  */
 
 /** A save shaped like the real thing, with only the fields this pass reads. */

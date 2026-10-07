@@ -32,21 +32,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ **Thorns** — the example the whole project is judged by
  * (Effects Grammar v2, V2).
- *
- * The owner's words:
- *
- * > *"With Thorns: I should be able to author a 'Does 1 damage to opponent when
- * > a cycle completes targeting this entity' effect… I would also want to apply
- * > the same thorns effect to a raspberry bush."*
- *
- * ## What makes one entry work on both
- * Nothing in the rule knows which it is on. `BoardRunner` (a hero finishes
- * harvesting) and `BoardCombat` (a hero wins a fight) publish **the same event
- * with the same payload**, because one kill is one cycle (D-129). So `actor`
- * resolves to the hero either way, and `DealDamage` cannot tell a berry bush
- * from a monster. That was already true; V1 exposed it and V2 uses it.
- *
- * The pair of tests under "one entry, two bearers" is the acceptance criterion.
  */
 
 /**
@@ -213,8 +198,8 @@ describe('⭐ one entry, two bearers', () => {
     });
 
     it('hurts nobody when the work was unstaffed', () => {
-        // A passive generator (D-116) completes cycles with no hero, so the
-        // actor role is declared and unfilled — the same honest nothing an
+        // A passive generator completes cycles with no hero, so the actor
+        // role is declared and unfilled — the same honest nothing an
         // unmatched filter returns, not a failure.
         registerTokenTypes({
             fixture_thorned_passive: {
@@ -271,8 +256,8 @@ describe('damage respects armour (G-23)', () => {
 describe('a lethal thorn announces, and never resolves the death itself', () => {
     it('publishes hero_downed rather than killing in place', () => {
         // ⚠️ The whole of what dying costs is implemented once, in
-        // `BoardCombat.resolveDefeat`. CR2-070: this branch was a log line and
-        // nothing else for months, and a poisoned hero worked on at 0 HP.
+        // `BoardCombat.resolveDefeat`. this branch was a log line and nothing
+        // else for months, and a poisoned hero worked on at 0 HP.
         const downed = [];
         const un = EventBus.subscribe('hero_downed', p => downed.push(p));
 
@@ -309,7 +294,7 @@ describe('the tier is the magnitude, and the bearer sets the price (G-5)', () =>
 
     it('leaves the statement’s own cost alone when the bearer says nothing', () => {
         // ⚠️ Absent means "whatever the statement says", so no reference
-        // authored before G-5 changes what it costs.
+        // authored changes what it costs.
         const entry = {
             id: 'e', name: 'Thorns',
             statements: [{ ...makeStatement(KEYWORD.DEALS), id: 's', chargeDelta: -2 }]
@@ -349,10 +334,10 @@ describe('the grammar and the sentence', () => {
 
     it('⚠️ prints a moment tag exactly as authored', () => {
         /**
-         * The original failure here was `.toLowerCase()` on the whole trigger
+         * The original failure here was `.toLowerCase` on the whole trigger
          * label, which turned "This Token's" into "this token's" and "The Bank"
          * into "the bank" — a sentence stripping the game's own capitals is not
-         * literal, and literal is the one thing rules text has to be (G-10).
+         * literal, and literal is the one thing rules text has to be.
          *
          * ⚠️ Moments are short TAGS now ("On Cycle"), joined with a colon rather
          * than folded into a "When …" clause, so nothing lowers a character any

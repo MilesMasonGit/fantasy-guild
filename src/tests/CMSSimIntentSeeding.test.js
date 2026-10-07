@@ -6,16 +6,6 @@ import {
 /**
  * The CMS's simulator-intent normaliser, tested from the game's suite.
  *
- * The CMS has no test runner of its own (finding S13, accepted at CR2-006), and
- * the precedent for testing CMS code is `CMSBalanceEngine.test.js`, which
- * imports across the project boundary and runs here. This follows it.
- *
- * What matters about this normaliser is not that it computes anything clever —
- * it copies two numbers — but that it is **safe to run on every load**, because
- * it runs on every load. Two load paths reach it, as alternatives rather than
- * in sequence: the entity store's persist `merge` (a browser rehydrate) and
- * `hydrate()` (a workspace import, which bypasses persist entirely).
- *
  * ⚠️ **`merge`, not `migrate`.** zustand only calls `migrate` when the stored
  * blob carries a numeric `version`, and every workspace persisted before P2 has
  * none — so a normaliser hung on `migrate` would skip every real workspace.

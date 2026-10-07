@@ -1,11 +1,6 @@
 /**
  * Economic simulator — the runner (phase P3+4).
  *
- * Covers `cms/src/engine/sim/simRunner.js`: the two acceptance criteria that
- * are properties of the whole assembly line rather than of any one pass —
- * **idempotence** (plan §11) and **termination** (plan §3.4) — plus the rule
- * that the passes write nothing.
- *
  * ⚠️ These tests run the engine over the real `data/` corpus. That corpus is
  * placeholder content whose Tempo/Purpose tags are provisional test substrate,
  * so nothing here asserts a *number* from it — only that the machinery behaves:
@@ -105,8 +100,7 @@ describe('EconSim — the runner', () => {
         }
     });
 
-    // ⚠ CR3-553 EXPECTED FAILURE (owner ruling 2026-09-30: "mark them as
-    // expected"). Content drift: `item_birch_wood`'s anchor flag sits on
+    // Content drift: `item_birch_wood`'s anchor flag sits on
     // `token_birch_tree`, but the sim elects `token_birch_forest`. Either the
     // anchor moved in the CMS or the flag names the wrong Token: an
     // owner-authored anchor, to check in the CMS (R10 section 4.2, row 2).
@@ -114,8 +108,7 @@ describe('EconSim — the runner', () => {
     it.fails('honours an explicit anchor flag over the rule that would elect otherwise', () => {
         // ⚠️ This used to name `item_charcoal` specifically: the Campfire was
         // level 1 (so the rule would elect it) but mythic, and a flag on
-        // `recipe_charcoal` overrode it. The owner re-authored both away on
-        // 2026-09-01 and the test failed while nothing was broken.
+        // `recipe_charcoal` overrode it.
         //
         // The behaviour worth pinning is the override itself, on whatever
         // content carries a flag: wherever an output says `anchor: true`, that

@@ -36,11 +36,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ One "can this run?" for choosing and for running (Free Playmat 1.4b).
- *
- * A flag chooses with `WorkCheck.whyCannotRun`; the runner raises its red mark
- * from the same module. Each case stages a hero already working the Token and
- * checks the runner's mark and the chooser's reason agree — and are the reason
- * the case is about.
  */
 
 const TILE = 14;
@@ -54,7 +49,7 @@ function hero(id, skills) {
 function put(tile, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
     Placement.placeTokenAt(instance, C(tile));
-    return pickRecipe(instance);   // the player picks a station's recipe (TL-15)
+    return pickRecipe(instance);   // the player picks a station's recipe
 }
 
 /** A hero already working the Token on TILE, set up directly. */

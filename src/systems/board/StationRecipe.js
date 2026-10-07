@@ -1,4 +1,4 @@
-// Fantasy Guild — station recipe selection (Recipe & Charges rework, P2)
+// station recipe selection
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
@@ -6,35 +6,20 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
- * Which recipe a station is set to — the one place `selectedRecipeId` is read
- * or written.
+ * Which recipe a station is set to: the one place `selectedRecipeId` is read or written.
  *
- * ## The selection is the station's, and the board only gates it
- * Before this phase a station had no selection at all: `RecipeResolver` looked
- * at the Tokens beside it and *inferred* what it was making. That is reversed
- * here (roadmap §2). The player picks the recipe; adjacency decides whether the
- * pick can run right now.
+ * The selection is the station's and the board only gates it: the player picks the recipe and
+ * adjacency decides whether the pick can run right now.
  *
- * ## It is the recipe's stable `id`, never a position
- * A pool index renumbers the moment a recipe is inserted in the CMS, which would
- * silently repoint every saved station. P0 put an `id` on every recipe for this
- * field to hold.
+ * It is the recipe's stable `id`, never a pool position, which renumbers when a recipe is inserted
+ * in the CMS and would silently repoint every saved station.
  *
- * ## No default: a station starts with nothing selected (TL-15)
- * Every station, however it arrives (bought, built on a Foundation, made by a
- * recipe, placed), is idle until the player picks a recipe; heroes do not work
- * it until then, and a picked recipe stays. This replaced R-5, under which a
- * freshly placed station took the lowest-level recipe of its pool, so a hero
- * started working it the moment it landed (owner feedback FB-13). Foundations
- * never had a default (Token Lifecycle 6.1, SP-49); stations now behave the
- * same way. With nothing picked the resolver says `choose_recipe` (a
- * Foundation says `choose_build`), and flags pass it over.
+ * No default: every station, however it arrives, starts with nothing selected and is idle until the
+ * player picks; heroes do not work it until then. With nothing picked the resolver says
+ * `choose_recipe` (a Foundation says `choose_build`), and flags pass it over.
  *
- * ## Lifetime
- * The selection lives on the Token instance, so it travels with the Token: it
- * survives a save and a move across the mat, and ends when the Token is
- * removed. (A trip through the Vault used to end it too; the Vault went in
- * Token Lifecycle 9.3.)
+ * The selection lives on the Token instance, so it survives a save and a move across the mat, and
+ * ends when the Token is removed.
  */
 
 /** A recipe's level gate. Absent means ungated — fixtures author no level. */
@@ -68,15 +53,12 @@ export function selectedRecipe(instance, def = null) {
 /**
  * Set a station's recipe. Refused unless the id is in that station's pool.
  *
- * This is what P3's modal calls. It is deliberately the only writer: a caller
- * that assigns `selectedRecipeId` by hand can set a station to a recipe it
- * cannot run, which the engine would then read as "no recipe" forever.
+ * Deliberately the only writer: assigning `selectedRecipeId` by hand can set a station to a recipe
+ * it cannot run, which the engine would read as no recipe forever.
  *
- * ⭐ **It announces its own change** (CR3-306): a new selection publishes
- * `TILE_CHANGED { instanceId, typeId }`, which is what the Token's gear badge
- * and its inspection panel re-read on. The screen used to announce it instead,
- * with a `state_changed` of its own; the rule now is that an engine command
- * says what it changed and the UI never publishes engine events.
+ * It announces its own change: a new selection publishes `TILE_CHANGED { instanceId, typeId }`,
+ * which the Token's gear badge and inspection panel re-read on. The UI never publishes engine
+ * events.
  *
  * @returns {boolean} whether the selection was accepted
  */
@@ -90,23 +72,20 @@ export function setSelectedRecipe(instance, recipeId, def = null) {
     return true;
 }
 
-/** Forget a station's selection. It then waits for the player to pick again (TL-15). */
+/** Forget a station's selection. It then waits for the player to pick again. */
 export function clearSelection(instance) {
     if (instance) delete instance.selectedRecipeId;
 }
 
 /**
- * The recipe this instance is set to, having first dropped a selection that is
- * no longer valid. Returns null when nothing (valid) is selected.
+ * The recipe this instance is set to, having first dropped a selection that is no longer valid.
+ * Returns null when nothing (valid) is selected.
  *
- * **It never picks for the player** (TL-15): a station with nothing selected
- * stays that way until the player chooses.
+ * It never picks for the player.
  *
- * **An id that is no longer in the pool becomes no recipe.** A recipe can be
- * renamed or deleted in the CMS under a save that references it. Before TL-15
- * such a station re-defaulted; it now waits for the player like a new one, and
- * says so ("Choose a recipe"), so it is never idle for a reason nothing on
- * screen explains.
+ * An id no longer in the pool becomes no recipe: a recipe can be renamed or deleted in the CMS
+ * under a save that references it. The station then waits for the player and says so (Choose a
+ * recipe), so it is never idle for a reason nothing on screen explains.
  */
 export function validateSelection(instance, def = null) {
     if (!instance) return null;
@@ -116,18 +95,12 @@ export function validateSelection(instance, def = null) {
     return null;
 }
 
-// `backfillBoardSelections` (the P2 save migration) was deleted in Free Playmat
-// slice 1.6a: it only carried pre-0.8.0 boards forward, and those saves are now
-// refused outright.
-
 /**
- * The work config a hero is checked against on this Token: its own `config`,
- * or, for a Foundation (Token Lifecycle 6.1, DP-6), one built from its
- * `foundation` block. A Foundation authors no `config` of its own; the skill is
- * `foundation.skill` (Construction, or Farming for farmland, SP-47) and the
- * level is the **selected recipe's** `levelRequirement` (SP-49), so a hero
- * below it cannot work it. With nothing selected the level is 0: the
- * Foundation is stopped by "Choose what to build", not by a level.
+ * The work config a hero is checked against on this Token: its own `config`, or, for a Foundation,
+ * one built from its `foundation` block. A Foundation authors no `config`; the skill is
+ * `foundation.skill` (Construction, or Farming for farmland) and the level is the selected recipe's
+ * `levelRequirement`. With nothing selected the level is 0: the Foundation is stopped by Choose
+ * what to build, not by a level.
  *
  * Returns null for a Token with neither, which is inert.
  */

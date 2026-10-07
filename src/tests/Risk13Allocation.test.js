@@ -12,26 +12,6 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
  * ⚠️ **Risk 13, measured rather than guessed** (Phase 10 §B).
- *
- * D-127 allocates inputs **first-come**: whichever Token's cycle completes
- * first takes what is in the Bank, and the others wait. That is deliberate and
- * it is what makes degradation emergent rather than per-cycle.
- *
- * But it carries a known hazard. **A Token needing 1 Coal can act sooner than
- * one needing 5**, so under sustained shortage the *deep, expensive* chains the
- * game most wants players to build are the ones that starve first — the
- * opposite of the pressure §6.2 intends.
- *
- * Phase 4 instrumented the allocator specifically so this phase could put a
- * number on it. **The roadmap's instruction is: do not guess — measure.** These
- * tests are that measurement, kept as a permanent regression net so a later
- * change to allocation cannot quietly make it worse.
- *
- * ## What the numbers below mean
- * The shallow consumer needs 2 inputs; the deep one needs 5. They are otherwise
- * identical — same cycle time, same everything. Supply is metered in at a rate
- * that covers roughly one of them but not both, which is precisely the
- * situation the design is worried about.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -152,8 +132,8 @@ describe('⚠️ Risk 13 — does first-come allocation starve deep chains?', ()
         //
         // The feared failure was the deep chain being squeezed toward zero
         // while the shallow one ran freely. That is not what happens. If this
-        // ever drops below ~30%, the hazard has become real and D-127 needs a
-        // rule that favours deep chains.
+        // ever drops below ~30%, the hazard has become real needs a rule that
+        // favours deep chains.
         const result = runShortage(0.02, 180000);
         const share = result.deepInput / (result.shallowInput + result.deepInput);
         expect(share).toBeGreaterThan(0.3);

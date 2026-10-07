@@ -5,9 +5,9 @@ import { getCombatXpAward } from '../utils/CombatFormulas.js';
 import { derivedTokenType } from '../config/registries/tokenTypeDerivation.js';
 
 /**
- * An enemy is a Token (D-104) — and since 2026-09-06 that is true of the data
- * too. These cover the seam that replaced `enemyRegistry.js`: what makes a
- * Token an enemy, what its stat block is, and what a kill drops.
+ * An enemy is a Token — and that is true of the data too. These cover the
+ * seam that replaced `enemyRegistry.js`: what makes a Token an enemy, what
+ * its stat block is, and what a kill drops.
  */
 
 const bear = () => ({

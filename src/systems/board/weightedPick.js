@@ -1,14 +1,13 @@
-// Fantasy Guild — a weighted pick among Token types (a leaf module)
+// a weighted pick among Token types (a leaf module)
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 
 /**
- * Shared by `TimedChanges` (what a Token turns into) and `SpawnerSystem`
- * (what a spawner spawns). It was `TimedChanges.pickWeighted`, and
- * SpawnerSystem importing TimedChanges for it alone formed an import cycle
- * (CR3-023 group 2); `TimedChanges` still re-exports it. Moved unchanged: the
- * random stream it consumes (none for a single choice, one draw otherwise) is
- * part of the bench's identical-work gate.
+ * Shared by `TimedChanges` and `SpawnerSystem`.
+ *
+ * ⚠️ Kept as a leaf module: SpawnerSystem importing TimedChanges for it formed an import cycle. The
+ * random draws it makes (none for a single choice, one otherwise) are part of the bench's
+ * identical-work gate.
  */
 /** A weighted pick from `[{ typeId, weight }]`, skipping unknown types and non-positive weights. */
 export function pickWeighted(entries, random = Math.random) {

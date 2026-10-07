@@ -12,12 +12,11 @@ const FPS_PRESETS = [4, 6, 8, 10, 12, 16];
 const ZOOM_PRESETS = [1, 2, 3, 4, 6, 8];
 
 /**
- * AnimationStudioModal — Developer & Visual QA tool for inspecting hero animation cycles.
- * Supports real-time playback, frame-by-frame scrubbing, floor/center alignment guides,
- * onion skinning, and interactive full-sheet frame mapping.
+ * AnimationStudioModal: Developer & Visual QA tool for inspecting hero animation cycles.
+ * Supports real-time playback, frame-by-frame scrubbing, floor/center alignment guides, onion
+ * skinning, and interactive full-sheet frame mapping.
  */
 export const AnimationStudioModal = ({ isOpen, onClose }) => {
-    // 1. Asset & Animation State
     const [sheetPath, setSheetPath] = useState('/assets/heroes/animations/ani_recruit_0.png');
     const [action, setAction] = useState('idle'); // 'idle' | 'walk' | 'active' | 'all'
     const [frame, setFrame] = useState(0);
@@ -25,7 +24,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
     const [fps, setFps] = useState(8);
     const [flipH, setFlipH] = useState(false);
 
-    // 2. Alignment & Inspection Controls
     const [zoom, setZoom] = useState(4);
     const [showGrid, setShowGrid] = useState(true);
     const [showCenter, setShowCenter] = useState(true);
@@ -34,11 +32,9 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
     const [showOnion, setShowOnion] = useState(false);
     const [bgMode, setBgMode] = useState('dark'); // 'dark' | 'grid' | 'wood'
 
-    // 3. Motion Runway Simulator
     const [motionRunway, setMotionRunway] = useState(false);
     const [runwayPos, setRunwayPos] = useState(50); // percentage 0..100
 
-    // Animation ticker loop
     useEffect(() => {
         if (!isOpen || !isPlaying) return;
 
@@ -50,7 +46,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
         return () => clearInterval(timer);
     }, [isOpen, isPlaying, fps]);
 
-    // Motion runway translation ticker
     useEffect(() => {
         if (!isOpen || !isPlaying || !motionRunway) return;
 
@@ -108,7 +103,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
     const currentFrame = frame % 8;
     const prevFrame = (currentFrame - 1 + 8) % 8;
 
-    // Single frame renderer helper
     const renderFrameView = (actKey, customZoom = zoom) => {
         const row = ROW_MAP[actKey]?.index ?? 0;
         const size = 64 * customZoom;
@@ -127,7 +121,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                     transform: flipH ? 'scaleX(-1)' : 'none'
                 }}
             >
-                {/* Onion Skin Layer (Previous Frame) */}
                 {showOnion && (
                     <img
                         src={sheetPath}
@@ -147,7 +140,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                     />
                 )}
 
-                {/* Primary Sprite Frame */}
                 <img
                     src={sheetPath}
                     alt=""
@@ -163,17 +155,14 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                     }}
                 />
 
-                {/* Alignment Guides Overlay */}
                 <div
                     className="absolute inset-0 pointer-events-none"
                     style={{ transform: flipH ? 'scaleX(-1)' : 'none' }}
                 >
-                    {/* Bounding Box Grid */}
                     {showGrid && (
                         <div className="absolute inset-0 border border-white/20 ring-1 ring-black/40" />
                     )}
 
-                    {/* Center Crosshairs */}
                     {showCenter && (
                         <>
                             <div className="absolute top-0 bottom-0 left-1/2 w-px bg-cyan-400/40 -translate-x-1/2 shadow-[0_0_2px_cyan]" />
@@ -181,7 +170,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                         </>
                     )}
 
-                    {/* Floor Baseline */}
                     {showFloor && (
                         <div
                             className="absolute left-0 right-0 h-px bg-amber-400 shadow-[0_0_3px_orange]"
@@ -201,7 +189,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 pointer-events-auto select-none">
             <div className="w-[1100px] max-w-full max-h-[92vh] bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-gi-text">
                 
-                {/* Header */}
                 <div className="flex items-center justify-between px-6 py-3.5 border-b border-gi-border bg-gi-base/80">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-gi-primary/20 border border-gi-primary/40 flex items-center justify-center text-gi-primary font-bold">
@@ -220,7 +207,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Quick Cycle Tabs */}
                     <div className="flex items-center bg-gi-surface/90 border border-gi-border rounded-lg p-1 gap-1">
                         {['idle', 'walk', 'active'].map(act => (
                             <button
@@ -258,15 +244,11 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                {/* Body Area: Split View */}
                 <div className="flex-1 flex overflow-hidden">
                     
-                    {/* Left Canvas Stage */}
                     <div className="flex-1 flex flex-col bg-black/40 border-r border-gi-border relative overflow-hidden">
                         
-                        {/* Stage Top Bar: Background & Zoom Toggles */}
                         <div className="flex items-center justify-between px-4 py-2 border-b border-gi-border/60 bg-gi-surface/40 text-xs">
-                            {/* Background mode */}
                             <div className="flex items-center gap-1.5">
                                 <span className="text-gi-muted font-bold">Surface:</span>
                                 <button
@@ -289,7 +271,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 </button>
                             </div>
 
-                            {/* Zoom selector */}
                             <div className="flex items-center gap-1">
                                 <span className="text-gi-muted font-bold mr-1">Zoom:</span>
                                 {ZOOM_PRESETS.map(z => (
@@ -309,7 +290,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             </div>
                         </div>
 
-                        {/* Visual Stage Container */}
                         <div
                             className={cn(
                                 'flex-1 relative flex items-center justify-center overflow-auto p-6 transition-colors',
@@ -318,7 +298,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 bgMode === 'wood' && 'bg-[#2a1d17]'
                             )}
                         >
-                            {/* Motion Runway Mode (Moving character along a path) */}
                             {motionRunway && action !== 'all' ? (
                                 <div className="w-full max-w-2xl h-64 border border-white/10 rounded-xl relative overflow-hidden bg-black/30 flex items-center">
                                     <div className="absolute bottom-12 left-0 right-0 h-1 bg-white/20 border-b border-amber-400/50" />
@@ -333,7 +312,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                     </div>
                                 </div>
                             ) : action === 'all' ? (
-                                /* Trio View: Idle, Walk, Active side-by-side */
                                 <div className="flex items-center justify-center gap-8 flex-wrap">
                                     {['idle', 'walk', 'active'].map(act => (
                                         <div key={act} className="flex flex-col items-center gap-3">
@@ -352,7 +330,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                     ))}
                                 </div>
                             ) : (
-                                /* Single Action Focused View */
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="p-4 bg-black/50 rounded-2xl border border-gi-border shadow-2xl relative group">
                                         {renderFrameView(action, zoom)}
@@ -374,7 +351,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             )}
                         </div>
 
-                        {/* Motion Runway Toggle Bar */}
                         <div className="px-4 py-2 border-t border-gi-border/60 bg-gi-surface/40 flex items-center justify-between text-xs">
                             <div className="flex items-center gap-4">
                                 <label className="flex items-center gap-2 cursor-pointer font-bold text-gi-text">
@@ -401,10 +377,8 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Right Control & Inspector Panel */}
                     <div className="w-80 flex flex-col bg-gi-surface p-5 gap-5 overflow-y-auto custom-scrollbar border-l border-gi-border">
                         
-                        {/* Playback Controls Box */}
                         <div className="bg-gi-base/60 border border-gi-border rounded-xl p-4 flex flex-col gap-3.5 shadow-sm">
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold uppercase tracking-wider text-gi-muted">
@@ -415,7 +389,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 </span>
                             </div>
 
-                            {/* Big Transport Buttons */}
                             <div className="flex items-center justify-center gap-3">
                                 <button
                                     onClick={() => {
@@ -453,7 +426,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 </button>
                             </div>
 
-                            {/* Frame Scrubber Bar */}
                             <div className="flex flex-col gap-1.5 pt-1">
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-gi-muted">Scrubber</span>
@@ -489,7 +461,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 </div>
                             </div>
 
-                            {/* FPS Slider & Presets */}
                             <div className="flex flex-col gap-1.5 pt-2 border-t border-gi-border/60">
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-gi-muted">Framerate</span>
@@ -521,7 +492,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             </div>
                         </div>
 
-                        {/* Alignment Guides Box */}
                         <div className="bg-gi-base/60 border border-gi-border rounded-xl p-4 flex flex-col gap-3">
                             <span className="text-xs font-bold uppercase tracking-wider text-gi-muted">
                                 Alignment Guides
@@ -581,7 +551,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                                 </label>
                             </div>
 
-                            {/* Floor Baseline Calibration */}
                             <div className="pt-2 border-t border-gi-border/60 flex flex-col gap-1.5">
                                 <div className="flex items-center justify-between text-xs">
                                     <label className="flex items-center gap-2 cursor-pointer font-bold text-amber-400">
@@ -610,7 +579,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             </div>
                         </div>
 
-                        {/* Asset File Selector */}
                         <div className="bg-gi-base/60 border border-gi-border rounded-xl p-4 flex flex-col gap-2">
                             <span className="text-xs font-bold uppercase tracking-wider text-gi-muted">
                                 Active Sprite Sheet
@@ -635,7 +603,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                {/* Footer: Master Sprite Sheet Map (512x192) */}
                 <div className="border-t border-gi-border bg-gi-base/90 p-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between text-xs px-1">
                         <div className="flex items-center gap-2">
@@ -651,7 +618,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                         </span>
                     </div>
 
-                    {/* Interactive Frame Sheet Grid */}
                     <div className="relative border border-white/10 rounded-lg overflow-hidden bg-black/60 mx-auto select-none">
                         <img
                             src={sheetPath}
@@ -665,7 +631,6 @@ export const AnimationStudioModal = ({ isOpen, onClose }) => {
                             }}
                         />
 
-                        {/* Interactive Clickable Grid Overlay */}
                         <div className="absolute inset-0 grid grid-cols-8 grid-rows-3 pointer-events-auto">
                             {['idle', 'walk', 'active'].map((actKey, _rIndex) => (
                                 Array.from({ length: 8 }).map((_, fIndex) => {

@@ -2,21 +2,8 @@ import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
 
 /**
- * The **chain inspector** (plan §15.2, phase P9) — criterion 11's
- * explainability surface, reachable from any item.
- *
- * > "Oak Wood 3g ← anchors: Oakwood Grove (L1, Medium, GPH) → Charcoal 6g =
- * > 4×3g inputs ÷ 2 + margin…"
- *
- * One sentence, then the same thing broken into its parts for anyone who wants
- * to walk it. Every named item is a link, so the trail is navigable a step at a
- * time rather than drawn as a tree — a tree of a real corpus is unreadable at
- * the third level, and the question this answers is always local: *why is
- * **this** worth **that**?*
- *
- * ⚠️ Every word of economics here comes from `engine/sim/chain.js`. This file
- * decides layout and nothing else; the moment it starts computing a value, the
- * CMS has two pricing rules.
+ * The chain inspector: why is this item worth that, as one sentence and the same thing broken into parts. Every named item is a link, so the trail is walked a step at a time rather than drawn as a tree.
+ * ⚠️ Every word of economics comes from `engine/sim/chain.js`; this file decides layout only, or the CMS would have two pricing rules.
  */
 export default function ChainInspector({ itemId }) {
   const trail = useSimulationStore((s) => s.simChains[itemId]);

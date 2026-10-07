@@ -30,17 +30,14 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ Flags choose the work (Free Playmat slice 1.4b).
  *
- * Board geometry for reading these: 6×6, one tile step is 160 u, so a
- * neighbour is 160 u away, a diagonal 226, two steps 320, three steps 480.
- *
  * ⚠️ These scenarios are laid out on the old reaches — flag radius 400 u and
- * Near 272 u — so `beforeEach` sets both explicitly. Both have shipped at 164 u
- * since FP-75; the per-hero rules and the shipped reach are pinned in
+ * Near 272 u — so `beforeEach` sets both explicitly. Both have shipped at 164
+ * u; the per-hero rules and the shipped reach are pinned in
  * `FlagRules.test.js`.
  */
 
 registerTokenTypes({
-    /** A worked Token with a blank skill — FP-47's case. */
+    /** A worked Token with a blank skill's case. */
     ft_blank: {
         id: 'ft_blank', name: 'Blank Bush', uses: 100, requiresHero: true,
         config: { skill: '', skillRequired: 1, cycleTimeMs: 12000, inputs: [], outputs: [] }
@@ -175,7 +172,7 @@ describe('what a flag never chooses by itself', () => {
 
     it('works a Promotion Token only when the flag point is on it (FP-61)', () => {
         // A hero the Token could promote: an unqualified one is now skipped
-        // (PR-8, Free Playmat 1.4c), which is not what this test is about.
+        // (Free Playmat 1.4c), which is not what this test is about.
         const cost = getPromotionCost('fighter');
         for (const skill of getPromotionGateSkills('fighter')) {
             GameState.state.heroes[0].skills[skill] = { level: cost.skillLevel, xp: 0 };
@@ -349,7 +346,7 @@ describe('⭐ a hero whose Token runs dry moves on — no Manager wait (SP-55, 9
 describe('dropping a hero plants their flag — a flag has no skill (FP-71)', () => {
     it('dropped on an enemy, a hero who can fight fights it (FP-74, Fight allowed by default)', () => {
         // Holds a combat skill: a hero who cannot fight is skipped as unskilled
-        // (FP-60, Free Playmat 1.4c).
+        // (Free Playmat 1.4c).
         GameState.state.heroes = [hero('h1', { logging: 50, melee: 30 })];
         put(14, 'fixture_enemy');
         Placement.plantFlagAt('h1', C(14));
@@ -383,6 +380,6 @@ describe('⭐ no rebuild storms', () => {
     });
 });
 
-// The 'an old save converts (FP-59, FPP-19)' suite was deleted in Free Playmat
-// slice 1.6a with `convertHeroTilesToFlags`: saves from before schema 0.8.0 are
-// refused outright (FP-85), so there is nothing left to convert.
+// The 'an old save converts' suite was deleted in Free Playmat slice 1.6a with
+// `convertHeroTilesToFlags`: saves from before schema 0.8.0 are refused
+// outright, so there is nothing left to convert.

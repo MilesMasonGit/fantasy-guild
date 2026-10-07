@@ -11,19 +11,14 @@ import { MAT_Z } from './matLayers.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 
 /**
- * The Near ring (FP-64) — **hitboxes are never drawn**, so a Token at rest is
- * just its art. The ring appears only for a Token whose rules involve its
- * neighbours (`showsNearRing`, owner 2026-09-21), and only while the player is
- * doing something with it:
- *
- * * **hovering** one — the ring sits on that Token's centre;
- * * **dragging** one — the ring sits ⭐ **where the Token would really land**.
- *   Since free placement (slice 1.6d) that is the cursor itself when there is
- *   room, and the nudged spot when there is not — so the ring is an honest
- *   preview of the drop rather than a copy of the pointer. When there is no room
- *   within nudge reach the drop would fly back (FP-46), and there is no ring to
- *   draw.
- *
+ * The Near ring: **hitboxes are never drawn**, so a Token at rest is just its art. The ring
+ * appears only for a Token whose rules involve its neighbours (`showsNearRing`), and only
+ * while the player is doing something with it:
+ * * **hovering** one: the ring sits on that Token's centre;
+ * * **dragging** one: the ring sits where the Token would REALLY land. With free placement
+ * that is the cursor itself when there is room, and the nudged spot when there is not, so the
+ * ring is an honest preview of the drop rather than a copy of the pointer. When there is no
+ * room within nudge reach the drop would fly back, and there is no ring to draw.
  * Flag radius rings are `FlagLayer`'s: they belong to the flag, not to the mat.
  */
 
@@ -39,23 +34,19 @@ function useNearRadius() {
  * @param {{current: HTMLElement|null}} matRef the mat's own element
  */
 /**
- * ⭐ Where the Token being dragged would land, as a mat point — or null when no
- * Token is being dragged, or it would fly back (FP-46).
- *
- * That is the cursor itself when there is room and the nudged spot when there
- * is not, so anything drawn from it is an honest preview of the drop. A Map lies
- * loose wherever it is let go. Shared by the Near ring here and the flag rings
- * in `FlagLayer` (a flag's ring shows while a dragged Token would land in it).
+ * Where the Token being dragged would land, as a mat point, or null when no Token is being
+ * dragged, or it would fly back.
+ * That is the cursor itself when there is room and the nudged spot when there is not, so
+ * anything drawn from it is an honest preview of the drop. Shared by the Near ring here and
+ * the flag rings in `FlagLayer` (a flag's ring shows while a dragged Token would land in it).
  */
-// CR3-401: `MatRings` and `FlagLayer` both call this with the same `matRef`,
-// each frame, while a Token is in the hand — so the landing used to be worked
-// out twice (a `pointerToMat` plus a `MatPlacement.findSpot` walk) for the
-// exact same answer. `pointer` is a fresh object only once per animation
-// frame (`DndKit.jsx`'s `setDragPointer`), and `activePayload` only changes at
-// drag start/end, so caching on their identity — plus the mat element's, in
-// case a caller passed a different `matRef` — answers the second call inside
-// the same frame for free and still recomputes the moment anything real
-// changes.
+// `MatRings` and `FlagLayer` both call this with the same `matRef`, each frame, while a Token
+// is in the hand, so without a cache the landing would be worked out twice (a `pointerToMat`
+// plus a `MatPlacement.findSpot` walk) for the exact same answer. `pointer` is a fresh object
+// only once per animation frame (`DndKit.jsx`'s `setDragPointer`), and `activePayload` only
+// changes at drag start/end, so caching on their identity (plus the mat element's, in case a
+// caller passed a different `matRef`) answers the second call inside the same frame for free
+// and still recomputes the moment anything real changes.
 let cachedInputs = null;
 let cachedResult = null;
 

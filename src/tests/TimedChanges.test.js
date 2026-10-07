@@ -23,7 +23,7 @@ import * as MatCap from '../systems/board/MatCap.js';
 import { TURN_DEFAULTS, turnTiming } from '../config/registries/tokenConstants.js';
 
 /**
- * Token Lifecycle slice 3.2 — **timed changes** (roadmap DP-2, §3.1):
+ * Token Lifecycle slice 3.2 — **timed changes** (roadmap §3.1):
  * `grows` and `turns`, on clocks advanced by the tick's `delta`.
  */
 
@@ -96,7 +96,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
         turns: { into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }], everyMs: 50000, chance: 100 }
     },
-    /** TL-12's shape: a 30% chance every minute, both ways. */
+    /** shape: a 30% chance every minute, both ways. */
     fixture_tl_lagoon: {
         id: 'fixture_tl_lagoon', name: 'Fixture Lagoon', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nautical',
@@ -244,7 +244,7 @@ describe('⭐ grows — a Sapling becomes a Tree after its time', () => {
     });
 });
 
-// --- moving a spawned Token (owner feedback FB-12) --------------------------
+// --- moving a spawned Token (owner feedback) --------------------------
 
 describe('⭐ a spawned Token moves like any other, and keeps what makes it spawned (FB-12)', () => {
     const spawnedAt = (typeId, x, y) => {
@@ -261,7 +261,7 @@ describe('⭐ a spawned Token moves like any other, and keeps what makes it spaw
         expect(sapling.y).toBe(700);
         expect(BoardState.originOf(sapling)).toBe(BoardState.ORIGIN.SPAWNED);
         expect(MatCap.placedCount()).toBe(before);
-        // Still pushable by a spawn (SP-68): only placed Tokens are held fixed.
+        // Still pushable by a spawn: only placed Tokens are held fixed.
         expect(BoardState.placedTokenIds()).not.toContain(sapling.id);
     });
 
@@ -329,7 +329,7 @@ describe('⭐ turns — a Coast turns, then turns back on the same cycle', () =>
         expect(turned.turnedFrom).toBe('fixture_tl_coast');
         expect(turned.origin).toBe('placed');
 
-        // The turn back rolls on the Coast's cycle, the type it turned FROM (TL-12).
+        // The turn back rolls on the Coast's cycle, the type it turned FROM.
         run(119900);
         expect(at(400, 400).id).toBe(turned.id);
         run(100);
@@ -386,7 +386,6 @@ describe('⭐ turns — a Coast turns, then turns back on the same cycle', () =>
     });
 });
 
-// --- SP-51 / SP-52 ----------------------------------------------------------
 
 describe('⭐ a hero fishing when the Coast turns back loses the cycle and moves on (SP-51, SP-52)', () => {
     it('no output for the cycle in progress; the hero takes the next fishing spot in range', () => {
@@ -416,11 +415,11 @@ describe('⭐ a hero fishing when the Coast turns back loses the cycle and moves
             expect(coast.cycleElapsedMs).toBe(0);
             expect(BoardState.getTokenById(shrimp.id)).toBeNull();
 
-            // SP-52: the hero has already let go and taken the next spot in range.
+            // the hero has already let go and taken the next spot in range.
             expect(BoardState.claimOfHero('hero_1')?.instanceId).toBe(other.id);
 
-            // SP-51: the cycle in progress was lost — still exactly one completion
-            // from the Shrimp Coast, however long we wait.
+            // the cycle in progress was lost — still exactly one completion from
+            // the Shrimp Coast, however long we wait.
             run(60000);
             expect(completions.filter(c => c.typeId === 'fixture_tl_shrimp_coast')).toHaveLength(2);
             expect(completions.some(c => c.instanceId === other.id)).toBe(true);
@@ -477,7 +476,7 @@ describe('⭐ clocks run on delta: one big tick equals many small ones', () => {
     });
 });
 
-// --- TL-12: a chance, not a timer ---------------------------------------------
+// --- a chance, not a timer ---------------------------------------------
 
 describe('⭐ TL-12 — a turning Token rolls a chance once per cycle, both ways', () => {
     /** A random that returns these values in order, then fails loudly. */

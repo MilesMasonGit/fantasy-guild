@@ -29,14 +29,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **Things that walk move by `transform`; things that stand use
- * `left`/`top`** (CR3-007, R6 rule 5).
- *
- * A walker's box is placed with `translate(x, y)` and glides with a `transform`
- * transition, so a step costs no layout and the graphics side stops redrawing
- * the ground under it (R6 spike 1b: S2 ~99 → ~124 fps). Only walkers: heroes,
- * their speech bubbles, and enemy Tokens (which walk by their spawner, B7.1).
- * Every other Token keeps `left`/`top` — at 300 Tokens a transform on all of
- * them cost more in compositing than it saved.
+ * `left`/`top`** (R6 rule 5).
  *
  * ⚠️ The style is chosen by **kind**, never by "walking right now": a box that
  * switched from `left`/`top` to a transform mid-life would slide in from the

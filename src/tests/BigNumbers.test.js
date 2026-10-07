@@ -4,9 +4,9 @@ import {
 } from '../utils/Formatters.js';
 import { DEFAULT_MAX_STACK } from '../config/registries/itemRegistry.js';
 
-// Locks C-15's big-number handling (watch item W-7). Economic values are
-// authored and tuned freely (D-71), so the display and storage layers must
-// cope with whatever the designer writes rather than assuming a range.
+// Economic values are authored and tuned freely, so the display and
+// storage layers must cope with whatever the designer writes rather than
+// assuming a range.
 
 describe('formatCompact — the suffix ladder', () => {
     it('leaves small numbers alone', () => {

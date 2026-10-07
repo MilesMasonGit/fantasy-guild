@@ -8,13 +8,12 @@ import { formatCompact } from '../../../utils/Formatters.js';
 import { Sparkles, HelpCircle } from 'lucide-react';
 
 /**
- * EntityRibbon — Standard minimalist ribbon row for items, tokens and loot.
- *
- * Distinct from the square badges used in inventory/vault (which represent owned assets):
- * this row view represents what the player *needs*, what a station *outputs*, what a map *costs*,
- * or what a loot table *drops*.
- *
- * Layout: [ Sprite (32px, scales to 64px on hover overflowing) | Name + Subtitle | Quantity / Chance (crossfades on hover) ]
+ * EntityRibbon: standard minimalist ribbon row for items, tokens and loot.
+ * Distinct from the square badges used in inventory (which represent owned assets): this row
+ * view represents what the player *needs*, what a station *outputs*, what a Token *costs*, or
+ * what a loot table *drops*.
+ * Layout: [ Sprite (32px, scales to 64px on hover overflowing) | Name + Subtitle | Quantity /
+ * Chance (crossfades on hover) ]
  */
 export const EntityRibbon = ({
     kind,
@@ -33,7 +32,7 @@ export const EntityRibbon = ({
     required,
     isDiscovered = true,
     // Optional hover text. Defaults to the entity's name; pass a sentence when
-    // the row needs explaining rather than naming (see `MapInspection`).
+    // the row needs explaining rather than naming.
     title,
     size = 'md',
     variant = 'default',
@@ -43,20 +42,16 @@ export const EntityRibbon = ({
 }) => {
     const rawId = id || refId || itemId || typeId;
 
-    // Detect kind if not explicitly passed
     let resolvedKind = kind;
     if (!resolvedKind) {
-        // No `gold` kind: gold is retired (SP-65) and its code deleted (Token
-        // Lifecycle 9.4); `item_coins` is an ordinary item now.
+        // No `gold` kind: gold is retired and `item_coins` is an ordinary item now.
         if (rawId === 'xp') {
             resolvedKind = 'xp';
         } else if (rawId && getTokenType(rawId)) {
             resolvedKind = 'token';
         } else {
-            // ⚠️ There is no `enemy` branch here any more. Enemies are Tokens
-            // (2026-09-06), so an enemy id resolves on the `token` branch
-            // above — which is why that branch is checked first and this one
-            // no longer needs to guess.
+            // ⚠️ There is no `enemy` branch here: enemies are Tokens, so an enemy id resolves
+            // on the `token` branch above, which is why that branch is checked first.
             resolvedKind = 'item';
         }
     }
@@ -64,7 +59,6 @@ export const EntityRibbon = ({
     const itemDef = resolvedKind === 'item' && rawId ? getItem(rawId) : null;
     const tokenDef = resolvedKind === 'token' && rawId ? getTokenType(rawId) : null;
 
-    // Resolve Name
     let displayName = name;
     if (!displayName) {
         if (!isDiscovered) {
@@ -79,7 +73,6 @@ export const EntityRibbon = ({
         }
     }
 
-    // Resolve Quantity Text
     let qtyDisplay = null;
     if (have !== undefined && required !== undefined) {
         qtyDisplay = `${have}/${required}`;
@@ -95,10 +88,8 @@ export const EntityRibbon = ({
         }
     }
 
-    // Subtitle / Timing info
     const subLabel = interval || subtitle || (!isDiscovered ? 'Undiscovered' : null);
 
-    // Affordable status for requirements
     const isRequirement = have !== undefined && required !== undefined;
     const isShort = isRequirement && have < required;
 
@@ -113,10 +104,11 @@ export const EntityRibbon = ({
 
     const isInteractive = Boolean(onClick || onInspect);
 
-    // Always enable the hover chance transition if chance is provided (even for 100% / guaranteed drops)
+    // Always enable the hover chance transition if chance is provided (even for 100% /
+    // guaranteed drops).
     const hasHoverChance = chance !== undefined && chance !== null && qtyDisplay !== null;
 
-    // Size configs — All display standard 32px sprites inside a 32px box
+    // Size configs: all display standard 32px sprites inside a 32px box.
     const sizeConfig = {
         sm: {
             box: 'w-8 h-8',
@@ -153,7 +145,6 @@ export const EntityRibbon = ({
             className={cn(
                 'group relative flex items-center rounded-lg border transition-all select-none overflow-visible hover:z-30',
                 sizeConfig.pad,
-                // Solid ribbon styling
                 isShort
                     ? 'bg-[#221316] border-gi-danger/40'
                     : 'bg-[#181412] border-white/10 hover:border-white/25',
@@ -162,7 +153,10 @@ export const EntityRibbon = ({
             )}
             title={title || displayName}
         >
-            {/* Sprite Box — 32px base, smoothly scales to 64px (scale-[2]) overflowing container on hover */}
+            {/**
+             * Sprite Box: 32px base, smoothly scales to 64px (scale-[2]) overflowing the
+             * container on hover.
+             */}
             <div
                 className={cn(
                     sizeConfig.box,
@@ -190,7 +184,6 @@ export const EntityRibbon = ({
                 </div>
             </div>
 
-            {/* Name and Subtitle */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
                 <span
                     className={cn(
@@ -208,11 +201,9 @@ export const EntityRibbon = ({
                 )}
             </div>
 
-            {/* Right-hand side: Quantity / Progress / Chance (transitions smoothly on hover) */}
             <div className="relative flex flex-col items-end justify-center shrink-0 tabular-nums font-mono min-w-[3.5rem]">
                 {hasHoverChance ? (
                     <div className="relative flex items-center justify-end w-full">
-                        {/* Default State: Quantity */}
                         <span
                             className={cn(
                                 sizeConfig.text,
@@ -223,7 +214,6 @@ export const EntityRibbon = ({
                             {qtyDisplay}
                         </span>
 
-                        {/* Hover State: Drop Chance */}
                         <span
                             className={cn(
                                 sizeConfig.text,

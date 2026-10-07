@@ -1,17 +1,15 @@
-// Fantasy Guild — the Token inspection's lifecycle lines (Token Lifecycle slice 8.1, TL-4)
 
 import { turnTiming } from '../../../config/registries/tokenConstants.js';
 
 /**
- * ⭐ **What a board Token's lifecycle blocks are doing right now**, as plain
- * rows for the inspection panel: a spawner's family and cap, its next spawn and
- * upkeep; time left to grow; the next chance to turn or to turn back; a
- * Foundation's build; a trickle's pay; and, in dev mode, the Token's origin.
- *
- * Pure: every engine read comes in through `sources`, so the panel stays thin
- * and the tests need no engine. The shapes it reads are §3.1's.
- *
- * @typedef {{ label: string, value: string, tone?: 'good'|'warning'|'danger'|'muted' }} LifecycleLine
+ * What a board Token's lifecycle blocks are doing right now, as plain rows for the inspection
+ * panel: a spawner's family and cap, its next spawn and upkeep; time left to grow; the next
+ * chance to turn or to turn back; a Foundation's build; a trickle's pay; and, in dev mode, the
+ * Token's origin.
+ * Pure: every engine read comes in through `sources`, so the panel stays thin and the tests
+ * need no engine.
+ * @typedef {{ label: string, value: string, tone?: 'good'|'warning'|'danger'|'muted' }}
+ * LifecycleLine
  */
 
 /** Tones the panel colours by. Absent means the plain text colour. */
@@ -53,7 +51,7 @@ function formatPercent(chance) {
     return `${Math.round(Number(chance) * 10) / 10}%`;
 }
 
-/** "in 34 s (30%)": time to a turn's next roll, and its chance (TL-12, FB-14). */
+/** "in 34 s (30%)": time to a turn's next roll, and its chance. */
 function nextChance(ms, chance) {
     return `in ${formatDuration(Math.max(0, ms))} (${formatPercent(chance)})`;
 }
@@ -144,7 +142,7 @@ function trickleLines(instance, def, src) {
 }
 
 /**
- * ⭐ **The trickle income as hover text** (FB-30): a heading, then one line per
+ *  **The trickle income as hover text**: a heading, then one line per
  * paying trickle line, e.g. "1 Oak Seed every 5 min (next in 3 min 20 s)".
  * The same wording and maths as the inspection panel's *Pays* rows — this only
  * relabels them. Empty for a Token with no trickle.
@@ -183,7 +181,7 @@ export function lifecycleLines(instance, src) {
 
     if (instance.turnedFrom) {
         // A turned Token runs only its turn back (TimedChanges): it rolls on the
-        // ORIGINAL type's cycle and chance, authored once on it (TL-12).
+        // ORIGINAL type's cycle and chance, authored once on it.
         const { everyMs, chance } = turnTiming(src.typeOf(instance.turnedFrom)?.turns);
         out.push({
             label: `Next chance to turn back into ${src.tokenName(instance.turnedFrom)}`,
@@ -199,8 +197,7 @@ export function lifecycleLines(instance, src) {
         }
         const turnsInto = typeList(def.turns?.into, src.tokenName);
         if (turnsInto) {
-            // TL-12: a chance once per cycle, not a fixed timer; the same
-            // numbers roll it back.
+            // A chance once per cycle, not a fixed timer; the same numbers roll it back.
             const { everyMs, chance } = turnTiming(def.turns);
             out.push({
                 label: `Next chance to turn into ${turnsInto}`,
@@ -215,8 +212,8 @@ export function lifecycleLines(instance, src) {
     }
 
     if (def.foundation) out.push(...foundationLines(instance, def, src));
-    // A station waits for the player to pick a recipe (TL-15), as a Foundation
-    // waits for "what to build". Only said while nothing is picked.
+    // A station waits for the player to pick a recipe, as a Foundation waits for 'what to
+    // build'. Only said while nothing is picked.
     else if (src.poolFor && src.poolFor(def).length && !src.selectedRecipe(instance, def)) {
         out.push({ label: 'Recipe', value: 'Choose a recipe', tone: TONE.WARNING });
     }

@@ -5,139 +5,97 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
- * The first promotion offer standing on the board, or null (Promotes rule P4).
- *
- * Read from the Token instances themselves — the saved truth — through
- * `BoardPromotion.getOffer`, which already excludes declined offers.
+ * The first promotion offer standing on the board, or null. Read from the Token instances (the
+ * saved truth) through `BoardPromotion.getOffer`, which excludes declined offers.
  */
 export function standingPromotionOffer(engine) {
     const BoardState = engine?.BoardState;
     const BoardPromotion = engine?.BoardPromotion;
     if (!BoardState?.tokens || !BoardPromotion?.getOffer) return null;
     try {
-        // Every Token on the mat, in arrival order, by instance id (slice 1.6b).
         for (const instance of BoardState.tokens()) {
             const offer = BoardPromotion.getOffer(instance.id);
             if (offer) return offer;
         }
     } catch {
-        // No game in progress (the title screen has no board): nothing stands.
     }
     return null;
 }
 
 /**
  * useUIModals
- * Centralizes the modal state management and EventBus subscriptions for the React layer.
+ * Modal state and EventBus subscriptions for the React layer.
  */
 
 /**
- * ## Contract: `ui_modal:opened` — a UI→engine notification (CR2-094)
+ * ## Contract: `ui_modal:opened` - a UI to engine notification
+ * ⚠️ **This hook is the ONLY publisher of `ui_modal:opened`, and the engine depends on it.**
+ * `QuestManager` subscribes to it and maps two `modalId` values onto quest targets
+ * (`cartographer` is the Shop's pane):
  *
- * ⚠️ **This hook is the ONLY publisher of `ui_modal:opened`, and the engine
- * depends on it.** `QuestManager` subscribes to it and maps two `modalId`
- * values onto quest targets (the `vault` row went with the Token Vault, Token
- * Lifecycle 9.3 / 9.5; `cartographer` is the Shop's pane):
+ *  | `modalId`      | quest target       |
+ *  |----------------|--------------------|
+ *  | `bank`         | `open_bank`        |
+ *  | `cartographer` | `open_cartographer`|
  *
- * | `modalId`      | quest target       |
- * |----------------|--------------------|
- * | `bank`         | `open_bank`        |
- * | `cartographer` | `open_cartographer`|
+ * The tutorial's Item Bank step advances **only** because this React hook fires. The coupling
+ * is two string literals in two files that know nothing about each other, so:
  *
- * The tutorial's "Item Bank" step therefore advances **only** because this
- * React hook fires. The coupling is two string literals in two files that know
- * nothing about each other, so:
- *
- * - **Any new route that opens the Bank or the Shop must publish
- *   this event**, or the quest silently never completes. There are two publish
- *   sites below — `openDrawerTab` (contextual auto-open) and `navToggle` (nav
- *   bubble click); a third route must join them.
- * - **Never rename these `modalId` strings** without changing
- *   `QuestManager.subscribeToEvents` in the same commit.
- * - Publishing for other targets (`guild`, `areas`, `settings`) is harmless —
- *   `QuestManager` ignores anything not in the table.
+ * - **Any new route that opens the Bank or the Shop must publish this event**, or the quest
+ * silently never completes. There are two publish sites below: `openDrawerTab` (contextual
+ * auto-open) and `navToggle` (nav bubble click).
+ * - **Never rename these `modalId` strings** without changing `QuestManager.subscribeToEvents`
+ * in the same commit.
+ * - Publishing for other targets (`guild`, `areas`, `settings`) is harmless; `QuestManager`
+ * ignores anything not in the table.
  *
  * `QuestManager` carries the matching note at its subscription.
  */
 
 /**
- * Nav targets that open as a DRAWER PANE rather than a full-screen view.
- *
- * One set rather than a chain of `||` comparisons: this is checked in three
- * places (is-active, close, open) and a target added to two of the three is a
- * bubble that opens and then cannot be closed.
+ * Nav targets that open as a drawer pane rather than a full-screen view. One set rather than a
+ * chain of `||` comparisons: it is checked in three places (is-active, close, open) and a
+ * target added to two of the three is a bubble that opens and then cannot be closed.
  */
 const DRAWER_TARGETS = new Set(['bank']);
 
 /**
- * The Shop's nav target. Since B4 (FB-25, FB-27) the Shop is its own drawer
- * from the left edge (`ShopDrawer`), not a pane of the Bank's drawer, so it
- * has its own open flag (`ui.shop`). The target keeps the old
- * `cartographer` name: the quest wiring and the tutorial read that string.
+ * The Shop's nav target. The Shop is its own drawer (`ShopDrawer`) with its own open flag
+ * (`ui.shop`), not a pane of the Bank's drawer. The target keeps the name `cartographer`: the
+ * quest wiring and the tutorial read that string.
  */
 const SHOP_TARGET = 'cartographer';
 
 export const useUIModals = (engine) => {
-    // --- Modal States ---
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
     const [isSandboxOpen, setIsSandboxOpen] = useState(false);
-    // The pack overlay went with the pack economy; the only thing that could
-    // ever fill it was `ui:open_pack_overlay`, which nothing published
-    // (CR2-132). Its state is gone with the subscription.
-    //
-    // The loot-table modal went the same way on 2026-08-26 (CR2-132): nothing
-    // published `ui:open_loot_table`, and the drop table it would have shown is
-    // already on screen in `TokenInspection`'s route block and `MapInspection`'s
-    // pool, both with per-output percentages. ⚠️ The owner may want loot tables
-    // on a modal again during development — that screen is to be built fresh for
-    // the current Token/Map system, not restored from the retired card system's
-    // data shape.
 
-    // --- Bottom Drawer (UI overhaul Phase 2: multi-pane) ---
-    // `panes` is the set of open panes (heroes/cards/bank) rendered side by
-    // side; `filters` holds a per-pane auto-open filter (§12.B) — a fresh
-    // object per open so panes can re-apply the same filter twice;
-    // `maximized` names the pane expanded to full height (or null).
+    // `filters` is a fresh object per open so panes can re-apply the same filter twice.
     const [drawerState, setDrawerState] = useState({ panes: [], filters: {}, maximized: null });
 
-    // --- The Shop drawer (B4) --- open or shut; it stays open while buying.
     const [isShopOpen, setIsShopOpen] = useState(false);
 
-    // --- Hero Dock pinned cards (Hero Dock Phase 5) ---
-    // An ORDERED list of pinned hero ids, oldest first, capped at
-    // DOCK_MAX_PINNED. Order is what makes "pinning a third closes the oldest"
-    // work, so this is an array rather than a Set.
+    // Ordered, oldest first, so that pinning a third closes the oldest; hence an array rather
+    // than a Set.
     const [pinnedHeroIds, setPinnedHeroIds] = useState([]);
 
-    // Which hero the Edit modal is open on, or null (Hero Dock Phase 7).
     const [editHeroId, setEditHeroId] = useState(null);
 
-    // Which hero the Job modal is open on, or null. Separate from the Edit
-    // modal because changing job is a decision with consequences, not a
-    // profile tweak sitting beside "rename".
+    // Separate from the Edit modal because changing job is a decision with consequences, not a
+    // profile tweak.
     const [jobHeroId, setJobHeroId] = useState(null);
 
-    // The live promotion offer, or null — a hero finished training on a Token
-    // with a Promotes rule and the game is waiting for an answer (P4).
-    //
-    // ⚠️ This holds only WHICH offer to draw. The offer itself is state on the
-    // Token instance (`promotionPaused`), which is saved board state — so it is
-    // re-found on load (`standingPromotionOffer`) rather than lost with the tab.
+    // ⚠️ Holds only WHICH offer to draw. The offer itself is state on the Token instance
+    // (`promotionPaused`), saved board state, so it is re-found on load
+    // (`standingPromotionOffer`) rather than lost with the tab.
     const [promotionOffer, setPromotionOffer] = useState(null);
 
-    // Whose flag rules panel is open, or null (Free Playmat 1.5b-ii, FP-73,
-    // FP-81). Opened only from a flag's gear badge (`ui:open_flag_rules`,
-    // FPP-20); one hero at a time — another gear swaps the hero.
     const [flagRulesHeroId, setFlagRulesHeroId] = useState(null);
 
-    // 'equipment' | 'skills' — which half of a pinned dock card's body shows.
     // One value for the whole dock, not one per card; see `toggleBodyView`.
     const [bodyView, setBodyView] = useState('equipment');
 
-    // --- Inspect selection state ---
-    // Per-target/pane inspection memory so Bank, Shop (Cartographer), and Guild Hall
-    // each remember their own last inspected item/token/map/upgrade without stomping or bleeding.
     const [inspectByPane, setInspectByPane] = useState({
         bank: null,
         cartographer: null,
@@ -145,23 +103,14 @@ export const useUIModals = (engine) => {
     });
     const [inspectSelection, setInspectSelection] = useState(null);
 
-    // --- Full-screen drawers (UI overhaul Phase 4) ---
-    // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'areas' | null
     const [fullscreenView, setFullscreenView] = useState(null);
 
-    // Helper function to open a bottom drawer tab (contextual auto-open —
-    // e.g. a banner's "open the drawer" prompt. Deliberately independent of
-    // the nav bar's exclusivity rule below: it only adds a pane, never
-    // closes anything else.)
-    // ⚠️ **One pane at a time** (D-239). Since B4 the Bank is the only pane.
-    //
-    // This used to append, so several panes shared the drawer's width. The
-    // drawer now comes from the SIDE at a fixed width (D-238), and splitting
-    // that three ways leaves each pane about a third of the playmat — roughly
-    // three columns of the Bank's 96px grid. `panes` stays an array so every
-    // existing reader keeps working; it simply never holds more than one.
+    // Contextual auto-open (e.g. a banner's open-the-drawer prompt). Independent of the nav
+    // bar's exclusivity rule: it only adds a pane, never closes anything else.
+    // ⚠️ One pane at a time: the drawer has a fixed width, and splitting it leaves each pane
+    // too narrow. `panes` stays an array so existing readers keep working but never holds more
+    // than one.
     const openDrawerTab = useCallback((tab, filter = null) => {
-        // B4: the Shop is no longer a pane — open its own drawer instead.
         if (tab === SHOP_TARGET) {
             setIsShopOpen(true);
             EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
@@ -178,13 +127,9 @@ export const useUIModals = (engine) => {
         EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
     }, []);
 
-    // --- Nav bar exclusivity (bubble clicks only) ---
-    // The nav bubbles share one "only one open at a time" rule: clicking a bubble
-    // closes whatever any of the others has open, and clicking the active
-    // one closes it. This is a property of the bubble click itself, not of
-    // the underlying view — contextual auto-opens (e.g. a banner's "open
-    // the drawer" prompt via openDrawerTab above) don't close other views
-    // and aren't closed by them either.
+    // The nav bubbles share an only-one-open rule: clicking a bubble closes whatever any other
+    // has open, and clicking the active one closes it. Contextual auto-opens (`openDrawerTab`)
+    // neither close other views nor are closed by them.
     const isNavActive = useCallback((target) => {
         switch (target) {
             case 'guild': return fullscreenView === 'guild';
@@ -204,11 +149,9 @@ export const useUIModals = (engine) => {
             else if (target === 'settings') setIsSettingsOpen(false);
             return;
         }
-        // Close everything now, then open the target next frame. Settings is
-        // a Headless UI Dialog with its own "click outside closes me"
-        // handling; switching straight into it in the same click races that
-        // handling against this one and the dialog never actually shows.
-        // Opening a frame later sidesteps the race — imperceptible.
+        // Close everything now, then open the target next frame. Settings is a Headless UI
+        // Dialog whose click-outside handling races a same-click switch, and the dialog never
+        // shows.
         setFullscreenView(null);
         setDrawerState({ panes: [], filters: {}, maximized: null });
         setIsSettingsOpen(false);
@@ -226,9 +169,6 @@ export const useUIModals = (engine) => {
         });
     }, [isNavActive]);
 
-    // --- Memoized Controls ---
-    // CR3-302: the groups ReactRoot's effects depend on are memoised, so a
-    // ReactRoot render no longer unsubscribes and resubscribes them.
     const fullscreenOpen = useCallback((view) => setFullscreenView(view), []);
     const fullscreenToggle = useCallback((view) => setFullscreenView(v => (v === view ? null : view)), []);
     const fullscreenClose = useCallback(() => setFullscreenView(null), []);
@@ -298,8 +238,6 @@ export const useUIModals = (engine) => {
         drawer: {
             ...drawerState,
             isOpen: drawerState.panes.length > 0,
-            // Ensure a pane is open and (re)apply its auto-open filter,
-            // leaving other open panes alone (§12.B).
             open: openDrawerTab,
             close: useCallback(() => setDrawerState({ panes: [], filters: {}, maximized: null }), []),
             closePane: useCallback(tab => {
@@ -313,8 +251,6 @@ export const useUIModals = (engine) => {
                 setDrawerState(s => ({ ...s, maximized: s.maximized === tab ? null : tab }));
             }, [])
         },
-        // The Shop drawer (B4, FB-25 / FB-27). The nav bubble goes through
-        // `nav.toggle('cartographer')`; this is for the drawer's own Close.
         shop: {
             isOpen: isShopOpen,
             open: useCallback(() => setIsShopOpen(true), []),
@@ -323,39 +259,32 @@ export const useUIModals = (engine) => {
         dock: {
             pinned: pinnedHeroIds,
             isPinned: (heroId) => pinnedHeroIds.includes(heroId),
-            // Click a tab: pin it, or unpin it if it's already open. A third
-            // pin evicts the oldest (concept §3, strict 2-card comparison).
+            // Click a tab: pin it, or unpin it if already open. A third pin evicts the oldest.
             togglePin: useCallback((heroId) => {
                 setPinnedHeroIds(prev => {
                     if (prev.includes(heroId)) return prev.filter(id => id !== heroId);
                     return [...prev, heroId].slice(-DOCK_MAX_PINNED);
                 });
             }, []),
-            // Clicking anywhere outside the dock closes every card (D11).
-            // Returns the same array when already empty so the state identity
-            // is stable and this can be called freely from a global listener.
+            // Returns the same array when already empty so state identity is stable; safe to
+            // call from a global listener.
             unpinAll: useCallback(() => {
                 setPinnedHeroIds(prev => (prev.length === 0 ? prev : []));
             }, []),
-            // Which half of a pinned card's body is showing. SHARED across
-            // every open card on purpose (owner decision 2026-08-02): the dock
-            // allows two cards open precisely to compare two heroes, and a
-            // comparison is only meaningful when both show the same side.
-            // Defaults to the loadout, which is also the drag-and-drop target.
+            // Shared across every open card on purpose: the dock allows two cards open to
+            // compare heroes, which only works if both show the same side. Defaults to the
+            // loadout, the drag-and-drop target.
             bodyView,
             toggleBodyView: useCallback(() => {
                 setBodyView(prev => (prev === 'equipment' ? 'skills' : 'equipment'));
             }, []),
-            // The Edit modal — name, portrait, job (roadmap D8).
             editHeroId,
             openEdit: useCallback((heroId) => setEditHeroId(heroId), []),
             closeEdit: useCallback(() => setEditHeroId(null), []),
-            // The Job modal — promote and re-train, which are one act (D-248).
             jobHeroId,
             openJob: useCallback((heroId) => setJobHeroId(heroId), []),
             closeJob: useCallback(() => setJobHeroId(null), []),
-            // The promotion ceremony (Promotes rule P4). Closing it only stops
-            // drawing: the ceremony's own buttons accept or decline, and an
+            // Closing only stops drawing: the ceremony's own buttons accept or decline, and an
             // offer closed any other way is still standing on the tile.
             promotionOffer,
             closePromotion: useCallback(() => setPromotionOffer(null), [])
@@ -367,61 +296,41 @@ export const useUIModals = (engine) => {
         },
         inspect,
         nav: {
-            // 'guild' | 'bank' | 'cartographer' | 'areas' | 'settings'
-            //
-            // 'library' (the Collection Binder) was removed on 2026-08-24
-            // (CR2-144). It was a nav target with no bubble and no screen —
-            // nothing could set it, yet `isAnyModalOpen`, which gates the
-            // particle overlay, depended on it.
             isActive: isNavActive,
             toggle: navToggle
         }
     };
 
-    // --- Event Subscriptions ---
     useEffect(() => {
         if (!engine) return;
 
-        // ⚠️ Every subscription below must have a publisher somewhere. Five
-        // that did not were removed on 2026-08-26 (CR2-191, CR2-132):
-        // `ui:card_tier_changed` (its `setCardTier` had already gone with
-        // CR2-166, so the handler was a ReferenceError waiting on a publish),
-        // `ui:open_settings` and `ui:open_hero_customize` (duplicate routes —
-        // the nav bar and `ui.dock.openEdit` are the real ones),
-        // `ui:open_pack_overlay` (the pack overlay is gone), and
-        // `ui:open_loot_table` (the loot-table modal is gone — see above).
+        // ⚠️ Every subscription below must have a publisher somewhere.
         const subs = [
             engine.EventBus.subscribe(UI_EVENTS.DEV_TOGGLE_SANDBOX, () => setIsSandboxOpen(prev => !prev)),
-            // Contextual auto-open from empty banner slots (§12.B). The
-            // 'heroes' tab is gone — the dock is always on screen, so an empty
-            // hero slot has nothing to open and just says so on the card.
             engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_DRAWER, (data) => {
                 const tab = data?.tab;
                 if (!tab || tab === 'heroes') return;
                 openDrawerTab(tab, data?.filter);
             }),
-            // A flag's gear badge (FlagLayer) — the only route into a hero's
-            // flag rules (FP-73, FPP-20).
             engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, (data) => {
                 if (data?.heroId) setFlagRulesHeroId(data.heroId);
             }),
-            // A hero finished training. Nothing has happened to them yet — the
-            // tile holds the offer open, and this only decides to draw it.
+            // Nothing has happened to the hero yet: the tile holds the offer open and this
+            // only decides to draw it.
             engine.EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
                 if (data?.instanceId == null) return;
                 setPromotionOffer(data);
             }),
-            // ⚠️ A loaded save can carry an offer nobody answered. Without this
-            // the hero would stand on the Token forever with nothing asking —
-            // the tile holds, and the ready event already fired in another
-            // session. A DECLINED offer is not standing, so this never re-asks.
+            // ⚠️ A loaded save can carry an offer nobody answered. Without this the hero would
+            // stand on the Token forever with nothing asking. A declined offer is not
+            // standing, so this never re-asks.
             engine.EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
                 setPromotionOffer(standingPromotionOffer(engine));
             })
         ];
 
-        // The same, for a board that was already loaded when the UI mounted.
-        // Deferred a tick so it reads after the engine has finished starting.
+        // Same, for a board already loaded when the UI mounted. Deferred a tick so it reads
+        // after the engine has finished starting.
         const initial = setTimeout(() => {
             setPromotionOffer((current) => current || standingPromotionOffer(engine));
         }, 0);

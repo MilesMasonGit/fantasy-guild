@@ -1,4 +1,4 @@
-// Fantasy Guild — the `Deals` verb (Effects Grammar v2, V2)
+// the `Deals` verb
 
 import { EventBus } from '../core/EventBus.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
@@ -12,57 +12,33 @@ import * as BoardCombat from './BoardCombat.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * ⭐ **The first rule in the game that does something to a person.**
+ * Deals damage to a person.
  *
- * Nine keywords and not one of them acted — `Provides` scales a number, `Grants`
- * drops an item, `Applies` attaches a status. Nothing dealt damage, which is why
- * the owner's Thorns example was unauthorable:
+ * One Thorns works on a berry bush and on a monster: `BoardRunner` (a hero finishes harvesting) and
+ * `BoardCombat` (a hero wins a fight) publish the same event with the same payload, so `actor`
+ * resolves to the hero either way and this module cannot tell the difference.
  *
- * > *"Does 1 damage to opponent when a cycle completes targeting this entity."*
+ * ⚠️ Damage respects armour, and can be fully stopped by it. `mitigateFlatDamage` floors at zero
+ * where a combat hit floors at one (reasoning in `CombatFormulas`): a fight must always progress, a
+ * thorn need not. An author who wants a thorn that pierces plate sets `ignoresArmor` on the
+ * statement.
  *
- * ## ⭐ Why one Thorns works on a berry bush and on a monster
- * It never learns which it is on. `BoardRunner` (a hero finishes harvesting) and
- * `BoardCombat` (a hero wins a fight) publish **the same event with the same
- * payload**, because one kill is one cycle (D-129) — so `actor` resolves to the
- * hero either way, and this module cannot tell the difference. That was not
- * built for this feature; it was already true, and V1 simply exposed it.
- *
- * ## ⚠️ Damage respects armour, and can be fully stopped by it (G-23)
- * `mitigateFlatDamage` floors at **zero**, where a combat hit floors at one. The
- * difference is deliberate and lives in `CombatFormulas` with its reasoning: a
- * fight must always progress, a thorn need not. A floor of 1 here would make
- * heavy armour worth exactly as much as none against every thorn in the game.
- *
- * An author who wants a thorn that pierces plate says so — `ignoresArmor` is a
- * field on the statement, not a rule this module decides.
- *
- * ## ⚠️ Killing a hero announces; it never resolves the death itself
- * The whole of what dying costs is implemented once, in
- * `BoardCombat.resolveDefeat`. A lethal blow here publishes `hero_downed` and
- * `BoardCombat` owns the response — the same discipline `StatusEffectSystem`
- * follows.
- *
- * ⚠️ This module **does** import `BoardCombat`, for `isEnemyToken`/`getFight`,
- * and that is not a cycle today: `BoardCombat` does not import back. The reason
- * the death is still announced rather than resolved is not import mechanics — it
- * is that dying must have exactly ONE implementation, and there must never be a
- * second subscriber that also kills (CR2-070: that branch was a no-op for months
- * and a poisoned hero worked on at 0 HP).
- * **There must never be a second subscriber that also kills** (CR2-070: that
- * branch was a no-op for months and a poisoned hero worked on at 0 HP).
+ * ⚠️ Killing a hero announces; it never resolves the death itself. Dying has exactly ONE
+ * implementation, `BoardCombat.resolveDefeat`; a lethal blow here publishes `hero_downed` and
+ * `BoardCombat` owns the response. There must never be a second subscriber that also kills: that
+ * branch was once a no-op and a poisoned hero worked on at 0 HP. This module imports `BoardCombat`
+ * (for `isEnemyToken`/`getFight`); that is not a cycle as long as `BoardCombat` does not import
+ * back.
  */
 
 /**
- * How many things the statement's second, `counted` selector matched (G-14).
+ * How many things the statement's second, `counted` selector matched.
  *
- * ⚠️ Counted from the **bearer**, not the target. *"1 damage per nearby
- * Coast Token"* on a monster means the Tokens beside the monster; it would be a
- * different rule, and a much stranger one, if it counted what happened to be
- * beside whoever it hit.
+ * ⚠️ Counted from the bearer, not the target: 1 damage per nearby Coast Token on a monster means
+ * the Tokens beside the monster.
  *
- * By instance id, measured from the bearer's point if it has left (slice 1.6b).
- *
- * Zero when the rule does not use a count, so the multiply is harmless.
+ * By instance id, measured from the bearer's point if it has left. Zero when the rule does not use
+ * a count, so the multiply is harmless.
  */
 function countMatches(statement, roles) {
     if (!usesCountedSelector(statement?.payload)) return 0;
@@ -76,11 +52,9 @@ function countMatches(statement, roles) {
 
 /** The entity a role points at, as something damage can be applied to. */
 function targetOf(role, roles, statement) {
-    /**
-     * ⭐ `the enemy` — found by hero, never by tile (G-43). No fight, or a
-     * moment that does not supply the role, reaches nobody; it never falls
-     * through to the occupant rule below, which would hit the hero.
-     */
+    // `the enemy` is found by hero, never by tile. No fight, or a moment that does not supply the
+    // role, reaches nobody; it never falls through to the occupant rule below, which would hit the
+    // hero.
     if (role === ROLE.OPPONENT) {
         const fight = BoardCombat.opponentFightOf(statement, roles);
         return fight?.combat?.enemyHp ? enemyTarget(fight) : null;
@@ -91,28 +65,20 @@ function targetOf(role, roles, statement) {
         return heroId ? heroTarget(heroId) : null;
     }
 
-    /**
-     * ⚠️ `self` may be a HERO rather than a Token (V6). A live effect sits on a
-     * person, so a Poison saying "deal 2 damage to this entity" means the person
-     * carrying it.
-     */
+    // ⚠️ `self` may be a HERO rather than a Token: a live effect sits on a person, so a Poison
+    // saying deal 2 damage to this entity means the person carrying it.
     if (role === ROLE.SELF && roles?.selfHeroId) return heroTarget(roles.selfHeroId);
 
-    /**
-     * ⚠️ ...and `self` may be a live ENEMY, for the same reason. A Poison on a
-     * monster says "deal 2 damage to this entity" and must mean the monster, not
-     * the hero fighting it — which is what the occupant rule below would
-     * otherwise resolve it to, silently turning every debuff on a monster into a
-     * debuff on its attacker.
-     */
+    // ⚠️ ...and `self` may be a live ENEMY, for the same reason: a Poison on a monster must mean
+    // the monster, not the hero fighting it, which the occupant rule below would otherwise resolve
+    // it to.
     if (role === ROLE.SELF && roles?.selfFightId != null) {
         const fight = BoardCombat.getFight(roles.selfFightId);
         return fight?.combat?.enemyHp ? enemyTarget(fight) : null;
     }
 
-    // Otherwise both are Tokens, by instance id (slice 1.6b). Whoever works it
-    // takes it — the hero if one is present, otherwise the live enemy, which is
-    // the same occupant rule `StatusApplication` resolves by.
+    // Otherwise both are Tokens, by instance id. Whoever works it takes it: the hero if one is
+    // present, otherwise the live enemy, the same occupant rule `StatusApplication` resolves by.
     const id = role === ROLE.SOURCE ? roles?.source : roles?.self;
     if (id == null) return null;
 
@@ -129,10 +95,8 @@ function targetOf(role, roles, statement) {
 }
 
 /**
- * A non-combat hit on an enemy, mitigated.
- *
- * Deliberately mirrors `mitigateFlatDamage` — floor at zero, not at one, for the
- * reason given in `CombatFormulas`: a thorn is not a fight.
+ * A non-combat hit on an enemy, mitigated. Mirrors `mitigateFlatDamage`: floor at zero, not at one,
+ * because a thorn is not a fight.
  */
 function mitigateEnemyDamage(fight, rawDamage) {
     const armor = enemyFlatArmor(fight?.enemy, fight?.combat?.enemyStatuses);
@@ -165,16 +129,9 @@ function enemyTarget(fight) {
     return {
         kind: 'enemy',
         apply(amount, ignoresArmor) {
-            /**
-             * ⭐ Armour on this side at last, and it means the same thing it
-             * means on the other: `mitigateFlatDamage` floors at zero, so heavy
-             * armour can stop a thorn outright, and `ignoresArmor` is the
-             * author's way past it (G-23).
-             *
-             * The old note here said an enemy had no aggregator to read. It has
-             * one now, so a monster carrying Armor Shield is as tough against a
-             * thorn as it is against a sword.
-             */
+            // Armour on this side means the same as on the other: `mitigateFlatDamage` floors at
+            // zero, so heavy armour can stop a thorn outright, and `ignoresArmor` is the author's
+            // way past it.
             const dealt = ignoresArmor
                 ? Math.max(0, Math.round(amount))
                 : mitigateEnemyDamage(fight, amount);
@@ -196,14 +153,9 @@ function enemyTarget(fight) {
 export function deal(statement, roles) {
     const payload = statement?.payload || {};
 
-    /**
-     * ⭐ The magnitude may be **computed** (G-13): a flat number, a percentage
-     * of a named stat, or a count of whatever the second selector matched.
-     *
-     * Resolved here rather than in the registry's caller so that every entity a
-     * stat could name is already in hand — the actor's hero, and the instance
-     * this rule is riding on.
-     */
+    // The magnitude may be computed: a flat number, a percentage of a named stat, or a count of
+    // whatever the second selector matched. Resolved here so every entity a stat could name is
+    // already in hand.
     const amount = resolveMagnitude(payload, {
         actorHero: roles?.actor ? HeroManager.getHero(roles.actor) : null,
         selfInstance: roles?.self != null ? BoardState.getTokenById(roles.self) : null
@@ -211,11 +163,9 @@ export function deal(statement, roles) {
 
     if (!Number.isFinite(amount) || amount <= 0) return 0;
 
-    // ⚠️ A role the moment did not supply reaches nobody — an unstaffed passive
-    // generator (D-116) completes cycles with no hero, so a Thorns on one hurts
-    // nothing. That is the same honest nothing an unmatched filter returns, not
-    // a failure, and `ContentAudit` is what warns about a rule that can NEVER
-    // have a target rather than one that merely has none right now.
+    // ⚠️ A role the moment did not supply reaches nobody: an unstaffed passive generator completes
+    // cycles with no hero, so a Thorns on one hurts nothing. That is the same honest nothing an
+    // unmatched filter returns, not a failure.
     const target = targetOf(statement?.target?.role || ROLE.ACTOR, roles, statement);
     if (!target) return 0;
 

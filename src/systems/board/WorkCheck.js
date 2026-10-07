@@ -1,4 +1,4 @@
-// Fantasy Guild — "Can this Token run for this hero?" (Free Playmat slice 1.4b)
+// can this Token run for this hero?
 
 import { ALERT } from './boardEvents.js';
 import * as RecipeResolver from './RecipeResolver.js';
@@ -8,34 +8,26 @@ import * as Charges from './Charges.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 
 /**
- * ⭐ **One answer to "why can't this Token run?", shared by the two things that
- * ask it** — the board runner, while a hero works a Token, and `Flags`, while a
- * flag chooses which Token to work.
+ * One answer to why a Token can't run, shared by the board runner (while a hero works a Token) and
+ * `Flags` (while a flag chooses which Token to work). The two must agree or heroes get sent to
+ * Tokens that then sit stuck; `WorkCheck.test.js` pins it.
  *
- * They used to be one inline block in `BoardRunner.tick`. A flag that skipped a
- * Token for a reason the runner would not have raised (or the reverse) would
- * send heroes to Tokens that then sit stuck, or past Tokens that would have run
- * — so the check was lifted here rather than copied. `WorkCheck.test.js` pins
- * that both callers agree.
- *
- * ⚠️ **Pure: it never publishes, never notes starvation, never charges.** The
- * runner keeps the side effects (the alert mark, `TILE_EVENT_ALERT`, the risk-13
- * starvation tally) because they describe a hero actually standing there; a flag
- * merely *considering* a Token must not raise them.
+ * ⚠️ Pure: it never publishes, never notes starvation, never charges. The runner keeps the side
+ * effects (the alert mark, `TILE_EVENT_ALERT`, the starvation tally) because they describe a hero
+ * actually standing there; a flag merely considering a Token must not raise them.
  */
 
-/** Reasons a player can fix from the board (FP-69): these keep a red badge. */
+/** Reasons a player can fix from the board: these keep a red badge. */
 export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE]);
 
 /**
- * Why `heroId` cannot work a Token with this `config` — or null if they can.
+ * Why `heroId` cannot work a Token with this `config`, or null if they can.
  *
- * **Two gates, in order: possession, then level.** Possession is checked even
- * when the Token sets no level requirement; the old version returned early on
- * `skillRequired <= 0` and let a hero who did not hold the skill work anyway.
+ * Two gates, in order: possession, then level. Possession is checked even when the Token sets no
+ * level requirement.
  *
- * A Token naming no `skill` needs nothing but a body *here* — whether such a
- * Token is workable at all is `Flags`' question (FP-47), not this one's.
+ * A Token naming no `skill` needs nothing but a body here; whether such a Token is workable at all
+ * is `Flags`' question.
  *
  * @returns {'access'|'unskilled'|null} an `ALERT` reason, or null
  */
@@ -65,10 +57,9 @@ export function fixableReason(instanceId, instance) {
     const io = RecipeResolver.effectiveIO(instanceId, instance);
 
     if (io.status === RECIPE.NONE) {
-        // A Foundation with nothing picked (Token Lifecycle 6.1) says so in
-        // its own words rather than as a missing Token.
+        // A Foundation with nothing picked says so in its own words rather than as a missing Token.
         if (io.reason === 'choose_build') return { reason: ALERT.CHOOSE_BUILD, io };
-        // A station with nothing picked (TL-15) likewise.
+        // A station with nothing picked likewise.
         if (io.reason === 'choose_recipe') return { reason: ALERT.CHOOSE_RECIPE, io };
         return { reason: ALERT.NO_RECIPE, io };
     }

@@ -16,7 +16,7 @@ const VIEWS = [
 
 export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOpenSettings, onOpenFileManager }) {
   const [recalcDone, setRecalcDone] = useState(false);
-  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'error'
+  const [syncStatus, setSyncStatus] = useState('idle');
   const recalculateEconomy = useEntityStore((s) => s.recalculateEconomy);
   const globals = useGlobalStore();
 
@@ -51,7 +51,6 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
         borderColor: 'var(--color-border-subtle)',
       }}
     >
-      {/* Left: brand */}
       <div className="flex items-center gap-3">
         <h1 className="text-sm font-bold tracking-tight" style={{ color: 'var(--color-accent)' }}>
           ⚔️ Fantasy Guild CMS
@@ -64,7 +63,6 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
         </span>
       </div>
 
-      {/* Center: view toggle */}
       <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: 'var(--color-bg-base)' }}>
         {VIEWS.map((view) => (
           <button
@@ -83,7 +81,6 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
         ))}
       </div>
 
-      {/* Right: actions */}
       <div className="flex items-center gap-2">
         <button
           onClick={handleRecalculate}

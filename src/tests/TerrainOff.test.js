@@ -10,12 +10,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { TERRAIN_ENABLED } from '../config/registries/terrainRegistry.js';
 
 /**
- * Free Playmat slice 1.1 — terrain is switched off (FP-10).
- *
- * The switch is `TERRAIN_ENABLED` in `terrainRegistry.js`. With it off, nothing
- * in the running game may paint, stamp or carry terrain. Each test here fails
- * if one of the guards is removed. `TerrainPainting.test.js` forces the switch
- * on and pins what happens when terrain is revived.
+ * Free Playmat slice 1.1 — terrain is switched off.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -53,7 +48,7 @@ describe('Terrain is switched off (FP-10)', () => {
 
     it('placing a Token paints nothing, even one carrying a Map stamp', () => {
         // Since Free Playmat 1.6a there is no paint hook and no terrain storage
-        // on the board at all (FP-10); placing still works.
+        // on the board at all; placing still works.
         const mine = BoardState.createTokenInstance('fixture_off_mine', 100, 'hills');
         Placement.placeTokenAt(mine, { x: 400, y: 300 });
         Placement.placeTokenAt(BoardState.createTokenInstance('fixture_off_keep', null), { x: 1000, y: 700 });
@@ -68,11 +63,11 @@ describe('Terrain is switched off (FP-10)', () => {
         }
     });
 
-    // 'does not backfill paint under an old save's Tokens' and 'keeps terrain
-    // a save already holds, untouched' went with Free Playmat 1.6a: the backfill
+    // 'does not backfill paint under an old save's Tokens' and 'keeps terrain a
+    // save already holds, untouched' went with Free Playmat 1.6a: the backfill
     // and the tile-keyed terrain storage they pinned were removed from
-    // BoardState and the save schema. Terrain stays dormant (FP-10) and needs
-    // new storage on a free mat. (Empty skipped tombstones deleted, CR3-554.)
+    // BoardState and the save schema. Terrain stays dormant and needs new
+    // storage on a free mat. (Empty skipped tombstones deleted.)
 
     // 'a Token sent to the Vault does not carry a stamp' went with the Vault
     // (Token Lifecycle 9.3).

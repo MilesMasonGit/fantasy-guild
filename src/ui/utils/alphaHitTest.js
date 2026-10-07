@@ -12,7 +12,6 @@ const pendingLoads = new Map();
 let isGlobalInitialized = false;
 const activeDisabledElements = new Set();
 
-/** Normalize image source paths so relative, root-relative, and absolute URLs match. */
 function normalizeSrc(src) {
     if (!src) return '';
     try {
@@ -130,7 +129,6 @@ export function isPointOpaque(src, u, v, threshold = 25) {
 export function isElementOpaqueAtPoint(element, clientX, clientY, threshold = 25) {
     if (!element) return false;
 
-    // Support circular / radial hit-testing (e.g. Navigation Bar Orbs)
     if (element.hasAttribute('data-alpha-circle') || element.dataset?.alphaCircle === 'true') {
         const rect = element.getBoundingClientRect();
         if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
@@ -143,7 +141,6 @@ export function isElementOpaqueAtPoint(element, clientX, clientY, threshold = 25
         return dist <= radius;
     }
 
-    // Find the image element inside or on the element
     const imgEl = element.tagName === 'IMG' ? element : element.querySelector('img');
     const src = imgEl?.getAttribute('src') || imgEl?.src || element.dataset?.alphaSrc;
 
@@ -157,7 +154,6 @@ export function isElementOpaqueAtPoint(element, clientX, clientY, threshold = 25
         );
     }
 
-    // If image is loaded in DOM but not yet cached, extract immediately in sync
     const norm = normalizeSrc(src);
     if (!alphaMaskCache.has(norm) && !alphaMaskCache.has(src) && imgEl?.complete && imgEl.naturalWidth > 0) {
         extractAlphaFromImage(imgEl, src);
@@ -231,7 +227,6 @@ function compareStackOrder(a, b) {
 export function updateAlphaPointerEvents(clientX, clientY) {
     if (typeof document === 'undefined') return;
 
-    // During active dragging, do not interfere with pointer events
     if (document.body.classList.contains('gi-dnd-active')) {
         for (const el of activeDisabledElements) {
             el.style.pointerEvents = '';
@@ -240,7 +235,6 @@ export function updateAlphaPointerEvents(clientX, clientY) {
         return;
     }
 
-    // Query all alpha-tested elements (avoids elementsFromPoint omitting pointer-events: none elements)
     const allAlpha = document.querySelectorAll('[data-alpha-test]');
     const intersecting = [];
 
@@ -268,7 +262,6 @@ export function updateAlphaPointerEvents(clientX, clientY) {
         return;
     }
 
-    // Sort intersecting elements top to bottom
     intersecting.sort(compareStackOrder);
 
     let foundTopOpaque = false;
@@ -312,7 +305,6 @@ export function initAlphaHitTesting() {
     }, { capture: true });
 }
 
-// Auto-initialize when running in browser
 if (typeof window !== 'undefined') {
     initAlphaHitTesting();
 }

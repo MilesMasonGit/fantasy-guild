@@ -8,7 +8,7 @@ import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/Tok
 import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 
-/** A limping hero (HM-6): drained of colour, a touch darker, and a slower walk cycle. */
+/** A limping hero: drained of colour, a touch darker, and a slower walk cycle. */
 const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
 const LIMP_FRAME_MS = 250;
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
@@ -22,11 +22,10 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 
 /**
- * When this hero's last real attack began (`performance.now()`), while
- * `listening` — a fighting hero idles and plays the attack row once per
- * `combat_hero_attack` (feedback Q6, FB-49). The enemy's knockback is timed
- * from the same event (`TokenHitArt`), so the blow and the reaction meet on
- * the strike frame. A stunned attempt is not an attack: the hero stays idle.
+ * When this hero's last real attack began (`performance.now()`), while `listening`: a fighting
+ * hero idles and plays the attack row once per `combat_hero_attack`. The enemy's knockback is
+ * timed from the same event (`TokenHitArt`), so the blow and the reaction meet on the strike
+ * frame. A stunned attempt is not an attack: the hero stays idle.
  */
 function useLastAttackAt(heroId, listening) {
     const [at, setAt] = useState(null);
@@ -42,16 +41,14 @@ function useLastAttackAt(heroId, listening) {
 
 /**
  * A hero standing on the mat: working a Token, or idle beside their flag.
- *
- * ⭐ **Dragging the hero drags their FLAG** (FP-76) — the player never moves a
- * hero. The payload is `DRAG_KIND.FLAG`, exactly as if the flag itself were
- * picked up: dropped on the mat it moves the flag and the hero goes to their
- * next job; dropped on the Dock it recalls. The hero stays drawn where they are
- * while the flag is in the hand.
+ * **Dragging the hero drags their FLAG**: the player never moves a hero. The payload is
+ * `DRAG_KIND.FLAG`, exactly as if the flag itself were picked up: dropped on the mat it moves
+ * the flag and the hero goes to their next job; dropped on the Dock it recalls. The hero stays
+ * drawn where they are while the flag is in the hand.
  */
 /**
- * Where a hero's 64 × 128 box goes for a point, in mat units: centred on it
- * (Hero Movement M1). Null for no point. `MatBoard.heroPlacement` is this.
+ * Where a hero's 64 × 128 box goes for a point, in mat units: centred on it. Null for no
+ * point. `MatBoard.heroPlacement` is this.
  */
 export function heroBoxAt(point) {
     if (!point || point.x == null || point.y == null) return null;
@@ -92,16 +89,14 @@ export const MatHero = memo(function MatHero({
     const artScale = boardScaleAt(fit);
     const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artScale);
 
-    // ⭐ Walking is the engine's (Hero Movement M1): `HeroMotion` moves the hero
-    // ten times a second and says whether they are moving and which way they
-    // face. The screen glides for exactly one tick between those steps, so the
-    // walk looks continuous. (A distance-guessed slide stood here before
-    // walking existed; it lagged and fought the real movement.)
+    // Walking is the engine's: `HeroMotion` moves the hero ten times a second and says whether
+    // they are moving and which way they face. The screen glides for exactly one tick between
+    // those steps, so the walk looks continuous.
     const isWalking = moving;
     const facingLeft = facing < 0;
 
-    // ⭐ CR3-008: a moving hero is handed no point (so their steps do not
-    // redraw the mat). Read it live, and let each step move the box directly.
+    // A moving hero is handed no point (so their steps do not redraw the mat). Read it live,
+    // and let each step move the box directly.
     const followsItself = left == null || top == null;
     const live = followsItself ? heroBoxAt(HeroMotion.bodyView(heroId)) : null;
     const boxLeft = live ? live.left : (left ?? 0);
@@ -147,11 +142,9 @@ export const MatHero = memo(function MatHero({
             }}
             onMouseEnter={() => onHover?.(heroId)}
             onMouseLeave={() => onHover?.(null)}
-            // ⭐ A walker moves by `transform` (CR3-007, R6 rule 5): a step
-            // costs no layout, and the graphics side does not redraw the
-            // ground under the hero. Always this style, walking or not — a
-            // box switching from left/top to a transform would slide in from
-            // the mat's corner. ⚠️ Never add `will-change` here (R6: 3× slower).
+            // A walker moves by `transform`: a step costs no layout and the ground under the hero
+            // is not redrawn. Always this style, walking or not, so a box switching from left/top
+            // to a transform would not slide in from the mat corner. ⚠️ Never add `will-change` here: it measured 3× slower.
             style={{
                 left: 0,
                 top: 0,
@@ -175,7 +168,6 @@ export const MatHero = memo(function MatHero({
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         hovered && !drag.isDragging && 'gi-token-hover-hop'
                     )}
-                    // A defeated hero limping home looks wounded (HM-6).
                     style={limp ? { filter: LIMP_FILTER } : undefined}
                 >
                     {animArt ? (

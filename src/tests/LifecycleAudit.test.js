@@ -14,12 +14,6 @@ import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 /**
  * Token Lifecycle slice 4.2 — the content audit for the new Token blocks.
- *
- * Every rule in `docs/archive/token_lifecycle_roadmap_v1.md` §3.1 "Validation" is
- * tested on its own: a clean fixture produces nothing, and each deliberately
- * broken copy produces exactly one message, naming the Token and the field.
- * Then the same checker is shown to reach both the game's boot audit and the
- * CMS Economy Audit, and to say nothing about the shipped content.
  */
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
@@ -362,12 +356,11 @@ describe('Lifecycle audit — warnings (allowed)', () => {
 });
 
 // Shipped data may carry only ALLOWED findings: slice 7.2's three mines spawn
-// for free (director's call for the first build; SP-70 is decided per Token).
-// Slice 7.5's Copper Anvil is sold at the Shop and is a context provider; since
-// slice 7.5a the audit counts that as useful, so it is not on this list.
-// Slice 7.7's Goblin Camp also spawns for free (director's call: no upkeep for
-// camps in this build).
-// Any error, or any other warning, still fails.
+// for free (director's call for the first build is decided per Token). Slice
+// 7.5's Copper Anvil is sold at the Shop and is a context provider; since slice
+// 7.5a the audit counts that as useful, so it is not on this list. Slice 7.7's
+// Goblin Camp also spawns for free (director's call: no upkeep for camps in
+// this build). Any error, or any other warning, still fails.
 const summarise = (findings) => findings.map((f) => [f.severity, f.entityId, f.field]).sort();
 const SHIPPED_ALLOWED = [
     ...['token_coal_mine', 'token_copper_mine', 'token_quarry', 'token_goblin_camp']

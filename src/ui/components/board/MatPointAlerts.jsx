@@ -7,21 +7,15 @@ import { MAT_Z } from './matLayers.js';
 import { useEventAlert, EventAlertMark } from './TokenEventAlert.jsx';
 
 /**
- * ⭐ **Alerts that belong to a place rather than to a Token.**
- *
- * Most board news is about a Token, and `MatToken` draws it by instance id. But
- * some of it has no Token left to sit on:
- *
- * * a Token that has just **run dry** — the event names the spot it stood on;
- * * a **refused drop**, which names the point the player aimed at;
- * * a hero's **level-up** where the hero is working nothing.
- *
- * The grid drew these on whichever tile the point fell in. There are no tiles,
- * so they are drawn at the point itself, in a 128 u box centred on it — the
- * same size the Token that left was.
- *
- * One alert per point: a spot that reports twice replaces its own note rather
- * than stacking two icons on one another.
+ * Alerts that belong to a place rather than to a Token.
+ * Most board news is about a Token, and `MatToken` draws it by instance id. But some of it has
+ * no Token left to sit on:
+ * * a Token that has just **run dry**: the event names the spot it stood on;
+ * * a **refused drop**, which names the point the player aimed at.
+ * These are drawn at the point itself, in a 128 u box centred on it, the same size the Token
+ * that left was.
+ * One alert per point: a spot that reports twice replaces its own note rather than stacking
+ * two icons on one another.
  */
 
 /** The box an alert is drawn in, centred on its point — one Token wide. */
@@ -33,7 +27,7 @@ const keyOf = (p) => `${Math.round(p.x)}_${Math.round(p.y)}`;
 export function isPointAlert(payload) {
     if (!payload) return false;
     if (!Number.isFinite(payload.x) || !Number.isFinite(payload.y)) return false;
-    // A hero's level-up is said by the hero, in a speech bubble (SB-2).
+    // A hero's level-up is said by the hero, in a speech bubble.
     if (payload.type === 'hero_level_up') return false;
     // A Token still on the mat draws its own alert (`MatToken`).
     if (payload.instanceId && BoardState.getTokenById(payload.instanceId)) return false;

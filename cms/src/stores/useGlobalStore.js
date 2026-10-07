@@ -2,19 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEFAULT_GLOBALS } from '../utils/constants';
 
-/**
- * Global simulation constants store.
- * These are the "tuning knobs" for the economic engine.
- */
+/** Global simulation constants store: the tuning knobs for the economic engine. */
 export const useGlobalStore = create(
   persist(
     (set) => ({
       ...DEFAULT_GLOBALS,
 
-      // Gemini API key (stored locally, never transmitted elsewhere)
+      // Gemini API key (stored locally).
       geminiApiKey: '',
 
-      // Persistent style guide injected into every AI generation prompt
       generatorStyleGuide: `## TAGS & CLASSIFICATION
 - DO NOT invent your own tags. You MUST only use tags from the approved list: [Food, Drink, Tool, Weapon, Armor, Consumable, Ingredient, Material, Treasure, Quest, Legendary, Intermediate, Root, Heavy, Volatile, Liquid, Resource Sink, Gathering, Passive, Fast, Slow].
 - Use "Food" for items that restore HP and "Drink" for items that restore Energy.
@@ -48,16 +44,13 @@ export const useGlobalStore = create(
   - mapFragmentTarget: The downstream area name/ID being unlocked (e.g., "Farmland" or "Mountain")
   - fragmentIcon: Emoji matching the destination theme`,
 
-      // Update a single global value
       setGlobal: (key, value) => set({ [key]: value }),
 
-      // Update a sell modifier for a specific item type
       setSellModifier: (type, value) =>
         set((s) => ({
           sellModifiers: { ...s.sellModifiers, [type]: value },
         })),
 
-      // Update a hero profile for a specific tier
       setHeroProfile: (tier, patch) =>
         set((s) => ({
           heroProfiles: {
@@ -66,51 +59,24 @@ export const useGlobalStore = create(
           },
         })),
 
-      // Reset all globals to defaults
       resetGlobals: () => set(DEFAULT_GLOBALS),
     }),
     {
       name: 'fantasy-guild-cms-globals',
       /**
-       * Version 2 adds `simDials` — the economic simulator's §14 dial set.
-       *
-       * ⚠️ **`migrate` is not enough on its own, and the reason is a zustand
-       * detail that reads backwards.** Verified against `zustand@5.0.13`'s
-       * source and by hand against a real blob: `migrate` runs only when the
-       * stored `version` is a **number** that differs from this one. A
-       * workspace that was opened but never edited was written before any
-       * version key existed, so `typeof undefined !== 'number'`, the condition
-       * is false, and the blob is used **as-is** — never discarded, never
-       * migrated. A store that installed `simDials` only in `migrate` would
-       * therefore hand `runSim` an undefined dial set on exactly the browsers
-       * most likely to be sitting on an old workspace.
-       *
-       * So the defaults are filled in `merge`, which zustand calls on **every**
-       * rehydration whether or not a migration happened. `migrate` is kept for
-       * the case it genuinely covers — a numbered version that is not this one
-       * — and because without it a real mismatch would throw the dials away.
+       * Version 2 adds `simDials`.
+       * ⚠️ `migrate` is not enough on its own: zustand runs it only when the stored `version` is a number that differs from this one, so a workspace written before any version key existed is used as-is, and a store that installed `simDials` only in `migrate` would hand `runSim` an undefined dial set. The defaults are therefore filled in `merge`, which runs on every rehydration; `migrate` is kept for a numbered mismatch, which would otherwise throw the dials away.
        */
       version: 2,
-      /**
-       * The default merge, plus the dial defaults. Runs on every rehydration.
-       *
-       * Spread order is zustand's own default (persisted wins over the fresh
-       * store, so actions survive and data is replaced); `simDials` is then
-       * layered so a stored dial set keeps every value the developer turned and
-       * gains any dial added since it was written.
-       */
+      /** The default merge plus the dial defaults. The spread order is zustand's own default (persisted wins over the fresh store); `simDials` is then layered so a stored dial set keeps every value the developer turned and gains any dial added since. */
       merge: (persistedState, currentState) => ({
         ...currentState,
         ...(persistedState || {}),
         simDials: { ...DEFAULT_GLOBALS.simDials, ...(persistedState?.simDials || {}) },
       }),
       migrate: (persistedState, version) => {
-        // ⚠️ `version === undefined` was tested here and could never be true —
-        // zustand does not call `migrate` for a versionless blob at all (see
-        // the note above). The dead half is removed; the versionless path is
-        // `merge`'s.
+        // ⚠️ zustand does not call `migrate` for a versionless blob, so the versionless path is `merge`'s.
         if (version < 1) {
-          // Old target curves become the high-fidelity synchronised values.
           return {
             ...DEFAULT_GLOBALS,
             ...persistedState,

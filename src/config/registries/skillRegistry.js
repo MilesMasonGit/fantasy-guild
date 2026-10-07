@@ -1,57 +1,33 @@
 // Fantasy Guild - Skill Registry
-// The 27-skill, four-layer system (skill_class_rework_roadmap_v1.md §1).
 
 /**
  * SkillRegistry — the world's skills, in four layers.
  *
  * ## The one rule that matters
  * **A hero holds SOME skills, not all of them.** A skill a hero does not hold
- * is work they cannot do at any level — this is *possession*, and it is the
- * gate the previous 15-skill system did not have (every hero held all 15, so
- * only level ever mattered).
+ * is work they cannot do at any level — this is *possession*, as distinct from level.
  *
  * ## The four layers
  *
  * | Layer | Count | Who holds it | Granted by |
  * | :-- | :-- | :-- | :-- |
- * | `foundation` | 9 | Every hero, on every job (TL-7) | The starting state |
+ * | `foundation` | 9 | Every hero, on every job | The starting state |
  * | `combat`     | 3 | Exactly one per promoted hero | First promotion |
  * | `shared`     | 6 | One per base class, plus T2 grants | Promotion |
  * | `signature`  | 11 | Exactly one job each, exclusively | Second promotion |
  *
  * A Recruit holds **every foundation skill** (`RECRUIT_SKILL_SLOTS`, nine), and
- * since TL-7 (owner, 2026-09-25) **promotion never takes one away**: a base
+ * **promotion never takes one away**: a base
  * class holds 11, an advanced job 13 (`jobRegistry.getJobSheet`). A promoted
  * job still LISTS exactly 6 (`HERO_SKILL_SLOTS`) — the list the promotion gate
  * reads — but that is no longer the width of a hero's sheet.
  *
- * ⚠️ *Token Lifecycle slice 1.1 (2026-09-25).* The foundation layer grew from six
- * to nine: `farming` (SP-60) and `explore` (SP-74) are new, and `construction`
- * moved here from the signature layer (SP-59). The Warlord, whose signature
- * was Construction, has no signature skill until the promotion overhaul
- * (SP-58).
- *
  * ## ⚠️ This list is a first draft and is expected to change
- * *(Owner, 2026-08-12.)* Which skills exist, and which layer each sits in, will
+ * Which skills exist, and which layer each sits in, will
  * move during development. **Nothing outside this file may hardcode a skill id
  * or a count.** Adding, renaming or re-layering a skill must be an edit to this
  * file and nothing else — derive from `SKILLS`, `SKILL_LAYERS` and the helpers
  * below rather than writing a literal.
- *
- * ## What happened to the old 15
- * Six ids are **deleted**: `labor` → `mining`, `aquatic` → `fishing`,
- * `forge` → `smithing`, `explore` → `survival`, `social` → `commerce`, and
- * `defense` folds into the hero's single combat skill. Nine survive, of which
- * `occult` and `science` **keep their id but change meaning** — both are now
- * job-exclusive signatures. That is safe only because saves are wiped.
- *
- * **`explore` is back, as a different skill** (SP-74): the new foundation
- * Explore works Maps. Nothing remaps the old id to `survival` (there was never
- * an alias or a save migration for it), so reusing it collides with nothing.
- *
- * **`SUB_SKILL_TO_PARENT` is gone.** Sub-skills were tags whose XP funnelled
- * into a parent; the split they simulated (mining vs quarrying) is now either a
- * real skill or nothing at all.
  */
 
 /** The four layers, in the order a hero acquires them. */
@@ -247,9 +223,8 @@ export const SHARED_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.SHARED);
 export const SIGNATURE_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.SIGNATURE);
 
 /**
- * Layer groupings for UI. Shaped like the old `SKILL_CATEGORIES` so consumers
- * that only wanted "give me the groups" keep working, but **derived** — adding
- * a skill to `SKILLS` puts it in the right group with no edit here.
+ * Layer groupings for UI, **derived**: adding a skill to `SKILLS` puts it in
+ * the right group with no edit here.
  */
 export const SKILL_CATEGORIES = {
     [SKILL_LAYERS.FOUNDATION]: {
@@ -272,20 +247,19 @@ export const SKILL_COUNT = Object.keys(SKILLS).length;
 /**
  * How many skills a **promoted job lists** (base class and advanced job): its
  * authored `skills` array in `jobRegistry.js`, whose foundation picks are what
- * the promotion gate asks for (D-262).
+ * the promotion gate asks for.
  *
- * ⚠️ Since TL-7 this is NOT how many skills a promoted hero holds. A hero keeps
+ * ⚠️ This is NOT how many skills a promoted hero holds. A hero keeps
  * all the foundation skills through every promotion, so the held sheet is the
  * foundation layer plus the job's non-foundation skills (11 on a base class,
  * 13 on an advanced job; `jobRegistry.getJobSheet`). Kept because the list
- * shape is still what `JobTree.test.js` checks; the promotion overhaul (SP-58)
- * decides whether it survives.
+ * shape is still what `JobTree.test.js` checks.
  */
 export const HERO_SKILL_SLOTS = 6;
 
 /**
- * How many skills a **Recruit** holds: the whole foundation layer (SP-59,
- * SP-60, SP-74). Every promoted hero holds these too (TL-7).
+ * How many skills a **Recruit** holds: the whole foundation layer.
+ * Every promoted hero holds these too.
  */
 export const RECRUIT_SKILL_SLOTS = FOUNDATION_SKILL_IDS.length;
 
@@ -302,8 +276,7 @@ export function isCombatSkill(skillId) {
 /**
  * Look up a skill definition.
  *
- * Unlike the old registry this does **not** resolve sub-skill tags — an
- * unknown id is unknown, and callers must handle `null`. Content still naming
+ * An
  * a deleted id is a content bug, and returning null is how it gets found.
  */
 export function getSkill(skillId) {

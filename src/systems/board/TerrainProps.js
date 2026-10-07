@@ -1,4 +1,4 @@
-// Fantasy Guild — Scenery scattered over the terrain (dynamic terrain P4).
+// scenery scattered over the terrain
 
 import { LATTICE_SIZE, SUBTILE_PX, hash01, subtileArtPx } from './TerrainLattice.js';
 
@@ -8,36 +8,16 @@ import { propsOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * Where every tree stands, worked out from the painted board.
+ * Where every tree stands, worked out from the painted board. Pure data, not drawing, so it can be
+ * asserted on: the renderer only paints the list in the order given.
  *
- * Pure data, not drawing. That is deliberate and it is the lesson from P3,
- * where the strip geometry lived inside the renderer, was wrong, and could not
- * be asserted on from anywhere. Everything here comes out as a list the renderer
- * only has to paint in the order given.
+ * Props are 16px art drawn at the ground's own zoom, so a prop never has finer pixels than the
+ * ground it stands on (it would read as pasted on). They change size when the art set is switched.
  *
- * ## Props are 16px art, drawn at the ground's own zoom
+ * A prop stands on a point, not a cell: anchored at a scattered point inside a subtile, never its
+ * centre (which would line trees up on a lattice), with its base at that point.
  *
- * The ground is 8px art at 4× (or 16px at 2× on the other art set), so one
- * "world pixel" is four screen pixels either way. A prop drawn at a different
- * zoom would have finer pixels than the ground it stands on and read as pasted
- * on rather than part of the scene — the same mistake as cutting a coastline
- * finer than the ground it runs through. So props follow the ground's zoom and
- * change size when the art set is switched, because the whole world's pixel
- * scale changes with it.
- *
- * ## They stand on a point, they do not fill a cell
- *
- * A prop is anchored at a scattered point inside a subtile — never its centre,
- * which would line every tree up on a lattice and undo the whole effect — and
- * drawn with its **base** at that point. So a 64px tree occupies the ground it
- * stands on and reaches up into the subtiles above it, exactly as a tree does.
- *
- * ## Depth
- *
- * The list comes back sorted by that anchor point's y, so painting it in order
- * puts nearer trees over farther ones. Sorting by the base rather than by the
- * top is what makes overlapping trees stack correctly: what matters is which
- * one is standing in front.
+ * The list is sorted by the anchor's y, so painting in order puts nearer trees over farther ones.
  */
 
 /**
@@ -71,18 +51,14 @@ export function propSizePx() {
 
 /**
  * Every prop on the board, in the order it should be painted.
- *
  * @param {Array<string|null>} grid A resolved lattice from `resolveLattice`.
  * @param {number} seed The save's terrain seed.
- * @param {object} [artPixels] A resolved art-pixel map. When given, a prop whose
- *   trunk does not stand on the terrain that grew it is dropped — concept §8A's
- *   validation rule. That happens wherever a beach has been fringed onto a
- *   forest's edge: the subtile is still forest, but those pixels are sand now,
- *   and a fir standing in it would be growing out of a beach.
- * @returns {Array<{propId, x, y, anchorX, anchorY, sx, sy, size}>}
- *   `x`/`y` are the sprite's top-left in board pixels, already offset so the
- *   sprite's base sits on its anchor; `anchorX`/`anchorY` are that base;
- *   `sx`/`sy` the subtile it grew in. Sorted back-to-front.
+ * @param {object} [artPixels] A resolved art-pixel map. When given, a prop whose trunk does not
+ * stand on the terrain that grew it is dropped: a beach fringed onto a forest's edge leaves the
+ * subtile forest but those pixels sand.
+ * @returns {Array<{propId, x, y, anchorX, anchorY, sx, sy, size}>} `x`/`y` are the sprite's
+ * top-left in board pixels, offset so its base sits on its anchor; `anchorX`/`anchorY` are that
+ * base; `sx`/`sy` the subtile it grew in. Sorted back-to-front.
  */
 export function propsForBoard(grid, seed = 0, artPixels = null) {
     const size = propSizePx();
@@ -133,7 +109,7 @@ export function propsForBoard(grid, seed = 0, artPixels = null) {
 
             out.push({
                 propId,
-                x: snap(anchorX - size / 2),   // base-centred on the anchor
+                x: snap(anchorX - size / 2),
                 y: snap(anchorY - size),
                 anchorX, anchorY,
                 // The subtile that grew it, kept so callers can check the trunk

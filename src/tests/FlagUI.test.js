@@ -30,11 +30,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * stands on. The React pieces are pinned in `FlagUIRender.test.js`.
  *
  * Geometry: 6×6, one tile step 160 u. ⚠️ Laid out on the old flag radius
- * (400 u), set in `beforeEach`; it has shipped at 164 u since FP-75.
+ * (400 u), set in `beforeEach`; it has shipped at 164 u.
  */
 
 registerTokenTypes({
-    /** A worked Token with a blank skill — FP-47's case. */
+    /** A worked Token with a blank skill's case. */
     ft_ui_blank: {
         id: 'ft_ui_blank', name: 'Blank Bush', uses: 100, requiresHero: true,
         config: { skill: '', skillRequired: 1, cycleTimeMs: 12000, inputs: [], outputs: [] }
@@ -113,9 +113,9 @@ describe('hero_deployed is published by planting a flag (slice 1.5)', () => {
 /**
  * ⚠️ `Placement.moveFlag` went with the index adapters in slice 1.6d-2. Dragging
  * a pennant lands through `plantFlagAt`, which is the one route a flag moves by
- * (FP-94) — so these say the same things through it. The third case, that
- * `moveFlag` refused a hero with no flag planted, pinned that adapter's own
- * guard and went with it: planting is always allowed.
+ * — so these say the same things through it. The third case, that `moveFlag`
+ * refused a hero with no flag planted, pinned that adapter's own guard and went
+ * with it: planting is always allowed.
  */
 describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
     it('moves the flag to the spot, with no skill written on it', () => {
@@ -139,9 +139,9 @@ describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
 });
 
 describe('dropping on the Dock recalls (dockRecall)', () => {
-    // Since slice 1.5b-ii a hero picked up on the board drags their FLAG (FP-76),
-    // so every recall drop is a FLAG payload — these are the three shapes the
-    // board produces (`BoardTile`'s hero, `FlagLayer`'s idle hero, the flag).
+    // Since slice 1.5b-ii a hero picked up on the board drags their FLAG, so
+    // every recall drop is a FLAG payload — these are the three shapes the board
+    // produces (`BoardTile`'s hero, `FlagLayer`'s idle hero, the flag).
     it.each([
         ['a hero on a Token (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { hero: true } }],
         ['an idle hero beside their flag (drags the flag)', { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true, hero: true } }],

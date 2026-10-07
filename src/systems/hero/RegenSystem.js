@@ -1,6 +1,3 @@
-// Fantasy Guild - Regen System
-// Phase 11: Regen System
-
 import * as HeroManager from './HeroManager.js';
 import { EventBus } from '../core/EventBus.js';
 import { REGEN_CONFIG } from '../../config/FormulaRegistry.js';
@@ -8,24 +5,19 @@ import * as ConsumptionSystem from './ConsumptionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * RegenSystem - Handles HP and Energy regeneration for idle heroes
- * 
- * Design:
- * - Only idle heroes regenerate
- * - Regeneration happens every tick
- * - Rate is configurable via FormulaRegistry.REGEN_CONFIG
- * - Publishes ui_update event for ViewManager to refresh
+ * RegenSystem - HP and Energy regeneration for heroes that are idle, working or
+ * in combat (not wounded). Rates come from FormulaRegistry.REGEN_CONFIG and are
+ * applied in interval-sized chunks accumulated across ticks. Publishes
+ * HEROES_UPDATED when anything changed.
  */
 
-// Timers for intervals
 let hpTimer = 0;
 let energyTimer = 0;
 
-// Track if any regen happened (for UI updates)
 let regenOccurred = false;
 
 /**
- * Process regeneration for all idle heroes
+ * Process regeneration for all regenerating heroes
  * Called every tick by GameLoop
  * @param {number} delta - Time since last tick in MILLISECONDS
  */
@@ -35,21 +27,17 @@ export function tick(delta) {
     // Convert delta (ms) to seconds for config compatibility
     const deltaSec = delta / 1000;
 
-    // Update timers
     hpTimer += deltaSec;
     energyTimer += deltaSec;
 
-    // Calculate pending regen
     let hpToRegen = 0;
     let energyToRegen = 0;
 
-    // Apply HP regen chunks
     while (hpTimer >= REGEN_CONFIG.hp.interval) {
         hpToRegen += REGEN_CONFIG.hp.amount;
         hpTimer -= REGEN_CONFIG.hp.interval;
     }
 
-    // Apply Energy regen chunks
     while (energyTimer >= REGEN_CONFIG.energy.interval) {
         energyToRegen += REGEN_CONFIG.energy.amount;
         energyTimer -= REGEN_CONFIG.energy.interval;
@@ -57,46 +45,32 @@ export function tick(delta) {
 
     regenOccurred = false;
 
-    // Apply regen to each idle hero
     for (const hero of heroes) {
-        // Allow regen for 'idle', 'working', and 'combat' statuses
-        // Note: 'wounded' does not regenerate via this system
+        // Wounded heroes do not regenerate via this system.
         if (hero.status !== 'idle' && hero.status !== 'working' && hero.status !== 'combat') continue;
 
-        // ⚠️ **A vital may be missing, and this must not throw.** This runs
-        // inside a GameLoop tick handler, so one bad hero raised the same error
-        // every frame forever — it does not fail once and stop.
-        //
-        // `HeroGenerator` gives every hero both `hp` and `energy`, so a hero
-        // without one is legacy or test-shaped save data rather than anything the
-        // game creates today. That is exactly the case a tick handler has to
-        // survive, and the rest of the codebase already assumes it can happen:
-        // `ConsumptionSystem` and `HeroDockTab` both read `hero.energy?.current`.
-        // This was the only place that did not.
+        // ⚠️ A vital may be missing, and this must not throw: it runs inside a
+        // GameLoop tick handler, so one bad hero would raise the same error every
+        // frame. A hero without `hp` or `energy` is legacy or test-shaped save data.
 
-        // Regenerate HP if not at max
         if (hpToRegen > 0 && hero.hp && hero.hp.current < hero.hp.max) {
             HeroManager.modifyHeroHp(hero.id, hpToRegen);
             regenOccurred = true;
         }
 
-        // Regenerate Energy if not at max
         if (energyToRegen > 0 && hero.energy && hero.energy.current < hero.energy.max) {
             HeroManager.modifyHeroEnergy(hero.id, energyToRegen);
             regenOccurred = true;
         }
 
-        // Eat when hurt, ANYWHERE (D-27). Combat has its own eating path — it
-        // charges the attack that a mid-fight meal costs — but a hero on a
-        // fight-free gathering loop must not be stranded below 25% by hazard
-        // chip damage with food in their grid. This is that safety net, and
-        // it's why the 25% rule reads as one rule rather than a combat one.
+        // Eat when hurt, anywhere. Combat has its own eating path, but a hero on a
+        // fight-free gathering loop must not be stranded below the threshold by
+        // hazard chip damage with food in their grid.
         if (hero.status !== 'combat' && ConsumptionSystem.tryEat(hero.id)) {
             regenOccurred = true;
         }
     }
 
-    // Notify UI to update if regen happened
     if (regenOccurred) {
         EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'regen' });
     }

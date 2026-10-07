@@ -1,21 +1,18 @@
-// Fantasy Guild — The terrain subtile lattice (dynamic terrain roadmap P2).
+// the terrain subtile lattice
 
 import { substrateArtPx, fringeOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * # ⚠️ Dormant terrain (FP-10) — the last of the old 6×6 grid
+ * ⚠️ Dormant terrain: the last of the old 6×6 grid.
  *
- * Terrain is switched off (`TERRAIN_ENABLED = false`) and its lattice is still
- * laid out on the grid the playmat used to be: six 128px tiles with 32px gaps,
- * 928px across. Free Playmat slice 1.6d-2 deleted `boardGeometry.js` and every
- * other tile in the game, so these four numbers — which exist **only** to keep
- * the dormant terrain stack compiling and drawing exactly as it did — live here,
- * in the stack that is the sole remaining user of them.
+ * Terrain is switched off (`TERRAIN_ENABLED = false`) and its lattice is still laid out on the grid
+ * the playmat used to be: six 128px tiles with 32px gaps, 928px across. These numbers exist only to
+ * keep the dormant terrain stack compiling and drawing as before, and live here, in the stack that
+ * is the sole remaining user of them.
  *
- * ⚠️ These are **not** playmat geometry and nothing outside the terrain files
- * may import them. The mat is a free surface (`matGeometry.js`); it has no size
- * in tiles, no tile step and no 928px anything. When terrain is revived it is
+ * ⚠️ These are not playmat geometry and nothing outside the terrain files may import them. The mat
+ * is a free surface (`matGeometry.js`) with no size in tiles. When terrain is revived it is
  * re-latticed over the mat itself and this block goes with the grid it describes.
  */
 export const LEGACY_BOARD_SIZE = 6;
@@ -24,10 +21,7 @@ export const LEGACY_TILE_GAP_PX = 32;
 export const LEGACY_BOARD_PX =
     LEGACY_TILE_PX * LEGACY_BOARD_SIZE + LEGACY_TILE_GAP_PX * (LEGACY_BOARD_SIZE - 1);
 
-/**
- * Where the dormant lattice is blitted onto the mat: the old 928px area,
- * centred (FP-92). Slice 1.6d-3 owns re-pointing this at the mat proper.
- */
+/** Where the dormant lattice is blitted onto the mat: the old 928px area, centred. */
 export const LEGACY_AREA_ORIGIN = Object.freeze({ x: 416, y: 99 });
 
 const BOARD_SIZE = LEGACY_BOARD_SIZE;
@@ -37,52 +31,28 @@ const TILE_GAP_PX = LEGACY_TILE_GAP_PX;
 /**
  * Which terrain each of the board's 841 subtiles shows.
  *
- * Pure arithmetic — no React, no game state beyond what is passed in — so the
- * renderer can ask for a whole board and get the same answer every time.
+ * Pure arithmetic, no React, no game state beyond what is passed in, so the renderer can ask for a
+ * whole board and get the same answer every time.
  *
- * ## The lattice (D-T1)
+ * The lattice: a terrain sprite is 16px drawn at 32px, and a tile is 128px, so four subtiles fit
+ * across a tile. The gap between tiles is 32px, exactly one more subtile, so the board is one
+ * continuous grid rather than 36 separate ones. Six tiles of four plus five gaps of one is 29
+ * across, and 29 × 32px = 928px, the board's exact width.
  *
- * A terrain sprite is 16px drawn at 32px, and a tile is 128px, so four subtiles
- * fit across a tile. The gap between tiles is 32px, which is *exactly one more
- * subtile*. That makes the board one continuous grid rather than 36 separate
- * little ones:
+ * Who owns a subtile: each tile keeps a solid 2×2 core that nothing can take from it (the middle
+ * four of its sixteen subtiles). Everything else is contestable: a tile's outer ring, and the gap
+ * subtiles between tiles, can go to any tile within reach, which is what makes a boundary ragged
+ * and lets one tile's terrain spill across the gap. A contest is settled by score, highest wins:
+ * - Distance: how far the subtile sits from the tile claiming it, in subtiles. Its own tile is 0
+ * away, a tile across the gap is 2, so bleeding into a neighbour is rarer than winning a gap.
+ * - Recency: later-painted tiles score higher. Ranked among the candidates rather than used as a
+ * raw number, so the arithmetic stays bounded however long a game runs.
+ * - Jitter: a fixed pseudo-random value per subtile-and-claimant, derived from coordinates and the
+ * save's seed so it is identical on every redraw. This is the whole source of the ragged edge.
  *
- * ```
- *   subtile column:  0  1  2  3 | 4 | 5  6  7  8 | 9 | 10 …
- *                   └─ tile 0 ─┘ gap └─ tile 1 ─┘ gap
- * ```
- *
- * Six tiles of four plus five gaps of one is 29 across, and 29 × 32px = 928px,
- * which is the board's exact width. Nothing is left over at the edges.
- *
- * ## Who owns a subtile (D-T2, D-T3)
- *
- * Each tile keeps a solid **2×2 core** that nothing can take from it — the
- * middle four of its sixteen subtiles. Everything else is contestable: a tile's
- * outer ring, and the gap subtiles between tiles, can go to any tile within
- * reach. That is what makes a boundary ragged instead of a straight line, and
- * it is what lets one tile's terrain spill across the gap into its neighbour.
- *
- * A contest is settled by score, highest wins:
- *
- *   * **Distance** — how far the subtile sits from the tile claiming it, in
- *     subtiles. Its own tile is 0 away, a tile across the gap is 2. This is why
- *     bleeding into a neighbour is rarer than winning a gap: it has twice the
- *     deficit to overcome.
- *   * **Recency** — later-painted tiles score higher, which is D-T3's "most
- *     recently painted wins". Ranked among the candidates rather than used as a
- *     raw number, so the arithmetic stays bounded however long a game runs.
- *   * **Jitter** — a fixed pseudo-random value per subtile-and-claimant. This
- *     is the whole source of the ragged edge, and because it is derived from
- *     coordinates and the save's seed it is identical on every redraw (D-T11).
- *
- * ## Two scales of raggedness
- *
- * Ownership above is the *coarse* one: which of 841 subtiles belongs to whom.
- * `edgeProfile` below is the *fine* one: where exactly, within a boundary
- * between two subtiles, one terrain stops and the other starts. The first makes
- * a coastline that wanders across tiles; the second stops it looking like it was
- * cut with scissors.
+ * Two scales of raggedness: ownership above is the coarse one (which of 841 subtiles belongs to
+ * whom); `edgeProfile` below is the fine one (where exactly, within a boundary between two
+ * subtiles, one terrain stops and the other starts).
  */
 
 /** Subtiles across one tile. 128px tile ÷ 32px subtile. */
@@ -101,12 +71,9 @@ export const LATTICE_SIZE = BOARD_SIZE * SUBTILES_PER_TILE + (BOARD_SIZE - 1) * 
 export const SUBTILE_PX = TILE_PX / SUBTILES_PER_TILE;
 
 /**
- * How much each term is worth when tiles compete for a subtile.
- *
- * Tuned by eye. Below about 1.5 of jitter the gaps resolve into straight lines,
- * which is worse than no raggedness at all — a perfectly regular sawtooth. Much
- * above 2.5 and a tile starts winning subtiles it is nowhere near, so the board
- * turns to soup.
+ * How much each term is worth when tiles compete for a subtile. Tuned by eye: below about 1.5 of
+ * jitter the gaps resolve into straight lines (a regular sawtooth, worse than none), and much above
+ * 2.5 a tile starts winning subtiles it is nowhere near.
  */
 const DISTANCE_WEIGHT = 0.75;
 const RECENCY_STEP = 0.7;
@@ -134,14 +101,9 @@ const COARSE_CELLS = 3;
 /**
  * A stable pseudo-random number in [0, 1) from a handful of integers.
  *
- * Deliberately not `Math.random`: the same subtile must resolve the same way on
- * every redraw and every reload, or the board would shimmer as you played and
- * come back different after a save. This is a plain integer hash — cheap, and
- * good enough for scattering an edge.
- *
+ * Deliberately not `Math.random`: the same subtile must resolve the same way on every redraw and
+ * every reload, or the board would shimmer as you played and come back different after a save.
  * Exported so `TerrainProps` scatters trees from the same source of noise.
- * Everything derived about the board's appearance comes from here and the
- * save's seed, which is what makes D-T11's two-numbers-per-tile enough.
  */
 export function hash01(...values) {
     let h = 0x811c9dc5;
@@ -196,14 +158,13 @@ function distanceToTile(subtileIndex, tileIndex) {
 function claimants(subtileIndex) {
     const { tile, offset } = split(subtileIndex);
     const out = [];
-    if (offset < SUBTILES_PER_TILE) out.push(tile);          // its own tile
+    if (offset < SUBTILES_PER_TILE) out.push(tile);
     if (offset >= SUBTILES_PER_TILE) {
-        out.push(tile);                                       // gap: the tile before
-        if (tile + 1 < BOARD_SIZE) out.push(tile + 1);        // and the tile after
+        out.push(tile);
+        if (tile + 1 < BOARD_SIZE) out.push(tile + 1);
     } else {
-        // An outer subtile of a tile can also be taken by the tile across the
-        // gap — this is the "spills into a neighbour's own subtiles" half of
-        // D-T2. The core two are never offered.
+        // An outer subtile of a tile can also be taken by the tile across the gap; the core two are
+        // never offered.
         if (offset === 0 && tile - 1 >= 0) out.push(tile - 1);
         if (offset === SUBTILES_PER_TILE - 1 && tile + 1 < BOARD_SIZE) out.push(tile + 1);
     }
@@ -298,10 +259,6 @@ export function resolveLattice(terrain = {}, seed = 0) {
     return out;
 }
 
-// ---------------------------------------------------------------------------
-// Edge blending (roadmap P3)
-// ---------------------------------------------------------------------------
-
 /**
  * How many art pixels a subtile is across — the resolution a coastline is cut at.
  *
@@ -320,51 +277,34 @@ export function subtileArtPx() {
 }
 
 /**
- * How far, in art pixels, a terrain may push across a subtile boundary.
+ * How far, in art pixels, a terrain may push across a subtile boundary. Expressed as a fraction of
+ * the subtile rather than a fixed number, so that switching art sets keeps the coastline the same
+ * shape and only changes how coarsely it is cut.
  *
- * Expressed as a fraction of the subtile rather than a fixed number, so that
- * switching art sets keeps the coastline the same *shape* and only changes how
- * coarsely it is cut. At 16 art pixels this is 5; at 8 it is 3.
- *
- * Kept well under half a subtile. The frontier is drawn relative to one boundary
- * and knows nothing about the next one along, so two neighbouring boundaries
- * each displaced by more than half could overlap and produce terrain on the far
- * side of a subtile that does not own it — an island with no cause.
+ * Kept well under half a subtile: the frontier is drawn relative to one boundary and knows nothing
+ * about the next one along, so two neighbouring boundaries each displaced by more than half could
+ * overlap and produce terrain on the far side of a subtile that does not own it.
  */
 export function edgeAmplitude() {
     return Math.max(1, Math.round(subtileArtPx() * EDGE_SWING()));
 }
 
 /**
- * The two dials that decide how a coastline reads. They do different jobs and
- * are worth turning separately.
+ * The two dials that decide how a coastline reads. They do different jobs and are worth turning
+ * separately.
  *
- * `EDGE_SWING` is **how far** the frontier travels from the grid line — the
- * scale of the bays and headlands. Turning it down makes the coast hug the
- * subtile boundary; turning it up past about a third starts letting terrain
- * reach ground it has no business on.
+ * `EDGE_SWING` is how far the frontier travels from the grid line, the scale of the bays and
+ * headlands. Past about a third it starts letting terrain reach ground it has no business on.
  *
- * `EDGE_ROUGHNESS` is **how spiky** the frontier is between its pinned ends.
- * This is the one that reads as "jagged": at high values the boundary grows
- * single-pixel teeth that look like noise on the edge rather than a shape. Note
- * it is a fraction of the subtile, so it shrinks with the art set — at 8px art
- * a value much above 0.1 puts a tooth on nearly every pixel.
+ * `EDGE_ROUGHNESS` is how spiky the frontier is between its pinned ends: at high values the
+ * boundary grows single-pixel teeth that look like noise. It is a fraction of the subtile, so it
+ * shrinks with the art set.
  *
- * ⚠️ **Tuning history, so nobody re-derives it.** Once the blending was actually
- * drawing, 0.3125 / 0.1125 read as too jagged; 0.25 / 0.055 read as too calm.
- * These are the owner's middle ground, and they are not a simple average:
+ * ⚠️ The shipped values (0.3125 / 0.070) are the owner's middle ground between too jagged (0.3125 /
+ * 0.1125) and too calm (0.25 / 0.055); not a simple average.
  *
- * | swing  | rough  | art px | single-pixel teeth |
- * | :----- | :----- | :----- | :----------------- |
- * | 0.3125 | 0.1125 | 3      | 16.1%  (too jagged)|
- * | 0.3125 | 0.070  | 3      | 8.3%   ← here      |
- * | 0.25   | 0.070  | 2      | 9.5%               |
- * | 0.25   | 0.055  | 2      | 6.0%   (too calm)  |
- *
- * ⚠️ **Swing is quantised** — it becomes a whole number of art pixels, so at 8px
- * art it is 2 or 3 and nothing between. There is no middle to be had on that
- * axis, which is why the swing went back to its original 3 and the middle
- * ground was found entirely in the roughness.
+ * ⚠️ Swing is quantised: it becomes a whole number of art pixels, so at 8px art it is 2 or 3 and
+ * nothing between. The middle ground has to be found in the roughness.
  */
 const EDGE_SWING = () => tuning('edgeSwing');
 const EDGE_ROUGHNESS = () => tuning('edgeRoughness');
@@ -373,27 +313,19 @@ const EDGE_ROUGHNESS = () => tuning('edgeRoughness');
 const wobble = () => subtileArtPx() * EDGE_ROUGHNESS();
 
 /**
- * Where two neighbouring subtiles actually divide, rather than where the grid
- * says they do (D-T13, D-T14).
+ * Where two neighbouring subtiles actually divide, rather than where the grid says they do.
  *
- * Returns one signed displacement per art pixel along the boundary. Positive
- * pushes the first subtile's terrain into the second; negative pulls the second
- * into the first. Straight zeros would give the hard edge P2 shipped.
+ * Returns one signed displacement per art pixel along the boundary. Positive pushes the first
+ * subtile's terrain into the second; negative pulls the second into the first. Straight zeros would
+ * give a hard edge.
  *
- * ## ⚠️ Why the ends are pinned, and to what
- *
- * The concept doc's §6 calls this the seam problem: a coastline crossing from
- * one boundary segment into the next steps, because each segment wandered off
- * on its own. The fix is that **a segment's endpoints are properties of the
- * junction, not of the segment** — both boundaries meeting at a junction read
- * the same hash of that junction's coordinates, so they agree without needing
- * to know about each other.
- *
- * Pinning every junction to the *same* depth would also be continuous, and was
- * prototyped: it makes the frontier cross the midline every 16 pixels and reads
- * as a decorative scalloped fringe rather than a coast. The depth has to vary
- * per junction, which is why this is computed rather than drawn — a stencil set
- * would need one shape per pair of endpoint depths.
+ * ⚠️ Why the ends are pinned, and to what: a coastline crossing from one boundary segment into the
+ * next steps if each segment wandered off on its own. So a segment's endpoints are properties of
+ * the junction, not of the segment: both boundaries meeting at a junction read the same hash of
+ * that junction's coordinates, so they agree without needing to know about each other. Pinning
+ * every junction to the same depth would also be continuous but reads as a decorative scalloped
+ * fringe rather than a coast, so the depth varies per junction, which is why this is computed
+ * rather than drawn.
  *
  * @param {number} sx Column of the first subtile.
  * @param {number} sy Row of the first subtile.
@@ -421,26 +353,18 @@ export function edgeProfile(sx, sy, axis, seed) {
 
     const out = new Array(artPx);
     for (let i = 0; i < artPx; i++) {
-        // ⚠️ `i / (N - 1)`, not `(i + 0.5) / N`. This lands the first and last
-        // samples **exactly on** the two junction depths rather than merely near
-        // them, which is what makes the seam guarantee structural instead of
-        // lucky. With the half-pixel version the end samples sat a fraction
-        // short of the junction; at 16 art pixels they still rounded to it, but
-        // at 8 the samples are further from the ends and a value sitting midway
-        // between two integers could round one way in one segment and the other
-        // way in its neighbour — a 1px step, found the moment the art set was
-        // switched.
+        // ⚠️ `i / (N - 1)`, not `(i + 0.5) / N`: this lands the first and last samples exactly on
+        // the two junction depths rather than merely near them, which makes the seam guarantee
+        // structural. With the half-pixel version a value midway between two integers could round
+        // one way in one segment and the other way in its neighbour: a 1px step.
         const t = i / (artPx - 1);
         const base = from + (to - from) * t;
 
-        // A little wander on top of the interpolation, or the run between two
-        // junctions is a straight ramp and the coast comes out faceted.
-        //
-        // ⚠️ Tapered to nothing at both ends. Without the taper the last sample
-        // of one segment and the first of the next each get their own wobble,
-        // and although both sit near the junction's depth they can differ by up
-        // to 4 pixels — a visible step, which is the whole thing the junction
-        // contract exists to prevent. Measured at 3–4px before, ≤1px after.
+        // A little wander on top of the interpolation, or the run between two junctions is a
+        // straight ramp and the coast comes out faceted.
+        // ⚠️ Tapered to nothing at both ends: otherwise the last sample of one segment and the
+        // first of the next each get their own wobble and can differ by several pixels, a visible
+        // step, which is what the junction contract exists to prevent.
         const taper = Math.sin(Math.PI * t);
         const wander = (hash01(sx, sy, i, seed) * 2 - 1) * wobble() * taper;
 
@@ -457,18 +381,10 @@ export function edgeProfile(sx, sy, axis, seed) {
 /**
  * The strips of one terrain that spill across a boundary into its neighbour.
  *
- * Returned as data rather than drawn, so the geometry can be tested without a
- * canvas — which is not incidental. The first version of this lived inside the
- * renderer and drew each strip's texture at the **winner's** subtile origin
- * while clipping to a rectangle in the **loser's** subtile. Those two regions
- * are nearby and never overlap, so every draw was clipped away entirely and
- * the blending silently did nothing for three commits. Nothing about the data
- * was wrong; only the drawing, which is the part nothing could assert on.
- *
- * Each strip says where it is (`x`, `y`, `w`, `h`, in art pixels), which
- * terrain's art to use, which subtile picks the *variant* of that art, and —
- * the bit that was wrong — **which subtile it is being painted into**, since
- * that is where a 32px texture has to be positioned to cover it.
+ * Returned as data rather than drawn, so the geometry can be tested without a canvas. Each strip
+ * says where it is (`x`, `y`, `w`, `h`, in art pixels), which terrain's art to use, which subtile
+ * picks the variant of that art, and which subtile it is being painted into (`intoSx`, `intoSy`),
+ * since that is where a 32px texture has to be positioned to cover it.
  *
  * @returns {Array<{x:number,y:number,w:number,h:number,terrainId:string,
  *                  variantSx:number,variantSy:number,
@@ -512,18 +428,14 @@ export function edgeStrips(sx, sy, axis, here, there, seed = 0) {
 }
 
 /**
- * Which terrain is at every art pixel, **after** the boundaries have been
- * ragged (P3).
+ * Which terrain is at every art pixel, after the boundaries have been ragged.
  *
- * The subtile lattice says what a 32px cell holds; this says what each 4px
- * world pixel holds, which is a different question once edges wander across
- * cell lines. Anything that has to follow the *drawn* coastline rather than the
- * grid needs this — the shore bands do, and the patches are better for it.
+ * The subtile lattice says what a 32px cell holds; this says what each world pixel holds, which is
+ * a different question once edges wander across cell lines. Anything that has to follow the drawn
+ * coastline rather than the grid needs this: the shore bands and the patches.
  *
- * ⚠️ Built from `edgeStrips`, the same function the renderer paints from, so
- * the two cannot disagree about where a boundary ended up. Recomputing the
- * displacement independently here would be a second implementation of the one
- * thing P3 already got wrong once.
+ * ⚠️ Built from `edgeStrips`, the same function the renderer paints from, so the two cannot
+ * disagree about where a boundary ended up.
  *
  * @param {boolean} [withFringes] Whether to push fringes onto neighbours — the
  *   beach around the sea. Off only for the test that checks this map against the
@@ -597,22 +509,14 @@ export function resolveArtPixels(grid, seed = 0, withFringes = true) {
 /**
  * How far each pixel is from the nearest seed.
  *
- * Distances come back **multiplied by 3** — the weights are 3 sideways and 4
- * diagonally, the standard cheap approximation to Euclidean distance, and
- * dividing through would only lose precision.
+ * Distances come back multiplied by 3: the weights are 3 sideways and 4 diagonally, the standard
+ * cheap approximation to Euclidean distance, and dividing through would only lose precision. Shared
+ * rather than duplicated: the shore bands and the beach fringe both measure distance from the
+ * coast, and two implementations would be two chances to disagree about where it is.
  *
- * Shared rather than duplicated: the shore bands measure how far a pixel is
- * from the water, and the beach fringe measures the same thing for a different
- * purpose. Two implementations of one distance would be two chances to disagree
- * about where the coast is.
- *
- * ## ⚠️ Pass `maxDist` if you have one — every caller does
- *
- * Without a bound this sweeps the whole board twice to compute a distance for
- * every pixel, and both callers then throw away everything past three or four
- * pixels. Bounded, it walks outward from the seeds and stops, touching only the
- * band it was asked about — measured at roughly a fifth of the work on a real
- * board, because a coastline is a small part of it.
+ * ⚠️ Pass `maxDist` if you have one: without a bound this sweeps the whole board twice to compute a
+ * distance for every pixel, and callers discard everything past a few pixels. Bounded, it walks
+ * outward from the seeds and stops, touching only the band it was asked about.
  *
  * @param {number} [maxDist] In the same ×3 units. Pixels beyond it come back as
  *   a large number rather than a true distance, which is all either caller

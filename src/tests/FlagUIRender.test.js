@@ -33,12 +33,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ Free Playmat slice 1.5 — the flag UI as drawn: the idle mark, the reach
  * ring and the disallow toggle. The engine hooks are in `FlagUI.test.js`. The
- * skill picker is gone since slice 1.5b (FP-71): a flag has no skill.
- *
- * Since slice 1.6c-2 the board these draw on is `MatBoard`, which draws every
- * Token and hero **at its mat point, by instance id** — there are no tiles to
- * hand a projected `token` prop to any more, so these mount the real mat over
- * real board state.
+ * skill picker is gone since slice 1.5b: a flag has no skill.
  */
 
 /**
@@ -96,7 +91,7 @@ describe('the idle mark (FP-29)', () => {
         expect(Flags.statusOf('h1').state).toBe('working');
 
         // A hero on a Token that cannot run gets no glow: the Token's own red
-        // badge says it alone (slice 1.5, FP-29).
+        // badge says it alone.
         forest.alert = ALERT.INPUTS;
 
         const { container } = mount(h(MatBoard));
@@ -219,7 +214,7 @@ describe('the flag has no skill since slice 1.5b (FP-71)', () => {
         fireEvent.click(flag);
         unsub();
         expect(document.querySelector('[role="menu"]')).toBeNull();
-        // Rules open only from the gear (FPP-20), never from the flag itself.
+        // Rules open only from the gear, never from the flag itself.
         expect(opened).toEqual([]);
 
         expect(flagTooltip('h1').title).toBe('h1');

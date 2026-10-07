@@ -36,7 +36,6 @@ export default function EntitySelect({ value, onChange, entityTypes = ['item'], 
   const selectedEntity = allEntities.find((e) => e.id === value);
   const exactMatch = allEntities.find((e) => e.name.toLowerCase() === query.toLowerCase());
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClick = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -117,7 +116,6 @@ export default function EntitySelect({ value, onChange, entityTypes = ['item'], 
             </button>
           ))}
 
-          {/* Ghost Creation Option */}
           {query && !exactMatch && (
             <button
               onClick={handleCreateGhost}

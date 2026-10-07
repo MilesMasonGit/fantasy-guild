@@ -12,8 +12,8 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('unassigned'); // 'unassigned' | 'all'
-  const [selectedFolder, setSelectedFolder] = useState('ALL'); // Original folder path or 'ALL'
+  const [activeTab, setActiveTab] = useState('unassigned');
+  const [selectedFolder, setSelectedFolder] = useState('ALL');
   const [selectedPath, setSelectedPath] = useState(null);
   const [registering, setRegistering] = useState(false);
 
@@ -49,19 +49,17 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
     return activeTab === 'unassigned' ? unassigned : physicalSprites;
   }, [auditData, activeTab]);
 
-  // Derive flat folder paths from files list
   const folders = useMemo(() => {
     const set = new Set();
     baseSpriteList.forEach(filePath => {
       const parts = filePath.split('/');
-      parts.pop(); // Remove filename
+      parts.pop();
       const folderPath = parts.join('/');
       if (folderPath) set.add(folderPath);
     });
     return ['ALL', ...Array.from(set).sort()];
   }, [baseSpriteList]);
 
-  // Build a nested folder tree structure from flat folder paths
   const folderTree = useMemo(() => {
     const root = { name: 'Root', fullPath: '', originalPath: 'ALL', children: {} };
 
@@ -96,14 +94,11 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
     return root.children;
   }, [folders]);
 
-  // Filter sprites list by folder prefix and search query
   const filteredSprites = useMemo(() => {
     return baseSpriteList.filter(filePath => {
-      // 1. Folder match (checks if file is inside selected folder or its subfolders)
       if (selectedFolder !== 'ALL') {
         if (!filePath.startsWith(selectedFolder + '/')) return false;
       }
-      // 2. Search query filter
       return filePath.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [baseSpriteList, selectedFolder, searchQuery]);
@@ -114,7 +109,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
     try {
       const { spriteManifest = {} } = auditData || {};
       
-      // Check if this path is already mapped to a manifest key
       const manifestKey = Object.keys(spriteManifest).find(
         key => spriteManifest[key] === selectedPath
       );
@@ -122,7 +116,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
       if (manifestKey) {
         onSelect(manifestKey);
       } else {
-        // Path is unregistered, register it automatically
         const spriteId = selectedPath.split('/').pop().replace('.png', '');
         
         const res = await fetch('/api/register-sprite', {
@@ -152,7 +145,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}>
       <div className="rounded-xl border flex flex-col relative w-11/12 max-w-5xl h-[80vh] shadow-2xl" style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-default)' }}>
         
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
           <div>
             <h2 className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>Select Sprite</h2>
@@ -163,9 +155,7 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
           </button>
         </div>
 
-        {/* Top Control Bar */}
         <div className="px-5 py-3 border-b flex flex-col sm:flex-row gap-3 items-center justify-between" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
-          {/* Tabs */}
           <div className="flex gap-2">
             <button 
               onClick={() => { setActiveTab('unassigned'); setSelectedPath(null); setSelectedFolder('ALL'); }}
@@ -181,7 +171,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
             </button>
           </div>
 
-          {/* Search bar */}
           <div className="relative w-full sm:w-64">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
             <input 
@@ -194,10 +183,8 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
           </div>
         </div>
 
-        {/* Sidebar + Main Grid Split Layout */}
         <div className="flex-1 flex overflow-hidden min-h-0">
           
-          {/* Left Sidebar: Folder Directory */}
           <div className="w-64 border-r flex flex-col overflow-y-auto p-4 gap-2" style={{ borderColor: 'var(--color-border-subtle)', background: 'var(--color-bg-base)' }}>
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-1">Directories</span>
             
@@ -205,7 +192,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
               <div className="px-2 text-xs text-gray-500">Loading directories...</div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {/* All Folders Option */}
                 <button
                   onClick={() => { setSelectedFolder('ALL'); setSelectedPath(null); }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${selectedFolder === 'ALL' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03] border border-transparent'} cursor-pointer`}
@@ -214,7 +200,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
                   <span>All Folders</span>
                 </button>
                 
-                {/* Recursive Nested Folder Tree */}
                 <FolderTreeRenderer 
                   nodes={folderTree} 
                   selectedFolder={selectedFolder} 
@@ -224,7 +209,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
             )}
           </div>
 
-          {/* Right Area: Grid items (text-only, fast loading) */}
           <div className="flex-1 overflow-y-auto p-5 min-h-0">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-500">
@@ -271,7 +255,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
 
         </div>
 
-        {/* Footer */}
         <div className="px-5 py-4 border-t flex items-center justify-between" style={{ borderColor: 'var(--color-border-subtle)', background: 'var(--color-bg-elevated)' }}>
           <div className="text-xs truncate max-w-md" style={{ color: 'var(--color-text-muted)' }}>
             {selectedPath ? `Selected: ${selectedPath}` : 'Select a file from the list'}
@@ -294,7 +277,6 @@ export default function SpritePickerModal({ isOpen, onClose, onSelect }) {
   );
 }
 
-// Recursive component to render nested folders with indentation
 function FolderTreeRenderer({ nodes, level = 0, selectedFolder, onSelectFolder }) {
   const sortedNodes = useMemo(() => {
     return Object.values(nodes || {}).sort((a, b) => a.name.localeCompare(b.name));

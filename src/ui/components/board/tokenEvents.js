@@ -1,40 +1,30 @@
-// Fantasy Guild — board events routed to one Token by instance id (Free Playmat slice 1.6c)
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import isEqual from 'fast-deep-equal/es6';
 import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
- * ⭐ **One EventBus subscription per event type, however many Tokens are drawn.**
- *
- * Every board event names the Token it happened to by `instanceId` (slice
- * 1.6b). The mat draws a component per Token, and several of those components
- * want the same events — progress, alerts, charges, effect text. Subscribing
- * each of them to the bus directly is what the grid renderer did, and it does
- * not survive a free mat: ~80 Tokens × four events is 320 subscriptions, and
- * **every one of them runs on every `board:progress` tick** only to compare an
- * id and return.
- *
- * So this is a switchboard. The first listener for an event type opens the one
- * bus subscription; the payload's `instanceId` picks a `Set` out of a `Map`, so
- * a progress tick wakes only the Token it is about. The last listener to leave
- * closes the bus subscription again, which is what keeps "no subscriptions left
- * behind on unmount" true.
- *
- * ⚠️ A payload with no `instanceId` — a spot that ran dry, a refused drop —
- * reaches nobody here **by design**: it belongs to no drawn Token. Those are
- * drawn at their mat point by `MatPointAlerts`, which listens to the bus itself.
+ * One EventBus subscription per event type, however many Tokens are drawn.
+ * The mat draws a component per Token, and several want the same events (progress, alerts,
+ * charges, effect text). Subscribing each directly means every subscription runs on every
+ * `board:progress` tick only to compare an id and return.
+ * So this is a switchboard: the first listener for an event type opens the one bus
+ * subscription; the payload's `instanceId` picks a `Set` out of a `Map`, so a progress tick
+ * wakes only the Token it is about. The last listener to leave closes the bus subscription,
+ * which keeps 'no subscriptions left behind on unmount' true.
+ * ⚠️ A payload with no `instanceId` (a spot that ran dry, a refused drop) reaches nobody here
+ * by design: it belongs to no drawn Token. Those are drawn at their mat point by
+ * `MatPointAlerts`, which listens to the bus itself.
  */
 
 /** `field + event` → `{ unsub, handlers: Map<key, Set<handler>> }`. */
 const routes = new Map();
 
 /**
- * Call `handler` when `event` happens with `payload[field] === key` — one bus
- * subscription per (event, field) however many listeners. `instanceId` is the
- * usual field; `heroId` routes a hero's events to the one Token they work
- * (CR3-304: `HERO_MOVED` names the Token a hero goes TO, never the one they
- * left).
+ * Call `handler` when `event` happens with `payload[field] === key`: one bus subscription per
+ * (event, field) however many listeners. `instanceId` is the usual field; `heroId` routes a
+ * hero's events to the one Token they work (`HERO_MOVED` names the Token a hero goes TO, never
+ * the one they left).
  * @returns {() => void} unsubscribe
  */
 export function subscribeBy(event, field, key, handler) {
@@ -85,9 +75,9 @@ export function subscribeToken(event, instanceId, handler) {
 }
 
 /**
- * The hook form. The handler is read through a ref, so a component may rebuild
- * it on every render without touching the subscription — the deps are the event
- * and the Token, and nothing else (CR2-168 item 1).
+ * The hook form. The handler is read through a ref, so a component may rebuild it on every
+ * render without touching the subscription: the deps are the event and the Token, and nothing
+ * else.
  */
 export function useTokenEvent(event, instanceId, handler) {
     const live = useRef(handler);
@@ -100,29 +90,22 @@ export function useTokenEvent(event, instanceId, handler) {
 }
 
 /**
- * ⭐ **A Token's state, woken only by events about that Token** (CR3-304).
- *
- * `useGameState` subscribes each caller to the whole event; with one caller
- * per drawn Token, every `TILE_CHANGED` re-ran ~105 selectors at S2 (~320 at
- * S3) to change one Token. This runs `selector` only when an event routed to
- * this Token arrives:
- *
- * * `byId` — events whose payload's `instanceId` is this Token;
- * * `byKey` — `{ event, field, key }`: events whose `payload[field] === key`
- *   (e.g. the hero working it, by `heroId`). A null key is skipped;
- * * `broadcast` — events that wake it whatever they name. For the few Tokens
- *   whose state reads OTHER Tokens (a spawner counts its family), and for
- *   `GAME_RESET`.
- *
- * `routesOf(state)` gives these from the current state, so a route can follow
- * it (the hero working the Token changes). Several events in one task run the
- * selector once (a microtask, as `useGameState` does). The selector must
- * return a flat projection (the CR-044 contract): it is compared by value and
- * never cloned.
- *
- * ⚠️ **A lost route is a Token that silently stops updating.**
- * `TokenDetailRoutes.test.js` drives every `MatToken` field through the real
- * engine command that changes it; add a test there with any new field.
+ * A Token's state, woken only by events about that Token.
+ * `useGameState` subscribes each caller to the whole event; with one caller per drawn Token,
+ * every `TILE_CHANGED` would re-run a selector per Token to change one. This runs `selector`
+ * only when an event routed to this Token arrives:
+ * * `byId`: events whose payload's `instanceId` is this Token;
+ * * `byKey`: `{ event, field, key }`: events whose `payload[field] === key` (e.g. the hero
+ * working it, by `heroId`). A null key is skipped;
+ * * `broadcast`: events that wake it whatever they name. For the few Tokens whose state reads
+ * OTHER Tokens (a spawner counts its family), and for `GAME_RESET`.
+ * `routesOf(state)` gives these from the current state, so a route can follow it (the hero
+ * working the Token changes). Several events in one task run the selector once (a microtask,
+ * as `useGameState` does). The selector must return a flat projection (see `useGameState`'s
+ * selector contract): it is compared by value and never cloned.
+ * ⚠️ A lost route is a Token that silently stops updating. `TokenDetailRoutes.test.js` drives
+ * every `MatToken` field through the real engine command that changes it; add a test there
+ * with any new field.
  */
 export function useTokenState(id, selector, routesOf) {
     const live = useRef(selector);

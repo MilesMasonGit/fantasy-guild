@@ -32,17 +32,7 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 /** What ran dry on spot `i`, or null. */
 
 /**
- * Combat on the board — **ported, not rebuilt** (D-136).
- *
- * The 7-stat engine is unchanged; only the trigger moved from "hero encounters
- * an enemy card" to "hero is dropped onto an enemy Token". These tests cover
- * what the BOARD adds: the tick owner, one-kill-is-one-cycle (D-129), enemy
- * depletion (D-104), retreat-by-unassigning (`G-3`, `G-4`) and defeat (D-74).
- *
- * ## Production is the idle half; combat is the active half (D-130)
- * There is no difficulty warning, no skill gate and no preview on an enemy
- * Token. The player is expected to watch the first few fights and pull out if
- * it goes badly — and leaving a hero in an unwinnable fight costs equipment.
+ * Combat on the board — **ported, not rebuilt**.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -93,11 +83,11 @@ function run(ms) {
     for (let t = 0; t < ms; t += 100) BoardRunner.tick(100);
 }
 
-// CR3-557: start Flags' subscribers, as the game does. Today a defeat furls the
-// flag by a direct call from BoardCombat; CR3-157's cycle cut moves that onto
-// an event Flags subscribes to, and this suite asserts the furl (the Defeat
-// case). Started here first, green before the cut, so the cut is not mistaken
-// for a regression. Once per file: the EventBus is a singleton.
+// start Flags' subscribers, as the game does. Today a defeat furls the flag by
+// a direct call from BoardCombat's cycle cut moves that onto an event Flags
+// subscribes to, and this suite asserts the furl (the Defeat case). Started
+// here first, green before the cut, so the cut is not mistaken for a
+// regression. Once per file: the EventBus is a singleton.
 beforeAll(() => Flags.init());
 afterAll(() => Flags.teardown());
 
@@ -164,7 +154,7 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
     it('is skipped as unskilled, shown on hover, with no red mark (Free Playmat FP-60)', () => {
         // Was: "says so on the tile" — a red UNSKILLED mark on the enemy. Under
         // flags the Recruit never claims the enemy at all; the flag records why,
-        // and a skill problem is hover-only (FP-60, slice 1.4c).
+        // and a skill problem is hover-only (slice 1.4c).
         const bear = place(10, 'fixture_enemy', 'recruit_1');
         run(1000);
         expect(bear.alert ?? null).toBeNull();
@@ -194,7 +184,7 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
     });
 });
 
-/** Every board event of the killing tick, in order, as published on 2026-09-30 (CR3-250). */
+/** Every board event of the killing tick, in order, as published on. */
 const KILLING_TICK_EVENTS = [
     'board:sprites_changed',
     'board:progress',
@@ -210,21 +200,7 @@ const KILLING_TICK_EVENTS = [
 
 describe('A kill', () => {
     /**
-     * ⚠️ THE SAFETY NET for the card-system retirement (2026-08-18).
-     *
-     * The live combat chain runs BoardCombat → CombatProcessor →
-     * CombatResolutionProcessor → WorkProcessor, all of which are being moved
-     * out of the retired `systems/cards/` namespace. This test is the one that
-     * proves that chain still works end to end: a capable hero fights, wins,
-     * and the reward reaches the board.
-     *
-     * It was deleted during the cleanup because the re-authored content set has
-     * no `item_blackberry` for `enemy_thorn_elemental` to drop. Restored by
-     * registering that id as a fixture item, so the assertion tests the
-     * MACHINERY rather than what happens to be authored.
-     *
-     * If this goes red during the retirement, stop and read the diff — nothing
-     * else covers board loot end to end.
+     * ⚠️ THE SAFETY NET for the card-system retirement.
      */
     it('is won by a capable hero, and drops loot ON THE BOARD (D-40)', () => {
         place(10, 'fixture_enemy', 'hero_1');
@@ -266,11 +242,6 @@ describe('A kill', () => {
         expect(rack.usesRemaining).toBeLessThan(10);
     });
 
-    /**
-     * CR3-250 (test first): a kill rebuilds the neighbourhood twice today, and
-     * its fix must not change what the killing tick tells the rest of the game,
-     * nor what the buffs around it add up to.
-     */
     it('the killing tick names the enemy as depleted and changed, in a pinned order (CR3-250)', () => {
         const bear = place(10, 'fixture_enemy', 'hero_1', 1);
         const published = [];
@@ -320,9 +291,9 @@ describe('A kill', () => {
         run(60000);
 
         expect(tokenAt(10)).toBeNull();
-        // Exactly what a spent Forest does. Enemies are not a special case
-        // (D-104) — including in what they leave behind: the hero's flag stays
-        // planted there (Free Playmat 1.4b).
+        // Exactly what a spent Forest does. Enemies are not a special case —
+        // including in what they leave behind: the hero's flag stays planted
+        // there (Free Playmat 1.4b).
         expect(BoardState.displayPointOf('hero_1')).toEqual(C(10));
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
         // Nothing is owed the spot: Managers and vacancies are retired (9.2).
@@ -351,9 +322,9 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         // checking once after a fixed window. Two things make the naive version
         // unreliable, and they pull in opposite directions: damage is rolled,
         // so a short window sometimes lands no hit at all; but a kill triggers
-        // an intermission that restores the enemy to full (D-103), so a long
-        // window can miss the damage by arriving after the reset. Tracking the
-        // minimum catches the damaged state either way.
+        // an intermission that restores the enemy to full, so a long window can
+        // miss the damage by arriving after the reset. Tracking the minimum
+        // catches the damaged state either way.
         run(100);                       // one tick, so the fight exists to read
         const max = BoardCombat.getFight(idAt(10)).combat.enemyHp.max;
         let lowest = BoardCombat.getFight(idAt(10)).combat.enemyHp.current;
@@ -376,8 +347,8 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         place(10, 'fixture_enemy', 'hero_1');
         run(4000);
 
-        // One hero per Token (FP-25): hero_2 only gets the enemy once hero_1's
-        // flag is taken down (Free Playmat 1.4b).
+        // One hero per Token: hero_2 only gets the enemy once hero_1's flag is
+        // taken down (Free Playmat 1.4b).
         Placement.recallHeroById('hero_1');
         Placement.plantFlagAt('hero_2', C(10));
         run(100);
@@ -428,10 +399,10 @@ describe('Defeat costs equipment (D-74)', () => {
 
 describe('Regen is unchanged (G-2)', () => {
     it('combat does not suppress it — that was a documentation error, not a bug', () => {
-        // §8.1/D-136 said RegenSystem heals "idle" heroes. It heals idle,
-        // working AND fighting alike. The conclusion survives on different
-        // grounds: regen is constant, so withdrawing removes the damage source
-        // and flips a hero from net-losing HP to net-gaining it.
+        // §8.1 said RegenSystem heals "idle" heroes. It heals idle, working
+        // AND fighting alike. The conclusion survives on different grounds:
+        // regen is constant, so withdrawing removes the damage source and
+        // flips a hero from net-losing HP to net-gaining it.
         const hero = GameState.state.heroes[0];
         hero.status = 'combat';
         hero.hp.current = 50;

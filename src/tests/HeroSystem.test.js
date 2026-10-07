@@ -47,17 +47,16 @@ describe('Hero System Enhancements', () => {
     });
 
     // Was "should NOT apply class/trait modifiers (cosmetic only)", and passed
-    // a rolled class and trait in. Classes and traits are retired (owner
-    // decision 2026-08-18) so there is nothing left to pass; the assertion
-    // itself is unchanged and still worth making — a fresh hero must start
-    // with an empty modifier pool.
+    // a rolled class and trait in. Classes and traits are retired so there is
+    // nothing left to pass; the assertion itself is unchanged and still worth
+    // making — a fresh hero must start with an empty modifier pool.
     it('gives a fresh hero no modifiers at all', () => {
         const hero = generateHero();
         const allModifiers = Array.from(hero.aggregator.modifiers.values()).flat();
         expect(allModifiers.length).toBe(0);
     });
 
-    // --- The nine-slot loadout grid (D-7/D-54/D-55) ---
+    // --- The nine-slot loadout grid ---
 
     it('gives every hero exactly GRID_SLOT_COUNT empty slots', () => {
         const hero = generateHero();
@@ -66,9 +65,9 @@ describe('Hero System Enhancements', () => {
         expect(hero.equipment.every(slot => slot === null)).toBe(true);
     });
 
-    // D-7: gear and consumables share one pool of nine, so the ratio between
-    // them is the player's decision, not a fixed layout.
-    // D-55: the cap is a property of the CATEGORY.
+    // gear and consumables share one pool of nine, so the ratio between them
+    // is the player's decision, not a fixed layout. the cap is a property of
+    // the CATEGORY.
     it('refuses nothing outright — a capped category displaces instead', () => {
         const hero = generateHero();
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
@@ -88,7 +87,7 @@ describe('Hero System Enhancements', () => {
         }
     });
 
-    // D-18: carrying the same item twice buffs nothing, so it is refused.
+    // carrying the same item twice buffs nothing, so it is refused.
 });
 
 // --- The bench, retired in the Hero Dock rework (Phase 3) ---
@@ -116,8 +115,8 @@ describe('Roster cap without a bench', () => {
     });
 
     // "should free a slot when a hero retires" was deleted with the retirement
-    // mechanic (owner decision 2026-08-19, CR2-086). Nothing takes a hero off
-    // the roster any more, so there is no slot-freeing path left to cover.
+    // mechanic. Nothing takes a hero off the roster any more, so there is no
+    // slot-freeing path left to cover.
 
     it('should track the cap from the Guild Hall roster_size rank', () => {
         GameState.state.progress.rosterLimit = 3;

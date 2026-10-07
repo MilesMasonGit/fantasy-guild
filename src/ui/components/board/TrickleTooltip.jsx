@@ -7,7 +7,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { trickleHoverLines } from '../drawer/lifecycleLines.js';
 import { placeUnder } from './tooltipPlacement.js';
 
-/** How often the tooltip re-reads the trickle clocks while shown (FB-52). */
+/** How often the tooltip re-reads the trickle clocks while shown. */
 export const TRICKLE_TOOLTIP_REFRESH_MS = 1000;
 
 /** The width it is placed with before it has been measured (the flag tooltip's). */
@@ -36,29 +36,19 @@ export function hasTrickle(def) {
 }
 
 /**
- * ⭐ **The Guild Hall's hover tooltip** (FB-52): the Token's name, then its
- * trickle income — one line per paying line with a **live** "next in"
- * countdown, re-read every second while shown.
- *
- * Styled and placed exactly like the flag's tooltip (`FlagTooltip`): a
- * portal to `document.body`, fixed under the Token's art, above the whole mat
- * (so above every Token), and `pointer-events: none`, so dragging the Hall,
- * clicking it and hover-collecting loot beside it all work as before. Hidden
- * while anything is being dragged, as the flag's is.
- *
- * The wording and maths are `trickleHoverLines`' (the inspection panel's
- * *Pays* rows); this only draws them.
- *
- * ⭐ **As wide as its longest line** (owner, after Q5b): each trickle line sits
- * on one row even under the all-caps setting, capped to the window; it is
- * measured after each draw so `placeUnder` keeps it on screen. The flag
- * tooltip keeps its fixed 256 px.
- *
- * @param {{
- *   instanceId: string,
- *   readLines?: (instanceId: string) => string[],   // tests
- *   anchorOf?: (instanceId: string) => Element|null  // tests
- * }} props
+ * The Guild Hall's hover tooltip: the Token's name, then its trickle income, one line per
+ * paying line with a **live** 'next in' countdown, re-read every second while shown.
+ * Styled and placed exactly like the flag's tooltip (`FlagTooltip`): a portal to
+ * `document.body`, fixed under the Token's art, above the whole mat (so above every Token),
+ * and `pointer-events: none`, so dragging the Hall, clicking it and hover-collecting loot
+ * beside it all work as before. Hidden while anything is being dragged, as the flag's is.
+ * The wording and maths are `trickleHoverLines`' (the inspection panel's *Pays* rows); this
+ * only draws them.
+ * As wide as its longest line: each trickle line sits on one row even under the all-caps
+ * setting, capped to the window; it is measured after each draw so `placeUnder` keeps it on
+ * screen. The flag tooltip keeps its fixed 256 px.
+ * @param {{ instanceId: string, readLines?: (instanceId: string) => string[], anchorOf?:
+ * (instanceId: string) => Element|null }} props  `readLines` and `anchorOf` are for tests
  */
 export const TrickleTooltip = ({ instanceId, readLines = liveTrickleLines, anchorOf = artOf }) => {
     const { isDragging: anyDrag } = useActiveDrag();

@@ -16,10 +16,8 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
- * Token Lifecycle slice 3.4 — **the trickle** (SP-66, §3.1): items on a clock
- * per line, no hero needed. Since FB-53 (feedback slice Q5b) they drop as loot
- * beside the Token, like a gathered output, and reach the Bank only when
- * collected.
+ * Token Lifecycle slice 3.4 — **the trickle**: items on a clock per line, no
+ * hero needed.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -62,7 +60,7 @@ registerTokenTypes({
     }
 });
 
-// FB-53: the trickle pays onto the mat as loot, not into the Bank.
+// the trickle pays onto the mat as loot, not into the Bank.
 const seeds = () => SpriteLayer.countOnBoard('fixture_tr_seed');
 const wood = () => SpriteLayer.countOnBoard('fixture_tr_wood');
 const banked = (id) => InventoryManager.getItemCount(id);

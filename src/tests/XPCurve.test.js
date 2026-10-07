@@ -43,11 +43,10 @@ describe('XPCurve', () => {
     });
 
     /**
-     * ⭐ A golden over every level (CR3-258, written before its fix). The fix
-     * makes `levelFromXp` read the pre-built XP table instead of re-summing the
-     * curve for every candidate level; these pin today's answers at, just
-     * below and between every threshold, so the faster lookup must agree
-     * exactly.
+     * ⭐ A golden over every level (written before its fix). The fix makes
+     * `levelFromXp` read the pre-built XP table instead of re-summing the curve
+     * for every candidate level; these pin today's answers at, just below and
+     * between every threshold, so the faster lookup must agree exactly.
      */
     describe('levelFromXp agrees with xpForLevel at every level (CR3-258)', () => {
         it('lands exactly on each level at its threshold, and one level lower one XP short', () => {

@@ -30,26 +30,17 @@ import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * ⭐ **The playmat as it is actually drawn** (Free Playmat slice 1.6c-2).
- *
- * It replaced the 6×6 CSS grid of `BoardTile`s. Nothing here knows what a tile
- * is: every Token, hero and flag is drawn **at its own mat point**, keyed by
- * **Token instance id**, in the layers `matLayers.js` sets out. The one
- * tile-shaped thing left on screen is the faint outline of where Tokens may
- * still land (FP-93) — a labelled stopgap that slice 1.6d deletes along with
- * the snapping behind it.
- *
- * ## Which Token the pointer is on is decided once, here
- * Token art is a circle, Tokens may overlap, and a box-shaped hover would let
- * the corner of one steal the pointer from another. So a single `pointermove`
- * on the mat asks the engine (`Flags.tokenAtPoint` — nearest centre, earliest
- * placed on a tie), and the answer is **raised to the front of the Token
- * layer**, which is what puts its own drag, click and right-click listeners
- * under the pointer. Badges reaching outside the art circle keep the hover
- * while the pointer is on them, so a gear badge can still be clicked.
- *
- * The hover pass steps aside entirely while a drag is live: dnd-kit owns the
- * pointer then, and re-ordering Tokens under a drag made the ghost flicker.
+ * The playmat as it is actually drawn. Every Token, hero and flag is drawn at its own mat
+ * point, keyed by Token instance id, in the layers `matLayers.js` sets out.
+ * Which Token the pointer is on is decided once, here. Token art is a circle and Tokens may
+ * overlap, so a box-shaped hover would let the corner of one steal the pointer from another. A
+ * single `pointermove` on the mat asks the engine (`Flags.tokenAtPoint`: nearest centre,
+ * earliest placed on a tie), and the answer is raised to the front of the Token layer, which
+ * puts its own drag, click and right-click listeners under the pointer. Badges reaching
+ * outside the art circle keep the hover while the pointer is on them, so a gear badge can
+ * still be clicked.
+ * The hover pass steps aside entirely while a drag is live: dnd-kit owns the pointer then, and
+ * re-ordering Tokens under a drag made the ghost flicker.
  */
 export const MatBoard = ({
     onInspectToken,
@@ -58,44 +49,39 @@ export const MatBoard = ({
     inspectedHeroId = null,
     inspectedTokenId = null
 }) => {
-    // Dev only (an empty function in production): MatBoard's OWN renders for
-    // the Perf HUD, beside Board.jsx's subtree Profiler (CR3-311).
+    // Dev only (an empty function in production): MatBoard's OWN renders for the Perf HUD,
+    // beside Board.jsx's subtree Profiler.
     usePerfRenderCount('MatBoard');
     const rootRef = useRef(null);
 
-    // How big the mat is right now (slice 1.6d-3). Read through the hook so the
-    // whole board redraws when the Mat Tuner resizes it.
+    // Read through the hook so the whole board redraws when the Mat Tuner resizes it.
     const mat = useMatSize();
 
-    /** The Token the pointer is on, and the hero it is on — both by id. */
     const [hoveredId, setHoveredId] = useState(null);
     const [hoverHeroId, setHoverHeroId] = useState(null);
-    /** The pointer is on a Token's art circle, so every flag lets it through (FB-44). */
+    /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
     const { isDragging } = useActiveDrag();
 
-    // B2.3 (FB-32): disallow mode. Read once here and handed to each Token as
-    // a prop, so a Token holds no subscription of its own for it.
+    // Disallow mode. Read once here and handed to each Token as a prop, so a Token holds no
+    // subscription of its own for it.
     const disallowMode = useDisallowMode();
     const fit = useMatFit() || 1;
 
-    // dnd-kit owns the pointer during a drag, and a Token re-ordering itself
-    // under the ghost made it flicker. Nothing is hovered while dragging.
-    //
-    // CR3-410 (owner ruling, Q3 = A): the drag ghost has pointer-events: none,
-    // so a hero or flag underneath it still gets onMouseEnter/onMouseLeave as
-    // the cursor crosses it — which used to show that hero's reach ring and
-    // force a full MatBoard commit, even though the carried Token would not
-    // land there. `FlagLayer` already rings exactly the flags the Token WOULD
-    // land in (`useTokenDragLanding`); that is the only ring that should show
-    // mid-drag, so hero hover is cleared here and ignored below for the
-    // drag's duration.
+    // dnd-kit owns the pointer during a drag, and a Token re-ordering itself under the ghost
+    // made it flicker. Nothing is hovered while dragging.
+    // The drag ghost has pointer-events: none, so a hero or flag underneath it still gets
+    // onMouseEnter/onMouseLeave as the cursor crosses it, which would show that hero's reach
+    // ring and force a full MatBoard commit even though the carried Token would not land
+    // there. `FlagLayer` already rings exactly the flags the Token WOULD land in
+    // (`useTokenDragLanding`); that is the only ring that should show mid-drag, so hero hover
+    // is cleared here and ignored below for the drag's duration.
     React.useEffect(() => {
         if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); }
     }, [isDragging]);
 
-    // CR3-410: a no-op while dragging, so a hero/flag crossing mid-drag does
-    // not reinstate a stray hover ring (and the commit it would cost).
+    // A no-op while dragging, so a hero/flag crossing mid-drag does not reinstate a stray
+    // hover ring (and the commit it would cost).
     const handleHoverHero = useCallback(
         (id) => { if (!isDragging) setHoverHeroId(id); },
         [isDragging]
@@ -103,13 +89,11 @@ export const MatBoard = ({
 
     /**
      * Every Token on the mat: where it is, and nothing about how it is doing.
-     *
-     * ⭐ **A walking enemy's steps do not redraw the mat** (CR3-008). For a
-     * Token that is walking this tick, `x` is null and `y` is only its place
-     * in the stack (`walkerSortY`), which holds still until it crosses another
-     * Token or flag; its box follows the engine by itself (`MatToken`). So a
-     * step re-renders MatBoard only when it changes who is in front of whom,
-     * or the walk starts, stops or turns.
+     * ⚠️ A walking enemy's steps do not redraw the mat. For a Token that is walking this tick,
+     * `x` is null and `y` is only its place in the stack (`walkerSortY`), which holds still
+     * until it crosses another Token or flag; its box follows the engine by itself
+     * (`MatToken`). So a step re-renders MatBoard only when it changes who is in front of
+     * whom, or the walk starts, stops or turns.
      */
     const tokensRaw = useGameState(
         () => {
@@ -124,8 +108,8 @@ export const MatBoard = ({
                 if (flag) flagYs.push(flag.y);
             }
             return all.map((t, i) => {
-                // B7.1 (TL-16): an enemy walking by its spawner glides from step
-                // to step, facing the way it goes. Null for everything standing still.
+                // An enemy walking by its spawner glides from step to step, facing the way it
+                // goes. Null for everything standing still.
                 const walkFacing = facing[i];
                 if (walkFacing == null) {
                     return { id: t.id, typeId: t.typeId, x: t.x, y: t.y, placedAt: t.placedAt ?? 0, walkFacing };
@@ -152,19 +136,17 @@ export const MatBoard = ({
     );
 
     /**
-     * ⭐ **Every hero on the mat is drawn here, where they really are** (Hero
-     * Movement M1–M2): their body's position from `HeroMotion` — walking,
-     * working beside a Token, or idle beside their flag.
-     * One component per hero in every state, so a hero is never swapped
-     * between layers mid-walk (that swap was M1's jump on reaching the flag).
+     * Every hero on the mat is drawn here, where they really are: their body's position from
+     * `HeroMotion` (walking, working beside a Token, or idle beside their flag). One component
+     * per hero in every state, so a hero is never swapped between layers mid-walk.
      * `HEROES_WALKED` redraws as they step.
      */
     const heroesRaw = useGameState(
         (state) => {
             const roster = state.heroes || [];
             const out = [];
-            // Flag holders in planting order, then heroes with no flag whose
-            // figure is still walking home (M3) — they have a body but no flag.
+            // Flag holders in planting order, then heroes with no flag whose figure is still
+            // walking home: they have a body but no flag.
             const ids = BoardState.heroesOnBoard().map(([heroId]) => heroId);
             for (const [heroId] of BoardState.heroBodies()) if (!ids.includes(heroId)) ids.push(heroId);
             for (const heroId of ids) {
@@ -178,9 +160,9 @@ export const MatBoard = ({
                     heroId,
                     state: status.state,
                     tokenId: worked?.id || null,
-                    // ⭐ CR3-008: no point while moving — the figure follows
-                    // its steps by itself (`MatHero`), so a step redraws
-                    // nothing here. It comes back when they stop.
+                    // No point while moving: the figure follows its steps by itself
+                    // (`MatHero`), so a step redraws nothing here. It comes back when they
+                    // stop.
                     x: body.moving ? null : body.x,
                     y: body.moving ? null : body.y,
                     moving: body.moving,
@@ -188,14 +170,13 @@ export const MatBoard = ({
                     limp: body.limp,
                     name: hero?.name || 'Hero',
                     sprite: hero?.spriteId || hero?.classId || null,
-                    // Not working productively: the Token it holds is stuck.
-                    // Such a hero gets no glow — the red badge says it alone —
-                    // and stands idle instead of swinging (FB-50). The same
-                    // test as the Token's own hit reaction (`strikesLive`).
+                    // Not working productively: the Token it holds is stuck. Such a hero gets
+                    // no glow (the red badge says it alone) and stands idle instead of
+                    // swinging. The same test as the Token's own hit reaction (`strikesLive`).
                     stuck: !!worked && !strikesLive(heroId, worked.alert),
-                    // Fighting: idle, one attack per real attack (FB-49).
+                    // Fighting: idle, one attack per real attack.
                     combat: !!worked && hitsOnAttack(hitSkillOf(getTokenType(worked.typeId))),
-                    // Which alert — the speech bubble says what is wrong (SB-B).
+                    // Which alert; the speech bubble says what is wrong.
                     alert: worked?.alert || null
                 });
             }
@@ -213,7 +194,7 @@ export const MatBoard = ({
     );
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
 
-    /** Every flag's point, in planting order — flags sort with the Tokens (FB-1). */
+    /** Every flag's point, in planting order; flags sort with the Tokens. */
     const flagsRaw = useGameState(
         () => {
             const out = [];
@@ -228,15 +209,12 @@ export const MatBoard = ({
     );
     const flagPoints = useMemo(() => flagsRaw || [], [flagsRaw]);
 
-    // The painted ground. Dormant while terrain is off (FP-10).
+    // The painted ground. Dormant while terrain is off.
     const terrain = useGameState(
         state => (TERRAIN_ENABLED ? state.board?.terrain || NO_TERRAIN : NO_TERRAIN),
         [ENGINE_EVENTS.STATE_CHANGED, BOARD_EVENTS.TILE_CHANGED]
     );
 
-    // ---------------------------------------------------------------------
-    // What the pointer is on
-    // ---------------------------------------------------------------------
 
     const handlePointerMove = useCallback((e) => {
         if (typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active')) return;
@@ -249,13 +227,10 @@ export const MatBoard = ({
             return;
         }
         /**
-         * ⭐ **Flags have no hitbox over Tokens** (B5, FB-44, TL-17). A point on a
-         * Token's art circle is that Token's, even when a flag is drawn in front
-         * of it: the Token is hovered (and so raised to the front), and every
-         * flag lets the pointer through until it leaves the circle. A flag is
-         * grabbed by the part of it standing over bare mat. ⛔ This reverses the
-         * 2026-09-21 ruling that a flag's round area keeps clicks meant for a
-         * Token just behind it.
+         * Flags have no hitbox over Tokens. A point on a Token's art circle is that Token's,
+         * even when a flag is drawn in front of it: the Token is hovered (and so raised to the
+         * front), and every flag lets the pointer through until it leaves the circle. A flag
+         * is grabbed by the part of it standing over bare mat.
          */
         const point = pointerToMat({ x: e.clientX, y: e.clientY }, el.getBoundingClientRect());
         let id = point ? (Flags.tokenAtPoint(point)?.id ?? null) : null;
@@ -276,29 +251,21 @@ export const MatBoard = ({
 
     const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); }, []);
 
-    // ---------------------------------------------------------------------
-    // What the player can do to a Token
-    // ---------------------------------------------------------------------
 
     const handleRecallHero = useCallback((heroId) => {
         announce(Placement.recallHeroById(heroId));
     }, []);
 
-    // B2.3: a click on a Token in disallow mode (a Token no hero works: nothing).
+    // A click on a Token in disallow mode (a Token no hero works: nothing).
     const handleFlipDisallow = useCallback((instanceId) => { flipDisallowed(instanceId); }, []);
 
-    // Right-click on a Token no hero works does nothing since the Vault went
-    // (Token Lifecycle 9.3); it used to deposit the Token there (FP-45).
 
-    // The green plus that sent an idle hero to a Token went with FB-6 (Token
-    // Lifecycle feedback Q2): heroes find work through their flags.
 
-    // Only a Token that acts on or depends on its neighbours shows a ring
-    // (owner, 2026-09-21) — `showsNearRing`.
+    // Only a Token that acts on or depends on its neighbours shows a ring (`showsNearRing`).
     const hoveredCentre = useMemo(() => {
         const t = hoveredId ? tokens.find(k => k.id === hoveredId) : null;
         if (!t || !showsNearRing(t.typeId)) return null;
-        // A walker's own point is not in `tokens` (CR3-008): read it live.
+        // A walker's own point is not in `tokens`: read it live.
         const at = t.x == null ? BoardState.getTokenById(t.id) : t;
         return at ? { x: at.x, y: at.y } : null;
     }, [hoveredId, tokens]);
@@ -310,13 +277,13 @@ export const MatBoard = ({
     }, [heroes]);
 
     /**
-     * ⭐ **Who is in front of whom** (feedback Q3): Tokens and flags sorted
-     * together (FB-1); a worked Token, with its hero, in front of every Token
-     * and flag at rest (FB-2); the hovered Token frontmost. `matLayers.js`.
+     * Who is in front of whom: Tokens and flags sorted together; a worked Token, with its
+     * hero, in front of every Token and flag at rest; the hovered Token frontmost. See
+     * `matLayers.js`.
      */
     // Keyed by the worked ids, not the heroes: heroes redraw every walking step.
     const workedKey = [...workedBy.keys()].sort().join('|');
-    // The same object when no z changed (CR3-303), so `flagZ` is a stable prop.
+    // The same object when no z changed, so `flagZ` is a stable prop.
     const lastOrderRef = useRef(null);
     const order = useMemo(() => {
         const next = matStackOrder({ tokens, flags: flagPoints, workedIds: workedKey ? workedKey.split('|') : [], hoveredId });
@@ -335,11 +302,10 @@ export const MatBoard = ({
             onPointerMove={handlePointerMove}
             onPointerLeave={clearHover}
         >
-            {/* 0 — ⭐ the mat itself (FP-96): a plain darker surface with a soft
-                rounded border. A placeholder until the owner gives it art — and
-                with free placement (1.6d) the only edge there is, since a Token
-                may now stand anywhere on it. The practice outline went with the
-                snapping it existed to explain. */}
+            {/**
+             * 0: the mat itself, a plain darker surface with a soft rounded border. With free
+             * placement it is the only edge there is, since a Token may stand anywhere on it.
+             */}
             <div
                 data-mat-surface
                 className="absolute left-0 top-0 pointer-events-auto"
@@ -356,8 +322,10 @@ export const MatBoard = ({
 
             {TERRAIN_ENABLED && <TerrainCanvas terrain={terrain} seed={0} />}
 
-            {/* 10+ — Tokens, the heroes on them, and what is written on them;
-                flags and idle heroes sort in among them (FlagLayer, below). */}
+            {/**
+             * 10+: Tokens, the heroes on them, and what is written on them; flags and idle
+             * heroes sort in among them (FlagLayer, below).
+             */}
             {ordered.map(t => (
                 <MatToken
                     key={t.id}
@@ -380,7 +348,7 @@ export const MatBoard = ({
             ))}
 
             {heroes.map(h => {
-                // A moving hero's point is MatHero's own (CR3-008).
+                // A moving hero's point is MatHero's own.
                 const place = h.x == null ? { left: null, top: null } : heroPlacement(h);
                 const animState = heroAnimationState({
                     moving: h.moving, working: h.state === 'working', stuck: h.stuck, combat: h.combat
@@ -412,16 +380,16 @@ export const MatBoard = ({
                 );
             })}
 
-            {/* 750 — news with no Token left to sit on. */}
+            {/* 750: news with no Token left to sit on. */}
             <MatPointAlerts />
 
-            {/* 760 — the Near ring (FP-64). Flag radius rings are FlagLayer's. */}
+            {/* 760: the Near ring. Flag radius rings are FlagLayer's. */}
             <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />
 
-            {/* 800 — loot on the floor. */}
+            {/* 800: loot on the floor. */}
             <SpriteLayerView />
 
-            {/* Flags, sorted in among the Tokens (FB-1), and their rings (760). */}
+            {/* Flags, sorted in among the Tokens, and their rings (760). */}
             <FlagLayer
                 flagZ={order.flagZ}
                 inspectedHeroId={inspectedHeroId}
@@ -434,9 +402,10 @@ export const MatBoard = ({
             {/* 860 — hero speech bubbles, above every hero. */}
             <HeroBubbleLayer heroes={heroes} />
 
-            {/* B2.3 (FB-32): disallow mode's red dashed edge and hint, above
-                everything and never in the pointer's way. Sized against the
-                mat's fit so they read the same at any zoom. */}
+            {/**
+             * Disallow mode's red dashed edge and hint, above everything and never in the
+             * pointer's way. Sized against the mat's fit so they read the same at any zoom.
+             */}
             {disallowMode && (
                 <div
                     data-disallow-edge
@@ -463,24 +432,20 @@ export const MatBoard = ({
     );
 };
 
-/** Disallow mode's edge and hint (B2.3): above the speech bubbles (`MAT_Z.HERO_BUBBLE`, 860). */
+/**
+ * Disallow mode's edge and hint: above the speech bubbles (`MAT_Z.HERO_BUBBLE`, 860).
+ */
 const DISALLOW_EDGE_Z = 900;
 
 /** Shared empty terrain, so a dormant board's selector returns a stable value. */
 const NO_TERRAIN = Object.freeze({});
 
 /**
- * ⭐ Where a hero's 64 × 128 box goes, in mat units (FP-77, D-266).
- *
- * * **Working a 1×1 Token** — half the pair offset to the left of its centre;
- *   the Token slides the same distance right, so the two stand 48 u apart.
- * * **Working a 2×2 Token** — down and left, standing in front of the art
- *   rather than beside it; a 2×2 is big enough to stand on.
+ * Where a hero's 64 × 128 box goes, in mat units: centred on the hero's own point. A working
+ * hero's point is already beside their Token (`HeroMotion.standingSpot`), so there is no
+ * per-state offset.
  */
 export function heroPlacement({ x, y }) {
-    // Centred on the hero's own point (Hero Movement M1). A working hero's
-    // point is already beside their Token (`HeroMotion.standingSpot`, HM-2),
-    // so there is no per-state offset any more (D-266's pairing went).
     return heroBoxAt({ x, y });
 }
 

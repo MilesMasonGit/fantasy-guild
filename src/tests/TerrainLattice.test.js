@@ -9,15 +9,6 @@ import {
 
 /**
  * Terrain P2 — the subtile lattice.
- *
- * Two things are worth pinning here and they pull against each other. The
- * lattice must **line up exactly** with the board it draws on, which is
- * arithmetic and can be asserted precisely. And it must be **stable** — the
- * same board resolving the same way on every redraw and every reload — which is
- * the property that would rot silently if anyone reached for `Math.random`.
- *
- * What the edges actually look like is a judgement call and is not asserted;
- * the numbers that control it are tuning constants and are expected to move.
  */
 
 /** A board where every tile carries the same terrain, painted in index order. */
@@ -289,17 +280,6 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
 describe('⚠️ Edge strips — the geometry the renderer draws', () => {
     /**
      * These exist because of a bug that no other test could see.
-     *
-     * The renderer clipped each strip to a rectangle in the *loser's* subtile
-     * and then drew the texture positioned over the *winner's* subtile. Those
-     * two are nearby and never overlap, so the clip threw away every draw and
-     * the blending did nothing at all — through three commits and two rounds of
-     * "verified in the running game", because the ownership model produces
-     * raggedness at subtile resolution that looks like blending at a glance.
-     *
-     * The data was right the whole time. Only the drawing was wrong, and the
-     * drawing was the one part that lived inside a canvas where nothing could
-     * assert on it. So the geometry now comes out as data.
      */
     const strips = (axis) => edgeStrips(3, 4, axis, 'forest', 'shore', 4242);
 

@@ -11,8 +11,6 @@ import { subtileArtPx } from '../systems/board/TerrainLattice.js';
  * Terrain vocabulary: every terrain type names real art.
  *
  * Terrain is switched off (`TERRAIN_ENABLED = false`) since the free playmat.
- * The tile-era table saying which Map or Token paints which terrain
- * (`terrainAssignments.js`) was deleted 2026-10-06 with its tests (owner).
  */
 
 const projectRoot = resolve(__dirname, '../..');

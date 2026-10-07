@@ -11,25 +11,9 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import { isSmallToken } from '../config/matGeometry.js';
 
 /**
- * B8.1 — the CMS models **`artSize`** (TL-19, FB-18) before any content uses it
- * (roadmap v1 §0.3: Sync destroys what the CMS does not carry). Slice B8.2 then
- * sets the saplings and the sprout small through the CMS.
- *
- * ## How the field is written
- * Only when Small: `artSize: 'small'` at the top of the Token record. Standard
- * removes it (the key is left `undefined`, which JSON drops), so a standard
- * Token's record is exactly what it was — a missing field is standard, which
- * is what the game reads (`isSmallToken`). The store shallow-merges patches and
- * Recalculate / Sync never rebuild a Token field by field, so the key rides
- * through untouched. Only a 1×1 may be small: the control is disabled on a 2×2
- * and switching Grid Size to 2×2 clears it.
- *
- * B8.2 shipped the three small Tokens (`SHIPPED_SMALL`); the round-trip and
- * editor tests use a standard 1×1 (`STANDARD`) so they still start standard.
- *
- * Nothing here touches `data/`: the files are READ, loaded into the store the
- * way `/api/load-game-data` builds its payload, and the sync payload is built
- * in memory with `syncFiles` and compared. No request is sent.
+ * B8.1 — the CMS models **`artSize`** before any content uses it (roadmap v1
+ * §0.3: Sync destroys what the CMS does not carry). Slice B8.2 then sets the
+ * saplings and the sprout small through the CMS.
  */
 const DATA = path.resolve(__dirname, '../../data');
 const FILES = ['items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json', 'effects.json'];

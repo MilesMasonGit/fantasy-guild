@@ -30,16 +30,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ Token Lifecycle slice 9.5 — the tutorial chain, walked through the REAL
  * systems on the SHIPPED content.
- *
- * Every step is completed by doing the thing it asks — recruiting through the
- * Guild Hall board, planting a flag, a hero working a Token until the engine
- * publishes the cycle, collecting loot, buying at the Shop, building on a
- * Foundation — never by publishing an event by hand. The one exception is the
- * Item Bank step, whose only publisher is a React hook (`useUIModals`), so the
- * test publishes exactly what that hook publishes.
- *
- * Items the chain needs are put in the Bank directly: this pins that each
- * step's EVENT fires; whether a new game can afford the chain is slice 10.1.
  */
 
 /** Spots on the mat, far enough apart that one flag reaches one Token. */
@@ -68,7 +58,7 @@ const complete = (id) => (quest(id)?.currentCount || 0) >= (quest(id)?.requiredC
 
 /**
  * The step is offered, finishes, and pays out. Since B6.1 it is the only
- * tutorial quest Token on the mat (FB-42), and claiming it brings the next.
+ * tutorial quest Token on the mat, and claiming it brings the next.
  */
 function claim(id) {
     expect(quest(id), `${id} is offered`).toBeTruthy();
@@ -98,8 +88,8 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     GameState.state.inventory.maxSlots = 50;
-    // Quest Tokens are spawned by the Guild Hall (B6.1, TL-18), so the mat
-    // needs one — in the middle, clear of every SPOT's flag.
+    // Quest Tokens are spawned by the Guild Hall (B6.1), so the mat needs
+    // one — in the middle, clear of every SPOT's flag.
     BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 600);
     QuestManager.init();
 });
@@ -158,7 +148,7 @@ describe('⭐ the tutorial chain, step by step, through the real systems (9.5)',
         expect(onMat('token_workbench')).toHaveLength(1);
         claim('tut_workbench');
 
-        // 9. Craft Charcoal. A new Workbench starts with no recipe (TL-15), so
+        // 9. Craft Charcoal. A new Workbench starts with no recipe, so
         // nothing is crafted until the player sets it to Charcoal.
         give('item_oak_wood', 10);
         const workbench = onMat('token_workbench')[0];

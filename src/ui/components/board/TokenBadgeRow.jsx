@@ -13,44 +13,36 @@ import { onFrame } from './frameClock.js';
 
 const NO_MISSING = Object.freeze({ type: null, items: [] });
 
-/** How many visible steps the cycle ring sweeps in one cycle (CR3-351): 0.9° each. */
+/** How many visible steps the cycle ring sweeps in one cycle: 0.9° each. */
 const RING_STEPS = 400;
 
 /**
- * ⭐ **TokenBadgeRow — a Token's ring row** (TL-22, B1.2). It replaced the
- * progress bar (`TokenProgressBar`, TP-2 / TP-4) and the hover charge chip.
- *
- * Fixed order: **cycle, charges, then the Token's own ring** — enemy HP, or a
- * standing ring (B1.3): a spawner's count (`extraRings`) or a turn countdown
- * (`readTurn`). A Token cannot both spawn and turn.
- *
- * * **Cycle** — while a hero works the Token and it is not a fight. Fills as
- *   the cycle runs; the number is seconds left, rounded up. Smooth between
- *   engine ticks (rAF interpolation, as the bar did) and back to empty on
- *   `CYCLE_COMPLETE`. Blocked (`workedAlertOf`, the same test the centre mark
- *   uses, B1.1): grey, frozen, no number.
- * * **Charges** — while a hero works the Token, and on hover of any Token
- *   with a finite count. Empties as charges go. Unlimited: no ring.
- * * **HP** — in a fight (`PROGRESS` with `combat: true`). Empties as the
- *   enemy's HP falls. No cycle ring then.
- * * **Spawner** (FB-5) and **turn** (FB-14, TL-12) — standing facts, shown
- *   always, hero or not, hovered or not (owner, B1 visibility "Mixed"). The
- *   spawner ring fills to its cap (`spawnerRing`, passed in `extraRings`); the
- *   turn ring empties toward the next roll and polls its own clock
- *   (`TurnRing`), so the poll never re-renders this row or the MatToken.
- * * While the Token is dragged: no row at all, standing rings included.
- * * Nothing to show: no row at all.
- *
- * The row is positioned by `MatToken` (`ringRowOffset`), in the Token's badge
- * overlay so it draws in front of the hero (MatToken's "Two boxes" note).
- *
- * ## The subscriptions are keyed on the Token and nothing else (CR2-168 item 1)
- * Carried over from the bar. Hovering, the alert, the hero and the fresh
- * `token` object the mat builds on every state change must not tear down the
- * subscriptions or cancel the animation frame: everything the handlers read
- * lives in `liveRef`. Through `tokenEvents.js`, so ~80 rows share one bus
- * subscription per event type. The frame loop runs only while a cycle is
- * live — never for an idle, blocked or fought Token.
+ * TokenBadgeRow: a Token's ring row.
+ * Fixed order: **cycle, charges, then the Token's own ring**: enemy HP, or a standing ring (a
+ * spawner's count, `extraRings`, or a turn countdown, `readTurn`). A Token cannot both spawn
+ * and turn.
+ * - **Cycle**: while a hero works the Token and it is not a fight. Fills as the cycle runs;
+ * the number is seconds left, rounded up. Smooth between engine ticks (rAF interpolation) and
+ * back to empty on `CYCLE_COMPLETE`. Blocked (`workedAlertOf`, the same test the centre mark
+ * uses): grey, frozen, no number.
+ * - **Charges**: while a hero works the Token, and on hover of any Token with a finite count.
+ * Empties as charges go. Unlimited: no ring.
+ * - **HP**: in a fight (`PROGRESS` with `combat: true`). Empties as the enemy's HP falls. No
+ * cycle ring then.
+ * - **Spawner** and **turn**: standing facts, shown always, hero or not, hovered or not. The
+ * spawner ring fills to its cap (`spawnerRing`, passed in `extraRings`); the turn ring empties
+ * toward the next roll and polls its own clock (`TurnRing`), so the poll never re-renders this
+ * row or the MatToken.
+ * - While the Token is dragged: no row at all, standing rings included.
+ * - Nothing to show: no row at all.
+ * The row is positioned by `MatToken` (`ringRowOffset`), in the Token's badge overlay so it
+ * draws in front of the hero.
+ * The subscriptions are keyed on the Token and nothing else. Hovering, the alert, the hero and
+ * the fresh `token` object the mat builds on every state change must not tear down the
+ * subscriptions or cancel the animation frame: everything the handlers read lives in
+ * `liveRef`. They go through `tokenEvents.js`, so every row shares one bus subscription per
+ * event type. The frame loop runs only while a cycle is live, never for an idle, blocked or
+ * fought Token.
  */
 export const TokenBadgeRow = ({
     instanceId = null,
@@ -66,8 +58,8 @@ export const TokenBadgeRow = ({
     const hasHero = !!token?.heroId;
     const usesRemaining = token?.usesRemaining ?? null;
 
-    // Blocked exactly when the centre mark shows a worked problem (B1.1).
-    // ⚠️ The live instance, not `token`: the slim projection has no recipe.
+    // Blocked exactly when the centre mark shows a worked problem. ⚠️ The live instance, not
+    // `token`: the slim projection has no recipe.
     const missing = useMemo(
         () => {
             if (!hasHero || !instanceId) return NO_MISSING;
@@ -97,7 +89,7 @@ export const TokenBadgeRow = ({
         let lastElapsed = 0;
         let cycleTime = null;
         let lastTimestamp = performance.now();
-        // The shared frame clock's unsubscribe while the sweep runs (CR3-011).
+        // The shared frame clock's unsubscribe while the sweep runs.
         let offClock = null;
 
         const stop = () => {
@@ -106,11 +98,10 @@ export const TokenBadgeRow = ({
             offClock = null;
         };
 
-        // ⭐ CR3-351 (R6 rule 3): write the ring only when a pixel would move.
-        // The sweep is quantised to RING_STEPS a cycle (0.9° — well under a
-        // pixel at any mat size), so a 16 s cycle writes ~25 times a second
-        // instead of once every display frame. The seconds and a remounted
-        // ring always write.
+        // Write the ring only when a pixel would move. The sweep is quantised to RING_STEPS a
+        // cycle (0.9°, well under a pixel at any mat size), so a long cycle writes far fewer
+        // times a second than once per display frame. The seconds and a remounted ring always
+        // write.
         let lastStep = null;
         let lastText = null;
         let lastRoot = null;
@@ -217,7 +208,7 @@ export const TokenBadgeRow = ({
             applyCurrentRef.current = null;
             unsubs.forEach(u => u());
         };
-        // ⚠️ `instanceId` ONLY (CR2-168) — everything else is read from refs.
+        // ⚠️ `instanceId` ONLY — everything else is read from refs.
     }, [instanceId]);
 
     useEffect(() => {

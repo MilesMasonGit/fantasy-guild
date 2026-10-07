@@ -1,4 +1,4 @@
-// Fantasy Guild — Flags: heroes choose their own work (Free Playmat slice 1.4b)
+// Flags: heroes choose their own work
 
 import { EventBus } from '../core/EventBus.js';
 import { GameState } from '../../state/GameState.js';
@@ -21,105 +21,78 @@ import * as PromotionSystem from '../hero/PromotionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * Flags — **a hero plants a flag, and works anything they can around it**
- * (roadmap §4 slices 1.4 and 1.5b, FP-20…FP-35, FP-47…FP-49, FP-57, FP-60,
- * FP-61, FP-68…FP-72, FP-74, FP-80).
+ * Flags: a hero plants a flag, and works anything they can around it.
  *
- * The saved half (where each flag stands) and the runtime claim records live in
- * `BoardState`; each hero's rules live on the hero (`FlagRules`, FPP-17). This
- * file is the behaviour: which Token a flag claims, when it lets go, and what
- * it says about Tokens it passed over.
+ * The saved half (where each flag stands) and the runtime claim records live in `BoardState`; each
+ * hero's rules live on the hero (`FlagRules`). This file is the behaviour: which Token a flag
+ * claims, when it lets go, and what it says about Tokens it passed over.
  *
- * ## A flag (FP-23, FP-57, FP-71)
- * A point on the mat and the global **flag radius** (Mat Tuner, default 164 u —
- * FP-75). A flag has **no skill of its own**: the hero works every skill they
- * hold, plus combat, shaped by their rules (allowed, priority 1–5). One hero per
- * Token (FP-25). The hero appears at the Token they work.
+ * A flag is a point on the mat and the global flag radius (Mat Tuner). A flag has no skill of its
+ * own: the hero works every skill they hold, plus combat, shaped by their rules (allowed, priority
+ * 1-5). One hero per Token. The hero appears at the Token they work.
  *
- * ## Choosing (phase 2 of `assign`)
- * First any **Promotion Token or Guild Hall under the flag's point** (FP-34,
- * FP-61, FPP-10) — the radius and the rules do not apply to them. Then every
- * worked Token and enemy whose centre is within the radius, ordered by
- * **priority (1 first), then distance, then the earlier-placed Token** (FP-72,
- * FP-79; `placedAt` replaced "lower anchor" in slice 1.6b). Each
- * candidate's rule is its Token's skill, or `FlagRules.FIGHT` for an enemy.
- * For each, in order (cheap checks before `WorkCheck`):
- *  1. **the player disallowed it** — `disallowed` (FP-35);
- *  2. a worked Token that **names no skill** — `no_skill` (FP-47);
- *  3. the hero **lacks that skill / cannot fight** — `unskilled` (FP-60);
- *  4. the hero's **rule for it is off** — `rule_off` (FPP-18);
- *  5. **another flag already holds it** — `claimed` (FP-25);
- *  6. a Promotion Token that would not train this hero — `same_job` or its gate
- *     reason, so a hero who has just accepted goes back to work (PR-8);
- *  7. the shared `WorkCheck` says it cannot run — skipped with that reason
- *     (FP-48: level too low, missing inputs, no recipe, charges);
- *  8. otherwise **claimed**.
+ * Choosing (phase 2 of `assign`): first any Promotion Token or Guild Hall under the flag's point
+ * (the radius and the rules do not apply to them). Then every worked Token and enemy whose centre
+ * is within the radius, ordered by priority (1 first), then distance, then the earlier-placed
+ * Token. Each candidate's rule is its Token's skill, or `FlagRules.FIGHT` for an enemy. For each,
+ * in order (cheap checks before `WorkCheck`):
+ * 1. the player disallowed it: `disallowed`;
+ * 2. a worked Token that names no skill: `no_skill`;
+ * 3. the hero lacks that skill / cannot fight: `unskilled`;
+ * 4. the hero's rule for it is off: `rule_off`;
+ * 5. another flag already holds it: `claimed`;
+ * 6. a Promotion Token that would not train this hero: `same_job` or its gate reason, so a hero who
+ * has just accepted goes back to work;
+ * 7. the shared `WorkCheck` says it cannot run: skipped with that reason (level too low, missing
+ * inputs, no recipe, charges);
+ * 8. otherwise claimed.
  *
- * Nothing claimable → retry in a second of game time (or sooner, when the board
- * changes — see "dirty").
+ * Nothing claimable: retry in a second of game time (or sooner, when the board changes: see dirty).
  *
- * ## Keeping a claim (phase 1) — sticky (FP-57)
- * A claim is **kept while its Token is workable, wherever that Token now is**:
- * a moved Token carries its hero, even outside the radius (FP-68). It is let go
- * when the Token stops being eligible, or the hero can no longer work it
- * (skill, or its rule switched off), or — for a fixable problem (inputs,
- * charges, no recipe) — **only once another Token in range can run** (FPP-1),
- * with one notification (FP-69, FPP-5).
+ * Keeping a claim (phase 1) is sticky: a claim is kept while its Token is workable, wherever that
+ * Token now is, so a moved Token carries its hero, even outside the radius. It is let go when the
+ * Token stops being eligible, or the hero can no longer work it (skill, or its rule switched off),
+ * or, for a fixable problem (inputs, charges, no recipe), only once another Token in range can run,
+ * with one notification.
  *
- * ## ⭐ Better work appears (FP-80)
- * A hero never leaves **mid-cycle** for a higher priority. When the hero's
- * cycle completes (a kill, for a fight), the next pass looks again, and they
- * switch only to a **strictly better** priority they can claim. The finished
- * cycle has already zeroed the Token, so nothing is lost.
+ * Better work appears: a hero never leaves mid-cycle for a higher priority. When the hero's cycle
+ * completes (a kill, for a fight), the next pass looks again, and they switch only to a strictly
+ * better priority they can claim. The finished cycle has already zeroed the Token, so nothing is
+ * lost.
  *
- * If the claimed Token is gone from the board:
- *  a. the same kind of Token stands at its last spot, unclaimed → claim that;
- *  b. otherwise let go, and choose again this very pass.
- * (FP-70's wait for a Manager's restock went with the Managers, Token
- * Lifecycle 9.2, SP-55: spawners replace used-up Tokens now.)
+ * If the claimed Token is gone from the board: (a) the same kind of Token stands at its last spot,
+ * unclaimed: claim that; (b) otherwise let go, and choose again this very pass.
  *
- * ## ⚠️ Leaving resets progress (FP-68, D-131)
- * Every release — moving on, a re-plant, a recall — zeroes the released Token's
- * cycle. A moved Token that keeps its hero keeps its progress.
+ * ⚠️ Leaving resets progress: every release (moving on, a re-plant, a recall) zeroes the released
+ * Token's cycle. A moved Token that keeps its hero keeps its progress.
  *
- * ## ⚠️ No rebuild storms
- * `HERO_MOVED` makes `TileModifiers` rebuild two neighbourhoods, so it is
- * published **only when a claim actually changes** (and once per plant, furl
- * or lapsed pin). A stable board publishes none (`Flags.test.js` runs 100 ticks).
+ * ⚠️ No rebuild storms: `HERO_MOVED` makes `TileModifiers` rebuild two neighbourhoods, so it is
+ * published only when a claim actually changes (and once per plant, furl or lapsed pin). A stable
+ * board publishes none (`Flags.test.js` runs 100 ticks).
  *
- * ## ⭐ Pinned flags (B5, FB-45, TL-17)
- * A flag the player **drops onto a Token** (`plant(…, { pin: true })`, the
- * drop route only) is **pinned** to it — `flag.pinnedTo` is that Token's
- * instance id — and the hero works **only that Token**: the radius, the
- * priorities, other Tokens, enemies they would seek and anything under the
- * flag's point are all ignored (`evaluate`). ⚠️ Replaces FP-49 ("targeting is
- * not its own system") for a drop on a Token.
+ * Pinned flags: a flag the player drops onto a Token (`plant(…, { pin: true })`, the drop route
+ * only) is pinned to it (`flag.pinnedTo` is that Token's instance id) and the hero works only that
+ * Token: the radius, the priorities, other Tokens, enemies they would seek and anything under the
+ * flag's point are all ignored (`evaluate`).
+ * - Only a Token the hero can work is pinned (`pinRefusal`): a worked Token or an enemy, not
+ * disallowed, naming a skill, held at the level it asks, with the hero's rule on. A spawner (or
+ * anything else no hero works; promotion Tokens and the Guild Hall keep their own under-the-flag
+ * rule) is silently a normal area flag. A skill or level refusal plants a normal area flag at the
+ * drop point and publishes `PIN_REFUSED`, which the hero's speech bubble says. A fixable problem
+ * (inputs, charges, no recipe) does not refuse: the hero can work it once it is fixed.
+ * - While pinned the flag's point is the Token's centre: `BoardState` moves it with the Token, so a
+ * moved Token carries its flag and the hero walks after it.
+ * - When the pinned Token leaves the mat (used up, removed, binned, or turned into something else:
+ * a transform is a fresh instance, so a tree becoming a stump counts) the pin lapses at the start
+ * of the next `assign`: the flag stays at the Token's last spot as a normal area flag and the hero
+ * chooses again that same pass. Never re-pinned by itself.
+ * - A pin whose Token is still there but can no longer be worked (disallowed later, a rule switched
+ * off, another hero on it) is kept: the hero waits by it, and the flag's hover says why.
  *
- * * Only a Token the hero **can work** is pinned (`pinRefusal`): a worked
- *   Token or an enemy, not disallowed, naming a skill, held at the level it
- *   asks, with the hero's rule on. A **spawner** (or anything else no hero
- *   works — promotion Tokens and the Guild Hall keep their own under-the-flag
- *   rule) is silently a normal area flag. A skill or level refusal plants a
- *   normal area flag at the drop point and publishes `PIN_REFUSED`, which the
- *   hero's speech bubble says (amends FP-60). A **fixable** problem (inputs,
- *   charges, no recipe) does not refuse: the hero can work it once it is fixed.
- * * While pinned the flag's point **is the Token's centre**: `BoardState`
- *   moves it with the Token, so a moved Token carries its flag and the hero
- *   walks after it (B5 pin follows).
- * * **When the pinned Token leaves the mat** — used up, removed, binned, or
- *   turned into something else (a transform is a fresh instance, so a tree
- *   becoming a stump counts) — the pin lapses at the start of the next
- *   `assign`: the flag stays at the Token's last spot as a normal area flag and
- *   the hero chooses again that same pass (TL-17: never re-pinned by itself).
- * * A pin whose Token is still there but can no longer be worked (disallowed
- *   later, a rule switched off, another hero on it) is **kept**: the hero waits
- *   by it, and the flag's hover says why.
- *
- * ## ⭐ Attacked heroes fight back (B7.2, TL-24)
- * A hostile enemy (`Hostiles.js`) attacks a hero through {@link ambush}: the
- * hero drops their work and claims that enemy, and keeps it whatever their
- * Fight rule or pin says until the kill or the enemy is gone. The rules here
- * still govern only what a hero *seeks*.
+ * Attacked heroes fight back: a hostile enemy (`Hostiles.js`) attacks a hero through {@link
+ * ambush}: the hero drops their work and claims that enemy, and keeps it whatever their Fight rule
+ * or pin says until the kill or the enemy is gone. The rules here still govern only what a hero
+ * seeks.
  */
 
 /** How long a flag with nothing to do waits before looking again, in game ms. */
@@ -127,35 +100,34 @@ export const RETRY_MS = 1000;
 
 /** Skip reasons beyond the runner's `ALERT` vocabulary. */
 export const SKIP = Object.freeze({
-    /** The Token names no skill, so no flag works it (FP-47). */
+    /** The Token names no skill, so no flag works it. */
     NO_SKILL: 'no_skill',
-    /** Another hero's flag already holds it (FP-25). */
+    /** Another hero's flag already holds it. */
     CLAIMED: 'claimed',
-    /** The player marked it "heroes may not work this" (FP-35). */
+    /** The player marked it "heroes may not work this". */
     DISALLOWED: 'disallowed',
-    /** A Promotion Token offering the job the hero already holds (PR-8). */
+    /** A Promotion Token offering the job the hero already holds. */
     SAME_JOB: 'same_job',
-    /** The hero's own rule for this skill (or Fight) is switched off (FPP-18). */
+    /** The hero's own rule for this skill (or Fight) is switched off. */
     RULE_OFF: 'rule_off'
 });
 
 /**
- * Whether the player has marked this Token disallowed (FP-35).
+ * Whether the player has marked this Token disallowed.
  *
- * ⚠️ **Stops hero work and nothing else.** The Token's own rules (Provides,
- * triggers) never read this. Saved on the
- * instance, so it survives a reload and a move.
+ * ⚠️ Stops hero work and nothing else. The Token's own rules (Provides, triggers) never read this.
+ * Saved on the instance, so it survives a reload and a move.
  */
 export function isDisallowed(instance) {
     return instance?.disallowed === true;
 }
 
-/** Fixable reasons — the ones that keep a red badge and earn a notice (FP-69). */
+/** Fixable reasons: the ones that keep a red badge and earn a notice. */
 export const FIXABLE = WorkCheck.FIXABLE;
 
 /**
- * The live flag radius, in mat units: the Mat Tuner's base (FP-65/66) plus the
- * Guild Hall's Scouting Flags upgrade (FP-23, `progress.flagRadiusBonus`).
+ * The live flag radius, in mat units: the Mat Tuner's base plus the Guild Hall's Scouting Flags
+ * upgrade (`progress.flagRadiusBonus`).
  */
 export function flagRadius() {
     const bonus = GameState.state?.progress?.flagRadiusBonus || 0;
@@ -175,10 +147,6 @@ export function flagReaches(flag, point) {
 
 const rt = () => BoardState.flagRuntime();
 
-// ---------------------------------------------------------------------------
-// Pins (B5, FB-45, TL-17)
-// ---------------------------------------------------------------------------
-
 /** The instance id `heroId`'s flag is pinned to, or null (an area flag). */
 export function pinnedIdOf(heroId) {
     const id = BoardState.flagOf(heroId)?.pinnedTo;
@@ -197,17 +165,12 @@ export function markDirty() {
     if (r) r.dirty = true;
 }
 
-// ---------------------------------------------------------------------------
-// Small rules
-// ---------------------------------------------------------------------------
-
 /** Batching depth: while > 0, claim changes do not announce themselves. */
 let quiet = 0;
 
 /**
- * A `HERO_MOVED` payload for `heroId`: the Token they work (`instanceId`, or
- * null) and the mat point they are drawn at (`x`, `y`, absent in the Dock).
- * By instance id and point since slice 1.6b.
+ * A `HERO_MOVED` payload for `heroId`: the Token they work (`instanceId`, or null) and the mat
+ * point they are drawn at (`x`, `y`, absent in the Dock).
  */
 export function heroMovedPayload(heroId, extra = {}) {
     const point = BoardState.displayPointOf(heroId);
@@ -230,8 +193,8 @@ function announceMoved(heroId) {
  * out — which is why it can be this cheap on the chooser's hot path.
  */
 function hasWorkSkill(def) {
-    // `workConfigOf`: a Foundation is worked with its `foundation.skill`
-    // though it authors no `config` (Token Lifecycle 6.1).
+    // `workConfigOf`: a Foundation is worked with its `foundation.skill` though it authors no
+    // `config`.
     const skill = workConfigOf(def)?.skill;
     return typeof skill === 'string' && skill.trim() !== '';
 }
@@ -239,11 +202,10 @@ function hasWorkSkill(def) {
 /**
  * 'enemy' | 'promotion' | 'hall' | 'work' | null (nothing a hero works).
  *
- * ⚠️ **'hall' is a provisional exemption (1.4b), awaiting a ruling.** The Guild
- * Hall's work cycle is not authored: `GuildUpgradeManager` writes it (the
- * Wishing Well's water) with no skill, so strict FP-47 would silently stop the
- * water. It is treated like a Promotion Token instead — worked only when a flag
- * is planted on it, whatever the flag's skill.
+ * ⚠️ 'hall' is a provisional exemption. The Guild Hall's work cycle is not authored:
+ * `GuildUpgradeManager` writes it (the Wishing Well's water) with no skill, so requiring a skill
+ * would silently stop the water. It is treated like a Promotion Token instead: worked only when a
+ * flag is planted on it, whatever the flag's skill.
  */
 function kindOf(instance, def) {
     if (BoardCombat.isEnemyToken(instance)) return 'enemy';
@@ -256,12 +218,7 @@ function kindOf(instance, def) {
 /** Kinds worked only when the flag's point is on them, ignoring skill and radius. */
 const UNDER_POINT = new Set(['promotion', 'hall']);
 
-/**
- * Whether a mat point sits on a Token — inside its **art circle** (1×1: 64 u,
- * 2×2: 144 u from its centre, a small 1×1 32 u — `matGeometry.artRadiusOf`,
- * TL-19 / B8.1). Slice 1.6b; it was the Token's
- * tiles plus their gaps.
- */
+/** Whether a mat point sits on a Token: inside its art circle (`matGeometry.artRadiusOf`). */
 export function pointOnToken(instance, point) {
     const centre = centreOf(instance);
     if (!centre || !point) return false;
@@ -296,7 +253,7 @@ function ruleIdOf(kind, def) {
 }
 
 /**
- * Where a claim ranks for FP-80: 0 for anything under the flag's point (it
+ * Where a claim ranks when looking for better work: 0 for anything under the flag's point (it
  * outranks every priority), else the priority of its rule. Lower is better.
  */
 function rankOf(heroId, kind, def) {
@@ -314,9 +271,9 @@ function ruleAllows(heroId, ruleId) {
 }
 
 /**
- * Why this Promotion Token would not train `heroId` — a skip reason — or null
- * if it would (PR-8). Already holding the job reads `same_job`; failing the
- * skill gate reads as the board's own `unskilled` / `access`.
+ * Why this Promotion Token would not train `heroId`: a skip reason, or null if it would. Already
+ * holding the job reads `same_job`; failing the skill gate reads as the board's own `unskilled` /
+ * `access`.
  */
 function promotionRefusal(heroId, instance) {
     const job = BoardPromotion.jobFor(instance);
@@ -327,7 +284,7 @@ function promotionRefusal(heroId, instance) {
     return blocked.alert || ALERT.UNSKILLED;
 }
 
-/** Zero a Token's cycle — the forfeit of D-131, when a hero leaves it (FP-68). */
+/** Zero a Token's cycle: the forfeit when a hero leaves it. */
 function resetProgress(instance) {
     if (!instance || !(instance.cycleElapsedMs > 0)) return;
     instance.cycleElapsedMs = 0;
@@ -335,13 +292,13 @@ function resetProgress(instance) {
 }
 
 /**
- * Let go of `heroId`'s claim, resetting the Token they leave — and ending their
- * fight at once if it was an enemy (FP-43, G-4), so the enemy is whole the next
- * time anyone engages it, including this hero re-planting on it (FP-49).
+ * Let go of `heroId`'s claim, resetting the Token they leave, and ending their fight at once if it
+ * was an enemy, so the enemy is whole the next time anyone engages it, including this hero
+ * re-planting on it.
  */
 function release(heroId) {
-    // A cycle-end mark belongs to the claim it was earned on (FP-80), and so
-    // does an ambush (B7.2): letting go of the enemy ends the fight-back.
+    // A cycle-end mark belongs to the claim it was earned on, and so does an ambush: letting go of
+    // the enemy ends the fight-back.
     rt()?.cycleEnded.delete(heroId);
     rt()?.ambushes.delete(heroId);
     const claim = BoardState.claimOfHero(heroId);
@@ -354,33 +311,25 @@ function release(heroId) {
 }
 
 function claimToken(heroId, instance) {
-    // ⚠️ A new claim starts with no cycle-end mark, or FP-80 could switch the
-    // hero off it one tick into its first cycle.
+    // ⚠️ A new claim starts with no cycle-end mark, or the better-work check could switch the hero
+    // off it one tick into its first cycle.
     rt()?.cycleEnded.delete(heroId);
     BoardState.setClaim(heroId, { instanceId: instance.id, typeId: instance.typeId, x: instance.x, y: instance.y });
-    // A different hero taking a Promotion Token is the gesture that asks again
-    // (PR-7). The same hero coming back after a gap is not.
+    // A different hero taking a Promotion Token is the gesture that asks again. The same hero
+    // coming back after a gap is not.
     if (instance.promotionHeroId && instance.promotionHeroId !== heroId) {
         BoardPromotion.clearPause(instance);
     }
-    /**
-     * ⚠️ A Token a flag skipped carries that skip's red badge (FPP-2). It passed
-     * the check to be claimed, so the badge is stale — and phase 1 reads the
-     * badge to decide whether a claimed Token is stuck, so a stale one would
-     * make the hero leave the Token they just chose.
-     */
+    // ⚠️ A Token a flag skipped carries that skip's red badge. It passed the check to be claimed,
+    // so the badge is stale, and phase 1 reads the badge to decide whether a claimed Token is
+    // stuck, so a stale one would make the hero leave the Token they just chose.
     if (instance.alert) {
         instance.alert = null;
         EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: instance.id, alert: null });
     }
-    // The hero sets off toward it — or, already standing there, starts now
-    // (Hero Movement M1: work begins on arrival, FP-26).
+    // The hero sets off toward it, or, already standing there, starts now (work begins on arrival).
     HeroMotion.settle(heroId);
 }
-
-// ---------------------------------------------------------------------------
-// Skips — what a flag passed over, and why (FP-48)
-// ---------------------------------------------------------------------------
 
 function clearSkips(r, heroId) {
     const ids = r.skipsByHero.get(heroId);
@@ -413,9 +362,8 @@ export function skipsOf(instanceId) {
 }
 
 /**
- * What `heroId`'s flag passed over, in the order it looked (nearest first), as
- * `[{ instanceId, reason, typeId }]` — the pennant's hover text (slice 1.5). A
- * Token that has since left the board is left out.
+ * What `heroId`'s flag passed over, in the order it looked (nearest first), as `[{ instanceId,
+ * reason, typeId }]`: the pennant's hover text. A Token that has since left the board is left out.
  */
 export function skipsOfHero(heroId) {
     const r = rt();
@@ -433,14 +381,10 @@ export function skipsOfHero(heroId) {
     return out;
 }
 
-/** Whether some flag skipped this Token for a reason the player can fix (FPP-2). */
+/** Whether some flag skipped this Token for a reason the player can fix. */
 export function hasFixableSkip(instance) {
     return skipsOf(instance?.id).some(s => FIXABLE.has(s.reason));
 }
-
-// ---------------------------------------------------------------------------
-// The FP-69 notice (FPP-5)
-// ---------------------------------------------------------------------------
 
 const LEAVE_WHY = {
     [ALERT.INPUTS]: 'it is out of materials',
@@ -451,9 +395,8 @@ const LEAVE_WHY = {
 };
 
 /**
- * One warning when a hero goes elsewhere because a Token has a fixable problem
- * — once per hero, Token and reason, until that hero completes a cycle there or
- * re-plants (FPP-5).
+ * One warning when a hero goes elsewhere because a Token has a fixable problem: once per hero,
+ * Token and reason, until that hero completes a cycle there or re-plants.
  */
 function notifyLeft(r, heroId, instance, reason) {
     if (!instance?.id || !FIXABLE.has(reason)) return;
@@ -474,18 +417,13 @@ function forgetNotices(r, heroId, instanceId = null) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Choosing
-// ---------------------------------------------------------------------------
-
 /**
- * Walk a flag's candidates in order and return the first it can claim, with
- * every skip recorded on the way — see the file comment for the order.
+ * Walk a flag's candidates in order and return the first it can claim, with every skip recorded on
+ * the way (see the file comment for the order).
  *
  * @param {string|null} excludeInstanceId a Token not to consider (the one held)
- * @param {number} [belowRank] only consider candidates ranked strictly better
- *   than this (FP-80's look for better work) — the walk stops at the first
- *   candidate that is not
+ * @param {number} [belowRank] only consider candidates ranked strictly better than this (the look
+ * for better work): the walk stops at the first candidate that is not
  */
 function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) {
     const point = { x: flag.x, y: flag.y };
@@ -493,10 +431,9 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
     const underPoint = [];
     const inRange = [];
 
-    // ⭐ A pinned flag has one candidate, its Token (B5, FB-45): no radius, no
-    // other Token, no enemy to seek, nothing under the point. It still passes
-    // every check below, so a pinned hero waits (with the reason recorded)
-    // rather than working something they cannot. A lapsed pin is an area flag
+    // A pinned flag has one candidate, its Token: no radius, no other Token, no enemy to seek,
+    // nothing under the point. It still passes every check below, so a pinned hero waits (with the
+    // reason recorded) rather than working something they cannot. A lapsed pin is an area flag
     // again by the time anything calls this (`lapsePins`).
     const pinnedId = typeof flag.pinnedTo === 'string' ? flag.pinnedTo : null;
     if (pinnedId) {
@@ -523,17 +460,17 @@ function evaluate(heroId, flag, excludeInstanceId = null, belowRank = Infinity) 
             continue;
         }
 
-        // Work and enemies alike: no split between combat and work (FP-71, FP-74).
+        // Work and enemies alike: no split between combat and work.
         const centre = centreOf(instance);
         if (!centre || !flagReaches(flag, centre)) continue;
-        // Reach is measured from the flag; "nearest" from the hero (HM-4).
+        // Reach is measured from the flag; nearest from the hero.
         const d = distanceSq(from, centre);
         const ruleId = ruleIdOf(kind, def);
         const rank = ruleId ? FlagRules.ruleOf(heroId, ruleId).priority : FlagRules.PRIORITY_DEFAULT;
         inRange.push({ instance, def, kind, d, ruleId, rank });
     }
 
-    // Priority first, then nearest, then the earlier-placed Token (FP-72, FP-79).
+    // Priority first, then nearest, then the earlier-placed Token.
     inRange.sort((a, b) => a.rank - b.rank || a.d - b.d
         || (a.instance.placedAt ?? 0) - (b.instance.placedAt ?? 0));
 
@@ -578,7 +515,7 @@ function choose(r, heroId) {
     claimToken(heroId, pick.instance);
     r.nextTryAt.delete(heroId);
 
-    // Went past a nearer Token the player could fix: say so, once (FP-69).
+    // Went past a nearer Token the player could fix: say so, once.
     const passed = skips.find(s => FIXABLE.has(s.reason));
     if (passed) notifyLeft(r, heroId, BoardState.getTokenById(passed.instanceId), passed.reason);
 
@@ -587,9 +524,9 @@ function choose(r, heroId) {
 }
 
 /**
- * FP-80's switch: let go of the held Token (already at zero — a cycle just
- * ended) and claim `pick`. Skips are recorded and FPP-11's notice fires for a
- * fixable Token passed over, exactly as when choosing.
+ * The better-work switch: let go of the held Token (already at zero, a cycle just ended) and claim
+ * `pick`. Skips are recorded and the fixable-Token notice fires for one passed over, exactly as
+ * when choosing.
  */
 function switchTo(r, heroId, pick, skips) {
     release(heroId);
@@ -615,11 +552,10 @@ function keepOrRelease(r, heroId, dirty) {
     const claim = BoardState.claimOfHero(heroId);
     const instance = BoardState.getTokenById(claim.instanceId);
 
-    // ⭐ **Fighting back** (B7.2, TL-24). A hero a hostile enemy attacked holds
-    // that enemy whatever their rules or pin say, until a kill (its
-    // `CYCLE_COMPLETE`) or the enemy leaves the mat. Then the ambush is over and
-    // this same pass treats the claim like any other: kept if their own rules
-    // would keep it, else let go, and their flag (or pin) chooses again.
+    // ⚠️ Fighting back: a hero a hostile enemy attacked holds that enemy whatever their rules or
+    // pin say, until a kill (its `CYCLE_COMPLETE`) or the enemy leaves the mat. Then the ambush is
+    // over and this same pass treats the claim like any other: kept if their own rules would keep
+    // it, else let go, and their flag (or pin) chooses again.
     const ambushId = r.ambushes.get(heroId);
     if (ambushId) {
         const over = ambushId !== claim.instanceId || !instance || r.cycleEnded.has(heroId);
@@ -637,7 +573,7 @@ function keepOrRelease(r, heroId, dirty) {
         const def = getTokenType(instance.typeId);
         const kind = kindOf(instance, def);
 
-        // A pinned hero holds nothing but their pinned Token (B5, FB-45).
+        // A pinned hero holds nothing but their pinned Token.
         const pinnedId = typeof flag?.pinnedTo === 'string' ? flag.pinnedTo : null;
         const eligible = !isDisallowed(instance) && (!pinnedId || pinnedId === instance.id) && (
             (kind === 'hall')
@@ -654,9 +590,9 @@ function keepOrRelease(r, heroId, dirty) {
             return;
         }
 
-        // FP-80: a cycle (or a kill) just ended — take strictly better work if
-        // any can be claimed. Checked here, at the start of the next pass and
-        // before any Token ticks, so the Token left behind is still at zero.
+        // A cycle (or a kill) just ended: take strictly better work if any can be claimed. Checked
+        // here, at the start of the next pass and before any Token ticks, so the Token left behind
+        // is still at zero.
         if (r.cycleEnded.delete(heroId)) {
             const { pick, skips } = evaluate(heroId, flag, instance.id, rankOf(heroId, kind, def));
             if (pick) {
@@ -677,7 +613,7 @@ function keepOrRelease(r, heroId, dirty) {
             return;
         }
 
-        // FPP-1: stuck for a fixable reason — stay until something else can run.
+        // Stuck for a fixable reason: stay until something else can run.
         if (FIXABLE.has(alert) && (dirty || r.clock >= (r.nextTryAt.get(heroId) ?? 0))) {
             const { pick, skips } = evaluate(heroId, flag, instance.id);
             if (!pick) {
@@ -686,7 +622,7 @@ function keepOrRelease(r, heroId, dirty) {
             }
             release(heroId);
             notifyLeft(r, heroId, instance, alert);
-            // The Token left behind keeps its red badge (FPP-2).
+            // The Token left behind keeps its red badge.
             recordSkips(r, heroId, [{ instanceId: instance.id, reason: alert }, ...skips]);
             claimToken(heroId, pick.instance);
             r.nextTryAt.delete(heroId);
@@ -695,9 +631,9 @@ function keepOrRelease(r, heroId, dirty) {
         return;
     }
 
-    // The claimed Token has left the board — and with it any fight against it
-    // (a depleted camp has already ended its own; a removed Token has not).
-    // Its last spot is the claim's remembered point.
+    // The claimed Token has left the board, and with it any fight against it (a depleted camp has
+    // already ended its own; a removed Token has not). Its last spot is the claim's remembered
+    // point.
     BoardCombat.endFightOfHero(heroId);
     const here = sameKindAt(claim.x, claim.y, claim.typeId);
     if (here && !BoardState.heroOfInstance(here.id)) {
@@ -713,10 +649,9 @@ function keepOrRelease(r, heroId, dirty) {
 }
 
 /**
- * ⭐ **A pin lapses when its Token leaves the mat** (TL-17): used up, removed,
- * binned, or transformed (a fresh instance, `EffectActions.transformInstance`).
- * The flag stays where it stands — the Token's last spot, since a pinned
- * flag's point follows its Token — as a normal area flag, and the hero looks
+ * A pin lapses when its Token leaves the mat: used up, removed, binned, or transformed (a fresh
+ * instance, `EffectActions.transformInstance`). The flag stays where it stands (the Token's last
+ * spot, since a pinned flag's point follows its Token) as a normal area flag, and the hero looks
  * for other work in its radius on this same pass. Never re-pinned by itself.
  *
  * One id lookup per pinned flag per tick: flat, like the rest of `assign`.
@@ -742,8 +677,8 @@ function plantingOrder() {
 }
 
 /**
- * Every flag keeps, changes or finds its work. Run once per engine tick, right
- * after the timed changes and before any Token ticks.
+ * Every flag keeps, changes or finds its work. Run once per engine tick, right after the timed
+ * changes and before any Token ticks.
  *
  * @param {number} delta game ms since the last tick (the retry clock)
  */
@@ -779,41 +714,34 @@ export function assignHero(heroId) {
     if (!BoardState.claimOfHero(heroId)) choose(r, heroId);
 }
 
-// ---------------------------------------------------------------------------
-// Planting and furling
-// ---------------------------------------------------------------------------
-
 /**
  * Plant `heroId`'s flag at a mat point, and let it choose at once.
  *
- * Planting the same flag at the same point changes nothing. Anything else is a
- * re-plant: the old claim is let go (its Token's progress reset — FP-68), the
- * notices re-arm (FPP-5), and the flag goes to the back of the
- * planting order. A flag carries no skill (FP-71): what the hero works comes
- * from their rules, which a re-plant does not touch.
+ * Planting the same flag at the same point changes nothing. Anything else is a re-plant: the old
+ * claim is let go (its Token's progress reset), the notices re-arm, and the flag goes to the back
+ * of the planting order. A flag carries no skill: what the hero works comes from their rules, which
+ * a re-plant does not touch.
  */
 /**
- * Why `heroId`'s flag may not be pinned to `instance` (B5, FB-45), or null if
- * it may. `{ reason, silent }`: a `silent` refusal is a Token no flag is ever
- * pinned to (a spawner, a Token no hero works, a Promotion Token or the Guild
- * Hall — those two keep their own under-the-flag rule, FP-61 / FPP-10), so the
- * flag just plants there with nothing said. Otherwise `reason` is a skip
- * reason (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `SKIP.DISALLOWED`,
- * `SKIP.RULE_OFF`), which the hero's bubble says where it has words for it.
+ * Why `heroId`'s flag may not be pinned to `instance`, or null if it may. `{ reason, silent }`: a
+ * `silent` refusal is a Token no flag is ever pinned to (a spawner, a Token no hero works, a
+ * Promotion Token or the Guild Hall, which keep their own under-the-flag rule), so the flag just
+ * plants there with nothing said. Otherwise `reason` is a skip reason (`ALERT.UNSKILLED`,
+ * `ALERT.ACCESS`, `SKIP.DISALLOWED`, `SKIP.RULE_OFF`), which the hero's bubble says where it has
+ * words for it.
  *
- * The same gates `evaluate` applies — disallowed, the skill, the rule, the
- * level (`WorkCheck.heroReason`) — minus the ones the player can fix later
- * (inputs, charges, a recipe: FIXABLE) and another hero working it, which a
- * pinned hero simply waits out.
+ * The same gates `evaluate` applies (disallowed, the skill, the rule, the level via
+ * `WorkCheck.heroReason`) minus the ones the player can fix later (inputs, charges, a recipe:
+ * FIXABLE) and another hero working it, which a pinned hero simply waits out.
  */
 export function pinRefusal(heroId, instance) {
     if (!heroId || !instance?.typeId) return { reason: null, silent: true };
     const def = getTokenType(instance.typeId);
-    // B5 spawner pin: heroes never work a spawner itself.
+    // Heroes never work a spawner itself.
     if (def?.spawner) return { reason: null, silent: true };
     const kind = kindOf(instance, def);
     if (kind !== 'work' && kind !== 'enemy') return { reason: null, silent: true };
-    // A worked Token naming no skill is unfinished content (FP-47): no pin, nothing said.
+    // A worked Token naming no skill is unfinished content: no pin, nothing said.
     if (kind === 'work' && !hasWorkSkill(def)) return { reason: SKIP.NO_SKILL, silent: true };
     if (isDisallowed(instance)) return { reason: SKIP.DISALLOWED, silent: false };
     const ruleId = ruleIdOf(kind, def);
@@ -833,20 +761,18 @@ export function plant(heroId, point, { pin = false } = {}) {
     const r = rt();
     if (!r) return { success: false, reason: 'No board' };
 
-    // A hero's first flag gets their lasting colour (FP-82); later plants keep it.
+    // A hero's first flag gets their lasting colour; later plants keep it.
     ensureFlagColour(heroId);
 
-    // Planting on a Promotion Token is the deliberate gesture that asks again
-    // (PR-7, FP-61) — even onto the very spot the flag already stands on, the
-    // flag-era "picked up and put back". Not when another hero holds the Token:
-    // that hero's standing offer is theirs to answer.
+    // Planting on a Promotion Token is the deliberate gesture that asks again, even onto the very
+    // spot the flag already stands on. Not when another hero holds the Token: that hero's standing
+    // offer is theirs to answer.
     clearOfferUnder(heroId, point);
 
-    // ⭐ B5 (FB-45): a drop inside a Token's art circle — the same test the mat
-    // uses for "which Token is under the pointer" — pins the flag to it when
-    // the hero can work it. A pinned flag stands on the Token's centre, so it
-    // moves with the Token (`BoardState`). A refused pin is an area flag at
-    // the drop point, and a loud refusal is said by the hero's bubble.
+    // A drop inside a Token's art circle (the same test the mat uses for which Token is under the
+    // pointer) pins the flag to it when the hero can work it. A pinned flag stands on the Token's
+    // centre, so it moves with the Token (`BoardState`). A refused pin is an area flag at the drop
+    // point, and a loud refusal is said by the hero's bubble.
     let pinTo = null;
     let refused = null;
     if (pin) {
@@ -878,8 +804,8 @@ export function plant(heroId, point, { pin = false } = {}) {
             ...(pinTo ? { pinnedTo: pinTo.id } : {})
         });
         r.dirty = true;
-        // Out of the Guild Hall (or turning round on the way home) BEFORE
-        // choosing, so "nearest" is measured from where they are (HMP-1, HM-4).
+        // Out of the Guild Hall (or turning round on the way home) BEFORE choosing, so nearest is
+        // measured from where they are.
         HeroMotion.enter(heroId);
         assignHero(heroId);
         HeroMotion.settle(heroId);
@@ -888,36 +814,31 @@ export function plant(heroId, point, { pin = false } = {}) {
     }
     announceMoved(heroId);
 
-    /**
-     * ⭐ **The quest action "deploy a hero" is planting a flag** (roadmap slice
-     * 1.5) — every route: a drop from the dock, a hero dragged on the board, a
-     * pennant moved, the "+" badge. Published here, once, so no
-     * caller can forget it or announce it twice. An unchanged plant is not a
-     * deployment and returned above.
-     *
-     * Names the Token the flag was planted on by `instanceId` (and its type),
-     * or null for bare mat (slice 1.6b).
-     */
+    // The quest action deploy a hero is planting a flag, by every route: a drop from the dock, a
+    // hero dragged on the board, a pennant moved, the + badge. Published here, once, so no caller
+    // can forget it or announce it twice. An unchanged plant is not a deployment and returned
+    // above. Names the Token the flag was planted on by `instanceId` (and its type), or null for
+    // bare mat.
     const under = tokenAtPoint(point);
     EventBus.publish(ENGINE_EVENTS.HERO_DEPLOYED, { heroId, instanceId: under?.id ?? null, typeId: under?.typeId ?? null });
-    // Said after the plant, so the bubble finds the hero on the mat (B5 bad pin).
+    // Said after the plant, so the bubble finds the hero on the mat.
     if (refused) EventBus.publish(BOARD_EVENTS.PIN_REFUSED, { heroId, ...refused });
     return { success: true, pinnedTo: pinTo?.id ?? null, pinRefused: refused?.reason ?? null };
 }
 
 /**
- * ⭐ **Change one of a hero's flag rules** — allowed and/or priority (FP-71,
- * FP-79, FPP-17). `ruleId` is a work skill id or `FlagRules.FIGHT`.
+ * Change one of a hero's flag rules: allowed and/or priority. `ruleId` is a work skill id or
+ * `FlagRules.FIGHT`.
  *
- * Refused: a skill the hero does not hold (a banked one included), Fight for a
- * hero who cannot fight, a priority that is not a whole number 1–5.
+ * Refused: a skill the hero does not hold (a banked one included), Fight for a hero who cannot
+ * fight, a priority that is not a whole number 1-5.
  *
- * ⚠️ **Not a re-plant.** The flag stays, `plantedAt` and the notices are
- * untouched, and no `hero_deployed` is published. Two effects only:
- * * switching **off** the rule of the Token the hero is working lets go of it
- *   now (its progress resets, FP-68) and the hero chooses again next pass;
- * * anything else just marks flags dirty — an idle hero looks again next tick,
- *   and a busy one takes a now-better priority when their cycle ends (FP-80).
+ * ⚠️ Not a re-plant. The flag stays, `plantedAt` and the notices are untouched, and no
+ * `hero_deployed` is published. Two effects only:
+ * - switching off the rule of the Token the hero is working lets go of it now (its progress resets)
+ * and the hero chooses again next pass;
+ * - anything else just marks flags dirty: an idle hero looks again next tick, and a busy one takes
+ * a now-better priority when their cycle ends.
  *
  * Works with no flag planted: the rules live on the hero. From the console:
  * `Game.Flags.setRule(heroId, 'logging', { priority: 1 })`.
@@ -946,7 +867,7 @@ export function setRule(heroId, ruleId, { allowed, priority } = {}) {
     if (next.allowed === current.allowed && next.priority === current.priority) return { success: true, unchanged: true };
 
     if (!hero.flagRules || typeof hero.flagRules !== 'object') hero.flagRules = {};
-    // Sparse (FPP-17): a rule back at the default is no entry at all.
+    // Sparse: a rule back at the default is no entry at all.
     if (next.allowed && next.priority === FlagRules.PRIORITY_DEFAULT) delete hero.flagRules[ruleId];
     else hero.flagRules[ruleId] = next;
 
@@ -974,7 +895,7 @@ export function resetRules(heroId) {
 function releaseIfWorking(heroId, ruleId) {
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return;
-    // An attacked hero fights back whatever the Fight rule says (B7.2, TL-24).
+    // An attacked hero fights back whatever the Fight rule says.
     if (rt()?.ambushes.get(heroId) === claim.instanceId) return;
     const instance = BoardState.getTokenById(claim.instanceId);
     if (!instance) return;
@@ -988,9 +909,9 @@ function releaseIfWorking(heroId, ruleId) {
 }
 
 /**
- * Whether a hero could ever work this board Token — the Tokens the "Heroes may
- * work this" toggle is offered on (FP-35): a work cycle that needs a hero and
- * names a skill (FP-47), an enemy, a Promotion Token, or the Guild Hall (FPP-10).
+ * Whether a hero could ever work this board Token: the Tokens the Heroes-may-work-this toggle is
+ * offered on: a work cycle that needs a hero and names a skill, an enemy, a Promotion Token, or the
+ * Guild Hall.
  */
 export function isHeroWorkable(instance) {
     if (!instance?.typeId) return false;
@@ -1010,9 +931,9 @@ function clearOfferUnder(heroId, point) {
 }
 
 /**
- * Take `heroId`'s flag down — a recall, or a defeat. The hero goes to the Dock
- * and the Token they worked loses its progress (FP-68). A fight ends **in this
- * call** (FP-43): `BoardCombat.fightOfHero` is null by the time it returns.
+ * Take `heroId`'s flag down: a recall, or a defeat. The hero goes to the Dock and the Token they
+ * worked loses its progress. A fight ends in this call: `BoardCombat.fightOfHero` is null by the
+ * time it returns.
  *
  * @returns {boolean} whether there was a flag to take down
  */
@@ -1027,7 +948,7 @@ export function furl(heroId, reason = 'recall') {
         forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
         BoardState.setFlag(heroId, null);
-        // The flag is gone at once; the hero walks, or limps, home (HM-5, HM-6).
+        // The flag is gone at once; the hero walks, or limps, home.
         HeroMotion.sendHome(heroId, { limp: reason === 'defeat' });
         r.dirty = true;
     } finally {
@@ -1038,22 +959,18 @@ export function furl(heroId, reason = 'recall') {
 }
 
 /**
- * ⭐ **A hostile enemy attacks `heroId`** (B7.2, TL-16, TL-24; called by
- * `Hostiles.js`). The hero drops whatever they were doing — let go exactly as
- * any hero leaving work is, so that Token's cycle resets (FP-68, D-131) — and
- * claims the enemy, which starts the fight through the normal route: they walk
- * up to it (the enemy holds still for them, B7.1) and `BoardCombat.tickToken`
- * begins the fight on arrival.
+ * A hostile enemy attacks `heroId` (called by `Hostiles.js`). The hero drops whatever they were
+ * doing (let go exactly as any hero leaving work is, so that Token's cycle resets) and claims the
+ * enemy, which starts the fight through the normal route: they walk up to it (the enemy holds still
+ * for them) and `BoardCombat.tickToken` begins the fight on arrival.
  *
- * Until the kill, or the enemy leaving the mat, `keepOrRelease` keeps the claim
- * **whatever their Fight rule or pin says** — the rule governs only whether a
- * hero *seeks* a fight. Then their flag chooses again as normal, so they go
- * back to work (or to their pinned Token). A re-plant, a recall or a defeat
- * ends it early, as any claim.
+ * Until the kill, or the enemy leaving the mat, `keepOrRelease` keeps the claim whatever their
+ * Fight rule or pin says: the rule governs only whether a hero seeks a fight. Then their flag
+ * chooses again as normal, so they go back to work (or to their pinned Token). A re-plant, a recall
+ * or a defeat ends it early, as any claim.
  *
- * Refused (false): no flag, no such enemy on the mat, a hero who cannot fight
- * (a Recruit would stand there forever: no fight can start), or an enemy
- * another hero already holds.
+ * Refused (false): no flag, no such enemy on the mat, a hero who cannot fight (a Recruit would
+ * stand there forever: no fight can start), or an enemy another hero already holds.
  *
  * @returns {boolean} whether the hero is now fighting back
  */
@@ -1078,23 +995,22 @@ export function ambush(heroId, instanceId) {
     return true;
 }
 
-/** The enemy that attacked `heroId` and that they are fighting back, or null (B7.2). */
+/** The enemy that attacked `heroId` and that they are fighting back, or null. */
 export function ambusherOf(heroId) {
     return rt()?.ambushes.get(heroId) ?? null;
 }
 
 /**
- * ⭐ **Mark a Token "heroes may not work this"** — or allow it again (FP-35).
+ * Mark a Token heroes may not work, or allow it again.
  *
- * Names the Token by **instance id** (slice 1.6b). Turning it on lets go of any
- * hero working it (their progress there is reset, FP-68; a fight ends, FP-43)
- * and their flag chooses again on the next tick; from then on every flag records
- * `disallowed` against it and never claims it — work, combat, promotion and the
- * Guild Hall alike. Nothing else about the Token changes: its rules and
- * triggers carry on (see `isDisallowed`).
+ * Names the Token by instance id. Turning it on lets go of any hero working it (their progress
+ * there is reset; a fight ends) and their flag chooses again on the next tick; from then on every
+ * flag records `disallowed` against it and never claims it: work, combat, promotion and the Guild
+ * Hall alike. Nothing else about the Token changes: its rules and triggers carry on (see
+ * `isDisallowed`).
  *
- * The Token panel's "Heroes may work this" checkbox calls this (slice 1.5);
- * from the console: `Game.Flags.setDisallowed(instanceId, true)`.
+ * The Token panel's Heroes-may-work-this checkbox calls this; from the console:
+ * `Game.Flags.setDisallowed(instanceId, true)`.
  *
  * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}
  */
@@ -1123,9 +1039,8 @@ export function setDisallowed(instanceId, on = true) {
 }
 
 /**
- * **Allow every disallowed Token on the mat again**, at once (B2.3, FB-32 —
- * the bar's *Allow all*, no confirm by owner decision). Each goes through
- * {@link setDisallowed}, so flags are marked to choose again on the next tick.
+ * Allow every disallowed Token on the mat again, at once (no confirm). Each goes through {@link
+ * setDisallowed}, so flags are marked to choose again on the next tick.
  *
  * @returns {number} how many Tokens were allowed
  */
@@ -1139,18 +1054,15 @@ export function allowAll() {
 }
 
 /**
- * What a hero is doing, for the dock and the idle mark:
- * `docked` (no flag) · `returning` (no flag, still walking home, M3) ·
- * `working` · `walking` (on the way — to a claimed Token,
- * `instanceId` set, or back to their flag, `instanceId` null; Hero Movement M1)
- * · `idle` (at their flag, nothing to do).
- * `instanceId` is the Token they work or walk to (or null), `point` where their
- * job is.
+ * What a hero is doing, for the dock and the idle mark: `docked` (no flag), `returning` (no flag,
+ * still walking home), `working`, `walking` (on the way: to a claimed Token, `instanceId` set, or
+ * back to their flag, `instanceId` null) and `idle` (at their flag, nothing to do). `instanceId` is
+ * the Token they work or walk to (or null), `point` where their job is.
  */
 export function statusOf(heroId) {
     const flag = BoardState.flagOf(heroId);
     if (!flag) {
-        // In the Dock already (HM-5), but their figure may still be walking home.
+        // In the Dock already, but their figure may still be walking home.
         const state = HeroMotion.isReturning(heroId) ? 'returning' : 'docked';
         return { state, instanceId: null, point: null, typeId: null, flag: null, limping: HeroMotion.isLimping(heroId) };
     }
@@ -1168,7 +1080,7 @@ export function statusOf(heroId) {
             point: { x: claim.x, y: claim.y }, typeId: claim.typeId, flag
         };
     }
-    // Walking back to the flag after work. A stroll near the flag is still idle (HM-1).
+    // Walking back to the flag after work. A stroll near the flag is still idle.
     if (HeroMotion.isWalking(heroId) && !HeroMotion.isPottering(heroId)) {
         return { state: 'walking', instanceId: null, point: { x: flag.x, y: flag.y }, typeId: null, flag };
     }
@@ -1176,13 +1088,12 @@ export function statusOf(heroId) {
 }
 
 /**
- * A hero finished a cycle (or a kill): their notices about that Token re-arm
- * (FPP-5), and the next pass looks for better work (FP-80).
+ * A hero finished a cycle (or a kill): their notices about that Token re-arm, and the next pass
+ * looks for better work.
  *
- * ⚠️ Only noted here, not acted on. This runs inside the runner's (or the
- * fight's) completion, which carries on after publishing; letting go of the
- * Token from in here would pull it out from under that code. The next
- * `assign` runs before any Token ticks, so the switch still lands between
+ * ⚠️ Only noted here, not acted on. This runs inside the runner's (or the fight's) completion,
+ * which carries on after publishing; letting go of the Token from in here would pull it out from
+ * under that code. The next `assign` runs before any Token ticks, so the switch still lands between
  * cycles.
  */
 function cycleCompleted(heroId) {
@@ -1194,10 +1105,9 @@ function cycleCompleted(heroId) {
 }
 
 /**
- * The rule the hero's current work answers to — a work skill id, or
- * `FlagRules.FIGHT` for an enemy — or null (not working, or working a Promotion
- * Token or the Guild Hall, which no rule governs). Read by the rules panel to
- * highlight the row the hero is working now (slice 1.5b-ii).
+ * The rule the hero's current work answers to (a work skill id, or `FlagRules.FIGHT` for an enemy),
+ * or null (not working, or working a Promotion Token or the Guild Hall, which no rule governs).
+ * Read by the rules panel to highlight the row the hero is working now.
  */
 export function workingRuleOf(heroId) {
     const claim = heroId ? BoardState.claimOfHero(heroId) : null;
@@ -1224,14 +1134,12 @@ export function reset() {
 }
 
 /**
- * ⭐ **After a load, heroes carry on where they were** (Hero Movement M5, HM-7,
- * amending FP-58). Every hero the save says had reached a Token stands back
- * beside it, on the same side, and works on — the Token's cycle progress is
- * saved with the Token, so the bar continues from where it was (what matters
- * on a Token with a very long cycle). A note that no longer fits (no flag, the
- * Token gone, another hero on it) is dropped and that hero chooses afresh.
- * Everyone else starts beside their flag. A fight in progress still restarts:
- * the hero is back at the enemy, which is whole again.
+ * After a load, heroes carry on where they were. Every hero the save says had reached a Token
+ * stands back beside it, on the same side, and works on: the Token's cycle progress is saved with
+ * the Token, so the bar continues from where it was. A note that no longer fits (no flag, the Token
+ * gone, another hero on it) is dropped and that hero chooses afresh. Everyone else starts beside
+ * their flag. A fight in progress still restarts: the hero is back at the enemy, which is whole
+ * again.
  *
  * Runs on `game_loaded`, right after `reset()` has cleared the runtime.
  */
@@ -1275,7 +1183,7 @@ export function init() {
     unsubscribers.push(onMatTuningChanged((key) => {
         if (key == null || key === 'flagRadius') markDirty();
     }));
-    // The Scouting Flags upgrade widens the radius too (FP-23).
+    // The Scouting Flags upgrade widens the radius too.
     unsubscribers.push(EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ({ upgradeId } = {}) => {
         if (upgradeId === 'flag_radius') markDirty();
     }));
@@ -1283,11 +1191,9 @@ export function init() {
         reset();
         restoreWork();
     }));
-    // CR3-157: `BoardCombat.resolveDefeat` used to call `furl` directly, which
-    // was the one edge making `BoardCombat ↔ Flags` an import cycle (Flags
-    // already reaches into BoardCombat for `isEnemyToken`/`endFightOfHero`).
-    // `EventBus.publish` is synchronous, so this runs at exactly the same
-    // point `resolveDefeat` used to call `furl` — before its own
-    // `TILE_CHANGED`/`COMBAT_RESOLVED` publishes.
+    // `BoardCombat.resolveDefeat` publishes a defeat event instead of calling `furl` directly,
+    // which would make a `BoardCombat ↔ Flags` import cycle (Flags already reaches into BoardCombat
+    // for `isEnemyToken`/`endFightOfHero`). `EventBus.publish` is synchronous, so this runs before
+    // `resolveDefeat`'s own `TILE_CHANGED`/`COMBAT_RESOLVED` publishes.
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId }) => furl(heroId, 'defeat')));
 }

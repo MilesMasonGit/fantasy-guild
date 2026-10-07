@@ -1,60 +1,36 @@
-// Fantasy Guild — Overall colouring per terrain, fading between neighbours.
+// overall colouring per terrain, fading between neighbours
 
 import { distanceFromSeeds } from './TerrainLattice.js';
 import { toneOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * The wash that makes a fir wood darker than an oak wood, and the fade that
- * stops the two meeting in a line.
+ * The wash that makes a fir wood darker than an oak wood, and the fade that stops the two meeting
+ * in a line.
  *
- * ## ⚠️ Not a band, and not a boundary
+ * ⚠️ Not a band, and not a boundary: a tone colours the whole of a terrain, and its only interest
+ * in the boundary is to stop being visible there. Two forests on the same grass differ by tone
+ * alone, so without the fade they would meet as a hard line.
  *
- * Everything else in the terrain system so far has been about *edges*: a band
- * shades a terrain's own rim, a fringe writes sand onto a neighbour, the ragged
- * frontier decides which of two substrates a pixel belongs to. A tone is none of
- * those. It colours the **whole** of a terrain, and its only interest in the
- * boundary is to stop being visible there.
+ * How the fade works: each toned terrain gets a bounded distance field from its own pixels. A pixel
+ * in terrain A, `d` away from terrain B, is coloured `lerp(A, B, ½(1 − d/width))`: half-and-half at
+ * the boundary, pure A a full width away. Both sides compute the same thing, so the ramps meet with
+ * no seam.
  *
- * Two forests on the same grass differ by tone alone. The ragged edge between
- * them is invisible — they are the same substrate — so without the fade they
- * would meet as a hard line of light green against dark green, which is exactly
- * what a wandering boundary cannot help with.
+ * ⚠️ Terrain with no tone still takes part, as somewhere to fade out toward: a meadow is the same
+ * grass as an oak wood, so a tone that stopped dead at the meadow would draw the hard line this
+ * exists to remove. All untoned ground shares one distance field.
  *
- * ## How the fade works
- *
- * Each toned terrain gets a bounded distance field from its own pixels. A pixel
- * standing in terrain A, `d` away from terrain B, is coloured
- * `lerp(A, B, ½(1 − d/width))`. At the boundary that is a half-and-half mix; a
- * full width away it is pure A. Both sides compute the same thing, so the two
- * ramps meet in the middle and the join has no edge in it at all.
- *
- * ⚠️ **Terrain with no tone still takes part**, as somewhere to fade *out*
- * toward. That is not a nicety: a meadow is the same grass as an oak wood, so a
- * tone that stopped dead at the meadow would draw precisely the hard line this
- * exists to remove. All untoned ground shares one distance field — they are
- * interchangeable as a destination, since fading toward "nothing" is the same
- * wherever the nothing is — so it costs one transform rather than one each.
- *
- * ## Why it is quantised
- *
- * The blend is rounded to a handful of steps rather than computed per pixel.
- * Two reasons, and the second is the real one:
- *
- *  * every distinct tint becomes one cached recoloured sprite, and a continuous
- *    gradient would mean a cache entry per pixel;
- *  * this is chunky pixel art at 4× zoom, and a step per art pixel is finer
- *    than anything the eye can find. A smooth 256-step ramp would cost far more
- *    and look identical.
+ * The blend is quantised to a handful of steps: every distinct tint becomes one cached recoloured
+ * sprite, and a step per art pixel is finer than the eye can find at this zoom.
  */
 
 /**
  * How many steps the fade is rounded to across its full width.
  *
- * ⚠️ Five, not eight. The fade spans about seven art pixels, so eight steps put
- * a step boundary closer together than the pixels themselves — invisible detail
- * bought at the price of a distinct recoloured sprite per step per variant. It
- * took the distinct-tone count from 172 to a few dozen and looks the same.
+ * ⚠️ Five, not eight: the fade spans about seven art pixels, so more steps put step boundaries
+ * closer than the pixels themselves, at the price of a distinct recoloured sprite per step per
+ * variant.
  */
 const BLEND_STEPS = 5;
 
@@ -92,11 +68,9 @@ export function buildToneMap(artPixels) {
     const anyToned = declared.some(t => t.amount > 0);
     if (!anyToned) return { tones: [], toneAt: new Int16Array(size * size).fill(-1) };
 
-    // --- Distance from each toned terrain ----------------------------------
-    //
-    // Only terrains that actually colour something need a field; a plain
-    // neighbour contributes by being *absent* from every field, which leaves
-    // the pixel with its own tone weakened rather than mixed.
+    // Only terrains that actually colour something need a field; a plain neighbour contributes by
+    // being absent from every field, which leaves the pixel with its own tone weakened rather than
+    // mixed.
     const limit = width * 3;
     const fields = declared.map((tone, p) => {
         if (tone.amount <= 0 || width <= 0) return null;
@@ -118,20 +92,10 @@ export function buildToneMap(artPixels) {
         if (any) plainField = distanceFromSeeds(seeds, size, limit);
     }
 
-    // --- Blend --------------------------------------------------------------
-    //
-    // ⚠️ Every possible result is built **before** the loop. The blend is
-    // quantised, so the set of outcomes is (own terrain × nearest terrain ×
-    // step) — a few hundred at most, against 53,824 pixels.
-    //
-    // The first version built a `#rrggbb` string and a `Map` key with
-    // `toFixed(3)` per pixel and cost 30ms, which is the same mistake the draw
-    // loop had made one commit earlier. Anything per-pixel has to be an integer
-    // index into something prepared in advance.
-    // ⚠️ Only terrains that have a distance field can ever be the *nearest*
-    // other terrain, so only those pairs are reachable. Building the full
-    // palette² grid made blends for combinations that cannot occur — most of
-    // the 172 tones the first version produced were unreachable.
+    // ⚠️ Every possible result is built before the loop. The blend is quantised, so the outcomes
+    // are (own terrain × nearest terrain × step); anything per-pixel has to be an integer index
+    // into something prepared in advance. Only terrains that have a distance field can ever be the
+    // nearest other terrain, so only those pairs are built.
     const active = [];
     for (let p = 0; p < fields.length; p++) if (fields[p]) active.push(p);
 
@@ -164,7 +128,7 @@ export function buildToneMap(artPixels) {
     for (let own = 0; own < palette.length; own++) {
         for (const other of [own, ...destinations]) {
             for (let step = 0; step < stepCount; step++) {
-                const f = (step / BLEND_STEPS) * 0.5;   // half and half at most
+                const f = (step / BLEND_STEPS) * 0.5;
                 let mixed;
                 if (other === own) mixed = declared[own];
                 else if (other === PLAIN) {
@@ -172,7 +136,7 @@ export function buildToneMap(artPixels) {
                 } else {
                     mixed = blend(declared[own], declared[other], f);
                 }
-                if (mixed.amount <= 0.001) continue;    // nothing to draw
+                if (mixed.amount <= 0.001) continue;
                 table[(own * (palette.length + 1) + other) * stepCount + step] = tones.length;
                 tones.push({ tint: toHex(mixed.rgb), amount: mixed.amount });
             }
@@ -185,9 +149,8 @@ export function buildToneMap(artPixels) {
         const own = at[i];
         if (own < 0) continue;
 
-        // The nearest *other* toned terrain, if one is within reach. Walks the
-        // handful of terrains that actually have a field rather than the whole
-        // palette — this runs 53,824 times.
+        // The nearest other toned terrain, if one is within reach. Walks only the terrains that
+        // have a field rather than the whole palette, since this runs once per pixel.
         let nearest = own;
         let nearestDist = limit;
         for (let a = 0; a < active.length; a++) {

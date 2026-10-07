@@ -1,5 +1,3 @@
-// Fantasy Guild — a statement as an ordered list of slots (Effects Grammar v2, V3)
-
 import {
     KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement, DEFAULT_STATEMENT_CHARGE_DELTA,
     rolesForKeyword
@@ -22,40 +20,21 @@ import { getAllSkills } from '../../config/registries/skillRegistry.js';
 import { JOBS } from '../../config/registries/jobRegistry.js';
 
 /**
- * A statement, described as the **ordered slots an author fills in** — the model
- * behind the sentence editor.
+ * A statement, described as the ordered slots an author fills in: the model behind the
+ * sentence editor. Each slot knows its vocabulary, its current value, and how to write itself
+ * back (choosing an option produces a patch).
  *
- * ## Why this exists (G-18)
- * The CMS used to ask for a rule through nested dropdowns: pick a keyword, then
- * a payload, then a target, then a trigger, each in its own labelled box. The
- * owner asked for the opposite — *"I write the rules text with support, and it
- * builds the effect from that"* — which needs one thing the editor never had: a
- * description of **what may go where**, in the order the sentence says it.
+ * ⚠️ There is no parser. The statement object stays the editor's state and `statementText`
+ * the one renderer; a slot offers declared options and hands back the picked one, so an
+ * invalid rule stays unwritable and no inverse of `renderStatement` has to exist.
  *
- * That is what this is. Each slot knows its vocabulary, its current value, and
- * how to write itself back into the statement. Typing filters a slot's options;
- * choosing one produces a patch.
+ * ⚠️ Slots are the EDITABLE parts, not every word. Connective words belong to the sentence
+ * rendered by `statementText`; keeping them apart stops this file becoming a second renderer
+ * that can disagree with the first.
  *
- * ## ⚠️ There is no parser, and this is not one
- * The statement object stays the editor's state and `statementText` stays the
- * one renderer. A slot never parses text into meaning — it offers **declared
- * options** and hands back the one that was picked. So an invalid rule remains
- * unwritable, exactly as it was with dropdowns, and no inverse of
- * `renderStatement` has to exist or be maintained.
- *
- * ## ⚠️ Slots are the EDITABLE parts, not every word
- * "When", "deals", "damage to" and the rest of the connective tissue belong to
- * the sentence, and the sentence is rendered by `statementText` as it always
- * was. A slot is a decision an author makes. Keeping the two apart is what stops
- * this file becoming a second renderer that can disagree with the first.
- *
- * ## ⭐ Legality is read from the same declarations the game reads
- * `KEYWORDS` says which keywords take a trigger, a filter, a reach.
- * `TRIGGER_EVENTS` says which moments a scope allows and which roles each
- * supplies (G-2). `REACHES`, `TARGET_MODES`, the palette and the status registry
- * supply the rest. **Adding a row to any of them puts it in the editor with no
- * editor change** — the same game-defines / CMS-renders split every other
- * vocabulary here already uses.
+ * Legality is read from the same declarations the game reads (`KEYWORDS`, `TRIGGER_EVENTS`,
+ * `REACHES`, the palette, ...), so adding a row to any of them puts it in the editor with no
+ * editor change.
  */
 
 /** What kind of control a slot needs. */
@@ -68,20 +47,11 @@ export const SLOT_KIND = Object.freeze({
     FLAG: 'flag',
     /** A free string with suggestions — a tag, which authors invent. */
     TEXT: 'text',
-    /**
-     * A payload the sentence cannot hold: a conversion's two item lists, a
-     * restock list. G-20 keeps these as a small form beneath the sentence,
-     * because a five-item conversion written out inline stops being a sentence.
-     */
+    /** A payload the sentence cannot hold: a conversion's two item lists. Kept as a small form beneath the sentence. */
     FORM: 'form',
     /** A stack of filters, each with its own value and a negate toggle. */
     FILTERS: 'filters',
-    /**
-     * Pick SEVERAL of a declared list — the Tokens a Manager restocks (P4).
-     *
-     * A set, not a table: it has no per-row numbers, so E-8 gives it a slot
-     * rather than letting it keep a form.
-     */
+    /** Pick SEVERAL of a declared list (the Tokens a Manager restocks): a set with no per-row numbers. */
     LIST: 'list'
 });
 
@@ -89,26 +59,21 @@ export const SLOT_KIND = Object.freeze({
 const option = (id, label, hint = '') => ({ id, label, hint });
 
 /**
- * Which moments a statement may legally name.
- *
- * ⚠️ A keyword that cannot carry a trigger gets none — `KEYWORDS` declares that,
- * and offering one anyway is the "authored but inert" failure the grammar exists
- * to prevent.
+ * Which moments a statement may legally name. ⚠️ This returns every moment; callers must not
+ * offer it to a keyword that cannot carry a trigger (`slotsOf` checks `KEYWORDS`).
  */
 function momentOptions() {
     return TRIGGER_EVENTS.map(t => option(t.id, t.label, t.hint));
 }
 
 /**
- * Which roles this statement may act on — **G-2, at the point of authoring**.
- *
- * The moment decides. Pick *"a neighbour runs out of charges"* and "the actor"
- * is simply not here, because nobody acted: a Token ran dry.
+ * Which roles this statement may act on. The moment decides: on a moment with no actor, "the
+ * actor" is not offered.
  */
 function roleOptions(statement) {
     const available = rolesOf(statement?.when?.event);
-    // ⚠️ ...and the keyword decides too (G-42): "Restores 1 charge to the enemy"
-    // is never offered, whatever the moment. The same allowlist ContentAudit reads.
+    // ⚠️ The keyword decides too: "Restores 1 charge to the enemy" is never offered, whatever the
+    // moment. The same allowlist ContentAudit reads.
     const allowed = rolesForKeyword(statement?.keyword);
     return ROLES
         .filter(r => available.includes(r.id) && allowed.includes(r.id))
@@ -119,12 +84,11 @@ function roleOptions(statement) {
 const skillOptions = () => Object.values(getAllSkills() || {}).map(s => option(s.id, s.name || s.id));
 
 /**
- * A `Provides` payload rebuilt for a newly chosen axis (Rules Line P4).
+ * A `Provides` payload rebuilt for a newly chosen axis.
  *
- * ⚠️ **Changing the effect REBUILDS the payload, as the retired form did.** A
- * chance-shaped axis wants `flat` and anything else `percentage`; swapping only
- * the type left the old bucket and value behind, so Yield at 25% switched to
- * Double Loot read "a 0.25% chance". Mirrors `makeModifier` in the CMS store.
+ * ⚠️ Changing the effect REBUILDS the payload: swapping only the type left the old bucket and
+ * value behind (Yield at 25% switched to Double Loot read "a 0.25% chance"). A chance-shaped
+ * axis wants `flat`, anything else `percentage`.
  */
 function payloadForAxis(type) {
     return getPaletteEntry(type)?.shape === 'proc'
@@ -132,18 +96,15 @@ function payloadForAxis(type) {
         : { type, bucket: 'percentage', value: 0 };
 }
 
-/** A 1–100 chance, clamped as the retired forms clamped it. Unreadable input keeps "always". */
+/** A 1-100 chance. Unreadable input keeps "always". */
 const clampChance = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? Math.min(100, Math.max(1, n)) : 100;
 };
 
 /**
- * The `Applies` decision that lived only in the retired form: how often.
- *
- * ⚠️ There is no `target` slot any more (V10b). Who a rule reaches is its
- * filter, or — on a combat moment — the "aims at" role slot, which is the one
- * way to name the enemy.
+ * The `Applies` chance slot. ⚠️ There is no `target` slot: who a rule reaches is its filter
+ * or, on a combat moment, the "aims at" role slot.
  */
 function appliesExtras(payload) {
     return [
@@ -179,8 +140,8 @@ function payloadSlots(statement, ctx) {
                     patch: v => ({ payload: { ...payload, magnitude: v } })
                 },
                 /**
-                 * ⚠️ G-2 reaches the magnitude vocabulary too: a stat about the
-                 * actor is not offered on a moment that has no actor.
+                 * ⚠️ The magnitude vocabulary is role-filtered too: a stat about the actor is not offered
+                 * on a moment that has no actor.
                  */
                 ...(payload.magnitude === MAGNITUDE_KIND.STAT ? [{
                     id: 'stat', kind: SLOT_KIND.VOCABULARY, label: 'of what',
@@ -224,25 +185,16 @@ function payloadSlots(statement, ctx) {
                 },
                 {
                     /**
-                     * ⚠️ **A percentage is typed as 5 and stored as 0.05.**
-                     *
-                     * The retired form divided by 100 for the percentage bucket
-                     * and clamped through `clampModifierValue`. The slot did
-                     * neither, so typing 5 for a percentage Yield stored 5 and
-                     * rendered *"500% more yield"* — and a proc's 0–100 clamp
-                     * was gone with it.
+                     * ⚠️ A percentage is typed as 5 and stored as 0.05, clamped through `clampModifierValue`;
+                     * storing the typed value rendered "500% more yield".
                      */
                     id: 'value', kind: SLOT_KIND.NUMBER, label: 'amount',
                     value: (payload.bucket === 'percentage' && entry?.shape !== 'proc')
                         ? Math.round((payload.value ?? 0) * 1000) / 10
                         : (payload.value ?? 0),
                     /**
-                     * ⚠️ The buff-or-penalty reading, which the sign alone does
-                     * not give. `+5%` on Yield is a gift and `+5%` on Work Time
-                     * is a punishment, because Work Time is milliseconds per
-                     * cycle. The palette knows which axes run backwards; without
-                     * saying so the author has to remember, which is exactly
-                     * what `inverted` exists to stop.
+                     * ⚠️ The buff-or-penalty reading, which the sign alone does not give: +5% on Yield is a
+                     * gift, +5% on Work Time a punishment. The palette's `inverted` knows which axes run backwards.
                      */
                     note: describeModifierDirection(entry, payload.value, payload.bucket)?.text,
                     patch: v => {
@@ -254,18 +206,11 @@ function payloadSlots(statement, ctx) {
                     }
                 },
                 ...(entry?.categories ? [{
-                    // ⚠️ Optional: an unset skill scope means "any", which is the
-                    // normal case. Without saying so the editor paints it as a
-                    // blank that needs filling, and every ordinary rule looks
-                    // half-finished.
+                    // ⚠️ Optional: an unset skill scope means "any", so the editor must not paint it as a
+                    // blank that needs filling.
                     id: 'category', kind: SLOT_KIND.VOCABULARY, label: 'only for', optional: true,
                     value: payload.category || '',
-                    /**
-                     * ⚠️ The skill list was EMPTY here — only the retired form's
-                     * picker could scope a rule to a skill, so deleting it would
-                     * have made "but only for Mining work" unauthorable (P4).
-                     * "Any skill" clears the scope, which the form also did.
-                     */
+                    /** The only way to scope a rule to a skill. "Any skill" clears the scope. */
                     options: entry.categories === 'status'
                         ? authorableStatuses().map(s => option(s.id, s.name, s.description))
                         : [option('', 'Any skill', 'No narrowing — the usual case.'), ...skillOptions()],
@@ -321,24 +266,9 @@ function payloadSlots(statement, ctx) {
             }];
 
         case KEYWORD.APPLIES:
-            /**
-             * ⚠️ **Two shapes during V6.** A `statusId` is the old status path
-             * and still edits as it did; an `effectId` attaches a live library
-             * effect for a while, which is the shape that makes the status
-             * registry deletable. V7 removes the first half.
-             */
-            /**
-             * ⭐ **Library effects only** (owner ruling, 2026-09-12).
-             *
-             * The retired form authored only statuses and the line only effects,
-             * so P4 had to choose. The owner chose effects: statuses are meant to
-             * become ordinary library effects, so new rules point there. No status
-             * slot is offered any more — and a rule that still names a status
-             * shows the effect picker in its place, where picking an effect
-             * replaces the status cleanly (its `statusId` and `stacks` go).
-             *
-             * The engine still RUNS status rules; nothing authored breaks.
-             */
+            // A rule naming a `statusId` still edits as before, but only library effects are offered:
+            // picking an effect replaces the status (its `statusId` and `stacks` go). The engine still
+            // RUNS status rules.
             return [
                 {
                     id: 'effectId', kind: SLOT_KIND.VOCABULARY, label: 'effect',
@@ -356,11 +286,7 @@ function payloadSlots(statement, ctx) {
                     patch: v => ({ payload: { ...payload, scale: Math.max(1, Number(v) || 1) } })
                 },
                 {
-                    /**
-                     * ⭐ Zero means **fire it once, now** — which is how chaining
-                     * works (G-17). One verb, both shapes, no new concept for
-                     * combos.
-                     */
+                    // Zero means fire it once, now (how chaining works).
                     id: 'durationMs', kind: SLOT_KIND.NUMBER, label: 'for (ms)', min: 0, optional: true,
                     value: payload.durationMs ?? 0,
                     note: !payload.durationMs
@@ -387,9 +313,8 @@ function payloadSlots(statement, ctx) {
             ];
 
         /**
-         * `Acts as` is the `Requires` capability plus a **tool tier**, which
-         * lived only in the retired form (P4). A station asking for a Tier 2
-         * tool refuses a Tier 1 one, so this is a real decision.
+         * `Acts as` is the `Requires` capability plus a tool tier: a station asking for a Tier 2
+         * tool refuses a Tier 1 one.
          */
         case KEYWORD.ACTS_AS:
             return [
@@ -408,20 +333,15 @@ function payloadSlots(statement, ctx) {
                     id: 'tag', kind: SLOT_KIND.TEXT, label: 'capability',
                     value: payload.tag || '',
                     /**
-                     * ⚠️ Capabilities come from the CONTENT, never from a
-                     * hardcoded list (B5). A capability exists because some
-                     * Token says it provides one, so the vocabulary is whatever
-                     * has been authored — and offering a fixed list would let an
+                     * ⚠️ Capabilities come from the CONTENT, never a hardcoded list: a fixed list would let an
                      * author require a `pickaxe` that nothing in the game grants.
                      */
                     suggestions: (ctx?.capabilities || []).slice().sort(),
                     patch: v => ({ payload: { ...payload, tag: v } })
                 },
                 /**
-                 * ⚠️ The sentence says "Tier 2", and the retired Requires form's
-                 * "Min Tool Tier" box was the only way to change it (Rules Line
-                 * P6). A number the rules text prints with no control behind it
-                 * is exactly the silent hole P4 kept finding.
+                 * ⚠️ The sentence says "Tier 2", so this slot must exist: a number the rules text prints
+                 * with no control behind it is a silent hole.
                  */
                 {
                     id: 'minTier', kind: SLOT_KIND.NUMBER, label: 'minimum tool tier', min: 1,
@@ -430,17 +350,14 @@ function payloadSlots(statement, ctx) {
                 }
             ];
 
-        // ⚠️ Item lists are a table, not a sentence (G-20). They keep a small
-        // form beneath the line rather than being spelled out inline.
         /**
-         * ⚠️ A conversion's two item lists are the ONE form that survives (E-8):
-         * a genuine table, with a quantity on every row. Everything else a form
-         * used to hold is a slot below.
+         * ⚠️ A conversion's two item lists are the ONE form that survives: a genuine table, with a
+         * quantity on every row. Everything else is a slot.
          */
         case KEYWORD.CONVERTS:
             return [{ id: 'payload', kind: SLOT_KIND.FORM, label: 'what it moves' }];
 
-        /** `Grants` — how many, of which item, how often (P4: was a form). */
+        /** `Grants`: how many, of which item, how often. */
         case KEYWORD.GRANTS:
             return [
                 {
@@ -463,7 +380,7 @@ function payloadSlots(statement, ctx) {
                 }
             ];
 
-        /** `Restocks` — the Tokens a Manager keeps supplied (P4: was a form). */
+        /** `Restocks`: the Tokens a Manager keeps supplied. */
         case KEYWORD.RESTOCKS:
             return [{
                 id: 'tokenIds', kind: SLOT_KIND.LIST, label: 'which Tokens',
@@ -473,10 +390,8 @@ function payloadSlots(statement, ctx) {
             }];
 
         /**
-         * `Works as` — which skill's recipes a station runs (P4). It had NO slot
-         * at all; the retired form was its only control, and `stationSkillOf`
-         * is the sole input to `deriveTokenType`, so losing it would have made
-         * every new station unauthorable.
+         * `Works as`: which skill's recipes a station runs. ⚠️ `stationSkillOf` is the sole input to
+         * `deriveTokenType`, so this slot is the only way to author a station.
          */
         case KEYWORD.STATION:
             return [{
@@ -487,11 +402,8 @@ function payloadSlots(statement, ctx) {
             }];
 
         /**
-         * `Promotes` — which job (Promotes rule, P1).
-         *
-         * Every job that HAS a parent. The Recruit is where every hero starts
-         * and has no parent, so nothing can promote a hero *to* it. Read from
-         * `jobRegistry`, so a new job is offered with no editor change.
+         * `Promotes`: which job. Every job that HAS a parent (the Recruit has none, so nothing
+         * promotes a hero to it). Read from `jobRegistry`, so a new job is offered with no editor change.
          */
         case KEYWORD.PROMOTES:
             return [{
@@ -511,8 +423,7 @@ function payloadSlots(statement, ctx) {
 /**
  * The ordered slots of one statement.
  *
- * Order follows the **sentence**, not the data shape: when, verb, payload, who,
- * how far. An author reading down the row is reading the rule.
+ * Order follows the sentence, not the data shape: when, verb, payload, who, how far.
  *
  * @param {object} statement
  * @returns {Array<object>} slots, each with `id`, `kind`, `label`, `value` and
@@ -524,8 +435,8 @@ export function slotsOf(statement, ctx = {}) {
 
     const slots = [];
 
-    // The moment comes first because the sentence starts with it — and because
-    // it decides which roles the target slot may offer (G-2).
+    // The moment comes first because the sentence starts with it, and it decides which roles
+    // the target slot may offer.
     if (keyword.when !== WHEN.NEVER) {
         slots.push({
             id: 'moment', kind: SLOT_KIND.VOCABULARY, label: 'when',
@@ -545,9 +456,8 @@ export function slotsOf(statement, ctx = {}) {
         });
     }
 
-    // The moment's own detail — what it watches for, and how often it may fire.
-    // All of it appears in the sentence, so all of it is a chip rather than a
-    // box somewhere else.
+    // The moment's own detail (what it watches, how often it may fire) is a chip, since all of
+    // it appears in the sentence.
     const moment = getTriggerEvent(statement?.when?.event);
     if (moment) {
         if (moment.needsItem || moment.id === 'ITEM_THRESHOLD') {
@@ -566,12 +476,8 @@ export function slotsOf(statement, ctx = {}) {
             });
         }
         /**
-         * ⚠️ **In seconds, because the sentence says seconds** (fixed in P5).
-         *
-         * The sentence reads "at most once every 5 seconds", and E-3 retypes
-         * the word the author sees. The slot used to take milliseconds, so
-         * retyping that 5 as 10 stored 10 ms and the sentence then read "every
-         * 0 seconds". The data stays in milliseconds; only the word converts.
+         * ⚠️ In seconds, because the sentence says seconds. The data stays in milliseconds; only
+         * the word converts.
          */
         slots.push({
             id: 'cooldown', kind: SLOT_KIND.NUMBER, label: 'cooldown (seconds)', min: 0,
@@ -586,21 +492,10 @@ export function slotsOf(statement, ctx = {}) {
         value: statement.keyword,
         options: KEYWORDS.map(k => option(k.id, k.label, k.blurb)),
         /**
-         * ⚠️ **Changing the verb REBUILDS the statement**, and must.
-         *
-         * A keyword decides the payload's shape, whether there is a moment,
-         * whether there is a target and whether there is a filter. Swapping only
-         * the word leaves the previous keyword's payload behind and the new
-         * keyword's required fields missing — a `Deals` carrying a `Provides`
-         * payload, with no moment and nothing to act on. That is not a rule an
-         * author could have written, so the editor must not be able to produce
-         * it either.
-         *
-         * `makeStatement` already builds a statement legal by construction, so
-         * the rebuild goes through it rather than through a second set of
-         * defaults here. The **id is kept**: per-statement save state
-         * (`blockUpkeep`, `blockCooldowns`) is keyed by it, and changing it under
-         * a live save would strand that state on a rule that no longer exists.
+         * ⚠️ Changing the verb REBUILDS the statement: a keyword decides the payload shape, the
+         * moment, the target and the filter, so swapping only the word would leave e.g. a `Deals`
+         * carrying a `Provides` payload. It goes through `makeStatement`. The id is KEPT: per-
+         * statement save state (`blockUpkeep`, `blockCooldowns`) is keyed by it.
          */
         patch: v => ({ ...makeStatement(v), id: statement.id })
     });
@@ -613,14 +508,9 @@ export function slotsOf(statement, ctx = {}) {
             value: statement?.target?.role || null,
             options: roleOptions(statement),
             /**
-             * ⚠️ Names a value its own options no longer contain.
-             *
-             * The orphan case (G-2): the author picked "the actor", then chose a
-             * moment that has none. Looking the label up in the CURRENT options
-             * finds nothing and falls back to the raw id, so the warning reads
-             * *"actor is not something this rule can reach"* — naming the value
-             * in a vocabulary the author never sees. They picked "the actor";
-             * they should be told about "the actor".
+             * ⚠️ Names a value its own options no longer contain (the author picked "the actor", then a
+             * moment that has none). The label is looked up outside the current options so the warning
+             * names "the actor" rather than a raw id.
              */
             labelFor: v => getRole(v)?.label,
             patch: v => ({ target: { ...(statement.target || {}), role: v } })
@@ -628,12 +518,9 @@ export function slotsOf(statement, ctx = {}) {
     }
 
     /**
-     * ⭐ `Applies` may aim at a role instead of its filter (G-42).
-     *
-     * Offered only where the moment supplies a role the keyword allows — so on
-     * a combat moment "the enemy" appears, and on a cycle moment the slot is
-     * absent and `Applies` edits exactly as before. A role already chosen keeps
-     * its slot on any moment, so an orphaned one can be seen and cleared.
+     * `Applies` may aim at a role instead of its filter. Offered only where the moment supplies a
+     * role the keyword allows; a role already chosen keeps its slot on any moment so an orphan
+     * can be seen and cleared.
      */
     const byRole = !!keyword.optionalRole && !!statement?.target?.role;
     if (keyword.optionalRole) {
@@ -672,14 +559,9 @@ export function slotsOf(statement, ctx = {}) {
         });
 
         /**
-         * ⚠️ The filter's VALUE, which the mode alone cannot supply.
-         *
-         * A tag is a string the author invents, so it is typed. A Token id is a
-         * choice from content, so it is a vocabulary — and the content comes
-         * from `ctx`, because the CMS edits its own draft store and the game
-         * reads its registry. Neither is more correct than the other, so the
-         * caller supplies whichever it means, exactly as `renderStatement` takes
-         * a `names` resolver rather than reaching for a registry itself.
+         * ⚠️ The filter's VALUE: a tag is typed (authors invent them), a Token id is chosen from
+         * content. The content comes from `ctx` because the CMS edits its own draft store while the
+         * game reads its registry.
          */
         if (mode === 'tag') {
             const typed = statement?.to?.value || '';
@@ -694,9 +576,8 @@ export function slotsOf(statement, ctx = {}) {
                 value: typed,
                 suggestions: [...known].sort(),
                 /**
-                 * ⚠️ The most common authoring slip there is: a capital letter
-                 * in the wrong place. Tags match exactly, so a near miss reaches
-                 * nothing at all and looks identical to a rule that works.
+                 * ⚠️ The most common authoring slip: a capital letter in the wrong place. Tags match exactly,
+                 * so a near miss reaches nothing and looks identical to a rule that works.
                  */
                 warning: miss
                     ? `No Token carries the tag “${typed}”, so this reaches nothing.`
@@ -716,10 +597,8 @@ export function slotsOf(statement, ctx = {}) {
 
     if (keyword.filter && !byRole) {
         /**
-         * The stacked filters (G-9). A list rather than a single value, so it
-         * gets the form treatment (G-20) — but the FILTER VOCABULARY still comes
-         * from the game, so adding a filter kind puts it in the editor with no
-         * editor change.
+         * The stacked filters. The FILTER VOCABULARY comes from the game, so a new filter kind appears
+         * in the editor with no editor change.
          */
         slots.push({
             id: 'filters', kind: SLOT_KIND.FILTERS, label: 'only the ones',
@@ -733,13 +612,9 @@ export function slotsOf(statement, ctx = {}) {
 }
 
 /**
- * Whether a slot's current value is one its own vocabulary still allows.
- *
- * ⭐ The G-2 case, and the reason this is a question worth asking: a target may
- * name a role, and then the author changes the moment to one that has no such
- * role. The value does not become invalid data — it becomes a rule that reaches
- * nobody on any board — so the editor must be able to say so rather than showing
- * a picker that silently lost its selection.
+ * Whether a slot's current value is one its own vocabulary still allows. A target may name a
+ * role and then the author changes the moment to one without it; the rule then reaches nobody,
+ * so the editor must say so rather than show a picker that silently lost its selection.
  */
 export function slotIsOrphaned(slot) {
     if (slot?.kind !== SLOT_KIND.VOCABULARY) return false;
@@ -784,7 +659,7 @@ export function slotDisplay(slot) {
 /**
  * Options whose label or hint matches what the author has typed, **best first**.
  *
- * ⚠️ Ranked, because Enter takes the top hit (Rules Line, E-1). Unranked, typing
+ * ⚠️ Ranked, because Enter takes the top hit. Unranked, typing
  * "tick" could commit whatever option merely *mentions* ticking in its hint
  * ahead of the one called "On Tick". The order: an exact label, a label that
  * starts with it, a label word that starts with it, a label containing it, and
@@ -828,18 +703,14 @@ const closeness = (a, b) => (a || b ? 1 - editDistance(a, b) / Math.max(a.length
 const wordsOf = (text) => text.toLowerCase().replace(/[^a-z0-9%\s]/g, '').split(/\s+/).filter(Boolean);
 
 /**
- * ⭐ **The nearest legal words to something that is not a word here** (E-4).
+ * The nearest legal words to something that is not a word here. An unrecognised word inserts
+ * nothing (that keeps an invalid rule unwritable), so the panel offers the closest options
+ * instead.
  *
- * An unrecognised word inserts nothing — that is what keeps an invalid rule
- * unwritable. But a dead end teaches nothing, so the panel offers the closest
- * options instead, turning "depletd" into a way of finding *On Depleted*.
+ * Scored on each typed word's best match among the label's words, blended with the whole
+ * label's closeness (so "on cycel" prefers *On Cycle* over *On Neighbour's Cycle*).
  *
- * Scored on each typed word's best match among the label's words (so a typo in
- * one word still finds it), blended with the whole label's closeness (so "on
- * cycel" prefers *On Cycle* over *On Neighbour's Cycle*, which shares both
- * words but is further from what was typed).
- *
- * ⚠️ Only ever returns the slot's own options — it ranks, it never invents.
+ * ⚠️ Only ever returns the slot's own options: it ranks, it never invents.
  */
 export function nearestOptions(slot, query, limit = 5) {
     const options = slot?.options || [];
@@ -862,13 +733,10 @@ export function nearestOptions(slot, query, limit = 5) {
 /**
  * The decisions this statement has that its SENTENCE never mentions.
  *
- * ⚠️ **This is what stops a decision becoming silently unauthorable.** The
- * Rules Line makes the sentence's own words clickable — but a flat damage
- * never says "measured as", "ignores armour" is absent until it is true, an
- * empty filter stack says nothing, a tier of 1 is not printed. Each of those is
- * a real slot with no word to click. The last code review found exactly this
- * failure hiding behind a form (`Works as` became unauthorable), so the line
- * offers every one of these explicitly.
+ * ⚠️ This stops a decision becoming silently unauthorable: a flat damage never says "measured
+ * as", "ignores armour" is absent until it is true, an empty filter stack says nothing, a tier
+ * of 1 is not printed. Each is a real slot with no word to click, so the line offers every one
+ * explicitly.
  *
  * `FORM` slots are left out: their form renders beneath the line regardless.
  *
@@ -881,13 +749,12 @@ export function slotsWithoutWords(slots, segments) {
 }
 
 /**
- * Slots the sentence may say, but whose control lives in the cost strip when it
- * does not (E-6, owner ruling 2026-09-12). Kept out of the quiet row beneath the
- * line so a decision is never offered in two places.
+ * Slots the sentence may say, whose control otherwise lives in the cost strip. Kept out of the
+ * quiet row beneath the line so a decision is never offered in two places.
  */
 export const FINE_PRINT_SLOTS = Object.freeze(['cooldown']);
 
-/** What a charge cost means, in the words the retired Charge cost box used. */
+/** What a charge cost means, in words. */
 function chargeHint(delta, moment) {
     const firing = moment === CHARGE_MOMENT.ON_FIRE;
     const n = Math.abs(delta);
@@ -913,29 +780,23 @@ function chargeHint(delta, moment) {
 }
 
 /**
- * ⭐ **The fine print: what a rule costs, which its sentence never says** (E-6, P5).
+ * The fine print: what a rule costs, which its sentence never says. The charge cost and the
+ * upkeep's clock appear nowhere in the rules text, so they get slots here.
  *
- * Owner ruling 2026-09-12: the strip beside the sentence holds only what the
- * sentence leaves unsaid. Cooldown and chance are already words in the rules
- * text, so they stay clickable there; the charge cost and the upkeep's clock
- * are said nowhere, so they get slots here.
+ * Separate from `slotsOf` on purpose: everything `slotsOf` returns is a decision the sentence
+ * can hold.
  *
- * Separate from `slotsOf` on purpose. Everything `slotsOf` returns is a decision
- * the sentence can hold, and the tests hold every tag the renderer emits to it.
- * None of these ever appears in the rules text.
- *
- * ⚠️ `charge` reads as what the rule SPENDS — positive — while `chargeDelta`
- * stores the change to the Token, negative. Writing it pins `chargeWhen`, as the
- * retired box did, so a rule's moment stops being inferred once a cost is typed.
+ * ⚠️ `charge` reads as what the rule SPENDS (positive) while `chargeDelta` stores the change to
+ * the Token (negative). Writing it pins `chargeWhen`, so a rule's moment stops being inferred
+ * once a cost is typed.
  *
  * @param {object} statement
  * @returns {Array<object>} slots shaped like `slotsOf`'s
  */
 export function costSlots(statement) {
     const keyword = getKeyword(statement?.keyword);
-    // ⚠️ `Requires` is a view of a Token's `acceptedTokens`, not a rule (owner
-    // Q5): nothing spends on it, and a charge written here would be written into
-    // the Token's requirement list.
+    // ⚠️ `Requires` is a view of a Token's `acceptedTokens`, not a rule: nothing spends on it,
+    // and a charge written here would land in the Token's requirement list.
     if (!keyword || keyword.id === KEYWORD.REQUIRES) return [];
 
     const moment = chargeMomentOf(statement);
@@ -967,7 +828,7 @@ export function costSlots(statement) {
             id: 'upkeepEvery', kind: SLOT_KIND.NUMBER, label: 'seconds between payments', min: 1,
             value: Math.round((upkeep.cadenceMs ?? 30000) / 100) / 10,
             hint: 'Its own clock, independent of any production cycle. When the Bank cannot pay, this rule switches off until stock returns — nothing is destroyed and no debt accrues.',
-            // The retired box's floor was one second.
+            // Floor of one second.
             patch: v => ({ upkeep: { ...upkeep, cadenceMs: Math.max(1000, Math.round((Number(v) || 0) * 1000)) } })
         });
     }

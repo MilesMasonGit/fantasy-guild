@@ -38,15 +38,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Token Lifecycle feedback **B8.1 — small Tokens: the size field** (TL-19, FB-18).
- *
- * A Token type may carry `artSize: 'small'`: 32 px art at 64 u on the mat
- * instead of 64 px at 128 u, with a half-size hit area and spacing. One helper
- * (`matGeometry.tokenBodyScale`, through `artRadiusOf` and `tokenSizeFor`)
- * decides it. `size` stays the footprint; a 2×2 marked small is ignored.
- *
- * At the shipped tuning (80% hitbox, 40% overlap): small hitbox 26 u, gaps
- * small–small **31.2 u**, small–standard **46.2 u**, standard–standard 61.2 u.
+ * ⭐ Token Lifecycle feedback **B8.1 — small Tokens: the size field**.
  */
 
 const CFG = { cycleTimeMs: 5000, inputs: [], outputs: [] };

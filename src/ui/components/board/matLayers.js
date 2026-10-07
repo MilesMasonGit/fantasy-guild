@@ -1,55 +1,47 @@
-// Fantasy Guild — what is drawn in front of what, on the free playmat (slice 1.6c, feedback Q3)
 
 /**
- * ⭐ **The mat's stacking order, in one place.**
- *
- * On the grid every tile was its own little world and z-index only had to sort
- * things out *within* a tile. On the mat everything shares one surface, so the
- * order has to be stated once and obeyed by every layer — otherwise a Token's
- * progress bar ends up behind the hero standing on it.
- *
- * ⚠️ **Tokens and flags share a range, not a number** (feedback Q3, FB-1).
- * Each Token and each flag is sorted by where it stands (lower on the mat
- * draws in front, the 2.5D reading) by {@link matStackOrder}, and each takes
- * three slots: a Token's art, the hero working it and the badges written on
- * it; a flag's cloth, the idle hero beside it and its gear. `TOKEN_SPAN` is how
- * much room that range is allowed, so everything above it stays above it.
- *
- * Every z below `WAITING_HERO` is set on an element that is a direct stacking
- * sibling of the others (no wrapper with its own z-index), which is what lets
- * a flag slot in between two Tokens.
+ * The mat's stacking order, in one place.
+ * Everything on the mat shares one surface, so the order has to be stated once and obeyed by
+ * every layer, otherwise a Token's progress bar ends up behind the hero standing on it.
+ * ⚠️ Tokens and flags share a range, not a number. Each Token and each flag is sorted by where
+ * it stands (lower on the mat draws in front, the 2.5D reading) by {@link matStackOrder}, and
+ * each takes three slots: a Token's art, the hero working it and the badges written on it; a
+ * flag's cloth, the idle hero beside it and its gear. `TOKEN_SPAN` is how much room that range
+ * is allowed, so everything above it stays above it.
+ * Every z below `WAITING_HERO` is set on an element that is a direct stacking sibling of the
+ * others (no wrapper with its own z-index), which is what lets a flag slot in between two
+ * Tokens.
  */
 export const MAT_Z = Object.freeze({
-    /** The playmat surface itself, and the play-area outline on it (FP-93). */
+    /** The playmat surface itself. */
     SURFACE: 0,
     /** Tokens, flags, their heroes and badges: `TOKEN_BASE + rank * 3`. */
     TOKEN_BASE: 10,
     /** Heroes with no Token to stand on and no flag to stand beside. */
     WAITING_HERO: 690,
-    /** Heroes on the move — above every Token they walk over (HM-3). */
+    /** Heroes on the move: above every Token they walk over. */
     WALKING_HERO: 695,
     /** Alerts that belong to a point rather than to a Token. */
     POINT_ALERT: 750,
-    /** Range rings — Near, and a flag's radius (FP-64). */
+    /** Range rings: Near, and a flag's radius. */
     RINGS: 760,
     /** Loot on the floor. */
     LOOT: 800,
     /**
-     * Flags drawn **without** the mat's order — `FlagLayer` on its own, as its
-     * tests mount it. On the mat, flags sort with the Tokens (FB-1).
+     * Flags drawn WITHOUT the mat's order: `FlagLayer` on its own, as its tests mount it. On
+     * the mat, flags sort with the Tokens.
      */
     FLAGS: 850,
     /** Hero speech bubbles — above every hero, never in the way of the pointer. */
     HERO_BUBBLE: 860
 });
 
-/** How many Tokens and flags can be sorted before the range would reach the layer above. */
 export const TOKEN_SPAN = Math.floor((MAT_Z.WAITING_HERO - MAT_Z.TOKEN_BASE) / 3) - 1;
 
 /**
- * Ranks kept for worked Tokens when the mat is too busy for every rank to be
- * distinct (CR3-354). Only heroes work Tokens and the roster holds 8; this
- * leaves twice that. Past it, worked Tokens tie among themselves only.
+ * Ranks kept for worked Tokens when the mat is too busy for every rank to be distinct. Only
+ * heroes work Tokens and the roster holds 8; this leaves twice that. Past it, worked Tokens
+ * tie among themselves only.
  */
 export const WORKED_BAND = 16;
 
@@ -64,27 +56,18 @@ function backToFront(a, b) {
 }
 
 /**
- * ⭐ **Where every Token and flag sits in the stack** (feedback Q3).
- *
- * Three bands, back to front:
- *
- * 1. **Everything at rest** — Tokens and flags together, lower on the mat in
- *    front (FB-1). On the same line a flag stands in front of a Token (flags
- *    used to be above everything; a tie keeps that); between two Tokens the
- *    earlier placed is behind, between two flags the earlier planted.
- * 2. **Worked Tokens** — a Token with a hero working it, in front of every
- *    Token and flag at rest (FB-2), sorted among themselves the same way. Its
- *    hero takes the slot above it, so the pair rises together; when the work
- *    ends the Token drops back into band 1.
- * 3. **The hovered Token**, frontmost, so its own drag, click and right-click
- *    listeners are the ones under the pointer (slice 1.6c-2).
- *
- * @param {{
- *   tokens?: {id: string, y: number, placedAt?: number}[],
- *   flags?: {heroId: string, y: number}[],   // in planting order
- *   workedIds?: Set<string>|string[],
- *   hoveredId?: string|null
- * }} input
+ * Where every Token and flag sits in the stack. Three bands, back to front:
+ * 1. **Everything at rest**: Tokens and flags together, lower on the mat in front. On the same
+ * line a flag stands in front of a Token; between two Tokens the earlier placed is behind,
+ * between two flags the earlier planted.
+ * 2. **Worked Tokens**: a Token with a hero working it, in front of every Token and flag at
+ * rest, sorted among themselves the same way. Its hero takes the slot above it, so the pair
+ * rises together; when the work ends the Token drops back into band 1.
+ * 3. **The hovered Token**, frontmost, so its own drag, click and right-click listeners are
+ * the ones under the pointer.
+ * @param {{tokens?: {id: string, y: number, placedAt?: number}[], flags?: {heroId: string, y:
+ * number}[], workedIds?: Set<string>|string[], hoveredId?: string|null}} input (flags in
+ * planting order)
  * @returns {{tokenZ: Map<string, number>, flagZ: Map<string, number>}}
  */
 export function matStackOrder({ tokens = [], flags = [], workedIds = [], hoveredId = null } = {}) {
@@ -107,14 +90,12 @@ export function matStackOrder({ tokens = [], flags = [], workedIds = [], hovered
     busy.sort(backToFront);
 
     /**
-     * ⭐ **The worked band and the hovered Token have reserved ranks** (CR3-354).
-     * The range holds `TOKEN_SPAN + 1` ranks. Past that (a busy mat: ~225
-     * Tokens and flags) the ranks clamp — and before this they clamped at the
-     * TOP, so every worked Token and the hovered one tied with ~95 resting
-     * Tokens at one z and the page order decided who was in front. Now only
-     * the resting band clamps, below ranks kept free for the worked Tokens
-     * and the hovered one, which therefore always draw (and take the pointer)
-     * in front. Under the cap every rank is exactly what it was.
+     * The worked band and the hovered Token have reserved ranks. The range holds `TOKEN_SPAN +
+     * 1` ranks. Past that (a busy mat) the ranks clamp, and if they clamped at the top every
+     * worked Token and the hovered one would tie with the resting Tokens at one z and page
+     * order would decide who is in front. So only the resting band clamps, below ranks kept
+     * free for the worked Tokens and the hovered one, which therefore always draw (and take
+     * the pointer) in front. Under the cap every rank is dense.
      */
     const tokenZOut = new Map();
     const flagZOut = new Map();
@@ -124,10 +105,10 @@ export function matStackOrder({ tokens = [], flags = [], workedIds = [], hovered
         // Room for everyone: dense ranks, back to front, exactly as always.
         [...resting, ...busy, ...(hovered ? [hovered] : [])].forEach(put);
     } else {
-        // ⚠️ The reserve is a FIXED size, not "however many are worked now":
-        // a reserve that grew and shrank with the worked count moved the
-        // clamp, and every clamped resting Token (~90 at S3) was re-ranked
-        // and redrawn each time a hero started or stopped work.
+        // ⚠️ The reserve is a FIXED size, not 'however many are worked now': a reserve that
+        // grew and shrank with the worked count would move the clamp, and every clamped
+        // resting Token would be re-ranked and redrawn each time a hero started or stopped
+        // work.
         const restCap = TOKEN_SPAN - WORKED_BAND - 1;
         resting.forEach((e, i) => put(e, Math.min(i, restCap)));
         busy.forEach((e, j) => put(e, Math.min(restCap + 1 + j, TOKEN_SPAN - 1)));
@@ -137,10 +118,9 @@ export function matStackOrder({ tokens = [], flags = [], workedIds = [], hovered
 }
 
 /**
- * Whether two {@link matStackOrder} answers put everything at the same z
- * (CR3-303). `MatBoard` keeps the old answer when they do, so the maps it hands
- * on stay the same objects and a memoised layer is not redrawn for a new map
- * with the same contents.
+ * Whether two {@link matStackOrder} answers put everything at the same z. `MatBoard` keeps the
+ * old answer when they do, so the maps it hands on stay the same objects and a memoised layer
+ * is not redrawn for a new map with the same contents.
  */
 export function sameStackOrder(a, b) {
     if (!a || !b) return false;
@@ -156,15 +136,13 @@ function sameMap(a, b) {
 
 /**
  * The z of one hero on the mat, given {@link matStackOrder}'s answer.
- *
- * * **Walking** somewhere (not a stroll by an idle hero): above every Token
- *   and flag it passes (HM-3).
- * * **Idle** beside their flag: just in front of that flag (FP-84), so the
- *   pair sorts with the Tokens around it.
- * * **Working** a Token: just in front of it — the Token is in the worked
- *   band, so the hero is too (FB-2).
- * * Anything else: above every Token, below the walkers.
- *
+ * - **Walking** somewhere (not a stroll by an idle hero): above every Token and flag it
+ * passes.
+ * - **Idle** beside their flag: just in front of that flag, so the pair sorts with the Tokens
+ * around it.
+ * - **Working** a Token: just in front of it. The Token is in the worked band, so the hero is
+ * too.
+ * - Anything else: above every Token, below the walkers.
  * @param {{heroId: string, state: string, tokenId?: string|null, moving?: boolean}} hero
  * @param {{tokenZ: Map<string, number>, flagZ: Map<string, number>}} order
  */
@@ -178,16 +156,12 @@ export function heroZ(hero, { tokenZ: tz, flagZ: fz }) {
 }
 
 /**
- * ⭐ **A walking Token's place in the stack, without its exact point** (CR3-008).
- *
- * The mat's order only needs to know which Tokens and flags a walker stands
- * between, not where it is between them. This gives a stand-in `y` that sorts
- * exactly as the real one does — the real `y` when it ties with something
- * (the tie rules then apply unchanged), otherwise the midpoint of its two
- * neighbours — and that stays the SAME value step after step until the walker
- * crosses one of them. `MatBoard` sorts walkers by it, so a step that crosses
- * nothing re-renders nothing; the walker's box follows the engine imperatively.
- *
+ * A walking Token's place in the stack, without its exact point. The mat's order only needs to
+ * know which Tokens and flags a walker stands between, not where it is between them. This
+ * gives a stand-in `y` that sorts exactly as the real one does (the real `y` when it ties with
+ * something, otherwise the midpoint of its two neighbours) and stays the SAME value step after
+ * step until the walker crosses one of them. `MatBoard` sorts walkers by it, so a step that
+ * crosses nothing re-renders nothing; the walker's box follows the engine imperatively.
  * @param {number} y the walker's real y
  * @param {number[]} others every other Token's and flag's y
  * @returns {number}

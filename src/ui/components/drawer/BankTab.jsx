@@ -17,25 +17,19 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js'
 const BANK_TAB_CAP = 16;
 
 /**
- * Bank pane (overhaul Phase 3, spec §COMP-BANK) — the guild bank as
- * user-sortable tabs of compact reorderable item lists (owner decisions
- * 2026-07-11: tabs start at 1 and unlock via Guild Hall; lists pack
- * compact, no slot grid; stack size / total slots / tab count are three
- * separate upgrade stats).
- *
- * Tabs reuse the inventory group system (groupOrder/groupDefs/
- * itemOverrides — persisted, and the legacy InvView spoke it too).
- * An item with no override lives in the FIRST tab. Drag a tile onto a
- * tile to reorder, onto a tab to file it there, onto a hero to equip
- * (payload kind 'item' is unchanged). Search matches ALL tabs.
- * Item details live in the shared InspectionPanel.
+ * Bank pane: the guild bank as user-sortable tabs of compact reorderable item lists. Tabs
+ * start at 1 and unlock via Guild Hall; lists pack compact with no slot grid; stack size,
+ * total slots and tab count are three separate upgrade stats.
+ * Tabs reuse the inventory group system (groupOrder/groupDefs/itemOverrides, persisted). An
+ * item with no override lives in the FIRST tab. Drag a tile onto a tile to reorder, onto a tab
+ * to file it there, onto a hero to equip (payload kind 'item'). Search matches ALL tabs. Item
+ * details live in the shared InspectionPanel.
  */
 export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' }) => {
     const [activeTabId, setActiveTabId] = useState(null);
-    const [typeFilter, setTypeFilter] = useState(null); // transient, from auto-open (§12.B)
+    const [typeFilter, setTypeFilter] = useState(null); // transient, from auto-open
     const [searchTerm, setSearchTerm] = useState('');
-    // Select mode (owner design 2026-07-14): multi-select stacks to drag-move
-    // between tabs.
+    // Select mode: multi-select stacks to drag-move between tabs.
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
 
@@ -45,9 +39,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
         setSearchTerm('');
     }, [filter]);
 
-    // The player's gold is NOT fetched here. It lives on the shared drawer pane
-    // header, so all three panes show one chip rather than each fetching its own
-    // (CR2-162). This tab only needs the stock list.
     const bank = useGameState(
         state => {
             const inv = state.inventory || {};
@@ -194,7 +185,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
     return (
         <div className="h-full min-h-0 flex flex-row">
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Header: tabs + search + totals */}
             <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-gi-border/40 bg-gi-base/30 flex-wrap">
                 <BankTabStrip
                     tabs={tabs}
@@ -215,8 +205,10 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 >
                     <BoxSelect size={11} /> {selectMode ? 'Done' : 'Select'}
                 </button>
-                {/* No Sell button: gold is retired and nothing sells to the
-                    merchant (SP-65, slice 2.2). Select mode only moves stacks. */}
+                {/**
+                 * No Sell button: nothing sells to the merchant. Select mode only moves
+                 * stacks.
+                 */}
                 {selectMode && (
                     <span className="text-[10px] text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
                 )}
@@ -240,8 +232,10 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                 </span>
             </div>
 
-            {/* No Upkeep toggle: the Upkeep Summary moved to the mat's top bar
-                (B2.2, FB-29), so the Bank shows its items only. */}
+            {/**
+             * No Upkeep toggle: the Upkeep Summary lives on the mat's top bar, so the Bank
+             * shows its items only.
+             */}
             {/* Compact reorderable list — the list is the "append here" target;
                 tiles are reorder targets nested inside it. */}
             <DropTarget
@@ -299,7 +293,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
  *  In select mode a checked tile drags the WHOLE selection (payload.selection). */
 const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = false, selectionIds = null, canReorder = false, onReorderDrop }) => {
     const { template, count } = entry;
-    // A checked tile in select mode drags the WHOLE selection (payload.selection).
     const drag = useEntityDrag({
         id: `item-src-${entry.id}`,
         kind: DRAG_KIND.ITEM,
@@ -337,7 +330,6 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
                     <Check size={11} strokeWidth={3} />
                 </span>
             )}
-            {/* 64px Icon, no background/border box around it */}
             <ItemIcon item={template} size={64} className="shrink-0" />
             <span className="text-xs md:text-sm font-bold text-gi-text mt-1.5 tabular-nums">
                 {formatCompact(count, 1)}
@@ -347,11 +339,10 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
 };
 
 /**
- * BankTabStrip — the fixed, system-owned bank tabs (owner design 2026-07-14):
- * always BANK_TAB_CAP slots; unlocked tabs show the 32px sprite of their first
- * item (or the slot number when empty), locked slots render greyed with a
- * lock. No player create/rename/delete. Tabs accept item drops (single stack
- * or a whole select-mode selection).
+ * BankTabStrip: the fixed, system-owned bank tabs. Always BANK_TAB_CAP slots; unlocked tabs
+ * show the 32px sprite of their first item (or the slot number when empty), locked slots
+ * render greyed with a lock. No player create/rename/delete. Tabs accept item drops (single
+ * stack or a whole select-mode selection).
  */
 const BankTabStrip = ({ tabs, activeId, onSelect, firstItemByTab, onDropToTab }) => {
     return (
@@ -408,16 +399,14 @@ const BankTabButton = ({ tab, index, first, active, onSelect, onDropToTab }) => 
 };
 
 /**
- * Item details — rendered by the shared InspectionPanel. `showSell` is still
- * accepted but ignored: selling to the merchant is gone, and with it the item's
- * price (SP-65, slice 2.2).
+ * Item details, rendered by the shared InspectionPanel. `showSell` is still accepted but
+ * ignored: nothing sells.
  */
 // eslint-disable-next-line no-unused-vars
 export const ItemInspection = ({ entry, showSell = true, showViewInBank = false }) => {
     const { template, count } = entry;
     return (
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
-            {/* Header: Centered 128px sprite, name, and type */}
             <div className="flex flex-col items-center text-center">
                 <div className="flex items-center justify-center w-32 h-32 mb-1">
                     <ItemIcon item={template} size={128} className="shrink-0" />
@@ -429,7 +418,6 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                     {template.type || 'item'}
                 </span>
 
-                {/* Tags underneath */}
                 {template.tags?.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 justify-center mt-2">
                         {template.tags.map(tag => (
@@ -444,7 +432,6 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                 )}
             </div>
 
-            {/* Description (Left-adjusted, not in quotes, if present) */}
             {template.description && (
                 <div className="text-left py-1">
                     <p className="text-xs text-gi-text/85 leading-relaxed select-text font-medium">
@@ -453,7 +440,6 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                 </div>
             )}
 
-            {/* Details Table */}
             {(template.equipSlot || template.toolType || template.restoreAmount > 0) && (
                 <div className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
                     {template.equipSlot && (
@@ -479,8 +465,7 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                 </div>
             )}
 
-            {/* Bank count only (SP-65, slice 2.2): nothing sells, so an item has
-                no Value to show. */}
+            {/* Bank count only: nothing sells, so an item has no Value to show. */}
             <div className="flex items-center gap-2 text-xs pt-1">
                 <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
                     <span className="text-gi-muted">Bank</span>
@@ -488,7 +473,6 @@ export const ItemInspection = ({ entry, showSell = true, showViewInBank = false 
                 </div>
             </div>
 
-            {/* View in Bank action */}
             {showViewInBank && count > 0 && (
                 <div className="pt-2 border-t border-gi-border/40">
                     <button

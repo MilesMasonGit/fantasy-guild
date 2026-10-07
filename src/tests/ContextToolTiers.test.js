@@ -9,19 +9,7 @@ import { registerRecipePools } from '../config/registries/recipePoolRegistry.js'
 import { KEYWORD } from '../systems/effects/statements.js';
 
 /**
- * Hierarchical tool tiers (concept §2.4, R-17).
- *
- * **A higher tier satisfies a lower requirement.** A recipe asking for a Tier 1
- * pickaxe runs beside a Tier 2 one; a recipe asking for Tier 2 does not run
- * beside a Tier 1. That asymmetry is the whole point of tiers — without it,
- * every recipe would have to relist each tool that qualifies, which R-10
- * rules out as making reassignment expensive.
- *
- * The mechanism (`contextTiersAround` keeping the highest tier per tag, and
- * `unmetContext` comparing it against `minTier`) was built across P1 and P2.
- * Nothing pinned the *hierarchy* itself: every other `minTier` test in the
- * suite asks for tier 1 and supplies tier 1, which passes whether the
- * comparison is `>=` or `===`.
+ * Hierarchical tool tiers (concept §2.4).
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

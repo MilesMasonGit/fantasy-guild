@@ -33,18 +33,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Token Lifecycle feedback **B1.2 — the ring row** (TL-22, FB-3, FB-4).
- *
- * Ring badges in one row centred under the hero and the Token together (under
- * the Token alone with no hero): cycle (seconds left, fills), charges (empties),
- * then the Token's own ring (enemy HP here, empties). It replaced the progress
- * bar and the hover charge chip. Its subscription rules are pinned in
- * `TokenBadgeRowSubscriptions.test.js`, its blocked look in `TileAlertHints`.
- *
- * **B1.3 — standing rings**: a spawner's `n/cap` (green, fills to cap) and a
- * turning Token's countdown (sky, empties; its polling is pinned in
- * `TurnCountdown.test.js`) always show, hero or not, hovered or not — but not
- * while dragged — after cycle and charges.
+ * ⭐ Token Lifecycle feedback **B1.2 — the ring row**.
  */
 
 registerTokenTypes({

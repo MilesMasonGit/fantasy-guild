@@ -16,17 +16,16 @@ import { formatCompact } from '../../../utils/Formatters.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * HeroInspectionSheet — full detailed hero inspection sheet that neatly covers the Token Tray.
+ * HeroInspectionSheet: full detailed hero inspection sheet.
  * - Sits behind the Hero Dock tabs.
  * - Top: 128px Sprite on left; Name, Level, Job, HP, Edit & Close buttons on right.
- * - Body: 3x3 Inventory Grid, Active Skills with XP bars & expandable detail metrics, and Locked Skills.
- *
- * ## Locked is a state; a banked level is still the hero's (D-250, D-71)
- * The locked block lists every registry skill the hero does not currently hold.
- * Some of those they have **earned and set down** at a job change — those show
- * their retained level, because promotion is reversible and the player has no
- * other way to see it on this surface. `HeroSkillSheet` (in the Hero Edit modal)
- * says the same thing in its "Set aside" block; the two must not disagree.
+ * - Body: 3x3 Inventory Grid, Active Skills with XP bars & expandable detail metrics, and
+ * Locked Skills.
+ * Locked is a state; a banked level is still the hero's. The locked block lists every registry
+ * skill the hero does not currently hold. Some of those they have **earned and set down** at a
+ * job change: those show their retained level, because promotion is reversible and the player
+ * has no other way to see it on this surface. `HeroSkillSheet` (in the Hero Edit modal) says
+ * the same thing in its 'Set aside' block; the two must not disagree.
  */
 export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
     const scrollRef = useRef(null);
@@ -91,14 +90,12 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
     const activeSkillIds = Object.keys(hero.skills || {});
     const allSkills = getAllSkills();
 
-    // Skills this hero earned and then set down at a job change. `bankedSkills`
-    // is written by PromotionSystem and is the same source `HeroSkillSheet`'s
-    // "Set aside" block reads (D-250).
-    //
-    // ⚠️ These are NOT "requires promotion to unlock" — the level is already
-    // earned and comes back untouched on a job that uses the skill again (D-71,
-    // owner decision 16). Listing them at "Locked / 0%" alongside skills the
-    // hero has never touched told the player their progress was gone (CR2-165).
+    // Skills this hero earned and then set down at a job change. `bankedSkills` is written by
+    // PromotionSystem and is the same source `HeroSkillSheet`'s 'Set aside' block reads.
+    // ⚠️ These are NOT 'requires promotion to unlock': the level is already earned and comes
+    // back untouched on a job that uses the skill again. Listing them at 'Locked / 0%'
+    // alongside skills the hero has never touched would tell the player their progress was
+    // gone.
     const bankedLevels = Object.fromEntries(
         Object.entries(hero.bankedSkills || {}).map(([id, s]) => [id, s?.level ?? 1])
     );
@@ -115,9 +112,7 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
 
     return (
         <div className="flex flex-col h-full bg-[#160f0b]/98 border-2 border-r-0 border-[#8a5d45] rounded-l-2xl shadow-[0_8px_35px_rgba(0,0,0,0.95)] p-3.5 pr-20 overflow-hidden text-gi-text select-none">
-            {/* Top Identity Block: 128px Sprite on Left; Name, Level, Job, HP, Edit on Right */}
             <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black/40 border border-[#5c3e2e]/60 shrink-0 mb-2.5">
-                {/* Left: 128px Character Sprite (Draggable) */}
                 <div
                     ref={drag.setNodeRef}
                     {...drag.handleProps}
@@ -140,7 +135,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                     )}
                 </div>
 
-                {/* Right: Name, Level, Job, HP, Edit & Close Buttons */}
                 <div className="flex-1 flex flex-col justify-between h-32 py-0.5 min-w-0">
                     <div>
                         <div className="flex items-center justify-between gap-1">
@@ -178,14 +172,12 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                         </div>
                     </div>
 
-                    {/* HP Bar */}
                     <div className="w-full space-y-1">
                         <VitalBar current={hp} max={hpMax} color="green" label="HP" />
                     </div>
                 </div>
             </div>
 
-            {/* Flat Scroll Arrow: Top */}
             {canScrollUp && (
                 <button
                     onClick={scrollUp}
@@ -196,12 +188,10 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                 </button>
             )}
 
-            {/* Scrollable Body: 3x3 Inventory & Skills (Scrollbar hidden) */}
             <div
                 ref={scrollRef}
                 className="flex-1 overflow-y-auto space-y-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             >
-                {/* 3x3 Inventory Grid */}
                 <div className="rounded-xl bg-black/40 border border-[#5c3e2e]/60 p-2.5">
                     <div className="flex items-center mb-1.5 px-1">
                         <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">
@@ -211,7 +201,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                     <DockEquipmentGrid heroId={heroId} />
                 </div>
 
-                {/* Active Skills List */}
                 <div className="rounded-xl bg-black/40 border border-[#5c3e2e]/60 p-2.5 space-y-2">
                     <div className="flex items-center px-1">
                         <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">
@@ -230,7 +219,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                             const nextMilestoneXp = xpForLevel(prog.level + 1);
                             const isExpanded = expandedSkillId === skillId;
 
-                            // Metric calculations for expanded view
                             const rate = XpRateTracker.getRate(heroId, skillId);
                             const xpRemaining = Math.max(0, prog.nextLevelXp - prog.currentXp);
                             const timeSecs = XpRateTracker.getTimeToNextLevelSeconds(heroId, skillId, xpRemaining);
@@ -265,7 +253,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                                         </div>
                                     </div>
 
-                                    {/* Progress Bar */}
                                     <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-white/5 my-0.5">
                                         <div
                                             className="h-full bg-gi-primary transition-all duration-300"
@@ -273,10 +260,8 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                                         />
                                     </div>
 
-                                    {/* Expanded Details Panel */}
                                     {isExpanded && (
                                         <div className="mt-1 pt-1.5 border-t border-white/10 flex flex-col gap-1 text-[11px]">
-                                            {/* Quantity of current total XP */}
                                             <div className="flex items-center justify-between text-gi-muted">
                                                 <span>XP:</span>
                                                 <span className="font-mono text-white/90 font-bold">
@@ -284,7 +269,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                                                 </span>
                                             </div>
 
-                                            {/* Milestone XP for next level */}
                                             <div className="flex items-center justify-between text-gi-muted">
                                                 <span>Next Level:</span>
                                                 <span className="font-mono text-white/90 font-bold">
@@ -292,7 +276,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                                                 </span>
                                             </div>
 
-                                            {/* XP Gain Rate */}
                                             <div className="flex items-center justify-between text-gi-muted">
                                                 <span className="flex items-center gap-1">
                                                     <TrendingUp size={11} className="text-gi-primary" />
@@ -303,7 +286,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                                                 </span>
                                             </div>
 
-                                            {/* Estimate to Next Level */}
                                             <div className="flex items-center justify-between text-gi-muted">
                                                 <span className="flex items-center gap-1">
                                                     <Clock size={11} className="text-gi-gold" />
@@ -321,7 +303,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                     </div>
                 </div>
 
-                {/* Locked Skills — with any banked level shown rather than hidden */}
                 {lockedSkills.length > 0 && (
                     <div className="rounded-xl bg-black/40 border border-[#5c3e2e]/60 p-2.5 space-y-2">
                         <div className="flex items-center px-1">
@@ -375,9 +356,12 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                                             )}
                                         </div>
 
-                                        {/* No bar for a banked skill: there is no live progress to
-                                            draw, and an empty track next to a retained level reads
-                                            as "reset to zero" — the exact thing D-71 is not. */}
+                                        {/**
+                                         * No bar for a banked skill: there is no live progress
+                                         * to draw, and an empty track next to a retained level
+                                         * reads as 'reset to zero', which is exactly what a
+                                         * banked level is not.
+                                         */}
                                         {!isBanked && (
                                             <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-white/5 my-0.5">
                                                 <div className="h-full bg-white/10" style={{ width: '0%' }} />
@@ -391,7 +375,6 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                 )}
             </div>
 
-            {/* Flat Scroll Arrow: Bottom */}
             {canScrollDown && (
                 <button
                     onClick={scrollDown}

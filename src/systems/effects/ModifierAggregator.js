@@ -2,59 +2,23 @@ import { EFFECT_TYPES, TARGET_CATEGORIES } from './constants.js';
 import { COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 
 /**
- * === Three-Bucket math (status_effects_plan.md §15.3, LOCKED) ===
+ * Three-Bucket math:  Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
+ * The buckets resolve IN SEQUENCE. Example: Base 1, a +1 flat, a ×2 multiplier and +25%
+ * give (1 + 1) × 2 × 1.25 = 5. Base sits INSIDE the flat bucket as the seed of the sum.
  *
- *      Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
+ * ⚠️ Members of a bucket SUM, they never compound: multipliers ×2 and ×3 give ×5 (not ×6),
+ * +25% and +50% give ×1.75 (not ×1.875). Do not "correct" this. Multipliers default to ×1
+ * when empty and clamp at 0; negative values are legal (a curse is -2, never ×0).
  *
- * Three buckets, resolved IN SEQUENCE. Every rule below is pinned by a test in
- * `src/tests/Mutators.test.js`.
+ * ⚠️ A neutral source must contribute NOTHING to a bucket, not a 1.0 entry: in a bucket that
+ * sums, a stray 1 inflates the total.
  *
- * Canonical worked example — a Fishing task with Base Yield 1 Shrimp, a
- * `+1 Shrimp` flat effect, a `×2 Fishing output` effect and a `+25% Shrimp`
- * effect produces 5 Shrimp:  (1 + 1) × 2 × 1.25 = 5.
- *
- *  1. **FLAT** — raw numbers sum. +2 and +3 give +5. **Base sits INSIDE this
- *     bucket** as the seed of the sum, not a separate term applied after.
- *
- *  2. **MULTIPLIER** — factors SUM, they do not compound. ×2 and ×3 give ×5,
- *     not ×6. This is deliberate and counter-intuitive; do not "correct" it.
- *     Defaults to ×1 when empty, clamped at 0. Negative values are legal — a
- *     curse is authored as -2, never ×0.
- *
- *  3. **PERCENTAGE** — fractions SUM, then apply ONCE as (1 + Σ). +25% and
- *     +50% give +75% → ×1.75. NOT ×1.875 (compounded) and NOT ×2.75 (summed
- *     as factors — the bug this bucket exists to prevent). Defaults to ×1 when
- *     empty; the resulting factor is clamped at 0.
- *
- * A neutral source must contribute NOTHING to a bucket, not a 1.0 entry — in a
- * bucket that sums, a stray 1 inflates the total.
- *
- * Multipliers DO scale the percentage result, because the buckets resolve in
- * sequence. That is intended. The rule being enforced is narrower: **no
- * bucket's members compound with each other.**
- *
- * Per §15.12 there is ONE set of buckets per axis, shared by hero Status
- * Effects, Card Tokens, gear and station buffs. There is no separate "hero
- * stage". Tokens themselves arrive in Phase 3; this is the shared machinery
- * they and everything else feed.
- *
- * === Which bucket does a modifier land in? ===
- * A UMI declares it explicitly:
- *   { bucket: 'multiplier', value: 2 }    → contributes the FACTOR 2 (×2)
- *   { bucket: 'percentage', value: 0.25 } → contributes +0.25 (i.e. +25%)
- *   { bucket: 'flat',       value: 5 }    → contributes +5 to the flat sum
- *
- * `bucket` is optional. Legacy content authored before this conversion
- * expresses percentage buffs as bare fractions (`value: 0.25` meaning "+25%").
- * An entry with no `bucket` field is therefore treated as a PERCENTAGE, which
- * is what such content always meant. New content should be explicit.
- *
- * ('additive' is accepted as a synonym for 'flat' — older call sites use it.)
- *
- * ModifierAggregator - Component for entities that can receive and sum modifiers.
+ * A modifier declares `bucket: 'flat' | 'multiplier' | 'percentage'` ('additive' is a synonym
+ * for flat). An entry with no `bucket` is a PERCENTAGE (a bare fraction such as 0.25 means
+ * +25%), except that `query`/`getFlat` read it as flat. New content should be explicit.
  */
 /**
- * Resolve a multiplier bucket: Σ factors, ×1 when empty, clamped at 0 (§15.3).
+ * Resolve a multiplier bucket: Σ factors, ×1 when empty, clamped at 0.
  *
  * Multipliers SUM: `combineMultipliers([2, 2, 2]) === 6`, not 8.
  *
@@ -71,7 +35,7 @@ export function combineMultipliers(factors) {
 
 /**
  * Resolve a percentage bucket: Σ fractions applied ONCE as (1 + Σ), ×1 when
- * empty, clamped at 0 (§15.3).
+ * empty, clamped at 0.
  *
  * Percentages SUM as percentages and never inflate one another:
  * `combinePercentages([0.25, 0.5]) === 1.75`, NOT 1.875 and NOT 2.75.
@@ -88,7 +52,7 @@ export function combinePercentages(fractions) {
 }
 
 /**
- * The whole Three-Bucket formula in one place (§15.3):
+ * The whole Three-Bucket formula in one place:
  *      Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
  *
  * Canonical example — applyThreeBucket(1, { flat: [1], multipliers: [2],
@@ -205,13 +169,9 @@ export class ModifierAggregator {
     query(effectType, category = TARGET_CATEGORIES.ALL) {
         let sum = 0;
         this._forEachMatching(effectType, category, (mod) => {
-            // Explicitly-bucketed multiplicative entries never land here.
             if (mod.bucket === 'multiplier' || mod.bucket === 'percentage') return;
-            // A BARE legacy entry (no `bucket`) is ambiguous on its own: it may
-            // be a flat +5 damage bonus or a 0.25 meaning "+25%". It is
-            // disambiguated by WHICH METHOD the caller uses — a caller asking
-            // for flats wants flats. This preserves pre-conversion behaviour
-            // exactly; new content should set `bucket` explicitly.
+            // A BARE entry (no `bucket`) is ambiguous: a flat +5 or a 0.25 meaning +25%. The
+            // method the caller uses disambiguates, and a caller asking for flats wants flats.
             sum += (mod.value || 0);
         });
         return sum;
@@ -237,9 +197,7 @@ export class ModifierAggregator {
     collectMultipliers(effectType, category = TARGET_CATEGORIES.ALL) {
         const factors = [];
         this._forEachMatching(effectType, category, (mod) => {
-            // ONLY explicit ×N factors. Bare legacy entries are percentages
-            // (see `collectPercentages`), not factors — reading them here is
-            // exactly the bug the percentage bucket was added to fix.
+            // ONLY explicit ×N factors; bare entries are percentages (see `collectPercentages`).
             if (mod.bucket !== 'multiplier') return;
             factors.push(mod.value || 0);
         });
@@ -251,9 +209,7 @@ export class ModifierAggregator {
      * fractions (0.25 meaning "+25%"), so callers can merge them with fractions
      * from non-aggregator sources before summing.
      *
-     * Bare legacy entries land here: content authored before the conversion
-     * wrote percentage buffs as fractions with no `bucket` field, and that is
-     * what they always meant.
+     * Bare entries (no `bucket`) land here: they are fractions meaning percentages.
      *
      * @returns {number[]} raw fractions, e.g. [0.25, 0.5]
      */
@@ -285,13 +241,9 @@ export class ModifierAggregator {
     }
 
     /**
-     * Resolve one effect axis end-to-end through the full §15.3 Three-Bucket
-     * formula: `(base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)`.
-     *
-     * This is the single place the whole formula is assembled from an
-     * aggregator, so the token consumers (yield/time/cost, Phase 5) and any
-     * future caller read the buckets identically. An aggregator with no
-     * modifiers for `effectType` returns `base` untouched.
+     * Resolve one effect axis end-to-end through the full Three-Bucket formula. The single
+     * place the formula is assembled from an aggregator; an aggregator with no modifiers for
+     * `effectType` returns `base` untouched.
      *
      * @param {string} effectType
      * @param {number} [base=0]  seed of the flat bucket
@@ -393,11 +345,9 @@ export class ModifierAggregator {
     /**
      * Check if a category is a parent of another.
      *
-     * **Only one hierarchy survives: `combat` over the three combat styles.**
-     * The sub-skill tree it used to walk (`mining` under `labor`) is gone —
-     * every skill is now a top-level skill, so a modifier targeting `mining`
-     * targets Mining and nothing else. A modifier that wants to cover several
-     * skills must name them.
+     * Only one hierarchy exists: `combat` over the three combat styles. Every skill is
+     * top-level, so a modifier targeting `mining` targets Mining and nothing else; to cover
+     * several skills it must name them.
      *
      * Categories are compared case-insensitively (modifier targets are often
      * uppercased).

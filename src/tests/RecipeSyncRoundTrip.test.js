@@ -14,23 +14,12 @@ import {
 /**
  * The CMS → game recipe sync.
  *
- * ## What this test is for now
- *
- * It began as a round trip that pinned the **nine EV fields** through a sync
- * that deliberately routed recipes *around* the economy pass, because the
- * solver of the day rewrote them. Both halves of that are gone: the EV fields
- * are deleted, and the bypass with them (plan §16). So the suite keeps the
- * round trip and changes what it is a round trip *of*:
- *
  * 1. **Authored intent survives byte-for-byte.** The CMS's known failure mode
  *    is that sync drops whatever the writer does not name, and a recipe still
  *    carries fields with no editor behind them.
  * 2. **Derived fields match a fresh solve.** The file is not a place numbers go
  *    to drift; re-solving the shipped corpus must reproduce it.
  * 3. **⚠️ Retired fields injected into the store do not reach the file.** This
- *    is the strip-on-write pin, and it is the one that matters most: a browser
- *    workspace saved before the cutover still holds those fields, and sync
- *    writes from the store.
  */
 
 const FILE = path.resolve(__dirname, '../../data/tokenRecipes.json');
@@ -47,9 +36,6 @@ const shipped = JSON.parse(raw);
 /**
  * Group the flat file into the CMS's skill-keyed pools — the shape
  * `useEntityStore.hydrate` takes and `recipesToFile` reads.
- *
- * The CMS has no game → CMS import path (CMS-4 removed it deliberately), so
- * this direction exists to state the round trip, not as production code.
  */
 function poolsFromFile(list) {
     const pools = {};

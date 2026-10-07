@@ -1,19 +1,16 @@
-// Fantasy Guild — Equipment Category Registry (Area Deck Rework, C-7)
+// Fantasy Guild — Equipment Category Registry
 //
-// [D-54] Equipment categories are DATA, not constants baked into the engine.
-// The owner intends to keep adding gear types — `quiver`, `gloves` and `boots`
-// are planned, and `trinket` is expected to split into `ring` (cap 2) and
-// `amulet` (cap 1) — so **adding a category must be an authoring change with
-// no engine edit**. Everything downstream derives from this table.
-//
-// [D-55] A category's cap is a property OF THE CATEGORY: most allow 1, a few
+// Equipment categories are DATA, not constants baked into the engine, so
+// adding a category must be an authoring change with no engine edit.
+// Everything downstream derives from this table.
+// A category's cap is a property OF THE CATEGORY: most allow 1, a few
 // allow 2. Nothing else constrains the hero's grid.
 //
-// [D-7] The grid itself is fully flexible: nine slots, any item in any slot,
+// The grid itself is fully flexible: nine slots, any item in any slot,
 // gear and consumables sharing one pool. That is what makes the gear-vs-
 // consumables ratio a real decision rather than a fixed layout.
 
-/** How many slots a hero's loadout grid has (D-7). Rendered 3×3. */
+/** How many slots a hero's loadout grid has. Rendered 3×3. */
 export const GRID_SLOT_COUNT = 9;
 
 /**
@@ -21,8 +18,8 @@ export const GRID_SLOT_COUNT = 9;
  * ids, so a new gear type or a new consumable class needs no engine change.
  *
  *   gear        — worn equipment; contributes stats, can be damaged/lost
- *   sustenance  — food & drink, consumed on need (the 25% rule, D-17)
- *   consumable  — potions, scrolls, runes; spent in the Prep Phase (D-20)
+ *   sustenance  — food & drink, consumed on need (the 25% rule)
+ *   consumable  — potions, scrolls, runes
  */
 export const CATEGORY_KINDS = {
     GEAR: 'gear',
@@ -30,7 +27,7 @@ export const CATEGORY_KINDS = {
     CONSUMABLE: 'consumable'
 };
 
-/** Unlimited — the `Consumable` class is deliberately uncapped (D-56). */
+/** Unlimited — the `Consumable` class is deliberately uncapped. */
 export const UNCAPPED = Infinity;
 
 /**
@@ -40,7 +37,7 @@ export const UNCAPPED = Infinity;
  * To add a category — `boots`, say — append a row. Nothing else changes.
  */
 export const EQUIPMENT_CATEGORY_DEFS = [
-    // --- Gear (D-55: most cap at 1, hands allow 2) ---------------------
+    // --- Gear (most cap at 1, hands allow 2) ---------------------
     {
         id: 'hand',
         label: 'Hand',
@@ -48,14 +45,14 @@ export const EQUIPMENT_CATEGORY_DEFS = [
         kind: CATEGORY_KINDS.GEAR,
         cap: 2,
         // Two free hands, no main/off distinction: either hand takes any
-        // weapon and their bonuses stack (hero_dock_roadmap_v1.md D2).
+        // weapon and their bonuses stack.
         weapon: true
     },
     { id: 'hat',     label: 'Hat',     icon: '🎩',  kind: CATEGORY_KINDS.GEAR, cap: 1 },
     { id: 'chest',   label: 'Chest',   icon: '🛡️',  kind: CATEGORY_KINDS.GEAR, cap: 1 },
     { id: 'trinket', label: 'Trinket', icon: '💍',  kind: CATEGORY_KINDS.GEAR, cap: 2 },
 
-    // --- Consumables (D-56: three classes, only the last is uncapped) ---
+    // --- Consumables (three classes, only the last is uncapped) ---
     { id: 'food',       label: 'Food',       icon: '🍖', kind: CATEGORY_KINDS.SUSTENANCE, cap: 1 },
     { id: 'drink',      label: 'Drink',      icon: '🍺', kind: CATEGORY_KINDS.SUSTENANCE, cap: 1 },
     {
@@ -63,8 +60,7 @@ export const EQUIPMENT_CATEGORY_DEFS = [
         label: 'Consumable',
         icon: '🧪',
         kind: CATEGORY_KINDS.CONSUMABLE,
-        // Uncapped on purpose: a wall of scrolls is a legitimate build, and
-        // the only brake is the Prep Phase time it costs (D-56).
+        // Uncapped on purpose: a wall of scrolls is a legitimate build.
         cap: UNCAPPED
     }
 ];
@@ -74,10 +70,8 @@ export const EQUIPMENT_CATEGORY_DEFS = [
  * module load. It is memoised on the table's length so lookups stay O(1),
  * but a category appended to `EQUIPMENT_CATEGORY_DEFS` is picked up.
  *
- * That matters because the table is the single source of truth (D-54): a
- * snapshot would mean "adding a category" silently required a reload, and
- * would be flatly wrong the day categories come from a data file the way
- * cards do.
+ * That matters because the table is the single source of truth: a
+ * snapshot would mean "adding a category" silently required a reload.
  */
 let byIdCache = null;
 let byIdCacheSize = -1;
@@ -119,7 +113,7 @@ export function isGearCategory(categoryId) {
     return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.GEAR;
 }
 
-/** True when items of this category are potions/scrolls/runes (the Prep Phase class, D-20). */
+/** True when items of this category are potions/scrolls/runes. */
 export function isConsumableCategory(categoryId) {
     return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.CONSUMABLE;
 }

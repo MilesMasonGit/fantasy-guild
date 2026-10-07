@@ -5,11 +5,6 @@ import { getTerrain, patchOf, bandOf, toneOf } from '../config/registries/terrai
 
 /**
  * The one answer per art pixel that replaced five rendering passes.
- *
- * This is where the layering rules now live, so this is where they can be
- * asserted. Before the rewrite they were expressed as *draw order* inside the
- * canvas — patches happened to be painted after bands, so patches happened to
- * win — and nothing outside the renderer could see, or check, that they did.
  */
 
 const flat = (terrainId) => new Array(LATTICE_SIZE * LATTICE_SIZE).fill(terrainId);

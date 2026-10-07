@@ -3,9 +3,9 @@ import { GameState } from '../state/GameState.js';
 import * as ConsumptionSystem from '../systems/hero/ConsumptionSystem.js';
 import { CONSUME_THRESHOLD } from '../config/loopConstants.js';
 
-// Locks C-13 (D-4, D-29): a crafter tops up from their OWN loadout grid, and
-// "runs indefinitely" holds even when a craft costs more energy than the
-// ambient top-up threshold.
+// Locks a crafter tops up from their OWN loadout grid, and "runs
+// indefinitely" holds even when a craft costs more energy than the ambient
+// top-up threshold.
 
 const WATER = { id: 'item_water', name: 'Water', equipSlot: 'drink', restoreAmount: 10 };
 

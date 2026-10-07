@@ -22,7 +22,6 @@ export const ItemRateTracker = {
         const gains = history.get(itemId);
         gains.push({ amount, timestamp: Date.now() });
         
-        // Lazy cleanup for this specific item
         this.prune(itemId);
     },
 
@@ -65,7 +64,6 @@ export const ItemRateTracker = {
         
         if (!gains || gains.length === 0) return 0;
 
-        // Sum up total amount in current window
         const totalAmount = gains.reduce((sum, g) => sum + g.amount, 0);
         
         // Calculate duration: Either the actual elapsed time in the window 
@@ -77,12 +75,6 @@ export const ItemRateTracker = {
         
         return totalAmount / durationHours;
     },
-
-    // ⚠️ `getAllRates()` was deleted on 2026-08-26 (CR2-097). It had no callers —
-    // the "Area Manager's Global Economy panel" its doc comment named was never
-    // built. `getRate(itemId)` remains and is the live entry point. The rate
-    // maths behind it is deliberately untouched: this tracker's premise sits
-    // behind the Time Bank, which is off.
 
     /**
      * Wipe all history caches (useful for game reset/load)

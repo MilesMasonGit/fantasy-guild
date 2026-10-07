@@ -2,63 +2,25 @@
 // Coordinates all Vite JSON globs for standard game configuration.
 
 export const DatabaseManager = {
-    // Cards are gone. The card system was retired by the playmat rework
-    // (Phase 1 §H, decision G-18); the leftover `data/archive/cards/` copies
-    // were deleted 2026-08-24 along with the empty `cardFiles` stub and the
-    // two area globs that still pointed at the pre-archive `data/cards/area/`.
-    // None of the three had a single consumer. Recover them from git history
-    // if the old item ids, enemy ids or flavour text are ever wanted again.
-    // `subskillFiles` was removed with the subskill concept (R-2). It had no
-    // reader; `data/subskills.json` was deleted with it and is in git history.
     stationFiles: import.meta.glob('/data/stations.json', { eager: true }),
 
-    // Tokens and Maps.
-    //
-    // CMS rework Phase 0 (CMS-82) finally did what the note above promised:
-    // Token and Map definitions used to be hand-authored JavaScript object
-    // literals inside their registries, which meant the CMS had nothing to
-    // write into — CMS-53 ("the CMS writes data/ JSON wholesale") was
-    // unbuildable for the two entity types the whole rework exists to author.
-    // The definitions now live in data/; the registries are loaders.
-    //
-    // The single-file + folder-glob pair mirrors items and recipes exactly, so
-    // content can later be split across files without touching this.
     tokenFilesSingle: import.meta.glob('/data/tokens.json', { eager: true }),
     tokenFilesGlob: import.meta.glob('/data/tokens/**/*.json', { eager: true }),
 
     mapFilesSingle: import.meta.glob('/data/maps.json', { eager: true }),
     mapFilesGlob: import.meta.glob('/data/maps/**/*.json', { eager: true }),
 
-    // Skill-pooled Token recipes (CMS-39). Keyed by skill id. These are the
-    // only recipes the game has: the card-era `recipes.json` list and the
-    // `recipeRegistry.js` that loaded it were deleted on 2026-08-24 (CR2-119).
-    // Nothing but the registries barrel imported that registry, which is why
-    // 23 unused recipes were parsed on every launch.
+    // Skill-pooled Token recipes, keyed by skill id.
     recipePoolFilesSingle: import.meta.glob('/data/tokenRecipes.json', { eager: true }),
     recipePoolFilesGlob: import.meta.glob('/data/tokenRecipes/**/*.json', { eager: true }),
 
-    // Quests — retired 2026-08-18. Quests are hardcoded in
-    // `systems/quests/tutorialQuests.js`; there is no authored quest content.
-
-    // Items
     itemFilesSingle: import.meta.glob('/data/items.json', { eager: true }),
     itemFilesGlob: import.meta.glob('/data/items/**/*.json', { eager: true }),
 
-    // The named effect library (Unified Effects P1). Bearers store references;
-    // `effectRegistry.js` holds the entries and `tokenRegistry` resolves the two
-    // at load.
-    //
-    // ⚠️ `data/effects.json` existed before, as the card-era CMS's 56 placeholder
-    // Effects — orphaned, read by nothing, deleted when this replaced it. If a
-    // glob here ever loads that shape again, something has restored the wrong
-    // file: those entries are keyed "0"–"55" and carry `targetEntityTypes`.
+    // ⚠️ The named-effect library. A dead card-era `data/effects.json` (entries keyed "0"-"55",
+    // carrying `targetEntityTypes`) must never be restored here.
     effectFilesSingle: import.meta.glob('/data/effects.json', { eager: true }),
     effectFilesGlob: import.meta.glob('/data/effects/**/*.json', { eager: true }),
-
-    // ⚠️ **The enemy globs are gone** (2026-09-06). `data/enemies.json` and
-    // `enemyRegistry.js` were deleted when enemies folded into Tokens: an enemy
-    // is a Token (D-104), so it loads with every other Token out of
-    // `data/tokens.json` and needs no data file, glob or registry of its own.
 };
 
 export default DatabaseManager;

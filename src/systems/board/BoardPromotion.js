@@ -1,4 +1,4 @@
-// Fantasy Guild — Promotion on the board (Promotes rule P3)
+// promotion on the board
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
@@ -13,46 +13,29 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
- * Promotion on the board — the Token is the price, the tile is the ceremony.
+ * Promotion on the board: the Token is the price, the tile is the ceremony. The job is read from
+ * the Token's Promotes rule (Promotes the hero to Knight).
  *
- * Ported from the unmerged `promotion-tokens` branch (2026-09-06), with one
- * change of source: the job is read from the Token's **Promotes rule** —
- * "Promotes the hero to Knight." (PR-1, PR-2) — rather than from a
- * `promotion: { jobId }` field. Everything the owner decided about how it plays
- * is carried over unchanged (PR-4…PR-8). See `docs/promotes_rule_roadmap.md`.
+ * Stand a qualified hero on a Token whose rule names a job and they train for a cycle; when it
+ * completes the game asks, and only then does anything change. Confirm and the hero takes the job
+ * and the Token pays the rule's price. Decline and nothing is spent. The offer comes after the
+ * training because dropping a hero on a Token is starting the work, not a commitment.
  *
- * ## The shape of it
- * Stand a qualified hero on a Token whose rule names a job and they **train for
- * a cycle**; when it completes the game asks, and only then does anything
- * change. Confirm and the hero becomes a Knight and the Token pays the rule's
- * price. Decline and nothing at all is spent.
+ * Declining costs nothing and moves nobody: the Token keeps its charges and the hero stays on the
+ * tile. The tile goes `promotionPaused` and does not restart, since re-asking every thirty seconds
+ * is nagging. Picking the hero up and putting them back asks again.
  *
- * ## Why the offer comes AFTER the training (PR-5)
- * Dropping a hero on a Token is not a commitment; it is starting the work. The
- * cycle is the anticipation and the offer is the payoff.
+ * ⚠️ Pause lives on the instance, which is saved board state, so a declined offer survives a
+ * reload.
  *
- * ## Declining costs nothing and moves nobody (PR-7)
- * The Token keeps its charges and **the hero stays on the tile**. The tile goes
- * `promotionPaused` and does **not** restart — a question re-asked every thirty
- * seconds at a player who said no is nagging. Picking the hero up and putting
- * them back is how you ask again.
+ * Training does not start unless the promotion could actually happen: a hero who already holds the
+ * job gets no alert (it makes the Token inert after a promotion with no extra state); an unmet
+ * skill gate shows `ALERT.UNSKILLED`/`ALERT.ACCESS`; a Token that cannot pay shows `ALERT.CHARGES`,
+ * so a price of 2 on a Token with 1 charge never trains a hero toward an offer that could never be
+ * accepted.
  *
- * ⚠️ Pause lives on the **instance**, which is saved board state, so a declined
- * offer survives a reload rather than quietly re-offering after a refresh.
- *
- * ## Refusing before the work (PR-8)
- * Training does not start unless the promotion could actually happen:
- * - **Already holds the job** — no alert. They have arrived, and it is what
- *   makes the Token inert after a successful promotion with no extra state.
- * - **Skill gate unmet** — `ALERT.UNSKILLED` / `ALERT.ACCESS`, the marks the
- *   board already uses for a hero who cannot work a station.
- * - **The Token cannot pay** — `ALERT.CHARGES`. New in P3: the price is now the
- *   rule's, and a price of 2 on a Token with 1 charge left must not train a
- *   hero toward an offer that could never be accepted.
- *
- * ## ⚠️ Tokens only (PR-3)
- * This reads `getTokenType` and nothing else. An item carrying a Promotes rule
- * never reaches it, which is exactly the owner's ruling.
+ * ⚠️ Tokens only: this reads `getTokenType` and nothing else, so an item carrying a Promotes rule
+ * never reaches it.
  */
 
 /** The job a tile's Token promotes to, resolved — or null. */
@@ -69,11 +52,9 @@ export function isPromotionToken(instance) {
 }
 
 /**
- * What accepting costs this Token, in charges — read from the rule itself, by
- * the same reading the CMS cost strip shows (`Charges.statementChargeDelta`).
- *
- * A positive delta would *restore* charges on a promotion; that is refused as a
- * price of nothing rather than a refund.
+ * What accepting costs this Token, in charges, read from the rule itself the same way the CMS cost
+ * strip does (`Charges.statementChargeDelta`). A positive delta would restore charges on a
+ * promotion; it is refused as a price of nothing rather than a refund.
  */
 export function priceOf(instance) {
     const def = getTokenType(instance?.typeId);
@@ -116,10 +97,8 @@ export function isPaused(instance) {
 }
 
 /**
- * Clear an offer, so the tile will train again.
- *
- * Called when the tile's hero changes — putting a different hero down, or the
- * same one back, is the physical gesture that means "ask me again".
+ * Clear an offer, so the tile will train again. Called when the tile's hero changes: putting a
+ * different hero down, or the same one back, is the gesture that means ask me again.
  */
 export function clearPause(instance) {
     if (!instance || instance.promotionPaused == null) return;
@@ -134,18 +113,14 @@ export function isDeclined(instance) {
 }
 
 /**
- * Training time when a Promotion Token's author has not set one.
- *
- * Long by the standards of the 10–30s production band, deliberately: this is
- * the only cycle on the board whose payoff is a different hero.
+ * Training time when a Promotion Token's author has not set one. Deliberately long: this is the
+ * only cycle on the board whose payoff is a different hero.
  */
 export const DEFAULT_TRAINING_MS = 30000;
 
 /**
- * Advance a promotion tile.
- *
- * Mirrors `BoardCombat.tickToken`: called every tick whether or not a hero is on
- * it, because this also owns *stopping*. By instance (Free Playmat slice 1.6b).
+ * Advance a promotion tile. Mirrors `BoardCombat.tickToken`: called every tick whether or not a
+ * hero is on it, because this also owns stopping.
  *
  * @returns {{ alert: string|null }}
  */
@@ -153,14 +128,12 @@ export function tickToken(instance, delta, heroId) {
     const job = jobFor(instance);
     if (!job) return { alert: null };
 
-    // Nobody here. Reset the cycle so the next hero starts from zero rather than
-    // inheriting a stranger's progress.
-    //
-    // ⚠️ **The offer is NOT dropped** (PR-7, FP-61; Free Playmat 1.4c). Under
-    // flags a tick with nobody here is not the player's gesture — a claim can
-    // lapse for a tick on its own — and clearing on it would re-ask a player
-    // who said "not yet". An offer is cleared only by a DIFFERENT hero claiming
-    // the Token, or by a flag being planted on it (`Flags.plant`).
+    // Nobody here. Reset the cycle so the next hero starts from zero rather than inheriting a
+    // stranger's progress.
+    // ⚠️ The offer is NOT dropped: under flags a tick with nobody here is not the player's gesture
+    // (a claim can lapse for a tick on its own), and clearing on it would re-ask a player who said
+    // not yet. An offer is cleared only by a DIFFERENT hero claiming the Token, or by a flag being
+    // planted on it (`Flags.plant`).
     if (!heroId) {
         instance.cycleElapsedMs = 0;
         return { alert: null };
@@ -215,12 +188,8 @@ export function tickToken(instance, delta, heroId) {
 }
 
 /**
- * The player said yes.
- *
- * Everything that costs something happens here and nowhere else — the only
- * place a promotion is ever paid for. The offer is named by the Token's
- * **instance id** (Free Playmat slice 1.6b), so it is found wherever the Token
- * has been moved to.
+ * The player said yes. Everything that costs something happens here and nowhere else. The offer is
+ * named by the Token's instance id, so it is found wherever the Token has been moved to.
  */
 export function accept(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
@@ -249,8 +218,8 @@ export function accept(instanceId) {
         instanceId: instance.id, typeId: instance.typeId, heroId, failed: false
     });
 
-    // Spend the price. `applyDelta` also removes a Token its last charge
-    // empties — exactly as a depleted Forest or Bear leaves (D-104).
+    // Spend the price. `applyDelta` also removes a Token its last charge empties, as a depleted
+    // Forest or Bear leaves.
     if (price > 0) Charges.applyDelta(instance, -price, { heroId });
 
     const hero = HeroManager.getHero(heroId);
@@ -271,14 +240,9 @@ export function decline(instanceId) {
     if (!instance || !isPaused(instance) || isDeclined(instance)) return { success: false, reason: 'NO_OFFER' };
 
     instance.cycleElapsedMs = 0;
-    /**
-     * ⚠️ **Recorded, not just implied by the pause** (Promotes rule P4).
-     *
-     * An unanswered offer and a declined one both hold the tile paused. After a
-     * reload the UI re-draws a standing offer so the player is asked — and
-     * without this flag it could not tell the two apart, and would re-ask a
-     * player who already said "not yet", which is the nagging PR-7 forbids.
-     */
+    // ⚠️ Recorded, not just implied by the pause: an unanswered offer and a declined one both hold
+    // the tile paused, and after a reload the UI re-draws a standing offer. Without this flag it
+    // could not tell the two apart and would re-ask a player who already said not yet.
     instance.promotionDeclined = true;
 
     EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: instance.id, percent: 0 });

@@ -23,20 +23,18 @@ const priceText = (price) =>
         : price.map(p => `${p.quantity.toLocaleString()} ${itemName(p.itemId)}`).join(' + ');
 
 /**
- * GuildUpgradeInspection — clean, focused upgrade inspection panel.
- * - Large, central, present sprite.
- * - Distinct, prominent upgrade button.
- * - Simple, non-redundant details.
- * - Progression list with wide flat scroll arrows matching Cartographer and Hero Inspection.
+ * GuildUpgradeInspection: clean, focused upgrade inspection panel: a large central sprite, a
+ * distinct upgrade button, simple non-redundant details, and a progression list with wide flat
+ * scroll arrows.
  */
 export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
     const scrollRef = useRef(null);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
 
-    // Hall upgrades are paid in Bank items (SP-65). The selector returns a flat
-    // signature string of "itemId:have" for the next rank's price, so the
-    // panel re-renders when any of those counts changes (CR-044 contract).
+    // Hall upgrades are paid in Bank items. The selector returns a flat signature string of
+    // 'itemId:have' for the next rank's price, so the panel re-renders when any of those
+    // counts changes (see `useGameState`'s selector contract).
     const haveSignature = useGameState(
         () => {
             if (!upgradeDef) return '';
@@ -79,15 +77,13 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
 
     const rank = ranks[upgradeDef.id] || 0;
     const isMax = rank >= upgradeDef.maxRank;
-    // Read by upgrade id: the web has no tiles (B9, TL-23).
+    // Read by upgrade id: the web has no tiles.
     const lock = getLockDetail(upgradeDef.id, ranks);
     const accessible = lock === null;
-    // The link lock is deliberately NOT spelled out here (owner decision,
-    // 2026-08-25, made for the old grid's adjacency lock): the web already
-    // shows which nodes are joined to a bought one, so repeating it is noise.
-    // The slot below is for the lock kinds the player cannot read off the web —
-    // skill gates such as "Requires Blacksmithing 5" (`LOCK_KIND.SKILL`, set
-    // through an upgrade's `gate`).
+    // The link lock is deliberately NOT spelled out here: the web already shows which nodes
+    // are joined to a bought one, so repeating it is noise. The slot below is for the lock
+    // kinds the player cannot read off the web, skill gates such as 'Requires Blacksmithing 5'
+    // (`LOCK_KIND.SKILL`, set through an upgrade's `gate`).
     const lockReason = lock && lock.kind !== LOCK_KIND.LINK ? lock.text : null;
     const price = !isMax ? getUpgradePrice(upgradeDef, rank) : null;
     const canAfford = price != null
@@ -107,7 +103,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
         scrollRef.current?.scrollBy({ top: 120, behavior: 'smooth' });
     };
 
-    // Progression tiers for the roadmap
     const allRanks = Array.from({ length: upgradeDef.maxRank }, (_, i) => {
         const r = i + 1;
         const tierPrice = getUpgradePrice(upgradeDef, i);
@@ -128,10 +123,11 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
 
     return (
         <div className="flex flex-col h-full bg-[#14100c] text-gi-text select-none p-3.5 gap-3 overflow-hidden">
-            {/* 1. Large Central Hero Box with Distinct Upgrade Button */}
             <div className="p-4 rounded-xl bg-black/40 border border-gi-border/40 flex flex-col items-center justify-center text-center relative shrink-0 shadow-inner">
-                {/* Way out of the panel. Without this the only exit was picking
-                    a different node or closing the whole drawer (CR2-167). */}
+                {/**
+                 * Way out of the panel. Without this the only exit was picking a different
+                 * node or closing the whole drawer.
+                 */}
                 {onClose && (
                     <button
                         type="button"
@@ -143,7 +139,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                         <X size={16} />
                     </button>
                 )}
-                {/* Large Central Sprite (128px) */}
                 <div className="w-36 h-36 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center relative overflow-hidden shadow-lg mb-2.5 shrink-0">
                     <img
                         src={upgradeDef.sprite}
@@ -166,7 +161,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                     )}
                 </div>
 
-                {/* Title & Silkscreen Rank */}
                 <h2 className="text-base font-bold text-gi-text">
                     {upgradeDef.name}
                 </h2>
@@ -177,12 +171,10 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                     {isMax ? 'MAX LEVEL' : `Rank ${toRoman(rank)} / ${toRoman(upgradeDef.maxRank)}`}
                 </div>
 
-                {/* Simple 1-sentence description */}
                 <p className="text-xs text-gi-muted mt-2 leading-relaxed max-w-[280px]">
                     {upgradeDef.description}
                 </p>
 
-                {/* 2. Very Distinct Upgrade Button */}
                 <div className="w-full mt-3.5">
                     {isMax ? (
                         <div className="w-full py-2.5 rounded-lg bg-gi-gold/15 border border-gi-gold/40 text-center text-xs font-bold text-gi-gold flex items-center justify-center gap-2">
@@ -199,8 +191,10 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                             <span>Upgrade Locked</span>
                         </div>
                     ) : null}
-                    {/* The display slot described above: silent for the link lock,
-                        used by future skill-gate reasons. */}
+                    {/**
+                     * The display slot described above: silent for the link lock, used by
+                     * future skill-gate reasons.
+                     */}
                     {lockReason && (
                         <p className="mt-2 text-[11px] leading-snug text-red-300/90 text-center">
                             {lockReason}
@@ -248,8 +242,10 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                             </div>
                         </button>
                     )}
-                    {/* What the Bank holds against the price, so a greyed-out
-                        button says what is missing. */}
+                    {/**
+                     * What the Bank holds against the price, so a greyed-out button says what
+                     * is missing.
+                     */}
                     {!isMax && accessible && price && price.length > 0 && (
                         <div className="mt-2 flex flex-col gap-0.5 text-[11px]" data-upgrade-bank-check>
                             {price.map(p => {
@@ -267,7 +263,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                 </div>
             </div>
 
-            {/* 3. Progression Roadmap with Wide Flat Scroll Arrows */}
             <div className="flex-1 flex flex-col min-h-0 relative">
                 <div className="flex items-center justify-between pb-1.5 px-1 shrink-0">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-gi-muted">
@@ -278,7 +273,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                     </span>
                 </div>
 
-                {/* Flat Scroll Arrow: Top */}
                 {canScrollUp && (
                     <button
                         onClick={scrollUp}
@@ -289,7 +283,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                     </button>
                 )}
 
-                {/* Scrollable list of ranks */}
                 <div
                     ref={scrollRef}
                     className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
@@ -341,7 +334,6 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose }) => {
                     })}
                 </div>
 
-                {/* Flat Scroll Arrow: Bottom */}
                 {canScrollDown && (
                     <button
                         onClick={scrollDown}

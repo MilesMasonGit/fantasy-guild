@@ -13,9 +13,8 @@ import { FOUNDATION_SKILL_IDS } from '../../../config/registries/skillRegistry.j
 
 /**
  * Move every banked FOUNDATION skill back onto the hero's sheet, at its stored
- * level and XP (TL-7, owner 2026-09-25: promotion keeps all nine starting
- * skills). Only saves from before TL-7 can hold one. Villagers never promote,
- * so they have no bank and are left alone. A held copy wins over a banked one.
+ * level and XP. Only older saves can hold one, since promotion no longer banks
+ * them. Villagers are left alone. A held copy wins over a banked one.
  *
  * @returns {string[]} the skill ids restored
  */
@@ -38,46 +37,30 @@ export function restoreBankedFoundation(hero) {
 export function rehydrateHero(hero) {
     if (!hero) return;
 
-    // 1. Restore Logic (Aggregator)
     hero.aggregator = new ModifierAggregator(hero.id);
 
-    // 2. Inject Display Data
-    //    Classes and traits are retired (owner decision 2026-08-18): a hero's
-    //    identity is their job, read from `jobRegistry` by the Dock and the
-    //    inspection sheet. `classId` / `traitId` are left untouched on saved
-    //    heroes so existing saves keep loading, but nothing looks them up any
-    //    more, so there is no class or trait name to inject.
     hero.className = hero.isVillager ? 'Villager' : 'Adventurer';
     hero.traitName = '';
     if (!hero.spriteId) hero.spriteId = 'hero_recruit_0';
     if (!hero.icon) hero.icon = 'icon_recruit_0';
 
-    // 3. TL-7: promotion no longer banks foundation skills. A hero saved
-    //    before that rule may hold some in the bank; put them back on the
-    //    sheet at their stored level and XP. Runs before the derived stats.
+    // Older saves may hold foundation skills in the bank; put them back on the
+    // sheet. Runs before the derived stats.
     restoreBankedFoundation(hero);
 
-    // 4. Skill-based Speed Modifiers (Dynamic)
     updateHeroSkillModifiers(hero);
 
-    // 5. Derived Stats
     hero.level = calculateHeroLevel(hero.skills);
     updateHeroMaxHp(hero);
 
-    // 6. Status effects container (pre-status-system saves lack the key)
+    // Older saves lack the key.
     if (!Array.isArray(hero.statuses)) hero.statuses = [];
 
-    // 7. Normalize the loadout grid so every hero has exactly the current
-    //    number of slots and nothing stale.
-    //    The grid is nine generic slots now (D-7), so normalising means
-    //    "an array of exactly GRID_SLOT_COUNT, keeping whatever was there".
+    // Normalise the loadout grid to exactly GRID_SLOT_COUNT slots.
     //
-    //    ⚠️ CR2-040: this used to `filter(Boolean)` unconditionally and rewrite
-    //    the survivors from index 0, which silently re-packed a saved grid to
-    //    the front on every load — `[,,A,,B,,,,C]` came back as `[A,B,C,...]`.
-    //    The collapse is a *legacy migration*, so it now runs only on the
-    //    legacy named-slot object. An array is padded/truncated in place, each
-    //    item keeping its own index.
+    // ⚠️ Only the legacy named-slot object is collapsed into grid order. An array
+    // is padded/truncated in place so each item keeps its index; re-packing it to
+    // the front would silently move a saved loadout on every load.
     const equipment = createEmptyEquipment();
     if (Array.isArray(hero.equipment)) {
         hero.equipment.slice(0, equipment.length)
@@ -92,15 +75,14 @@ export function rehydrateHero(hero) {
     delete hero.lastEatenAt;
     delete hero.lastDrunkAt;
 
-    // Performance Rev
+    // UI change counter.
     hero._rev = (hero._rev || 0) + 1;
 
     return hero;
 }
 
 /**
- * Recompute max HP from combat skills (30·G(CL) + 20·G(Defense)).
- * Villagers keep their flat HP — they don't fight.
+ * Recompute max HP from the hero's combat skill. Villagers keep their flat HP.
  * Raising max keeps current HP as-is (level-ups grant headroom, not a heal);
  * lowering max clamps current down to it.
  */
@@ -120,23 +102,19 @@ export function updateHeroSkillModifiers(heroOrId) {
     updateHeroMaxHp(hero);
     hero.level = calculateHeroLevel(hero.skills);
 
-    // Clear existing skill modifiers first
     for (const skillId of Object.keys(hero.skills)) {
         hero.aggregator.removeModifiersBySource(`skill:${skillId}`);
     }
 
-    // Add fresh modifiers
     for (const [skillId, skillData] of Object.entries(hero.skills)) {
         const level = typeof skillData === 'number' ? skillData : (skillData.level || 0);
         if (level > 0) {
             hero.aggregator.addModifier({
                 source: `skill:${skillId}`,
                 type: EFFECT_TYPES.SPEED,
-                // ⚠️ Lower-case, and it matters (CR2-072). Every category id in
-                // the game is lower-case (`TARGET_CATEGORIES.MINING === 'mining'`)
-                // and `_forEachMatching` compares them case-SENSITIVELY, so the
-                // old `skillId.toUpperCase()` filed this under a key no reader
-                // could ever match — the query simply returned 0, silently.
+                // ⚠️ Lower-case: category ids are lower-case and `_forEachMatching`
+                // compares them case-SENSITIVELY, so an upper-cased key is one no
+                // reader could match and the query would silently return 0.
                 target: { category: skillId },
                 value: skillSpeedBonus(level),
                 persistent: true

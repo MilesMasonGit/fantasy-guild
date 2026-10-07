@@ -6,6 +6,10 @@ project's first tagged baseline — everything before it was untagged developmen
 ## [Unreleased]
 - **Crunch order updated (2026-10-06).** The Atlas joins the crunch after deep optimization,
   followed by a terrain rework; markets stay undecided.
+- **Comment-slimming pass (2026-10-06).** Comments only, about 610 files across `src/config`,
+  `src/systems`, `src/ui`, `src/state`, `src/utils`, `cms/src` and `src/tests`: roughly 12,000 net
+  lines removed, ticket and decision IDs gone, around 90 false comments deleted or corrected. One
+  test (`DeadEventWiring`) now matches comment text instead of a ticket ID. Leftovers are T-103.
 - **Owner rulings on the GDD questions (2026-10-06).** Recorded in the GDD and as tickets
   T-097..T-100; skill & class rework v2 and real offline progress became crunch tracks; a
   comment-slimming pass is briefed in `docs/active/brief_comment_slimming.md`.

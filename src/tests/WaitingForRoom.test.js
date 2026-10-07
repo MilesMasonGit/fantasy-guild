@@ -23,12 +23,10 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **CR3-201 (round 3 review, R3): something waiting for room.** A spawner
- * with nowhere to land re-asks `MatPlacement.findSpot` every tick. A failed
- * search is now remembered while the board, the Mat Tuner and the registry are
- * all exactly as they were — so these pin that ANY of them changing is seen at
- * once, including the case R10 named: room appearing because an unrelated
- * Token MOVED away (not a removal).
+ * A failed search is now remembered while the board, the Mat Tuner and the
+ * registry are all exactly as they were — so these pin that ANY of them
+ * changing is seen at once, including the case R10 named: room appearing
+ * because an unrelated Token MOVED away (not a removal).
  */
 
 registerTokenTypes({

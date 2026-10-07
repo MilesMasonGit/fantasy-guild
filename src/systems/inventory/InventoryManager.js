@@ -29,8 +29,8 @@ export const InventoryManager = {
     /**
      * Whether the Bank has no slot for `itemId`: it holds none of it and every
      * slot is taken. The one test {@link addItem} refuses a new type by, shared
-     * so `SpriteLayer`'s sweeps can skip a pile it would refuse (CR3-254)
-     * rather than re-trying it every tick.
+     * so `SpriteLayer`'s sweeps can skip a pile it would refuse rather than
+     * re-trying it every tick.
      */
     lacksSlotFor(itemId) {
         if (InventoryStore.getEntry(itemId)) return false;
@@ -46,35 +46,25 @@ export const InventoryManager = {
             return 0;
         }
 
-        // 0. Bank slot capacity (CR-039). Each distinct item type occupies one
-        //    slot; adding to an existing stack never needs a new slot. maxSlots
-        //    is owned by GuildUpgradeManager (bank_slots upgrade raises it).
+        // Bank slot capacity: each distinct item type occupies one slot; adding to
+        // an existing stack never needs a new one. `maxSlots` is owned by
+        // GuildUpgradeManager (the bank_slots upgrade raises it).
         //
-        //    ⚠️ **D-138: nothing is ever lost to a full Bank.** This used to
-        //    warn and destroy the incoming items. It now hands them to the
-        //    board, where they stay as a sprite until the player makes room —
-        //    so a full Bank announces itself *visibly*, as litter accumulating
-        //    across the grid, rather than through an error message. It is also
-        //    the only thing protecting a one-copy-ever Mythic drop.
-        //
-        //    The handoff is an EVENT rather than a call so this module and
-        //    `SpriteLayer` don't import each other. That makes the guarantee one
-        //    subscriber away from being silently untrue — if items ever start
-        //    vanishing, check `SpriteLayer.init()` is running first.
+        // ⚠️ Nothing is ever lost to a full Bank: the overflow goes to the board,
+        // where it stays as a sprite until the player makes room. The handoff is an
+        // EVENT so this module and `SpriteLayer` don't import each other, which
+        // makes the guarantee one subscriber away from being silently untrue: if
+        // items vanish, check `SpriteLayer.init()` is running.
         if (this.lacksSlotFor(itemId)) {
             EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount });
             return 0;
         }
 
         let addedCount = amount;
-        // `dur` is inert. It held item durability, which was retired (D-118)
-        // and cut entirely (owner decision 2026-08-19, CR2-096) — equipment is
-        // permanent and defeat-loss is the only way to lose gear. Nothing reads
-        // it; it stays on the entry, always null, so existing saves keep their
-        // shape and keep loading.
+        // `dur` is inert: a retired durability field, always null, kept so
+        // existing saves keep their shape. Nothing reads it.
         let entry = InventoryStore.getEntry(itemId) || { itemId, quantity: 0, dur: null };
 
-        // 1. Stack and Space Constraints
         if (template.stackable !== false) {
             // Falls back to the shared constant, not to state: an existing
             // save carries whatever ceiling was current when it was written,
@@ -84,11 +74,8 @@ export const InventoryManager = {
             const maxStack = baseMaxStack + stackBonus;
             const spaceRemaining = maxStack - entry.quantity;
 
-            // Same D-138 rule for a maxed stack: the remainder goes to the
-            // board, not to nothing. In practice this almost never fires —
-            // DEFAULT_MAX_STACK is 1e12 and D-137 says stacks are never capped
-            // — but "almost never" is not "never", and this is the path a
-            // Mythic-equivalent quantity would take.
+            // A maxed stack hands the remainder to the board, not to nothing.
+            // DEFAULT_MAX_STACK is 1e12, so this almost never fires.
             if (spaceRemaining <= 0) {
                 EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount });
                 return 0;
@@ -103,12 +90,10 @@ export const InventoryManager = {
             return 0;
         }
 
-        // 2. Atomic Update
         entry.quantity += addedCount;
         InventoryStore.setEntry(itemId, entry);
         InventoryFormatter.invalidate();
 
-        // 3. Side Effects
         RegistryManager.recordItemGain(itemId, addedCount, sourceId);
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId, amount: entry.quantity, added: addedCount });
         EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
@@ -155,14 +140,6 @@ export const InventoryManager = {
         return InventoryStore.getEntry(itemId)?.quantity || 0;
     },
 
-    // ⚠️ `canAccept(itemId, amount)` was deleted on 2026-08-26 (CR2-097). It had
-    // no callers: the "card work pre-flight" its doc comment named was Phase 6 of
-    // the retired card system and never shipped. It was also wrong — its last
-    // line read `>= Math.min(amount, 1)`, so it compared free space against 1 no
-    // matter what `amount` was, and would have answered "yes, room for 500" with
-    // one slot free. Anything that needs this question later should be written
-    // against `addItem`'s guards, not restored from here.
-
     /**
      * Public getters (delegated)
      */
@@ -174,27 +151,17 @@ export const InventoryManager = {
         return InventoryFormatter.getDisplayInventory();
     },
 
-    // ========================================
-    // Group & Sorting Mutations
-    // ========================================
-
-    // Bank tabs are NOT player-managed (owner ruling 2026-08-25). The only way
-    // a tab appears is buying the `bank_tabs` Guild Hall upgrade, which raises
-    // `inventory.maxTabs`; `GuildUpgradeManager._ensureBankTabs` then creates
-    // the matching `bank-tab-N` entry in `groupOrder`/`groupDefs`. Players
-    // cannot create, name, delete or rearrange tabs. `createGroup`,
-    // `renameGroup`, `deleteGroup` and `reorderGroups` used to live here; they
-    // had no callers anywhere and `createGroup` could never succeed anyway,
-    // because `_ensureBankTabs` always keeps `groupOrder.length === maxTabs`.
-    // Removed 2026-08-25 (CR2-089).
+    // Bank tabs are NOT player-managed: the only way a tab appears is buying the
+    // `bank_tabs` Guild Hall upgrade, which raises `inventory.maxTabs`;
+    // `GuildUpgradeManager._ensureBankTabs` then creates the matching entry in
+    // `groupOrder`/`groupDefs`.
     //
-    // `groupDefs[id].isCustom` survives in saved games as an inert field: it is
-    // written `false` by every tab-creating path that remains and read by
-    // nothing. It stays so old saves keep loading unchanged.
+    // `groupDefs[id].isCustom` survives in saved games as an inert field (always
+    // false, read by nothing) so old saves keep loading.
 
     /**
-     * Replace a group's manual item order wholesale (UI overhaul Phase 3 —
-     * the Bank pane's compact reorderable list commits its visual order).
+     * Replace a group's manual item order wholesale (the Bank pane's reorderable
+     * list commits its visual order).
      */
     setGroupOrder(groupId, orderedIds) {
         const def = GameState.inventory.groupDefs[groupId];

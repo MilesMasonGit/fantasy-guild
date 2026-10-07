@@ -1,4 +1,4 @@
-// Fantasy Guild — Hero portrait catalogue (Hero Dock rework, Phase 7)
+// Fantasy Guild — Hero portrait catalogue
 
 /**
  * Every portrait a hero can wear, as sprite ids.
@@ -7,7 +7,7 @@
  * to `assets/heroes/<id>.png`, so these need no manifest entry — the id IS the
  * filename stem.
  *
- * Free choice across the whole set (owner decision 2026-07-22): classes are
+ * Free choice across the whole set: classes are
  * cosmetic in this game, so restricting portraits by class would protect no
  * rule and would leave several classes with one or two options.
  *

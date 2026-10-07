@@ -40,39 +40,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * **A firing rule lands where its sentence says it lands** (Effects Robustness P1).
  *
- * ## The bug this pins
- * `Grants` declares `filter: true`, so the editor let an author write *"when a
- * neighbour completes a cycle, grant 1 Copper to any nearby Forge"* and
- * generated exactly that sentence. `TriggerSystem` then dropped the item on the
- * Token that fired, reading the filter never.
- *
- * It survived the whole of Unified Effects for a reason worth recording: the
- * **ambient** path has honoured filters since the grammar shipped
- * (`applicableStatements` matches every one), and no shipped content has ever
- * used a *triggered* `Grants` — all three authored `Grants` statements are
- * ambient. So the only code path carrying the bug was the only one nothing
- * exercised.
- *
- * ## What "honest" means is not the same for both keywords
- * * `Grants` **broadcasts** — a bonus to each named neighbour is four bonuses,
- *   which is what the sentence says and what the author priced.
- * * `Converts` picks **one destination** (ER-14) — it is an exchange with a
- *   fixed input, so producing onto every match would multiply the output while
- *   the Bank paid once.
- *
- * A filter matching nothing reaches nothing in both cases. Falling back to the
- * firing tile would make an unmatched filter silently universal, which is the
- * failure `matchesTokenTarget` already refuses for unknown modes.
- *
  * ## ⚠️ Why these assert on `addSprite` rather than on the board
  * A sprite does not remember where it came from — `addSprite` scatters it a step
  * or two away and **merges it into any nearby stack of the same item**. So "how
  * many Charcoal are lying on spot 16" is not a question the board can answer,
  * and two grants to two neighbours may well end up as one stack.
- *
- * The Token a grant was *addressed to* is the actual contract here, and it is
- * the argument `TriggerSystem` passes. Spying on it asserts the thing under test
- * instead of a rendering side effect downstream of it.
  */
 
 // 15 and 16 are neighbours; 33 is near neither.
@@ -159,7 +131,7 @@ beforeEach(() => {
     TriggerSystem.resetCascadeGuard();
     TriggerSystem.init();
     // ⚠️ The "every match" case counts diagonal neighbours, so Near is pinned at
-    // the old 8-neighbour ring (272 u); the shipped default is 164 u since FP-75.
+    // the old 8-neighbour ring (272 u); the shipped default is 164 u.
     resetMatTuning();
     setMatTuning('nearRadius', 272);
     GameState.state.heroes = [makeHero('hero_1')];
@@ -285,9 +257,7 @@ describe('Converts aims at ONE destination (ER-14)', () => {
     });
 
     it('produces ONCE even when several neighbours match', () => {
-        // ⚠️ The rule that keeps the exchange honest. A conversion consumes a
-        // fixed input; broadcasting the output would be free money, which is the
-        // trap UE-7 names for scale, arriving here through the filter instead.
+        // ⚠️ The rule that keeps the exchange honest.
         sigilAimedAt('fixture_sigil_at_all', { mode: 'tag', value: 'seafood' });
 
         place(SOURCE, 'fixture_sigil_at_all');

@@ -10,15 +10,14 @@ import { Package, Sparkles } from 'lucide-react';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * GuildHallEffectsPanel — the Guild Hall's active outputs and boosts, shown
- * beside the upgrade web.
- *
- * Always on the LEFT of the web (B9, FB-38), whichever side the nav is on, so
- * it takes no `menuRight`. Its width is the Tray's column spec, so it gives way
- * on a narrow window before the web does (FP-100).
+ * GuildHallEffectsPanel: the Guild Hall's active outputs and boosts, shown beside the upgrade
+ * web.
+ * Always on the LEFT of the web, whichever side the nav is on, so it takes no `menuRight`. Its
+ * width is the `TRAY_COLUMN` spec in `boardConstants.js`, so it gives way on a narrow window
+ * before the web does.
  */
 export const GuildHallEffectsPanel = () => {
-    // Re-evaluate whenever upgrades, board, or game state updates
+    // Re-evaluate whenever upgrades, board, or game state updates.
     const guildHallData = useGameState(
         () => {
             const def = getTokenType('token_guild_hall');
@@ -39,12 +38,11 @@ export const GuildHallEffectsPanel = () => {
             style={{ width: columnWidthCss(TRAY_COLUMN) }}
             className="shrink-0 h-full flex flex-col items-center justify-center py-8 pl-8 pr-0 bg-transparent relative z-10 select-none pointer-events-auto"
         >
-            {/* Inner Wrapper matched to SIDE_COLUMN_PX (Playmat Height) */}
             <div
                 className="w-full relative shrink-0 flex flex-col"
                 style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             >
-                {/* Wooden Frame Box matching the exact height and styling of the Token Tray */}
+                {/* Wooden frame box. */}
                 <div
                     className="w-full h-full relative rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden flex flex-col bg-[#14100c]"
                     style={{
@@ -55,14 +53,11 @@ export const GuildHallEffectsPanel = () => {
                         boxShadow: 'inset 0 0 20px rgba(0,0,0,0.85), 0 8px 24px rgba(0,0,0,0.6)'
                     }}
                 >
-                    {/* Header: Panel title */}
                     <div className="shrink-0 py-2.5 px-3.5 text-center text-xs md:text-sm font-bold text-gi-text tracking-wider uppercase select-none border-b border-gi-border/40 bg-gi-base/80">
                         Guild Hall Effects
                     </div>
 
-                    {/* Scrollable Content Body */}
                     <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4 text-xs text-gi-text">
-                        {/* 1. Outputs Category */}
                         <div className="flex flex-col gap-2">
                             <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
                                 Outputs
@@ -88,7 +83,6 @@ export const GuildHallEffectsPanel = () => {
                             )}
                         </div>
 
-                        {/* 2. Boosts Category */}
                         <div className="flex flex-col gap-2">
                             <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
                                 Boosts & Modifiers

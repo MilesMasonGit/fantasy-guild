@@ -1,66 +1,44 @@
-// Fantasy Guild — Board state accessors (7×7 Playmat rework, Phase 2)
+// board state accessors
 
 import { GameState } from '../../state/GameState.js';
 import { createEmptyBoard } from '../../state/StateSchema.js';
 
 /**
- * BoardState — read/write primitives over `state.board`.
+ * BoardState: read/write primitives over `state.board`.
  *
- * This layer knows the SHAPE of board state and nothing about the rules.
- * Displacement, forfeited cycles and what may go where all live in
- * `Placement.js`; keeping them apart is what stops "put a Token here" quietly
- * growing a policy.
+ * This layer knows the SHAPE of board state and nothing about the rules. Displacement, forfeited
+ * cycles and what may go where all live in `Placement.js`; keeping them apart stops
+ * put-a-Token-here quietly growing a policy.
  *
- * ## The Token instance shape (D-79)
- * A Token is **a definition plus board state**: the registry holds the type, and
- * a light instance holds only what is true of this copy, on this tile, right now.
+ * A Token is a definition plus board state. The registry holds the type, and a light instance holds
+ * only what is true of this copy right now: `typeId` (the definition, NEVER copied onto the
+ * instance), `usesRemaining` (null means unlimited) and `cycleElapsedMs` (runtime; reset by any
+ * interruption). A station also carries `selectedRecipeId`, the recipe the player set it to. It is
+ * optional and absent on everything that is not a station; `StationRecipe.js` is the only thing
+ * that reads or writes it, and its absence on a station means not chosen yet: the station waits,
+ * and nobody works it until the player picks.
  *
- * ```js
- * { typeId: 'token_forest',   // → the definition; NEVER copied onto the instance
- *   usesRemaining: 4200,      // null means unlimited use (D-176)
- *   cycleElapsedMs: 0 }       // runtime; reset by any interruption (D-54)
- * ```
+ * Where a Token is: `board.tokens[id]` holds every Token on the mat, keyed by its instance id, and
+ * the instance itself carries its point: `x`, `y` in mat units (1 u = one natural board pixel) and
+ * `placedAt`, from `board.nextTokenOrder`, the order it arrived on the mat in. A Token is addressed
+ * by its instance id or by a point, and by nothing else.
  *
- * A station also carries **`selectedRecipeId`** — the recipe the player set it
- * to. It is optional and absent on everything that is not a station;
- * `StationRecipe.js` is the only thing that reads or writes it, and its absence
- * on a station means "not chosen yet": the station waits, and nobody works it
- * until the player picks (TL-15; R-5's pool default is gone).
+ * ⚠️ `heroId` is NOT on the instance. A hero's flag is their own state (`board.flags`), and which
+ * Token they work is a runtime claim keyed by the instance's `id` (see Flags and Claims below).
  *
- * ## Where a Token is (Free Playmat slice 1.6a)
- * `board.tokens[id]` holds every Token on the mat, keyed by its instance id,
- * and the instance itself carries its point: `x`, `y` in mat units (1 u = one
- * natural board pixel) and `placedAt`, from `board.nextTokenOrder`, the order
- * it arrived on the mat in. There are no tiles in this storage, and since slice
- * 1.6d-2 there is no tile-index view over it either: a Token is addressed by
- * its instance id or by a point, and by nothing else.
+ * The definition is deliberately never copied onto the instance: retuning a Token in the registry
+ * has to take effect immediately, everywhere, and stale copies stranded on live Tokens would make
+ * tuning untrustworthy.
  *
- * ⚠️ **`heroId` is NOT on the instance.** A hero's flag is their own state
- * (`board.flags`), and which Token they work is a runtime claim keyed by the
- * instance's `id` — see "Flags" and "Claims" below.
- *
- * The definition is deliberately never copied onto the instance. Retuning a
- * Token in the registry has to take effect immediately, everywhere — with
- * D-161's hand-authored numbers and ~60 Tokens to balance, stale copies
- * stranded on live tiles would make tuning untrustworthy.
- *
- * ## `usesRemaining: null` means unlimited, and is not `0`
- * Charges are a per-Token property, independent of rarity (D-176) — a Common
- * may be unlimited and a Mythic may be charged. `null` and `0` are opposites
- * here: one never depletes, the other is spent. Anything comparing charges must
- * check `== null` first.
+ * `usesRemaining: null` means unlimited, and is not `0`: one never depletes, the other is spent.
+ * Charges are a per-Token property, independent of rarity. Anything comparing charges must check
+ * `== null` first.
  */
 
 /**
- * The live board slice, created if a save predates it.
- *
- * The shape comes from `createEmptyBoard()` in StateSchema — this file used to
- * carry its own shorter list, one of three that disagreed (CR2-049). The
- * per-field guards below stay because they also repair a board that is present
- * but has a field of the wrong type.
- *
- * Terrain's paint hook and its backfill of old saves were removed from this
- * file in slice 1.6a (terrain is dormant, FP-10; its modules stay).
+ * The live board slice, created if a save predates it. The shape comes from `createEmptyBoard()` in
+ * StateSchema; the per-field guards below stay because they also repair a board that is present but
+ * has a field of the wrong type.
  */
 function board() {
     const state = GameState.state;
@@ -72,42 +50,33 @@ function board() {
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.workClaims || typeof state.board.workClaims !== 'object') state.board.workClaims = {};
     if (!Array.isArray(state.board.bin)) state.board.bin = [];
-    // Spot vacancies went with the Managers (Token Lifecycle 9.2, SP-55); an
-    // older save's leftover map is simply dropped.
     if ('vacancies' in state.board) delete state.board.vacancies;
-    // The Token Vault and the dormant Tray went in Token Lifecycle 9.3 (goal 1:
-    // Tokens live on the mat). `migrateState` drops their fields from an older
-    // save; nothing here reads them.
     return state.board;
 }
 
 /**
- * A fresh Token instance of `typeId`. `uses` of null means unlimited (D-176).
+ * A fresh Token instance of `typeId`. `uses` of null means unlimited.
  *
- * `terrain` is the Map's stamp (D-T6): the terrain of whichever Map burst this
- * Token into existence. It is set only when there is one, so the field is
- * absent on the great majority of Tokens rather than being null on all of them.
- * Dormant: terrain is switched off and nothing reads the stamp today.
+ * `terrain` is the Map's stamp: the terrain of whichever Map burst this Token into existence. It is
+ * set only when there is one, so the field is absent on the great majority of Tokens rather than
+ * being null on all of them. Nothing reads the stamp today.
  */
 function newTokenId() {
     return `tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
 /**
- * ## Where a Token came from (Token Lifecycle DP-3, slice 3.1)
+ * Where a Token came from:
+ * - `placed`: the player put it there, or the game did on the player's behalf: the opening Guild
+ * Hall, a crafted Token, anything bought or built.
+ * - `spawned`: the engine made it (`EffectActions.spawn`): a sapling from a Forest, a goblin from a
+ * camp.
  *
- * * `placed`  — the player put it there, or the game did on the player's
- *   behalf: the opening Guild Hall, a crafted Token (TL-8), anything bought
- *   or built.
- * * `spawned` — the engine made it (`EffectActions.spawn`): a sapling from a
- *   Forest, a goblin from a camp.
+ * Two rules read it: the mat cap counts `placed` only (`MatCap.js`), and a spawn may push only
+ * `spawned` Tokens. A `grows` or `turns` change (a transform) keeps it.
  *
- * Two rules read it: the mat cap counts `placed` only (SP-67, `MatCap.js`), and
- * a spawn may push only `spawned` Tokens (SP-68). A `grows` or `turns` change
- * (a transform) keeps it.
- *
- * Saved with the instance. ⚠️ An instance without it reads as `placed`
- * ({@link originOf}), so a save from before the field existed loses nothing.
+ * Saved with the instance. ⚠️ An instance without it reads as `placed` ({@link originOf}), so a
+ * save from before the field existed loses nothing.
  */
 export const ORIGIN = Object.freeze({ PLACED: 'placed', SPAWNED: 'spawned' });
 
@@ -117,9 +86,8 @@ export function originOf(instance) {
 }
 
 /**
- * A fresh Token instance. `origin` defaults to `placed`: every route that makes
- * a Token except a spawn is the player's (DP-3), so only `EffectActions.spawn`
- * passes `spawned`.
+ * A fresh Token instance. `origin` defaults to `placed`: every route that makes a Token except a
+ * spawn is the player's, so only `EffectActions.spawn` passes `spawned`.
  */
 export function createTokenInstance(typeId, uses = null, terrain = null, origin = ORIGIN.PLACED) {
     const instance = {
@@ -133,14 +101,10 @@ export function createTokenInstance(typeId, uses = null, terrain = null, origin 
     return instance;
 }
 
-/** The ids of every `placed` Token on the mat — what a spawn may not push (SP-68). */
+/** The ids of every `placed` Token on the mat: what a spawn may not push. */
 export function placedTokenIds() {
     return tokens().filter(t => originOf(t) === ORIGIN.PLACED).map(t => t.id);
 }
-
-// ---------------------------------------------------------------------------
-// Tokens on the mat (Free Playmat slice 1.6a)
-// ---------------------------------------------------------------------------
 
 /** Stamp `placedAt` from the board's counter, unless the instance already has one. */
 function stampOrder(b, instance) {
@@ -148,12 +112,10 @@ function stampOrder(b, instance) {
 }
 
 /**
- * ## The layout version (Free Playmat slice 1.6b)
- * A counter bumped whenever any Token is put on the mat, moved, or taken off,
- * kept per `tokens` object (so a load or a hand-built test board starts a new
- * count). Readers that cache something about *where Tokens are* — the
- * neighbour-id cache in `nearby.js` — key their cache on it, so a cached answer
- * can never outlive a change to the layout.
+ * The layout version: a counter bumped whenever any Token is put on the mat, moved, or taken off,
+ * kept per `tokens` object (so a load or a hand-built test board starts a new count). Readers that
+ * cache something about where Tokens are, like the neighbour-id cache in `nearby.js`, key their
+ * cache on it, so a cached answer can never outlive a change to the layout.
  */
 const layoutVersions = new WeakMap();
 
@@ -168,16 +130,14 @@ export function layoutVersion() {
 }
 
 /**
- * ## The membership version (CR3-001, CR3-047 — round 3 review, R2 §3.4)
- * A counter bumped only when a Token is **added to or removed from** the mat
- * (`addToken`, `removeToken`) — never by `setTokenPoint`, whose moves cannot
- * change which Tokens are on the mat or their arrival order. Kept per `tokens`
- * object, exactly like {@link layoutVersion}, which also counts moves and so
- * would rebuild a membership-keyed cache on nearly every tick (walking
- * enemies bump it almost every tick, R2 §3.1).
+ * The membership version: a counter bumped only when a Token is added to or removed from the mat
+ * (`addToken`, `removeToken`), never by `setTokenPoint`, whose moves cannot change which Tokens are
+ * on the mat or their arrival order. Kept per `tokens` object, like {@link layoutVersion}, which
+ * also counts moves and so would rebuild a membership-keyed cache on nearly every tick (walking
+ * enemies bump it almost every tick).
  *
- * `tokens()` below keys its cache on this; `SpawnerSystem`'s census (CR3-047)
- * keys its own on the same counter — one counter serves both.
+ * `tokens()` below keys its cache on this; `SpawnerSystem`'s census keys its own on the same
+ * counter.
  */
 const membershipVersions = new WeakMap();
 
@@ -192,19 +152,17 @@ export function membershipVersion() {
 }
 
 /**
- * ## The move journal (CR3-200, round 3 review R2 §3.6)
- * Every {@link setTokenPoint} records the moved id and its from and to points
- * here, kept per `tokens` object like the counters above. A reader that caches
- * something about *who is near whom* — `nearby.neighbourIds` — replays the
- * moves it has not seen ({@link eachMoveSince}) and drops only the entries a
- * move can have changed, instead of the whole cache on every step a walking
- * enemy takes. Adds and removes are not journalled: they bump
- * {@link membershipVersion}, which drops such a cache outright.
+ * The move journal: every {@link setTokenPoint} records the moved id and its from and to points
+ * here, kept per `tokens` object like the counters above. A reader that caches something about who
+ * is near whom (`nearby.neighbourIds`) replays the moves it has not seen ({@link eachMoveSince})
+ * and drops only the entries a move can have changed, instead of the whole cache on every step a
+ * walking enemy takes. Adds and removes are not journalled: they bump {@link membershipVersion},
+ * which drops such a cache outright.
  *
- * It is a journal the reader pulls rather than a callback, because this file
- * cannot import `nearby.js` (that would be a cycle). A fixed ring of the last
- * {@link MOVE_JOURNAL_SIZE} moves, so a step allocates nothing; a reader that
- * fell further behind than that is told so and must start over.
+ * It is a journal the reader pulls rather than a callback, because this file cannot import
+ * `nearby.js` (that would be a cycle). A fixed ring of the last {@link MOVE_JOURNAL_SIZE} moves, so
+ * a step allocates nothing; a reader that fell further behind than that is told so and must start
+ * over.
  */
 const moveJournals = new WeakMap();
 export const MOVE_JOURNAL_SIZE = 512;
@@ -248,11 +206,9 @@ export function eachMoveSince(since, fn) {
 }
 
 /**
- * After a Token's point changes: a claimed Token keeps its hero (FP-68), and the
- * claim's last-known point follows. **A flag pinned to it moves with it** (B5,
- * "pin follows", FB-45): a pinned flag's point is its Token's centre, so the
- * hero walks after the Token and, should it be used up, the flag is left
- * standing at its last spot (TL-17).
+ * After a Token's point changes: a claimed Token keeps its hero, and the claim's last-known point
+ * follows. A flag pinned to it moves with it: a pinned flag's point is its Token's centre, so the
+ * hero walks after the Token and, should it be used up, the flag is left standing at its last spot.
  */
 function afterPointChange(b, instance) {
     bumpLayout(b);
@@ -290,10 +246,9 @@ export function addToken(instance, x, y) {
     instance.y = y;
     stampOrder(b, instance);
     b.tokens[instance.id] = instance;
-    // Every call bumps membership (CR3-001 C-9), including a *different*
-    // object replacing the same id above: a cached list holding the old
-    // instance would be stale. Over-bumping on a plain move-through-add
-    // (`placeTokenAt`) is harmless — measured at 0.006 extra rebuilds/tick.
+    // Every call bumps membership, including a different object replacing the same id above: a
+    // cached list holding the old instance would be stale. Over-bumping on a plain move-through-add
+    // (`placeTokenAt`) is harmless.
     bumpMembership(b);
     afterPointChange(b, instance);
     return instance;
@@ -331,8 +286,8 @@ export function setTokenPoint(id, x, y) {
 }
 
 /**
- * Carry out a push that `MatPlacement.forceSpot` decided (slice 1.8): move each
- * pushed Token to its new point. No rules — the push was already checked.
+ * Carry out a push that `MatPlacement.forceSpot` decided: move each pushed Token to its new point.
+ * No rules; the push was already checked.
  *
  * @param {{id: string, x: number, y: number}[]} pushed
  * @returns {{x: number, y: number}[]} every point touched, old and new, for the
@@ -359,23 +314,21 @@ export function getTokenById(id) {
 const EMPTY_TOKENS = Object.freeze([]);
 
 /**
- * ⭐ **The cached Token list (CR3-001, round 3 review R2 §3.4).** Rebuilt only
- * when membership changes (an add or a remove — never a move), so a tick that
- * neither adds nor removes anything reuses the same array. **Replaced, never
- * patched**: a caller mid-iteration when a Token is added or removed keeps
- * walking its own snapshot, exactly as a fresh `Object.values().sort()` would
- * have (`BoardTokensWritePath.test.js`, `FreeReaders.test.js`).
+ * The cached Token list. Rebuilt only when membership changes (an add or a remove, never a move),
+ * so a tick that neither adds nor removes anything reuses the same array. Replaced, never patched:
+ * a caller mid-iteration when a Token is added or removed keeps walking its own snapshot, exactly
+ * as a fresh `Object.values().sort()` would have (`BoardTokensWritePath.test.js`,
+ * `FreeReaders.test.js`).
  */
 let tokenListCache = { tokens: null, version: -1, list: EMPTY_TOKENS };
 
 /**
  * Every Token on the mat, in the order they arrived (`placedAt` ascending).
  *
- * ⚠️ **Shared and frozen.** Iterate it, map it, filter it — never mutate it,
- * and never hand it to a UI selector: the instances inside it move in place
- * (their `x`/`y` change without the array changing), so a selector that
- * returned this list itself would deep-compare equal to a stale snapshot and
- * miss every move (R2 §3.2).
+ * ⚠️ Shared and frozen. Iterate it, map it, filter it, never mutate it, and never hand it to a UI
+ * selector: the instances inside it move in place (their `x`/`y` change without the array
+ * changing), so a selector that returned this list itself would deep-compare equal to a stale
+ * snapshot and miss every move.
  */
 export function tokens() {
     const map = board()?.tokens || null;
@@ -398,44 +351,30 @@ export function tokensAtPoint(x, y) {
 }
 
 /**
- * ## The discard bin (B3.1, FB-34) — the saved half
- *
- * `board.bin` is an array of whole Token instances lifted off the mat, in the
- * order they went in. They are **not** in `board.tokens`, so nothing that walks
- * the mat — work, adjacency, spawner families, drawing — sees them. The rules
- * (what may go in, refunds, discarding) live in `DiscardBin.js`; this is the
- * storage only. The live array is returned, so callers must not hold it across
- * a load.
+ * The discard bin, the saved half: `board.bin` is an array of whole Token instances lifted off the
+ * mat, in the order they went in. They are not in `board.tokens`, so nothing that walks the mat
+ * (work, adjacency, spawner families, drawing) sees them. The rules (what may go in, refunds,
+ * discarding) live in `DiscardBin.js`; this is the storage only. The live array is returned, so
+ * callers must not hold it across a load.
  */
 export function binTokens() {
     return board()?.bin || [];
 }
 
-// ---------------------------------------------------------------------------
-// Heroes on the board — flags
-// ---------------------------------------------------------------------------
-
 /**
- * ## Flags (Free Playmat slice 1.4b) — the saved half
+ * Flags, the saved half: `board.flags[heroId] = { x, y, plantedAt, pinnedTo? }` is where each
+ * hero's flag stands, in mat units. A hero with no flag is in the Dock; the Dock is not a data
+ * structure.
  *
- * `board.flags[heroId] = { x, y, plantedAt, pinnedTo? }` is where each hero's
- * flag stands, in mat units (the `skill` it once carried went with FP-71).
- * **A hero with no flag is in the Dock** — the Dock is still not a data structure.
+ * `pinnedTo` is the instance id of the Token the flag is pinned to (its hero works only that Token)
+ * and is absent on an area flag. While pinned, `x`/`y` are that Token's centre and follow it when
+ * it moves (`afterPointChange`); `Flags.js` lapses the pin when the Token is gone.
  *
- * `pinnedTo` (B5, FB-45, TL-17) is the instance id of the Token the flag is
- * pinned to — its hero works only that Token — and is absent on an area flag,
- * which is also how every save from before B5 reads (no migration needed).
- * While pinned, `x`/`y` are that Token's centre and follow it when it moves
- * (`afterPointChange`); `Flags.js` lapses the pin when the Token is gone.
+ * `plantedAt` comes from `board.nextFlagOrder`, a counter bumped on every plant, and is the order
+ * heroes choose in (earlier flags choose first).
  *
- * `plantedAt` comes from `board.nextFlagOrder`, a counter bumped on every plant,
- * and is the order heroes choose in (earlier flags choose first).
- *
- * It replaced the old hero → tile map. Saves from before the 0.8.0 schema
- * (slice 1.6a) are refused outright, so nothing converts that shape any more.
- *
- * This layer knows the shape only. Choosing, claiming and releasing are rules,
- * and live in `Flags.js`.
+ * This layer knows the shape only. Choosing, claiming and releasing are rules, and live in
+ * `Flags.js`.
  */
 export function getFlags() {
     return board()?.flags || {};
@@ -470,26 +409,18 @@ export function heroesOnBoard() {
         .map(heroId => [heroId, displayPointOf(heroId)]);
 }
 
-// ---------------------------------------------------------------------------
-// Claims — the runtime half (Free Playmat slice 1.4b)
-// ---------------------------------------------------------------------------
-
 /**
- * **Which Token each flag is working right now** — the live record, never
- * saved as such. Since Hero Movement M5 (HM-7, amending FP-58) the save keeps a
- * separate note of the Tokens heroes had *reached* (`board.workClaims`, below
- * "Saved work"), and `Flags.restoreWork` rebuilds claims from it on load.
+ * Which Token each flag is working right now: the live record, never saved as such. The save keeps
+ * a separate note of the Tokens heroes had reached (`board.workClaims`, below under Saved work),
+ * and `Flags.restoreWork` rebuilds claims from it on load.
+ * - `claims`: heroId → `{ instanceId, typeId, x, y }`, keyed by Token instance id, so a Token that
+ * moves carries its hero. `x`, `y` is the Token's last-known point, refreshed whenever it moves, so
+ * a hero whose Token has left can still find the spot it stood on.
+ * - the rest (`skips`, retry times, notices, cycle ends, clock) belong to `Flags.js`.
  *
- * * `claims`   heroId → `{ instanceId, typeId, x, y }` — keyed by Token
- *   **instance id**, so a Token that moves carries its hero (FP-68). `x`, `y`
- *   is the Token's last-known point, refreshed whenever it moves, so a hero
- *   whose Token has left can still find the spot it stood on (slice 1.6b).
- * * the rest (`skips`, retry times, notices, cycle ends, clock) belong to `Flags.js`.
- *
- * ## ⚠️ Kept per board object, not per module
- * A new game or a load replaces `GameState.state`, and with it the board, so
- * nothing claimed on one board can leak onto another — including the hand-built
- * boards the test suites swap in between tests.
+ * ⚠️ Kept per board object, not per module: a new game or a load replaces `GameState.state`, and
+ * with it the board, so nothing claimed on one board can leak onto another, including the
+ * hand-built boards the test suites swap in between tests.
  */
 const runtimes = new WeakMap();
 
@@ -502,13 +433,13 @@ function runtimeOf(b) {
             skipsByHero: new Map(),
             nextTryAt: new Map(),
             notified: new Set(),
-            // Heroes who just finished a cycle, to look for better work (FP-80).
+            // Heroes who just finished a cycle, to look for better work.
             cycleEnded: new Set(),
-            // Heroes a hostile enemy attacked, heroId → that enemy's instance
-            // id: they fight back whatever their rules say (B7.2, TL-24).
+            // Heroes a hostile enemy attacked, heroId → that enemy's instance id: they fight back
+            // whatever their rules say.
             ambushes: new Map(),
-            // Where each hero on the mat actually is (Hero Movement M1) — see
-            // "Hero bodies" below. Owned by `HeroMotion.js`.
+            // Where each hero on the mat actually is: see Hero bodies below. Owned by
+            // `HeroMotion.js`.
             bodies: new Map(),
             clock: 0,
             dirty: true
@@ -539,10 +470,6 @@ export function setClaim(heroId, claim) {
     const saved = board()?.workClaims?.[heroId];
     if (saved && saved.instanceId !== claim?.instanceId) delete board().workClaims[heroId];
 }
-
-// ---------------------------------------------------------------------------
-// Saved work — what each hero had reached (Hero Movement M5, HM-7)
-// ---------------------------------------------------------------------------
 
 /**
  * Note in the save that `heroId` has **reached** Token `instanceId` and works
@@ -578,21 +505,16 @@ export function heroOfInstance(instanceId) {
     return null;
 }
 
-// ---------------------------------------------------------------------------
-// Hero bodies — the runtime half of walking (Hero Movement M1)
-// ---------------------------------------------------------------------------
-
 /**
- * **Where a hero on the mat actually is**, as they walk: `heroId → { x, y,
- * targetId, side, atWork, moving, facing }`. Never saved: on load a hero is
- * placed from the saved work note (`workClaims`) or beside their flag (M5). `HeroMotion.js` is the only writer; this file just
- * holds them and answers the seam's "has the hero arrived?".
+ * Where a hero on the mat actually is, as they walk: `heroId → { x, y, targetId, side, atWork,
+ * moving, facing }`. Never saved: on load a hero is placed from the saved work note (`workClaims`)
+ * or beside their flag. `HeroMotion.js` is the only writer; this file just holds them and answers
+ * the seam's has-the-hero-arrived question.
  *
- * `atWork` is the instance id of the claimed Token the hero has **reached**.
- * Until then they are walking to it and do not count as working it (FP-26,
- * HMP-2). Once reached it sticks for that claim, even if the Token is moved
- * and they have to catch up — so a moved Token keeps its progress (FP-68) and a
- * moved enemy keeps its fight (FPP-4).
+ * `atWork` is the instance id of the claimed Token the hero has reached. Until then they are
+ * walking to it and do not count as working it. Once reached it sticks for that claim, even if the
+ * Token is moved and they have to catch up, so a moved Token keeps its progress and a moved enemy
+ * keeps its fight.
  */
 export function heroBodyOf(heroId) {
     return flagRuntime()?.bodies.get(heroId) || null;
@@ -634,34 +556,21 @@ function arrivedAt(heroId, instanceId) {
     return flagRuntime()?.bodies.get(heroId)?.atWork === instanceId;
 }
 
-// ---------------------------------------------------------------------------
-// The worker seam (Free Playmat slices 1.4a, 1.4b)
-// ---------------------------------------------------------------------------
-
 /**
- * ⭐ **The only three questions the rest of the game may ask about where a hero
- * is.** `WorkerSeam.test.js` fails if any other file reads the flag storage.
+ * The only three questions the rest of the game may ask about where a hero is. `WorkerSeam.test.js`
+ * fails if any other file reads the flag storage.
+ * - `workerOf(instanceId)`: who works this Token (damage, statuses, roles, gear feeding the Token,
+ * filters, the tick)
+ * - `workTokenOf(heroId)`: the instance id of the Token this hero works (their cycle, their idle
+ * mark, where their actor rules act from)
+ * - `displayPointOf(heroId)`: the mat point to draw them at (badges, particles, level-up pops)
  *
- *   * `workerOf(instanceId)`   — who works this Token (damage, statuses, roles,
- *                                gear feeding the Token, filters, the tick)
- *   * `workTokenOf(heroId)`    — the instance id of the Token this hero works
- *                                (their cycle, their idle mark, where their
- *                                actor rules act from)
- *   * `displayPointOf(heroId)` — the mat point to draw them at (badges,
- *                                particles, level-up pops)
- *
- * ## Under flags (slice 1.4b, roadmap §2), by id and point (slice 1.6b)
- * * `workerOf(id)` is **the hero whose flag has claimed that Token**, while it
- *   is on the mat **and the hero has arrived** (Hero Movement M1 — walking to
- *   it is not working it, FP-26). ⚠️ A spot with no Token has no worker, ever.
- * * `workTokenOf(heroId)` is the claimed Token's id while it is on the mat and
- *   the hero has arrived, or null. (Flags reads the claim itself through
- *   `claimOfHero` — a claim is made when the hero sets off, HMP-2.)
- * * `displayPointOf(heroId)` is the claimed Token's centre, else their flag's
- *   point, else null (in the Dock).
- *
- * ⭐ The tile forms that stood beside them — `workerOfTile` and `workTileOf` —
- * were deleted with the grid in slice 1.6d-2.
+ * `workerOf(id)` is the hero whose flag has claimed that Token, while it is on the mat and the hero
+ * has arrived (walking to it is not working it). ⚠️ A spot with no Token has no worker, ever.
+ * `workTokenOf(heroId)` is the claimed Token's id while it is on the mat and the hero has arrived,
+ * or null (Flags reads the claim itself through `claimOfHero`: a claim is made when the hero sets
+ * off). `displayPointOf(heroId)` is the claimed Token's centre, else their flag's point, else null
+ * (in the Dock).
  */
 export function workerOf(instanceId) {
     if (typeof instanceId !== 'string' || !instanceId) return null;
@@ -673,11 +582,8 @@ export function workerOf(instanceId) {
 /**
  * The instance id of the Token `heroId` works, or null.
  *
- * ⭐ **A read, not a write (CR3-158).** This used to also refresh the claim's
- * last-known point here — harmless, since `afterPointChange` already keeps
- * every claim current on every move, but a seam documented as a question
- * (above) silently writing is the kind of thing a future cache or memo over
- * it would break.
+ * A read, not a write: a seam documented as a question silently writing is the kind of thing a
+ * future cache or memo over it would break.
  */
 export function workTokenOf(heroId) {
     if (!heroId) return null;

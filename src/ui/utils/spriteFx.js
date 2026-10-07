@@ -1,5 +1,3 @@
-// Fantasy Guild — where a sprite's generated shadow and outline images are,
-// and how big to draw them (Wave 5, CR3-350).
 
 import { useSyncExternalStore } from 'react';
 import {

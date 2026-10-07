@@ -14,27 +14,23 @@ import { announce } from './dropOnMat.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * ⭐ **The discard bin** (B3.2: FB-34, FB-35, TL-13) — the bin's UI, at the
- * bottom of the notification column. The engine is `DiscardBin.js` (B3.1).
- *
- * * **In:** drag a Token off the mat onto the panel (the whole panel is one
- *   drop target, {@link BIN_DROP_ID}). A refusal (the Guild Hall, a full bin)
- *   leaves the Token on the mat and the ghost flies back.
- * * **Out:** each binned Token is a draggable slot. Its payload is a `TOKEN`
- *   with `from.binnedId`, which `dropOnMat` hands to `DiscardBin.unbinToken`
- *   at the drop point.
- * * **Discard all (n)** is the confirm (B3 confirm): one press discards
- *   everything and pays the refund listed above it. No dialog; an empty bin
- *   makes it do nothing.
+ * The discard bin: the bin's UI, at the bottom of the notification column. The engine is
+ * `DiscardBin.js`.
+ * * **In:** drag a Token off the mat onto the panel (the whole panel is one drop target,
+ * {@link BIN_DROP_ID}). A refusal (the Guild Hall, a full bin) leaves the Token on the mat and
+ * the ghost flies back.
+ * * **Out:** each binned Token is a draggable slot. Its payload is a `TOKEN` with
+ * `from.binnedId`, which `dropOnMat` hands to `DiscardBin.unbinToken` at the drop point.
+ * * **Discard all (n)** is the confirm: one press discards everything and pays the refund
+ * listed above it. No dialog; an empty bin makes it do nothing.
  */
 
 /** The bin's droppable id. */
 export const BIN_DROP_ID = 'discard-bin';
 
 /**
- * The art in a slot, whatever the Token's footprint: half the 64 px tray
- * sprite, so nine slots fit in two rows of five and the bin stays on screen
- * in a short window (the 3x3 grid of 64 px slots pushed it off a 720 px one).
+ * The art in a slot, whatever the Token's footprint: half the 64 px sprite, so nine slots fit
+ * in two rows of five and the bin stays on screen in a short window.
  */
 const SLOT_ART_PX = tokenSizeFor(TOKEN_SURFACE.TRAY, 1) / 2;
 
@@ -73,13 +69,12 @@ export function refundText(lines) {
     return list.length ? list.map(l => `${l.quantity}× ${l.name}`).join(', ') : 'No refund';
 }
 
-/** What the panel draws: the binned Tokens, in order (CR3-309). */
+/** What the panel draws: the binned Tokens, in order. */
 const binSignature = () => DiscardBin.binContents().map(t => t.id).join('|');
 
 /**
- * Re-render on the bin's events — only when what is in the bin changed
- * (CR3-309). A bare `state_changed` used to redraw the panel and its nine
- * empty slots every time.
+ * Re-render on the bin's events, only when what is in the bin changed: a bare `state_changed`
+ * would redraw the panel and its nine empty slots every time.
  */
 function useBinRefresh() {
     const [, bump] = useState(0);

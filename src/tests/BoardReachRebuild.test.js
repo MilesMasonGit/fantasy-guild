@@ -25,19 +25,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * ⭐ **Wave 3b — with a board-reach rule on the mat, the whole mat is rebuilt
  * only when the board-reach rules change** (round 3 review R3 §3.2, "the
  * optional second step"; `TileModifiers.rebuildTokens`).
- *
- * Before, every change anywhere rebuilt every Token while a `board` rule was
- * (or had just been) present. Now:
- *
- * * an unrelated change rebuilds only its own neighbourhood (plus anything that
- *   moved since the last rebuild without its caller saying where), and
- * * a board-reach source arriving, leaving, going paid/unpaid, or a new one
- *   appearing, still rebuilds the whole mat **in the same call**.
- *
- * "Exact" is checked the strong way: after a rebuild, every Token's aggregator
- * must equal what a whole-mat rebuild gives it (`expectSameAsWholeRebuild`).
- * Rebuild counts come from a spy on `ModifierAggregator.prototype.clearAll`,
- * which `rebuildToken` calls once per Token it rebuilds.
  */
 
 const RR_BOARD = 'fixture_rr_board';

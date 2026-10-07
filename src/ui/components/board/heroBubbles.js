@@ -1,4 +1,3 @@
-// Fantasy Guild — what a hero has to say (Hero Speech Bubbles slice SB-B)
 
 import { ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -8,17 +7,14 @@ import { getTokenType, tokenName } from '../../../config/registries/tokenRegistr
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 
 /**
- * ⭐ **A hero's blocked line, in plain words** (SB-5, SBP-3).
- *
- * A block is a live fact rather than an event (SBP-2): the line is worked out
- * from the Token the hero holds *now*, so it names the thing that is missing
- * this moment and vanishes the moment the problem does.
+ * A hero's blocked line, in plain words. A block is a live fact rather than an event: the line
+ * is worked out from the Token the hero holds NOW, so it names the thing that is missing this
+ * moment and vanishes the moment the problem does.
  */
 
 /**
- * How long a hero waits, stuck for want of items, before saying so (SB-6).
- * Provisional — items often arrive within a few seconds, and a bubble that
- * flashes on and off is worse than none.
+ * How long a hero waits, stuck for want of items, before saying so. Provisional: items often
+ * arrive within a few seconds, and a bubble that flashes on and off is worse than none.
  */
 export const INPUTS_DELAY_MS = 3000;
 
@@ -53,8 +49,8 @@ export function blockedText(alert, { token, missing = null, skill = null }) {
             return `Choose a recipe for ${token}.`;
         case ALERT.NO_ROOM:
             return `There is no room for what ${token} makes.`;
-        // A Token that names no skill (FB-54) drops the skill from the
-        // sentence rather than filling it with a placeholder.
+        // A Token that names no skill drops the skill from the sentence rather than filling it
+        // with a placeholder.
         case ALERT.ACCESS:
             return skill ? `My ${skill} level is too low to work ${token}.` : `My level is too low to work ${token}.`;
         case ALERT.UNSKILLED:
@@ -65,12 +61,10 @@ export function blockedText(alert, { token, missing = null, skill = null }) {
 }
 
 /**
- * ⭐ **Blocks a hero does not speak about** (Token Lifecycle feedback Q6,
- * FB-21). A station or Foundation with nothing chosen is waiting, not broken:
- * the owner ruled after Q1 that it shows only its gear (FB-7), with no alert,
- * so its hero says nothing either. The wording in `blockedText` stays, so the
- * owner can reinstate a line by taking it out of this set. Every line and its
- * status: `docs/reference/speech_bubble_lines.md`.
+ * Blocks a hero does not speak about. A station or Foundation with nothing chosen is waiting,
+ * not broken: it shows only its gear, with no alert, so its hero says nothing either. The
+ * wording in `blockedText` stays, so a line can be reinstated by taking it out of this set.
+ * Every line and its status: `docs/reference/speech_bubble_lines.md`.
  */
 export const SILENT_BLOCKS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
 
@@ -101,12 +95,11 @@ export function blockedLineFor(tokenId, alert) {
 }
 
 /**
- * ⭐ What a hero says when their flag, dropped on a Token, could not be pinned
- * to it (B5 bad pin, FB-45) — the **same sentence** they would say stuck on
- * that Token for that reason (lines 7 and 8 of `docs/reference/speech_bubble_lines.md`:
- * level too low, skill not held). Null for a reason with no wording (a Token
- * the player disallowed, or the hero's own rule switched off): the flag's hover
- * still says it. Spoken as a moment (`heroSpeech.MOMENT_SPOKEN.pinRefused`).
+ * What a hero says when their flag, dropped on a Token, could not be pinned to it: the **same
+ * sentence** they would say stuck on that Token for that reason (level too low, skill not
+ * held; see `docs/reference/speech_bubble_lines.md`). Null for a reason with no wording (a
+ * Token the player disallowed, or the hero's own rule switched off): the flag's hover still
+ * says it. Spoken as a moment (`heroSpeech.MOMENT_SPOKEN.pinRefused`).
  */
 export function pinRefusedLineFor(tokenId, reason) {
     if (!tokenId || !reason) return null;
@@ -121,8 +114,8 @@ export function pinRefusedLineFor(tokenId, reason) {
 }
 
 /**
- * Whether a block has been showing long enough to speak. Only item shortages
- * wait (SB-6); every other block speaks at once.
+ * Whether a block has been showing long enough to speak. Only item shortages wait; every other
+ * block speaks at once.
  */
 export function readyToSpeak(alert, sinceMs, nowMs) {
     return alert !== ALERT.INPUTS || nowMs - sinceMs >= INPUTS_DELAY_MS;

@@ -3,9 +3,7 @@ import { useEntityStore } from '../stores/useEntityStore';
 import { useGlobalStore } from '../stores/useGlobalStore';
 import { syncFiles } from './recipeSync';
 
-/**
- * Workspace save, load, and one-way game data sync (CMS-53).
- */
+/** Workspace save, load, and one-way game data sync. */
 
 /** The collections a workspace file carries. One place, so save and load agree. */
 function snapshot(state) {
@@ -28,9 +26,7 @@ export function exportWorkspace() {
 
 /**
  * Read a workspace JSON file and replace the current workspace with it.
- *
- * ⚠️ Replaces rather than merges — `hydrate` overwrites all three collections.
- * Loading a backup discards unsaved work, exactly as it always did.
+ * ⚠️ Replaces rather than merges: `hydrate` overwrites all three collections, so loading a backup discards unsaved work.
  */
 export async function importWorkspace(file) {
   return new Promise((resolve, reject) => {
@@ -49,21 +45,8 @@ export async function importWorkspace(file) {
 }
 
 /**
- * One-way full-file sync to project `data/` directory (CMS-53).
- * Runs the economy recalculation, then writes `data/items.json`,
- * `data/tokens.json`, `data/maps.json`, `data/tokenRecipes.json` and
- * `data/effects.json`.
- *
- * All five files are written from the recalculation's output — recipes
- * included, since the bypass that routed them around it is retired, and the
- * effect library, which `tokens.json` is now only a set of references into.
- *
- * ⚠️ **Sync writes from the STORE, never from `data/`.** Loading a workspace
- * backup is what puts content in the store; a browser that has never loaded one
- * syncs whatever it happens to hold. The recalculation's write-back deletes the
- * retired fields on the way past, so a stale workspace cannot put them back
- * into the game files — but it can still overwrite `data/` with older content.
- *
+ * One-way full-file sync to the project `data/` directory: runs the economy recalculation, then writes `data/items.json`, `tokens.json`, `maps.json`, `tokenRecipes.json` and `effects.json` from its output.
+ * ⚠️ Sync writes from the STORE, never from `data/`: a browser that has never loaded a workspace backup syncs whatever it holds, so it can overwrite `data/` with older content.
  * @returns {Promise<{ success: boolean, filesWritten: Array<string> }>}
  */
 export async function syncToGame() {

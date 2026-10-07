@@ -8,33 +8,21 @@ import InspectionPanel from './InspectionPanel.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
 
 /**
- * BottomFolderDrawer — the bank drawer.
- *
- * ⚠️ **The name is now wrong and is kept only to avoid a rename in the same
- * change.** It slid up from the bottom with a shared InspectionPanel column;
- * it now slides in from the **side** (D-238), shows **one pane at a time**
- * (D-239), and **inspection has left it entirely** for a panel over the Tray
- * (D-240). Renaming it to `BankDrawer` is a tidy-up worth doing separately.
- *
- * One pane: the item Bank. The Shop pane left for its own drawer from the
- * left edge (`ShopDrawer`, B4: FB-25, FB-27). The Token Vault pane went with the
- * Vault (Token Lifecycle 9.3); the Stations pane was temporary by design and
- * retired once station cards moved to the Collection Binder's Deployment
- * Panel.
- *
- * Per-pane header: title + Close. **Maximize is gone** — with one pane at a
- * time it had nothing left to do. Opening/closing is driven by the BubbleMenu
- * (via `ui.nav`) or `ui:open_drawer` auto-open events; state lives in
- * useUIModals (`ui.drawer`: `panes` / `filters`).
- *
- * Clicking a tile still sets the shared selection — it now renders in the
- * inspection panel over the Tray rather than inside this drawer.
+ * BottomFolderDrawer: the bank drawer.
+ * ⚠️ The name is wrong and is kept only to avoid a rename in the same change. It slides in
+ * from the **side**, shows **one pane at a time**, and inspection has left it entirely for a
+ * panel elsewhere. Renaming it to `BankDrawer` is a tidy-up worth doing separately.
+ * One pane: the item Bank (the Shop has its own drawer from the left edge, `ShopDrawer`).
+ * Per-pane header: title + Close. Opening/closing is driven by the BubbleMenu (via `ui.nav`)
+ * or `ui:open_drawer` auto-open events; state lives in useUIModals (`ui.drawer`: `panes` /
+ * `filters`).
+ * Clicking a tile still sets the shared selection, which renders in the inspection panel
+ * rather than inside this drawer.
  */
 
-// Heroes live in the always-visible Hero Dock, not a drawer pane.
-// `paneProps` names exactly what each pane's own signature accepts, so the
-// drawer no longer hands every pane the same five props and hopes. Keep each
-// entry in step with its component's signature (CR2-166).
+// Heroes live in the always-visible Hero Dock, not a drawer pane. `paneProps` names exactly
+// what each pane's own signature accepts, so the drawer does not hand every pane the same
+// props and hope. Keep each entry in step with its component's signature.
 const PANES = [
     {
         key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab, inspects: true,
@@ -42,16 +30,14 @@ const PANES = [
     }
 ];
 
-// Which selection type each pane's tiles produce — used to hand each pane
-// only its own selection for tile highlighting.
+// Which selection type each pane's tiles produce, used to hand each pane only its own
+// selection for tile highlighting.
 const PANE_SELECTION_TYPE = { bank: 'item' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
     const [searchQuery, setSearchQuery] = useState('');
-    // Canonical order regardless of the order panes were opened in.
-    // One pane at a time (D-239) — `panes` never holds more than one, so this
-    // is a lookup rather than a filter, and **maximise is gone**: a lone pane
-    // already fills the drawer.
+    // Canonical order regardless of the order panes were opened in. `panes` never holds more
+    // than one, so this is a lookup rather than a filter.
     const shownPanes = PANES.filter(p => drawer.panes.includes(p.key));
     const activeKey = shownPanes[0]?.key || null;
     const showsInspect = !!shownPanes[0]?.inspects;
@@ -59,12 +45,10 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
 
     const handleInspect = (type, id, source = null) => inspect.set(type, id, source, activeKey);
 
-    // Get the selection specifically remembered for the active pane
     const paneSelection = inspect.getByPane ? inspect.getByPane(activeKey) : null;
     const activeSelection = paneSelection || (inspect.selection?.pane === activeKey || (!inspect.selection?.pane && inspect.selection?.type === PANE_SELECTION_TYPE[activeKey]) ? inspect.selection : null);
     const sidebarSelection = activeSelection && !(activeSelection.type === 'token' && activeSelection.source?.rect != null) ? activeSelection : null;
 
-    // Reset search when switching panes or closing
     React.useEffect(() => {
         setSearchQuery('');
     }, [activeKey, drawer.isOpen]);
@@ -80,23 +64,7 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: slideOffset, opacity: 0 }}
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                    /**
-                     * A SIDE drawer (D-238), not a bottom one.
-                     *
-                     * It slides from the nav's edge and spans inward, **covering the
-                     * notifications column and the playmat** and stopping before the
-                     * Tray. The offsets are the nav's width on one side and the Tray's
-                     * on the other.
-                     *
-                     * ⚠️ **The Tray is excluded deliberately and it is not cosmetic.**
-                     * D-107 makes the Tray load-bearing *because* an open Bank covers
-                     * the board: the only route from storage to a tile is
-                     * **Bank → Tray → Board**. Cover the Tray and there is nowhere to
-                     * drag a Token to.
-                     *
-                     * ⚠️ **z-[90] sits UNDER the nav and OVER everything else.** The
-                     * BubbleMenu carries `z-[110]` for exactly this.
-                     */
+                    // ⚠️ z-[90] sits under the nav (BubbleMenu is z-[110]) and over everything else.
                     className={cn(
                         'pointer-events-auto flex bg-gi-surface overflow-hidden',
                         'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',
@@ -122,17 +90,15 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
                         />
                     )}
                     {shownPanes.map(({ key, label, icon: Icon, Component, paneProps }) => {
-                        // Only the pane whose tiles match the selection type
-                        // highlights it (each pane reads its own prop name).
+                        // Only the pane whose tiles match the selection type highlights it
+                        // (each pane reads its own prop name).
                         const selId = activeSelection?.type === PANE_SELECTION_TYPE[key] ? activeSelection.id : null;
                         return (
                             <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50">
-                                {/* Pane header */}
                                 <div className="shrink-0 flex items-center justify-between px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]">
                                     <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
                                         <Icon size={18} className="text-gi-primary" /> {label}
                                     </span>
-                                    {/* No gold chip: gold was retired (SP-65, slice 2.2). */}
                                     <div className="flex items-center gap-2.5">
                                         <button
                                             onClick={() => drawer.closePane(key)}
@@ -149,7 +115,6 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
                                     </div>
                                 </div>
 
-                                {/* Pane content */}
                                 <div className="flex-1 min-h-0">
                                     <Component
                                         {...paneProps({

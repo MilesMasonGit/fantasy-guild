@@ -1,29 +1,17 @@
-// Fantasy Guild — What is on the mat, by type (Token Lifecycle feedback B2.1, FB-31, SP-67)
+// what is on the mat, by type
 
 import { ORIGIN, originOf } from './BoardState.js';
 
 /**
- * ⭐ **The Token cap's hover summary** (FB-31): every Token on the mat, grouped
- * by type with counts, split the way the cap counts them (SP-67).
+ * The Token cap's hover summary: every Token on the mat grouped by type with counts, split the way
+ * `MatCap` counts them.
  *
- * * **Placed** Tokens are what `MatCap` counts. Each type carries how many of
- *   its copies are **blocked** (a live problem) and how many are **off**
- *   (disallowed, FP-35), so the popover can add a short red note.
- * * **Spawned** Tokens are listed apart, "not counted": their family's cap
- *   bounds them instead (SP-5).
- * * **The Guild Hall is in neither**: it is always there and never counts.
- * * **Binned** placed Tokens (B3.2, TL-13) are off the mat but still counted
- *   by `MatCap` until *Discard all*, so they get their own line, "counted",
- *   and the popover's total matches the badge. Spawned or Hall Tokens in the
- *   bin are not counted, as on the mat.
+ * Placed Tokens carry how many copies are blocked and how many are off. Spawned Tokens are listed
+ * apart, not counted. The Guild Hall is in neither. Binned placed Tokens still count in `MatCap`
+ * until Discard all, so they get their own line.
  *
- * Pure — the caller hands in the Tokens and every reader, so this can be
- * tested without a mat, and the UI decides what "blocked" means (the gear-only
- * rule lives beside the centre mark, `centreAlert.js`).
- *
- * ## Order
- * Most copies first; ties by name A→Z, then by type id, so the list never
- * shuffles between two refreshes of the same mat.
+ * Pure: the caller hands in the Tokens and every reader. Order: most copies first, ties by name
+ * then type id, so the list never shuffles between refreshes.
  *
  * @param {object[]} tokens  Token instances on the mat
  * @param {{
@@ -32,7 +20,7 @@ import { ORIGIN, originOf } from './BoardState.js';
  *   isBlocked?: (instance: object) => boolean,
  *   isOff?: (instance: object) => boolean,
  *   binned?: object[]
- * }} readers  `binned`: the Token instances in the discard bin (B3.2)
+ * }} readers  `binned`: the Token instances in the discard bin
  * @returns {{
  *   placed: { count: number, groups: {typeId: string, name: string, count: number, blocked: number, off: number}[] },
  *   spawned: { count: number, groups: {typeId: string, name: string, count: number}[] },

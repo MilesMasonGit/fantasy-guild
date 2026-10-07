@@ -3,27 +3,21 @@
 /**
  * What terrain a playmat tile can be painted with.
  *
- * This is the vocabulary half of the dynamic terrain system (roadmap P0). It
+ * This is the vocabulary half of the dynamic terrain system. It
  * says what a "forest" or a "shore" *is*. Terrain is switched off since the free
- * playmat (`TERRAIN_ENABLED` below); the tile-era table of which Map or Token
- * paints which terrain was deleted 2026-10-06.
+ * playmat (`TERRAIN_ENABLED` below).
  *
- * ## A terrain type is a substrate plus a prop table (D-T8)
+ * ## A terrain type is a substrate plus a prop table
  *
- * Deliberately flatter than `concept_dynamic_playmat_terrain.md` §10C, which
- * splits terrain into geographical *substrates* and civilisation *overlays*
- * that preserve the ground beneath them, so that "village on coast" and
- * "village on mountain" emerge from combining two things. The owner ruled
- * against that on 2026-09-06: a terrain type is one flat thing, and two terrain
- * types may simply share a substrate. `farmland` and `hamlet` are both dirt
- * with different props; `forest` and `meadow` are both grass. Every terrain's
+ * Deliberately flat: a terrain type is one flat thing, and two terrain types may
+ * simply share a substrate (`forest` and `meadow` are both grass). Every terrain's
  * look is decided rather than computed, and there is no override hierarchy.
  *
- * ## Why this lives in code and not the CMS (D-T9)
+ * ## Why this lives in code and not the CMS
  *
  * Terrain is presentation config, like `sprite-manifest.js` beside it. It
  * carries no balance numbers, no economy, nothing a player reads as content.
- * The owner chose a code registry over a CMS surface so the look can be
+ * It is a code registry rather than a CMS surface so the look can be
  * iterated on without building an editor first.
  *
  * ⚠️ **Art paths live here rather than in `sprite-manifest.js`**, even though
@@ -34,24 +28,19 @@
  */
 
 /**
- * ⭐ **The terrain master switch (Free Playmat FP-10).**
+ * ⭐ **The terrain master switch.**
  *
- * Terrain is **dormant**, not deleted. The free playmat has no tiles, and terrain
- * is a subtile lattice laid under the grid, so it is switched off ahead of free
- * placement. Every file of the system stays, and its pure-logic tests keep
+ * Terrain is **dormant**, not deleted. The free playmat has no tiles, and terrain is a subtile
+ * lattice laid under the grid. Every file of the system stays, and its pure-logic tests keep
  * running, so it can be revived in a form that suits a free mat.
  *
  * While `false`:
- * - placing a Token paints nothing — the paint hook and the old-save backfill
- *   were removed from `BoardState` in Free Playmat slice 1.6a;
- * - bursting a Map stamps nothing on what it produces (`Cartographer.openMap`);
- * - the terrain canvas is not drawn and the board never reads terrain or its
- *   seed (`Board.jsx`), so every tile shows its plain unpainted outline;
+ * - placing a Token paints nothing (the paint hook was removed from `BoardState`);
+ * - the terrain canvas is not drawn (`MatBoard.jsx`);
  * - the Playmat Tuner dev panel is hidden (`ReactRoot.jsx`).
  *
- * `board.terrain`, `nextPaintOrder` and `terrainSeed` left the save schema in
- * slice 1.6a (they were keyed by tile). Reviving terrain on a free mat needs a
- * new paint hook and new storage, not just this switch (FP-10).
+ * `board.terrain`, `nextPaintOrder` and `terrainSeed` are not in the save schema. Reviving terrain
+ * on a free mat needs a new paint hook and new storage, not just this switch.
  *
  * ⚠️ Read at the point of use, never copied, so a test can force it on with
  * `vi.mock` (see `TerrainPainting.test.js`). `TerrainOff.test.js` fails if any
@@ -90,8 +79,7 @@ export const ART_PX_FOR_SET = Object.freeze({ a: 16, b: 8 });
  * ⚠️ Mutable, and read through `artSet()` rather than imported as a value,
  * because the QA panel switches it at runtime so the two can be compared
  * side by side. Anything that captures it into a module-level constant at
- * import time will keep drawing the old set after a switch — which is exactly
- * what `SUBTILE_ART_PX` used to do before it became a function.
+ * import time will keep drawing the old set after a switch.
  *
  * Remembered per device, like the rest of the developer settings, so a reload
  * mid-comparison does not silently put you back on the default.
@@ -137,14 +125,14 @@ export function setArtSet(set) {
  * The ground textures that exist as art, in `public/assets/playmat/terrain/`.
  *
  * Each is a seamless noise fill drawn to exactly fill a 32px subtile — a quarter
- * of a 128px tile, which is what makes the board a 29×29 subtile lattice (D-T1).
+ * of a 128px tile, which is what makes the board a 29×29 subtile lattice.
  * `variants` is how many interchangeable versions were drawn **per art set**,
  * because the two sets were not drawn to the same count; the renderer picks
  * between them deterministically, so the ground reads as noisy rather than tiled
- * and the same subtile picks the same variant on every load (D-T11).
+ * and the same subtile picks the same variant on every load.
  *
  * ⚠️ These are **fills only**. There are no edge or corner pieces and no alpha
- * stencils, and there will not be: edges are computed (D-T13).
+ * stencils, and there will not be: edges are computed.
  */
 export const SUBSTRATES = Object.freeze({
     // ⚠️ No terrain has dirt as its *base* any more — it is only ever patched
@@ -298,9 +286,9 @@ export const TERRAIN_TYPES = Object.freeze({
         band: { width: 2, tint: '#6b4a25', amount: 0.30, against: ['ocean'] }
     },
     desert: { id: 'desert', name: 'Desert', substrate: 'sand', props: [] },
-    // ⚠️ These three used to sit on a dirt substrate. Dirt is now only ever a
-    // patch (owner ruling, 2026-09-07): they are grass worn through heavily
-    // rather than bare earth with nothing under it. Tilled ground with grass
+    // ⚠️ Dirt is only ever a patch, never a base: these three are grass worn
+    // through heavily rather than bare earth with nothing under it.
+    // Tilled ground with grass
     // surviving between the rows, paths worn across a green, churned-up
     // diggings — the same mechanism as a scuffed meadow, turned up.
     farmland: {

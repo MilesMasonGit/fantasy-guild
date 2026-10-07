@@ -18,10 +18,10 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Token Lifecycle slice 10.1 — the new-game opening (SP-14; contents are
- * SP-72 placeholders), and the roadmap §6 **circularity check**: starting from
- * the opening mat, the opening Bank and the Guild Hall trickle alone, every
- * Token and item in the test content set is reachable, on the SHIPPED data.
+ * ⭐ Token Lifecycle slice 10.1 — the new-game opening (contents are
+ * placeholders), and the roadmap §6 **circularity check**: starting from the
+ * opening mat, the opening Bank and the Guild Hall trickle alone, every Token
+ * and item in the test content set is reachable, on the SHIPPED data.
  */
 
 beforeEach(() => {

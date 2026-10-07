@@ -1,7 +1,7 @@
-// Fantasy Guild — where a spawned Token lands (Effects Grammar v2, V9)
+// Fantasy Guild — where a spawned Token lands
 
 /**
- * The destinations a `Spawns` rule may choose from (G-15).
+ * The destinations a `Spawns` rule may choose from.
  *
  * ## ⭐ Why this is a vocabulary and not a fallback rule
  * The obvious implementation is "put it on the bearer's tile; if that is taken,
@@ -9,8 +9,7 @@
  * of the behaviour from the person authoring it — *"nearest"* becomes a rule the
  * author cannot see, cannot predict and cannot change.
  *
- * The owner's answer was better than any of the options offered: make it a
- * **choice**, from a short list. An author picks where it lands, the sentence
+ * Make it a **choice** from a short list. An author picks where it lands, the
  * says which, and there is no hidden fallback anywhere.
  *
  * ## ⚠️ Locations, not entities
@@ -62,14 +61,14 @@ export function placementOf(payload) {
     return getPlacement(payload?.placement) ? payload.placement : PLACEMENT.HERE;
 }
 
-/** How many random free spots `random_free` tries before keeping the roomiest (plan §D). */
+/** How many random free spots `random_free` tries before keeping the roomiest. */
 export const RANDOM_FREE_DARTS = 40;
 
 /**
- * Choose the mat point a spawn lands on (Free Playmat slice 1.6b).
+ * Choose the mat point a spawn lands on.
  *
  * ⚠️ Returns `null` when there is nowhere to go, and the caller does nothing
- * (FP-46). A full mat is an ordinary state, not a failure, and shoving a Token
+ * A full mat is an ordinary state, not a failure, and shoving a Token
  * onto another would silently destroy whatever was there.
  *
  * Kept free of the board: the caller hands in the free spots it found.

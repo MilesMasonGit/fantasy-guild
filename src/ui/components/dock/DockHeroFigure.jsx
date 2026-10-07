@@ -18,9 +18,8 @@ import {
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * The drag payload a hero picked up in the horizontal dock carries. Unchanged
- * from the old dock tab (`HeroDockTab`), so a drop on the mat plants the flag
- * exactly as before (B10 keeps the actions, FB-46).
+ * The drag payload a hero picked up in the horizontal dock carries. Unchanged from the old
+ * dock tab (`HeroDockTab`), so a drop on the mat plants the flag exactly as before.
  */
 export function dockHeroDragPayload(heroId, hero) {
     return {
@@ -33,18 +32,15 @@ export function dockHeroDragPayload(heroId, hero) {
 }
 
 /**
- * ⭐ **One hero standing in the horizontal dock** (B10, FB-46).
- *
- * The idle sprite the mat uses (`AnimatedHeroSprite`), at the mat's art size,
- * cut off at the waist by the strip's bottom edge. The name and HP bar sit
- * above the head at the same height for every hero; only the ART sinks and
- * darkens when the hero is out on the mat, and lifts on hover.
- *
- * The sprite runs its own frame clock, so an idle frame re-renders the sprite
- * alone — never this figure or the dock around it.
- *
- * Click, double-click, drag onto the mat, drop an item to equip, drop a flag
- * to recall and drop another dock hero to reorder all behave as the old tab did.
+ * One hero standing in the horizontal dock.
+ * The idle sprite the mat uses (`AnimatedHeroSprite`), at the mat's art size, cut off at the
+ * waist by the strip's bottom edge. The name and HP bar sit above the head at the same height
+ * for every hero; only the ART sinks and darkens when the hero is out on the mat, and lifts on
+ * hover.
+ * The sprite runs its own frame clock, so an idle frame re-renders the sprite alone, never
+ * this figure or the dock around it.
+ * Click, double-click, drag onto the mat, drop an item to equip, drop a flag to recall and
+ * drop another dock hero to reorder all behave as the old tab did.
  */
 export const DockHeroFigure = ({
     heroId,
@@ -74,9 +70,9 @@ export const DockHeroFigure = ({
         return undefined;
     }, [globalDragging]);
 
-    // Flat projection per the useGameState selector contract (CR-044, CR3-300):
-    // `hp` is rebuilt fresh from primitives each evaluation, never the store's
-    // own nested object, so an in-place HP mutation is actually seen as a change.
+    // Flat projection per the useGameState selector contract: `hp` is rebuilt fresh from
+    // primitives each evaluation, never the store's own nested object, so an in-place HP
+    // mutation is actually seen as a change.
     const hero = useGameState(
         state => {
             const h = (state.heroes || []).find(x => x.id === heroId);
@@ -95,8 +91,8 @@ export const DockHeroFigure = ({
         { deps: [heroId] }
     );
 
-    // Out on the mat or walking home: `HERO_MOVED` announces every plant,
-    // recall and defeat, `HEROES_WALKED` a hero arriving home.
+    // Out on the mat or walking home: `HERO_MOVED` announces every plant, recall and defeat,
+    // `HEROES_WALKED` a hero arriving home.
     const statusState = useGameState(
         () => Flags.statusOf(heroId).state,
         [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
@@ -158,8 +154,8 @@ export const DockHeroFigure = ({
     const targetIndex = index ?? heroIds.indexOf(heroId);
     const insertAfter = sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex;
 
-    // The sprite frame's top edge sits half the art above the strip's bottom;
-    // the labels sit just above that, whatever the art is doing.
+    // The sprite frame's top edge sits half the art above the strip's bottom; the labels sit
+    // just above that, whatever the art is doing.
     const labelBottom = artPx / 2 + DOCK_LABEL_GAP_PX;
 
     return (
@@ -208,10 +204,11 @@ export const DockHeroFigure = ({
                 <div className="absolute inset-x-1 inset-y-0 rounded-t-lg bg-gi-primary/20 ring-2 ring-gi-primary/70 pointer-events-none" />
             )}
 
-            {/* The art window: bottom-anchored on the strip's edge and one art
-                tall, clipping everything below the edge (the lower body). Its
-                empty top half is room to lift into; it never takes the pointer,
-                so the mat above stays clickable. */}
+            {/**
+             * The art window: bottom-anchored on the strip's edge and one art tall, clipping
+             * everything below the edge (the lower body). Its empty top half is room to lift
+             * into; it never takes the pointer, so the mat above stays clickable.
+             */}
             <div
                 className="absolute bottom-0 left-1/2 -translate-x-1/2 overflow-hidden pointer-events-none"
                 style={{ width: artPx, height: artPx }}

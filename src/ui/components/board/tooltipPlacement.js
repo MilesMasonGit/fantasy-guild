@@ -1,4 +1,3 @@
-// Fantasy Guild — where a floating mat tooltip sits on screen (shared by the flag and Hall tooltips)
 
 /**
  * Fixed-position place for a floating panel under an anchor element, kept on

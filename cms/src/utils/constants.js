@@ -1,16 +1,5 @@
-// === Shared vocabulary — DERIVED from the game's registries, never copied ===
-//
-// CMS-5's founding principle: the CMS asks the game what words exist. The old
-// CMS kept its own hand-maintained lists and they rotted out of sync, which is
-// how it ended up offering skills (`industry`, `culinary`, `nautical`) the game
-// had never heard of. Definitions flow game → CMS, in one direction, so that
-// drift cannot recur.
-//
-// ⚠️ **The cost of this principle, seen once already:** removing an export from
-// a game registry breaks the CMS silently and immediately — the skill/class
-// rework's removal of `SUB_SKILL_TO_PARENT` left the CMS unable to build, and
-// nothing caught it. The trade is still judged worth it (see the CMS-5 note in
-// `cms_rework_v2_decisions.md`), but a game-side deletion is a CMS-side break.
+// Shared vocabulary, derived from the game's registries and never copied: the CMS asks the game what words exist, so definitions flow game → CMS in one direction and drift cannot recur.
+// ⚠️ The cost: removing an export from a game registry breaks the CMS silently and immediately; a game-side deletion is a CMS-side break.
 
 import { SKILLS as GAME_SKILLS } from '../../../src/config/registries/skillRegistry.js';
 import { EQUIPMENT_CATEGORY_DEFS } from '../../../src/config/registries/equipmentCategories.js';
@@ -20,9 +9,7 @@ import {
   TOKEN_RARITIES as GAME_TOKEN_RARITIES,
 } from '../../../src/config/registries/tokenConstants.js';
 
-// The authorable modifier palette (CMS-20/25) and target modes (CMS-18). Read
-// from the game so the CMS can only ever offer axes something actually reads —
-// `EFFECT_TYPES` itself holds several with no consumer at all.
+// The authorable modifier palette and target modes, read from the game so the CMS only offers axes something actually reads; `EFFECT_TYPES` itself holds several with no consumer.
 export {
   MODIFIER_PALETTE,
   MODIFIER_BUCKETS,
@@ -36,10 +23,7 @@ export {
   describeModifierDirection,
 } from '../../../src/config/registries/modifierPalette.js';
 
-// The statement grammar (effect authoring redesign). The keywords, what each
-// one accepts, and the one renderer that turns a statement into a sentence —
-// used by the editor row, the rules panel and the in-game tooltip alike, so
-// there is nothing left for them to disagree about.
+// The statement grammar: the keywords, what each accepts, and the one renderer that turns a statement into a sentence, used by the editor row, the rules panel and the in-game tooltip alike.
 export {
   KEYWORD,
   KEYWORDS,
@@ -65,10 +49,7 @@ export {
   rulesTextOf,
 } from '../../../src/systems/effects/statementText.js';
 
-// A statement as the ordered slots an author fills in (G-18) — the model behind
-// the sentence editor. It reads the same declarations the game reads, so adding
-// a keyword, a moment, a reach or a role puts it in the editor with no editor
-// change at all.
+// A statement as the ordered slots an author fills in: the model behind the sentence editor. It reads the same declarations the game reads, so a new keyword, moment, reach or role reaches the editor with no editor change.
 export {
   SLOT_KIND,
   slotsOf,
@@ -81,11 +62,7 @@ export {
   filterOptions,
 } from '../../../src/systems/effects/statementSlots.js';
 
-// The named effect library (Unified Effects P1). A statement no longer lives on
-// the Token that uses it: it lives in a named entry, and bearers reference that
-// entry by id. Same one-direction rule as everything else here — the *shape*
-// is declared in the game and the CMS authors against it, so the library the
-// CMS writes and the library the game loads cannot diverge.
+// The named effect library. A statement lives in a named entry and bearers reference that entry by id; the shape is declared in the game.
 export {
   EFFECT_ID_PREFIX,
   MAX_SCALE,
@@ -101,11 +78,7 @@ export {
   usedBy,
 } from '../../../src/systems/effects/effectLibrary.js';
 
-// ⚠️ The migration is imported, never reimplemented. It runs twice over two
-// copies of the same content — once by `scripts/migrate-effects-library.mjs`
-// over `data/`, and once by `useEntityStore` over the workspace in the author's
-// browser. A second implementation here would let the two produce different
-// libraries, and the next sync would silently overwrite one with the other.
+// ⚠️ The migration is imported, never reimplemented: it runs once by `scripts/migrate-effects-library.mjs` over `data/` and once by `useEntityStore` over the workspace in the browser, and a second implementation would let the two produce different libraries.
 export {
   migrateBearers,
   migratePromotionFields,
@@ -113,10 +86,7 @@ export {
   provisionalName,
 } from '../../../src/systems/effects/effectMigration.js';
 
-// When a rule spends its Token's charges (UE-20). Same extensibility rule as
-// TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker
-// with no CMS change — and the game deliberately declares only the moments
-// something actually spends at, so nothing offered here is inert.
+// When a rule spends its Token's charges. Same extensibility rule as TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker with no CMS change.
 export {
   CHARGE_MOMENT,
   CHARGE_MOMENTS,
@@ -126,51 +96,36 @@ export {
   chargeMomentOf,
 } from '../../../src/config/registries/chargeMomentRegistry.js';
 
-// Token Lifecycle (roadmap v1 §3.1): the kinds of Foundation. Game-defined,
-// like every other vocabulary here, so the dropdown, the engine and the content
-// audit can never disagree about what a kind is.
+// Token Lifecycle: the kinds of Foundation. Game-defined, so the dropdown, the engine and the content audit cannot disagree about what a kind is.
 export { FOUNDATION_KINDS } from '../../../src/config/registries/tokenConstants.js';
 
-// A turning Token rolls a chance once per cycle, both ways (TL-12). The
-// defaults a new Turns block starts with (1 min, 30%) are the game's.
+// A turning Token rolls a chance once per cycle, both ways. The defaults a new Turns block starts with are the game's.
 export { TURN_DEFAULTS } from '../../../src/config/registries/tokenConstants.js';
 
-// An enemy is a Token (D-104), and as of 2026-09-06 that is true of the data
-// too: `data/enemies.json` and `enemyRegistry.js` are gone, and a Token is an
-// enemy because it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the
-// Style dropdown and `enemyCombatBudget` powers the editor's read-only stat
-// preview — imported from the game so the numbers the author is shown are the
-// exact numbers the fight will use, with no second copy of the curve here.
+// An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyCombatBudget` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
 export { ENEMY_STYLES } from '../../../src/config/registries/enemyProfile.js';
 export { enemyCombatBudget } from '../../../src/config/FormulaRegistry.js';
 
-// FP-47 (Free Playmat slice 1.0): a hero-worked Token must name a skill. The
-// game's own rule and wording, so the CMS and the boot audit name the same Tokens.
+// A hero-worked Token must name a skill. The game's own rule and wording, so the CMS and the boot audit name the same Tokens.
 export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/workSkillRule.js';
 
-// Token Lifecycle slice 4.2: the content checks for the six lifecycle blocks.
-// The game's own rules and wording, so the Economy Audit and the boot audit
-// report the same problems.
+// The content checks for the six lifecycle blocks: the game's own rules and wording, so the Economy Audit and the boot audit report the same problems.
 export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.js';
 
-// `tokenType` is derived from what a Token has rather than picked (§1.2). The
-// CMS computes it and writes it into the file; the author never types it.
+// `tokenType` is derived from what a Token has rather than picked. The CMS computes it and writes it into the file.
 export {
   deriveTokenType,
   derivedTokenType,
 } from '../../../src/config/registries/tokenTypeDerivation.js';
 
-// Triggered Token vocabulary (CMS-32). Extensible from the game: adding a row
-// to TRIGGER_EVENTS makes it available in the trigger picker with no CMS change.
+// Triggered Token vocabulary: adding a row to TRIGGER_EVENTS makes it available in the trigger picker with no CMS change.
 export {
   TRIGGER_EVENTS,
   TRIGGER_SCOPES,
   getTriggerEvent,
 } from '../../../src/config/registries/triggerRegistry.js';
 
-// How far a rule carries (ER-1). Same game-defines / CMS-renders split as the
-// trigger vocabulary above: adding a reach row in the game puts it in the
-// picker with no CMS change.
+// How far a rule carries: the same game-defines / CMS-renders split as the trigger vocabulary.
 export {
   REACH,
   REACHES,
@@ -178,8 +133,7 @@ export {
   reachOf,
 } from '../../../src/config/registries/reachRegistry.js';
 
-// Who a moment puts in the room (G-2). The CMS offers a role only where the
-// chosen moment supplies it, which is why `rolesOf` crosses the boundary too.
+// Who a moment puts in the room. The CMS offers a role only where the chosen moment supplies it, which is why `rolesOf` crosses the boundary too.
 export {
   ROLE,
   ROLES,
@@ -187,9 +141,7 @@ export {
 } from '../../../src/config/registries/roleRegistry.js';
 export { rolesOf } from '../../../src/config/registries/triggerRegistry.js';
 
-// The filters a selector may stack (G-9). AND-composed, negatable, and each row
-// declares what it needs to look at — so a filter the caller cannot evaluate
-// refuses rather than guessing.
+// The filters a selector may stack: AND-composed, negatable, and each declares what it needs to look at, so a filter the caller cannot evaluate refuses rather than guessing.
 export {
   FILTER_KINDS,
   FILTER_NEEDS,
@@ -198,8 +150,7 @@ export {
   filterPhrase,
 } from '../../../src/config/registries/filterRegistry.js';
 
-// Where a number comes from (G-13): typed, a percentage of a named stat, or a
-// count of a second selector's matches. A closed list, never arithmetic.
+// Where a number comes from: typed, a percentage of a named stat, or a count of a second selector's matches. A closed list, never arithmetic.
 export {
   MAGNITUDE_KIND,
   MAGNITUDE_STATS,
@@ -208,8 +159,7 @@ export {
   magnitudePhrase,
 } from '../../../src/config/registries/magnitudeRegistry.js';
 
-// Where a spawned Token lands (G-15) — an authored choice from a short list,
-// never a hidden fallback.
+// Where a spawned Token lands: an authored choice from a short list, never a hidden fallback.
 export {
   PLACEMENT,
   PLACEMENTS,
@@ -217,21 +167,12 @@ export {
   placementOf,
 } from '../../../src/config/registries/placementRegistry.js';
 
-// What a `Cannot` may forbid. One row today — an adjacency limit — shaped like
-// the modifier palette so restriction #2 is a row in the game, not a rewrite of
-// the editor.
+// What a `Cannot` may forbid. One row today, shaped like the modifier palette so a second restriction is a row in the game, not a rewrite of the editor.
 export {
   RESTRICTION_KINDS,
   getRestrictionKind,
   blankRestriction,
 } from '../../../src/config/registries/restrictionPalette.js';
-
-// The five tempos and their cycle-time bands (economic simulator rework P2,
-// plan §13.3). Same one-direction rule as everything else here: the game
-// declares the vocabulary, the CMS offers it. ⚠️ Nothing acts on a tempo yet —
-// P3 and P4 build the passes that will read it. Today these only fill the
-// Simulator panel's Tempo buttons and note when a hand-typed cycle time sits
-// outside the band the author just picked.
 
 // What an `Applies` may put on someone. Read from the status engine's own
 // registry, so the CMS can never offer a status the engine has not got.
@@ -242,21 +183,10 @@ import { DEFAULT_DIALS } from '../engine/sim/dials.js';
 
 export const AUTHORABLE_STATUSES = authorableStatuses();
 
-// The game defines SKILLS as an object keyed by id; every CMS consumer expects
-// an array of { id, name }. Transform here so downstream code is untouched.
-// `combat` is deliberately absent: it is a game CATEGORY, not one of the 15
-// skills, so it can never be picked in a skill dropdown.
+// The game defines SKILLS as an object keyed by id; every CMS consumer expects an array of `{ id, name }`, so it is transformed here. `combat` is deliberately absent: it is a game category, not a skill, so it can never be picked in a skill dropdown.
 export const SKILLS = Object.values(GAME_SKILLS).map(({ id, name, layer }) => ({ id, name, layer }));
 
-/**
- * The skill layers, in the order the game declares them, with the words a
- * designer sees.
- *
- * ⚠️ `SKILLS` is **already** in this order — Foundation first, then Combat,
- * Shared and Signature — so nothing is re-sorted anywhere. What was missing is
- * that the order is invisible: 27 options in a flat list read as arbitrary even
- * when they are not. These are the group headings that show it.
- */
+/** The skill layers, in the order the game declares them, with the words a designer sees. `SKILLS` is already in this order, so nothing is re-sorted; these are the group headings that make the order visible. */
 export const SKILL_LAYER_LABELS = Object.freeze([
   ['foundation', 'Foundation — every Recruit has these'],
   ['combat', 'Combat'],
@@ -273,16 +203,7 @@ export function skillsByLayer() {
 
 /**
  * What an item's `equipSlot` may be.
- *
- * ⚠️ **Not `SLOT_ORDER`**, which the CMS used to import for this. That is
- * `[0..8]` — the hero dock's grid *indices* since the dock rework replaced
- * named slots with a 9-cell grid. An item does not name a cell; it names a
- * **category**, and `EquipmentValidator` checks it with `isEquipCategory`.
- * Importing the wrong symbol produced an equip-slot dropdown offering the
- * numbers 0 to 8.
- *
- * Categories carry a display label and a cap, so surface both — `hand` allows
- * two, `consumable` is uncapped, most gear caps at one (D-55/D-56).
+ * ⚠️ Not `SLOT_ORDER`, which is the hero dock's grid indices `[0..8]`: an item names a category, which `EquipmentValidator` checks with `isEquipCategory`. Categories carry a display label and a cap, so surface both.
  */
 export const EQUIP_CATEGORIES = EQUIPMENT_CATEGORY_DEFS.map(({ id, label, icon, cap }) => ({
   id,
@@ -293,21 +214,11 @@ export const EQUIP_CATEGORIES = EQUIPMENT_CATEGORY_DEFS.map(({ id, label, icon, 
 
 export const EQUIP_SLOTS = EQUIP_CATEGORIES.map((c) => c.id);
 
-// Token classification vocabulary (CMS-89). Adding a value in the game makes it
-// available here with no CMS change; `ContentRules.test.js` asserts that shipped
-// content only uses values these lists declare.
+// Token classification vocabulary. Adding a value in the game makes it available here with no CMS change; `ContentRules.test.js` asserts that shipped content only uses values these lists declare.
 export const TOKEN_TYPES = [...GAME_TOKEN_TYPES];
 export const TOKEN_RARITIES = [...GAME_TOKEN_RARITIES];
-// The five tempos and their cycle-time bands (economic simulator rework P2,
-// plan §13.3). Same one-direction rule as the vocabularies above: the game
-// declares it, the CMS offers it.
-//
-// This sat near the top of the file until 2026-08-28, to dodge a bug in
-// `CMSBoundary.test.js`'s scanner that mis-read a `from` clause appearing
-// after an `export const` and blamed the wrong module. The scanner is fixed,
-// so the re-export lives beside the vocabulary it belongs with — and this
-// position is now the regression guard: if the scanner ever regresses, this
-// line is what fails.
+// The five tempos and their cycle-time bands: the game declares the vocabulary, the CMS offers it.
+// ⚠️ Keep this re-export after an `export const`: its position is the regression guard for `CMSBoundary.test.js`'s scanner, which once mis-read a `from` clause appearing after one.
 export {
   TEMPO_NAMES,
   TEMPO_BANDS,
@@ -316,61 +227,19 @@ export {
   isInBand,
 } from '../../../src/config/registries/tempoBands.js';
 
-// `TOKEN_THEMES` was re-exported here until 2026-08-24 (CR2-125). The game no
-// longer declares it: `theme` was never a feature (`concept_audit.md` §A), and
-// the dropdown it fed in `MapEditor` has gone with it.
-
-/**
- * ⚠️ **Known wrong — resolve before building the Item editor (Phase 1).**
- *
- * There is a live three-way disagreement about what an item's `type` may be:
- *
- * * the game declares `material, tool, weapon, armor, food, potion, currency,
- *   drop` (here);
- * * `data/items.json` actually uses `material, ingredient, weapon, food, drink`
- *   — two of which the game does not declare;
- * * the old CMS offered a third, capitalised list (`Material`, `Ingredient`,
- *   `Quest Item`, …) matching neither.
- *
- * Type is not cosmetic — CMS-13 has it keying recipe and context gating — so an
- * item authored as `Material` and synced would write a value the game does not
- * recognise. This import at least makes the game the single source, per CMS-5,
- * rather than adding a fourth list. **Which values the merged vocabulary should
- * contain is an open content question for the owner**, tracked in the decisions
- * log's Open list; the Item editor must not ship until it is answered.
- */
 export const ITEM_TYPES = Object.values(GAME_ITEM_TYPES);
 
 export const RESTORE_TYPES = ['HP', 'Energy'];
 
-/**
- * ⚠️ **Also known wrong, and for the same reason as `ITEM_TYPES` above.**
- *
- * A hardcoded tag vocabulary maintained in the CMS — precisely what CMS-5
- * forbids. CMS-13 has item `tags` keying recipe and context gating rather than
- * being cosmetic, so these are mechanically meaningful strings that the game
- * has no matching list for: `tagRegistry.js` exports `FLAVOUR_TAGS`, but those
- * are card-era Token-targeting tags, not item tags.
- *
- * Kept unchanged for now only so the Phase 1 Item editor keeps building.
- * Resolving it belongs with the `ITEM_TYPES` question — same decision, same
- * phase, and both are in the decisions log's Open list.
- */
 export const PERSONALITY_TAGS = [
   'Food', 'Drink', 'Tool', 'Weapon', 'Armor', 'Consumable', 'Ingredient',
   'Material', 'Treasure', 'Quest', 'Legendary', 'Intermediate', 'Root',
   'Heavy', 'Volatile', 'Liquid', 'Resource Sink', 'Gathering', 'Passive', 'Fast', 'Slow',
 ];
 
-/** Combat tiers, used only by the Settings screen's hero profiles (Phase 8 culls this). */
 export const ENEMY_TIERS = [1, 2, 3, 4, 5, 6];
 
-// === Balance defaults ========================================================
-// Consumed by `useGlobalStore` and, for now, by the balance engines kept as
-// Phase 8 reference. CMS-15's Global Value dials (production markup, Map ROI
-// ratio, velocity bands) replace most of this when the solver is rewritten —
-// these are the old card-economy's dials, kept only so the dial UI has
-// something to render against until then.
+// Balance defaults, consumed by `useGlobalStore`. These are the old card-economy's dials, kept only so the dial UI has something to render against.
 
 export const EV_CURVE = {
   1: 1.05,
@@ -388,18 +257,7 @@ export const EV_VARIANCE = {
 };
 
 export const DEFAULT_GLOBALS = {
-  /**
-   * The economic simulator's dials (plan §14), in one key.
-   *
-   * Kept as a nested object rather than spread across the globals above so that
-   * "the simulator's dials" is one thing to reset, migrate and hand to
-   * `runSim` — the flat dials around it belong to the retired balance engine and
-   * are on their way out.
-   *
-   * ⚠️ The Dashboard that turns these is a later phase. Today they are stored,
-   * migrated and read by the passes that exist; the rest wait for the passes
-   * that will read them (see `sim/dials.js`, which says which is which).
-   */
+  /** The economic simulator's dials, in one key: nested rather than spread across the globals above so they are one thing to reset, migrate and hand to `runSim`. The flat dials around it belong to the retired balance engine. See `sim/dials.js` for which dials a pass reads. */
   simDials: DEFAULT_DIALS,
 
   gpt: 3.0,
@@ -415,7 +273,6 @@ export const DEFAULT_GLOBALS = {
   rawCommodityBaseValue: 1.0,
   rawCommodityScalingRate: 0.05,
 
-  // Wealth & XP velocity targets — CMS-10's velocity check, CMS-15's third dial.
   gphTargets: {
     1: 1200,
     11: 1400,
@@ -433,7 +290,6 @@ export const DEFAULT_GLOBALS = {
   restorationMarkup: 0.2,
   laborRatePerLevel: 0.002,
 
-  // CMS-116 Global Dials for balancing and economy feel
   mapTargetROI: 20.0,
   passiveVelocityRatio: 0.25,
   craftMarkupBase: 0.05,
@@ -443,10 +299,7 @@ export const DEFAULT_GLOBALS = {
   mapBurstSellRatio: 0.50,
   combatRewardMultiplier: 1.05,
 
-  // ⚠️ Combat- and progression-era dials, kept ONLY so the existing Settings
-  // screen renders controlled inputs rather than throwing React warnings.
-  // CMS-2 defers combat balancing and CMS-15 replaces most of these with the
-  // real Global Value dials — Phase 8 culls this block wholesale.
+  // ⚠️ Combat- and progression-era dials, kept only so the existing Settings screen renders controlled inputs rather than throwing React warnings.
   combatXpMultiplier: 1.0,
   energyPerSwing: 1,
   xpThresholdBase: 100,

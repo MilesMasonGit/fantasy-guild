@@ -13,10 +13,6 @@ import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
  * Token Lifecycle slice 4.3 — the CMS authors a recipe that builds (§3.1):
  * a Construction/Farming recipe with `foundationKinds`, one `tokenId` output,
  * its inputs as the building cost and `durationMs` as the build time.
- *
- * Nothing here touches `data/`: the shipped files are READ into the store, the
- * fixture recipe is authored in memory, and the sync payload is built with
- * `syncFiles` without being sent.
  */
 
 const DATA = path.resolve(__dirname, '../../data');

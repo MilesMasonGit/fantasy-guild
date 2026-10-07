@@ -30,11 +30,6 @@ const plant = (heroId, i) => Placement.plantFlagAt(heroId, C(i));
 
 /**
  * The board's cycle engine — Tokens working, and what stops them.
- *
- * Covers D-53 (most Tokens need a hero), D-67's **Access** (the only hero
- * property implemented this pass), D-127 (first-come allocation, no partial
- * cycles), D-176 (charges, and `null` meaning unlimited), D-116 (Passive
- * Generators run unstaffed) and D-149 (an unstaffed Token is not an error).
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -49,11 +44,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * How long an authored `base`-ms cycle actually takes for a hero at `level`.
- *
- * Skill speed is live from 2026-08-25 (CR2-072): a skilled hero shortens the
- * cycle, so every timing assertion below is expressed against this rather than
- * against the raw authored number. Derived from `SKILL_SPEED_FACTOR` on purpose
- * — retuning the dial must not need these tests edited.
  */
 function cycleMs(base, level = 50) {
     return base / (1 + level * SKILL_SPEED_FACTOR);
@@ -223,8 +213,8 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
 
         run(25000);
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
-        // "Says so" under flags (FP-48, FP-60): the flag skips the Token and
-        // records ACCESS for hover — no red mark on the Token itself.
+        // "Says so" under flags: the flag skips the Token and records ACCESS
+        // for hover — no red mark on the Token itself.
         expect(Flags.skipsOf(token.id).map(s => s.reason)).toEqual([BoardRunner.ALERT.ACCESS]);
         expect(token.alert).toBeFalsy();
     });
@@ -241,9 +231,9 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
     it('DOES make a high-skill hero faster (CR2-072)', () => {
         // ⚠️ This test used to assert the opposite — "a level 99 hero works a
         // Forest at exactly the speed a level 1 hero does" — pinning a hole
-        // rather than a rule. Owner decision 5 (2026-08-19): *"Skills should
-        // make a hero faster. WIRE IT UP."* So the same scenario now pins the
-        // behaviour instead of the gap.
+        // rather than a rule. Owner decision 5: *"Skills should make a hero
+        // faster. WIRE IT UP."* So the same scenario now pins the behaviour
+        // instead of the gap.
         GameState.state.heroes = [makeHero('hero_1', 1), makeHero('hero_2', 99)];
         place(10, 'fixture_producer', 'hero_1');
         place(20, 'fixture_producer', 'hero_2');
@@ -344,9 +334,9 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
 
     it('counts blocked ticks per Token type so the balance pass has data', () => {
         InventoryManager.addItem('fixture_oak_wood', 3);
-        // A flag never claims a Token it cannot run (FP-48), so the starving
-        // Token is staffed by a claim made directly — the runner's tally of a
-        // STAFFED Token going hungry is what this pins (Free Playmat 1.4b).
+        // A flag never claims a Token it cannot run, so the starving Token is
+        // staffed by a claim made directly — the runner's tally of a STAFFED
+        // Token going hungry is what this pins (Free Playmat 1.4b).
         const deep = place(20, 'fixture_deep_consumer');
         Flags.plant('hero_2', C(20), { skill: 'smithing' });
         BoardState.setClaim('hero_2', { instanceId: deep.id, typeId: deep.typeId });
@@ -390,7 +380,7 @@ describe('Charges and depletion (D-176, D-118)', () => {
         run(13000);
 
         expect(tokenAt(10)).toBeNull();
-        // Token depletion is the ONLY wear mechanic in the game (D-118).
+        // Token depletion is the ONLY wear mechanic in the game.
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);   // last cycle still paid out
     });
 
@@ -400,12 +390,11 @@ describe('Charges and depletion (D-176, D-118)', () => {
         plant('hero_1', 10);
         run(13000);
 
-        // Heroes never move themselves (D-59), and since Phase 7 they do not
-        // get moved BY a Token vanishing either — the player returns to a
-        // person standing on nothing, which is what the yellow mark is for
-        // (D-172). This is also what D-151 restocks underneath.
-        // Under flags (1.4b) the flag stays planted there; with nothing to work
-        // and no Manager to wait for, the hero idles at it.
+        // Heroes never move themselves, and since Phase 7 they do not get moved
+        // BY a Token vanishing either — the player returns to a person standing
+        // on nothing, which is what the yellow mark is for. Under flags (1.4b)
+        // the flag stays planted there; with nothing to work and no Manager to
+        // wait for, the hero idles at it.
         expect(BoardState.displayPointOf('hero_1')).toEqual(C(10));
         expect(BoardState.flagOf('hero_1')).not.toBeNull();
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
@@ -432,7 +421,7 @@ describe('Passive Generators (D-116)', () => {
     it('⚠️ are strictly worse per tile than the same job staffed (risk 11)', () => {
         // If an unstaffed Token ever beat a staffed one per tile, the optimal
         // board would become mostly unstaffed and heroes would stop being the
-        // ceiling — which unpicks D-115, D-181 and §6.2 at once.
+        // ceiling — which unpicks and §6.2 at once.
         place(10, 'fixture_producer', 'hero_1');   // 2 wood / 12s
         place(20, 'fixture_passive');          // 1 wood / 30s
 

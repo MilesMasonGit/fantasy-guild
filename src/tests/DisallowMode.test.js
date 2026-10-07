@@ -30,8 +30,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * Token Lifecycle feedback **B2.3** — disallow mode and *Allow all* (FB-32),
- * on FP-35's per-Token disallow.
+ * Token Lifecycle feedback **B2.3** — disallow mode and *Allow all*, on
+ * per-Token disallow.
  */
 
 /** A Token no hero works: disallow mode leaves it alone. */

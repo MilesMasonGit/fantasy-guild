@@ -15,25 +15,18 @@ import { STATE_TONE } from '../board/FlagLayer.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * FlagRulesPanel — **one hero's flag rules** (Free Playmat slice 1.5b-ii,
- * FP-71, FP-73, FP-79, FP-81, FPP-17…FPP-21).
- *
- * A narrow panel that covers the Notifications column, so the board stays in
- * view while the rules change (FP-81). Opened only from a flag's gear badge
- * (FPP-20); `ReactRoot` places it.
- *
- * * **Header** — portrait, name, flag colour, what the hero is doing and up to
- *   five Tokens their flag passed over (every reason, FPP-21). Re-read twice a
- *   second, because skips change without an event.
- * * **One row per `FlagRules.rowsFor`** — every held work skill, then Fight for
- *   a hero who can fight. An **Allowed** toggle and a **priority 1–5** (1 is
- *   highest, 3 the default); the row the hero is working now is highlighted.
- *   Both call `Flags.setRule`.
- * * **Reset to defaults** — `Flags.resetRules`.
- *
- * The rules live on the hero (FPP-17), so a recalled or defeated hero's panel
- * stays editable and reads "In the Guild". A hero who no longer exists shows
- * "Hero gone".
+ * FlagRulesPanel: one hero's flag rules.
+ * A narrow panel that covers the Notifications column, so the board stays in view while the
+ * rules change. Opened only from a flag's gear badge; `ReactRoot` places it.
+ * * **Header**: portrait, name, flag colour, what the hero is doing and up to five Tokens
+ * their flag passed over (every reason). Re-read twice a second, because skips change without
+ * an event.
+ * * **One row per `FlagRules.rowsFor`**: every held work skill, then Fight for a hero who can
+ * fight. An **Allowed** toggle and a **priority 1–5** (1 is highest, 3 the default); the row
+ * the hero is working now is highlighted. Both call `Flags.setRule`.
+ * * **Reset to defaults**: `Flags.resetRules`.
+ * The rules live on the hero, so a recalled or defeated hero's panel stays editable and reads
+ * 'In the Guild'. A hero who no longer exists shows 'Hero gone'.
  */
 export const FlagRulesPanel = ({ heroId, onClose }) => {
     const [, refresh] = useState(0);
@@ -122,7 +115,7 @@ export const FlagRulesPanel = ({ heroId, onClose }) => {
     );
 };
 
-/** The drawer look (Bank / Vault pane header), narrowed to one column. */
+/** The drawer look (the Bank pane header), narrowed to one column. */
 const PanelShell = ({ title, onClose, heroId = null, children }) => (
     <section
         data-flag-rules={heroId || ''}

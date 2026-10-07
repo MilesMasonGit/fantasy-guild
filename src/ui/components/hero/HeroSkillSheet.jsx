@@ -9,7 +9,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * HeroSkillSheet — a hero's job, the six skills they hold, and everything they
  * have **set down**.
  *
- * ## Why banked skills live here and not on the dock card (D-250)
+ * ## Why banked skills live here and not on the dock card
  * The card is a glance surface: six cells, no room, and a player scanning the
  * dock wants to know what someone can do *now*. Banked skills are the opposite
  * kind of information — they only matter when you are deciding whether to
@@ -18,7 +18,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * Showing them is what makes reversibility real rather than a rule in a
  * document. A player who cannot see that Bren still has Cooking 30 sitting
  * dormant has no reason to believe promotion is anything but permanent, and
- * D-71 exists precisely so it isn't.
+ * the design exists precisely so it isn't.
  *
  * ## Grouped by layer, because the layers mean different things
  * Foundation skills are the ordinary work of the guild; a combat skill decides
@@ -63,7 +63,6 @@ export const HeroSkillSheet = ({ heroId, className }) => {
 
     return (
         <div className={cn('flex flex-col gap-3', className)}>
-            {/* Job, and the path taken to it */}
             <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Job</span>
                 <div className="flex items-baseline gap-2">
@@ -77,7 +76,6 @@ export const HeroSkillSheet = ({ heroId, className }) => {
                 )}
             </div>
 
-            {/* Held — the six they can use right now */}
             <div className="flex flex-col gap-2">
                 <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">
                     Skills ({held.length})

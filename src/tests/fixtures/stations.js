@@ -1,17 +1,7 @@
-// Fantasy Guild — test helper: a player picking a station's recipe (TL-15)
+// Fantasy Guild — test helper: a player picking a station's recipe
 
 /**
  * **For tests only.**
- *
- * Since TL-15 a station arrives with **no recipe** and nobody works it until the
- * player picks one. Tests written before that relied on placement picking the
- * lowest-level recipe for them (R-5, retired). They are about something else
- * (context, charges, reach, XP), so they now say out loud what the player did:
- * picked the recipe. This helper is that pick, made the way the recipe picker
- * makes it (`setSelectedRecipe`, the only writer).
- *
- * Picks the lowest-level recipe of the pool, ties to pool order: the same
- * recipe those tests always ran on, so their expectations are unchanged.
  */
 
 import * as StationRecipe from '../../systems/board/StationRecipe.js';

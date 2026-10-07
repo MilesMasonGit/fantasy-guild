@@ -15,11 +15,11 @@ import { getItem } from '../config/registries/itemRegistry.js';
 import './fixtures/fixtureItems.js';
 
 /**
- * The quest machinery QuestManager keeps since B6.1 (TL-18): the event
- * reports, bounty content, rewards and counting one action once — now counted
- * on quest Tokens on the mat. The Tokens' own rules (cap, clock, tutorial
- * chain, bin, saves) are `QuestTokens.test.js`; the tutorial's steps are
- * driven through the real systems in `QuestTutorialChain.test.js`.
+ * The quest machinery QuestManager keeps since B6.1: the event reports,
+ * bounty content, rewards and counting one action once — now counted on quest
+ * Tokens on the mat. The Tokens' own rules (cap, clock, tutorial chain, bin,
+ * saves) are `QuestTokens.test.js`; the tutorial's steps are driven through
+ * the real systems in `QuestTutorialChain.test.js`.
  */
 
 /**
@@ -97,7 +97,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         const res = QuestManager.claimQuest('tut_recruit');
         expect(res.success).toBe(true);
         expect(res.rewardItems.map(r => [r.itemId, r.quantity])).toEqual([['item_oak_wood', 10]]);
-        // FB-53 / B6 rewards: on the floor, not in the Bank, until collected.
+        // B6 rewards: on the floor, not in the Bank, until collected.
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(0);
         const loot = SpriteLayer.getSprites().filter(s => s.refId === 'item_oak_wood');
         expect(loot.reduce((n, s) => n + s.quantity, 0)).toBe(10);
@@ -205,12 +205,12 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         expect(SpriteLayer.getSprites().some(s => s.refId === 'item_oak_wood')).toBe(true);
     });
 
-    // ------------------------------------------------------------------
-    // One player action = one count (CR2-085, CR2-055/CR2-177). Pinned
-    // 2026-08-25. These drive the ENGINE rather than publishing by hand,
-    // because the bug was a single call raising TWO events QuestManager
-    // both listened to. `requiredCount` is raised first: at a target of 1 the
-    // `Math.min` cap in `reportProgress` hides a doubling completely.
+    // ------------------------------------------------------------------ One
+    // player action = one count. These drive the ENGINE rather than
+    // publishing by hand, because the bug was a single call raising TWO
+    // events QuestManager both listened to. `requiredCount` is raised first:
+    // at a target of 1 the `Math.min` cap in `reportProgress` hides a
+    // doubling completely.
     // ------------------------------------------------------------------
     const probe = (targetType) => bounty({ id: 'probe', targetType, requiredCount: 10 });
 

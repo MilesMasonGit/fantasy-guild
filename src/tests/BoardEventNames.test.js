@@ -5,21 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 /**
- * CR3-106 — board events are named by their constants, never by raw strings.
- *
- * A subscription to a mistyped raw string (`'board:tile_changd'`) never fires
- * and never errors. `HeroDockTab` and `GuildHallEffectsPanel` subscribed by
- * raw string until CR3-106; this keeps it from coming back.
- *
- * * No string literal starting `board:` anywhere in `src/` outside
- *   `boardEvents.js` (the tests excepted: they may build payloads by hand).
- * * The one board event without the prefix, `token_placed` (and any other
- *   added later), is not subscribed or published by raw string, nor listed
- *   raw in a `useGameState` event array. (`QuestManager` also uses
- *   `'token_placed'` as a quest *target type*, a different vocabulary, which
- *   this leaves alone.)
- *
- * Comments are stripped first: prose may name events freely.
+ * board events are named by their constants, never by raw strings.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));

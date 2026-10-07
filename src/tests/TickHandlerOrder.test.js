@@ -9,11 +9,11 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ CR3-031 (round 3 review, R1 §6). The nine tick handlers used to run in
- * registration order only because every one defaulted to `GameLoop.onTick`'s
- * priority of 100 and `Array.prototype.sort` happens to be stable — true, but
- * accidental, and a future ninth-and-a-half handler inserted in the wrong
- * place could silently change behaviour.
+ * The nine tick handlers used to run in registration order only because every
+ * one defaulted to `GameLoop.onTick`'s priority of 100 and
+ * `Array.prototype.sort` happens to be stable — true, but accidental, and a
+ * future ninth-and-a-half handler inserted in the wrong place could silently
+ * change behaviour.
  *
  * A permutation spike (R1, same seed, 4,000 S2 ticks, a uses/Bank/XP
  * fingerprint) found every reordering of the nine gives an identical result

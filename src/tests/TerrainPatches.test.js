@@ -8,12 +8,6 @@ import { setTuning, resetTuning } from '../config/playmatTuning.js';
 
 /**
  * Patches — a second substrate worn through a first.
- *
- * The test that matters here is the coverage one. The first version used the
- * authored coverage directly as a noise threshold, which sounds right and is
- * not: interpolating four uniform corners piles the result up around the middle,
- * so "0.18" produced **1.6%** on the real board. It looked plausible in code,
- * produced a picture, and was an order of magnitude wrong.
  */
 
 afterEach(() => resetTuning());

@@ -4,21 +4,12 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 import { TOKEN_TYPES, derivedTokenType, expandBearer } from '../../utils/constants';
 
-/**
- * Three tabs, not ten (CMS-36/37). Tasks, Stations, Areas, Tags,
- * Effects and Loot Tables are gone with the card-sequence game they described.
- *
- * ⚠️ **There is no Enemies tab.** CMS-85 makes Enemy a *filtered view* of the
- * Token list rather than a separate entity — an enemy is a Token (D-104), so it
- * lives in the Token list and is reached through the type filter below.
- */
+/** ⚠️ There is no Enemies tab: an enemy is a Token, so it lives in the Token list and is reached through the type filter. */
 const ENTITY_TABS = [
   { key: 'items', label: 'Items', type: 'item', icon: Package, color: 'var(--color-item)', add: 'addItem' },
   { key: 'tokens', label: 'Tokens', type: 'token', icon: Boxes, color: 'var(--color-accent)', add: 'addToken' },
   { key: 'maps', label: 'Maps', type: 'map', icon: MapIcon, color: 'var(--color-area)', add: 'addMap' },
-  // The named effect library (Unified Effects P1). A Token's rules live here
-  // now, so the library needs to be reachable on its own rather than only from
-  // inside the Token that happens to use it.
+  // The named effect library. A Token's rules live there, so it needs to be reachable on its own.
   { key: 'effects', label: 'Effects', type: 'effect', icon: Sparkles, color: 'var(--color-accent)', add: 'addEffect' },
 ];
 
@@ -33,9 +24,7 @@ export default function Sidebar() {
   const addEntity = useEntityStore((s) => s[tab.add]);
   const activeEntityId = useEntityStore((s) => s.activeEntityId);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
-  // A Token's type is derived from its rules, and its rules live in the effect
-  // library (Unified Effects P1) — without expanding, every Token in the list
-  // groups as "unclassified".
+  // A Token's type is derived from its rules, which live in the effect library; without expanding, every Token groups as unclassified.
   const effects = useEntityStore((s) => s.effects);
   const typeOf = (entity) => derivedTokenType(expandBearer(entity, effects));
 
@@ -56,15 +45,7 @@ export default function Sidebar() {
     return list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [entities, activeTab, typeFilter, searchQuery]);
 
-  /**
-   * Tokens group by their type. Items and Maps stay flat — there are too few
-   * Maps to group, and an Item's type is not how you look for one.
-   *
-   * ⚠️ Grouped by the **derived** type rather than the stored one, so a Token
-   * moves group the moment you give it the rule that changes what it is. The
-   * stored field is only refreshed on sync, so reading that instead would leave
-   * a Token filed under what it used to be until you pressed a button.
-   */
+  /** Items and Maps stay flat. ⚠️ Tokens group by the derived type, not the stored one, which is only refreshed on sync, so a Token moves group as soon as its rules change. */
   const groupedEntities = useMemo(() => {
     if (activeTab !== 'tokens') return null;
     const groups = {};
@@ -138,7 +119,6 @@ export default function Sidebar() {
         borderColor: 'var(--color-border-subtle)',
       }}
     >
-      {/* Tab bar */}
       <div className="flex border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
         {ENTITY_TABS.map((t) => {
           const Icon = t.icon;
@@ -168,7 +148,6 @@ export default function Sidebar() {
         })}
       </div>
 
-      {/* Header + add */}
       <div className="flex items-center justify-between px-3 py-2">
         <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
           {tab.label}
@@ -179,7 +158,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Search */}
       <div className="px-3 pb-2">
         <div className="relative">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
@@ -194,7 +172,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Token type filter — this is how Enemies are reached (CMS-85) */}
       {activeTab === 'tokens' && (
         <div className="px-3 pb-2">
           <select
@@ -214,7 +191,6 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Entity list */}
       <div className="flex-1 overflow-y-auto px-1 pb-4">
         {filteredEntities.length === 0 && (
           <div className="text-center py-8 px-4" style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>
@@ -253,7 +229,6 @@ export default function Sidebar() {
           : filteredEntities.map(renderEntityButton)}
       </div>
 
-      {/* Footer count */}
       <div
         className="px-3 py-2 border-t text-xs"
         style={{ borderColor: 'var(--color-border-subtle)', color: 'var(--color-text-muted)' }}

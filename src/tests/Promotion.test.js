@@ -15,25 +15,10 @@ import { canHeroFight } from '../utils/CombatFormulas.js';
 /**
  * Promotion, re-training and banking.
  *
- * The three rules under test, and why each matters:
- *
- * 1. **A promotion is gated on the skills it carries forward** (D-262), so it
- *    is the payoff for work already done rather than a purchase.
- * 2. **Nothing is lost, only banked** (D-71). A removed skill goes dormant at
- *    its level and comes back exactly as it was — this is what makes promotion
- *    a reconfiguration rather than a gamble, and it is the single thing that
- *    lets a player engage with the system at all.
- * 3. **Re-training is the same act as promoting** (D-248), not an undo. It is
- *    also the ONLY respec the player has, which is why it needs to work
- *    perfectly in both directions.
- *
- * ⚠️ **No gold, no materials (Promotes rule P3, PR-6).** A promotion is paid
- * for with a charge of the Token whose Promotes rule names the job, spent by
+ * ⚠️ **No gold, no materials (Promotes rule P3).** A promotion is paid for
+ * with a charge of the Token whose Promotes rule names the job, spent by
  * `BoardPromotion` — see `BoardPromotion.test.js`. This file tests the
  * qualification and the skill-sheet swap, which is all `PromotionSystem` does.
- *
- * Nothing below hardcodes a skill name where the registry can supply it — the
- * job tree is a first draft and these tests must survive it changing.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -84,9 +69,9 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
     });
 
     it('gates only on carried-forward skills, not on everything the hero holds', () => {
-        // A Fighter's list does not name Fishing or Cooking (it keeps them
-        // since TL-7, but does not gate on them). Being terrible at them must
-        // not block the promotion.
+        // A Fighter's list does not name Fishing or Cooking (it keeps them,
+        // but does not gate on them). Being terrible at them must not block
+        // the promotion.
         const hero = makeQualified('fighter');
         const dropped = Object.keys(hero.skills)
             .filter(id => !getJobSkills('fighter').includes(id));
@@ -100,8 +85,8 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
     /**
      * ⚠️ **Replaces two tests that asserted the retired price** — "refuses when
      * the gold is short" and "refuses when the materials are short". They
-     * correctly described a rule the owner deliberately replaced (PR-6). This is
-     * the assertion that keeps the old price from creeping back.
+     * correctly described a rule the owner deliberately replaced. This is the
+     * assertion that keeps the old price from creeping back.
      */
     it('does not care about materials (or gold, which is gone) — the Token is the price', () => {
         const hero = makeQualified('fighter');
@@ -130,11 +115,11 @@ describe('A promotion swaps the sheet', () => {
         PromotionSystem.promote(hero.id, 'fighter');
 
         expect(hero.jobId).toBe('fighter');
-        // TL-7: the held sheet is every foundation skill plus the Fighter's own.
+        // the held sheet is every foundation skill plus the Fighter's own.
         expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('fighter')].sort());
     });
 
-    /** ⚠️ Replaces 'takes the gold and the materials' (PR-6). */
+    /** ⚠️ Replaces 'takes the gold and the materials'. */
     it('leaves the guild materials completely alone (gold is gone, 9.4)', () => {
         const hero = makeQualified('fighter');
         InventoryManager.addItem('item_copper_ingot', 10);
@@ -217,8 +202,8 @@ describe('⭐ Promotion keeps all nine starting skills (TL-7)', () => {
     });
 
     it('restores foundation skills an older save had banked, on the next promotion', () => {
-        // Before TL-7 the first promotion banked five foundation skills. A hero
-        // like that gets them back, at their stored level, when promoted again.
+        // A hero like that gets them back, at their stored level, when promoted
+        // again.
         const hero = makeQualified('fighter');
         PromotionSystem.promote(hero.id, 'fighter');
         hero.bankedSkills = { fishing: { level: 19, xp: 777 } };
@@ -252,9 +237,9 @@ describe('⭐ Promotion keeps all nine starting skills (TL-7)', () => {
 });
 
 describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
-    // ⚠️ Rewritten for TL-7 (slice 1.2). These used to bank the foundation
-    // skills Recruit → Fighter dropped; promotion no longer drops any. Banking
-    // now only happens when re-training ACROSS branches, which swaps
+    // ⚠️ Rewritten (slice 1.2). These used to bank the foundation skills
+    // Recruit → Fighter dropped; promotion no longer drops any. Banking now
+    // only happens when re-training ACROSS branches, which swaps
     // non-foundation skills — so that is what these exercise.
 
     /** A Fighter, re-trained to Cleric: banks Leadership, gains Faith. */
@@ -309,9 +294,7 @@ describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
 });
 
 describe('Re-training is the same act as promoting (D-248)', () => {
-    // ⚠️ Un-skipped in Promotes rule P3. Both were skipped on a claim that
-    // "promotion past the first tier is not implemented" — which was false: it
-    // worked all along (found 2026-09-06 on the promotion-tokens branch).
+    // ⚠️ Un-skipped in Promotes rule P3.
     it('moves a hero sideways between siblings', () => {
         const hero = makeQualified('fighter');
         PromotionSystem.promote(hero.id, 'fighter');
@@ -376,9 +359,7 @@ describe('The UI is told, so the Dock actually redraws', () => {
         expect(seen[0]).toMatchObject({
             heroId: hero.id, fromJobId: STARTING_JOB_ID, toJobId: 'fighter'
         });
-        // ⚠️ TL-7 (slice 1.2): nothing is banked any more — a Fighter keeps all
-        // nine foundation skills and gains its combat and shared skill. (Slice
-        // 1.1 asserted five banked here.)
+        // (Slice 1.1 asserted five banked here.)
         expect(seen[0].banked).toEqual([]);
         expect(seen[0].gained).toHaveLength(2);
     });
@@ -394,7 +375,7 @@ describe('The UI is told, so the Dock actually redraws', () => {
         const after = project();
 
         expect(after).not.toBe(before);
-        // TL-7: nine foundation + combat + shared.
+        // nine foundation + combat + shared.
         expect(after.split(',')).toHaveLength(11);
         for (const id of getJobSheet('fighter')) expect(after).toContain(`${id}:`);
     });
@@ -405,7 +386,6 @@ describe('Preview shows the trade before the player commits', () => {
         const hero = makeQualified('fighter');
         const preview = PromotionSystem.previewPromotion(hero.id, 'fighter');
 
-        // ⚠️ TL-7 (slice 1.2): nothing lost, all nine kept, two arriving.
         // (Slice 1.1 asserted five lost and four kept.)
         expect(preview.losing).toEqual([]);
         expect(preview.arriving.length).toBe(2);

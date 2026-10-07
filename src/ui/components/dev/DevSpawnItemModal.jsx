@@ -16,10 +16,8 @@ const TYPE_LABEL = {
 };
 
 /**
- * DevSpawnItemModal — QA tool: search the full item registry and drop copies
- * straight into the bank so they can be dragged onto a hero to test
- * equipability. The other half of the old dead "Spawn Cards/Items..." button
- * (see DevUnlockCardsModal for the split rationale).
+ * DevSpawnItemModal: QA tool: search the full item registry and drop copies straight into the
+ * bank so they can be dragged onto a hero to test equipability.
  */
 export const DevSpawnItemModal = ({ engine, onClose }) => {
     const [query, setQuery] = useState('');

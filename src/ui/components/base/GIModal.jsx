@@ -18,17 +18,14 @@ export const GIModal = ({
     maxWidth = "max-w-2xl",
     hideClose = false
 }) => {
-    // Headless UI always needs a function here, but "can this be dismissed?"
-    // is decided explicitly: a caller that supplies no `onClose`, or passes
-    // `hideClose`, gets no dismiss control. (Previously this was inferred by
-    // string-comparing the handler's source, which never matched, so every
-    // modal showed an X - including the un-dismissable SYSTEM BOOT screen.)
+    // Headless UI always needs a function here, but 'can this be dismissed?' is decided
+    // explicitly: a caller that supplies no `onClose`, or passes `hideClose`, gets no dismiss
+    // control (so the un-dismissable boot screen shows no X).
     const canClose = !hideClose && typeof onClose === 'function';
     const handleClose = canClose ? onClose : NOOP;
     return (
         <Transition appear show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-[300]" onClose={handleClose}>
-                {/* Backdrop */}
                 <Transition.Child
                     as={Fragment}
                     enter="ease-out duration-300"
@@ -41,7 +38,6 @@ export const GIModal = ({
                     <div className="fixed inset-0 bg-black/80 transition-opacity" />
                 </Transition.Child>
 
-                {/* Container for centering */}
                 <div className="fixed inset-0 overflow-y-auto">
                     <div className="flex min-h-full items-center justify-center p-4 text-center">
                         <Transition.Child
@@ -61,7 +57,6 @@ export const GIModal = ({
                                     className
                                 )}
                             >
-                                {/* Header */}
                                 {(title || canClose) && (
                                     <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30 shrink-0">
                                         {title && (
@@ -82,7 +77,6 @@ export const GIModal = ({
                                     </div>
                                 )}
 
-                                {/* Content */}
                                 <div className="p-6 flex-1 min-h-0 overflow-hidden">
                                     {children}
                                 </div>

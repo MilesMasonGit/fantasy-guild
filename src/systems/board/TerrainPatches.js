@@ -1,40 +1,23 @@
-// Fantasy Guild — Patches of one substrate showing through another.
+// patches of one substrate showing through another
 
 import { hash01 } from './TerrainLattice.js';
 import { patchOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
 /**
- * Clumps of bare earth worn through the grass — the concept doc's §5, finally.
+ * Clumps of bare earth worn through the grass: a second substrate showing through a first inside
+ * one terrain, with no edge involved.
  *
- * Everything before this was a boundary *between* two terrains. This is a
- * second substrate showing through a first **inside** one terrain: patches of
- * dirt scuffed into a meadow, with no edge involved.
+ * Clumps, not speckle: the shape comes from smooth value noise on a coarse grid, interpolated,
+ * because independent per-pixel noise gives dithering.
  *
- * ## Clumps, not speckle
+ * The noise is sampled from absolute art-pixel coordinates, so a clump runs across subtile and tile
+ * boundaries without lining anything up. What stops a patch is the terrain underneath changing to
+ * one with no patches declared.
  *
- * The shape comes from smooth value noise rather than a per-pixel coin flip.
- * Independent noise per pixel would give dithering — the same mistake that made
- * the first coastline look like static. Noise sampled on a coarse grid and
- * interpolated between gives blobs a few pixels across, which is what a worn
- * patch actually looks like.
- *
- * ## It ignores every boundary on the board
- *
- * The noise is sampled from **absolute art-pixel coordinates**, so a clump runs
- * across subtile and tile boundaries without noticing them. That is the concept
- * doc's own third answer to seam continuity (§6, "Continuous Global Coordinate
- * Sampling"), and here it comes for free: there is nothing to line up, because
- * nothing is ever cut.
- *
- * What *does* stop a patch is the terrain underneath changing to something that
- * has no patches declared — dirt worn into grass simply stops at the sand.
- *
- * ⚠️ Which is why this reads the **art-pixel** map rather than the subtile
- * lattice. Gated per subtile, dirt speckled straight across the beaches fringed
- * onto a forest's edge: the subtile was still forest, so the patch had no idea
- * the ground beneath it had become sand. Per pixel it stops where the sand
- * starts, because it is asking the same question the renderer answers.
+ * ⚠️ Reads the art-pixel map, not the subtile lattice: gated per subtile, dirt speckled across the
+ * beaches fringed onto a forest's edge, because the subtile was still forest. Per pixel it stops
+ * where the sand starts.
  */
 
 /**
@@ -58,14 +41,10 @@ const CALIBRATION_SAMPLES = 4096;
 /**
  * The noise field, kept between repaints.
  *
- * ⚠️ It depends on the **seed and the clump size only** — not on the terrain —
- * so recomputing it whenever a Token moves was fifty thousand evaluations of
- * four hashes each to arrive at exactly the number it arrived at last time.
- * About 4ms of a repaint, spent reproducing a constant.
- *
- * Held as one field for the whole board rather than only the patched parts:
- * which parts are patched changes with the terrain, and a cache that had to be
- * invalidated whenever the board changed would not be a cache.
+ * ⚠️ It depends on the seed and the clump size only, not on the terrain, so recomputing it whenever
+ * a Token moves is wasted work. Held for the whole board rather than only the patched parts: which
+ * parts are patched changes with the terrain, and a cache that had to be invalidated whenever the
+ * board changed would not be a cache.
  */
 let noiseCache = { key: null, field: null, quantiles: null };
 
@@ -80,9 +59,6 @@ function noiseField(size, seed, cell) {
         }
     }
 
-    // Calibration comes off the field itself now, rather than from a second
-    // set of samples taken at made-up coordinates — it is the real
-    // distribution of the real board, and it is already in memory.
     const step = Math.max(1, Math.floor(field.length / CALIBRATION_SAMPLES));
     const sample = [];
     for (let i = 0; i < field.length; i += step) sample.push(field[i]);
@@ -93,22 +69,15 @@ function noiseField(size, seed, cell) {
 }
 
 /**
- * ⚠️ **Coverage has to be calibrated, not used as a threshold directly.**
+ * ⚠️ Coverage has to be calibrated, not used as a threshold directly.
  *
- * Interpolating between four uniform random corners does not give a uniform
- * result — it piles up around the middle, the way the average of four dice
- * does. So `noise < 0.18` is nowhere near 18% of pixels: measured on the real
- * board it came out at **1.6%**, an order of magnitude short of what the
- * terrain asked for, and the first version of this shipped that.
- *
- * Rather than fight the distribution, this measures it: coverage picks a
- * **quantile** of the sorted noise. Then "0.18" means what it says — 18% of the
- * ground is worn through — for every terrain, whatever the noise happens to
- * look like at that scale.
+ * Interpolating between uniform random corners does not give a uniform result: it piles up around
+ * the middle, so `noise < 0.18` is nowhere near 18% of pixels. Instead coverage picks a quantile of
+ * the sorted noise, so 0.18 means 18% of the ground for every terrain.
  */
 function thresholdFrom(quantiles, coverage) {
-    if (coverage <= 0) return -Infinity;   // nothing is below this
-    if (coverage >= 1) return Infinity;    // everything is
+    if (coverage <= 0) return -Infinity;
+    if (coverage >= 1) return Infinity;
     return quantiles[Math.floor(coverage * (quantiles.length - 1))];
 }
 
@@ -138,10 +107,9 @@ export function patchNoise(px, py, seed, cell = NOISE_CELL) {
 /**
  * The alpha masks that say where each patch substrate shows through.
  *
- * One mask per distinct patch substrate, at **art-pixel** resolution — so 232
- * square on the 8px art set. The renderer scales it up with smoothing off,
- * which is both faster than drawing thousands of little rectangles and the only
- * way to keep the patch edges on the pixel grid.
+ * One mask per distinct patch substrate, at art-pixel resolution. The renderer scales it up with
+ * smoothing off, which keeps the patch edges on the pixel grid and is faster than drawing many
+ * small rectangles.
  *
  * @param {object} artPixels A resolved art-pixel map from `resolveArtPixels`.
  * @param {number} seed The save's terrain seed.
@@ -154,8 +122,8 @@ export function buildPatchMasks(artPixels, seed = 0) {
     const coverageScale = tuning('patchCoverage');
     const cell = Math.max(2, Math.round(NOISE_CELL * tuning('patchScale')));
 
-    // Which terrains want patches at all, resolved once per palette entry
-    // rather than once per pixel — the per-pixel noise is the expensive part.
+    // Which terrains want patches at all, resolved once per palette entry rather than once per
+    // pixel: the per-pixel noise is the expensive part.
     const wants = palette.map(id => {
         const patch = patchOf(id);
         return patch && patch.coverage > 0 ? patch : null;
@@ -168,8 +136,6 @@ export function buildPatchMasks(artPixels, seed = 0) {
         masks[substrate] = new Uint8ClampedArray(size * size);
     }
 
-    // One noise field and one calibration for the whole board, both cached
-    // across repaints — see `noiseField`.
     const { field, quantiles } = noiseField(size, seed, cell);
     const thresholds = new Map();
 
@@ -179,10 +145,8 @@ export function buildPatchMasks(artPixels, seed = 0) {
             const patch = terrain >= 0 ? wants[terrain] : null;
             if (!patch) continue;
 
-            // Below the threshold is worn through, and the threshold is the
-            // quantile that actually yields the requested fraction — see
-            // `calibrate`. Cached per coverage value, since a board has only a
-            // handful of distinct ones.
+            // The threshold is the calibrated quantile (see `calibrate`), cached per coverage
+            // value.
             const wanted = patch.coverage * coverageScale;
             if (!thresholds.has(wanted)) {
                 thresholds.set(wanted, thresholdFrom(quantiles, wanted));

@@ -35,24 +35,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * **Who a moment puts in the room** (Effects Grammar v2, V1 — G-2).
- *
- * ## What this phase is for
- * A rule needs to name things it did not place: *"deal 1 damage to whoever just
- * harvested me"*. That "whoever" is a **participant in the moment**, and it
- * exists only because a particular kind of thing happened.
- *
- * G-2 is the rule that keeps this bounded: **a moment declares the roles it
- * supplies, and a target may only name a role its moment has.** An author
- * picking *"a neighbour runs out of charges"* is never offered *"the actor"*,
- * because nobody acted.
- *
- * ## ⭐ The thing worth proving
- * A raspberry bush and a monster are the same case **already**. `BoardRunner`
- * and `BoardCombat` publish the same event with the same payload, because one
- * kill is one cycle (D-129). The last test here is the one that matters: the
- * actor resolves identically for both, which is what makes one Thorns work on
- * both without knowing which it is on.
+ * **Who a moment puts in the room** (Effects Grammar v2, V1).
  */
 
 const TILE = 15;
@@ -110,9 +93,9 @@ describe('the two short payloads now carry an actor', () => {
     });
 
     it('reports a null actor rather than omitting the field when nobody is there', () => {
-        // `fixture_passive` is a passive generator (D-116): it cycles unstaffed.
-        // The role is DECLARED and simply not filled, which is different from
-        // the field not existing.
+        // `fixture_passive` is a passive generator: it cycles unstaffed. The
+        // role is DECLARED and simply not filled, which is different from the
+        // field not existing.
         place(TILE, 'fixture_passive');
         run(300);
 
@@ -228,8 +211,8 @@ describe('⭐ a bush and a monster are the same case', () => {
     it('resolves the actor identically for work and for combat', () => {
         // The whole generalisation the owner asked for, in one assertion.
         // `BoardRunner` and `BoardCombat` publish the same event with the same
-        // payload (D-129: one kill is one cycle), so a rule that reads `actor`
-        // cannot tell — and must not be able to tell — which it is standing on.
+        // payload (one kill is one cycle), so a rule that reads `actor` cannot
+        // tell — and must not be able to tell — which it is standing on.
         const harvest = { instanceId: 'tok_15', typeId: 'token_raspberry_bush', heroId: 'hero_1', failed: false };
         const kill = { instanceId: 'tok_15', typeId: 'token_thorn_elemental', heroId: 'hero_1', failed: false };
 

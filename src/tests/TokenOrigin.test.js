@@ -18,7 +18,7 @@ import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
  * Token Lifecycle slice 3.1 — **origin, the mat cap and fixed pushes**
- * (roadmap DP-3, SP-67, SP-68).
+ * (roadmap).
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

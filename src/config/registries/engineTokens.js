@@ -1,16 +1,16 @@
-// Fantasy Guild — Engine-owned Token types (B6.1, TL-18)
+// Fantasy Guild — Engine-owned Token types
 
 /**
  * ⭐ **Token types the engine owns, defined in code rather than in `data/`.**
  *
- * The one member is the **quest Token** (B6.1: FB-41–FB-43, TL-18). Quests are
+ * The one member is the **quest Token**. Quests are
  * Tokens on the mat now, spawned by the Guild Hall (`QuestTokens.js`); what a
  * quest asks and pays lives on the instance (`instance.quest`), so the type
  * itself holds nothing a designer would tune.
  *
  * ## Why not in `data/tokens.json`
  * The CMS is the only authoring surface for `data/`, and its one-way sync
- * destroys whatever it does not model (roadmap §0.3). This type is never
+ * destroys whatever it does not model. This type is never
  * authored, so it never enters `data/`, and the CMS never sees it.
  *
  * ## Kept out of the content set on purpose
@@ -28,7 +28,7 @@
  * that no shipped Token does.
  */
 
-/** The quest Token's type id (TL-18). */
+/** The quest Token's type id. */
 export const QUEST_TOKEN_TYPE = 'token_quest';
 
 export const ENGINE_TOKEN_TYPES = Object.freeze({
@@ -46,7 +46,7 @@ export const ENGINE_TOKEN_TYPES = Object.freeze({
         size: 1,
         // Unlimited: a quest is not worn down, it is claimed (and then removed).
         uses: null,
-        // No hero works a quest (FB-41: "no hero involved"). No `config`, so
+        // No hero works a quest. No `config`, so
         // it has no work at all; `requiresHero: false` makes that explicit to
         // the readers that check it (`Flags`, `workSkillRule`).
         requiresHero: false,

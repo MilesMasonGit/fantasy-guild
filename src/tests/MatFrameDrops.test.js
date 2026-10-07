@@ -24,15 +24,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ Free Playmat slice 1.6c-1 — the mat frame and the one drop function.
- *
- * * The mat is 1760 × 1126 u (FP-92).
- * * A screen pointer becomes a mat point by the mat's on-screen scale.
- * * Everything dropped on the playmat goes through `dropOnMat(payload, point)`:
- *   a flag stands at the raw point (FP-94), a Map lies free, and any other Token
- *   lands **exactly where it was let go** — nothing snaps (slice 1.6d-1).
- *
- * ⭐ **Test layout only** (slice 1.6d-2): `C(i)` names spots on a 160 u lattice
- * so a drop can be aimed near a known point. The game has no tiles.
  */
 
 const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
@@ -91,8 +82,8 @@ describe('pointerToMat — screen pointer → mat point', () => {
         expect(pointerToMat({ x: 120 + 480, y: 80 + 321.5 }, rect)).toEqual({ x: 960, y: 643 });
     });
 
-    // CR3-413: the maths holds at any mat size and zoom, because both the
-    // width and the scale are read live. Pinned at the Mat Tuner's extremes.
+    // the maths holds at any mat size and zoom, because both the width and
+    // the scale are read live. Pinned at the Mat Tuner's extremes.
     describe('at other mat sizes and zooms (CR3-413)', () => {
         afterEach(() => resetMatTuning());
 
@@ -265,11 +256,11 @@ describe('dropOnMat — one drop function for the playmat', () => {
     });
 
     /**
-     * ⭐ A board drawn smaller than its natural size (the mat fits the window,
-     * FP-99) converts a pointer by **its own** on-screen size before calling
-     * this same function. A pointer a given fraction across a small board
-     * therefore means the very same mat point as one that far across a big one.
-     * (First written for the Tray's mini mat, FP-97, retired in slice 1.9.)
+     * ⭐ A board drawn smaller than its natural size (the mat fits the window)
+     * converts a pointer by **its own** on-screen size before calling this same
+     * function. A pointer a given fraction across a small board therefore means
+     * the very same mat point as one that far across a big one. (First written
+     * for the Tray's mini mat, retired in slice 1.9.)
      */
     it('⭐ a scaled-down board drops at the right mat point, at its own scale', () => {
         const target = { x: 1320, y: 844.5 };   // three quarters across the mat
@@ -290,8 +281,8 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(only().y).toBeCloseTo(target.y, 6);
     });
 
-    // Maps used to lie loose on the mat in a box of their own (D-155) until
-    // the Map bursts retired (Token Lifecycle 9.1). A Map is an ordinary Token.
+    // Maps used to lie loose on the mat in a box of their own until the Map
+    // bursts retired (Token Lifecycle 9.1). A Map is an ordinary Token.
     it('a Map Token stands on the mat like any other Token (9.1)', () => {
         expect(dropOnMat({ typeId: 'fixture_map', usesRemaining: 1 }, { x: 1500, y: 1000 }).success).toBe(true);
         expect(BoardState.tokens().map(t => t.typeId)).toEqual(['fixture_map']);
@@ -320,9 +311,8 @@ describe('dropOnMat — one drop function for the playmat', () => {
     });
 
     /**
-     * ⭐ The FP-93 practice area is gone with the snapping (slice 1.6d-1). A
-     * Token dropped far from where the old 6×6 board used to be is no longer
-     * refused — the whole mat is the play area now.
+     * A Token dropped far from where the old 6×6 board used to be is no
+     * longer refused — the whole mat is the play area now.
      */
     it('⭐ a Token dropped far from the middle of the mat simply lands there now', () => {
         const point = { x: 100, y: 100 };

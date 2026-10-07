@@ -6,23 +6,8 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { ENGINE_EVENTS, UI_EVENTS, ORPHAN_EVENTS, NO_LISTENER } from '../systems/core/engineEvents.js';
 
 /**
- * CR3-559 — every global event is declared in `engineEvents.js` and named by
- * its constant; CR3-107 — "sent to nobody" is a written decision, not drift.
- *
- * * No `publish`/`subscribe`/`unsubscribe` call anywhere in `src/` takes a
- *   string literal as its event name (board or global): a typo in one is a
- *   subscription that never fires and never errors.
- * * No declared name sits raw in an event array (`useGameState` lists,
- *   `*_EVENTS` arrays).
- * * Census, by scanning the code for each constant (and the few local aliases
- *   of one, e.g. `COMBAT_ATTACK_EVENT`):
- *   - every `ENGINE_EVENTS`/`UI_EVENTS` entry has a publisher;
- *   - every `ORPHAN_EVENTS` entry has none (the list can only shrink);
- *   - an engine event with no listener is in `NO_LISTENER`, and everything in
- *     `NO_LISTENER` really has none.
- *
- * Comments are stripped first: prose may name events freely. Tests are not
- * scanned (they may publish by hand).
+ * every global event is declared in `engineEvents.js` and named by its
+ * constant — "sent to nobody" is a written decision, not drift.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));

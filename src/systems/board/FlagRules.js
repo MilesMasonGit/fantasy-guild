@@ -1,31 +1,25 @@
-// Fantasy Guild — A hero's flag rules: which skills they work, and in what order (Free Playmat slice 1.5b)
+// a hero's flag rules: which skills they work, and in what order
 
 import { isCombatSkill, getSkill } from '../../config/registries/skillRegistry.js';
 import { GameState } from '../../state/GameState.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 
 /**
- * FlagRules — **the data half of FP-71**: per-hero, per-skill "allowed" and
- * "priority". The rules that act on them (choosing, switching, `setRule`) are
- * in `Flags.js`; this file only reads and describes.
+ * Per-hero, per-skill allowed and priority. The rules that act on them (choosing, switching,
+ * `setRule`) are in `Flags.js`; this file only reads and describes.
  *
- * ## The shape (FPP-17)
- * `hero.flagRules = { [ruleId]: { allowed: boolean, priority: 1..5 } }`, saved
- * on the hero, so it survives a recall, a defeat and a save. **Sparse**: a
- * missing entry means allowed at priority 3. A `ruleId` is a work skill id, or
- * {@link FIGHT} for combat.
+ * `hero.flagRules = { [ruleId]: { allowed: boolean, priority: 1..5 } }`, saved on the hero. Sparse:
+ * a missing entry means allowed at priority 3. A `ruleId` is a work skill id, or {@link FIGHT} for
+ * combat.
  *
- * * An entry for a skill the hero no longer holds (banked by a promotion) is
- *   **kept and ignored** — so a banked-and-restored skill comes back with its
- *   rule, and a newly gained skill simply has no entry, which is the default.
- * * **Priority 1 is highest** (FP-79). The hero takes the nearest runnable
- *   Token of the best priority that has one (FP-72).
- * * **Combat is one rule**, `'combat'` — a hero fights with whatever combat
- *   skill they hold, so combat skills are never listed one by one (FP-74).
- *   Allowed by default.
+ * An entry for a skill the hero no longer holds (banked by a promotion) is kept and ignored, so a
+ * banked-and-restored skill comes back with its rule. Priority 1 is highest.
+ *
+ * Combat is one rule, `'combat'`: a hero fights with whatever combat skill they hold, so combat
+ * skills are never listed one by one. Allowed by default.
  */
 
-/** The single combat rule (FP-74). */
+/** The single combat rule. */
 export const FIGHT = 'combat';
 
 export const PRIORITY_MIN = 1;
@@ -67,7 +61,7 @@ function heldSkills(heroId) {
     return hero?.skills && typeof hero.skills === 'object' ? hero.skills : {};
 }
 
-/** Whether the hero can fight at all — holds a combat skill (D-249). */
+/** Whether the hero can fight at all: holds a combat skill. */
 export function canFight(heroId) {
     return CombatFormulas.canHeroFight(heroRecord(heroId));
 }

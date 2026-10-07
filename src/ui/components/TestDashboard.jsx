@@ -19,9 +19,8 @@ const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
 const devButtonClass = 'shrink-0 px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
 /**
- * The open QA panel never grows past the window (FB-36): it is capped at the
- * viewport height less its 1rem margins top and bottom, and the part under the
- * header scrolls inside it.
+ * The open QA panel never grows past the window: it is capped at the viewport height less its
+ * 1rem margins top and bottom, and the part under the header scrolls inside it.
  */
 export const QA_PANEL_FIT_CLASS = 'max-h-[calc(100dvh-2rem)]';
 export const QA_PANEL_BODY_CLASS = 'flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1';
@@ -44,7 +43,7 @@ export const TestDashboard = React.memo(() => {
     const itemIds = React.useMemo(() => (isOpen ? listGivableItemIds() : []), [isOpen]);
     const kindCounts = isOpen ? getSpawnerKindCounts() : [];
 
-    // Spawner kinds refresh (Token Lifecycle 3.3): a spawn, a grow, a removal
+    // Spawner kinds refresh (): a spawn, a grow, a removal
     // and a Token running out each change a family's count or cap, and each
     // publishes one of these. Only while the panel is open.
     const [, setKindTick] = useState(0);
@@ -138,13 +137,8 @@ export const TestDashboard = React.memo(() => {
     };
 
     /**
-     * ⚠️ TEMPORARY SCAFFOLDING — remove when promotion lands (Phase 5).
-     *
-     * Every hero now generates as a Recruit, and a Recruit holds no combat
-     * skill, so nobody can fight. That is the intended end state, but the only
-     * legitimate way to gain a combat skill is a promotion, and the promotion
-     * system does not exist yet. Without this button combat is untestable for
-     * three phases.
+     * ⚠️ Dev scaffolding: grants a combat skill directly. A hero who holds no combat skill
+     * cannot fight, and the only other way to gain one is a promotion.
      */
     const grantCombatSkill = (skillId) => {
         const heroes = engine.HeroManager.getAllHeroes().filter(h => !h.isVillager);
@@ -190,8 +184,8 @@ export const TestDashboard = React.memo(() => {
             label: "🧰 Spawn Items...",
             onClick: () => setShowSpawnItem(true)
         },
-        // No "Add 1k Gold": gold is retired (SP-65, slice 2.2). Use Spawn
-        // Items for the items that are the only price now.
+        // No 'Add 1k Gold': gold is retired. Use Spawn Items for the items that are the only
+        // price now.
         {
             label: "Hire Random Hero",
             onClick: () => {
@@ -211,7 +205,6 @@ export const TestDashboard = React.memo(() => {
             label: "⬆️⬆️ Level All Skills +10",
             onClick: () => levelAllHeroes(10)
         },
-        // ⚠️ Scaffolding — delete when promotion lands (Phase 5).
         {
             label: "⚔️ Grant Melee (temp)",
             onClick: () => grantCombatSkill('melee')
@@ -230,21 +223,16 @@ export const TestDashboard = React.memo(() => {
                 engine.EventBus.publish(UI_EVENTS.DEV_TOGGLE_SANDBOX);
             }
         },
-        // The deck-loop dev buttons (buy pack, unlock areas, world map,
-        // rainfall, chaos, invasions) are deleted with the systems they drove.
-        // Board tools replace them, phase by phase; spawn-loot lands in Phase 3.
         {
             label: "✨ Scatter Loot (burst)",
             onClick: () => {
-                // 3-6 item stacks scattered from random points (D-167). Items
-                // only: Token loot went with the Vault (Token Lifecycle 9.3).
+                // 3-6 item stacks scattered from random points. Items only.
                 const items = ['item_yew_log', 'item_glowcap', 'item_spider_silk'];
                 const count = 3 + Math.floor(Math.random() * 4);
                 for (let i = 0; i < count; i++) {
-                    // A random point on the mat, as a fraction of it, so the
-                    // scatter follows the mat's live size (slice 1.6d-3). The
-                    // fractions are the old fixed numbers over the shipped
-                    // 1760 × 1126, so at 11 steps nothing has moved.
+                    // A random point on the mat, as a fraction of it, so the scatter follows
+                    // the mat's live size. The fractions are the old fixed numbers over the
+                    // shipped 1760 × 1126.
                     const w = matW();
                     const hh = matH();
                     const from = {
@@ -325,14 +313,16 @@ export const TestDashboard = React.memo(() => {
                         </button>
                     </div>
 
-                    {/* Everything under the header scrolls, so the panel never
-                        runs off a short window (FB-36). */}
+                    {/**
+                     * Everything under the header scrolls, so the panel never runs off a short
+                     * window.
+                     */}
                     <div data-testid="qa-panel-body" className={QA_PANEL_BODY_CLASS}>
-                        {/* Perf HUD + stress scenarios (round-3 review, P3).
-                            Compile-time dev only: a production build with
-                            Debug Mode on still has no harness. */}
+                        {/**
+                         * Perf HUD + stress scenarios. Compile-time dev only: a production
+                         * build with Debug Mode on still has no harness.
+                         */}
                         {import.meta.env.DEV && <PerfDevSection />}
-                        {/* Token Lifecycle dev tools (slice 0.2, DP-11) */}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
                             <div>
                                 <div className={devLabelClass}>Give item</div>

@@ -11,25 +11,6 @@ import mapData from '../../data/maps.json';
 /**
  * The CMS connectivity auditor's Token branch.
  *
- * ## Why this suite exists
- * The auditor read a Token's producers from `token.outputs`. A Token's outputs
- * live on `token.config.outputs`, and always have — so from its first version
- * the auditor saw **no Token producer anywhere**, and filed "Unreachable Item
- * (CMS-86)" Criticals against items that Tokens produce and the simulator
- * prices without complaint. On the shipped corpus that was 35 unreachable rows
- * where 4 are real. Nothing behaved wrongly; the audit tab simply lied, loudly,
- * to anyone who did not already know which half of it to ignore.
- *
- * The bug survived because every existing check was written against fixtures in
- * the auditor's own shape. So there are two tests here and they are deliberately
- * different in kind:
- *
- * 1. **The rule, on a fixture** — a Token that produces an item makes that item
- *    reachable. This is what a shape change must not break.
- * 2. **The rule, on real content** — no item the simulator prices is reported
- *    unreachable. This is the one that would actually have caught it, because
- *    the failure was only ever visible against authored data.
- *
  * ⚠️ No shipped id is named anywhere below. Test 2 derives its subject from the
  * corpus, so the owner can author freely without breaking it.
  */

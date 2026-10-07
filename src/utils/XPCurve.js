@@ -1,10 +1,8 @@
 // Fantasy Guild - XP Curve
-// Phase 3: Core Utilities
 
 /**
  * XP Curve utilities for skill leveling
- * Uses a polynomial curve: XP = floor(level + 300 * 2^(level/7))
- * Similar to RuneScape's XP curve but simplified
+ * Uses an exponential curve similar to RuneScape's.
  */
 
 /**
@@ -31,11 +29,8 @@ export function xpForLevel(level) {
 export function levelFromXp(xp) {
     if (xp <= 0) return 1;
 
-    // Reads the pre-built table (CR3-258). It used to call `xpForLevel` (itself
-    // a loop) for every candidate level: about 0.2 ms per call at level 99, on
-    // every XP award and every skill row of the hero sheet. Same answers: the
-    // table holds exactly `xpForLevel(1..100)`, and `XPCurve.test.js` pins
-    // every level against it.
+    // Reads the pre-built table rather than calling `xpForLevel` (itself a loop)
+    // per candidate level: this runs on every XP award and hero-sheet skill row.
     for (let level = 1; level < 99; level++) {
         if (XP_TABLE[level + 1] > xp) {
             return level;
@@ -82,8 +77,7 @@ export function xpToNextLevel(currentLevel) {
     return xpForLevel(currentLevel + 1) - xpForLevel(currentLevel);
 }
 
-// Pre-calculated XP table for quick lookups: XP_TABLE[L] === xpForLevel(L)
-// for L = 1..100. `levelFromXp` reads it.
+// XP_TABLE[L] === xpForLevel(L) for L = 1..100; `levelFromXp` reads it.
 const XP_TABLE = [];
 for (let i = 1; i <= 100; i++) {
     XP_TABLE[i] = xpForLevel(i);
@@ -100,5 +94,4 @@ export function getXpTable(level) {
     return XP_TABLE[level] || xpForLevel(level);
 }
 
-// Export the table for debugging
 export const XP_CURVE_TABLE = Object.freeze([...XP_TABLE]);

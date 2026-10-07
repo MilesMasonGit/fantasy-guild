@@ -11,31 +11,24 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * ⭐ **The Shop drawer** (B4: FB-25, FB-27; was the Bank drawer's Shop pane,
- * `CartographerTab`, Token Lifecycle slice 5.1).
- *
- * * **A drawer from the left edge**, a third of the screen wide, beside the
- *   nav when the nav is on the left. Opened and closed by the nav's Shop
- *   bubble (`ui.nav.toggle('cartographer')`) or its own Close. The Bank drawer
- *   no longer has a Shop pane.
- * * **Drag a row onto the mat to buy** (FB-25). The row's payload is a
- *   `TOKEN` with `from.shop`; `dropOnMat` hands it to `Shop.buyAt`, which pays
- *   on drop and places the Token at the drop point. There are no Buy buttons.
- * * **While a Shop row is carried, the drawer slides away to a lip**
- *   ({@link SHOP_LIP_PX} wide, FB-27) whenever the pointer is over the
- *   playmat, and slides back open the moment it comes back over the drawer
- *   (CR3-402, owner ruling 2026-09-30) — not just when the drag ends. A Shop
- *   Token let go over the lip (or the reopened drawer) is a plain cancel
- *   ({@link pointerOverShopDrawer}).
- * * **Rows that cannot be bought are dimmed, say why in red, and cannot be
- *   picked up** (B4 unaffordable). They re-read on every Bank, cap or bin
- *   change, and on a Mat Tuner cap change.
- *
- * No inspect panel (Token Lifecycle feedback Q7, FB-24). Prices use the
- * standard `EntityRibbon` item row, have / need, short in red (FB-26).
+ * The Shop drawer.
+ * - **A drawer from the left edge**, a third of the screen wide, beside the nav when the nav
+ * is on the left. Opened and closed by the nav's Shop bubble (`ui.nav.toggle('cartographer')`)
+ * or its own Close.
+ * - **Drag a row onto the mat to buy.** The row's payload is a `TOKEN` with `from.shop`;
+ * `dropOnMat` hands it to `Shop.buyAt`, which pays on drop and places the Token at the drop
+ * point. There are no Buy buttons.
+ * - **While a Shop row is carried, the drawer slides away to a lip** ({@link SHOP_LIP_PX}
+ * wide) whenever the pointer is over the playmat, and slides back open the moment it comes
+ * back over the drawer, not just when the drag ends. A Shop Token let go over the lip (or the
+ * reopened drawer) is a plain cancel ({@link pointerOverShopDrawer}).
+ * - **Rows that cannot be bought are dimmed, say why in red, and cannot be picked up.** They
+ * re-read on every Bank, cap or bin change, and on a Mat Tuner cap change.
+ * No inspect panel. Prices use the standard `EntityRibbon` item row, have / need, short in
+ * red.
  */
 
-/** How much of the drawer stays on screen while a Shop Token is carried (FB-27). */
+/** How much of the drawer stays on screen while a Shop Token is carried. */
 export const SHOP_LIP_PX = 28;
 
 /**
@@ -56,18 +49,15 @@ export function pointerOverShopDrawer(pointer) {
     return pointer.x >= r.left && pointer.x <= r.right && pointer.y >= r.top && pointer.y <= r.bottom;
 }
 
-/** A Shop row being carried. */
 export const isShopPayload = (p) => p?.kind === DRAG_KIND.TOKEN && !!p.from?.shop;
 
 /**
  * `'closed' | 'open' | 'lip'`: shut, open, or slid away during a Shop drag.
- *
- * ⭐ **CR3-402** (owner ruling 2026-09-30): the slide now tracks WHERE the
- * Shop row is being carried, not just that it is being carried. It is a lip
- * while the pointer is over the playmat, and open again the moment it is
- * back over the drawer — so the player can change their mind mid-drag. The
- * default for `surface` reproduces the old "always a lip" behaviour for any
- * caller that does not track position (e.g. a test driving this directly).
+ * The slide tracks WHERE the Shop row is being carried, not just that it is being carried: a
+ * lip while the pointer is over the playmat, and open again the moment it is back over the
+ * drawer, so the player can change their mind mid-drag. The default for `surface` reproduces
+ * 'always a lip' for any caller that does not track position (e.g. a test driving this
+ * directly).
  */
 export function shopDrawerState(isOpen, activePayload, surface = DND_SURFACE.BOARD) {
     if (!isOpen) return 'closed';
@@ -75,14 +65,12 @@ export function shopDrawerState(isOpen, activePayload, surface = DND_SURFACE.BOA
     return surface === DND_SURFACE.DRAWER ? 'open' : 'lip';
 }
 
-/** The slide for each state. */
 export function shopDrawerTransform(state) {
     if (state === 'open') return 'translateX(0)';
     if (state === 'lip') return `translateX(calc(-100% + ${SHOP_LIP_PX}px))`;
     return 'translateX(-100%)';
 }
 
-/** The drag payload for one row. */
 export const shopRowPayload = (typeId) => ({ typeId, from: { shop: typeId } });
 
 /** What re-reads the catalogue: the Bank, the cap and the bin (binned Tokens count). */
@@ -97,7 +85,7 @@ function useShopRefresh(active) {
         if (!active) return undefined;
         const refresh = () => bump(n => n + 1);
         const unsubs = SHOP_EVENTS.map(e => EventBus.subscribe(e, refresh));
-        // The cap is a Mat Tuner setting, which publishes no game event (slice 8.3).
+        // The cap is a Mat Tuner setting, which publishes no game event ().
         unsubs.push(onMatTuningChanged(refresh));
         return () => unsubs.forEach(u => u?.());
     }, [active]);
@@ -169,7 +157,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                 ))}
             </div>
 
-            {/* The lip (FB-27): the strip left showing while a Shop Token is carried. */}
+            {/* The lip: the strip left showing while a Shop Token is carried. */}
             <div
                 aria-hidden
                 className={cn(
@@ -184,7 +172,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
 
 /**
  * One Token for sale: sprite, name, then one standard item row per price line
- * (have / need). The whole row is the drag handle (FB-25). A row that cannot
+ * (have / need). The whole row is the drag handle. A row that cannot
  * be bought is dimmed, names what is missing in red, and does not start a drag.
  */
 export const ShopRow = ({ item }) => {

@@ -1,10 +1,10 @@
-// Fantasy Guild — what a `Cannot` statement may forbid (effect grammar Phase 2)
+// Fantasy Guild — what a `Cannot` statement may forbid
 
 /**
  * The restriction kinds the `Cannot` keyword can express.
  *
- * ## Exactly one kind, on purpose (design §1.3)
- * The owner asked for a general **Cannot**, adjacency limits first. Building a
+ * ## Exactly one kind, on purpose
+ * A general **Cannot**, adjacency limits first. Building a
  * restriction *framework* to hold one rule is the classic way to spend a week
  * and ship nothing, so the split is:
  *
@@ -21,7 +21,7 @@
  * ## A restriction is not a modifier
  * It has no bucket, no aggregator, and it never reaches `TileModifiers`. It is
  * read once, by `Placement.js`, at the moment a Token is put down — which is
- * why it lives in its own file rather than being a ninth entry in the modifier
+ * why it lives in its own file rather than in the modifier
  * palette.
  *
  * ## ⚠️ A restriction is symmetric, and that is the whole difficulty
@@ -41,7 +41,7 @@
  *
  * ⚠️ One definition of the wording. `sentence` fills it for the string; the
  * renderer fills it with markers so the LIMIT can be its own clickable word
- * (Rules Line P4) — without a second copy of the phrase living there.
+ * — without a second copy of the phrase living there.
  */
 const adjacencySentence = (limit, subject) => `be nearby to more than ${limit} ${subject}`;
 

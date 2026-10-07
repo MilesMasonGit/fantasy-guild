@@ -7,15 +7,12 @@ import { useTokenEvent } from './tokenEvents.js';
 
 /**
  * The Token sheet, floating beside the Token it is about.
- *
- * ## It follows the Token, not a remembered rectangle (slice 1.6c-2)
- * It used to anchor to `#tile-N` — a square that never moved. On the mat a
- * Token moves: it is pushed by a 2×2 cascade, or dragged somewhere else, and
- * the popup has to come along or it ends up pointing at bare mat. So the anchor
- * is looked up live by **instance id** (`[data-token-id]`), and re-measured
- * whenever something happens to that Token — once straight away, and once more
- * after the CSS move has finished, because a Token slides to its new point over
- * 220ms and measuring mid-slide would anchor to where it was passing through.
+ * It follows the Token, not a remembered rectangle. On the mat a Token moves: it is pushed by
+ * a 2×2 cascade, or dragged somewhere else, and the popup has to come along or it ends up
+ * pointing at bare mat. So the anchor is looked up live by **instance id**
+ * (`[data-token-id]`), and re-measured whenever something happens to that Token: once straight
+ * away, and once more after the CSS move has finished, because a Token slides to its new point
+ * over 220ms and measuring mid-slide would anchor to where it was passing through.
  */
 
 /** Long enough for `MatToken`'s left/top transition to have settled. */
@@ -210,7 +207,6 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             )}
 
             <div className="w-full flex-1 flex flex-col overflow-hidden rounded-lg">
-                {/* Flat Scroll Arrow: Top */}
                 {canScrollUp && (
                     <button
                         onClick={scrollUp}
@@ -228,7 +224,6 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
                     <TokenInspection typeId={typeId} instanceId={instanceId} hideSprite={true} showSell={false} />
                 </div>
 
-                {/* Flat Scroll Arrow: Bottom */}
                 {canScrollDown && (
                     <button
                         onClick={scrollDown}

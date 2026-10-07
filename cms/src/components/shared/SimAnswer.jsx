@@ -3,33 +3,15 @@ import { fingerprint } from '../../engine/sim/answers';
 import { formatHours, LONG_LIFETIME_HOURS, SHORT_LIFETIME_HOURS } from '../../engine/sim/checkPass';
 
 /**
- * The **"the sim answered" half** of the Simulator panel (plan §15.1, phase P6)
- * — read-only, filled by the last Recalculate, shared by the Token editor and
- * the Recipe editor so there is one surface rather than two that drift.
- *
- * What it shows, in the order §15.1 asks for:
- * - the cycle time it chose, inside its band;
- * - per output, the item's value with an **anchor** or **inherits** badge;
- * - any tuning, stated as a **diff** ("range 1–3 → 2–4");
- * - the **earn gauge** — a dot inside a bracket, readable without numbers;
- * - any **refusal cards** inline, not only in the audit panel;
- * - the grey **stale — recalculate** badge when the record has been edited
- *   since the run.
- *
- * ⚠️ Deliberately plain. The deliverable here is the information, not the
- * flourish — and everything it renders is computed in `engine/sim/answers.js`,
- * so this file holds no economics of its own.
- *
+ * The sim answered half of the Simulator panel: read-only, filled by the last Recalculate, shared by the Token and Recipe editors. It shows the chosen cycle time in its band, per-output value with an anchor or inherits badge, tuning as a diff, the earn gauge, refusal cards, and a stale badge when the record was edited since the run.
+ * ⚠️ Everything it renders is computed in `engine/sim/answers.js`; this file holds no economics.
  * @param entityId  the Token or Recipe id
  * @param record    the live record, for the stale check
  */
 export default function SimAnswer({ entityId, record }) {
   const answer = useSimulationStore((s) => s.simAnswers[entityId]);
 
-  // Nothing to say until a Recalculate has run. Renders nothing at all rather
-  // than a line explaining where the Recalculate button is (owner, 2026-09-05)
-  // — the panel is at the top of the editor, so an empty-state sentence there
-  // is the first thing read on every un-run Token.
+  // Renders nothing until a Recalculate has run, rather than an empty-state sentence at the top of every un-run Token.
   if (!answer) return null;
 
   const stale = fingerprint(record) !== answer.fingerprint;
@@ -91,10 +73,7 @@ export default function SimAnswer({ entityId, record }) {
                   </span>
                 </>
               )}
-              {/* F9's standing caption. Value-absorbs-yield is the one
-                  behaviour of this tool that inverts a designer's instinct, and
-                  the churn report after the fact is too late to be the first
-                  warning. */}
+              {/* Standing caption: value-absorbs-yield is the one behaviour of this tool that inverts a designer's instinct, and the churn report after the fact is too late to be the first warning. */}
               {o.anchored && (
                 <span className="block text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
                   changing this yield changes {o.itemId}'s price, not this one's earnings
@@ -131,7 +110,6 @@ export default function SimAnswer({ entityId, record }) {
   );
 }
 
-/** A labelled line, the panel's one layout primitive. */
 function Line({ label, children }) {
   return (
     <div className="text-[11px] leading-relaxed">
@@ -157,15 +135,7 @@ function Badge({ tone, children }) {
   );
 }
 
-/**
- * The earn gauge: a dot inside a bracket.
- *
- * §15.1 asks for something *readable without numbers* — the bracket is the
- * band, the dot is where this source actually earns. The axis runs from nothing
- * to twice the target, so a dot pinned at either end reads as "way off" without
- * anyone having to do arithmetic. The numbers are still printed underneath for
- * anyone who wants them.
- */
+/** The earn gauge: a dot inside a bracket, readable without numbers. The bracket is the band and the axis runs from nothing to twice the target, so a dot pinned at either end reads as way off. */
 function EarnGauge({ earn }) {
   const axisMax = earn.targetPerHour * 2;
   const pct = (v) => Math.max(0, Math.min(100, (v / axisMax) * 100));
@@ -181,14 +151,11 @@ function EarnGauge({ earn }) {
         Earns
       </div>
       <div className="relative h-4 rounded" style={{ background: 'rgba(255,255,255,0.04)' }}>
-        {/* the band */}
         <div
           className="absolute top-0 bottom-0 rounded"
           style={{ left: `${lo}%`, width: `${Math.max(hi - lo, 1)}%`, background: 'rgba(255,255,255,0.10)' }}
         />
-        {/* the target */}
         <div className="absolute top-0 bottom-0" style={{ left: `${pct(earn.targetPerHour)}%`, width: 1, background: 'rgba(255,255,255,0.25)' }} />
-        {/* the dot */}
         <div
           className="absolute rounded-full"
           style={{
@@ -205,21 +172,7 @@ function EarnGauge({ earn }) {
   );
 }
 
-/**
- * The lifetime line, **hours first** (plan §15.1, CMS-135).
- *
- * > "lives ~3.1h · returns ~14× its find cost"
- *
- * Hours-first is the ruled way to think about charges: a raw count answers
- * nothing on its own, because 25 charges is twenty minutes on a fast Token and
- * most of a day on a heavy one. The count still shows, beside the translation —
- * charges stay hand-typed (D-176 untouched) and the author needs to see the
- * number they typed.
- *
- * The two scale heuristics from the ruling are echoed here as a quiet caption,
- * and filed properly as Info rows by the check pass. This is the early warning;
- * the audit row is the record.
- */
+/** The lifetime line, hours first: a raw charge count answers nothing on its own, because 25 charges is twenty minutes on a fast Token and most of a day on a heavy one. The count still shows beside the translation. The scale heuristics are echoed here as a quiet caption and filed as Info rows by the check pass. */
 function LifetimeLine({ lifetime }) {
   const long = !lifetime.unlimited && lifetime.hours > LONG_LIFETIME_HOURS;
   const short = !lifetime.unlimited && lifetime.hours < SHORT_LIFETIME_HOURS;
@@ -253,11 +206,7 @@ function LifetimeLine({ lifetime }) {
   );
 }
 
-/**
- * One refusal, inline (plan §12): what, why in game terms, and ranked remedies.
- * Every remedy names a tag or a dial — that is the catalogue's job, not this
- * component's.
- */
+/** One refusal, inline: what, why in game terms, and ranked remedies. Every remedy names a tag or a dial; that is the catalogue's job, not this component's. */
 function RefusalCard({ refusal }) {
   const colour = refusal.severity === 'critical'
     ? 'var(--color-error, #ef4444)'

@@ -1,40 +1,6 @@
-/**
- * Economic simulator — the field adapter (phase P3+4).
- *
- * ## Why this file exists (finding S24/B5)
- *
- * Tokens and Recipes describe the *same* idea — "a work cycle that consumes
- * some items and produces others" — in two different vocabularies:
- *
- * | Idea | Token | Recipe |
- * | :--- | :--- | :--- |
- * | skill | `config.skill` | `skill` |
- * | required level | `config.skillRequired` | `levelRequirement` |
- * | cycle length | `config.cycleTimeMs` | `durationMs` |
- * | outputs / inputs | `config.outputs` / `config.inputs` | `outputs` / `inputs` |
- *
- * (`RecipeResolver.js:196` is where the running game maps `durationMs` onto
- * `io.cycleTimeMs`, i.e. the game already does this reconciliation once, at its
- * own edge.)
- *
- * Every pass downstream of this module reads **adapted entities only**. No pass
- * anywhere in `sim/` may contain `entity.config?.skillRequired ??
- * entity.levelRequirement`; if a field name has to be chosen, it is chosen
- * here, once.
- *
- * Every pass in this directory is a pure function over data a caller hands in.
- * `recalculateEconomy` is that caller, and `sim/writeBack.js` is the only place
- * a result reaches the store.
- */
+/** Economic simulator: the field adapter. Tokens and Recipes describe the same idea (a work cycle that consumes items and produces others) in two vocabularies: skill is `config.skill` / `skill`, required level `config.skillRequired` / `levelRequirement`, cycle length `config.cycleTimeMs` / `durationMs`, and I/O is `config.outputs` + `config.inputs` / `outputs` + `inputs`. Every pass reads adapted entities only; no pass in `sim/` may contain `entity.config?.skillRequired ?? entity.levelRequirement`, because a field name is chosen here, once. Every pass in this directory is a pure function over data a caller hands in. */
 
-/**
- * The Token kinds this simulator does not model in v1 (plan §17's deferred
- * list, plus passives).
- *
- * A Token of one of these kinds **can never anchor an item** (plan §3.2) — but
- * if it has a work cycle it is still *seen*, as a deferred-scope Info row, so a
- * passive producer is not silently forgotten. That is the "Wind Trap wrinkle".
- */
+/** The Token kinds this simulator does not model, plus passives. Such a Token can never anchor an item, but if it has a work cycle it is still seen, as a deferred-scope Info row, so a passive producer is not silently forgotten. */
 export const DEFERRED_TOKEN_TYPES = Object.freeze([
     'passive',
     'buff',
@@ -46,21 +12,7 @@ export const DEFERRED_TOKEN_TYPES = Object.freeze([
 
 /**
  * A Token's live charge count.
- *
- * **`uses` is the field. `charges` is never read.** Source of truth:
- * `src/config/registries/tokenRegistry.js:146` (`tokenStartingUses`), which is
- * literally `def.uses ?? null` and is the game's only reader.
- *
- * The CMS cannot import that helper — it reads the game's registry singleton
- * (`TOKENS`), not the CMS's own store — so the semantics are mirrored here in
- * one line rather than re-derived.
- *
- * ⚠️ `charges` was dead data on Token records (finding S6/A5): the retired CMS
- * balance engine's proposal, written back on every recalculation, disagreeing
- * with `uses` on 33 of the 37 Tokens that carried it (one was `uses: 25` beside
- * `charges: 500`). It was deleted from `data/tokens.json` on 2026-09-01. The
- * rule stays because the name could be coined again: reading it would not fail
- * loudly, it would silently multiply some Tokens' lifetimes twentyfold.
+ * ⚠️ `uses` is the field; `charges` is never read. `tokenStartingUses` in `src/config/registries/tokenRegistry.js` is the game's only reader and is `def.uses ?? null`; the CMS cannot import it (it reads the game's registry singleton, not the CMS store), so the semantics are mirrored here. Reading `charges` would not fail loudly, it would silently multiply some Tokens' lifetimes.
  */
 export function liveCharges(def) {
     return def?.uses ?? null;
@@ -68,16 +20,7 @@ export function liveCharges(def) {
 
 /**
  * An output's expected quantity per successful roll.
- *
- * ⚠️ **This must agree with the runtime's `expectedOutputQuantity`**
- * (`tokenRegistry.js:224-238`, `(min + max) / 2` over `outputRange`) or every
- * band the simulator computes is quietly wrong (finding S17/A6).
- * `EconSimTime.test.js` pins the agreement by importing the game's helper.
- *
- * The one addition: authored intent lives in `baseQty {min,max}` and the
- * `minQty`/`maxQty` pair is *derived* output (plan §16), so intent is preferred
- * when present. On the shipped corpus the two agree exactly; when they stop
- * agreeing the pin test is the drift alarm.
+ * ⚠️ Must agree with the runtime's `expectedOutputQuantity` in `tokenRegistry.js`, `(min + max) / 2` over `outputRange`, or every band the simulator computes is quietly wrong; `EconSimTime.test.js` pins the agreement. Authored intent lives in `baseQty {min,max}` while `minQty`/`maxQty` are derived, so intent is preferred when present.
  */
 export function expectedQuantity(output) {
     const range = quantityRange(output);
@@ -94,19 +37,8 @@ export function quantityRange(output) {
 }
 
 /**
- * An output's **authored** drop chance, as a percentage.
- *
- * Plan §16 lists `chance` among the *derived* fields, so once the tuning pass
- * (P6) has turned one, the number sitting in `chance` is the simulator's answer
- * rather than the author's question. `baseChance` is the intent, exactly as
- * `baseQty` is the intent behind `minQty`/`maxQty` — and it is what makes a
- * tuned chance re-derivable instead of a one-way overwrite that loses the
- * authored value forever.
- *
- * ⚠️ `writeBack.js` seeds `baseChance` the first time it tunes an output's
- * chance, and never otherwise: an output nothing has tuned carries no
- * `baseChance` and reads straight from `chance`, so untouched content keeps
- * exactly the shape it has always had.
+ * An output's authored drop chance, as a percentage. `chance` is a derived field, so once the tuning pass has turned one it holds the simulator's answer; `baseChance` is the authored intent that keeps a tuned chance re-derivable.
+ * ⚠️ `writeBack.js` seeds `baseChance` the first time it tunes an output's chance and never otherwise, so untouched content keeps its original shape.
  */
 export function authoredChance(output) {
     if (Number.isFinite(output?.baseChance)) return output.baseChance;
@@ -126,15 +58,13 @@ function adaptOutput(output) {
         minQty: min,
         maxQty: max,
         avgQty,
-        // Units produced per cycle, in expectation. The pricing pass's
-        // "abundance" (plan §3.3's multi-output split) is exactly this number.
+        // Units produced per cycle, in expectation; this is the pricing pass's abundance.
         abundance: avgQty * chance,
         variable: output?.variable === true,
         anchor: output?.anchor === true,
     });
 }
 
-/** One normalised input entry. */
 function adaptInput(input) {
     return Object.freeze({
         itemId: input?.itemId ?? null,
@@ -165,7 +95,6 @@ function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, inputs, output
     });
 }
 
-/** Adapt one Token definition. `id` may come from the record or its store key. */
 export function adaptToken(def, id = def?.id) {
     return adaptCommon({
         id,
@@ -186,7 +115,6 @@ export function adaptToken(def, id = def?.id) {
     });
 }
 
-/** Adapt one Recipe definition. */
 export function adaptRecipe(def, id = def?.id) {
     return adaptCommon({
         id,
@@ -214,13 +142,7 @@ function entries(collection) {
     return Object.entries(collection);
 }
 
-/**
- * Adapt a whole corpus.
- *
- * Returns entities **sorted by id**. The order is load-bearing for idempotence
- * (plan §11): every later pass iterates this array, and a stable order is what
- * makes two runs byte-identical.
- */
+/** Adapt a whole corpus. Returns entities sorted by id: every later pass iterates this array, and a stable order is what makes two runs byte-identical. */
 export function adaptCorpus({ tokens, recipes } = {}) {
     const adapted = [
         ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id)),
@@ -231,16 +153,8 @@ export function adaptCorpus({ tokens, recipes } = {}) {
 }
 
 /**
- * Has this entity a **work cycle** at all?
- *
- * ⚠️ **Inert is not the same as untagged** (findings A10 / B11/S21):
- *
- * - *Inert* — `config: null`, or a config that produces nothing. There is
- *   nothing here to tag, so the entity is skipped **silently**. 23 of the 39
- *   shipped Tokens are `config: null` (pickaxes, maps, buffs, the guild hall).
- *   Filing a row for each would bury every real row under permanent noise.
- * - *Untagged* — a real producer with no `sim.tempo` / `sim.purpose`. That is
- *   "you forgot", and it files exactly one Info row (see `tempoPass.js`).
+ * Has this entity a work cycle at all?
+ * ⚠️ Inert is not the same as untagged. Inert (`config: null`, or a config that produces nothing) has nothing to tag, so it is skipped silently; filing a row for each would bury every real row under permanent noise. Untagged is a real producer with no `sim.tempo` / `sim.purpose`: you forgot, and it files exactly one Info row (see `tempoPass.js`).
  */
 export function isInert(entity) {
     if (!entity) return true;

@@ -1,25 +1,19 @@
 import React from 'react';
 
 /**
- * The bar's height in px (FB-28: "a thin bar"). The mat does not sit under it:
- * `ReactRoot` stacks the bar above `Board` in a column, so the box `Board`
- * measures for its fit (`useBoardScale`) is this much shorter and the mat
- * shrinks to match.
+ * The bar's height in px: a thin bar. The mat does not sit under it: `ReactRoot` stacks the
+ * bar above `Board` in a column, so the box `Board` measures for its fit (`useBoardScale`) is
+ * this much shorter and the mat shrinks to match.
  */
 export const MAT_TOP_BAR_PX = 30;
 
 /**
- * ⭐ **The mat's top bar** (Token Lifecycle feedback B2, FB-28): a slim wooden
- * strip across the top of the board area, styled like the mat's brown frame.
- *
- * Three parts, by owner decision (B2 bar style, 2026-09-27):
- * * **left** — information (the Token cap, B2.1; Upkeep, B2.2),
+ * The mat's top bar: a slim wooden strip across the top of the board area, styled like the
+ * mat's brown frame. Three parts:
+ * * **left**: information (the Token cap; Upkeep),
  * * a **flexible middle**, empty, kept for future mat controls,
- * * **right** — controls (disallow mode and *Allow all*, B2.3; the Time Bank).
- *
- * Only drawn on the playmat — never on the Guild Hall upgrade screen
- * ({@link showsMatTopBar}).
- *
+ * * **right**: controls (disallow mode and *Allow all*; the Time Bank).
+ * Only drawn on the playmat, never on the Guild Hall upgrade screen ({@link showsMatTopBar}).
  * @param {{ left?: React.ReactNode, right?: React.ReactNode }} props
  */
 export const MatTopBar = ({ left = null, right = null }) => (

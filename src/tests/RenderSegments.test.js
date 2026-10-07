@@ -6,22 +6,7 @@ import { slotsOf } from '../systems/effects/statementSlots.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 
 /**
- * ⭐ **Which word came from which decision** (Rules Line P1, E-2).
- *
- * `renderSegments` is the renderer's own output, annotated: each run of text
- * either belongs to the sentence (connective tissue — "damage to", "on the
- * board") or IS a decision, and names the editor slot that decision lives in.
- * P2 makes exactly those runs clickable.
- *
- * The golden test proves the words did not change. This one proves the
- * annotations are TRUE, over the same corpus:
- *
- * 1. the segments join back to exactly the sentence;
- * 2. every tagged word names a slot `slotsOf` actually emits for that
- *    statement — a word tagged with a slot the editor lacks is a click that
- *    opens nothing;
- * 3. a decision is one span, never split into fragments or padded with spaces,
- *    so what the author clicks is the word and only the word.
+ * ⭐ **Which word came from which decision** (Rules Line P1).
  *
  * ⚠️ There is still **no parser**. Segments are produced alongside the string,
  * by the same code path that writes it; nothing reads text back into meaning.

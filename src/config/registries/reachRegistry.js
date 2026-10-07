@@ -1,21 +1,13 @@
-// Fantasy Guild — how far a rule reaches (Effects Robustness P2)
+// Fantasy Guild — how far a rule reaches
 
 /**
  * **How far** a statement reaches, as a declared vocabulary rather than a fact
  * about the code.
  *
- * ## Why this exists (ER-1)
- * Reach used to be `neighboursOf(index)`, written into three separate readers
- * and choosable by nobody. That made two whole classes of rule unauthorable:
- *
- * * **A Token cannot affect itself.** `neighboursOf` never contains the tile it
- *   was asked about — `areNearby` says so in as many words: *"a tile is never
- *   nearby to itself"*. So a Token could not buff its own yield, put a status
- *   on the hero working *it*, or grant an item to itself. This was the owner's
- *   own example when the project started.
- * * **Nothing could reach further than one tile.** The only scope wider than
- *   adjacency is the guild-wide aggregator, and the only thing that writes there
- *   is the Guild Hall upgrade track.
+ * ## Why this exists
+ * `nearby` never includes the Token carrying the rule, so affecting itself (buff its own
+ * yield, put a status on the hero working it) needs its own row, as does reaching beyond
+ * the neighbourhood.
  *
  * ## Reach and filter are different questions
  * They are easy to confuse and must not be merged:
@@ -33,15 +25,15 @@
  * this whole line of work exists to remove. All four rows below have readers in
  * `TileModifiers` (inbound) and `TileModifiers.filterTargetTiles` (outbound).
  *
- * ## ⚠️ No shapes, no radius, no direction (ER-2)
+ * ## ⚠️ No shapes and no direction
  * Four named rows, not a geometry language. Directional adjacency is ruled out
- * of the concept and a 6×6 board does not need distance falloff. A shape
+ * of the concept. A shape
  * language is how a small feature becomes a rules engine — the slope
  * `restrictionPalette.js` already refuses in as many words.
  */
 
 export const REACH = Object.freeze({
-    /** The 8 surrounding tiles. What every rule written before P2 means. */
+    /** Every Token within the Near radius, not the Token carrying the rule. */
     NEARBY: 'nearby',
     /** The Token carrying the rule, and nothing else. */
     SELF: 'self',
@@ -52,13 +44,10 @@ export const REACH = Object.freeze({
 });
 
 /**
- * ⚠️ **The default, and it is load-bearing** (ER-5).
+ * ⚠️ **The default, and it is load-bearing.**
  *
- * Every statement authored before this phase carries no `reach` field. Treating
- * its absence as `nearby` is what lets 20 Tokens and 17 library entries keep
- * behaving exactly as they did, with no migration writing a field into content
- * the owner did not touch. The same trick `chargeMomentOf` uses for the charge
- * moment, for the same reason.
+ * An absent `reach` field means `nearby`, so older content needs no migration
+ * writing a field into it. `chargeMomentOf` uses the same trick for the charge moment.
  */
 export const DEFAULT_REACH = REACH.NEARBY;
 
@@ -83,9 +72,9 @@ export const REACHES = Object.freeze([
     },
     {
         /**
-         * ⚠️ **Uncapped, knowingly** (ER-16).
+         * ⚠️ **Uncapped, knowingly.**
          *
-         * Duplicates stack uncapped everywhere else (D-23), justified because
+         * Duplicates stack uncapped everywhere else, justified because
          * adjacency effects are deliberately small. A board-wide effect is not
          * small by that argument, and **two board-reach Tokens of one type
          * genuinely double up with no audit warning**. The owner accepted that
@@ -105,8 +94,8 @@ export function getReach(id) {
 }
 
 /**
- * The reach ids before the Free Playmat's wording slice (1.10) renamed
- * "adjacent" to "nearby". The CMS keeps its own copy of the content and can
+ * The old reach ids ("adjacent" was renamed "nearby").
+ * The CMS keeps its own copy of the content and
  * sync the old ids back into `data/`; without this, `self_and_adjacent` would
  * fall through to plain `nearby` and quietly lose its "self" half.
  */
@@ -118,7 +107,7 @@ const LEGACY_REACH = Object.freeze({
 /**
  * The reach a statement uses.
  *
- * An unauthored or unrecognised value resolves to `nearby` (ER-5) rather than
+ * An unauthored or unrecognised value resolves to `nearby` rather than
  * to nothing, because "reaches nowhere" is never what an absent field meant and
  * a typo should not silently switch a rule off.
  */

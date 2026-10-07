@@ -31,9 +31,9 @@ export function webPoint(nodeId) {
 }
 
 /**
- * A node's state on the web (B9): `maxed` at its top rank, `bought` from rank
+ * A node's state on the web: `maxed` at its top rank, `bought` from rank
  * one, `buyable` when open but not yet bought, `locked` when no linked node is
- * bought (TL-23). The Hall is the root and counts as bought.
+ * bought. The Hall is the root and counts as bought.
  */
 export function nodeState(nodeId, ranks) {
     if (nodeId === HALL_NODE) return 'bought';
@@ -48,13 +48,13 @@ export function nodeState(nodeId, ranks) {
 const isOwned = (state) => state === 'bought' || state === 'maxed';
 
 /**
- * GuildHallBoard — the Guild Hall upgrade web (B9, TL-23, FB-39).
+ * GuildHallBoard — the Guild Hall upgrade web.
  *
  * The Hall in the centre, every upgrade a node placed freely around it, lines
  * between linked nodes. A line glows gold once both its ends are bought (the
  * Hall always is), so the bought paths read at a glance; a line to a locked
  * node is dimmed. There are no tiles here: nodes are picked by upgrade id.
- * The Effects list sits to the left of this, in `ReactRoot` (FB-38).
+ * The Effects list sits to the left of this, in `ReactRoot`.
  */
 export const GuildHallBoard = ({
     selectedUpgradeId,
@@ -66,8 +66,8 @@ export const GuildHallBoard = ({
         state => state.progress?.guildUpgrades || {},
         [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
     );
-    // Which upgrades the Bank can pay for right now (Hall upgrades cost items,
-    // SP-65). A flat id list as a string, per the useGameState selector contract.
+    // Which upgrades the Bank can pay for right now (Hall upgrades cost items). A flat id list
+    // as a string, per the useGameState selector contract.
     const affordableSignature = useGameState(
         () => GUILD_UPGRADES.filter(u => GuildUpgradeManager.canAfford(u.id)).map(u => u.id).join(','),
         [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.STATE_CHANGED]
@@ -139,8 +139,7 @@ export const GuildHallBoard = ({
                                 })}
                             </svg>
 
-                            {/* The Hall. Clicking it returns to the playmat, as the
-                                centre tile did before B9. */}
+                            {/* The Hall. Clicking it returns to the playmat. */}
                             <button
                                 type="button"
                                 data-hall-node={HALL_NODE}
@@ -228,7 +227,7 @@ export const GuildHallBoard = ({
                                                     style={{ imageRendering: 'pixelated' }}
                                                 />
                                             )}
-                                            {/* Affordable: the Token Alert badge, as on the old board. */}
+                                            {/* Affordable: the Token Alert badge. */}
                                             {canAfford && (
                                                 <div data-upgrade-available="true" className="absolute -top-3 -left-3 z-10 pointer-events-none">
                                                     <img

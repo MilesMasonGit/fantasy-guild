@@ -13,10 +13,10 @@ import {
     listCategoryIds
 } from '../config/registries/equipmentCategories.js';
 
-// [D-54] Equipment categories are DATA. The owner intends to keep adding gear
-// types — quiver, gloves, boots are planned, and `trinket` is expected to split
-// into `ring` and `amulet` — so adding one must be an AUTHORING change with no
-// engine edit. That is what this file exists to prove.
+// The owner intends to keep adding gear types — quiver, gloves, boots are
+// planned, and `trinket` is expected to split into `ring` and `amulet` — so
+// adding one must be an AUTHORING change with no engine edit. That is what this
+// file exists to prove.
 
 describe('the category table', () => {
     it('gives the hero a nine-slot grid (D-7)', () => {
@@ -54,8 +54,8 @@ describe('the category table', () => {
     });
 });
 
-// The acceptance test for D-54. `boots` is one of the categories the owner
-// named as planned; adding it must require nothing but a row in the table.
+// The acceptance test. `boots` is one of the categories the owner named as
+// planned; adding it must require nothing but a row in the table.
 describe('adding a category by data alone (D-54 acceptance)', () => {
     const BOOTS = { id: 'boots', label: 'Boots', icon: '🥾', kind: CATEGORY_KINDS.GEAR, cap: 1 };
 

@@ -1,5 +1,4 @@
 // Fantasy Guild - Item Registry
-// Phase 16 / CMS Rework Phase 10: Dynamic JSON Loader (CMS-83)
 
 /**
  * ItemRegistry - Defines all item templates loaded dynamically from data/
@@ -35,7 +34,7 @@ export const ITEM_TYPES = {
     DROP: 'drop'
 };
 
-// === Dynamic Item Loader (CMS-83) ===
+// === Dynamic Item Loader ===
 const jsonItemFilesSingle = DatabaseManager.itemFilesSingle;
 const jsonItemFilesGlob = DatabaseManager.itemFilesGlob;
 
@@ -83,11 +82,6 @@ export const ITEMS = loadJsonItems();
  * the same reason that one does: engine suites assert on fixed numbers, so they
  * run against `fixture_` content rather than shipped content, and **content
  * must be free to be re-authored without the engine suite noticing**.
- *
- * Tokens got that seam in Phase 10; items did not, so the fixture Tokens went
- * on referencing real item ids. Re-authoring content in the CMS then emptied
- * those ids out from under them and broke ~25 engine assertions across six
- * suites — the exact coupling the fixture split was built to prevent.
  *
  * Vitest isolates module registries per test file, so registering never leaks
  * into the content validation suite (`ContentRules.test.js`, which imports no

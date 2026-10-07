@@ -29,8 +29,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * Token Lifecycle slice 5.2 — **Remove** (TL-1 no refunds, SP-6 spawned Tokens
- * stay, SP-52 a hero working it moves on).
+ * Token Lifecycle slice 5.2 — **Remove** ( no refunds spawned Tokens stay a
+ * hero working it moves on).
  *
  * The fixture "Forest" is a placed `fixture_producer` with spawned producers
  * around it, which is what a real Forest leaves behind.

@@ -1,23 +1,14 @@
-// Fantasy Guild — each hero's lasting flag colour (Free Playmat slice 1.5b-ii, FP-82)
+// each hero's lasting flag colour
 
 import { GameState } from '../../state/GameState.js';
 
 /**
- * FlagColours — **a hero keeps one flag colour** (FP-82).
+ * A hero keeps one flag colour, saved as `hero.flagColour` (survives a recall, a defeat and a
+ * save).
  *
- * * Saved on the hero as `hero.flagColour` (not stripped by `GameState.serialize`),
- *   so it survives a recall, a defeat and a save.
- * * **Given automatically at the first plant** (`Flags.plant` calls
- *   {@link ensureFlagColour}): the first colour of {@link FLAG_COLOURS} no other
- *   hero uses; once all eight are taken, the ninth hero onward reuses them in
- *   order.
- * * **Not tied to roster position**: reordering the Dock repaints nothing.
- * * Changeable in the Edit Hero modal (`HeroManager.updateHeroProfile`).
- * * A hero with no colour, or an unknown one, draws the plain base flag.
- *
- * ⚠️ The order below is a pick, not a ruling: the eight sprites are ordered so
- * the first heroes get clearly different hues (dark red, light blue, light
- * green, orange…) rather than two reds in a row.
+ * Given automatically at the first plant (`Flags.plant` calls {@link ensureFlagColour}): the first
+ * of {@link FLAG_COLOURS} no other hero uses; once all eight are taken, reused in order. Not tied
+ * to roster position. A hero with no colour, or an unknown one, draws the plain base flag.
  */
 export const FLAG_COLOURS = Object.freeze([
     'reddark',

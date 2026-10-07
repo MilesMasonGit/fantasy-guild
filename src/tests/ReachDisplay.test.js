@@ -8,9 +8,8 @@ import * as Flags from '../systems/board/Flags.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
 /**
- * ⭐ Which Tokens show a reach ring (owner, 2026-09-21): "only tokens that care
- * about reach" — read broadly, any Token whose rules act on or depend on what
- * is near it.
+ * ⭐ Which Tokens show a reach ring: "only tokens that care about reach" — read
+ * broadly, any Token whose rules act on or depend on what is near it.
  */
 const provides = (reach) => ({ keyword: KEYWORD.PROVIDES, reach, payload: {} });
 

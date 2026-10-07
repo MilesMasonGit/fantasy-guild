@@ -30,13 +30,8 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 }));
 
 /**
- * B7.2 — **hostile enemies attack; attacked heroes fight back** (TL-16, TL-24,
- * FB-23; owner's "B7 range" and "B7 ambushed").
- *
- * Geometry: flag radius 300 u. The camp stands at (800, 500) and never spawns
- * (its clock is a day long); its goblin is tethered to it. A hero working the
- * Producer at (800, 750) stands about 260 u from the camp — inside. One at
- * (1600, 500) is 800 u away — outside. Heroes and enemies do not stroll.
+ * B7.2 — **hostile enemies attack; attacked heroes fight back** (owner's "B7
+ * range" and "B7 ambushed").
  */
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -175,7 +170,7 @@ describe('⭐ a hostile enemy attacks a hero inside the flag radius of its spawn
         // The hero's flag moves into range: they settle on the Producer there…
         const near = logging('h1', NEAR);
         near.cycleElapsedMs = 4000;
-        // …and on its next look the goblin attacks, whatever the Fight rule says (TL-24).
+        // …and on its next look the goblin attacks, whatever the Fight rule says.
         expect(Hostiles.scan()).toEqual([{ enemyId: enemy.id, heroId: 'h1' }]);
         expect(FlagRules.ruleOf('h1', FlagRules.FIGHT).allowed).toBe(false);
         expect(Flags.ambusherOf('h1')).toBe(enemy.id);
@@ -183,7 +178,7 @@ describe('⭐ a hostile enemy attacks a hero inside the flag radius of its spawn
         // The fight starts through BoardCombat's normal route on the next tick.
         BoardRunner.tick(1);
         expect(BoardCombat.fightOfHero('h1')?.instanceId).toBe(enemy.id);
-        // The work they dropped lost its progress, as any hero leaving does (FP-68).
+        // The work they dropped lost its progress, as any hero leaving does.
         expect(near.cycleElapsedMs || 0).toBe(0);
     });
 

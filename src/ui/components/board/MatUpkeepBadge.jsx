@@ -8,10 +8,10 @@ import { CAP_EVENTS } from './MatCapBadge.jsx';
 import { placeUnder } from './tooltipPlacement.js';
 
 /**
- * What changes the badge's total (B2.2, FB-29): the Upkeep Summary's own
- * events, the Token cap badge's (a Token placed, spawned, lifted or run dry, a
- * load), and a spawner starting or stopping waiting. Spawner clocks move
- * without an event, so the badge also polls every {@link POLL_MS} like the panel.
+ * What changes the badge's total: the Upkeep Summary's own events, the Token cap badge's (a
+ * Token placed, spawned, lifted or run dry, a load), and a spawner starting or stopping
+ * waiting. Spawner clocks move without an event, so the badge also polls every {@link POLL_MS}
+ * like the panel.
  */
 export const UPKEEP_EVENTS = Object.freeze([...new Set([
     ...REFRESH_EVENTS,
@@ -47,9 +47,8 @@ export function liveUpkeepTotal() {
 }
 
 /**
- * The hover popover: the whole Upkeep Summary (slice 8.2), in a box styled like
- * the Hall's trickle tooltip. Unlike the cap popover it takes the pointer, so a
- * long summary can be scrolled.
+ * The hover popover: the whole Upkeep Summary, in a box styled like the Hall's trickle
+ * tooltip. Unlike the cap popover it takes the pointer, so a long summary can be scrolled.
  */
 export const MatUpkeepPopover = ({ anchor, onMouseEnter, onMouseLeave }) => {
     if (typeof document === 'undefined') return null;
@@ -69,13 +68,10 @@ export const MatUpkeepPopover = ({ anchor, onMouseEnter, onMouseLeave }) => {
 };
 
 /**
- * ⭐ **The Upkeep badge** (B2.2, FB-29): `Upkeep 2/min` — the items per minute
- * every ongoing cost on the mat takes, summed. Hover opens the full Upkeep
- * Summary, which moved here from the Bank drawer's toggle.
- *
- * Always neutral, whatever the state (owner): a Token waiting unpaid shows red
- * in the summary and on its own centre mark, never on this badge.
- *
+ * The Upkeep badge: `Upkeep 2/min`, the items per minute every ongoing cost on the mat takes,
+ * summed. Hover opens the full Upkeep Summary.
+ * Always neutral, whatever the state: a Token waiting unpaid shows red in the summary and on
+ * its own centre mark, never on this badge.
  * @param {{ readTotal?: () => number }} props  `readTotal` for tests
  */
 export const MatUpkeepBadge = ({ readTotal = liveUpkeepTotal }) => {

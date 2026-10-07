@@ -36,13 +36,6 @@ function workTileOf(heroId) {
 
 /**
  * ⭐ **Promotion on the board — read from the Promotes rule** (Promotes rule P3).
- *
- * Ported from the unmerged `promotion-tokens` branch, where the job was a
- * Token field. The owner's rulings are carried over unchanged (PR-4…PR-8): the
- * hero **trains first and is asked afterwards**, the Token is the whole price,
- * declining costs nothing and moves nobody, and nothing trains that could never
- * be accepted. New here: the job comes from "Promotes the hero to Fighter.", and
- * the price is the rule's own charge cost.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -292,7 +285,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
         expect(result.success).toBe(true);
         expect(hero.jobId).toBe('fighter');
-        // TL-7: the held sheet is every foundation skill plus the Fighter's own.
+        // the held sheet is every foundation skill plus the Fighter's own.
         expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('fighter')].sort());
     });
 
@@ -420,7 +413,7 @@ describe('Declining costs nothing and moves nobody (PR-7)', () => {
     it('asks again once the hero is recalled and their flag planted back on it', () => {
         // Was: one heroless tick cleared the offer. Under flags a claim can
         // lapse for a tick on its own, so the gesture is a flag planted on the
-        // Token (PR-7, FP-61; Free Playmat 1.4c).
+        // Token (Free Playmat 1.4c).
         const hero = makeQualified();
         setup(hero);
         trainToOffer(hero.id);
@@ -464,7 +457,7 @@ describe('The offer survives a reload', () => {
     /**
      * ⚠️ P4: after a reload the UI asks again about a standing offer — so a
      * DECLINED offer must not count as standing, or the player who said "not
-     * yet" is asked again the moment they load their game (PR-7).
+     * yet" is asked again the moment they load their game.
      */
     it('a declined offer is not a standing offer, before or after a reload', () => {
         const hero = makeQualified();
@@ -489,7 +482,7 @@ describe('The offer survives a reload', () => {
     });
 
     it('planting the hero back on it forgets the decline, so training can offer again', () => {
-        // Was: a heroless tick forgot the decline — see the PR-7 note above.
+        // Was: a heroless tick forgot the decline — see note above.
         const hero = makeQualified();
         setup(hero, { uses: 2 });
         trainToOffer(hero.id);

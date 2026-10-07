@@ -10,17 +10,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
 
 /**
- * CR2-042 / CR2-069: the declared schema must describe the save the game
- * actually writes.
- *
- * Twelve fields had been added to real saves without ever being declared in
- * `INITIAL_STATE`, each one covered by its own defensive re-creation at the
- * point of use. This test is the durable half of that fix: it plays enough of
- * the game to make those writers run, then fails if `serialize()` produced a
- * field the schema does not declare.
- *
- * If this test fails, the fix is to declare the new field in
- * `StateSchema.INITIAL_STATE` — not to loosen the test.
+ * the declared schema must describe the save the game actually writes.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -222,7 +212,7 @@ describe('The validator guards the sections this game is made of (CR2-043)', () 
         state.collection.binders = 'not even an object';
         expect(validateSaveData({ version: GAME_VERSION, state }).valid).toBe(true);
     });
-    // Gold left the save with its code (Token Lifecycle 9.4, SP-65).
+    // Gold left the save with its code (Token Lifecycle 9.4).
     it('a new save has no currency section, and validates without one', () => {
         const state = GameState.serialize().state;
         expect(state.currency).toBeUndefined();

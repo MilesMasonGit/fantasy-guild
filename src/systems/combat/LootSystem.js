@@ -1,5 +1,4 @@
 // Fantasy Guild - Loot System
-// Phase 31: Combat System - Loot Generation (Cluster-Based Evolution)
 
 import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
@@ -24,10 +23,8 @@ function scaleYield(quantity, multiplier) {
 }
 
 /**
- * LootSystem - Evolved for Cluster-Based mutually exclusive rewards.
- * 
- * Each table contains one or more "Clusters."
- * For each cluster, the system picks EXACTLY one item (or none if chance sum < 100).
+ * Loot rolls. Enemy kills roll each drop line independently; task rewards
+ * (`handleTaskReward`) pick one entry per group.
  */
 const LootSystem = {
     initialized: false,
@@ -40,15 +37,11 @@ const LootSystem = {
     },
 
     /**
-     * Handle combat victory - Selective Source Processing
+     * Roll a victory's drops: floating sprites on the board, straight to the Bank otherwise.
      */
     handleCombatVictory(data) {
         const { cardId, heroId, enemyId, enemyName, drops, areaId, instanceId } = data;
 
-        // Source Resolution. An enemy's rewards are its inline `drops[]` and
-        // nothing else — the card-era `dropTableId` lookup was deleted on
-        // 2026-08-24 (CR2-116); no enemy ever carried that field, so it only
-        // ever resolved to null.
         const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : null;
 
         if (!sourceData) {
@@ -56,27 +49,21 @@ const LootSystem = {
             return;
         }
 
-        // Every drop line rolls on its own `chance` (TL-10, 2026-09-26), exactly
-        // as a station's outputs do in `BoardRunner`: a Goblin with Bones 100%
-        // and Copper Ore 30% drops Bones every kill AND Ore 30% of the time.
-        // It used to be ONE weighted pick over the whole list (`generateDrops`
-        // → `_processCluster`), so it dropped Bones OR Ore, never both —
-        // contradicting the per-line descriptions the CMS generates.
+        // Every drop line rolls on its own `chance`, as a station's outputs do in
+        // `BoardRunner`: a Goblin with Bones 100% and Copper Ore 30% drops Bones
+        // every kill AND Ore 30% of the time.
         const generatedDrops = this.rollEachLine(sourceData.drops, areaId);
 
         if (generatedDrops.length > 0) {
             if (instanceId != null) {
-                // On the BOARD, loot drops as floating sprites where the kill
-                // happened (D-40) — it is not banked until collected. Routing
-                // combat loot straight into the Bank would make kills the one
-                // thing on the board that skips the sprite layer, and would
-                // quietly bypass D-138's "nothing is ever lost" guarantee.
+                // On the board, loot drops as floating sprites where the kill
+                // happened and is not banked until collected; banking it directly
+                // would skip the sprite layer.
                 for (const drop of generatedDrops) {
                     SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId);
                 }
             } else {
-                // Straight into the Bank (TransactionProcessor went with gold,
-                // Token Lifecycle 9.4; its item entry was exactly this call).
+                // No Token to anchor sprites to: bank directly.
                 for (const d of generatedDrops) {
                     InventoryManager.addItem(d.itemId, d.quantity || 1, enemyId);
                 }
@@ -87,7 +74,7 @@ const LootSystem = {
     },
 
     /**
-     * Universal Reward Orchestrator (Used by Task Cards)
+     * Roll task outputs as one pick-one group and bank them. ⚠️ No caller in `src/`.
      */
     handleTaskReward(card, outputs) {
         if (!outputs || !Array.isArray(outputs) || outputs.length === 0) return null;
@@ -103,9 +90,8 @@ const LootSystem = {
         if (itemDrops.length > 0) {
             // Yield buffs (Cookout) scale task outputs for the working hero…
             const yieldMult = getYieldMultiplier(card.assignedHeroId);
-            // …and stamped Token YIELD (§15.8, Phase 5) scales the base quantity
-            // first, through the full Three-Bucket formula. resolveYield keeps
-            // the fractional result so scaleYield's probabilistic rounding
+            // …and stamped Token YIELD scales the base quantity first. resolveYield
+            // keeps the fractional result so scaleYield's probabilistic rounding
             // applies once, at the end, over both sources combined.
             for (const d of itemDrops) {
                 const amount = scaleYield(resolveYield(card.aggregator, d.quantity), yieldMult);
@@ -122,9 +108,8 @@ const LootSystem = {
     },
 
     /**
-     * Roll every line independently (TL-10): each entry lands when its own
-     * `chance` (default 100) hits, with its quantity rolled over its authored
-     * min–max. The chance test is the one `BoardRunner` uses for outputs.
+     * Roll every line independently: each entry lands when its own `chance`
+     * (default 100) hits, with its quantity rolled over its authored min–max.
      *
      * @param {Array} entries - `{ itemId, chance, minQty, maxQty }` lines
      * @returns {Array} the drops that landed, possibly empty
@@ -142,25 +127,23 @@ const LootSystem = {
     },
 
     /**
-     * Polymorphic Drop Generator — ONE weighted pick per group.
+     * Polymorphic drop generator: ONE weighted pick per group. Handles
+     * clusters and flat drop lists.
      *
-     * ⚠️ Not the enemy-kill path any more: kills use `rollEachLine` (TL-10).
-     * Kept for `handleTaskReward`, which wants pick-one — though nothing in
-     * `src/` calls that today.
-     * Handles New Architecture (clusters) and Legacy Architecture (flat drops)
+     * ⚠️ Not the enemy-kill path (kills use `rollEachLine`). Only
+     * `handleTaskReward` calls it, and nothing in `src/` calls that.
      */
     generateDrops(source, areaId) {
         const results = [];
         
         if (source.clusters && Array.isArray(source.clusters)) {
-            // New Multi-Cluster Pattern
             for (const cluster of source.clusters) {
                 const drop = this._processCluster(cluster, areaId);
                 if (drop) results.push(drop);
             }
         } 
         else if (source.drops && Array.isArray(source.drops)) {
-            // Legacy/Task Cluster (Treated as 1 group)
+            // Flat drops list: treated as one group
             const drop = this._processCluster(source.drops, areaId);
             if (drop) results.push(drop);
         }
@@ -169,12 +152,10 @@ const LootSystem = {
     },
 
     /**
-     * Unified Polymorphic Preview for UI
+     * Normalised drop lines for UI display; does not roll.
      */
     previewDrops(source) {
         const results = [];
-        // `source` is a drops-bearing object. It used to also accept a drop
-        // table id string; that registry was deleted on 2026-08-24 (CR2-116).
         const table = source;
         if (!table) return [];
 
@@ -185,11 +166,7 @@ const LootSystem = {
                 itemName: item?.name || drop.itemId || drop.id,
                 itemIcon: item?.icon || '?',
                 chance: drop.chance ?? 100,
-                // `quantity` is accepted alongside min/max because that is what
-                // card `config.outputs` and every recipe author — and what
-                // StationManager already reads. Without it an authored
-                // `"quantity": 3` was silently ignored and every task dropped
-                // exactly 1, which is a very quiet way to lose a design.
+                // Same min/max/amount/quantity fallbacks as `_rollEntryDetails`.
                 minQty: drop.minQty ?? drop.min ?? drop.amount ?? drop.quantity ?? 1,
                 maxQty: drop.maxQty ?? drop.max ?? drop.amount ?? drop.quantity ?? 1
             };
@@ -223,7 +200,7 @@ const LootSystem = {
     },
 
     /**
-     * Quantity and Mastery Processor
+     * Rolls one entry's item and quantity
      * @private
      */
     _rollEntryDetails(entry, areaId) {
@@ -233,27 +210,18 @@ const LootSystem = {
         const itemId = entry.itemId || entry.id;
         const item = getItem(itemId);
         if (!item) {
-            // The swallow Session 3 traced four layers deep (CR2-108c). A loot
-            // table naming an item that no longer exists rolls, wins, and pays
-            // nothing — indistinguishable from an unlucky roll.
+            // A loot table naming an item that no longer exists would roll, win
+            // and pay nothing, indistinguishable from an unlucky roll.
             warnMissingContent('LootSystem', 'item', itemId,
                 'this drop pays out nothing at all');
             return null;
         }
 
-        // `quantity` is accepted alongside min/max because it is what card
-        // `config.outputs` and every recipe author, and what StationManager
-        // already reads. Without it an authored `"quantity": 3` was silently
-        // ignored and every task dropped exactly 1 — a very quiet way to lose a
-        // design. (This is the REAL roller; `previewDrops` only feeds the UI.)
+        // `quantity` is accepted alongside min/max because card `config.outputs`
+        // and recipe authors use it. Ignoring it would silently drop exactly 1.
         const min = entry.minQty ?? entry.min ?? entry.amount ?? entry.quantity ?? 1;
         const max = entry.maxQty ?? entry.max ?? entry.amount ?? entry.quantity ?? 1;
         let quantity = randomInt(min, max);
-
-        // The old double-yield mastery roll is gone with MasterySystem (C-19).
-        // Binder Mastery rides the area aggregator instead; a YIELD-axis bonus
-        // would need that aggregator consulted here, which it is not today
-        // (see buff_diversification_orientation.md §3).
 
         return { itemId, quantity, itemName: item.name, itemIcon: item.icon };
     }

@@ -2,17 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { importClosure } from './fixtures/sourceScan.js';
 
 /**
- * ⭐ The content-grammar modules stay pure (CR3-510, R9 section 5.5).
- *
- * These files live under `systems/`, but they are really a shared
- * content-model layer: the CMS (`cms/src`) imports each of them directly, and
- * `src/config/` builds on them. Today none of them reaches game state, the
- * event bus, an engine manager or React. If one ever did, opening the CMS
- * would quietly start booting engine state, and config would grow a hidden
- * engine dependency. `FreeMatGuards.test.js` guards the grid the same way.
- *
- * The rule is on the whole IMPORT CLOSURE (everything each one loads, through
- * any chain of imports), not just its own import lines.
+ * ⭐ The content-grammar modules stay pure (R9 section 5.5).
  */
 
 const CONTENT_GRAMMAR = [

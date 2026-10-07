@@ -35,19 +35,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ **Free Playmat slice 1.7 — the mat UI.**
  *
- * Two owner rulings are held here:
- *
- * * **FP-99 — stepped art, smooth spacing.** Positions, the surface, rings and
- *   flags keep scaling smoothly, but a Token sprite is only ever *drawn* at a
- *   whole multiple of its 64px art, and never below 1×. The mat may now grow
- *   past 1:1, which is what the stepping makes safe.
- * * **FP-100 — the columns give way.** The flanking columns shrink on a narrow
- *   window so the mat keeps a readable size, and the mat can never reach under
- *   one of them.
- *
- * ⚠️ Collision is deliberately NOT part of this. FP-99 is a drawing rule, so the
- * tests below assert what is *painted* and say nothing about `minGap` or
- * `hitRadiusOf`.
+ * ⚠️ Collision is deliberately NOT part of this.
  */
 
 const h = React.createElement;
@@ -88,7 +76,7 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// 1. FP-99 — the mat grows as well as shrinks
+// 1. the mat grows as well as shrinks
 // ---------------------------------------------------------------------------
 
 describe('⭐ the mat fills the space it is given (FP-99)', () => {
@@ -126,7 +114,7 @@ describe('⭐ the mat fills the space it is given (FP-99)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 2. FP-99 — the art steps, the spacing glides
+// 2. the art steps, the spacing glides
 // ---------------------------------------------------------------------------
 
 describe('⭐ a Token sprite is only ever drawn at a whole multiple of ART_PX (FP-99)', () => {
@@ -184,7 +172,7 @@ describe('⭐ a Token sprite is only ever drawn at a whole multiple of ART_PX (F
 describe('⭐ the drawn Token, on the mat (FP-99)', () => {
     it('draws its sprite at the stepped size for the live fit', () => {
         const tok = placeAt('fixture_producer', 600, 400);
-        // 0.21 is roughly what 1280 × 720 gave before FP-100.
+        // 0.21 is roughly what 1280 × 720 gave.
         const { container } = mountAt(0.21);
 
         // 1 step of art: 305 u, which the 0.21 transform draws as 64 real px.
@@ -208,10 +196,10 @@ describe('⭐ the drawn Token, on the mat (FP-99)', () => {
     });
 
     /**
-     * ⭐ FPR-6, which the owner accepted: below 1× the art is bigger than the
-     * Token's own circle and spills over its neighbours. The box is `clip-path`ed
-     * to a circle, so it has to grow with the art or it would crop exactly the
-     * spill the ruling calls for.
+     * ⭐ which the owner accepted: below 1× the art is bigger than the Token's own
+     * circle and spills over its neighbours. The box is `clip-path`ed to a
+     * circle, so it has to grow with the art or it would crop exactly the spill
+     * the ruling calls for.
      */
     it('⭐ below 1× the art outgrows the Token’s circle, and is not cropped', () => {
         const tok = placeAt('fixture_producer', 600, 400);
@@ -253,7 +241,7 @@ describe('⭐ the drawn Token, on the mat (FP-99)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. FP-100 — the columns give way
+// 3. the columns give way
 // ---------------------------------------------------------------------------
 
 describe('⭐ the flanking columns give way before the mat does (FP-100)', () => {

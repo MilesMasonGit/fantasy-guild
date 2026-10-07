@@ -4,9 +4,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { advanceTime } from '../systems/core/DevTools.js';
 
 /**
- * CR3-305 stage 1 — the "everything may have changed" moments say so with one
- * event, `GAME_RESET { reason }`, so a surface can stop listening to the
- * catch-all `state_changed`. (The new-game / load boot publishes it from
+ * (The new-game / load boot publishes it from
  * `EngineBootstrap.onSlotSelected`; that path needs the whole engine and is
  * covered by the running game.)
  */

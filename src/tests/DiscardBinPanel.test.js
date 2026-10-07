@@ -33,9 +33,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * B3.2 — **the discard bin's UI** (FB-34, FB-35, TL-13): drag a mat Token in,
- * drag a binned one back out, the nine-slot grid, the refund total and
- * *Discard all (n)*. The engine itself is `DiscardBin.test.js` (B3.1).
+ * B3.2 — **the discard bin's UI**: drag a mat Token in, drag a binned one
+ * back out, the nine-slot grid, the refund total and *Discard all (n)*. The
+ * engine itself is `DiscardBin.test.js` (B3.1).
  */
 
 const item = (id, name) => ({

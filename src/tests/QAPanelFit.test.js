@@ -16,10 +16,10 @@ function stubEngine() {
 }
 
 /**
- * ⭐ **The QA panel fits the window** (Token Lifecycle feedback Q7: FB-36,
- * FB-37). It used to grow past a short window's bottom edge; now it is capped
- * at the viewport and everything under its header scrolls inside it. The
- * *banner card width* slider is gone from it.
+ * ⭐ **The QA panel fits the window** (Token Lifecycle feedback Q7:). It used
+ * to grow past a short window's bottom edge; now it is capped at the viewport
+ * and everything under its header scrolls inside it. The *banner card width*
+ * slider is gone from it.
  */
 describe('QA panel', () => {
     afterEach(() => cleanup());

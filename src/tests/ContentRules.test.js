@@ -60,41 +60,16 @@ function solveShippedCorpus() {
  *
  * ⚠️ **These are not style checks.** Each one prevents a specific failure the
  * design has already identified, and each is the kind of thing the eye stops
- * catching somewhere around the thirtieth Token. D-161's hand-authored numbers
- * do not scale (risk 17); this suite is the part that does.
+ * catching somewhere around the thirtieth Token.
  *
- * The tests deliberately read the registries rather than a fixture, so adding a
- * Token to the game is enough to put it under every rule below.
- *
- * ## ⚠️ Why 27 cases below are skipped (cleanup, 2026-08-18; count corrected by
- * CR3-554: 13 `it.skip` plus two `it.skip.each` over the 7 Maps)
- *
- * Content is mid-re-authoring in the CMS: the live set is 5 items and 10
- * Tokens, a deliberate starter slice rather than a finished game. Most rules
- * here describe a *complete* content set — "every Map pools an enemy", "later
- * Maps cost more", "every material has a tool-free source" — and cannot pass
- * against a partial one. They are skipped, **not deleted**: they are correct
- * rules and the content will grow into them.
- *
- * **Un-skip them as content lands.** They are the acceptance criteria for
- * "content is finished enough to ship", and a green suite here means something
- * quite different from a green suite anywhere else in this project.
- *
- * Two failures in this suite were *not* completeness gaps but real defects in
- * the Tokens that are authored — an empty `theme` and a sprite pointing at art
- * that does not exist. Those are filed as review tickets rather than skipped
- * away; see code_review_v2_findings.md.
+ * ## ⚠️ Why 27 cases below are skipped (cleanup; count corrected: 13 `it.skip`
+ * plus two `it.skip.each` over the 7 Maps)
  */
 
 /**
  * ⚠️ **Shipped content only.** Engine suites register `fixture_*` Tokens with
  * deliberately unbalanced instrument numbers; those are not content and must
  * never be judged by these rules.
- *
- * Vitest isolates module registries per test file, so no fixture should reach
- * this suite at all — the filter is belt-and-braces against someone later
- * setting `isolate: false` for speed and silently turning this suite into a
- * validator of test scaffolding.
  */
 const TOKENS = Object.fromEntries(
     Object.entries(getAllTokenTypes()).filter(([id]) => !id.startsWith('fixture_'))
@@ -105,13 +80,13 @@ const ALL_IDS = Object.keys(TOKENS);
 /**
  * Tokens that run a WORK CYCLE.
  *
- * ⚠️ Enemies are excluded (2026-09-06). An enemy Token carries a `config` —
- * that is where its drops live, since a kill is a cycle (D-129) — but nothing
- * ever reads its `cycleTimeMs`: a fight is paced by the enemy's attack
- * interval and the hero's, both derived from the level. Leaving enemies in
- * here made the cycle-time band rule assert against a number with no effect on
- * anything, which is worse than not asserting: it would have had authors tune
- * a dead field to keep the suite quiet.
+ * ⚠️ Enemies are excluded. An enemy Token carries a `config` — that is where
+ * its drops live, since a kill is a cycle — but nothing ever reads its
+ * `cycleTimeMs`: a fight is paced by the enemy's attack interval and the
+ * hero's, both derived from the level. Leaving enemies in here made the
+ * cycle-time band rule assert against a number with no effect on anything,
+ * which is worse than not asserting: it would have had authors tune a dead
+ * field to keep the suite quiet.
  */
 const RUNNING = ALL_IDS.filter(
     id => (TOKENS[id].config || stationSkillOf(TOKENS[id])) && !isEnemyDef(TOKENS[id])
@@ -119,11 +94,6 @@ const RUNNING = ALL_IDS.filter(
 
 describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () => {
     /**
-     * D-51 used to promise that supply deadlock was **structurally** impossible,
-     * because base Tokens consume nothing. D-213 downgraded that to *authored*
-     * by making tool requirements per-Token: a player who burns their last axe
-     * with no logs banked can now hard-lock.
-     *
      * A barehanded route back must always exist, and **this test is the only
      * thing preventing the lock.**
      */
@@ -172,7 +142,7 @@ describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () =
         //
         // P2.5 had to narrow this to items something produced, because the
         // migrated corpus consumed 16 things nothing made. P2.6 pruned those
-        // recipes (R-16), so the full assertion holds again: every input has a
+        // recipes, so the full assertion holds again: every input has a
         // producer, and every producer has a barehanded route.
         const locked = [...consumed].filter(item => !toolFreeOutputs.has(item));
         expect(locked).toEqual([]);
@@ -188,10 +158,7 @@ describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () =
 
 describe('⚠️ Rule 2 — Passive Generators are strictly worse (D-116, risk 11)', () => {
     /**
-     * Tiles are abundant. If an unstaffed Token ever beat a staffed one *per
-     * tile*, the optimal board would become mostly unstaffed and heroes would
-     * stop being the production ceiling — which unpicks D-115, D-181 and §6.2
-     * at once.
+     * Tiles are abundant.
      */
     const passives = ALL_IDS.filter(id => TOKENS[id].requiresHero === false);
 
@@ -234,9 +201,9 @@ describe('⚠️ Rule 2 — Passive Generators are strictly worse (D-116, risk 1
 describe('Rule 3 — creates-from-nothing is free; transforms cost (D-97)', () => {
     /**
      * No rule enforces this — inputs are a per-Token property with no category
-     * rule (D-97), which is exactly why consistency has to be checked. Players
-     * have no principle to reason from and must learn each Token individually,
-     * so an inconsistent kit is the cruelty, not the variety.
+     * rule, which is exactly why consistency has to be checked. Players have
+     * no principle to reason from and must learn each Token individually, so
+     * an inconsistent kit is the cruelty, not the variety.
      */
     it.skip('gives every resource Token an input-free route', () => {
         const resources = ALL_IDS.filter(id => TOKENS[id].tokenType === 'resource');
@@ -258,10 +225,10 @@ describe('Rule 3 — creates-from-nothing is free; transforms cost (D-97)', () =
         for (const id of stations) {
             // ⚠️ A route with no outputs is unfinished authoring, not a broken
             // transform — the owner creates a recipe and fills it in over
-            // several sittings, and a half-written one turned this rule red on
-            // 2026-09-01. The rule is about what a station charges for what it
-            // *produces*; with nothing produced there is nothing to charge for.
-            // The simulator files its own row for an outputless recipe.
+            // several sittings, and a half-written one turned this rule red on.
+            // The rule is about what a station charges for what it *produces*;
+            // with nothing produced there is nothing to charge for. The
+            // simulator files its own row for an outputless recipe.
             for (const route of productionRoutes(id).filter(r => r.outputs?.length)) {
                 expect(route.inputs.length, `${tokenName(id)} (${route.id}) should cost something`)
                     .toBeGreaterThan(0);
@@ -285,25 +252,6 @@ describe('Rule 3 — creates-from-nothing is free; transforms cost (D-97)', () =
 describe('Rule 4 — cycle times stay in their band', () => {
     /**
      * ## Two rules here, not one, and the split is temporary scaffolding
-     *
-     * D-164's flat 10–30s band is being replaced by the four **tempo** bands in
-     * `tempoBands.js` (economic simulator rework, plan §13.3), which scale with
-     * the level a Token requires. A Token declares which band it belongs to by
-     * carrying `sim.tempo`.
-     *
-     * Tagging content with a tempo is an authoring act and happens in its own
-     * sitting (rework P2.5). Between now and then the corpus is mixed, so this
-     * suite reads whichever rule applies to each Token:
-     *
-     * * **tagged** (`sim.tempo` set) → must sit inside that tempo's band at the
-     *   level it requires;
-     * * **untagged** → the legacy flat 10–30s check, unchanged.
-     *
-     * The alternative was a big-bang content pass in the same change as the
-     * vocabulary that makes it possible, which is how a rework ends up with one
-     * unreviewable commit. The cost is that the suite carries two rules for a
-     * while; when the last Token is tagged, the untagged branch and this comment
-     * go.
      *
      * ⚠️ **Coverage flipped in P2.5**, when the shipped corpus was tagged: every
      * running Token now carries a tempo, so the *tagged* branch fires on real
@@ -338,10 +286,9 @@ describe('Rule 4 — cycle times stay in their band', () => {
                 expect(untagged).toEqual([]);
             });
         } else {
-            // ⚠ CR3-553 (owner ruling 2026-09-30: "mark them as expected"): a
-            // Token listed here is an EXPECTED failure. `it.fails` passes while
-            // the assertion fails and fails the day it passes, so when the
-            // content is fixed this goes red: delete the entry.
+            // `it.fails` passes while the assertion fails and fails the day it
+            // passes, so when the content is fixed this goes red: delete the
+            // entry.
             const KNOWN_BAND_DRIFT = {
                 // Content drift: authored in the CMS at 5,000 ms and untagged,
                 // below the 10-30 s band (R10 section 4.2, row 1). A CMS number.
@@ -443,13 +390,13 @@ describe('Rule 4 — cycle times stay in their band', () => {
 
 describe('Registry integrity', () => {
     /**
-     * ⚠️ Guards the CMS's dropdowns (CMS-89).
+     * ⚠️ Guards the CMS's dropdowns.
      *
      * `tokenType`, `rarity` and `theme` used to be free strings. The CMS offers
-     * them as closed dropdowns sourced from `tokenConstants.js` (CMS-5), so a
-     * value in content that the constants do not list is a value the CMS can
-     * neither display nor round-trip — a sync would quietly rewrite it. This
-     * catches that drift in either direction: content inventing a value, or the
+     * them as closed dropdowns sourced from `tokenConstants.js`, so a value in
+     * content that the constants do not list is a value the CMS can neither
+     * display nor round-trip — a sync would quietly rewrite it. This catches
+     * that drift in either direction: content inventing a value, or the
      * constants dropping one that content still uses.
      */
     it.skip('classifies every Token with vocabulary the game declares', () => {
@@ -457,8 +404,8 @@ describe('Registry integrity', () => {
             const def = TOKENS[id];
             expect(isTokenType(def.tokenType), `${id} has unknown tokenType "${def.tokenType}"`).toBe(true);
 
-            // Maps sit outside the rarity system entirely (D-132), so a missing
-            // rarity is correct for them and only for them.
+            // Maps sit outside the rarity system entirely, so a missing rarity
+            // is correct for them and only for them.
             if (def.rarity !== undefined) {
                 expect(isTokenRarity(def.rarity), `${id} has unknown rarity "${def.rarity}"`).toBe(true);
             } else {
@@ -466,10 +413,10 @@ describe('Registry integrity', () => {
             }
 
             // The `isTokenTheme(def.theme)` assertion that used to close this
-            // loop was removed 2026-08-24 (CR2-001, CR2-125). It was the source
-            // of the "unknown theme \"\"" failures: `theme` was never a feature
-            // (`concept_audit.md` §A), the game no longer declares a vocabulary
-            // for it, and nothing reads the field.
+            // loop was removed. It was the source of the "unknown theme \"\""
+            // failures: `theme` was never a feature (`concept_audit.md` §A),
+            // the game no longer declares a vocabulary for it, and nothing
+            // reads the field.
         }
     });
 
@@ -479,7 +426,7 @@ describe('Registry integrity', () => {
      * A station's pool is the skill named in its `Works as` statement and
      * nothing else, so a leftover `recipes[]` array is content that looks
      * authored and can never run. A station-exclusive recipe belongs *in* the
-     * pool, gated by a context tag only that station satisfies (CMS-6).
+     * pool, gated by a context tag only that station satisfies.
      */
     it('never declares a private recipes array', () => {
         for (const id of ALL_IDS) {
@@ -512,8 +459,8 @@ describe('Registry integrity', () => {
     /**
      * `Fuel` and `tag_allium` used to be excused here: they arrived with the 23
      * migrated card-era recipes and nothing provided them. P2.6 pruned those
-     * recipes (R-16), so the allowance is gone and this is a plain assertion
-     * again — every context tag a recipe names has a Token that provides it.
+     * recipes, so the allowance is gone and this is a plain assertion again —
+     * every context tag a recipe names has a Token that provides it.
      *
      * Providers are read through `getProvidedTagsWithTiers`, the reader the
      * engine itself uses: an `Acts as` statement (the only channel the CMS
@@ -561,20 +508,8 @@ describe('Registry integrity', () => {
     });
 
     /**
-     * ⚠️ **Un-skipped 2026-09-06**, and rewritten, because the thing it guarded
-     * against cannot happen any more.
-     *
-     * It used to check that every Token's `enemyId` resolved in
-     * `enemyRegistry`. That check could never fail *and never pass*: no Token
-     * ever carried an `enemyId`, so `enemies` was always empty and the
-     * `toBeGreaterThan(0)` line is what kept it skipped. A dangling pointer is
-     * now impossible by construction — an enemy is a Token, so there is no
-     * second entity to point at.
-     *
-     * What is worth asserting instead is that an enemy is COMPLETE: it has a
-     * sane level, a style the engine knows, and drops that exist. Those are the
-     * failures that would actually reach a player — an enemy that cannot be
-     * costed, or one whose kill yields an item id nothing can render.
+     * ⚠️ **Un-skipped**, and rewritten, because the thing it guarded against
+     * cannot happen any more.
      */
     it('gives every enemy Token a usable level, style and drop table', () => {
         const enemies = ALL_IDS.filter(id => isEnemyDef(TOKENS[id]));
@@ -668,7 +603,7 @@ describe("A Map's pool is a complete kit (D-139)", () => {
         // for hours. This is the rule that sent the Bramble Patch (Nature), the
         // Woodland Still (Alchemy) and the Lumber Market (Commerce) to the
         // Riverlands pool.
-        const firstMap = listMaps()[0];       // price order (D-101)
+        const firstMap = listMaps()[0];       // price order
         const foundation = new Set(FOUNDATION_SKILL_IDS);
 
         for (const entry of firstMap.pool) {
@@ -702,9 +637,8 @@ describe("A Map's pool is a complete kit (D-139)", () => {
     });
 
     it('the opening Tray is workable by the one hero the player starts with', () => {
-        // D-122/D-123 hand the player four Tokens and exactly one Recruit. A
-        // Token in that tray demanding a specialist would be the first thing a
-        // new player tried and the first thing that refused them.
+        // A Token in that tray demanding a specialist would be the first thing
+        // a new player tried and the first thing that refused them.
         const foundation = new Set(FOUNDATION_SKILL_IDS);
 
         for (const { typeId } of openingMat()) {
@@ -783,27 +717,12 @@ describe('⚠️ Later Maps are stronger AND more demanding (D-95)', () => {
  * ⚠️ Rule — the derived economy in `data/` is what the simulator derives
  * (plan §16).
  *
- * Two claims, and the second is the one with teeth.
- *
- * 1. **Every item carries a `valueSource` field.** Provenance is not optional:
- *    it is what the chain inspector reads and what makes an anchor election
- *    sticky, so an item without the field is an item the next Recalculate could
- *    silently re-price.
- *
- * 2. **Derived fields match a fresh solve** — the drift alarm. `data/` holds
- *    derived numbers, and a hand-edit to one of them is invisible until
- *    something disagrees. Re-solving the shipped intent must reproduce the
- *    shipped file exactly.
- *
  * ⚠️ **Deviation from the plan, deliberate and recorded.** §16 asks for "every
  * item has a `valueSource`" without qualification. Six of the eighteen shipped
  * items have **no producer at all** — the simulator files each as a Critical
  * orphan row — so no source exists to name and `valueSource` is null. The
  * unconditional form of the rule would fail on content that is behaving exactly
  * as the design says it should. Asserted here as: the field is present on every
- * item, and it names a real source wherever a value was derived. The stricter
- * rule becomes true when the content gains its missing producers, and this is
- * the place to tighten it when it does.
  */
 describe('⚠️ Rule 6 — items carry their derived value and its provenance', () => {
     const items = shippedItems;

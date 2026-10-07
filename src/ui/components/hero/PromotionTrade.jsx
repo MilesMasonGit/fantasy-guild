@@ -2,26 +2,18 @@ import { cn } from '../../utils/cn.js';
 
 /**
  * What a promotion would do to a hero, rendered once.
- *
- * Ported from the unmerged `promotion-tokens` branch (Promotes rule P4).
- *
- * ## Why this is its own component
- * Two screens ask the same question. The **Change Job** screen browses the
- * whole tree and previews whichever job you point at; the **ceremony** on a
- * Token with a Promotes rule asks about exactly one, after the training is
- * done. Both have to say "you give up Fishing 23, you gain Leadership 1" and
- * mean identically the same thing by it — a trade display that existed twice
- * would eventually disagree with itself about what a promotion costs.
- *
- * Everything here comes from `PromotionSystem.previewPromotion`, the single
- * source of the numbers. This only draws them.
- *
- * ## "Set aside", not "lost" (D-71)
- * The wording is load-bearing. A removed skill goes dormant **at its level**
- * and returns intact if a later job wants it, so calling it a loss would
- * misdescribe the one property that makes promotion safe to engage with. A
- * skill arriving *back* from the bank says so, because "Cooking 30" appearing
- * from nowhere otherwise reads as a bug.
+ * Why this is its own component: two screens ask the same question. The **Change Job** screen
+ * browses the whole tree and previews whichever job you point at; the **ceremony** on a Token
+ * with a Promotes rule asks about exactly one, after the training is done. Both have to say
+ * 'you give up Fishing 23, you gain Leadership 1' and mean identically the same thing by it; a
+ * trade display that existed twice would eventually disagree with itself about what a
+ * promotion costs.
+ * Everything here comes from `PromotionSystem.previewPromotion`, the single source of the
+ * numbers. This only draws them.
+ * 'Set aside', not 'lost': the wording is load-bearing. A removed skill goes dormant **at its
+ * level** and returns intact if a later job wants it, so calling it a loss would misdescribe
+ * the one property that makes promotion safe to engage with. A skill arriving *back* from the
+ * bank says so, because 'Cooking 30' appearing from nowhere otherwise reads as a bug.
  */
 export const PromotionTrade = ({ preview, size = 'sm' }) => {
     if (!preview) return null;
@@ -61,11 +53,9 @@ export const PromotionTrade = ({ preview, size = 'sm' }) => {
 };
 
 /**
- * One side of the trade.
- *
- * `empty` is a sentence rather than a dash. "nothing" in the Sets aside column
- * is genuinely good news — the hero loses nothing at all — and a bare dash
- * reads as missing data instead of as an answer.
+ * One side of the trade. `empty` is a sentence rather than a dash: 'nothing' in the Sets aside
+ * column is genuinely good news (the hero loses nothing at all), and a bare dash reads as
+ * missing data instead of as an answer.
  */
 const TradeList = ({ title, tone, rows, empty, size }) => {
     const big = size === 'lg';

@@ -4,8 +4,8 @@ import {
 } from '../ui/utils/lootFlight.js';
 
 /**
- * Q5 (FB-16, FB-17): collected loot flies to the Guild Hall Token on the mat,
- * falling back to the Bank bubble, and keeps its floor size in flight.
+ * Q5: collected loot flies to the Guild Hall Token on the mat, falling back
+ * to the Bank bubble, and keeps its floor size in flight.
  */
 
 const rectOf = (left, top, size) => ({

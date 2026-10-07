@@ -7,15 +7,12 @@ import {
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
- * MatTuner — developer panel for the free playmat's rules (FP-66).
- *
- * Separate from the terrain `PlaymatTuner` by owner ruling. Built entirely from
- * `MAT_TUNABLES` in `config/matTuning.js`: a later slice adds a setting by adding
- * a row there, with no UI to write.
- *
- * Moving a slider changes gameplay live: `TileModifiers` listens for the change
- * and rebuilds every tile. The panel only publishes `state_changed` so open
- * inspection panels re-read their numbers.
+ * MatTuner: developer panel for the free playmat's rules, separate from the terrain
+ * `PlaymatTuner`. Built entirely from `MAT_TUNABLES` in `config/matTuning.js`: adding a
+ * setting is adding a row there, with no UI to write.
+ * Moving a slider changes gameplay live: `TileModifiers` listens for the change and rebuilds
+ * every tile. The panel only publishes `state_changed` so open inspection panels re-read their
+ * numbers.
  */
 export const MatTuner = React.memo(() => {
     const engine = useEngine();

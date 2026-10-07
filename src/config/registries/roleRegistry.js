@@ -1,4 +1,4 @@
-// Fantasy Guild — who a moment puts in the room (Effects Grammar v2, V1)
+// Fantasy Guild — who a moment puts in the room
 
 /**
  * The **roles** a moment supplies, and the rule that keeps targeting bounded.
@@ -9,7 +9,7 @@
  * **participant in the moment**, and it only exists because a particular kind of
  * thing just happened.
  *
- * ## ⭐ G-2, and why the vocabulary cannot run away
+ * ## ⭐ The one rule that keeps the vocabulary bounded
  * > **A moment declares the roles it supplies; a target may only name a role its
  * > moment has.**
  *
@@ -23,10 +23,8 @@
  * ## ⭐ Why a bush and a monster are the same case
  * `BoardRunner` (a hero finishes harvesting) and `BoardCombat` (a hero wins a
  * fight) publish **the same event with the same payload**, because one kill is
- * one cycle (D-129). So `actor` resolves identically for a raspberry bush and a
- * Thorn Elemental, and the generalisation the owner asked for needed no new
- * concept — only exposure. `heroId` has been in that payload the whole time,
- * correct and read by nothing.
+ * one cycle. So `actor` resolves identically for a raspberry bush and a
+ * Thorn Elemental.
  */
 
 export const ROLE = Object.freeze({
@@ -42,7 +40,7 @@ export const ROLE = Object.freeze({
      * The **hero** who caused this moment: the one who harvested, or fought.
      *
      * ⚠️ Declared by a moment does not mean present at runtime. An unstaffed
-     * Token can complete a cycle (a passive generator, D-116), and then
+     * Token can complete a cycle (a passive generator), and then
      * `heroId` is null. A rule aimed at the actor reaches nobody, which is the
      * same honest nothing a filter matching no Tokens returns.
      */
@@ -58,16 +56,15 @@ export const ROLE = Object.freeze({
     SOURCE: 'source',
 
     /**
-     * ⭐ **The creature the hero in this moment is fighting** (Effects Grammar
-     * v2, V10a — G-40…G-43).
+     * ⭐ **The creature the hero in this moment is fighting.**
      *
-     * One meaning everywhere (G-41): on an item it is the monster its hero is
+     * One meaning everywhere: on an item it is the monster its hero is
      * fighting, and on a monster's own rule it is that monster.
      *
-     * ⚠️ **Found by HERO, never by tile** (G-43). The hero is `actor`, or the
+     * ⚠️ **Found by HERO, never by tile.** The hero is `actor`, or the
      * person carrying the rule (`selfHeroId`); the fight is whichever one names
      * that hero. A tile lookup would break the moment a hero's recorded tile
-     * stops being the tile they fight on (Free Playmat FP-67). Resolved lazily
+     * stops being the tile they fight on. Resolved lazily
      * inside each verb, so `resolveRoles` below stays free of board code.
      */
     OPPONENT: 'opponent'
@@ -87,12 +84,8 @@ export function opponentSeekerOf(roles) {
  */
 export const ROLES = Object.freeze([
     /**
-     * ⚠️ **These are the game's own words, not the code's** (owner, 2026-09-12).
-     *
-     * They used to read *"this entity"*, *"the actor"* and *"the entity that
-     * caused this"* — accurate, and none of them a term the game uses anywhere
-     * else. The owner's note was exact: *"'actor' isn't a term used in the
-     * game."* A rule that reads in vocabulary nobody plays with is a rule the
+     * ⚠️ **These are the game's own words, not the code's.**
+     * A rule that reads in vocabulary nobody plays with is a rule the
      * author has to translate in their head every time.
      *
      * ⚠️ The ids below are untouched on purpose. They are stored in every
@@ -106,10 +99,8 @@ export const ROLES = Object.freeze([
     },
     {
         /**
-         * ⚠️ "The hero" is not a narrowing — it is what this has always meant.
-         * The doc on `ROLE.ACTOR` above already said "the **hero** who caused
-         * this moment", and it is safe because enemies never initiate anything
-         * (D-14): the one who acted is always a hero.
+         * ⚠️ "The hero" is not a narrowing: enemies never initiate anything,
+         * so the one who acted is always a hero.
          */
         id: ROLE.ACTOR,
         label: 'the hero',
@@ -118,15 +109,14 @@ export const ROLES = Object.freeze([
     {
         /**
          * ⚠️ "That Token" is true even when the neighbour is a monster, because
-         * enemies *are* Tokens in this game. It would have been a lie before
-         * enemies were folded in.
+         * enemies *are* Tokens in this game.
          */
         id: ROLE.SOURCE,
         label: 'that Token',
         hint: 'The neighbour whose event this was — the Token that finished, not the hero who worked it.'
     },
     {
-        // G-40: the game's own word, one label for the picker, the sentence and the audit.
+        // The game's own word, one label for the picker, the sentence and the audit.
         id: ROLE.OPPONENT,
         label: 'the enemy',
         hint: 'The creature the hero is fighting. On a monster’s own rule, that monster. Only while a fight is on.'
@@ -161,7 +151,7 @@ export const AMBIENT_ROLES = Object.freeze([ROLE.SELF]);
  * filled, or make a rule silently inert on the perfectly ordinary occasions when
  * nobody was around.
  *
- * ## By instance id (Free Playmat slice 1.6b)
+ * ## By instance id
  * `self` and `source` are Token **instance ids**, never tiles. `selfPoint` is
  * the bearer's mat point, for a bearer that has already left the mat (a rule on
  * its own depletion) — the only way a verb can still measure from it.
@@ -178,7 +168,7 @@ export function resolveRoles(payload, bearerId, bearerPoint = null) {
         selfPoint: bearerPoint || null,
         /**
          * ⚠️ `self` is a TOKEN for a rule on a Token, and a HERO for a rule the
-         * hero is carrying (V6). A live effect instance sits on a person, not on
+         * hero is carrying. A live effect instance sits on a person, not on
          * a Token, so "this entity" has to be able to mean either.
          *
          * Null here: only `LiveEffects` fills it, because only it knows the

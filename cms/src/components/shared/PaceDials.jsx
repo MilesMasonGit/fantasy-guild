@@ -1,29 +1,6 @@
 /**
- * The **Pace dials** (plan §13.1 / §13.2 / §14, phase P8) — the two earn
- * curves, the player the projections assume, and the mastery expectation.
- *
- * ## Why numeric pin rows and a read-only curve
- *
- * The plan offers "pin editors over a drawn curve — draggable points, or
- * numeric rows if dragging fights the sitting", and is explicit that **the dial
- * is the deliverable, not the flourish**. Dragging a point over a log axis
- * spanning three orders of magnitude is a fiddly way to type 24,200, and a
- * half-working drag is worse than none — so the pins are typed, and the curve
- * beside them is a read-out that redraws as they are typed. Every edit is exact
- * and legible, and a kinked curve still shows up the moment it is made.
- *
- * ## The mastery read-out is the load-bearing part
- *
- * `skillMasteryHours` is an **expectation, not an input** — no pass reads it.
- * The number beside it is what the XP curve *actually* integrates to against
- * the game's own threshold table (`src/utils/XPCurve.js`), so moving an XPH pin
- * moves the read-out and a developer sees at once whether the climb still lands
- * where the plan says it should. A target shown without the actual would be a
- * dial that lies.
- *
- * ⚠️ Lives in its own file rather than inside `SettingsModal` because it is the
- * largest section in that modal by some way, and because the Map dials next to
- * it are the precedent for "one section, one concern".
+ * The Pace dials: the two earn curves, the player the projections assume, and the mastery expectation. Pins are typed rows with a read-only curve beside them, because dragging points on a log axis is a fiddly way to type a number.
+ * ⚠️ `skillMasteryHours` is an expectation, not an input: no pass reads it. The read-out beside it is what the XP curve actually integrates to against the game's threshold table (`src/utils/XPCurve.js`), so an XPH edit shows at once whether the climb still lands where intended.
  */
 
 import { useGlobalStore } from '../../stores/useGlobalStore';
@@ -31,7 +8,6 @@ import { Section, Field } from './EditorLayout';
 import { GPH_PINS, XPH_PINS, normaliseDials, gphAt } from '../../engine/sim/dials';
 import { hoursToMastery, xphAt } from '../../engine/sim/xpPass';
 
-/** The band plan §13.2 says one focused skill's climb should land inside. */
 const MASTERY_BAND = Object.freeze({ min: 50, max: 60 });
 
 const num = (value, fallback) => (Number.isFinite(value) ? value : fallback);
@@ -130,7 +106,6 @@ export default function PaceDials() {
   );
 }
 
-/** One curve's pins as a typed column, sorted by level. */
 function PinColumn({ title, pins, fallback, onChange, hint }) {
   const levels = Object.keys(pins).map(Number).sort((a, b) => a - b);
   return (
@@ -156,15 +131,7 @@ function PinColumn({ title, pins, fallback, onChange, hint }) {
   );
 }
 
-/**
- * Both curves drawn on a shared logarithmic axis, with a dot on every pin.
- *
- * Log, because the curves span three orders of magnitude and on a linear axis
- * everything below level 60 lies flat on the floor. On a log axis steady
- * compounding is a straight line — which makes the gold curve's deliberate bend
- * at level 70 read as a bend, exactly the thing a developer editing pins needs
- * to see.
- */
+/** Both curves on a shared logarithmic axis: they span three orders of magnitude, so on a linear axis the low levels lie flat, and on a log axis steady compounding is a straight line, which makes the gold curve's deliberate bend read as a bend. */
 function CurvePreview({ gphPins, xphPins, hoursPerDay }) {
   const W = 640;
   const H = 130;

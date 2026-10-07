@@ -14,11 +14,11 @@ export const SRC = path.resolve(here, '../..').replace(/\\/g, '/');
 
 /**
  * Strip block and line comments in ONE left-to-right pass, so only real code
- * is scanned (the same stripper as `tools/cycles.mjs`, CR3-505). One pass
- * matters: a line comment that mentions a glob such as data/*.json must not
- * open a block comment that swallows the code below it. A `//` after `:` (a
- * URL) or after a backslash (inside a regex) is not a comment. Still a regex,
- * not a parser: good enough for names and call shapes.
+ * is scanned (the same stripper as `tools/cycles.mjs`). One pass matters: a
+ * line comment that mentions a glob such as data/*.json must not open a block
+ * comment that swallows the code below it. A `//` after `:` (a URL) or after
+ * a backslash (inside a regex) is not a comment. Still a regex, not a parser:
+ * good enough for names and call shapes.
  */
 export function codeOf(text) {
     return text.replace(/\/\*[\s\S]*?\*\/|(^|[^:\\])\/\/[^\n]*/g, (m, pre) => (pre ?? '') + ' ');

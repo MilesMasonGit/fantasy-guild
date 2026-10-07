@@ -8,9 +8,9 @@ import { statementChargeDelta } from '../systems/board/Charges.js';
 /**
  * ⭐ **The fine print** — what a rule costs, beside its sentence (Rules Line P5).
  *
- * Owner ruling 2026-09-12: the strip holds only what the sentence leaves
- * unsaid. The charge cost and the upkeep's clock are said nowhere, so they get
- * slots of their own; cooldown and chance are already words in the rules text.
+ * Owner ruling the strip holds only what the sentence leaves unsaid. The
+ * charge cost and the upkeep's clock are said nowhere, so they get slots of
+ * their own; cooldown and chance are already words in the rules text.
  */
 
 const slot = (st, id) => costSlots(st).find(s => s.id === id);

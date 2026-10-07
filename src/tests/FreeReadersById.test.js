@@ -45,12 +45,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **Free Playmat slice 1.6b part 2 — the readers that were still tile-shaped.**
- *
- * The owner's framing rule: *"We won't have 'Tiles' in the new system. Tokens
- * and flags sit freely around the playmat."* Everything below names a Token by
- * its **instance id** and a place by a **mat point**, and each test moves a
- * Token the most direct way there is (`BoardState.setTokenPoint`, no placement
- * rules, no code that "carries" anything) to prove the answer follows the id.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));

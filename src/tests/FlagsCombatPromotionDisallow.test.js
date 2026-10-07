@@ -39,13 +39,8 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
 /**
  * ⭐ Free Playmat slice 1.4c — combat flags, promotion offers, disallow.
  *
- * Geometry: 6×6, one tile step is 160 u. From tile 14, tile 15 is 160 u away,
- * 16 is 320, 17 is 480; tile 0 is 452 away.
- *
  * ⚠️ Laid out on the old reaches — flag radius 400 u, Near 272 u (a Token on a
- * diagonal) — so `beforeEach` sets both. Both ship at 164 u since FP-75.
- * Since FP-71 a flag has no skill: "fighting" is just planting a hero who can
- * fight near an enemy, with nothing better in range.
+ * diagonal) — so `beforeEach` sets both. Both ship at 164 u.
  */
 
 /**
@@ -432,7 +427,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
         expect(train()).toHaveLength(1);
         expect(BoardPromotion.accept(idAt(14)).success).toBe(true);
 
-        // Any work skill the promoted hero holds: since FP-71 they work them all.
+        // Any work skill the promoted hero holds: they work them all.
         const skill = Object.keys(GameState.state.heroes[0].skills).find(s => !isCombatSkill(s));
         registerTokenTypes({
             ft_after_promotion: {

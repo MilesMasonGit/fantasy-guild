@@ -14,7 +14,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 
 /**
- * Enemy drops roll per line (Token Lifecycle slice 7.8, owner decision TL-10).
+ * Enemy drops roll per line (Token Lifecycle slice 7.8, owner decision).
  *
  * A defeated enemy's loot used to be ONE weighted pick over its drop list, so a
  * Goblin (Bones 100%, Copper Ore 30%) dropped Bones OR Ore, never both. Each
@@ -99,7 +99,7 @@ describe('Every drop line rolls on its own (TL-10)', () => {
                 ['fixture_oak_wood', 2]
             ]);
         }
-        // Still sprites, still not banked until collected (D-40, D-138).
+        // Still sprites, still not banked until collected.
         const ids = SpriteLayer.getSprites().map(s => s.refId);
         expect(ids).toEqual(expect.arrayContaining(['item_blackberry', 'fixture_oak_wood']));
         expect(InventoryManager.getItemCount('item_blackberry')).toBe(0);

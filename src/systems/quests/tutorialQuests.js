@@ -1,22 +1,20 @@
 // Fantasy Guild - Tutorial Quests Specification
 //
-// ⭐ The tutorial walks the Token Lifecycle loop (slice 9.5): recruit a hero,
-// plant their flag, gather, collect the loot, buy at the Shop, build on a
-// Foundation, craft, farm and explore. Every step is completable in a new game
-// with no dev tools, and every `targetType` is reported by `QuestManager` from
-// an event the engine (or, for `open_bank`, the React layer) really publishes.
+// The tutorial walks the Token Lifecycle loop: recruit a hero, plant their flag,
+// gather, collect the loot, buy at the Shop, build on a Foundation, craft, farm
+// and explore. Every step is completable in a new game with no dev tools, and
+// every `targetType` is reported by `QuestManager` from an event the engine (or,
+// for `open_bank`, the React layer) really publishes.
 // `QuestTutorialChain.test.js` drives each step through the real systems.
 //
-// The old chain (Map bursts, the Token Vault, context tools, buying a Map)
-// used ids `tutorial_1` … `tutorial_16`. The new steps use different ids on
-// purpose: an old save's `completedTutorials` must not tick off a new step
-// that merely shares a number with an old one. Old ids a save still carries
-// are ignored, and an old step still active is dropped on load.
+// Step ids are not reused from an older chain: an old save's
+// `completedTutorials` must not tick off a new step that merely shares a number
+// with an old one. Old ids a save still carries are ignored.
 //
 // `match` narrows a target to one Token type, item or skill: a quest with a
 // `match` only counts a report whose metadata carries every listed value.
 //
-// Rewards are small placeholder items (TL-5, SP-65), live `item_*` ids only.
+// Rewards are small placeholder items, live `item_*` ids only.
 
 /** The default tutorial reward, and what a step with no rewards of its own pays. */
 export const TUTORIAL_REWARD_ITEMS = Object.freeze([

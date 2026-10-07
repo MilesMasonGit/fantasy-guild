@@ -1,35 +1,27 @@
 import { RING_D_U, RING_COLOUR, RING_GREY, GLIDING_RINGS } from './ringRow.js';
 
 /**
- * RingBadge — one ring of a Token's ring row (TL-22, B1.2): a faint track, an
- * arc that fills or empties, the number inside, on its own small dark disc
- * (the owner picked bare rings — no tray behind the row).
- *
- * Drawn in a 28 × 28 viewBox scaled to {@link RING_D_U} mat units, so the
- * stroke is 3/28 of the diameter at any size.
- *
- * ## Two ways to drive it
- * * **Controlled** — pass `fraction` (0–1) and `text`; React draws them. The
- *   charges and HP rings, which change a few times a second at most.
- * * **Imperative** — leave `fraction` undefined and paint it with
- *   {@link paintRing} through `rootRef`. The cycle ring, which moves every
- *   animation frame and must not re-render React to do it (CR2-168). React
- *   sets the empty arc once at mount and never touches it again, because the
- *   props it compares do not change.
- *
- * `greyed` draws the arc grey and hides the number: a worked Token that is
- * blocked (its problem is the centre mark, B1.1).
- *
- * ## ⭐ Count rings glide (owner, 2026-10-01)
- * A controlled ring of a kind in {@link GLIDING_RINGS} (charges, a spawner's
- * count) slides to its new value over ~0.8 s instead of jumping. Its arc is a
- * full-length dash pushed back by `stroke-dashoffset`, and a CSS transition on
- * that one property (`gi-ring-glide`) does the motion. Why CSS and not the
- * shared `frameClock`: the browser runs it with no JavaScript at all, only
- * the ring whose value changed animates, it stops by itself, and a ring at
- * rest costs nothing — the clock would need a subscriber, a per-frame
- * callback and our own easing for the same result. The number inside
- * changes at once; only the arc glides.
+ * RingBadge: one ring of a Token's ring row: a faint track, an arc that fills or empties, the
+ * number inside, on its own small dark disc (bare rings, no tray behind the row).
+ * Drawn in a 28 × 28 viewBox scaled to {@link RING_D_U} mat units, so the stroke is 3/28 of
+ * the diameter at any size.
+ * Two ways to drive it:
+ * * **Controlled**: pass `fraction` (0–1) and `text`; React draws them. The charges and HP
+ * rings, which change a few times a second at most.
+ * * **Imperative**: leave `fraction` undefined and paint it with {@link paintRing} through
+ * `rootRef`. The cycle ring, which moves every animation frame and must not re-render React to
+ * do it. React sets the empty arc once at mount and never touches it again, because the props
+ * it compares do not change.
+ * `greyed` draws the arc grey and hides the number: a worked Token that is blocked (its
+ * problem is the centre mark).
+ * Count rings glide: a controlled ring of a kind in {@link GLIDING_RINGS} (charges, a
+ * spawner's count) slides to its new value over ~0.8 s instead of jumping. Its arc is a
+ * full-length dash pushed back by `stroke-dashoffset`, and a CSS transition on that one
+ * property (`gi-ring-glide`) does the motion. Why CSS and not the shared `frameClock`: the
+ * browser runs it with no JavaScript at all, only the ring whose value changed animates, it
+ * stops by itself, and a ring at rest costs nothing; the clock would need a subscriber, a
+ * per-frame callback and our own easing for the same result. The number inside changes at
+ * once; only the arc glides.
  */
 
 const VIEW = 28;
@@ -52,7 +44,7 @@ const fontFor = (text) => {
     if (n <= 2) return 15;
     if (n === 3) return 12.5;
     if (n === 4) return 10.5;
-    return 9;   // a spawner's `10/10` (B1.3)
+    return 9;   // a spawner's `10/10`
 };
 
 /**

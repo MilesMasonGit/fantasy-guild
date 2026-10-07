@@ -11,17 +11,7 @@ import { getTokenType, tokenStartingUses } from '../config/registries/tokenRegis
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
- * Market Tokens (D-141) — **a Token whose output is currency.**
- *
- * Goods-specific, with an input list like any other Token, which keeps Markets
- * consistent with the rest of the board and removes any ambiguity about what a
- * Market sells. It also reinforces D-128: the best gold comes from feeding
- * *finished goods* into the right Market, so deep chains pay off in currency as
- * well as in capability.
- *
- * **Serious gold income should cost several tiles and several heroes.** That is
- * the property these tests protect — a Market must never be better than a menu
- * action would have been, or the board stops being where the game happens.
+ * Market Tokens — **a Token whose output is currency.**
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -64,9 +54,9 @@ beforeEach(() => {
 });
 
 describe('A Market is an ordinary Token whose output is gold', () => {
-    // ⚠️ Changed in slice 2.2 (SP-65): gold is retired, so a Market's currency
-    // output credits nothing. It used to assert the gold matched the authored
-    // output. The cycle itself is unchanged: it still runs and takes its inputs.
+    // ⚠️ Changed in slice 2.2: gold is retired, so a Market's currency output
+    // credits nothing. It used to assert the gold matched the authored output.
+    // The cycle itself is unchanged: it still runs and takes its inputs.
     it('consumes its inputs and credits no gold (SP-65)', () => {
         const def = getTokenType(MARKET);
         expect(def.config.outputs[0].quantity).toBeGreaterThan(0);
@@ -109,14 +99,14 @@ describe('A Market is an ordinary Token whose output is gold', () => {
 });
 
 describe('⚠️ Items are worth more used than sold (D-128)', () => {
-    // The 20% premium over the Bank's sell price (D-128) is no longer
-    // testable: the Bank's item price (`CommerceSystem.getItemPrice`) was
-    // deleted with gold (Token Lifecycle 9.4).
+    // The 20% premium over the Bank's sell price is no longer testable:
+    // the Bank's item price (`CommerceSystem.getItemPrice`) was deleted
+    // with gold (Token Lifecycle 9.4).
 
-    // ⚠️ Changed in slice 2.2 (SP-65). This used to sell the goods raw, run
-    // them through the Market, and check the Market paid the premium in gold.
-    // Gold is retired: nothing sells from the UI and a Market credits nothing,
-    // so the end-to-end check is now that a full Market cycle banks no gold.
+    // ⚠️ Changed in slice 2.2. This used to sell the goods raw, run them
+    // through the Market, and check the Market paid the premium in gold. Gold
+    // is retired: nothing sells from the UI and a Market credits nothing, so
+    // the end-to-end check is now that a full Market cycle banks no gold.
     it('a Market cycle banks no gold at all (SP-65)', () => {
         const input = getTokenType(MARKET).config.inputs[0];
 
@@ -129,8 +119,8 @@ describe('⚠️ Items are worth more used than sold (D-128)', () => {
     });
 
     it('costs a whole spot and a whole hero for its income', () => {
-        // The design's actual constraint (D-141): serious gold income costs
-        // several spots and several heroes. One Market occupies one of each.
+        // The design's actual constraint: serious gold income costs several
+        // spots and several heroes. One Market occupies one of each.
         const def = getTokenType(MARKET);
         expect(def.requiresHero).not.toBe(false);
         expect(def.config.inputs.length).toBeGreaterThan(0);

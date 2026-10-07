@@ -11,19 +11,8 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import { isHostileEnemy } from '../config/registries/enemyProfile.js';
 
 /**
- * B7.2 — the CMS models **`enemy.hostile`** (TL-16, FB-23) before any content
- * uses it (roadmap v1 §0.3: Sync destroys what the CMS does not carry).
- *
- * ## How the field is written
- * Only when ticked: `enemy.hostile: true`. Unticking removes the key, so a
- * peaceful enemy's block is exactly what it was (a missing field is peaceful,
- * which is what the game reads — `isHostileEnemy`). The store carries the
- * `enemy` block by spreading the record, and Recalculate and Sync never rebuild
- * it field by field, so the key rides through untouched.
- *
- * Nothing here touches `data/`: the files are READ, loaded into the store the
- * way `/api/load-game-data` builds its payload, and the sync payload is built
- * in memory with `syncFiles` and compared. No request is sent.
+ * B7.2 — the CMS models **`enemy.hostile`** before any content uses it
+ * (roadmap v1 §0.3: Sync destroys what the CMS does not carry).
  */
 
 const DATA = path.resolve(__dirname, '../../data');

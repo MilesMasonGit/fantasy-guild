@@ -29,30 +29,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * **The active reach readers measure like the buffs do** (Free Playmat slice 1.3).
- *
- * Slice 1.2 made reach a centre-to-centre distance for buffs. This pins the
- * rest — crafting context, tool wear, neighbour triggers and
- * `Cannot` counts — to the same `nearby()` measurement:
- *
- * * 1×1 Tokens at 272 u: exactly the old 8-tile ring;
- * * 2×2 Tokens (FP-41): the neighbours touching their sides, not those touching
- *   only a corner;
- * * a larger Near radius widens every one of them.
- *
- * ## ⭐ The scene is a lattice of points, not a grid (Free Playmat slice 1.6d-2)
- * There are no tiles left to lay this out on, so the spots below are explicit
- * mat points 160 u apart — the step the old board had. **Every distance these
- * tests turn on is unchanged**, which is the whole reason for keeping the
- * spacing: a side neighbour is 160 u, a diagonal 226 u, two steps 320 u. A 2×2
- * Token's centre sits half a step (80 u) down and right of the 1×1 spot it used
- * to be anchored on, which is what puts it 253 u from a side-touching spot and
- * 339 u from a corner-diagonal one.
- *
- * ```
- *   (0,0) (0,1) (0,2) (0,3) …      P(row, col) = 400 + col·160, 300 + row·160
- *   (1,0) (1,1) (1,2) (1,3) …      BIG is the 2×2 centred between the four
- *   (2,0) (2,1) (2,2) (2,3) …      spots around (1,1) — 640, 540.
- * ```
  */
 
 /** A spot on the 160 u lattice — the step the old board used. */
@@ -137,7 +113,7 @@ registerTokenTypes({
 function put(point, typeId, uses = undefined) {
     const instance = BoardState.createTokenInstance(typeId, uses === undefined ? tokenStartingUses(typeId) : uses);
     BoardState.addToken(instance, point.x, point.y);
-    // The player picks a station's recipe (TL-15); a non-station is untouched.
+    // The player picks a station's recipe; a non-station is untouched.
     return pickRecipe(instance);
 }
 
@@ -166,8 +142,8 @@ beforeEach(() => {
     TileModifiers.clearAll();
     resetMatTuning();
     // ⚠️ These cases are laid out on the old 8-neighbour ring (272 u), not the
-    // shipped default: Near has started at 164 u since FP-75, which reaches no
-    // diagonal and lets a 2×2 reach nothing. The shipped default is pinned in
+    // shipped default: Near has started at 164 u, which reaches no diagonal
+    // and lets a 2×2 reach nothing. The shipped default is pinned in
     // Nearby.test.js.
     setMatTuning('nearRadius', 272);
     GameState.state.inventory.maxSlots = 50;
@@ -419,8 +395,8 @@ describe('Restrictions: "Cannot be nearby to more than 2 Coast" counts within Ne
     it('⭐ through Placement: the corner 2×2 lands, and the side one is nudged clear (FP-88)', () => {
         atLimit();
 
-        // The side spot would break the rule, so since FP-88 the drop is moved
-        // to the nearest spot that obeys it rather than being refused.
+        // The side spot would break the rule, so the drop is moved to the
+        // nearest spot that obeys it rather than being refused.
         const side = BoardState.createTokenInstance('fixture_large_coast', 500);
         const sideRes = Placement.placeTokenAt(side, big(1, 2));
         expect(sideRes.success).toBe(true);

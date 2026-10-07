@@ -3,34 +3,7 @@ import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 
-/**
- * **Sticky-anchor re-election** (plan §3.2, phase P9) — the one click that
- * accepts a new anchor, and the one that waves it away.
- *
- * ## What this card is for
- *
- * An item's value is set by exactly one source, and that election is *sticky*:
- * once an item has an anchor it keeps it, even when a newly authored source
- * would now out-rank it. That rule is criterion 6 — *adding one Token must not
- * silently re-price half the game* — and without a way to accept the new
- * candidate it would also be a one-way door: the better anchor could never win
- * without someone hand-editing a derived field.
- *
- * So the simulator files an Info row naming both sources, and this card turns it
- * into two buttons:
- *
- * - **Re-elect** — writes the new election through the normal write path
- *   (`valueSource`, then a full Recalculate) and reports the churn it caused,
- *   because the whole reason the election is sticky is that re-pricing a chain
- *   is a real event. Accepting it silently would be the same failure with the
- *   default flipped.
- * - **Dismiss** — hides the prompt for this session. Keyed by the *candidate*,
- *   so tomorrow's better source asks again.
- *
- * ⚠️ **This path was fixture-proven for the whole rework.** No shipped item
- * carried a `valueSource` until the P5 cutover wrote one, so until then the row
- * this card is built on could not appear on real content at all.
- */
+/** Sticky-anchor re-election: an item's value is set by exactly one source and the election is sticky, so a newly authored better source needs this card to win. Re-elect writes `valueSource` then runs a full Recalculate and reports the churn; Dismiss hides the prompt for this session, keyed by the candidate so a later better source asks again. */
 export default function AnchorElections() {
   const rows = useSimulationStore((s) => s.simRows);
   const dismissed = useSimulationStore((s) => s.dismissedElections);

@@ -1,9 +1,8 @@
-// Fantasy Guild — the QA panel's Performance section (round-3 review, P3).
-//
-// ⚠️ DEV BUILDS ONLY. TestDashboard renders this behind
-// `import.meta.env.DEV && …`, so a production build drops it, and with it the
-// section. Nothing is measured or wrapped until a button is pressed, and the
-// bench fixtures are only loaded (and registered) when a scenario starts.
+// The QA panel's Performance section.
+// ⚠️ DEV BUILDS ONLY. TestDashboard renders this behind `import.meta.env.DEV && …`, so a
+// production build drops it, and with it the section. Nothing is measured or wrapped until a
+// button is pressed, and the bench fixtures are only loaded (and registered) when a scenario
+// starts.
 
 import { useState } from 'react';
 import { SaveManager } from '../../../systems/core/SaveManager.js';

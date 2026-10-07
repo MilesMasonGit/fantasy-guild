@@ -13,7 +13,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * CR3-100 — a brand-new game is saved complete straight away.
+ * a brand-new game is saved complete straight away.
  *
  * `SaveManager.newGame` claims the slot with a save written **before** the
  * opening Tokens and items exist (they are made later, in `onSlotSelected`).

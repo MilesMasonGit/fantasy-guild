@@ -1,30 +1,7 @@
 /**
- * Economic simulator — the runner (phase P3+4).
- *
- * Orchestrates the first four passes of the assembly line (plan §2):
- *
- * ```
- * adapt → 1. TIME → 2. ANCHOR → 3. PRICE → 4. TUNE → 5. MAP + XP → CHECK
- * ```
- *
- * **The line is complete as of P8.** Pass 5's Map half (P7) and its XP half
- * (P8) both run here, so one Recalculate settles cycle times, item values,
- * output quantities, tuning, the Map check and XP.
- *
- * ⚠️ **XP runs last, and reads only settled numbers.** It needs the cycle time
- * TUNE may have moved, and it needs the Map costs the Map check computed, so it
- * cannot run earlier — and nothing downstream reads it, so it does not need to.
- *
- * ⚠️ **TUNE runs after PRICE and never writes a value.** It moves what a source
- * produces and how often, which changes what that source *earns*; item values
- * are settled by then and are read only. That ordering is what keeps the line
- * one-way and is why nothing here iterates (plan §3.4).
- *
- * ## What this does not do
- *
- * **It writes nothing.** No store, no file, no mutation of the corpus handed
- * in. Every result is returned. `recalculateEconomy` is the CMS's caller, and
- * `sim/writeBack.js` is the one place a result is turned into stored fields.
+ * Economic simulator: the runner. Orchestrates the assembly line adapt → TIME → ANCHOR → PRICE → TUNE → MAP + XP → CHECK, so one Recalculate settles cycle times, item values, output quantities, tuning, the Map check and XP.
+ * ⚠️ XP runs last and reads only settled numbers (the cycle time TUNE may have moved, the Map costs).
+ * ⚠️ TUNE runs after PRICE and never writes a value: it moves what a source produces and how often, and item values are read-only by then. That ordering keeps the line one-way.
  */
 
 import { adaptCorpus } from './fieldAdapter.js';
@@ -46,20 +23,10 @@ function idsOf(collection) {
 }
 
 /**
- * Run TIME → ANCHOR → PRICE over a corpus.
- *
- * @param {object} corpus  `{ tokens, recipes, items }` — keyed objects or arrays
- * @param {object} dialOverrides  the §14 dials; defaults in `dials.js`
- * @returns {{ cycleTimes: Map, elections: Map, values: Map, rows: Array,
- *             entities: Array, timing: Map, skipped: Map, details: Map,
- *             downcycles: Map, tunings: Map, dials: object,
- *             maps: Map, mapWeights: Map, scrapValues: Map, xp: Map,
- *             projection: object, masteryHours: number, lifetimes: Map }}
- *
- * Re-running on identical input returns identical output (plan §11). That is
- * an acceptance criterion, and it holds because every pass iterates sorted
- * collections and nothing reads its own previous output — with the single
- * deliberate exception of a stored anchor election (plan §3.2).
+ * Run the whole line over a corpus.
+ * @param {object} corpus  `{ tokens, recipes, items }`, keyed objects or arrays
+ * @param {object} dialOverrides  the dials; defaults in `dials.js`
+ * Re-running on identical input returns identical output: every pass iterates sorted collections and nothing reads its own previous output, except a stored anchor election.
  */
 export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemies = {} } = {}, dialOverrides = {}) {
     const dials = normaliseDials(dialOverrides);
@@ -87,16 +54,11 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
         dials,
     });
 
-    // The TIME pass chose every cycle from the middle of its band; the TUNE
-    // pass may have moved one off that middle. The tuned time is the one the
-    // game gets, so it wins here — `writeBack` reads this single map and has no
-    // idea two passes had opinions.
+    // The TIME pass chose every cycle from the middle of its band; the TUNE pass may have moved one. The tuned time is the one the game gets, so it wins here: `writeBack` reads this single map.
     const cycleTimes = new Map(time.cycleTimes);
     for (const [id, ms] of tune.cycleTimes) cycleTimes.set(id, ms);
 
-    // Pass 5 — the Map check. It reads the tuned cycle times and the settled
-    // item values and **writes nothing back to a Map's authored fields**: every
-    // input to it is authored, so its findings are refusals, not adjustments.
+    // Pass 5, the Map check: it reads the tuned cycle times and settled item values and writes nothing back to a Map's authored fields.
     const mapPass = runMapPass(maps, {
         entities,
         values: price.values,
@@ -107,8 +69,7 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
         dials,
     });
 
-    // Pass 5's XP half (P8) — the last derivation. It reads the tuned cycle
-    // times and the Map check's costs, writes nothing, and closes the line.
+    // Pass 5's XP half, the last derivation: it reads the tuned cycle times and the Map check's costs and writes nothing.
     const xpPass = runXpPass(entities, {
         cycleTimes,
         skipped: time.skipped,
@@ -116,9 +77,7 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
         dials,
     });
 
-    // The Map reports gain their "estimated day in reach" here rather than
-    // inside either pass: the Map check knows the cost and the XP pass knows the
-    // pacing curves, and neither should have to know the other.
+    // The Map reports gain their estimated day in reach here rather than inside either pass: the Map check knows the cost and the XP pass knows the pacing curves.
     const mapReports = new Map();
     for (const [id, report] of mapPass.reports) {
         mapReports.set(id, report.skipped
@@ -126,11 +85,7 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
             : { ...report, dayInReach: xpPass.mapDays.get(id) ?? null });
     }
 
-    // The check pass (P9). It derives nothing and writes nothing: it reads the
-    // settled line and the dial set, and says out loud what looks wrong — the
-    // progression guard (§13.5) and the hours-first charge outliers (CMS-135).
-    // It runs last because the charge half needs the cycle times TUNE may have
-    // moved, and the guard half needs nothing at all.
+    // The check pass derives nothing and writes nothing: it reads the settled line and the dial set. It runs last because the charge half needs the cycle times TUNE may have moved.
     const check = runCheckPass(entities, { cycleTimes, skipped: time.skipped, tokens, dials });
 
     return {

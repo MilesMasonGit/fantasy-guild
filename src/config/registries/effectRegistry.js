@@ -7,7 +7,7 @@ import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js'
 /**
  * One entry on its way into the library, in the shape the game runs.
  *
- * ⚠️ V10b: the retired `target: 'enemy'` flag becomes the enemy role here, on
+ * ⚠️ The retired `target: 'enemy'` flag becomes the enemy role here, on
  * every entry — shipped and fixture alike — so nothing downstream ever sees the
  * flag. The CMS store runs the same function on its own copy.
  */
@@ -23,21 +23,15 @@ function admit(entry) {
  * nothing downstream of it knows the library exists.
  *
  * ## ⚠️ `data/effects.json` has been this name before
- * The retired card-era CMS kept a collection called Effects: 56 entries keyed
- * `"0"`–`"55"`, each a name, a `targetEntityTypes` list and a description. It
- * was deleted from the editor by CMS-36 and the data file was orphaned — still
- * on disk, read by nothing, for months. The Unified Effects work deleted it and
- * took the filename back.
+ * An old card-era file of this name (56 entries keyed `"0"`–`"55"`, each a name and a `targetEntityTypes` list) was orphaned and deleted. Do not restore it.
  *
- * That library failed for one reason, and it is the reason this file exists in
- * the shape it does: **the names had no mechanism behind them.** A name, a
- * description, and nothing that read either. An entry here is a name wrapping
- * real statements, which generate their own sentence and are consumed by the
+ * The old library failed because **the names had no mechanism behind them.**
+ * An entry here is a name wrapping real statements, which generate their own sentence and are consumed by the
  * same board systems that have always consumed them — and `ContentAudit`
- * enforces UE-10, that a named effect cannot exist without a statement that
+ * enforces that a named effect cannot exist without a statement that
  * works.
  *
- * ⚠️ **Never hand-edit `data/effects.json`** (CMS-53). The CMS writes it
+ * ⚠️ **Never hand-edit `data/effects.json`.** The CMS writes it
  * wholesale on sync; anything added by hand is destroyed on the next one.
  */
 function loadJsonEffects() {
@@ -98,7 +92,7 @@ export function effectName(effectId) {
     return EFFECTS[effectId]?.name || effectId || '';
 }
 
-/** Entries with a name and nothing behind it — UE-10's violations. */
+/** Entries with a name and nothing behind it — violations of the rule that a named effect needs a working statement. */
 export function unbackedEffectIds() {
     return Object.keys(EFFECTS).filter(id => !hasWorkingStatements(EFFECTS[id]));
 }

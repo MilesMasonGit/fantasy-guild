@@ -13,16 +13,9 @@ import {
 } from '../config/spriteFx.js';
 
 /**
- * ⭐ Wave 5 (CR3-350, owner rulings Z §11): the hard shadow and the coloured
- * outlines are PICTURES made from the art at build and dev time, never live
- * filters. These pin what the generator draws:
- *
- * - the silhouette is the art's alpha mask, in solid black;
- * - an outline is ONE ART PIXEL on the art's own grid, and only where a clear
- *   pixel touches the art EDGE TO EDGE (up/down/left/right): a plus-shaped,
- *   4-connected dilation minus the art (owner ruling 2026-10-01 — no pixel
- *   that only touches the art corner to corner, so no "doubles");
- * - a sprite sheet's ring stays inside each frame cell.
+ * ⭐ Wave 5 (owner rulings Z §11): the hard shadow and the coloured outlines
+ * are PICTURES made from the art at build and dev time, never live filters.
+ * These pin what the generator draws:
  */
 
 /** A w×h RGBA buffer with the given [x, y] pixels opaque (an arbitrary colour). */

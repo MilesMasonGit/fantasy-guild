@@ -83,7 +83,6 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                         ? "bg-gi-primary/5 border-gi-primary shadow-[0_0_15px_rgba(46,204,113,0.1)]" 
                         : "bg-black/60 border-white/10 hover:border-white/30")
             )}>
-                {/* Last Active Indicator */}
                 {isLastActive && !isPendingDelete && (
                     <div className="absolute top-0 right-0 bg-gi-primary text-black px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest z-10 font-pixel">
                         Last Played

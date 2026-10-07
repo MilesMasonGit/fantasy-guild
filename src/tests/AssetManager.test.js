@@ -64,11 +64,10 @@ describe('AssetManager path resolution', () => {
 
     it('should resolve token sprite paths correctly', () => {
         expect(resolveSpritePath('t_pick_copper')).toBe('assets/items/tool/pick/t_pick_copper.png');
-        // ⚠️ Was `assets/tokens/token_ore_copper.png` until 2026-09-05, which
-        // was a path with no file behind it — the token art moved into
-        // subfolders and the manifest was never repointed. The assertion was
-        // pinning the broken value. Repointed again 2026-09-30 to the new vein
-        // art (owner): the sprite id stays, so no content changed.
+        // ⚠️ Was `assets/tokens/token_ore_copper.png`, which was a path with
+        // no file behind it — the token art moved into subfolders and the
+        // manifest was never repointed. The assertion was pinning the broken
+        // value.
         expect(resolveSpritePath('token_ore_copper')).toBe('assets/tokens/ore/token_ore_vein_copper.png');
         // Same story as the line above: `assets/tokens/map_base.png` had no
         // file behind it either. The art is in `tokens/map/`.

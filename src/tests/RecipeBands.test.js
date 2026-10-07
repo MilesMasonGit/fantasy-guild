@@ -11,13 +11,6 @@ import { StationGearBadge } from '../ui/components/board/TokenBadges.jsx';
 
 /**
  * Recipe modal banding (Recipe & Charges rework, P3).
- *
- * The shipped corpus is three recipes at levels 1, 1 and 5, so the live game
- * cannot show all five of concept §2.2's bands at once. These fixtures exist to
- * exercise the general case the modal is built for.
- *
- * **Bands key on skill level only (R-12).** Nothing here asserts anything about
- * inputs or nearby context Tokens, because the modal computes neither.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

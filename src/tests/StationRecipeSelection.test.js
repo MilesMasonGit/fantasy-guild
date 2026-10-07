@@ -25,12 +25,6 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 
 /**
  * Station recipe selection (Recipe & Charges rework, P2).
- *
- * The rework's central reversal: **the player chooses the recipe and the board
- * gates it**, where adjacency used to choose. These tests pin what that
- * reversal turns on — a station arriving with **no** recipe (TL-15, which
- * retired R-5's lowest-level default), the id being stable rather than
- * positional, and a picked recipe staying put.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -40,8 +34,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * A second cooking pool entry that is LOWER level than the fixtures' own, and
- * authored last. Under R-5 it would have been the default; TL-15's tests below
- * check that even a level-0 recipe is not picked for the player.
+ * authored last.
  */
 registerRecipePools({
     cooking: [{
@@ -69,7 +62,7 @@ beforeEach(() => {
 
 describe('TL-15 — a freshly placed station starts with no recipe', () => {
     it('is placed with nothing selected, though its pool holds a level-0 recipe', () => {
-        // `pooled_gruel` is level 0: R-5 would have picked it. TL-15 does not.
+        // `pooled_gruel` is level 0: would have picked it.
         const kitchen = place(A, 'fixture_kitchen');
         expect(kitchen.selectedRecipeId).toBeUndefined();
         expect(StationRecipe.selectedRecipe(kitchen)).toBeNull();
@@ -138,8 +131,8 @@ describe('The selection is the recipe\'s stable id', () => {
     });
 
     it('a selection whose recipe no longer exists becomes no recipe (TL-15)', () => {
-        // A CMS deletion under a live save. It used to re-default (R-5); now
-        // the station waits for the player and says so ("Choose a recipe").
+        // A CMS deletion under a live save. It used to re-default; now the
+        // station waits for the player and says so ("Choose a recipe").
         const kitchen = place(A, 'fixture_kitchen');
         kitchen.selectedRecipeId = 'recipe_that_was_deleted';
         expect(StationRecipe.validateSelection(kitchen)).toBeNull();
@@ -162,10 +155,10 @@ describe('Persistence — until it reaches the Vault', () => {
     // the Vault (Token Lifecycle 9.3).
 });
 
-// The 'Save migration — a save written before the field existed' suite was
-// deleted in Free Playmat slice 1.6a with `StationRecipe.backfillBoardSelections`:
-// saves from before schema 0.8.0 are refused outright (FP-85). A station placed
-// today starts with no recipe (TL-15) — see the suites above.
+// The 'Save migration — a save written before the field existed' suite was deleted
+// in Free Playmat slice 1.6a with `StationRecipe.backfillBoardSelections`: saves
+// from before schema 0.8.0 are refused outright. A station placed today starts
+// with no recipe — see the suites above.
 
 describe('Validation, not discovery', () => {
     it('reports the selected recipe\'s own missing context, and only that', () => {

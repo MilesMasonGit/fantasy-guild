@@ -1,27 +1,9 @@
 /**
  * Economic simulator — pass 5, the MAP check (phase P7).
  *
- * Covers `cms/src/engine/sim/mapPass.js`: derived pool weights (CMS-124), the
- * aggregate-first scrap allocation (CMS-48), the burst expectation with
- * CMS-129's Token-led first slot, the five entry-kind rules, and the two-sided
- * verdict on whether a Map's burst pays for itself.
- *
  * ## ⚠️ Which arms are fixture-proven only
  *
- * **Enemy, gold and raw-item entries are exercised by fixtures and by nothing
- * else.** Every pool entry across all seven shipped Maps is `kind: "token"`;
- * the Map editor offers `token` and `item` kinds only; `data/enemies.json` is
- * not loaded by the CMS store at all, so an enemy entry is unauthorable today.
- * Those three arms are therefore built to the plan's rules and proven against
- * hand-made pools, not against anything that ships. Stating that here is this
- * project's precedent, and the honest reading of the coverage.
- *
  * ## ⚠️ No test here names a shipped Map, Token or item id
- *
- * The owner authors in this workspace continuously and content-naming tests
- * have broken a dozen times. Everything specific is a fixture; everything
- * asserted against the real corpus is a **rule** that holds whatever the corpus
- * happens to contain.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -74,12 +56,6 @@ const unlimitedProducer = (id) => {
 
 /**
  * Run the pass over a hand-made corpus.
- *
- * Cycle times come from the real TIME/TUNE passes, so the productive side is
- * computed exactly as it is in production. **Item values are the fixture's
- * own**, not the pricing pass's: a fixture item with no producer is an orphan
- * the pricing pass rightly refuses to price, and the arithmetic these tests
- * pin is the Map pass's, not the pricing pass's.
  */
 function runFixture({ tokens, maps, items = fixtureItems, enemies = {}, dials = DIALS }) {
     const sim = runSim({ tokens, recipes: {}, items }, dials);
@@ -99,7 +75,7 @@ function runFixture({ tokens, maps, items = fixtureItems, enemies = {}, dials = 
 const poolMap = (id, price, pool, extra = {}) => ({ [id]: { id, name: id, price, pool, ...extra } });
 const tokenEntry = (refId) => ({ kind: 'token', refId });
 
-// === CMS-124: weights are derived from rarity ================================
+// === weights are derived from rarity ================================
 
 describe('Map pass — derived pool weights (CMS-124)', () => {
     it('reads every tier off the one global table', () => {
@@ -148,12 +124,12 @@ describe('Map pass — derived pool weights (CMS-124)', () => {
     });
 });
 
-// === CMS-48: aggregate first, allocate second ================================
+// === aggregate first, allocate second ================================
 
 describe('Map pass — the scrap allocation (CMS-48)', () => {
     it('sums to the budget exactly, whatever the pool length or premium', () => {
-        // The whole point of CMS-48: the total is a property of the Map, so
-        // adding another entry to a pool must not make the Map richer.
+        // The whole point: the total is a property of the Map, so adding
+        // another entry to a pool must not make the Map richer.
         for (const premium of [0, 0.35, 0.8, 1]) {
             for (const size of [1, 2, 3, 7, 13, 40]) {
                 const weights = Array.from({ length: size }, (_, i) => [100, 40, 12, 4, 1][i % 5]);
@@ -213,7 +189,7 @@ describe('Map pass — the scrap allocation (CMS-48)', () => {
     });
 });
 
-// === CMS-129: the burst expectation ==========================================
+// === the burst expectation ==========================================
 
 describe('Map pass — the burst expectation (CMS-129)', () => {
     it('uses the live burst constant, never a literal', () => {

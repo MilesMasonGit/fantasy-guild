@@ -24,11 +24,10 @@ const STATUS_TONE = {
 };
 
 /**
- * HeroDockTab — sliding hero tab in the rightmost Hero Dock.
- * - Collapsed: 56px headshot portrait on the left, vertical HP bar to its right, top hero name.
- * - Hover: Slides out to preview stats without displacing the dock.
- * - Drag over: Pops out slightly without showing full title or 400px width.
- * - Sits above the inspection sheet with z-30 / z-40.
+ * HeroDockTab: a hero's header tab in the dock.
+ * - Collapsed: headshot portrait on the left, vertical HP bar to its right, hero name on top.
+ * - Hover: slides out to preview stats without displacing the dock.
+ * - Drag over: pops out slightly without showing the full title.
  */
 export const HeroDockTab = ({
     heroId,
@@ -69,9 +68,9 @@ export const HeroDockTab = ({
         prevDraggingRef.current = globalDragging;
     }, [globalDragging]);
 
-    // Flat projection per the useGameState selector contract (CR-044, CR3-300):
-    // `hp` is rebuilt fresh from primitives each evaluation, never the store's
-    // own nested object, so an in-place HP mutation is actually seen as a change.
+    // Flat projection per the useGameState selector contract: `hp` is rebuilt fresh from
+    // primitives each evaluation, never the store's own nested object, so an in-place HP
+    // mutation is actually seen as a change.
     const hero = useGameState(
         state => {
             const h = (state.heroes || []).find(x => x.id === heroId);
@@ -98,11 +97,11 @@ export const HeroDockTab = ({
         { deps: [heroId] }
     );
 
-    // What this hero is doing, from their flag's status: working, walking,
-    // idle at their flag, or in the Guild (slice 1.5's status line).
-    // ⚠️ It listened for `board:hero_placed` / `board:hero_recalled`, which
-    // nothing has ever published; `HERO_MOVED` is what every plant, claim
-    // change, recall and defeat actually announces.
+    // What this hero is doing, from their flag's status: working, walking, idle at their flag,
+    // or in the Guild.
+    // ⚠️ `HERO_MOVED` is what every plant, claim change, recall and defeat announces;
+    // `board:hero_placed` / `board:hero_recalled` are never published, so listening for them
+    // would never fire.
     const status = useGameState(
         () => {
             const s = Flags.statusOf(heroId);
@@ -116,7 +115,7 @@ export const HeroDockTab = ({
     const workId = status?.state === 'working' ? status.instanceId : null;
 
     const token = useGameState(
-        // The Token they work, by instance id (Free Playmat slice 1.6b).
+        // The Token they work, by instance id ().
         () => workId == null ? null : BoardState.getTokenById(workId),
         [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null,
@@ -143,10 +142,9 @@ export const HeroDockTab = ({
     const drop = useEntityDrop({
         id: `${dragIdPrefix}-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
-        // A hero off the board or a pennant dropped on any tab recalls (slice
-        // 1.5) — the tab is the smaller target, so it must say yes itself or
-        // the Dock's own recall zone never gets the drop. A tab dragged within
-        // the Dock is a reorder.
+        // A hero off the board or a pennant dropped on any tab recalls: the tab is the smaller
+        // target, so it must say yes itself or the Dock's own recall zone never gets the drop.
+        // A tab dragged within the Dock is a reorder.
         accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
             || isRecallDrop(p)
             || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
@@ -176,15 +174,12 @@ export const HeroDockTab = ({
     // Inventory count out of 9 — computed in the selector's flat projection.
     const equippedCount = hero.equippedCount;
 
-    // Sprite & Icon paths
     const headshotPath = resolveSpritePath(hero.icon || 'icon_recruit_0') || resolveSpritePath(hero.spriteId || 'hero_recruit_0');
 
-    // Health
     const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
     const hpMax = Math.max(1, hero.hp?.max ?? 100);
     const hpPercent = Math.min(100, Math.round((hp / hpMax) * 100));
 
-    // Status Pip Tone
     const pipColor = isWounded
         ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)] animate-pulse'
         : isWorking
@@ -203,7 +198,6 @@ export const HeroDockTab = ({
 
     const titleText = expanded ? `${hero.name}, Lv ${level} ${jobTitle}` : hero.name;
 
-    // Determine insertion position indicator (above or below this tab)
     const isHeroDropValid = drop.valid && isDraggingHero;
     const sourceIndex = isHeroDropValid && heroIds ? heroIds.indexOf(drop.activePayload.heroId) : -1;
     const targetIndex = index ?? (heroIds ? heroIds.indexOf(heroId) : -1);
@@ -219,7 +213,6 @@ export const HeroDockTab = ({
                     isHovered ? 'z-50' : 'z-40'
                 )}
             >
-                {/* Insertion Line Highlight Indicator between Hero Dock Tabs */}
                 {isHeroDropValid && (
                     <div
                         className={cn(
@@ -264,7 +257,6 @@ export const HeroDockTab = ({
                         drag.isDragging && 'opacity-30'
                     )}
                 >
-                    {/* Top: Hero Name sits above the headshot, sliding out with it */}
                     <div className={cn("absolute -top-3.5 flex items-center gap-1 pointer-events-none z-20", isDockLeft ? "left-2" : "right-2")}>
                         <span
                             className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,1)] tracking-wide leading-none"
@@ -285,9 +277,7 @@ export const HeroDockTab = ({
                         )}
                     </div>
 
-                    {/* Main Content Area */}
                     <div className={cn("flex-1 flex items-center gap-1.5 min-h-0 overflow-hidden pt-0.5", isDockLeft ? "flex-row pr-1 pl-2" : "flex-row-reverse pl-1 pr-2")}>
-                        {/* Left/Right: 56px Headshot Portrait with Activity Pip */}
                         <div className="w-14 h-14 rounded-lg bg-black/60 border border-white/15 flex items-center justify-center overflow-hidden shrink-0 relative shadow-inner">
                             <div
                                 className={cn("absolute top-1 right-1 w-2 h-2 rounded-full z-10", pipColor)}
@@ -304,7 +294,6 @@ export const HeroDockTab = ({
                             )}
                         </div>
 
-                        {/* Vertical Health Bar directly to the right of the portrait */}
                         <div
                             className="w-1.5 h-14 bg-black/80 rounded-full overflow-hidden border border-white/10 shrink-0 flex flex-col justify-end p-px shadow-inner"
                         >
@@ -317,7 +306,6 @@ export const HeroDockTab = ({
                             />
                         </div>
 
-                        {/* Right: Expanded Info when Hovered */}
                         {expanded && (
                             <div className="flex-1 flex items-center justify-between h-full py-0.5 px-2 min-w-0 pointer-events-auto animate-in fade-in duration-150">
                                 <div className="flex flex-col justify-center space-y-1 min-w-0 flex-1 pr-2">
@@ -362,7 +350,6 @@ export const HeroDockTab = ({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            {/* Insertion Line Highlight Indicator between Hero Dock Tabs */}
             {isHeroDropValid && (
                 <div
                     className={cn(
@@ -404,7 +391,6 @@ export const HeroDockTab = ({
                     drag.isDragging && 'opacity-30'
                 )}
             >
-                {/* Top: Hero Name sits above the dock tab */}
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 pointer-events-none z-20">
                     <span
                         className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,1)] tracking-wide leading-none"
@@ -425,7 +411,6 @@ export const HeroDockTab = ({
                     )}
                 </div>
 
-                {/* Expanded Content Area (Top) */}
                 {expanded && (
                     <div className="flex-1 flex flex-col justify-start w-full px-1 pt-1 min-h-0 pointer-events-auto animate-in fade-in duration-150">
                         <div className="flex flex-col space-y-1 mb-2">
@@ -453,9 +438,7 @@ export const HeroDockTab = ({
                     </div>
                 )}
 
-                {/* Base Portrait Area (Bottom) */}
                 <div className="flex items-center gap-1 w-full shrink-0">
-                    {/* Vertical Health Bar to the left */}
                     <div
                         className="w-1.5 h-14 bg-black/80 rounded-full overflow-hidden border border-white/10 shrink-0 flex flex-col justify-end p-px shadow-inner"
                     >
@@ -468,7 +451,6 @@ export const HeroDockTab = ({
                         />
                     </div>
 
-                    {/* 56px Headshot Portrait */}
                     <div className="w-14 h-14 rounded-lg bg-black/60 border border-white/15 flex items-center justify-center overflow-hidden shrink-0 relative shadow-inner">
                         <div
                             className={cn("absolute top-1 right-1 w-2 h-2 rounded-full z-10", pipColor)}

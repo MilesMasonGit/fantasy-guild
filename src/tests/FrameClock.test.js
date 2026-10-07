@@ -15,14 +15,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ **One frame loop for every sweeping ring** (CR3-011, R6 rule 2).
- *
- * Each worked Token's cycle ring used to run its own `requestAnimationFrame`
- * loop (6–7 at the realistic board). They now share one, and it stops when
- * the last ring stops (R6 rule 1).
- *
- * `requestAnimationFrame` is a queue this test flushes by hand, so "frames
- * requested" is the queue's length.
+ * ⭐ **One frame loop for every sweeping ring** (R6 rule 2).
  */
 
 const h = React.createElement;

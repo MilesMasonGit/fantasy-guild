@@ -1,10 +1,9 @@
-// CR3-405 — a refused equip must not look like a success: no equip sound,
-// the drop reported as a miss (so the ghost flies back), and a short
-// notification saying why. Full dnd-kit drag simulation is unreliable in
-// jsdom (master plan R7: "drag is unreliable to simulate — DnD findings need
-// the owner's own hands"), so this tests the shared `equipOrAnnounce` helper
-// every dock drop target now calls — exactly the seam the three `onDrop`s
-// used to skip.
+// a refused equip must not look like a success: no equip sound, the drop
+// reported as a miss (so the ghost flies back), and a short notification
+// saying why. Full dnd-kit drag simulation is unreliable in jsdom (master
+// plan R7: "drag is unreliable to simulate — DnD findings need the owner's
+// own hands"), so this tests the shared `equipOrAnnounce` helper every dock
+// drop target now calls — exactly the seam the three `onDrop`s used to skip.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

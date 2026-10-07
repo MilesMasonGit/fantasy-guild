@@ -39,14 +39,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * Combat numbers — Unified Effects P7.
- *
- * Combat has queried `ARMOR`, `ACCURACY`, `BLOCK`, `RESIST_FLAT` and `DAMAGE`
- * off the hero's aggregator for a long time, and **nothing has written them**
- * since the legacy gear pipeline was deleted (CR2-074's territory). This phase
- * closes the write side: content can feed those numbers, from a hero's own gear
- * or from the enemy they are fighting.
- *
- * Nothing about the combat engine changed to allow it, which is the point.
  */
 
 const TILE = 10;

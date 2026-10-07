@@ -23,13 +23,11 @@ const MAX_CONCURRENT = 12;
 
 /**
  * Where a board point (natural board pixels / mat units) is on screen.
- *
- * ⚠️ The board is drawn at its natural size and then CSS-scaled to fit
- * (`useBoardScale`), so its on-screen rect is the SCALED box. A board point has
- * to be multiplied by that scale — `rect.width / data-natural-width` — before
- * it is added to the rect's corner. Without it, loot sparkles and Map bursts
- * started further from their Token the smaller the window (slice 1.6c). A board
- * with no `data-natural-width` reads as unscaled.
+ * ⚠️ The board is drawn at its natural size and then CSS-scaled to fit (`useBoardScale`), so
+ * its on-screen rect is the SCALED box. A board point has to be multiplied by that scale
+ * (`rect.width / data-natural-width`) before it is added to the rect's corner; without it,
+ * loot sparkles start further from their Token the smaller the window. A board with no
+ * `data-natural-width` reads as unscaled.
  */
 export function boardPointToScreen(boardEl, x, y) {
     const r = boardEl.getBoundingClientRect();
@@ -39,8 +37,8 @@ export function boardPointToScreen(boardEl, x, y) {
 }
 
 /**
- * ParticleOverlay - A high-performance Canvas layer for UI-space effects.
- * Visualizes items flying between Cards and the Bank nav bubble.
+ * ParticleOverlay: a Canvas layer for UI-space effects. Visualizes collected loot flying to
+ * where it went, with sparkles.
  */
 export const ParticleOverlay = ({ disabled }) => {
     const canvasRef = useRef(null);
@@ -50,11 +48,9 @@ export const ParticleOverlay = ({ disabled }) => {
     /** Starts the frame loop if it is asleep (set by the loop effect below). */
     const wakeRef = useRef(null);
 
-    // Sync ref
     useEffect(() => {
         disabledRef.current = disabled;
         
-        // If we are disabling, clear active particles for a clean look
         if (disabled && systemRef.current) {
             systemRef.current.particles = [];
             systemRef.current.sparkles = [];
@@ -82,21 +78,8 @@ export const ParticleOverlay = ({ disabled }) => {
         handleResize();
 
         /**
-         * Loot collected off the board flies to wherever it actually went
-         * (D-236). **This is the only particle source left.**
-         *
-         * Two others used to sit above it and both were removed on 2026-08-26:
-         *
-         * - `loot_generated` (CR2-149) flew items out of a DOM element named by
-         *   `data.cardId`. Since the board rework that id is the ephemeral
-         *   fight object's `fight_<tile>`, which no element in the UI carries,
-         *   so the handler could only ever bail — the file's old comment said
-         *   as much and then kept the subscription anyway. It also fired when
-         *   loot was *created*, not when it was *taken*, so it would have flown
-         *   things still lying on the floor. `SPRITE_COLLECTED` replaced it.
-         * - `items_consumed` (CR2-148) was the "items fly back to the card
-         *   being consumed" animation, belonging to the retired hero food/drink
-         *   model. Nothing has ever published it.
+         * Loot collected off the board flies to wherever it actually went. This is the only
+         * particle source left.
          */
         const onCollected = (data) => {
             if (disabledRef.current) return;
@@ -104,7 +87,7 @@ export const ParticleOverlay = ({ disabled }) => {
             if (system.particles.length) wakeRef.current?.();
         };
         const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, onCollected);
-        // The same flight for the eye only (a hero lifted from the dock, CR3-306).
+        // The same flight for the eye only (a hero lifted from the dock).
         const subFly = EventBus.subscribe(UI_EVENTS.UI_PARTICLE_FLY, onCollected);
 
         return () => {
@@ -115,14 +98,11 @@ export const ParticleOverlay = ({ disabled }) => {
     }, []);
 
     /**
-     * The frame loop. ⚠️ It **sleeps when there is nothing to draw** (CR3-010):
-     * once the last particle has landed and the last sparkle faded, the loop
-     * stops asking for frames, and a new collection wakes it. It used to
-     * re-arm every frame forever, clearing an empty full-screen canvas sixty
-     * times a second for the whole session (R6 measured frame work p50
-     * 5.56 → 4.65 ms at S2 with the sleep). The final frame before sleeping
-     * has just run `draw()`, which clears the canvas first, so nothing is
-     * left on screen.
+     * The frame loop.
+     * ⚠️ It sleeps when there is nothing to draw: once the last particle has landed and the
+     * last sparkle faded, the loop stops asking for frames, and a new collection wakes it. The
+     * final frame before sleeping has just run `draw()`, which clears the canvas first, so
+     * nothing is left on screen.
      */
     useEffect(() => {
         if (disabled) {
@@ -184,22 +164,15 @@ class ParticleSystem {
     }
 
     /**
-     * One collected sprite, flying from where it lay to where it went (D-236).
-     *
-     * Items land on the **Guild Hall Token on the mat** (FB-16, Q5; the Bank
-     * bubble before, D-232), found live by `lootFlightTarget` so a dragged
-     * Hall is followed; the Bank bubble is the fallback when the Hall is not
-     * on screen. Items fly at the size they lay on the floor (FB-17). (Tokens flew to the Token Vault
-     * bubble until Token loot and the Vault retired, Token Lifecycle 9.3.)
-     *
-     * ⚠️ **The stagger is global, not per-call.** The old `spawnFlyingItems`
-     * (deleted 2026-08-26 with its last two callers) staggered by array index,
-     * which worked for one card dropping five things. Collection is
-     * one call per sprite, so a Collect All over forty sprites would have fired
-     * forty particles on the same frame. `_nextSlot()` spreads them across a
-     * shared queue and refuses beyond `MAX_CONCURRENT` — the loot is still
-     * collected, it just stops drawing after a point, because forty simultaneous
-     * arcs is noise rather than spectacle.
+     * One collected sprite, flying from where it lay to where it went.
+     * Items land on the Guild Hall Token on the mat, found live by `lootFlightTarget` so a
+     * dragged Hall is followed; the Bank bubble is the fallback when the Hall is not on
+     * screen. Items fly at the size they lay on the floor.
+     * ⚠️ The stagger is global, not per-call. Collection is one call per sprite, so a Collect
+     * All over forty sprites would fire forty particles on the same frame. `_nextSlot()`
+     * spreads them across a shared queue and refuses beyond `MAX_CONCURRENT`; the loot is
+     * still collected, it just stops drawing after a point, because forty simultaneous arcs is
+     * noise rather than spectacle.
      */
     spawnCollected({ kind, refId, heroId, quantity, x, y, fromScreenX, fromScreenY, toScreenX, toScreenY, destination, trayX, trayY, instanceId }) {
         if (!SettingsManager.get('ui.itemParticles')) return;
@@ -279,9 +252,9 @@ class ParticleSystem {
 
         if (![startX, startY, endX, endY, cpX, cpY].every(Number.isFinite)) return;
 
-        // ⭐ CR3-352 (owner R6-Q4 = A): at most MAX_CONCURRENT from one burst,
-        // STAGGER_MS apart. Asked only once this particle would really fly, so
-        // a refused one does not use up a place. The loot is collected either way.
+        // At most MAX_CONCURRENT from one burst, STAGGER_MS apart. Asked only once this
+        // particle would really fly, so a refused one does not use up a place. The loot is
+        // collected either way.
         const slot = this._nextSlot();
         if (slot == null) return;
 
@@ -292,7 +265,7 @@ class ParticleSystem {
             mode: 'gain',
             destination,
             landsOn,
-            // FB-17: an item keeps its floor size in flight; a hero keeps 32.
+            // An item keeps its floor size in flight; a hero keeps 32.
             size: isHero ? 32 : this._floorItemPx(),
             trayX,
             trayY,
@@ -319,14 +292,12 @@ class ParticleSystem {
         return this._slot++;
     }
 
-    /** `source` is either 'bank-bubble-target' (the Bank nav bubble, a fixed
-     *  landing spot — owner design 2026-08-01, replacing the old per-item
-     *  bank-tile targeting that nothing in the current UI renders anymore)
-     *  or a card instance id (`data-card-id`, set by GICard) or quest id (`data-quest-id`). */
+    /**
+     * `source` is either 'bank-bubble-target' (the Bank nav bubble, a fixed landing spot), or
+     * an element carrying `data-card-id` or `data-quest-id`.
+     */
     _getRect(source) {
-        // A point on the board, in board coordinates (D-236). Previously there
-        // was **no way to express "from tile 31"** — a source could only be the
-        // Bank bubble or a card — which is half of why board loot never flew.
+        // A point on the board, in board coordinates.
         if (source && typeof source === 'object' && source.boardX != null) {
             const board = document.querySelector('[data-board-origin]');
             if (!board) return null;
@@ -368,12 +339,12 @@ class ParticleSystem {
         );
     }
 
-    /** Takes the full item template, not just its id — `resolveSpritePath`
-     *  needs the object's own `sprite`/`spriteId` field (e.g. item id
-     *  `oak_wood` has `sprite: "wood_oak"`; they're rarely the same string),
-     *  the same way `ItemIcon.jsx` resolves it. Passing the bare id here
-     *  before meant the manifest lookup used the wrong key and the image
-     *  never loaded, so every particle silently fell back to the emoji icon. */
+    /**
+     * Takes the full item template, not just its id: `resolveSpritePath` needs the object's
+     * own `sprite`/`spriteId` field (e.g. item id `oak_wood` has `sprite: "wood_oak"`), the
+     * same way `ItemIcon.jsx` resolves it. A bare id used the wrong manifest key and every
+     * particle silently fell back to the emoji icon.
+     */
     _preloadSprite(template) {
         if (this.spriteCache.has(template.id)) return;
         const img = new Image();
@@ -388,7 +359,6 @@ class ParticleSystem {
     }
 
     update(currentTime) {
-        // 1. Update Particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             if (currentTime < p.startTime) continue;
@@ -403,7 +373,6 @@ class ParticleSystem {
             p.x = invT * invT * p.path.startX + 2 * invT * t * p.path.cpX + t * t * p.path.endX;
             p.y = invT * invT * p.path.startY + 2 * invT * t * p.path.cpY + t * t * p.path.endY;
 
-            // Spawn Sparkles along the path
             if (lastX !== undefined && Math.random() > 0.4) {
                 this.sparkles.push({
                     x: p.x + (Math.random() - 0.5) * 10,
@@ -420,7 +389,8 @@ class ParticleSystem {
             if (p.trail.length > p.maxTrail) p.trail.pop();
 
             if (t >= 1) {
-                // Notify that the particle has landed for visual feedback (e.g., Vault flashes, Tray landings)
+                // Notify that the particle has landed for visual feedback (e.g. a Guild Hall
+                // flash).
                 EventBus.publish(UI_EVENTS.PARTICLE_LANDED, {
                     itemId: p.itemId,
                     mode: p.mode,
@@ -435,7 +405,6 @@ class ParticleSystem {
                     instanceId: p.instanceId
                 });
 
-                // Spawn a little burst of sparkles at the end
                 for(let k=0; k<8; k++) {
                     this.sparkles.push({
                         x: p.x, y: p.y,
@@ -450,7 +419,6 @@ class ParticleSystem {
             }
         }
 
-        // 2. Update Sparkles
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
             const s = this.sparkles[i];
             s.x += s.vx;
@@ -467,19 +435,16 @@ class ParticleSystem {
         // Use Additive Blending for that "Glow" look
         ctx.globalCompositeOperation = 'lighter';
 
-        // 1. Draw Sparkles
         this.sparkles.forEach(s => {
             ctx.globalAlpha = s.life;
             ctx.fillStyle = s.color;
             ctx.fillRect(s.x, s.y, 2, 2);
         });
 
-        // 2. Draw Particles
         this.particles.forEach(p => {
             if (performance.now() < p.startTime) return;
             if (!isFinite(p.x) || !isFinite(p.y)) return;
 
-            // 2.1 Draw Tapered Energy Trail
             if (p.trail.length > 1) {
                 for (let j = 0; j < p.trail.length - 1; j++) {
                     const ratio = 1 - (j / p.trail.length);
@@ -492,7 +457,6 @@ class ParticleSystem {
                     ctx.lineTo(p.trail[j+1].x, p.trail[j+1].y);
                     ctx.stroke();
 
-                    // Inner bright core
                     ctx.beginPath();
                     ctx.strokeStyle = '#fff';
                     ctx.lineWidth = 6 * ratio; // Thicker Core
@@ -503,7 +467,6 @@ class ParticleSystem {
                 }
             }
 
-            // 2.2 Draw Aura Glow
             const grad = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 25);
             grad.addColorStop(0, p.color);
             grad.addColorStop(1, 'transparent');
@@ -528,7 +491,6 @@ class ParticleSystem {
                 ctx.textBaseline = 'middle';
                 ctx.fillText(p.icon, p.x, p.y);
             }
-            // Switch back to lighter for the next particle's trails/glow
             ctx.globalCompositeOperation = 'lighter';
         });
         

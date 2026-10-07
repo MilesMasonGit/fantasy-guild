@@ -1,4 +1,3 @@
-// Fantasy Guild — what flags say on hover (Free Playmat slice 1.5)
 
 import * as Flags from '../../../systems/board/Flags.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -7,12 +6,11 @@ import { GameState } from '../../../state/GameState.js';
 import { skipHint } from './boardConstants.js';
 
 /**
- * The words for flags, in one place: the pennant's tooltip, a Token's own
- * hover lines (FP-60) and the Dock tab's status line (FPP-15).
- *
- * ⚠️ Read live, when asked. Skips are runtime records that change without an
- * event (a flag re-checks every second), so callers ask at hover time rather
- * than projecting these into React state.
+ * The words for flags, in one place: the pennant's tooltip, a Token's own hover lines and the
+ * Dock tab's status line.
+ * ⚠️ Read live, when asked. Skips are runtime records that change without an event (a flag
+ * re-checks every second), so callers ask at hover time rather than projecting these into
+ * React state.
  */
 
 /** A pennant lists at most this many skipped Tokens, then "+N more". */
@@ -42,8 +40,8 @@ export function skipLine(skip, heroId = null) {
 }
 
 /**
- * "Working only Oak Tree" for a flag pinned to a Token (B5, FB-45), else null.
- * Read live, like everything here: a pin lapses when its Token is used up.
+ * 'Working only Oak Tree' for a flag pinned to a Token, else null. Read live, like everything
+ * here: a pin lapses when its Token is used up.
  */
 export function flagPinLine(heroId) {
     const token = Flags.pinnedTokenOf(heroId);
@@ -51,10 +49,9 @@ export function flagPinLine(heroId) {
 }
 
 /**
- * Everything the pennant's tooltip shows, as
- * `{ title, pin, state, status, skips: string[], more }`. The title is the
- * hero's name: a flag has no skill since slice 1.5b (FP-71). `pin` is
- * {@link flagPinLine} (null on an area flag).
+ * Everything the pennant's tooltip shows, as `{ title, pin, state, status, skips: string[],
+ * more }`. The title is the hero's name: a flag has no skill. `pin` is {@link flagPinLine}
+ * (null on an area flag).
  */
 export function flagTooltip(heroId) {
     const state = Flags.statusOf(heroId).state;
@@ -69,7 +66,7 @@ export function flagTooltip(heroId) {
     };
 }
 
-/** A Token's own hover lines: which flags passed it over, and why (FP-60). */
+/** A Token's own hover lines: which flags passed it over, and why. */
 export function tokenSkipLines(instanceId) {
     if (!instanceId) return [];
     return Flags.skipsOf(instanceId).map(s => {
@@ -78,7 +75,9 @@ export function tokenSkipLines(instanceId) {
     });
 }
 
-/** The Dock tab's status line (FPP-15): Working: X · Walking to: X · Idle at flag · Idle in Guild. */
+/**
+ * The Dock tab's status line: Working: X · Walking to: X · Idle at flag · Idle in Guild.
+ */
 export function dockStatusLine(status) {
     switch (status?.state) {
         case 'working': return `Working: ${tokenName(status.typeId) || 'a Token'}`;

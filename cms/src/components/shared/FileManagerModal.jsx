@@ -131,7 +131,6 @@ export default function FileManagerModal({ isOpen, onClose }) {
           </div>
         )}
         
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
           <div className="flex items-center gap-2">
             <DatabaseBackup size={18} style={{ color: 'var(--color-accent)' }} />
@@ -140,7 +139,6 @@ export default function FileManagerModal({ isOpen, onClose }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}><X size={18} /></button>
         </div>
 
-        {/* Create Save and New Workspace */}
         <div className="px-5 py-4 border-b flex flex-col gap-2" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
           <div className="flex items-center justify-between w-full">
             <form onSubmit={handleSave} className="flex gap-2 flex-1 mr-4">
@@ -179,7 +177,6 @@ export default function FileManagerModal({ isOpen, onClose }) {
           {error && <p className="text-xs" style={{ color: 'var(--color-error)' }}>{error}</p>}
         </div>
 
-        {/* List */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
           {loading ? (
             <div className="flex items-center justify-center py-8 text-sm" style={{ color: 'var(--color-text-muted)' }}>Loading saves...</div>

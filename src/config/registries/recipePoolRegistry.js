@@ -1,34 +1,26 @@
-// Fantasy Guild — Recipe registry (Recipe & Charges rework, P0)
+// Fantasy Guild — Recipe registry
 
 /**
  * Every recipe in the game, loaded from `data/tokenRecipes.json`.
  *
  * ## The file is a flat array and every recipe has an id
- * It used to be an object keyed by skill (`{ "cooking": [ … ] }`) in which a
- * recipe had no identifier of its own — it was identified by its position in
- * its skill's pool. P2 saves a station's chosen recipe on the token instance as
- * `selectedRecipeId`, and a position renumbers the moment someone inserts a
- * recipe in the CMS, which would silently repoint every saved station. So the
- * skill moved onto the recipe as a field, the file flattened, and `id` became
- * required. `getSkillRecipePool` is now a filter over one list rather than a
- * lookup into many.
+ * A station's chosen recipe is saved on the token instance as `selectedRecipeId`, and a position
+ * would renumber the moment someone inserts a recipe in the CMS, silently repointing every saved
+ * station. So `skill` is a field on the recipe and `id` is required; `getSkillRecipePool` is a
+ * filter over one list.
  *
  * ## A recipe belongs to a skill
- * `skill` is a real skill id from `skillRegistry.js`. Subskills are retired
- * (R-2): Smelting, Weaponsmithing, Toolsmithing and Jewelry are all `smithing`,
+ * `skill` is a real skill id from `skillRegistry.js`. There are no subskills:
+ * Smelting, Weaponsmithing, Toolsmithing and Jewelry are all `smithing`,
  * and Baking and Cooking are both `cooking`. A station draws every recipe of
  * its skill, so adding a Cooking recipe makes it available to every Cooking
  * station at once.
  *
- * ## A station's pool comes from its `Works as` statement (P2.5, R-14)
- * `recipePool` is retired. The skill named in the Token's Station statement is
+ * ## A station's pool comes from its `Works as` statement
+ * The skill named in the Token's Station statement is
  * the pool, and it is the same statement `deriveTokenType` reads — so a Token
  * cannot be typed a station while pooling nothing, or pool a skill while being
- * typed something else. Both were true of `token_ceramics_kiln`.
- *
- * The private `recipes[]` fork is gone with it (CMS-76/CMS-77). No shipped
- * Token ever used it, and the pooled-or-private rule those tickets enforced
- * cannot be broken by a shape that has only one side.
+ * typed something else.
  *
  * ## Recipe shape
  * ```jsonc
@@ -48,37 +40,26 @@
  * ]
  * ```
  *
- * ## An input names an item; only context keeps a tag (P2.6, R-17)
- * `inputs` entries are always `{ itemId, quantity }`. The `{ tag, quantity }`
- * material form is retired: the single recipe that used it was naming a context
- * Token ("Fuel") in an input's clothing. `requiresContext` **keeps** tag +
+ * ## An input names an item; only context keeps a tag
+ * `inputs` entries are always `{ itemId, quantity }`. `requiresContext` **keeps** tag +
  * `minTier`, because that hierarchy is what lets a tier-2 tool satisfy a tier-1
- * requirement without relisting every qualifying Token (concept §2.4).
- *
- * ## The corpus is deliberately three recipes (P2.6, R-16)
- * Pooling the 23 migrated card-era recipes exposed 16 inputs nothing in the
- * game produces and two context tags nothing provides. Rather than author
- * placeholder content to prop them up, the owner pruned to the three that can
- * actually run. The art for the rest is still in `public/`, waiting for the
- * content to be re-authored — so a short pool here is the plan, not a bug.
+ * requirement without relisting every qualifying Token.
  *
  * `requiresContext` entries are objects, not bare tag strings, so a recipe can
  * state a minimum tool tier and a per-cycle charge cost against the nearby
  * Token. The entry is deliberately shaped like an `acceptedTokens` entry plus
  * `chargeCost`, so `checkAcceptedTokens` in `RecipeResolver.js` compares both
- * with the same code. `minTier` and `chargeCost` are authored data at P0;
- * nothing deducts a context charge until P4.
+ * with the same code.
  *
  * `stationChargeCost` is the charges the station itself spends per cycle,
- * a separate axis from context charge costs (R-8). `BoardRunner.js` still
- * hardcodes a decrement of 1 per cycle; P1 makes it read this field.
+ * a separate axis from context charge costs; `Charges.js` reads it.
  *
  * Nine EV fields (`targetEV`, `calculatedEV`, `autoBalance`, `fieldLocks`,
  * `profitSplit`, `liquidityEV`, `progressionEV`, `goldPerMinute`,
  * `xpPerMinute`) also sit flat on a recipe. Nothing in `src/` reads them; they
- * belong to the CMS balance engine and to the economic simulator rework (R-6).
+ * belong to the CMS balance engine and to the economic simulator.
  *
- * ⚠️ **Never hand-edit `data/tokenRecipes.json` once the CMS is live** (CMS-53).
+ * ⚠️ **Never hand-edit `data/tokenRecipes.json`.** The CMS writes it wholesale.
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
@@ -107,7 +88,7 @@ function loadJsonRecipes() {
 /** @type {object[]} */
 const RECIPES = loadJsonRecipes();
 
-/** One recipe by its stable id, or null. This is what P2's `selectedRecipeId` resolves through. */
+/** One recipe by its stable id, or null. This is what a station's `selectedRecipeId` resolves through. */
 export function getRecipe(recipeId) {
     return RECIPES.find(r => r.id === recipeId) || null;
 }
@@ -137,8 +118,7 @@ function skillRecipes(skillId) {
 }
 
 /**
- * Whether a recipe builds on a Foundation (Token Lifecycle roadmap v1 §3.1,
- * DP-6): it carries a non-empty `foundationKinds`. Such a recipe belongs to the
+ * Whether a recipe builds on a Foundation: it carries a non-empty `foundationKinds`. Such a recipe belongs to the
  * Foundation pool only and never appears on an ordinary station.
  */
 export function buildsOnFoundation(recipe) {
@@ -146,10 +126,9 @@ export function buildsOnFoundation(recipe) {
 }
 
 /**
- * A Foundation's recipe pool (§3.1): the recipes of its `foundation.skill`
+ * A Foundation's recipe pool: the recipes of its `foundation.skill`
  * whose `foundationKinds` include its `foundation.kind`. A Token without a
- * `foundation` block has none. Building in place (the Foundation becoming the
- * output Token) is slice 6.1, not here.
+ * `foundation` block has none.
  */
 export function recipesForFoundation(def) {
     const { kind, skill } = def?.foundation || {};
@@ -164,7 +143,7 @@ export function listPooledSkillIds() {
 
 /**
  * The recipes a Token can actually attempt: its `Works as` skill's pool, or,
- * for a Token with a `foundation` block, its Foundation pool (§3.1). The
+ * for a Token with a `foundation` block, its Foundation pool. The
  * Foundation block wins: a Foundation's pool is the building recipes of its
  * skill, never that skill's ordinary ones.
  *
@@ -181,7 +160,7 @@ export function recipesForToken(def) {
  *
  * ⚠️ **The one reader of `requiresContext`.** The CMS writes a bare tag string
  * (`["anvil"]`) until the author picks a tier, and a reader that reached for
- * `.tag` / `.tag.split` on that crashed the whole game screen (slice 7.5a). A
+ * `.tag` / `.tag.split` on that crashed the whole game screen. A
  * bare string is read as that tag at tier 1 costing no charges; an entry with
  * no tag at all (null, `{}`, `""`) is dropped. Every engine and UI reader goes
  * through here rather than touching the raw list.

@@ -4,16 +4,10 @@
  * The numbers that decide how the playmat *looks*, in one place, adjustable
  * while the game runs.
  *
- * The terrain has a lot of small constants — how far a coastline wanders, how
- * spiky it is, how thickly trees grow — and every one of them was tuned by
- * editing a file, reloading, and squinting. That is a slow way to find a look,
- * and it means only whoever can edit the code can find it. This makes them
- * sliders instead.
- *
  * ## ⚠️ Why this is in `config/` and not `ui/dev/`
  *
- * `src/systems/` is React-agnostic and must not import out of the UI tree
- * (CR2-051), and `TerrainLattice` and `TerrainProps` are both systems. Config is
+ * `src/systems/` is React-agnostic and must not import out of the UI tree,
+ * and `TerrainLattice` and `TerrainProps` are both systems. Config is
  * the one place both they and the panel can reach. It follows the precedent set
  * by the art-set switch in `terrainRegistry`.
  *

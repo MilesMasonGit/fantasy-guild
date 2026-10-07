@@ -21,8 +21,8 @@ export function slugify(name, prefix = '') {
   const slug = name
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, '_') // replace non-alphanumeric chars with _
-    .replace(/^_+|_+$/g, '');   // trim leading/trailing underscores
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
   return prefix ? `${prefix}_${slug}` : slug;
 }
 

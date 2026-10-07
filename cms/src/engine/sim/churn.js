@@ -1,42 +1,7 @@
 /**
- * Economic simulator — the churn report (phase P6, plan §15.2).
- *
- * After every Recalculate: **what moved.** This is criterion 6 made visible —
- * "adding one Token must not silently re-price half the game" is only a
- * promise until something says out loud how much the last run changed.
- *
- * ## The stored shape (plan §16: "the last churn report" lives in the CMS store)
- *
- * ```js
- * {
- *   ranAt: 1756700000000,          // ms epoch, when the run finished
- *   valuesChanged: 4,              // items whose value differs from before the run
- *   itemsPriced: 33,               // items carrying a value after the run
- *   largestMovers: [               // at most 5, biggest relative move first
- *     { itemId: 'item_clay', from: 2, to: 5, delta: 3, factor: 2.5 },
- *   ],
- *   tuned: [                       // one entry per source the lever policy moved
- *     { entityId: 'token_oak_tree', name: 'Oak Tree', lever: 'cycle',
- *       diff: 'cycle 10s → 12s' },
- *   ],
- *   refusals: {
- *     total: 7,
- *     new: [{ key, code, entityId, itemId, message }],      // not in the last run
- *     cleared: [{ key, code, entityId, itemId, message }],  // in the last run, gone now
- *   },
- *   refusalKeys: ['orphan-item||item_water', …],  // input to the NEXT run's diff
- * }
- * ```
- *
- * `refusalKeys` is the only field that exists for the machine rather than the
- * reader: the next run diffs against it to say what is new and what cleared.
- * Keep it in whatever the report is stored in, or every run reports every
- * refusal as new.
- *
- * ⚠️ **The first run after a reload has nothing to diff against**, so every
- * refusal reads as new. That is honest rather than wrong — the report is a
- * statement about consecutive runs in one session, and the store that holds it
- * is not persisted.
+ * Economic simulator: the churn report. After every Recalculate it says what moved, so adding one Token cannot silently re-price half the game unnoticed. The report holds `ranAt`, `valuesChanged`, `itemsPriced`, `largestMovers` (at most five, biggest relative move first), `tuned`, `refusals` and `refusalKeys`.
+ * ⚠️ `refusalKeys` exists for the machine: the next run diffs against it to say what is new and what cleared, so keep it wherever the report is stored.
+ * ⚠️ A first run has nothing to diff against, so it reports a refusal total and claims nothing new.
  */
 
 import { isRefusal } from './refusals.js';
@@ -87,8 +52,6 @@ export function buildChurnReport(sim, { itemsBefore = {}, previous = null, ranAt
             from,
             to,
             delta: (to ?? 0) - (from ?? 0),
-            // An item that had no value before has no *factor* — it arrived,
-            // it did not move. Sorting treats that as the biggest news there is.
             factor: from && to ? to / from : null,
         });
     }

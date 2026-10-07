@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Download, Upload, SwatchBook, RefreshCw, Layers, FolderDown } from 'lucide-react';
 
-// --- Color Helpers ---
-
 function rgbToOklab(r, g, b) {
   const toLinear = (c) => c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
   const lR = toLinear(r / 255);
@@ -54,41 +52,36 @@ function getLuminance(hex) {
 export default function RecolorEditor() {
   const [imageSrc, setImageSrc] = useState(null);
   const [imageName, setImageName] = useState('recolored_item');
-  const [category, setCategory] = useState('items'); // items vs enemy
-  const [tolerance, setTolerance] = useState(10); // 0 to 50
+  const [category, setCategory] = useState('items');
+  const [tolerance, setTolerance] = useState(10);
 
-  // Pixels & Colors state
-  const [originalPixels, setOriginalPixels] = useState(null); // { width, height, data }
-  const [uniqueColors, setUniqueColors] = useState([]); // Array of Hex strings
-  const [colorMap, setColorMap] = useState({}); // originalHex -> snappedHex
-  const [simplifiedColors, setSimplifiedColors] = useState([]); // Unique colors after snapping
+  const [originalPixels, setOriginalPixels] = useState(null);
+  const [uniqueColors, setUniqueColors] = useState([]);
+  const [colorMap, setColorMap] = useState({});
+  const [simplifiedColors, setSimplifiedColors] = useState([]);
 
-  // Custom Palettes state (Material Library)
-  const [customPalettes, setCustomPalettes] = useState({}); // { name: [hex1, hex2...] }
-  const [activeParts, setActiveParts] = useState({}); // { partName: [hex1, hex2...] } (Local to image)
+  const [customPalettes, setCustomPalettes] = useState({});
+  const [activeParts, setActiveParts] = useState({});
   const [newPaletteName, setNewPaletteName] = useState('');
-  const [selectedColors, setSelectedColors] = useState(new Set()); // Selected simplified colors
+  const [selectedColors, setSelectedColors] = useState(new Set());
 
-  // Palette assignments maps simplifiedHex -> activePartName
   const [colorAssignments, setColorAssignments] = useState({});
 
-  // Materials Library
   const [materials, setMaterials] = useState({});
-  const [activeMaterialSwaps, setActiveMaterialSwaps] = useState({}); // { activePartName: targetMaterialName/targetPaletteName }
+  const [activeMaterialSwaps, setActiveMaterialSwaps] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmName, setDeleteConfirmName] = useState(null);
   const [saveConfirmName, setSaveConfirmName] = useState(null);
-  const [luminanceBias, setLuminanceBias] = useState(0); // -100 (darker) to 100 (lighter)
+  const [luminanceBias, setLuminanceBias] = useState(0);
   const [editingPaletteName, setEditingPaletteName] = useState(null);
-  const [paletteGroups, setPaletteGroups] = useState({}); // { [paletteName]: groupName }
+  const [paletteGroups, setPaletteGroups] = useState({});
   const [isCreatingGroupFor, setIsCreatingGroupFor] = useState(null);
   const [openComboboxPart, setOpenComboboxPart] = useState(null);
-  const [comboboxSearch, setComboboxSearch] = useState({}); // { [partName]: searchQuery }
-  const [viewportBg, setViewportBg] = useState('#171717'); // viewport background option
+  const [comboboxSearch, setComboboxSearch] = useState({});
+  const [viewportBg, setViewportBg] = useState('#171717');
 
-  // Color Pinning state
-  const [pinnedColors, setPinnedColors] = useState(new Set());  // hex strings immune to snapping
-  const [isPinMode, setIsPinMode] = useState(false);  // when true, swatch clicks pin/unpin
+  const [pinnedColors, setPinnedColors] = useState(new Set());
+  const [isPinMode, setIsPinMode] = useState(false);
 
   const canvasRef = useRef(null);
   const canvas32Ref = useRef(null);
@@ -111,7 +104,6 @@ export default function RecolorEditor() {
   const isSwatchesDraggingRef = useRef(false);
   const swatchDragModeRef = useRef(null);
 
-  // Global mouseup listener to reset dragging states
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       isDraggingRef.current = false;
@@ -125,7 +117,6 @@ export default function RecolorEditor() {
     };
   }, []);
 
-  // Redraw Original Canvas
   useEffect(() => {
     if (!originalPixels || !originalCanvasRef.current) return;
     const canvas = originalCanvasRef.current;
@@ -138,7 +129,6 @@ export default function RecolorEditor() {
     }
     ctx.putImageData(imgData, 0, 0);
 
-    // Save to offscreen original
     const offscreen = offscreenOriginalRef.current;
     offscreen.width = originalPixels.width;
     offscreen.height = originalPixels.height;
@@ -154,7 +144,6 @@ export default function RecolorEditor() {
     }
   }, [originalPixels]);
 
-  // Load materials & custom palettes on mount
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
@@ -230,7 +219,6 @@ export default function RecolorEditor() {
     }
   };
 
-  // Handle Drag & Drop
   const handleDragOver = (e) => {
     e.preventDefault();
   };
@@ -255,7 +243,6 @@ export default function RecolorEditor() {
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        // Create canvas to read pixel data
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = img.width;
         tempCanvas.height = img.height;
@@ -263,7 +250,6 @@ export default function RecolorEditor() {
         ctx.drawImage(img, 0, 0);
         const imgData = ctx.getImageData(0, 0, img.width, img.height);
 
-        // Extract unique colors
         const colors = new Set();
         for (let i = 0; i < imgData.data.length; i += 4) {
           const r = imgData.data[i];
@@ -271,7 +257,7 @@ export default function RecolorEditor() {
           const b = imgData.data[i + 2];
           const a = imgData.data[i + 3];
 
-          if (a > 128) { // Only keep opaque pixels
+          if (a > 128) {
             colors.add(rgbToHex(r, g, b));
           }
         }
@@ -306,7 +292,6 @@ export default function RecolorEditor() {
     reader.readAsDataURL(file);
   };
 
-  // Perform Tolerance Snapping with Pinned Color support
   useEffect(() => {
     if (uniqueColors.length === 0) return;
 
@@ -326,9 +311,8 @@ export default function RecolorEditor() {
       }
     }
 
-    // Cluster remaining (non-pinned) colors
     for (const item of labs) {
-      if (pinnedColors.has(item.hex)) continue; // already a centroid
+      if (pinnedColors.has(item.hex)) continue;
 
       let matchedCentroid = null;
       let minDistance = Infinity;
@@ -353,7 +337,6 @@ export default function RecolorEditor() {
     setSimplifiedColors(centroids.map(c => c.hex));
   }, [uniqueColors, tolerance, pinnedColors]);
 
-  // Redraw / Render Canvas with Snapping & Palette Swapping
   useEffect(() => {
     if (!originalPixels || !imageSrc || !canvasRef.current) return;
 
@@ -380,14 +363,11 @@ export default function RecolorEditor() {
       const originalHex = rgbToHex(r, g, b);
       let hex = colorMap[originalHex] || originalHex;
 
-      // Check if this snapped color belongs to an assigned palette that is swapped
       const assignedPalette = colorAssignments[hex];
       if (assignedPalette && activeMaterialSwaps[assignedPalette]) {
         const swapTarget = activeMaterialSwaps[assignedPalette];
 
-        // Source palette colors (from active image parts)
         const sourcePaletteColors = activeParts[assignedPalette] || [];
-        // Target colors (either material library ramp or custom library palette)
         let targetColors = [];
         if (materials[swapTarget]) {
           targetColors = materials[swapTarget];
@@ -396,17 +376,13 @@ export default function RecolorEditor() {
         }
 
         if (sourcePaletteColors.length > 0 && targetColors.length > 0) {
-          // Sort both by luminance
           const sortedSource = [...sourcePaletteColors].sort((a, b) => getLuminance(a) - getLuminance(b));
           const sortedTarget = [...targetColors].sort((a, b) => getLuminance(a) - getLuminance(b));
 
-          // Find the rank of the current color in the source palette
           const srcIndex = sortedSource.indexOf(hex);
           if (srcIndex !== -1) {
-            // Map index using ratio (automated stretch/squeeze)
             const ratio = srcIndex / (sortedSource.length - 1 || 1);
 
-            // Apply exponential luminance bias curve
             const exponent = Math.pow(3, -luminanceBias / 100);
             const biasedRatio = Math.pow(ratio, exponent);
 
@@ -420,12 +396,11 @@ export default function RecolorEditor() {
       newImgData.data[i] = finalRgb.r;
       newImgData.data[i + 1] = finalRgb.g;
       newImgData.data[i + 2] = finalRgb.b;
-      newImgData.data[i + 3] = 255; // Force solid alpha for non-background pixels
+      newImgData.data[i + 3] = 255;
     }
 
     ctx.putImageData(newImgData, 0, 0);
 
-    // Save to offscreen modified
     const offscreen = offscreenModifiedRef.current;
     offscreen.width = originalPixels.width;
     offscreen.height = originalPixels.height;
@@ -441,14 +416,12 @@ export default function RecolorEditor() {
     }
   }, [originalPixels, colorMap, colorAssignments, activeMaterialSwaps, customPalettes, activeParts, luminanceBias]);
 
-  // Handle canvas pinning in Pin Mode
   const handleCanvasPin = (clientX, clientY) => {
     if (!canvasRef.current || !originalPixels) return;
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
 
-    // Scale coordinate to canvas logical resolution
     const x = Math.floor(((clientX - rect.left) / rect.width) * canvas.width);
     const y = Math.floor(((clientY - rect.top) / rect.height) * canvas.height);
 
@@ -474,14 +447,12 @@ export default function RecolorEditor() {
     }
   };
 
-  // Handle drag selection on canvas
   const handleCanvasSelection = (clientX, clientY, mode) => {
     if (!canvasRef.current || !originalPixels) return;
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
 
-    // Scale coordinate to canvas logical resolution
     const x = Math.floor(((clientX - rect.left) / rect.width) * canvas.width);
     const y = Math.floor(((clientY - rect.top) / rect.height) * canvas.height);
 
@@ -562,7 +533,6 @@ export default function RecolorEditor() {
     ctx.drawImage(offscreenTarget, 0, 0);
   };
 
-  // Swatch Drag Selectors
   const handleSwatchMouseDown = (hex) => {
     isSwatchesDraggingRef.current = true;
     const isSelected = selectedColors.has(hex);
@@ -593,7 +563,6 @@ export default function RecolorEditor() {
     });
   };
 
-  // Create Active Part from Selection (Local)
   const createPalette = () => {
     if (!newPaletteName.trim() || selectedColors.size === 0) return;
 
@@ -605,7 +574,6 @@ export default function RecolorEditor() {
       [partName]: colorsList
     }));
 
-    // Assign colors to the active part
     setColorAssignments(prev => {
       const updated = { ...prev };
       for (const hex of colorsList) {
@@ -618,7 +586,6 @@ export default function RecolorEditor() {
     setNewPaletteName('');
   };
 
-  // Remove Active Part
   const deletePalette = (name) => {
     setActiveParts(prev => {
       const updated = { ...prev };
@@ -643,16 +610,13 @@ export default function RecolorEditor() {
     });
   };
 
-  // Save an Active Part's colors to the persistent Material Library
   const savePartToLibrary = (partName) => {
     const colors = activeParts[partName];
     if (!colors || colors.length === 0) return;
 
     if (customPalettes[partName]) {
-      // Collision! Set state to trigger inline confirmation warning
       setSaveConfirmName(partName);
     } else {
-      // No collision, save directly
       const nextPalettes = {
         ...customPalettes,
         [partName]: colors
@@ -662,7 +626,6 @@ export default function RecolorEditor() {
     }
   };
 
-  // Merge active part's colors into an existing library palette
   const mergePartToLibrary = (partName) => {
     const colors = activeParts[partName];
     console.log("mergePartToLibrary: Active part colors:", colors);
@@ -680,7 +643,6 @@ export default function RecolorEditor() {
     setSaveConfirmName(null);
   };
 
-  // Delete a palette from the persistent Material Library
   const deleteLibraryPalette = (name) => {
     console.log("deleteLibraryPalette called for:", name);
     if (!window.confirm(`Are you sure you want to delete "${name}" from your Material Library?`)) {
@@ -694,14 +656,12 @@ export default function RecolorEditor() {
     savePalettes(nextPalettes);
   };
 
-  // Add library palette to active sprite parts
   const addLibraryPaletteToActive = (name, colors) => {
     setActiveParts(prev => ({
       ...prev,
       [name]: colors
     }));
 
-    // Auto-assign any matching colors on the currently loaded sprite to this active part
     setColorAssignments(prev => {
       const updated = { ...prev };
       for (const hex of colors) {
@@ -713,12 +673,10 @@ export default function RecolorEditor() {
     });
   };
 
-  // Load a library palette into the workspace to inspect and edit its colors
   const startEditingPalette = (name, colors) => {
     setEditingPaletteName(name);
     setImageName(`palette_${name}`);
 
-    // Create a dummy pixel buffer representing the colors as vertical stripes
     const blockWidth = 16;
     const blockHeight = 16;
     const width = colors.length * blockWidth;
@@ -737,8 +695,7 @@ export default function RecolorEditor() {
       }
     }
 
-    // Load states so workspace processes this palette
-    setImageSrc(true); // set truthy value so it renders viewport
+    setImageSrc(true);
     setOriginalPixels({
       width,
       height,
@@ -771,7 +728,6 @@ export default function RecolorEditor() {
     setUniqueColors([]);
   };
 
-  // Download directly in browser
   const downloadAsset = () => {
     if (!canvasRef.current) return;
     const link = document.createElement('a');
@@ -782,7 +738,6 @@ export default function RecolorEditor() {
     document.body.removeChild(link);
   };
 
-  // Save the final asset to backend
   const exportAsset = async () => {
     if (!canvasRef.current) return;
     const base64Image = canvasRef.current.toDataURL('image/png');
@@ -793,7 +748,7 @@ export default function RecolorEditor() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           filename: imageName,
-          category, // 'items' or 'enemy'
+          category,
           base64Image
         })
       });
@@ -812,7 +767,6 @@ export default function RecolorEditor() {
     }
   };
 
-  // Category folders list
   const categoryOptions = [
     { value: 'items', label: 'Items (32px)' },
     { value: 'enemy', label: 'Enemies (64px)' },
@@ -821,7 +775,6 @@ export default function RecolorEditor() {
 
   const displaySize = category === 'enemy' ? 64 : 32;
 
-  // Group the palettes and sort by group name, then palette name alphabetically
   const sortedPaletteEntries = Object.entries(customPalettes)
     .filter(([name]) => name.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort(([nameA], [nameB]) => {
@@ -837,7 +790,6 @@ export default function RecolorEditor() {
       return nameA.localeCompare(nameB);
     });
 
-  // Group sorted list
   const groupedPalettes = {};
   sortedPaletteEntries.forEach(([name, colors]) => {
     const grp = paletteGroups[name] || '(No Group)';
@@ -847,18 +799,15 @@ export default function RecolorEditor() {
     groupedPalettes[grp].push([name, colors]);
   });
 
-  // Extract all unique group names (sorted alphabetically, excluding default)
   const uniqueGroups = Array.from(new Set(Object.values(paletteGroups)))
     .filter(g => g && g !== '(No Group)')
     .sort((a, b) => a.localeCompare(b));
 
   return (
     <div className="flex h-[calc(100vh-84px)] gap-4 overflow-hidden text-sm" style={{ color: 'var(--color-text-primary)' }}>
-      {/* Left / Main Workspace */}
       <div className="flex-1 flex flex-col items-center justify-between p-4 rounded-xl border"
         style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}>
 
-        {/* Top: Image Drag and Drop Area */}
         {!imageSrc ? (
           <div
             onDragOver={handleDragOver}
@@ -988,7 +937,6 @@ export default function RecolorEditor() {
           </div>
         )}
 
-        {/* Bottom controls: Sliders and metadata */}
         {imageSrc && (
           <div className="w-full border-t pt-4 flex flex-col gap-3" style={{ borderColor: 'var(--color-border-subtle)' }}>
             <div className="flex flex-col gap-2.5">
@@ -1029,7 +977,6 @@ export default function RecolorEditor() {
               </div>
             </div>
 
-            {/* Export / Palette Edit Bar */}
             {editingPaletteName ? (
               <div className="flex items-center justify-between gap-3 pt-2 border border-amber-500/30 bg-amber-500/10 p-3 rounded-lg w-full">
                 <div className="flex flex-col gap-0.5">
@@ -1096,11 +1043,9 @@ export default function RecolorEditor() {
         )}
       </div>
 
-      {/* Right Sidebar: Palettes & Ramps */}
       <div className="w-80 flex flex-col gap-4 overflow-y-auto p-4 rounded-xl border h-full"
         style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}>
 
-        {/* Create Palette section */}
         {imageSrc && (
           <div className="flex flex-col gap-2">
             <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
@@ -1129,7 +1074,6 @@ export default function RecolorEditor() {
           </div>
         )}
 
-        {/* Active Sprite Parts List */}
         <div>
           <h3 className="text-xs font-extrabold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
             Active Sprite Parts
@@ -1201,7 +1145,6 @@ export default function RecolorEditor() {
                       </button>
                     </div>
                   </div>
-                  {/* Swatches */}
                   <div className="flex flex-wrap gap-1">
                     {colors.map(c => (
                       <div
@@ -1212,7 +1155,6 @@ export default function RecolorEditor() {
                       />
                     ))}
                   </div>
-                  {/* Swap Select */}
                   {(() => {
                     const sQuery = comboboxSearch[name] !== undefined ? comboboxSearch[name] : (activeMaterialSwaps[name] || '');
                     const filteredSwaps = Object.keys(customPalettes)
@@ -1314,7 +1256,6 @@ export default function RecolorEditor() {
           )}
         </div>
 
-        {/* Swatch Inspector list */}
         {imageSrc && (
           <div className="flex-1 flex flex-col min-h-0 border-t pt-3" style={{ borderColor: 'var(--color-border-subtle)' }}>
             <div className="flex items-center justify-between mb-2">
@@ -1345,7 +1286,6 @@ export default function RecolorEditor() {
             </div>
             <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-1">
 
-              {/* Grouped Colors */}
               {Object.keys(activeParts).map(palName => {
                 const colors = activeParts[palName];
                 return (
@@ -1386,7 +1326,6 @@ export default function RecolorEditor() {
                 );
               })}
 
-              {/* Ungrouped Colors */}
               <div className="flex flex-col gap-1.5">
                 <div className="text-xs font-bold text-yellow-500 flex items-center gap-1.5">
                   <Layers size={12} /> Ungrouped Colors
@@ -1433,11 +1372,9 @@ export default function RecolorEditor() {
         )}
       </div>
 
-      {/* Right Sidebar 2: Persistent Material Library */}
       <div className="w-80 flex flex-col gap-4 overflow-y-auto p-4 rounded-xl border h-full"
         style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}>
 
-        {/* Material Library Section */}
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between mb-4 border-b pb-2" style={{ borderColor: 'var(--color-border-subtle)' }}>
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground" style={{ color: 'var(--color-text-muted)' }}>
@@ -1534,7 +1471,6 @@ export default function RecolorEditor() {
                           ))}
                         </div>
 
-                        {/* Group Selection */}
                         {isCreatingGroupFor === name ? (
                           <div className="flex items-center gap-1.5 mt-1" onClick={(e) => e.stopPropagation()}>
                             <input

@@ -11,19 +11,13 @@ import { FlagMark } from '../components/board/FlagMark.jsx';
 import { flagColourOf } from '../../systems/board/FlagColours.js';
 
 /**
- * DragGhost — the floating representation of whatever is being dragged.
- *
+ * DragGhost: the floating representation of whatever is being dragged.
  * `bold` is true while the cursor is over the board, false over a drawer.
- *
- * ## Bloom is retired for Tokens & Heroes
- * Carried Tokens and Heroes no longer change size at all or show card frames.
- * They are 128px from pick-up to release, and being held is expressed by the
- * shadow instead — the hard pixel shadow of `PixelArt`'s lifted state (Wave 5).
- * `bold` is therefore ignored by `TokenGhost` and `HeroGhost`.
- *
- * `ItemGhost` never used the bold/compact card-frame split either — it has
- * always drawn a single 64px icon (CR3-407 deleted the dead `GhostCardFrame`/
- * banner-tier chain `ItemGhost` never called).
+ * Bloom is retired for Tokens and Heroes: carried Tokens and Heroes never change size or show
+ * card frames. They are 128px from pick-up to release, and being held is expressed by the
+ * shadow instead, the hard pixel shadow of `PixelArt`'s lifted state. `bold` is therefore
+ * ignored by `TokenGhost` and `HeroGhost`.
+ * `ItemGhost` always draws a single 64px icon.
  */
 
 function liveBoardFit() {
@@ -78,9 +72,8 @@ export const DragGhost = ({ payload, bold }) => {
 };
 
 /**
- * A flag in flight (Free Playmat slice 1.5b-ii) — the hero's own flag sprite at
- * 128 px, lifted, with no hero drawn: a flag drag moves only the flag, and so
- * does dragging a hero on the board (FP-76).
+ * A flag in flight: the hero's own flag sprite at 128 px, lifted, with no hero drawn. A flag
+ * drag moves only the flag, and so does dragging a hero on the board.
  */
 export const FlagGhost = ({ payload }) => {
     const artScale = boardArtSteps(liveBoardFit());
@@ -93,29 +86,22 @@ export const FlagGhost = ({ payload }) => {
 };
 
 /**
- * A Token in flight — one size, no frame, all the way (D-219, D-220).
- *
- * It is drawn at exactly the size it will be once placed, so what you are
- * carrying is already the size of the hole it is going into. That used to be
- * true only over the board; now it is true over the Tray as well, which is what
- * lets the size stay constant.
- *
- * `lifted` is what says "this is in your hand": a hard black silhouette 2 art
- * pixels down-right (the only Tokens with a shadow at all, owner ruling Z §11)
- * and a few pixels of upward offset — a real object picked up off a table.
- * A "slight" scale-up was considered and is impossible: from a 64px source there
- * is nothing between 128 and 192, and anything between them lands off the pixel
- * grid (D-220).
+ * A Token in flight: one size, no frame, all the way.
+ * It is drawn at exactly the size it will be once placed, so what you are carrying is already
+ * the size of the hole it is going into.
+ * `lifted` is what says 'this is in your hand': a hard black silhouette 2 art pixels
+ * down-right (the only Tokens with a shadow at all) and a few pixels of upward offset, like a
+ * real object picked up off a table. A 'slight' scale-up is impossible: from a 64px source
+ * there is nothing between 128 and 192, and anything between them lands off the pixel grid.
  */
 const TokenGhost = ({ payload }) => {
     const artScale = boardArtSteps(liveBoardFit());
     const size = tokenSizeFor(TOKEN_SURFACE.CARRY, payload.typeId, artScale);
     return (
-        // ⚠️ The explicit box is load-bearing, not tidiness. dnd-kit sizes its
-        // DragOverlay to the node the drag STARTED from — a 74px Tray slot, a
-        // 128px tile — so without a box of its own the ghost inherits whatever
-        // that was and the carried Token changes size depending on where it was
-        // picked up. Which is bloom, reintroduced by accident (D-220).
+        // ⚠️ The explicit box is load-bearing, not tidiness. dnd-kit sizes its DragOverlay to
+        // the node the drag STARTED from (a 128px tile, a drawer slot), so without a box of
+        // its own the ghost inherits whatever that was and the carried Token changes size
+        // depending on where it was picked up. Which is bloom, reintroduced by accident.
         <div className="flex items-center justify-center" style={{ width: size, height: size }}>
             <TokenSprite typeId={payload.typeId} surface={TOKEN_SURFACE.CARRY} scale={artScale} lifted />
         </div>
@@ -123,7 +109,7 @@ const TokenGhost = ({ payload }) => {
 };
 
 /**
- * A Hero in flight — one size (128px), no card frame, sprite-only (same style as Tokens).
+ * A Hero in flight: one size (128px), no card frame, sprite-only (same style as Tokens).
  */
 const HeroGhost = ({ payload }) => {
     const artScale = boardArtSteps(liveBoardFit());

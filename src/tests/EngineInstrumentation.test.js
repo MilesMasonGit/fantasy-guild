@@ -3,23 +3,7 @@ import { GameLoop } from '../systems/core/GameLoop.js';
 import { EventBus } from '../systems/core/EventBus.js';
 
 /**
- * The bench and the Perf HUD watch the engine from outside (CR3-566).
- *
- * Neither tool edits engine code. `bench/lib/harness.mjs` and
- * `src/ui/dev/perf/perfHarness.js` time and count the engine by **replacing
- * methods on the two singletons** and by wrapping each tick handler's function:
- *
- * - `GameLoop.runHandlers` — reassigned on the instance (the HUD), and called
- *   by `tick()` through `this`, so the replacement sees every real tick;
- * - `GameLoop.tickHandlers` — an array of `{ name, handler }` objects whose
- *   `handler` the bench swaps for a timed wrapper;
- * - `EventBus.publish` — reassigned on the instance (both tools);
- * - `EventBus.subscribers` — a `Map` of event name → listeners (the bench
- *   reads `.get(name).size` to count listener calls).
- *
- * A rewrite to private fields (`#subscribers`), a frozen instance, or a
- * `tick()` that stopped going through `this.runHandlers` would blind both tools
- * without a single error. This file is that contract, pinned.
+ * The bench and the Perf HUD watch the engine from outside.
  */
 describe('the engine stays observable from outside (CR3-566)', () => {
     const ownPublish = Object.prototype.hasOwnProperty.call(EventBus, 'publish');

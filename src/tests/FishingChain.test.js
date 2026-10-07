@@ -7,13 +7,6 @@ import { SKILLS } from '../config/registries/skillRegistry.js';
 /**
  * Token Lifecycle slice 7.3 — the Fishing chain, pinned from the SHIPPED data
  * (authored through the CMS, never by hand).
- *
- * Coast (sold at the Shop) → once a minute a 30% chance to turn into a Shrimp
- * Coast → a hero fishes Raw Shrimp from it → once a minute a 30% chance to turn
- * back into a Coast (a cycle in progress is lost, SP-51) → and again (TL-12).
- * No spawns, so no cap and no upkeep. No fishing net (TL-2).
- *
- * The numbers are placeholders (TL-5); this pins the shape of the chain.
  */
 
 const DATA = path.resolve(__dirname, '../../data');

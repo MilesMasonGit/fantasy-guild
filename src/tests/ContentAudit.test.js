@@ -4,19 +4,13 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
 /**
- * The content-integrity audit (CR2-108).
+ * The content-integrity audit.
  *
  * ⚠️ **These tests deliberately do NOT assert that the content set is clean.**
  * It is not — the audit currently reports around fifty dangling references, and
  * that is the expected state of half-authored content. The owner's ruling is
  * warn-only: the audit exists to make the breakage visible, not to fail a
  * build over it.
- *
- * So what is worth locking down is the *mechanism*: that a broken reference is
- * caught, that an absent one is not mistaken for a broken one, and above all
- * that the audit can never throw. An audit that crashes the boot it is
- * auditing would be worse than no audit at all, and it runs inside
- * `EngineBootstrap.init()` where an exception would take the whole game down.
  *
  * ## ⚠️ Why the malformed entries below are FIXTURES
  * This suite used to assert that `data/items.json` contained an entry whose id
@@ -26,18 +20,14 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
  * when content is *repaired* is worse than no test: it teaches you to distrust
  * the suite, and it is the exact coupling `fixtures/testTokens.js` exists to
  * prevent (engine suites test machinery; `ContentRules.test.js` tests content).
- *
- * So the malformed things are registered here, on purpose, and the assertions
- * are about the audit noticing them. Vitest isolates module registries per test
- * file, so nothing here is visible to any other suite or to the game.
  */
 describe('The content-integrity audit', () => {
     afterEach(() => vi.restoreAllMocks());
 
     beforeAll(() => {
         registerItems({
-            // The CR2-184 shape: an entry saved half-finished. A blank name is
-            // the tell, and it reads as a real item everywhere it is referenced.
+            // A blank name is the tell, and it reads as a real item everywhere
+            // it is referenced.
             fixture_audit_nameless: { id: 'fixture_audit_nameless', name: '', sprite: 'ore_copper' },
             fixture_audit_ok: { id: 'fixture_audit_ok', name: 'Audit Fixture', sprite: 'ore_copper' }
         });
@@ -108,8 +98,8 @@ describe('The content-integrity audit', () => {
     });
 
     it('catches a production output that names neither an item nor a currency', () => {
-        // An output pays in an item OR in currency (D-141). A row with neither
-        // reads as a real payout in the CMS and produces nothing in game.
+        // An output pays in an item OR in currency. A row with neither reads
+        // as a real payout in the CMS and produces nothing in game.
         const findings = auditContent();
         const hit = findings.find(f => f.where === 'Token "fixture_audit_blank_output"');
         expect(hit).toBeTruthy();

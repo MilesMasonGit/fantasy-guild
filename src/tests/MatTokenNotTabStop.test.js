@@ -25,11 +25,10 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ CR3-411 — owner ruling (R7-Q2 = A): take mat Tokens out of the keyboard
- * Tab order and drop the "press space to drag" screen-reader text, since no
- * keyboard sensor is registered (`DeckDndProvider` wires only
- * `AlphaPointerSensor`) and that instruction describes a drag that cannot
- * happen.
+ * ⭐ owner ruling (R7-Q2 = A): take mat Tokens out of the keyboard Tab order
+ * and drop the "press space to drag" screen-reader text, since no keyboard
+ * sensor is registered (`DeckDndProvider` wires only `AlphaPointerSensor`)
+ * and that instruction describes a drag that cannot happen.
  */
 
 const h = React.createElement;

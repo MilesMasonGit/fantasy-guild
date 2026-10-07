@@ -20,25 +20,15 @@ import { GEAR_ONLY_ALERTS, workedAlertOf } from '../ui/components/board/centreAl
 
 /**
  * These tests exist because this feature was written once and never shown.
- *
- * `ALERT_HINT` sat in the tree for weeks as a complete, correct, entirely
- * unread table (CR2-156), while three of the six alert values drew nothing at
- * all on the Token (CR2-155). Both faults were invisible to the suite, because
- * nothing asserted that a blocked Token says anything. So: every alert value
- * the engine can set is pinned here to the sentence the player is shown for it.
- *
- * ⭐ Since B1.1 (TL-14, TL-22) a worked Token's problem is the red or yellow
- * mark at its centre, not a label on the progress bar, and hovering the Token
- * opens the mark's bubble with the hint sentence and the missing requirements.
  */
 
-/** Every alert value that can reach a Token (one enum since CR2-060). */
+/** Every alert value that can reach a Token (one enum). */
 const ALERT_VALUES = Object.values(ALERT);
 
 /**
  * The worked-Token alerts: every value except "nothing chosen", which the
- * pulsing recipe gear says instead (Token Lifecycle feedback Q2, FB-7). Those
- * two are pinned below to draw nothing.
+ * pulsing recipe gear says instead (Token Lifecycle feedback Q2). Those two
+ * are pinned below to draw nothing.
  */
 const MARK_ALERTS = ALERT_VALUES.filter(a => !GEAR_ONLY_ALERTS.has(a));
 
@@ -83,7 +73,7 @@ describe('Token alert hints (D-114)', () => {
             .toBe('This hero doesn’t have the skill for this work — levelling won’t help');
         expect(ALERT_HINT[ALERT.NO_RECIPE])
             .toBe('This station is missing a Token its recipe needs beside it');
-        // `unstocked` went with the Managers (SP-55, 9.2).
+        // `unstocked` went with the Managers.
         expect(ALERT_HINT.unstocked).toBeUndefined();
     });
 
@@ -97,7 +87,7 @@ describe('Token alert hints (D-114)', () => {
 
     it.each(MARK_ALERTS)('draws a centre mark in the right colour for "%s"', (alert) => {
         const { container } = renderMark(alert, { isHovered: false });
-        // CR2-155: access, unskilled and unstocked once drew nothing at all.
+        // access, unskilled and unstocked once drew nothing at all.
         const wrap = container.querySelector(`[data-worked-alert="${alert}"]`);
         expect(wrap, `"${alert}" drew no centre mark`).toBeTruthy();
         const mark = wrap.querySelector('[data-alert-kind="problem"]');

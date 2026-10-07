@@ -1,4 +1,4 @@
-// Fantasy Guild — heroes walk the mat (Hero Movement slice M1)
+// heroes walk the mat
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -9,68 +9,50 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.js';
 
 /**
- * ⭐ **Heroes live on the mat** (`docs/archive/hero_movement_roadmap_v1.md`). `Flags.js`
- * decides what a hero works; this file decides **where the hero is**, and walks
- * them there.
+ * Heroes live on the mat. `Flags.js` decides what a hero works; this file decides where the hero
+ * is, and walks them there.
  *
- * ## Where a hero is heading
- * * holding a claim → **beside that Token**, on the side they approached from
- *   (HM-2), facing it; the Token itself never moves to make room;
- * * otherwise → **beside their flag** (`idleSpot`, FP-29, FP-84), where they
- *   **potter** (slice M4, HM-1): a pause of a few seconds, a short stroll to a
- *   random spot close by, another pause. Strolls are measured from the flag's
- *   idle spot, so they stay within easy sight of it and move with it.
+ * Where a hero is heading: holding a claim, beside that Token on the side they approached from,
+ * facing it (the Token itself never moves to make room); otherwise beside their flag (`idleSpot`),
+ * where they potter: a pause of a few seconds, a short stroll to a random spot close by, another
+ * pause. Strolls are measured from the flag's idle spot, so they stay within easy sight of it and
+ * move with it. The destination is worked out afresh every tick, so a hero follows a Token that is
+ * moved or pushed while they walk.
  *
- * The destination is worked out afresh every tick, so a hero follows a Token
- * that is moved or pushed while they walk (HMP-3).
+ * Walking costs work time: a hero claims a Token when they set off (so no two heroes race for it),
+ * but counts as working it only once they arrive. `BoardState`'s seam (`workerOf`, `workTokenOf`)
+ * answers null until then, so the Token's cycle does not run. Arriving publishes one `HERO_MOVED`,
+ * which switches on anything that cares who works a Token (buffs, statuses).
  *
- * ## ⭐ Walking costs work time (FP-26)
- * A hero claims a Token when they set off (HMP-2, so no two heroes race for
- * it), but counts as **working** it only once they arrive: `BoardState`'s seam
- * (`workerOf`, `workTokenOf`) answers null until then, so the Token's cycle does
- * not run. Arriving publishes one `HERO_MOVED`, which switches on anything that
- * cares who works a Token (buffs, statuses).
+ * Straight lines, over Tokens: no pathfinding. The screen draws a walking hero above the Tokens.
  *
- * ## Straight lines, over Tokens (HM-3)
- * No pathfinding. The screen draws a walking hero above the Tokens.
- *
- * ## ⚠️ Steps are not `HERO_MOVED`
- * `HERO_MOVED` rebuilds neighbourhoods. A step publishes only
+ * ⚠️ Steps are not `HERO_MOVED`, which rebuilds neighbourhoods. A step publishes only
  * `HEROES_WALKED`, once per tick, for the screen.
  *
- * ## Coming and going through the Guild Hall (slice M3)
- * * A hero sent out **appears at the Guild Hall** and walks to their first job,
- *   or beside their flag if there is none (HMP-1).
- * * **Recall** (HM-5): the flag is gone at once and the hero is in the Dock at
- *   once, but their figure walks back into the Hall and disappears there
- *   (`sendHome`). Sent out again on the way, they simply turn around.
- * * **Defeat** (HM-6): the same walk home, but a **limp** at half speed.
- * * With no Guild Hall on the mat (a hand-built test board) they appear beside
- *   the flag and vanish on recall, as before.
+ * Coming and going through the Guild Hall: a hero sent out appears at the Guild Hall and walks to
+ * their first job, or beside their flag if there is none. Recall: the flag is gone at once and the
+ * hero is in the Dock at once, but their figure walks back into the Hall and disappears there
+ * (`sendHome`); sent out again on the way, they simply turn around. Defeat: the same walk home, but
+ * a limp at half speed. With no Guild Hall on the mat (a hand-built test board) they appear beside
+ * the flag and vanish on recall.
  *
- * ## Offline catch-up
- * One very long tick (the game was asleep) covers the whole walk in one step:
- * the hero simply arrives, rather than walking in fast-forward.
+ * Offline catch-up: one very long tick covers the whole walk in one step: the hero simply arrives,
+ * rather than walking in fast-forward.
  */
 
 /** Gap between a Token's art edge and the centre of the hero working it, in mat units. */
 export const STAND_GAP = 16;
 
 /**
- * Where an idle hero stands relative to their flag's pole base, in mat units:
- * just right of the pole and up by half a hero, so they stand in front of the
- * cloth rather than on the pole (FP-29, FP-84). The same place `FlagLayer` drew
- * idle heroes before M2 — the retired `IDLE_HERO_OFFSET` (48, −20) from the
- * 128 px flag box whose pole base is (40, 116), to the centre of a 128 px hero:
- * 48 − 40 + 64 = 72 across, −20 − 116 + 64 = −72 up — so the look is unchanged,
- * but it is now a real destination the hero walks to instead of jumping there.
+ * Where an idle hero stands relative to their flag's pole base, in mat units: just right of the
+ * pole and up by half a hero, so they stand in front of the cloth rather than on the pole.
  */
 export const IDLE_SPOT = Object.freeze({ dx: 72, dy: -72 });
 
 /**
- * The point an idle hero stands at beside `flag`. A **pinned** flag (B5,
- * FB-45) stands on its Token's centre, so its idle hero waits where they would
- * work it — beside the Token, on the right — rather than on top of it.
+ * The point an idle hero stands at beside `flag`. A pinned flag stands on its Token's centre, so
+ * its idle hero waits where they would work it (beside the Token, on the right) rather than on top
+ * of it.
  */
 export function idleSpot(flag) {
     const pinned = typeof flag?.pinnedTo === 'string' ? BoardState.getTokenById(flag.pinnedTo) : null;
@@ -78,21 +60,24 @@ export function idleSpot(flag) {
     return { x: flag.x + IDLE_SPOT.dx, y: flag.y + IDLE_SPOT.dy };
 }
 
-/** Walking speed in mat units a second (Mat Tuner "Walk speed", HMP-4). */
+/** Walking speed in mat units a second (Mat Tuner Walk speed). */
 export function walkSpeed() {
     return matTuning('walkSpeed');
 }
 
-/** A defeated hero limps home at this fraction of walking speed (HM-6, HMP-4). */
+/** A defeated hero limps home at this fraction of walking speed. */
 export const LIMP_FACTOR = 0.5;
 
-/** An idle hero strolls at this fraction of walking speed (HM-1). */
+/** An idle hero strolls at this fraction of walking speed. */
 export const STROLL_FACTOR = 0.5;
 
-/** An idle hero pauses between strolls for this long, in game ms (HM-1). */
+/** An idle hero pauses between strolls for this long, in game ms. */
 export const POTTER_PAUSE_MS = Object.freeze({ min: 2000, max: 6000 });
 
-/** How far from the idle spot a hero may stroll, in mat units (Mat Tuner "Idle wander"; 0 = stand still). */
+/**
+ * How far from the idle spot a hero may stroll, in mat units (Mat Tuner Idle wander; 0 = stand
+ * still).
+ */
 export function potterRadius() {
     return matTuning('potterRadius');
 }
@@ -135,7 +120,7 @@ export function isReturning(heroId) {
     return !!BoardState.heroBodyOf(heroId)?.homeward;
 }
 
-/** Whether a hero walking home is limping (defeated, HM-6). */
+/** Whether a hero walking home is limping (defeated). */
 export function isLimping(heroId) {
     return !!BoardState.heroBodyOf(heroId)?.limp;
 }
@@ -145,7 +130,7 @@ export function isWalking(heroId) {
     return !!BoardState.heroBodyOf(heroId)?.moving;
 }
 
-/** Whether an idle hero is out on a stroll near their flag (HM-1) — still idle. */
+/** Whether an idle hero is out on a stroll near their flag: still idle. */
 export function isPottering(heroId) {
     return !!BoardState.heroBodyOf(heroId)?.potter;
 }
@@ -186,7 +171,7 @@ export function standingSpot(typeId, centre, side) {
     return { x, y: centre.y };
 }
 
-/** The side a hero coming from `body` arrives on: the side they are already on (HM-2). */
+/** The side a hero coming from `body` arrives on: the side they are already on. */
 function sideFor(body, centre) {
     return body.x > centre.x ? 1 : -1;
 }
@@ -215,7 +200,7 @@ function destinationOf(heroId, body) {
         return standingSpot(claim.typeId, centre, body.side);
     }
 
-    // Idle: beside the flag, or out on a stroll near it (HM-1).
+    // Idle: beside the flag, or out on a stroll near it.
     if (body.targetId) stopPottering(body);      // just came off work
     body.targetId = null;
     body.atWork = null;
@@ -243,10 +228,10 @@ function step(heroId, body, delta) {
 
     const speed = walkSpeed() * (body.limp ? LIMP_FACTOR : body.potter ? STROLL_FACTOR : 1);
     const reach = BoardState.isInstantArrival() ? Infinity : speed * Math.max(0, delta) / 1000;
-    // The step itself is shared with enemies (B7.1, `walking.js`).
+    // The step itself is shared with enemies (`walking.js`).
     const moved = stepToward(body, dest, reach);
 
-    // Home: in through the Hall, and gone (HM-5, HM-6).
+    // Home: in through the Hall, and gone.
     if (body.homeward) {
         if (!body.moving) BoardState.setHeroBody(heroId, null);
         return true;
@@ -261,8 +246,8 @@ function step(heroId, body, delta) {
         if (target && Math.abs(target.x - body.x) > ARRIVE_EPS) body.facing = target.x < body.x ? -1 : 1;
     }
 
-    // Idle and standing still: count the pause down, then set off on a stroll
-    // (HM-1). Idle means no claim, not walking home.
+    // Idle and standing still: count the pause down, then set off on a stroll. Idle means no claim,
+    // not walking home.
     if (!body.moving && !body.targetId && !claim && potterRadius() > 0) {
         if (body.pauseLeft == null) body.pauseLeft = pauseMs();
         body.pauseLeft -= Math.max(0, delta);
@@ -272,8 +257,7 @@ function step(heroId, body, delta) {
         }
     }
 
-    // Arrived at a claimed Token: from now on they are working it (FP-26),
-    // and the save remembers it (HM-7).
+    // Arrived at a claimed Token: from now on they are working it, and the save remembers it.
     if (!body.moving && claim && body.atWork !== claim.instanceId
         && body.targetId === claim.instanceId && BoardState.getTokenById(claim.instanceId)) {
         body.atWork = claim.instanceId;
@@ -297,9 +281,9 @@ function announceArrival(heroId) {
 }
 
 /**
- * A hero's body, made if they have a flag and none yet: **at the Guild Hall**
- * (HMP-1), or beside the flag when there is no Hall. A hero still walking home
- * who is sent out again keeps their body and turns around (HM-5).
+ * A hero's body, made if they have a flag and none yet: at the Guild Hall, or beside the flag when
+ * there is no Hall. A hero still walking home who is sent out again keeps their body and turns
+ * around.
  */
 function ensureBody(heroId) {
     const flag = BoardState.flagOf(heroId);
@@ -320,9 +304,8 @@ function ensureBody(heroId) {
 }
 
 /**
- * After a load (HM-7): stand `heroId` back beside `token`, on `side`, already
- * working it — no walk from the Guild Hall, no walk at all. `Flags` then
- * restores the claim itself.
+ * After a load: stand `heroId` back beside `token`, on `side`, already working it: no walk from the
+ * Guild Hall, no walk at all. `Flags` then restores the claim itself.
  */
 export function restoreAtWork(heroId, token, side) {
     const at = standingSpot(token.typeId, token, side);
@@ -333,8 +316,8 @@ export function restoreAtWork(heroId, token, side) {
 }
 
 /**
- * After a load (HM-7): a hero with a flag and no restored work starts beside
- * their flag — not at the Guild Hall, which is for heroes newly sent out.
+ * After a load: a hero with a flag and no restored work starts beside their flag, not at the Guild
+ * Hall, which is for heroes newly sent out.
  */
 export function placeAtFlag(heroId) {
     if (BoardState.heroBodyOf(heroId)) return;
@@ -345,18 +328,17 @@ export function placeAtFlag(heroId) {
 }
 
 /**
- * A hero is being sent out: their body appears (at the Hall), or, still on
- * their way home, turns around. `Flags.plant` calls this BEFORE choosing, so
- * "nearest" is measured from where they really are (HM-4, HMP-1).
+ * A hero is being sent out: their body appears (at the Hall), or, still on their way home, turns
+ * around. `Flags.plant` calls this BEFORE choosing, so nearest is measured from where they really
+ * are.
  */
 export function enter(heroId) {
     return ensureBody(heroId);
 }
 
 /**
- * Their flag is down: recalled, or defeated (`limp`). Their figure walks back
- * into the Guild Hall and disappears there (HM-5, HM-6). With no Hall on the
- * mat, or instant arrival (tests), they are simply gone.
+ * Their flag is down: recalled, or defeated (`limp`). Their figure walks back into the Guild Hall
+ * and disappears there. With no Hall on the mat, or instant arrival (tests), they are simply gone.
  */
 export function sendHome(heroId, { limp = false } = {}) {
     const body = BoardState.heroBodyOf(heroId);
@@ -388,7 +370,7 @@ export function settle(heroId) {
     if (body) step(heroId, body, 0);
 }
 
-/** Take a hero off the mat at once (recall, defeat — slice M3 walks them home). */
+/** Take a hero off the mat at once (recall, defeat; `sendHome` is the walk home). */
 export function remove(heroId) {
     BoardState.setHeroBody(heroId, null);
 }

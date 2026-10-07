@@ -1,4 +1,4 @@
-// Fantasy Guild — the Upkeep Summary's maths (Token Lifecycle slice 8.2, TL-4)
+// the Upkeep Summary's maths
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
@@ -10,33 +10,25 @@ import * as SpawnerSystem from './SpawnerSystem.js';
 import { isStatementPaid } from './BlockUpkeep.js';
 
 /**
- * ⭐ **Every ongoing cost on the mat, per item, per minute** — the numbers
- * behind the Upkeep Summary panel (roadmap §5, slice 8.2). Pure: it reads the
- * mat, the Bank and the Token types, and changes nothing.
+ * Every ongoing cost on the mat, per item, per minute: the numbers behind the Upkeep Summary panel.
+ * Pure: it reads the mat, the Bank and the Token types, and changes nothing.
  *
- * ## What counts as a cost
- * * **Spawner upkeep** (§3.1, DP-5): paid per spawn, so a spawner costs
- *   `quantity × 60000 / intervalMs` per minute — but only while it is
- *   `spawning` or waiting on an item (`needs_item`). A spawner `at_cap` or with
- *   `no_room` pays nothing until that changes, so it is listed as **idle**.
- * * **Statement upkeep** (`BlockUpkeep`, CMS-60): each costed statement charges
- *   `quantity × 60000 / cadenceMs` per minute. Its clock runs on every Token on
- *   the mat regardless of heroes (see `BoardRunner.tick`), so it always counts;
- *   an unpaid statement (`isStatementPaid` false) is listed as waiting.
+ * Spawner upkeep is paid per spawn, so a spawner costs `quantity × 60000 / intervalMs` per minute,
+ * but only while it is `spawning` or waiting on an item (`needs_item`); one `at_cap` or with
+ * `no_room` pays nothing and is listed as idle.
  *
- * ## Income
- * `trickle` lines on live Tokens (§3.1, slice 3.4): `quantity × 60000 / everyMs`.
+ * Statement upkeep (`BlockUpkeep`): each costed statement charges `quantity × 60000 / cadenceMs`
+ * per minute. Its clock runs on every Token on the mat regardless of heroes (see
+ * `BoardRunner.tick`), so it always counts; an unpaid statement is listed as waiting.
  *
- * ## "Runs out in"
- * Rough by design: what is on hand ÷ (cost − that item's trickle income) per
- * minute. Net income at or above the cost means it never runs out
- * (`runsOutMs: null`).
+ * Income is `trickle` lines on live Tokens: `quantity × 60000 / everyMs`.
  *
- * ⭐ **On hand** (TL-20): a spawner pays its upkeep from the Bank and then from
- * matching loot on the mat, so an item any spawner uses counts both (`have` =
- * `bank` + `onMat`). Statement upkeep (`BlockUpkeep`) is still paid from the
- * Bank alone, so an item only rules use counts the Bank alone, and a rule's
- * "short" check stays Bank-only.
+ * Runs out in: rough by design, on hand ÷ (cost − that item's trickle income) per minute; net
+ * income at or above the cost means it never runs out (`runsOutMs: null`).
+ *
+ * On hand: a spawner pays from the Bank and then from matching loot on the mat, so an item any
+ * spawner uses counts both (`have` = `bank` + `onMat`). Statement upkeep is paid from the Bank
+ * alone, so an item only rules use counts the Bank alone.
  */
 
 const MINUTE = 60000;
@@ -104,7 +96,6 @@ export function computeUpkeepSummary(sources = {}) {
         if (!def) continue;
         const name = def.name || instance.typeId;
 
-        // --- Spawners ---------------------------------------------------------
         const status = src.statusOf(instance.id);
         if (status) {
             const upkeep = spawnerUpkeep(def);
@@ -128,7 +119,6 @@ export function computeUpkeepSummary(sources = {}) {
             }
         }
 
-        // --- Statement upkeep (BlockUpkeep) -----------------------------------
         for (const statement of costedStatements(def)) {
             const paid = src.isPaid(instance, statement.id);
             const lines = statement.upkeep.items.filter(it => it?.itemId);
@@ -146,7 +136,6 @@ export function computeUpkeepSummary(sources = {}) {
             }
         }
 
-        // --- Trickle income ---------------------------------------------------
         for (const line of Array.isArray(def.trickle) ? def.trickle : []) {
             const q = qty(line?.quantity);
             const everyMs = Number(line?.everyMs);
@@ -164,7 +153,7 @@ export function computeUpkeepSummary(sources = {}) {
         const netPerMinute = row.perMinute - incomePerMinute;
         const bank = src.bankCount(row.itemId);
         const onMat = src.floorCount ? (Number(src.floorCount(row.itemId)) || 0) : 0;
-        // Floor loot pays spawners only (TL-20), so it counts only where a spawner uses the item.
+        // Floor loot pays spawners only, so it counts only where a spawner uses the item.
         const have = bank + (row.consumers.some(c => c.source === 'spawner') ? onMat : 0);
         return {
             ...row,

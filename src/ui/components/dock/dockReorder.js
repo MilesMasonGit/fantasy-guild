@@ -1,6 +1,5 @@
-// Fantasy Guild — reordering a hero within a dock-style strip of tabs/figures.
-// Shared by BottomHeroDock and BankHeroPanel (CR3-457) so both wire a
-// hero-on-hero drop to HeroManager.reorderHero the same way.
+// Reordering a hero within a dock-style strip of tabs/figures. Shared by BottomHeroDock and
+// BankHeroPanel so both wire a hero-on-hero drop to HeroManager.reorderHero the same way.
 
 /**
  * Move `sourceHeroId` to stand where `targetHeroId` currently is.

@@ -2,21 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { sourceCode, matchLines } from './fixtures/sourceScan.js';
 
 /**
- * ⭐ Flags is the one place heroes choose work (CR3-562, R10 section 5.1).
- *
- * Stage 2 (autonomous heroes) will add AI that decides what a hero does next.
- * The seam it must keep: **`Flags.js` is the only writer of a hero's claim**
- * (`BoardState.setClaim`, and dropping the saved work note) **and the only
- * caller of HeroMotion's lifecycle** (a body entering, settling, going home,
- * being removed, or being stood back at work or at its flag after a load).
- * An AI module that called `BoardState.setClaim` or moved a body itself would
- * bypass the claim rules, the `HERO_MOVED` announcement and the save's work
- * note all at once. It should ask Flags.
- *
- * One deliberate exception, pinned so it stays the only one: HeroMotion writes
- * the saved work note (`recordWorkClaim`) itself, at the moment a walking hero
- * ARRIVES at the Token Flags gave them (HM-7). It records an arrival; it never
- * chooses one.
+ * ⭐ Flags is the one place heroes choose work (R10 section 5.1).
  */
 
 /** Who may call what: `[pattern, allowed files, what it is]`. */

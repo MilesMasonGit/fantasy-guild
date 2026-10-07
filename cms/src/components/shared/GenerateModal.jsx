@@ -33,7 +33,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
   const [areaId, setAreaId] = useState(prefill?.areaId || '');
   const [showStyleGuide, setShowStyleGuide] = useState(false);
 
-  const [status, setStatus] = useState('idle'); // idle, generating, preview, importing, done, error
+  const [status, setStatus] = useState('idle');
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -98,7 +98,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
       <div className="rounded-xl shadow-2xl border flex flex-col" style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-default)', width: 640, maxHeight: '85vh' }}>
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
           <div className="flex items-center gap-2">
             <Sparkles size={18} style={{ color: 'var(--color-accent)' }} />
@@ -108,7 +107,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {/* API Key Section */}
           {!apiKey && (
             <div className="rounded-lg p-4 border space-y-2" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-warning)' }}>
               <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-warning)' }}>
@@ -122,7 +120,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
             </div>
           )}
 
-          {/* Mode Selection */}
           {status === 'idle' && (
             <>
               <div className="space-y-2">
@@ -138,7 +135,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 ))}
               </div>
 
-              {/* Config Fields */}
               {mode === 'generate_single' && prefill && (
                 <div className="rounded-lg p-3 border space-y-1.5" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
                   <div className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>
@@ -208,7 +204,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 </div>
               )}
 
-              {/* Area Assignment */}
               <div>
                 <label className="text-xs block mb-1" style={{ color: 'var(--color-text-secondary)' }}>Assign to Area</label>
                 <select value={areaId} onChange={(e) => setAreaId(e.target.value)} className="w-full">
@@ -222,7 +217,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 <textarea value={additionalContext} onChange={(e) => setAdditionalContext(e.target.value)} className="w-full" rows={2} placeholder="e.g., Should use existing Iron Ore as an input..." />
               </div>
 
-              {/* Style Guide Toggle */}
               <div>
                 <button onClick={() => setShowStyleGuide(!showStyleGuide)} className="text-xs flex items-center gap-1" style={{ color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
                   {showStyleGuide ? '▼' : '▶'} Edit Style Guide
@@ -240,7 +234,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
             </>
           )}
 
-          {/* Generating Status */}
           {status === 'generating' && (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <Loader2 size={32} className="animate-spin" style={{ color: 'var(--color-accent)' }} />
@@ -249,7 +242,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
             </div>
           )}
 
-          {/* Preview */}
           {status === 'preview' && preview && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-success)' }}>
@@ -364,7 +356,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
             </div>
           )}
 
-          {/* Done */}
           {status === 'done' && result && (
             <div className="flex flex-col items-center justify-center py-8 gap-3">
               <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--color-success)', color: '#000' }}>
@@ -384,7 +375,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
             </div>
           )}
 
-          {/* Error */}
           {error && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--color-error)', color: 'white' }}>
               <AlertTriangle size={14} />
@@ -393,7 +383,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
           {status === 'idle' && (
             <button onClick={handleGenerate} className="btn-primary flex items-center gap-2" disabled={!apiKey}>

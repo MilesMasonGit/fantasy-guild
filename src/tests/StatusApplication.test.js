@@ -29,11 +29,6 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 /**
  * `Applies` — content putting a status on somebody.
  *
- * Seven statuses have existed and worked since the status engine was built, and
- * **only combat ever called them.** Nothing an author could write reached them
- * at all. These tests are about the wire that closes that, and about the one
- * genuinely awkward thing in the design:
- *
  * ⚠️ **The filter selects Tokens; the status lands on a person.** The owner
  * ruled that `Applies` uses the same filter as every other keyword, so a filter
  * naming Tokens has to resolve to *the heroes working those Tokens* — and the

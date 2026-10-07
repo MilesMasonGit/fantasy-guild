@@ -5,53 +5,6 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * The CMS→game import boundary, guarded.
- *
- * ## Why this exists (CR2-010)
- *
- * The CMS is a separate Vite app with its own `package.json`, but it reaches
- * across the project boundary and imports the game's source directly by
- * relative path (`../../../src/config/registries/...`). That coupling is
- * deliberate and is not what this file objects to: the two apps share a content
- * vocabulary, and `cms/src/utils/constants.js` explains at length why that
- * vocabulary flows game → CMS in one direction rather than being copied.
- *
- * The problem is that the coupling is **invisible from the game's side**. The
- * game builds without the CMS, `npm run build` never compiles `cms/`, and the
- * reachability tool does not know the CMS exists. So a game-side module or
- * export that only the CMS uses looks like dead code to every tool in the
- * project. This has already bitten twice:
- *
- * - the skill/class rework removed `SUB_SKILL_TO_PARENT` from a game registry
- *   and left the CMS unable to build, with nothing to catch it;
- * - a cleanup pass came close to deleting `modifierPalette.js` and
- *   `tokenConstants.js` outright.
- *
- * The CMS has no test suite of its own (CR2-006, accepted deliberately), so
- * the only thing standing between a tidy-up and a broken authoring tool is a
- * check that lives here, where the deletion would be made.
- *
- * ## What this asserts
- *
- * It scans `cms/src` for every static import or re-export whose path escapes
- * into the game's `src/`, and then, for each one:
- *
- * 1. the target file still exists;
- * 2. the module still exports every binding the CMS names.
- *
- * The list is **derived by scanning, never hand-maintained**. A written-down
- * list is what CR2-010 itself shipped with, and it had gone stale in both
- * directions by the time anyone acted on it — it named seven modules when the
- * real number was twelve. A scanner cannot rot the same way: add a
- * cross-boundary import to the CMS and it is covered from that moment.
- *
- * ## What it does not claim
- *
- * Nothing about behaviour. An export can still change meaning underneath the
- * CMS and this file will stay green — it only asserts the shape of the seam,
- * not what flows through it. `CMSSmoke.test.js` is the shallow behavioural
- * companion; it renders the CMS's screens and would catch a *rendered* break,
- * but only along the paths a render happens to walk. This file covers every
- * named binding whether or not any test renders the component that uses it.
  */
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -75,11 +28,6 @@ function cmsSourceFiles(dir = CMS_SRC, found = []) {
 
 /**
  * Remove comments before matching.
- *
- * Not cosmetic: `cms/src/utils/constants.js` discusses these very paths in its
- * prose, and `restrictionPalette.js` names `modifierPalette.js` in a doc block.
- * Matching those would invent imports that do not exist. Strings are left
- * alone — a `//` inside one would only ever appear in a URL here.
  */
 function stripComments(source) {
     return source
@@ -89,11 +37,6 @@ function stripComments(source) {
 
 /**
  * Pull the bound names out of an import/export clause.
- *
- * `{ a, b as c }` binds `a` and `b` — the local alias is the CMS's business,
- * the exported name is the game's promise. `* as ns` and a default import bind
- * nothing checkable by name, so they resolve to `default` or to nothing and
- * the file-exists assertion carries them.
  */
 function bindingsOf(clause) {
     const names = [];
@@ -118,15 +61,6 @@ function crossBoundaryImports() {
     // `[\s\S]*?`, which is lazy but can still run across statement boundaries:
     // an `export const FOO = …` line with no `from` of its own would let the
     // clause reach forward to the NEXT `from` in the file, and `bindingsOf`
-    // would then read whichever brace happened to sit nearest. The failure
-    // that exposed it named a module that exports nothing of the sort —
-    // `tempoBands.js` "no longer exports `id`", where `id` came from an
-    // unrelated destructure fifty lines earlier — so the error pointed at the
-    // wrong file entirely, and the only thing keeping the suite green was
-    // where a line happened to sit in `cms/src/utils/constants.js`. No real
-    // import or re-export clause contains either character, so excluding them
-    // confines the match to a single statement. Found during P2, fixed before
-    // P5 moves several cross-boundary imports.
     const statement = /(?:^|[\n;])\s*(?:import|export)\s+([^;=]*?)\s+from\s+['"]([^'"]+)['"]/g;
 
     for (const file of cmsSourceFiles()) {

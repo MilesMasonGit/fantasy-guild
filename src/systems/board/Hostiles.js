@@ -1,4 +1,4 @@
-// Fantasy Guild — hostile enemies attack heroes near their spawner (B7.2, TL-16, TL-24, FB-23)
+// hostile enemies attack heroes near their spawner
 
 import { GameState } from '../../state/GameState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -12,42 +12,25 @@ import * as HeroMotion from './HeroMotion.js';
 import * as TimedChanges from './TimedChanges.js';
 
 /**
- * ⭐ **Hostile enemies attack** (B7.2, TL-16, FB-23; owner's "B7 range").
+ * An enemy authored `enemy.hostile: true` (see `isHostileEnemy`) attacks a hero who comes inside
+ * the live flag radius (`Flags.flagRadius()`) around its spawner (`EnemyMotion.spawnerOf`); with no
+ * live spawner it watches the radius around itself.
  *
- * An enemy whose Token type is authored `enemy.hostile: true` (in the CMS; see
- * `isHostileEnemy`) attacks a hero who comes **inside the live flag radius**
- * (`Flags.flagRadius()`) **around its spawner** — the spawner it is tethered to
- * (`EnemyMotion.spawnerOf`, B7.1). A hostile enemy with no live spawner (placed
- * by hand, or its spawner gone) watches the radius around itself.
+ * Attacking is `Flags.ambush`: the hero drops their work and claims the enemy, walks up, and
+ * `BoardCombat.tickToken` begins the fight on arrival; they fight back whatever their rules say. A
+ * peaceful enemy never comes through here: it fights only when a hero with Fight allowed seeks it.
  *
- * Attacking is `Flags.ambush`: the hero drops their work and claims the enemy,
- * so the fight starts the normal way — they walk up to it and
- * `BoardCombat.tickToken` begins it on arrival — and they fight back whatever
- * their rules say (TL-24). A peaceful enemy never comes through here: it fights
- * only when a hero with Fight allowed seeks it, as before B7.2.
+ * Who is attacked: for each hostile enemy in arrival order, the nearest hero whose body is inside
+ * the radius (the earlier-planted flag on a tie). One fight per enemy and one enemy per hero, so
+ * enemies never gang up.
  *
- * ## Who is attacked
- * For each hostile enemy on the mat, in arrival order, the **nearest hero to
- * the enemy** whose body stands inside the radius (the earlier-planted flag on
- * a tie). One fight per enemy and one enemy per hero: BoardCombat keys a fight
- * by enemy and allows a hero one fight (G-43), so enemies never gang up —
- * a hero already taken this pass is not offered to the next enemy.
+ * Not attacked: heroes with no flag, wounded heroes, heroes who cannot fight (a Recruit holds no
+ * combat skill, so they would stand frozen) and heroes already on an enemy. An enemy does not
+ * attack while a hero holds it, while it is in the player's hand, or while the player has marked it
+ * as not for heroes to work: a forced fight there would be let go on the next pass.
  *
- * Not attacked: heroes with no flag (docked, or walking home — `furl` takes the
- * flag down at once), wounded heroes, heroes who cannot fight (a Recruit holds
- * no combat skill, so no fight could start and they would stand frozen), and
- * heroes already on an enemy (fighting it, or walking up to it).
- *
- * An enemy does not attack while it is already fought or walked up to (a hero
- * holds it), while it is in the player's hand, or while the player has marked
- * it "heroes may not work this" (FP-35) — a forced fight there would be let go
- * on the next pass anyway.
- *
- * ## Clock and cost
- * One look every {@link SCAN_MS} of game time, advanced by the tick's `delta`
- * (so the time bank speeds it up). A look is one pass over the mat's Tokens
- * plus, for each hostile enemy, a squared-distance test per hero on the mat —
- * flat, and publishes nothing unless an attack starts.
+ * One look every {@link SCAN_MS} of game time, advanced by the tick's `delta` (so the time bank
+ * speeds it up).
  */
 
 /** How often hostile enemies look for heroes, in game ms. */

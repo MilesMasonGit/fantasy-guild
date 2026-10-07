@@ -32,16 +32,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * * **"Leave a Stump behind when this depletes"** (Effects Grammar v2, V7b).
  *
- * The motivating case for `Spawns` and `Transforms`, and the one item the code
- * review left open. It was unauthorable in its natural form for two separate
- * reasons, and both had to go:
- *
- * 1. `TOKEN_DEPLETED` existed with an **NEARBY scope only**, so a Token could
- *    hear a neighbour run out of charges and never itself.
- * 2. `destroyToken` empties the tile *before* publishing, so even with the
- *    scope, a self-scoped handler asking the board what is standing there gets
- *    `null` and does nothing.
- *
  * WARNING: emptying first is CORRECT and is not what was fixed. It is what makes
  * the square free for a `Spawns here` to take. What was missing is that the
  * departing instance had no way to be found, so it now rides on the event.

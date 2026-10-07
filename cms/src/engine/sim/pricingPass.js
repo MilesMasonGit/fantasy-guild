@@ -1,45 +1,14 @@
 /**
- * Economic simulator — pass 3 of 5: **PRICE** (phase P3+4).
- *
- * ```
- * 3. PRICE    Walk the chain bottom-up: anchors set item values,
- *             crafted items price as inputs + purpose profit.  (each value set once)
- * ```
- *
- * ## The property this file must not break
- *
- * Each item's value is **set exactly once**, reading only values already set.
- * There is no feedback loop and nothing iterates toward a fixed point:
- * convergence is a property of the ordering, not of repetition (plan §3.4,
- * CMS-118). The two places iteration could have crept in are closed
- * deliberately — a genuine recipe cycle is *refused* rather than iterated, and
- * anchor election is value-independent.
- *
- * If a future change here wants a "repeat until stable" loop, that is the exact
- * design this one replaced.
- *
- * This pass writes nothing: a caller gets a Map, and `sim/writeBack.js` lands
- * the numbers on each item's `value`.
+ * Economic simulator, pass 3 of 5: PRICE. Walks the chain bottom-up: anchors set item values and crafted items price as inputs plus purpose profit.
+ * ⚠️ Each item's value is set exactly once, reading only values already set. There is no feedback loop and nothing iterates toward a fixed point: a genuine recipe cycle is refused rather than iterated, and anchor election is value-independent. A repeat-until-stable loop is the design this one replaced.
+ * This pass writes nothing: a caller gets a Map, and `sim/writeBack.js` lands the numbers.
  */
 
 import { gphAt, purposeGoldFactor, toleranceFor, DEFAULT_DIALS } from './dials.js';
 import { makeRow, SEVERITY } from './rows.js';
 import { makeRefusal } from './refusals.js';
 
-/**
- * Pick the integer value for an ideal (plan §3.3, problem P4).
- *
- * Item values are integers, so the ideal almost never lands on one. The rule:
- * try the two neighbouring integers; if either lands inside the tolerance band,
- * take it, preferring the closer. If neither lands — routine at values of 1–4g,
- * where a ±1 step is a huge relative move — keep the **nearer** integer and
- * record the residual.
- *
- * The lever policy that *closes* a residual lives in `tuningPass.js`, which runs
- * after this pass and judges the source's total earnings. This pass records the
- * residual and files one Info row; it never decides whether the residual
- * matters, because that question is about the whole source, not one output.
- */
+/** Pick the integer value for an ideal. Item values are integers, so try the two neighbouring integers; if either lands inside the tolerance band take it, preferring the closer. If neither does, keep the nearer one and record the residual. The lever policy that closes a residual lives in `tuningPass.js`; this pass only records it and files one Info row. */
 export function chooseInteger(ideal, band) {
     const safeIdeal = Number.isFinite(ideal) && ideal > 0 ? ideal : 0;
     const neighbours = [...new Set([Math.floor(safeIdeal), Math.ceil(safeIdeal)])]
@@ -61,18 +30,8 @@ export function chooseInteger(ideal, band) {
 }
 
 /**
- * Split a per-cycle target across the outputs an entity anchors,
- * **inversely proportional to abundance** (plan §3.3, the Trout Stream shape).
- *
- * The scarcer output takes the bigger per-unit slice — "the rare drop is the
- * valuable one", which is how a designer reads it without any arithmetic.
- *
- * Note what that compounds to: the *target* splits inversely to abundance, and
- * the per-unit value is then that slice divided by abundance again — so a 10×
- * scarcer output is worth 100× per unit, not 10×. Written out: each output's
- * weight is `1 / abundance`, its slice of the target is `target × weight ÷ Σ
- * weights`, and its per-unit value is that slice ÷ abundance. The square is
- * deliberate, and it is the arithmetic the plan says this inherits.
+ * Split a per-cycle target across the outputs an entity anchors, inversely proportional to abundance, so the rare drop is the valuable one.
+ * ⚠️ That compounds: each output's weight is `1 / abundance`, its slice is `target × weight ÷ Σ weights`, and its per-unit value is that slice ÷ abundance, so a 10× scarcer output is worth 100× per unit. The square is deliberate.
  */
 export function splitByScarcity(target, abundances) {
     const weights = abundances.map(a => (a > 0 ? 1 / a : 0));
@@ -112,32 +71,21 @@ export function runPricingPass(entities, { timing = new Map(), elections = new M
 
     const byId = new Map(entities.map(e => [e.id, e]));
 
-    // Which items does each entity anchor?
-    const anchoredBy = new Map();   // entity id → [itemId]
+    const anchoredBy = new Map();
     for (const election of elections.values()) {
         if (!anchoredBy.has(election.sourceId)) anchoredBy.set(election.sourceId, []);
         anchoredBy.get(election.sourceId).push(election.itemId);
     }
     for (const list of anchoredBy.values()) list.sort();
 
-    // ── Downcycle recipes stand entirely outside the walk (CMS-130) ──────────
-    // They never price anything — every item they touch already has a value —
-    // so they are neither nodes nor edges here, and they take no part in cycle
-    // detection. That is what makes a backwards-pointing loop safe: the return
-    // leg only ever reads values.
+    // Downcycle recipes stand entirely outside the walk: they never price anything, so they are neither nodes nor edges and take no part in cycle detection, which is what makes a backwards-pointing loop safe.
     const downcycleEntities = entities.filter(e => e.downcycle && !skipped.has(e.id) && !refused.has(e.id));
 
     const pending = [...anchoredBy.keys()]
         .filter(id => byId.has(id) && !refused.has(id) && !byId.get(id).downcycle)
         .sort();
 
-    // ── The topological walk ─────────────────────────────────────────────────
-    // Root items first (produced from nothing), then each crafted item once all
-    // its inputs are priced. Every sweep that prices at least one entity is
-    // progress; when a sweep makes none, whatever is left is either a cycle or
-    // is blocked behind an item that will never have a value. Either way the
-    // loop stops — the termination proof is that `remaining` strictly shrinks
-    // or the loop exits.
+    // The topological walk: root items first, then each crafted item once all its inputs are priced. A sweep that prices nothing ends the loop; what is left is a cycle or is blocked behind an item that will never have a value.
     let remaining = pending;
     for (;;) {
         const remainingSet = new Set(remaining);
@@ -154,7 +102,6 @@ export function runPricingPass(entities, { timing = new Map(), elections = new M
         if (remaining.length === 0) break;
     }
 
-    // ── What is left: cycles, and chains blocked on an unpriceable input ─────
     if (remaining.length > 0) {
         reportStuck(remaining, { byId, elections, values, rows });
     }
@@ -168,29 +115,7 @@ export function runPricingPass(entities, { timing = new Map(), elections = new M
 
 /**
  * Is every output this entity does NOT anchor already settled?
- *
- * ⚠️ **A co-output is a dependency edge, exactly like an input.** `priceEntity`
- * subtracts the value of the outputs it does not anchor (`inherited`) from its
- * target before splitting the rest. Reading that value before the item has been
- * priced silently counts it as zero — so an entity must wait for its
- * co-outputs, not just for its inputs.
- *
- * Without this the walk was **order-dependent on entity id**: two economically
- * identical corpora priced differently depending on what the entities were
- * named, because sorted-id order decided whether the co-output happened to be
- * priced first. Found by the P3+4 verification pass; it was invisible on the
- * shipped corpus because no shipped producer mixes anchored and non-anchored
- * outputs, and idempotence held throughout (the wrong ordering was at least a
- * *stable* wrong ordering).
- *
- * An unpriced co-output that **no still-pending entity anchors** will never
- * gain a value, so waiting for it would deadlock. That case proceeds and
- * contributes nothing, which is correct — the item genuinely has no value.
- *
- * A mutual co-output dependency (A waits on B, B waits on A) makes neither
- * ready, the sweep prices nothing, and `reportStuck` takes them — the same
- * termination path a recipe cycle uses. No iteration is introduced: this only
- * widens the edge set of the existing Kahn walk.
+ * ⚠️ A co-output is a dependency edge, exactly like an input: `priceEntity` subtracts the value of the outputs it does not anchor from its target, and reading one before it is priced silently counts it as zero. Without this the walk was order-dependent on entity id.
  */
 function coOutputsSettled(entity, anchoredItemIds, values, remainingSet, anchoredBy) {
     if (!entity) return true;
@@ -206,25 +131,17 @@ function coOutputsSettled(entity, anchoredItemIds, values, remainingSet, anchore
     return true;
 }
 
-/** Price one anchoring entity, setting each item it anchors exactly once. */
 function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, rows }) {
     const t = timing.get(entity.id);
     if (!t) return;
 
     const inputValue = inputValuePerCycle(entity, values) ?? 0;
 
-    // target profit/hour = GPH curve(required level) × purpose factor(Purpose tag)
     const targetPerHour = gphAt(entity.level, dials) * purposeGoldFactor(entity.purpose, dials);
     const targetPerCycle = targetPerHour / t.cyclesPerHour;
 
-    // Crafted anchors: value × units = input value + target profit per cycle,
-    // floored at input value × (1 + craft margin per step) (plan §3.3, CMS-122).
-    //
-    // ⚠️ Interpretation: the plan words this rule for "the anchor is a Recipe",
-    // but the floor is really about *consuming inputs* — a station Token that
-    // eats 4 Oak Wood is as crafted as a recipe is, and the passes deliberately
-    // never branch on entity kind. So the floor applies whenever an entity has
-    // priced inputs, of either kind.
+    // Crafted anchors: value × units = input value + target profit per cycle, floored at input value × (1 + craft margin per step).
+    // ⚠️ The floor applies whenever an entity has priced inputs, of either kind: a station Token that eats 4 Oak Wood is as crafted as a recipe, and the passes never branch on entity kind.
     let gross = inputValue + targetPerCycle;
     const floor = inputValue * (1 + dials.craftMarginPerStep);
     let floorEngaged = false;
@@ -286,17 +203,7 @@ function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, 
         });
 
         if (!chosen.inBand) {
-            // ⚠️ **Info, not Warning, and the reason is the TUNE pass.**
-            // Until P6 this row was the only voice on an off-ideal price, so it
-            // was a Warning whose first remedy said "wait for the lever policy".
-            // The lever policy exists now: it judges this source's *total*
-            // earnings, closes the residual with one lever where it can, and
-            // refuses in its own words where it cannot. Leaving a Warning here
-            // as well would file two rows for one situation, and the louder of
-            // the two would be the one with less information.
-            //
-            // So this row is now an observation — "gold is whole numbers and
-            // this ideal was not" — and the verdict belongs to `tuningPass.js`.
+            // ⚠️ Info, not Warning: the TUNE pass judges this source's total earnings and files its own verdict, so a Warning here would be two rows for one situation. This row is only the observation that gold is whole numbers and the ideal was not.
             rows.push(makeRow(
                 SEVERITY.INFO,
                 'integer-residual',
@@ -323,7 +230,6 @@ function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, 
 function reportStuck(remaining, { byId, elections, values, rows }) {
     const stuck = new Set(remaining);
 
-    // Edge: this entity needs an input whose anchor is also stuck.
     const edges = new Map();
     for (const id of remaining) {
         const targets = [];
@@ -336,8 +242,8 @@ function reportStuck(remaining, { byId, elections, values, rows }) {
     }
 
     // Depth-first cycle hunt. Each distinct cycle is reported once, naming
-    // every recipe in it — plan §12: the refusal names both recipes.
-    const state = new Map();    // id → 'visiting' | 'done'
+    // every recipe in it: the refusal names both recipes.
+    const state = new Map();
     const stack = [];
     const seenCycles = new Set();
     const inCycle = new Set();
@@ -368,28 +274,13 @@ function reportStuck(remaining, { byId, elections, values, rows }) {
 
     for (const id of remaining) if (!state.has(id)) visit(id);
 
-    // Waiting on something that will never arrive. The root cause already has
-    // its own Critical row — an orphan, a deferred-only item, or the cycle
-    // refusal above — so this is the consequence, filed as a Warning naming
-    // what it waits for.
-    //
-    // ⚠️ **Cycle members are included** (found P9, by the adversarial set). They
-    // used to be skipped here on the grounds that the cycle refusal covers
-    // them — but that row is keyed by *entity*, so an item stranded inside a
-    // ring had no item-keyed row at all, and every item-centric reader (the
-    // audit panel, the chain inspector, "why has this no value?") came up
-    // empty on exactly the items a designer would be puzzling over. The cycle
-    // row is still the cause; these say which items paid for it.
+    // Waiting on something that will never arrive. The root cause already has its own Critical row, so this is the consequence, filed as a Warning naming what it waits for.
+    // ⚠️ Cycle members are included: the cycle row is keyed by entity, so an item stranded inside a ring would otherwise have no item-keyed row for the audit panel or chain inspector.
     for (const id of remaining) {
         const missing = byId.get(id).inputs
             .filter(i => i.itemId && !values.has(i.itemId))
             .map(i => i.itemId);
-        // ⚠️ One row per *item* left unpriced, not one per blocked entity.
-        // The row used to name only the recipe, and said "the items it anchors
-        // stay unpriced" without naming them — so an item-centric reader (the
-        // audit panel, or anything asking "why has this item no value?") could
-        // not find it, and the item looked silently skipped. Found 2026-09-01
-        // when a real chain went unpriced behind an orphaned input.
+        // ⚠️ One row per item left unpriced, not one per blocked entity, so an item-centric reader can find why an item has no value.
         const blockedItems = (elections ? [...elections.values()] : [])
             .filter(e => e.sourceId === id && !values.has(e.itemId))
             .map(e => e.itemId);
@@ -412,15 +303,7 @@ function reportStuck(remaining, { byId, elections, values, rows }) {
     }
 }
 
-/**
- * Price a downcycle recipe's *quantities* (CMS-130).
- *
- * A downcycle recipe never sets a value. Everything it touches is already
- * priced, so the one rule is a cap: the total value that comes back is at most
- * the **recovery ratio** times the value that went in, and the output
- * quantities are derived to fit under it. Strictly losing value on every pass
- * is what makes the loop safe — gold cannot be duplicated by construction.
- */
+/** Price a downcycle recipe's quantities. It never sets a value: the total value that comes back is at most the recovery ratio times the value that went in, and quantities are derived to fit under that cap. Strictly losing value on every pass means gold cannot be duplicated by construction. */
 function priceDowncycle(entity, { values, dials, rows, downcycles }) {
     const missing = [
         ...entity.inputs.filter(i => i.itemId && !values.has(i.itemId)).map(i => i.itemId),

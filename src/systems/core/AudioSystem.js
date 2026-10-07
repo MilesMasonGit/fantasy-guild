@@ -1,6 +1,3 @@
-// Fantasy Guild - Audio System
-// Central manager for BGM Soundtrack and SFX
-
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { logger } from '../../utils/Logger.js';
@@ -58,28 +55,18 @@ const TOKEN_DROP_SFX = [
     '/assets/audio/sfx/kenney_rpg-audio/Audio/dropLeather.ogg'
 ];
 
-/**
- * AudioSystem - Central manager for BGM and SFX
- * 
- * Handles:
- * - Shuffled / Random BGM soundtrack playlist
- * - Autoplay policy unlocks upon first user interaction
- * - Punctuating SFX with random sibling variations & subtle pitch shifting
- * - Volume control via SettingsManager
- */
+/** Central manager for BGM and SFX: shuffled playlist, autoplay unlock, SFX variation, volumes from SettingsManager. */
 class AudioSystemClass {
     constructor() {
-        this.bgm = null; // Current playing HTMLAudioElement
+        this.bgm = null;
         this.currentTrack = null;
         this.playlistQueue = [];
         this.initialized = false;
         this.hasUserInteracted = false;
         
-        // Global gain adjustment to normalize loud assets
-        // A slider value of 50% will result in 10% actual gain
+        // Normalizes loud source assets: the 0-100 sliders scale this base gain.
         this.GLOBAL_MIXER_GAIN = 0.2;
 
-        // Cache for preloaded SFX if needed
         this._sfxCache = new Map();
     }
 
@@ -89,10 +76,8 @@ class AudioSystemClass {
     init() {
         if (this.initialized) return;
 
-        // Subscribe to Core Events
         EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (data) => this.playSfx(data.clip, data.options));
         
-        // Subscribe to Global SFX
         EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, () => this.playSfx('levelup'));
         EventBus.subscribe(ORPHAN_EVENTS.SKILL_LEVELED, () => this.playSfx('levelup'));
         EventBus.subscribe(ORPHAN_EVENTS.INVASION_STARTED, () => this.playSfx('invasion'));
@@ -102,20 +87,16 @@ class AudioSystemClass {
         EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, () => this.playSfx('hero_assign'));
         EventBus.subscribe(ORPHAN_EVENTS.HERO_ASSIGNED, () => this.playSfx('hero_assign'));
         
-        // Subscribe to Contextual SFX
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, () => this.playContextualSfx('hit'));
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, () => this.playContextualSfx('hit'));
 
-        // Subscribe to Settings updates
         EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, () => this.updateVolumes());
 
-        // Unlock audio on first user gesture if blocked by browser autoplay policy
         this._setupAutoplayUnlock();
 
         this.initialized = true;
         logger.info('AudioSystem', 'Initialized');
 
-        // Start random soundtrack
         this.playNextTrack();
     }
 
@@ -131,7 +112,6 @@ class AudioSystemClass {
             window.removeEventListener('keydown', unlock);
             window.removeEventListener('click', unlock);
 
-            // Resume BGM if it was blocked
             if (this.bgm && this.bgm.paused) {
                 const master = (SettingsManager.get('audio.masterVolume') ?? 0) / 100;
                 const music = (SettingsManager.get('audio.musicVolume') ?? 50) / 100;
@@ -151,7 +131,6 @@ class AudioSystemClass {
      */
     _replenishQueue() {
         const pool = [...BGM_PLAYLIST];
-        // Fisher-Yates shuffle
         for (let i = pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -178,7 +157,6 @@ class AudioSystemClass {
 
         this.currentTrack = nextTrack;
 
-        // Clean up previous BGM instance
         if (this.bgm) {
             this.bgm.onended = null;
             this.bgm.onerror = null;
@@ -189,7 +167,7 @@ class AudioSystemClass {
 
         const src = `/assets/audio/bgm/${encodeURIComponent(nextTrack.file)}`;
         const audio = new Audio(src);
-        audio.loop = false; // We want onended to trigger the next track
+        audio.loop = false;
         
         audio.onended = () => {
             logger.info('AudioSystem', `Finished track: ${nextTrack.title}. Playing next...`);
@@ -285,7 +263,6 @@ class AudioSystemClass {
         audio.volume = finalVol;
         audio.currentTime = 0;
 
-        // Apply subtle pitch/speed shifting (±6%) for natural tactile variation
         const pitchVariance = options?.pitchVariance ?? 0.06;
         if (pitchVariance > 0) {
             try {

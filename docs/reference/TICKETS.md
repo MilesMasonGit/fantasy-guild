@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-103**
+**Next free number: T-104**
 
 ---
 
@@ -122,6 +122,7 @@ here.
 | T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `TimeBankWidget` says it is mounted; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
 | T-094 | P3 | open | More dead code from the GDD survey: `Placement.removePlacedToken` (replaced by the bin), `LootSystem` legacy cluster functions, `WoundedSystem.woundHero`, the enemy thorns-trait branch in `CombatAttackProcessor`, `HeroGenerator.generateCandidates`/`generateVillager`, declared-but-unread axes `HP_REGEN`, `THORNS_REFLECT`, `STAT_BONUS`. Three-way grep before deleting. | GDD survey |
 | T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
+| T-103 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (held back, owner's Atlas edit uncommitted), 2 comments in `cms/src/components/editors/RulesLine.jsx`, `cms/src/engine/sim/dryRun.mjs` header, `filterTargetTiles` named in `reachRegistry.js:26,136` (now `filterTargets`), ~15 test comments clipped by the ID stripper (e.g. `AdjacencyEffects.test.js:82`), and trailing string text carrying IDs (`workSkillRule.js` WORK_SKILL_WHY, `lifecycleAudit.js`, `matTuning.js` hints). Also dead exports found: `PERSONALITY_TAGS`, the three tutorial selectors in T-095. | Slimming pass |
 
 ### Build, tests, docs
 

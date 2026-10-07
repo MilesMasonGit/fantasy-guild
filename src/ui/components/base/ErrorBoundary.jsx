@@ -2,22 +2,16 @@ import React from 'react';
 import { logger } from '../../../utils/Logger.js';
 
 /**
- * ⭐ **CR3-203**: there was no error boundary anywhere in the tree. Any render
- * exception — on the mat, in the dock, in a drawer — unmounted the WHOLE React
- * app while the engine kept ticking and saving underneath it, so the player
- * saw a black screen and had no way to tell their game was still alive
- * (the handoff's black-screen crash; its specific cause is fixed, but nothing
- * was added to catch the next one).
- *
- * Owner ruling: when part of the screen crashes, only THAT area is replaced
- * by a small plain panel saying so, with a Reload button; the rest of the
- * game keeps working. So this is deliberately one boundary per surface
- * (`MatBoard`, the hero dock, the Bank panel, the drawers), not one boundary
- * around everything — plus one more at the very root as a last resort for
- * whatever isn't under a named surface yet.
- *
- * A plain class component: `componentDidCatch` / `getDerivedStateFromError`
- * are the only way to catch a render error in React, hooks included.
+ * A render exception on the mat, in the dock or in a drawer would otherwise unmount the WHOLE
+ * React app while the engine kept ticking and saving underneath it, leaving a black screen
+ * with no sign the game is still alive.
+ * When part of the screen crashes, only THAT area is replaced by a small plain panel saying
+ * so, with a Reload button; the rest of the game keeps working. So this is deliberately one
+ * boundary per surface (`MatBoard`, the hero dock, the Bank panel, the drawers), not one
+ * around everything, plus one more at the very root as a last resort for whatever isn't under
+ * a named surface yet.
+ * A plain class component: `componentDidCatch` / `getDerivedStateFromError` are the only way
+ * to catch a render error in React, hooks included.
  */
 export class ErrorBoundary extends React.Component {
     constructor(props) {

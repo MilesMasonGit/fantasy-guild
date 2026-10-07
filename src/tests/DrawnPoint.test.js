@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
 /**
- * The test helper the ~37 mat-position assertions read (CR3-556). It must give
- * the same answer whether an element is placed by `left`/`top` (today) or by a
- * `transform` (CR3-007), so that change leaves those assertions green.
+ * The test helper the ~37 mat-position assertions read. It must give the same
+ * answer whether an element is placed by `left`/`top` (today) or by a
+ * `transform`, so that change leaves those assertions green.
  */
 describe('drawnPoint reads where an element is drawn, however it is placed (CR3-556)', () => {
     const el = (style) => {

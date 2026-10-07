@@ -1,4 +1,4 @@
-// Fantasy Guild — What every art pixel of the ground should look like.
+// what every art pixel of the ground should look like
 
 import { LATTICE_SIZE, subtileArtPx, variantAt } from './TerrainLattice.js';
 import { buildBandMasks } from './TerrainBands.js';
@@ -7,33 +7,16 @@ import { buildToneMap } from './TerrainTones.js';
 import { getTerrain, substrateVariants } from '../../config/registries/terrainRegistry.js';
 
 /**
- * One answer per art pixel: which substrate, which variant of it, and whether
- * it is tinted.
+ * One answer per art pixel: which substrate, which variant of it, and whether it is tinted.
  *
- * ## ⚠️ Why this exists — the renderer was five passes and cost 60ms
+ * ⚠️ A single buffer rather than one canvas pass per feature: the features all answer the same
+ * question (what is at this pixel), and a pass each, with a clip() call per boundary pixel, cost
+ * far too much per repaint. A wandering coastline is just a different value in the buffer.
  *
- * Every terrain feature used to get its own pass over the whole board: flat
- * fills, then a clipped draw per ragged boundary pixel, then beaches, then
- * shore bands, then ground patches. Five composites of a 928×928 surface, and
- * **2,455 separate `clip()` calls** for the boundaries alone. Measured at 55–63ms
- * for one repaint — four dropped frames every time a Token moved — and each new
- * effect added another 8–17ms, so it was getting worse with every feature.
+ * Kept as data, not drawing, so it can be tested.
  *
- * The passes were never independent: they all answer the same question, "what
- * is at this pixel". Asked once, the answer is a single buffer that gets written
- * to the screen in one blit, and a wandering coastline is just a different value
- * in it rather than a clipped draw.
- *
- * Kept as *data* rather than as drawing, for the reason P3 taught the hard way:
- * a mistake inside the renderer is invisible to everything except a person
- * looking closely at the screen.
- *
- * ## What is already folded in before this runs
- *
- * `resolveArtPixels` has done the ragged boundaries and the beaches, so the
- * terrain index here is what the player ends up seeing. That is why the two
- * most expensive old passes have no equivalent below — there is nothing left
- * for them to do.
+ * `resolveArtPixels` has already done the ragged boundaries and the beaches, so the terrain index
+ * here is what the player ends up seeing.
  */
 
 /**
@@ -54,11 +37,8 @@ export function buildSurface(artPixels, seed = 0) {
     const patches = buildPatchMasks(artPixels, seed);
     const toneMap = buildToneMap(artPixels);
 
-    // --- Small per-palette and per-substrate tables, built once -------------
-    //
-    // Everything the inner loop needs is resolved to an integer here, because
-    // the loop runs 53,824 times and a registry lookup or a string compare in
-    // it is the difference between two milliseconds and twenty.
+    // Tables resolved to integers once: the inner loop runs once per art pixel, so a registry
+    // lookup or string compare in it is expensive.
 
     const substrates = [];
     const substrateIndex = new Map();
@@ -94,21 +74,16 @@ export function buildSurface(artPixels, seed = 0) {
     const variants = new Int16Array(size * size);
     const tintAt = new Int16Array(size * size).fill(-1);
 
-    // Patch masks are keyed by substrate id; flatten to an index once.
     const patchMasks = Object.entries(patches.masks)
         .map(([id, mask]) => ({ substrate: substrateIdFor(id), mask }));
 
-    // Band masks are keyed by terrain; flatten to (palette index, tint index).
     const bandMasks = bands.bands.map(({ terrainId, mask, appearance }) => ({
         terrain: palette.indexOf(terrainId),
         tint: tintIdFor(appearance),
         mask
     })).filter(b => b.terrain >= 0 && b.tint >= 0);
 
-    // --- Per-subtile variant tables ----------------------------------------
-    //
-    // The variant is a property of the subtile, not of the pixel, so it is
-    // chosen 841 times rather than 53,824.
+    // The variant is a property of the subtile, not of the pixel, so it is chosen once per subtile.
     const variantTables = substrates.map(id => {
         const count = substrateVariants(id);
         const table = new Int16Array(LATTICE_SIZE * LATTICE_SIZE);
@@ -120,23 +95,15 @@ export function buildSurface(artPixels, seed = 0) {
         return table;
     });
 
-    // --- The one pass -------------------------------------------------------
-
     for (let i = 0; i < at.length; i++) {
         const terrain = at[i];
-        if (terrain < 0) continue;   // bare table, left transparent
+        if (terrain < 0) continue;
         substrateAt[i] = baseSubstrate[terrain];
     }
 
-    // ⚠️ Three things want to colour a pixel, and the order they are applied in
-    // *is* the precedence rule:
-    //
-    //   tone   — the terrain's overall wash, and the weakest claim
-    //   band   — a local edge effect, so more specific than a wash
-    //   patch  — different ground entirely, so it drops the colouring with it
-    //
-    // Written down here because it used to be implicit in which canvas pass ran
-    // last, where nothing could see it and nothing could test it.
+    // ⚠️ Three things want to colour a pixel, and the order they are applied in is the precedence
+    // rule: tone (the terrain's overall wash, the weakest claim), band (a local edge effect), patch
+    // (different ground entirely, so it drops the colouring with it).
     if (toneMap.tones.length) {
         const offset = tints.length;
         for (const tone of toneMap.tones) tints.push(tone);
@@ -159,9 +126,8 @@ export function buildSurface(artPixels, seed = 0) {
         }
     }
 
-    // Subtile by subtile, so the variant is looked up 841 times and the pixel
-    // index is a counter — rather than two divisions per pixel to rediscover
-    // which subtile we are standing in.
+    // Subtile by subtile, so the variant is looked up once per subtile and the pixel index is a
+    // counter rather than two divisions per pixel.
     for (let sy = 0; sy < LATTICE_SIZE; sy++) {
         for (let sx = 0; sx < LATTICE_SIZE; sx++) {
             const subtile = sy * LATTICE_SIZE + sx;

@@ -50,8 +50,7 @@ export function updateHeroProfile(heroId, updates = {}) {
         hero.spriteId = updates.spriteId;
     }
 
-    // The hero's lasting flag colour (FP-82), chosen in the Edit Hero modal.
-    // Only one of the eight colours is accepted.
+    // Only one of the eight flag colours is accepted.
     if (updates.flagColour !== undefined && isFlagColour(updates.flagColour)) {
         hero.flagColour = updates.flagColour;
     }

@@ -5,13 +5,6 @@ import { fileURLToPath } from 'url';
 
 /**
  * Free Playmat — the guards that keep the grid from growing back.
- *
- * 1. **The grid is deleted** (slice 1.6d-2). `gridShim.js`, `boardGeometry.js`
- *    and `adjacency.js` are gone, and the scan at the bottom of this file drives
- *    every name that was grid *geometry* to zero outside `src/tests/` and two
- *    short labelled allow-lists.
- * 2. **`tests/fixtures/mat.js` is test layout, not a game concept.** Nothing
- *    outside `src/tests/` may import it.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -176,22 +169,6 @@ describe('⚠️ board events carry instance ids, not tiles (slice 1.6b part 2)'
 
 /**
  * ⭐ **This scan passing is what "the grid is deleted" means.**
- *
- * It looks for grid **geometry** — the names that only make sense if there is a
- * lattice of numbered squares under the playmat — and requires **zero** of them
- * anywhere in `src/` outside `src/tests/` and the two labelled allow-lists
- * below. Putting any one of them back fails this file, which the neutering
- * proof at the end demonstrates name by name.
- *
- * ## What is deliberately NOT scanned
- * Names that merely *say* "tile" but are not grid geometry are out of scope, and
- * are listed in `NOT_GEOMETRY_KEPT` so the decision is recorded rather than
- * forgotten. They are event and module names, and renaming them is a separate
- * job with its own risk.
- *
- * ## Comments are stripped before scanning
- * These names appear in prose all over the engine — this file included — saying
- * what was deleted and when. That history is worth keeping. Only code counts.
  */
 
 /** Strip block and line comments, so only real code is scanned. */
@@ -201,12 +178,12 @@ function codeOf(text) {
 
 /**
  * The Guild Hall upgrade board was allow-list 1 here: a separate 7×7 diagram
- * with its own geometry module (`upgradeBoardGeometry.js`). B9 (TL-23) turned it
- * into a web of freely placed nodes and deleted that module, so it no longer
- * needs excusing and is scanned like everything else.
+ * with its own geometry module (`upgradeBoardGeometry.js`). B9 turned it into a
+ * web of freely placed nodes and deleted that module, so it no longer needs
+ * excusing and is scanned like everything else.
  *
- * ⚠️ **The allow-list — dormant terrain (FP-10).** `TERRAIN_ENABLED` is false and
- * this stack draws nothing. It is wholly lattice-shaped and is **re-latticed or
+ * ⚠️ **The allow-list — dormant terrain.** `TERRAIN_ENABLED` is false and this
+ * stack draws nothing. It is wholly lattice-shaped and is **re-latticed or
  * deleted when terrain is revived**; slice 1.6d-3 owns it. Not re-latticed here.
  */
 const DORMANT_TERRAIN_FILES = [
@@ -218,14 +195,6 @@ const DORMANT_TERRAIN_FILES = [
 /**
  * ⚠️ **Kept on purpose — names that say "tile" but are not geometry.** Each is
  * an identifier in the live event/module vocabulary, not a coordinate system:
- *
- * * `BOARD_EVENTS.TILE_CHANGED` — published when a **Token** changes.
- * * `BOARD_EVENTS.TILE_EVENT_ALERT` — the red/green mark on a **Token**.
- * * `TileModifiers.js` — the module that aggregates a **Token's** modifiers.
- *
- * A follow-up rename to `TOKEN_CHANGED`, `TOKEN_ALERT` and `TokenModifiers.js`
- * is proposed as its own task. Until then this list is the record of why the
- * scan below ignores them.
  */
 const NOT_GEOMETRY_KEPT = ['TILE_CHANGED', 'TILE_EVENT_ALERT', 'TileModifiers.js'];
 

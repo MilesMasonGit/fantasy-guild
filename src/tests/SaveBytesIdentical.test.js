@@ -18,16 +18,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * CR3-109 — the save is written without deep-copying the state first, and its
- * bytes are exactly what they were.
- *
- * `GameState.serialize()` (unchanged, and still what the tests and tools read)
- * deep-copies the whole state with `structuredClone`, strips the heroes'
- * runtime props from the copy and stamps `meta.lastSavedAt` on it; the save
- * then stringifies the copy. `serializeJson()` does the same two edits with a
- * `JSON.stringify` replacer instead. Here both run on the bench's S2 and S3
- * boards, after some play, and must give the same string, and the save
- * `SaveManager.save` writes must be that string.
+ * the save is written without deep-copying the state first, and its bytes are
+ * exactly what they were.
  */
 
 /** The bench's seeded generator (bench/lib/prelude.mjs, mulberry32). */

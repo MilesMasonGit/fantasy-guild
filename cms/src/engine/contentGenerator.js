@@ -7,9 +7,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  * then asks it to generate balanced entities to fill a specific gap.
  */
 
-/**
- * Build the system prompt that teaches Gemini the economic model.
- */
 function buildSystemPrompt(globals, existingItems, existingEffects) {
   const itemList = Object.values(existingItems)
     .filter((i) => i.trueCost > 0)
@@ -183,13 +180,9 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
 IMPORTANT: In inputs/outputs/drops/assignedEnemies/assignedEffectName/targetIdName/mapFragmentTargetName/idName, use names NOT IDs. The system will resolve names to IDs after import.`;
 }
 
-/**
- * Build the user prompt for a specific generation request.
- */
 function buildUserPrompt(request, areas) {
   const parts = [];
 
-  // Area context
   if (request.areaId && areas) {
     const area = Object.values(areas).find((a) => a.id === request.areaId);
     if (area) {
@@ -236,9 +229,6 @@ function buildUserPrompt(request, areas) {
   return parts.join('\n');
 }
 
-/**
- * Call Gemini to generate content.
- */
 export async function generateContent(apiKey, globals, existingItems, request, areas, existingEffects) {
   if (!apiKey) {
     throw new Error('Gemini API key not configured. Add it in the Settings panel.');
@@ -263,13 +253,10 @@ export async function generateContent(apiKey, globals, existingItems, request, a
 
   const text = result.response.text();
 
-  // Parse JSON response
   let parsed;
   try {
-    // Try direct parse first
     parsed = JSON.parse(text);
   } catch {
-    // Try extracting from markdown code fences
     const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (match) {
       parsed = JSON.parse(match[1].trim());
@@ -300,13 +287,11 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
   const existingEffects = entityStore.getState().effects;
   const existingAreas = entityStore.getState().areas;
 
-  // Build Area name → id lookup
   const areaNameToId = {};
   for (const a of Object.values(existingAreas || {})) {
     areaNameToId[a.name.toLowerCase()] = a.id;
   }
 
-  // Pre-pre-pass: Create generated Areas
   const newAreaIds = {};
   for (const a of (generated.areas || [])) {
     const existingId = areaNameToId[a.name.toLowerCase()];
@@ -335,7 +320,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  // Build item name → id lookup
   const nameToId = {};
   for (const item of Object.values(existingItems)) {
     nameToId[item.name.toLowerCase()] = item.id;
@@ -346,7 +330,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     effectNameToId[eff.name.toLowerCase()] = eff.id;
   }
 
-  // Pre-pass: Create generated effects
   for (const eff of (generated.effects || [])) {
     if (activeEntityType === 'effect' && activeId) {
       entityStore.getState().updateEffect(activeId, {
@@ -373,11 +356,9 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  // First pass: create all generated items
   const newItemIds = {};
   for (const item of (generated.items || [])) {
     const assignedEffectId = effectNameToId[item.assignedEffectName?.toLowerCase()] || '';
-    // Check if item already exists by name
     const existingId = nameToId[item.name.toLowerCase()];
     if (activeEntityType === 'item' && activeId) {
       entityStore.getState().updateItem(activeId, {
@@ -395,7 +376,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
       nameToId[item.name.toLowerCase()] = activeId;
     } else if (existingId) {
       newItemIds[item.name] = existingId;
-      // Update existing item if it was a ghost (no trueCost)
       const existing = existingItems[existingId];
       if (existing && !existing.trueCost && item.trueCost) {
         entityStore.getState().updateItem(existingId, {
@@ -423,7 +403,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  // Second pass: create all generated enemies
   const newEnemyIds = {};
   const enemyNameToId = {};
   for (const enemy of (generated.enemies || [])) {
@@ -473,7 +452,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  // Third pass: Tasks, Recipes, Encounters, Stations
   const newTaskIds = [];
   const newRecipeIds = [];
   const newEncounterIds = [];

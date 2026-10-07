@@ -50,11 +50,11 @@ describe('7-Stat Combat Engine (combat_formula_spec.md)', () => {
 
     // ⚠️ These two used to fetch `guild_hall_t1_skeleton` through `getEnemy`.
     // That enemy was one of the 18 hardcoded card-era entries deleted from
-    // `enemyRegistry` on 2026-08-24 (CR2-117) — nothing but this file ever
-    // named it, and enemies are authored content now. The assertions below
-    // check the same numbers against the budget function and a local fixture,
-    // so they test the formula engine rather than whichever enemies the owner
-    // happens to have authored today.
+    // `enemyRegistry` on nothing but this file ever named it, and enemies are
+    // authored content now. The assertions below check the same numbers
+    // against the budget function and a local fixture, so they test the
+    // formula engine rather than whichever enemies the owner happens to have
+    // authored today.
     it('budgetScale shrinks tutorial enemies proportionally', () => {
         const scaled = enemyCombatBudget(1, 0.25);
         expect(scaled.hp).toBe(8);              // 32 × G(1) × 0.25

@@ -3,15 +3,8 @@ import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
 
 /**
- * ⭐ **A big collection flies at most 12 sparkles, 60 ms apart** (CR3-352,
- * owner R6-Q4 = A).
- *
- * A Collect All can take forty piles at once. Forty arcs drawn on one frame is
- * noise, and a long frame. The cap and its stagger were the design (the
- * comment above `spawnCollected` still says so) but the call that applied them
- * was dropped in `f8dcae0`. Everything is still collected; only the drawing is
- * capped. After a quiet spell (250 ms) the queue starts again from zero, so the
- * first sparkle of the next collection flies at once.
+ * ⭐ **A big collection flies at most 12 sparkles, 60 ms apart** (owner
+ * R6-Q4 = A).
  */
 
 vi.mock('../systems/core/SettingsManager.js', () => ({

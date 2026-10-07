@@ -33,13 +33,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * `CYCLE_START` — the moment work begins (Unified Effects P5).
- *
- * The mirror of `CYCLE_COMPLETE`, and the moment the owner asked for first: a
- * buff should already be up while the hero swings, not arrive as they finish.
- *
- * The whole risk of this phase is the event firing at the wrong instant — once
- * per tick instead of once per cycle, or on a Token that is stalled and only
- * *looks* like it is working. Most of these tests are about that.
  */
 
 const TILE = 10;

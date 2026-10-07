@@ -1,21 +1,6 @@
 /**
- * Economic simulator — audit rows (phase P3+4).
- *
- * A row is what the simulator says out loud. Plan §12 sets the bar: *a designer
- * who reads no formulas knows which tag or dial to change next.* So a row
- * carries **what**, **why in game terms**, and **remedies, ranked**.
- *
- * Severities follow the existing audit panel (plan §12):
- * - `critical` — unpriceable content (orphans, cycles, deferred-only items)
- * - `warning`  — in-game but off-target (an unclosed integer residual)
- * - `info`     — the simulator exercised judgement you may want to see
- *                (margin floor engaged, anchor candidate changed, an untagged
- *                producer, a deferred-scope source)
- *
- * ⚠️ The audit panel has no shape of its own for a row. `recalculateEconomy`
- * flattens each one into a line of prose and sends it through the auditor's
- * refusal channel, so the severity leads the sentence rather than colouring a
- * badge. `dryRun.mjs` prints them properly grouped.
+ * Economic simulator: audit rows. A row is what the simulator says out loud: what, why in game terms, and ranked remedies. Severities: `critical` is unpriceable content (orphans, cycles, deferred-only items); `warning` is in-game but off-target (an unclosed integer residual); `info` is judgement the simulator exercised that you may want to see.
+ * ⚠️ The audit panel has no shape of its own for a row: `recalculateEconomy` flattens each into a line of prose and sends it through the auditor's refusal channel.
  */
 
 export const SEVERITY = Object.freeze({
@@ -26,15 +11,7 @@ export const SEVERITY = Object.freeze({
 
 const SEVERITY_ORDER = Object.freeze({ critical: 0, warning: 1, info: 2 });
 
-/**
- * Build one row. `code` is the stable machine name; `message` is the prose.
- *
- * `what` and `why` are the card's first two parts (plan §12), carried
- * separately so a surface that can afford two lines — the CMS's inline refusal
- * card — can show them apart, while everything that can only afford one line
- * reads `message`. A row built without them keeps `message` as its whole story;
- * `refusals.js` is what fills them in.
- */
+/** Build one row. `code` is the stable machine name; `message` is the prose. `what` and `why` are carried separately so a surface with room for two lines can show them apart; a row built without them keeps `message` as its whole story, and `refusals.js` fills them in. */
 export function makeRow(severity, code, message, extra = {}) {
     return Object.freeze({
         severity,
@@ -49,11 +26,7 @@ export function makeRow(severity, code, message, extra = {}) {
     });
 }
 
-/**
- * Sort rows into a stable, human-readable order: severity, then code, then the
- * ids. **Stability here is what makes two runs byte-identical** (plan §11), so
- * this is an acceptance criterion, not tidiness.
- */
+/** Sort rows into a stable, human-readable order: severity, then code, then the ids. Stability is what makes two runs byte-identical. */
 export function sortRows(rows) {
     return [...rows].sort((a, b) => {
         const s = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];

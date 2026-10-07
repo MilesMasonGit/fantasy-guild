@@ -15,27 +15,22 @@ import { reorderHeroInDock } from './dockReorder.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * Whether the horizontal hero dock shows under the main surface. It shows on
- * the playmat and is left out of the Guild Hall upgrade screen (Token
- * Lifecycle feedback Q7, FB-47). `fullscreenView` is `ui.fullscreen.view`.
+ * Whether the horizontal hero dock shows under the main surface. It shows on the playmat and
+ * is left out of the Guild Hall upgrade screen. `fullscreenView` is `ui.fullscreen.view`.
  */
 export function showsBottomHeroDock(fullscreenView) {
     return fullscreenView !== 'guild';
 }
 
 /**
- * ⭐ **The horizontal hero dock: a dark strip with the heroes standing in it**
- * (B10, FB-46). No ledge, no tabs: each hero idles at the mat's own art size,
- * cut off at the waist by the strip's bottom edge, with a name and HP bar over
- * the head (`DockHeroFigure`). Heroes out on the mat are darkened and sunk.
- *
- * The strip stays a drop target for recalls (a flag, or a hero dragged off the
- * mat) as before. The inspection sheet still slides up from it. The vertical
- * hero panel beside the Bank (`BankHeroPanel`) is a separate component and is
- * unchanged.
- *
- * `isBankOpen` is still accepted but no longer changes anything: it only
- * forced the old tabs open.
+ * The horizontal hero dock: a dark strip with the heroes standing in it. No ledge, no tabs:
+ * each hero idles at the mat's own art size, cut off at the waist by the strip's bottom edge,
+ * with a name and HP bar over the head (`DockHeroFigure`). Heroes out on the mat are darkened
+ * and sunk.
+ * The strip stays a drop target for recalls (a flag, or a hero dragged off the mat). The
+ * inspection sheet slides up from it. The vertical hero panel beside the Bank
+ * (`BankHeroPanel`) is a separate component.
+ * `isBankOpen` is still accepted but no longer changes anything.
  */
 export const BottomHeroDock = ({
     // eslint-disable-next-line no-unused-vars
@@ -57,7 +52,7 @@ export const BottomHeroDock = ({
 
     const isOpen = Boolean(selectedHeroId);
 
-    // The same art size the mat draws its heroes at (FP-99's whole steps).
+    // The same art size the mat draws its heroes at (whole steps).
     const artPx = dockArtPx(useLiveMatFit());
 
     const heroIds = useGameState(
@@ -80,10 +75,10 @@ export const BottomHeroDock = ({
                 e.target.closest('[data-dnd-region="drawer"]') ||
                 e.target.closest('[data-item-id]') ||
                 e.target.closest('[data-bank-tab]') ||
-                // The Bank-side hero panel (its tabs AND its own inspection
-                // sheet) is a separate aside this dock doesn't contain, but a
-                // click there is still "inside" (CR3-450). The playmat, or
-                // anywhere else, is genuinely outside and still closes it.
+                // The Bank-side hero panel (its tabs AND its own inspection sheet) is a
+                // separate aside this dock doesn't contain, but a click there is still
+                // 'inside'. The playmat, or anywhere else, is genuinely outside and still
+                // closes it.
                 e.target.closest('[data-bank-hero-panel]')
             ) {
                 return;
@@ -92,11 +87,10 @@ export const BottomHeroDock = ({
         };
 
         const handleKeyDown = (e) => {
-            // CR3-409 (owner: one Escape, one layer): while a drag is live,
-            // Escape only cancels it. dnd-kit's own Escape-to-cancel listener
-            // attaches at pointerdown, after this one (registered the moment
-            // the sheet opened), so it always runs AFTER this check — by the
-            // time it fires, `gi-dnd-active` is still present here.
+            // One Escape, one layer: while a drag is live, Escape only cancels it. dnd-kit's
+            // own Escape-to-cancel listener attaches at pointerdown, after this one
+            // (registered the moment the sheet opened), so it always runs AFTER this check; by
+            // the time it fires, `gi-dnd-active` is still present here.
             if (e.key === 'Escape' && !document.body.classList.contains('gi-dnd-active')) {
                 onCloseHero?.();
             }
@@ -118,9 +112,9 @@ export const BottomHeroDock = ({
     });
 
     return (
-        // Overflow stays VISIBLE upward: the heroes' heads, names and HP bars
-        // may stand over the bottom of the mat. z-40 keeps them above the mat
-        // (z-0) and under the drawers and modals, as the old dock sat.
+        // Overflow stays VISIBLE upward: the heroes' heads, names and HP bars may stand over
+        // the bottom of the mat. z-40 keeps them above the mat (z-0) and under the drawers and
+        // modals.
         <aside
             ref={mergeRefs(recall.setNodeRef, asideRef)}
             data-dnd-region={DND_SURFACE.DRAWER}
@@ -153,8 +147,10 @@ export const BottomHeroDock = ({
                 )}
             </div>
 
-            {/* The heroes, one row. On a narrow window each slot shrinks
-                (88 px down to 48 px) before the row runs out of room. */}
+            {/**
+             * The heroes, one row. On a narrow window each slot shrinks (88 px down to 48 px)
+             * before the row runs out of room.
+             */}
             <div className="absolute inset-0 flex flex-row items-end justify-center gap-1 px-2 z-40">
                 {heroIds.map((heroId, index) => (
                     <motion.div

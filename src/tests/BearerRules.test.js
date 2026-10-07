@@ -7,12 +7,7 @@ import Statements from '../../cms/src/components/editors/Statements.jsx';
 import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 
 /**
- * ⭐ **A Token's and an item's rules, on the Rules Line** (Rules Line P6, E-9).
- *
- * Owner ruling 2026-09-12: an effect only this bearer uses is edited in place;
- * a shared one stays read-only with its count and Edit, because an in-place edit
- * would change every other bearer while looking local. And the separate "Rules
- * Text" section goes — it printed the same sentences twice.
+ * ⭐ **A Token's and an item's rules, on the Rules Line** (Rules Line P6).
  *
  * ⚠️ These mount the real bearer panel, which reads the CMS store. The store is
  * reset before and after every test, exactly as `CMSSmoke` does — nothing here

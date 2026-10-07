@@ -17,16 +17,14 @@ function viewOf(roll) {
 const sameView = (a, b) => a === b || (!!a && !!b && a.text === b.text && a.fraction === b.fraction && a.title === b.title);
 
 /**
- * TurnRing — a turning Token's standing ring (FB-14, TL-12, B1.3): time to its
- * next roll, `0:34`, emptying toward the roll. On a Coast it counts to its
- * next chance to turn, on the Shrimp Coast it became to its chance to turn
- * back (the same authored cycle, read from the original, TL-12).
- *
- * The clock runs on game time (the engine's `delta`), so the ring polls it
- * every {@link TURN_COUNTDOWN_REFRESH_MS} rather than keeping its own. The
- * poll lives here so only this ring re-renders on it, never the MatToken, and
- * only when what it draws changed. `read()` returns `TimedChanges.nextTurnRoll`
- * for the Token plus its `everyMs`, or null (then no ring).
+ * TurnRing: a turning Token's standing ring: time to its next roll, `0:34`, emptying toward
+ * the roll. On a Coast it counts to its next chance to turn; on the Shrimp Coast it became, to
+ * its chance to turn back (the same authored cycle, read from the original).
+ * The clock runs on game time (the engine's `delta`), so the ring polls it every {@link
+ * TURN_COUNTDOWN_REFRESH_MS} rather than keeping its own. The poll lives here so only this
+ * ring re-renders on it, never the MatToken, and only when what it draws changed. `read()`
+ * returns `TimedChanges.nextTurnRoll` for the Token plus its `everyMs`, or null (then no
+ * ring).
  */
 export const TurnRing = ({ read }) => {
     const [view, setView] = useState(() => viewOf(read?.() ?? null));

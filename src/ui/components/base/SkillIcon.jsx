@@ -53,7 +53,6 @@ export const SkillIcon = ({
         'social'
     ]);
 
-    // Resolve sprite from definition, AssetManager, or standard directory path
     let spritePath = def?.sprite || (cleanId ? resolveSpritePath(def || cleanId || normalizedId) : null);
     if (!spritePath && cleanId && KNOWN_SKILL_SPRITES.has(cleanId)) {
         spritePath = `assets/skills/skill_${cleanId}.png`;

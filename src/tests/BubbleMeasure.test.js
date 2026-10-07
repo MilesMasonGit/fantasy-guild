@@ -6,12 +6,7 @@ import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 
 /**
  * ⭐ **Speech bubbles are measured when what they say changes, not every
- * render** (CR3-353, R6 rule 9).
- *
- * The layer re-renders with every walking step (its heroes move). It used to
- * read every bubble stack's size (`offsetWidth`/`offsetHeight`, a forced
- * layout) after each of those renders. A stack's size depends only on its
- * lines, so it is measured when the lines change.
+ * render** (R6 rule 9).
  */
 
 const h = React.createElement;

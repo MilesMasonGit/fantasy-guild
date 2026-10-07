@@ -29,12 +29,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ **Free Playmat slice 1.6b part 1 — the engine readers by instance id and
  * mat point.**
- *
- * The owner's framing rule: *there are no Tiles.* These tests lay Tokens out at
- * mat points with the test helper (`placeAt`) and ask the readers by **instance
- * id** and **point**. Where a test compares with "today's answer" it lays the
- * Tokens on today's 160 u step (`P(col, row)`, test layout only) so the old
- * tile algorithm can be written out beside the new reader.
  */
 
 const LARGE_BUFF = 'fixture_free_large_buff';
@@ -65,7 +59,7 @@ registerTokenTypes({
  */
 const ORIGIN = { x: 480, y: 163 };
 const P = (col, row) => ({ x: ORIGIN.x + col * SPACING, y: ORIGIN.y + row * SPACING });
-// The player picks a station's recipe (TL-15); a non-station is untouched.
+// The player picks a station's recipe; a non-station is untouched.
 const at = (typeIdOrInstance, point) => pickRecipe(placeAt(typeIdOrInstance, point.x, point.y));
 const yieldOf = (instance) => TileModifiers.resolveAxis(instance.id, EFFECT_TYPES.YIELD, 100);
 const sortedIds = (ids) => [...ids].sort();
@@ -145,13 +139,13 @@ describe('⭐ a moved buff Token: its old neighbours lose it AND its new neighbo
 // `nearby` answers is pinned on its own terms in `Nearby.test.js`.
 
 // ---------------------------------------------------------------------------
-// tokens() is a snapshot (CR3-001, test first)
+// tokens is a snapshot (test first)
 // ---------------------------------------------------------------------------
 
 describe('⭐ a tokens() list can be walked while Tokens are removed (CR3-001)', () => {
-    // CR3-001 caches the list `tokens()` returns. The engine walks it and
-    // removes as it goes (a depleted Token, a kill), so a cached list must
-    // never be the same array a removal edits: the walk would skip entries.
+    // The engine walks it and removes as it goes (a depleted Token, a
+    // kill), so a cached list must never be the same array a removal edits:
+    // the walk would skip entries.
     it('visits every Token that was on the mat when the walk began, whatever is removed meanwhile', () => {
         const placed = [0, 1, 2, 3, 4].map(i => at('fixture_producer', P(i, 0)));
         const ids = placed.map(t => t.id);
@@ -228,9 +222,9 @@ describe('⭐ Restrictions on a projected view (place / remove / move) give toda
         expect(refusal.ok).toBe(false);
         expect(refusal.violatingTypeId).toBe('fixture_coast');
 
-        // ⭐ The VIEW still says no to that exact point — but since FP-88 the
-        // engine does not refuse the drop, it moves it to the nearest point that
-        // obeys the rule. Either way the board is never left illegal.
+        // ⭐ The VIEW still says no to that exact point — but the engine does not
+        // refuse the drop, it moves it to the nearest point that obeys the rule.
+        // Either way the board is never left illegal.
         const res = Placement.placeTokenAt(BoardState.createTokenInstance('fixture_plain_coast', 500), P(2, 1));
         expect(res.success).toBe(true);
         expect(res.nudged).toBe(true);
@@ -292,8 +286,7 @@ describe('⭐ the per-instance neighbour cache drops on add, move, remove and a 
         expect(tiers()).toEqual({});
     });
 
-    // CR3-200 (test first) swaps the whole-cache drop on any move for a
-    // per-move one. These are the moves a per-move cache could miss.
+    // These are the moves a per-move cache could miss.
     it('a provider moved in from far away is seen at its new place (CR3-200)', () => {
         const station = at('fixture_tool_gated', P(2, 2));
         const tool = at('fixture_tool', P(6, 5));
@@ -466,9 +459,6 @@ describe('⭐ a board-reach rule still rebuilds every Token', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// CR3-004 (test first): what counts as an ambient source
-// ---------------------------------------------------------------------------
 
 const UPKEEP_AURA = 'fixture_free_upkeep_aura';
 const WHEN_ONLY = 'fixture_free_when_only';
@@ -497,9 +487,8 @@ registerTokenTypes({
 });
 
 describe('⭐ what counts as an ambient source (CR3-004, test first)', () => {
-    // CR3-004 indexes the Tokens that can be ambient sources instead of
-    // scanning every Token. The index must drop an aura whose upkeep lapses
-    // and must never list a rule that only fires on a moment.
+    // The index must drop an aura whose upkeep lapses and must never list a
+    // rule that only fires on a moment.
 
     it('a board-reach aura whose upkeep goes unpaid stops reaching a distant Token, and comes back when paid', () => {
         const far = at('fixture_producer', P(5, 5));

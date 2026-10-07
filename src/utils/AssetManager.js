@@ -6,15 +6,12 @@ import { SPRITE_MANIFEST } from '../config/registries/sprite-manifest.js';
  * with consistent scaling and framing.
  */
 
-// ⚠️ ART ALIASES, not live concepts. `AREA_ART_MAP` keys are area ids (areas
-// were retired by the playmat rework) and `HERO_MAP` keys are class names
-// (classes were retired, replaced by jobs). Both survive purely so old ids
-// still find a picture. Do not read them as evidence that areas or classes
-// exist.
+// ⚠️ ART ALIASES, not live concepts. `AREA_ART_MAP` keys are area ids and
+// `HERO_MAP` keys are class names; areas and classes are retired. Both survive
+// only so old ids still find a picture.
 //
-// They are at module scope on purpose: they used to be declared inside
-// `resolveSpritePath`, which runs once per visible sprite per render, so every
-// icon allocated two fresh objects (CR2-103, hoisted 2026-08-24).
+// Module scope on purpose: `resolveSpritePath` runs once per visible sprite per
+// render, so declaring them inside would allocate two objects per icon.
 
 /** CMS area-background id → art file stem. */
 const AREA_ART_MAP = {
@@ -50,17 +47,12 @@ const HERO_MAP = {
 };
 
 /**
- * Enemy Token sprite id → animation sheet path (Enemy Animations EA-A,
- * EAP-4). A small explicit list, the same principle as `ANIMATION_MAP`
- * below — only a Token whose sprite id is here animates; every other enemy
- * keeps its static art until it gets a sheet and an entry. The full path is
- * stored (not just a stem, as the hero map does) because enemy art is
- * already split across category folders (`enemies/animal/`, and others to
- * come) rather than one shared `heroes/animations/` directory.
+ * Enemy Token sprite id → animation sheet path. Only a Token whose sprite id is
+ * listed animates; every other enemy keeps its static art. Full paths are
+ * stored because enemy art is split across category folders.
  *
- * ⚠️ A different grid from a hero's sheet: 4 columns × 4 rows of 64px
- * frames, not 8×3 — see `AnimatedEnemySprite.jsx`, which reads this file's
- * shape, not `AnimatedHeroSprite.jsx`'s.
+ * ⚠️ A different grid from a hero's sheet: 4 columns × 4 rows of 64px frames,
+ * not 8×3. See `AnimatedEnemySprite.jsx`.
  */
 const ENEMY_ANIMATION_MAP = {
     e_cow: 'assets/enemies/animal/anim/ani_cow.png'
@@ -68,7 +60,7 @@ const ENEMY_ANIMATION_MAP = {
 
 /**
  * The animation sheet for an enemy Token's sprite id, or null if it has
- * none yet (EAP-4). `spriteId` is the Token def's own `sprite` field.
+ * none yet. `spriteId` is the Token def's own `sprite` field.
  */
 export function resolveEnemyAnimationPath(spriteId) {
     return ENEMY_ANIMATION_MAP[spriteId] || null;
@@ -100,7 +92,6 @@ export function resolveSpritePath(entity) {
     }
 
     // 2. Resolve ID for Manifest Lookup
-    // Priority: spriteId (New) > classId (Legacy) > templateId > ID
     let id = null;
     if (typeof entity === 'object') {
         id = entity.spriteId || entity.sprite || entity.background || entity.classId || entity.templateId || entity.id || entity.itemId;
@@ -114,7 +105,7 @@ export function resolveSpritePath(entity) {
 
     let spritePath = null;
 
-    // Direct Hero Sprite & Class ID Mapping (Bypass broken static manifests)
+    // Direct hero sprite and class id mapping
     if (id && typeof id === 'string') {
         if (HERO_MAP[id]) {
             spritePath = `assets/heroes/${HERO_MAP[id]}.png`;
@@ -276,9 +267,3 @@ export function resolveAnimationPath(entity) {
     
     return null;
 }
-
-// `renderIcon` was deleted on 2026-08-24 (CR2-103). It built an icon by
-// returning a raw HTML string with inline styles and an `onerror` attribute —
-// pre-React machinery that `ItemIcon.jsx` replaced — and had no callers in
-// `src/`, `cms/src/` or the tests. The default export went with it;
-// `resolveSpritePath` is the only thing anything imports from this file.

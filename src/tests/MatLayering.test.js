@@ -27,11 +27,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ Token Lifecycle feedback, slice **Q3 — layering**.
- *
- * * FB-1: hero flags follow the same layering as Tokens (lower on the mat in
- *   front) instead of always drawing on top.
- * * FB-2: while a Token is worked, it and its hero draw above every other
- *   Token and flag; when the work stops they drop back.
  */
 
 const h = React.createElement;
@@ -253,10 +248,10 @@ describe('on the mat', () => {
     });
 
     /**
-     * ⛔ Reversed by B5 (FB-44, TL-17): this used to pin that a flag in front
-     * of a Token kept the pointer — "the pointer on a flag raises no Token over
-     * it". Flags have no hitbox over Tokens now: a point on a Token's art
-     * circle is the Token's, wherever the event lands.
+     * ⛔ Reversed by B5: this used to pin that a flag in front of a Token kept
+     * the pointer — "the pointer on a flag raises no Token over it". Flags have
+     * no hitbox over Tokens now: a point on a Token's art circle is the
+     * Token's, wherever the event lands.
      */
     it('FB-44: the pointer on a flag over a Token hovers the Token, and every flag lets it through', () => {
         const tok = placeAt('fixture_producer', 600, 600);

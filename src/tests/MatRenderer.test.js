@@ -36,14 +36,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **Free Playmat slice 1.6c-2 — the mat renderer.**
- *
- * The owner's framing rule: *"We won't have 'Tiles' in the new system. Tokens
- * and flags sit freely around the playmat."* These tests hold the renderer to
- * it — every Token, hero and flag drawn **at its own mat point, keyed by Token
- * instance id**, with nothing on screen measured in tiles.
- *
- * The faint outline of where a Token could still land (FP-93) went with the
- * snapping in slice 1.6d-1, and the grid itself in slice 1.6d-2.
  */
 
 /** A Token two steps square, for the large-art geometry. */
@@ -229,7 +221,6 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
         expect(spot.x).toBe(tok.x + 64 + HeroMotion.STAND_GAP);
         expect(drawnPoint(drawn).x).toBe(place.left);
         expect(drawnPoint(drawn).y).toBe(place.top);
-        // D-266's slide-apart is gone: the Token has not moved.
         expect(drawnPoint(artOf(container, tok.id)).x).toBe(tok.x - 64);
     });
 
@@ -405,8 +396,8 @@ describe('the mat itself (FP-96)', () => {
         expect(parseFloat(surface.style.width)).toBe(matW());
         expect(parseFloat(surface.style.height)).toBe(matH());
 
-        // FP-96: the rounded border is the mat's only edge now — a placeholder
-        // until it gets real art.
+        // the rounded border is the mat's only edge now — a placeholder until
+        // it gets real art.
         expect(parseFloat(surface.style.borderRadius)).toBeGreaterThan(0);
         expect(surface.style.border).toBeTruthy();
 

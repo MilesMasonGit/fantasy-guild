@@ -1,4 +1,4 @@
-// Fantasy Guild — Triggered Token vocabulary (CMS rework Phase 6)
+// Fantasy Guild — Triggered Token vocabulary
 
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { ROLE, AMBIENT_ROLES } from './roleRegistry.js';
@@ -7,40 +7,30 @@ import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../systems/core/engineEvents.js
 /**
  * What a Triggered Token can react to, and how far it listens.
  *
- * ## The fifth Token category (CMS-29)
- * Producer, Context, Buff and Manager all either run a cycle or work by sitting
- * still. A **Triggered** Token does neither: it has no work cycle and needs no
- * hero, it watches for something to happen and acts, and it is rate-limited by
- * a **cooldown** rather than a cycle time.
- *
- * Distinct from a Passive Generator (D-116), which still runs its own cycle
- * unstaffed — a Triggered Token does not cycle at all, it waits and reacts.
- *
- * ## Extensible by design (CMS-32)
- * The owner was explicit that these are "baseline effects, with more that I
- * might need coded in later". Adding a row here makes the event immediately
+ * ## Extensible by design
+ * Adding a row here makes the event immediately
  * available in the CMS's trigger picker with no CMS-side change — the same
  * game-defines / CMS-provides-content split as `tokenConstants.js` and
  * `modifierPalette.js`.
  *
- * ## Why these three, and not the rest of BOARD_EVENTS (CMS-33)
+ * ## Which BOARD_EVENTS are offered
  * The UI-only events — `PROGRESS`, `ALERT_CHANGED`, `SPRITES_CHANGED` — are
  * plumbing for progress bars and particle sync, not meaningful game-state
  * changes, so they are deliberately not offered. `TILE_CHANGED`/`HERO_MOVED`
  * ("react to a neighbour being placed, or a hero arriving") are a bigger design
- * surface that was not picked up this round — not ruled out, just not built.
+ * surface that is not built — not ruled out.
  */
 
-/** How far a trigger listens (CMS-30). Chosen per Token, not fixed once. */
+/** How far a trigger listens. Chosen per Token, not fixed once. */
 export const TRIGGER_SCOPES = {
-    /** React only to the 8 neighbouring tiles — the Wheelbarrow's Ore Vein. */
+    /** React only to Tokens within the Near radius — the Wheelbarrow's Ore Vein. */
     NEARBY: 'nearby',
-    /** React to a condition anywhere, consistent with D-83's global supply. */
+    /** React to a condition anywhere (the global supply). */
     GLOBAL: 'global',
     /**
      * React to **this Token's own** cycle finishing.
      *
-     * ⚠️ Every trigger before this one listened *outward*. A Token reacting to
+     * ⚠️ Other triggers listen *outward*. A Token reacting to
      * itself is the shape that can recurse, so `TriggerSystem` carries an
      * explicit re-entrancy guard and a cascade depth cap rather than relying on
      * the author remembering to set a cooldown — see the note there.
@@ -49,7 +39,7 @@ export const TRIGGER_SCOPES = {
 };
 
 /**
- * ## ⭐ `roles` — who a moment puts in the room (Effects Grammar v2, G-2)
+ * ## ⭐ `roles` — who a moment puts in the room
  *
  * Every row declares the **roles** its event supplies, and a target may only
  * name a role its moment has. That is the whole defence against the targeting
@@ -64,17 +54,15 @@ export const TRIGGER_SCOPES = {
  *
  * ⚠️ **Declared is not present.** A row listing `actor` promises the payload has
  * somewhere to put one, not that anybody was there — an unstaffed passive
- * generator (D-116) completes cycles with a null hero. `resolveRoles` answers the
+ * generator completes cycles with a null hero. `resolveRoles` answers the
  * runtime question; this list answers the authoring one.
  *
  * @type {Array<{id: string, event: string, label: string, scopes: string[], roles: string[], hint: string}>}
  */
 /**
- * ⭐ **A moment is a short TAG, not a sentence** (owner ruling, 2026-09-12).
+ * ⭐ **A moment is a short TAG, not a sentence.**
  *
- * These read "On Cycle", not "When this Token's cycle completes". The owner's
- * words: *"should be more simple or shorter. Maybe just 'On Cycle' and I'll
- * teach the player what that means elsewhere."*
+ * These read "On Cycle", not "When this Token's cycle completes".
  *
  * ⚠️ **Terse everywhere, and the same words in game and in the CMS.** Half of
  * these are about a NEIGHBOUR rather than this Token, and a half-terse
@@ -83,7 +71,7 @@ export const TRIGGER_SCOPES = {
  * because there is one renderer — two would be a second place for the game to
  * disagree with itself.
  *
- * ⚠️ **The meaning moved into `hint`, it was not thrown away.** The panel shows
+ * ⚠️ **The meaning lives in `hint`.** The panel shows
  * both, and typing narrows on both, so the old prose is still how an author
  * finds a moment they cannot yet name.
  */
@@ -108,8 +96,7 @@ export const TRIGGER_EVENTS = [
         /**
          * ⭐ **"Leave a Stump behind when this depletes."**
          *
-         * The motivating case for `Spawns`/`Transforms`, and it was unauthorable
-         * in its natural form: `TOKEN_DEPLETED` existed with a NEARBY scope
+         * The motivating case for `Spawns`/`Transforms`. `TOKEN_DEPLETED` has a NEARBY scope
          * only, so a Token could hear a *neighbour* run out and never itself.
          *
          * ⚠️ **The charge ledger is already closed when this fires.**
@@ -131,7 +118,7 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
-         * ⚠️ Narrow exception to CMS-2's combat deferral, and deliberately so.
+         * ⚠️ Combat is otherwise out of scope for Triggered Tokens; this is a narrow exception.
          *
          * This is for an economy Token reacting to a kill nearby — it does not
          * model damage, defense or hit chance, and must not be read later as
@@ -146,14 +133,13 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
-         * The other moment the owner asked for first, beside the cycle start:
-         * a rule acting as a fight begins rather than as one ends (UE-15).
+         * A rule acting as a fight begins rather than as one ends.
          *
          * `COMBAT_RESOLVED` above is the mirror — that one is a kill, this one
          * is the swing before it.
          */
         id: 'COMBAT_ENGAGED',
-        // ⚠️ `opponent` here and on SELF_COMBAT_ENGAGED only (G-43). Not on
+        // ⚠️ `opponent` here and on SELF_COMBAT_ENGAGED only. Not on
         // COMBAT_RESOLVED: by then the creature is at 0 HP.
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT],
         event: BOARD_EVENTS.COMBAT_ENGAGED,
@@ -218,8 +204,7 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
-         * The mirror of `CYCLE_COMPLETE`, and the moment the owner asked for
-         * first (Unified Effects P5).
+         * The mirror of `CYCLE_COMPLETE`.
          *
          * `CYCLE_COMPLETE` is for reacting to work that *happened* — a bonus
          * alongside the output. This is for acting on work about to be done: a
@@ -248,7 +233,7 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
-         * ⭐ **The moment a live effect recurs on** (Effects Grammar v2, V6).
+         * ⭐ **The moment a live effect recurs on.**
          *
          * The mechanism behind every damage-over-time effect: an effect sitting
          * on somebody fires this every five seconds until it expires. It is what
@@ -270,7 +255,7 @@ export const TRIGGER_EVENTS = [
          * ⚠️ Phrased to follow the word **"When"**, because every moment's label
          * does. "Every few seconds, while carried" read as *"When every few
          * seconds, while carried, deals 2 damage…"* — the label was written as a
-         * standalone heading and the sentence is not a heading (G-10).
+         * standalone heading and the sentence is not a heading.
          */
         label: 'On Tick',
         scopes: [TRIGGER_SCOPES.SELF],
@@ -278,7 +263,7 @@ export const TRIGGER_EVENTS = [
     },
     {
         /**
-         * The Sigil's case: "Stone exists anywhere" (CMS-35).
+         * The Sigil's case: "Stone exists anywhere".
          *
          * There is no per-item "X was produced" event, only the coarse
          * `inventory_updated`. Rather than build item-specific board events, a
@@ -317,7 +302,7 @@ export function rolesOf(triggerId) {
     return getTriggerEvent(triggerId)?.roles || AMBIENT_ROLES;
 }
 
-/** Whether a moment can offer a given role at all (G-2). */
+/** Whether a moment can offer a given role at all. */
 export function momentSupplies(triggerId, role) {
     return rolesOf(triggerId).includes(role);
 }

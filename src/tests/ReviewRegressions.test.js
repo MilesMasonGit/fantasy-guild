@@ -41,15 +41,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * **Regressions from the code review of the effects rework.**
- *
- * Every test here pins a defect a reviewer found in shipped-looking work that
- * the existing suite passed clean. They are collected in one file deliberately:
- * each was invisible because a fixture dodged the exact condition that broke —
- * `uses: null` skipping the charge path, a hero standing on every bearer tile,
- * a fixture carrying no `to` key when the editor always writes one.
- *
- * That pattern is the lesson worth keeping: **a fixture that avoids the hard
- * case makes a green suite meaningless.**
  */
 
 const A = 15, NEIGHBOUR = 16;
@@ -131,14 +122,10 @@ describe('⭐ a Token that replaced itself does not pay a charge', () => {
          * the tile is cleared.
          *
          * ⚠️ `uses: 1` does NOT show it, and that is a separate finding: a
-         * one-charge Token is destroyed by `commitPlan` (D-118) BEFORE
-         * `CYCLE_COMPLETE` is published, so it never transforms at all. "Leave a
-         * Stump behind when this depletes" cannot be authored as a transform on
-         * completion today — see the note in the roadmap.
-         *
-         * Every fixture in `SpawnTransform.test.js` used `uses: null`, the one
-         * value that makes `applyDelta` a no-op, so the suite could not see any
-         * of this.
+         * one-charge Token is destroyed by `commitPlan` BEFORE `CYCLE_COMPLETE`
+         * is published, so it never transforms at all. "Leave a Stump behind
+         * when this depletes" cannot be authored as a transform on completion
+         * today — see the note in the roadmap.
          */
         ruleProducer('fixture_sapling_2use', KEYWORD.TRANSFORMS,
             { typeId: 'fixture_passive' }, { target: { role: ROLE.SELF } }, 2);
@@ -246,8 +233,8 @@ describe('⭐ a station can always be authored', () => {
 describe('⭐ an unstaffed Token can still act on itself', () => {
     it('transforms with no hero anywhere near it', () => {
         // `Transforms` was born aiming at `the actor`, and resolves a TILE from
-        // that role — so an unstaffed passive generator (D-116) could never
-        // transform on any board.
+        // that role — so an unstaffed passive generator could never transform
+        // on any board.
         ruleProducer('fixture_lonely_sapling', KEYWORD.TRANSFORMS,
             { typeId: 'fixture_passive' });
         registerTokenTypes({

@@ -91,20 +91,8 @@ export function Section({ title, icon, children, className = "" }) {
 }
 
 /**
- * The mark that says "the simulator writes this, not you".
- *
- * ## Why a mark and not a lock
- *
- * Derived inputs stay **normally styled and fully editable** (owner decision,
- * 2026-09-05). Greying them out would be the obvious move and is the wrong one:
- * a value the sim has not yet written still has to be typed by hand, and the
- * game reads the derived field, so locking it would make un-tagged content
- * unauthorable. The hazard was never that the fields are editable — it was that
- * nothing said which ones get overwritten.
- *
- * ⚠️ Deliberately **not** a severity colour. Red and amber mean "something is
- * wrong here" across this UI; derived is a statement of fact about a field, not
- * a problem with it, so it takes the neutral accent.
+ * The mark that says the simulator writes this field.
+ * ⚠️ A mark, not a lock: derived inputs stay fully editable, because a value the sim has not written still has to be typed by hand and the game reads the derived field. Deliberately not a severity colour; derived is a fact about a field, not a problem with it, so it takes the neutral accent.
  */
 export function DerivedMark({ title = 'Recalculate' }) {
   return (
@@ -122,12 +110,7 @@ export function DerivedMark({ title = 'Recalculate' }) {
   );
 }
 
-/**
- * A labelled form field.
- *
- * `derived` marks the field as one the simulator writes — see `DerivedMark` for
- * why that is a mark rather than a lock.
- */
+/** A labelled form field. `derived` marks a field the simulator writes (see `DerivedMark`). */
 export function Field({ label, className = "", derived = false, children }) {
   return (
     <div className={className}>
@@ -140,14 +123,7 @@ export function Field({ label, className = "", derived = false, children }) {
   );
 }
 
-/**
- * A heading for a block of derived fields.
- *
- * The output card is the case this exists for: its authored pair sat under an
- * "Intended yield" heading while the three fields the sim overwrites had no
- * heading at all, in identical styling, directly below near-identical labels
- * ("Base min" above "Min"). Naming the group is most of the fix.
- */
+/** A heading for a block of derived fields, so they are not mistaken for the authored fields beside them. */
 export function DerivedGroupLabel({ children = 'Derived' }) {
   return (
     <span className="text-[9px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">

@@ -7,24 +7,17 @@ import { rosterLimitForRank } from '../../../config/guildUpgrades.js';
 import { ENGINE_EVENTS } from '../../core/engineEvents.js';
 
 /**
- * Hero Lifecycle: Creation and Recruitment.
- *
- * Retirement was retired as a mechanic (owner decision, 2026-08-19, CR2-086):
- * heroes are never removed from the roster by the player, and a new recruit
- * arrives automatically when the Guild Hall raises the roster cap
- * (`GuildUpgradeManager.purchase`). `retireHero`, the recruit-cost formula and
- * the retirement Influence payout all went with it.
+ * Hero Lifecycle: creation and recruitment. The player never removes a hero from
+ * the roster; a new recruit arrives automatically when the Guild Hall raises the
+ * roster cap (`GuildUpgradeManager.purchase`).
  */
 
 /**
  * The roster cap, raised one per `roster_size` Guild Hall rank (0 to 8).
  *
  * `GuildUpgradeManager.recompute` normally writes `progress.rosterLimit`; the
- * fallback covers a save written before it ran, or a state shape caught
- * mid-migration. That fallback used to re-derive the cap by hand and left
- * `ROSTER_BASE` out (CR2-193) — so the two answers differ by the whole base the
- * moment ROSTER_BASE stops being 0, and the roster reads as full when it is not.
- * Both now go through `rosterLimitForRank`, the single definition.
+ * fallback covers a save written before it ran. Both go through
+ * `rosterLimitForRank`, so the cap has a single definition.
  */
 export function getRosterLimit() {
     return GameState.progress?.rosterLimit
@@ -37,8 +30,7 @@ export function isRosterFull() {
 }
 
 export function createHero(options = {}, silent = false) {
-    // Honours the same cap as addHero — otherwise this is a back door around
-    // a limit the game now enforces for real (Hero Dock Phase 3).
+    // Honours the same cap as addHero, or this is a back door around the limit.
     if (isRosterFull()) {
         logger.info('HeroLifecycle', 'Roster full — refused to create a new hero');
         return null;
@@ -72,8 +64,7 @@ export function addHero(heroData) {
         return null;
     }
 
-    // The roster is the whole roster now (Hero Dock Phase 3) — a full roster
-    // refuses the hero outright rather than quietly benching them. Callers
+    // A full roster refuses the hero outright rather than benching them. Callers
     // must check the null return and keep whatever the player was spending.
     if (isRosterFull()) {
         logger.info('HeroLifecycle', `Roster full — refused new hero "${heroData.name}"`);

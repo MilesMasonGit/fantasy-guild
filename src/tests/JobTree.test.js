@@ -22,31 +22,13 @@ import { canHeroFight } from '../utils/CombatFormulas.js';
  * the shape of the tree are all expected to move. Every rule below is one that
  * a human eye stops catching somewhere around the sixth sheet, and every one of
  * them would fail *silently* in play rather than throwing.
- *
- * Nothing here hardcodes a skill or job name except where the rule genuinely is
- * about a specific thing. Counts derive from the registries, so adding a
- * seventh base class or a thirteenth signature puts it under every rule
- * automatically.
  */
 
 const ADVANCED = getJobsByTier(JOB_TIERS.ADVANCED);
 const BASE = getJobsByTier(JOB_TIERS.BASE);
 
 /**
- * ⚠️ Token Lifecycle slice 1.1 (2026-09-25) — the known exceptions.
- *
- * Construction (SP-59), Farming (SP-60) and Explore (SP-74) joined the
- * foundation layer so a Recruit can build, farm and explore, but the promoted
- * sheets were deliberately left alone until the promotion overhaul (TL-6,
- * SP-58). Two things follow, and the rules below name them rather than
- * pretending the tree is still balanced:
- *
- * * `NOT_YET_IN_TREE` — the three new foundation skills are not part of the
- *   promoted tree's foundation design (no base class holds any of them), so the
- *   coverage audit runs over the other six.
- * * `FORMER_SIGNATURE` — the Warlord still lists `construction`, which used to
- *   be its signature and is now a foundation skill. It has no signature until
- *   the overhaul, and takes Construction back from the bank on promotion.
+ * ⚠️ Token Lifecycle slice 1.1 — the known exceptions.
  */
 const NOT_YET_IN_TREE = new Set(['construction', 'farming', 'explore']);
 const TREE_FOUNDATION = FOUNDATION_SKILL_IDS.filter(id => !NOT_YET_IN_TREE.has(id));
@@ -60,16 +42,16 @@ function advancedHolding(skillId) {
 
 describe('Every job sheet is well-formed', () => {
     it.each([...BASE, ...ADVANCED])('%s lists exactly HERO_SKILL_SLOTS skills', (jobId) => {
-        // ⚠️ TL-7: this is the width of the authored LIST (what the gate and
-        // the layer-shape rules read), not of the held sheet — a promoted hero
+        // ⚠️ this is the width of the authored LIST (what the gate and the
+        // layer-shape rules read), not of the held sheet — a promoted hero
         // also keeps every foundation skill (`getJobSheet`, tested below).
         expect(getJobSkills(jobId)).toHaveLength(HERO_SKILL_SLOTS);
     });
 
     it('the Recruit holds RECRUIT_SKILL_SLOTS: every foundation skill, nine of them', () => {
-        // Slice 1.1: the Recruit is wider than a promoted sheet (SP-59/60/74),
-        // so the first promotion narrows it. The count is pinned at nine so a
-        // silent change to the starting set is noticed.
+        // Slice 1.1: the Recruit is wider than a promoted sheet, so the first
+        // promotion narrows it. The count is pinned at nine so a silent change
+        // to the starting set is noticed.
         expect(getJobSkills(STARTING_JOB_ID)).toHaveLength(RECRUIT_SKILL_SLOTS);
         expect(RECRUIT_SKILL_SLOTS).toBe(9);
     });
@@ -106,8 +88,8 @@ describe('Each tier has the shape the design specifies', () => {
     });
 
     it.each(Object.keys(FORMER_SIGNATURE))('⚠️ %s lost its signature to the foundation layer (slice 1.1)', (jobId) => {
-        // Its signature moved to foundation (SP-59) and TL-6 leaves the sheet
-        // alone, so it reads 3 foundation · 1 combat · 2 shared · 0 signature.
+        // Its signature moved to foundation leaves the sheet alone, so it
+        // reads 3 foundation · 1 combat · 2 shared · 0 signature.
         expect(getJobSkills(jobId)).toContain(FORMER_SIGNATURE[jobId]);
         expect(getJobSkillsByLayer(jobId, SKILL_LAYERS.FOUNDATION)).toHaveLength(3);
         expect(getJobSkillsByLayer(jobId, SKILL_LAYERS.COMBAT)).toHaveLength(1);
@@ -123,11 +105,11 @@ describe('Each tier has the shape the design specifies', () => {
 });
 
 describe('A promotion adds — it never removes a starting skill (TL-7)', () => {
-    // ⚠️ Updated for Token Lifecycle slice 1.2 (TL-7, owner 2026-09-25). These
-    // used to assert that promotion NARROWS the sheet (base class: remove five
-    // foundation skills; advanced: remove two). The owner reversed that:
-    // promotion keeps every foundation skill, so down the tree nothing is
-    // removed and each promotion only adds its two new skills.
+    // ⚠️ Updated for Token Lifecycle slice 1.2. These used to assert that
+    // promotion NARROWS the sheet (base class: remove five foundation skills;
+    // advanced: remove two). The owner reversed that: promotion keeps every
+    // foundation skill, so down the tree nothing is removed and each promotion
+    // only adds its two new skills.
     it.each(BASE)('%s removes nothing and adds exactly 2 (its combat and shared skill)', (jobId) => {
         expect(removesOf(jobId), `${jobId} removals`).toEqual([]);
         expect(grantsOf(jobId), `${jobId} grants`).toHaveLength(2);
@@ -184,8 +166,8 @@ describe('A promotion adds — it never removes a starting skill (TL-7)', () => 
     });
 
     it('a promotion never removes the skills it gates on', () => {
-        // D-262 gates on the skills carried FORWARD. Gating on something the
-        // same promotion takes away would be incoherent.
+        // Gating on something the same promotion takes away would be
+        // incoherent.
         for (const jobId of [...BASE, ...ADVANCED]) {
             const removed = new Set(removesOf(jobId));
             for (const gate of getPromotionGateSkills(jobId)) {
@@ -242,8 +224,8 @@ describe('⚠️ Coverage — the audit that makes the tree authorable (D-268)',
     });
 
     it.each(SHARED_SKILL_IDS)('%s is held by an even share of advanced jobs', (skillId) => {
-        // This is the rule D-268 exists to enforce. Before it, Leadership sat
-        // at 7 of 12 while Nature, Crime and Enchanting sat at 3.
+        // This is the rule exists to enforce. Before it, Leadership sat at 7
+        // of 12 while Nature, Crime and Enchanting sat at 3.
         expect(advancedHolding(skillId).length).toBe(perShared);
     });
 
@@ -260,9 +242,9 @@ describe('⚠️ Coverage — the audit that makes the tree authorable (D-268)',
     });
 
     it('⚠️ known gap until the promotion overhaul: no promoted job holds Farming or Explore', () => {
-        // Slice 1.1 / TL-6. A fully-promoted guild cannot farm or explore (it
-        // can build only through the Warlord). This pins the gap so it is
-        // visible; the overhaul (SP-58) should turn it into a coverage rule.
+        // Slice 1.1. A fully-promoted guild cannot farm or explore (it can
+        // build only through the Warlord). This pins the gap so it is
+        // visible; the overhaul should turn it into a coverage rule.
         for (const skillId of NOT_YET_IN_TREE) {
             if (Object.values(FORMER_SIGNATURE).includes(skillId)) continue;
             expect(advancedHolding(skillId), skillId).toEqual([]);
@@ -298,10 +280,10 @@ describe('The tree is connected and complete', () => {
     });
 
     /**
-     * ⚠️ The gold half of this was deleted in Promotes rule P3 (PR-6). A
-     * promotion is paid for with a Token charge, so `PROMOTION_COSTS` holds only
-     * the skill threshold. What the tiers must still differ on is the
-     * QUALIFICATION: an advanced job has to ask more of a hero than a base one.
+     * ⚠️ The gold half of this was deleted in Promotes rule P3. A promotion is
+     * paid for with a Token charge, so `PROMOTION_COSTS` holds only the skill
+     * threshold. What the tiers must still differ on is the QUALIFICATION: an
+     * advanced job has to ask more of a hero than a base one.
      */
     it('advancing demands more of a hero than the first promotion', () => {
         expect(PROMOTION_COST_AT(JOB_TIERS.ADVANCED).skillLevel)
@@ -330,9 +312,9 @@ describe('Hero generation reads the tree, rather than repeating it', () => {
 
     it.each(getAllJobIds())('generating straight into %s produces that sheet', (jobId) => {
         // Phase 5 promotes heroes properly; this proves the data is right and
-        // the wiring honours it, without waiting for that machinery.
-        // ⚠️ TL-7: the held sheet is `getJobSheet` (every foundation skill plus
-        // the job's own), no longer the six-wide listed `skills`.
+        // the wiring honours it, without waiting for that machinery. ⚠️ the
+        // held sheet is `getJobSheet` (every foundation skill plus the job's
+        // own), no longer the six-wide listed `skills`.
         const hero = generateHero({ jobId });
 
         expect(hero.jobId).toBe(jobId);

@@ -9,7 +9,7 @@ import {
 } from '../systems/core/DevTools.js';
 import { MAX_TICK_DELTA_MS } from '../config/loopConstants.js';
 
-// Token Lifecycle slice 0.2 (DP-11): the QA panel's give-item and
+// Token Lifecycle slice 0.2: the QA panel's give-item and
 // advance-timers helpers.
 
 vi.mock('../config/registries/itemRegistry.js', () => {
@@ -37,7 +37,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 beforeEach(() => {
     GameState.initNew();
     InventoryManager.init();
-    SpriteLayer.init();          // wires the D-138 overflow subscription
+    SpriteLayer.init();          // wires overflow subscription
 });
 
 describe('listGivableItemIds', () => {

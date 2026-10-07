@@ -4,19 +4,6 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { GameState } from '../state/GameState.js';
 import { GRID_SLOT_COUNT } from '../config/registries/equipmentConstants.js';
 
-// CR2-040 regression net.
-//
-// The bug: `rehydrateHero` ran `existing.filter(Boolean)` unconditionally and
-// re-wrote the survivors from index 0, so every gap the player left in their
-// nine-slot loadout was squeezed out on load. Gear placed in slots 2, 4 and 8
-// came back in slots 0, 1 and 2.
-//
-// Why nothing caught it: `SaveRoundtrip.test.js` covers `serialize` and
-// `migrateState`, but the damage happens later, in the rehydration step that
-// only the boot / slot-selection route reaches (`GameState.initFromSave` →
-// `_rehydrateAll` → `rehydrateHero`). Calling `SaveManager.loadSlot` does NOT
-// reproduce it. So these tests drive `rehydrateHero` and `initFromSave`
-// directly — anything shallower passes while the bug is still present.
 
 /** A hero shaped like one coming off disk, with the given equipment field. */
 function savedHero(equipment) {
@@ -136,7 +123,7 @@ describe('CR2-040: hero loadout survives rehydration at its own indices', () => 
     // --- The legacy migration this collapse actually exists for ---
 
     it('still collapses a legacy named-slot OBJECT into grid order', () => {
-        // The pre-D-7 shape: named slots, some empty. Collapsing is correct
+        // The pre- shape: named slots, some empty. Collapsing is correct
         // here — the names carry no index, so order is all there is.
         const hero = savedHero({
             hand1: 'item_water',

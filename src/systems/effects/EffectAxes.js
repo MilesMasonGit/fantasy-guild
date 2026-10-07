@@ -1,44 +1,21 @@
-// Fantasy Guild - Token Effect Axes (Card Mutators & Tokens, Phase 5)
-
 import { EFFECT_TYPES } from './constants.js';
 
 /**
- * The three v1 Token effect axes (§15.8) resolved against a card's aggregator,
- * with the §10 hard floors enforced HERE and nowhere else.
+ * Token effect axes (YIELD, WORK_TIME, INPUT_COST) resolved against an aggregator,
+ * with the hard floors enforced HERE and nowhere else.
  *
- * Every stamped Token registered its effect against one of these EFFECT_TYPES
- * in Phase 3 (`SlotTokens.buildTokenModifiers`); Phase 4 stamped them onto
- * slots; this module is where they finally change a number:
- *   - YIELD      → output quantities (`LootSystem.handleTaskReward`) — **no caller**
- *   - WORK_TIME  → **no caller**
- *   - INPUT_COST → **no caller**
+ * ⚠️ No live caller: `resolveYield` is only called by `LootSystem.handleTaskReward`,
+ * which nothing calls, and the other two have no caller outside tests. The board
+ * resolves these axes through `TileModifiers.resolveAxis`, which applies its own floors.
  *
- * ⚠️ Corrected 2026-08-24 (CR2-081). The two dead lines used to name
- * `StatProcessor` and `WorkProcessor.consumeInputs` as the consumers.
- * **Both files were deleted with the card system**, and `resolveWorkTime` and
- * `resolveInputCost` now have no caller in `src/` outside the tests. The board
- * resolves those two axes through `TileModifiers.resolveAxis` instead
- * (`BoardRunner`), which applies the same floors independently — see the
- * comments there.
- *
- * ⚠️ Corrected again 2026-08-26 (CR2-020). This block used to end "Only
- * `resolveYield` is still on a live path." It is not. `resolveYield`'s only
- * caller in `src/` is `LootSystem.handleTaskReward`, and **`handleTaskReward`
- * itself has no callers at all** — nothing in `src/` or `cms/src/` invokes it.
- * The line above naming it is a doc reference, not a call; an audit read it as
- * one. All three axes are therefore dead here today. Kept, not deleted: the
- * board's own `TileModifiers.resolveAxis` is the live path, and settling
- * whether these are worth reviving is the owner's call, not a cleanup.
- *
- * The math is always the full Three-Bucket formula via
- * `aggregator.resolveAxis()`; an aggregator with no modifiers for an axis
- * returns the base untouched, so these are safe to call unconditionally.
+ * An aggregator with no modifiers for an axis returns the base untouched, so these are
+ * safe to call unconditionally.
  */
 
-/** §10 / §14: a task can never take less than one second, however mitigated. */
+/** A task can never take less than one second, however mitigated. */
 export const MIN_WORK_TIME_MS = 1000;
 
-/** §10: an input cost can never drop below one unit. */
+/** An input cost can never drop below one unit. */
 export const MIN_INPUT_COST = 1;
 
 /** Resolve an axis, tolerating a missing aggregator (returns base). */
@@ -60,10 +37,8 @@ export function resolveYield(aggregator, baseQuantity) {
 /**
  * Token-adjusted Work Time in ms, floored at {@link MIN_WORK_TIME_MS}.
  *
- * The floor only bites once Tokens have actually touched the time: a card
- * whose *base* tick is already under a second (a content choice) is left
- * alone, but no stack of Haste can drive a modified time below the floor
- * (§10 "no absolute mitigation").
+ * The floor only bites once Tokens have touched the time: a base tick already under
+ * a second is left alone, but no stack of Haste can push a modified time below it.
  */
 export function resolveWorkTime(aggregator, baseMs) {
     const adjusted = resolve(aggregator, EFFECT_TYPES.WORK_TIME, baseMs);

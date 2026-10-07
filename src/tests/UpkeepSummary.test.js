@@ -15,9 +15,9 @@ import { computeUpkeepSummary, formatRate, formatRunsOut } from '../systems/boar
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
- * Token Lifecycle slice 8.2 — the **Upkeep Summary** maths (TL-4): every
- * ongoing cost per item per minute, the Bank, a rough runs-out, who waits, and
- * the trickle's income.
+ * Token Lifecycle slice 8.2 — the **Upkeep Summary** maths: every ongoing cost
+ * per item per minute, the Bank, a rough runs-out, who waits, and the
+ * trickle's income.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

@@ -24,15 +24,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ **Free Playmat slice 1.6d-3 — the mat's size is live.**
- *
- * Two things are held here:
- *
- * 1. **Nothing caches how big the mat is.** `matW()` / `matH()` are functions on
- *    purpose, and every rule that measures against the mat's edge has to see a
- *    new size on its very next call — no reload, no re-import.
- * 2. **Shrinking the mat pulls what no longer fits back inside** (FP-98):
- *    Tokens clamped *and* spaced, flags clamped only (FP-83), owed spots clamped,
- *    and nothing lost. Growing it moves nothing at all.
  */
 
 const MID = () => ({ x: Math.round(matW() / 2), y: Math.round(matH() / 2) });
@@ -124,7 +115,7 @@ describe('⭐ the mat size is the Mat Tuner’s, read live (slice 1.6d-3)', () =
 });
 
 // ---------------------------------------------------------------------------
-// 2. Shrinking pulls things in (FP-98)
+// 2. Shrinking pulls things in
 // ---------------------------------------------------------------------------
 
 describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', () => {
@@ -197,7 +188,7 @@ describe('⭐ shrinking the mat pulls what no longer fits back inside (FP-98)', 
         const b = BoardState.flagOf('h2');
         // Clamped onto the mat's own edge — flags use the whole mat, not an art circle.
         expect({ x: a.x, y: a.y }).toEqual({ x: 960, y: 614 });
-        // ⭐ FP-83: two flags at one point both stand there. Neither was spaced.
+        // ⭐ two flags at one point both stand there. Neither was spaced.
         expect({ x: b.x, y: b.y }).toEqual({ x: a.x, y: a.y });
     });
 

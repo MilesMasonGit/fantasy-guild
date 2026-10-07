@@ -2,32 +2,20 @@
 
 /**
  * The Token registry — the *type* half of "a Token is a definition plus board
- * state" (D-79). Board state lives on the instance (see `BoardState.js`); this
+ * state". Board state lives on the instance (see `BoardState.js`); this
  * holds everything true of every copy.
  *
- * ## Definitions live in `data/`, not here (CMS rework Phase 0, CMS-82)
- * Token definitions used to be a hand-authored object literal in this file.
- * They now load from `data/tokens.json` (plus an optional `data/tokens/**`
- * folder), so the CMS has somewhere to write — CMS-53 makes the CMS the
- * exclusive authoring surface, and it had no data file to target while Tokens
- * were JavaScript. This file is now a loader plus accessors.
+ * ## Definitions live in `data/`, not here
+ * Definitions load from `data/tokens.json` (plus an optional `data/tokens/**` folder); this file is a loader plus accessors.
  *
- * ⚠️ **The ~190 lines of design commentary that used to sit inline here moved
- * to [`token_content_notes.md`](../../../token_content_notes.md)** (CMS-88).
- * JSON cannot carry comments, and the reasoning was worth more than the
- * convenience of having it beside the numbers. **Read that document before
- * authoring or retuning Tokens** — it holds the four authoring rules, the
- * two independent axes (rarity and charges — `theme` was retired, see
- * `concept_audit.md` §A), the execution-config
- * schema, and the per-Token justifications for why the shipped numbers are
- * what they are.
+ * ⚠️ Design commentary on authoring and retuning Tokens lives in `docs/archive/token_content_notes.md`.
  *
  * The rule that most needs restating here, because a test depends on it:
- * ⚠️ **every material must have at least one tool-free source** (D-213, rule
- * 1). `ContentRules.test.js` asserts it mechanically — it is the only thing
+ * ⚠️ **every material must have at least one tool-free source.**
+ * `ContentRules.test.js` asserts it mechanically — it is the only thing
  * preventing a supply hard-lock.
  *
- * ⚠️ **Never hand-edit `data/tokens.json` once the CMS is live** (CMS-53).
+ * ⚠️ **Never hand-edit `data/tokens.json`.**
  * The CMS writes it wholesale; anything added by hand is destroyed on the next
  * sync.
  */
@@ -56,12 +44,8 @@ function loadJsonTokens() {
                 const data = module.default || module;
                 for (const [typeId, def] of Object.entries(data)) {
                     if (!def.id) def.id = typeId;
-                    // Library references become the statements the game runs on,
-                    // once, here (Unified Effects P1). Everything downstream —
-                    // TileModifiers, TriggerSystem, Restrictions, statementText,
-                    // deriveTokenType — keeps reading `def.statements` and did
-                    // not change when the library landed.
-                    // V10b: inline statements lose the retired enemy flag here;
+                    // Library references become the statements the game runs on, once, here, so everything downstream keeps reading `def.statements`.
+                    // Inline statements lose the retired enemy flag here;
                     // library statements already lost it in `effectRegistry`.
                     tokens[typeId] = expandBearer(migrateAppliesTargets(def), EFFECTS);
                 }
@@ -89,15 +73,9 @@ export const TOKENS = loadJsonTokens();
  *
  * ## Why this exists
  * Engine tests need Tokens with *stable, known* numbers — a producer that makes
- * exactly 2 of something every 12s, a consumer that needs exactly 5. Before
- * this, they used shipped content for that, which quietly made every balance
- * change a test-breaking change: retuning the Oakwood Grove failed assertions
- * in `TokenCycle` that were never about the Grove at all.
- *
- * That coupling was reported at the end of Phase 9 as the real shape of risk
- * 17 — hand-authored numbers do not scale, and they scale even worse when
- * touching one breaks twenty tests in three files. **Content should be free to
- * be retuned without the engine suite noticing.**
+ * exactly 2 of something every 12s, a consumer that needs exactly 5. Shipped content would make
+ * every balance change a test-breaking change, so **content should be free to be retuned without
+ * the engine suite noticing.**
  *
  * Fixtures live in `src/tests/fixtures/testTokens.js` and are all prefixed
  * `fixture_`, so they can never collide with content and are trivially
@@ -120,7 +98,7 @@ export function registerTokenTypes(definitions) {
 }
 
 /**
- * ## The registry version (CR3-047, round 3 review R3 §3.1 item 4)
+ * ## The registry version
  * Bumped on every `registerTokenTypes` call — today only a CMS re-sync (which
  * reloads the page) or a test re-registering a type mid-file. Nothing in the
  * shipped game changes content at runtime. A reader that memoises something
@@ -138,7 +116,7 @@ export function registryVersion() {
 /**
  * A Token definition by id, or null.
  *
- * Falls back to the engine-owned types (`engineTokens.js`, B6.1: the quest
+ * Falls back to the engine-owned types (`engineTokens.js`: the quest
  * Token), so an instance of one resolves like any Token. They are NOT in
  * `TOKENS` or {@link getAllTokenTypes}: those stay the authored content set
  * the audits and the Shop walk.
@@ -163,28 +141,19 @@ export function tokenName(typeId) {
 }
 
 /**
- * A Token's starting charges — `null` for unlimited use (D-176).
+ * A Token's starting charges — `null` for unlimited use.
  *
  * Deliberately returns `null` rather than `Infinity` or `0`: `null` and `0` are
  * opposites (never depletes vs spent), and every charge comparison has to check
  * `== null` first.
  *
- * ## `uses` is the field, and it is now the ONLY one. (CR2-121)
+ * ## `uses` is the ONLY charge field
  * `uses` is the sole charge field: this is its sole reader, and the CMS's own
  * Token editor writes it.
  *
- * A second field named `charges` used to sit beside it on 37 authored Tokens,
- * disagreeing with `uses` on 33 of them — one was `uses: 25` beside
- * `charges: 500`. It was dead data: the retired CMS balance engine solved a
- * lifetime value per Token and wrote it back under that name, and nothing ever
- * read it. That engine went with the economic simulator's cutover, and the
- * field itself was deleted from `data/tokens.json` on 2026-09-01.
- *
- * ⚠️ **Keep the two names apart anyway.** Nothing prevents the CMS growing a
- * `charges` field again, and if it does it will be a proposal, not the pool —
- * reading it here would not fail loudly, it would silently multiply some
- * Tokens' lifetimes twentyfold. `uses` is the field; anything else by that name
- * is data about a Token, not the Token's charges.
+ * ⚠️ **Never read a `charges` field here.** If the CMS ever grows one it will be a proposal,
+ * not the pool — reading it would silently multiply some Tokens' lifetimes twentyfold.
+ * `uses` is the field; anything else by that name is data about a Token, not its charges.
  */
 export function tokenStartingUses(typeId) {
     const def = getTokenType(typeId);
@@ -212,7 +181,7 @@ export function productionRoutes(typeId) {
     const def = TOKENS[typeId];
     if (!def) return [];
 
-    // Pooled recipes count as routes exactly as private ones do (CMS-39), so
+    // Pooled recipes count as routes, so
     // content validation sees a Kitchen's whole Cooking pool. Without this,
     // opting a station into a pool would silently exempt everything it makes
     // from rule 1's tool-free-source check.
@@ -237,19 +206,18 @@ export function productionRoutes(typeId) {
 /**
  * An output entry's quantity range, as `{ min, max }`.
  *
- * ## Why a range (CMS-41)
- * An output used to be a single fixed `quantity`. The CMS authors outputs as
+ * ## Why a range
+ * The CMS authors outputs as
  * `{ itemId, chance, minQty, maxQty }` so a Token can yield "2–4 Oak Wood"
  * rather than always exactly 2 — the variability that makes a completion worth
  * watching.
  *
  * **Backwards compatible on purpose:** an entry with only `quantity` reads as
- * the degenerate range `{ min: q, max: q }`, so every existing authored Token
- * keeps its exact behaviour and nothing needed migrating.
+ * the degenerate range `{ min: q, max: q }`.
  *
  * ⚠️ Per-entry `chance` is a **separate** axis and already independent — each
  * output rolls its own chance, so one cycle can yield several different items
- * (CMS-41). This is deliberately not the legacy "pick exactly one" cluster
+ * This is deliberately not the legacy "pick exactly one" cluster
  * behaviour, which stays orphaned.
  */
 export function outputRange(output) {
@@ -281,32 +249,8 @@ export function expectedOutputQuantity(output) {
 }
 
 /**
- * A Token's effect blocks (CMS-59/61/65).
- *
- * ## Blocks, not one buff
- * A Token is **not single-purpose** (CMS-58): it can produce AND carry an aura,
- * or carry two auras reacting to different neighbours. So effects are a *stack*
- * of blocks rather than the single `buff` object the schema used to allow, and
- * blocks are freely repeatable (CMS-65).
- *
- * Each block is a flexible container of already-typed pieces (CMS-61) — any of
- * `trigger`, `cost`, `target` and `modifiers` may be present or absent:
- *
- * ```jsonc
- * effectBlocks: [
- *   {
- *     targetToken: { mode: 'tag', value: 'seafood' },   // CMS-18
- *     cost: { items: [{ itemId, quantity }], cadenceMs: 30000 },  // CMS-60
- *     modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
- *   }
- * ]
- * ```
- *
- * ## Legacy `buff` reads as one block
- * Shipped content and older fixtures use `buff: { target, targetToken,
- * modifiers }`. That is exactly one untriggered, uncosted block, so it is
- * normalised here rather than migrated — the same backwards-compatible move
- * output ranges took (CMS-41), and for the same reason: no content churn.
+ * ⚠️ Nothing calls this: the statements shape replaced effect blocks. Reads
+ * `effectBlocks`, or a legacy `buff` as a single block.
  */
 export function effectBlocksOf(def) {
     if (Array.isArray(def?.effectBlocks)) return def.effectBlocks;
@@ -318,7 +262,7 @@ export function effectBlocksOf(def) {
  * A Token's **statements** — the shape that replaced effect blocks.
  *
  * Re-exported from `statements.js` so the rest of the game has one import for
- * "read a Token's rules", exactly as `effectBlocksOf` used to be.
+ * "read a Token's rules".
  */
 export { statementsOf, statementsWith } from '../../systems/effects/statements.js';
 
@@ -332,10 +276,10 @@ import {
  * Whether a Token affects its neighbours **by sitting beside them**.
  *
  * Used to decide whether a Token is "support" — something that serves nearby
- * work and therefore wears one charge per cycle served (D-126).
+ * work and therefore wears one charge per cycle served.
  *
  * ⚠️ **Triggered blocks do not count.** A Triggered Token is not ambient
- * support: it wears when it *fires* (CMS-26), which `TriggerSystem` handles.
+ * support: it wears when it *fires*, which `TriggerSystem` handles.
  * Counting it here too would wear it twice for one event — once as a reaction
  * and once as a bystander.
  */
@@ -346,10 +290,10 @@ export function hasAdjacencyEffect(def) {
 /**
  * Which statements make a Token *ambient support* — something that serves its
  * neighbours simply by sitting beside them, and therefore wears one charge per
- * cycle served (D-126).
+ * cycle served.
  *
- * A triggered statement is excluded for the same reason a triggered block was:
- * it wears when it **fires** (CMS-26), and counting it here too would wear it
+ * A triggered statement is excluded:
+ * it wears when it **fires**, and counting it here too would wear it
  * twice for one event.
  */
 function isAmbientSupport(statement) {
@@ -366,7 +310,7 @@ function isAmbientSupport(statement) {
  */
 export { getProvidedTagsWithTiers } from '../../systems/effects/statements.js';
 
-/** Which context tags are TOOLS (D-213) rather than recipe definitions. */
+/** Which context tags are TOOLS rather than recipe definitions. */
 export function toolContextTags() {
     const tags = new Set();
     for (const def of Object.values(TOKENS)) {

@@ -3,13 +3,8 @@ import { EventBus } from '../../core/EventBus.js';
 import { ENGINE_EVENTS } from '../../core/engineEvents.js';
 
 /**
- * Hero Roster: ordering of the roster.
- *
- * The bench was retired in the Hero Dock rework (Phase 3): there is one list
- * of heroes, capped by `progress.rosterLimit`, and recruiting is refused when
- * it is full rather than overflowing onto a second list. `moveHeroToBench` /
- * `moveHeroToActive` went with it. Since retirement was retired too (owner
- * decision 2026-08-19, CR2-086), nothing takes a hero off the roster at all.
+ * Hero Roster: ordering of the roster. There is one list of heroes, capped by
+ * `progress.rosterLimit`; recruiting is refused when it is full.
  */
 
 export function reorderHero(heroId, targetIndex) {

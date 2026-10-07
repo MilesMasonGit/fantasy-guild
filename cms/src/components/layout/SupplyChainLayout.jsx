@@ -4,26 +4,7 @@ import { makeTokenConfig, makeInputEntry, makeOutputEntry, makeCurrencyOutputEnt
 import SupplyChainColumn from './SupplyChainColumn';
 import { derivedTokenType, expandBearer } from '../../utils/constants';
 
-/**
- * The 3-column shape: origins on the left, the editor in the middle, products
- * on the right.
- *
- * ## What this used to be
- * A ~350-line `if`-chain computing sidebar contents for nine entity types —
- * task, recipe, enemy, item, area, quest, station, lootTable, encounter,
- * encounterTable. Eight of those no longer exist (CMS-36/37).
- *
- * ## What it is now
- * **Tokens** get CMS-59's literal, editable Inputs and Outputs. Production
- * lives in the sidebars so the centre column stays free for the stackable
- * effect blocks Phase 5 adds.
- *
- * **Items** get a read-only dependency view — which Tokens and Maps produce
- * this item, and which consume it. That is the reachability check CMS-9's
- * backward chaining needs.
- *
- * **Maps** get empty sidebars until Phase 7 builds the pool editor.
- */
+/** The 3-column shape: origins on the left, the editor in the middle, products on the right. Tokens get editable Inputs and Outputs; Items get a read-only dependency view of which Tokens and Maps produce or consume them. */
 export default function SupplyChainLayout({ children }) {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const activeType = useEntityStore((s) => s.activeEntityType);
@@ -34,14 +15,7 @@ export default function SupplyChainLayout({ children }) {
 
   const token = activeType === 'token' ? tokens[activeId] : null;
 
-  /**
-   * Edit one side of a Token's production config.
-   *
-   * The config is created lazily: a Token with no production at all has
-   * `config: null` rather than an empty object, because CMS-58 allows Tokens
-   * with no production side and an empty config would claim otherwise. Adding
-   * the first input or output is what brings it into being.
-   */
+  /** Edit one side of a Token's production config. The config is created lazily: a Token with no production has `config: null` rather than an empty object, which would claim otherwise. */
   const editList = (key, mutate) => {
     const config = token?.config || makeTokenConfig();
     const next = mutate([...(config[key] || [])]);
@@ -51,14 +25,11 @@ export default function SupplyChainLayout({ children }) {
   const tokenSidebars = useMemo(() => {
     if (!token) return null;
     const config = token.config;
-    // Derived, not the stored `tokenType`: that is only rewritten by
-    // Recalculate, so the Drops/Outputs relabelling would otherwise lag a
-    // whole recalculation behind ticking the Enemy box.
+    // Derived, not the stored `tokenType`, which is only rewritten by Recalculate, so the Drops/Outputs relabelling would lag a recalculation behind ticking the Enemy box.
     const isEnemy = derivedTokenType(expandBearer(token, effects)) === 'enemy';
 
     return {
-      // An enemy's outputs are its drops (CMS-68) — the same shape, relabelled,
-      // because an enemy is a Token and a kill is a cycle (D-104, D-129).
+      // An enemy's outputs are its drops: the same shape, relabelled.
       leftTitle: isEnemy ? 'Consumes' : 'Inputs',
       rightTitle: isEnemy ? 'Drops' : 'Outputs',
       leftEntries: config?.inputs || [],
@@ -74,9 +45,7 @@ export default function SupplyChainLayout({ children }) {
     const producers = [];
     const consumers = [];
 
-    // Every way a Token can move an item: its own production config, and each
-    // recipe in a pooled station's list (CMS-76, Phase 3). Both shapes are
-    // checked so pooled stations are not silently invisible here later.
+    // Every way a Token can move an item: its own production config and each recipe in a pooled station's list, so pooled stations are not invisible here.
     for (const t of Object.values(tokens || {})) {
       const routes = [t.config, ...(Array.isArray(t.recipes) ? t.recipes : [])].filter(Boolean);
       if (routes.some((r) => (r.outputs || []).some((o) => o.itemId === activeId))) {
@@ -87,8 +56,7 @@ export default function SupplyChainLayout({ children }) {
       }
     }
 
-    // A Map produces an item by dropping it from its pool, and consumes one by
-    // charging it as part of the purchase price (D-100).
+    // A Map produces an item by dropping it from its pool and consumes one by charging it as part of the purchase price.
     for (const m of Object.values(maps || {})) {
       if ((m.pool || []).some((e) => e.kind === 'item' && e.refId === activeId)) {
         producers.push({ id: m.id, type: 'map' });

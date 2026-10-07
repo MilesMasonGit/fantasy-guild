@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
-// Static: SaveManager is already in the main chunk (main.jsx and the slot
-// screen import it), so the dynamic import here split nothing (CR3-509).
+// Static: SaveManager is already in the main chunk (main.jsx and the slot screen import it),
+// so a dynamic import here would split nothing.
 import { SaveManager } from '../../systems/core/SaveManager.js';
 import { cn } from '../utils/cn.js';
 import { Bell, MonitorPlay, Volume2, Wrench, Save, Eye, Type, Sliders } from 'lucide-react';
 import { TypographyScaleModal } from './TypographyScaleModal.jsx';
 
-/**
- * SettingsModal
- * A 5-tabbed interface for global game settings.
- */
+/** SettingsModal: a tabbed interface for global game settings. */
 export const SettingsModal = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState('accessibility');
     const [settings, setSettings] = useState({});
@@ -44,7 +41,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     return (
         <GIModal isOpen={isOpen} onClose={onClose} title="Protocol Settings" className="w-full max-w-3xl bg-gray-900 border-gi-primary/50 text-white">
             <div className="flex flex-col md:flex-row gap-4 h-full min-h-[400px]">
-                {/* Vertical Sidebar */}
                 <div className="w-full md:w-48 flex flex-col gap-2 border-r border-white/10 pr-4">
                     {tabs.map(tab => (
                         <button
@@ -58,19 +54,16 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             {tab.icon} {tab.label}
                         </button>
                     ))}
-                    {/* Injected from package.json by Vite's `define` (CR2-145).
-                        Typed by hand this said v0.9.0 while the real version was
-                        0.6.0 — this is the only version number a player ever
-                        sees, and it is now impossible to forget to bump. */}
+                    {/**
+                     * Injected from package.json by Vite's `define`, so the only version
+                     * number a player ever sees cannot be forgotten at a bump.
+                     */}
                     <div className="mt-auto pt-4 text-xs text-gray-600">v{__APP_VERSION__}</div>
                 </div>
 
-                {/* Content Panel */}
                 <div className="flex-1 flex flex-col pt-2 h-[450px] overflow-y-auto custom-scrollbar px-2 pb-2">
-                    {/* ACCESSIBILITY */}
                     {activeTab === 'accessibility' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
-                            {/* Typography Scale Launcher */}
                             <div className="p-3.5 bg-black/40 rounded-lg border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-white font-pixel tracking-wide flex items-center gap-2">
@@ -108,8 +101,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 description="Convert standard headers and labels to uppercase for readability"
                             />
 
-                            {/* CR3-033 (round-2 decision 14): ruled disabled +
-                                "coming soon" rather than wired or removed. */}
+                            {/* Disabled with 'coming soon' rather than wired or removed. */}
                             <SettingSelect settingKey="gameplay.themeMode" disabled label="Theme Mode" value={getVal('gameplay.themeMode')} onChange={(v) => handleSettingChange('gameplay.themeMode', v)} options={[{value: 'dark', label: 'Dark'}, {value: 'light', label: 'Light'}]} />
 
                             <SettingToggle
@@ -132,13 +124,13 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                         </div>
                     )}
 
-                    {/* NOTIFICATIONS */}
                     {activeTab === 'notifications' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
-                            {/* CR3-033: these five are not wired to anything yet
-                                (the setting is read nowhere) — disabled with
-                                "coming soon" until a later wave wires them,
-                                rather than left to look live and do nothing. */}
+                            {/**
+                             * These are not wired to anything yet (the setting is read
+                             * nowhere): disabled with 'coming soon' until something wires
+                             * them, rather than left to look live and do nothing.
+                             */}
                             <SettingToggle settingKey="showSystemMessages" disabled label="System Messages" value={getVal('showSystemMessages')} onChange={(v) => handleSettingChange('showSystemMessages', v)} description="Show messages like game saved, errors, etc." />
                             <SettingToggle settingKey="showLevelUpMessages" disabled label="Level Up Messages" value={getVal('showLevelUpMessages')} onChange={(v) => handleSettingChange('showLevelUpMessages', v)} />
                             <SettingToggle settingKey="showLootMessages" disabled label="Loot Messages" value={getVal('showLootMessages')} onChange={(v) => handleSettingChange('showLootMessages', v)} />
@@ -160,7 +152,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                         </div>
                     )}
 
-                    {/* GAMEPLAY */}
                     {activeTab === 'gameplay' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
                             <SettingSelect 
@@ -197,12 +188,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             <div className="pt-4 mt-2 border-t border-white/10 flex flex-col gap-2">
                                 <span className="text-[10px] font-bold text-gi-primary uppercase tracking-[0.2em] mb-1 opacity-80">UI & HUD Toggles</span>
                                 <SettingToggle label="Menu on Right Side" value={getVal('ui.bubbleMenuRight')} onChange={(v) => handleSettingChange('ui.bubbleMenuRight', v)} description="Dock the bubble menu on the right edge of the screen" />
-                                {/* CR3-033: "Large Tray Tokens", "Card Badge
-                                    Tooltips", "Boost Tile Tooltips" and
-                                    "Instant Pack Reveal" named the Tray, cards
-                                    and boost tiles — all retired — and packs,
-                                    which never shipped. Deleted rather than
-                                    disabled: there is nothing to wire later. */}
                                 <SettingToggle settingKey="ui.tooltipsEnabled" disabled label="Master Tooltips" value={getVal('ui.tooltipsEnabled')} onChange={(v) => handleSettingChange('ui.tooltipsEnabled', v)} />
                                 <SettingToggle settingKey="ui.tooltipsItems" disabled label="Item Tooltips" value={getVal('ui.tooltipsItems')} onChange={(v) => handleSettingChange('ui.tooltipsItems', v)} />
                                 <SettingToggle label="Item Fly Particles" value={getVal('ui.itemParticles')} onChange={(v) => handleSettingChange('ui.itemParticles', v)} description="Show items flying between cards and inventory" />
@@ -210,7 +195,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                         </div>
                     )}
 
-                    {/* AUDIO */}
                     {activeTab === 'audio' && (
                         <div className="flex flex-col gap-4 animate-in fade-in duration-300">
                             <SettingSlider label="Master Volume" value={getVal('audio.masterVolume')} onChange={(v) => handleSettingChange('audio.masterVolume', v)} />
@@ -219,7 +203,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                         </div>
                     )}
 
-                    {/* DEV TOOLS */}
                     {activeTab === 'dev' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
                             <SettingToggle label="Debug Mode" value={getVal('debugMode')} onChange={(v) => handleSettingChange('debugMode', v)} />
@@ -228,7 +211,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 </div>
             </div>
 
-            {/* Modal Actions */}
             <div className="flex justify-between w-full border-t border-white/10 pt-4 mt-2">
                 <button onClick={() => { SettingsManager.resetOptions(); setSettings(SettingsManager.getAll()); }} className="text-gray-500 hover:text-red-400 font-bold transition-colors text-sm px-4">
                     Reset Defaults
@@ -238,7 +220,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 </button>
             </div>
 
-            {/* Typography Scale Sub-Modal */}
             <TypographyScaleModal
                 isOpen={isTypographyOpen}
                 onClose={() => {
@@ -250,12 +231,10 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     );
 };
 
-// --- INTERNAL SUB-COMPONENTS ---
 
-// CR3-033: a control with nothing behind it yet (not wired, or ruled
-// "coming soon") is DISABLED rather than left to look live — a player could
-// flip it and nothing would happen. `disabled` greys the row, blocks the
-// control, and adds the "(Coming soon)" tag; it never changes `value` or
+// A control with nothing behind it yet (not wired, or marked 'coming soon') is DISABLED rather
+// than left to look live: a player could flip it and nothing would happen. `disabled` greys
+// the row, blocks the control, and adds the '(Coming soon)' tag; it never changes `value` or
 // `onChange`, so re-wiring it later is just dropping the prop.
 const SettingToggle = ({ label, value, onChange, description, disabled = false, settingKey }) => (
     <div data-setting={settingKey} data-setting-disabled={disabled || undefined} className={cn("flex items-center justify-between p-3 bg-black/40 rounded border border-white/5", disabled && "opacity-50")}>

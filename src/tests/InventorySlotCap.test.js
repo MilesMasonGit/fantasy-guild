@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 
-// Bank slot capacity enforcement (CR-039, owner decision 2026-07-17):
-// each distinct item type occupies one slot; a full bank rejects NEW types
-// but keeps accepting additions to existing stacks.
+// Bank slot capacity enforcement (CR-039, owner decision): each distinct
+// item type occupies one slot; a full bank rejects NEW types but keeps
+// accepting additions to existing stacks.
 
 vi.mock('../config/registries/itemRegistry.js', () => ({
     getItem: vi.fn((id) => ({ id, name: id, maxStack: 99 }))

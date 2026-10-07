@@ -22,7 +22,7 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 
 /**
  * Free Playmat slice 1.6a — Tokens stored by instance id at a mat point, and
- * the save bump that goes with it (FP-44, FP-85, FP-19).
+ * the save bump that goes with it.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -91,8 +91,8 @@ describe('⭐ the save bump refuses old saves (FP-85)', () => {
 });
 
 describe('⭐ a new game opens with the Guild Hall on the mat (FP-44)', () => {
-    // ⚠️ Changed in Token Lifecycle 10.1 (SP-14): the Hall is joined by the
-    // starter Oak Forest and Copper Mine, either side of it, all `placed`.
+    // ⚠️ Changed in Token Lifecycle 10.1: the Hall is joined by the starter
+    // Oak Forest and Copper Mine, either side of it, all `placed`.
     it('holds the Hall in the middle of the mat, with the starter set beside it', () => {
         EngineBootstrap.createDefaultGameData();
 

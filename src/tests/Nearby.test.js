@@ -22,28 +22,6 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * **`nearby()` — reach as a distance** (Free Playmat slices 1.2, 1.6b).
  *
- * FP-56: every passive reader is a centre-to-centre distance query, and since
- * slice 1.6b the readers take and answer **instance ids**.
- *
- * FP-41: a 2×2 Token, measured from its own centre, reaches the 8 side-touching
- * spots and loses the 4 corner-diagonal ones (at 272 u).
- *
- * ## ⭐ Test layout only (Free Playmat slice 1.6d-2)
- * The game has no tiles. The scene below is a 6 × 6 lattice of mat points 160 u
- * apart — the step the old board had — so the familiar ring geometry can still
- * be pinned exactly: a side neighbour is 160 u, a diagonal 226 u, and a 2×2's
- * centre sits half a step in from its anchor spot, putting it 253 u from a
- * side-touching spot and 339 u from a corner-diagonal one.
- *
- * ```
- *    0  1  2  3  4  5
- *    6  7  8  9 10 11
- *   12 13 14 15 16 17
- *   18 19 20 21 22 23
- *   24 25 26 27 28 29
- *   30 31 32 33 34 35
- * ```
- *
  * ⚠️ The blocks that pinned `tileCentre`, `footprintCentre`, `positionOf` and
  * `adjacency.js` were **deleted** with those functions in slice 1.6d-2 — they
  * asserted the shape of the grid itself, which no longer exists. What survives
@@ -138,7 +116,7 @@ beforeEach(() => {
     TileModifiers.clearAll();
     resetMatTuning();
     // ⚠️ This file pins the geometry of the 8-spot ring, so Near is set to 272 u
-    // explicitly. It has shipped at 164 u since FP-75 — see the FP-75 block below.
+    // explicitly. It has shipped at 164 u — see block below.
     setMatTuning('nearRadius', 272);
 });
 
@@ -276,7 +254,7 @@ describe('a larger radius widens the set', () => {
         setMatTuning('nearRadius', 5000);
         expect(matTuning('nearRadius')).toBe(600);
         resetMatTuning();
-        expect(near(14)).toHaveLength(4);      // the shipped 164 u (FP-75)
+        expect(near(14)).toHaveLength(4);      // the shipped 164 u
     });
 });
 

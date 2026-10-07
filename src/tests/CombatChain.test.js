@@ -17,16 +17,6 @@ import { getTokenType } from '../config/registries/tokenRegistry.js';
 /**
  * Token Lifecycle slice 7.7 — Combat, pinned from the SHIPPED data (authored
  * through the CMS, never by hand).
- *
- * A Goblin Camp is bought at the Shop and spawns from a weighted list: mostly
- * Goblins, rarely a Goblin Chief (SP-34, SP-37). Goblins and Chiefs share ONE
- * cap, the camp's allowance (DP-4, SP-35). An enemy is a Token with an `enemy`
- * block; its drops are its outputs. A Goblin has one charge, so a kill removes
- * it and the camp spawns a replacement (SP-36). The Chief is tougher and drops
- * better loot (SP-38) and is dangerous on purpose (SP-69). Losing a fight is
- * FP-42, which is the existing engine and not pinned here.
- *
- * The numbers are placeholders (TL-5); this pins the shape of the chain.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -98,7 +88,7 @@ describe('The Combat chain in shipped data (7.7)', () => {
 
     // budgetScale 0.3: at the full level-1 budget an unarmed Melee 1 hero (all
     // this build can make) lost to a single Goblin in the game; at 0.3 it wins
-    // steadily. Placeholder numbers (TL-5).
+    // steadily. Placeholder numbers.
     it('a Goblin is a level 1 pushover with one charge, so a kill clears it and the camp spawns again', () => {
         expect(goblin.enemy).toEqual({ level: 1, style: 'melee', budgetScale: 0.3, hostile: true });
         expect(goblin.uses).toBe(1);

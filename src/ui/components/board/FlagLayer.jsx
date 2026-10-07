@@ -30,40 +30,27 @@ import {
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * FlagLayer — **flags standing freely on the playmat** (Free Playmat slices 1.5
- * and 1.6c-2).
- *
- * An absolute overlay over the mat, in mat units.
- *
- * * **Flag** (FP-77, FP-82, FP-83) — the owner's sprite in the hero's lasting
- *   colour, 128 px, its **pole base standing exactly on the flag's point**. Drag
- *   it to move the flag (`DRAG_KIND.FLAG`); hover for status and skips. It
- *   answers on a round area the size of its art (owner, 2026-09-21 — there is
- *   no opaque-pixel test, whatever older notes say), except over a Token (below).
- *   ⛔ The grid's fan-out, its three-flag cap and its "+N" chip are **gone**:
- *   flags may stand very close together or overlap, and never push, nudge or
- *   hide each other (FP-83). Later flags draw in front of earlier ones.
- * * **Gear badge** (FP-73) — top-right of the cloth, shown while the flag or its
- *   hero is hovered or the hero is inspected. Opens that hero's rules panel
- *   (`ui:open_flag_rules`); it is not part of the drag handle, so a click on it
- *   never starts a drag. The only way into the rules (FPP-20).
- * * **Idle** (FP-29, FP-84) — the flag keeps its colour and a "…" chip sits
- *   near the top of the pole. The hero standing beside it — like every hero on
- *   the mat, in every state — is drawn by `MatBoard` (Hero Movement M2), so a
- *   hero walking back to their flag is never handed from one layer to another.
- * * **The player never moves a hero** (FP-76) — dragging any hero drags their
- *   FLAG.
- * * **Reach ring** (FP-64, A-4) — a dashed gold circle of the live flag radius,
- *   only while that flag or its hero is hovered, dragged or inspected, or while
- *   a dragged Token would land inside it.
- * * ⭐ **No hitbox over Tokens** (B5, FB-44, TL-17) — wherever the pointer is
- *   on a Token's art circle, every flag lets it through (`yieldToTokens`,
- *   set by `MatBoard`), so a flag never eats a Token's hover, click or grab.
- *   A flag is grabbed by the part of it that stands over bare mat.
- * * ⭐ **Pinned** (B5, FB-45) — a flag pinned to a Token is drawn with its
- *   pole planted at the top of that Token (`pinnedFlagPoint`), carries
- *   `data-flag-pinned`, shows no reach ring (the radius does not apply) and
- *   says "Working only X" on hover.
+ * FlagLayer: flags standing freely on the playmat, an absolute overlay in mat units.
+ * - **Flag**: the hero's sprite in their lasting colour, 128 px, its pole base standing
+ * exactly on the flag's point. Drag it to move the flag (`DRAG_KIND.FLAG`); hover for status
+ * and skips. It answers on a round area the size of its art (there is no opaque-pixel test),
+ * except over a Token (below). Flags may stand very close together or overlap, and never push,
+ * nudge or hide each other; later flags draw in front of earlier ones.
+ * - **Gear badge**: top-right of the cloth, shown while the flag or its hero is hovered or the
+ * hero is inspected. Opens that hero's rules panel (`ui:open_flag_rules`); it is not part of
+ * the drag handle, so a click on it never starts a drag. The only way into the rules.
+ * - **Idle**: the flag keeps its colour and a '…' chip sits near the top of the pole. The hero
+ * standing beside it, like every hero on the mat in every state, is drawn by `MatBoard`, so a
+ * hero walking back to their flag is never handed from one layer to another.
+ * - **The player never moves a hero**: dragging any hero drags their FLAG.
+ * - **Reach ring**: a dashed gold circle of the live flag radius, only while that flag or its
+ * hero is hovered, dragged or inspected, or while a dragged Token would land inside it.
+ * - **No hitbox over Tokens**: wherever the pointer is on a Token's art circle, every flag
+ * lets it through (`yieldToTokens`, set by `MatBoard`), so a flag never eats a Token's hover,
+ * click or grab. A flag is grabbed by the part of it that stands over bare mat.
+ * - **Pinned**: a flag pinned to a Token is drawn with its pole planted at the top of that
+ * Token (`pinnedFlagPoint`), carries `data-flag-pinned`, shows no reach ring (the radius does
+ * not apply) and says 'Working only X' on hover.
  */
 
 /** The live flag radius, following the Mat Tuner and the Scouting Flags upgrade. */
@@ -86,8 +73,8 @@ function projectFlags() {
         const flag = BoardState.flagOf(heroId);
         if (!flag) continue;
         const hero = heroes.find(h => h?.id === heroId);
-        // A pinned flag is drawn on its Token (B5); a lapsed pin reads as an
-        // area flag even before the next tick takes the pin off.
+        // A pinned flag is drawn on its Token; a lapsed pin reads as an area flag even before
+        // the next tick takes the pin off.
         const pinned = Flags.pinnedTokenOf(heroId);
         const drawn = pinned ? pinnedFlagPoint(pinned, artRadiusOf(pinned.typeId)) : flag;
         out.push({
@@ -107,8 +94,8 @@ function projectFlags() {
 }
 
 /**
- * Where a flag being dragged would be planted: under the cursor, exactly
- * (FP-94). Null unless a flag or a board hero is actually in the hand.
+ * Where a flag being dragged would be planted: under the cursor, exactly. Null unless a flag
+ * or a board hero is actually in the hand.
  */
 function useFlagDragPoint(matRef) {
     const { activePayload, isDragging } = useActiveDrag();
@@ -121,10 +108,9 @@ function useFlagDragPoint(matRef) {
 
     const point = pointerToMat(pointer, matRectForDrag(matRef.current, activePayload));
     if (!point) return null;
-    // Off the mat entirely (over the Tray, the Dock): nothing to preview.
+    // Off the mat entirely (over a drawer or the dock): nothing to preview.
     if (point.x < 0 || point.y < 0 || point.x > matW() || point.y > matH()) return null;
-    // Over a Token this hero would be pinned to (B5): the radius will not
-    // apply, so no reach ring.
+    // Over a Token this hero would be pinned to: the radius will not apply, so no reach ring.
     const under = Flags.tokenAtPoint(point);
     if (under && !Flags.pinRefusal(activePayload.heroId, under)) return null;
     return { heroId: activePayload.heroId, ...clampToMat(point) };
@@ -134,12 +120,10 @@ function useFlagDragPoint(matRef) {
  * @param {string|null} inspectedHeroId the hero whose panel is open
  * @param {string|null} hoverHeroId a hero hovered anywhere on the board
  * @param {(heroId: string|null) => void} onHoverHero
- * @param {{ heroId: string, x: number, y: number }|null} dragRing an explicit
- *   plant preview; without one the layer follows the live drag itself
+ * @param {{ heroId: string, x: number, y: number }|null} dragRing an explicit plant preview;
+ * without one the layer follows the live drag itself
  * @param {{current: HTMLElement|null}} matRef the mat's own element
- * @param {Map<string, number>|null} flagZ each flag's z in the mat's order
- *   (`matStackOrder`, feedback Q3 FB-1). Given, the flags sort in among the
- *   Tokens; without it (the layer on its own) they all sit at `MAT_Z.FLAGS`.
+ * @param {Map<string, number>|null} flagZ each flag's z in the mat's order (`matStackOrder`)
  */
 export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, dragRing = null, matRef = null, flagZ = null, yieldToTokens = false }) => {
     const flags = useGameState(
@@ -155,15 +139,15 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     const ring = dragRing || liveDragRing;
 
     const rings = new Map();
-    // A pinned flag has no reach to show (B5, FB-45).
+    // A pinned flag has no reach to show.
     for (const id of [inspectedHeroId, hoverHeroId]) {
         const flag = id ? flags.find(f => f.heroId === id) : null;
         if (flag && !flag.pinnedTo) rings.set(id, { x: flag.x, y: flag.y });
     }
     if (ring?.heroId) rings.set(ring.heroId, { x: ring.x, y: ring.y });
 
-    // While a Token is dragged, every flag it would land inside shows its reach
-    // — whatever the Token is (owner, 2026-09-21).
+    // While a Token is dragged, every flag it would land inside shows its reach, whatever the
+    // Token is.
     const landing = useTokenDragLanding(matRef);
     if (landing) {
         for (const flag of flags) {
@@ -175,17 +159,13 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
 
     /**
      * ⚠️ Two layers. Rings sit above the Tokens.
-     *
-     * ⭐ **Flags sort in among the Tokens** (feedback Q3, FB-1): a flag standing
-     * higher on the mat than a Token is drawn behind it, like any Token. For
-     * that the pennants' box must **not** have a z-index of its own — a z-index
-     * would make it one stacking layer, and every flag in it would sit above or
-     * below every Token together. Each flag carries its own z (`flagZ`), and the
-     * idle hero beside it is one above (`MatBoard`).
-     *
-     * ⚠️ Flags used to sit above the loot, because a flag under a pile of Oak
-     * Wood could not be grabbed (found while verifying 1.5). Loot is collected
-     * the moment the pointer touches it, so a pile never stays in the way.
+     * Flags sort in among the Tokens: a flag standing higher on the mat than a Token is drawn
+     * behind it, like any Token. For that the pennants' box must NOT have a z-index of its
+     * own: a z-index would make it one stacking layer, and every flag in it would sit above or
+     * below every Token together. Each flag carries its own z (`flagZ`), and the idle hero
+     * beside it is one above (`MatBoard`).
+     * Loot is collected the moment the pointer touches it, so a pile never stays in the way of
+     * grabbing a flag.
      */
     return (
         <>
@@ -272,7 +252,7 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
         sourceSurface: DND_SURFACE.BOARD
     });
 
-    // Dragged by the flag itself or by its hero (FP-76): either way this flag is in the hand.
+    // Dragged by the flag itself or by its hero: either way this flag is in the hand.
     const carried = drag.isDragging
         || (anyDrag && activePayload?.kind === DRAG_KIND.FLAG && activePayload?.heroId === flag.heroId);
 
@@ -311,7 +291,7 @@ const Flag = memo(function Flag({ flag, z = 0, artPx, onHover, boardHovered = fa
                 onClick={handleClick}
                 className={cn(
                     'absolute p-0 m-0 bg-transparent border-0 outline-none',
-                    // FB-44: over a Token the pointer goes to the Token.
+                    // Over a Token the pointer goes to the Token.
                     yieldToTokens ? 'pointer-events-none' : 'pointer-events-auto',
                     'cursor-grab active:cursor-grabbing',
                     carried && 'opacity-30'
@@ -384,9 +364,9 @@ export const STATE_TONE = {
 };
 
 /**
- * The flag's hover text: the hero, what they are doing, and up to five Tokens
- * the flag passed over with the reason (FP-48, FP-60, FPP-21). Refreshed twice
- * a second while shown, because skips change without an event.
+ * The flag's hover text: the hero, what they are doing, and up to five Tokens the flag passed
+ * over with the reason. Refreshed twice a second while shown, because skips change without an
+ * event.
  */
 export const FlagTooltip = ({ anchor, heroId }) => {
     const [, refresh] = useState(0);
