@@ -20,7 +20,7 @@ turns, upkeep, fights and wounds. A loading bar shows it happening, then a
 | While it runs | A **loading bar or other visuals**, so the game never looks frozen. |
 | On return | A **"While you were away" summary**: time away, items gained and spent, level-ups, Tokens depleted, heroes wounded. Level-up bubbles also wait on the hero bar. |
 | Danger | **Same rules as playing**: fights, wounds and running out of seeds all happen offline. |
-| What counts | **Only a closed game.** A minimised or background window just runs (slowly); it doesn't get a catch-up or summary. |
+| What counts | **A closed game, and a sleeping PC** (lid shut; owner, 2026-10-07). A minimised or background window just runs (slowly); it doesn't get a catch-up or summary. |
 | Time Bank | Retired: its banking, speed-up presets and hidden widget go. |
 
 ## What's known today

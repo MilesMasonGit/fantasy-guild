@@ -40,8 +40,8 @@ only a closed game counts; the Time Bank retires.
 
 Remove `TimeBankManager`, the hidden widget, its presets and save fields
 (old saves are refused until 1.0, so no migration). Ticket T-080 closes.
-`TIME_OVERFLOW` from the live loop (lid-shut gaps) is handled by the same
-catch-up path *(director default; confirm against "only a closed game counts")*.
+**A sleeping PC counts as closed** (owner): `TIME_OVERFLOW` from the live loop
+(lid-shut gaps) goes through the same catch-up, bar and summary, up to 24 h.
 
 **Done when:** a save closed for 24 h (simulated by editing `savedAt` on a
 test slot) catches up in under 30 s with the bar, ends identical to a live run
