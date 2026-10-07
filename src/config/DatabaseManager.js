@@ -5,10 +5,8 @@ export const DatabaseManager = {
     stationFiles: import.meta.glob('/data/stations.json', { eager: true }),
 
     tokenFilesSingle: import.meta.glob('/data/tokens.json', { eager: true }),
-    tokenFilesGlob: import.meta.glob('/data/tokens/**/*.json', { eager: true }),
 
     mapFilesSingle: import.meta.glob('/data/maps.json', { eager: true }),
-    mapFilesGlob: import.meta.glob('/data/maps/**/*.json', { eager: true }),
 
     // Skill-pooled Token recipes, keyed by skill id.
     recipePoolFilesSingle: import.meta.glob('/data/tokenRecipes.json', { eager: true }),

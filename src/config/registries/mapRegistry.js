@@ -1,8 +1,7 @@
 // Fantasy Guild — Map registry (loader)
 
 /**
- * The Map catalogue, authored in the CMS and loaded from `data/maps.json` (plus an optional
- * `data/maps/**` folder). ⚠️ No Map bursts and none is sold: a Map Token still in the game is an
+ * The Map catalogue, authored in the CMS and loaded from `data/maps.json`. ⚠️ No Map bursts and none is sold: a Map Token still in the game is an
  * ordinary Explore producer. Only the boot content audit reads this file.
  *
  * ⚠️ **Never hand-edit `data/maps.json`.** The CMS writes it wholesale.
@@ -14,7 +13,7 @@ import { DatabaseManager } from '../DatabaseManager.js';
 function loadJsonMaps() {
     const maps = {};
 
-    for (const source of [DatabaseManager.mapFilesSingle, DatabaseManager.mapFilesGlob]) {
+    for (const source of [DatabaseManager.mapFilesSingle]) {
         for (const [path, module] of Object.entries(source || {})) {
             try {
                 const data = module.default || module;
