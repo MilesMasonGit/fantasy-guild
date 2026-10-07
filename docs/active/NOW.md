@@ -28,8 +28,8 @@ changed, what's next. Keep it under one screen.*
 2. **Crunch prep P3 done** 2026-10-07: tools merged and the baseline recorded in
    [PERFORMANCE.md](../reference/PERFORMANCE.md) (rings are over half the drawing cost;
    drag success 74–100 %, tickets T-104..T-107).
-3. Crunch prep P4: ready-to-run crunch briefs, one per track. UI input: the
-   owner's [ui_rework_list.md](ui_rework_list.md).
+3. **Crunch prep P4 done** 2026-10-07: interviews finished and the crunch
+   briefs written: [briefs/README.md](briefs/README.md) (start with brief 00).
 
 ## Planned
 
