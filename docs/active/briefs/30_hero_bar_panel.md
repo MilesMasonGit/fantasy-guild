@@ -18,7 +18,7 @@ Cost log line per phase.
   bubbles**.
 - **Level-up bubbles persist until cleared** ("Leveled up Mining to 25!
   (+4)"), so after an AFK session the player scans the bar; clicking a bubble
-  (or the hero) clears it *(director default)*. Same text as the mat bubble
+  or the hero clears that hero's bubbles (owner). Same text as the mat bubble
   (brief 10 U3).
 - Today: `BottomHeroDock.jsx`, `DockHeroFigure.jsx`; dead code to remove:
   `HeroDockCard.jsx`, `DockSkillsGrid.jsx` (T-044), `dockConstants.js` remnants.

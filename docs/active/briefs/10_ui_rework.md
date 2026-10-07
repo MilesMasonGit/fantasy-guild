@@ -68,8 +68,8 @@ hovering an enemy shows its bar; tests for show/hide.
 - **Level-ups on the mat**: the hero says "Leveled up Mining to 25! (+4)"
   (the +N is levels gained since the last bubble). The persistent hero-bar
   copy is brief 30.
-- **"Hero went elsewhere"** (`Flags.js` ~line 408) stops being a notification;
-  the hero says it as a speech line instead *(director default)*.
+- **"Hero went elsewhere"** (`Flags.js` ~line 408) is **dropped entirely**:
+  no notification, no speech line; the hero just moves on (owner).
 - Problems the alerts used to show must still be discoverable: the hero's
   speech bubbles (blocked lines) and the Token Summary (U6) carry them.
 - Speech code: `heroSpeech.js`, `heroBubbles.js`, `HeroBubbleLayer.jsx`;
@@ -130,9 +130,9 @@ tier 2 and 3.
   per type with status counts; hovering a row highlights that type's Tokens;
   missing-items problems pinned at the top, then by skill section; a plain
   "In the bin ×N" line. Today: `MatCapBadge.jsx`, `MatSummary.js`.
-- **T-102**: Token cap **80**, and **spawned Tokens count too**. *Director
-  default for the open interaction:* spawner family caps stay; a spawner also
-  waits (at cap) when the mat's cap is full. Move the cap out of the dev
+- **T-102**: Token cap **80**, and **spawned Tokens count too**. Spawner
+  family caps stay, and a spawner also **waits while the mat's cap is full**
+  (owner). Move the cap out of the dev
   tuner into a game value as part of this (half of T-097).
 - **Upkeep panel** shows only what consumes: no passive production lines.
   Today: `UpkeepSummary.js`, `UpkeepSummaryPanel.jsx`, `MatUpkeepBadge.jsx`.
