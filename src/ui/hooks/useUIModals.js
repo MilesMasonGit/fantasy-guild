@@ -33,12 +33,12 @@ export function standingPromotionOffer(engine) {
  * ## Contract: `ui_modal:opened` - a UI to engine notification
  * ⚠️ **This hook is the ONLY publisher of `ui_modal:opened`, and the engine depends on it.**
  * `QuestManager` subscribes to it and maps two `modalId` values onto quest targets
- * (`cartographer` is the Shop's pane):
+ * (`shop` is the Shop's pane):
  *
  *  | `modalId`      | quest target       |
  *  |----------------|--------------------|
  *  | `bank`         | `open_bank`        |
- *  | `cartographer` | `open_cartographer`|
+ *  | `shop`         | `open_shop`        |
  *
  * The tutorial's Item Bank step advances **only** because this React hook fires. The coupling
  * is two string literals in two files that know nothing about each other, so:
@@ -63,10 +63,10 @@ const DRAWER_TARGETS = new Set(['bank']);
 
 /**
  * The Shop's nav target. The Shop is its own drawer (`ShopDrawer`) with its own open flag
- * (`ui.shop`), not a pane of the Bank's drawer. The target keeps the name `cartographer`: the
- * quest wiring and the tutorial read that string.
+ * (`ui.shop`), not a pane of the Bank's drawer. The quest wiring and the tutorial read
+ * this string.
  */
-const SHOP_TARGET = 'cartographer';
+const SHOP_TARGET = 'shop';
 
 export const useUIModals = (engine) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -99,7 +99,7 @@ export const useUIModals = (engine) => {
 
     const [inspectByPane, setInspectByPane] = useState({
         bank: null,
-        cartographer: null,
+        shop: null,
         guild: null
     });
     const [inspectSelection, setInspectSelection] = useState(null);
@@ -185,7 +185,7 @@ export const useUIModals = (engine) => {
     const inspectSet = useCallback((type, id, source = null, pane = null) => {
         const effectivePane = pane || (
             type === 'guild_upgrade' ? 'guild' :
-            type === 'token' ? 'cartographer' :
+            type === 'token' ? 'shop' :
             type === 'item' ? 'bank' : null
         );
         const nextSelection = { type, id, source, pane: effectivePane };

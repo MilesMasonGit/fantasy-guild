@@ -33,7 +33,7 @@ export const TOKEN_SURFACE = {
     TRAY: 'tray',             // racked, waiting to be placed
     VAULT: 'vault',           // stored in the Token Bank
     INSPECT: 'inspect',       // the inspection panel's header
-    CATALOGUE: 'catalogue'    // dense listings — Cartographer pool chips only
+    CATALOGUE: 'catalogue'    // dense listings — Shop pool chips only
 };
 
 /**

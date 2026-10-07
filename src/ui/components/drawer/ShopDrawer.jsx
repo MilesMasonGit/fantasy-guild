@@ -13,7 +13,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 /**
  * The Shop drawer.
  * - **A drawer from the left edge**, a third of the screen wide, beside the nav when the nav
- * is on the left. Opened and closed by the nav's Shop bubble (`ui.nav.toggle('cartographer')`)
+ * is on the left. Opened and closed by the nav's Shop bubble (`ui.nav.toggle('shop')`)
  * or its own Close.
  * - **Drag a row onto the mat to buy.** The row's payload is a `TOKEN` with `from.shop`;
  * `dropOnMat` hands it to `Shop.buyAt`, which pays on drop and places the Token at the drop

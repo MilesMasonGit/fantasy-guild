@@ -18,7 +18,7 @@ describe('Tutorial Aide Target Resolution & Events', () => {
         document.body.innerHTML = `
             <div id="guild-bubble-target">Guild Hall</div>
             <div id="bank-bubble-target">Bank</div>
-            <div id="cartographer-bubble-target">Shop</div>
+            <div id="shop-bubble-target">Shop</div>
             <div id="rightmost-hero-dock">
                 <div data-hero-dock-tab="true">Hero Arthur</div>
             </div>
@@ -70,9 +70,9 @@ describe('Tutorial Aide Target Resolution & Events', () => {
         expect(text('tut_collect')).toBe('Wood Drop');
         expect(elId('tut_bank')).toBe('bank-bubble-target');
         // Nothing bought yet: the Shop orb.
-        expect(elId('tut_shop')).toBe('cartographer-bubble-target');
-        expect(elId('tut_foundation')).toBe('cartographer-bubble-target');
-        expect(elId('tut_explore')).toBe('cartographer-bubble-target');
+        expect(elId('tut_shop')).toBe('shop-bubble-target');
+        expect(elId('tut_foundation')).toBe('shop-bubble-target');
+        expect(elId('tut_explore')).toBe('shop-bubble-target');
     });
 
     it('prefers the Shop card, then the Token on the mat, once they exist', () => {

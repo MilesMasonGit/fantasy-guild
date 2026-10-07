@@ -174,10 +174,10 @@ export const QuestManager = {
             // publisher is `src/ui/hooks/useUIModals.js`, whose header carries the
             // contract, including that any NEW route into the Bank or the Shop must
             // publish it too or these quest targets silently stall. The Shop is the
-            // `cartographer` pane.
+            // `shop` pane.
             EventBus.subscribe(UI_EVENTS.UI_MODAL_OPENED, (data) => {
                 if (data?.modalId === 'bank') this.reportProgress('open_bank');
-                else if (data?.modalId === 'cartographer') this.reportProgress('open_cartographer');
+                else if (data?.modalId === 'shop') this.reportProgress('open_shop');
             }),
             // ⚠️ Retired events that must not come back (`QuestTutorialChain.test.js`
             // fails if one does): `map_burst` / `map_opened` / `map_purchased`,

@@ -25,7 +25,7 @@ describe('useUIModals keeps fullscreen and inspect stable (CR3-302)', () => {
         expect(result.current.fullscreen.view).toBe('guild');
         act(() => { result.current.inspect.set('token', 'tok_1', { instanceId: 'tok_1' }); });
         expect(result.current.inspect).not.toBe(before);
-        expect(result.current.inspect.selection).toMatchObject({ type: 'token', id: 'tok_1', pane: 'cartographer' });
-        expect(result.current.inspect.getByPane('cartographer')).toMatchObject({ id: 'tok_1' });
+        expect(result.current.inspect.selection).toMatchObject({ type: 'token', id: 'tok_1', pane: 'shop' });
+        expect(result.current.inspect.getByPane('shop')).toMatchObject({ id: 'tok_1' });
     });
 });

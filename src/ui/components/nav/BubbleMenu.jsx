@@ -107,7 +107,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
              * 'no menus' but 'no menu decides what the board does'; a Shop Token would have
              * permanently consumed a spot AND a hero purely to keep progression ticking.
              */}
-            <Bubble id="cartographer-bubble-target" icon={MapIcon} label="Shop" color="green" active={nav.isActive('cartographer')} onClick={() => nav.toggle('cartographer')} />
+            <Bubble id="shop-bubble-target" icon={MapIcon} label="Shop" color="green" active={nav.isActive('shop')} onClick={() => nav.toggle('shop')} />
 
             <div className="mt-auto" />
             <Bubble icon={Settings} label="Settings" color="red" active={nav.isActive('settings')} onClick={() => nav.toggle('settings')} />

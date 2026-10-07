@@ -86,7 +86,7 @@ const row = (view, typeId) => view.container.querySelector(`[data-shop-row="${ty
  */
 describe('the Bank drawer keeps the Bank only (B4)', () => {
     it('has no Shop pane: asking for the old pane draws nothing', () => {
-        const view = render(h(BottomFolderDrawer, { drawer: drawerFor('cartographer'), inspect }));
+        const view = render(h(BottomFolderDrawer, { drawer: drawerFor('shop'), inspect }));
         expect(view.queryByText('Shop')).toBeNull();
         expect(view.queryByTestId('bank-pane')).toBeNull();
     });
@@ -101,14 +101,14 @@ describe('the Bank drawer keeps the Bank only (B4)', () => {
         const opened = vi.fn();
         const unsub = EventBus.subscribe('ui_modal:opened', opened);
         const { result } = renderHook(() => useUIModals(null));
-        act(() => result.current.nav.toggle('cartographer'));
+        act(() => result.current.nav.toggle('shop'));
         await waitFor(() => expect(result.current.shop.isOpen).toBe(true));
         expect(result.current.drawer.panes).toEqual([]);
-        expect(result.current.nav.isActive('cartographer')).toBe(true);
+        expect(result.current.nav.isActive('shop')).toBe(true);
         // The quest wiring still hears the Shop open.
-        expect(opened).toHaveBeenCalledWith({ modalId: 'cartographer' });
+        expect(opened).toHaveBeenCalledWith({ modalId: 'shop' });
 
-        act(() => result.current.nav.toggle('cartographer'));
+        act(() => result.current.nav.toggle('shop'));
         expect(result.current.shop.isOpen).toBe(false);
         unsub();
     });

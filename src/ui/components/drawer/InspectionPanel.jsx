@@ -36,7 +36,7 @@ export const InspectionPanel = ({
     );
 
     let body = null;
-    const isCartographer = activePane === 'cartographer';
+    const isShop = activePane === 'shop';
 
     if (selection?.type === 'guild_upgrade') {
         const upgradeDef = selection.upgradeDef || selection.source?.upgradeDef || getUpgradeDef(selection.id);
@@ -50,17 +50,17 @@ export const InspectionPanel = ({
         body = (
             <TokenInspection
                 typeId={selection.id}
-                showSell={!isCartographer}
+                showSell={!isShop}
             />
         );
     } else if (selection?.type === 'item') {
         const template = getItem(selection.id);
-        if (template && (itemCount > 0 || isCartographer)) {
+        if (template && (itemCount > 0 || isShop)) {
             body = (
                 <ItemInspection
                     entry={{ id: selection.id, count: itemCount, template }}
-                    showSell={!isCartographer}
-                    showViewInBank={isCartographer}
+                    showSell={!isShop}
+                    showViewInBank={isShop}
                 />
             );
         }

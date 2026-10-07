@@ -39,7 +39,7 @@ export function resolveTutorialTargetElement(questId) {
 
     const q = (selector) => document.querySelector(selector);
     const token = (typeId) => q(`[data-token-art="true"][data-token-type="${typeId}"]`);
-    const shopItem = (typeId) => q(`[data-shop-item="${typeId}"]`) || q('#cartographer-bubble-target');
+    const shopItem = (typeId) => q(`[data-shop-item="${typeId}"]`) || q('#shop-bubble-target');
 
     switch (questId) {
         case 'tut_recruit': // Recruit a Hero from the Guild Hall board
@@ -66,7 +66,7 @@ export function resolveTutorialTargetElement(questId) {
             return q('#bank-bubble-target');
 
         case 'tut_shop': // Buy anything at the Shop
-            return q('[data-shop-item]') || q('#cartographer-bubble-target');
+            return q('[data-shop-item]') || q('#shop-bubble-target');
 
         case 'tut_foundation': // Buy a Wood Foundation
             return shopItem('token_wood_foundation');
