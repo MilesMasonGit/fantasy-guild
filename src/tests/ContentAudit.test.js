@@ -52,7 +52,7 @@ describe('The content-integrity audit', () => {
     });
 
     it('catches an opening Token that does not exist', () => {
-        const findings = auditContent({ openingTray: ['token_definitely_not_authored'] });
+        const findings = auditContent({ openingTokens: ['token_definitely_not_authored'] });
         const hit = findings.find(f => f.what.includes('token_definitely_not_authored'));
         expect(hit).toBeTruthy();
         expect(hit.where).toBe('The Tokens a new game starts with');
@@ -60,7 +60,7 @@ describe('The content-integrity audit', () => {
 
     it('says nothing about the opening Tokens the game actually ships', async () => {
         const { openingMat } = await import('../systems/core/EngineBootstrap.js');
-        const findings = auditContent({ openingTray: openingMat().map(t => t.typeId) });
+        const findings = auditContent({ openingTokens: openingMat().map(t => t.typeId) });
         const openingProblems = findings.filter(
             f => f.where === 'The Tokens a new game starts with'
         );
@@ -68,7 +68,7 @@ describe('The content-integrity audit', () => {
     });
 
     it('describes a break in words, naming both the thing and what it points at', () => {
-        const [hit] = auditContent({ openingTray: ['token_ghost'] })
+        const [hit] = auditContent({ openingTokens: ['token_ghost'] })
             .filter(f => f.where === 'The Tokens a new game starts with');
         // Readable by the person authoring content, not a stack trace.
         expect(hit.what).toContain('token_ghost');
@@ -79,7 +79,7 @@ describe('The content-integrity audit', () => {
     it('treats an empty reference as "not set", not as broken', () => {
         // An unset field is how content says "this Token opens no Map". If
         // these counted, the real findings would drown in hundreds of lines.
-        const blank = auditContent({ openingTray: ['', null, undefined] });
+        const blank = auditContent({ openingTokens: ['', null, undefined] });
         expect(blank.filter(f => f.where === 'The Tokens a new game starts with')).toEqual([]);
     });
 
@@ -119,7 +119,7 @@ describe('The content-integrity audit', () => {
         const info = vi.spyOn(console, 'info').mockImplementation(() => {});
 
         let findings;
-        expect(() => { findings = reportContentIntegrity({ openingTray: ['token_ghost'] }); })
+        expect(() => { findings = reportContentIntegrity({ openingTokens: ['token_ghost'] }); })
             .not.toThrow();
 
         expect(Array.isArray(findings)).toBe(true);
@@ -130,7 +130,7 @@ describe('The content-integrity audit', () => {
         // The audit runs during boot. Anything it is handed must produce a
         // report line at worst, never an exception.
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        expect(() => reportContentIntegrity({ openingTray: 'not-a-list' })).not.toThrow();
+        expect(() => reportContentIntegrity({ openingTokens: 'not-a-list' })).not.toThrow();
         expect(warn).toHaveBeenCalled();
     });
 });

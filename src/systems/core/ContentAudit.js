@@ -554,11 +554,11 @@ function auditMaps(out) {
  * CMS-side check would have caught none of them — which is why the audit lives
  * on the game side.
  */
-function auditHardcodedLists(out, openingTray) {
+function auditHardcodedLists(out, openingTokens) {
     // Passed in rather than imported: this list lives in `EngineBootstrap`,
     // which calls the audit, and importing it back would make the two modules
     // depend on each other in a circle.
-    const opening = openingTray || [];
+    const opening = openingTokens || [];
     opening.forEach((typeId, i) => {
         checkRef(out, 'The Tokens a new game starts with', 'Token', typeId,
             `Opening Token ${i + 1} of ${opening.length}`);
@@ -592,12 +592,12 @@ function auditLifecycle(out) {
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
-export function auditContent({ openingTray = [] } = {}) {
+export function auditContent({ openingTokens = [] } = {}) {
     const out = [];
     const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditMaps, auditHardcodedLists];
     for (const step of steps) {
         try {
-            step(out, openingTray);
+            step(out, openingTokens);
         } catch (error) {
             out.push(finding('The content check itself',
                 `could not finish one of its passes (${error?.message || error}) — the results below may be incomplete`));

@@ -158,8 +158,8 @@ export const EngineBootstrap = {
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
 
-        // `openingTray` is the audit's name for "the Tokens a new game starts with".
-        reportContentIntegrity({ openingTray: openingMat().map(t => t.typeId) });
+        // `openingTokens` is the audit's name for "the Tokens a new game starts with".
+        reportContentIntegrity({ openingTokens: openingMat().map(t => t.typeId) });
 
         // The same audit over the loaded SAVE, on every load: the content audit above
         // cannot see a Token renamed after the save was written. Reports only.
