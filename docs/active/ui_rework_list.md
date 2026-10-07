@@ -18,6 +18,55 @@ discussion get an owner interview first.
 Checked 2026-10-06: the inspection panel's "Origin (dev)" line shows only in a
 dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
 
+## Bubble design — locked (owner interview, 2026-10-07)
+
+"Bubbles" are the small round badges on a Token (the ring badges in code:
+`RingBadge`, `TokenBadgeRow`, `TurnRing`, `StationGearBadge`, `DisallowBadge`).
+
+**Positions, inside the Token's box:**
+
+```
+ +---------------------+
+ | (timer)             |   top-left: time until the Token changes (growth or turn)
+ |                     |
+ |   (gear)(3/5)(X)    |   middle row: gear, spawner count, disallow, side by side
+ |                     |
+ | (cycle) (quest) (12)|   bottom-left work cycle · bottom-centre quest · bottom-right charges
+ +---------------------+
+```
+
+| Bubble | Where | When visible |
+|---|---|---|
+| Work cycle | bottom-left | the whole time a hero is working it |
+| Charges | bottom-right | ~2 s when it changes, and on hover |
+| Quest progress | bottom-centre | ~2 s when it changes, and on hover |
+| Lifespan / turn timer (Coast) | top-left | on hover, and in its last ~10 s |
+| **Growth timer (new)**: sapling, sprout, young tree | top-left | on hover, and in its last ~10 s |
+| Spawner count | middle row | ~2 s when it changes, and on hover |
+| Station / Foundation gear | middle row | always while a choice is needed; on hover otherwise |
+| Disallow mark | middle row | always while disallowed |
+
+- **Middle row**: when a Token has several centre bubbles they line up side by
+  side, centred.
+- **Combat**: **health bars above the hero and the enemy** (bars, not rings),
+  shown **during a fight, or when the enemy is hovered**. Replaces today's
+  enemy-HP ring.
+- **Small Tokens** (half-size saplings and sprouts): same corners for now, and
+  bubbles may overhang the small box. (The owner may later show none on small
+  Tokens.)
+- **Glide**: every count bubble animates when its number jumps (2/5 → 3/5),
+  not only charges and spawners.
+- **Tooltips**: hovering a bubble shows what it means and does; **pressing a
+  bubble still grabs the Token**. The director drafts the wording; the owner
+  reviews it in the build.
+- **Callouts, one style**: spawns ("! Spawned Oak Tree"), depletion ("Oak Tree
+  Depleted", said by the hero), and effect callouts (e.g. a bonus drop) use the
+  same quick speech-bubble-style popup that fades. The "-1" / "+50" charge
+  number stays as a small number rising from the charges bubble.
+- **Name label**: on hover, **above** the Token's box, never over a bubble.
+- Bubbles are drawn **inside** the Token's box, so nothing is cut off at the
+  mat's edges and hovering them never leaves the Token.
+
 The list below is the owner's own wording.
 
 ---
