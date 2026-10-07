@@ -1,5 +1,6 @@
 
 import { useSyncExternalStore } from 'react';
+import { isDrawn } from '../dev/perf/drawSwitches.js';
 import {
     SPRITE_FX_DIR, shadowScreenPx, outlineFolder, silhouetteFolder
 } from '../../config/spriteFx.js';
@@ -103,6 +104,7 @@ function screenPerSource(entry, drawnPx, fit) {
  * 2 art pixels, in whole screen pixels. Null if there is no silhouette.
  */
 export function shadowLayer(src, size, fit = 1) {
+    if (!isDrawn('spriteFx')) return null;
     const entry = spriteFxEntry(src);
     if (!entry || entry.cols || !(size > 0) || !(fit > 0)) return null;
     const k = screenPerSource(entry, size, fit);
@@ -118,6 +120,7 @@ export function shadowLayer(src, size, fit = 1) {
  * outline pixel lands on the art's grid. Null if this sprite has no outlines.
  */
 export function outlineLayer(src, size, colour) {
+    if (!isDrawn('spriteFx')) return null;
     const entry = spriteFxEntry(src);
     if (!entry || !entry.outlined || entry.cols || !colour || !(size > 0)) return null;
     return { url: url(outlineFolder(colour), entry.key), pad: size / entry.w };
@@ -129,6 +132,7 @@ export function outlineLayer(src, size, colour) {
  * like the sheet, with the same frame offset. Null if none.
  */
 export function sheetOutlineLayer(src, colour) {
+    if (!isDrawn('spriteFx')) return null;
     const entry = spriteFxEntry(src);
     if (!entry || !entry.outlined || !entry.cols || !colour) return null;
     return { url: url(outlineFolder(colour), entry.key) };

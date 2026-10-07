@@ -38,6 +38,7 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { useDrawn } from '../../dev/perf/drawSwitches.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -104,6 +105,11 @@ export const MatToken = React.memo(function MatToken({
     disallowMode = false,
     onFlipDisallow
 }) {
+    // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
+    const ringsDrawn = useDrawn('rings');
+    const alertsDrawn = useDrawn('alerts');
+    const tooltipsDrawn = useDrawn('tooltips');
+    const walkDrawn = useDrawn('walkDraw');
     // The radius and the art both come from the type (footprint and `artSize` alike), so a
     // small Token is half size here exactly as it is to the engine (`artRadiusOf`).
     const r = artRadiusOf(typeId);
@@ -285,7 +291,7 @@ export const MatToken = React.memo(function MatToken({
         transform: `translate(${left}px, ${top}px)`,
         width: boxPx,
         height: boxPx,
-        transition: skipSlide
+        transition: skipSlide || (walking && !walkDrawn)
             ? 'none'
             : walking
                 ? `transform ${TICK_INTERVAL_MS}ms linear`
@@ -511,7 +517,7 @@ export const MatToken = React.memo(function MatToken({
                  * `RING_D_U` is fixed in mat units; only the row's anchor (`boxHalf`) follows
                  * the smaller Token.
                  */}
-                <TokenBadgeRow
+                {ringsDrawn && <TokenBadgeRow
                     instanceId={id}
                     token={isGuildHallToken ? { ...token, usesRemaining: null } : token}
                     isHovered={isHovered}
@@ -520,23 +526,23 @@ export const MatToken = React.memo(function MatToken({
                     top={boxHalf + row.dy}
                     extraRings={standingRings}
                     readTurn={detail?.turns ? readTurn : null}
-                />
+                />}
 
                 {/**
                  * The one mark at the centre: a spawner's or a worked Token's live problem,
                  * news of a problem, or a green notice that fades.
                  */}
-                <TokenCentreAlert
+                {alertsDrawn && <TokenCentreAlert
                     instanceId={id}
                     isSpawner={!!detail?.isSpawner}
                     token={token}
                     isHovered={isHovered}
-                />
+                />}
                 <EffectProcText instanceId={id} />
             </div>
 
-            {showTrickle && !hidden && <TrickleTooltip instanceId={id} />}
-            {showQuestTip && !hidden && <QuestTooltip instanceId={id} quest={quest} />}
+            {tooltipsDrawn && showTrickle && !hidden && <TrickleTooltip instanceId={id} />}
+            {tooltipsDrawn && showQuestTip && !hidden && <QuestTooltip instanceId={id} quest={quest} />}
         </>
     );
 });

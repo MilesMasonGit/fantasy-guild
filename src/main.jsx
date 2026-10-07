@@ -111,9 +111,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Perf harness (round-3 review, P3): `window.__perf`, the Perf HUD and
-    // `?stress=<name>`. Dev builds only — a production build drops this line
+    // `?stress=<name>`. Dev and perf builds only — a normal production build drops this line
     // and the whole of src/ui/dev/perf with it.
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV || import.meta.env.MODE === 'perf') {
         import('./ui/dev/perf/perfHarness.js').then(m => m.installPerf());
     }
 

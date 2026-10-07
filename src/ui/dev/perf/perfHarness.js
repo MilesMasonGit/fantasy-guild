@@ -1,6 +1,6 @@
 // The in-game perf harness.
-// ⚠️ DEV BUILDS ONLY. `main.jsx` imports this behind `import.meta.env.DEV`, so a production
-// build never contains it.
+// ⚠️ DEV AND PERF BUILDS ONLY. `main.jsx` imports this behind a compile-time check, so a normal
+// production build never contains it.
 // It measures frame interval, frame work, long animation frames, engine ticks, React commits
 // (via `<PerfProfiler>`), EventBus traffic, DOM nodes, listeners and heap.
 // The harness must not become what it measures: nothing is installed until `start()`; `stop()`
@@ -9,6 +9,7 @@
 // a second, by `textContent`, outside React. Memory is fixed-size, and the report's by-name
 // tables are bounded.
 
+import { setDrawn, drawnSwitches } from './drawSwitches.js';
 import { GameLoop } from '../../../systems/core/GameLoop.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
@@ -397,7 +398,7 @@ export function report() {
         },
         env: {
             userAgent: navigator.userAgent,
-            build: import.meta.env.DEV ? 'vite-dev (React development build)' : 'production',
+            build: import.meta.env.DEV ? 'vite-dev (React development build)' : import.meta.env.MODE === 'perf' ? 'perf' : 'production',
             appVersion: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null,
             refreshHzEstimate: refreshHz,
             devicePixelRatio: globalThis.devicePixelRatio ?? null,
@@ -542,6 +543,9 @@ export async function installPerf() {
         toggleHud,
         drive,
         scenarios: STRESS_SCENARIOS.map(s => ({ name: s.name, id: s.id, label: s.label })),
+        off: (name) => setDrawn(name, false),
+        on: (name) => setDrawn(name, true),
+        switches: drawnSwitches,
         get running() { return running; },
         get profilingArmed() { return profilingArmed(); }
     };

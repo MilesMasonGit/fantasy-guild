@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { ENEMY_SHEET_GRID } from '../../../config/spriteFx.js';
 import { useSpriteFxVersion, sheetOutlineLayer } from '../../utils/spriteFx.js';
+import { isDrawn } from '../../dev/perf/drawSwitches.js';
 
 /**
  * Renders a 64px enemy sprite sheet, 4 columns × 4 rows: rows 0–1 are the **idle** cycle (8
@@ -78,6 +79,7 @@ export const AnimatedEnemySprite = ({
     // Frame advance: a local clock, unrelated to the game's own tick, exactly like
     // AnimatedHeroSprite's. 8 frames either cycle.
     useEffect(() => {
+        if (!isDrawn('enemyAnim')) return undefined;
         const id = setInterval(() => {
             frameRef.current = (frameRef.current + 1) % 8;
             paintRef.current();

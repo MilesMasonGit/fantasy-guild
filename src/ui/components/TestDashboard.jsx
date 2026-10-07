@@ -319,10 +319,10 @@ export const TestDashboard = React.memo(() => {
                      */}
                     <div data-testid="qa-panel-body" className={QA_PANEL_BODY_CLASS}>
                         {/**
-                         * Perf HUD + stress scenarios. Compile-time dev only: a production
-                         * build with Debug Mode on still has no harness.
+                         * Perf HUD + stress scenarios. Compile-time dev or perf build only: a
+                         * normal production build with Debug Mode on still has no harness.
                          */}
-                        {import.meta.env.DEV && <PerfDevSection />}
+                        {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
                             <div>
                                 <div className={devLabelClass}>Give item</div>

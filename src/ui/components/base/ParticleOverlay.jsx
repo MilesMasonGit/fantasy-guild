@@ -7,6 +7,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { GameState } from '../../../state/GameState.js';
 import { lootFlightTarget, lootSpriteScreenPx } from '../../utils/lootFlight.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { isDrawn } from '../../dev/perf/drawSwitches.js';
 
 /** Gap between staggered particles from one collection burst. */
 const STAGGER_MS = 60;
@@ -82,7 +83,7 @@ export const ParticleOverlay = ({ disabled }) => {
          * particle source left.
          */
         const onCollected = (data) => {
-            if (disabledRef.current) return;
+            if (disabledRef.current || !isDrawn('itemFlight')) return;
             system.spawnCollected(data);
             if (system.particles.length) wakeRef.current?.();
         };

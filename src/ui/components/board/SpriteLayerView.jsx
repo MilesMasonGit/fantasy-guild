@@ -14,6 +14,7 @@ import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { isDrawn } from '../../dev/perf/drawSwitches.js';
 
 /**
  * SpriteLayerView: item loot floating **above** the mat. An absolutely-positioned overlay over
@@ -85,7 +86,7 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
     const fit = useMatFit();
 
     React.useEffect(() => {
-        if (!justThrown(sprite)) return;
+        if (!justThrown(sprite) || !isDrawn('itemFlight')) return;
         const fx = Math.round((sprite.fromX ?? sprite.x) - sprite.x);
         const fy = Math.round((sprite.fromY ?? sprite.y) - sprite.y);
         if (elementRef.current && (fx !== 0 || fy !== 0)) {
@@ -102,7 +103,7 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
         const delay = Math.max(0, 800 - elapsed);
 
         const timer = setTimeout(() => {
-            if (elementRef.current) {
+            if (elementRef.current && isDrawn('itemFlight')) {
                 const dx = Math.round(parent.x - sprite.x);
                 const dy = Math.round(parent.y - sprite.y);
                 playAbsorptionSlide(elementRef.current, dx, dy, 300);

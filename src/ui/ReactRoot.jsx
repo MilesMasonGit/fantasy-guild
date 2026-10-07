@@ -46,6 +46,7 @@ import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
 import MatDisallowControls from './components/board/MatDisallowControls.jsx';
 import { PerfProfiler, usePerfHudShowing } from './dev/perf/PerfProfiler.jsx';
+import { useDrawn } from './dev/perf/drawSwitches.js';
 
 /**
  * Time Bank widget visibility: parked, not deleted. Only its placement is switched off, so
@@ -69,6 +70,8 @@ import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../systems/core/engineE
  */
 export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
     const [notificationsHidden, setNotificationsHidden] = React.useState(false);
+    const toastsDrawn = useDrawn('notifications');
+    const binDrawn = useDrawn('bin');
     const slideFrom = menuRight ? 40 : -40;
 
     return (
@@ -111,7 +114,7 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
                     >
                         {notificationsHidden ? 'Show Notifications' : 'Notifications'}
                     </button>
-                    {!notificationsHidden && (
+                    {!notificationsHidden && toastsDrawn && (
                         <div className="flex-1 min-h-0 overflow-y-auto gi-scrollbar">
                             <ToastContainer />
                         </div>
@@ -123,7 +126,7 @@ export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
                  * notifications above take whatever is left.
                  */}
                 <div className="shrink-0 pt-2 border-t border-gi-border/30">
-                    <DiscardBinPanel />
+                    {binDrawn && <DiscardBinPanel />}
                 </div>
             </div>
         </aside>
@@ -154,6 +157,12 @@ export const ReactRoot = ({ engine }) => {
 
     // Dev only: the FPS counter stands down while the Perf HUD is up.
     const perfHudShowing = usePerfHudShowing();
+    // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
+    const dockDrawn = useDrawn('dock');
+    const drawersDrawn = useDrawn('drawers');
+    const backgroundDrawn = useDrawn('background');
+    const particlesDrawn = useDrawn('particles');
+    const tooltipsDrawn = useDrawn('tooltips');
 
     const [debugMode, setDebugMode] = React.useState(() => SettingsManager.get('debugMode') ?? false);
     // Bubble menu side: left by default, right via the Settings toggle.
@@ -170,11 +179,11 @@ export const ReactRoot = ({ engine }) => {
     }, []);
 
     // A stress scenario from the perf harness (`?stress=…`) builds its own board, so the slot
-    // picker has nothing left to ask. Dev builds only; the event is published by
+    // picker has nothing left to ask. Dev and perf builds only; the event is published by
     // src/ui/dev/perf/stressScenarios.js.
     const closeSlotSelection = ui.slotSelection.close;
     React.useEffect(() => {
-        if (!import.meta.env.DEV) return undefined;
+        if (!(import.meta.env.DEV || import.meta.env.MODE === 'perf')) return undefined;
         return EventBus.subscribe(UI_EVENTS.DEV_STRESS_STARTED, () => closeSlotSelection());
     }, [closeSlotSelection]);
 
@@ -261,13 +270,13 @@ export const ReactRoot = ({ engine }) => {
         <EngineProvider engine={engine}>
             <ViewportProvider>
                 <DeckDndProvider>
-                <ParticleOverlay disabled={ui.isAnyModalOpen} />
+                {particlesDrawn && <ParticleOverlay disabled={ui.isAnyModalOpen} />}
                 <TutorialAideOverlay />
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                     <div 
                         className="flex-1 relative flex overflow-hidden bg-black"
                         style={{
-                            backgroundImage: `url('/assets/ui/${backgroundTile}.png')`,
+                            backgroundImage: backgroundDrawn ? `url('/assets/ui/${backgroundTile}.png')` : 'none',
                             backgroundRepeat: 'repeat',
                             backgroundSize: '512px',
                             imageRendering: 'pixelated',
@@ -390,7 +399,7 @@ export const ReactRoot = ({ engine }) => {
                              * Bottom Hero Dock: horizontal sliding tabs. Not on the Guild Hall
                              * upgrade screen.
                              */}
-                            {showsBottomHeroDock(ui.fullscreen.view) && (
+                            {dockDrawn && showsBottomHeroDock(ui.fullscreen.view) && (
                                 // A crash in the bottom hero dock stays local to it.
                                 <ErrorBoundary label="HeroDock">
                                     <PerfProfiler id="HeroDock">
@@ -471,18 +480,18 @@ export const ReactRoot = ({ engine }) => {
                          * Perf HUD commit counting, dev only. A crash in the Bank drawer stays
                          * local to it.
                          */}
-                        <ErrorBoundary label="BankDrawer">
+                        {drawersDrawn && <ErrorBoundary label="BankDrawer">
                             <PerfProfiler id="Drawer">
                                 <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
                             </PerfProfiler>
-                        </ErrorBoundary>
+                        </ErrorBoundary>}
                         {/**
                          * The Shop drawer, from the left edge. A crash here stays local to it
                          * too.
                          */}
-                        <ErrorBoundary label="ShopDrawer">
+                        {drawersDrawn && <ErrorBoundary label="ShopDrawer">
                             <ShopDrawer isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
-                        </ErrorBoundary>
+                        </ErrorBoundary>}
                     </div>
                 </div>
 
@@ -501,7 +510,7 @@ export const ReactRoot = ({ engine }) => {
                     </>
                 )}
 
-                {ui.inspect.selection?.type === 'token' && (ui.inspect.selection.source?.rect || ui.inspect.selection.source?.instanceId != null) && (
+                {tooltipsDrawn && ui.inspect.selection?.type === 'token' && (ui.inspect.selection.source?.rect || ui.inspect.selection.source?.instanceId != null) && (
                     <TokenInspectPopup
                         typeId={ui.inspect.selection.id}
                         instanceId={ui.inspect.selection.source?.instanceId}

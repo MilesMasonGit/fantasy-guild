@@ -4,6 +4,11 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Measurement tools, part 1 (2026-10-06).** `npm run build:perf` makes a production build that keeps
+  the Perf HUD (into `dist-perf/`); `npm run check:perf-build` proves the normal build has none of it.
+  15 per-system drawing switches (`?off=rings,speech` or `window.__perf.off(name)`) turn one
+  system's drawing off at a time to measure its cost; they never change game logic. Dev and perf
+  builds only.
 - **Crunch order updated (2026-10-06).** The Atlas joins the crunch after deep optimization,
   followed by a terrain rework; markets stay undecided.
 - **Comment-slimming pass (2026-10-06).** Comments only, about 610 files across `src/config`,

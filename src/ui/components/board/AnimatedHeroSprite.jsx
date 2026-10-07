@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { heroSpriteFrame } from './hitAnimations.js';
 import { HERO_SHEET_GRID } from '../../../config/spriteFx.js';
 import { useSpriteFxVersion, sheetOutlineLayer } from '../../utils/spriteFx.js';
+import { isDrawn } from '../../dev/perf/drawSwitches.js';
 
 /** The sheet's row for each state the clock can ask for. */
 const ROW_INDEX = { attack: 0, walk: 1, idle: 2 };
@@ -67,7 +68,8 @@ export const AnimatedHeroSprite = ({
                     root.setAttribute('data-hero-frame', String(next.frame));
                 }
             }
-            timer = setTimeout(step, next.nextInMs + 1);
+            // heroAnim off: the one frame the state asks for, then no more steps.
+            if (isDrawn('heroAnim')) timer = setTimeout(step, next.nextInMs + 1);
         };
         step();
         return () => clearTimeout(timer);
