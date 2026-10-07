@@ -110,6 +110,41 @@ the flag**.
   hero's name and its reach ring, as today. It is otherwise just something to
   drag.
 
+## Hero bar and hero panel — locked (owner interview, 2026-10-07)
+
+- **A general overhaul**: the owner dislikes the current look (thick borders,
+  dead space, clunky information), not the positions. Apply
+  [`docs/reference/UI_STYLE.md`](../reference/UI_STYLE.md) throughout.
+- **The bar stays horizontal at the bottom**, spaced for 8 heroes, compact and
+  clean. Each hero shows: **figure or portrait + name, HP bar, and level-up
+  speech bubbles** (persistent until cleared). Hovering a hero shows its
+  **work-rules gear** (see "Hero work rules").
+- **The hero panel is a full-height side panel**, in the same place whether or
+  not the Bank is open (like today's Bank-side hero panel). The mat stays fully
+  visible.
+- Layout mockups (slim portraits / compact cards / vertical column) were shown
+  and set aside: the issue is presentation, not layout.
+
+## Token Summary — locked (owner interview, 2026-10-07)
+
+- **Opens by clicking the Token counter** ("Tokens 62 / 80") in the top bar
+  above the mat (today it opens on hover). It drops down over the mat; Esc or
+  clicking elsewhere closes it.
+- **One row per Token type**, no individual Tokens: "Oak Tree ×5", with small
+  status counts (working / idle / blocked / disallowed).
+- **Hovering a row highlights every Token of that type** on the mat. Clicking a
+  row does nothing more.
+- **Order**: Tokens **missing items** (waiting for inputs or upkeep they can't
+  pay) pinned at the top; the rest grouped by skill section (Logging, Mining…)
+  like the Shop, spawners next to what they spawn.
+- **Spawned Tokens** get rows like placed ones, since they now count toward the
+  cap (T-102).
+- **The bin**: a plain "In the bin ×N" line at the bottom *(director default)*.
+  ⚠️ The owner expects to cut the bin once the Atlas exists, maybe for a
+  "demolish" action; don't invest in bin UI.
+- **Bubbles everywhere** (on Tokens and in the top bar) get a clean tooltip
+  explaining what they mean.
+
 The list below is the owner's own wording.
 
 ---
