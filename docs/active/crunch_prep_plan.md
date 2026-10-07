@@ -84,7 +84,7 @@ Two safeguards:
 | P1 | Doc triage | Gemini → owner approves | ✅ Done; finished by Claude 2026-10-06 (docs/active, docs/reference, one archive, TICKETS.md) |
 | P2 | GDD rewrite | Gemini drafts → Claude reviews | 🟡 Drafted; Claude review 2026-10-06 |
 | P3 | Performance baseline + tools | Claude (director) | ✅ Done 2026-10-07: tools merged, baseline in [PERFORMANCE.md](../reference/PERFORMANCE.md) |
-| P4 | Crunch backlog | Gemini drafts → owner approves | ⬜ Not started |
+| P4 | Crunch backlog | Claude (director) + owner interviews | ✅ Done 2026-10-07: [briefs/README.md](briefs/README.md) |
 | P5 | Max go / no-go | Owner | ⬜ Not started |
 
 Kickoff prompt for P1 + P2 (archived): `docs/archive/KICKOFF_doc_triage_gdd.md`

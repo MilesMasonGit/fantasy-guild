@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Crunch briefs written (2026-10-07).** Ten ready-to-run briefs in `docs/active/briefs/` (quick
+  fixes, UI rework, class rework v2, hero bar and panel, offline progress, drag, optimization,
+  Atlas, terrain, Performance Envelope), from the owner's design interviews.
 - **Certification run by the owner (2026-10-07).** The realistic board passes (99.1 % of frames in
   budget, no freezes); the kill stall is confirmed gone; the torture board misses (83 %); picking up
   a Token stalls ~90 ms in the dev build (T-033). Results in `docs/reference/PERFORMANCE.md`.
