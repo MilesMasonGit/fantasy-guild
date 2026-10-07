@@ -7,6 +7,36 @@
 
 ---
 
+## ⚠️ Amendments — owner, 2026-10-07 (these override the sections below)
+
+Rulings made after this concept was approved clashed with it; the owner settled
+them before the roadmap:
+
+1. **Construction stays a Starting skill** (every hero builds; Foundations and
+   the tutorial depend on it). Starting skills are therefore **9**: mining,
+   forestry, fishing, smithing, crafting, cooking, farming, alchemy,
+   construction.
+2. **The Fighter's Advanced skill is Leadership** (an existing skill), replacing
+   construction everywhere this concept uses it (Fighter, and the
+   cross-pollination of Paladin, Knight, Scholar and Merchant). *Placeholder:*
+   the owner expects to **rework all the specialist skills** (Advanced and
+   Master) later.
+3. **Explore is dropped.** Maps become special items in the Atlas rework. When
+   Explore goes, **retire the Oak Forest Map** (the Shop's Explore Token, a CMS
+   edit) and the tutorial's last step **"Explore a Map"**.
+4. **Logging is renamed Forestry**, including the internal id (CMS content
+   follows on its next sync).
+5. **Alchemy becomes a Starting skill**, as this concept says.
+6. **Academies**: the four basic classes get Academy Tokens built on Wood or
+   Stone Foundations (owner, 2026-10-06), using the Foundation tiers in
+   `docs/active/ui_rework_list.md`. Promotion stays free.
+7. **No save migration**: saves from another version are refused until 1.0, so
+   old heroes need no conversion.
+
+Resulting count: 9 Starting + 4 Combat + 4 Advanced + 8 Master = **25 skills**.
+
+---
+
 ## 1. Executive Summary
 
 This rework streamlines the guild's job and skill progression into a cohesive, symmetrical four-pillar design built around **four distinct combat styles**: **Melee**, **Ranged**, **Magic**, and **Stealth**.
