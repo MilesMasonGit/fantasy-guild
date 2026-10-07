@@ -15,30 +15,30 @@ export const BGM_PLAYLIST = [
 ];
 
 const CALCULATOR_BUTTON_SFX = [
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_001_81851.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_002_81852.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_003_81853.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_004_81854.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_005_81855.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_006_81856.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_007_81857.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_008_81858.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_009_81859.mp3',
-    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_010_81860.mp3'
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_001_81851.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_002_81852.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_003_81853.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_004_81854.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_005_81855.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_006_81856.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_007_81857.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_008_81858.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_009_81859.mp3',
+    '/assets/audio/sfx/zapsplat_pack_calculator_buttons_mp3/zapsplat_office_calculator_button_single_press_010_81860.mp3'
 ];
 
 const COINS_HAND_SFX = [
-    '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_001_85378.mp3',
-    '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_002_85379.mp3',
-    '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_003_85380.mp3',
-    '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_004_85381.mp3'
+    '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_001_85378.mp3',
+    '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_002_85379.mp3',
+    '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_003_85380.mp3',
+    '/assets/audio/sfx/zapsplat_pack_handling_coins_mp3/zapsplat_foley_money_several_coins_loose_change_place_into_another_persons_hand_004_85381.mp3'
 ];
 
 const HERO_ASSIGN_SFX = [
-    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_001_20464.mp3',
-    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_002_20465.mp3',
-    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_003_20466.mp3',
-    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_004_20467.mp3'
+    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_001_20464.mp3',
+    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_002_20465.mp3',
+    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_003_20466.mp3',
+    '/assets/audio/sfx/zapsplat_pack_playing_cards_mp3/zapsplat_leisure_playing_card_single_place_down_on_table_004_20467.mp3'
 ];
 
 const TOKEN_DRAG_SFX = [
