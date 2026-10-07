@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
-import { DOCK_MAX_PINNED } from '../components/dock/dockConstants.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
+
+/** How many hero cards can be pinned open at once; pinning another closes the oldest. */
+export const DOCK_MAX_PINNED = 2;
 
 /**
  * The first promotion offer standing on the board, or null. Read from the Token instances (the

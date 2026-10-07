@@ -331,7 +331,7 @@ describe('Re-training is the same act as promoting (D-248)', () => {
 
 describe('The UI is told, so the Dock actually redraws', () => {
     // ⚠️ Standing in for browser verification: the Dock's six skill cells
-    // changing contents hangs entirely off these two events. `DockSkillsGrid`
+    // changing contents hangs entirely off these two events. the Dock
     // subscribes to `heroes_updated` and projects `hero.skills`, so if the event
     // does not fire the grid keeps showing the old job's skills and nothing
     // looks wrong.
@@ -365,7 +365,7 @@ describe('The UI is told, so the Dock actually redraws', () => {
     });
 
     it('the projection the Dock renders changes to the new job sheet', () => {
-        // Exactly what DockSkillsGrid computes: id:level pairs off hero.skills.
+        // The skills projection the Dock renders: id:level pairs off hero.skills.
         const hero = makeQualified('fighter');
         const project = () => Object.entries(hero.skills)
             .map(([id, s]) => `${id}:${s.level}`).sort().join(',');
