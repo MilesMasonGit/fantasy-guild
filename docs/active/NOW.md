@@ -23,7 +23,8 @@ changed, what's next. Keep it under one screen.*
 ## Next up
 
 1. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
-   the certification run (T-003) and the CMS fixes (T-001, T-002).
+   the CMS fixes (T-001, T-002). Certification ran 2026-10-07: realistic
+   board passes; results in [PERFORMANCE.md](../reference/PERFORMANCE.md).
 2. **Crunch prep P3 done** 2026-10-07: tools merged and the baseline recorded in
    [PERFORMANCE.md](../reference/PERFORMANCE.md) (rings are over half the drawing cost;
    drag success 74–100 %, tickets T-104..T-107).

@@ -34,7 +34,6 @@ here.
 |---|---|---|
 | T-001 | **CMS**: Wood Foundation → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, Stone item → `item_stone`; **retire Copper Rubble** (also clears the last failing test). Then Sync to Game. | CR3 summary |
 | T-002 | **CMS: retire the dormant Maps** (owner 2026-10-06): the 8 maps in `data/maps.json` and the six unsold Map Tokens. Keep the Oak Forest Map (it is an Explore producer sold in the Shop). Also clears the missing `token_fallen_oak_tree`. The Atlas gets fresh Map content. | FB §5, GDD |
-| T-003 | **Run the certification checklist** ([`docs/active/certification_checklist.md`](../active/certification_checklist.md), ~25 min, on your PC). Unblocks T-033, T-034, T-060, T-071. | CR3 summary |
 | T-005 | **Uncommitted Atlas work**: `src/state/StateSchema.js` adds a required `atlas` save section (check old saves still load); `data/items/maps.json` was written outside the CMS (a CMS sync may wipe it). Keep, finish or discard? | CR3 summary |
 | T-006 | **Two edited map PNGs** (`map_frozenpeak`, `map_volcano`) uncommitted — commit or discard? | CR3 summary |
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
@@ -81,8 +80,7 @@ here.
 | T-030 | P2 | open | Five tooltip implementations. Ruling: one shared gold-bordered tooltip; plain browser tips only on icon buttons. | CR3-455 |
 | T-031 | P2 | open | z-index: one table for the mat, ~20 literal values elsewhere; unify. | CR3-456 |
 | T-032 | P2 | open | Typography window is boxed inside Settings; Escape leaves its preview applied. *Suspected.* | CR3-453 |
-| T-033 | P2 | blocked (T-003) | Picking up / dropping re-renders every draggable → a memoised Token grab. Measure in certification items 1–2 first. | CR3-400 |
-| T-034 | P3 | blocked (T-003) | A quick flick drops the Token short of the cursor (second cursor tracker). Check certification item 13 first. | CR3-412 |
+| T-033 | P1 | open | **Picking up, dropping and carrying redraw every draggable.** Measured by the owner 2026-10-07 (dev build, S2): ~90 ms pause at every pickup (seen as a hitch), ~60 ms at every drop, the mat redraws ~115×/s while carrying (6 % of frames over 16.7 ms); S3: 226 ms pickup. Fix in the drag deep-dive (a memoised Token grab); see `docs/reference/PERFORMANCE.md`. | CR3-400 |
 | T-035 | P2 | open | A push shoves overlapping Tokens anywhere on the mat. Ruling: move only what the newcomer crowds (and what that pushes into). ⚠ The bench will report WORK CHANGED for S4 — expected, accept it here. | CR3-151 |
 | T-036 | P3 | open | One close-button look: the red pixel-art cancel icon everywhere. | R8-Q3 |
 | T-037 | P3 | open | Two ways to hide notifications; keep only "Collapse". | R8-Q8 |
@@ -113,7 +111,7 @@ here.
 | T-057 | P3 | open | Rename tile-named engine vocabulary — code names and event strings together, one slice. | CR3-501 |
 | T-058 | P3 | open | Lint residue (~74 old errors), per area: engine, combat (keep `MERGE_GRACE_MS` at 1100), UI↔engine (don't add hook deps blindly), renderer, UI. | CR3-110, 265, 312, 359, 467 |
 | T-059 | P3 | open | The CMS imports `itemRegistry` for one constant. | CR3-511 |
-| T-060 | P3 | blocked (T-003) | Toasts may leave page elements behind — the certification soak decides. | CR3-039 |
+| T-060 | P3 | blocked (soak) | Toasts may leave page elements behind — the optional 60-minute soak (certification Part G, not yet run) decides. | CR3-039 |
 | T-061 | P3 | open | `cardSizeStore` is half dead (the drag ghost still reads it); unreachable Shop branches in `InspectionPanel.jsx`. | FB §5 |
 | T-062 | P3 | open | `statementText.js` contains a literal NUL byte, so git treats it as binary (no diffs). | FMR (still true 2026-10-06) |
 | T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |
@@ -150,7 +148,7 @@ first, when content that uses it is authored.*
 
 | ID | Why parked | Summary | Origin |
 |---|---|---|---|
-| T-071 | after T-003 | Canvas mat — very likely unnecessary now; confirm after certification. | CR3-355 |
+| T-071 | Envelope | Canvas mat. Certification (2026-10-07): the realistic board passes, ~320 Tokens reaches 83 % of frames in budget. Unnecessary at realistic sizes; decide with the Performance Envelope whether boards that large must be smooth. | CR3-355 |
 | T-072 | after the crunch | `@ts-check` trial on the contract layer. | CR3-560 |
 | T-073 | latent | Input-cost discount applied when paying, not when checking. | CR3-028 |
 | T-074 | latent | Item rules can be given moments that never fire. | CR3-202 |

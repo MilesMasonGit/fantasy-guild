@@ -7,3 +7,5 @@ Before the T- system (2026-10-06): code review round 3's closed tickets are
 recorded in `docs/archive/review_v3/` (run log and session summary).
 
 T-004 — Re-save the engine bench baseline on a quiet machine — chore/p3-baseline — 2026-10-07
+T-003 — Owner ran the certification checklist; results in docs/reference/PERFORMANCE.md — docs/certification-results — 2026-10-07
+T-034 — A quick flick lands short of the cursor: not reproduced by the owner (C3), it lands where released — docs/certification-results — 2026-10-07
