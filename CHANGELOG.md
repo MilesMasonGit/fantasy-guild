@@ -4,6 +4,9 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Certification run by the owner (2026-10-07).** The realistic board passes (99.1 % of frames in
+  budget, no freezes); the kill stall is confirmed gone; the torture board misses (83 %); picking up
+  a Token stalls ~90 ms in the dev build (T-033). Results in `docs/reference/PERFORMANCE.md`.
 - **Performance baseline recorded (2026-10-07).** Engine and drawing baselines saved on the owner's
   PC; results, the per-system cost table and the drag success rates are in
   `docs/reference/PERFORMANCE.md`. The rings are over half the drawing cost of a realistic mat.

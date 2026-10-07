@@ -102,7 +102,37 @@ rework list — the rework should measure them before and after.
 | Shop row → mat | 100 % | 82 % |
 | Bank item → hero | 100 % | 100 % |
 
-Pickup is instant once the pointer moves 8 px. Almost every failure is one of
+The drag *starts* within a millisecond of the pointer moving 8 px, but see the
+certification below: a redraw stall follows it. Almost every failure is one of
 the drag tickets: the closed hero sheet's invisible drop slots (T-104, most
 failures), a hero sprite blocking its flag (T-105), a flag grabbing a Token
 (T-106), an alert mark blocking a Token (T-107). Goal: 100 % everywhere.
+
+## Owner certification run (2026-10-07)
+
+The owner ran the certification checklist
+([`docs/active/certification_checklist.md`](../active/certification_checklist.md))
+on their PC: dev build, Chrome 154, 1920 × 953, a 163.9 Hz screen. ⚠️ At
+163.9 Hz a perfect frame is 6.10 ms, just over the 6.06 ms line, so the HUD's
+"≤ 6.06" frame figure reads ~42 % even when nothing is late; use **frame work**
+and **missed refreshes** instead.
+
+| Check | Target | Result | |
+|---|---|---|---|
+| A4 busy board (S2), 5 min hands off | ≥ 99 % in budget, no freezes | **99.1 %** frame work in budget; 0.2 % refreshes missed; 0 long frames; worst 1-in-1,000 frame 12.2 ms | ✅ |
+| A4 mat redraws | ≤ 1 / s | 5.1 / s own renders (9.5 subtree) — not measurable as specified (heroes always walk on a stress board); the review measured ~40 | ⚠️ |
+| A7 torture board (S3, ~320 Tokens) | ≥ 95 % in budget | **83 %** frame work in budget (the perf build at 1× gives 87 %); longest frame 66 ms | ❌ known: crunch optimization / Envelope |
+| A6 a kill on S3 (the old CR3-250 stall) | no freeze | Owner saw none; game tick max **5.9 ms** with 4 kills (was 120–220 ms per kill) | ✅ fixed |
+| B1 pick up / drop, S2 | — | **~90 ms pause at every pickup**, ~60 ms at every drop (owner saw "a slight hitch at the start of the drag"); 226 ms / 177 ms on S3 | ❌ T-033 |
+| B2 carrying over the dock, S2 | — | the mat redraws ~115×/s while a Token is carried (9×/s otherwise); 6 % of frames over 16.7 ms (judder) | ❌ T-033 |
+| B4, B5, B8, C1–C6, D1–D4, E1 | the fixed behaviour | all as intended (the old review's bugs CR3-100, 300, 401, 405, 409, 450, 451, 010 confirmed fixed by eye); a quick flick lands where released | ✅ |
+| B3 | — | skipped: describes the retired Vault-era design | — |
+| F, G (engine bench, 60-min soak) | — | F done by the director the same morning (above); G skipped | — |
+
+Owner ruling from B6/B7: a mat Token or flag dropped over the Shop drawer or
+the hero sheet **lands on the mat underneath**; that is the intended behaviour.
+
+The pickup/drop stalls are dev-build numbers (React's development build
+re-renders several times slower than players see), so players get a smaller
+hitch. `bench:drag` doesn't see them yet, because it times the drag start, not
+the frames after it; add frame timing to it when the drag deep-dive starts.
