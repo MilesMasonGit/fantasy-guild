@@ -92,6 +92,24 @@ Work split: code builds the group mechanic and the Foundation "minimum tier"
 (new Foundation tiers, Marble and Basalt items and sources, anvil tiers,
 building recipes' minimum tiers).
 
+## Hero work rules and the flag — locked (owner interview, 2026-10-07)
+
+The work rules (per held skill: Allowed on/off and priority 1–5, plus one
+Fight row for heroes who can fight; `FlagRulesPanel.jsx` today) move **off
+the flag**.
+
+- **Opened from the hero bar**: hovering a hero in the bar shows a **gear** on
+  that hero; clicking it opens the rules.
+- **A side panel**: it slides out over the mat from the same side as the
+  notification sidebar *(director default)* and stays open until closed (Esc
+  or its X). It names the hero and shows their flag colour.
+- **Copy rules to…**: in the panel, a list of the other heroes with
+  checkboxes and **Copy**. Skills a target hero doesn't hold are skipped.
+- **The flag**: no gear and no "…" idle chip (removed entirely; the hero's
+  "No work in range." speech bubble remains). On hover it highlights, shows its
+  hero's name and its reach ring, as today. It is otherwise just something to
+  drag.
+
 The list below is the owner's own wording.
 
 ---
