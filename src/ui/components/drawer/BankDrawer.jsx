@@ -8,10 +8,7 @@ import InspectionPanel from './InspectionPanel.jsx';
 import { columnWidthCss, NOTIFICATION_COLUMN } from '../board/boardConstants.js';
 
 /**
- * BottomFolderDrawer: the bank drawer.
- * ⚠️ The name is wrong and is kept only to avoid a rename in the same change. It slides in
- * from the **side**, shows **one pane at a time**, and inspection has left it entirely for a
- * panel elsewhere. Renaming it to `BankDrawer` is a tidy-up worth doing separately.
+ * BankDrawer: slides in from the side and holds the item Bank.
  * One pane: the item Bank (the Shop has its own drawer from the left edge, `ShopDrawer`).
  * Per-pane header: title + Close. Opening/closing is driven by the BubbleMenu (via `ui.nav`)
  * or `ui:open_drawer` auto-open events; state lives in useUIModals (`ui.drawer`: `panes` /
@@ -34,7 +31,7 @@ const PANES = [
 // selection for tile highlighting.
 const PANE_SELECTION_TYPE = { bank: 'item' };
 
-export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
+export const BankDrawer = ({ drawer, inspect, menuRight = false }) => {
     const [searchQuery, setSearchQuery] = useState('');
     // Canonical order regardless of the order panes were opened in. `panes` never holds more
     // than one, so this is a lookup rather than a filter.
@@ -135,4 +132,4 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
     );
 };
 
-export default BottomFolderDrawer;
+export default BankDrawer;

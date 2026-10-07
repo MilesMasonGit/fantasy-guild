@@ -34,7 +34,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
-import { BottomFolderDrawer } from '../ui/components/drawer/BottomFolderDrawer.jsx';
+import { BankDrawer } from '../ui/components/drawer/BankDrawer.jsx';
 import {
     ShopDrawer, ShopRow, shopDrawerState, shopDrawerTransform, shopRowPayload,
     isShopPayload, SHOP_LIP_PX
@@ -86,13 +86,13 @@ const row = (view, typeId) => view.container.querySelector(`[data-shop-row="${ty
  */
 describe('the Bank drawer keeps the Bank only (B4)', () => {
     it('has no Shop pane: asking for the old pane draws nothing', () => {
-        const view = render(h(BottomFolderDrawer, { drawer: drawerFor('shop'), inspect }));
+        const view = render(h(BankDrawer, { drawer: drawerFor('shop'), inspect }));
         expect(view.queryByText('Shop')).toBeNull();
         expect(view.queryByTestId('bank-pane')).toBeNull();
     });
 
     it('keeps the Bank with its inspect column', () => {
-        const view = render(h(BottomFolderDrawer, { drawer: drawerFor('bank'), inspect }));
+        const view = render(h(BankDrawer, { drawer: drawerFor('bank'), inspect }));
         expect(view.getByTestId('bank-pane')).toBeTruthy();
         expect(view.getByTestId('inspect-column')).toBeTruthy();
     });

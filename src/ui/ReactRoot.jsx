@@ -15,7 +15,7 @@ import { useUIModals } from './hooks/useUIModals.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 
 import Board from './components/board/Board.jsx';
-import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
+import BankDrawer from './components/drawer/BankDrawer.jsx';
 import ShopDrawer from './components/drawer/ShopDrawer.jsx';
 
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
@@ -481,7 +481,7 @@ export const ReactRoot = ({ engine }) => {
                          */}
                         {drawersDrawn && <ErrorBoundary label="BankDrawer">
                             <PerfProfiler id="Drawer">
-                                <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
+                                <BankDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
                             </PerfProfiler>
                         </ErrorBoundary>}
                         {/**
