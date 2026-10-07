@@ -67,6 +67,31 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
 - Bubbles are drawn **inside** the Token's box, so nothing is cut off at the
   mat's edges and hovering them never leaves the Token.
 
+## Shop groups and Foundation tiers — locked (owner interview, 2026-10-07)
+
+**Groups.** The CMS can mark any set of shop Tokens as one **group** (a general
+rule, so future families need no code). The Shop shows a group as **one row
+with a dropdown**; picking an entry shows that entry's sprite and price.
+**Everything is selectable from the start: price is the only gate** (the
+existing "no unlocks" rule).
+
+**Foundation tiers.** A building recipe names a Foundation kind and a
+**minimum tier** ("Wood Foundation, tier 2 or higher"). A higher Foundation
+builds everything a lower one can. This is the same rule tools already use
+(Copper Nails needs an anvil of tier 1 or higher).
+
+| Group | Tiers | Notes |
+|---|---|---|
+| Wood Foundation | **Oak** (1) · **Maple** (2) · **Ebony** (3) | Logging levels 1 / 45 / 90. Fir, Birch, Cedar and Mahogany go to other constructions (e.g. Mahogany → Fine Furniture). ⚠️ Only one generic wood Foundation art exists. |
+| Stone Foundation | **Stone** (1) · **Marble** (2) · **Basalt** (3) | Marble and Basalt items, sources and Tokens don't exist yet. Art exists: items, bricks, Foundations and veins. Granite and Sandstone are for other constructions. |
+| Anvil | Copper · Iron · Mythril · Adamantite · Darkmetal | Copper Anvil exists today; art exists for all five. Follows the metal ladder. |
+| Any other family | — | e.g. Oak / Fir / … Forests, if the owner groups them in the CMS. |
+
+Work split: code builds the group mechanic and the Foundation "minimum tier"
+(engine, CMS fields, Shop dropdown); the owner authors the content in the CMS
+(new Foundation tiers, Marble and Basalt items and sources, anvil tiers,
+building recipes' minimum tiers).
+
 The list below is the owner's own wording.
 
 ---
