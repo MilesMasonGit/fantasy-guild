@@ -1,6 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import {
     getAllTokenTypes, getTokenType, getProvidedTagsWithTiers, productionRoutes, toolContextTags, tokenName,
     expectedOutputQuantity
@@ -62,8 +60,11 @@ function solveShippedCorpus() {
  * design has already identified, and each is the kind of thing the eye stops
  * catching somewhere around the thirtieth Token.
  *
- * ## ⚠️ Why 27 cases below are skipped (cleanup; count corrected: 13 `it.skip`
- * plus two `it.skip.each` over the 7 Maps)
+ * ## ⚠️ Why 3 cases below are skipped
+ *
+ * Each one still guards something live: Resources having an input-free route
+ * (fails today on a Resource with no recipe yet), Markets paying in goods, and the
+ * closed vocabulary the CMS dropdowns rely on (the last two pass if un-skipped).
  */
 
 /**
@@ -110,12 +111,6 @@ describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () =
         }
     }
 
-    it.skip('recognises at least one tool at all — otherwise this suite proves nothing', () => {
-        // A guard on the guard: if `isTool` were ever dropped from every Token,
-        // every assertion below would pass vacuously.
-        expect(TOOL_TAGS.size).toBeGreaterThan(0);
-    });
-
     it('gives every produced material a route needing no tool', () => {
         const produced = new Set();
         for (const id of ALL_IDS) {
@@ -148,12 +143,6 @@ describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () =
         expect(locked).toEqual([]);
     });
 
-    it.skip('specifically: Yew Log is obtainable without the axe that gates the Stand', () => {
-        // Named explicitly because it is the one case in the current content
-        // where a tool exists at all — if the Copse is ever retuned away, the
-        // general assertion above would be the only thing catching it.
-        expect(toolFreeOutputs.has('item_yew_log')).toBe(true);
-    });
 });
 
 describe('⚠️ Rule 2 — Passive Generators are strictly worse (D-116, risk 11)', () => {
@@ -488,17 +477,6 @@ describe('Registry integrity', () => {
         }
     });
 
-    it.skip('points every Manager at Tokens that exist (D-35)', () => {
-        const managers = ALL_IDS.filter(id => TOKENS[id].manages?.length);
-        expect(managers.length).toBeGreaterThan(0);
-
-        for (const id of managers) {
-            for (const managed of TOKENS[id].manages) {
-                expect(getTokenType(managed), `${id} manages ${managed}, which does not exist`).toBeTruthy();
-            }
-        }
-    });
-
     it('never depletes a Manager (D-140)', () => {
         // A restocker needing restocking would be exactly the chore it exists
         // to remove, so permanence is a rule rather than a large number.
@@ -532,32 +510,6 @@ describe('Registry integrity', () => {
         }
     });
 
-    it.skip('gives every Token a rarity except Maps, which sit outside it (D-132)', () => {
-        for (const id of ALL_IDS) {
-            const def = TOKENS[id];
-            if (def.mapId) expect(def.rarity).toBeUndefined();
-            else expect(def.rarity, `${id} has no rarity`).toBeTruthy();
-        }
-    });
-
-    it.skip('makes every Map a single burst (D-155)', () => {
-        for (const id of ALL_IDS.filter(x => TOKENS[x].mapId)) {
-            expect(TOKENS[id].uses).toBe(1);
-        }
-    });
-
-    it.skip('⚠️ points every Token at art that actually exists', () => {
-        // Found the hard way in the Phase 9 playtest: two Tokens named sprites
-        // that were never drawn, and the only symptom was a 500 in the network
-        // log and an invisible Token on the board. Nothing else in the stack
-        // notices — `tokenSpritePath` happily builds a path to a missing file.
-        for (const id of ALL_IDS) {
-            const sprite = TOKENS[id].sprite;
-            expect(sprite, `${id} has no sprite`).toBeTruthy();
-            const file = resolve(process.cwd(), 'public/assets/skills', `${sprite}.png`);
-            expect(existsSync(file), `${id} → ${sprite}.png does not exist`).toBe(true);
-        }
-    });
 });
 
 describe("A Map's pool is a complete kit (D-139)", () => {
@@ -578,25 +530,6 @@ describe("A Map's pool is a complete kit (D-139)", () => {
         }
     });
 
-    it.skip.each(maps.map(m => m.id))('%s contains producers, a Manager and an enemy', (mapId) => {
-        const ids = getMap(mapId).pool.filter(e => e.kind === 'token').map(e => e.refId);
-        const types = ids.map(id => TOKENS[id].tokenType);
-
-        expect(types, `${mapId} has no producer`).toContain('resource');
-        expect(types, `${mapId} has no Manager — it cannot run unattended`).toContain('manager');
-        expect(types, `${mapId} has no enemies`).toContain('enemy');
-    });
-
-    it.skip.each(maps.map(m => m.id))('%s only pools Tokens of its own theme', (mapId) => {
-        // A Map's loot pool is the ONLY meaning "biome" has. If themes leak,
-        // the word stops meaning anything at all.
-        const map = getMap(mapId);
-        for (const entry of map.pool) {
-            if (entry.kind !== 'token') continue;
-            expect(TOKENS[entry.refId].theme, `${entry.refId} in ${mapId}`).toBe(map.theme);
-        }
-    });
-
     it('⚠️ the FIRST Map may demand only the Foundation six (D-261)', () => {
         // A Recruit holds the Foundation skills and nothing else, so a Token in
         // the opening kit that wants a specialist is a Token nobody can work
@@ -612,26 +545,6 @@ describe("A Map's pool is a complete kit (D-139)", () => {
             if (!skill) continue;             // context, buff, Manager, enemy
             expect(foundation.has(skill),
                 `${entry.refId} in ${firstMap.id} demands "${skill}", which no Recruit holds`
-            ).toBe(true);
-        }
-    });
-
-    it.skip('⚠️ every Foundation skill has something to work on the first Map (D-193)', () => {
-        // The mirror of the rule above, and the one that actually bit: three of
-        // the six had NO Token at all — Fishing only on Map 2, Crafting and
-        // Cooking nowhere in the game. A skill nothing works can never level,
-        // so it can never gate, so it is a word rather than a mechanic.
-        const firstMap = listMaps()[0];
-        const worked = new Set(
-            firstMap.pool
-                .filter(e => e.kind === 'token')
-                .map(e => TOKENS[e.refId]?.config?.skill)
-                .filter(Boolean)
-        );
-
-        for (const skillId of FOUNDATION_SKILL_IDS) {
-            expect(worked.has(skillId),
-                `no Token in ${firstMap.id} demands "${skillId}" — a Recruit holds it with nothing to do`
             ).toBe(true);
         }
     });
@@ -669,47 +582,6 @@ describe("A Map's pool is a complete kit (D-139)", () => {
                 }
             }
         }
-    });
-});
-
-describe('⚠️ Later Maps are stronger AND more demanding (D-95)', () => {
-    /**
-     * On a fixed board, power growth alone would just mean swapping Tokens and
-     * having spare tiles. Because later content also costs **more board** —
-     * deeper chains, more inputs, higher skill floors — the player faces a real
-     * choice about what to run. **Map 2 must demonstrate that, not merely cost
-     * more.**
-     */
-    const [first, second] = listMaps();
-
-    /** The average skill floor across a Map's runnable Tokens. */
-    function meanSkillFloor(mapId) {
-        const ids = getMap(mapId).pool
-            .filter(e => e.kind === 'token')
-            .map(e => e.refId)
-            .filter(id => TOKENS[id].config?.skillRequired != null);
-        const total = ids.reduce((sum, id) => sum + TOKENS[id].config.skillRequired, 0);
-        return total / ids.length;
-    }
-
-    it.skip('costs more', () => {
-        expect(second.price).toBeGreaterThan(first.price);
-    });
-
-    it.skip('demands more skill — the "more demanding" half, which is the point', () => {
-        expect(meanSkillFloor(second.id)).toBeGreaterThan(meanSkillFloor(first.id));
-    });
-
-    it.skip('yields more per cycle from its headline producer', () => {
-        const best = (mapId) => Math.max(...getMap(mapId).pool
-            .filter(e => e.kind === 'token' && TOKENS[e.refId].tokenType === 'resource')
-            .map(e => {
-                const routes = productionRoutes(e.refId);
-                return Math.max(0, ...routes.flatMap(r => r.outputs.map(expectedOutputQuantity)));
-            }));
-
-        expect(best(second.id)).toBeGreaterThan(0);
-        expect(best(first.id)).toBeGreaterThan(0);
     });
 });
 

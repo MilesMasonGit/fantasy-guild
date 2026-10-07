@@ -150,13 +150,6 @@ describe('CR2-107: the inventory sort survives half-authored content', () => {
 describe('CR2-196: Map materials have one display shape', () => {
     const withMaterials = listMaps().filter(m => (m.materials || []).length > 0);
 
-    // A retired premise: Map bursts were retired (`ac88c99`), and no authored
-    // Map has materials any more (R10 section 4.2, row 4). `it.fails` goes
-    // red the day a Map has materials again: then make it a plain `it`.
-    it.fails('at least one authored Map still has materials to draw', () => {
-        expect(withMaterials.length).toBeGreaterThan(0);
-    });
-
     it('the raw registry shape has no `id` — which is why `m.id` drew Unknown', () => {
         for (const def of withMaterials) {
             for (const m of def.materials) {
