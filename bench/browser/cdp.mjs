@@ -296,7 +296,7 @@ export async function launchChrome({ width = 1600, height = 1000, headless = tru
 
     const cdp = await Cdp.connect(wsUrl);
     const version = await cdp.send('Browser.getVersion');
-    let gpu = null;
+    let gpu;
     try {
         const g = await cdp.send('SystemInfo.getInfo');
         const dev = g.gpu?.devices?.find((d) => d.vendorString || d.deviceString) || g.gpu?.devices?.[0];
