@@ -208,7 +208,9 @@ Signature skills have no Token or recipe yet.
 - **Being replaced** (crunch track, owner 2026-10-06): the approved
   [skill & class rework v2](../active/concept_skill_and_class_rework_v2.md)
   moves to **4 combat skills (melee, ranged, magic, stealth), 4 basic classes
-  (Fighter, Ranger, Wizard, Rogue) and 8 master classes**, 24 skills in all.
+  (Fighter, Ranger, Wizard, Rogue) and 8 master classes**, 25 skills in all
+  after the owner's 2026-10-07 amendments (construction stays universal,
+  Explore is dropped, Logging becomes Forestry; see the concept's amendments).
   Its four Academies are built on Wood or Stone Foundations and arrive with the
   rework, not before. Until then this section describes the old tree.
 
