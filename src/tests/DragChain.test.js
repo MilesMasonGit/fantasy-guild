@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
 import { smallestWithin, surfaceAtPoint } from '../ui/dnd/DndKit.jsx';
 import { DND_SURFACE } from '../ui/dnd/dragConstants.js';

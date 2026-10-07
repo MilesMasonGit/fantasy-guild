@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';

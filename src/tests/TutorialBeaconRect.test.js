@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React, { Profiler } from 'react';
 import { render, cleanup, act } from '@testing-library/react';

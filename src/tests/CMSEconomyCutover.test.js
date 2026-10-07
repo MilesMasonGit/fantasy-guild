@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // Covers the two surfaces fixed in the wave-4 small-fixes batch that the
 // preview harness cannot reach (no nav bubble opens its drawer there):
 // GIModal's close-button decision, and the Guild Hall upgrade panel's exit

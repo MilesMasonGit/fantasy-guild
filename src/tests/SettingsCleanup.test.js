@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // the Settings screen had 13 controls that did nothing. Four named retired
 // concepts (Tray, cards, boost tiles, packs) and are deleted outright. Four
 // were already ruled "disabled + coming soon" in round 2 (Theme Mode, Zoom to

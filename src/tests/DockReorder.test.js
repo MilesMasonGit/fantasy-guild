@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // BankHeroPanel accepted and highlighted a hero-reorder drop (HeroDockTab
 // draws the insertion line on its own, regardless of whether anyone is
 // listening) and then silently dropped it: no onReorder was ever passed

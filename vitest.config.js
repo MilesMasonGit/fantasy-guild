@@ -36,8 +36,8 @@ export default defineConfig({
     },
 
     test: {
-        // Use jsdom for DOM testing
-        environment: 'jsdom',
+        // Node by default; files that need the DOM opt in with a // @vitest-environment jsdom docblock
+        environment: 'node',
         // Heroes arrive instantly in tests unless a test says otherwise (Hero Movement M1).
         setupFiles: ['./src/tests/setup/instantArrival.js', './src/tests/setup/eventBusErrors.js', './src/tests/setup/quietLogger.js'],
 
