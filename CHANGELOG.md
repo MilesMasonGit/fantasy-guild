@@ -4,6 +4,13 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Environment cleanup before the crunch (2026-10-07).** Test runs are quiet (~380 lines instead of
+  ~25,000) and faster (~70 s instead of ~110 s); 25 tombstone tests removed. About 3,500 lines of dead
+  code and ~3,000 lines of unused CSS deleted (CSS bundle 215 → 141 kB), plus 3 unused packages and
+  old one-off scripts. Misleading names fixed (the Shop's internal id, `BankDrawer`, Tray/Vault
+  constants); the slot picker says "Heroes". Audio files moved out of doubled folders. Docs:
+  `.ignore` hides the archive from searches, the changelog is split, TESTING.md gained the machine's
+  quirks. Plan: `docs/active/hygiene_plan.md`.
 - **Crunch briefs written (2026-10-07).** Ten ready-to-run briefs in `docs/active/briefs/` (quick
   fixes, UI rework, class rework v2, hero bar and panel, offline progress, drag, optimization,
   Atlas, terrain, Performance Envelope), from the owner's design interviews.

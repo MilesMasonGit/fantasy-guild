@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-108**
+**Next free number: T-109**
 
 ---
 
@@ -107,7 +107,7 @@ here.
 | T-053 | P3 | open | Nav "rise above my own modal" can't work; `useUIModals` controls nobody uses. | CR3-459, 462 |
 | T-054 | P3 | open | Stylesheets loaded but unused / used but never loaded. Check `modals.css` for global selectors before deleting. | CR3-465 |
 | T-055 | P3 | open | Equip-flash timer cleanup never runs. | CR3-466 |
-| T-056 | P3 | open | Dead tile/Tray-era code; Tray names and Tray-as-current comments; card/deck-era names; Tray dormant storage in `BoardState`/save. | CR3-502, 503, 504, FMR |
+| T-056 | P3 | open | Dead tile/Tray-era code (Tray-named constants renamed in hygiene W4); remaining: Tray-as-current comments; card/deck-era names; Tray dormant storage in `BoardState`/save. | CR3-502, 503, 504, FMR |
 | T-057 | P3 | open | Rename tile-named engine vocabulary — code names and event strings together, one slice. | CR3-501 |
 | T-058 | P3 | open | Lint residue (~74 old errors), per area: engine, combat (keep `MERGE_GRACE_MS` at 1100), UI↔engine (don't add hook deps blindly), renderer, UI. | CR3-110, 265, 312, 359, 467 |
 | T-059 | P3 | open | The CMS imports `itemRegistry` for one constant. | CR3-511 |
@@ -117,7 +117,8 @@ here.
 | T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |
 | T-064 | P3 | open | Dead clock surfaces and write-only fields (R1-Q4 ruling A). | CR3-105 |
 | T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `TimeBankWidget` says it is mounted; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
-| T-094 | P3 | open | More dead code from the GDD survey: `Placement.removePlacedToken` (replaced by the bin), `LootSystem` legacy cluster functions, `WoundedSystem.woundHero`, the enemy thorns-trait branch in `CombatAttackProcessor`, `HeroGenerator.generateCandidates`/`generateVillager`, declared-but-unread axes `HP_REGEN`, `THORNS_REFLECT`, `STAT_BONUS`. Three-way grep before deleting. | GDD survey |
+| T-094 | P3 | open | Dead-code leftovers after hygiene W3 (2026-10-07): functions now used only by tests (`resolveYield`, `getYieldMultiplier`, the other two `EffectAxes` helpers); Villager remnants (`isVillager` branches in `EquipmentValidator`, `HeroRehydration`, `PromotionSystem`, `SkillSystem`); `HeroDockTab`'s unused `onClick` prop; inert `effectFilesGlob`/`recipePoolFilesGlob` in `DatabaseManager.js`. `Placement.removePlacedToken` is kept (benches and tests use it). | GDD survey, W3 |
+| T-108 | P3 | open | `cardUseCounts` (counts completed cycles per Token type; `GameState.js`, `BoardRunner.js`) is a deck-era name; rename it once the owner's uncommitted `StateSchema.js` edit is committed (it declares the field). | hygiene W4 |
 | T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
 | T-103 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (held back, owner's Atlas edit uncommitted), 2 comments in `cms/src/components/editors/RulesLine.jsx`, `cms/src/engine/sim/dryRun.mjs` header, `filterTargetTiles` named in `reachRegistry.js:26,136` (now `filterTargets`), ~15 test comments clipped by the ID stripper (e.g. `AdjacencyEffects.test.js:82`), and trailing string text carrying IDs (`workSkillRule.js` WORK_SKILL_WHY, `lifecycleAudit.js`, `matTuning.js` hints). Also dead exports found: `PERSONALITY_TAGS`, the three tutorial selectors in T-095. | Slimming pass |
 
