@@ -20,6 +20,13 @@ import { HUD_STORAGE_KEY, profilingArmed, stressFromUrl, hudRemembered } from '.
 import { mountHud, unmountHud, renderHud, hudStatus, hudNodeCount, hudMounted } from './perfHud.js';
 import { buildStress, resolveStress, STRESS_SCENARIOS, STRESS_STARTED_EVENT } from './stressScenarios.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { EngineBootstrap } from '../../../systems/core/EngineBootstrap.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import * as Shop from '../../../systems/board/Shop.js';
+import * as DiscardBin from '../../../systems/board/DiscardBin.js';
+import * as MatCap from '../../../systems/board/MatCap.js';
+import * as EquipmentValidator from '../../../systems/equipment/EquipmentValidator.js';
+import { getAllItems } from '../../../config/registries/itemRegistry.js';
 
 const REPORT_VERSION = 1;
 const THRESHOLDS = [6.06, 8.33, 16.7];
@@ -546,6 +553,11 @@ export async function installPerf() {
         off: (name) => setDrawn(name, false),
         on: (name) => setDrawn(name, true),
         switches: drawnSwitches,
+        // The engine modules, for the drawing and drag benches: `window.Game` exists only in
+        // dev builds, and the benches also run on the perf build.
+        get game() {
+            return { ...EngineBootstrap.getEngine(), NotificationSystem, Shop, DiscardBin, MatCap, EquipmentValidator, getAllItems };
+        },
         get running() { return running; },
         get profilingArmed() { return profilingArmed(); }
     };

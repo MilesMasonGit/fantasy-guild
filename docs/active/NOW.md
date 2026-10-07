@@ -24,8 +24,8 @@ changed, what's next. Keep it under one screen.*
 
 1. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
    the certification run (T-003) and the CMS fixes (T-001, T-002).
-2. **Crunch prep P3** (in progress): perf build, per-system
-   switches, `bench:draw`, `bench:drag`, baseline. Plan:
+2. **Crunch prep P3**: tools built and merged (perf build, switches,
+   `bench:draw`, `bench:drag`); left: **P3.5 baseline on the owner's quiet PC**. Plan:
    [p3_measurement_plan.md](p3_measurement_plan.md).
 3. Crunch prep P4: ready-to-run crunch briefs, one per track. UI input: the
    owner's [ui_rework_list.md](ui_rework_list.md).

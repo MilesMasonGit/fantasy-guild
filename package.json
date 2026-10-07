@@ -17,6 +17,8 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "bench": "node bench/run.mjs",
+    "bench:draw": "node bench/draw.mjs",
+    "bench:drag": "node bench/drag.mjs",
     "bench:micro": "vitest bench --config bench/micro/vitest.config.mjs --run",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",

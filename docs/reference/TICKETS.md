@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-104**
+**Next free number: T-108**
 
 ---
 
@@ -123,6 +123,15 @@ here.
 | T-094 | P3 | open | More dead code from the GDD survey: `Placement.removePlacedToken` (replaced by the bin), `LootSystem` legacy cluster functions, `WoundedSystem.woundHero`, the enemy thorns-trait branch in `CombatAttackProcessor`, `HeroGenerator.generateCandidates`/`generateVillager`, declared-but-unread axes `HP_REGEN`, `THORNS_REFLECT`, `STAT_BONUS`. Three-way grep before deleting. | GDD survey |
 | T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
 | T-103 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (held back, owner's Atlas edit uncommitted), 2 comments in `cms/src/components/editors/RulesLine.jsx`, `cms/src/engine/sim/dryRun.mjs` header, `filterTargetTiles` named in `reachRegistry.js:26,136` (now `filterTargets`), ~15 test comments clipped by the ID stripper (e.g. `AdjacencyEffects.test.js:82`), and trailing string text carrying IDs (`workSkillRule.js` WORK_SKILL_WHY, `lifecycleAudit.js`, `matTuning.js` hints). Also dead exports found: `PERSONALITY_TAGS`, the three tutorial selectors in T-095. | Slimming pass |
+
+### Drag (found by `npm run bench:drag`, 2026-10-07; fix in the drag deep-dive, then re-run the bench to 100 %)
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-104 | P1 | open | **A closed hero sheet keeps catching drops in the middle of the mat.** The sheet in `BottomHeroDock` is hidden with opacity 0 but stays mounted while a hero is still selected, so its equipment-slot drop targets (`dock-slot-drop-…`, `DockEquipmentGrid`) stay registered; dnd-kit ignores `pointer-events`. Any mat drop inside its box (about the mat centre) is refused. Caused most failures of the bench's overlays pass. Confirmed in code by the director. | bench:drag |
+| T-105 | P2 | open | A hero sprite's transparent pixels block grabbing the flag behind it (`MatHero` alpha test refuses the press; nothing starts). | bench:drag |
+| T-106 | P2 | open | Some flags can't be grabbed or grab a nearby Token instead, even at a point clear of Token art: Token hit areas may be larger than their art circles. *Cause unverified.* | bench:drag |
+| T-107 | P2 | open | Alert marks over a Token (`TokenCentreAlert`, `MatPointAlerts`) block presses on that Token. (The owner's UI list removes these alerts anyway.) | bench:drag |
 
 ### Build, tests, docs
 

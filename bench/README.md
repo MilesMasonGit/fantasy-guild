@@ -6,7 +6,9 @@ reports how long each tick took. It answers "how much of a frame does one engine
 tick steal?" (plan §2.A, §4.1 of `docs/archive/review_v3/code_review_v3_master_plan.md`).
 
 It does **not** measure drawing. Frame times, React commits and the browser's
-layout/paint cost are Tier B (the in-game Perf HUD).
+layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
+`npm run bench:drag` measure those in a real browser: see
+[Drawing and drag benches](#drawing-and-drag-benches) at the end.
 
 ## Running it
 
@@ -229,3 +231,214 @@ suspect, not the engine. Keep them boring.
   certify with `--long`.
 - **Anything the fixtures don't exercise** — shipped content with unusual
   rules (triggers, `Cannot`, statuses, promotions) is not on these boards.
+
+## Drawing and drag benches
+
+Two commands drive the real game in the installed **Chrome, headless**, over the
+DevTools protocol (`bench/browser/cdp.mjs`, no packages: Node 24's built-in
+`WebSocket`). Chrome gets its own throwaway profile, the **real GPU** (the
+graphics process was the S2 bottleneck in round 3, so software rendering would
+measure something else), and background throttling off. Chrome, the profile and
+any server the bench started are removed on every way out, Ctrl+C included.
+
+Both serve the game themselves on a free port (never 5173/5174): the **perf
+build** by default (`vite build --mode perf` → `dist-perf/`, served by Vite's
+preview), or the **dev build** (a Vite dev server with its own dependency cache,
+`node_modules/.vite-bench`, so it never fights the owner's server).
+
+⚠️ **Drawing numbers are machine-specific.** `bench/draw-baseline.json` is the
+owner's PC, taken on a quiet machine. A number from another machine, or from a
+busy one, compares with nothing.
+
+### `npm run bench:draw`: what drawing costs
+
+For each scene: a fresh tab at **1600 × 1000, DPR 1**, the CPU slowdown set
+(`Emulation.setCPUThrottlingRate`), the stress board loaded (`?stress=…`),
+**20 s settle**, `__perf.reset()`, a **20 s window**, then `__perf.report()`.
+
+| Scene | What |
+|---|---|
+| `S1` `S2` `S3` | the quiet, realistic and torture stress boards |
+| `bank` | S2 with the Bank drawer open (a real click on the Item Bank button) |
+| `shop` | S2 with the Shop drawer open (a real click on the Shop button) |
+| `inspect` | S2 with the hero inspection sheet open (a real click on a dock hero) |
+| `notify` | S2 with 20 notifications every 4 s (`NotificationSystem.info`, from a page timer) |
+| `loot` | S2 with 30 loot sprites every 3 s (`SpriteLayer.addSprite`, as the QA panel's Scatter Loot does) |
+
+Columns: **fps** (frames ÷ window), **frame interval** p50/p95/p99, **frame
+work** p50/p99 (rAF start to the first task after the frame: the main thread's
+cost of a frame), **≤6.06 %** (frames whose work fits a 165 Hz frame), **LoAF**
+(long animation frames: count / worst ms), **engine tick** p50/p99, **Mat own/s**
+(MatBoard's own renders), **mat sub/s** and **dock/s** (React commits in the mat
+and dock subtrees), **DOM** nodes and JS **heap**.
+
+| Command | What it does | Time |
+|---|---|---|
+| `npm run bench:draw` | perf build, CPU 1× and 4×, all 8 scenes | ~12 min |
+| `npm run bench:draw -- --quick` | S2 only, 6 s settle, 8 s window (agent checks; not comparable with full runs) | ~1 min |
+| `npm run bench:draw -- --dev` | also the dev build (doubles the time) | |
+| `npm run bench:draw -- --only=S2,bank` | some scenes | |
+| `npm run bench:draw -- --cpu=1` | CPU slowdowns to run (default `1,4`) | |
+| `npm run bench:draw -- --switches` | the **cost table** (below); perf, 1× unless `--cpu` is given | ~12 min |
+| `npm run bench:draw -- --repeats=3` | windows per scene; the median is reported with its min–max spread | |
+| `npm run bench:draw -- --compare` | compare with `bench/draw-baseline.json` (2 windows per scene unless `--repeats`) | about twice the default |
+| `npm run bench:draw -- --save-baseline` | write the medians as `bench/draw-baseline.json` (3 windows per scene unless `--repeats`) | about three times the default |
+| `npm run bench:draw -- --ab=http://localhost:5391` | interleaved A/B per scene: A (this checkout's build) and B (a server someone else started), in the order A, B, B, A | |
+| `npm run bench:draw -- --no-build` | reuse `dist-perf/` as it is | saves ~20 s |
+| `--settle=20 --window=20` | seconds | |
+
+Results go to `bench/results/draw/` (git-ignored) as JSON, tagged with the
+commit, which of `src/` `data/` `bench/` `public/` had uncommitted changes, the
+machine, CPU, Chrome version and the GPU / ANGLE backend Chrome reports.
+
+| Exit | Means |
+|---|---|
+| 0 | fine (and, with `--compare`, no regression) |
+| 1 | **REGRESSED**: a number is worse than the baseline beyond the tolerance |
+| 3 | the bench failed: a scene drew nothing or was hidden, a page reloaded mid-run, a click opened nothing, there is no baseline, or the baseline used another settle or window |
+
+**The cost table** (`--switches`): S2 with everything drawn, then once with each
+of the 15 drawing switches off (`?off=<name>`, `src/ui/dev/perf/drawSwitches.js`).
+All-on is measured at the start, the middle and the end; its spread is the
+**noise**, and a system's cost is all-on minus switch-off. A cost inside the
+noise is printed but marked "above noise: no".
+
+**A/B** (`--ab=<url>`): for comparing two branches. The director starts the
+second branch's server (its own worktree, port and Vite `cacheDir`); this
+checkout's build is A. Only the A/B difference within one run means anything.
+
+#### Noise and the tolerance
+
+Measured on the owner's PC (i7-8700, RTX 3060, Chrome 154) on 2026-10-07 with
+the machine **under load** (other agents running; about 12 % CPU with the bench
+idle), S2, perf build:
+
+| | windows | fps | frame work p50 | frame work p99 | ≤6.06 % |
+|---|---|---|---|---|---|
+| CPU 1×, 10 s settle | 5 | 162.3–163.6 | 2.00–2.11 ms | 8.0–8.7 ms | 96.8–98.0 |
+| CPU 1×, 25 s settle | 3 | 164.0–164.0 | 1.81–1.91 ms | | |
+| CPU 4×, 10 s settle | 5 | 52.8–62.4 | 17.1–20.6 ms | 71.4–77.3 ms | 0.1–0.6 |
+| CPU 4×, 20 s settle | 5 | 67.7–82.2 | 13.4–16.2 ms | | |
+
+What that showed, and what was done about it:
+
+- **The board is still settling for its first ~20 s** (heroes walking to their
+  jobs): a 10 s settle read ~10 % more frame work than a 25 s one, and at 4× the
+  fps jumped by a third. The settle is therefore **20 s**, and `--compare`
+  refuses a baseline taken with another settle or window.
+- **At 1× fps is pinned at ~164** (headless Chrome draws at about 164 Hz, the
+  6.10 ms interval), so fps only moves once frames get expensive. **Frame work**
+  is the sensitive number there.
+- **At 4× the spread is several times wider.** Chrome's CPU throttle stretches
+  everything the renderer does, including time lost to other programs, so other
+  load is magnified. Hence a separate, wider tolerance.
+
+`--compare` fails a number only when it is worse by more than **both** a ratio
+and a floor (`TOLERANCE` in `bench/browser/drawLib.mjs`):
+
+| | fps | frame work p50 | frame work p99 | ≤6.06 % |
+|---|---|---|---|---|
+| CPU 1× | −5 % and −3 fps | +20 % and +0.3 ms | +30 % and +2 ms | −5 % and −4 points |
+| CPU slowed | −25 % and −5 fps | +35 % and +2 ms | +50 % and +10 ms | −25 % and −5 points |
+
+The 1× set is about three times the measured spread; the 4× set about one and a
+half times the spread measured under load, which should be tighter on a quiet
+machine: re-check it when the baseline is taken. As with the engine bench, when
+a compare fails, run it again before believing it.
+
+#### What it cannot measure
+
+- **React commits in the perf build.** React's production build never calls a
+  `<Profiler>`'s `onRender`, so `mat sub/s` and `dock/s` are blank (`—`) for the
+  perf build. `Mat own/s` works in both. Use `--dev` for commit counts.
+- **The real window.** Headless Chrome is not the desktop app's WebView2, and
+  its frame clock is not the owner's 165 Hz screen. The numbers are for
+  comparing with each other, not for "is it smooth on my screen".
+- **The GPU's own time.** The Perf HUD measures the main thread. Round 3's
+  "GPU busy" came from a trace (`docs/active/certification_checklist.md`,
+  "real frame numbers without the owner", step 8); this bench does not trace.
+- The Perf HUD is on screen during every run (it is the harness), the same in
+  every run.
+
+### `npm run bench:drag`: does dragging always work?
+
+On a busy S2 mat, N **real drags** of each kind, sent as browser input
+(`Input.dispatchMouseEvent`): the pointer rests on the source for 80 ms (as a
+hand does), presses, makes one move under and one past the 8 px activation
+distance, eases to the target in 10 steps a frame apart, wiggles, releases, and
+waits 450 ms. Because it is real input, the browser's own hit-testing decides
+what the press lands on, which is where "something is blocking the drag" bugs
+live. Sources and targets are picked from the live DOM and state for every drag
+(things move); targets are the best-cleared of 40 random points on the mat,
+away from open drawers.
+
+| Kind | Source → target | Success (read from the game's state) |
+|---|---|---|
+| hero dock → mat | a dock hero → an open spot | the hero's flag planted within 60 u of the aim (or pinned) |
+| flag → mat | a planted flag → an open spot | the same |
+| Token → mat | a Token on the mat → an open spot | the Token stands within 150 u of the aim |
+| Token → bin | a Token → the discard bin | the Token is in the bin |
+| bin → mat | a bin slot → an open spot | the Token is back on the mat |
+| Shop row → mat | an affordable Shop row → an open spot | a new Token of that type stands there (it is then removed, so the mat cap never fills) |
+| Bank item → dock hero | an equippable Bank item → a hero who can wear it | the hero wears it (their gear is cleared first) |
+
+Every kind runs twice: a **plain** pass, and an **overlays** pass with speech
+bubbles over every hero (a level-up event for each hero every 2.5 s, which also
+fills the notification column) on top of S2's alert icons. In both, every drag
+must also pick up the right thing. The Perf HUD is hidden first (it is the
+harness's own overlay and would cover the Shop's lower rows). Set-up is done
+through the game's functions, never as a drag: Bank stock for the Shop's prices
+and equippable items, unequipping before an equip, refilling or emptying the
+bin, removing a bought Token. Both passes run on one page, kinds in the order
+of the table, so the overlays pass starts with whatever the plain pass left
+behind (for example a hero sheet opened and closed by the equip drops). That is
+deliberate: leftovers like that are how a player meets a drag bug. The "other
+drop targets there" note on a failure tells such a cause apart from the bubbles.
+
+Fairness rules, so that a failure is the game's and not the bench's:
+
+- **A Token** is pressed at its centre, or at another point of its art when a
+  *different Token* lies on top there (overlapping Tokens: the player grabs the
+  top one). Anything else on top, a ring, an alert, a bubble, is kept: that is
+  what the bench is looking for.
+- **A flag** is pressed at its highest point clear of every Token's art circle:
+  by design a flag over a Token lets the pointer through to the Token
+  (`FlagLayer.jsx`, `yieldToTokens`). A flag with no part over bare mat is still
+  tried at its centre, and says so.
+
+Per kind and pass it reports attempts, successes, success %, **pickup delay**
+p50/p95 and the grouped **failure causes**:
+
+- **press→start**: the press to the drag provider's start (`gi-dnd-active` on
+  `<body>`, `DndKit.jsx`). It includes the bench's own 16 ms wait and two moves.
+- **8px move→start**: from the move that crossed the activation distance to the
+  start: the game's own pickup delay.
+- a failure is one of: *never picked up* (with what `document.elementFromPoint`
+  found at the press point after the hover: the nearest element with an
+  identifying `data-` attribute, and in the dev build the React component names),
+  *picked up the wrong thing* (what was in the hand, read from what each source
+  draws while carried), *dropped, refused by the game* (the warning it raised),
+  *dropped, no target took it* (the drop made the drag system's "invalid" sound;
+  with what was under the drop point), or *state not as intended*. In the
+  overlays pass each attempt also records how long before the release the last
+  burst of level-ups went out (`msSinceOverlayBurst` in the JSON).
+
+| Command | What it does | Time |
+|---|---|---|
+| `npm run bench:drag` | perf build, 50 drags per kind, both passes (700 drags) | ~13 min |
+| `npm run bench:drag -- --n=10` | drags per kind and pass | |
+| `npm run bench:drag -- --kinds=token,flag` | some kinds: `dockHero`, `flag`, `token`, `tokenToBin`, `binToMat`, `shop`, `equip` | |
+| `npm run bench:drag -- --no-overlays` | the plain pass only | |
+| `npm run bench:drag -- --dev` | the dev build: React component names for the blockers | |
+| `npm run bench:drag -- --cpu=4` | CPU slowdown | |
+| `npm run bench:drag -- --no-build` | reuse `dist-perf/` | |
+
+| Exit | Means |
+|---|---|
+| 0 | every kind succeeded every time |
+| 1 | at least one kind, in either pass, is below 100 % (so it can gate later work) |
+| 3 | the bench failed |
+
+JSON with every attempt (source, target, what was under the pointer, what was in
+the hand, the drop sound, the game's notifications) goes to `bench/results/drag/`.
+⚠️ The bench reports drag bugs; it does not fix them.
