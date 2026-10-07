@@ -204,8 +204,4 @@ describe('the shipped data', () => {
         }
     });
 
-    it('uses the shared function in the data script, never a copy of it', () => {
-        const script = readFileSync(join(process.cwd(), 'scripts', 'migrate-promotion-rules.mjs'), 'utf8');
-        expect(script).toContain("import { migratePromotionFields } from '../src/systems/effects/effectMigration.js'");
-    });
 });

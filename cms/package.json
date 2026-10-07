@@ -12,9 +12,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/vite": "^4.3.0",
-    "@xyflow/react": "^12.10.2",
     "file-saver": "^2.0.5",
-    "jszip": "^3.10.1",
     "lucide-react": "^1.14.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

@@ -115,11 +115,6 @@ export function isTokenRarity(value) {
  */
 export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmland']);
 
-/** Whether a value is a known Foundation kind. */
-export function isFoundationKind(value) {
-    return FOUNDATION_KINDS.includes(value);
-}
-
 /**
  * ⭐ **A self-transforming Token rolls a chance.**
  * `turns: { into, everyMs, chance }` on the Token type:

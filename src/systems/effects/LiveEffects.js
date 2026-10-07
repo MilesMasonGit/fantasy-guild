@@ -50,11 +50,6 @@ export function registerBearerSource(fn) {
     if (typeof fn === 'function') bearerSources.add(fn);
 }
 
-/** Forget every registered source. For teardown, and for tests. */
-export function clearBearerSources() {
-    bearerSources.clear();
-}
-
 /**
  * The descriptor for a hero. `roles` is what a carried statement fires with: `self` is the
  * PERSON, not a square, which is why `selfHeroId` exists.

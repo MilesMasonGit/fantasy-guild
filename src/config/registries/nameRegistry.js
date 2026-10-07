@@ -57,33 +57,3 @@ export const EPITHETS = [
 export function getRandomName() {
     return FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
 }
-
-/**
- * Get a random name with optional embellishments
- * @param {number} titleChance - Chance (0-1) to add a title prefix
- * @param {number} epithetChance - Chance (0-1) to add an epithet
- * @returns {string}
- */
-export function getRandomFullName(titleChance = 0, epithetChance = 0) {
-    let name = getRandomName();
-
-    if (Math.random() < titleChance) {
-        const prefix = TITLE_PREFIXES[Math.floor(Math.random() * TITLE_PREFIXES.length)];
-        name = `${prefix} ${name}`;
-    }
-
-    if (Math.random() < epithetChance) {
-        const epithet = EPITHETS[Math.floor(Math.random() * EPITHETS.length)];
-        name = `${name} ${epithet}`;
-    }
-
-    return name;
-}
-
-/**
- * Get total name count
- * @returns {number}
- */
-export function getNameCount() {
-    return FIRST_NAMES.length;
-}

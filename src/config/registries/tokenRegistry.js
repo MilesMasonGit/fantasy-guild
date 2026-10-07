@@ -6,7 +6,7 @@
  * holds everything true of every copy.
  *
  * ## Definitions live in `data/`, not here
- * Definitions load from `data/tokens.json` (plus an optional `data/tokens/**` folder); this file is a loader plus accessors.
+ * Definitions load from `data/tokens.json`; this file is a loader plus accessors.
  *
  * ⚠️ Design commentary on authoring and retuning Tokens lives in `docs/archive/token_content_notes.md`.
  *
@@ -38,7 +38,7 @@ import { engineTokenType } from './engineTokens.js';
 function loadJsonTokens() {
     const tokens = {};
 
-    for (const source of [DatabaseManager.tokenFilesSingle, DatabaseManager.tokenFilesGlob]) {
+    for (const source of [DatabaseManager.tokenFilesSingle]) {
         for (const [path, module] of Object.entries(source || {})) {
             try {
                 const data = module.default || module;

@@ -59,30 +59,6 @@ const WoundedSystem = {
     },
 
     /**
-     * Wound a hero and start the recovery timer. ⚠️ No caller in `src/`.
-     * @param {string} heroId
-     */
-    woundHero(heroId) {
-        const hero = HeroManager.getHero(heroId);
-        if (!hero) {
-            logger.warn('WoundedSystem', `Cannot wound hero: ${heroId} not found`);
-            return;
-        }
-
-        HeroManager.setHeroStatus(heroId, 'wounded');
-        hero.woundedRemainingMs = BASE_RECOVERY_TIME_MS;
-        hero.woundedUntil = null;
-
-        logger.info('WoundedSystem', `${hero.name} is wounded. Recovery in ${BASE_RECOVERY_TIME_MS / 1000}s of game time`);
-
-        EventBus.publish(ENGINE_EVENTS.HERO_WOUNDED, {
-            heroId,
-            heroName: hero.name,
-            recoveryTime: BASE_RECOVERY_TIME_MS
-        });
-    },
-
-    /**
      * Recover a hero from wounded state
      * @param {string} heroId 
      */

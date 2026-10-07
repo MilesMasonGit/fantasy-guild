@@ -148,8 +148,3 @@ export function reachCovers(reachId, relation) {
             return relation === RELATION.NEARBY;
     }
 }
-
-/** Whether a reach can ever leave the Token carrying it. */
-export function reachesOutward(reachId) {
-    return reachId !== REACH.SELF;
-}

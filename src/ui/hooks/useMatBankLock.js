@@ -1,5 +1,3 @@
-import { useSyncExternalStore } from 'react';
-
 /**
  * While the Bank is open, the playmat cannot be interacted with at all: the Bank covers it.
  * Mirrors `useDisallowMode.js`'s shape on purpose: a tiny external store so
@@ -17,7 +15,6 @@ import { useSyncExternalStore } from 'react';
  * player toggles directly.
  */
 let locked = false;
-const listeners = new Set();
 
 export function isMatBankLocked() {
     return locked;
@@ -27,15 +24,4 @@ export function setMatBankLocked(next) {
     const value = !!next;
     if (value === locked) return;
     locked = value;
-    listeners.forEach((l) => l());
-}
-
-function subscribe(listener) {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-}
-
-/** React hook — re-renders the consumer when the Bank opens or closes. */
-export function useMatBankLocked() {
-    return useSyncExternalStore(subscribe, isMatBankLocked, isMatBankLocked);
 }

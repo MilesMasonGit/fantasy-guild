@@ -534,12 +534,5 @@ export function isPurelyTriggered(def) {
     return hasTrigger && !def.config && !stationSkillOf(def);
 }
 
-/** Every trigger event id a Token listens for. Used by content validation. */
-export function triggersOf(def) {
-    return statementsOf(def)
-        .map(s => s?.when?.event)
-        .filter(Boolean);
-}
-
 /** @see getTriggerEvent — re-exported so callers need one import. */
 export { getTriggerEvent };

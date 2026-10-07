@@ -11,7 +11,7 @@ import * as HeroManager from '../systems/hero/HeroManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
-import { generateHero, generateCandidates } from '../systems/hero/HeroGenerator.js';
+import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { tokenStartingUses, getAllTokenTypes } from '../config/registries/tokenRegistry.js';
 import { getJobSkills, STARTING_JOB_ID } from '../config/registries/jobRegistry.js';
 import { FOUNDATION_SKILL_IDS } from '../config/registries/skillRegistry.js';
@@ -107,9 +107,9 @@ describe('The roster runs to eight (owner, 2026-09-21; D-251 had twelve)', () =>
     });
 });
 
-describe('Recruits are interchangeable, and the UI no longer pretends otherwise (D-73)', () => {
-    it('every candidate is a Recruit holding the same six skills', () => {
-        const candidates = generateCandidates(3);
+describe('Recruits are interchangeable', () => {
+    it('every new hero is a Recruit holding the same six skills', () => {
+        const candidates = Array.from({ length: 3 }, () => generateHero());
         expect(candidates).toHaveLength(3);
 
         for (const c of candidates) {
@@ -119,21 +119,12 @@ describe('Recruits are interchangeable, and the UI no longer pretends otherwise 
         }
     });
 
-    it('candidates differ by name and nothing else', () => {
-        const candidates = generateCandidates(5);
+    it('new heroes differ by name and nothing else', () => {
+        const candidates = Array.from({ length: 5 }, () => generateHero());
         const sheets = candidates.map(c =>
             Object.entries(c.skills).map(([k, v]) => `${k}:${v.level}`).sort().join(',')
         );
         expect(new Set(sheets).size, 'all candidates should be mechanically identical').toBe(1);
-    });
-
-    it('the class/trait reveal is gone from the candidate payload', () => {
-        // It advertised a rolled attribute that never did anything. Leaving it
-        // would keep implying a difference between candidates that is not real.
-        const [candidate] = generateCandidates(1);
-        expect(candidate.revealed).toBeUndefined();
-        expect(candidate.className).toBeUndefined();
-        expect(candidate.traitName).toBeUndefined();
     });
 });
 

@@ -67,31 +67,8 @@ export function getXpProgress(xp) {
     };
 }
 
-/**
- * Get the XP required for the next level
- * @param {number} currentLevel - Current level
- * @returns {number} XP required for next level, 0 if at max
- */
-export function xpToNextLevel(currentLevel) {
-    if (currentLevel >= 99) return 0;
-    return xpForLevel(currentLevel + 1) - xpForLevel(currentLevel);
-}
-
 // XP_TABLE[L] === xpForLevel(L) for L = 1..100; `levelFromXp` reads it.
 const XP_TABLE = [];
 for (let i = 1; i <= 100; i++) {
     XP_TABLE[i] = xpForLevel(i);
 }
-
-/**
- * Get the pre-calculated XP for a level (faster than xpForLevel)
- * @param {number} level - Target level
- * @returns {number} XP required
- */
-export function getXpTable(level) {
-    if (level <= 1) return 0;
-    if (level > 99) level = 99;
-    return XP_TABLE[level] || xpForLevel(level);
-}
-
-export const XP_CURVE_TABLE = Object.freeze([...XP_TABLE]);

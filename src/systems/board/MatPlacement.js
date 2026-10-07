@@ -195,14 +195,6 @@ function insideBounds(point, { r, w, h }) {
     return point.x >= r && point.y >= r && point.x <= w - r && point.y <= h - r;
 }
 
-/**
- * Whether `point` is clear of every Token that could crowd it. Exported for tests and for
- * `MatResize`; ordinary callers want {@link isLegal}, which also checks the mat edge and `Cannot`.
- */
-export function isClear(typeId, point, excludeId = null) {
-    return clearOf(point, contextFor(typeId, point, { excludeId, reach: 0 }));
-}
-
 /** The hot inner test: `point` against the prefiltered neighbour list. */
 function clearOf(point, ctx) {
     return clearAt(point.x, point.y, ctx);

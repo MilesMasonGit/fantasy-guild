@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
-import { DOCK_MAX_PINNED } from '../components/dock/dockConstants.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
+
+/** How many hero cards can be pinned open at once; pinning another closes the oldest. */
+export const DOCK_MAX_PINNED = 2;
 
 /**
  * The first promotion offer standing on the board, or null. Read from the Token instances (the
@@ -69,7 +71,6 @@ const SHOP_TARGET = 'cartographer';
 export const useUIModals = (engine) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
-    const [isSandboxOpen, setIsSandboxOpen] = useState(false);
 
     // `filters` is a fresh object per open so panes can re-apply the same filter twice.
     const [drawerState, setDrawerState] = useState({ panes: [], filters: {}, maximized: null });
@@ -229,11 +230,6 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setIsSlotSelectionOpen(false), []),
             isOpen: isSlotSelectionOpen
         },
-        sandbox: {
-            toggle: useCallback(() => setIsSandboxOpen(prev => !prev), []),
-            close: useCallback(() => setIsSandboxOpen(false), []),
-            isOpen: isSandboxOpen
-        },
         fullscreen,
         drawer: {
             ...drawerState,
@@ -306,7 +302,6 @@ export const useUIModals = (engine) => {
 
         // ⚠️ Every subscription below must have a publisher somewhere.
         const subs = [
-            engine.EventBus.subscribe(UI_EVENTS.DEV_TOGGLE_SANDBOX, () => setIsSandboxOpen(prev => !prev)),
             engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_DRAWER, (data) => {
                 const tab = data?.tab;
                 if (!tab || tab === 'heroes') return;
@@ -342,7 +337,6 @@ export const useUIModals = (engine) => {
     }, [engine]);
 
     const isAnyModalOpen = isSettingsOpen ||
-                           isSandboxOpen ||
                            fullscreenView !== null;
 
     return { ...controls, isAnyModalOpen };

@@ -1,6 +1,6 @@
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
-import { levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
+import { levelFromXp } from '../../utils/XPCurve.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
@@ -32,16 +32,6 @@ export function heroHasSkill(heroId, skillId) {
 }
 
 /**
- * Every skill id a hero currently holds.
- * @param {string} heroId
- * @returns {string[]}
- */
-export function getHeldSkillIds(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    return hero?.skills ? Object.keys(hero.skills) : [];
-}
-
-/**
  * Get a hero's base skill level (no modifiers).
  * @returns {number|null} `null` when the hero does not hold the skill.
  */
@@ -53,20 +43,6 @@ export function getSkillLevel(heroId, skillId) {
     if (!skill) return null;
 
     return skill.level;
-}
-
-/**
- * Get a hero's skill XP.
- * @returns {number|null} `null` when the hero does not hold the skill.
- */
-export function getSkillXp(heroId, skillId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return null;
-
-    const skill = hero.skills[skillId];
-    if (!skill) return null;
-
-    return skill.xp;
 }
 
 /**
@@ -205,32 +181,6 @@ export function requirementFailure(heroId, requirement) {
 }
 
 /**
- * Check if a hero meets a skill requirement — possession first, then level.
- * @param {string} heroId
- * @param {{ skill: string, level: number }} requirement
- * @returns {boolean}
- */
-export function meetsRequirement(heroId, requirement) {
-    return requirementFailure(heroId, requirement) === null;
-}
-
-/**
- * Get XP progress for a skill (percentage to next level)
- * @param {string} heroId 
- * @param {string} skillId 
- * @returns {{ level: number, currentXp: number, xpForNext: number, progress: number }|null}
- */
-export function getSkillProgress(heroId, skillId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return null;
-
-    const skill = hero.skills[skillId];
-    if (!skill) return null;
-
-    return getXpProgress(skill.xp);
-}
-
-/**
  * Get all skills for a hero with their levels
  * @param {string} heroId 
  * @returns {Object|null} { skillId: { level, xp, name, icon } }
@@ -251,16 +201,4 @@ export function getAllSkills(heroId) {
     }
 
     return result;
-}
-
-/**
- * Get total skill levels for hero level calculation
- * @param {string} heroId 
- * @returns {number}
- */
-export function getTotalSkillLevels(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return 0;
-
-    return Object.values(hero.skills).reduce((sum, skill) => sum + skill.level, 0);
 }

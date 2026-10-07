@@ -1,7 +1,6 @@
 // Fantasy Guild — Effect registry (loader)
 
 import { DatabaseManager } from '../DatabaseManager.js';
-import { hasWorkingStatements, usedBy } from '../../systems/effects/effectLibrary.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
 
 /**
@@ -82,28 +81,7 @@ export function getEffect(effectId) {
     return EFFECTS[effectId] || null;
 }
 
-/** Every entry. */
-export function getAllEffects() {
-    return EFFECTS;
-}
-
 /** An entry's display name, falling back to its id so a sentence never reads blank. */
 export function effectName(effectId) {
     return EFFECTS[effectId]?.name || effectId || '';
-}
-
-/** Entries with a name and nothing behind it — violations of the rule that a named effect needs a working statement. */
-export function unbackedEffectIds() {
-    return Object.keys(EFFECTS).filter(id => !hasWorkingStatements(EFFECTS[id]));
-}
-
-/**
- * Which bearers reference an entry.
- *
- * The game side of the CMS's *used by* readout. It is here rather than only in
- * the CMS because `ContentAudit` needs the inverse question — an entry nothing
- * references is content the owner has probably lost track of.
- */
-export function effectUsedBy(effectId, tokens = {}) {
-    return usedBy(effectId, tokens);
 }

@@ -36,8 +36,6 @@ export const HeroDockTab = ({
     forceExpanded = false,
     isSelected = false,
     onSelect,
-    // `HeroDockCard` (the pinned-card route) passes its pin toggle as `onClick`.
-    // Both names are accepted so neither caller has to know about the other.
     onClick,
     onDoubleClick,
     onEdit,

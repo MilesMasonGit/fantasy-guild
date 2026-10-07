@@ -285,11 +285,6 @@ export function getTriggerEvent(id) {
     return TRIGGER_EVENTS.find(t => t.id === id) || null;
 }
 
-/** Whether an id is a known trigger event. */
-export function isTriggerEvent(id) {
-    return TRIGGER_EVENTS.some(t => t.id === id);
-}
-
 /**
  * The roles a statement's moment supplies — the list an author may target from.
  *
@@ -305,9 +300,4 @@ export function rolesOf(triggerId) {
 /** Whether a moment can offer a given role at all. */
 export function momentSupplies(triggerId, role) {
     return rolesOf(triggerId).includes(role);
-}
-
-/** Every distinct EventBus name a trigger can listen on. */
-export function triggerEventNames() {
-    return [...new Set(TRIGGER_EVENTS.map(t => t.event))];
 }

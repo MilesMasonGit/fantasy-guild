@@ -61,12 +61,6 @@ export function contextTiersAround(instanceId) {
     return tiers;
 }
 
-/** Every context tag supplied by the Tokens near a Token. */
-export function contextAround(instanceId) {
-    const tiers = contextTiersAround(instanceId);
-    return new Set(Object.keys(tiers));
-}
-
 /** The type ids of every Token near a Token. */
 function typesNear(instanceId) {
     const types = new Set();

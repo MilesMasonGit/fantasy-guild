@@ -1,5 +1,4 @@
 import { nanoid } from 'nanoid';
-import { FOUNDATION_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 import { STARTING_JOB_ID, getJobSheet } from '../../config/registries/jobRegistry.js';
 // ⚠️ `nameRegistry` is imported only here. It looks like an orphan; it names every hero.
 import { getRandomName } from '../../config/registries/nameRegistry.js';
@@ -100,98 +99,6 @@ export function generateHero(options = {}) {
     hero.aggregator.id = hero.id;
 
     return hero;
-}
-
-/**
- * Generate a complete Villager object: two Foundation skills and nothing else.
- * Not called outside tests.
- *
- * @returns {Object} Complete villager object
- */
-export function generateVillager() {
-    const name = getRandomName();
-    const icon = HERO_ICONS[Math.floor(Math.random() * HERO_ICONS.length)];
-    const sprite = HERO_SPRITES.length > 0
-        ? HERO_SPRITES[Math.floor(Math.random() * HERO_SPRITES.length)]
-        : null;
-
-    const pool = [...FOUNDATION_SKILL_IDS];
-
-    const skills = {};
-    const skill1 = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-    const skill2 = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-
-    const level1 = Math.floor(Math.random() * 3) + 1;
-    const level2 = Math.floor(Math.random() * 3) + 1;
-
-    skills[skill1] = { xp: xpForLevel(level1), level: level1 };
-    skills[skill2] = { xp: xpForLevel(level2), level: level2 };
-
-    const villager = {
-        id: `villager_${nanoid(8)}`,
-        isVillager: true,
-        name,
-        classId: null,
-        traitId: null,
-        icon,
-        sprite,
-
-        aggregator: new ModifierAggregator(null),
-
-        className: 'Villager',
-        traitName: '',
-
-        hp: { current: 100, max: 100 },
-        energy: { current: 100, max: 100 },
-        status: 'idle',
-        woundedUntil: null,
-
-        skills,
-        perks: {},
-
-        equipment: createEmptyEquipment(),
-        assignedCardId: null,
-        createdAt: Date.now()
-    };
-
-    villager.aggregator.id = villager.id;
-    return villager;
-}
-
-/**
- * Generate hero candidates for recruitment. Every candidate is an interchangeable
- * Recruit: differences between heroes are earned through promotion, never rolled.
- * Not called outside tests.
- *
- * @param {number} count - Number of candidates to generate
- * @returns {Array} Array of partial hero info for display
- */
-export function generateCandidates(count = 3) {
-    const candidates = [];
-
-    for (let i = 0; i < count; i++) {
-        const hero = generateHero();
-
-        candidates.push({
-            id: hero.id,
-            name: hero.name,
-            jobId: hero.jobId,
-            skills: hero.skills,
-            _fullHero: hero  // Hidden data, used when player selects
-        });
-    }
-
-    return candidates;
-}
-
-/**
- * Unwrap a candidate from generateCandidates into its full hero.
- * Not called outside tests.
- * @param {Object} candidate
- * @returns {Object} Full hero object
- */
-export function finalizeCandidate(candidate) {
-    return candidate._fullHero;
 }
 
 /**
