@@ -25,18 +25,6 @@ export function skillSpeedBonus(level) {
     return level * SKILL_SPEED_FACTOR;
 }
 
-/**
- * Tool speed multiplier: converts a tool's speedBonus (0-1 reduction) to a multiplier.
- * Formula: 1 / (1 - reduction), capped at 0.9 reduction to prevent divide-by-zero.
- * @param {number} speedBonus - Tool's speed bonus (0 to ~0.5 typically)
- * @returns {number} Multiplier (e.g. 1.25 for a 0.2 bonus)
- */
-export function toolSpeedMultiplier(speedBonus) {
-    if (!speedBonus) return 1.0;
-    const reduction = Math.min(0.9, speedBonus);
-    return 1 / (1 - reduction);
-}
-
 // COMBAT FORMULAS — 7-Stat Engine. ⚠ marks first-calibration values (tools/curve_explorer.html).
 
 /**
@@ -203,10 +191,3 @@ export const REGEN_CONFIG = {
 
 /** Unread: nothing multiplies combat XP by this. */
 export const GLOBAL_COMBAT_XP_MULTIPLIER = 1.0;
-
-/** Max skill level */
-export const MAX_SKILL_LEVEL = 99;
-
-/** XP curve formula constant: floor(level + 300 * 2^(level/7)) / 4 cumulative. Documentation only: nothing imports XP_CURVE_*; XPCurve.js builds the table. */
-export const XP_CURVE_BASE = 300;
-export const XP_CURVE_EXPONENT_DIVISOR = 7;

@@ -38,16 +38,6 @@ export const MAX_TICK_DELTA_MS = 1000;
 export const CONSUME_THRESHOLD = 0.25;
 
 /**
- * ⚠️ ENERGY IS CUT. Both constants below have zero consumers and are kept only as a record.
- *
- * The hero `energy` pool, Drink category and `ConsumptionSystem.tryDrink` still exist but are dormant.
- *
- * ⚠️ Do not give Energy a new board-side sink: Tokens consume resources when they work, not per second.
- */
-export const ENERGY_DRAW_COST = 2;
-export const DEFAULT_CRAFT_ENERGY = 15;
-
-/**
  * Defeat penalties. Placeholder numbers, to be tuned.
  */
 export const DEFEAT_PENALTY = {

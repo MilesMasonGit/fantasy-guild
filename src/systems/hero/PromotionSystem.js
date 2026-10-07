@@ -2,8 +2,8 @@ import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import {
-    getJob, getAllJobIds, getJobSheet, getPromotionCost,
-    getPromotionGateSkills, STARTING_JOB_ID
+    getJob, getJobSheet, getPromotionCost,
+    getPromotionGateSkills
 } from '../../config/registries/jobRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -66,23 +66,6 @@ export function knownLevel(hero, skillId) {
     return null;
 }
 
-/** Every skill a hero holds or has banked, with where it currently sits. */
-export function getSkillSheet(heroId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return [];
-
-    const held = Object.entries(hero.skills || {}).map(([id, s]) => ({
-        skillId: id, level: s.level, xp: s.xp, banked: false,
-        name: getSkill(id)?.name || id, icon: getSkill(id)?.icon
-    }));
-    const banked = Object.entries(hero.bankedSkills || {}).map(([id, s]) => ({
-        skillId: id, level: s.level, xp: s.xp, banked: true,
-        name: getSkill(id)?.name || id, icon: getSkill(id)?.icon
-    }));
-
-    return [...held, ...banked];
-}
-
 /**
  * Whether a hero may take a job, and why not.
  *
@@ -125,13 +108,6 @@ export function canPromote(heroId, jobId) {
     }
 
     return { ok: true };
-}
-
-/** Every job this hero could move to right now. */
-export function getAvailablePromotions(heroId) {
-    return getAllJobIds()
-        .filter(id => id !== STARTING_JOB_ID)
-        .map(id => ({ jobId: id, job: getJob(id), ...canPromote(heroId, id) }));
 }
 
 /**

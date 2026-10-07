@@ -88,8 +88,3 @@ export function tickUpkeep(instance, def, delta) {
 
     return changed;
 }
-
-/** Whether any statement on this Token costs upkeep at all. */
-export function hasUpkeep(def) {
-    return costedStatements(def).length > 0;
-}

@@ -65,8 +65,6 @@ export const ENGINE_EVENTS = Object.freeze({
     HERO_DEPLOYED: 'hero_deployed',
     /** A hero's HP reached zero. Payload: `{ heroId, cause }` ('effect' | 'status' | …). */
     HERO_DOWNED: 'hero_downed',
-    /** Payload: `{ heroId, heroName, recoveryTime }`. */
-    HERO_WOUNDED: 'hero_wounded',
     /** Payload: `{ heroId, heroName, recoveredHp }`. */
     HERO_RECOVERED: 'hero_recovered',
     /** A hero ate or drank from the Bank. Payload: `{ heroId, itemId, category, amount }`. */
@@ -226,7 +224,6 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.QUEST_SPAWNED]: 'quest moment; quest Tokens announce on the board',
     [ENGINE_EVENTS.TOKEN_RESTOCKED]: 'player action moment; the board events carry the redraw',
     [ENGINE_EVENTS.LOOT_GENERATED]: 'combat moment; loot lands as sprites',
-    [ENGINE_EVENTS.HERO_WOUNDED]: 'combat moment; HEROES_UPDATED carries the redraw',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
     [ENGINE_EVENTS.HERO_CONSUMED]: 'combat moment; INVENTORY_UPDATED carries the redraw',
     [ENGINE_EVENTS.COMBAT_HERO_ATE]: 'combat moment, for a future floating-text cue',

@@ -4,9 +4,8 @@ import { EFFECT_TYPES } from './constants.js';
  * Token effect axes (YIELD, WORK_TIME, INPUT_COST) resolved against an aggregator,
  * with the hard floors enforced HERE and nowhere else.
  *
- * ⚠️ No live caller: `resolveYield` is only called by `LootSystem.handleTaskReward`,
- * which nothing calls, and the other two have no caller outside tests. The board
- * resolves these axes through `TileModifiers.resolveAxis`, which applies its own floors.
+ * ⚠️ No live caller: all three axes are called only from tests.
+ * The board resolves these axes through `TileModifiers.resolveAxis`, which applies its own floors.
  *
  * An aggregator with no modifiers for an axis returns the base untouched, so these are
  * safe to call unconditionally.

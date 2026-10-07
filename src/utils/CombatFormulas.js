@@ -316,17 +316,6 @@ export function getEnemyDamageRange(enemy, hero = null, heroStyle = 'melee') {
 }
 
 /**
- * Crit chance hook: resolves to 0 until the crit pass lands (innate 5%/2× then).
- *
- * ⚠️ Nothing reads this yet, nor `getHeroDamageRange`, `getEnemyDamageRange` or
- * `getHeroAttackSpeed`. They are hooks for the deferred crit/armor/speed pass,
- * not because a display is wired to them.
- */
-export function getCritChance(/* entity */) {
-    return 0;
-}
-
-/**
  * Hero attack interval: a fixed value until weapon archetypes redefine it.
  */
 export function getHeroAttackSpeed() {

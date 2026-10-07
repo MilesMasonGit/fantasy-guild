@@ -113,30 +113,3 @@ export function getItem(itemId) {
 export function getAllItems() {
     return ITEMS;
 }
-
-/**
- * Get items by type
- * @param {string} itemType 
- * @returns {Array}
- */
-export function getItemsByType(itemType) {
-    return Object.values(ITEMS).filter(i => i.type === itemType);
-}
-
-/**
- * Check if item exists
- * @param {string} itemId 
- * @returns {boolean}
- */
-export function itemExists(itemId) {
-    return !!ITEMS[itemId];
-}
-
-/**
- * Get items by tag
- * @param {string} tag - Tag to filter by
- * @returns {Array} Items with matching tag
- */
-export function getItemsByTag(tag) {
-    return Object.values(ITEMS).filter(item => item.tags?.includes(tag));
-}

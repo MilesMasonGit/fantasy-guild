@@ -526,15 +526,6 @@ export function claimQuest(instanceId) {
     return { success: true, rewardItems };
 }
 
-/**
- * Advance the bounty clock by `ms` of game time, as the loop would (one call,
- * closed form).
- */
-export function advanceClock(ms) {
-    tick(ms);
-    return clockMs();
-}
-
 /** Forget the runtime check state (tests). */
 export function resetRuntime() {
     pending = true;

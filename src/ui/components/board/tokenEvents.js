@@ -147,8 +147,3 @@ export function useTokenState(id, selector, routesOf) {
 
     return state;
 }
-
-/** How many bus subscriptions the router currently holds. For tests. */
-export function openRouteCount() {
-    return routes.size;
-}

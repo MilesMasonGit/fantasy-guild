@@ -30,11 +30,6 @@ export function getGlobalAggregator() {
     return aggregator;
 }
 
-/** Drop every global modifier. */
-export function clearGlobalAggregator() {
-    aggregator = null;
-}
-
 /**
  * The source id one installed thing registers its aura under.
  * `ownerId` must identify the **copy** (a tile index, an upgrade rank), not the

@@ -39,8 +39,3 @@ export function onFrame(fn) {
         }
     };
 }
-
-/** How many functions the clock is driving (tests and the Perf HUD). */
-export function frameClockSubscribers() {
-    return subs.size;
-}

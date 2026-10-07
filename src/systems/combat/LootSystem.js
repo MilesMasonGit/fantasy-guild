@@ -6,25 +6,11 @@ import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { randomInt } from '../../utils/RNG.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
-import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
-import { resolveYield } from '../effects/EffectAxes.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * Scale a drop quantity by a yield multiplier (Cookout-style buffs) with
- * probabilistic rounding: qty 1 × 1.2 → 1, plus a 20% chance of +1.
- */
-function scaleYield(quantity, multiplier) {
-    if (!multiplier || multiplier === 1) return quantity;
-    const scaled = (quantity || 1) * multiplier;
-    const whole = Math.floor(scaled);
-    return whole + (Math.random() < (scaled - whole) ? 1 : 0);
-}
-
-/**
- * Loot rolls. Enemy kills roll each drop line independently; task rewards
- * (`handleTaskReward`) pick one entry per group.
+ * Loot rolls. Enemy kills roll each drop line independently.
  */
 const LootSystem = {
     initialized: false,
@@ -74,40 +60,6 @@ const LootSystem = {
     },
 
     /**
-     * Roll task outputs as one pick-one group and bank them. ⚠️ No caller in `src/`.
-     */
-    handleTaskReward(card, outputs) {
-        if (!outputs || !Array.isArray(outputs) || outputs.length === 0) return null;
-
-        const areaId = card.areaId || card.config?.areaId || 'area_guild_hall';
-        
-        // Wrap task outputs in a single cluster for "Pick One" behavior
-        const generatedDrops = this.generateDrops({ drops: outputs }, areaId);
-
-        const itemDrops = generatedDrops.filter(d => d && d.type !== 'combat_trigger');
-        const combatTrigger = generatedDrops.find(d => d && d.type === 'combat_trigger');
-
-        if (itemDrops.length > 0) {
-            // Yield buffs (Cookout) scale task outputs for the working hero…
-            const yieldMult = getYieldMultiplier(card.assignedHeroId);
-            // …and stamped Token YIELD scales the base quantity first. resolveYield
-            // keeps the fractional result so scaleYield's probabilistic rounding
-            // applies once, at the end, over both sources combined.
-            for (const d of itemDrops) {
-                const amount = scaleYield(resolveYield(card.aggregator, d.quantity), yieldMult);
-                InventoryManager.addItem(d.itemId, amount || 1, card.templateId);
-            }
-        }
-
-        EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId: card.id, areaId, drops: generatedDrops });
-
-        if (combatTrigger) {
-            return { type: 'combat_trigger', enemyId: combatTrigger.enemyId };
-        }
-        return null;
-    },
-
-    /**
      * Roll every line independently: each entry lands when its own `chance`
      * (default 100) hits, with its quantity rolled over its authored min–max.
      *
@@ -123,31 +75,6 @@ const LootSystem = {
             const drop = this._rollEntryDetails(entry, areaId);
             if (drop && (drop.type === 'combat_trigger' || drop.quantity > 0)) results.push(drop);
         }
-        return results;
-    },
-
-    /**
-     * Polymorphic drop generator: ONE weighted pick per group. Handles
-     * clusters and flat drop lists.
-     *
-     * ⚠️ Not the enemy-kill path (kills use `rollEachLine`). Only
-     * `handleTaskReward` calls it, and nothing in `src/` calls that.
-     */
-    generateDrops(source, areaId) {
-        const results = [];
-        
-        if (source.clusters && Array.isArray(source.clusters)) {
-            for (const cluster of source.clusters) {
-                const drop = this._processCluster(cluster, areaId);
-                if (drop) results.push(drop);
-            }
-        } 
-        else if (source.drops && Array.isArray(source.drops)) {
-            // Flat drops list: treated as one group
-            const drop = this._processCluster(source.drops, areaId);
-            if (drop) results.push(drop);
-        }
-
         return results;
     },
 
@@ -177,26 +104,6 @@ const LootSystem = {
         else if (Array.isArray(table)) results.push(...extract(table));
 
         return results;
-    },
-
-    /**
-     * Single Weighted Roll per Group
-     * @private
-     */
-    _processCluster(entries, areaId) {
-        if (!entries || entries.length === 0) return null;
-
-        const totalWeight = entries.reduce((sum, e) => sum + (e.chance ?? 100), 0);
-        const roll = Math.random() * Math.max(100, totalWeight);
-
-        let cumulative = 0;
-        for (const entry of entries) {
-            cumulative += (entry.chance ?? 100);
-            if (roll <= cumulative) {
-                return this._rollEntryDetails(entry, areaId);
-            }
-        }
-        return null;
     },
 
     /**
