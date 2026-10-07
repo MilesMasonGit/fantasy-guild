@@ -29,7 +29,6 @@ const defaultSettings = {
         position: 'top_right'
     },
     ui: {
-        largeTrayTokens: true,
         tooltipsEnabled: true,
         tooltipsCardBadges: true,
         tooltipsBoostTiles: true,
