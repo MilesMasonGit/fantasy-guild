@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { SaveManager } from '../systems/core/SaveManager.js';

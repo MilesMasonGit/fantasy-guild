@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AudioSystem, BGM_PLAYLIST } from '../systems/core/AudioSystem.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';

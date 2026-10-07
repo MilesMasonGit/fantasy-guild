@@ -98,21 +98,6 @@ describe('⚠️ Risk 13 — does first-come allocation starve deep chains?', ()
         // the deep chain getting nothing at all while the shallow one runs
         // freely, which is what would invert §6.2's intended pressure.
         expect(result.shallowCompletions + result.deepCompletions).toBeGreaterThan(0);
-
-        const totalInput = result.shallowInput + result.deepInput;
-        const deepShare = totalInput ? (result.deepInput / totalInput) : 0;
-
-        // Recorded for the balance report. Not asserted as a target, because
-        // there is no agreed target yet — the point is that the number exists.
-        // eslint-disable-next-line no-console
-        console.log(
-            `[risk-13] completions  shallow=${result.shallowCompletions} deep=${result.deepCompletions}
-` +
-            `[risk-13] input used   shallow=${result.shallowInput} deep=${result.deepInput} ` +
-            `(deep took ${Math.round(deepShare * 100)}% of the scarce material)
-` +
-            `[risk-13] starved ticks ${JSON.stringify(result.starvation)}`
-        );
     });
 
     it('⚠️ the deep consumer completes fewer cycles — expected, not a fault', () => {

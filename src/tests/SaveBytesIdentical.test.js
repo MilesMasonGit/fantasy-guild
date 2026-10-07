@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';

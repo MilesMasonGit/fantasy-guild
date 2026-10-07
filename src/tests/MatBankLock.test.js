@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AlphaPointerSensor } from '../ui/dnd/DndKit.jsx';
 import { matAccepts } from '../ui/components/board/Board.jsx';

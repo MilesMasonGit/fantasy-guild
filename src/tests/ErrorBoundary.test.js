@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // there was no error boundary anywhere: a render exception on any surface
 // unmounted the WHOLE React app while the engine kept ticking and saving
 // underneath it, so the player saw a black screen with no sign their game
