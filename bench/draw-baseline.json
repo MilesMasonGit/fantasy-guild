@@ -1,0 +1,218 @@
+{
+  "meta": {
+    "commit": "9a07e320",
+    "branch": "chore/p3-baseline",
+    "dirty": {
+      "src": true,
+      "data": true,
+      "bench": true,
+      "public": true
+    },
+    "date": "2026-10-07T16:30:56.214Z",
+    "node": "v24.11.1",
+    "machine": "DESKTOP-IEM8MOS",
+    "cpu": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+    "cores": 12,
+    "platform": "win32 10.0.19045",
+    "loadAvgNote": "Windows reports no load average; quiet the machine before a baseline",
+    "args": {
+      "builds": [
+        "perf"
+      ],
+      "cpus": [
+        1,
+        4
+      ],
+      "quick": false,
+      "only": null,
+      "switches": false,
+      "repeats": 3,
+      "compare": false,
+      "saveBaseline": true,
+      "ab": null,
+      "build": true,
+      "settleS": 20,
+      "windowS": 20,
+      "port": null,
+      "cpuGiven": false,
+      "repeatsGiven": false
+    },
+    "perfBuildS": 12.815,
+    "chrome": {
+      "product": "Chrome/154.0.8037.98",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+      "gpu": {
+        "device": "NVIDIA GeForce RTX 3060",
+        "driver": "32.0.15.7283",
+        "angle": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 (0x00002504) Direct3D11 vs_5_0 ps_5_0, D3D11-32.0.15.7283)",
+        "features": {
+          "gpu_compositing": "enabled",
+          "rasterization": "enabled",
+          "webgl": "enabled"
+        }
+      }
+    },
+    "chromeClosed": {
+      "exited": true,
+      "profileRemoved": true,
+      "profileDir": "C:\\Users\\16048\\AppData\\Local\\Temp\\fg-bench-chrome-WPnXKS"
+    },
+    "note": "Medians per condition and scene. Machine-specific: re-take on the owner's PC, machine quiet: npm run bench:draw -- --save-baseline"
+  },
+  "settings": {
+    "settleS": 20,
+    "windowS": 20,
+    "repeats": 3,
+    "viewport": "1600x1000@1"
+  },
+  "conditions": {
+    "perf@1x": {
+      "S1": {
+        "fps": 165,
+        "workP50": 0.81,
+        "workP99": 2.41,
+        "inBudgetPct": 99.97,
+        "tokens": 7,
+        "domNodes": 248,
+        "n": 3
+      },
+      "S2": {
+        "fps": 163.7,
+        "workP50": 2.1,
+        "workP99": 8.71,
+        "inBudgetPct": 97.34,
+        "tokens": 102,
+        "domNodes": 1522,
+        "n": 3
+      },
+      "S3": {
+        "fps": 159.4,
+        "workP50": 3.2,
+        "workP99": 12.9,
+        "inBudgetPct": 87.35,
+        "tokens": 309,
+        "domNodes": 3451,
+        "n": 3
+      },
+      "bank": {
+        "fps": 164.2,
+        "workP50": 1.81,
+        "workP99": 6.9,
+        "inBudgetPct": 98.69,
+        "tokens": 102,
+        "domNodes": 1637,
+        "n": 3
+      },
+      "shop": {
+        "fps": 163.9,
+        "workP50": 2.01,
+        "workP99": 8.41,
+        "inBudgetPct": 97.87,
+        "tokens": 102,
+        "domNodes": 1734,
+        "n": 3
+      },
+      "notify": {
+        "fps": 161.1,
+        "workP50": 2.11,
+        "workP99": 10.3,
+        "inBudgetPct": 92.3,
+        "tokens": 102,
+        "domNodes": 1548,
+        "n": 3
+      },
+      "loot": {
+        "fps": 158.2,
+        "workP50": 3,
+        "workP99": 10.7,
+        "inBudgetPct": 88.02,
+        "tokens": 102,
+        "domNodes": 1779,
+        "n": 3
+      },
+      "inspect": {
+        "fps": 163.8,
+        "workP50": 2.1,
+        "workP99": 8.7,
+        "inBudgetPct": 97.41,
+        "tokens": 102,
+        "domNodes": 1847,
+        "n": 3
+      }
+    },
+    "perf@4x": {
+      "S1": {
+        "fps": 164.8,
+        "workP50": 2.91,
+        "workP99": 7.01,
+        "inBudgetPct": 97.82,
+        "tokens": 7,
+        "domNodes": 248,
+        "n": 3
+      },
+      "S2": {
+        "fps": 84,
+        "workP50": 12.6,
+        "workP99": 48.41,
+        "inBudgetPct": 6.1,
+        "tokens": 102,
+        "domNodes": 1531,
+        "n": 3
+      },
+      "S3": {
+        "fps": 26.1,
+        "workP50": 40.3,
+        "workP99": 198.9,
+        "inBudgetPct": 0,
+        "tokens": 310,
+        "domNodes": 3459,
+        "n": 3
+      },
+      "bank": {
+        "fps": 98.3,
+        "workP50": 11.91,
+        "workP99": 35.6,
+        "inBudgetPct": 5.28,
+        "tokens": 102,
+        "domNodes": 1661,
+        "n": 3
+      },
+      "shop": {
+        "fps": 80.8,
+        "workP50": 14.1,
+        "workP99": 49.91,
+        "inBudgetPct": 3.53,
+        "tokens": 102,
+        "domNodes": 1754,
+        "n": 3
+      },
+      "notify": {
+        "fps": 72.2,
+        "workP50": 13.7,
+        "workP99": 70.6,
+        "inBudgetPct": 4.56,
+        "tokens": 102,
+        "domNodes": 1557,
+        "n": 3
+      },
+      "loot": {
+        "fps": 39.9,
+        "workP50": 24.6,
+        "workP99": 133.3,
+        "inBudgetPct": 0,
+        "tokens": 102,
+        "domNodes": 1866,
+        "n": 3
+      },
+      "inspect": {
+        "fps": 70.6,
+        "workP50": 15.1,
+        "workP99": 55.4,
+        "inBudgetPct": 2.21,
+        "tokens": 102,
+        "domNodes": 1838,
+        "n": 3
+      }
+    }
+  }
+}

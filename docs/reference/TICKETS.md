@@ -35,7 +35,6 @@ here.
 | T-001 | **CMS**: Wood Foundation → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, Stone item → `item_stone`; **retire Copper Rubble** (also clears the last failing test). Then Sync to Game. | CR3 summary |
 | T-002 | **CMS: retire the dormant Maps** (owner 2026-10-06): the 8 maps in `data/maps.json` and the six unsold Map Tokens. Keep the Oak Forest Map (it is an Explore producer sold in the Shop). Also clears the missing `token_fallen_oak_tree`. The Atlas gets fresh Map content. | FB §5, GDD |
 | T-003 | **Run the certification checklist** ([`docs/active/certification_checklist.md`](../active/certification_checklist.md), ~25 min, on your PC). Unblocks T-033, T-034, T-060, T-071. | CR3 summary |
-| T-004 | **Re-save the bench baseline on a quiet machine**: `npm run bench -- --save-baseline`. Current timings were taken under load. | CR3 summary |
 | T-005 | **Uncommitted Atlas work**: `src/state/StateSchema.js` adds a required `atlas` save section (check old saves still load); `data/items/maps.json` was written outside the CMS (a CMS sync may wipe it). Keep, finish or discard? | CR3 summary |
 | T-006 | **Two edited map PNGs** (`map_frozenpeak`, `map_volcano`) uncommitted — commit or discard? | CR3 summary |
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
@@ -141,7 +140,7 @@ here.
 | T-066 | P2 | open | 19 CMS-importing test files can't run in a worktree: link `cms/node_modules` too; remove both links before removing the copy. | CR3-552 |
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
 | T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |
-| T-069 | P2 | open | Write a mat-era performance guide (draft in `docs/archive/review_v3/R6.md` §8 + `R7.md` §4), as `docs/reference/PERFORMANCE.md`. | CR3-021 |
+| T-069 | P2 | open | Write the mat-era guide to keeping it fast in `docs/reference/PERFORMANCE.md` (the baseline and how-to-measure parts exist since 2026-10-07; draft in `docs/archive/review_v3/R6.md` §8 + `R7.md` §4). | CR3-021 |
 | T-070 | P3 | open | Document `window.Game` — agents rely on ~30 entries the game never reads. | CR3-040 |
 
 ## 3. Parked — don't work on these without a reason
