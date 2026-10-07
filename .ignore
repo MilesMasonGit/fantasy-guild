@@ -1,0 +1,3 @@
+# Search tools (ripgrep, and the Grep/Glob tools built on it) skip these paths.
+# The files stay in git; read them by path when a live doc points there.
+docs/archive/
