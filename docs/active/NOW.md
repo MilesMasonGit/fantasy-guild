@@ -38,7 +38,8 @@ changed, what's next. Keep it under one screen.*
   Brings the 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone
   Foundations.
 - **Real offline progress** (crunch track): simulate time away on return;
-  replaces the Time Bank. No design doc yet.
+  replaces the Time Bank. Decisions locked:
+  [concept_offline_progress.md](concept_offline_progress.md).
 - **Atlas** (crunch, after optimization): [concept_atlas.md](concept_atlas.md).
 - **Terrain rework** (crunch, after the Atlas works): painted ground returns
   for Atlas Regions; currently switched off. Some
