@@ -4,6 +4,12 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Measurement tools, part 2 (2026-10-07).** `npm run bench:draw` measures what drawing costs:
+  each stress board, and S2 with the Bank, the Shop or a hero sheet open or with notification and
+  loot bursts, in headless Chrome on the real GPU at CPU 1× and 4×, with a cost table per drawing
+  switch, a baseline compare and an A/B mode. `npm run bench:drag` makes hundreds of real mouse
+  drags of every kind on a busy mat and reports which ones fail and what blocked them. See
+  `bench/README.md`, "Drawing and drag benches". No baseline is saved yet (the owner's quiet run).
 - **Measurement tools, part 1 (2026-10-06).** `npm run build:perf` makes a production build that keeps
   the Perf HUD (into `dist-perf/`); `npm run check:perf-build` proves the normal build has none of it.
   15 per-system drawing switches (`?off=rings,speech` or `window.__perf.off(name)`) turn one

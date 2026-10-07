@@ -65,7 +65,7 @@ export async function startDevServer({ port } = {}) {
 /** `vite build --mode perf` into dist-perf/. Returns how long it took. */
 export function buildPerf() {
     const t0 = Date.now();
-    const res = spawnSync(process.execPath, [path.join(root, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--mode', 'perf', '--logLevel', 'warn'], {
+    const res = spawnSync(process.execPath, [path.join(root, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--mode', 'perf', '--logLevel', 'error'], {
         cwd: root, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true
     });
     if (res.status !== 0) throw new Error(`vite build --mode perf failed (exit ${res.status})`);

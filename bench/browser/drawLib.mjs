@@ -197,7 +197,9 @@ export function costTable(allOnRuns, offBySwitch) {
             switch: name, fps: off.fps, workP50: off.workP50, workP99: off.workP99, inBudgetPct: off.inBudgetPct,
             fpsGain: round(fpsGain, 1), workSavedMs: round(workSavedMs, 3), p99SavedMs: round(p99SavedMs, 2),
             matSubtreePerS: off.matSubtreePerS, domNodes: off.domNodes,
-            aboveNoise: Math.abs(workSavedMs) > noise.workP50 || Math.abs(fpsGain) > noise.fps
+            // Frame work is the sensitive number (fps sits at the frame clock's cap until frames
+            // get expensive), so it alone decides.
+            aboveNoise: Math.abs(round(workSavedMs, 2)) > round(noise.workP50, 2)
         };
     });
     rows.sort((a, b) => b.workSavedMs - a.workSavedMs);
@@ -306,5 +308,5 @@ export function costTableText(ct) {
     for (const r of ct.rows) {
         lines.push([r.switch, fmt(r.fps), fmt(r.fpsGain), fmt(r.workP50, 2), fmt(r.workSavedMs, 2), fmt(r.workP99, 2), fmt(r.p99SavedMs, 2), fmt(r.inBudgetPct), fmt(r.matSubtreePerS), fmt(r.domNodes, 0), r.aboveNoise ? 'yes' : 'no']);
     }
-    return table(header, lines) + `\nnoise (spread of the all-on runs): fps ±${fmt(ct.noise.fps)}, work p50 ${fmt(ct.noise.workP50, 2)} ms, work p99 ${fmt(ct.noise.workP99, 2)} ms`;
+    return table(header, lines) + `\nnoise = the spread (max − min) of the all-on runs: fps ${fmt(ct.noise.fps)}, work p50 ${fmt(ct.noise.workP50, 2)} ms, work p99 ${fmt(ct.noise.workP99, 2)} ms. "above noise" = the p50 saving is wider than that spread.`;
 }
