@@ -1,6 +1,3 @@
-/* Fantasy Guild - Main Styles */
-/* Phase 1: CSS Foundation - Design Tokens & Reset */
-
 /* ============================================
    FONTS — self-hosted from /public/fonts.
    Sourced from the @fontsource npm packages (all SIL OFL licensed) and
@@ -450,38 +447,9 @@ table {
     display: block;
 }
 
-.pixel-art--tag {
-    filter: grayscale(1) opacity(0.35);
-}
-
-.emoji-art {
-    display: block;
-    line-height: 1;
-    font-size: 1.25rem;
-    text-align: center;
-}
-
-.asset-container img+.emoji-art {
-    /* Fallback emoji is hidden unless image fails (via JS) */
-    display: none;
-}
-
 /* ============================================
    UTILITY CLASSES
    ============================================ */
-
-/* Visually hidden but accessible */
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
@@ -501,30 +469,6 @@ table {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
-}
-
-/* Visible horizontal scroll bar for the banner footer — the scroll control for
-   long card lists in focus views (only appears when content overflows). Kept
-   unlayered here (not in @layer) so it overrides the global scrollbar above by
-   specificity. The bar renders at the bottom of its scroll container, i.e. in
-   the footer band. */
-.banner-scroll::-webkit-scrollbar {
-    height: 10px;
-}
-.banner-scroll::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.35);
-    border-radius: 9999px;
-    margin: 0 12px;
-}
-.banner-scroll::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.28);
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-}
-.banner-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.45);
-    background-clip: padding-box;
 }
 
 /* Selection styling */
@@ -549,57 +493,6 @@ table {
    DND HIGHLIGHTING (OPTION C: CSS-DRIVEN)
    ============================================ */
 
-/* Base Drop Zone Highlighter (Default State) */
-.drop-zone {
-    transition: all 0.3s ease;
-}
-
-/* 1. HERO SLOTS: Match when dragging a hero and slot is unassigned */
-body[data-dragging-type="hero"] .drop-zone[data-accept-type="hero"][data-is-assigned="false"] {
-    border-color: var(--color-success) !important;
-    background-color: var(--color-success-bg) !important;
-    box-shadow: 0 0 10px var(--color-success-bg);
-}
-
-/* 2. ITEM SLOTS (ID Match): Match specific item requirements */
-/* Match specific ID */
-body[data-dragging-id="iron_ore"] .drop-zone[data-accept-id="iron_ore"][data-is-assigned="false"],
-body[data-dragging-id="wood"] .drop-zone[data-accept-id="wood"][data-is-assigned="false"],
-body[data-dragging-id="stone"] .drop-zone[data-accept-id="stone"][data-is-assigned="false"],
-body[data-dragging-id="copper_ore"] .drop-zone[data-accept-id="copper_ore"][data-is-assigned="false"],
-body[data-dragging-id="coal"] .drop-zone[data-accept-id="coal"][data-is-assigned="false"] {
-    border-color: var(--color-success) !important;
-    background-color: var(--color-success-bg) !important;
-    box-shadow: 0 0 10px var(--color-success-bg);
-}
-
-/* 3. ITEM SLOTS (Tag Match): Match via ~= (space-separated list) */
-body[data-dragging-tags~="metal"] .drop-zone[data-accept-tag="metal"][data-is-assigned="false"],
-body[data-dragging-tags~="resource"] .drop-zone[data-accept-tag="resource"][data-is-assigned="false"],
-body[data-dragging-tags~="weapon"] .drop-zone[data-accept-tag="weapon"][data-is-assigned="false"],
-body[data-dragging-tags~="gear"] .drop-zone[data-accept-tag="gear"][data-is-assigned="false"],
-body[data-dragging-tags~="consumable"] .drop-zone[data-accept-tag="consumable"][data-is-assigned="false"],
-body[data-dragging-tags~="crafting"] .drop-zone[data-accept-tag="crafting"][data-is-assigned="false"] {
-    border-color: var(--color-success) !important;
-    background-color: var(--color-success-bg) !important;
-    box-shadow: 0 0 10px var(--color-success-bg);
-}
-/* ---- Pixel Typography Utilities ---- */
-.text-pixel-sm {
-    font-size: var(--font-size-xs) !important;
-    text-shadow: var(--text-shadow-sm) !important;
-}
-
-.text-pixel-base {
-    font-size: var(--font-size-sm) !important;
-    text-shadow: var(--text-shadow-base) !important;
-}
-
-.text-pixel-lg {
-    font-size: var(--font-size-base) !important;
-    text-shadow: var(--text-shadow-lg) !important;
-}
-
 /* --- Tile Placement Constraints --- */
 
 /* Blocked state - Red outline and tint */
@@ -614,9 +507,4 @@ body[data-dragging-tags~="crafting"] .drop-zone[data-accept-tag="crafting"][data
     outline: 3px solid rgba(56, 189, 248, 0.6) !important;
     background-color: rgba(56, 189, 248, 0.1) !important;
     box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
-}
-
-/* Ensure tooltips are suppressed during dragging via global body attribute */
-body[data-dragging-type] .tile-tooltip {
-    display: none !important;
 }
