@@ -1,27 +1,10 @@
 # Archive
 
-**Nothing in this folder describes the current or planned design.** These files are kept for history only.
-
-If you are implementing or planning the playmat, the live documents are in the repo root:
-
-| Document | Owns |
-| :--- | :--- |
-| **`playmat_roadmap_v1.md`** | **The build plan. Start here — its Implementation Status table says what is already done.** |
-| **`playmat_gap_analysis.md`** | The codebase audit behind that plan. **Supersedes `playmat_grid_concept.md` §10 wherever they disagree.** |
-| `playmat_grid_concept.md` | The board, Tokens and the economy |
-| `playmat_ui_concept.md` | Layout, the tile, feedback and interaction |
-| `playmat_decisions.md` | The reasoning behind every decision in the above |
-| `playmat_hero_concept.md` | What a hero is — ⚠️ **mostly out of scope for the current build** |
-| `playmat_skills_concept.md` | What a skill is — ⚠️ **DESIGN-AHEAD, NOT A BUILD TARGET** |
-
-> ⚠️ **`playmat_skills_concept.md` and `playmat_hero_concept.md` are listed for
-> reference, not for building.** The current pass ports the existing 15-skill and
-> hero systems unchanged; D-66 is *postponed*, not violated. Nothing in the
-> skills doc — the six-slot sheet (D-180), the three combat skills (D-196), the
-> three-layer list (D-205), D-192…D-214 — ships this pass. See
-> `playmat_roadmap_v1.md`, "The skills trap", before touching either area.
-
----
+**Nothing in this folder is current.** It is finished or superseded work, kept
+for history: why decisions were made, and rejected options. Live documents are
+in `docs/active/` (start at `NOW.md`) and `docs/reference/`. This folder is
+hidden from content searches (`.ignore`); read a file here by path only when
+a live doc points to it.
 
 ## What's here, and why it's misleading
 

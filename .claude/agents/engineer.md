@@ -21,6 +21,7 @@ engineer = Opus, high thinking). You take the hard, judgement-heavy work.
   and Vite `cacheDir`.
 - Git: work on the branch the brief names; stage by name only; print
   `git diff --cached --name-status` before each commit; no double quotes in messages;
-  end messages with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; never
-  push; never merge. Never touch `public/assets/` unless the brief says so; never
+  end messages with the Co-Authored-By line your session's instructions give you; never
+  push; never merge (the director merges and pushes). In a worktree use simple single
+  `git -C <path>` commands, and run the full test suite in the main folder (TESTING.md). Never touch `public/assets/` unless the brief says so; never
   hand-edit `data/*.json`.

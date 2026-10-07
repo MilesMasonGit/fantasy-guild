@@ -355,7 +355,7 @@ a compare fails, run it again before believing it.
   its frame clock is not the owner's 165 Hz screen. The numbers are for
   comparing with each other, not for "is it smooth on my screen".
 - **The GPU's own time.** The Perf HUD measures the main thread. Round 3's
-  "GPU busy" came from a trace (`docs/active/certification_checklist.md`,
+  "GPU busy" came from a trace (`docs/archive/certification_checklist.md`,
   "real frame numbers without the owner", step 8); this bench does not trace.
 - The Perf HUD is on screen during every run (it is the harness), the same in
   every run.

@@ -90,6 +90,14 @@ Turning one system's drawing off at a time. All on: 79.6 FPS, frame work
 animation and the notification column. All three are in the owner's UI
 rework list — the rework should measure them before and after.
 
+## UI rework cost log
+
+One line per UI rework phase (brief 10, brief 30): `npm run bench:draw -- --compare`
+before and after, S2 at 4× (perf build). Measure, don't fix.
+
+| Phase | Date | FPS before → after | Frame work p50 before → after (ms) | Note |
+|---|---|---|---|---|
+
 ## Drag baseline (`npm run bench:drag`, 50 drags per kind)
 
 | Drag | Plain | With bubbles and alerts showing |
@@ -111,7 +119,7 @@ failures), a hero sprite blocking its flag (T-105), a flag grabbing a Token
 ## Owner certification run (2026-10-07)
 
 The owner ran the certification checklist
-([`docs/active/certification_checklist.md`](../active/certification_checklist.md))
+(`docs/archive/certification_checklist.md`)
 on their PC: dev build, Chrome 154, 1920 × 953, a 163.9 Hz screen. ⚠️ At
 163.9 Hz a perfect frame is 6.10 ms, just over the 6.06 ms line, so the HUD's
 "≤ 6.06" frame figure reads ~42 % even when nothing is late; use **frame work**

@@ -18,6 +18,7 @@ export default [
         // and archived code that is kept for reference only.
         ignores: [
             'dist/**',
+            'dist-perf/**',
             'node_modules/**',
             'cms/**',
             'archive/**',

@@ -33,7 +33,7 @@ here.
 | ID | What | Origin |
 |---|---|---|
 | T-001 | **CMS**: Wood Foundation → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, Stone item → `item_stone`; **retire Copper Rubble** (also clears the last failing test). Then Sync to Game. | CR3 summary |
-| T-002 | **CMS: retire the dormant Maps** (owner 2026-10-06): the 8 maps in `data/maps.json` and the six unsold Map Tokens. Keep the Oak Forest Map (it is an Explore producer sold in the Shop). Also clears the missing `token_fallen_oak_tree`. The Atlas gets fresh Map content. | FB §5, GDD |
+| T-002 | **CMS: retire the dormant Maps** (owner 2026-10-06): the 8 maps in `data/maps.json` and the six unsold Map Tokens. Keep the Oak Forest Map until brief 20 drops Explore (it is an Explore producer sold in the Shop). Also clears the missing `token_fallen_oak_tree`. The Atlas gets fresh Map content. | FB §5, GDD |
 | T-005 | **Uncommitted Atlas work**: `src/state/StateSchema.js` adds a required `atlas` save section (check old saves still load); `data/items/maps.json` was written outside the CMS (a CMS sync may wipe it). Keep, finish or discard? | CR3 summary |
 | T-006 | **Two edited map PNGs** (`map_frozenpeak`, `map_volcano`) uncommitted — commit or discard? | CR3 summary |
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
@@ -111,7 +111,7 @@ here.
 | T-057 | P3 | open | Rename tile-named engine vocabulary — code names and event strings together, one slice. | CR3-501 |
 | T-058 | P3 | open | Lint residue (~74 old errors), per area: engine, combat (keep `MERGE_GRACE_MS` at 1100), UI↔engine (don't add hook deps blindly), renderer, UI. | CR3-110, 265, 312, 359, 467 |
 | T-059 | P3 | open | The CMS imports `itemRegistry` for one constant. | CR3-511 |
-| T-060 | P3 | blocked (soak) | Toasts may leave page elements behind — the optional 60-minute soak (certification Part G, not yet run) decides. | CR3-039 |
+| T-060 | P3 | blocked (soak) | Toasts may leave page elements behind. A 60-minute soak decides: certification Part G (`docs/archive/certification_checklist.md`), or automate it with the drawing bench's Chrome driver. | CR3-039 |
 | T-061 | P3 | open | `cardSizeStore` is half dead (the drag ghost still reads it); unreachable Shop branches in `InspectionPanel.jsx`. | FB §5 |
 | T-062 | P3 | open | `statementText.js` contains a literal NUL byte, so git treats it as binary (no diffs). | FMR (still true 2026-10-06) |
 | T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |

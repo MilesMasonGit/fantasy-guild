@@ -2,8 +2,8 @@
 
 **Status:** the owner's outstanding UI list, the input for the crunch's UI
 rework (the old `ui_overhaul_spec.md` / `ui_bugfix_tracker.md` stay archived).
-Crunch prep P4 turns it into ready-to-run briefs; items still marked for
-discussion get an owner interview first.
+Its locked sections are the source of truth for briefs 10 and 30 (written
+2026-10-07); the owner's own list follows them.
 
 **Gameplay rulings inside this list** (they override earlier tickets and the GDD):
 - **Token cap 80** for testing, and **spawners and spawned Tokens are under

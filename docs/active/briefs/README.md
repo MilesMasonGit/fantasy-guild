@@ -2,7 +2,7 @@
 
 Ready-to-run briefs for the crunch, one file per track, written 2026-10-07
 from the owner's interviews. A director session picks the next brief, reads
-**only that brief plus `CLAUDE.md` and `docs/reference/TESTING.md`**, and runs
+**only that brief, the docs it names, `CLAUDE.md` and `docs/reference/TESTING.md`**, and runs
 its phases. Each phase says what to read, what to change, how to know it's
 done, and which tier should build it.
 

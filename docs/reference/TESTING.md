@@ -4,10 +4,12 @@
 
 Nothing merges to `main` until all of these hold:
 
-1. **Tests**: `npm test` shows no new failures. Known failures are marked
-   expected (`it.fails`) in their files, so the run should be clean apart from
-   anything listed in `docs/active/NOW.md`. Run it in the **main folder**: 19
-   CMS-importing test files can't load in a worktree (T-066).
+1. **Tests**: `npm test` shows no new failures. Content-drift failures are
+   marked expected (`it.fails`); today one plain red test remains,
+   `AssetManager` (T-001), as `docs/active/NOW.md` says. Anything else red is
+   new. Run it in the **main folder**: 19 CMS-importing test files can't load
+   in a worktree (T-066). The suite takes ~2–3 minutes; read its result with
+   `npx vitest run --reporter=dot 2>&1 | tail -30` rather than the full output.
 2. **Bench**: `npm run bench -- --compare` exits **0**.
    - Exit 1 = `REGRESSED` (slower). Timing is noisy under machine load; re-run
      before believing it.
@@ -29,7 +31,11 @@ together with the code they test.
 ## Running the game for verification
 
 `preview_start` with name `dev` (game) or `cms` (CMS). The dev server gets its
-own origin, so its saves are separate from the owner's real ones.
+own origin, so its saves are separate from the owner's real ones. **Use the
+port `preview_start` returns**, never a guessed one: another chat may hold
+5173. The browser pane is often hidden: read with `read_page` /
+`javascript_tool` first; a screenshot is the last resort (retry once, then
+switch method). Most past browser failures came from fighting a hidden pane.
 
 **Reading state.** Prefer `read_page`, `read_console_messages` and
 `javascript_tool` probes on `window.Game` and `window.GameState`. Dynamic
@@ -99,4 +105,33 @@ for it three ways (import, string id, CMS).
 
 `git worktree add --detach …`; link `node_modules` and `cms/node_modules` as
 junctions, and remove the junctions with `cmd //c rmdir` **before** removing
-the worktree. A second dev server needs its own port and Vite `cacheDir`.
+the worktree (otherwise deleting the worktree deletes the real packages). A
+second dev server needs its own port and Vite `cacheDir`.
+- Keep the worktree **path short** (e.g. `.claude/worktrees/a1`): Windows
+  path limits break checkouts of the deeply nested audio files.
+- In a worktree, run **simple single git commands** (`git -C <path> …`): no
+  loops, heredocs or chained `cd && git`; the safety check refuses git
+  commands it can't read.
+- Read the worktree's copy of a file before editing it (Edit refuses a file
+  you haven't read at that path).
+
+## Shell and tools on this machine (Windows)
+
+Facts past sessions had to re-learn:
+- **Bash paths**: use `/c/Users/...` or `C:/Users/...`, never `C:\Users\...`
+  (backslashes get eaten). No `/tmp`: Windows programs (Python, Node) can't
+  see it; use the session scratchpad. Run Python with `-X utf8`.
+- **Scratch scripts**: write them with the Write tool and run them, instead of
+  long heredocs piped into an interpreter.
+- **Git line endings**: "LF will be replaced by CRLF" warnings are harmless,
+  not errors.
+- **Chrome**: `chrome.exe --version` opens a real Chrome window on the owner's
+  profile. Read the version from the file's properties instead.
+- **The Grep tool** takes the regex in `pattern` and flags (`-n`, `-A`, case)
+  as its own parameters; ripgrep has no lookaround, and `{` is special.
+- **Edit** needs a fresh Read of that file; re-read after another session or a
+  CMS Sync may have changed it.
+- **Auto-mode "no verdict"** errors are transient: retry once as-is; don't
+  redesign the step. A real denial means stop and tell the owner.
+- **Debug output**: game code logs at debug level; filter test and bench
+  output to the summary lines.

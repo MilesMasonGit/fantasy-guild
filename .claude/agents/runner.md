@@ -15,5 +15,6 @@ report exact results.
 - Report numbers verbatim (test counts, bench verdicts, exit codes, file lists).
 - Git: stage files by name only (never `git add .`, `-A`, `stash`); print
   `git diff --cached --name-status` before any commit; no double-quote characters in
-  commit messages; never push; never merge unless the brief says so.
+  commit messages; never push; never merge unless the brief says so. Report test
+  results from `npx vitest run --reporter=dot 2>&1 | tail -30`, not the full output.
 - Never touch `public/assets/` or hand-edit `data/*.json`.

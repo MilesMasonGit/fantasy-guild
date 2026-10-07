@@ -1,46 +1,44 @@
 # NOW — start here
 
-*Updated 2026-10-06. Update this page at the end of every session: what
-changed, what's next. Keep it under one screen.*
+*Updated 2026-10-07. Update this page at the end of every session. Keep it
+under one screen: what's next first, finished work gone (it lives in git, the
+changelog and `docs/archive/`).*
+
+## Next
+
+1. **Environment cleanup** (in progress, branch `chore/hygiene`): waves W1–W5
+   in [hygiene_plan.md](hygiene_plan.md).
+2. **The crunch**: start with [briefs/README.md](briefs/README.md), brief 00
+   (quick fixes T-104, T-101). The owner hasn't upgraded to Max yet; the
+   crunch can start on the current plan.
+3. **Owner to-dos**: the CMS fixes at the top of
+   [TICKETS](../reference/TICKETS.md) §1 (T-001, T-002), and T-096.
 
 ## Where the project is
 
-- **Version** 0.8.x on `main`. Code review round 3 is closed: 165 FPS reached on
-  a realistic mat, ~4,000 tests. Its leftovers are tickets.
-- **Phase: crunch prep.** Plan: [crunch_prep_plan.md](crunch_prep_plan.md).
-  Crunch order: UI rework (fresh owner plans), skill & class rework v2 and real
-  offline progress → deep optimization → Atlas → terrain rework → Performance
-  Envelope.
-- **Tests**: one known failure, `AssetManager` (Copper Rubble's missing art,
-  ticket T-001). Anything else red is new.
+- **Version** 0.8.x on `main`. Crunch prep is done: GDD, tickets, measuring
+  tools and baseline ([PERFORMANCE.md](../reference/PERFORMANCE.md)), design
+  interviews, and the briefs.
+- **Crunch order:** UI rework → class rework v2 → hero bar and panel →
+  offline progress → drag deep-dive → deep optimization → Atlas → terrain →
+  Performance Envelope ([briefs](briefs/README.md)).
+- **Tests:** one known failure, `AssetManager` (Copper Rubble's missing art,
+  T-001). Anything else red is new.
 
-## In flight
+## Ground rules during the crunch
 
-| Work | Doc | State |
-|---|---|---|
-| Crunch prep | [crunch_prep_plan.md](crunch_prep_plan.md) | Doc cleanup, tickets, CLAUDE.md, GDD rebuild and the owner's GDD rulings and the comment-slimming pass done 2026-10-06 (leftovers T-103) |
+- **Measure, don't fix** during the UI rework: one line per phase in
+  PERFORMANCE.md's "UI rework cost log"; optimization comes later (brief 60).
+- **Don't add expensive effects** to the mat (background blur, layout-shifting
+  animation, heavy transparency over animation) without logging their cost.
+- **Don't invest in what the Atlas replaces**: the bin, and resource spawners
+  in the Shop.
 
-## Next up
+## Design docs in flight
 
-1. Owner to-dos at the top of [TICKETS](../reference/TICKETS.md) §1, especially
-   the CMS fixes (T-001, T-002). Certification ran 2026-10-07: realistic
-   board passes; results in [PERFORMANCE.md](../reference/PERFORMANCE.md).
-2. **Crunch prep P3 done** 2026-10-07: tools merged and the baseline recorded in
-   [PERFORMANCE.md](../reference/PERFORMANCE.md) (rings are over half the drawing cost;
-   drag success 74–100 %, tickets T-104..T-107).
-3. **Crunch prep P4 done** 2026-10-07: interviews finished and the crunch
-   briefs written: [briefs/README.md](briefs/README.md) (start with brief 00).
-
-## Planned
-
-- **Skill & class rework v2** (crunch track):
-  [concept](concept_skill_and_class_rework_v2.md), approved, needs a roadmap.
-  Brings the 4 Academies (Fighter, Wizard, Rogue, Ranger) on Wood or Stone
-  Foundations.
-- **Real offline progress** (crunch track): simulate time away on return;
-  replaces the Time Bank. Decisions locked:
-  [concept_offline_progress.md](concept_offline_progress.md).
-- **Atlas** (crunch, after optimization): [concept_atlas.md](concept_atlas.md).
-- **Terrain rework** (crunch, after the Atlas works): painted ground returns
-  for Atlas Regions; currently switched off. Some
-  uncommitted Atlas code sits in the working folder (T-005).
+- [ui_rework_list.md](ui_rework_list.md): locked UI decisions and the owner's list.
+- [concept_skill_and_class_rework_v2.md](concept_skill_and_class_rework_v2.md):
+  read its amendments first.
+- [concept_offline_progress.md](concept_offline_progress.md).
+- [concept_atlas.md](concept_atlas.md): read its owner decisions first. Some
+  uncommitted Atlas code sits in the folder (T-005).
