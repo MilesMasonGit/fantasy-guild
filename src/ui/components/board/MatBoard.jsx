@@ -27,6 +27,7 @@ import * as Placement from '../../../systems/board/Placement.js';
 import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
+import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -52,6 +53,10 @@ export const MatBoard = ({
     // Dev only (an empty function in production): MatBoard's OWN renders for the Perf HUD,
     // beside Board.jsx's subtree Profiler.
     usePerfRenderCount('MatBoard');
+    // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
+    const ringsDrawn = useDrawn('rings');
+    const alertsDrawn = useDrawn('alerts');
+    const speechDrawn = useDrawn('speech');
     const rootRef = useRef(null);
 
     // Read through the hook so the whole board redraws when the Mat Tuner resizes it.
@@ -381,10 +386,10 @@ export const MatBoard = ({
             })}
 
             {/* 750: news with no Token left to sit on. */}
-            <MatPointAlerts />
+            {alertsDrawn && <MatPointAlerts />}
 
             {/* 760: the Near ring. Flag radius rings are FlagLayer's. */}
-            <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />
+            {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
 
             {/* 800: loot on the floor. */}
             <SpriteLayerView />
@@ -400,7 +405,7 @@ export const MatBoard = ({
             />
 
             {/* 860 — hero speech bubbles, above every hero. */}
-            <HeroBubbleLayer heroes={heroes} />
+            {speechDrawn && <HeroBubbleLayer heroes={heroes} />}
 
             {/**
              * Disallow mode's red dashed edge and hint, above everything and never in the

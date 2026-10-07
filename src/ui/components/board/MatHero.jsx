@@ -18,6 +18,7 @@ import { useMatFit } from './MatFitContext.jsx';
 import { isRealAttack } from './hitAnimations.js';
 import { COMBAT_ATTACK_EVENT } from './TokenHitArt.jsx';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 
@@ -93,6 +94,7 @@ export const MatHero = memo(function MatHero({
     // they are moving and which way they face. The screen glides for exactly one tick between
     // those steps, so the walk looks continuous.
     const isWalking = moving;
+    const walkDrawn = useDrawn('walkDraw');
     const facingLeft = facing < 0;
 
     // A moving hero is handed no point (so their steps do not redraw the mat). Read it live,
@@ -152,7 +154,7 @@ export const MatHero = memo(function MatHero({
                 width: HERO_HIT_PX,
                 height: FLAG_PX,
                 zIndex: z,
-                transition: isWalking
+                transition: isWalking && walkDrawn
                     ? `transform ${TICK_INTERVAL_MS}ms linear`
                     : 'none'
             }}

@@ -9,6 +9,7 @@
 // a second, by `textContent`, outside React. Memory is fixed-size, and the report's by-name
 // tables are bounded.
 
+import { setDrawn, drawnSwitches } from './drawSwitches.js';
 import { GameLoop } from '../../../systems/core/GameLoop.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { GameState } from '../../../state/GameState.js';
@@ -542,6 +543,9 @@ export async function installPerf() {
         toggleHud,
         drive,
         scenarios: STRESS_SCENARIOS.map(s => ({ name: s.name, id: s.id, label: s.label })),
+        off: (name) => setDrawn(name, false),
+        on: (name) => setDrawn(name, true),
+        switches: drawnSwitches,
         get running() { return running; },
         get profilingArmed() { return profilingArmed(); }
     };
