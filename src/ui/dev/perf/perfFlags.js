@@ -1,12 +1,14 @@
 // Perf harness switches.
-// ⚠️ DEV BUILDS ONLY. Everything in `src/ui/dev/perf/` is reached through a compile-time
-// `import.meta.env.DEV` check, so a production build (`vite build`) folds the check to `false`
+// ⚠️ DEV AND PERF BUILDS ONLY. Everything in `src/ui/dev/perf/` is reached through a compile-time
+// check (dev server, or `vite build --mode perf`), so a normal production build (`vite build`) folds the check to `false`
 // and drops the harness entirely: no HUD, no `window.__perf`, no `<React.Profiler>`. `npx vite
 // build` then grepping `dist/assets/*.js` for `fg-perf-hud` proves it. This module must stay
 // free of side effects at import time: ReactRoot and Board import `PerfProfiler`, which
 // imports this, in every build.
 
-export const PERF_ENABLED = !!import.meta.env.DEV;
+// ⚠️ Files outside this folder write the check inline (`import.meta.env.DEV || import.meta.env.MODE
+// === 'perf'`) so the bundler sees the literals and drops what sits behind it.
+export const PERF_ENABLED = !!(import.meta.env.DEV || import.meta.env.MODE === 'perf');
 
 /** localStorage key: the HUD was switched on, keep it on across reloads. */
 export const HUD_STORAGE_KEY = 'fg_perf_hud';

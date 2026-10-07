@@ -170,11 +170,11 @@ export const ReactRoot = ({ engine }) => {
     }, []);
 
     // A stress scenario from the perf harness (`?stress=…`) builds its own board, so the slot
-    // picker has nothing left to ask. Dev builds only; the event is published by
+    // picker has nothing left to ask. Dev and perf builds only; the event is published by
     // src/ui/dev/perf/stressScenarios.js.
     const closeSlotSelection = ui.slotSelection.close;
     React.useEffect(() => {
-        if (!import.meta.env.DEV) return undefined;
+        if (!(import.meta.env.DEV || import.meta.env.MODE === 'perf')) return undefined;
         return EventBus.subscribe(UI_EVENTS.DEV_STRESS_STARTED, () => closeSlotSelection());
     }, [closeSlotSelection]);
 

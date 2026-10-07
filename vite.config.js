@@ -69,12 +69,15 @@ function assetManifestPlugin() {
     };
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     // Honor an externally assigned port (e.g. tooling that sets PORT) so two
     // dev servers can run side-by-side; falls back to Vite's default 5173.
     server: {
         port: Number(process.env.PORT) || 5173
     },
+    // Perf mode (`npm run build:perf`) is the production build plus the measuring harness; its own
+    // folder means it never overwrites the shipped `dist/`.
+    build: mode === 'perf' ? { outDir: 'dist-perf' } : {},
     define: {
         __APP_VERSION__: JSON.stringify(packageVersion)
     },
@@ -89,4 +92,4 @@ export default defineConfig({
         include: /src\/.*\.jsx?$/,
         exclude: []
     }
-});
+}));
