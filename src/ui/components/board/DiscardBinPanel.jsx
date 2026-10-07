@@ -32,7 +32,7 @@ export const BIN_DROP_ID = 'discard-bin';
  * The art in a slot, whatever the Token's footprint: half the 64 px sprite, so nine slots fit
  * in two rows of five and the bin stays on screen in a short window.
  */
-const SLOT_ART_PX = tokenSizeFor(TOKEN_SURFACE.TRAY, 1) / 2;
+const SLOT_ART_PX = tokenSizeFor(TOKEN_SURFACE.BIN, 1) / 2;
 
 /** What re-reads the bin. */
 const BIN_EVENTS = Object.freeze([BOARD_EVENTS.BIN_CHANGED, ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.GAME_LOADED]);

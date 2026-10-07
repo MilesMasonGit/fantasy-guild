@@ -25,7 +25,7 @@ export const SIDE_COLUMN_PX = 928;
  * - **Notifications**: `Toast` carries `min-w-[220px]`, and the column's `pl-8` gutter is
  * inside its border-box, so below ~252px the toasts overflow their own column. 256 leaves a
  * little air.
- * - **Effects panel** (`TRAY_COLUMN`): 244 keeps a comfortable margin around its contents.
+ * - **Effects panel** (`EFFECTS_COLUMN`): 244 keeps a comfortable margin around its contents.
  * - **The hero dock** is already only `w-20` (80px) and its inspection sheet is absolutely
  * positioned, so it is left alone.
  * ⚠️ This never lets the mat reach under a column: the mat is fitted to its own cell's
@@ -35,7 +35,7 @@ export const SIDE_COLUMN_PX = 928;
  * board.
  */
 export const NOTIFICATION_COLUMN = Object.freeze({ min: 256, vw: 20, max: 356 });
-export const TRAY_COLUMN = Object.freeze({ min: 244, vw: 19, max: 340 });
+export const EFFECTS_COLUMN = Object.freeze({ min: 244, vw: 19, max: 340 });
 
 /**
  * What a column spec is worth at a given viewport width, in pixels. The pure form of the

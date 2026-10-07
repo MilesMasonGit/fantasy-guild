@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
-import { SIDE_COLUMN_PX, TRAY_COLUMN, columnWidthCss } from './boardConstants.js';
+import { SIDE_COLUMN_PX, EFFECTS_COLUMN, columnWidthCss } from './boardConstants.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
@@ -13,7 +13,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * GuildHallEffectsPanel: the Guild Hall's active outputs and boosts, shown beside the upgrade
  * web.
  * Always on the LEFT of the web, whichever side the nav is on, so it takes no `menuRight`. Its
- * width is the `TRAY_COLUMN` spec in `boardConstants.js`, so it gives way on a narrow window
+ * width is the `EFFECTS_COLUMN` spec in `boardConstants.js`, so it gives way on a narrow window
  * before the web does.
  */
 export const GuildHallEffectsPanel = () => {
@@ -35,7 +35,7 @@ export const GuildHallEffectsPanel = () => {
         <aside
             data-dnd-region="drawer"
             data-hall-effects
-            style={{ width: columnWidthCss(TRAY_COLUMN) }}
+            style={{ width: columnWidthCss(EFFECTS_COLUMN) }}
             className="shrink-0 h-full flex flex-col items-center justify-center py-8 pl-8 pr-0 bg-transparent relative z-10 select-none pointer-events-auto"
         >
             <div

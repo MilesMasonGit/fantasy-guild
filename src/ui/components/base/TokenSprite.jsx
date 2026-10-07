@@ -30,8 +30,8 @@ export const TOKEN_SURFACE = {
     BOARD: 'board',           // on a tile, in play
     CARRY: 'carry',           // held by the cursor mid-drag
     FLOOR: 'floor',           // loose on the board, not yet collected
-    TRAY: 'tray',             // racked, waiting to be placed
-    VAULT: 'vault',           // stored in the Token Bank
+    BIN: 'bin',               // the Discard Bin panel's slots
+    BANK: 'bank',             // the Bank's item chips
     INSPECT: 'inspect',       // the inspection panel's header
     CATALOGUE: 'catalogue'    // dense listings — Shop pool chips only
 };
@@ -46,8 +46,8 @@ export const TOKEN_SCALE = {
     [TOKEN_SURFACE.BOARD]: 2,
     [TOKEN_SURFACE.CARRY]: 2,
     [TOKEN_SURFACE.FLOOR]: 2,
-    [TOKEN_SURFACE.TRAY]: 1,
-    [TOKEN_SURFACE.VAULT]: 1,
+    [TOKEN_SURFACE.BIN]: 1,
+    [TOKEN_SURFACE.BANK]: 1,
     [TOKEN_SURFACE.INSPECT]: 1,
     [TOKEN_SURFACE.CATALOGUE]: 0.5
 };
