@@ -7,9 +7,9 @@ changelog and `docs/archive/`).*
 ## Next
 
 1. **Brief 10, UI rework** ([brief](briefs/10_ui_rework.md)) on branch
-   `crunch/ui-rework`. Batch A (U1–U3) is merged. **Batch B (U4–U5, plus the
-   batch A tweaks) waits for the owner's eye-check**, then merges. Next: U6
-   (top bar, Token Summary, T-102 cap 80, Passive Production T-099).
+   `crunch/ui-rework`. Batch A (U1–U3) is merged. **All of U4–U8 is built and
+   verified; batches B (U4–U5) and C (U6–U8) wait for the owner's eye-check**,
+   then the branch merges. After that: brief 20 (class rework v2).
    The unfinished Atlas work is parked on branch `atlas-wip`, not `main`.
 2. **Owner CMS to-do** (after batch B merges): Foundation **Tier** on each
    Foundation (Wood: Oak 1, Maple 2, Ebony 3; Stone: Stone 1, Marble 2,
