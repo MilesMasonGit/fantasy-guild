@@ -100,7 +100,7 @@ builds everything a lower one can. This is the same rule tools already use
 
 | Group | Tiers | Notes |
 |---|---|---|
-| Wood Foundation | **Oak** (1) · **Maple** (2) · **Ebony** (3) | Logging levels 1 / 45 / 90. Fir, Birch, Cedar and Mahogany go to other constructions (e.g. Mahogany → Fine Furniture). ⚠️ Only one generic wood Foundation art exists. |
+| Wood Foundation | **Oak** (1) · **Maple** (2) · **Ebony** (3) | Forestry levels 1 / 45 / 90. Fir, Birch, Cedar and Mahogany go to other constructions (e.g. Mahogany → Fine Furniture). ⚠️ Only one generic wood Foundation art exists. |
 | Stone Foundation | **Stone** (1) · **Marble** (2) · **Basalt** (3) | Marble and Basalt items, sources and Tokens don't exist yet. Art exists: items, bricks, Foundations and veins. Granite and Sandstone are for other constructions. |
 | Anvil | Copper · Iron · Mythril · Adamantite · Darkmetal | Copper Anvil exists today; art exists for all five. Follows the metal ladder. |
 | Any other family | — | e.g. Oak / Fir / … Forests, if the owner groups them in the CMS. |
@@ -153,7 +153,7 @@ the flag**.
 - **Hovering a row highlights every Token of that type** on the mat. Clicking a
   row does nothing more.
 - **Order**: Tokens **missing items** (waiting for inputs or upkeep they can't
-  pay) pinned at the top; the rest grouped by skill section (Logging, Mining…)
+  pay) pinned at the top; the rest grouped by skill section (Forestry, Mining…)
   like the Shop, spawners next to what they spawn.
 - **Spawned Tokens** get rows like placed ones, since they now count toward the
   cap (T-102).
