@@ -3,7 +3,7 @@
 // Runs each scenario in a fresh Node process (bench/worker.mjs), a few times,
 // takes the median, prints a table and writes JSON to bench/results/.
 //
-//   npm run bench                       S1–S7, default lengths
+//   npm run bench                       S1–S8, default lengths
 //   npm run bench -- --only=S2,S3       some scenarios
 //   npm run bench -- --compare          also compare with bench/baseline.json:
 //                                       the work first (fingerprints), then
@@ -26,8 +26,9 @@
 //   1  SLOWER — a timing regression (> 20 % and > 0.02 ms over the baseline)
 //   2  WORK CHANGED — a scenario ended in a different state, or drew a
 //      different number of random numbers, than the baseline (or its repeats
-//      disagreed with each other). Wins over 1: timings of different work are
-//      not comparable.
+//      disagreed with each other), or the catch-up gates failed (S8 not
+//      identical to S8L, or S8L more than 1 % off S8F). Wins over 1: timings of
+//      different work are not comparable.
 //   3  the bench itself failed (a worker crashed, a bad option, no baseline)
 //
 // See bench/README.md.
@@ -55,12 +56,25 @@ const SCENARIOS = [
     { id: 'S4', file: 's4-push-storm.mjs', name: 'Push storm', profile: true },
     { id: 'S5', file: 's5-rebuild-storm.mjs', name: 'Rebuild storm', profile: true },
     { id: 'S6', file: 's6-long-idle.mjs', name: 'Long idle', profile: false, repeats: 1, longChangesWork: true },
-    { id: 'S7', file: 's7-waiting-room.mjs', name: 'Waiting for room', profile: true }
+    { id: 'S7', file: 's7-waiting-room.mjs', name: 'Waiting for room', profile: true },
+    // Offline progress: one game-hour after a load, three ways (bench/scenarios/hour-after-load.mjs).
+    // Only S8's time is checked; S8L and S8F are the references its work is checked against.
+    { id: 'S8', file: 's8-catchup.mjs', name: 'Catch-up hour', profile: false, catchUp: true, timed: true },
+    { id: 'S8L', file: 's8l-steps.mjs', name: 'Same hour, plain 1000 ms steps', profile: false, catchUp: true },
+    { id: 'S8F', file: 's8f-ticks.mjs', name: 'Same hour, 100 ms ticks', profile: false, catchUp: true, repeats: 1 }
 ];
 
 /** A regression is > 20 % slower AND more than this many ms slower (timer noise floor). */
 const REGRESSION_RATIO = 1.2;
 const NOISE_FLOOR_MS = 0.02;
+
+/**
+ * Catch-up fidelity: what the hour produced in 1000 ms steps (S8L) against 100 ms ticks (S8F)
+ * may differ by this fraction, or by one unit for a count too small to judge in percent
+ * (Tokens depleted: about 6 an hour on S2).
+ */
+const FIDELITY_TOLERANCE = 0.01;
+const FIDELITY_FIELDS = ['bankItems', 'heroXp', 'cycles', 'depleted'];
 
 const EXIT = { OK: 0, SLOWER: 1, WORK_CHANGED: 2, BENCH_FAILED: 3 };
 
@@ -152,6 +166,15 @@ function aggregateCustom(runs) {
     };
 }
 
+/** S8, S8L, S8F: the hour's wall time, and what it produced (work: the same in every repeat). */
+function aggregateCatchUp(runs) {
+    return {
+        runMs: median(runs.map(r => r.custom.runMs)),
+        steps: runs[0].custom.steps,
+        gains: runs[0].custom.gains
+    };
+}
+
 function sameWork(runs) {
     const prints = runs.map(r => JSON.stringify(r.fingerprint));
     return prints.every(p => p === prints[0]);
@@ -184,7 +207,11 @@ function printTable(rows) {
     for (const l of lines) console.log(fmt(l));
 
     for (const r of rows) {
-        if (r.custom) {
+        if (r.catchUp) {
+            const c = r.custom;
+            const g = c.gains;
+            console.log(`\n${r.id} ${r.name}: ${c.steps} steps in ${f(c.runMs / 1000, 2)} s · Bank +${g.bankItems} items, hero XP +${g.heroXp}, ${g.cycles} cycles, ${g.depleted} Tokens depleted`);
+        } else if (r.custom) {
             const c = r.custom;
             const l = c.landing;
             console.log(`\n${r.id} ${r.name}:`);
@@ -282,6 +309,62 @@ function printWork(checks, baseline, accepted) {
 }
 
 // ---------------------------------------------------------------------------
+// The catch-up gates (offline progress)
+// ---------------------------------------------------------------------------
+
+/**
+ * Two checks between the S8 rows of this run, independent of the baseline:
+ *  - identity: the catch-up (S8) ends exactly as the same 1000 ms steps through plain
+ *    `runHandlers` (S8L): every fingerprint field, random draws included;
+ *  - fidelity: what that hour produced (S8L) is within FIDELITY_TOLERANCE of today's 100 ms
+ *    ticks (S8F).
+ * Either failing is WORK CHANGED (exit 2), and `--accept-work-change` never lets it through.
+ * A check whose rows did not run (`--only`) is not checked.
+ */
+function catchUpGates(rows) {
+    const byId = Object.fromEntries(rows.map(r => [r.id, r]));
+    const out = { identity: null, fidelity: null, failed: false };
+
+    if (byId.S8 && byId.S8L) {
+        const diffs = diffFingerprint(byId.S8L.fingerprints[0], byId.S8.fingerprints[0]);
+        out.identity = { same: diffs.length === 0, diffs };
+        if (diffs.length) out.failed = true;
+    }
+    if (byId.S8L && byId.S8F) {
+        const steps = byId.S8L.custom.gains;
+        const ticks = byId.S8F.custom.gains;
+        const fields = FIDELITY_FIELDS.map(field => {
+            const diff = steps[field] - ticks[field];
+            const allowed = Math.max(Math.abs(ticks[field]) * FIDELITY_TOLERANCE, 1);
+            return { field, ticks: ticks[field], steps: steps[field], change: ticks[field] ? diff / ticks[field] : 0, ok: Math.abs(diff) <= allowed };
+        });
+        out.fidelity = { ok: fields.every(x => x.ok), fields };
+        if (!out.fidelity.ok) out.failed = true;
+    }
+    return out;
+}
+
+function printCatchUpGates(gates) {
+    console.log('\nCatch-up gates (S8 against S8L: identical; S8L against S8F: within ±1 %)');
+    if (!gates.identity) console.log('  identity  not checked (needs S8 and S8L)');
+    else if (gates.identity.same) console.log('  identity  same: the catch-up ended exactly as plain 1000 ms steps');
+    else {
+        console.log('  identity  CATCH-UP CHANGED THE WORK');
+        for (const d of gates.identity.diffs) {
+            console.log(`          ${d.field.padEnd(24)} steps ${show(d.base).padEnd(20)} catch-up ${show(d.now)}`);
+        }
+    }
+    if (!gates.fidelity) console.log('  fidelity  not checked (needs S8L and S8F)');
+    else {
+        console.log(`  fidelity  ${gates.fidelity.ok ? 'ok' : 'OUTSIDE ±1 %'}: one game-hour, 1000 ms steps against 100 ms ticks`);
+        for (const x of gates.fidelity.fields) {
+            const pct = `${x.change >= 0 ? '+' : ''}${(x.change * 100).toFixed(2)} %`;
+            console.log(`          ${x.field.padEnd(10)} ticks ${String(x.ticks).padStart(8)}  steps ${String(x.steps).padStart(8)}  ${pct.padStart(9)}  ${x.ok ? 'ok' : 'FAIL'}`);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Compare, part 2: the timings
 // ---------------------------------------------------------------------------
 
@@ -294,6 +377,9 @@ function printWork(checks, baseline, accepted) {
  * within 3.10–3.41). Their worst is still printed and kept in the results JSON.
  */
 function comparable(row) {
+    if (row.catchUp) {
+        return SCENARIOS.find(s => s.id === row.id)?.timed ? { runMs: row.custom.runMs } : {};
+    }
     if (row.custom) {
         return {
             arrivalsWorst: row.custom.arrivalsWorst,
@@ -382,7 +468,10 @@ async function main() {
             errors: [...new Set(runs.flatMap(r => r.errors || []))],
             runs: runs.map(r => ({ tick: r.tick, custom: r.custom, heap: r.heap, buildMs: r.buildMs, totalMs: r.totalMs }))
         };
-        if (first.custom) {
+        if (scenario.catchUp) {
+            row.catchUp = true;
+            row.custom = aggregateCatchUp(runs);
+        } else if (first.custom) {
             row.custom = aggregateCustom(runs);
         } else {
             row.tick = aggregateTicks(runs);
@@ -400,6 +489,9 @@ async function main() {
     }
 
     printTable(rows);
+
+    const gates = catchUpGates(rows);
+    if (rows.some(r => r.catchUp)) printCatchUpGates(gates);
 
     let workChecks = null;
     let timing = null;
@@ -460,6 +552,7 @@ async function main() {
         scenarios: rows,
         work: workChecks,
         acceptedWorkChange: accepted,
+        catchUpGates: gates,
         comparison: timing
     };
     fs.mkdirSync(resultsDir, { recursive: true });
@@ -470,7 +563,11 @@ async function main() {
 
     // --accept-work-change: rewrite ONLY the fingerprints of the scenarios that
     // changed. The timing numbers stay those of the quiet-machine baseline.
-    if (accepted && baseline) {
+    if (gates.failed) {
+        console.log('✗ WORK CHANGED: the catch-up gates failed (above). The catch-up must end as plain steps do, and play like 100 ms ticks; --accept-work-change does not cover this.');
+        if (accepted) console.log('  bench/baseline.json is left unchanged.');
+    }
+    if (accepted && baseline && !gates.failed) {
         for (const id of Object.keys(accepted.scenarios)) {
             const row = rows.find(r => r.id === id);
             baseline.scenarios[id] = {
@@ -507,7 +604,7 @@ async function main() {
         }
     }
 
-    const code = workFailed ? EXIT.WORK_CHANGED : benchFailed ? EXIT.BENCH_FAILED : slower ? EXIT.SLOWER : EXIT.OK;
+    const code = (workFailed || gates.failed) ? EXIT.WORK_CHANGED : benchFailed ? EXIT.BENCH_FAILED : slower ? EXIT.SLOWER : EXIT.OK;
     process.exit(code);
 }
 

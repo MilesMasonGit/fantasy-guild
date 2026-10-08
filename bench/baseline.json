@@ -150,6 +150,20 @@
             "randomDraws"
           ]
         }
+      },
+      {
+        "ticket": "T-080",
+        "commit": "c5958bcb",
+        "branch": "crunch/offline",
+        "dirty": true,
+        "date": "2026-10-08T23:08:04.679Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "S8": [],
+          "S8L": [],
+          "S8F": []
+        },
+        "note": "S8, S8L and S8F added (new scenarios: no earlier work to change). S8L and S8F carry no timing: they are the references S8 is checked against."
       }
     ]
   },
@@ -310,6 +324,73 @@
         "spriteHash": "200b58b1",
         "binHash": "811c9dc5",
         "randomDraws": 4641
+      },
+      "fingerprintOptions": {
+        "seed": 1
+      }
+    },
+    "S8": {
+      "runMs": 2103.9433,
+      "fingerprint": {
+        "tokens": 109,
+        "uses": 123642,
+        "bankItems": 4403,
+        "heroXp": 499149,
+        "sprites": 3,
+        "gameTimeMs": 3700000,
+        "tokensHash": "48674670",
+        "bankHash": "8538f283",
+        "heroHash": "385facf8",
+        "spriteHash": "267add14",
+        "binHash": "811c9dc5",
+        "randomDraws": 31812,
+        "cycles": 2376,
+        "depleted": 6,
+        "steps": 3600
+      },
+      "fingerprintOptions": {
+        "seed": 1
+      }
+    },
+    "S8L": {
+      "fingerprint": {
+        "tokens": 109,
+        "uses": 123642,
+        "bankItems": 4403,
+        "heroXp": 499149,
+        "sprites": 3,
+        "gameTimeMs": 3700000,
+        "tokensHash": "48674670",
+        "bankHash": "8538f283",
+        "heroHash": "385facf8",
+        "spriteHash": "267add14",
+        "binHash": "811c9dc5",
+        "randomDraws": 31812,
+        "cycles": 2376,
+        "depleted": 6,
+        "steps": 3600
+      },
+      "fingerprintOptions": {
+        "seed": 1
+      }
+    },
+    "S8F": {
+      "fingerprint": {
+        "tokens": 109,
+        "uses": 123642,
+        "bankItems": 4403,
+        "heroXp": 499149,
+        "sprites": 3,
+        "gameTimeMs": 3700000,
+        "tokensHash": "835723e0",
+        "bankHash": "8538f283",
+        "heroHash": "1ddb85dd",
+        "spriteHash": "2174e351",
+        "binHash": "811c9dc5",
+        "randomDraws": 192328,
+        "cycles": 2376,
+        "depleted": 6,
+        "steps": 36000
       },
       "fingerprintOptions": {
         "seed": 1

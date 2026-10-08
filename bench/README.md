@@ -14,7 +14,7 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench` | S1–S7, 3 timing runs each (S6 once), profile passes for S2–S5 and S7 | ~4 min |
+| `npm run bench` | S1–S8, 3 timing runs each (S6 and S8F once), profile passes for S2–S5 and S7 | ~5 min |
 | `npm run bench -- --only=S2,S3` | only some scenarios | |
 | `npm run bench -- --compare` | also compare with `bench/baseline.json`: **exits 2** (WORK CHANGED) if any scenario did different work, **exits 1** if any checked number is more than 20 % slower — see below | |
 | `npm run bench -- --accept-work-change=CR3-123` | compare, but let a deliberate, ruled change of work through: rewrites only the fingerprints in `bench/baseline.json` and records the ticket (implies `--compare`) | |
@@ -109,8 +109,9 @@ it to make a speed fix pass: a speed fix that changes the work is not identical.
 #### The timings
 
 `--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5–S7),
-and for S4 the **worst arrival**, the **p50 landing drop**, the **worst
-refused drop** and **the shrink**, each on its own. A number fails when it is
+for S4 the **worst arrival**, the **p50 landing drop**, the **worst
+refused drop** and **the shrink**, each on its own, and for S8 the **wall time
+of the catch-up hour**. A number fails when it is
 more than **×1.2** the baseline **and** more than **0.02 ms** worse (the floor
 stops sub-microsecond timer noise on S1 from failing a run). The landing drops
 are checked on their p50 because the worst of fifty ~3 ms drops is whichever
@@ -137,10 +138,37 @@ timings from one machine mean nothing on another.
 | S5 | Rebuild storm | S2 plus one board-reach aura | 500 + 1,500 |
 | S6 | Long idle | S2, 30 game-minutes with a checkpoint every 5 (`--long`: 8 game-hours, every 30) — heap after GC and the size of every runtime structure the bench can see | 1,000 + 18,000 |
 | S7 | Waiting for room | 8-step mat packed with placed passives until not even a tree fits within 800 u of the two waiters: a **Forest under its cap with nowhere to spawn**, and a **Foundation building a 2×2 station with no room to stand**, a builder pinned to it. Both re-run their placement search every tick (CR3-201). Its own types and recipe are registered inside the scenario, so no other scenario's work changes. Added to `baseline.json` on its own (`meta.addedScenarios`). | 300 + 1,500 |
+| S8 | Catch-up hour | S2, warmed up as S2 is (1,000 ticks), **saved and loaded** as a player's slot is, then one game-hour of the game's own catch-up (`CatchUp.run`): 1000 ms steps, the game clock, the bus quiet, toasts and sounds off, slices with yields. The virtual wall clock stands still through it, as the real one nearly does. | 1,000 + 3,600 steps |
+| S8L | Same hour, plain 1000 ms steps | The same save and load, then 3,600 × `GameLoop.runHandlers(1000)` with the virtual clock moving, as live play's would. The reference S8 must equal. | 1,000 + 3,600 steps |
+| S8F | Same hour, 100 ms ticks | The same save and load, then 36,000 ticks of 100 ms: the fidelity reference. Run once. | 1,000 + 36,000 |
 
 Every spawner is filled to its cap before the heroes arrive (`prefillSpawners`,
 through the real `SpawnerSystem.attemptSpawn`), so the warm-up warms the JIT
 rather than waiting for the board to fill.
+
+### The catch-up gates (S8, S8L, S8F)
+
+Two checks between this run's own S8 rows, printed as "Catch-up gates", independent of the
+baseline. Either failing exits **2** (WORK CHANGED), and `--accept-work-change` never lets it
+through (the baseline is then left alone).
+
+- **Identity**: S8 must end **exactly** as S8L: every fingerprint field, random draws included.
+  It proves the catch-up mode itself (the quiet bus, the game clock, the silenced sounds and
+  toasts, the slices, saving suspended) changes nothing about the game. Their fingerprints leave
+  the wall-clock time out of ids (`fingerprint({ stableIds: true })`): a Token or loot id carries
+  the real time it was made at, which differs by design; the rest of each id stays.
+- **Fidelity**: what the hour produced in S8L (Bank items, hero XP, work cycles, Tokens depleted)
+  must be within **±1 %** of S8F's 100 ms ticks, or within one for a count too small to judge
+  in percent (about 6 depletions an hour). 1000 ms steps can never equal 100 ms ticks exactly
+  (fewer random draws), so this is a tolerance, not a fingerprint.
+
+Proven to bite (2026-10-08): a catch-up that skipped the game clock left 40 loot stacks on the
+floor and 68 fewer items in the Bank than S8L (identity failed, exit 2); without the work
+cycle's carried leftover, S8L made 4.59 % fewer Bank items and 4.10 % fewer cycles than S8F
+(fidelity failed, exit 2). Measured: identical (all four within 0.00 %).
+
+S8, S8L and S8F were added to `baseline.json` under T-080 (`meta.workChanges`, no fields: new
+scenarios). Only S8 carries a timing.
 
 ## How it works
 
@@ -236,7 +264,7 @@ suspect, not the engine. Keep them boring.
 
 Two scripts in `bench/catchup/` time a long run of game time, for offline progress
 (brief 40; the numbers and the plan are in `docs/active/concept_offline_progress.md`,
-"Catch-up plan"). Neither is part of `npm run bench` or its `--compare`.
+"Catch-up plan"). Neither is part of `npm run bench` or its `--compare` (S8 is: above).
 
 | Command | What | Time |
 |---|---|---|
@@ -245,13 +273,18 @@ Two scripts in `bench/catchup/` time a long run of game time, for offline progre
 | `node --expose-gc --cpu-prof --cpu-prof-dir=<dir> bench/catchup/time.mjs --hours=6` | a V8 profile of the engine (the `.0.` file; the other is the module loader's thread) | |
 | `node bench/catchup/page.mjs` | the same in the **real page**: perf build, headless Chrome, S2 with the whole UI listening, 1 game-hour at 1000 ms, alternating `ui` and `muted` × 3 | ~4 min |
 | `… page.mjs --hours=24 --modes=muted,ui --no-build` | a full 24 h in the page | ~2 min |
+| `… page.mjs --hours=24 --modes=catchup,catchup` | **the 30 s target**: the game's own catch-up (`CatchUp.run`, slices and yields included) for 24 h, twice | ~2 min |
 
 - ⚠️ The headless numbers are about **twice** the page's for the same board (Vite's SSR
   loader turns every imported call into a property lookup; the shipped build is bundled).
   Judge "under 30 s" with `page.mjs`; use `time.mjs` for comparisons and fingerprints.
 - `muted` in `page.mjs` is the bus gone quiet (`EventBus.setQuiet`), as a catch-up runs it:
   every listener tagged `UI_LISTENER` is skipped and the engine's own still run.
-- Both put a virtual wall clock in place (Date.now() moves with game time), as the bench does.
+- `catchup` runs `CatchUp.run` itself: no virtual clock (the game clock does that job), the
+  bus quiet, toasts and sounds off, 50 ms slices with a yield between them. Measured
+  2026-10-08: 24 h in 23.9 s.
+- `time.mjs` and the `ui` / `muted` modes put a virtual wall clock in place (Date.now() moves
+  with game time), as the bench does.
 
 ## Drawing and drag benches
 
