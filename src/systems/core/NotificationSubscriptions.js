@@ -1,4 +1,4 @@
-import { EventBus } from './EventBus.js';
+import { EventBus, UI_LISTENER } from './EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import * as NotificationSystem from './NotificationSystem.js';
@@ -8,10 +8,12 @@ import { ENGINE_EVENTS } from './engineEvents.js';
 // COPY, so a cached one goes stale immediately. Handlers below re-fetch.
 
 // === Event Subscriptions for Auto-Notifications ===
+// Toasts are what the player sees, so they are tagged `UI_LISTENER`: a catch-up's quiet bus skips
+// them and its summary reports instead.
 
 EventBus.subscribe(ENGINE_EVENTS.HERO_RECRUITED, ({ name }) => {
     NotificationSystem.success(`${name} joined the guild!`, { category: 'hero' });
-});
+}, UI_LISTENER);
 
 EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, heroName, skillId, skillName, newLevel, oldLevel, startLevel: pStartLevel }) => {
     const key = `levelup_${heroId}_${skillId}`;
@@ -26,7 +28,7 @@ EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, heroName, skillId, ski
         aggregationKey: key,
         meta: { startLevel }
     });
-});
+}, UI_LISTENER);
 
 // 1. Loot Gain (Inventory Updates)
 EventBus.subscribe(ENGINE_EVENTS.INVENTORY_UPDATED, (data) => {
@@ -49,7 +51,7 @@ EventBus.subscribe(ENGINE_EVENTS.INVENTORY_UPDATED, (data) => {
             removed: data.removed || 0
         });
     }
-});
+}, UI_LISTENER);
 
 // --- PERFORMANCE OPTIMIZED HEARTBEAT (10s) ---
 let heartbeatIntervalId = null;
@@ -91,5 +93,5 @@ export function checkHeartbeat() {
 }
 
 // Decoupled triggers for heartbeat checks to prevent circular imports
-EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, () => checkHeartbeat());
-EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_DISMISSED, () => checkHeartbeat());
+EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, () => checkHeartbeat(), UI_LISTENER);
+EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_DISMISSED, () => checkHeartbeat(), UI_LISTENER);

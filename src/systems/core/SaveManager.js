@@ -23,6 +23,17 @@ export const SaveManager = {
     currentSlot: null, // Track which slot is active (0, 1, or 2)
     _beforeUnloadBound: false, // Track if beforeunload listener is registered
     _settingsUnsubscribe: null,
+    /** While true (a catch-up), nothing is written: the slot keeps the save it had. */
+    savingSuspended: false,
+
+    /** Refuse every save (autosave, closing the window, a button) until `resumeSaving`. */
+    suspendSaving() {
+        this.savingSuspended = true;
+    },
+
+    resumeSaving() {
+        this.savingSuspended = false;
+    },
 
     // Proxy SlotHelper methods for backward compatibility
     getSlotKey: SlotHelper.getSlotKey,
@@ -110,7 +121,7 @@ export const SaveManager = {
             return false;
         }
 
-        if (!GameState.getIsInitialized() || this.isResetting) {
+        if (!GameState.getIsInitialized() || this.isResetting || this.savingSuspended) {
             return false;
         }
 

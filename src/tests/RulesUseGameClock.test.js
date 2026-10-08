@@ -9,6 +9,7 @@ import { sourceCode } from './fixtures/sourceScan.js';
  */
 const ALLOWED = {
     'systems/core/GameClock.js': [1, 'the game clock itself: live, it is the wall clock'],
+    'systems/core/CatchUp.js': [1, 'the real time now, to measure how long the game was away'],
     'systems/core/SaveManager.js': [1, 'an imported save without a stamp is stamped now'],
     'systems/core/TimeBankManager.js': [1, 'the retiring Time Bank'],
     'systems/core/TimeManager.js': [1, 'when the player paused'],

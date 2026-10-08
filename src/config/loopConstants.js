@@ -28,6 +28,27 @@ export const TICK_INTERVAL_MS = 100;
 export const MAX_TICK_DELTA_MS = 1000;
 
 /**
+ * Catching up on time the game was not running (`CatchUp.js`): a closed game's time away on load,
+ * and a gap the live loop could not deliver (a sleeping PC, a background browser tab).
+ */
+export const CATCH_UP = Object.freeze({
+    /** The most time away that is played; anything beyond is dropped. */
+    CAP_MS: 24 * 60 * 60 * 1000,
+    /**
+     * One step of the whole engine. The largest safe step is the live tick's own ceiling: a work
+     * cycle completes at most once a tick and is floored at 1000 ms.
+     */
+    STEP_MS: MAX_TICK_DELTA_MS,
+    /** Steps run in slices of about this much work, yielding between them so the page can draw. */
+    SLICE_MS: 50,
+    /**
+     * A gap the live loop missed of at least this much is caught up with the loading bar and the
+     * summary; a shorter one (a background tab woken once a minute) is played quietly.
+     */
+    SHOW_GAP_MS: 2 * 60 * 1000
+});
+
+/**
  * Consume Threshold — the fraction of max HP/Energy below which a hero
  * reaches for supplies on their own (the 25% rule).
  *

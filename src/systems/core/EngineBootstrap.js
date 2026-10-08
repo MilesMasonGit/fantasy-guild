@@ -3,6 +3,8 @@ import { EventBus } from './EventBus.js';
 import { GameLoop } from './GameLoop.js';
 import { TimeManager } from './TimeManager.js';
 import { TimeBankManager } from './TimeBankManager.js';
+import * as GameClock from './GameClock.js';
+import * as CatchUp from './CatchUp.js';
 import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { SaveManager } from './SaveManager.js';
 import { GameState } from '../../state/GameState.js';
@@ -119,7 +121,8 @@ export const EngineBootstrap = {
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,
-            GameLoop
+            GameLoop,
+            CatchUp
         };
     },
 
@@ -210,7 +213,7 @@ export const EngineBootstrap = {
 
         // 45: the time bank, between the board and the quest manager.
         GameLoop.onTick('time_bank', (delta) => {
-            if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
+            if (GameState.getIsInitialized() && !GameClock.isCatchingUp()) TimeBankManager.tick(delta);
         }, 45);
 
         // 50: bounty quests. Must run AFTER `board_runner` (40) — see there.

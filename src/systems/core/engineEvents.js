@@ -103,6 +103,23 @@ export const ENGINE_EVENTS = Object.freeze({
     /** Payload: `{ bankedMs, isSpending, multiplier }`. */
     TIME_BANK_UPDATED: 'time_bank_updated',
 
+    /**
+     * A catch-up began playing time the game was not running. Payload: `{ awayMs, playMs, show }`;
+     * `show` is true for a gap long enough for the loading bar and the summary. ⚠️ Delivered to UI
+     * listeners even though the bus is quiet while a catch-up runs.
+     */
+    CATCH_UP_STARTED: 'catch_up_started',
+    /**
+     * Between a catch-up's slices. Payload: `{ fraction, playedMs, targetMs, show }`. ⚠️ Delivered
+     * to UI listeners even though the bus is quiet while a catch-up runs.
+     */
+    CATCH_UP_PROGRESS: 'catch_up_progress',
+    /**
+     * A catch-up finished. Payload: the result, `{ awayMs, simulatedMs, droppedMs, steps, wallMs,
+     * show, summary }` (`CatchUp.js` describes the summary).
+     */
+    CATCH_UP_FINISHED: 'catch_up_finished',
+
     /** Payload: the notification object. */
     NOTIFICATION_ADDED: 'notification_added',
     /** Payload: `{ id }`. */
@@ -139,6 +156,12 @@ export const ENGINE_EVENTS = Object.freeze({
     /** Shared engine/UI channel: play a sound. Payload: `{ clip, options? }`. */
     AUDIO_PLAY: 'audio:play',
 });
+
+/**
+ * The events a quiet bus (a catch-up) still delivers to UI listeners: the catch-up's own start and
+ * progress, for the loading bar.
+ */
+export const HEARD_WHILE_QUIET = Object.freeze([ENGINE_EVENTS.CATCH_UP_STARTED, ENGINE_EVENTS.CATCH_UP_PROGRESS]);
 
 export const UI_EVENTS = Object.freeze({
     /** ⭐ UI → engine notice: a save slot was chosen. Payload: `{ index, isNewGame }`. The engine boots on it. */
@@ -232,4 +255,7 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.STATUS_DOT_TICK]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.STATUS_PURGED]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
+    [ENGINE_EVENTS.CATCH_UP_STARTED]: 'the catch-up loading bar will listen',
+    [ENGINE_EVENTS.CATCH_UP_PROGRESS]: 'the catch-up loading bar will listen',
+    [ENGINE_EVENTS.CATCH_UP_FINISHED]: 'the "While you were away" summary will listen',
 });

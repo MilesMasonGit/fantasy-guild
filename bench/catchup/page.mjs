@@ -9,8 +9,11 @@
 //   ui     every listener the page has (the UI's included);
 //   muted  the bus quiet (`EventBus.setQuiet`): every listener tagged `UI_LISTENER` is skipped,
 //          the engine's own still run.
+//   catchup  the game's own catch-up (`CatchUp.run`): quiet bus, game clock, no toasts or sounds,
+//          50 ms slices with a yield between them. What a player waits for; no virtual clock.
 //
 //   node bench/catchup/page.mjs                       1 game-hour at 1000 ms, ui/muted × 3
+//   node bench/catchup/page.mjs --hours=24 --modes=catchup,catchup --no-build
 //   node bench/catchup/page.mjs --hours=24 --modes=muted,ui --no-build
 //   node bench/catchup/page.mjs --step=100 --hours=1
 //
@@ -49,6 +52,18 @@ const inPage = (mode) => `(() => {
     return { mode: ${JSON.stringify(mode)}, steps, seconds: ms / 1000, msPerStep: ms / steps, tokens, listeners };
 })()`;
 
+const inPageCatchUp = () => `(async () => {
+    window.__perf.stop();
+    const g = window.__perf.game;
+    g.GameLoop.stop();
+    let listeners = 0;
+    for (const set of g.EventBus.engineSubscribers.values()) listeners += set.size;
+    const tokens = g.BoardState.tokens().length;
+    const now = Date.now();
+    const r = await g.CatchUp.run({ savedAt: now - ${hours} * 3600000, now, save: false });
+    return { mode: 'catchup', steps: r.steps, seconds: r.wallMs / 1000, msPerStep: r.wallMs / r.steps, tokens, listeners };
+})()`;
+
 let server;
 let chrome;
 let code = 0;
@@ -60,8 +75,8 @@ try {
     for (const mode of modes) {
         const page = await openBoard(chrome, sceneUrl(server.url, SCENES.S2), { stress: 'realistic' });
         await sleep(20_000);   // the draw bench's settle: heroes walk to their work
-        const r = await page.evaluate(inPage(mode), { timeoutMs: 900_000 });
-        console.log(`  ${r.mode.padEnd(5)}  ${r.seconds.toFixed(2).padStart(7)} s  ${r.msPerStep.toFixed(3)} ms/step  ${r.steps} steps  ${r.tokens} Tokens  ${r.listeners} listeners`);
+        const r = await page.evaluate(mode === 'catchup' ? inPageCatchUp() : inPage(mode), { timeoutMs: 900_000 });
+        console.log(`  ${r.mode.padEnd(7)}  ${r.seconds.toFixed(2).padStart(7)} s  ${r.msPerStep.toFixed(3)} ms/step  ${r.steps} steps  ${r.tokens} Tokens  ${r.listeners} listeners`);
         await page.close();
     }
 } catch (err) {
