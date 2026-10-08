@@ -12,6 +12,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import './fixtures/testTokens.js';
@@ -19,7 +20,8 @@ import './fixtures/testTokens.js';
 // a single tick used to carry the whole gap since the last one, so a sleeping
 // laptop added its entire sleep to `meta.totalPlaytime` and `time.gameTimeMs`
 // while producing nothing. The delta is now clamped, and the remainder is
-// routed to the Time Bank rather than discarded.
+// handed to the catch-up (`time_overflow`) rather than discarded; the catch-up
+// itself is `CatchUpOnLoad.test.js`.
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(),
@@ -301,40 +303,43 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
     // Where the excess goes
     // ------------------------------------------------------------------
 
-    describe('routing the excess to the Time Bank', () => {
+    describe('handing the excess to the catch-up', () => {
+        let handed;
+        let off;
+
         beforeEach(() => {
-            TimeBankManager.init();     // idempotent; wires the subscription
+            TimeBankManager.init();     // idempotent: it no longer listens for the excess
             GameLoop.isRunning = true;
+            handed = [];
+            off = EventBus.subscribe(ENGINE_EVENTS.TIME_OVERFLOW, (p) => handed.push(p));
         });
 
-        it('banks the time the clamp refused to deliver', () => {
+        afterEach(() => off());
+
+        it('hands over the time the clamp refused to deliver, with the tick delta', () => {
             advancePerf(EIGHT_HOURS_MS);
             GameLoop.tick();
-
-            expect(TimeBankManager.getBankedMs())
-                .toBe(EIGHT_HOURS_MS - MAX_TICK_DELTA_MS);
+            expect(handed).toEqual([{ overflowMs: EIGHT_HOURS_MS - MAX_TICK_DELTA_MS, deltaMs: MAX_TICK_DELTA_MS }]);
         });
 
-        it('banks nothing on a normal tick', () => {
+        it('hands over nothing on a normal tick', () => {
             advancePerf(100);
             GameLoop.tick();
-            expect(TimeBankManager.getBankedMs()).toBe(0);
+            expect(handed).toEqual([]);
         });
 
-        it('still honours the 24-hour bank cap', () => {
+        it('does not hand the same time over twice on the following tick', () => {
+            advancePerf(EIGHT_HOURS_MS);
+            GameLoop.tick();
+            advancePerf(100);
+            GameLoop.tick();
+            expect(handed).toHaveLength(1);
+        });
+
+        it('banks nothing: the Time Bank no longer takes the excess', () => {
             advancePerf(TIME_BANK.MAX_MS * 3);
             GameLoop.tick();
-            expect(TimeBankManager.getBankedMs()).toBe(TIME_BANK.MAX_MS);
-        });
-
-        it('does not double-bank on the following tick', () => {
-            advancePerf(EIGHT_HOURS_MS);
-            GameLoop.tick();
-            const afterFirst = TimeBankManager.getBankedMs();
-
-            advancePerf(100);
-            GameLoop.tick();
-            expect(TimeBankManager.getBankedMs()).toBe(afterFirst);
+            expect(TimeBankManager.getBankedMs()).toBe(0);
         });
     });
 });

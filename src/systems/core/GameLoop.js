@@ -62,12 +62,14 @@ class GameLoopClass {
 
         if (TimeManager.getIsPaused()) return;
 
-        // Time the clamp refused to deliver goes to the Time Bank rather than being
+        // Time the clamp refused to deliver is caught up (`CatchUp`) rather than
         // discarded. Published, not called, so the clock keeps no dependency on the
-        // bank. Fires only after a real gap (a sleep, a suspend, a throttled timer).
+        // catch-up. Fires only after a real gap (a sleep, a suspend, a throttled timer).
         const overflow = TimeManager.consumeOverflow();
         if (overflow > 0) {
-            EventBus.publish(ENGINE_EVENTS.TIME_OVERFLOW, { overflowMs: overflow });
+            EventBus.publish(ENGINE_EVENTS.TIME_OVERFLOW, { overflowMs: overflow, deltaMs: delta });
+            // A long gap pauses the loop to catch up, and that catch-up plays this tick's time too.
+            if (!this.isRunning) return;
         }
 
         this.runHandlers(delta);

@@ -25,6 +25,8 @@ export const SaveManager = {
     _settingsUnsubscribe: null,
     /** While true (a catch-up), nothing is written: the slot keeps the save it had. */
     savingSuspended: false,
+    /** When the loaded save was written (epoch ms): the catch-up on load plays from here. */
+    loadedSavedAt: null,
 
     /** Refuse every save (autosave, closing the window, a button) until `resumeSaving`. */
     suspendSaving() {
@@ -248,11 +250,11 @@ export const SaveManager = {
 
             await GameState.initFromSave(state);
             this.currentSlot = slotIndex;
+            this.loadedSavedAt = Number(data.savedAt) || null;
             localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();
 
-            // savedAt is when this save was written — the Time Bank
-            // uses it to accrue closed-only offline time on load.
+            // savedAt is when this save was written: the catch-up on load plays from it.
             EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: slotIndex, savedAt: data.savedAt });
             return true;
         } catch (err) {
@@ -277,6 +279,7 @@ export const SaveManager = {
         // Initialize fresh state
         GameState.initNew();
         this.currentSlot = slotIndex;
+        this.loadedSavedAt = null;
         localStorage.setItem(LAST_SLOT_KEY, slotIndex);
 
         // Save immediately to claim the slot

@@ -46,7 +46,8 @@ export const ENGINE_EVENTS = Object.freeze({
      * or the dev time-skip ran. Payload: `{ reason }` — `'new_game'`,
      * `'load'`, `'dev_time_skip'` or `'dev_stress'`. A surface that reads
      * state no specific event names listens to this instead of
-     * `state_changed`.
+     * `state_changed`. Also `'catch_up'`: time the loop could not deliver was
+     * caught up with the UI's listeners quiet.
      */
     GAME_RESET: 'game_reset',
 
@@ -98,7 +99,11 @@ export const ENGINE_EVENTS = Object.freeze({
     /** Payload: `{ instanceId, typeId, addedCharges, currentCharges }`. */
     TOKEN_RESTOCKED: 'token_restocked',
 
-    /** The loop could not keep up and dropped time. Payload: `{ overflowMs }`. */
+    /**
+     * The loop could not deliver all the time since its last tick (a sleep, a throttled
+     * background tab); `CatchUp` plays it. Payload: `{ overflowMs, deltaMs }` (`deltaMs`: what
+     * the tick itself delivers).
+     */
     TIME_OVERFLOW: 'time_overflow',
     /** Payload: `{ bankedMs, isSpending, multiplier }`. */
     TIME_BANK_UPDATED: 'time_bank_updated',

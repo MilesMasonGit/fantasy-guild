@@ -192,10 +192,16 @@ gate has two parts:
    same 1000 ms steps do through plain `GameLoop.runHandlers`: same
    fingerprint, random draws included. This proves the catch-up mode itself
    (muted UI, game clock, slices, save suspended) changes nothing.
+   *Built (O2.5):* the fingerprint leaves the wall-clock time out of ids
+   (`tok_<ms>_…`, `sprite_<ms>_<n>`): S8's virtual wall clock stands still as
+   the real one nearly does, so its ids differ from S8L's by design.
 2. **Fidelity (tolerance).** 1000 ms steps against 100 ms ticks, S2, one
    game-hour: Bank items, hero XP, cycles and depletions within ±1 %
    (measured with the carry: ≤ 0.1 %; without it the check fails at −4.5 %,
-   which is the neutered guard).
+   which is the neutered guard). *Built (O2.5):* depletions are ~6 a
+   game-hour on S2, too few for a percentage, so each count may also be off by
+   one. Measured after a save and load: 0.00 % on all four; without the carry
+   −4.59 % Bank items.
 
 ### The game clock
 
@@ -215,16 +221,24 @@ settles ticket T-085, "loot timing uses the wall clock".)
 ### What a catch-up skips
 
 - **Drawing**: nothing redraws, because the UI's listeners are muted and
-  O3's catch-up screen covers the mat; one `GAME_RESET` at the end redraws
-  everything (the event `DevTools.advanceTime` already uses).
+  O3's catch-up screen covers the mat. *Built (O2.6):* one `GAME_RESET` is
+  not enough: the UI that reads through `useGameState` hears only the events
+  it names, so the end announces what a load does (`GAME_RESET`, then
+  `state_changed`, `heroes_updated`, `inventory_updated`, once each), and a
+  promotion offer made during the catch-up is re-read on `GAME_RESET`.
 - **UI events**: muted at the bus by **listener tag**, not by event name
   (an engine listener on a "UI-looking" event would be lost). The page has
   ~350 listeners against the engine's 66; muting is the 2.0–2.2× above (M,
   estimate). `PROGRESS` events need not be published at all (2.8 a step,
   no engine listener).
-- **Sounds**: `AudioSystem` silent.
+- **Sounds**: `AudioSystem` silent. *Built:* silenced after a sound's
+  variant is picked, not before: the pick draws from the game's shared
+  random stream, and the identity gate needs the catch-up to draw exactly as
+  play at volume 0 does.
 - **Notifications and toasts**: `NotificationSystem` stands down (S2 makes
   ~2,200 notification updates a game-hour, M); the summary collects instead.
+  *Built:* the toast subscriptions (`NotificationSubscriptions.js`) are tagged
+  UI as well, so the bus skips them.
 - **The summary's counts** come from engine events while it runs: items
   gained and spent (`inventory_updated`'s `added` / `removed`, plus a Bank
   diff before and after, since two Bank paths publish no amounts), level-ups
@@ -274,7 +288,11 @@ frame (minimised does not throttle, M). In a background browser tab it
 arrives every tick (~10 ms) and, after 5 minutes, ~59 s a minute (M). So O4
 needs a threshold: a gap of 2 minutes or more pauses the loop and runs the
 catch-up with the bar and the summary; a smaller gap is played silently as
-extra 1000 ms steps inside the tick (owner question 2).
+extra 1000 ms steps inside the tick (owner question 2). *Built in O2.6, not
+O4* (director, 2026-10-08): `CatchUp` listens for `TIME_OVERFLOW`
+(`CATCH_UP.SHOW_GAP_MS`); a shorter gap runs through the same `CatchUp.run` in
+one slice, quiet, before the tick's own step; less than a step waits for the
+next gap. The Time Bank no longer banks either gap.
 
 ### Slices for O2
 

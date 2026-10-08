@@ -1,7 +1,7 @@
-// Time Bank Manager: time spent away is banked (capped) and later played out by
-// accelerating the LIVE engine via TimeManager's time-scale, so there is no
-// parallel simulation to keep in sync. See loopConstants.TIME_BANK for the cap,
-// presets and the drain model. Registered on the game loop by EngineBootstrap.
+// Time Bank Manager: banked time played out by accelerating the LIVE engine via
+// TimeManager's time-scale. ⚠️ Nothing banks any more: a closed game's time away
+// and the loop's overflow are caught up (`CatchUp`). Kept until it is removed
+// with its widget, presets and save field. See loopConstants.TIME_BANK.
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from './EventBus.js';
@@ -26,14 +26,8 @@ export const TimeBankManager = {
         if (this.initialized) return;
         this.initialized = true;
 
-        // Closed-only accrual: when a save loads, bank the time since it was
-        // written (SaveManager stamps `savedAt` on the save and forwards it on
-        // the game_loaded event). A brand-new game emits no meaningful gap.
-        EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, ({ savedAt }) => this.accrueOffline(savedAt));
-
-        // Lid-shut accrual: time the tick clamp refused to deliver, banked here
-        // exactly as a closed game's gap is.
-        EventBus.subscribe(ENGINE_EVENTS.TIME_OVERFLOW, ({ overflowMs }) => this.accrue(overflowMs));
+        // ⚠️ No accrual on `game_loaded` or `time_overflow`: that time is caught up,
+        // and banking it as well would play it twice.
 
         logger.info('TimeBankManager', 'Time bank initialized');
     },

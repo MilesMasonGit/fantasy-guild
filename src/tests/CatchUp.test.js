@@ -153,7 +153,7 @@ describe('how much it plays', () => {
 });
 
 describe('what it keeps quiet', () => {
-    it('UI listeners hear nothing while it runs and one GAME_RESET after', async () => {
+    it('UI listeners hear nothing while it runs and one GAME_RESET after (with the broad updates, once each)', async () => {
         buildBoard();
         const ui = [];
         const engine = [];
@@ -170,7 +170,8 @@ describe('what it keeps quiet', () => {
             offs.forEach(off => off());
         }
         expect(engine.length).toBeGreaterThan(20);             // the board really worked
-        expect(ui).toEqual([ENGINE_EVENTS.CATCH_UP_FINISHED, ENGINE_EVENTS.GAME_RESET]);
+        expect(ui).toEqual([ENGINE_EVENTS.CATCH_UP_FINISHED, ENGINE_EVENTS.GAME_RESET,
+            ENGINE_EVENTS.STATE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.INVENTORY_UPDATED]);
         expect(EventBus.isQuiet()).toBe(false);
     }, 30_000);
 

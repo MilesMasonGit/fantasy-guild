@@ -321,6 +321,10 @@ export const useUIModals = (engine) => {
             // standing, so this never re-asks.
             engine.EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
                 setPromotionOffer(standingPromotionOffer(engine));
+            }, UI_LISTENER),
+            // Likewise an offer made while a catch-up played with this listener quiet.
+            engine.EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, () => {
+                setPromotionOffer((current) => current || standingPromotionOffer(engine));
             }, UI_LISTENER)
         ];
 

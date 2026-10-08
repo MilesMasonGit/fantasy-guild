@@ -134,7 +134,8 @@ export const EngineBootstrap = {
         
         // 1. System Subscriptions
         LootSystem.init();
-        TimeBankManager.init();     // offline time bank + fast-forward
+        TimeBankManager.init();     // the retiring Time Bank's fast-forward
+        CatchUp.init();             // gaps the live loop could not deliver
         GuildUpgradeManager.init(); // Guild Hall upgrade tree
 
         // Unified status effect engine (buffs/debuffs on the 5s global clock)
@@ -237,6 +238,22 @@ export const EngineBootstrap = {
         }, 80);
     },
 
+    /**
+     * Play the time the game was closed (`CatchUp.run`, up to 24 h), then save once. A failure is
+     * reported and the game goes on from where it is; the slot still holds the save it loaded.
+     * @returns {Promise<object|null>} the catch-up's result, or null
+     */
+    async catchUpOnLoad() {
+        const savedAt = SaveManager.loadedSavedAt;
+        if (!savedAt) return null;
+        try {
+            return await CatchUp.run({ savedAt, reset: false });
+        } catch (err) {
+            console.error('[Engine] Catching up the time away failed', err);
+            return null;
+        }
+    },
+
     /** Create the default game data for a new game. */
     createDefaultGameData() {
         logger.debug('Engine', 'Creating default game data...');
@@ -275,9 +292,12 @@ export const EngineBootstrap = {
     },
 
     /**
-     * Finalize game preparation once a slot is selected
+     * Finalize game preparation once a slot is selected. A loaded save first catches up the time
+     * since it was written, before the loop starts.
+     *
+     * ⚠️ Async only for a load: a new game runs to the end synchronously.
      */
-    onSlotSelected(slotIndex, isNewGame) {
+    async onSlotSelected(slotIndex, isNewGame) {
         logger.info('Engine', `Slot ${slotIndex + 1} finalized (New: ${isNewGame})`);
 
         // 1. Critical System Startups
@@ -293,6 +313,8 @@ export const EngineBootstrap = {
             // items existed, so a game that died before the next autosave loaded
             // as an empty table with no Guild Hall.
             SaveManager.save(false);
+        } else {
+            await this.catchUpOnLoad();
         }
 
         // 3. State Sync

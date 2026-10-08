@@ -37,10 +37,56 @@ import { logger } from '../../utils/Logger.js';
  */
 
 let running = false;
+let last = null;
+let initialized = false;
+/** Overflow the live loop handed over that is still less than one step. */
+let pendingMs = 0;
 
 /** Whether a catch-up is playing right now. */
 export function isRunning() {
     return running;
+}
+
+/** The last catch-up that played anything (its result, summary included), or null. */
+export function lastResult() {
+    return last;
+}
+
+/**
+ * Time the live loop could not deliver (`TIME_OVERFLOW`: a sleeping PC, a stalled frame, a
+ * background browser tab woken once a minute) is caught up here, through `run` like a load.
+ * A gap of `CATCH_UP.SHOW_GAP_MS` or more pauses the loop and plays with the loading bar and the
+ * summary (`show`); a shorter one plays at once, inside the tick that found it, before that tick's
+ * own step; less than a step waits for the next overflow.
+ */
+function onOverflow({ overflowMs, deltaMs = 0 } = {}) {
+    if (running || !(overflowMs > 0)) return;
+    pendingMs += overflowMs;
+    const now = Date.now();
+    if (pendingMs >= CATCH_UP.SHOW_GAP_MS) {
+        const savedAt = now - deltaMs - pendingMs;
+        pendingMs = 0;
+        // Stopped before the catch-up starts, so the tick that found the gap does not also run its
+        // own step: the catch-up plays that second too, up to the real time it finishes at.
+        GameLoop.stop();
+        run({ savedAt })
+            .catch(err => logger.error('CatchUp', `catching up a ${Math.round((now - savedAt) / 1000)} s gap failed`, err))
+            .finally(() => { if (!GameLoop.getIsRunning()) GameLoop.start(); });
+        return;
+    }
+    if (pendingMs < CATCH_UP.STEP_MS) return;
+    const play = pendingMs - (pendingMs % CATCH_UP.STEP_MS);
+    const start = now - deltaMs - pendingMs;
+    pendingMs -= play;
+    // One slice, so it runs to the end synchronously: the tick carries on with its own step after.
+    run({ savedAt: start, now: start + play, sliceMs: Infinity, save: false });
+}
+
+/** Catch up the gaps the live loop reports. Idempotent. */
+export function init() {
+    if (initialized) return;
+    initialized = true;
+    EventBus.subscribe(ENGINE_EVENTS.TIME_OVERFLOW, onOverflow);
 }
 
 /**
@@ -154,7 +200,8 @@ function enterQuiet(startMs) {
  * @param {(fraction: number, progress: {playedMs: number, targetMs: number}) => void} [options.onProgress]
  *        called with 0 before the first slice, between slices, and with 1 at the end
  * @param {boolean} [options.save]   save once at the end (the bench passes false)
- * @param {boolean} [options.reset]  publish one `GAME_RESET` at the end, for everything muted
+ * @param {boolean} [options.reset]  announce at the end what a load does (`GAME_RESET`, then the
+ *        broad updates), once, for everything that was quiet
  * @param {() => Promise<void>} [options.yieldFn]
  * @returns {Promise<{awayMs: number, simulatedMs: number, droppedMs: number, steps: number,
  *          wallMs: number, show: boolean, summary: object|null}>}
@@ -189,7 +236,7 @@ export async function run({
     let played = 0;
     let steps = 0;
     let target = Math.min(startAway, capMs);
-    let away = startAway;
+    let away;
     const progress = (fraction) => {
         const payload = { fraction, playedMs: played, targetMs: target };
         onProgress?.(fraction, payload);
@@ -236,9 +283,17 @@ export async function run({
     progress(1);
     if (save) SaveManager.save(false);
     result.wallMs = performance.now() - wallStart;
+    last = result;
     logger.info('CatchUp', `Played ${Math.round(played / 1000)} s of game in ${Math.round(result.wallMs)} ms`
-        + `${result.droppedMs > 0 ? `, dropped ${Math.round(result.droppedMs / 1000)} s past the cap` : ''}`);
+        + `${result.droppedMs > 0 ? `, dropped ${Math.round(result.droppedMs / 1000)} s past the cap` : ''}`,
+    result.summary);
     EventBus.publish(ENGINE_EVENTS.CATCH_UP_FINISHED, result);
-    if (reset) EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'catch_up' });
+    if (reset) {
+        // What a load announces once it has booted: the UI heard nothing while this played.
+        EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'catch_up' });
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
+        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
+    }
     return result;
 }

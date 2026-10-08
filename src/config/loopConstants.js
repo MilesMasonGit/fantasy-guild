@@ -8,7 +8,7 @@ export const TICK_INTERVAL_MS = 100;
 
 /**
  * Upper bound on the game-time a SINGLE tick may advance. Read by
- * `TimeManager.update()`; anything past it is routed to the Time Bank rather
+ * `TimeManager.update()`; anything past it is caught up (`CatchUp`) rather
  * than discarded.
  *
  * **Why 1000 ms — it is not a new number.** Two places already fix it:
