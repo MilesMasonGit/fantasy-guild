@@ -70,18 +70,18 @@ describe('⭐ the Hall tooltip (FB-52, T-099)', () => {
         expect(tip).not.toBeNull();
         expect(tip.getAttribute('role')).toBe('tooltip');
         expect(tip.textContent).toContain('Tooltip Hall');
-        expect(tip.textContent).toContain('Passive Production every 5 min (next in 5 min):');
+        expect(tip.textContent).toContain('Passive Production · next in 5:00');
         expect(tip.textContent).toContain('1 Tooltip Seed');
         expect(tip.textContent.toLowerCase()).not.toContain('trickle');
         // The same wording as the hover lines: nothing re-derived here.
-        expect(livePassiveLines(hall.id)).toEqual(['Passive Production every 5 min (next in 5 min):', '1 Tooltip Seed']);
+        expect(livePassiveLines(hall.id)).toEqual(['Passive Production · next in 5:00', '1 Tooltip Seed']);
     });
 
     it("lists the Wishing Well's Water with the Hall's own lines", () => {
         GameState.state.progress.guildUpgrades.wishing_well = 2;
         const hall = placeAt('fixture_tt_hall', 800, 500);
         expect(livePassiveLines(hall.id)).toEqual([
-            'Passive Production every 5 min (next in 5 min):', '1 Tooltip Seed', '20 Water (Wishing Well)'
+            'Passive Production · next in 5:00', '1 Tooltip Seed', '20 Water (Wishing Well)'
         ]);
     });
 
@@ -97,16 +97,16 @@ describe('⭐ the Hall tooltip (FB-52, T-099)', () => {
     it('⭐ the "next in" ticks live while shown', () => {
         const hall = placeAt('fixture_tt_hall', 800, 500);
         render(React.createElement(PassiveProductionTooltip, { instanceId: hall.id }));
-        expect(tooltip().textContent).toContain('next in 5 min)');
+        expect(tooltip().textContent).toContain('next in 5:00');
 
         // The game runs 3 seconds; the tooltip re-reads on its own clock.
         TimedChanges.tick(3000);
         act(() => { vi.advanceTimersByTime(PASSIVE_TOOLTIP_REFRESH_MS); });
-        expect(tooltip().textContent).toContain('next in 4 min 57 s)');
+        expect(tooltip().textContent).toContain('next in 4:57');
 
         TimedChanges.tick(2000);
         act(() => { vi.advanceTimersByTime(PASSIVE_TOOLTIP_REFRESH_MS); });
-        expect(tooltip().textContent).toContain('next in 4 min 55 s)');
+        expect(tooltip().textContent).toContain('next in 4:55');
     });
 
     it('hides while anything is being dragged, as the flag tooltip does', () => {
@@ -131,7 +131,7 @@ describe('⭐ the Hall tooltip (FB-52, T-099)', () => {
         const anchor = { getBoundingClientRect: () => ({ left: 100, top: 100, right: 200, bottom: 200 }) };
         render(React.createElement(PassiveProductionTooltip, {
             instanceId: 'x',
-            readLines: () => ['Passive Production every 5 min (next in 5 min):', 'a line'],
+            readLines: () => ['Passive Production · next in 5:00', 'a line'],
             anchorOf: () => anchor
         }));
         expect(tooltip().style.left).toBe('100px');
@@ -141,7 +141,7 @@ describe('⭐ the Hall tooltip (FB-52, T-099)', () => {
     it('is as wide as its longest line, one row each, capped to the window (the flag tooltip keeps a fixed 256 px)', () => {
         render(React.createElement(PassiveProductionTooltip, {
             instanceId: 'x',
-            readLines: () => ['Passive Production every 5 min (next in 5 min):', 'a line'],
+            readLines: () => ['Passive Production · next in 5:00', 'a line'],
             anchorOf: () => null
         }));
         const cls = tooltip().className;

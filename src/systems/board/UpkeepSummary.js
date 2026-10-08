@@ -22,11 +22,10 @@ import { isStatementPaid } from './BlockUpkeep.js';
  * per minute. Its clock runs on every Token on the mat regardless of heroes (see
  * `BoardRunner.tick`), so it always counts; an unpaid statement is listed as waiting.
  *
- * Income is Passive Production on live Tokens (`PassiveProduction.linesOf`, the Wishing Well
- * included): `quantity × 60000 / PASSIVE_PRODUCTION_MS`.
- *
- * Runs out in: rough by design, on hand ÷ (cost − that item's income) per minute; net
- * income at or above the cost means it never runs out (`runsOutMs: null`).
+ * Passive Production is never listed: this is what consumes. It only nets against a cost for the
+ * rough "runs out" (`quantity × 60000 / PASSIVE_PRODUCTION_MS` an item, the Wishing Well
+ * included): on hand ÷ (cost − that item's income) per minute; net income at or above the cost
+ * means it never runs out (`runsOutMs: null`).
  *
  * On hand: a spawner pays from the Bank and then from matching loot on the mat, so an item any
  * spawner uses counts both (`have` = `bank` + `onMat`). Statement upkeep is paid from the Bank
@@ -78,8 +77,7 @@ function costedStatements(def) {
  * @returns {{
  *   items: Array<{ itemId, name, perMinute, incomePerMinute, netPerMinute, bank,
  *                  onMat, have, runsOutMs: number|null, consumers: object[], waiting: object[] }>,
- *   idle: Array<{ instanceId, name, state, familyLabel, count, cap }>,
- *   income: Array<{ itemId, name, perMinute, sources: object[] }>
+ *   idle: Array<{ instanceId, name, state, familyLabel, count, cap }>
  * }}
  *   `items` puts anything with a Token waiting first, then the soonest to run out.
  */
@@ -143,10 +141,9 @@ export function computeUpkeepSummary(sources = {}) {
             const q = qty(line?.quantity);
             if (!line?.itemId || !q) continue;
             const perMinute = q * MINUTE / PassiveProduction.PASSIVE_PRODUCTION_MS;
-            if (!incomeByItem.has(line.itemId)) incomeByItem.set(line.itemId, { itemId: line.itemId, perMinute: 0, sources: [] });
+            if (!incomeByItem.has(line.itemId)) incomeByItem.set(line.itemId, { itemId: line.itemId, perMinute: 0 });
             const row = incomeByItem.get(line.itemId);
             row.perMinute += perMinute;
-            row.sources.push({ instanceId: instance.id, name, perMinute });
         }
     }
 
@@ -173,11 +170,7 @@ export function computeUpkeepSummary(sources = {}) {
         || (a.runsOutMs ?? Infinity) - (b.runsOutMs ?? Infinity)
         || a.name.localeCompare(b.name));
 
-    const income = [...incomeByItem.values()]
-        .map(row => ({ ...row, name: src.itemName(row.itemId) }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-    return { items: itemRows, idle, income };
+    return { items: itemRows, idle };
 }
 
 /** A per-minute rate for the panel: `1`, `0.5`, `2.5`, `0.25`. */

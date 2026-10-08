@@ -127,6 +127,12 @@ function foundationLines(instance, def, src) {
     return out;
 }
 
+/** A countdown as the UI writes it: `4:57`, rounded up to the second. */
+export function formatClock(ms) {
+    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
 /** One lap's pay as words: "1 Oak Seed", "10 Water (Wishing Well)". */
 function passivePays(passive, itemName) {
     return (passive?.lines || [])
@@ -146,7 +152,7 @@ function passiveRows(instance, src) {
 }
 
 /**
- * **Passive Production as hover text**: a heading with the shared timer's countdown, then one line
+ * **Passive Production as hover text**: a heading with the shared timer's countdown (`Passive Production · next in 4:57`), then one line
  * per item a lap pays, e.g. "1 Oak Seed", "10 Water (Wishing Well)". Empty for a Token that pays
  * nothing.
  *
@@ -161,7 +167,7 @@ export function passiveHoverLines(instance, src) {
     const pays = passivePays(passive, src.itemName);
     if (!pays.length) return [];
     return [
-        `Passive Production every ${formatDuration(PASSIVE_PRODUCTION_MS)} (next in ${formatDuration(passive.nextInMs)}):`,
+        `Passive Production · next in ${formatClock(passive.nextInMs)}`,
         ...pays
     ];
 }

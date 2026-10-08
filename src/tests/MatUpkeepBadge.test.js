@@ -50,6 +50,7 @@ const tokenDef = (id, name, extra = {}) => ({
 });
 registerTokenTypes({
     fixture_ub_sapling: tokenDef('fixture_ub_sapling', 'Fixture Ub Sapling'),
+    fixture_ub_hall: tokenDef('fixture_ub_hall', 'Fixture Ub Hall', { trickle: [{ itemId: SEED, quantity: 10 }] }),
     /** A seed every 20 s = 3 a minute while spawning. */
     fixture_ub_forest: tokenDef('fixture_ub_forest', 'Fixture Ub Forest', {
         spawner: {
@@ -123,6 +124,19 @@ describe('⭐ MatUpkeepBadge (B2.2, FB-29)', () => {
         expect(badgeText(container)).toBe('Upkeep 7.3/min');
     });
 
+    it('the panel lists only what consumes: a Hall paying the same item adds no income line', () => {
+        InventoryManager.addItem(SEED, 50);
+        placeAt('fixture_ub_hall', 300, 300);
+        placeAt('fixture_ub_forest', 500, 500);
+        const { container } = render(React.createElement(MatUpkeepBadge));
+        fireEvent.mouseEnter(container.querySelector('[data-mat-upkeep-badge]'));
+        const text = popover().textContent;
+        expect(text).toContain('Fixture Badge Seed');
+        expect(text).not.toContain('Passive Production');
+        expect(text).not.toContain('Fixture Ub Hall');
+        expect(text).not.toMatch(/\+\d/);
+    });
+
     it('updates when a spawner is placed or removed', () => {
         InventoryManager.addItem(SEED, 50);
         const { container } = render(React.createElement(MatUpkeepBadge));
@@ -174,10 +188,11 @@ describe('⭐ MatUpkeepBadge (B2.2, FB-29)', () => {
         const panel = tip.querySelector('[data-testid="upkeep-summary"]');
         expect(panel).not.toBeNull();
         expect(panel.className).not.toContain('h-full');
-        expect(tip.textContent).toContain('Ongoing costs');
+        expect(tip.textContent).toContain('Items the mat uses each minute');
+        expect(tip.textContent).not.toContain('Passive Production');
         expect(tip.textContent).toContain('Fixture Badge Seed');
-        expect(tip.textContent).toContain('3 / min');
-        expect(tip.textContent).toContain('Waiting unpaid: Fixture Ub Forest');
+        expect(tip.textContent).toContain('3/min');
+        expect(tip.textContent).toContain('Waiting: Fixture Ub Forest');
     });
 
     it('the popover stays while the pointer is over it, and closes after leaving', () => {

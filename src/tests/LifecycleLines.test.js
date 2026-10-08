@@ -214,12 +214,12 @@ describe('lifecycleLines', () => {
 describe('passiveHoverLines (FB-30, T-099)', () => {
     it('says when the shared timer pays next, then what it pays', () => {
         expect(passiveHoverLines({ id: 'h', typeId: 'hall', clocks: { passiveMs: 100000 } }, src()))
-            .toEqual(['Passive Production every 5 min (next in 3 min 20 s):', '2 Oak Seed']);
+            .toEqual(['Passive Production · next in 3:20', '2 Oak Seed']);
     });
 
     it('starts a fresh clock at the full lap, and names the Wishing Well', () => {
         expect(passiveHoverLines({ id: 'h', typeId: 'hall' }, src({ passive: hallPassive(2) })))
-            .toEqual(['Passive Production every 5 min (next in 5 min):', '2 Oak Seed', '20 Water (Wishing Well)']);
+            .toEqual(['Passive Production · next in 5:00', '2 Oak Seed', '20 Water (Wishing Well)']);
     });
 
     it('is empty for a Token that pays nothing, or no Token', () => {

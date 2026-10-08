@@ -172,13 +172,11 @@ describe('⭐ TL-20: loot on the mat counts toward a spawner upkeep', () => {
 });
 
 describe('Passive Production income', () => {
-    it('shows income per item per minute and nets it against the cost', () => {
+    it('nets income against the cost for runs-out, without listing it', () => {
         placeAt('fixture_us_hall', 300, 300);
         let summary = computeUpkeepSummary();
-        expect(summary.income).toEqual([{
-            itemId: SEED, name: 'Fixture Upkeep Seed', perMinute: 2,
-            sources: [expect.objectContaining({ name: 'Fixture Us Hall', perMinute: 2 })]
-        }]);
+        // Income is never listed: a Hall alone consumes nothing.
+        expect(summary.income).toBeUndefined();
         expect(summary.items).toEqual([]);
 
         // One Forest costs 3 a minute; the Hall pays 2 of it.

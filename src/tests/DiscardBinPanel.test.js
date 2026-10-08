@@ -22,7 +22,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { DiscardBinPanel, BIN_DROP_ID, binAccepts, dropIntoBin, refundText } from '../ui/components/board/DiscardBinPanel.jsx';
-import { MatCapPopover } from '../ui/components/board/MatCapBadge.jsx';
+import { TokenSummaryPanel } from '../ui/components/board/MatCapBadge.jsx';
 import { clearMat } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -239,7 +239,7 @@ describe('⭐ the bin panel (B3.2)', () => {
     });
 });
 
-describe('the mat cap hover explains binned Tokens (B3.2)', () => {
+describe('the Token Summary counts binned Tokens (B3.2)', () => {
     it('summariseMat counts binned Tokens, placed and spawned, not the Hall (T-102)', () => {
         const readers = { nameOf: (id) => id, isExcluded: (t) => t.typeId === 'hall' };
         const s = summariseMat([{ typeId: 'oak' }], {
@@ -250,15 +250,15 @@ describe('the mat cap hover explains binned Tokens (B3.2)', () => {
         expect(summariseMat([], readers).binned.count).toBe(0);
     });
 
-    it('the popover totals mat + bin and adds an "In the bin" line', () => {
+    it('the panel totals mat + bin and adds an In the bin line', () => {
         const summary = {
-            placed: { count: 3, groups: [{ typeId: 'oak', name: 'Oak', count: 3, blocked: 0, off: 0 }] },
-            spawned: { count: 0, groups: [] },
+            total: 3, pinned: [],
+            sections: [{ section: 'general', name: 'General', rows: [{ typeId: 'oak', name: 'Oak', count: 3, working: 0, idle: 3, blocked: 0, off: 0, missing: 0 }] }],
             binned: { count: 2 }
         };
-        render(h(MatCapPopover, { anchor: null, summary, cap: 40 }));
-        const tip = document.body.querySelector('[data-mat-cap-popover]');
-        expect(tip.textContent).toContain('Tokens 5 of 40');
-        expect(tip.querySelector('[data-mat-cap-binned]').textContent).toContain('In the bin 2 (counted');
+        render(h(TokenSummaryPanel, { anchor: null, summary, cap: 40 }));
+        const tip = document.body.querySelector('[data-token-summary]');
+        expect(tip.textContent).toContain('Tokens 5/40');
+        expect(tip.querySelector('[data-token-summary-bin]').textContent).toBe('In the bin ×2');
     });
 });
