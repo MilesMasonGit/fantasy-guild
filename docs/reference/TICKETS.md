@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-119**
+**Next free number: T-120**
 
 ---
 
@@ -82,6 +82,7 @@ here.
 | T-041 | P3 | open | A newly recruited hero's class reads "Adventurer", not "Recruit" (`HeroRehydration.js:50`). | FB §5 |
 | T-042 | P3 | open | Settings toggle "Item Fly Particles" still says "between cards and inventory". | FB §5 |
 | T-043 | P3 | open | Empty-string duplicate React key logged on save load. *Unverified since 2026-09-21.* | FMR |
+| T-119 | P2 | open | **The game will be translated** (owner 2026-10-08). Pick how player-facing text is stored (a strings file per language and a lookup), then new UI keeps its text there; converting existing text waits for after the crunch. Until it exists, keep each new screen's text together, not scattered through logic. | ideas.md |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 

@@ -63,10 +63,10 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
 - **Master allow / disallow all per hero**: most players leave every skill on
   and steer by moving the flag; per-skill controls are only for players who
   want to micromanage (owner). Add one switch per hero to allow or disallow
-  everything. *quick* · ⚠️ brief 30 rebuilds the work rules panel and hasn't
-  run; may be what the top bar's "hero control button" becomes.
+  everything. *quick* · ⚠️ brief 30 is running now; its H3 rebuilds the work rules panel, not
+  reached yet; may be what the top bar's "hero control button" becomes.
 - **Hero flags**: smaller, and fade to half opacity while work is happening on
-  them. *quick* · ⚠️ overlaps brief 30 H4 (the flag), which hasn't run yet.
+  them. *quick* · ⚠️ overlaps brief 30 H4 (the flag); brief 30 is running now, H4 not reached.
 
 ### New features
 
@@ -96,6 +96,10 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
   UI_STYLE.md's "no thick borders, no frames inside frames"; the
   investigation is read-only and could run any time; anything new drawn on
   the mat gets a cost-log line.
+
+- **Modding system**: let players make their own content. *long-term* · would
+  lean on the CMS (and its saving), translation (T-119) and the encyclopedia's
+  "what comes from where" data, so worth knowing early even if built late.
 
 ### Tools and process
 
@@ -149,8 +153,9 @@ the owner agreed all eight belong here (2026-10-08).
 - **Saves before release**: saves live in the desktop app's browser storage,
   and other versions are refused until 1.0. Before outside players: real save
   files and carrying saves across updates. *pre-release*
-- **Leftover rough edges**: the slot screen's sci-fi "SYSTEM BOOT" wording,
-  nine "coming soon" Settings controls, no gameplay hotkeys. *quick*
+- **Leftover rough edges**: the slot screen's sci-fi "SYSTEM BOOT" wording
+  (already T-039), nine "coming soon" Settings controls, no gameplay hotkeys.
+  *quick*
 - **Tokens hardly interact**: pillars 1 and 3 promise a self-feeding ecosystem
   and mechanically different skills; the rules grammar can do far more (16
   verbs, 12 moments, neighbour modifiers) but ships a handful (Coast −5 % work
@@ -210,9 +215,9 @@ the owner agreed all eight belong here (2026-10-08).
 - **CMS saving**: unsynced CMS work lives only in the browser ("Restore from
   Game" rebuilds synced content). Better saving and backups; may become part
   of a **modding system** (owner, 2026-10-08). Pairs with agent authoring.
-- **Translation**: the game **will be translated** (owner, 2026-10-08). Today
-  text is written directly in the code; every new screen adds more to move.
-  Decide how text is stored before the post-crunch UI work, ideally sooner.
+- **Translation**: the game **will be translated** (owner, 2026-10-08). → now
+  ticket **T-119**: pick how text is stored; new UI uses it; converting old
+  text waits for after the crunch.
 
 ### Post-Atlas content
 
