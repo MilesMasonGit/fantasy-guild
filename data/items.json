@@ -26,10 +26,10 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_copper_ore",
-    "valueSource": "token_copper_rubble"
+    "valueSource": "token_copper_ore_vein"
   },
   "item_copper_ingot": {
     "name": "Copper Ingot",
@@ -42,7 +42,7 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": 10,
+    "value": 6,
     "autoSyncId": true,
     "id": "item_copper_ingot",
     "valueSource": "recipe_copper_ingot"
