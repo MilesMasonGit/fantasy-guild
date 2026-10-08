@@ -223,14 +223,14 @@ export function installDragKit() {
         const pts = [c];
         for (let k = 0; k < 8; k++) pts.push({ x: Math.round(c.x + Math.cos(k * Math.PI / 4) * rad * 0.45), y: Math.round(c.y + Math.sin(k * Math.PI / 4) * rad * 0.45) });
         for (const p of pts) {
-            // The game grabs the hovered Token: the one whose centre is nearest the pointer, which
-            // it raises to the front. Where art boxes overlap that can differ from the Token
-            // drawn on top before the pointer arrives, so a point only counts if it is this one's.
-            if (G.Flags.tokenAtPoint(kit.screenToMat(p))?.id !== id) continue;
             const top = document.elementFromPoint(p.x, p.y);
             // `clearOfHeroes`: for kinds testing what happens AFTER the press (the bin), where
-            // a hero standing on the Token is not what is being measured.
+            // a hero standing on the Token is not what is being measured, and the game must
+            // grab THIS Token: the one whose centre is nearest the pointer, which can differ
+            // from the one drawn on top where art boxes overlap. Other kinds keep such presses,
+            // since "pressed near a Token, a different one was grabbed" is what they measure.
             if (clearOfHeroes && top?.closest?.('[data-board-hero]')) continue;
+            if (clearOfHeroes && G.Flags.tokenAtPoint(kit.screenToMat(p))?.id !== id) continue;
             const art = top?.closest?.('[data-token-art]');
             if (!art || art === el) return p;
         }
