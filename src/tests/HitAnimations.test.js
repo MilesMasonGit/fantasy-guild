@@ -17,6 +17,7 @@ import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
+import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenHitArt, COMBAT_ATTACK_EVENT } from '../ui/components/board/TokenHitArt.jsx';
@@ -55,7 +56,7 @@ registerTokenTypes({
     fixture_q4_tree: {
         id: 'fixture_q4_tree', name: 'Fixture Q4 Tree', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 10, sprite: 'skill_nature',
-        config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1, inputs: [], outputs: [] }
+        config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1, inputs: [], outputs: [] }
     },
     fixture_q4_coast: {
         id: 'fixture_q4_coast', name: 'Fixture Q4 Coast', tokenType: 'resource',
@@ -113,7 +114,6 @@ afterEach(() => {
 
 describe('skill → hit animation (FB-10, the owner-approved list)', () => {
     it('maps every approved skill to its own animation', () => {
-        expect(hitAnimationNameFor('logging')).toBe('shake');
         expect(hitAnimationNameFor('mining')).toBe('jitter');
         expect(hitAnimationNameFor('fishing')).toBe('bob');
         expect(hitAnimationNameFor('farming')).toBe('sway');
@@ -121,17 +121,23 @@ describe('skill → hit animation (FB-10, the owner-approved list)', () => {
         expect(hitAnimationNameFor('crafting')).toBe('hop');
         expect(hitAnimationNameFor('cooking')).toBe('pulse');
         expect(hitAnimationNameFor('construction')).toBe('thump');
-        expect(hitAnimationNameFor('explore')).toBe('rustle');
-        // Ten skills, ten different animations.
+        // Every skill on the list has an animation of its own.
         expect(new Set(Object.values(SKILL_HIT)).size).toBe(Object.keys(SKILL_HIT).length);
     });
 
-    it('every combat style is knocked back', () => {
-        for (const s of ['combat', 'melee', 'ranged', 'magic', 'Melee']) {
-            expect(hitAnimationNameFor(s)).toBe('knockback');
-            expect(hitsOnAttack(s)).toBe(true);
+    it('forestry shakes', () => {
+        expect(hitAnimationNameFor('forestry')).toBe('shake');
+        expect(SKILL_HIT.logging).toBeUndefined();
+        expect(SKILL_HIT.explore).toBeUndefined();
+    });
+
+    it('every combat style, stealth included, is knocked back', () => {
+        for (const s of ['combat', ...COMBAT_SKILL_IDS, 'Melee', 'Stealth']) {
+            expect(hitAnimationNameFor(s), s).toBe('knockback');
+            expect(hitsOnAttack(s), s).toBe(true);
         }
-        expect(hitsOnAttack('logging')).toBe(false);
+        expect(COMBAT_SKILL_IDS).toContain('stealth');
+        expect(hitsOnAttack('forestry')).toBe(false);
     });
 
     it('a skill not on the list plays nothing', () => {
@@ -151,7 +157,7 @@ describe('skill → hit animation (FB-10, the owner-approved list)', () => {
     });
 
     it('reads the skill of the work done on the Token', () => {
-        expect(hitSkillOf(getTokenType('fixture_q4_tree'))).toBe('logging');          // gathering
+        expect(hitSkillOf(getTokenType('fixture_q4_tree'))).toBe('forestry');          // gathering
         expect(hitSkillOf(getTokenType('fixture_q4_anvil'))).toBe('smithing');        // station statement
         expect(hitSkillOf(getTokenType('fixture_q4_foundation'))).toBe('construction'); // Foundation
         expect(hitSkillOf(getTokenType('fixture_q4_goblin'))).toBe('combat');         // enemy
@@ -184,14 +190,14 @@ describe('knockback direction (FB-10 combat)', () => {
     });
 
     it('a non-directional animation ignores the direction', () => {
-        const anim = hitAnimationFor('logging');
+        const anim = hitAnimationFor('forestry');
         expect(buildHitKeyframes(anim, { dir: -1 })).toEqual(buildHitKeyframes(anim, { dir: 1 }));
     });
 });
 
 describe('keyframes in a strike loop, and reduced motion', () => {
     it('squeezes the move into the start of the loop and rests until the next strike', () => {
-        const anim = hitAnimationFor('logging');
+        const anim = hitAnimationFor('forestry');
         const k = buildHitKeyframes(anim, { periodMs: HIT_PERIOD_MS });
         const lastMove = k[k.length - 2];
         expect(lastMove.offset).toBeCloseTo(anim.ms / HIT_PERIOD_MS, 5);
@@ -256,7 +262,7 @@ describe('TokenHitArt', () => {
         const anim = stubAnimate();
         try {
             const { rerender, container } = mount(h(TokenHitArt, {
-                instanceId: 't1', skill: 'logging', heroId: 'hero_1', active: true, tokenX: 500
+                instanceId: 't1', skill: 'forestry', heroId: 'hero_1', active: true, tokenX: 500
             }, h('span')));
             expect(anim.calls).toHaveLength(1);
             const loop = anim.calls[0];
@@ -268,7 +274,7 @@ describe('TokenHitArt', () => {
 
             // Stuck (an alert): the hero is not really striking.
             rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null,
-                h(TokenHitArt, { instanceId: 't1', skill: 'logging', heroId: 'hero_1', active: false, tokenX: 500 }, h('span')))));
+                h(TokenHitArt, { instanceId: 't1', skill: 'forestry', heroId: 'hero_1', active: false, tokenX: 500 }, h('span')))));
             expect(loop.cancel).toHaveBeenCalled();
             expect(anim.calls).toHaveLength(1);
         } finally {
@@ -279,7 +285,7 @@ describe('TokenHitArt', () => {
     it('plays nothing with no hero, and nothing for a skill off the list', () => {
         const anim = stubAnimate();
         try {
-            mount(h(TokenHitArt, { instanceId: 't1', skill: 'logging', heroId: null, active: false }, h('span')));
+            mount(h(TokenHitArt, { instanceId: 't1', skill: 'forestry', heroId: null, active: false }, h('span')));
             mount(h(TokenHitArt, { instanceId: 't2', skill: 'commerce', heroId: 'hero_1', active: true }, h('span')));
             expect(anim.calls).toHaveLength(0);
         } finally {

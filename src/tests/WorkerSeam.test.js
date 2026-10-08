@@ -34,18 +34,18 @@ describe('the worker seam answers from flags and claims', () => {
                 tray: [], tokenBank: {}, maps: []
             },
             heroes: [
-                { id: 'hero_1', name: 'Althea', skills: { logging: { level: 5, xp: 0 } }, level: 1 },
-                { id: 'hero_2', name: 'Brom', skills: { logging: { level: 5, xp: 0 } }, level: 1 }
+                { id: 'hero_1', name: 'Althea', skills: { forestry: { level: 5, xp: 0 } }, level: 1 },
+                { id: 'hero_2', name: 'Brom', skills: { forestry: { level: 5, xp: 0 } }, level: 1 }
             ]
         };
         registerTokenTypes({
             fixture_seam_small: {
                 id: 'fixture_seam_small', name: 'Small', size: 1, uses: 10, requiresHero: true,
-                config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [] }
+                config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [] }
             },
             fixture_seam_large: {
                 id: 'fixture_seam_large', name: 'Large', size: 2, uses: 50, requiresHero: true,
-                config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 10000, inputs: [], outputs: [] }
+                config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 10000, inputs: [], outputs: [] }
             }
         });
     });

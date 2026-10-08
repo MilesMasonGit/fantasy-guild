@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs } from '../utils/constants';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
 
@@ -119,6 +119,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
       entityType: f.entityType,
       issueType: 'Data Integrity',
       severity: f.severity === 'warning' ? 'Warning' : 'Critical',
+      details: f.message,
+    });
+  }
+
+  // A skill or job the game does not have (a renamed or dropped one). The game's own rule (`unknownRefRule.js`), so this tab and the boot audit name the same things.
+  for (const f of findUnknownRefs({ tokens: expandedTokens, items, recipes })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Critical',
       details: f.message,
     });
   }

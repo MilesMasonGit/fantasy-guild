@@ -46,6 +46,19 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 const TILE = 24;
 const CYCLE_MS = 20000;
 
+/** A master-class training yard, so the skill gate can be refused on a Token. */
+registerTokenTypes({
+    fixture_promotion_master: {
+        id: 'fixture_promotion_master', name: 'Fixture Chapel', tokenType: 'promotion',
+        rarity: 'rare', theme: 'fixture', uses: 1, sprite: 'skill_leadership',
+        requiresHero: true,
+        statements: [
+            { id: 'stm_fixture_promotes_master', keyword: 'promotes', payload: { jobId: 'paladin' }, chargeDelta: 0 }
+        ],
+        config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
+    }
+});
+
 /** A hero who qualifies for Fighter — every fixture Token's job. */
 function makeQualified(id = 'hero_1') {
     const hero = generateHero({ name: id });
@@ -59,9 +72,13 @@ function makeQualified(id = 'hero_1') {
     return hero;
 }
 
-/** A hero who does not qualify: trained in nothing. */
+/**
+ * A Fighter who does not qualify for the Paladin `fixture_promotion_master`
+ * trains: trained in nothing. A master class, because a basic class has no
+ * skill gate (the Recruit's list shares nothing with it).
+ */
 function makeUnqualified(id = 'hero_low') {
-    const hero = generateHero({ name: id });
+    const hero = generateHero({ name: id, jobId: 'fighter' });
     hero.id = id;
     hero.status = 'idle';
     Object.values(hero.skills).forEach(s => { s.level = 1; });
@@ -193,7 +210,7 @@ describe('Training happens first, and the offer comes after (PR-5)', () => {
 describe('It refuses BEFORE the work, never after (PR-8)', () => {
     it('does not train a hero who fails the skill gate, and says so on the Token', () => {
         const hero = makeUnqualified();
-        const instance = setup(hero);
+        const instance = setup(hero, { typeId: 'fixture_promotion_master' });
 
         const result = BoardPromotion.tickToken(instance, CYCLE_MS, hero.id);
 
@@ -203,7 +220,7 @@ describe('It refuses BEFORE the work, never after (PR-8)', () => {
 
     it('never offers to a hero who cannot take the job', () => {
         const hero = makeUnqualified();
-        setup(hero);
+        setup(hero, { typeId: 'fixture_promotion_master' });
 
         expect(trainToOffer(hero.id)).toHaveLength(0);
     });

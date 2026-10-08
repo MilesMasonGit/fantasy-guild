@@ -13,8 +13,8 @@ import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { tokenStartingUses, getAllTokenTypes } from '../config/registries/tokenRegistry.js';
-import { getJobSkills, STARTING_JOB_ID } from '../config/registries/jobRegistry.js';
-import { FOUNDATION_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { getAllJobIds, getJobSkills, STARTING_JOB_ID } from '../config/registries/jobRegistry.js';
+import { STARTING_SKILL_IDS } from '../config/registries/skillRegistry.js';
 
 /**
  * Phase 6 — the roster, recruitment, and what a Market now costs to run.
@@ -108,13 +108,13 @@ describe('The roster runs to eight (owner, 2026-09-21; D-251 had twelve)', () =>
 });
 
 describe('Recruits are interchangeable', () => {
-    it('every new hero is a Recruit holding the same six skills', () => {
+    it('every new hero is a Recruit holding the same nine Starting skills', () => {
         const candidates = Array.from({ length: 3 }, () => generateHero());
         expect(candidates).toHaveLength(3);
 
         for (const c of candidates) {
             expect(c.jobId).toBe(STARTING_JOB_ID);
-            expect(Object.keys(c.skills).sort()).toEqual([...FOUNDATION_SKILL_IDS].sort());
+            expect(Object.keys(c.skills).sort()).toEqual([...STARTING_SKILL_IDS].sort());
             for (const s of Object.values(c.skills)) expect(s.level).toBe(1);
         }
     });
@@ -141,7 +141,7 @@ describe('A Market demands Commerce (D-259)', () => {
 
     it('refuses a hero without Commerce, however good they are otherwise', () => {
         // The whole point: a Market is not a thing any hero can run.
-        GameState.state.heroes = [makeHero('hero_1', FOUNDATION_SKILL_IDS, 99)];
+        GameState.state.heroes = [makeHero('hero_1', STARTING_SKILL_IDS, 99)];
         const token = place(10, 'fixture_market');
         // A Commerce flag, so the Market is a candidate; the flag skips it as
         // UNSKILLED for hover rather than raising a red mark (Free Playmat
@@ -169,9 +169,7 @@ describe('A Market demands Commerce (D-259)', () => {
     });
 
     it('a Merchant is the only job that brings Commerce', () => {
-        const withCommerce = ['knight', 'warlord', 'zealot', 'paladin', 'druid', 'scout',
-            'merchant', 'assassin', 'conjurer', 'astromancer', 'scientist', 'engineer']
-            .filter(id => getJobSkills(id).includes('commerce'));
+        const withCommerce = getAllJobIds().filter(id => getJobSkills(id).includes('commerce'));
 
         expect(withCommerce).toEqual(['merchant']);
     });

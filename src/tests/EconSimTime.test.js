@@ -30,7 +30,7 @@ const cycledToken = (over = {}) => ({
     uses: 25,
     charges: 500,
     config: {
-        skill: 'logging',
+        skill: 'forestry',
         skillRequired: 1,
         cycleTimeMs: 16000,
         inputs: [],
@@ -63,7 +63,7 @@ describe('EconSim — TIME pass', () => {
             expect(token.kind).toBe('token');
             expect(token.level).toBe(1);             // config.skillRequired
             expect(token.authoredCycleTimeMs).toBe(16000);   // config.cycleTimeMs
-            expect(token.skill).toBe('logging');
+            expect(token.skill).toBe('forestry');
 
             // Same keys, either side.
             expect(Object.keys(token).sort()).toEqual(Object.keys(recipe).sort());

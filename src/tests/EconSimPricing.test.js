@@ -20,7 +20,7 @@ const out = (itemId, over = {}) => ({ itemId, chance: 100, minQty: 1, maxQty: 1,
 
 const token = (id, { level = 1, tempo = 'fast', purpose = 'gph', inputs = [], outputs = [out('item_a')], rarity = 'common', tokenType = 'resource' } = {}) => ({
     id, name: id, rarity, tokenType, uses: 10,
-    config: { skill: 'logging', skillRequired: level, cycleTimeMs: 10000, inputs, outputs },
+    config: { skill: 'forestry', skillRequired: level, cycleTimeMs: 10000, inputs, outputs },
     sim: { tempo, purpose },
 });
 

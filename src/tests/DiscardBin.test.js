@@ -55,14 +55,14 @@ registerTokenTypes({
     fixture_db_forest: {
         id: 'fixture_db_forest', name: 'Fixture Db Forest', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
-        shop: { price: [{ itemId: WOOD, quantity: 11 }, { itemId: STONE, quantity: 3 }], section: 'logging' },
+        shop: { price: [{ itemId: WOOD, quantity: 11 }, { itemId: STONE, quantity: 3 }], section: 'forestry' },
         spawner: { spawns: [{ typeId: 'fixture_db_tree', weight: 1 }], allowance: 2, intervalMs: 5000, upkeep: [] }
     },
     fixture_db_tree: {
         id: 'fixture_db_tree', name: 'Fixture Db Tree', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 3, sprite: 'skill_nature',
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: WOOD, quantity: 1, chance: 100 }]
         }
     },
@@ -132,7 +132,7 @@ beforeEach(() => {
     clearMat();
     GameState.state.inventory.items = {};
     GameState.state.inventory.maxSlots = 50;
-    GameState.state.heroes = [hero('h1', { logging: 50, construction: 5 })];
+    GameState.state.heroes = [hero('h1', { forestry: 50, construction: 5 })];
 });
 
 describe('binning a Token (FB-34)', () => {

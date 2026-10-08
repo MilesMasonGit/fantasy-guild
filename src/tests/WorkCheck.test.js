@@ -66,7 +66,7 @@ beforeEach(() => {
     TileModifiers.clearAll();
     InputAllocator.resetStarvationStats();
     GameState.state.inventory.maxSlots = 50;
-    GameState.state.heroes = [hero('h1', { logging: 50, mining: 50, alchemy: 50, smithing: 50 })];
+    GameState.state.heroes = [hero('h1', { forestry: 50, mining: 50, alchemy: 50, smithing: 50 })];
 });
 
 const CASES = [

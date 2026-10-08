@@ -54,15 +54,15 @@ const readers = {
 
 describe('summariseMat (Token Summary)', () => {
     const layouts = {
-        oak: { section: 'logging', anchor: 'Oak Forest', rank: 0 },
-        tree: { section: 'logging', anchor: 'Oak Forest', rank: 1 },
+        oak: { section: 'forestry', anchor: 'Oak Forest', rank: 0 },
+        tree: { section: 'forestry', anchor: 'Oak Forest', rank: 1 },
         bench: { section: 'crafting', anchor: 'Workbench', rank: 0 },
         vein: { section: 'general', anchor: 'Iron Vein', rank: 0 }
     };
     const withLayout = {
         ...readers,
         layoutOf: (id) => layouts[id],
-        sectionName: (s) => ({ logging: 'Logging', crafting: 'Crafting', general: 'General' }[s]),
+        sectionName: (s) => ({ forestry: 'Forestry', crafting: 'Crafting', general: 'General' }[s]),
         statusOf: (i) => ({ status: i.status || 'idle', missing: !!i.missing })
     };
 
@@ -88,7 +88,7 @@ describe('summariseMat (Token Summary)', () => {
             t('vein'), t('tree'), t('oak'), t('bench'), t('bench', { status: 'blocked', missing: true })
         ], withLayout);
         expect(s.pinned.map(r => r.typeId)).toEqual(['bench']);
-        expect(s.sections.map(x => x.name)).toEqual(['Logging', 'General']);
+        expect(s.sections.map(x => x.name)).toEqual(['Forestry', 'General']);
         expect(s.sections[0].rows.map(r => r.typeId)).toEqual(['oak', 'tree']);
     });
 

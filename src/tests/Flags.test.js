@@ -43,13 +43,13 @@ registerTokenTypes({
         config: { skill: '', skillRequired: 1, cycleTimeMs: 12000, inputs: [], outputs: [] }
     },
     /**
-     * A logging Token that needs coal — stuck for a fixable reason. Coal, not
+     * A forestry Token that needs coal — stuck for a fixable reason. Coal, not
      * wood: the fixture Forests drop wood on the floor, which would feed it.
      */
     ft_hungry: {
         id: 'ft_hungry', name: 'Hungry Mill', uses: 100, requiresHero: true,
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [{ itemId: 'item_coal', quantity: 2 }],
             outputs: [{ itemId: 'item_glowcap', quantity: 1, chance: 100 }]
         }
@@ -81,7 +81,7 @@ function workTileOf(heroId) {
     return row * 6 + col;
 }
 
-function hero(id, skills = { logging: 50 }) {
+function hero(id, skills = { forestry: 50 }) {
     const out = {};
     for (const [s, level] of Object.entries(skills)) out[s] = { level, xp: 0 };
     return { id, name: id, status: 'idle', level: 50, skills: out, hp: { current: 100, max: 100 } };
@@ -147,8 +147,8 @@ describe('the flag radius (FP-23, FP-65)', () => {
 describe('skill (FP-47, FP-60, FP-71)', () => {
     it('skips a blank-skill Token as no_skill and a skill the hero lacks as unskilled', () => {
         const blank = put(15, 'ft_blank');                 // nearest
-        const mine = put(13, 'fixture_producer_alt');      // mining, just as near — h1 holds only logging
-        put(16, 'fixture_producer');                       // logging, further
+        const mine = put(13, 'fixture_producer_alt');      // mining, just as near — h1 holds only forestry
+        put(16, 'fixture_producer');                       // forestry, further
 
         plant('h1', 14);
 
@@ -270,7 +270,7 @@ describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
         const forest = put(14, 'fixture_producer');
         plant('h1', 14);
         run(5000);
-        GameState.state.heroes[0].skills.logging.level = 0;  // now below skillRequired 1
+        GameState.state.heroes[0].skills.forestry.level = 0;  // now below skillRequired 1
         run(300);
 
         expect(workTileOf('h1')).toBeNull();
@@ -347,7 +347,7 @@ describe('dropping a hero plants their flag — a flag has no skill (FP-71)', ()
     it('dropped on an enemy, a hero who can fight fights it (FP-74, Fight allowed by default)', () => {
         // Holds a combat skill: a hero who cannot fight is skipped as unskilled
         // (Free Playmat 1.4c).
-        GameState.state.heroes = [hero('h1', { logging: 50, melee: 30 })];
+        GameState.state.heroes = [hero('h1', { forestry: 50, melee: 30 })];
         put(14, 'fixture_enemy');
         Placement.plantFlagAt('h1', C(14));
         expect(BoardState.flagOf('h1')).toEqual({ ...C(14), plantedAt: expect.any(Number) });

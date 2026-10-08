@@ -46,18 +46,18 @@ const WOOD = 'item_oak_wood';
 registerTokenTypes({
     fixture_sp_forest: {
         id: 'fixture_sp_forest', name: 'Fixture Sp Forest', size: 1,
-        shop: { price: [{ itemId: WOOD, quantity: 10 }], section: 'logging' }
+        shop: { price: [{ itemId: WOOD, quantity: 10 }], section: 'forestry' }
     }
 });
 
 registerTokenTypes({
     fixture_pnl_big: {
         id: 'fixture_pnl_big', name: 'Fixture Pnl Big', size: 1,
-        shop: { price: [{ itemId: WOOD, quantity: 20 }], section: 'logging', group: 'Fixture Panel Group' }
+        shop: { price: [{ itemId: WOOD, quantity: 20 }], section: 'forestry', group: 'Fixture Panel Group' }
     },
     fixture_pnl_small: {
         id: 'fixture_pnl_small', name: 'Fixture Pnl Small', size: 1,
-        shop: { price: [{ itemId: WOOD, quantity: 4 }], section: 'logging', group: 'Fixture Panel Group' }
+        shop: { price: [{ itemId: WOOD, quantity: 4 }], section: 'forestry', group: 'Fixture Panel Group' }
     }
 });
 

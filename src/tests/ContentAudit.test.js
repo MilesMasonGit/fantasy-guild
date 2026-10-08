@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { auditContent, reportContentIntegrity } from '../systems/core/ContentAudit.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
-import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
+import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
+import { auditConnectivity } from '../../cms/src/engine/connectivityAuditor.js';
 
 /**
  * The content-integrity audit.
@@ -132,5 +134,113 @@ describe('The content-integrity audit', () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         expect(() => reportContentIntegrity({ openingTokens: 'not-a-list' })).not.toThrow();
         expect(warn).toHaveBeenCalled();
+    });
+});
+
+/**
+ * Names that point at no skill or job: a renamed or dropped skill (Logging,
+ * Explore) or job leaves content that loads silently and does nothing.
+ */
+describe('The audit names content pointing at a skill or job that does not exist', () => {
+    const recipe = (id) => ({ id, name: id, levelRequirement: 1, durationMs: 1000, xp: 0, inputs: [], outputs: [] });
+    const rule = (id, keyword, payload) => ({ id, keyword, payload });
+
+    beforeAll(() => {
+        registerTokenTypes({
+            fixture_unknown_work_skill: {
+                id: 'fixture_unknown_work_skill', name: 'Unknown Work Skill', requiresHero: true,
+                config: { skill: 'fx_no_such_skill', skillRequired: 1, cycleTimeMs: 1000, xp: 0, inputs: [], outputs: [] }
+            },
+            fixture_unknown_station: {
+                id: 'fixture_unknown_station', name: 'Unknown Station',
+                statements: [rule('stm_fx_unknown_station', 'station', { skill: 'fx_no_such_station_skill' })]
+            },
+            fixture_unknown_job: {
+                id: 'fixture_unknown_job', name: 'Unknown Academy',
+                statements: [rule('stm_fx_unknown_job', 'promotes', { jobId: 'fx_no_such_job' })]
+            },
+            fixture_unknown_scope: {
+                id: 'fixture_unknown_scope', name: 'Unknown Scope',
+                statements: [rule('stm_fx_unknown_scope', 'provides',
+                    { type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'fx_no_such_scope' })]
+            },
+            fixture_unknown_section: {
+                id: 'fixture_unknown_section', name: 'Unknown Section',
+                shop: { price: [], section: 'fx_no_such_section' }
+            },
+            fixture_known_refs: {
+                id: 'fixture_known_refs', name: 'Known Refs', requiresHero: true,
+                shop: { price: [], section: 'general' },
+                config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 0, inputs: [], outputs: [] },
+                statements: [
+                    rule('stm_fx_known_job', 'promotes', { jobId: 'paladin' }),
+                    rule('stm_fx_blank_job', 'promotes', { jobId: '' }),
+                    rule('stm_fx_combat_scope', 'provides', { type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'combat' }),
+                    rule('stm_fx_skill_scope', 'provides', { type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'stealth' }),
+                    rule('stm_fx_status_scope', 'provides', { type: 'STATUS_IMMUNITY', bucket: 'flat', value: 1, category: 'poisoned' })
+                ]
+            }
+        });
+        registerRecipePools({ fx_no_such_recipe_skill: [recipe('fixture_unknown_recipe_skill')] });
+        registerItems({
+            fixture_unknown_requirement: {
+                id: 'fixture_unknown_requirement', name: 'Unknown Requirement', equipSlot: 'hand',
+                requirements: [{ skill: 'fx_no_such_requirement', level: 5 }]
+            }
+        });
+    });
+
+    const at = (where) => auditContent().filter(f => f.where === where).map(f => f.what);
+
+    it('names a Token whose work skill does not exist', () => {
+        expect(at('Token "fixture_unknown_work_skill"')).toContainEqual(
+            expect.stringMatching(/skill "fx_no_such_skill", which does not exist/));
+        expect(at('Token "fixture_unknown_station"')).toContainEqual(
+            expect.stringMatching(/skill "fx_no_such_station_skill", which does not exist/));
+    });
+
+    it('names a recipe whose skill does not exist', () => {
+        expect(at('Recipe "fixture_unknown_recipe_skill"')).toContainEqual(
+            expect.stringMatching(/skill "fx_no_such_recipe_skill", which does not exist/));
+    });
+
+    it('names a Promotes rule whose job does not exist', () => {
+        expect(at('Token "fixture_unknown_job"')).toContainEqual(
+            expect.stringMatching(/job "fx_no_such_job", which does not exist/));
+    });
+
+    it('names a rule scoped to an unknown skill', () => {
+        expect(at('Token "fixture_unknown_scope"')).toContainEqual(
+            expect.stringMatching(/skill "fx_no_such_scope", which does not exist/));
+    });
+
+    it('names a Shop section that is neither a skill nor general', () => {
+        expect(at('Token "fixture_unknown_section"')).toContainEqual(
+            expect.stringMatching(/Shop section "fx_no_such_section", which is neither a skill nor General/));
+    });
+
+    it('names an item that needs a skill that does not exist', () => {
+        expect(at('Item "fixture_unknown_requirement"')).toContainEqual(
+            expect.stringMatching(/skill "fx_no_such_requirement", which does not exist/));
+    });
+
+    it('says nothing about real skills and jobs, General, a combat or status scope, or a blank job', () => {
+        expect(at('Token "fixture_known_refs"').filter(w => /does not exist|neither a skill/.test(w))).toEqual([]);
+    });
+
+    it('the CMS Economy Audit names the same things in the same words', () => {
+        const tokens = {
+            fixture_unknown_work_skill: getTokenType('fixture_unknown_work_skill'),
+            fixture_unknown_job: getTokenType('fixture_unknown_job'),
+            fixture_unknown_section: getTokenType('fixture_unknown_section')
+        };
+        const recipes = { fixture_unknown_recipe_skill: { ...recipe('fixture_unknown_recipe_skill'), skill: 'fx_no_such_recipe_skill' } };
+        const cms = auditConnectivity({ tokens, recipes, items: {}, effects: {} }).map(i => i.details);
+        const game = auditContent().map(f => f.what);
+        for (const fragment of ['"fx_no_such_skill"', '"fx_no_such_job"', '"fx_no_such_section"', '"fx_no_such_recipe_skill"']) {
+            const fromCms = cms.find(d => d.includes(fragment));
+            expect(fromCms, fragment).toBeTruthy();
+            expect(game, fragment).toContain(fromCms);
+        }
     });
 });

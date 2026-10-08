@@ -31,3 +31,13 @@ line each is enough.
 - The inspection's XP bubble ring fills with the work cycle (builder's choice).
 - Health bar thickness, colour and the hero bar's height over each sprite were
   never seen by an agent.
+
+## Open from brief 20 (class rework v2)
+- Alchemy has no hit animation when a hero works it (Explore's rustle is now
+  free); the Starting skills otherwise each have their own.
+- New skills and classes use emoji placeholders: Stealth, Fletching, Trapping,
+  Taming, Shadowcraft and the reused Advanced/Master skills; the jobs
+  Beastmaster, Hunter, Necromancer and Scholar (job icons are all emoji).
+  Forestry shows the Logging sprite.
+- The tutorial step still reads Log an Oak Tree (let your Hero log 3 times);
+  the verb fits, but it could say fell.

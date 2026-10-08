@@ -419,7 +419,7 @@ describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', (
      */
     it('widens XP the way YIELD widens output', () => {
         place(A, 'fixture_producer', 'hero_1');
-        const skillId = 'logging';
+        const skillId = 'forestry';
         const before = GameState.state.heroes[0].skills[skillId].xp;
 
         place(NEIGHBOUR, 'fixture_buff_xp');   // +100%
@@ -432,12 +432,12 @@ describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', (
     it('a failed cycle produces nothing and grants no XP', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_always_fails');
-        const before = GameState.state.heroes[0].skills.logging.xp;
+        const before = GameState.state.heroes[0].skills.forestry.xp;
 
         run(13000);
 
         expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
-        expect(GameState.state.heroes[0].skills.logging.xp).toBe(before);
+        expect(GameState.state.heroes[0].skills.forestry.xp).toBe(before);
     });
 
     it('a failed cycle still costs a charge — failure costs the cycle, it does not rewind it', () => {

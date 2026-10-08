@@ -18,7 +18,7 @@ import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
 
-const SKILLS = ['construction', 'farming', 'logging'];
+const SKILLS = ['construction', 'farming', 'forestry'];
 
 const ITEMS = {
     item_oak_seed: { id: 'item_oak_seed', name: 'Oak Seed' },
@@ -43,7 +43,7 @@ function clean() {
                     allowance: 5, intervalMs: 20000,
                     upkeep: [{ itemId: 'item_oak_seed', quantity: 1 }],
                 },
-                shop: { price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'logging' },
+                shop: { price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'forestry' },
             },
             token_oak_sapling: {
                 id: 'token_oak_sapling', name: 'Oak Sapling',
@@ -51,8 +51,8 @@ function clean() {
             },
             token_oak_tree: {
                 id: 'token_oak_tree', name: 'Oak Tree',
-                config: { skill: 'logging', cycleTimeMs: 12000, inputs: [], outputs: [] },
-                shop: { price: [{ itemId: 'item_oak_wood', quantity: 2 }], section: 'logging' },
+                config: { skill: 'forestry', cycleTimeMs: 12000, inputs: [], outputs: [] },
+                shop: { price: [{ itemId: 'item_oak_wood', quantity: 2 }], section: 'forestry' },
             },
             token_coast: {
                 id: 'token_coast', name: 'Coast',
@@ -73,7 +73,7 @@ function clean() {
                 inputs: [], outputs: [{ tokenId: 'token_furnace', chance: 100 }],
             },
             recipe_plain: {
-                id: 'recipe_plain', name: 'Plain', skill: 'logging',
+                id: 'recipe_plain', name: 'Plain', skill: 'forestry',
                 inputs: [], outputs: [{ itemId: 'item_oak_wood' }],
             },
         },

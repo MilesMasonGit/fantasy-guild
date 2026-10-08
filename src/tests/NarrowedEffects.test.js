@@ -92,8 +92,8 @@ beforeEach(() => {
 
 describe('⭐ a rule can be narrowed to one skill', () => {
     it('applies when the Token is doing that skill', () => {
-        // `fixture_producer` works `logging`.
-        skillScopedBuff('fixture_logging_only', 'logging');
+        // `fixture_producer` works `forestry`.
+        skillScopedBuff('fixture_logging_only', 'forestry');
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_logging_only');
 
@@ -150,7 +150,7 @@ describe('⭐ a rule can be narrowed to one skill', () => {
         place(A, 'fixture_producer', 'hero_1');   // a LOGGING Token
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);   // mining rule, logging work
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);   // mining rule, forestry work
     });
 });
 

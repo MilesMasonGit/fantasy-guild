@@ -143,7 +143,7 @@ describe('⭐ on the mat (CR3-008)', () => {
         setMatTuning('flagRadius', 400);
         setMatTuning('walkSpeed', 120);
         setMatTuning('potterRadius', 0);
-        GameState.state.heroes = [{ id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
+        GameState.state.heroes = [{ id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         placeAt('fixture_producer', 1500, 500);
 
         const { container } = mount();

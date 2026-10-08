@@ -56,7 +56,6 @@ export const TARGET_CATEGORIES = {
     SCIENCE: 'science',
     OCCULT: 'occult',
     CRIME: 'crime',
-    EXPLORE: 'explore',
     SOCIAL: 'social',
     COMBAT: 'combat',
 
@@ -76,7 +75,7 @@ export const TARGET_CATEGORIES = {
     MINING: 'mining',
     SMELTING: 'smelting',
     SMITHING: 'smithing',
-    LOGGING: 'logging',
+    FORESTRY: 'forestry',
     FORAGING: 'foraging',
     HERBALISM: 'herbalism',
     HARVESTING: 'harvesting',

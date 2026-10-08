@@ -41,7 +41,7 @@ const FIXTURES = {
         id: 'fx_ws_passive', name: 'Heroless Well', requiresHero: false, config: cycle(''),
     },
     fx_ws_skilled: {
-        id: 'fx_ws_skilled', name: 'Skilled Bush', requiresHero: true, config: cycle('nature'),
+        id: 'fx_ws_skilled', name: 'Skilled Bush', requiresHero: true, config: cycle('forestry'),
     },
 };
 
@@ -144,9 +144,9 @@ describe('FP-47 — a skill picked in the CMS reaches the game file', () => {
             activeEntityId: null, activeEntityType: null,
         });
         const token = useEntityStore.getState().tokens.fx_ws_blank_bush;
-        useEntityStore.getState().updateToken('fx_ws_blank_bush', { config: { ...token.config, skill: 'nature' } });
+        useEntityStore.getState().updateToken('fx_ws_blank_bush', { config: { ...token.config, skill: 'forestry' } });
 
         const files = syncFiles(useEntityStore.getState().recalculateEconomy());
-        expect(files['tokens.json'].fx_ws_blank_bush.config.skill).toBe('nature');
+        expect(files['tokens.json'].fx_ws_blank_bush.config.skill).toBe('forestry');
     });
 });

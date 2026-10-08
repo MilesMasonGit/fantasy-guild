@@ -56,7 +56,7 @@ function workTileOf(heroId) {
     return row * 6 + col;
 }
 
-function hero(id, skills = { logging: 50 }) {
+function hero(id, skills = { forestry: 50 }) {
     const out = {};
     for (const [s, level] of Object.entries(skills)) out[s] = { level, xp: 0 };
     return { id, name: id, status: 'idle', level: 50, skills: out, hp: { current: 100, max: 100 } };
@@ -83,9 +83,9 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     GameState.state.heroes = [
-        hero('h1', { logging: 50, mining: 50 }),
-        hero('h2', { logging: 50 }),
-        hero('fighter', { logging: 20, melee: 10 })
+        hero('h1', { forestry: 50, mining: 50 }),
+        hero('h2', { forestry: 50 }),
+        hero('fighter', { forestry: 20, melee: 10 })
     ];
     GameState.state.inventory.maxSlots = 50;
 });
@@ -133,7 +133,7 @@ describe('dragging the pennant (FLAG) just moves the point (FP-71)', () => {
         expect(workTileOf('h1')).toBe(13);
 
         Placement.recallHeroById('h1');
-        Placement.plantFlagAt('h2', C(13));                  // h2 holds only logging
+        Placement.plantFlagAt('h2', C(13));                  // h2 holds only forestry
         expect(workTileOf('h2')).toBeNull();
     });
 });

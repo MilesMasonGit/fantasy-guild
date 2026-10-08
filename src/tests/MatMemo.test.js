@@ -93,7 +93,7 @@ describe('⭐ on the mat: moving the hover between Tokens redraws no hero, flag 
         clearMat();
         GameState.state.heroes = [{
             id: 'h1', name: 'h1', spriteId: 'recruit', status: 'idle', level: 50,
-            skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
+            skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 }
         }];
     });
 

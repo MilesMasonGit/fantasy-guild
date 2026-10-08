@@ -56,8 +56,8 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
     const preview = selected ? P.previewPromotion(heroId, selected) : null;
 
     const tiers = [
-        { tier: JOB_TIERS.BASE, label: 'Base classes' },
-        { tier: JOB_TIERS.ADVANCED, label: 'Advanced jobs' }
+        { tier: JOB_TIERS.BASIC, label: 'Basic classes' },
+        { tier: JOB_TIERS.MASTER, label: 'Master classes' }
     ];
 
     return (
@@ -71,7 +71,7 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                 {/**
                  * ⚠️ This deliberately does NOT say 'swaps two for two'. A step down the tree
                  * does, but a lateral move across branches (Fighter to Rogue) swaps three,
-                 * because the combat skill and the shared specialist change too. The per-job
+                 * because the combat skill and the advanced skill change too. The per-job
                  * panel states the real trade; this line only has to be true every time.
                  */}
                 <p className="text-[10px] text-gi-muted italic">

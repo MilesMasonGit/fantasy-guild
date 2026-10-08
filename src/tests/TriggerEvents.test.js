@@ -83,7 +83,7 @@ registerTokenTypes({
         id: 'fixture_self_reactor', name: 'Fixture Self Reactor', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         },
         statements: [grantOf('item_bones', {
@@ -102,7 +102,7 @@ registerTokenTypes({
         id: 'fixture_ouroboros', name: 'Fixture Ouroboros', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         },
         statements: [grantOf('item_bones', {
@@ -125,7 +125,7 @@ registerTokenTypes({
         id: 'fixture_wood_lot', name: 'Fixture Wood Lot', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         }
     }

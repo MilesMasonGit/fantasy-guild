@@ -216,7 +216,7 @@ describe('a carried rule reaches the Token its hero is working', () => {
             id: 'hero_1', name: 'hero_1', status: 'idle',
             equipment: ['fixture_sword', null, null, null, null, null, null, null, null],
             // Holds the Token's skill: a hero only works what they can run.
-            hp: { current: 100, max: 100 }, skills: { logging: { level: 5, xp: 0 } },
+            hp: { current: 100, max: 100 }, skills: { forestry: { level: 5, xp: 0 } },
         }];
 
         const instance = BoardState.createTokenInstance('fixture_producer', 100);
@@ -238,7 +238,7 @@ describe('a carried rule reaches the Token its hero is working', () => {
             id: 'hero_1', name: 'hero_1', status: 'idle',
             equipment: ['fixture_sword', null, null, null, null, null, null, null, null],
             // Holds the Token's skill: a hero only works what they can run.
-            hp: { current: 100, max: 100 }, skills: { logging: { level: 5, xp: 0 } },
+            hp: { current: 100, max: 100 }, skills: { forestry: { level: 5, xp: 0 } },
         }];
 
         const instance = BoardState.createTokenInstance('fixture_producer', 100);

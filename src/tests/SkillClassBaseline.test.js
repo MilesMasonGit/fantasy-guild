@@ -12,10 +12,11 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { calculateHeroLevel } from '../systems/hero/HeroGenerator.js';
 import * as CombatFormulas from '../utils/CombatFormulas.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
 import {
-    FOUNDATION_SKILL_IDS,
+    STARTING_SKILL_IDS,
     COMBAT_SKILL_IDS,
-    SIGNATURE_SKILL_IDS
+    MASTER_SKILL_IDS
 } from '../config/registries/skillRegistry.js';
 
 /**
@@ -39,8 +40,8 @@ function makeHero(id, held, level = 50) {
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 
-/** A Recruit: the Foundation six and nothing else. */
-const makeRecruit = (id, level = 50) => makeHero(id, FOUNDATION_SKILL_IDS, level);
+/** A Recruit: the Starting skills and nothing else. */
+const makeRecruit = (id, level = 50) => makeHero(id, STARTING_SKILL_IDS, level);
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;
@@ -69,7 +70,7 @@ beforeEach(() => {
 
 describe('Hero Level is the average of the skills a hero HOLDS', () => {
     it('averages held skills, whatever they are', () => {
-        const [a, b, c, d] = FOUNDATION_SKILL_IDS;
+        const [a, b, c, d] = STARTING_SKILL_IDS;
         const skills = {
             [a]: { level: 10 }, [b]: { level: 20 },
             [c]: { level: 30 }, [d]: { level: 40 }
@@ -81,7 +82,7 @@ describe('Hero Level is the average of the skills a hero HOLDS', () => {
         // The old formula read only the four combat skills, so a fully-trained
         // production hero scored 1. This is the line that changed.
         const skills = Object.fromEntries(
-            FOUNDATION_SKILL_IDS.map(id => [id, { level: 40 }])
+            STARTING_SKILL_IDS.map(id => [id, { level: 40 }])
         );
         expect(calculateHeroLevel(skills)).toBe(40);
     });
@@ -104,7 +105,7 @@ describe('The gate is possession first, then level', () => {
     const skipReasons = (token) => Flags.skipsOf(token.id).map(s => s.reason);
 
     it('refuses a hero whose level is too low, and calls it ACCESS', () => {
-        // `fixture_gated` wants a Foundation skill at 25.
+        // `fixture_gated` wants a Starting skill at 25.
         GameState.state.heroes = [makeRecruit('hero_1', 5)];
         const token = place(10, 'fixture_gated', 'hero_1');
 
@@ -117,7 +118,7 @@ describe('The gate is possession first, then level', () => {
     it('refuses a hero who does not hold the skill, and calls it UNSKILLED', () => {
         // Two different problems, two different reasons. Levelling fixes one of
         // them and can never fix the other, so they must not look alike.
-        GameState.state.heroes = [makeHero('hero_1', SIGNATURE_SKILL_IDS.slice(0, 2), 99)];
+        GameState.state.heroes = [makeHero('hero_1', MASTER_SKILL_IDS.slice(0, 2), 99)];
         const token = place(10, 'fixture_gated');
         plantFor('hero_1', 10, 'mining');
 
@@ -141,7 +142,7 @@ describe('The gate is possession first, then level', () => {
         // `heroMeetsRequirement` returned true the moment `required <= 0` and
         // never looked at the hero's skills, so a hero who did not hold the
         // skill worked the Token anyway.
-        GameState.state.heroes = [makeHero('hero_1', SIGNATURE_SKILL_IDS.slice(0, 1), 99)];
+        GameState.state.heroes = [makeHero('hero_1', MASTER_SKILL_IDS.slice(0, 1), 99)];
         const token = place(10, 'fixture_ungated');
         plantFor('hero_1', 10, 'crafting');
 
@@ -163,8 +164,8 @@ describe('The gate is possession first, then level', () => {
 
     it('names the two failures apart at the SkillSystem level too', () => {
         GameState.state.heroes = [makeRecruit('hero_1', 10)];
-        const held = FOUNDATION_SKILL_IDS[0];
-        const notHeld = SIGNATURE_SKILL_IDS[0];
+        const held = STARTING_SKILL_IDS[0];
+        const notHeld = MASTER_SKILL_IDS[0];
 
         expect(SkillSystem.requirementFailure('hero_1', { skill: held, level: 5 })).toBeNull();
         expect(SkillSystem.requirementFailure('hero_1', { skill: held, level: 50 })).toBe('LEVEL');
@@ -182,7 +183,7 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
 
     it('a Recruit scores 0, not 1 — they are a non-combatant, not a weak one', () => {
         const recruit = {
-            skills: Object.fromEntries(FOUNDATION_SKILL_IDS.map(id => [id, { level: 40 }]))
+            skills: Object.fromEntries(STARTING_SKILL_IDS.map(id => [id, { level: 40 }]))
         };
 
         expect(CombatFormulas.getHeroCombatSkillEntry(recruit).id).toBeNull();
@@ -192,7 +193,7 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
 
     it('max HP tracks the combat skill, and production skills never touch it', () => {
         const fighter = { [COMBAT_SKILL_IDS[0]]: { level: 20 } };
-        const miner = Object.fromEntries(FOUNDATION_SKILL_IDS.map(id => [id, { level: 99 }]));
+        const miner = Object.fromEntries(STARTING_SKILL_IDS.map(id => [id, { level: 99 }]));
 
         const fighterHp = CombatFormulas.heroMaxHpFromSkills(fighter);
         const minerHp = CombatFormulas.heroMaxHpFromSkills(miner);
@@ -209,37 +210,47 @@ describe('One combat skill supplies both halves (Phase 2)', () => {
         expect(CombatFormulas.getHeroCombatStyle({ skills: { [ranged]: { level: 5 } } }))
             .toBe(ranged);
     });
+
+    it('an unarmed stealth hero fights stealth', () => {
+        const rogue = { skills: { stealth: { level: 12 } } };
+        expect(CombatFormulas.getHeroCombatStyle(rogue)).toBe('stealth');
+        expect(CombatFormulas.getHeroCombatSkillEntry(rogue)).toEqual({ id: 'stealth', level: 12 });
+        expect(CombatFormulas.canHeroFight(rogue)).toBe(true);
+    });
+
+    it('a stealth weapon makes its wielder fight stealth, whatever their own style', () => {
+        registerItems({
+            fixture_shiv: {
+                id: 'fixture_shiv', name: 'Shiv', type: 'weapon', equipSlot: 'hand',
+                skillRequired: 'stealth', levelRequired: 1
+            }
+        });
+        const fighter = { skills: { melee: { level: 12 } }, equipment: ['fixture_shiv'] };
+        expect(CombatFormulas.getHeroCombatStyle(fighter)).toBe('stealth');
+    });
 });
 
 describe('A hero holds some skills, not all of them', () => {
-    it('a Recruit holds the Foundation skills and no others', () => {
+    it('a Recruit holds the Starting skills and no others', () => {
         GameState.state.heroes = [makeRecruit('hero_1', 1)];
         const hero = GameState.state.heroes[0];
 
-        expect(Object.keys(hero.skills).sort()).toEqual([...FOUNDATION_SKILL_IDS].sort());
-        for (const id of [...COMBAT_SKILL_IDS, ...SIGNATURE_SKILL_IDS]) {
+        expect(Object.keys(hero.skills).sort()).toEqual([...STARTING_SKILL_IDS].sort());
+        for (const id of [...COMBAT_SKILL_IDS, ...MASTER_SKILL_IDS]) {
             expect(hero.skills[id]).toBeUndefined();
         }
     });
 
     it('the deleted ids are gone from the registry', () => {
-        // labor, aquatic, forge, defense, social. Content or a save still
-        // naming one of these must fail loudly, not resolve to something
-        // approximate — which is why the sub-skill funnel went with them.
-        // `explore` was the sixth; Token Lifecycle slice 1.1 reuses the id for
-        // a NEW foundation skill, asserted below.
+        // Content or a save still naming one of these must fail loudly, not
+        // resolve to something approximate. The first five went with the
+        // sub-skill funnel; the rest with the class rework v2, where Logging
+        // became Forestry and Explore left for the Atlas.
         const { SKILLS } = require('../config/registries/skillRegistry.js');
-        for (const dead of ['labor', 'aquatic', 'forge', 'defense', 'social']) {
-            expect(SKILLS[dead]).toBeUndefined();
+        for (const dead of ['labor', 'aquatic', 'forge', 'defense', 'social',
+            'logging', 'explore', 'nature', 'occult', 'inscription', 'beastmaster',
+            'survival', 'brewing', 'astrology', 'engineering']) {
+            expect(SKILLS[dead], dead).toBeUndefined();
         }
-    });
-
-    it('explore is the new foundation Explore skill, not an alias of survival (SP-74)', () => {
-        // Nothing ever remapped the old `explore` id to `survival` (no alias,
-        // no save migration), so the id was free to reuse.
-        const { SKILLS, SKILL_LAYERS } = require('../config/registries/skillRegistry.js');
-        expect(SKILLS.explore.layer).toBe(SKILL_LAYERS.FOUNDATION);
-        expect(SKILLS.explore.name).toBe('Explore');
-        expect(SKILLS.survival.layer).toBe(SKILL_LAYERS.SIGNATURE);
     });
 });

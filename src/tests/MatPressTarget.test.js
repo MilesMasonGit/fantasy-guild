@@ -198,7 +198,7 @@ describe('⭐ where two circles overlap, the press goes where hovering would', (
 
 describe('⭐ a hero\'s art takes no pointer outside the hero\'s box', () => {
     it('the figure draws wider than its 64 × 128 box, and only the box catches presses', () => {
-        GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hero_knight', status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
+        GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hero_knight', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         Flags.plant('h1', { x: 500, y: 900 });
         const { container } = mountAt(OWNER_FIT);
         const hero = container.querySelector('[data-board-hero="h1"]');

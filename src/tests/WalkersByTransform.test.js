@@ -72,7 +72,7 @@ describe('⭐ speech bubbles follow by transform', () => {
     it('a stack is translated to its hero and keeps its own centring', () => {
         const heroes = [{ heroId: 'hb', state: 'idle', x: 400, y: 500, moving: true, tokenId: null, alert: null }];
         const { container } = mount(h(HeroBubbleLayer, { heroes }));
-        act(() => { EventBus.publish('hero_leveled', { heroId: 'hb', skillName: 'Logging', newLevel: 5 }); });
+        act(() => { EventBus.publish('hero_leveled', { heroId: 'hb', skillName: 'Forestry', newLevel: 5 }); });
         const stack = container.querySelector('[data-hero-bubble-stack="hb"]');
         expect(stack).not.toBeNull();
         expect(stack.style.left).toBe('0px');

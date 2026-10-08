@@ -280,7 +280,7 @@ describe('Planting a hero’s flag (D-111, D-147)', () => {
     it('a Token placed under a planted flag is worked without re-placing them', () => {
         // The same courtesy a Manager extends, arrived at from the player's
         // side: drop a Forest under a flag and its hero starts on it.
-        GameState.state.heroes = [makeHero('hero_1', ['logging'])];
+        GameState.state.heroes = [makeHero('hero_1', ['forestry'])];
         Placement.plantFlagAt('hero_1', A);
         const forest = place('fixture_producer', A);
         Flags.assign(1000);

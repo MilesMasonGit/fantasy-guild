@@ -19,7 +19,7 @@ import {
     DAMAGE_SPREAD_MIN,
     DAMAGE_SPREAD_MAX,
 } from '../config/FormulaRegistry.js';
-import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { COMBAT_SKILL_IDS, isCombatSkill } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
 import { sumStatusEffect } from '../config/registries/statusRegistry.js';
@@ -41,14 +41,14 @@ export function clamp(value, min, max) {
  * With two hands the PRIMARY weapon decides (the first occupied hand), so a
  * sword in hand1 and a bow in hand2 fights melee.
  * @param {Object} hero
- * @returns {'melee'|'ranged'|'magic'}
+ * @returns {string} a combat skill id
  */
 export function getHeroCombatStyle(hero) {
     const weaponId = getPrimaryWeapon(hero);
     if (weaponId) {
         const weapon = getItem(weaponId);
         const style = weapon?.skillRequired;
-        if (style === 'melee' || style === 'ranged' || style === 'magic') return style;
+        if (isCombatSkill(style)) return style;
     }
     // Unarmed: fall back to the hero's own combat skill rather than assuming
     // melee, so an unarmed Ranger fights ranged.
@@ -58,7 +58,7 @@ export function getHeroCombatStyle(hero) {
 /**
  * The ONE combat skill a hero holds, and its level.
  *
- * **A hero holds exactly one of Melee, Ranged or Magic, or none at all.** This
+ * **A hero holds exactly one of Melee, Ranged, Magic or Stealth, or none at all.** This
  * is the single number the whole combat engine runs on: it supplies attack
  * *and* defence, max HP and block. A Melee 30 hero attacks at 30 and defends
  * at 30.

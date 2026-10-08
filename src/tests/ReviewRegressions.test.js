@@ -80,7 +80,7 @@ function ruleProducer(id, keyword, payload, extra = {}, uses = null) {
             id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture',
             uses, sprite: 'skill_nature',
             config: {
-                skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+                skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
                 inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
             },
             effects: [{ effectId: `effect_${id}` }]
@@ -274,12 +274,12 @@ describe('⭐ a hero leaving switches a state filter back off', () => {
         place(NEIGHBOUR, 'fixture_worked_buff');
         place(A, 'fixture_producer', 'hero_1');
 
-        const buffed = TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'logging');
+        const buffed = TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'forestry');
         expect(buffed).toBe(4);
 
         Placement.recallHeroById('hero_1');
 
-        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(2);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'forestry')).toBe(2);
     });
 });
 
@@ -308,7 +308,7 @@ describe('⭐ a distant duplicate cannot suppress a nearby one', () => {
         place(NEIGHBOUR, 'fixture_unique_buff');  // nearby to A
         place(A, 'fixture_producer', 'hero_1');
 
-        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(4);
+        expect(TileModifiers.resolveAxis(idAt(A), EFFECT_TYPES.YIELD, 2, 'forestry')).toBe(4);
     });
 });
 

@@ -82,7 +82,7 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     clearMat();
-    GameState.state.heroes = [hero('h1', { logging: 50 }), hero('h2', { logging: 50 })];
+    GameState.state.heroes = [hero('h1', { forestry: 50 }), hero('h2', { forestry: 50 })];
 });
 
 // ---------------------------------------------------------------------------

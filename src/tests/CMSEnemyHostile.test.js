@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { asLoaded } from './fixtures/shippedAsLoaded.js';
 import React from 'react';
 import { render, cleanup, fireEvent, within } from '@testing-library/react';
 
@@ -20,7 +21,9 @@ const DATA = path.resolve(__dirname, '../../data');
 const FILES = ['items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json', 'effects.json'];
 // git may check these out with CRLF; JSON.stringify always emits LF.
 const read = (file) => fs.readFileSync(path.join(DATA, file), 'utf8').replace(/\r\n/g, '\n');
-const raw = Object.fromEntries(FILES.map((f) => [f, read(f)]));
+// ⚠️ As the CMS holds the files once loaded: it renames retired skill ids, so until the
+// owner's next Sync writes them, a sync differs from data/ by that rename and nothing else.
+const raw = Object.fromEntries(FILES.map((f) => [f, asLoaded(f, read(f))]));
 
 /** The workspace `/api/load-game-data` builds from `data/` (vite-plugin-cms-api.js). */
 function workspaceFromFiles(files) {

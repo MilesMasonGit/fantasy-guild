@@ -110,7 +110,7 @@ describe('the §6 circularity check: every chain is reachable from the opening a
     const { tokens, items } = reachable();
 
     const SIX = {
-        Logging: ['token_oak_forest', 'token_oak_sapling', 'token_oak_tree'],
+        Forestry: ['token_oak_forest', 'token_oak_sapling', 'token_oak_tree'],
         Mining: ['token_copper_mine', 'token_coal_mine', 'token_quarry', 'token_copper_ore_vein', 'token_coal_vein', 'token_stone_outcrop'],
         Fishing: ['token_coast', 'token_shrimp_coast'],
         Farming: ['token_farmland', 'token_wheat_field', 'token_wheat_sprout', 'token_ripe_wheat', 'token_apple_orchard', 'token_apple_sapling', 'token_apple_tree'],

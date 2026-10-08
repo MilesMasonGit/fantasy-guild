@@ -18,7 +18,8 @@ import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
-    migrateBearers, migratePromotionFields, migrateAppliesTargetsIn, expandBearer, expandAll, effectRefsOf, provisionalName,
+    migrateBearers, migratePromotionFields, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
+    expandBearer, expandAll, effectRefsOf, provisionalName,
     normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
@@ -606,6 +607,25 @@ function seedAppliesTargets(state = {}) {
     return { ...state, effects, tokens, items };
 }
 
+/**
+ * A renamed skill id (Logging → Forestry) is rewritten wherever the workspace names a skill, and a recipe pool under the old key moves to the new one.
+ * ⚠️ Runs first on the same three load paths and calls the same pure function the game's loaders call: Sync to Game writes this workspace wholesale, so a workspace still naming the old id would write it back into `data/`. Idempotent.
+ */
+function seedSkillIds(state) {
+    if (!state || typeof state !== 'object') return state;
+    let next = state;
+    const replace = (key, value) => {
+        if (value === state[key]) return;
+        if (next === state) next = { ...state };
+        next[key] = value;
+    };
+    replace('tokens', migrateSkillIdsIn(state.tokens));
+    replace('effects', migrateSkillIdsIn(state.effects));
+    replace('items', migrateSkillIdsIn(state.items));
+    replace('recipePools', migrateRecipePools(state.recipePools));
+    return next;
+}
+
 const FACTORIES = {
     items: { make: makeItem, prefix: 'item', type: 'item' },
     tokens: { make: makeToken, prefix: 'token', type: 'token' },
@@ -869,12 +889,12 @@ export const useEntityStore = create(
              * ⚠️ This path bypasses the persist `migrate` hook entirely: an imported workspace never touches localStorage on the way in, so `seedSimIntent` runs here as well as on the persist config's `merge`; the two together are the whole coverage.
              */
             hydrate: (data = {}) => {
-                const seeded = seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSimIntent({
+                const seeded = seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent({
                     items: data.items || {},
                     tokens: data.tokens || {},
                     effects: data.effects || {},
                     recipePools: data.recipePools || {},
-                }))));
+                })))));
                 set({
                     items: seeded.items,
                     tokens: seeded.tokens,
@@ -1037,10 +1057,10 @@ export const useEntityStore = create(
             /** The default merge plus the seeding. The spread order is zustand's own default (persisted wins over the fresh store, so actions survive and data is replaced); only `seedSimIntent` is added. */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSimIntent(persistedState)))),
+                ...seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent(persistedState))))),
             }),
             /** Reached only by a numbered version that is not 1. Seeds anyway: the normaliser is idempotent, and a future migration should never be the reason intent went missing. */
-            migrate: (persistedState) => seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSimIntent(persistedState)))),
+            migrate: (persistedState) => seedAppliesTargets(seedPromotionRules(seedEffectLibrary(seedSkillIds(seedSimIntent(persistedState))))),
             /**
              * What survives a reload.
              * ⚠️ `activeEntityId` is in here deliberately: without it, anything that re-created this module (registering a sprite writes `sprite-manifest.js`, which the editors import, so Vite reloaded them) dropped the selection and closed the editor.

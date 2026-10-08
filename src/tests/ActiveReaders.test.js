@@ -68,7 +68,7 @@ registerTokenTypes({
     fixture_large_gated: {
         id: 'fixture_large_gated', name: 'Fixture Large Gated', tokenType: 'resource',
         rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 'skill_nature', size: 2,
-        config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
+        config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
         statements: [
             { id: 'stm_fixture_large_gated', keyword: KEYWORD.STATION, payload: { skill: 'fixture_gated_skill' } }
         ]
@@ -77,7 +77,7 @@ registerTokenTypes({
         id: 'fixture_large_producer', name: 'Fixture Large Producer', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_nature', size: 2,
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 2, chance: 100 }]
         }
     },

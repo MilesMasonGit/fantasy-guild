@@ -135,18 +135,18 @@ describe('CMS connectivity auditor — Pacing Gaps reads the real skill fields',
     it('reports a gap between two Tokens far apart in one skill', () => {
         const issues = auditConnectivity({
             items: {}, recipes: {}, maps: {},
-            tokens: { a: worker('tok_low', 'logging', 1), b: worker('tok_high', 'logging', 70) },
+            tokens: { a: worker('tok_low', 'forestry', 1), b: worker('tok_high', 'forestry', 70) },
         }, []);
         const gaps = issues.filter((i) => i.issueType === 'Pacing Gap');
         expect(gaps.length).toBeGreaterThan(0);
         // The row names the skill by its display name, not its id.
-        expect(gaps[0].entityId).toBe('logging');
+        expect(gaps[0].entityId).toBe('forestry');
         expect(gaps[0].details).toMatch(/level 1 and 70/);
     });
 
     it('reports nothing when the ladder is evenly spaced', () => {
         const tokens = {};
-        for (let lv = 1; lv <= 60; lv += 10) tokens[`t${lv}`] = worker(`tok_${lv}`, 'logging', lv);
+        for (let lv = 1; lv <= 60; lv += 10) tokens[`t${lv}`] = worker(`tok_${lv}`, 'forestry', lv);
         const issues = auditConnectivity({ items: {}, recipes: {}, maps: {}, tokens }, []);
         expect(issues.filter((i) => i.issueType === 'Pacing Gap')).toEqual([]);
     });

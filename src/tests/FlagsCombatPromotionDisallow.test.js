@@ -100,7 +100,7 @@ function qualified(id) {
 
 /** A plain logger, as in `Flags.test.js`. */
 function logger(id) {
-    return { id, name: id, status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
+    return { id, name: id, status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
 }
 
 function put(tile, typeId, uses = undefined) {
@@ -515,13 +515,13 @@ describe('⭐ disallow (FP-35)', () => {
         put(14, 'fixture_producer');
         put(15, 'fixture_buff_yield');
         TileModifiers.rebuildAround([C(15)]);
-        const allowed = TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'logging');
+        const allowed = TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'forestry');
         expect(allowed).toBeGreaterThan(100);
 
         Flags.setDisallowed(idAt(15), true);
         TileModifiers.rebuildAround([C(15)]);
 
-        expect(TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'logging')).toBe(allowed);
+        expect(TileModifiers.resolveAxis(idAt(14), EFFECT_TYPES.YIELD, 100, 'forestry')).toBe(allowed);
     });
 
     it('survives a save and reload', async () => {

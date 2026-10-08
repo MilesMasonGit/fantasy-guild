@@ -1,5 +1,6 @@
 
 import { stationSkillOf } from '../../../systems/effects/statements.js';
+import { isCombatSkill } from '../../../config/registries/skillRegistry.js';
 
 /**
  * The Token reacts each time its hero strikes it, one animation per skill.
@@ -154,7 +155,7 @@ export const HIT_ANIMATIONS = Object.freeze({
 
 /** Which animation each skill plays. A skill not listed plays nothing. */
 export const SKILL_HIT = Object.freeze({
-    logging: 'shake',
+    forestry: 'shake',
     mining: 'jitter',
     fishing: 'bob',
     farming: 'sway',
@@ -162,11 +163,11 @@ export const SKILL_HIT = Object.freeze({
     crafting: 'hop',
     cooking: 'pulse',
     construction: 'thump',
-    explore: 'rustle',
     [COMBAT]: 'knockback'
 });
 
-const COMBAT_SKILLS = new Set([COMBAT, 'melee', 'ranged', 'magic']);
+/** Every combat style plays the combat animation; the registry says which skills those are. */
+const isCombatKey = (key) => key === COMBAT || isCombatSkill(key);
 
 /**
  * The skill a hero uses on a Token of type `def`: combat for an enemy, a Foundation's build
@@ -182,7 +183,7 @@ export function hitSkillOf(def) {
 export function hitAnimationNameFor(skill) {
     if (!skill) return null;
     const key = String(skill).toLowerCase();
-    return SKILL_HIT[COMBAT_SKILLS.has(key) ? COMBAT : key] || null;
+    return SKILL_HIT[isCombatKey(key) ? COMBAT : key] || null;
 }
 
 export function hitAnimationFor(skill) {

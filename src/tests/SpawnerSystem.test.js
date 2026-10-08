@@ -59,7 +59,7 @@ registerTokenTypes({
         id: 'fixture_sp_tree', name: 'Fixture Sp Tree', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 3, sprite: 'skill_nature',
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         }
     },

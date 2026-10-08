@@ -61,7 +61,7 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     GameState.state.heroes = [
-        { id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }
+        { id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }
     ];
 });
 
@@ -154,7 +154,7 @@ describe('skill icons are sharp', () => {
 
     it('the inspection Skill Req icon is pixelated', () => {
         const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', hideSprite: true }));
-        const img = container.querySelector('img[alt="Logging"]');
+        const img = container.querySelector('img[alt="Forestry"]');
         expect(img).toBeTruthy();
         expect(img.style.width).toBe('32px');
         expect(img.style.imageRendering).toBe('pixelated');

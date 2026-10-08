@@ -253,7 +253,7 @@ describe('animated sheets carry an outline sheet that follows every frame', () =
 
 describe('on the mat: no shadow at rest; outlines from the game’s own state', () => {
     const TOKEN = { x: 400, y: 300 };
-    const hero = (id) => ({ id, name: id, status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } });
+    const hero = (id) => ({ id, name: id, status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } });
     const put = (point, typeId) => {
         const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
         Placement.placeTokenAt(instance, point);

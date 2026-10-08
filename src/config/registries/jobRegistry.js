@@ -1,39 +1,29 @@
 // Fantasy Guild - Job Registry
-// The 19-entry job tree (skill_class_rework_roadmap_v1.md §2).
+// The 13-entry class tree: the Recruit, four basic classes, eight master classes.
 
 import {
     SKILLS,
     SKILL_LAYERS,
-    FOUNDATION_SKILL_IDS,
-    HERO_SKILL_SLOTS
+    STARTING_SKILL_IDS
 } from './skillRegistry.js';
 
 /**
  * JobRegistry — **the class tree is the skill unlock tree.**
  *
- * ## ⭐ Promotion keeps every foundation skill
- * A hero on any job holds **all nine foundation skills plus the job's own
- * non-foundation skills** (`getJobSheet`). Promotion only ever adds (and,
- * when re-training across branches, swaps) non-foundation skills:
+ * ## ⭐ Promotion keeps every Starting skill
+ * A hero on any job holds **all nine Starting skills plus the job's own
+ * class skills** (`getJobSheet`). Promotion only ever adds (and, when
+ * re-training across branches, swaps) class skills:
  *
  * ```
- * RECRUIT            9 foundation · no combat skill · cannot fight      (9)
- *    │  promote        +1 combat  +1 shared
+ * RECRUIT        9 Starting · no combat skill · cannot fight            (9)
+ *    │  promote    +1 combat  +1 advanced
  *    ▼
- * BASE CLASS         9 foundation · 1 combat · 1 shared                (11)
- *    │  promote        +1 shared  +1 signature
+ * BASIC CLASS    9 Starting · 1 combat · 1 advanced                    (11)
+ *    │  promote    +1 advanced  +1 master
  *    ▼
- * ADVANCED JOB       9 foundation · 1 combat · 2 shared · 1 signature  (13)
+ * MASTER CLASS   9 Starting · 1 combat · 2 advanced · 1 master         (13)
  * ```
- *
- * ## ⚠️ The `skills` arrays below are still six wide
- * They are the job's authored LIST, kept because the promotion gate reads its
- * foundation picks (a Knight gates on the Mining and Smithing it lists) and
- * `JobTree.test.js` checks its layer shape. A listed foundation skill is no
- * longer the only one a hero holds: every foundation skill is.
- *
- * ⚠️ The **Warlord** still lists `construction`, which is a foundation skill,
- * so it has no signature skill.
  *
  * ## Each job declares its LIST, not its deltas
  * What a promotion *grants* and *removes* is derived by diffing the held sheets
@@ -44,43 +34,41 @@ import {
  * sheet cannot silently drift out of agreement with its own parent. **Re-parent
  * a job and its deltas recompute themselves**.
  *
+ * ## ⚠️ The promotion gate reads the LISTS
+ * `getPromotionGateSkills` asks for the listed skills a job shares with its
+ * parent's list. A basic class lists only its combat and advanced skill, which
+ * the Recruit does not list, so a basic class has no skill gate; a master class
+ * gates on its parent's combat and advanced skill.
+ *
  * ## ⚠️ Everything else is derived
- * Which skill is the combat one, which is the signature, which are foundation —
+ * Which skill is the combat one, which is the master skill, which are Starting —
  * none of that is declared. It is read from each skill's `layer` in
  * `skillRegistry.js`. **Nothing here may hardcode a skill id outside a `skills`
  * array**, so moving a skill between layers needs no edit in this file at all.
- *
- * ## ⚠️ This list is a first draft
- * Which jobs exist, what each holds, and the shape of
- * the tree are all expected to change. `JobTree.test.js` asserts the structural
- * rules — every promoted list exactly 6, foundation pairs subset of the parent's,
- * signatures unique, coverage even — so the tree can be rearranged freely and
- * the tests will say if a rearrangement broke something.
+ * `JobTree.test.js` asserts the structural rules, so the tree can be
+ * rearranged freely and the tests will say if a rearrangement broke something.
  */
 
-/** Tier 0 is the waiting room; 1 is a base class; 2 is a specialised job. */
-export const JOB_TIERS = { RECRUIT: 0, BASE: 1, ADVANCED: 2 };
+/** Tier 0 is the waiting room; 1 is a basic class; 2 is a master class. */
+export const JOB_TIERS = { RECRUIT: 0, BASIC: 1, MASTER: 2 };
 
 /**
  * Promotion cost, per tier.
  *
  * ⚠️ **Every number here is a placeholder for the balance pass.**
- * `skillLevel` is the threshold each *carried-forward* skill must reach
- * to become a Knight you need the Mining and Smithing a Knight keeps,
- * not an arbitrary hero level. That shape is settled; the values are not.
+ * `skillLevel` is the threshold each skill in the promotion gate
+ * (`getPromotionGateSkills`) must reach.
  *
- * ⚠️ **Re-training uses the same cost as entering the job.** It is
- * the only respec the player has, so its price is the single most
- * important balance dial in the rework — and the roadmap's advice is to ship it
- * cheap and raise it, because a forgiving system is far easier to tighten than
- * a punishing one is to recover from.
+ * ⚠️ **Re-training uses the same cost as entering the job.** It is the only
+ * respec the player has, so its price is the single most important balance
+ * dial in the rework.
  */
 export const PROMOTION_COSTS = {
     // ⚠️ Gold and materials are retired: a promotion is
     // paid for with a charge of the Token whose Promotes rule names the job.
     // The skill threshold — the qualification — is all this table holds now.
-    [JOB_TIERS.BASE]: { skillLevel: 10 },
-    [JOB_TIERS.ADVANCED]: { skillLevel: 25 }
+    [JOB_TIERS.BASIC]: { skillLevel: 10 },
+    [JOB_TIERS.MASTER]: { skillLevel: 25 }
 };
 
 export const JOBS = {
@@ -89,125 +77,89 @@ export const JOBS = {
         id: 'recruit', name: 'Recruit', tier: JOB_TIERS.RECRUIT, parent: null,
         description: 'Wide and shallow — a little of everything, badly. Cannot fight.',
         icon: '🧑',
-        skills: [...FOUNDATION_SKILL_IDS]
+        skills: [...STARTING_SKILL_IDS]
     },
 
-    // === Tier 1 — the six base classes ===================================
-    // 4 foundation · 1 combat · 1 shared. The shared skill a base class grants
-    // is its identity, and every advanced job under it inherits that skill.
+    // === Tier 1 — the four basic classes =================================
+    // 1 combat · 1 advanced. The advanced skill is the class's identity, and
+    // both master classes under it keep it.
     fighter: {
-        id: 'fighter', name: 'Fighter', tier: JOB_TIERS.BASE, parent: 'recruit',
+        id: 'fighter', name: 'Fighter', tier: JOB_TIERS.BASIC, parent: 'recruit',
         description: 'A frontline soldier who leads from the front.',
         icon: '⚔️',
-        skills: ['mining', 'logging', 'smithing', 'crafting', 'melee', 'leadership']
-    },
-    cleric: {
-        id: 'cleric', name: 'Cleric', tier: JOB_TIERS.BASE, parent: 'recruit',
-        description: 'A devoted servant who fights and mends in equal measure.',
-        icon: '✝️',
-        skills: ['mining', 'smithing', 'crafting', 'cooking', 'melee', 'faith']
+        skills: ['melee', 'leadership']
     },
     ranger: {
-        id: 'ranger', name: 'Ranger', tier: JOB_TIERS.BASE, parent: 'recruit',
-        description: 'A hunter at home in the wild, and deadly at distance.',
+        id: 'ranger', name: 'Ranger', tier: JOB_TIERS.BASIC, parent: 'recruit',
+        description: 'A wilderness scout, deadly at distance, who makes their own arrows.',
         icon: '🏹',
-        skills: ['logging', 'fishing', 'crafting', 'cooking', 'ranged', 'nature']
-    },
-    rogue: {
-        id: 'rogue', name: 'Rogue', tier: JOB_TIERS.BASE, parent: 'recruit',
-        description: 'An opportunist who takes what is not offered.',
-        icon: '🗝️',
-        skills: ['mining', 'logging', 'fishing', 'crafting', 'ranged', 'crime']
+        skills: ['ranged', 'fletching']
     },
     wizard: {
-        id: 'wizard', name: 'Wizard', tier: JOB_TIERS.BASE, parent: 'recruit',
-        description: 'A scholar who binds power into things.',
+        id: 'wizard', name: 'Wizard', tier: JOB_TIERS.BASIC, parent: 'recruit',
+        description: 'An arcane researcher who binds power into things.',
         icon: '🔮',
-        skills: ['smithing', 'fishing', 'crafting', 'cooking', 'magic', 'enchanting']
+        skills: ['magic', 'enchanting']
     },
-    alchemist: {
-        id: 'alchemist', name: 'Alchemist', tier: JOB_TIERS.BASE, parent: 'recruit',
-        description: 'A compounder of reagents, and of trouble.',
-        icon: '🧪',
-        skills: ['logging', 'fishing', 'crafting', 'cooking', 'magic', 'alchemy']
+    rogue: {
+        id: 'rogue', name: 'Rogue', tier: JOB_TIERS.BASIC, parent: 'recruit',
+        description: 'An infiltrator who moves through shadows and picks locks.',
+        icon: '🗝️',
+        skills: ['stealth', 'crime']
     },
 
-    // === Tier 2 — the twelve advanced jobs ===============================
-    // 2 foundation · 1 combat · 2 shared · 1 signature. The signature is
-    // exclusive: one job, one signature, no exceptions.
-    knight: {
-        id: 'knight', name: 'Knight', tier: JOB_TIERS.ADVANCED, parent: 'fighter',
-        description: 'Masterwork plate, and outgrown gear tempered into something better.',
-        icon: '🛡️',
-        skills: ['mining', 'smithing', 'melee', 'leadership', 'faith', 'armory']
-    },
-    warlord: {
-        id: 'warlord', name: 'Warlord', tier: JOB_TIERS.ADVANCED, parent: 'fighter',
-        description: 'Permanent stone — vaults, paving and a hall that grows.',
-        icon: '🧱',
-        skills: ['mining', 'logging', 'melee', 'leadership', 'crime', 'construction']
-    },
-    zealot: {
-        id: 'zealot', name: 'Zealot', tier: JOB_TIERS.ADVANCED, parent: 'cleric',
-        description: 'Pyres, sacrifices and hexes that strip an enemy bare.',
-        icon: '💀',
-        skills: ['mining', 'smithing', 'melee', 'faith', 'leadership', 'occult']
-    },
+    // === Tier 2 — the eight master classes ===============================
+    // The parent's two skills · 1 more advanced · 1 master. The master skill
+    // is exclusive: one class, one master skill, no exceptions.
     paladin: {
-        id: 'paladin', name: 'Paladin', tier: JOB_TIERS.ADVANCED, parent: 'cleric',
-        description: 'Scribed scrolls, consecrated gear, and scripture that holds.',
-        icon: '📜',
-        skills: ['smithing', 'cooking', 'melee', 'faith', 'enchanting', 'inscription']
+        id: 'paladin', name: 'Paladin', tier: JOB_TIERS.MASTER, parent: 'fighter',
+        description: 'A holy protector who blesses monuments and wards armor.',
+        icon: '✝️',
+        skills: ['melee', 'leadership', 'enchanting', 'faith']
     },
-    druid: {
-        id: 'druid', name: 'Druid', tier: JOB_TIERS.ADVANCED, parent: 'ranger',
-        description: 'Living companions that haul, hunt and fight beside you.',
+    knight: {
+        id: 'knight', name: 'Knight', tier: JOB_TIERS.MASTER, parent: 'fighter',
+        description: 'A master of arms who reforges masterwork plate.',
+        icon: '🛡️',
+        skills: ['melee', 'leadership', 'fletching', 'armory']
+    },
+    beastmaster: {
+        id: 'beastmaster', name: 'Beastmaster', tier: JOB_TIERS.MASTER, parent: 'ranger',
+        description: 'A forest warden whose companion beasts work beside them.',
         icon: '🐺',
-        skills: ['fishing', 'cooking', 'ranged', 'nature', 'alchemy', 'beastmaster']
+        skills: ['ranged', 'fletching', 'enchanting', 'taming']
     },
-    scout: {
-        id: 'scout', name: 'Scout', tier: JOB_TIERS.ADVANCED, parent: 'ranger',
-        description: 'Forward camps and towers that supercharge whatever they sit beside.',
-        icon: '⛺',
-        skills: ['logging', 'crafting', 'ranged', 'nature', 'crime', 'survival']
+    hunter: {
+        id: 'hunter', name: 'Hunter', tier: JOB_TIERS.MASTER, parent: 'ranger',
+        description: 'A cunning stalker of snares, traps and blinds.',
+        icon: '🪤',
+        skills: ['ranged', 'fletching', 'crime', 'trapping']
+    },
+    necromancer: {
+        id: 'necromancer', name: 'Necromancer', tier: JOB_TIERS.MASTER, parent: 'wizard',
+        description: 'A dark arcanist who raises thralls to fight unattended.',
+        icon: '💀',
+        skills: ['magic', 'enchanting', 'crime', 'summoning']
+    },
+    scholar: {
+        id: 'scholar', name: 'Scholar', tier: JOB_TIERS.MASTER, parent: 'wizard',
+        description: 'A visionary who builds laboratories and bulk converters.',
+        icon: '⚗️',
+        skills: ['magic', 'enchanting', 'leadership', 'science']
     },
     merchant: {
-        id: 'merchant', name: 'Merchant', tier: JOB_TIERS.ADVANCED, parent: 'rogue',
+        id: 'merchant', name: 'Merchant', tier: JOB_TIERS.MASTER, parent: 'rogue',
         // ⚠️ The only job that can run a Market, which makes this
         // promotion an economic turning point rather than a stat change.
-        description: 'Markets and charters that turn surplus goods into gold.',
+        description: 'A trade baron of market stalls, banks and charters.',
         icon: '💰',
-        skills: ['mining', 'logging', 'ranged', 'crime', 'leadership', 'commerce']
+        skills: ['stealth', 'crime', 'leadership', 'commerce']
     },
     assassin: {
-        id: 'assassin', name: 'Assassin', tier: JOB_TIERS.ADVANCED, parent: 'rogue',
-        description: 'Toxins, weapon oils and acids — potions aimed the other way.',
+        id: 'assassin', name: 'Assassin', tier: JOB_TIERS.MASTER, parent: 'rogue',
+        description: 'A shadow craftsman of cloaks, daggers and poisoned blades.',
         icon: '☠️',
-        skills: ['fishing', 'crafting', 'ranged', 'crime', 'alchemy', 'brewing']
-    },
-    conjurer: {
-        id: 'conjurer', name: 'Conjurer', tier: JOB_TIERS.ADVANCED, parent: 'wizard',
-        description: 'Disposable minions that fight so a hero does not have to.',
-        icon: '👻',
-        skills: ['smithing', 'fishing', 'magic', 'enchanting', 'faith', 'summoning']
-    },
-    astromancer: {
-        id: 'astromancer', name: 'Astromancer', tier: JOB_TIERS.ADVANCED, parent: 'wizard',
-        description: 'Lenses, star-charts and beacons that bend what the world drops.',
-        icon: '🔭',
-        skills: ['crafting', 'cooking', 'magic', 'enchanting', 'nature', 'astrology']
-    },
-    scientist: {
-        id: 'scientist', name: 'Scientist', tier: JOB_TIERS.ADVANCED, parent: 'alchemist',
-        description: 'Research that permanently sharpens recipes across the guild.',
-        icon: '⚗️',
-        skills: ['fishing', 'cooking', 'magic', 'alchemy', 'enchanting', 'science']
-    },
-    engineer: {
-        id: 'engineer', name: 'Engineer', tier: JOB_TIERS.ADVANCED, parent: 'alchemist',
-        description: 'Managers, drones and clockwork — the board working unattended.',
-        icon: '⚙️',
-        skills: ['logging', 'crafting', 'magic', 'alchemy', 'nature', 'engineering']
+        skills: ['stealth', 'crime', 'fletching', 'shadowcraft']
     }
 };
 
@@ -234,32 +186,30 @@ export function getPromotionsFrom(jobId) {
 }
 
 /**
- * The job's **listed** skills — its `skills` array as authored (nine for a
- * Recruit, six for a promoted job).
+ * The job's **listed** skills — its `skills` array as authored (the nine
+ * Starting skills for a Recruit, its class skills for a promoted job).
  *
  * ⚠️ This is NOT everything a hero on the job holds; that is
- * `getJobSheet`. The list still matters: its layer shape is what the tree's
- * design rules check, and its foundation picks are what the promotion gate
- * asks for (`getPromotionGateSkills`).
+ * `getJobSheet`. The list still matters: it is what the promotion gate
+ * reads (`getPromotionGateSkills`).
  */
 export function getJobSkills(jobId) {
     return JOBS[jobId]?.skills ? [...JOBS[jobId].skills] : [];
 }
 
 /**
- * Every skill a hero on this job **holds**: all the foundation skills, plus the
- * job's own non-foundation skills.
+ * Every skill a hero on this job **holds**: all the Starting skills, plus the
+ * job's own class skills.
  *
- * Promotion never removes a foundation skill, so a promoted hero can still
- * build, farm and explore. The sheet widens with each tier — 9 for a Recruit,
- * 11 for a base class, 13 for an advanced job (12 for the Warlord). Derived, so a job's list needs
- * no edit when the foundation layer grows; a foundation skill a job lists is
- * simply already held.
+ * Promotion never removes a Starting skill, so a promoted hero can still
+ * build, farm and fell trees. The sheet widens with each tier — 9 for a
+ * Recruit, 11 for a basic class, 13 for a master class. A Starting skill a
+ * job lists is simply already held.
  */
 export function getJobSheet(jobId) {
     if (!JOBS[jobId]) return [];
-    const own = getJobSkills(jobId).filter(id => !FOUNDATION_SKILL_IDS.includes(id));
-    return [...FOUNDATION_SKILL_IDS, ...own];
+    const own = getJobSkills(jobId).filter(id => !STARTING_SKILL_IDS.includes(id));
+    return [...STARTING_SKILL_IDS, ...own];
 }
 
 /** Skills in one layer of a job's LISTED skills — derived, never declared. */
@@ -272,9 +222,9 @@ export function getJobCombatSkill(jobId) {
     return getJobSkillsByLayer(jobId, SKILL_LAYERS.COMBAT)[0] || null;
 }
 
-/** The exclusive signature skill, or null below tier 2. */
-export function getJobSignatureSkill(jobId) {
-    return getJobSkillsByLayer(jobId, SKILL_LAYERS.SIGNATURE)[0] || null;
+/** The exclusive master skill, or null below tier 2. */
+export function getJobMasterSkill(jobId) {
+    return getJobSkillsByLayer(jobId, SKILL_LAYERS.MASTER)[0] || null;
 }
 
 /** Whether a hero on this job can fight at all. */
@@ -295,11 +245,10 @@ export function grantsOf(jobId) {
 
 /**
  * What that promotion **removes**, diffing the held sheets. This is
- * empty for every promotion down the tree: no foundation skill is ever
- * removed, and every advanced job keeps its parent's combat and shared skills.
- * Re-training ACROSS branches (a Knight becoming a Druid) still removes
- * non-foundation skills; `PromotionSystem.promote` banks those at their level
- * level.
+ * empty for every promotion down the tree: no Starting skill is ever
+ * removed, and every master class keeps its parent's combat and advanced
+ * skills. Re-training ACROSS branches (a Knight becoming a Wizard) still
+ * removes class skills; `PromotionSystem.promote` banks those at their level.
  */
 export function removesOf(jobId) {
     const job = JOBS[jobId];
@@ -314,13 +263,13 @@ export function getPromotionCost(jobId) {
 }
 
 /**
- * The skills a promotion gates on: those carried forward from the parent
- * To become a Knight you need the Mining and Smithing a Knight keeps.
+ * The skills a promotion gates on: those the job's list shares with its
+ * parent's list. To become a Paladin you need the Melee and Leadership a
+ * Paladin keeps.
  *
  * ⚠️ Deliberately diffs the LISTED skills, not the held sheets. Every
- * sheet now holds all nine foundation skills, so diffing sheets would gate
- * every promotion on all nine; the listed foundation picks keep the gate
- * asking for the job's own trades.
+ * sheet holds all nine Starting skills, so diffing sheets would gate every
+ * promotion on all nine.
  */
 export function getPromotionGateSkills(jobId) {
     const job = JOBS[jobId];
@@ -339,6 +288,3 @@ export function getJobLineage(jobId) {
     }
     return chain;
 }
-
-/** How many skills a promoted job LISTS (not how many it holds). Re-exported so consumers need one import. */
-export { HERO_SKILL_SLOTS };
