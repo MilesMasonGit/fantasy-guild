@@ -105,6 +105,7 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | U6 Top bar, Token Summary, Upkeep | 2026-10-08 | 55.4 → 46.7 / 60.3 | 19.5 → 23.5 / 17.6 | Two after-runs disagree; read as noise (the summary does nothing per frame while shut). Bench boards lift the new 80-Token cap so they keep measuring the same load. |
 | U7 Token inspection | 2026-10-08 | 50.9 → 57.3 | 22.1 → 19.6 | No change (popup closed in S2; the before run was noisy, 47–66 fps). |
 | U8 Motion and polish | 2026-10-08 | 41.7 → 59.9 | 26.21 → 18.51 | No change; the before run was a slow outlier. S2 has almost no spawns, so the spawn pop-out's own cost isn't measured here (`spawnMotion` switch exists for that). |
+| H1 Hero bar | 2026-10-08 | 63.9 → 83.0 | 17.21 → 13.11 | No change: the before run was slow (another agent's worktree busy; it flagged S2, shop, notify, loot and inspect at 4×, the after run flagged bank and S3 instead). S2 keeps every level-up as a bar bubble now. Drag bench after (plain / overlays): hero dock → mat 100 / 100 %, flag → mat 92 / 92 %; no failure had a bar bubble under the pointer. |
 
 ## Drag baseline (`npm run bench:drag`, 50 drags per kind)
 

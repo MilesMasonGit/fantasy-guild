@@ -132,15 +132,15 @@ export const BottomHeroDock = ({
             style={{ height: DOCK_STRIP_PX }}
             className={cn(
                 'w-full shrink-0 pointer-events-auto select-none relative z-40 overflow-visible',
-                'bg-gradient-to-b from-[#0d0907]/90 to-[#050302] border-t border-black/60 shadow-[0_-6px_18px_rgba(0,0,0,0.45)]',
+                'bg-[#0a0705]/95 border-t border-white/10',
                 recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5'
             )}
             {...recall.droppableProps}
         >
-            {/* Hero Inspection Sheet sliding UP from the dock, clear of the names. */}
+            {/* Hero Inspection Sheet sliding UP from the dock, clear of the names and over any level-up bubbles. */}
             <div
                 className={cn(
-                    "absolute left-1/2 -translate-x-1/2 w-[368px] md:w-[400px] xl:w-[400px] 2xl:w-[420px] h-[700px] max-h-[75vh] z-30 transition-all duration-200 ease-out",
+                    "absolute left-1/2 -translate-x-1/2 w-[368px] md:w-[400px] xl:w-[400px] 2xl:w-[420px] h-[700px] max-h-[75vh] z-50 transition-all duration-200 ease-out",
                     isOpen
                         ? "translate-y-0 opacity-100 pointer-events-auto"
                         : "translate-y-8 opacity-0 pointer-events-none"
@@ -157,13 +157,14 @@ export const BottomHeroDock = ({
             </div>
 
             {/**
-             * The heroes, one row. On a narrow window each slot shrinks (88 px down to 48 px)
+             * The heroes, one row. On a narrow window each slot shrinks (`DOCK_SLOT_PX` down to `DOCK_SLOT_MIN_PX`)
              * before the row runs out of room.
              */}
-            <div className="absolute inset-0 flex flex-row items-end justify-center gap-1 px-2 z-40">
+            <div className="absolute inset-0 flex flex-row items-end justify-center px-2 z-40">
                 {heroIds.map((heroId, index) => (
                     <motion.div
                         key={heroId}
+                        data-dock-slot={heroId}
                         layout="position"
                         transition={{ type: 'spring', stiffness: 350, damping: 28 }}
                         className="relative flex"

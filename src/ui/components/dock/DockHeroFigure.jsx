@@ -11,6 +11,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { equipOrAnnounce } from './dockEquip.js';
+import { useHeroBarBubbles, clearHeroBubbles, BAR_BUBBLES_SHOWN } from './heroBarBubbles.js';
 import {
     DOCK_STRIP_PX, DOCK_LABEL_GAP_PX,
     isDeployedStatus, dockArtOffset, dockArtFilter, hpPercent, hpTone, HP_TONE_CLASS
@@ -100,6 +101,8 @@ export const DockHeroFigure = ({
         { deps: [heroId] }
     );
 
+    const bubbles = useHeroBarBubbles(heroId);
+
     const justDroppedRef = useRef(false);
 
     const drag = useEntityDrag({
@@ -171,6 +174,7 @@ export const DockHeroFigure = ({
             data-dock-art-offset={offset}
             onClick={() => {
                 if (justDroppedRef.current) return;
+                clearHeroBubbles(heroId);
                 onSelect?.(heroId);
             }}
             onDoubleClick={(e) => {
@@ -263,10 +267,10 @@ export const DockHeroFigure = ({
                 <div
                     data-dock-hp={pct}
                     data-dock-hp-tone={tone}
-                    title={`${hp} / ${hpMax} HP${isWounded ? ' (wounded)' : ''}`}
+                    title={`${hp.toLocaleString()} / ${hpMax.toLocaleString()} HP${isWounded ? ' (wounded)' : ''}`}
                     className={cn(
-                        'w-12 h-1.5 rounded-full bg-black/80 border overflow-hidden',
-                        isWounded ? 'border-red-500/80' : 'border-white/20'
+                        'w-14 h-1 rounded-full bg-black/70 overflow-hidden',
+                        isWounded && 'ring-1 ring-red-500/80'
                     )}
                 >
                     <div
@@ -275,6 +279,69 @@ export const DockHeroFigure = ({
                     />
                 </div>
             </div>
+
+            {bubbles.length > 0 && (
+                <BarBubbles
+                    heroId={heroId}
+                    bubbles={bubbles}
+                    bottom={labelBottom + LABEL_PX}
+                    passive={globalDragging}
+                />
+            )}
+        </div>
+    );
+};
+
+/** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of the name. */
+const LABEL_PX = 24;
+
+/**
+ * A hero's level-up bubbles, standing over the name: newest nearest the head, the rest
+ * counted on top. Never wider than the hero's slot. A click on any of them clears them all
+ * without opening the hero; they let the pointer through while something is being dragged.
+ */
+const BarBubbles = ({ heroId, bubbles, bottom, passive }) => {
+    const shown = bubbles.slice(-BAR_BUBBLES_SHOWN);
+    const hidden = bubbles.length - shown.length;
+    const clear = (e) => {
+        e.stopPropagation();
+        clearHeroBubbles(heroId);
+    };
+    return (
+        <div
+            data-bar-bubbles={heroId}
+            title="Click to clear"
+            className={cn(
+                'absolute inset-x-0 mx-auto flex flex-col items-center gap-0.5 px-0.5',
+                passive ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'
+            )}
+            style={{ bottom, maxWidth: '100%' }}
+            // ⚠️ Stops the press reaching the hero's drag handle: a bubble is clicked, not dragged.
+            onPointerDown={e => e.stopPropagation()}
+            onClick={clear}
+            onDoubleClick={e => e.stopPropagation()}
+        >
+            {hidden > 0 && (
+                <span
+                    data-bar-bubble-more
+                    className="px-1 text-[9px] font-bold leading-none text-yellow-200/80"
+                    style={{ textShadow: '0 1px 2px #000' }}
+                >
+                    {`+${hidden} more`}
+                </span>
+            )}
+            {shown.map((b, i) => (
+                <div
+                    key={b.key}
+                    data-bar-bubble={b.key}
+                    className="relative max-w-full px-1.5 py-0.5 rounded border border-yellow-500/70 bg-yellow-950/95 text-yellow-100 text-[10px] font-bold leading-tight text-center shadow"
+                >
+                    {b.text}
+                    {i === shown.length - 1 && (
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-yellow-500/70 bg-yellow-950/95" />
+                    )}
+                </div>
+            ))}
         </div>
     );
 };

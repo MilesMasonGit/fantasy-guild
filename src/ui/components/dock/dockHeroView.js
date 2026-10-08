@@ -13,9 +13,13 @@ import { boardArtSteps } from '../base/TokenSprite.jsx';
 /** The strip's height in screen px. Fixed: a height that followed the art size would change the mat's fit and could oscillate. */
 export const DOCK_STRIP_PX = 64;
 
-/** A hero's slot at full width, and the narrowest it shrinks to on a small window. */
-export const DOCK_SLOT_PX = 88;
-export const DOCK_SLOT_MIN_PX = 48;
+/**
+ * A hero's slot at full width, and the narrowest it shrinks to on a small window. Sized so
+ * eight heroes (the owner's planned roster cap) fit the bar at the usual window width, each with room
+ * for a level-up bubble that never reaches a neighbour.
+ */
+export const DOCK_SLOT_PX = 128;
+export const DOCK_SLOT_MIN_PX = 56;
 
 /** Gap between the top of the sprite frame and the bottom of the name/HP block. */
 export const DOCK_LABEL_GAP_PX = 2;
