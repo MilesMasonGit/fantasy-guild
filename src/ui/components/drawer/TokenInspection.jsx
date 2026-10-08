@@ -14,10 +14,12 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { lifecycleLines } from './lifecycleLines.js';
+import { InspectBubbles } from './InspectBubbles.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -80,8 +82,6 @@ export const TokenInspection = ({
     const skillDef = skillId ? getSkill(skillId) : null;
     const skillName = skillDef?.name || (skillId ? skillId.charAt(0).toUpperCase() + skillId.slice(1) : null);
     const skillReq = def.config?.skillRequired ?? (skillName ? 1 : 0);
-    const xpAmount = def.config?.xp ?? 0;
-    const cycleSec = def.config?.cycleTimeMs ? (def.config.cycleTimeMs / 1000).toFixed(0) : null;
 
     return (
         <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
@@ -141,35 +141,7 @@ export const TokenInspection = ({
                     </div>
                 )}
 
-                {(xpAmount > 0 || cycleSec) && (
-                    <div className="flex items-center gap-2 text-xs">
-                        {xpAmount > 0 && (
-                            <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                                <span className="text-gi-muted">XP</span>
-                                <span className="font-bold text-amber-400 tabular-nums">+{xpAmount}</span>
-                            </div>
-                        )}
-                        {cycleSec && (
-                            <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
-                                <span className="text-gi-muted">Time</span>
-                                <span className="font-bold text-gi-text tabular-nums">{cycleSec}s</span>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
-                    <span className="text-gi-muted">Charges</span>
-                    <div className="font-bold text-gi-text font-mono tabular-nums">
-                        {def.uses == null ? (
-                            <span className="text-gi-success font-sans">∞</span>
-                        ) : (
-                            <span>
-                                {def.uses}/{def.uses}
-                            </span>
-                        )}
-                    </div>
-                </div>
+                <InspectBubbles def={def} instanceId={instanceId} />
 
                 {enemy && (
                     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
@@ -180,7 +152,7 @@ export const TokenInspection = ({
                     </div>
                 )}
 
-                {instanceId != null && <HeroesMayWork instanceId={instanceId} />}
+                {instanceId != null && <DisallowSwitch instanceId={instanceId} />}
                 {instanceId != null && <LifecycleLines instanceId={instanceId} />}
             </div>
 
@@ -223,18 +195,18 @@ export const TokenInspection = ({
 };
 
 /**
- * The disallow toggle: 'Heroes may work this'. Shown only for a board Token a hero could work:
- * a work cycle that needs a hero and names a skill, an enemy, a Promotion Token, or the Guild
- * Hall (`Flags.isHeroWorkable`). Unticking lets go of any hero working it and every flag skips
- * it from then on; the Token itself keeps running its rules. A Token a Manager restocks
- * arrives allowed.
+ * The Disallow switch. Shown only for a board Token a hero could work: a work cycle that needs a
+ * hero and names a skill, an enemy, a Promotion Token, or the Guild Hall (`Flags.isHeroWorkable`).
+ * On means heroes may NOT work it, the same state the mat's disallow bubble shows: switching it
+ * on lets go of any hero working it and every flag skips it from then on; the Token itself keeps
+ * running its rules. A Token a Manager restocks arrives allowed.
  */
-const HeroesMayWork = ({ instanceId }) => {
+const DisallowSwitch = ({ instanceId }) => {
     const view = useGameState(
         () => {
             const instance = BoardState.getTokenById(instanceId);
             if (!instance || !Flags.isHeroWorkable(instance)) return null;
-            return { id: instance.id, allowed: !Flags.isDisallowed(instance) };
+            return { id: instance.id, disallowed: Flags.isDisallowed(instance) };
         },
         [BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null,
@@ -244,25 +216,26 @@ const HeroesMayWork = ({ instanceId }) => {
 
     return (
         <label
-            data-heroes-may-work={view.allowed ? 'yes' : 'no'}
+            data-disallow-switch={view.disallowed ? 'on' : 'off'}
+            title="When on, heroes will not work this Token"
             className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 hover:border-gi-gold/40 text-xs cursor-pointer transition-colors"
         >
-            <span className="text-gi-muted">Heroes may work this</span>
+            <span className="text-gi-muted">Disallow</span>
             <button
                 type="button"
                 role="switch"
-                aria-checked={view.allowed}
-                onClick={() => Flags.setDisallowed(view.id, view.allowed)}
+                aria-checked={view.disallowed}
+                onClick={() => Flags.setDisallowed(view.id, !view.disallowed)}
                 className={cn(
                     "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                    view.allowed ? "bg-amber-400" : "bg-black/80 border-white/20"
+                    view.disallowed ? "bg-red-500" : "bg-black/80 border-white/20"
                 )}
             >
                 <span
                     aria-hidden="true"
                     className={cn(
                         "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                        view.allowed ? "translate-x-4" : "translate-x-0 bg-white/70"
+                        view.disallowed ? "translate-x-4" : "translate-x-0 bg-white/70"
                     )}
                 />
             </button>
@@ -287,6 +260,7 @@ function liveLifecycleSources() {
         tokenName,
         itemName: (itemId) => getItem(itemId)?.name || itemId,
         spawnerStatus: SpawnerSystem.spawnerStatus,
+        passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance) }),
         selectedRecipe: StationRecipe.selectedRecipe,
         poolFor: StationRecipe.poolFor,
         originOf: BoardState.originOf,
@@ -296,7 +270,7 @@ function liveLifecycleSources() {
 
 /**
  * Lifecycle lines: a spawner's family, next spawn and upkeep; time to grow, turn or turn back;
- * a Foundation's build; a trickle's pay; origin in dev mode. Plain rows; the wording lives in
+ * a Foundation's build; Passive Production; origin in dev mode. Plain rows; the wording lives in
  * `lifecycleLines.js`. Clocks move without events, so it re-reads every second while open.
  */
 const LifecycleLines = ({ instanceId }) => {

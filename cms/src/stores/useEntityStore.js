@@ -487,8 +487,9 @@ export function makeWeightedTokenEntry(typeId = '') {
     return { typeId, weight: 1 };
 }
 
+/** A Passive Production line: paid every lap of the one shared 5-minute timer, so it has no interval of its own. */
 export function makeTrickleEntry(itemId = '') {
-    return { itemId, quantity: 1, everyMs: 300000 };
+    return { itemId, quantity: 1 };
 }
 
 /** A new block's starting value. Token and item id slots start empty rather than guessed; the content audit reports an unfinished one. */

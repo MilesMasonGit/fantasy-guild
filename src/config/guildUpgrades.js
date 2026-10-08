@@ -78,6 +78,21 @@ export function placeholderPrices(maxRank, {
     });
 }
 
+/** What the Wishing Well adds to the Guild Hall's Passive Production: 10 Water per rank, per lap. */
+export const WISHING_WELL_ITEM = 'item_water';
+export const WISHING_WELL_WATER_PER_RANK = 10;
+
+/** Water the Wishing Well pays each Passive Production lap at a rank (0 below rank 1). */
+export function wishingWellWater(rank) {
+    const r = Math.floor(Number(rank) || 0);
+    return r > 0 ? WISHING_WELL_WATER_PER_RANK * r : 0;
+}
+
+/** The Wishing Well's rank in a ranks map, honouring its old id. */
+export function wishingWellRank(ranks) {
+    return rankIn(ranks, 'wishing_well');
+}
+
 /**
  * Notice Board ranks: +1 quest per rank from the base of 2 to 5, so three ranks.
  */
@@ -137,13 +152,13 @@ export const GUILD_UPGRADES = [
     {
         id: 'wishing_well',
         name: 'Wishing Well',
-        description: 'The Guild Hall draws fresh water every cycle.',
+        description: 'The Guild Hall draws fresh Water as Passive Production every 5 minutes. No hero needed.',
         node: { x: 0, y: 0.5 },
         links: [HALL_NODE],
         maxRank: 10,
         prices: placeholderPrices(10, { freeFirstRank: true }),
-        statLabel: rank => rank === 0 ? 'No water generated' : `${rank} Water / 10s`,
-        nextStatLabel: rank => `${rank + 1} Water / 10s`,
+        statLabel: rank => rank === 0 ? 'No water generated' : `${wishingWellWater(rank)} Water / 5 min`,
+        nextStatLabel: rank => `${wishingWellWater(rank + 1)} Water / 5 min`,
         sprite: UPGRADE_SPRITES.wishing_well
     },
     {

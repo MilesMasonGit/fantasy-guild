@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, renderHook, act, waitFor } from '@testing-library/react';
+import { render, cleanup, renderHook, act, waitFor, fireEvent } from '@testing-library/react';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
@@ -37,7 +37,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 import { BankDrawer } from '../ui/components/drawer/BankDrawer.jsx';
 import {
     ShopDrawer, ShopRow, shopDrawerState, shopDrawerTransform, shopRowPayload,
-    isShopPayload, SHOP_LIP_PX
+    isShopPayload, SHOP_LIP_PX, SHOP_ROW_PX, SHOP_ART_PX
 } from '../ui/components/drawer/ShopDrawer.jsx';
 
 const h = React.createElement;
@@ -47,6 +47,17 @@ registerTokenTypes({
     fixture_sp_forest: {
         id: 'fixture_sp_forest', name: 'Fixture Sp Forest', size: 1,
         shop: { price: [{ itemId: WOOD, quantity: 10 }], section: 'logging' }
+    }
+});
+
+registerTokenTypes({
+    fixture_pnl_big: {
+        id: 'fixture_pnl_big', name: 'Fixture Pnl Big', size: 1,
+        shop: { price: [{ itemId: WOOD, quantity: 20 }], section: 'logging', group: 'Fixture Panel Group' }
+    },
+    fixture_pnl_small: {
+        id: 'fixture_pnl_small', name: 'Fixture Pnl Small', size: 1,
+        shop: { price: [{ itemId: WOOD, quantity: 4 }], section: 'logging', group: 'Fixture Panel Group' }
     }
 });
 
@@ -183,13 +194,12 @@ describe('the Shop drawer (B4)', () => {
         expect(el.querySelector('[data-shop-row]')).toBeNull();
     });
 
-    it('has no Buy buttons: the only button is Close (FB-25)', () => {
+    it('has no Buy buttons: only Close and the two scroll arrows (FB-25)', () => {
         InventoryManager.addItem(WOOD, 10);
         const view = mountDrawer();
         expect(row(view, 'fixture_sp_forest')).toBeTruthy();
         const buttons = [...view.container.querySelectorAll('button')];
-        expect(buttons).toHaveLength(1);
-        expect(buttons[0].title).toBe('Close Shop');
+        expect(buttons.map(b => b.title).sort()).toEqual(['Close Shop', 'Scroll down', 'Scroll up']);
     });
 
     it('an affordable row can be picked up; its payload lands through the mat (from.shop)', () => {
@@ -220,11 +230,11 @@ describe('the Shop drawer (B4)', () => {
         InventoryManager.addItem(WOOD, 10);
         const t = BoardState.createTokenInstance('fixture_sp_forest', 1, null, BoardState.ORIGIN.PLACED);
         BoardState.addToken(t, 1200, 900);
-        setMatTuning('matCap', MatCap.placedCount());
+        setMatTuning('tokenCap', MatCap.tokenCount());
         const view = mountDrawer();
         const r = row(view, 'fixture_sp_forest');
         expect(r.getAttribute('data-shop-affordable')).toBe('false');
-        expect(r.querySelector('[data-shop-missing]').textContent).toMatch(/Mat is full/);
+        expect(r.querySelector('[data-shop-missing]').textContent).toMatch(/Token cap full/);
     });
 
     it('re-enables live when the Bank fills', () => {
@@ -232,6 +242,93 @@ describe('the Shop drawer (B4)', () => {
         expect(row(view, 'fixture_sp_forest').getAttribute('data-shop-affordable')).toBe('false');
         act(() => { InventoryManager.addItem(WOOD, 10); });
         expect(row(view, 'fixture_sp_forest').getAttribute('data-shop-affordable')).toBe('true');
+    });
+});
+
+describe('Shop layout (U5)', () => {
+    it('every row is the same height, with a 128 px sprite on the right', () => {
+        InventoryManager.addItem(WOOD, 30);
+        const view = mountDrawer();
+        const rows = [...view.container.querySelectorAll('[data-shop-row]')];
+        expect(rows.length).toBeGreaterThan(1);
+        const heights = new Set(rows.map(r => r.style.height));
+        expect(heights.size).toBe(1);
+        expect([...heights][0]).toBe(`${SHOP_ROW_PX}px`);
+        for (const r of rows) {
+            const art = r.querySelector('[data-shop-art]');
+            expect(art).toBeTruthy();
+            expect(art.style.width).toBe(`${SHOP_ART_PX}px`);
+            expect(art.nextElementSibling).toBeNull();
+            expect(art.previousElementSibling).toBeTruthy();
+            const img = art.querySelector('img');
+            if (img) expect(img.style.width).toBe(`${SHOP_ART_PX}px`);
+        }
+        expect(SHOP_ROW_PX).toBeGreaterThanOrEqual(SHOP_ART_PX);
+    });
+
+    it('lays the price out as a two-column grid', () => {
+        const view = mountDrawer();
+        const price = view.container.querySelector('[data-shop-row="fixture_sp_forest"] [data-shop-price]');
+        expect(price.className).toContain('grid');
+        expect(price.className).toContain('grid-cols-2');
+    });
+
+    it('has arrow buttons at the top and bottom, and no visible scrollbar', () => {
+        const view = mountDrawer();
+        const up = view.container.querySelector('[data-shop-scroll="up"]');
+        const down = view.container.querySelector('[data-shop-scroll="down"]');
+        expect(up).toBeTruthy();
+        expect(down).toBeTruthy();
+        expect(up.compareDocumentPosition(down) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        const list = view.container.querySelector('[data-shop-list]');
+        expect(list.className).toContain('[scrollbar-width:none]');
+        expect(list.className).not.toContain('gi-scrollbar');
+        let scrolled = null;
+        list.scrollBy = (o) => { scrolled = o; };
+        Object.defineProperty(list, 'scrollTop', { value: 100, configurable: true });
+        act(() => { list.dispatchEvent(new Event('scroll')); });
+        expect(up.disabled).toBe(false);
+        fireEvent.click(up);
+        expect(scrolled.top).toBeLessThan(0);
+    });
+});
+
+describe('Shop groups (U5)', () => {
+    const groupRow = (view) => view.container.querySelector('[data-shop-group="Fixture Panel Group"]');
+
+    it('a group is one row with a dropdown listing every entry, cheapest picked first', () => {
+        InventoryManager.addItem(WOOD, 30);
+        const view = mountDrawer();
+        expect(view.container.querySelectorAll('[data-shop-group="Fixture Panel Group"]')).toHaveLength(1);
+        const r = groupRow(view);
+        const select = r.querySelector('[data-shop-select]');
+        expect([...select.options].map(o => o.value)).toEqual(['fixture_pnl_small', 'fixture_pnl_big']);
+        expect(select.value).toBe('fixture_pnl_small');
+        expect(r.getAttribute('data-shop-row')).toBe('fixture_pnl_small');
+        expect(r.querySelector('[data-shop-price]').textContent).toContain('30/4');
+        // An ungrouped row has no dropdown.
+        expect(row(view, 'fixture_sp_forest').querySelector('[data-shop-select]')).toBeNull();
+    });
+
+    it('picking an entry shows its price and drags that entry', () => {
+        InventoryManager.addItem(WOOD, 30);
+        const view = mountDrawer();
+        fireEvent.change(groupRow(view).querySelector('[data-shop-select]'), { target: { value: 'fixture_pnl_big' } });
+        const r = groupRow(view);
+        expect(r.getAttribute('data-shop-row')).toBe('fixture_pnl_big');
+        expect(r.querySelector('[data-shop-price]').textContent).toContain('30/20');
+        expect(r.getAttribute('aria-roledescription')).toBe('draggable');
+    });
+
+    it('the picked entry is gated by its own price: affordable small, not big', () => {
+        InventoryManager.addItem(WOOD, 5);
+        const view = mountDrawer();
+        expect(groupRow(view).getAttribute('data-shop-affordable')).toBe('true');
+        fireEvent.change(groupRow(view).querySelector('[data-shop-select]'), { target: { value: 'fixture_pnl_big' } });
+        const r = groupRow(view);
+        expect(r.getAttribute('data-shop-affordable')).toBe('false');
+        expect(r.querySelector('[data-shop-missing]').textContent).toBe('Need 15× Oak Wood');
+        expect(r.getAttribute('aria-roledescription')).toBeNull();
     });
 });
 

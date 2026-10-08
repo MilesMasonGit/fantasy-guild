@@ -13,6 +13,11 @@ Its locked sections are the source of truth for briefs 10 and 30 (written
   bin lets a spawner exceed its cap: a bug). → T-101
 - **"Trickle" becomes "Passive Production"**: all of it on one 5-minute timer;
   the **Wishing Well** joins it (about 10 Water every 5 min). → T-099
+  - Built 2026-10-08: the Wishing Well pays **10 × rank** Water per 5 min (owner);
+    every Passive Production line pays each 5-minute lap, so the Hall's Apple
+    Seed now comes every 5 min, not 10 (director, from "one timer"); the Guild
+    Hall and quest Tokens don't count toward the Token cap, so a full mat never
+    blocks a quest (director).
 - The **"Hero went elsewhere"** notification should not be a notification.
 
 Checked 2026-10-06: the inspection panel's "Origin (dev)" line shows only in a
@@ -68,6 +73,14 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
   in the same popup (owner, 2026-10-07).
 - **Level-up line**: "Leveled up Mining to 25!" for one level; "(+4)" is added
   only when two or more levels merge into one bubble (owner, 2026-10-07).
+- **Token size on the mat** (owner, 2026-10-08): art stays on whole-pixel
+  steps and rounds to the nearest step, so at 1920×1080 Tokens and heroes draw at
+  2× (bigger than their 128-unit design). Keep that; make grabbing follow each
+  Token's own circle so overlapping art doesn't steal presses.
+- **Heroes stand a little further** from what they work or fight, so the two
+  health bars don't collide (owner, 2026-10-08; T-112).
+- **Health bars** show the HP number on the bar; the hero's bar stays ~3 s after
+  a fight (owner, 2026-10-08).
 - **Name label**: on hover, **above** the Token's box, never over a bubble.
 - Bubbles are drawn **inside** the Token's box, so nothing is cut off at the
   mat's edges and hovering them never leaves the Token.

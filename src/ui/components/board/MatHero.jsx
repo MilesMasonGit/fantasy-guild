@@ -8,6 +8,8 @@ import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/Tok
 import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 
+const NO_POINTER = Object.freeze({ pointerEvents: 'none' });
+
 /** A limping hero: drained of colour, a touch darker, and a slower walk cycle. */
 const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
 const LIMP_FRAME_MS = 250;
@@ -24,7 +26,7 @@ import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HealthBar } from './HealthBar.jsx';
-import { HEALTH_BAR_GAP_U, HEALTH_BAR_H_U, HERO_BAR_W_U } from './healthBar.js';
+import { heroBarPlace } from './healthBar.js';
 
 /**
  * A fighting hero's health bar, just over their figure's head. Reads the hero's HP as a flat
@@ -48,13 +50,23 @@ function HeroHealthBar({ heroId, artPx }) {
             of={heroId}
             cur={hp.cur}
             max={hp.max}
-            style={{
-                left: (HERO_HIT_PX - HERO_BAR_W_U) / 2,
-                top: (FLAG_PX - artPx) / 2 - HEALTH_BAR_H_U - 6 - HEALTH_BAR_GAP_U,
-                width: HERO_BAR_W_U
-            }}
+            style={heroBarPlace(artPx)}
         />
     );
+}
+
+/** How long a hero's bar stays up after their fight ends, in ms. */
+export const HERO_BAR_LINGER_MS = 3000;
+
+/** True while `fighting`, and for `HERO_BAR_LINGER_MS` after it stops. */
+function useBarLinger(fighting) {
+    const [linger, setLinger] = useState(false);
+    useEffect(() => {
+        if (fighting) { setLinger(true); return undefined; }
+        const t = setTimeout(() => setLinger(false), HERO_BAR_LINGER_MS);
+        return () => clearTimeout(t);
+    }, [fighting]);
+    return fighting || linger;
 }
 
 /**
@@ -132,6 +144,7 @@ export const MatHero = memo(function MatHero({
     const isWalking = moving;
     const walkDrawn = useDrawn('walkDraw');
     const barsDrawn = useDrawn('bubbles');
+    const barShown = useBarLinger(fighting);
     const facingLeft = facing < 0;
 
     // A moving hero is handed no point (so their steps do not redraw the mat). Read it live,
@@ -207,7 +220,9 @@ export const MatHero = memo(function MatHero({
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         hovered && !drag.isDragging && 'gi-token-hover-hop'
                     )}
-                    style={limp ? { filter: LIMP_FILTER } : undefined}
+                    // The art is wider than the hero's box and takes no pointer: a press beside
+                    // the figure reaches the flag or Token behind it.
+                    style={limp ? { filter: LIMP_FILTER, pointerEvents: 'none' } : NO_POINTER}
                 >
                     {animArt ? (
                         <AnimatedHeroSprite
@@ -234,7 +249,7 @@ export const MatHero = memo(function MatHero({
                     )}
                 </div>
             )}
-            {fighting && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
+            {barShown && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
         </button>
     );
 });

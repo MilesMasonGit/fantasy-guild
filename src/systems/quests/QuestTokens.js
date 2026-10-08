@@ -43,8 +43,8 @@ export { QUEST_TOKEN_TYPE };
  * }
  * ```
  *
- * It is `origin: 'spawned'`, so it never counts toward the mat's Token cap
- * (`MatCap.placedCount`), and the player can drag it like any Token. No hero
+ * It is `origin: 'spawned'` and never counts toward the mat's Token cap
+ * (`MatCap.countsTowardCap`), and the player can drag it like any Token. No hero
  * works it.
  *
  * ## Two kinds, two rules
@@ -507,7 +507,7 @@ export function claimQuest(instanceId) {
         InventoryManager.removeItem(quest.itemId, quest.requiredCount);
     }
 
-    // The reward floats beside the quest, as the Hall's trickle does: collected
+    // The reward floats beside the quest, as the Hall's Passive Production does: collected
     // on hover, banked through InventoryManager. Dropped before the Token
     // leaves, since the drop is placed at its point.
     const rewardItems = questReward(quest);

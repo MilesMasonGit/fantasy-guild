@@ -16,7 +16,7 @@ const BLOCK_INFO = {
   turns: { title: 'Turns', what: 'Rolls a chance every cycle to turn into one of a list, and the same to turn back (Coast ↔ Shrimp Coast).' },
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
-  trickle: { title: 'Trickle', what: 'Pays items into the Bank on a clock, no hero needed (Guild Hall only, for now).' },
+  trickle: { title: 'Passive Production', what: 'Drops these items beside the Token every 5 minutes, all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
 };
 
 export default function LifecycleBlocks({ token, onChange }) {
@@ -28,6 +28,11 @@ export default function LifecycleBlocks({ token, onChange }) {
       .filter(Boolean)
       .map((t) => ({ id: t.id, name: t.name || t.id }))
       .sort((a, b) => a.name.localeCompare(b.name)),
+    [tokens]
+  );
+
+  const shopGroupNames = useMemo(
+    () => [...new Set(Object.values(tokens).map((t) => t?.shop?.group).filter(Boolean))].sort(),
     [tokens]
   );
 
@@ -74,7 +79,7 @@ export default function LifecycleBlocks({ token, onChange }) {
                     <FoundationBlock block={token.foundation} onChange={(v) => set('foundation', v)} />
                   )}
                   {key === 'shop' && (
-                    <ShopBlock block={token.shop} items={items} onChange={(v) => set('shop', v)} />
+                    <ShopBlock block={token.shop} items={items} groupNames={shopGroupNames} onChange={(v) => set('shop', v)} />
                   )}
                   {key === 'trickle' && (
                     <TrickleBlock lines={token.trickle} items={items} onChange={(v) => set('trickle', v)} />
@@ -173,11 +178,13 @@ function FoundationBlock({ block, onChange }) {
       <Field label="Built with skill">
         <SkillSelect value={block.skill} onChange={(skill) => patch({ skill })} />
       </Field>
+      {/* A building recipe names a minimum tier; a higher tier builds everything a lower one can. Unset is tier 1. */}
+      <IntField label="Tier" min={1} value={block.tier ?? 1} onChange={(tier) => patch({ tier })} />
     </div>
   );
 }
 
-function ShopBlock({ block, items, onChange }) {
+function ShopBlock({ block, items, groupNames = [], onChange }) {
   const patch = (p) => onChange({ ...block, ...p });
   return (
     <div className="space-y-3">
@@ -191,6 +198,21 @@ function ShopBlock({ block, items, onChange }) {
       <Field label="Shop section">
         <SkillSelect value={block.section} onChange={(section) => patch({ section })} general />
       </Field>
+      <Field label="Shop group (optional)">
+        <input
+          type="text" list="shop-group-names" data-field="shop-group"
+          value={block.group || ''} placeholder="Tokens sharing a label are one Shop row with a dropdown"
+          onChange={(e) => {
+            const group = e.target.value;
+            const { group: _drop, ...rest } = block;
+            onChange(group.trim() ? { ...rest, group } : rest);
+          }}
+          className="w-full" style={{ fontSize: 11 }}
+        />
+        <datalist id="shop-group-names">
+          {groupNames.map((g) => <option key={g} value={g} />)}
+        </datalist>
+      </Field>
     </div>
   );
 }
@@ -201,10 +223,9 @@ function TrickleBlock({ lines, items, onChange }) {
   return (
     <div className="space-y-2">
       {list.map((line, i) => (
-        <div key={i} className="grid grid-cols-[1fr_70px_110px_auto] gap-2 items-end">
+        <div key={i} className="grid grid-cols-[1fr_70px_auto] gap-2 items-end">
           <ItemPicker label="Item" value={line.itemId} items={items} canCreate={false} onPick={(itemId) => patchLine(i, { itemId })} />
           <IntField label="Qty" min={1} value={line.quantity} onChange={(quantity) => patchLine(i, { quantity })} />
-          <IntField label="Every (ms)" min={1000} step={1000} value={line.everyMs} onChange={(everyMs) => patchLine(i, { everyMs })} />
           <RemoveButton onClick={() => onChange(list.filter((_, idx) => idx !== i))} />
         </div>
       ))}

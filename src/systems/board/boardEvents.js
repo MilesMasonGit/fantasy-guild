@@ -128,7 +128,7 @@ export const BOARD_EVENTS = {
 
     /**
      * A spawner's waiting alert changed: `{ instanceId, alert, needs }`, where `alert` is
-     * `ALERT.SPAWN_NEEDS_ITEM`, `ALERT.SPAWN_NO_ROOM` or null, and `needs` lists the item ids the
+     * `ALERT.SPAWN_NEEDS_ITEM`, `ALERT.SPAWN_NO_ROOM`, `ALERT.SPAWN_MAT_FULL` or null, and `needs` lists the item ids the
      * Bank is short of. Published by `SpawnerSystem.syncAlerts` on a change only.
      *
      * ⚠️ Deliberately NOT `ALERT_CHANGED`: that one carries a hero-worked Token's `instance.alert`,
@@ -292,5 +292,10 @@ export const ALERT = {
      * Same channel as `SPAWN_NEEDS_ITEM`. A spawner at its cap raises nothing: that is its normal
      * resting state, not a problem.
      */
-    SPAWN_NO_ROOM: 'spawn_no_room'
+    SPAWN_NO_ROOM: 'spawn_no_room',
+    /**
+     * A spawner is waiting because the mat is at its Token cap (`MatCap`): spawned Tokens count
+     * toward it. Same channel as `SPAWN_NEEDS_ITEM`.
+     */
+    SPAWN_MAT_FULL: 'spawn_mat_full'
 };

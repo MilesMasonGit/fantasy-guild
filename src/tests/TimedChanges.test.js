@@ -254,13 +254,13 @@ describe('⭐ a spawned Token moves like any other, and keeps what makes it spaw
 
     it('moves, stays spawned, and still does not count toward the mat cap (SP-67)', () => {
         const sapling = spawnedAt('fixture_tl_sapling', 400, 400);
-        const before = MatCap.placedCount();
+        const before = MatCap.tokenCount();
         const res = Placement.moveTokenTo(sapling.id, { x: 900, y: 700 });
         expect(res.success).toBe(true);
         expect(sapling.x).toBe(900);
         expect(sapling.y).toBe(700);
         expect(BoardState.originOf(sapling)).toBe(BoardState.ORIGIN.SPAWNED);
-        expect(MatCap.placedCount()).toBe(before);
+        expect(MatCap.tokenCount()).toBe(before);
         // Still pushable by a spawn: only placed Tokens are held fixed.
         expect(BoardState.placedTokenIds()).not.toContain(sapling.id);
     });

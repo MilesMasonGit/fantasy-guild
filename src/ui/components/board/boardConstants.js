@@ -35,6 +35,13 @@ export const SIDE_COLUMN_PX = 928;
  * board.
  */
 export const NOTIFICATION_COLUMN = Object.freeze({ min: 256, vw: 20, max: 356 });
+
+/**
+ * On the playmat the notification side reserves only this slim strip of tabs: the Notifications
+ * and Bin sidebars pop out over the mat from it (`PopOutSidebars.jsx`) at `NOTIFICATION_COLUMN`'s
+ * width. The Bank and the Guild Hall still take the full column.
+ */
+export const NOTIFICATION_STRIP_PX = 28;
 export const EFFECTS_COLUMN = Object.freeze({ min: 244, vw: 19, max: 340 });
 
 /**
@@ -79,6 +86,7 @@ export const SKIP_HINT = {
     [ALERT.NO_ROOM]: 'no room for what it makes',
     [ALERT.SPAWN_NEEDS_ITEM]: 'can’t pay its upkeep',
     [ALERT.SPAWN_NO_ROOM]: 'no room to spawn',
+    [ALERT.SPAWN_MAT_FULL]: 'Token cap full',
     no_skill: 'names no skill',
     disallowed: 'heroes not allowed',
     claimed: 'being worked by {holder}',

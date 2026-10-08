@@ -34,7 +34,7 @@ export function questNeedLine(quest) {
  * A quest Token's hover tooltip: the title (with a *Tutorial* tag on a tutorial step), the
  * instruction, what is still needed, the reward as item icons with counts, and 'Click to
  * claim' once done.
- * Styled and placed like the Guild Hall's `TrickleTooltip`: a portal to `document.body`, fixed
+ * Styled and placed like the Guild Hall's `PassiveProductionTooltip`: a portal to `document.body`, fixed
  * under the Token's art, `pointer-events: none` (so clicking and dragging the Token work
  * through it), hidden while anything is dragged. The quest comes in as a prop (`MatToken`'s
  * own projection), so the tooltip holds no subscription.

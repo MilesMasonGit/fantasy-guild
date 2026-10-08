@@ -5,6 +5,7 @@ import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { foundationTierOf } from '../../config/registries/tokenConstants.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { totalPrice } from '../../config/guildUpgrades.js';
 import * as BoardState from './BoardState.js';
@@ -17,11 +18,11 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Sells every Token type that carries a `shop` block: `shop: { price: [{ itemId, quantity }],
- * section: '<skill id>' | 'general' }`.
+ * section: '<skill id>' | 'general', group?: '<label>' }`.
  *
  * Everything with a `shop` block is listed from the start; the price is the only gate. Items are
  * the only price, paid all or nothing through `InputAllocator` (Bank first, then loot on the
- * floor). A purchase is refused once placed Tokens reach `MatCap.matCap()`.
+ * floor). A purchase is refused once the mat's Token count reaches `MatCap.matCap()`.
  *
  * A bought Token is created with `origin: 'placed'`, beside the Guild Hall via
  * `Placement.placeArrivalNear` aimed at `Placement.centreOfBoard()`. When that area is crowded it
@@ -82,7 +83,7 @@ function shortfallText(typeId) {
 export function canBuy(typeId) {
     if (!shopBlockOf(typeId)) return refuse('Not sold at the Shop');
     if (!MatCap.canPlaceMore(1)) {
-        return refuse(`Mat is full (${MatCap.placedCount()}/${MatCap.matCap()} placed Tokens)`);
+        return refuse(`Token cap full (${MatCap.tokenCount()}/${MatCap.matCap()})`);
     }
     const missing = shortfallText(typeId);
     if (missing) return refuse(`Need ${missing}`);
@@ -157,25 +158,61 @@ function purchase(typeId, place) {
     return { success: true, instance, x: placed.x, y: placed.y, nudged: !!placed.nudged };
 }
 
+/** Total quantity of a price, used to order a group cheapest first. */
+const priceWeight = (typeId) => priceOf(typeId).reduce((n, l) => n + l.quantity, 0);
+
+/** A group member's Foundation tier, or 0 for a Token that is not a Foundation. */
+const tierWeight = (typeId) => {
+    const def = getTokenType(typeId);
+    return def?.foundation ? foundationTierOf(def) : 0;
+};
+
 /**
  * The catalogue for the panel: every sold Token, grouped by section. Sections
- * are ordered by name with General last; Tokens within a section by name.
+ * are ordered by name with General last; entries within a section by name.
  *
- * @returns {Array<{section, name, items: Array<{typeId, name, price, affordability}>}>}
+ * Tokens whose `shop.group` is the same label are one entry: `{ group, name: <label>, options,
+ * typeId, price, affordability }`, where `options` lists the members lowest Foundation tier first,
+ * then cheapest first, and the top-level `typeId`, `price` and `affordability` are the first
+ * option's. The entry sits in the section of its first member. Every option is selectable; each is
+ * gated only by its own price.
+ *
+ * @returns {Array<{section, name, items: Array<{typeId, name, price, affordability, group?, options?}>}>}
  */
 export function catalogue() {
     const bySection = new Map();
+    const groups = new Map();
+    const entryOf = (typeId) => ({
+        typeId,
+        name: tokenName(typeId) || typeId,
+        price: priceLines(typeId),
+        affordability: canBuy(typeId)
+    });
     for (const typeId of Object.keys(getAllTokenTypes())) {
         const shop = shopBlockOf(typeId);
         if (!shop) continue;
         const section = shop.section || GENERAL_SECTION;
         if (!bySection.has(section)) bySection.set(section, []);
-        bySection.get(section).push({
-            typeId,
-            name: tokenName(typeId) || typeId,
-            price: priceLines(typeId),
-            affordability: canBuy(typeId)
-        });
+        const label = typeof shop.group === 'string' ? shop.group.trim() : '';
+        if (label) {
+            if (!groups.has(label)) {
+                const entry = { group: label, name: label, options: [] };
+                groups.set(label, entry);
+                bySection.get(section).push(entry);
+            }
+            groups.get(label).options.push(entryOf(typeId));
+            continue;
+        }
+        bySection.get(section).push(entryOf(typeId));
+    }
+    for (const entry of groups.values()) {
+        entry.options.sort((a, b) => tierWeight(a.typeId) - tierWeight(b.typeId)
+            || priceWeight(a.typeId) - priceWeight(b.typeId)
+            || a.name.localeCompare(b.name));
+        const [first] = entry.options;
+        entry.typeId = first.typeId;
+        entry.price = first.price;
+        entry.affordability = first.affordability;
     }
     return [...bySection.entries()]
         .map(([section, items]) => ({
@@ -190,7 +227,7 @@ export function catalogue() {
         });
 }
 
-/** The header figure: placed Tokens against the cap. */
+/** The header figure: Tokens counting toward the cap, against it. */
 export function capStatus() {
-    return { placed: MatCap.placedCount(), cap: MatCap.matCap() };
+    return { count: MatCap.tokenCount(), cap: MatCap.matCap() };
 }

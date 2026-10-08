@@ -18,6 +18,14 @@ import { useTokenEvent } from './tokenEvents.js';
 /** Long enough for `MatToken`'s left/top transition to have settled. */
 const MOVE_SETTLE_MS = 280;
 
+/** Where the tail sits for each side the popup opens on, and which two edges carry its border. */
+const TAIL_CLASS = {
+    top: '-bottom-[6px] -translate-x-1/2 border-r border-b',
+    bottom: '-top-[6px] -translate-x-1/2 border-l border-t',
+    right: '-left-[6px] -translate-y-1/2 border-l border-b',
+    left: '-right-[6px] -translate-y-1/2 border-r border-t'
+};
+
 export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClose }) => {
     const popupRef = useRef(null);
     const scrollRef = useRef(null);
@@ -117,7 +125,8 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             tailOffset = Math.max(16, Math.min(popupH - 16, tokenCenterY - top));
         }
 
-        setCoords({ top, left, dir, tailOffset });
+        // Whole pixels: a fractional position blurs the pixel-art icons inside.
+        setCoords({ top: Math.round(top), left: Math.round(left), dir, tailOffset: Math.round(tailOffset) });
         requestAnimationFrame(() => setIsVisible(true));
     }, [targetRect, typeId]);
 
@@ -170,7 +179,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         <div
             ref={popupRef}
             className={cn(
-                "fixed z-[80] w-72 bg-gi-surface border border-gi-border shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-lg flex flex-col",
+                "fixed z-[80] w-72 border border-yellow-500/70 bg-yellow-950/95 shadow-lg rounded-md flex flex-col",
                 "transition-all duration-200 ease-out",
                 originClass,
                 isVisible ? "opacity-100 scale-100" : "opacity-0 scale-75 pointer-events-none"
@@ -180,33 +189,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
                 left: coords.left
             }}
         >
-            {/* Tail pointing toward the anchored Token */}
-            {coords.dir === 'top' && (
-                <div
-                    className="absolute bottom-0 translate-y-full -translate-x-1/2 w-0 h-0 border-solid border-t-[8px] border-l-[8px] border-r-[8px] border-b-0 border-t-gi-border border-l-transparent border-r-transparent pointer-events-none drop-shadow"
-                    style={{ left: coords.tailOffset }}
-                />
-            )}
-            {coords.dir === 'bottom' && (
-                <div
-                    className="absolute top-0 -translate-y-full -translate-x-1/2 w-0 h-0 border-solid border-b-[8px] border-l-[8px] border-r-[8px] border-t-0 border-b-gi-border border-l-transparent border-r-transparent pointer-events-none drop-shadow"
-                    style={{ left: coords.tailOffset }}
-                />
-            )}
-            {coords.dir === 'right' && (
-                <div
-                    className="absolute left-0 -translate-x-full -translate-y-1/2 w-0 h-0 border-solid border-r-[8px] border-t-[8px] border-b-[8px] border-l-0 border-r-gi-border border-t-transparent border-b-transparent pointer-events-none drop-shadow"
-                    style={{ top: coords.tailOffset }}
-                />
-            )}
-            {coords.dir === 'left' && (
-                <div
-                    className="absolute right-0 translate-x-full -translate-y-1/2 w-0 h-0 border-solid border-l-[8px] border-t-[8px] border-b-[8px] border-r-0 border-l-gi-border border-t-transparent border-b-transparent pointer-events-none drop-shadow"
-                    style={{ top: coords.tailOffset }}
-                />
-            )}
-
-            <div className="w-full flex-1 flex flex-col overflow-hidden rounded-lg">
+            <div className="w-full flex-1 flex flex-col overflow-hidden rounded-md">
                 {canScrollUp && (
                     <button
                         onClick={scrollUp}
@@ -234,6 +217,19 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
                     </button>
                 )}
             </div>
+
+            {/* The tail is the speech bubbles' own: a small turned square on the edge facing
+                the Token, its two outer edges carrying the border. */}
+            <div
+                data-inspect-tail={coords.dir}
+                className={cn(
+                    "absolute z-10 w-2.5 h-2.5 rotate-45 border-yellow-500/70 bg-yellow-950 pointer-events-none",
+                    TAIL_CLASS[coords.dir]
+                )}
+                style={coords.dir === 'top' || coords.dir === 'bottom'
+                    ? { left: coords.tailOffset }
+                    : { top: coords.tailOffset }}
+            />
         </div>
     );
 };

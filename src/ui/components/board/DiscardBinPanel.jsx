@@ -14,7 +14,7 @@ import { announce } from './dropOnMat.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
- * The discard bin: the bin's UI, at the bottom of the notification column. The engine is
+ * The discard bin: the bin's UI, inside the bin sidebar (`PopOutSidebars.jsx`). The engine is
  * `DiscardBin.js`.
  * * **In:** drag a Token off the mat onto the panel (the whole panel is one drop target,
  * {@link BIN_DROP_ID}). A refusal (the Guild Hall, a full bin) leaves the Token on the mat and
@@ -76,7 +76,7 @@ const binSignature = () => DiscardBin.binContents().map(t => t.id).join('|');
  * Re-render on the bin's events, only when what is in the bin changed: a bare `state_changed`
  * would redraw the panel and its nine empty slots every time.
  */
-function useBinRefresh() {
+export function useBinRefresh() {
     const [, bump] = useState(0);
     const sig = useRef(binSignature());
     useEffect(() => {
@@ -124,7 +124,7 @@ const EmptySlot = () => (
     <div data-bin-slot="" className="aspect-square rounded-full border-2 border-dashed border-white/15" />
 );
 
-export const DiscardBinPanel = ({ className }) => {
+export const DiscardBinPanel = ({ className, dropDisabled = false }) => {
     useBinRefresh();
     const [hoverId, setHoverId] = useState(null);
 
@@ -132,7 +132,8 @@ export const DiscardBinPanel = ({ className }) => {
         id: BIN_DROP_ID,
         surface: DND_SURFACE.DRAWER,
         accepts: binAccepts,
-        onDrop: (payload) => dropIntoBin(payload)
+        onDrop: (payload) => dropIntoBin(payload),
+        disabled: dropDisabled
     });
     // The cue says what the engine will say: red for a Token the bin refuses.
     const carried = drop.isOver && binAccepts(drop.activePayload) ? drop.activePayload : null;

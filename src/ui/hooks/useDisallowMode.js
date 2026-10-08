@@ -42,7 +42,7 @@ export function useDisallowMode() {
 /**
  * A click on a Token in disallow mode: allowed → disallowed, or back. Only a
  * Token a hero could work flips — the same Tokens the inspection panel's
- * "Heroes may work this" switch is shown for (`Flags.isHeroWorkable`); a click
+ * Disallow switch is shown for (`Flags.isHeroWorkable`); a click
  * on any other does nothing.
  *
  * @returns {{ success: boolean, reason?: string, disallowed?: boolean }}

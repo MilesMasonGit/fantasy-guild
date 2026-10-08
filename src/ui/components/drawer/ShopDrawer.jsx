@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -85,6 +86,12 @@ function useShopRefresh(active) {
         if (!active) return undefined;
         const refresh = () => bump(n => n + 1);
         const unsubs = SHOP_EVENTS.map(e => EventBus.subscribe(e, refresh));
+        // Spawns and depletions change the Token count too; only a changed count re-renders.
+        let count = Shop.capStatus().count;
+        unsubs.push(EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, () => {
+            const next = Shop.capStatus().count;
+            if (next !== count) { count = next; refresh(); }
+        }));
         // The cap is a Mat Tuner setting, which publishes no game event ().
         unsubs.push(onMatTuningChanged(refresh));
         return () => unsubs.forEach(u => u?.());
@@ -127,7 +134,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                 <span className="text-sm md:text-base font-bold tracking-wide text-gi-text">Shop</span>
                 <div className="flex items-center gap-2.5">
                     <span data-shop-cap className="text-xs font-semibold text-gi-muted tabular-nums">
-                        Placed Tokens {cap.placed} / {cap.cap}
+                        Tokens {cap.count} / {cap.cap}
                     </span>
                     <button
                         onClick={onClose}
@@ -144,7 +151,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto gi-scrollbar p-3 flex flex-col gap-3">
+            <ShopList>
                 <p className="text-[11px] text-gi-muted">Drag a Token onto the mat to buy it.</p>
                 {shop.length === 0 && (
                     <p className="text-xs text-gi-muted">Nothing is for sale yet.</p>
@@ -152,10 +159,10 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                 {shop.map(group => (
                     <section key={group.section} data-shop-section={group.section} className="flex flex-col gap-1.5">
                         <h3 className="text-[11px] font-bold gi-caps tracking-wider text-gi-muted">{group.name}</h3>
-                        {group.items.map(item => <ShopRow key={item.typeId} item={item} />)}
+                        {group.items.map(item => <ShopRow key={item.group ? `group:${item.group}` : item.typeId} item={item} />)}
                     </section>
                 ))}
-            </div>
+            </ShopList>
 
             {/* The lip: the strip left showing while a Shop Token is carried. */}
             <div
@@ -170,17 +177,76 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
     );
 };
 
+/** Every Shop row is exactly this tall: the 128 px sprite plus the row's padding. */
+export const SHOP_ART_PX = 128;
+export const SHOP_ROW_PX = SHOP_ART_PX + 18;
+/** How far an arrow press scrolls the list: two rows and their gaps. */
+const SHOP_SCROLL_STEP_PX = (SHOP_ROW_PX + 6) * 2;
+
+const arrowClass = 'shrink-0 h-7 flex items-center justify-center text-gi-muted hover:text-gi-gold bg-gi-base/60 disabled:opacity-30 disabled:cursor-default cursor-pointer';
+
 /**
- * One Token for sale: sprite, name, then one standard item row per price line
- * (have / need). The whole row is the drag handle. A row that cannot
- * be bought is dimmed, names what is missing in red, and does not start a drag.
+ * The scrolling list: an arrow bar above and below instead of a scrollbar (the wheel still
+ * scrolls). An arrow dims when that end is reached.
+ */
+const ShopList = ({ children }) => {
+    const ref = useRef(null);
+    const [ends, setEnds] = useState({ top: true, bottom: true });
+    const measure = useCallback(() => {
+        const el = ref.current;
+        if (!el) return;
+        const top = el.scrollTop <= 0;
+        const bottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        setEnds(prev => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
+    }, []);
+    useEffect(() => {
+        window.addEventListener('resize', measure);
+        return () => window.removeEventListener('resize', measure);
+    }, [measure]);
+    // Content or drawer size may have changed since the last paint.
+    useEffect(measure);
+    const scrollBy = (dy) => ref.current?.scrollBy({ top: dy, behavior: 'smooth' });
+    return (
+        <>
+            <button
+                type="button" data-shop-scroll="up" title="Scroll up" aria-label="Scroll up"
+                disabled={ends.top} onClick={() => scrollBy(-SHOP_SCROLL_STEP_PX)} className={arrowClass}
+            >
+                <ChevronUp size={20} />
+            </button>
+            <div
+                ref={ref}
+                data-shop-list
+                onScroll={measure}
+                className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+                {children}
+            </div>
+            <button
+                type="button" data-shop-scroll="down" title="Scroll down" aria-label="Scroll down"
+                disabled={ends.bottom} onClick={() => scrollBy(SHOP_SCROLL_STEP_PX)} className={arrowClass}
+            >
+                <ChevronDown size={20} />
+            </button>
+        </>
+    );
+};
+
+/**
+ * One Token for sale, a fixed-height row: the name (a dropdown when the entry is a group), the
+ * price in a 2 x 2 grid and, on the right, the Token at 128 px, the thing to drag out onto the
+ * mat. The whole row is the drag handle. A row that cannot be bought is dimmed, names what is
+ * missing in red, and does not start a drag. A group row buys the option picked in its dropdown.
  */
 export const ShopRow = ({ item }) => {
-    const ok = !!item.affordability?.success;
+    const options = item.options || null;
+    const [picked, setPicked] = useState(null);
+    const chosen = options ? (options.find(o => o.typeId === picked) || options[0]) : item;
+    const ok = !!chosen.affordability?.success;
     const drag = useEntityDrag({
-        id: `shop-row-${item.typeId}`,
+        id: `shop-row-${chosen.typeId}`,
         kind: DRAG_KIND.TOKEN,
-        payload: shopRowPayload(item.typeId),
+        payload: shopRowPayload(chosen.typeId),
         sourceSurface: DND_SURFACE.DRAWER,
         disabled: !ok
     });
@@ -188,45 +254,65 @@ export const ShopRow = ({ item }) => {
         <div
             ref={drag.setNodeRef}
             {...(ok ? drag.handleProps : {})}
-            data-shop-item={item.typeId}
-            data-shop-row={item.typeId}
+            data-shop-item={chosen.typeId}
+            data-shop-row={chosen.typeId}
+            data-shop-group={item.group || undefined}
             data-shop-affordable={ok ? 'true' : 'false'}
-            title={ok ? `Drag ${item.name} onto the mat to buy it` : item.affordability?.reason}
+            title={ok ? `Drag ${chosen.name} onto the mat to buy it` : chosen.affordability?.reason}
+            style={{ height: SHOP_ROW_PX }}
             className={cn(
-                'rounded-lg border border-gi-border/50 bg-gi-base/50 p-2 flex flex-col gap-2 select-none transition-opacity',
+                'shrink-0 overflow-hidden rounded-lg border border-gi-border/50 bg-gi-base/50 p-2 flex items-stretch gap-2 select-none transition-opacity',
                 ok ? 'cursor-grab touch-none hover:border-gi-gold/60' : 'opacity-50 cursor-not-allowed',
                 drag.isDragging && 'opacity-30'
             )}
         >
-            <div className="flex items-center gap-3">
-                <div className="w-12 h-12 shrink-0 flex items-center justify-center pointer-events-none">
-                    <TokenSprite typeId={item.typeId} surface={TOKEN_SURFACE.CATALOGUE} alt={item.name} />
-                </div>
-                <div className="flex-1 min-w-0 flex flex-col">
-                    <span className="text-sm font-bold text-gi-text">{item.name}</span>
+            <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <div className="flex items-center gap-2 min-w-0 h-6 shrink-0">
+                    {options ? (
+                        <select
+                            data-shop-select
+                            value={chosen.typeId}
+                            onChange={e => setPicked(e.target.value)}
+                            onPointerDown={e => e.stopPropagation()}
+                            onKeyDown={e => e.stopPropagation()}
+                            aria-label={`${item.name}: pick one`}
+                            className="min-w-0 max-w-full text-sm font-bold text-gi-text bg-gi-base border border-gi-border/50 rounded px-1 cursor-pointer"
+                        >
+                            {options.map(o => <option key={o.typeId} value={o.typeId}>{o.name}</option>)}
+                        </select>
+                    ) : (
+                        <span className="text-sm font-bold text-gi-text truncate">{chosen.name}</span>
+                    )}
                     {!ok && (
-                        <span data-shop-missing className="text-xs font-semibold text-gi-danger">
-                            {item.affordability?.reason}
+                        <span data-shop-missing className="text-xs font-semibold text-gi-danger truncate">
+                            {chosen.affordability?.reason}
                         </span>
                     )}
                 </div>
+                {chosen.price.length > 0 && (
+                    <div data-shop-price className="grid grid-cols-2 gap-1 content-start min-h-0">
+                        {chosen.price.map(p => (
+                            <EntityRibbon
+                                key={p.itemId}
+                                kind="item"
+                                id={p.itemId}
+                                name={p.name}
+                                have={p.have}
+                                required={p.need}
+                                size="sm"
+                                variant="cost"
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
-            {item.price.length > 0 && (
-                <div data-shop-price className="flex flex-col gap-1">
-                    {item.price.map(p => (
-                        <EntityRibbon
-                            key={p.itemId}
-                            kind="item"
-                            id={p.itemId}
-                            name={p.name}
-                            have={p.have}
-                            required={p.need}
-                            size="sm"
-                            variant="cost"
-                        />
-                    ))}
-                </div>
-            )}
+            <div
+                data-shop-art
+                className="shrink-0 flex items-center justify-center pointer-events-none"
+                style={{ width: SHOP_ART_PX, height: SHOP_ART_PX }}
+            >
+                <TokenSprite typeId={chosen.typeId} surface={TOKEN_SURFACE.CARRY} size={SHOP_ART_PX} alt={chosen.name} />
+            </div>
         </div>
     );
 };

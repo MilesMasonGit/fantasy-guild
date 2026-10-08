@@ -7,6 +7,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { contextRequirementsOf } from '../../../config/registries/recipePoolRegistry.js';
+import { foundationMinTierOf } from '../../../config/registries/tokenConstants.js';
 import { BAND } from '../../../systems/board/RecipeBands.js';
 
 /** An item's display name, falling back to its id so an unauthored item still reads. */
@@ -27,6 +28,13 @@ export function contextSummary(recipe) {
         c.minTier ? `${c.tag} (tier ${c.minTier})` : c.tag
     ));
     return parts.length ? parts.join(', ') : null;
+}
+
+/** "Foundation tier 2 or higher" for a building recipe that needs more than tier 1, or null. */
+export function foundationTierSummary(recipe) {
+    if (!recipe?.foundationKinds?.length) return null;
+    const min = foundationMinTierOf(recipe);
+    return min > 1 ? `Foundation tier ${min} or higher` : null;
 }
 
 /** "1× Charcoal" — a recipe's outputs, chances included when they are not certain. */
@@ -63,6 +71,7 @@ const RecipeRow = ({ row, isSelected, onSelect }) => {
     const inputs = inputSummary(recipe);
     const context = contextSummary(recipe);
     const outputs = outputSummary(recipe);
+    const tier = foundationTierSummary(recipe);
     const firstOutput = recipe.outputs?.[0]?.itemId;
 
     return (
@@ -91,6 +100,7 @@ const RecipeRow = ({ row, isSelected, onSelect }) => {
                     {outputs ? `${recipe.foundationKinds?.length ? 'Builds' : 'Makes'} ${outputs}` : 'Makes nothing'}
                     {inputs ? ` · Needs ${inputs}` : ''}
                     {context ? ` · Beside ${context}` : ''}
+                    {tier ? ` · ${tier}` : ''}
                 </div>
                 {band === BAND.GUILD && (
                     <div className="flex items-center gap-1 text-[10px] text-amber-300 mt-0.5">

@@ -5,6 +5,7 @@ import { turnTiming } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
+import * as PassiveProduction from './PassiveProduction.js';
 import { pickWeighted } from './weightedPick.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -23,8 +24,8 @@ export { pickWeighted };
  * are `TURN_DEFAULTS` in `tokenConstants.js`.
  *
  * Spawner intervals are one more row of the {@link HANDLERS} table; the attempt itself lives in
- * `SpawnerSystem.js`. The trickle keeps one clock per line, so {@link tick} runs it beside the
- * table (`SpawnerSystem.advanceTrickle`).
+ * `SpawnerSystem.js`. Passive Production pays several lines on its own clock, so {@link tick} runs
+ * it beside the table (`PassiveProduction.advance`).
  *
  * State (saved, on the instance): `instance.clocks = { growMs, turnMs, … }`, elapsed ms, created
  * only on a Token that has a timed block, absent reads as 0. `turnWon: 1` marks a `turns` roll that
@@ -294,9 +295,9 @@ export function tick(delta, random = Math.random) {
     for (const instance of BoardState.tokens()) {
         // A Token taken off the mat earlier in this same pass is skipped.
         if (!BoardState.getTokenById(instance.id)) continue;
-        // The trickle first: it only grants items, and a Token that changes below starts its new
-        // self with fresh clocks.
-        SpawnerSystem.advanceTrickle(instance, delta);
+        // Passive Production first: it only grants items, and a Token that changes below starts its
+        // new self with fresh clocks.
+        PassiveProduction.advance(instance, delta);
         advance(instance, delta, random);
     }
     // Spawners' on-mat alerts, once this tick's attempts are done.

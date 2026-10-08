@@ -95,3 +95,8 @@ gi-slot-label {
         100% { opacity: 0; transform: none; }
     }
 }
+
+/* The Token Summary lights every Token of the hovered type. */
+[data-summary-highlight="true"] {
+    filter: drop-shadow(0 0 2px #fde047) drop-shadow(0 0 6px #fde047);
+}

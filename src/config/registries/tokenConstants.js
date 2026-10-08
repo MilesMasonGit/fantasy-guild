@@ -116,6 +116,32 @@ export function isTokenRarity(value) {
 export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmland']);
 
 /**
+ * Foundation tiers: `foundation.tier` on the Token and `foundationMinTier` on a building recipe,
+ * both whole numbers from 1. A Foundation builds a recipe when its tier is at least the recipe's
+ * minimum, the rule `requiresContext.minTier` applies to tools, so a higher tier builds everything a
+ * lower one can.
+ *
+ * ⚠️ Absent or nonsense reads as 1 on both sides: content that sets no tier must keep building
+ * exactly what it built before tiers existed. The content audit reports the nonsense.
+ */
+const tierValue = (value) => (Number.isInteger(value) && value >= 1 ? value : 1);
+
+/** A Foundation Token's tier; 1 when unset. */
+export function foundationTierOf(def) {
+    return tierValue(def?.foundation?.tier);
+}
+
+/** The lowest Foundation tier a building recipe accepts; 1 when unset. */
+export function foundationMinTierOf(recipe) {
+    return tierValue(recipe?.foundationMinTier);
+}
+
+/** Whether a Foundation's tier reaches a building recipe's minimum. Kind and skill are not checked here. */
+export function foundationTierMeets(def, recipe) {
+    return foundationTierOf(def) >= foundationMinTierOf(recipe);
+}
+
+/**
  * ⭐ **A self-transforming Token rolls a chance.**
  * `turns: { into, everyMs, chance }` on the Token type:
  *
@@ -135,6 +161,13 @@ export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmla
  * them from here (the CMS across the boundary, see the header note).
  */
 export const TURN_DEFAULTS = Object.freeze({ everyMs: 60000, chance: 30 });
+
+/**
+ * Passive Production's one timer: every line of a Token's `trickle` block (and the Wishing Well's
+ * water on the Guild Hall) pays its quantity once per lap. A line's own `everyMs`, from before the
+ * shared timer, is ignored.
+ */
+export const PASSIVE_PRODUCTION_MS = 5 * 60 * 1000;
 
 /**
  * The roll cycle and chance of a `turns` block, defaults filled in:

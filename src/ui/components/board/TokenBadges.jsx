@@ -194,11 +194,12 @@ export const DisallowBadge = ({ isDragging }) => {
 
 /**
  * StuckBadge: the warning mark in the middle row of a spawner that cannot spawn: yellow while
- * it waits on an item, red when there is no room. `TokenBubbles` shows it the whole time.
+ * it waits on an item, red when there is no room or the mat's Token cap is full. `TokenBubbles`
+ * shows it the whole time.
  */
-export const StuckBadge = ({ noRoom = false, title }) => (
+export const StuckBadge = ({ noRoom = false, matFull = false, title }) => (
     <div
-        data-stuck-badge={noRoom ? 'no_room' : 'needs_item'}
+        data-stuck-badge={matFull ? 'mat_full' : noRoom ? 'no_room' : 'needs_item'}
         aria-label={title}
         className="shrink-0 select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
     >

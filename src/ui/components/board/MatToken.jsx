@@ -25,14 +25,17 @@ import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import { tokenOutline } from './spriteOutline.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
-import { TrickleTooltip, hasTrickle } from './TrickleTooltip.jsx';
+import { PassiveProductionTooltip } from './PassiveProductionTooltip.jsx';
+import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import { QuestTooltip } from './QuestTooltip.jsx';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
-import { useDrawn } from '../../dev/perf/drawSwitches.js';
+import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
+import { QuestPosterItem } from './QuestPoster.jsx';
+import { takeSpawn, playSpawn } from './spawnMotion.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -60,6 +63,14 @@ function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
     }, [on, id, artRef, overlayRef]);
 }
 
+/**
+ * How wide a Token's box is drawn, in mat units, for art `artPx` across: the Token's own circle,
+ * or the art where the art is the larger.
+ */
+export function tokenBoxPx(typeId, artPx) {
+    return Math.max(artRadiusOf(typeId) * 2, artPx);
+}
+
 const RECEIVED_MS = 350;
 
 
@@ -73,10 +84,12 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * player makes is not: the Token is simply where it was let go.
  * - **A drag source and nothing else.** The whole mat is the one drop target (`dropOnMat`);
  * dropping a copy on a Token still restocks it, because the drop point lands on its spot.
- * - **Hit-tested as a circle** (`border-radius`, not `clip-path`, so art that spills past the
- * circle is drawn rather than cropped), so the corners of the box belong to whatever is
- * underneath. Which Token the pointer is on is decided once by `MatBoard` (nearest centre,
- * `Flags.tokenAtPoint`); this just draws.
+ * - **Pressed by its own circle, not its art.** The box is drawn as big as the art, and the art
+ * may spill past the Token's circle onto its neighbours; none of the drawing takes the pointer.
+ * Only a round hit area exactly the Token's circle does (`data-token-hit`, the engine's
+ * `artRadiusOf`), so overlapping art never takes a press from the Token whose circle is under
+ * the pointer. Where two circles overlap, `MatBoard` decides (nearest centre,
+ * `Flags.tokenAtPoint`) and routes the press there; this just draws.
  * Two boxes, not one: the art and the badges are siblings with explicit z, not parent and
  * child. A hero stands beside the Token, and the bubbles have to stay
  * readable in front of that hero. A single box would make its own stacking context and bury
@@ -112,17 +125,16 @@ export const MatToken = React.memo(function MatToken({
      * How big this Token's art is drawn, in mat units. The mat's transform turns `artPx` mat
      * units into exactly `boardArtSteps(fit) × ART_PX` screen pixels, so the sprite is always
      * a whole multiple of its 64px art and never resampled.
-     * ⚠️ The box grows to hold the art when the art is the larger of the two, which below 1×
-     * it is: the box is the Token's round hit area, so a box left at the Token's own radius
-     * would crop the very spill the art step accepts. A 2×2's 288 u circle is already wider
-     * than its 256 u art, and `max` leaves that, and every 1:1 case, as it was.
+     * The box grows to hold the art when the art is the larger of the two, so the spill the
+     * art step accepts is drawn, not cropped. The hit area does not grow with it: it stays the
+     * Token's own circle, `2r` across, centred in the box.
      * ⚠️ This moves nothing in the engine: `x`/`y`, `hitRadiusOf` and `minGap` are untouched;
      * this is only how much art is painted at the same point.
      */
     const fit = useMatFit();
     const artScale = boardScaleAt(fit);
     const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, artScale);
-    const boxPx = Math.max(r * 2, artPx);
+    const boxPx = tokenBoxPx(typeId, artPx);
     const boxHalf = boxPx / 2;
 
     const def = getTokenType(typeId);
@@ -243,9 +255,9 @@ export const MatToken = React.memo(function MatToken({
         setSkipLines(tokenSkipLines(id));
     }, [isHovered, id]);
 
-    // A Token with a trickle (the Guild Hall) shows what it pays in a game-styled tooltip with
-    // a live next-in, not the native title.
-    const showTrickle = isHovered && hasTrickle(def);
+    // A Token with Passive Production (the Guild Hall) shows what it pays in a game-styled
+    // tooltip with a live next-in, not the native title. Read only while hovered.
+    const showPassive = isHovered && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
 
     // Hovering a quest Token reads it (`QuestTooltip`), and a tutorial step still to do lights
     // its target (`TutorialAideOverlay`).
@@ -310,6 +322,18 @@ export const MatToken = React.memo(function MatToken({
     const setNodeRef = drag.setNodeRef;
     const setArtRef = React.useCallback((el) => { artRef.current = el; setNodeRef(el); }, [setNodeRef]);
     useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
+
+    // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
+    // at mount, so a Token already on the mat never replays it.
+    React.useLayoutEffect(() => {
+        const from = takeSpawn(id);
+        if (!from || !isDrawn('spawnMotion')) return;
+        const dx = from.x - px;
+        const dy = from.y - py;
+        if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+        playSpawn(artRef.current, dx, dy);
+        playSpawn(overlayRef.current, dx, dy);
+    }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
     const token = React.useMemo(
         () => ({ typeId, instanceId: id, heroId, alert, usesRemaining }),
@@ -410,16 +434,28 @@ export const MatToken = React.memo(function MatToken({
                 style={{
                     ...boxStyle,
                     zIndex: z,
-                    // Rounded, not clipped: the corners of the box do not catch the pointer,
-                    // and art that spills past the circle is not cropped.
-                    borderRadius: '50%',
+                    // The drawing takes no pointer; presses reach these listeners from the hit
+                    // circle inside.
+                    pointerEvents: 'none',
                     visibility: hidden ? 'hidden' : 'visible'
                 }}
                 className={cn(
-                    'absolute select-none pointer-events-auto',
+                    'absolute select-none',
                     disallowMode || questDone ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 )}
             >
+                <div
+                    data-token-hit={id}
+                    className="absolute"
+                    style={{
+                        left: boxHalf - r,
+                        top: boxHalf - r,
+                        width: r * 2,
+                        height: r * 2,
+                        borderRadius: '50%',
+                        pointerEvents: 'auto'
+                    }}
+                />
                 {/**
                  * A done quest glows until claimed: the transform glow's gold, held as a halo
                  * behind the art that breathes (`gi-quest-ready`), spilling past it.
@@ -468,6 +504,9 @@ export const MatToken = React.memo(function MatToken({
                             />
                         )}
                     </TokenHitArt>
+                    {quest?.itemId && (
+                        <QuestPosterItem itemId={quest.itemId} boxPx={boxPx} artPx={artPx} fit={fit} />
+                    )}
                 </div>
                 {transformGlow && (
                     <div
@@ -512,7 +551,7 @@ export const MatToken = React.memo(function MatToken({
 
             </div>
 
-            {tooltipsDrawn && showTrickle && !hidden && <TrickleTooltip instanceId={id} />}
+            {tooltipsDrawn && showPassive && !hidden && <PassiveProductionTooltip instanceId={id} />}
             {tooltipsDrawn && showQuestTip && !hidden && <QuestTooltip instanceId={id} quest={quest} />}
         </>
     );

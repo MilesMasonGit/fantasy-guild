@@ -131,7 +131,7 @@ timings from one machine mean nothing on another.
 | Id | Name | Board | Ticks (warm-up + measured) |
 |---|---|---|---|
 | S1 | Quiet Hall | Hall, 1 hero, 5 Tokens (4 producers, 1 mill) — the floor | 2,000 + 5,000 |
-| S2 | Realistic late game | 11-step mat. Hall + 39 placed (the default cap is 40): 20 producers, 3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs, 3 Forests + 3 Quarries (60 spawned trees/rocks), 2 goblin camps (6 hostile goblins walking about). 8 heroes with flags, walking; one pinned to a smelter that runs dry (a stalled station with a hero on it). Quest Tokens from the Hall. Loot drops every cycle, auto-collect on. ~108 Tokens. | 1,000 + 3,000 |
+| S2 | Realistic late game | 11-step mat, Token cap lifted (the board is over the game cap of 80). Hall + 39 placed: 20 producers, 3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs, 3 Forests + 3 Quarries (60 spawned trees/rocks), 2 goblin camps (6 hostile goblins walking about). 8 heroes with flags, walking; one pinned to a smelter that runs dry (a stalled station with a hero on it). Quest Tokens from the Hall. Loot drops every cycle, auto-collect on. ~108 Tokens. | 1,000 + 3,000 |
 | S3 | Torture | 20-step mat. 200 placed incl. Hall and **one board-reach aura**, 5 Forests + 5 Quarries (100 spawned), 4 war camps (20 goblins), 8 heroes. ~320 Tokens. | 300 + 500 |
 | S4 | Push storm | 20-step mat, 60 placed + a Forest packed round with 24 trees. 50 **arrivals** at the Forest (`EffectActions.spawn`, which pushes); 50 **refused player drops** in the cluster's middle (`Placement.placeTokenAt` — every one flies back, **by design**: FP-46, a drop never pushes); 50 **landing player drops** aimed round the cluster's rim (the radius is measured: the farthest tree from the Forest; angles i × 2π/50), each landing with a nudge, then taken off again; then the mat **shrunk 20 → 6**. Each operation timed on its own (CR3-156). | — |
 | S5 | Rebuild storm | S2 plus one board-reach aura | 500 + 1,500 |
@@ -298,7 +298,7 @@ machine, CPU, Chrome version and the GPU / ANGLE backend Chrome reports.
 | 3 | the bench failed: a scene drew nothing or was hidden, a page reloaded mid-run, a click opened nothing, there is no baseline, or the baseline used another settle or window |
 
 **The cost table** (`--switches`): S2 with everything drawn, then once with each
-of the 16 drawing switches off (`?off=<name>`, `src/ui/dev/perf/drawSwitches.js`).
+of the 17 drawing switches off (`?off=<name>`, `src/ui/dev/perf/drawSwitches.js`).
 All-on is measured at the start, the middle and the end; its spread is the
 **noise**, and a system's cost is all-on minus switch-off. A cost inside the
 noise is printed but marked "above noise: no".

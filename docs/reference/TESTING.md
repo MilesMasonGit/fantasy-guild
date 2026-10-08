@@ -68,7 +68,8 @@ synchronously: `for (let i=0;i<400;i++) window.Game.LoopRunner.tick(100)`.
 **Drags can be automated** with a synthetic pointer sequence from
 `javascript_tool`: `pointerdown` on the handle → one `pointermove` past 8 px →
 several stepped moves → `pointerup` at the target, ~30 ms apart, ~250 ms after
-the drop. Events: `new PointerEvent(type, {bubbles:true, cancelable:true,
+the drop. When a move opens a pop-out (the bin sidebar), wait ≥100 ms after that
+move before releasing, so the measurement is not timing-sensitive. Events: `new PointerEvent(type, {bubbles:true, cancelable:true,
 composed:true, pointerId:1, pointerType:'mouse', isPrimary:true,
 buttons: type==='pointerup'?0:1, clientX:x, clientY:y})`, moves and up
 dispatched on `document`.

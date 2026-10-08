@@ -189,10 +189,10 @@ describe('⭐ A Token a recipe makes stands on the mat beside its station (TL-8)
 
     it('counts toward the mat cap', () => {
         bench('drop_one_tool');
-        const before = MatCap.placedCount();
+        const before = MatCap.tokenCount();
         run(11000);
 
-        expect(MatCap.placedCount()).toBe(before + 1);
+        expect(MatCap.tokenCount()).toBe(before + 1);
     });
 
     it('makes one Token per copy of a quantity range', () => {
@@ -224,7 +224,7 @@ describe('⭐ With no room, the cycle waits and nothing is lost (TL-8)', () => {
     it('holds a finished cycle when the mat is at its cap: no Token, no sprite, nothing spent', () => {
         InventoryManager.addItem('fixture_oak_wood', 10);
         const station = bench('tool_for_wood');
-        setMatTuning('matCap', MatCap.placedCount());   // the bench fills the mat
+        setMatTuning('tokenCap', MatCap.tokenCount());   // the bench fills the mat
 
         run(15000);
 
@@ -238,10 +238,10 @@ describe('⭐ With no room, the cycle waits and nothing is lost (TL-8)', () => {
     it('completes and pays as soon as there is room again', () => {
         InventoryManager.addItem('fixture_oak_wood', 10);
         const station = bench('tool_for_wood');
-        setMatTuning('matCap', MatCap.placedCount());
+        setMatTuning('tokenCap', MatCap.tokenCount());
         run(15000);
 
-        setMatTuning('matCap', 40);
+        setMatTuning('tokenCap', 40);
         run(200);
 
         expect(made('fixture_dropped_tool')).toHaveLength(1);
@@ -251,7 +251,7 @@ describe('⭐ With no room, the cycle waits and nothing is lost (TL-8)', () => {
 
     it('reserves room for every copy a cycle could make, not just one', () => {
         bench('drop_three_tools');
-        setMatTuning('matCap', MatCap.placedCount() + 2);   // room for two of three
+        setMatTuning('tokenCap', MatCap.tokenCount() + 2);   // room for two of three
 
         run(15000);
 
@@ -263,6 +263,7 @@ describe('A crowded station still places what it makes (Token Lifecycle 5.3)', (
     it('lands the Token on the nearest free spot anywhere on the mat, pushing nothing', () => {
         const station = BoardState.createTokenInstance('fixture_drop_bench', 900);
         BoardState.addToken(station, 900, 560);
+        setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
         const crowd = [];
         for (let dx = -400; dx <= 400; dx += 50) {
             for (let dy = -400; dy <= 400; dy += 50) {

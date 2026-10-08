@@ -11,7 +11,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
-import { MatHero } from '../ui/components/board/MatHero.jsx';
+import { MatHero, HERO_BAR_LINGER_MS } from '../ui/components/board/MatHero.jsx';
 import { healthFraction, healthText, enemyBarPlace, HEALTH_BAR_H_U } from '../ui/components/board/healthBar.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 
@@ -113,13 +113,11 @@ describe('the enemy bar', () => {
         expect(bar(container, 'enemy')).toBeNull();
     });
 
-    it('the exact number shows while the bar is hovered, and goes after', () => {
+    it('the exact number is drawn on the bar itself, with no tooltip', () => {
         const { container } = mount(h(TokenBubbles, props()));
         fightProgress(34);
-        expect(tip()).toBeNull();
+        expect(bar(container, 'enemy').querySelector('[data-health-label]').textContent).toBe('34/50');
         fireEvent.pointerEnter(bar(container, 'enemy'));
-        expect(tip().textContent).toBe('34/50');
-        fireEvent.pointerLeave(bar(container, 'enemy'));
         expect(tip()).toBeNull();
     });
 
@@ -147,19 +145,34 @@ describe('the hero bar', () => {
         expect(bar(container, 'hero')).toBeNull();
         rerender(tree(hero({ fighting: true })));
         expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('80/100');
-        rerender(tree(hero({ fighting: false })));
-        expect(bar(container, 'hero')).toBeNull();
     });
 
-    it('follows the hero HP as it drops, and shows the exact number on hover', async () => {
+    it('lingers 3 s after the fight ends, then goes; a new fight cancels the countdown', () => {
+        vi.useFakeTimers();
+        try {
+            const { container, rerender } = mount(hero({ fighting: true }));
+            expect(bar(container, 'hero')).not.toBeNull();
+            rerender(tree(hero({ fighting: false })));
+            expect(bar(container, 'hero')).not.toBeNull();
+            act(() => { vi.advanceTimersByTime(HERO_BAR_LINGER_MS - 100); });
+            expect(bar(container, 'hero')).not.toBeNull();
+            rerender(tree(hero({ fighting: true })));
+            rerender(tree(hero({ fighting: false })));
+            act(() => { vi.advanceTimersByTime(HERO_BAR_LINGER_MS - 100); });
+            expect(bar(container, 'hero')).not.toBeNull();
+            act(() => { vi.advanceTimersByTime(200); });
+            expect(bar(container, 'hero')).toBeNull();
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('follows the hero HP as it drops, with the number on the bar', async () => {
         const { container } = mount(hero({ fighting: true }));
         await act(async () => {
             GameState.state.heroes[0].hp.current = 35;
             EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'test' });
         });
         expect(bar(container, 'hero').getAttribute('data-health-text')).toBe('35/100');
-        fireEvent.pointerEnter(bar(container, 'hero'));
-        expect(tip().textContent).toBe('35/100');
+        expect(bar(container, 'hero').querySelector('[data-health-label]').textContent).toBe('35/100');
     });
 
     it('the bubbles draw switch turns it off', () => {

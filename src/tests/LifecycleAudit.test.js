@@ -209,7 +209,6 @@ describe('Lifecycle audit — errors: shape rules', () => {
         ['spawner interval', (w) => { w.tokens.token_oak_forest.spawner.intervalMs = 999; }, 'token_oak_forest', 'spawner.intervalMs'],
         ['grow time', (w) => { w.tokens.token_oak_sapling.grows.afterMs = 0; }, 'token_oak_sapling', 'grows.afterMs'],
         ['turns every', (w) => { delete w.tokens.token_coast.turns.everyMs; }, 'token_coast', 'turns.everyMs'],
-        ['trickle interval', (w) => { w.tokens.token_guild_hall.trickle[0].everyMs = 10; }, 'token_guild_hall', 'trickle[0].everyMs'],
     ])('%s must be at least 1000 ms', (_, mutate, id, field) => {
         expectOne(mutate, { id, field, includes: 'at least 1000 ms' });
     });
@@ -291,6 +290,45 @@ describe('Lifecycle audit — errors: shape rules', () => {
             { id: 'recipe_build_furnace', field: 'foundationKinds', includes: 'marble' });
     });
 
+    it.each([0, -1, 1.5, '2'])('a foundation tier of %s is not a whole number of 1 or more', (tier) => {
+        expectOne((w) => { w.tokens.token_stone_foundation.foundation.tier = tier; },
+            { id: 'token_stone_foundation', field: 'foundation.tier', includes: 'whole number of 1 or more' });
+    });
+
+    it.each([0, 2.5, '2'])('a recipe minimum Foundation tier of %s is not a whole number of 1 or more', (tier) => {
+        expectOne((w) => { w.recipes.recipe_build_furnace.foundationMinTier = tier; },
+            { id: 'recipe_build_furnace', field: 'foundationMinTier', includes: 'whole number of 1 or more' });
+    });
+
+    it('a tier that reaches every recipe is fine, and no tier at all is tier 1', () => {
+        const w = clean();
+        w.tokens.token_stone_foundation.foundation.tier = 3;
+        w.recipes.recipe_build_furnace.foundationMinTier = 2;
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+        w.tokens.token_stone_foundation.foundation.tier = 1;
+        w.recipes.recipe_build_furnace.foundationMinTier = 1;
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+    });
+
+    it('a sold Foundation whose tier is below every recipe of its kind', () => {
+        const found = auditLifecycleBlocks((() => {
+            const w = clean();
+            w.recipes.recipe_build_furnace.foundationMinTier = 2;
+            return w;
+        })());
+        expect(found).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                severity: 'error', entityId: 'token_stone_foundation', field: 'foundation.tier',
+                message: expect.stringContaining('tier 1 stone Foundation sold at the Shop'),
+            }),
+            expect.objectContaining({
+                severity: 'warning', entityId: 'recipe_build_furnace', field: 'foundationMinTier',
+                message: expect.stringContaining('no stone Foundation is tier 2 or higher yet'),
+            }),
+        ]));
+        expect(found).toHaveLength(2);
+    });
+
     it('a Token with more than one of spawner, turns and foundation', () => {
         expectOne((w) => {
             w.tokens.token_shrimp_coast.foundation = { kind: 'wood', skill: 'construction' };
@@ -306,6 +344,12 @@ describe('Lifecycle audit — warnings (allowed)', () => {
     it('a spawner with empty upkeep', () => {
         expectOne((w) => { w.tokens.token_oak_forest.spawner.upkeep = []; },
             { severity: 'warning', id: 'token_oak_forest', field: 'spawner.upkeep', includes: 'no upkeep' });
+    });
+
+    it('Passive Production lines need no interval: one shared timer pays them (T-099)', () => {
+        const w = clean();
+        w.tokens.token_guild_hall.trickle = [{ itemId: 'item_oak_seed', quantity: 1 }, { itemId: 'item_oak_wood', quantity: 2, everyMs: 10 }];
+        expect(auditLifecycleBlocks(w)).toEqual([]);
     });
 
     it('a trickle on a Token other than the Guild Hall', () => {

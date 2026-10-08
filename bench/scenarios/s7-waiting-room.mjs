@@ -63,6 +63,9 @@ export default {
     build({ fixtures, setMatTuning }) {
         const { placeAt, lattice, makeHeroes, plant } = fixtures;
         setMatTuning('matSteps', MAT_STEPS);
+        // ⚠️ The packed mat is over the game's Token cap (80); lifted, or the spawner would wait on
+        // the cap and never run the no-room search this scenario measures.
+        setMatTuning('tokenCap', 2000);
         const w = MAT_STEPS * 160;
         const h = Math.round(w * 0.64);
 

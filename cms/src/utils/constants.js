@@ -97,7 +97,7 @@ export {
 } from '../../../src/config/registries/chargeMomentRegistry.js';
 
 // Token Lifecycle: the kinds of Foundation. Game-defined, so the dropdown, the engine and the content audit cannot disagree about what a kind is.
-export { FOUNDATION_KINDS } from '../../../src/config/registries/tokenConstants.js';
+export { FOUNDATION_KINDS, foundationTierOf, foundationMinTierOf } from '../../../src/config/registries/tokenConstants.js';
 
 // A turning Token rolls a chance once per cycle, both ways. The defaults a new Turns block starts with are the game's.
 export { TURN_DEFAULTS } from '../../../src/config/registries/tokenConstants.js';

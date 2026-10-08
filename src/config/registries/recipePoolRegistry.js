@@ -64,6 +64,7 @@
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { stationSkillOf } from '../../systems/effects/statements.js';
+import { foundationTierMeets } from './tokenConstants.js';
 
 /** Concatenate every recipe JSON source into one flat list. */
 function loadJsonRecipes() {
@@ -126,14 +127,19 @@ export function buildsOnFoundation(recipe) {
 }
 
 /**
- * A Foundation's recipe pool: the recipes of its `foundation.skill`
- * whose `foundationKinds` include its `foundation.kind`. A Token without a
+ * A Foundation's recipe pool: the recipes of its `foundation.skill` whose `foundationKinds` include
+ * its `foundation.kind` and whose `foundationMinTier` its tier reaches. A Token without a
  * `foundation` block has none.
+ *
+ * The tier is gated here, in the pool, so the picker never offers a recipe above the Foundation's
+ * tier and `StationRecipe` refuses or drops one (an old save's choice) the same way it does a
+ * recipe from another skill.
  */
 export function recipesForFoundation(def) {
     const { kind, skill } = def?.foundation || {};
     if (!kind || !skill) return [];
-    return skillRecipes(skill).filter(r => buildsOnFoundation(r) && r.foundationKinds.includes(kind));
+    return skillRecipes(skill).filter(r =>
+        buildsOnFoundation(r) && r.foundationKinds.includes(kind) && foundationTierMeets(def, r));
 }
 
 /** Every skill that has at least one recipe. */

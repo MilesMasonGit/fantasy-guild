@@ -47,7 +47,7 @@ export function liveUpkeepTotal() {
 }
 
 /**
- * The hover popover: the whole Upkeep Summary, in a box styled like the Hall's trickle
+ * The hover popover: the whole Upkeep Summary, in a box styled like the Hall's Passive Production
  * tooltip. Unlike the cap popover it takes the pointer, so a long summary can be scrolled.
  */
 export const MatUpkeepPopover = ({ anchor, onMouseEnter, onMouseLeave }) => {

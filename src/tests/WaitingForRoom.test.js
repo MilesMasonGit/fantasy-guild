@@ -42,6 +42,7 @@ const FOREST_AT = { x: 200, y: 200 };
 /** A 6-step mat packed with placed blockers at the minimum gap, clear only round `FOREST_AT`. */
 function packedMat() {
     setMatTuning('matSteps', 6);
+    setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
     const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
     const blockers = [];
     for (let x = 64; x <= matW() - 64; x += gap) {

@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-112**
+**Next free number: T-113**
 
 ---
 
@@ -60,10 +60,8 @@ here.
 | T-025 | P3 | open | `buyMap` ignores the Shop's `sourceRect`. *Unverified since 2026-09-21.* | FMR |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
-| T-097 | P2 | open | Move the Token cap, mat size and quest cap/interval out of the dev Mat Tuner into fixed game values (Hall upgrades may raise them later); hide Debug Mode and the QA tools in shipped builds. Owner 2026-10-06. | GDD §16.1 |
+| T-097 | P2 | open | *(Token cap done in T-102: `MatCap.BASE_TOKEN_CAP`.)* Move the mat size and quest cap/interval out of the dev Mat Tuner into fixed game values (Hall upgrades may raise them later); hide Debug Mode and the QA tools in shipped builds. Owner 2026-10-06. | GDD §16.1 |
 | T-098 | P2 | open | Remove hero energy (dormant). Drinks heal like food: keep the separate food and drink slots, both eaten below 25 % HP. Owner 2026-10-06. | GDD §16.7 |
-| T-099 | P3 | open | **Passive Production** replaces "trickle": all Guild Hall passive income on one 5-minute timer, renamed everywhere; the Wishing Well joins it (about 10 Water per 5 min, scaling with rank), no hero needed. Owner 2026-10-06, `docs/active/ui_rework_list.md`. | owner |
-| T-102 | P2 | open | **Token cap 80, and spawned Tokens count too** (today only placed Tokens count). Base 80 for testing; a Guild Hall upgrade raises it later. Decide with the owner how this interacts with spawner family caps. Owner 2026-10-06. | owner UI list |
 
 ### UI
 
@@ -122,7 +120,6 @@ here.
 |---|---|---|---|---|
 | T-105 | P2 | open | A hero sprite's transparent pixels block grabbing the flag behind it (`MatHero` alpha test refuses the press; nothing starts). | bench:drag |
 | T-106 | P2 | open | Some flags can't be grabbed or grab a nearby Token instead, even at a point clear of Token art: Token hit areas may be larger than their art circles. *Cause unverified.* | bench:drag |
-| T-107 | P2 | open | Alert marks over a Token (`TokenCentreAlert`, `MatPointAlerts`) block presses on that Token. (The owner's UI list removes these alerts anyway.) | bench:drag |
 
 ### Build, tests, docs
 

@@ -3,7 +3,10 @@ import { BookOpen, Plus, Trash2, X, AlertTriangle, Boxes, Hammer } from 'lucide-
 import {
   useEntityStore, makeInputEntry, makeOutputEntry, makeTokenOutputEntry,
 } from '../../stores/useEntityStore';
-import { SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer, FOUNDATION_KINDS } from '../../utils/constants';
+import {
+  SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer,
+  FOUNDATION_KINDS, foundationTierOf, foundationMinTierOf,
+} from '../../utils/constants';
 import { NumberCell } from '../shared/IOEntryList';
 import SupplyChainColumn from '../layout/SupplyChainColumn';
 import { Field } from '../shared/EditorLayout';
@@ -365,6 +368,12 @@ function FoundationKindsRow({ recipe, tokens, skillName, onChange }) {
   const foundations = Object.values(tokens).filter((t) => t.foundation && kinds.includes(t.foundation.kind));
   const mismatched = foundations.filter((t) => t.foundation.skill !== recipe.skill);
   const withoutFoundation = kinds.filter((k) => !foundations.some((t) => t.foundation.kind === k));
+  const minTier = foundationMinTierOf(recipe);
+  // Kinds that have Foundations, none of them at the minimum tier yet.
+  const belowTier = kinds.filter((k) => {
+    const ofKind = foundations.filter((t) => t.foundation.kind === k);
+    return ofKind.length > 0 && !ofKind.some((t) => foundationTierOf(t) >= minTier);
+  });
 
   return (
     <div data-testid="foundation-kinds">
@@ -385,13 +394,31 @@ function FoundationKindsRow({ recipe, tokens, skillName, onChange }) {
                 const next = e.target.checked
                   ? [...kinds, kind]
                   : kinds.filter((k) => k !== kind);
-                onChange({ foundationKinds: next.length > 0 ? next : undefined });
+                onChange(next.length > 0
+                  ? { foundationKinds: next }
+                  : { foundationKinds: undefined, foundationMinTier: undefined });
               }}
             />
             {kind.charAt(0).toUpperCase() + kind.slice(1)}
           </label>
         ))}
       </div>
+      {kinds.length > 0 && (
+        <div className="mt-2 w-48">
+          {/* A higher-tier Foundation builds everything a lower one can, like a tool's minimum tier. Unset is tier 1. */}
+          <NumberCell
+            label="Minimum Foundation tier"
+            value={recipe.foundationMinTier ?? 1}
+            min={1}
+            onChange={(v) => onChange({ foundationMinTier: Math.max(1, Math.floor(v) || 1) })}
+          />
+        </div>
+      )}
+      {belowTier.length > 0 && (
+        <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ No {belowTier.join(' or ')} Foundation is tier {minTier} or higher yet, so nothing can build this there.
+        </p>
+      )}
       {mismatched.length > 0 && (
         <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
           ⚠️ {mismatched.map((t) => t.name || t.id).join(', ')}{' '}

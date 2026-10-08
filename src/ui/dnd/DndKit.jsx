@@ -113,21 +113,16 @@ export function surfaceWithinRegions(x, y, regions) {
     return board;
 }
 
-const GLOW_BOLD = 'drop-shadow(0 10px 18px rgba(0,0,0,0.55))';
-const GLOW_COMPACT = 'drop-shadow(0 4px 8px rgba(0,0,0,0.45))';
 
 // Static, so passing it to <DndContext> never counts as a changed prop.
 const AUTO_SCROLL = { enabled: true, threshold: { x: 0, y: 0.18 } };
 
 /**
- * A carried Token, hero or flag casts the hard pixel shadow `PixelArt` draws for `lifted`; a
- * soft drop-shadow on top would be a second, blurred shadow. Only a carried item (its card
- * frame) keeps the soft one.
+ * Whatever is carried casts the hard pixel shadow `PixelArt` draws for `lifted`; a soft
+ * drop-shadow on top would be a second, blurred shadow, so the overlay only brightens.
  */
-const SPRITE_KINDS = new Set([DRAG_KIND.TOKEN, DRAG_KIND.HERO, DRAG_KIND.FLAG]);
-function overlayFilter(kind, bold) {
-    const lift = 'brightness(1.15) saturate(1.25)';
-    return SPRITE_KINDS.has(kind) ? lift : `${bold ? GLOW_BOLD : GLOW_COMPACT} ${lift}`;
+export function overlayFilter() {
+    return 'brightness(1.15) saturate(1.25)';
 }
 
 export const DeckDndContext = React.createContext({ activePayload: null, isDragging: false });
@@ -295,10 +290,12 @@ export const DeckDndProvider = ({ children }) => {
         const payload = active?.data?.current;
         let success = false;
 
-        if (over && payload) {
-            const data = over.data?.current;
+        // A live target under the release point wins over dnd-kit's `over`, which can be stale.
+        const live = payload ? liveDropTargetAt(payload, pointerRef.current) : null;
+        if (payload && (live || over)) {
+            const data = live || over.data?.current;
             if (data?.accepts?.(payload)) {
-                const node = document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
+                const node = live ? live.node?.() : document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
                 if (node) {
                     const r = node.getBoundingClientRect();
                     glideTargetRef.current = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -392,7 +389,7 @@ export const DeckDndProvider = ({ children }) => {
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.15, ease: 'easeOut' }}
                             className="w-full h-full flex items-center justify-center origin-center will-change-transform"
-                            style={{ filter: overlayFilter(activePayload.kind, bold) }}
+                            style={{ filter: overlayFilter() }}
                         >
                             <DragGhost payload={activePayload} bold={bold} />
                         </motion.div>
@@ -429,6 +426,38 @@ export function useEntityDrag({
         isDragging,
         handleProps: keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }
     };
+}
+
+/**
+ * Drop targets that answer for themselves at the moment of release, ahead of dnd-kit's `over`.
+ * ⚠️ dnd-kit learns that a target was switched on only from React's passive effects, about
+ * 25 ms after the pointer move that opened it, and its `over` lags further behind. A pop-out
+ * target (the bin sidebar) is drawn open within ~5 ms of that move, so a release in between
+ * landed on whatever `over` still named (the mat). A live target is asked directly, with the
+ * live pointer, so what the player sees open is what takes the drop.
+ * Each entry: `{ accepts(payload), contains(pointer), onDrop(payload, ctx), node() }`.
+ */
+const liveDropTargets = new Set();
+
+/** Register a live drop target while the calling component is mounted (see above). */
+export function useLiveDropTarget(target) {
+    const ref = useRef(target);
+    ref.current = target;
+    useEffect(() => {
+        const entry = { get: () => ref.current };
+        liveDropTargets.add(entry);
+        return () => { liveDropTargets.delete(entry); };
+    }, []);
+}
+
+/** The live drop target that takes `payload` released at `pointer`, or null. */
+export function liveDropTargetAt(payload, pointer) {
+    if (!payload || !pointer) return null;
+    for (const entry of liveDropTargets) {
+        const target = entry.get();
+        if (target?.accepts?.(payload) && target.contains?.(pointer)) return target;
+    }
+    return null;
 }
 
 /**

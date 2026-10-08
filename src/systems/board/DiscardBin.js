@@ -22,9 +22,9 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * (`BoardState.binTokens`) and saved with the game: its charges, selected recipe, origin and any
  * `builtFrom`. Only its in-flight cycle is forfeited.
  *
- * Binned Tokens still count toward the mat cap (`MatCap.placedCount`), so the bin cannot dodge it.
- * Spawned Tokens may be binned too; they count toward their spawner's family cap until discarded,
- * so the bin cannot be used to make a spawner exceed its cap. {@link unbinToken} puts one back
+ * Binned Tokens still count toward the mat's Token cap (`MatCap.tokenCount`), so the bin cannot
+ * dodge it. Spawned Tokens may be binned too; they count toward that cap and their spawner's family
+ * cap until discarded, so the bin cannot be used to make a spawner exceed either. {@link unbinToken} puts one back
  * through normal placement, unchanged.
  * {@link discardAll} is the one confirm: everything goes for good and the refund is paid through
  * `InventoryManager`, so a full Bank drops the rest as loot on the mat.

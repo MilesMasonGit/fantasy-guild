@@ -199,10 +199,9 @@ function hasWorkSkill(def) {
 /**
  * 'enemy' | 'promotion' | 'hall' | 'work' | null (nothing a hero works).
  *
- * ⚠️ 'hall' is a provisional exemption. The Guild Hall's work cycle is not authored:
- * `GuildUpgradeManager` writes it (the Wishing Well's water) with no skill, so requiring a skill
- * would silently stop the water. It is treated like a Promotion Token instead: worked only when a
- * flag is planted on it, whatever the flag's skill.
+ * 'hall': the Guild Hall has no work of its own today (its income is Passive Production, no hero
+ * needed). Should it be given a work cycle, it is treated like a Promotion Token: worked only when
+ * a flag is planted on it, whatever the flag's skill.
  */
 function kindOf(instance, def) {
     if (BoardCombat.isEnemyToken(instance)) return 'enemy';
@@ -966,7 +965,7 @@ export function ambusherOf(heroId) {
  * Hall alike. Nothing else about the Token changes: its rules and triggers carry on (see
  * `isDisallowed`).
  *
- * The Token panel's Heroes-may-work-this checkbox calls this; from the console:
+ * The Token panel's Disallow switch calls this; from the console:
  * `Game.Flags.setDisallowed(instanceId, true)`.
  *
  * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}

@@ -25,7 +25,7 @@ import * as Flags from '../systems/board/Flags.js';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.jsx';
 import { AnimatedHeroSprite } from '../ui/components/board/AnimatedHeroSprite.jsx';
-import { NotificationColumn } from '../ui/ReactRoot.jsx';
+import { NotificationSidebars } from '../ui/components/board/PopOutSidebars.jsx';
 import { shadowLayer, outlineLayer, sheetOutlineLayer, setSpriteFxManifest } from '../ui/utils/spriteFx.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -64,8 +64,8 @@ afterEach(() => {
 });
 
 describe('the registry', () => {
-    it('lists the sixteen switches, all on by default', () => {
-        expect(DRAW_SWITCHES).toHaveLength(16);
+    it('lists the seventeen switches, all on by default', () => {
+        expect(DRAW_SWITCHES).toHaveLength(17);
         expect(Object.values(drawnSwitches()).every(Boolean)).toBe(true);
         expect(DRAW_SWITCHES.every(isDrawn)).toBe(true);
     });
@@ -97,14 +97,14 @@ describe('the registry', () => {
 
 describe('side UI', () => {
     it('notifications and bin draw by default and not when off', () => {
-        const on = mount(h(NotificationColumn));
+        const on = mount(h(NotificationSidebars));
         expect(on.container.querySelector('[data-toasts]')).not.toBeNull();
         expect(on.container.querySelector('[data-discard-bin]')).not.toBeNull();
         cleanup();
 
         setDrawn('notifications', false);
         setDrawn('bin', false);
-        const off = mount(h(NotificationColumn));
+        const off = mount(h(NotificationSidebars));
         expect(off.container.querySelector('[data-toasts]')).toBeNull();
         expect(off.container.querySelector('[data-discard-bin]')).toBeNull();
     });

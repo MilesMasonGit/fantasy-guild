@@ -7,6 +7,7 @@ import { statementsOf } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
+import * as PassiveProduction from './PassiveProduction.js';
 import { isStatementPaid } from './BlockUpkeep.js';
 
 /**
@@ -14,17 +15,17 @@ import { isStatementPaid } from './BlockUpkeep.js';
  * Pure: it reads the mat, the Bank and the Token types, and changes nothing.
  *
  * Spawner upkeep is paid per spawn, so a spawner costs `quantity × 60000 / intervalMs` per minute,
- * but only while it is `spawning` or waiting on an item (`needs_item`); one `at_cap` or with
+ * but only while it is `spawning` or waiting on an item (`needs_item`); one `at_cap`, `mat_full` or with
  * `no_room` pays nothing and is listed as idle.
  *
  * Statement upkeep (`BlockUpkeep`): each costed statement charges `quantity × 60000 / cadenceMs`
  * per minute. Its clock runs on every Token on the mat regardless of heroes (see
  * `BoardRunner.tick`), so it always counts; an unpaid statement is listed as waiting.
  *
- * Income is `trickle` lines on live Tokens: `quantity × 60000 / everyMs`.
- *
- * Runs out in: rough by design, on hand ÷ (cost − that item's trickle income) per minute; net
- * income at or above the cost means it never runs out (`runsOutMs: null`).
+ * Passive Production is never listed: this is what consumes. It only nets against a cost for the
+ * rough "runs out" (`quantity × 60000 / PASSIVE_PRODUCTION_MS` an item, the Wishing Well
+ * included): on hand ÷ (cost − that item's income) per minute; net income at or above the cost
+ * means it never runs out (`runsOutMs: null`).
  *
  * On hand: a spawner pays from the Bank and then from matching loot on the mat, so an item any
  * spawner uses counts both (`have` = `bank` + `onMat`). Statement upkeep is paid from the Bank
@@ -42,6 +43,7 @@ function liveSources() {
         bankCount: (itemId) => InventoryManager.getItemCount(itemId),
         floorCount: (itemId) => SpriteLayer.countOnBoard(itemId),
         isPaid: (instance, statementId) => isStatementPaid(instance, statementId),
+        passiveLines: (instance, def) => PassiveProduction.linesOf(instance, def),
         itemName: (itemId) => getItem(itemId)?.name || itemId
     };
 }
@@ -75,8 +77,7 @@ function costedStatements(def) {
  * @returns {{
  *   items: Array<{ itemId, name, perMinute, incomePerMinute, netPerMinute, bank,
  *                  onMat, have, runsOutMs: number|null, consumers: object[], waiting: object[] }>,
- *   idle: Array<{ instanceId, name, state, familyLabel, count, cap }>,
- *   income: Array<{ itemId, name, perMinute, sources: object[] }>
+ *   idle: Array<{ instanceId, name, state, familyLabel, count, cap }>
  * }}
  *   `items` puts anything with a Token waiting first, then the soonest to run out.
  */
@@ -136,15 +137,13 @@ export function computeUpkeepSummary(sources = {}) {
             }
         }
 
-        for (const line of Array.isArray(def.trickle) ? def.trickle : []) {
+        for (const line of src.passiveLines(instance, def)) {
             const q = qty(line?.quantity);
-            const everyMs = Number(line?.everyMs);
-            if (!line?.itemId || !q || !(everyMs > 0)) continue;
-            const perMinute = q * MINUTE / everyMs;
-            if (!incomeByItem.has(line.itemId)) incomeByItem.set(line.itemId, { itemId: line.itemId, perMinute: 0, sources: [] });
+            if (!line?.itemId || !q) continue;
+            const perMinute = q * MINUTE / PassiveProduction.PASSIVE_PRODUCTION_MS;
+            if (!incomeByItem.has(line.itemId)) incomeByItem.set(line.itemId, { itemId: line.itemId, perMinute: 0 });
             const row = incomeByItem.get(line.itemId);
             row.perMinute += perMinute;
-            row.sources.push({ instanceId: instance.id, name, perMinute });
         }
     }
 
@@ -171,11 +170,7 @@ export function computeUpkeepSummary(sources = {}) {
         || (a.runsOutMs ?? Infinity) - (b.runsOutMs ?? Infinity)
         || a.name.localeCompare(b.name));
 
-    const income = [...incomeByItem.values()]
-        .map(row => ({ ...row, name: src.itemName(row.itemId) }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-    return { items: itemRows, idle, income };
+    return { items: itemRows, idle };
 }
 
 /** A per-minute rate for the panel: `1`, `0.5`, `2.5`, `0.25`. */

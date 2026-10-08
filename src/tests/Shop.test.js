@@ -38,7 +38,28 @@ registerTokenTypes({
         id: 'fixture_shop_bench', name: 'Fixture Bench', size: 1,
         shop: { price: [{ itemId: WOOD, quantity: 2 }, { itemId: 'item_stone', quantity: 1 }], section: 'general' }
     },
-    fixture_not_sold: { id: 'fixture_not_sold', name: 'Fixture Not Sold', size: 1 }
+    fixture_grp_big: {
+        id: 'fixture_grp_big', name: 'Fixture Grp Big', size: 1,
+        shop: { price: [{ itemId: WOOD, quantity: 20 }], section: 'logging', group: 'Fixture Group' }
+    },
+    fixture_grp_small: {
+        id: 'fixture_grp_small', name: 'Fixture Grp Small', size: 1,
+        shop: { price: [{ itemId: WOOD, quantity: 4 }], section: 'logging', group: 'Fixture Group' }
+    },
+    fixture_not_sold: { id: 'fixture_not_sold', name: 'Fixture Not Sold', size: 1 },
+    // Foundations whose price order is the reverse of their tier order.
+    fixture_tgrp_t3: {
+        id: 'fixture_tgrp_t3', name: 'Fixture Tier 3', size: 1, foundation: { kind: 'wood', skill: 'construction', tier: 3 },
+        shop: { price: [{ itemId: WOOD, quantity: 2 }], section: 'smithing', group: 'Fixture Tier Group' }
+    },
+    fixture_tgrp_t1: {
+        id: 'fixture_tgrp_t1', name: 'Fixture Tier 1', size: 1, foundation: { kind: 'wood', skill: 'construction' },
+        shop: { price: [{ itemId: WOOD, quantity: 30 }], section: 'smithing', group: 'Fixture Tier Group' }
+    },
+    fixture_tgrp_t2: {
+        id: 'fixture_tgrp_t2', name: 'Fixture Tier 2', size: 1, foundation: { kind: 'wood', skill: 'construction', tier: 2 },
+        shop: { price: [{ itemId: WOOD, quantity: 9 }], section: 'smithing', group: 'Fixture Tier Group' }
+    }
 });
 
 beforeEach(() => {
@@ -77,6 +98,36 @@ describe('the catalogue', () => {
         expect(groups[groups.length - 1].name).toBe('General');
     });
 
+    it('shows a group as one entry, options cheapest first, and leaves ungrouped Tokens alone', () => {
+        const logging = Shop.catalogue().find(g => g.section === 'logging');
+        const groupEntries = logging.items.filter(i => i.group);
+        expect(groupEntries).toHaveLength(1);
+        const [entry] = groupEntries;
+        expect(entry.group).toBe('Fixture Group');
+        expect(entry.name).toBe('Fixture Group');
+        expect(entry.options.map(o => o.typeId)).toEqual(['fixture_grp_small', 'fixture_grp_big']);
+        expect(entry.typeId).toBe('fixture_grp_small');
+        const all = Shop.catalogue().flatMap(g => g.items);
+        // The members are not also listed on their own.
+        expect(all.filter(i => i.typeId === 'fixture_grp_big' && !i.options)).toHaveLength(0);
+        const forest = all.find(i => i.typeId === 'fixture_shop_forest');
+        expect(forest.options).toBeUndefined();
+        expect(forest.group).toBeUndefined();
+    });
+
+    it('a group of Foundations lists its options by Foundation tier, not by price', () => {
+        const entry = Shop.catalogue().flatMap(g => g.items).find(i => i.group === 'Fixture Tier Group');
+        expect(entry.options.map(o => o.typeId)).toEqual(['fixture_tgrp_t1', 'fixture_tgrp_t2', 'fixture_tgrp_t3']);
+        expect(entry.typeId).toBe('fixture_tgrp_t1');
+    });
+
+    it('each option is gated by its own price only', () => {
+        InventoryManager.addItem(WOOD, 5);
+        const entry = Shop.catalogue().flatMap(g => g.items).find(i => i.group);
+        expect(entry.options.find(o => o.typeId === 'fixture_grp_small').affordability.success).toBe(true);
+        expect(entry.options.find(o => o.typeId === 'fixture_grp_big').affordability.success).toBe(false);
+    });
+
     it('shows have / need against each price line', () => {
         InventoryManager.addItem(WOOD, 4);
         const [line] = Shop.priceLines('fixture_shop_forest');
@@ -84,10 +135,21 @@ describe('the catalogue', () => {
     });
 });
 
+describe('buying from a group', () => {
+    it('buys the chosen option at the drop point, and its price only', () => {
+        InventoryManager.addItem(WOOD, 25);
+        const result = Shop.buyAt('fixture_grp_big', { x: 600, y: 600 });
+        expect(result.success).toBe(true);
+        expect(onMat('fixture_grp_big')).toHaveLength(1);
+        expect(onMat('fixture_grp_small')).toHaveLength(0);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(5);
+    });
+});
+
 describe('buying', () => {
     it('takes the price and lands the Token beside the Guild Hall as placed', () => {
         InventoryManager.addItem(WOOD, 12);
-        const before = MatCap.placedCount();
+        const before = MatCap.tokenCount();
 
         const result = Shop.buy('fixture_shop_forest');
         expect(result.success).toBe(true);
@@ -96,7 +158,7 @@ describe('buying', () => {
         const [forest] = onMat('fixture_shop_forest');
         expect(forest).toBeTruthy();
         expect(forest.origin).toBe('placed');
-        expect(MatCap.placedCount()).toBe(before + 1);
+        expect(MatCap.tokenCount()).toBe(before + 1);
 
         const h = hall();
         const dist = Math.hypot(forest.x - h.x, forest.y - h.y);
@@ -125,20 +187,28 @@ describe('buying', () => {
     it('is refused at the mat cap, and takes nothing', () => {
         InventoryManager.addItem(WOOD, 50);
         placeAt('fixture_not_sold', 100, 100);
-        setMatTuning('matCap', MatCap.placedCount());
-        expect(MatCap.matCap()).toBe(MatCap.placedCount());
+        setMatTuning('tokenCap', MatCap.tokenCount());
+        expect(MatCap.matCap()).toBe(MatCap.tokenCount());
         const result = Shop.buy('fixture_shop_forest');
         expect(result.success).toBe(false);
         expect(result.reason).toMatch(/full/i);
         expect(InventoryManager.getItemCount(WOOD)).toBe(50);
     });
 
-    it('spawned Tokens do not count toward the cap (SP-67)', () => {
+    it('⭐ spawned Tokens count toward the cap too (T-102)', () => {
         InventoryManager.addItem(WOOD, 10);
-        setMatTuning('matCap', MatCap.placedCount() + 1);
+        setMatTuning('tokenCap', MatCap.tokenCount() + 1);
         const spawned = BoardState.createTokenInstance('fixture_not_sold', 1, null, BoardState.ORIGIN.SPAWNED);
         BoardState.addToken(spawned, 100, 100);
-        expect(Shop.buy('fixture_shop_forest').success).toBe(true);
+        const refused = Shop.buy('fixture_shop_forest');
+        expect(refused.success).toBe(false);
+        expect(refused.reason).toMatch(/Token cap full/);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(10);
+    });
+
+    it('⭐ the cap is 80 by default (T-102)', () => {
+        expect(MatCap.BASE_TOKEN_CAP).toBe(80);
+        expect(MatCap.matCap()).toBe(80);
     });
 
     it('refuses a Token that is not sold', () => {
@@ -150,7 +220,9 @@ describe('buying', () => {
         const h = hall();
         const hallAt = { x: h.x, y: h.y };
         // Spawned Tokens packed 50 u apart out to 400 u round the Hall — far
-        // past nudge reach — so no legal spot exists anywhere near it.
+        // past nudge reach — so no legal spot exists anywhere near it. The cap
+        // is lifted: crowding is the point here, not the count.
+        setMatTuning('tokenCap', 2000);
         let crowd = 0;
         for (let dx = -400; dx <= 400; dx += 50) {
             for (let dy = -400; dy <= 400; dy += 50) {
@@ -177,7 +249,8 @@ describe('buying', () => {
 
     it('refuses on a mat with no legal spot anywhere, and takes nothing (5.3)', () => {
         InventoryManager.addItem(WOOD, 25);
-        // The whole mat packed 50 u apart with spawned Tokens (not counted by the cap).
+        // The whole mat packed 50 u apart with spawned Tokens, the cap lifted above them.
+        setMatTuning('tokenCap', 2000);
         for (let x = 0; x <= 2000; x += 50) {
             for (let y = 0; y <= 1400; y += 50) {
                 const t = BoardState.createTokenInstance('fixture_not_sold', 1, null, BoardState.ORIGIN.SPAWNED);
@@ -193,10 +266,10 @@ describe('buying', () => {
         expect(onMat('fixture_shop_forest')).toHaveLength(0);
     });
 
-    it('reports placed Tokens against the cap', () => {
+    it('reports the Token count against the cap', () => {
         placeAt('fixture_not_sold', 100, 100);
-        const { placed, cap } = Shop.capStatus();
-        expect(placed).toBe(MatCap.placedCount());
+        const { count, cap } = Shop.capStatus();
+        expect(count).toBe(MatCap.tokenCount());
         expect(cap).toBe(MatCap.matCap());
     });
 });
@@ -221,7 +294,8 @@ describe('buying at a point (B4)', () => {
 
     it('a refused placement charges nothing and flies back (full)', () => {
         InventoryManager.addItem(WOOD, 25);
-        // Pack the area round the spot far past nudge reach with spawned Tokens.
+        // Pack the area round the spot far past nudge reach with spawned Tokens, the cap lifted.
+        setMatTuning('tokenCap', 2000);
         for (let dx = -400; dx <= 400; dx += 50) {
             for (let dy = -300; dy <= 300; dy += 50) {
                 const t = BoardState.createTokenInstance('fixture_not_sold', 1, null, BoardState.ORIGIN.SPAWNED);
@@ -238,7 +312,7 @@ describe('buying at a point (B4)', () => {
     it('is refused at the mat cap, and takes nothing', () => {
         InventoryManager.addItem(WOOD, 50);
         placeAt('fixture_not_sold', 1200, 900);
-        setMatTuning('matCap', MatCap.placedCount());
+        setMatTuning('tokenCap', MatCap.tokenCount());
         const result = Shop.buyAt('fixture_shop_forest', SPOT);
         expect(result.success).toBe(false);
         expect(result.reason).toMatch(/full/i);

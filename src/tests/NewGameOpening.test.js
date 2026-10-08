@@ -37,7 +37,7 @@ describe('a new game opens with the starter set', () => {
         expect(onMat.map(t => t.typeId)).toEqual(['token_guild_hall', 'token_oak_forest', 'token_copper_mine']);
         expect(onMat.every(t => t.origin === 'placed')).toBe(true);
         // The Hall is exempt from the mat cap; the other two count.
-        expect(MatCap.placedCount()).toBe(2);
+        expect(MatCap.tokenCount()).toBe(2);
         // Spawners carry no charges.
         expect(onMat.find(t => t.typeId === 'token_oak_forest').usesRemaining ?? null).toBeNull();
     });

@@ -117,12 +117,14 @@ export const MAT_TUNABLES = Object.freeze([
         format: (v) => `${Math.round(v)} steps · ${Math.round(v) * STEP_U} × ${Math.round(Math.round(v) * STEP_U * ASPECT)} u`
     },
     {
-        key: 'matCap',
+        // ⚠️ A new key on purpose: the old `matCap` row's value (40) is still stored on devices
+        // that ever touched this panel, and would otherwise outrank the game's cap.
+        key: 'tokenCap',
         group: 'The mat',
-        label: 'Token cap',
-        hint: 'The most Tokens the player may have placed on the mat (SP-10, SP-67). Counts only placed Tokens (spawners, stations, Foundations); spawned trees, veins and enemies are bounded by their own family caps instead. The Guild Hall never counts.',
-        min: 1, max: 200, step: 1, def: 40,
-        format: (v) => `${Math.round(v)} placed Tokens`
+        label: 'Token cap override',
+        hint: 'Dev override for the most Tokens the mat may hold (MatCap.BASE_TOKEN_CAP is the game value, 80). Every Token counts, placed or spawned, on the mat or in the bin; the Guild Hall and quests never do. 0 uses the game value.',
+        min: 0, max: 2000, step: 1, def: 0,
+        format: (v) => (Math.round(v) === 0 ? 'off: game value' : `${Math.round(v)} Tokens`)
     },
     {
         key: 'questCap',

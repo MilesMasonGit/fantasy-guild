@@ -115,7 +115,7 @@ describe('the Guild Hall spawns bounties up to the cap on a game-time clock (TL-
     });
 
     it('bounties are spawned beside the Hall, draggable, and never count toward the Token cap', () => {
-        const before = MatCap.placedCount();
+        const before = MatCap.tokenCount();
         QuestManager.tick(6 * MIN);
         for (const t of bounties()) {
             expect(BoardState.originOf(t)).toBe(BoardState.ORIGIN.SPAWNED);
@@ -124,7 +124,7 @@ describe('the Guild Hall spawns bounties up to the cap on a game-time clock (TL-
             expect(t.quest.rewardItems.length).toBeGreaterThan(0);
             expect(['hunt', 'collection']).toContain(t.quest.type);
         }
-        expect(MatCap.placedCount()).toBe(before);
+        expect(MatCap.tokenCount()).toBe(before);
         const [first] = bounties();
         expect(QuestTokens.questOf(first.id)).toBe(first.quest);
     });
@@ -183,7 +183,7 @@ describe('the tutorial chain under its hidden cap (FB-42)', () => {
         expect(tutorials().map(t => t.quest.id)).toEqual([TUTORIAL_QUESTS[0].id]);
         const [t] = tutorials();
         expect(BoardState.originOf(t)).toBe(BoardState.ORIGIN.SPAWNED);
-        expect(MatCap.placedCount()).toBe(0);
+        expect(MatCap.tokenCount()).toBe(0);
     });
 
     it('a new game whose Hall lands after init gets its step on the next tick', () => {

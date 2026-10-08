@@ -4,6 +4,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { computeUpkeepSummary, formatRate, formatRunsOut } from '../../../systems/board/UpkeepSummary.js';
 import { cn } from '../../utils/cn.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import ItemIcon from '../base/ItemIcon.jsx';
 
 /**
  * Events after which the summary is worked out again (the top bar's Upkeep badge hears these
@@ -13,12 +14,11 @@ export const REFRESH_EVENTS = [ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TIL
 /** Spawner clocks and statement lapses move without an event; a slow poll catches them. */
 export const POLL_MS = 2000;
 
-const STATE_TEXT = { at_cap: 'at its cap', no_room: 'no room to spawn' };
-
 /**
- * The Upkeep Summary: every ongoing cost per item per minute, what the Bank holds, a rough
- * runs-out, and who is waiting unpaid, plus the trickle's income. Plain and functional. The
- * maths lives in `systems/board/UpkeepSummary.js`.
+ * The Upkeep Summary: only what consumes. One block per item: its icon, name and items per
+ * minute, what the Bank and the mat hold, a rough runs-out, who uses it and who is waiting
+ * unpaid. No Passive Production, no idle spawners (the Token Summary shows those). Rows are not
+ * boxed. The maths lives in `systems/board/UpkeepSummary.js`.
  * Shown in the hover popover of the mat's top-bar Upkeep badge. `className` sizes it for its
  * host (the popover gives it a max height, so it scrolls on its own).
  * @param {{ className?: string }} props
@@ -33,72 +33,36 @@ export const UpkeepSummaryPanel = ({ className = 'h-full' } = {}) => {
         return () => { unsubs.forEach(u => u()); clearInterval(timer); };
     }, []);
 
-    const { items, idle, income } = summary;
-    const nothing = !items.length && !idle.length && !income.length;
+    const { items } = summary;
 
     return (
-        <div data-testid="upkeep-summary" className={cn('overflow-y-auto custom-scrollbar p-3 flex flex-col gap-4 text-xs text-gi-text', className)}>
-            {nothing && (
-                <div className="text-gi-muted italic">Nothing on the mat costs upkeep or pays income.</div>
-            )}
-
-            {items.length > 0 && (
-                <section className="flex flex-col gap-2">
-                    <h4 className="text-[11px] font-bold uppercase tracking-wide text-gi-muted">Ongoing costs</h4>
-                    {items.map(row => (
-                        <div
-                            key={row.itemId}
-                            data-item-id={row.itemId}
-                            className={cn(
-                                'rounded border px-3 py-2 flex flex-col gap-1',
-                                row.waiting.length ? 'border-gi-danger/50 bg-gi-danger/10' : 'border-gi-border bg-gi-base/60'
-                            )}
-                        >
-                            <div className="flex items-center justify-between gap-2 font-bold">
-                                <span>{row.name}{row.waiting.length > 0 && <span className="text-gi-danger"> — needed</span>}</span>
-                                <span className="tabular-nums">{formatRate(row.perMinute)} / min</span>
-                            </div>
-                            <div className="flex flex-wrap gap-x-4 text-gi-muted tabular-nums">
-                                <span>Bank: <b className="text-gi-text">{row.bank}</b></span>
-                                {row.onMat > 0 && <span>On the mat: <b className="text-gi-text">{row.onMat}</b></span>}
-                                {row.incomePerMinute > 0 && <span>Trickle: +{formatRate(row.incomePerMinute)} / min</span>}
-                                <span>Runs out: <b className="text-gi-text">{formatRunsOut(row.runsOutMs)}</b></span>
-                            </div>
-                            <div className="text-gi-muted">
-                                Used by: {row.consumers.map(c => `${c.name} (${formatRate(c.perMinute)}/min${c.source === 'rule' ? ', rule' : ''})`).join(', ')}
-                            </div>
-                            {row.waiting.length > 0 && (
-                                <div className="text-gi-danger">
-                                    Waiting unpaid: {row.waiting.map(w => w.name).join(', ')}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </section>
-            )}
-
-            {income.length > 0 && (
-                <section className="flex flex-col gap-1">
-                    <h4 className="text-[11px] font-bold uppercase tracking-wide text-gi-muted">Trickle income</h4>
-                    {income.map(row => (
-                        <div key={row.itemId} data-income-item-id={row.itemId} className="flex justify-between gap-2 px-3 py-1 rounded border border-gi-border bg-gi-base/60">
-                            <span>{row.name} <span className="text-gi-muted">from {row.sources.map(s => s.name).join(', ')}</span></span>
-                            <span className="tabular-nums font-bold">+{formatRate(row.perMinute)} / min</span>
-                        </div>
-                    ))}
-                </section>
-            )}
-
-            {idle.length > 0 && (
-                <section className="flex flex-col gap-1">
-                    <h4 className="text-[11px] font-bold uppercase tracking-wide text-gi-muted">Idle spawners (paying nothing)</h4>
-                    {idle.map(s => (
-                        <div key={s.instanceId} className="px-3 py-1 rounded border border-gi-border/60 text-gi-muted">
-                            {s.name}: {STATE_TEXT[s.state] || s.state} ({s.familyLabel} {s.count} / {s.cap})
-                        </div>
-                    ))}
-                </section>
-            )}
+        <div data-testid="upkeep-summary" className={cn('overflow-y-auto custom-scrollbar p-2 flex flex-col text-[11px] leading-snug text-white', className)}>
+            <div className="font-bold text-gi-gold">Upkeep</div>
+            <div className="text-white/60">Items the mat uses each minute</div>
+            {!items.length && <div className="mt-1 text-white/60">Nothing on the mat costs upkeep.</div>}
+            {items.map(row => (
+                <div key={row.itemId} data-item-id={row.itemId} className="mt-1.5 pt-1.5 border-t border-white/10 flex flex-col gap-0.5">
+                    <div className="flex items-center justify-between gap-2 font-bold">
+                        <span className="flex items-center gap-1 min-w-0">
+                            <ItemIcon item={row.itemId} size={16} />
+                            <span className="truncate">{row.name}</span>
+                            {row.waiting.length > 0 && <span className="text-red-400 font-normal">needed</span>}
+                        </span>
+                        <span className="shrink-0 tabular-nums">{formatRate(row.perMinute)}/min</span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 text-white/60 tabular-nums">
+                        <span>Bank <b className="text-white">{row.bank}</b></span>
+                        {row.onMat > 0 && <span>On the mat <b className="text-white">{row.onMat}</b></span>}
+                        <span>Runs out <b className="text-white">{formatRunsOut(row.runsOutMs)}</b></span>
+                    </div>
+                    <div className="text-white/60">
+                        {row.consumers.map(c => `${c.name} ${formatRate(c.perMinute)}/min${c.source === 'rule' ? ' (rule)' : ''}`).join(', ')}
+                    </div>
+                    {row.waiting.length > 0 && (
+                        <div className="text-red-400">Waiting: {row.waiting.map(w => w.name).join(', ')}</div>
+                    )}
+                </div>
+            ))}
         </div>
     );
 };
