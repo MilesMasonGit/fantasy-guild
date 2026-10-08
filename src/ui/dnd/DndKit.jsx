@@ -295,10 +295,12 @@ export const DeckDndProvider = ({ children }) => {
         const payload = active?.data?.current;
         let success = false;
 
-        if (over && payload) {
-            const data = over.data?.current;
+        // A live target under the release point wins over dnd-kit's `over`, which can be stale.
+        const live = payload ? liveDropTargetAt(payload, pointerRef.current) : null;
+        if (payload && (live || over)) {
+            const data = live || over.data?.current;
             if (data?.accepts?.(payload)) {
-                const node = document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
+                const node = live ? live.node?.() : document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
                 if (node) {
                     const r = node.getBoundingClientRect();
                     glideTargetRef.current = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
@@ -429,6 +431,38 @@ export function useEntityDrag({
         isDragging,
         handleProps: keyboardAccessible ? { ...listeners, ...attributes } : { ...listeners }
     };
+}
+
+/**
+ * Drop targets that answer for themselves at the moment of release, ahead of dnd-kit's `over`.
+ * ⚠️ dnd-kit learns that a target was switched on only from React's passive effects, about
+ * 25 ms after the pointer move that opened it, and its `over` lags further behind. A pop-out
+ * target (the bin sidebar) is drawn open within ~5 ms of that move, so a release in between
+ * landed on whatever `over` still named (the mat). A live target is asked directly, with the
+ * live pointer, so what the player sees open is what takes the drop.
+ * Each entry: `{ accepts(payload), contains(pointer), onDrop(payload, ctx), node() }`.
+ */
+const liveDropTargets = new Set();
+
+/** Register a live drop target while the calling component is mounted (see above). */
+export function useLiveDropTarget(target) {
+    const ref = useRef(target);
+    ref.current = target;
+    useEffect(() => {
+        const entry = { get: () => ref.current };
+        liveDropTargets.add(entry);
+        return () => { liveDropTargets.delete(entry); };
+    }, []);
+}
+
+/** The live drop target that takes `payload` released at `pointer`, or null. */
+export function liveDropTargetAt(payload, pointer) {
+    if (!payload || !pointer) return null;
+    for (const entry of liveDropTargets) {
+        const target = entry.get();
+        if (target?.accepts?.(payload) && target.contains?.(pointer)) return target;
+    }
+    return null;
 }
 
 /**

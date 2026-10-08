@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Fast drops on the bin.** Flicking a Token onto the bin edge and letting go straight away now bins it; before, a release in the first few milliseconds after the bin popped open dropped the Token on the mat underneath. A Token dragged back out of the bin still never drops back into it.
 - **Grabbing follows each Token's own circle.** Tokens still draw at their bigger 2× size, but only a Token's own round body now answers a press, so art spilling over a neighbour no longer steals the click or drag; where two Tokens overlap, the press goes to the one whose centre is nearest, the same one the hover outline shows. A hero's art beside their figure no longer blocks the flag or Token behind it either.
 - **Heroes stand a little further from their Token.** A hero working or fighting now stands 32 units from the Token's edge instead of 16, so in a fight the hero's health bar and the enemy's no longer touch, even with a four-digit HP number (T-112).
 - **Health bar numbers and lingering hero bar.** The health bar now has its number (like 34/50) written on it all the time, so there is no hover tooltip; the bars are a little thicker to fit it. A hero's bar stays up for about 3 seconds after their fight ends, then goes.

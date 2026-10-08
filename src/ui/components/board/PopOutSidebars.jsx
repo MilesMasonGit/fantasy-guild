@@ -6,10 +6,10 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
 import * as DiscardBin from '../../../systems/board/DiscardBin.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
-import { useActiveDrag } from '../../dnd/DndKit.jsx';
+import { useActiveDrag, useLiveDropTarget } from '../../dnd/DndKit.jsx';
 import ToastContainer from '../base/ToastContainer.jsx';
 import { FlagRulesPanel } from '../drawer/FlagRulesPanel.jsx';
-import DiscardBinPanel, { binAccepts, useBinRefresh } from './DiscardBinPanel.jsx';
+import DiscardBinPanel, { binAccepts, dropIntoBin, useBinRefresh } from './DiscardBinPanel.jsx';
 import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, NOTIFICATION_STRIP_PX, columnWidthCss } from './boardConstants.js';
 
 /**
@@ -98,6 +98,8 @@ function usePopOut({ towardMat, watches = null }) {
     const open = followsDrag ? near : (!dragging && hovered);
     return {
         open, wrapRef, stripRef, panelRef,
+        /** Whether a watched drag has it open, as of the latest pointer move (before React redraws). */
+        openNow: () => followsDrag && nearRef.current,
         hoverProps: { onMouseEnter: () => setHovered(true), onMouseLeave: () => setHovered(false) }
     };
 }
@@ -197,6 +199,18 @@ export const BinSidebar = ({ towardMat }) => {
     // Only a Token headed for the bin is dropped on it. A binned Token dragged back out must
     // find the mat under the panel, so the target stays off while it is in the hand.
     const dropsOpen = pop.open && !!activePayload && binAccepts(activePayload);
+    // A release on the open bin bins the Token even before dnd-kit has caught up with the bin
+    // opening (`useLiveDropTarget`). The same rule: only a Token headed for the bin.
+    const binEl = () => pop.panelRef.current?.querySelector('[data-discard-bin]') || null;
+    useLiveDropTarget({
+        accepts: binAccepts,
+        contains: (p) => {
+            const el = pop.openNow() ? binEl() : null;
+            return !!el && inside(p, el.getBoundingClientRect());
+        },
+        onDrop: (payload) => dropIntoBin(payload),
+        node: binEl
+    });
     return (
         <div
             ref={pop.wrapRef}

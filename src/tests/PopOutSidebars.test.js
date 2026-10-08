@@ -14,8 +14,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
-import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
-import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
+import { DeckDndContext, DeckDndProvider, DropTarget, useEntityDrag } from '../ui/dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../ui/dnd/dragConstants.js';
 import { BIN_DROP_ID } from '../ui/components/board/DiscardBinPanel.jsx';
 import {
     NotificationSidebars, pointerAtSidebar, SIDEBAR_APPROACH_PX
@@ -218,5 +218,111 @@ describe('dragging to the bin', () => {
         expect(binDropDisabled()).toBe(true);
         // The slot being dragged is still in the page.
         expect(container.querySelector(`[data-bin-slot="${t.id}"]`)).not.toBeNull();
+    });
+});
+
+/**
+ * ⭐ The bin is drawn open within a few ms of the pointer move that opens it, but dnd-kit only
+ * treats it as the drop target ~25 ms later (its target switches on in a passive effect, and its
+ * `over` lags behind that). A release in that gap used to drop the Token on the mat under the
+ * panel. The bin now answers for itself at the release (`useLiveDropTarget`).
+ */
+describe('a fast release on the bin', () => {
+    let matDrops;
+    beforeEach(() => { matDrops = []; });
+
+    function token() {
+        const t = BoardState.createTokenInstance('fixture_producer', tokenStartingUses('fixture_producer'), null, BoardState.ORIGIN.PLACED);
+        return BoardState.addToken(t, 300, 300);
+    }
+
+    /** Something to pick up, carrying `payload`. */
+    const Source = ({ payload }) => {
+        const drag = useEntityDrag({ id: 'race-src', kind: DRAG_KIND.TOKEN, payload, sourceSurface: DND_SURFACE.BOARD });
+        return h('div', { ref: drag.setNodeRef, ...drag.handleProps, 'data-race-src': true });
+    };
+
+    /** The real drag provider, a mat that takes any Token, the sidebars, and the source. */
+    function mountRace(payload) {
+        vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function () {
+            if (this.matches?.('[data-sidebar="bin"] [data-sidebar-tab]')) return rect(1572, 700, 1600, 812);
+            if (this.matches?.('[data-discard-bin]')) return rect(1320, 504, 1568, 808);
+            if (this.parentElement?.matches?.('[data-sidebar="bin"]') && this.tagName === 'DIV' && !this.hasAttribute('data-sidebar-tab')) {
+                return rect(1316, 500, 1572, 812);
+            }
+            if (this.matches?.('[data-race-mat]')) return rect(0, 0, 1600, 1000);
+            if (this.matches?.('[data-race-src]')) return rect(880, 580, 920, 620);
+            return rect(0, 0, 0, 0);
+        });
+        const view = render(
+            h(EngineContext.Provider, { value: { GameState, EventBus } },
+                h(DeckDndProvider, null,
+                    h(DropTarget, {
+                        id: 'race-mat', surface: DND_SURFACE.BOARD, 'data-race-mat': true,
+                        accepts: (p) => p?.kind === DRAG_KIND.TOKEN,
+                        onDrop: (p) => { matDrops.push(p); }
+                    }),
+                    h(NotificationSidebars),
+                    h(Source, { payload })))
+        );
+        const src = view.container.querySelector('[data-race-src]');
+        const at = (type, x, y) => fireEvent[type](src, { pointerId: 1, clientX: x, clientY: y, isPrimary: true, button: 0 });
+        // Picked up over the mat, past the 8 px threshold.
+        act(() => { at('pointerDown', 900, 600); });
+        act(() => { at('pointerMove', 930, 600); });
+        return { ...view, at };
+    }
+
+    it('released in the same instant as the move that opened the bin, the Token is binned', () => {
+        const t = token();
+        const { container, at } = mountRace({ typeId: t.typeId, from: { instanceId: t.id } });
+        expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
+        expect(isOpen(binSidebar(container))).toBe(false);
+        // One act: the move and the release land before React redraws anything (0 ms).
+        act(() => {
+            at('pointerMove', 1540, 650);
+            at('pointerUp', 1540, 650);
+        });
+        expect(DiscardBin.isBinned(t.id)).toBe(true);
+        expect(matDrops).toHaveLength(0);
+    });
+
+    it('released 8 ms after it, still binned', async () => {
+        const t = token();
+        const { at } = mountRace({ typeId: t.typeId, from: { instanceId: t.id } });
+        // Still inside one act, so React has not redrawn: the release comes 8 ms after the move.
+        await act(async () => {
+            at('pointerMove', 1540, 650);
+            await new Promise(r => setTimeout(r, 8));
+            at('pointerUp', 1540, 650);
+        });
+        expect(DiscardBin.isBinned(t.id)).toBe(true);
+        expect(matDrops).toHaveLength(0);
+    });
+
+    it('released over where the shut panel would be, it lands on the mat', () => {
+        const t = token();
+        const { at } = mountRace({ typeId: t.typeId, from: { instanceId: t.id } });
+        // Straight to the middle of the panel's area, beyond the tab's opening margin: still shut.
+        act(() => {
+            at('pointerMove', 1400, 650);
+            at('pointerUp', 1400, 650);
+        });
+        expect(DiscardBin.isBinned(t.id)).toBe(false);
+        expect(matDrops).toHaveLength(1);
+    });
+
+    it('a binned Token dragged back out never drops back on the open bin', () => {
+        const t = token();
+        DiscardBin.binToken(t.id);
+        const { container, at } = mountRace({ typeId: t.typeId, from: { binnedId: t.id } });
+        act(() => { at('pointerMove', 1540, 650); });
+        expect(isOpen(binSidebar(container))).toBe(true);
+        act(() => {
+            at('pointerMove', 1450, 650);
+            at('pointerUp', 1450, 650);
+        });
+        expect(matDrops).toHaveLength(1);
+        expect(matDrops[0].from.binnedId).toBe(t.id);
     });
 });
