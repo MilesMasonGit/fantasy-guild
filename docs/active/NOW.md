@@ -1,15 +1,23 @@
 # NOW — start here
 
-*Updated 2026-10-07. Update this page at the end of every session. Keep it
+*Updated 2026-10-08. Update this page at the end of every session. Keep it
 under one screen: what's next first, finished work gone (it lives in git, the
 changelog and `docs/archive/`).*
 
 ## Next
 
-1. **The crunch**: brief 00 (quick fixes T-104, T-101) is done. Next is
-   [brief 10, UI rework](briefs/10_ui_rework.md); see [briefs/README.md](briefs/README.md).
+1. **Brief 10, UI rework** ([brief](briefs/10_ui_rework.md)) on branch
+   `crunch/ui-rework`. Batch A (U1–U3) is merged. **Batch B (U4–U5, plus the
+   batch A tweaks) waits for the owner's eye-check**, then merges. Next: U6
+   (top bar, Token Summary, T-102 cap 80, Passive Production T-099).
    The unfinished Atlas work is parked on branch `atlas-wip`, not `main`.
-2. **T-111**: the engine bench reads ~1.4× slow on unchanged `main`; re-run on
+2. **Owner CMS to-do** (after batch B merges): Foundation **Tier** on each
+   Foundation (Wood: Oak 1, Maple 2, Ebony 3; Stone: Stone 1, Marble 2,
+   Basalt 3; author the missing Tokens first). **Shop group** labels: "Wood
+   Foundation", "Stone Foundation", "Anvil". **Minimum Foundation tier** on
+   building recipes (Recipes → Construction). Higher anvils each need their
+   own "Acts as: anvil, tool tier N" effect (Copper 1 … Darkmetal 5).
+3. **T-111**: the engine bench reads ~1.4× slow on unchanged `main`; re-run on
    a quiet machine before trusting timing verdicts.
 
 ## Where the project is
