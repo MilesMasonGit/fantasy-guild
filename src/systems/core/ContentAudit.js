@@ -21,6 +21,7 @@ import { RANDOM_HUNTS } from '../quests/QuestManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
+import { findUnknownRefs } from './unknownRefRule.js';
 import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 
@@ -589,12 +590,22 @@ function auditLifecycle(out) {
 }
 
 /**
+ * Skills and jobs named in content that the game does not have. The rule lives
+ * in `unknownRefRule.js`, shared with the CMS Economy Audit.
+ */
+function auditUnknownRefs(out) {
+    for (const f of findUnknownRefs({ tokens: TOKENS, items: ITEMS, recipes: listRecipes() })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
 export function auditContent({ openingTokens = [] } = {}) {
     const out = [];
-    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditMaps, auditHardcodedLists];
+    const steps = [auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditMaps, auditHardcodedLists];
     for (const step of steps) {
         try {
             step(out, openingTokens);

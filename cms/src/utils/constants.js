@@ -85,6 +85,7 @@ export {
   migrateAppliesTargetsIn,
   provisionalName,
 } from '../../../src/systems/effects/effectMigration.js';
+export { migrateSkillIdsIn, migrateRecipePools } from '../../../src/systems/effects/skillIdMigration.js';
 
 // When a rule spends its Token's charges. Same extensibility rule as TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker with no CMS change.
 export {
@@ -111,6 +112,9 @@ export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/
 
 // The content checks for the six lifecycle blocks: the game's own rules and wording, so the Economy Audit and the boot audit report the same problems.
 export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.js';
+
+// Content naming a skill or job the game does not have (a renamed or dropped one). The game's own rule and wording.
+export { findUnknownRefs } from '../../../src/systems/core/unknownRefRule.js';
 
 // `tokenType` is derived from what a Token has rather than picked. The CMS computes it and writes it into the file.
 export {

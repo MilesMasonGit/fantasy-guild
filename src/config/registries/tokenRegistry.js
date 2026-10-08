@@ -26,6 +26,7 @@ import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { EFFECTS } from './effectRegistry.js';
 import { expandBearer } from '../../systems/effects/effectLibrary.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
+import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
 import { engineTokenType } from './engineTokens.js';
 
 /**
@@ -47,7 +48,9 @@ function loadJsonTokens() {
                     // Library references become the statements the game runs on, once, here, so everything downstream keeps reading `def.statements`.
                     // Inline statements lose the retired enemy flag here;
                     // library statements already lost it in `effectRegistry`.
-                    tokens[typeId] = expandBearer(migrateAppliesTargets(def), EFFECTS);
+                    // ⚠️ Renamed skill ids are rewritten here and NOT in `registerTokenTypes`
+                    // (see `skillIdMigration.js`).
+                    tokens[typeId] = expandBearer(migrateAppliesTargets(migrateSkillIds(def)), EFFECTS);
                 }
             } catch (error) {
                 console.warn(`[TokenRegistry] Error loading token JSON from ${path}:`, error);
