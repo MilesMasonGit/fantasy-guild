@@ -61,7 +61,10 @@ Questions 1–3 are answered in the catch-up plan below; question 4 is in its
 
 **M** = measured, **R** = reasoned. Measured on the owner's PC (i7-8700,
 Node 24.11.1, Chrome 154 headless for the in-page runs) at `5e1b220d`, with
-another agent working on the machine (~35 % CPU busy before the runs). The
+other agents working on the machine (~35 % CPU busy before the runs; the
+in-page runs with the virtual clock overlapped another agent's drawing
+bench), so the times are if anything slow. Re-measure on a quiet machine
+before calling the target met. The
 board is the bench's S2 (101–109 Tokens, over the game's 80-Token cap: a busy
 board), seed 1, with the bench's virtual wall clock. Tools:
 `bench/catchup/time.mjs` (headless) and `bench/catchup/page.mjs` (the real
