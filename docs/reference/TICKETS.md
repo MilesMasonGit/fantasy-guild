@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-117**
+**Next free number: T-119**
 
 ---
 
@@ -133,6 +133,8 @@ here.
 | T-111 | P3 | open | Engine bench timings are load-sensitive: on unchanged `main` (`933d12db`, 2026-10-08) a run beside a busy agent read 1.2–2.3× slower on every line; the next run alone matched the baseline on every p50 (0.94–1.05×) with only two p99 tails over 20 %. Treat REGRESSED as noise until reproduced on a quiet machine; the work check is reliable. | T-109 merge gate |
 | T-115 | P3 | open | Player-facing Logging wording after the Forestry rename: the tutorial step "Log an Oak Tree / Let your Hero log 3 times" (`tutorialQuests.js`), and the ceremony line "Requires the skills it carries forward at level N" (`PromotionTrade.jsx`), now wrong for basic classes, which gate on two Starting skills. Visible text: owner eye-check (fits brief 30). | brief 20 R2a/R3 |
 | T-116 | P3 | open | The CMS content generator still writes the retired task/area effect vocabulary (`targetCategory` enum ALL/COMBAT/MELEE/MINING/INDUSTRY/NATURE/CRAFTING in `contentGenerator.js`); only its skill list follows the registry. Revisit if the generator is revived. | brief 20 R3 |
+| T-117 | P2 | open | The desktop app keeps drawing at ~165 fps while minimised (measured 2026-10-08: WebView2 is never told); pause drawing on Tauri's minimise event. Battery and GPU waste. | brief 40 O1 |
+| T-118 | P3 | open | `npm run bench -- --cpu-prof` writes the module-loader thread's idle profile on Node 24 (`bench/run.mjs` `runWorker` uses a fixed `--cpu-prof-name`); drop the name or add the thread id. Workaround: plain `node --cpu-prof` (bench/README.md). | brief 40 O1 |
 | T-114 | P3 | open | Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason
