@@ -965,7 +965,7 @@ export function ambusherOf(heroId) {
  * Hall alike. Nothing else about the Token changes: its rules and triggers carry on (see
  * `isDisallowed`).
  *
- * The Token panel's Heroes-may-work-this checkbox calls this; from the console:
+ * The Token panel's Disallow switch calls this; from the console:
  * `Game.Flags.setDisallowed(instanceId, true)`.
  *
  * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}

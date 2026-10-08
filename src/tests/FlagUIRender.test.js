@@ -222,23 +222,23 @@ describe('the flag has no skill since slice 1.5b (FP-71)', () => {
     });
 });
 
-describe('"Heroes may work this" (FP-35, FPP-8)', () => {
-    const toggle = (container) => container.querySelector('[data-heroes-may-work]');
+describe('the Disallow switch (FP-35, FPP-8)', () => {
+    const toggle = (container) => container.querySelector('[data-disallow-switch]');
 
-    it('unticking marks the Token disallowed and the hero working it leaves', async () => {
+    it('switching on marks the Token disallowed and the hero working it leaves', async () => {
         const forest = put(TOKEN,'fixture_producer');
         Flags.plant('h1', TOKEN);
         expect(BoardState.workTokenOf('h1')).toBe(forest.id);
 
         const { container } = mount(h(TokenInspection, { typeId: 'fixture_producer', instanceId: forest.id }));
         const box = toggle(container).querySelector('[role="switch"]');
-        expect(box.getAttribute('aria-checked')).toBe('true');
+        expect(box.getAttribute('aria-checked')).toBe('false');
 
         await act(async () => { fireEvent.click(box); });
 
         expect(Flags.isDisallowed(forest)).toBe(true);
         expect(BoardState.workTokenOf('h1')).toBeNull();
-        expect(toggle(container).getAttribute('data-heroes-may-work')).toBe('no');
+        expect(toggle(container).getAttribute('data-disallow-switch')).toBe('on');
     });
 
     it('is offered only for a board Token a hero could work', () => {

@@ -69,8 +69,10 @@ export const SkillIcon = ({
                 alt={alt || name}
                 width={size}
                 height={size}
-                style={{ width: `${size}px`, height: `${size}px` }}
-                className={cn('object-contain pixelated shrink-0 inline-block align-middle select-none', className)}
+                // ⚠️ Inline: no `pixelated` class exists, and without the property the browser
+                // smooths the 16 px art into a blur.
+                style={{ width: `${size}px`, height: `${size}px`, imageRendering: 'pixelated' }}
+                className={cn('object-contain shrink-0 inline-block align-middle select-none', className)}
                 onError={() => setHasError(true)}
             />
         );

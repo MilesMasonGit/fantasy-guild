@@ -26,7 +26,9 @@ export const RING_COLOUR = Object.freeze({
     grow: '#bef264',
     // A quest's progress, parchment: warmer and paler than the charges gold, so a done quest's
     // full ring is not read as charges.
-    quest: '#e8c98a'
+    quest: '#e8c98a',
+    // Skill XP in the inspection.
+    xp: '#fb923c'
 });
 
 /**
