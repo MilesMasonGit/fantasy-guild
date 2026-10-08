@@ -55,7 +55,7 @@ registerTokenTypes({
 
 const P = (x, y) => ({ x, y });
 
-function hero(id, skills = { logging: 50, mining: 5 }) {
+function hero(id, skills = { forestry: 50, mining: 5 }) {
     const out = {};
     for (const [s, level] of Object.entries(skills)) out[s] = { level, xp: 0 };
     return { id, name: id, status: 'idle', level: 50, skills: out, hp: { current: 100, max: 100 } };
@@ -146,8 +146,8 @@ describe('FB-44 — a flag has no footprint', () => {
 
 describe('FB-45 — dropping a flag on a Token the hero can work pins it', () => {
     it('pins, and the hero works only that Token — past a nearer one and a better priority', () => {
-        const pinned = put(P(600, 600), 'fixture_producer');           // logging
-        const nearer = put(P(760, 600), 'fixture_producer');           // logging, nearer the hero later
+        const pinned = put(P(600, 600), 'fixture_producer');           // forestry
+        const nearer = put(P(760, 600), 'fixture_producer');           // forestry, nearer the hero later
         const better = put(P(600, 760), 'fixture_producer_alt');       // mining, priority 1
         Flags.setRule('h1', 'mining', { priority: 1 });
 
@@ -170,7 +170,7 @@ describe('FB-45 — dropping a flag on a Token the hero can work pins it', () =>
         // A station with no recipe chosen — fixable, so the pin is allowed.
         const station = put(P(600, 600), 'fixture_kitchen');
         put(P(760, 600), 'fixture_producer');
-        GameState.state.heroes = [hero('h1', { logging: 50, cooking: 50 })];
+        GameState.state.heroes = [hero('h1', { forestry: 50, cooking: 50 })];
 
         const res = dropFlag('h1', P(600, 600));
         expect(res.pinnedTo).toBe(station.id);

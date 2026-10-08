@@ -104,7 +104,7 @@ function saplingThatBecomes(id, effectId, uses = 1) {
             id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture',
             uses, sprite: 'skill_nature',
             config: {
-                skill: 'logging', skillRequired: 1, cycleTimeMs: 1000, xp: 1,
+                skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 1,
                 inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
             },
             effects: [{ effectId }]

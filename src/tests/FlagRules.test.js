@@ -20,6 +20,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getJobSkills, getPromotionCost, getPromotionGateSkills } from '../config/registries/jobRegistry.js';
+import { isCombatSkill } from '../config/registries/skillRegistry.js';
 import { resetMatTuning, matTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -43,11 +44,11 @@ vi.mock('../systems/combat/DefeatPenalties.js', () => ({
  */
 
 registerTokenTypes({
-    /** A logging Token that needs coal — stuck for a fixable reason. */
+    /** A forestry Token that needs coal — stuck for a fixable reason. */
     fr_hungry: {
         id: 'fr_hungry', name: 'Hungry Mill', uses: 100, requiresHero: true,
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
             inputs: [{ itemId: 'item_coal', quantity: 2 }],
             outputs: [{ itemId: 'item_glowcap', quantity: 1, chance: 100 }]
         }
@@ -75,10 +76,10 @@ function workTileOf(heroId) {
     return row * 6 + col;
 }
 
-const FOREST = 'fixture_producer';        // logging
+const FOREST = 'fixture_producer';        // forestry
 const MINE = 'fixture_producer_alt';      // mining
 
-function hero(id, skills = { logging: 50, mining: 50 }) {
+function hero(id, skills = { forestry: 50, mining: 50 }) {
     const out = {};
     for (const [s, level] of Object.entries(skills)) out[s] = { level, xp: 0 };
     return { id, name: id, status: 'idle', level: 50, skills: out, hp: { current: 100, max: 100 } };
@@ -144,7 +145,7 @@ describe('the shipped reach (FP-75)', () => {
 
 describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-72, FP-79)', () => {
     it('works a nearer Token of another held skill', () => {
-        put(15, FOREST);                              // logging, 160 u
+        put(15, FOREST);                              // forestry, 160 u
         put(14, MINE);                                // mining, under the flag
         plant('h1', 14);
         expect(workTileOf('h1')).toBe(14);
@@ -153,7 +154,7 @@ describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-
     it('a priority-1 Token farther away beats a priority-3 Token nearer', () => {
         put(14, MINE);                                // priority 3, 0 u
         put(15, FOREST);                              // priority 1, 160 u
-        expect(Flags.setRule('h1', 'logging', { priority: 1 }).success).toBe(true);
+        expect(Flags.setRule('h1', 'forestry', { priority: 1 }).success).toBe(true);
 
         plant('h1', 14);
 
@@ -161,9 +162,9 @@ describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-
     });
 
     it('a priority-1 Token stuck on inputs → the priority-3 one, the skip recorded, no notification', () => {
-        const hungry = put(15, 'fr_hungry');          // logging, priority 1, no coal
+        const hungry = put(15, 'fr_hungry');          // forestry, priority 1, no coal
         put(13, MINE);                                // mining, priority 3
-        Flags.setRule('h1', 'logging', { priority: 1 });
+        Flags.setRule('h1', 'forestry', { priority: 1 });
 
         plant('h1', 14);
 
@@ -182,7 +183,7 @@ describe('rules switched off (FPP-18)', () => {
     it('a skill whose rule is off is skipped as rule_off, and the hero works something else', () => {
         const forest = put(14, FOREST);
         put(15, MINE);
-        Flags.setRule('h1', 'logging', { allowed: false });
+        Flags.setRule('h1', 'forestry', { allowed: false });
 
         plant('h1', 14);
 
@@ -200,7 +201,7 @@ describe('rules switched off (FPP-18)', () => {
         const plantedAt = BoardState.flagOf('h1').plantedAt;
 
         const deployed = counting('hero_deployed', () => {
-            expect(Flags.setRule('h1', 'logging', { allowed: false }).success).toBe(true);
+            expect(Flags.setRule('h1', 'forestry', { allowed: false }).success).toBe(true);
         });
 
         expect(workTileOf('h1')).toBeNull();
@@ -213,7 +214,7 @@ describe('rules switched off (FPP-18)', () => {
     });
 
     it('Fight is allowed by default (FP-74); switching it off lets go of the enemy and skips enemies', () => {
-        GameState.state.heroes = [hero('f1', { logging: 50, melee: 30 })];
+        GameState.state.heroes = [hero('f1', { forestry: 50, melee: 30 })];
         const bear = put(15, 'fixture_enemy');
 
         expect(FlagRules.ruleOf('f1', FlagRules.FIGHT)).toEqual({ allowed: true, priority: 3 });
@@ -232,35 +233,35 @@ describe('rules switched off (FPP-18)', () => {
 
 describe('Flags.setRule and resetRules (FPP-17)', () => {
     it('refuses an unheld skill, Fight for a hero who cannot fight, and a priority outside 1–5', () => {
-        GameState.state.heroes = [hero('h1', { logging: 50 })];
+        GameState.state.heroes = [hero('h1', { forestry: 50 })];
         const refused = (ruleId, change) => Flags.setRule('h1', ruleId, change).success === false;
 
         expect(refused('mining', { priority: 1 })).toBe(true);
         expect(refused(FlagRules.FIGHT, { allowed: false })).toBe(true);
-        for (const priority of [0, 6, 2.5, '1', -1]) expect(refused('logging', { priority })).toBe(true);
-        expect(refused('logging', { allowed: 'no' })).toBe(true);
-        expect(Flags.setRule('nobody', 'logging', { priority: 1 }).success).toBe(false);
+        for (const priority of [0, 6, 2.5, '1', -1]) expect(refused('forestry', { priority })).toBe(true);
+        expect(refused('forestry', { allowed: 'no' })).toBe(true);
+        expect(Flags.setRule('nobody', 'forestry', { priority: 1 }).success).toBe(false);
 
         expect(FlagRules.heroRecord('h1').flagRules ?? {}).toEqual({});
     });
 
     it('stores rules sparsely: a rule back at the default is no entry', () => {
-        Flags.setRule('h1', 'logging', { priority: 1 });
-        expect(FlagRules.heroRecord('h1').flagRules).toEqual({ logging: { allowed: true, priority: 1 } });
-        Flags.setRule('h1', 'logging', { priority: 3 });
+        Flags.setRule('h1', 'forestry', { priority: 1 });
+        expect(FlagRules.heroRecord('h1').flagRules).toEqual({ forestry: { allowed: true, priority: 1 } });
+        Flags.setRule('h1', 'forestry', { priority: 3 });
         expect(FlagRules.heroRecord('h1').flagRules).toEqual({});
     });
 
     it('resetRules puts every rule back to allowed, priority 3', () => {
-        Flags.setRule('h1', 'logging', { priority: 5 });
+        Flags.setRule('h1', 'forestry', { priority: 5 });
         Flags.setRule('h1', 'mining', { allowed: false });
         expect(Flags.resetRules('h1').success).toBe(true);
-        expect(FlagRules.ruleOf('h1', 'logging')).toEqual({ allowed: true, priority: 3 });
+        expect(FlagRules.ruleOf('h1', 'forestry')).toEqual({ allowed: true, priority: 3 });
         expect(FlagRules.ruleOf('h1', 'mining')).toEqual({ allowed: true, priority: 3 });
     });
 
     it('a priority change is not a re-plant: claim, plantedAt and progress stay; no hero_deployed', () => {
-        GameState.state.heroes = [hero('h1', { logging: 50 })];
+        GameState.state.heroes = [hero('h1', { forestry: 50 })];
         put(14, 'fr_hungry');                          // under the flag, stuck: passed over
         const west = put(13, FOREST);
         const east = put(15, FOREST);
@@ -282,7 +283,7 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         let moved = 0;
         const deployed = counting('hero_deployed', () => {
             moved = counting(BOARD_EVENTS.HERO_MOVED, () => {
-                expect(Flags.setRule('h1', 'logging', { priority: 1 }).success).toBe(true);
+                expect(Flags.setRule('h1', 'forestry', { priority: 1 }).success).toBe(true);
                 Flags.assign(0);
             });
         });
@@ -301,20 +302,20 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
     });
 
     it('rules survive a furl, a re-plant, and a save and reload', async () => {
-        Flags.setRule('h1', 'logging', { priority: 2 });
+        Flags.setRule('h1', 'forestry', { priority: 2 });
         Flags.setRule('h1', 'mining', { allowed: false });
         plant('h1', 14);
 
         Flags.furl('h1');
         plant('h1', 20);
-        expect(FlagRules.ruleOf('h1', 'logging')).toEqual({ allowed: true, priority: 2 });
+        expect(FlagRules.ruleOf('h1', 'forestry')).toEqual({ allowed: true, priority: 2 });
         expect(FlagRules.ruleOf('h1', 'mining')).toEqual({ allowed: false, priority: 3 });
 
         const saved = JSON.parse(JSON.stringify(GameState.serialize()));
         await GameState.initFromSave(migrateState(saved.state, saved.version));
 
         expect(GameState.state.heroes.find(x => x.id === 'h1').flagRules).toEqual({
-            logging: { allowed: true, priority: 2 },
+            forestry: { allowed: true, priority: 2 },
             mining: { allowed: false, priority: 3 }
         });
         expect(FlagRules.ruleOf('h1', 'mining').allowed).toBe(false);
@@ -331,11 +332,9 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
                 h.skills[s].level = cost.skillLevel;
             }
         };
-        // ⚠️ Rewritten (slice 1.2). This used to bank a foundation skill on
-        // Recruit → Fighter; promotion keeps every foundation skill now, so the
-        // bank-and-restore round trip runs on a re-training across branches
-        // instead: Fighter → Cleric banks Leadership, Cleric → Fighter restores
-        // it.
+        // Promotion keeps every Starting skill, so the bank-and-restore round
+        // trip runs on a re-training across branches: Fighter → Wizard banks
+        // Leadership, Wizard → Fighter restores it.
         qualify('fighter');
         const toFighter = PromotionSystem.promote(h.id, 'fighter');
         expect(toFighter.success).toBe(true);
@@ -345,21 +344,22 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         }
         expect(FlagRules.rowsFor(h.id).at(-1)).toMatchObject({ ruleId: FlagRules.FIGHT, allowed: true, priority: 3 });
 
-        const revived = getJobSkills('fighter').find(id => !getJobSkills('cleric').includes(id)
-            && toFighter.gained.includes(id));
+        // A work skill, not the combat one: combat has the single Fight row.
+        const revived = getJobSkills('fighter').find(id => !getJobSkills('wizard').includes(id)
+            && toFighter.gained.includes(id) && !isCombatSkill(id));
         expect(revived).toBeTruthy();
         h.skills[revived].level = 40;
         expect(Flags.setRule(h.id, revived, { priority: 1 }).success).toBe(true);
 
-        qualify('cleric');
-        const toCleric = PromotionSystem.promote(h.id, 'cleric');
-        expect(toCleric.success).toBe(true);
-        expect(toCleric.banked).toContain(revived);
+        qualify('wizard');
+        const toWizard = PromotionSystem.promote(h.id, 'wizard');
+        expect(toWizard.success).toBe(true);
+        expect(toWizard.banked).toContain(revived);
         // Banked: no longer settable, not listed, but the rule is kept.
         expect(Flags.setRule(h.id, revived, { priority: 2 }).success).toBe(false);
         expect(FlagRules.rowsFor(h.id).map(r => r.ruleId)).not.toContain(revived);
         expect(h.flagRules[revived]).toEqual({ allowed: true, priority: 1 });
-        for (const gained of toCleric.gained) {
+        for (const gained of toWizard.gained) {
             expect(FlagRules.ruleOf(h.id, gained)).toEqual({ allowed: true, priority: 3 });
         }
 
@@ -376,14 +376,14 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
 describe('FlagRules.rowsFor — what a rules panel lists', () => {
     it('held work skills by level then name, then one Fight row only for a hero who can fight', () => {
         GameState.state.heroes = [
-            hero('w', { mining: 40, logging: 50, cooking: 50 }),
+            hero('w', { mining: 40, forestry: 50, cooking: 50 }),
             hero('f', { mining: 40, melee: 10 })
         ];
         Flags.setRule('w', 'mining', { allowed: false, priority: 5 });
 
         expect(FlagRules.rowsFor('w')).toEqual([
             expect.objectContaining({ ruleId: 'cooking', level: 50, combat: false, allowed: true, priority: 3 }),
-            expect.objectContaining({ ruleId: 'logging', level: 50, allowed: true, priority: 3 }),
+            expect.objectContaining({ ruleId: 'forestry', level: 50, allowed: true, priority: 3 }),
             expect.objectContaining({ ruleId: 'mining', level: 40, allowed: false, priority: 5 })
         ]);
         expect(FlagRules.rowsFor('f').map(r => r.ruleId)).toEqual(['mining', FlagRules.FIGHT]);
@@ -397,8 +397,8 @@ describe('FlagRules.rowsFor — what a rules panel lists', () => {
 
         const rows = FlagRules.rowsFor(h.id);
         expect(rows.map(r => r.ruleId).sort()).toEqual([
-            'construction', 'cooking', 'crafting', 'explore', 'farming',
-            'fishing', 'logging', 'mining', 'smithing'
+            'alchemy', 'construction', 'cooking', 'crafting', 'farming',
+            'fishing', 'forestry', 'mining', 'smithing'
         ]);
         for (const row of rows) {
             expect(row, row.ruleId).toMatchObject({ combat: false, level: 1, allowed: true, priority: 3 });
@@ -455,7 +455,7 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
         run(200);
 
         put(13, FOREST);
-        Flags.setRule('f1', 'logging', { priority: 1 });
+        Flags.setRule('f1', 'forestry', { priority: 1 });
 
         let won = false;
         const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, p => { if (p.outcome === 'victory') won = true; });
@@ -480,9 +480,9 @@ describe('⭐ better work appears: finish the cycle, then switch (FP-80)', () =>
         put(8, MINE);                                  // spare: claimable, never better
         put(13, MINE);
         put(20, MINE);
-        Flags.setRule('h1', 'logging', { priority: 1 });
+        Flags.setRule('h1', 'forestry', { priority: 1 });
         Flags.setRule('h2', 'mining', { priority: 1 });
-        Flags.setRule('h3', 'logging', { priority: 1 });   // its priority-1 forest is h1's
+        Flags.setRule('h3', 'forestry', { priority: 1 });   // its priority-1 forest is h1's
         plant('h1', 14);
         plant('h2', 14);
         plant('h3', 14);

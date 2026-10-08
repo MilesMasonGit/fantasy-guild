@@ -164,10 +164,10 @@ describe('level-ups on the mat', () => {
     it('counts per hero and per skill', () => {
         const { container } = render(h(HeroBubbleLayer, { heroes }));
         level('h1', 'Mining', 9, 10);
-        level('h1', 'Logging', 3, 4);
+        level('h1', 'Forestry', 3, 4);
         level('h2', 'Mining', 19, 20);
         level('h1', 'Mining', 10, 11);
-        expect(stackOf(container, 'h1')).toEqual(['Leveled up Logging to 4!', 'Leveled up Mining to 11! (+2)']);
+        expect(stackOf(container, 'h1')).toEqual(['Leveled up Forestry to 4!', 'Leveled up Mining to 11! (+2)']);
         expect(stackOf(container, 'h2')).toEqual(['Leveled up Mining to 20!']);
     });
 
@@ -182,7 +182,7 @@ describe('level-ups on the mat', () => {
     it('levelUpFrom reads the start of the live bubble, else the level it started at', () => {
         const list = addMoment([], { key: 'level:Mining', text: 'x', from: 20 }, 0);
         expect(levelUpFrom(list, 'level:Mining', 24, 100)).toBe(20);
-        expect(levelUpFrom(list, 'level:Logging', 4, 100)).toBe(4);
+        expect(levelUpFrom(list, 'level:Forestry', 4, 100)).toBe(4);
         expect(levelUpFrom(list, 'level:Mining', 24, 1e9)).toBe(24);
     });
 });

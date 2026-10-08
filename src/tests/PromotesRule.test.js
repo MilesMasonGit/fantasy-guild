@@ -74,7 +74,7 @@ describe('the job slot', () => {
 describe('⭐ the sentence (owner, 2026-09-12)', () => {
     it('reads "Promotes the hero to Knight."', () => {
         expect(renderStatement(promotes('knight'))).toBe('Promotes the hero to Knight.');
-        expect(renderStatement(promotes('alchemist'))).toBe('Promotes the hero to Alchemist.');
+        expect(renderStatement(promotes('rogue'))).toBe('Promotes the hero to Rogue.');
     });
 
     it('shows a blank as a word to click, and keeps an unknown job visible', () => {
@@ -98,7 +98,7 @@ describe('what else knows about it', () => {
     });
 
     it('reads the first job a Token names', () => {
-        expect(promotedJobOf({ statements: [promotes(''), promotes('knight'), promotes('scout')] })).toBe('knight');
+        expect(promotedJobOf({ statements: [promotes(''), promotes('knight'), promotes('hunter')] })).toBe('knight');
         expect(promotedJobOf({ statements: [promotes('')] })).toBeNull();
         expect(promotedJobOf({ statements: [] })).toBeNull();
     });

@@ -72,7 +72,7 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     clearMat();
-    GameState.state.heroes = [hero('h1', { logging: 50 })];
+    GameState.state.heroes = [hero('h1', { forestry: 50 })];
 });
 
 /** A placed Forest with two spawned Tokens beside it, and the Guild Hall. */

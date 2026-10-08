@@ -6,7 +6,7 @@ import {
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { enemyProfileOf, isEnemyDef } from '../config/registries/enemyProfile.js';
 import { getItem } from '../config/registries/itemRegistry.js';
-import { FOUNDATION_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { STARTING_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.js';
 import { isTempo, bandFor, isInBand } from '../config/registries/tempoBands.js';
 import { openingMat } from '../systems/core/EngineBootstrap.js';
@@ -530,20 +530,20 @@ describe("A Map's pool is a complete kit (D-139)", () => {
         }
     });
 
-    it.skipIf(maps.length === 0)('⚠️ the FIRST Map may demand only the Foundation six (D-261)', () => {
-        // A Recruit holds the Foundation skills and nothing else, so a Token in
+    it.skipIf(maps.length === 0)('⚠️ the FIRST Map may demand only the Starting skills (D-261)', () => {
+        // A Recruit holds the Starting skills and nothing else, so a Token in
         // the opening kit that wants a specialist is a Token nobody can work
         // for hours. This is the rule that sent the Bramble Patch (Nature), the
         // Woodland Still (Alchemy) and the Lumber Market (Commerce) to the
         // Riverlands pool.
         const firstMap = listMaps()[0];       // price order
-        const foundation = new Set(FOUNDATION_SKILL_IDS);
+        const starting = new Set(STARTING_SKILL_IDS);
 
         for (const entry of firstMap.pool) {
             if (entry.kind !== 'token') continue;
             const skill = TOKENS[entry.refId]?.config?.skill;
             if (!skill) continue;             // context, buff, Manager, enemy
-            expect(foundation.has(skill),
+            expect(starting.has(skill),
                 `${entry.refId} in ${firstMap.id} demands "${skill}", which no Recruit holds`
             ).toBe(true);
         }
@@ -552,12 +552,12 @@ describe("A Map's pool is a complete kit (D-139)", () => {
     it('the opening Tray is workable by the one hero the player starts with', () => {
         // A Token in that tray demanding a specialist would be the first thing
         // a new player tried and the first thing that refused them.
-        const foundation = new Set(FOUNDATION_SKILL_IDS);
+        const starting = new Set(STARTING_SKILL_IDS);
 
         for (const { typeId } of openingMat()) {
             const skill = TOKENS[typeId]?.config?.skill;
             if (!skill) continue;
-            expect(foundation.has(skill),
+            expect(starting.has(skill),
                 `opening Tray Token ${typeId} demands "${skill}"`
             ).toBe(true);
         }

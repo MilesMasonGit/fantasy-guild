@@ -51,12 +51,12 @@ registerTokenTypes({
     fixture_bp_shed: {
         id: 'fixture_bp_shed', name: 'Fixture Bp Shed', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
-        shop: { price: [{ itemId: PLANK, quantity: 8 }, { itemId: NAIL, quantity: 3 }], section: 'logging' }
+        shop: { price: [{ itemId: PLANK, quantity: 8 }, { itemId: NAIL, quantity: 3 }], section: 'forestry' }
     },
     fixture_bp_hut: {
         id: 'fixture_bp_hut', name: 'Fixture Bp Hut', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
-        shop: { price: [{ itemId: PLANK, quantity: 4 }], section: 'logging' }
+        shop: { price: [{ itemId: PLANK, quantity: 4 }], section: 'forestry' }
     }
 });
 

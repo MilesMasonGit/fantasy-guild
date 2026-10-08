@@ -62,7 +62,7 @@ const CAMP = { x: 800, y: 500 };
 const NEAR = { x: 800, y: 750 };
 const FAR = { x: 1600, y: 500 };
 
-/** A hero who holds a combat skill (and, at level 50, logging for the Producer). */
+/** A hero who holds a combat skill (and, at level 50, forestry for the Producer). */
 function fighter(id) {
     const hero = generateHero({ name: id });
     hero.id = id;
@@ -76,7 +76,7 @@ function fighter(id) {
 
 /** A Recruit who logs: no combat skill. */
 function recruit(id) {
-    return { id, name: id, status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
+    return { id, name: id, status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
 }
 
 const run = (ms, step = 100) => { for (let t = 0; t < ms; t += step) BoardRunner.tick(step); };

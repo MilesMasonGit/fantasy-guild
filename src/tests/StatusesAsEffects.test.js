@@ -161,10 +161,10 @@ describe('⭐ the four that linger — and the capability V7 had to build', () =
             lasting(EFFECT_TYPES.YIELD, 1.0, 'percentage'));
 
         place(TILE, 'fixture_producer', 'hero_1');
-        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(2);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 2, 'forestry')).toBe(2);
 
         carry('effect_cookout');
-        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 2, 'logging')).toBe(4);
+        expect(TileModifiers.resolveAxis(idAt(TILE), EFFECT_TYPES.YIELD, 2, 'forestry')).toBe(4);
     });
 
     it('Stun: a hit-chance penalty, re-authored rather than translated', () => {

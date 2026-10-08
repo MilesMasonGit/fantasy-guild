@@ -80,8 +80,8 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     GameState.state.heroes = [
-        hero('h1', { logging: 50, mining: 40 }),
-        hero('fighter', { logging: 20, melee: 10 })
+        hero('h1', { forestry: 50, mining: 40 }),
+        hero('fighter', { forestry: 20, melee: 10 })
     ];
 });
 

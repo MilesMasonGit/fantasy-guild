@@ -429,7 +429,7 @@ describe('Map pass — the two-sided check (§13.6)', () => {
             fx_nan: {
                 id: 'fx_nan', name: 'Broken Producer', rarity: 'common', tokenType: 'resource', uses: 10,
                 config: {
-                    skill: 'logging', skillRequired: 1, cycleTimeMs: 10000, inputs: [],
+                    skill: 'forestry', skillRequired: 1, cycleTimeMs: 10000, inputs: [],
                     // No minQty/maxQty and no baseQty: nothing to derive an
                     // abundance from.
                     outputs: [{ itemId: 'item_fx_nowhere', chance: 100 }],

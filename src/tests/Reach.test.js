@@ -68,7 +68,7 @@ function selfBuffingProducer(id, reach) {
             id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture',
             uses: null, sprite: 'skill_nature',
             config: {
-                skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
+                skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
                 inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 2, chance: 100 }]
             },
             statements: [{

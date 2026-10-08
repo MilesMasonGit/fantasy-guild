@@ -215,7 +215,7 @@ export function buildCorpus() {
     addS('station:blank', S(KEYWORD.STATION, { payload: {} }));
     // Promotes (Promotes rule P1): a job with a parent, an unknown one, a blank.
     addS('promotes', S(KEYWORD.PROMOTES, { payload: { jobId: 'knight' } }));
-    addS('promotes:base', S(KEYWORD.PROMOTES, { payload: { jobId: 'alchemist' } }));
+    addS('promotes:base', S(KEYWORD.PROMOTES, { payload: { jobId: 'rogue' } }));
     addS('promotes:unknown-job', S(KEYWORD.PROMOTES, { payload: { jobId: 'not_a_job' } }));
     addS('promotes:blank', S(KEYWORD.PROMOTES, { payload: {} }));
     addS('acts-as', S(KEYWORD.ACTS_AS, { payload: { tag: 'net', tier: 2 } }));

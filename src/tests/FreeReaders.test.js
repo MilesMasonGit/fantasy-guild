@@ -64,7 +64,7 @@ const at = (typeIdOrInstance, point) => pickRecipe(placeAt(typeIdOrInstance, poi
 const yieldOf = (instance) => TileModifiers.resolveAxis(instance.id, EFFECT_TYPES.YIELD, 100);
 const sortedIds = (ids) => [...ids].sort();
 
-function hero(id, skills = { logging: 50 }) {
+function hero(id, skills = { forestry: 50 }) {
     const out = {};
     for (const [s, level] of Object.entries(skills)) out[s] = { level, xp: 0 };
     return { id, name: id, status: 'idle', level: 50, skills: out, hp: { current: 100, max: 100 } };

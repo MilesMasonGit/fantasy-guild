@@ -40,7 +40,7 @@ const zOfFlag = (c, heroId) => Number(c.querySelector(`[data-flag="${heroId}"]`)
 const zOfHero = (c, heroId) => Number(c.querySelector(`[data-board-hero="${heroId}"]`).style.zIndex);
 
 function hero(id) {
-    return { id, name: id, status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
+    return { id, name: id, status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
 }
 
 // ---------------------------------------------------------------------------

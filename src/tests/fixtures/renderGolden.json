@@ -748,7 +748,7 @@
   "moment:cooldown-odd": "On Cycle: deals 1 damage to the hero, at most once every 12.3 seconds.",
   "moment:unknown-event": "NOT_A_MOMENT: deals 1 damage to the hero.",
   "promotes": "Promotes the hero to Knight.",
-  "promotes:base": "Promotes the hero to Alchemist.",
+  "promotes:base": "Promotes the hero to Rogue.",
   "promotes:blank": "Promotes the hero to ….",
   "promotes:unknown-job": "Promotes the hero to not_a_job.",
   "requires:blank": "Requires a nearby ….",

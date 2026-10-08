@@ -22,7 +22,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: 25, sprite: 'token_tree_oak',
         acceptedTokens: [{ tag: 'axe', minTier: 1 }],
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 16000, xp: 2, inputs: [],
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 16000, xp: 2, inputs: [],
             outputs: [{ itemId: 'item_oak_wood', chance: 100, minQty: 1, maxQty: 2 }]
         }
     }

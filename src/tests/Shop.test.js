@@ -32,7 +32,7 @@ const WOOD = 'item_oak_wood';
 registerTokenTypes({
     fixture_shop_forest: {
         id: 'fixture_shop_forest', name: 'Fixture Oak Forest', size: 1,
-        shop: { price: [{ itemId: WOOD, quantity: 10 }], section: 'logging' }
+        shop: { price: [{ itemId: WOOD, quantity: 10 }], section: 'forestry' }
     },
     fixture_shop_bench: {
         id: 'fixture_shop_bench', name: 'Fixture Bench', size: 1,
@@ -40,11 +40,11 @@ registerTokenTypes({
     },
     fixture_grp_big: {
         id: 'fixture_grp_big', name: 'Fixture Grp Big', size: 1,
-        shop: { price: [{ itemId: WOOD, quantity: 20 }], section: 'logging', group: 'Fixture Group' }
+        shop: { price: [{ itemId: WOOD, quantity: 20 }], section: 'forestry', group: 'Fixture Group' }
     },
     fixture_grp_small: {
         id: 'fixture_grp_small', name: 'Fixture Grp Small', size: 1,
-        shop: { price: [{ itemId: WOOD, quantity: 4 }], section: 'logging', group: 'Fixture Group' }
+        shop: { price: [{ itemId: WOOD, quantity: 4 }], section: 'forestry', group: 'Fixture Group' }
     },
     fixture_not_sold: { id: 'fixture_not_sold', name: 'Fixture Not Sold', size: 1 },
     // Foundations whose price order is the reverse of their tier order.
@@ -92,15 +92,15 @@ describe('the catalogue', () => {
         expect(all).toContain('fixture_shop_bench');
         expect(all).not.toContain('fixture_not_sold');
 
-        const logging = groups.find(g => g.section === 'logging');
-        expect(logging.items.map(i => i.typeId)).toContain('fixture_shop_forest');
+        const forestry = groups.find(g => g.section === 'forestry');
+        expect(forestry.items.map(i => i.typeId)).toContain('fixture_shop_forest');
         expect(groups[groups.length - 1].section).toBe('general');
         expect(groups[groups.length - 1].name).toBe('General');
     });
 
     it('shows a group as one entry, options cheapest first, and leaves ungrouped Tokens alone', () => {
-        const logging = Shop.catalogue().find(g => g.section === 'logging');
-        const groupEntries = logging.items.filter(i => i.group);
+        const forestry = Shop.catalogue().find(g => g.section === 'forestry');
+        const groupEntries = forestry.items.filter(i => i.group);
         expect(groupEntries).toHaveLength(1);
         const [entry] = groupEntries;
         expect(entry.group).toBe('Fixture Group');

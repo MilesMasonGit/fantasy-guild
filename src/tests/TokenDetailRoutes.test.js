@@ -54,7 +54,7 @@ const P = (x, y) => ({ x, y });
 const h = React.createElement;
 
 function hero(id) {
-    return { id, name: id, status: 'idle', level: 50, skills: { logging: { level: 50, xp: 0 }, smithing: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
+    return { id, name: id, status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 }, smithing: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } };
 }
 
 function put(point, typeId) {

@@ -36,7 +36,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 const SPEED = 120;
 const STAND = 64 + HeroMotion.STAND_GAP;
 
-function hero(id, skills = { logging: 50 }) {
+function hero(id, skills = { forestry: 50 }) {
     const out = {};
     for (const [s, level] of Object.entries(skills)) out[s] = { level, xp: 0 };
     return { id, name: id, status: 'idle', level: 50, skills: out, hp: { current: 100, max: 100 } };

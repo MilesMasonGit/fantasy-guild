@@ -22,7 +22,7 @@ const token = (id, over = {}) => ({
     tokenType: 'resource',
     uses: 10,
     config: {
-        skill: 'logging',
+        skill: 'forestry',
         skillRequired: 1,
         cycleTimeMs: 16000,
         inputs: [],

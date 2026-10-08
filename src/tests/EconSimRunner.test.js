@@ -78,7 +78,7 @@ describe('EconSim — the runner', () => {
             tokens: {
                 token_root: {
                     id: 'token_root', name: 'Root', rarity: 'common', tokenType: 'resource', uses: 5,
-                    config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 10000, inputs: [], outputs: [{ itemId: 'item_root', chance: 100, minQty: 1, maxQty: 1 }] },
+                    config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 10000, inputs: [], outputs: [{ itemId: 'item_root', chance: 100, minQty: 1, maxQty: 1 }] },
                     sim: { tempo: 'fast', purpose: 'gph' },
                 },
             },

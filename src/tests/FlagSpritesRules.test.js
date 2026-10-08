@@ -93,7 +93,7 @@ function workTileOf(heroId) {
 }
 
 const h = React.createElement;
-const FOREST = 'fixture_producer';        // logging
+const FOREST = 'fixture_producer';        // forestry
 
 function hero(id, skills) {
     const out = {};
@@ -134,11 +134,11 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     GameState.state.heroes = [
-        hero('h1', { logging: 50, mining: 40 }),
-        hero('h2', { logging: 50 }),
-        hero('h3', { logging: 50 }),
-        hero('h4', { logging: 50 }),
-        hero('fighter', { logging: 20, melee: 10 })
+        hero('h1', { forestry: 50, mining: 40 }),
+        hero('h2', { forestry: 50 }),
+        hero('h3', { forestry: 50 }),
+        hero('h4', { forestry: 50 }),
+        hero('fighter', { forestry: 20, melee: 10 })
     ];
 });
 
@@ -268,7 +268,7 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
         Flags.plant('h1', C(20));
         expect(flagColourOf('h1')).toBe(FLAG_COLOURS[1]);
 
-        GameState.state.heroes = Array.from({ length: 9 }, (_, i) => hero(`r${i}`, { logging: 1 }));
+        GameState.state.heroes = Array.from({ length: 9 }, (_, i) => hero(`r${i}`, { forestry: 1 }));
         GameState.state.heroes.slice(0, 8).forEach((x, i) => { x.flagColour = FLAG_COLOURS[i]; });
         Flags.plant('r8', C(20));
         expect(flagColourOf('r8')).toBe(FLAG_COLOURS[0]);
@@ -420,7 +420,7 @@ describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
 
     it('lists one row per held work skill, and a Fight row only for a hero who can fight', () => {
         const a = panel('h1').container;
-        expect(row(a, 'logging')).toBeTruthy();
+        expect(row(a, 'forestry')).toBeTruthy();
         expect(row(a, 'mining')).toBeTruthy();
         expect(row(a, FlagRules.FIGHT)).toBeNull();
         cleanup();
@@ -433,11 +433,11 @@ describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
 
     it('shows name, level and the default rule: allowed, priority 3', () => {
         const { container } = panel('h1');
-        const logging = row(container, 'logging');
-        expect(logging.textContent).toContain('Lv 50');
-        expect(logging.querySelector('[data-rule-allowed]').checked).toBe(true);
-        expect(logging.querySelector('[data-rule-priority="3"]').getAttribute('aria-pressed')).toBe('true');
-        expect(logging.querySelectorAll('[data-rule-priority]')).toHaveLength(5);
+        const forestry = row(container, 'forestry');
+        expect(forestry.textContent).toContain('Lv 50');
+        expect(forestry.querySelector('[data-rule-allowed]').checked).toBe(true);
+        expect(forestry.querySelector('[data-rule-priority="3"]').getAttribute('aria-pressed')).toBe('true');
+        expect(forestry.querySelectorAll('[data-rule-priority]')).toHaveLength(5);
     });
 
     it('the Allowed toggle and the priority chips set the hero’s rule', async () => {
@@ -445,24 +445,24 @@ describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
         await act(async () => { fireEvent.click(row(container, 'mining').querySelector('[data-rule-allowed]')); });
         expect(FlagRules.ruleOf('h1', 'mining')).toEqual({ allowed: false, priority: 3 });
 
-        await act(async () => { fireEvent.click(row(container, 'logging').querySelector('[data-rule-priority="1"]')); });
-        expect(FlagRules.ruleOf('h1', 'logging')).toEqual({ allowed: true, priority: 1 });
-        expect(row(container, 'logging').querySelector('[data-rule-priority="1"]').getAttribute('aria-pressed')).toBe('true');
+        await act(async () => { fireEvent.click(row(container, 'forestry').querySelector('[data-rule-priority="1"]')); });
+        expect(FlagRules.ruleOf('h1', 'forestry')).toEqual({ allowed: true, priority: 1 });
+        expect(row(container, 'forestry').querySelector('[data-rule-priority="1"]').getAttribute('aria-pressed')).toBe('true');
 
-        await act(async () => { fireEvent.click(row(container, 'logging').querySelector('[data-rule-priority="5"]')); });
-        expect(FlagRules.ruleOf('h1', 'logging').priority).toBe(5);
+        await act(async () => { fireEvent.click(row(container, 'forestry').querySelector('[data-rule-priority="5"]')); });
+        expect(FlagRules.ruleOf('h1', 'forestry').priority).toBe(5);
     });
 
     it('highlights the row of the job the hero is working now', () => {
         put(15, FOREST);
         Placement.plantFlagAt('h1', C(15));
         const { container } = panel('h1');
-        expect(row(container, 'logging').getAttribute('data-rule-working')).toBe('true');
+        expect(row(container, 'forestry').getAttribute('data-rule-working')).toBe('true');
         expect(row(container, 'mining').getAttribute('data-rule-working')).toBeNull();
     });
 
     it('"Reset to defaults" puts every rule back', async () => {
-        Flags.setRule('h1', 'logging', { priority: 1 });
+        Flags.setRule('h1', 'forestry', { priority: 1 });
         Flags.setRule('h1', 'mining', { allowed: false });
         const { container } = panel('h1');
         await act(async () => { fireEvent.click(container.querySelector('[data-flag-rules-reset]')); });
@@ -485,8 +485,8 @@ describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
         const { container } = panel('h1');
         await act(async () => { Placement.recallHeroById('h1'); });
         expect(container.querySelector('[data-flag-rules-status]').textContent).toBe('In the Guild');
-        await act(async () => { fireEvent.click(row(container, 'logging').querySelector('[data-rule-priority="2"]')); });
-        expect(FlagRules.ruleOf('h1', 'logging').priority).toBe(2);
+        await act(async () => { fireEvent.click(row(container, 'forestry').querySelector('[data-rule-priority="2"]')); });
+        expect(FlagRules.ruleOf('h1', 'forestry').priority).toBe(2);
     });
 
     it('a hero who no longer exists shows "Hero gone" and a Close', () => {

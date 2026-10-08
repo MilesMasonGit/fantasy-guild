@@ -43,12 +43,12 @@ export const BENCH_TOKENS = {
         sprite: 'skill_social'
     },
 
-    /** A spawned logging Token that runs out — 40 cycles — so its spawner refills it. */
+    /** A spawned forestry Token that runs out — 40 cycles — so its spawner refills it. */
     bench_tree: {
         id: 'bench_tree', name: 'Bench Tree', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_nature',
         config: {
-            skill: 'logging', skillRequired: 1, cycleTimeMs: 8000, xp: 3,
+            skill: 'forestry', skillRequired: 1, cycleTimeMs: 8000, xp: 3,
             inputs: [],
             outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         }
@@ -140,7 +140,7 @@ registerTokenTypes(BENCH_TOKENS);
 
 /** Skills every bench hero holds, and at what level. */
 export const HERO_SKILLS = {
-    logging: 30, mining: 30, alchemy: 30, smithing: 30,
+    forestry: 30, mining: 30, alchemy: 30, smithing: 30,
     melee: 25
 };
 
