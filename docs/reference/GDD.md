@@ -79,10 +79,12 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
   *(`MatPlacement.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
   may push **spawned** Tokens aside; **placed Tokens are never pushed**.
-- **Token cap: 40 placed Tokens** (*placeholder*). Counts Tokens the player
-  bought or built, including any in the discard bin; not spawned Tokens, quests
-  or the Hall. Enforced by the Shop and by recipes that make Tokens.
-  *(`MatCap.js`)*
+- **Token cap: 80 Tokens** (*for testing*; a Guild Hall upgrade may raise it
+  later). Counts every Token, placed or spawned, including any in the discard
+  bin; not quests or the Hall. Enforced by the Shop and by recipes that make
+  Tokens; a spawner waits while the mat is at the cap (as well as at its family
+  cap). A save already over the cap keeps everything; adding waits until it is
+  under. *(`MatCap.js`)*
 - One Mythic of a type may be placed at a time (the only gameplay use of
   rarity). *(`Placement.js:84-93`)*
 - **Disallow mode** (top bar): click Tokens to forbid hero work on them.
@@ -99,8 +101,8 @@ Token.
   logging 1, 3 s, 1–2 Oak Wood + 20 % Oak Seed, 5 charges.
 - **Charges** (`uses`): one is spent per cycle by default; at 0 the Token is
   removed. `null` = unlimited (Workbench, Furnace, Cooking Pot).
-- **Origin**: *placed* (bought or built: fixed, counts toward the cap,
-  refundable) or *spawned* (free, pushable, no refund).
+- **Origin**: *placed* (bought or built: fixed, refundable) or *spawned*
+  (free, pushable, no refund). Both count toward the Token cap.
 - **Size**: 1 (art radius 64 u) or 2 (144 u); growing stages are half-size.
 - **Context Tokens** are tools (pickaxes, axes, fishing net, anvil) that stand
   near a worker; some recipes spend their charges. **Tools are not hero
@@ -394,7 +396,7 @@ drawers**. The menu can be flipped to the right.
 - **Slot select** (3 save slots) is the only screen before play. Its wording
   is a leftover sci-fi theme ("SYSTEM BOOT").
 - **Bubble menu**: Guild Hall, Item Bank, Shop, Settings.
-- **Top bar**: placed Tokens / cap, upkeep per minute, disallow mode.
+- **Top bar**: Tokens / cap, upkeep per minute, disallow mode.
 - **Notification column**: toasts (collapse / clear all) and the discard bin.
 - **Hero dock** (bottom): heroes as standing figures with HP bars; drag onto
   the mat to deploy, drop a flag or hero on it to recall. Click → **hero
@@ -512,8 +514,8 @@ realistic, ≈ 1.9 ms at 300 Tokens (code review round 3).
 | **Mat / playmat** | The free surface Tokens stand on (1760 × 1126 u by default). |
 | **u, step** | Mat unit; a step is 160 u. |
 | **Token** | Anything on the mat. A *type* is authored; an *instance* is one on the mat. |
-| **Placed / spawned** | Bought or built by the player (capped, fixed, refundable) vs made by the mat (free, pushable). |
-| **Cap** | The limit on placed Tokens (40). |
+| **Placed / spawned** | Bought or built by the player (fixed, refundable) vs made by the mat (free, pushable). |
+| **Cap** | The limit on Tokens on the mat, placed and spawned (80). |
 | **Charges / uses** | A Token's wear; one per cycle; 0 removes it; `null` is unlimited. |
 | **Cycle** | One unit of work on a Token (or one kill). |
 | **Near / reach** | 164 u centre to centre; how far a rule carries. |

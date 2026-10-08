@@ -15,6 +15,7 @@ import { matTuning, setMatTuning, resetMatTuning, MAT_TUNABLES } from '../config
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 
 /**
  * Token Lifecycle slice 3.1 — **origin, the mat cap and fixed pushes**
@@ -127,18 +128,22 @@ describe('⭐ every Token instance records its origin (DP-3)', () => {
     });
 });
 
-describe('⭐ the mat cap counts placed Tokens only (SP-67)', () => {
-    it('is a Mat Tuner setting, 40 by default', () => {
-        const row = MAT_TUNABLES.find(t => t.key === 'matCap');
-        expect(row).toBeDefined();
-        expect(row.def).toBe(40);
-        expect(MatCap.matCap()).toBe(40);
-        setMatTuning('matCap', 3);
+describe('⭐ the mat cap counts every Token, placed or spawned (T-102)', () => {
+    it('is a game value, 80; the Mat Tuner only overrides it on this device', () => {
+        expect(MatCap.BASE_TOKEN_CAP).toBe(80);
+        expect(MatCap.matCap()).toBe(80);
+        // The old row is gone: a device that stored `matCap: 40` must not cap the game at 40.
+        expect(MAT_TUNABLES.find(t => t.key === 'matCap')).toBeUndefined();
+        const row = MAT_TUNABLES.find(t => t.key === 'tokenCap');
+        expect(row.def).toBe(0);
+        setMatTuning('tokenCap', 3);
         expect(MatCap.matCap()).toBe(3);
-        expect(matTuning('matCap')).toBe(3);
+        expect(matTuning('tokenCap')).toBe(3);
+        setMatTuning('tokenCap', 0);
+        expect(MatCap.matCap()).toBe(80);
     });
 
-    it('ignores spawned Tokens and the Guild Hall', () => {
+    it('counts placed and spawned Tokens; never the Guild Hall or a quest', () => {
         // The Hall, and the starter Oak Forest and Copper Mine (10.1), which
         // are placed and count.
         EngineBootstrap.createDefaultGameData();
@@ -147,18 +152,19 @@ describe('⭐ the mat cap counts placed Tokens only (SP-67)', () => {
         placeSpawned('fixture_passive', 600, 200);
         placeSpawned('fixture_passive', 800, 200);
         placeSpawned('fixture_passive', 1000, 200);
+        placeSpawned(QUEST_TOKEN_TYPE, 1200, 200);
 
-        expect(BoardState.tokens()).toHaveLength(8);
-        expect(MatCap.placedCount()).toBe(4);
+        expect(BoardState.tokens()).toHaveLength(9);
+        expect(MatCap.tokenCount()).toBe(7);
     });
 
-    it('canPlaceMore answers against the cap', () => {
-        setMatTuning('matCap', 2);
+    it('canPlaceMore answers against the cap, spawned Tokens included', () => {
+        setMatTuning('tokenCap', 3);
         placeAt('fixture_producer', 200, 200);
         placeSpawned('fixture_passive', 600, 200);
         expect(MatCap.canPlaceMore()).toBe(true);
         expect(MatCap.canPlaceMore(2)).toBe(false);
-        placeAt('fixture_kitchen', 400, 200);
+        placeSpawned('fixture_passive', 800, 200);
         expect(MatCap.canPlaceMore()).toBe(false);
     });
 });

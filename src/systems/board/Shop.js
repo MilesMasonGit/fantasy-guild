@@ -22,7 +22,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  *
  * Everything with a `shop` block is listed from the start; the price is the only gate. Items are
  * the only price, paid all or nothing through `InputAllocator` (Bank first, then loot on the
- * floor). A purchase is refused once placed Tokens reach `MatCap.matCap()`.
+ * floor). A purchase is refused once the mat's Token count reaches `MatCap.matCap()`.
  *
  * A bought Token is created with `origin: 'placed'`, beside the Guild Hall via
  * `Placement.placeArrivalNear` aimed at `Placement.centreOfBoard()`. When that area is crowded it
@@ -83,7 +83,7 @@ function shortfallText(typeId) {
 export function canBuy(typeId) {
     if (!shopBlockOf(typeId)) return refuse('Not sold at the Shop');
     if (!MatCap.canPlaceMore(1)) {
-        return refuse(`Mat is full (${MatCap.placedCount()}/${MatCap.matCap()} placed Tokens)`);
+        return refuse(`Token cap full (${MatCap.tokenCount()}/${MatCap.matCap()})`);
     }
     const missing = shortfallText(typeId);
     if (missing) return refuse(`Need ${missing}`);
@@ -227,7 +227,7 @@ export function catalogue() {
         });
 }
 
-/** The header figure: placed Tokens against the cap. */
+/** The header figure: Tokens counting toward the cap, against it. */
 export function capStatus() {
-    return { placed: MatCap.placedCount(), cap: MatCap.matCap() };
+    return { count: MatCap.tokenCount(), cap: MatCap.matCap() };
 }

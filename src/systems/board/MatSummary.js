@@ -3,12 +3,11 @@
 import { ORIGIN, originOf } from './BoardState.js';
 
 /**
- * The Token cap's hover summary: every Token on the mat grouped by type with counts, split the way
- * `MatCap` counts them.
+ * The Token cap's hover summary: every Token on the mat grouped by type with counts.
  *
  * Placed Tokens carry how many copies are blocked and how many are off. Spawned Tokens are listed
- * apart, not counted. The Guild Hall is in neither. Binned placed Tokens still count in `MatCap`
- * until Discard all, so they get their own line.
+ * apart. Both count toward `MatCap`; what `isExcluded` names (the Guild Hall, quests) is in
+ * neither. Binned Tokens still count in `MatCap` until Discard all, so they get their own line.
  *
  * Pure: the caller hands in the Tokens and every reader. Order: most copies first, ties by name
  * then type id, so the list never shuffles between refreshes.
@@ -16,7 +15,7 @@ import { ORIGIN, originOf } from './BoardState.js';
  * @param {object[]} tokens  Token instances on the mat
  * @param {{
  *   nameOf: (typeId: string) => string,
- *   isGuildHall: (instance: object) => boolean,
+ *   isExcluded: (instance: object) => boolean,
  *   isBlocked?: (instance: object) => boolean,
  *   isOff?: (instance: object) => boolean,
  *   binned?: object[]
@@ -27,11 +26,11 @@ import { ORIGIN, originOf } from './BoardState.js';
  *   binned: { count: number }
  * }}
  */
-export function summariseMat(tokens = [], { nameOf, isGuildHall, isBlocked = () => false, isOff = () => false, binned = [] } = {}) {
+export function summariseMat(tokens = [], { nameOf, isExcluded, isBlocked = () => false, isOff = () => false, binned = [] } = {}) {
     const placed = new Map();
     const spawned = new Map();
     for (const t of tokens) {
-        if (!t?.typeId || isGuildHall?.(t)) continue;
+        if (!t?.typeId || isExcluded?.(t)) continue;
         const bucket = originOf(t) === ORIGIN.SPAWNED ? spawned : placed;
         let g = bucket.get(t.typeId);
         if (!g) {
@@ -49,9 +48,7 @@ export function summariseMat(tokens = [], { nameOf, isGuildHall, isBlocked = () 
     const total = (groups) => groups.reduce((n, g) => n + g.count, 0);
     const placedGroups = [...placed.values()].sort(order);
     const spawnedGroups = [...spawned.values()].sort(order).map(({ typeId, name, count }) => ({ typeId, name, count }));
-    const binnedCount = (binned || []).filter(t =>
-        t?.typeId && !isGuildHall?.(t) && originOf(t) !== ORIGIN.SPAWNED
-    ).length;
+    const binnedCount = (binned || []).filter(t => t?.typeId && !isExcluded?.(t)).length;
     return {
         placed: { count: total(placedGroups), groups: placedGroups },
         spawned: { count: total(spawnedGroups), groups: spawnedGroups },

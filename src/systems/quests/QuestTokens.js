@@ -43,8 +43,8 @@ export { QUEST_TOKEN_TYPE };
  * }
  * ```
  *
- * It is `origin: 'spawned'`, so it never counts toward the mat's Token cap
- * (`MatCap.placedCount`), and the player can drag it like any Token. No hero
+ * It is `origin: 'spawned'` and never counts toward the mat's Token cap
+ * (`MatCap.countsTowardCap`), and the player can drag it like any Token. No hero
  * works it.
  *
  * ## Two kinds, two rules

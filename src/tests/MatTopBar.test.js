@@ -14,6 +14,7 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { summariseMat, groupNote, groupLabel } from '../systems/board/MatSummary.js';
 import { MatTopBar, showsMatTopBar, MAT_TOP_BAR_PX } from '../ui/components/board/MatTopBar.jsx';
 import { MatCapBadge, hasLiveProblem, liveMatSummary } from '../ui/components/board/MatCapBadge.jsx';
+import * as MatCap from '../systems/board/MatCap.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
@@ -45,7 +46,7 @@ registerTokenTypes({
 const t = (typeId, extra = {}) => ({ id: `${typeId}_${Math.random()}`, typeId, ...extra });
 const readers = {
     nameOf: (id) => ({ oak: 'Oak Forest', bench: 'Workbench', tree: 'Oak Tree', vein: 'Iron Vein', hall: 'Guild Hall' }[id] || id),
-    isGuildHall: (i) => i.typeId === 'hall',
+    isExcluded: (i) => i.typeId === 'hall',
     isBlocked: (i) => !!i.blocked,
     isOff: (i) => !!i.disallowed
 };
@@ -116,7 +117,7 @@ beforeEach(() => {
     SpriteLayer.init();
     GameState.state.heroes = [];
     clearMat();
-    setMatTuning('matCap', 12);
+    setMatTuning('tokenCap', 12);
 });
 
 afterEach(() => {
@@ -144,13 +145,13 @@ describe('MatTopBar (FB-28)', () => {
     });
 });
 
-describe('⭐ MatCapBadge (FB-31, SP-67)', () => {
-    it('shows placed Tokens against the cap, the Guild Hall and spawned Tokens not counted', () => {
+describe('⭐ MatCapBadge (FB-31, T-102)', () => {
+    it('shows placed and spawned Tokens against the cap, the Guild Hall not counted', () => {
         placeAt('fixture_mb_hall', 800, 500);
         placeAt('fixture_mb_oak', 160, 160);
         placeAt(BoardState.createTokenInstance('fixture_mb_tree', null, null, BoardState.ORIGIN.SPAWNED), 320, 160);
         const { container } = render(React.createElement(MatCapBadge));
-        expect(badgeText(container)).toBe('Tokens 1/12');
+        expect(badgeText(container)).toBe('Tokens 2/12');
     });
 
     it('updates live when a Token is placed or removed', () => {
@@ -168,11 +169,11 @@ describe('⭐ MatCapBadge (FB-31, SP-67)', () => {
 
     it('updates live when the Mat Tuner changes the cap', () => {
         const { container } = render(React.createElement(MatCapBadge));
-        act(() => { setMatTuning('matCap', 20); });
+        act(() => { setMatTuning('tokenCap', 20); });
         expect(badgeText(container)).toBe('Tokens 0/20');
     });
 
-    it('hover opens the summary: heading, types with counts and red notes, spawned not counted', () => {
+    it('hover opens the summary: heading, types with counts and red notes, spawned counted', () => {
         placeAt('fixture_mb_hall', 800, 500);
         placeAt('fixture_mb_oak', 160, 160);
         const blocked = placeAt('fixture_mb_oak', 320, 160);
@@ -192,7 +193,7 @@ describe('⭐ MatCapBadge (FB-31, SP-67)', () => {
         const tip = popover();
         expect(tip).not.toBeNull();
         expect(tip.className).toContain('pointer-events-none');
-        expect(tip.textContent).toContain('Placed 4 of 12');
+        expect(tip.textContent).toContain('Tokens 7 of 12');
         const oak = tip.querySelector('[data-mat-cap-group="fixture_mb_oak"]');
         expect(oak.textContent).toContain('Bar Oak Forest ×2');
         expect(oak.querySelector('[data-mat-cap-note]').textContent).toBe('1 blocked');
@@ -201,7 +202,8 @@ describe('⭐ MatCapBadge (FB-31, SP-67)', () => {
         expect(bench.querySelector('[data-mat-cap-note]').textContent).toBe('1 off');
         expect(tip.querySelector('[data-mat-cap-group="fixture_mb_hall"]')).toBeNull();
         const spawned = tip.querySelector('[data-mat-cap-spawned]');
-        expect(spawned.textContent).toContain('Spawned 3 (not counted)');
+        expect(spawned.textContent).toContain('Spawned 3');
+        expect(spawned.textContent).not.toContain('not counted');
         expect(spawned.textContent).toContain('Bar Tree ×2, Bar Vein ×1');
 
         fireEvent.mouseLeave(container.querySelector('[data-mat-cap-badge]'));
@@ -219,12 +221,13 @@ describe('⭐ MatCapBadge (FB-31, SP-67)', () => {
         expect(popover().querySelector('[data-mat-cap-note]')).toBeNull();
     });
 
-    it('the live summary agrees with MatCap on the placed count', () => {
+    it('the live summary agrees with MatCap on the count', () => {
         placeAt('fixture_mb_hall', 800, 500);
         placeAt('fixture_mb_oak', 160, 160);
         placeAt(BoardState.createTokenInstance('fixture_mb_tree', null, null, BoardState.ORIGIN.SPAWNED), 320, 160);
         const s = liveMatSummary();
         expect(s.placed.count).toBe(1);
         expect(s.spawned.count).toBe(1);
+        expect(s.placed.count + s.spawned.count + s.binned.count).toBe(MatCap.tokenCount());
     });
 });

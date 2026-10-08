@@ -14,7 +14,7 @@ import { isStatementPaid } from './BlockUpkeep.js';
  * Pure: it reads the mat, the Bank and the Token types, and changes nothing.
  *
  * Spawner upkeep is paid per spawn, so a spawner costs `quantity × 60000 / intervalMs` per minute,
- * but only while it is `spawning` or waiting on an item (`needs_item`); one `at_cap` or with
+ * but only while it is `spawning` or waiting on an item (`needs_item`); one `at_cap`, `mat_full` or with
  * `no_room` pays nothing and is listed as idle.
  *
  * Statement upkeep (`BlockUpkeep`): each costed statement charges `quantity × 60000 / cadenceMs`

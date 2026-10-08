@@ -201,8 +201,8 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
         return;
     }
 
-    // A Token a recipe makes lands on the mat beside this station as a `placed` Token that counts
-    // toward the mat cap. Room is checked here, before anything is paid, exactly as a build checks
+    // A Token a recipe makes lands on the mat beside this station as a `placed` Token, under the
+    // mat's Token cap. Room is checked here, before anything is paid, exactly as a build checks
     // above: with the mat full or nowhere legal beside the station, the cycle holds at full
     // progress with the `NO_ROOM` mark, nothing is spent and nothing is lost, and it retries every
     // tick.

@@ -180,11 +180,11 @@ describe('binning a Token (FB-34)', () => {
     it('still counts toward the mat cap until discarded (owner, B3 interview)', () => {
         const anvil = put('fixture_db_anvil');
         put('fixture_db_anvil', ELSEWHERE);
-        expect(MatCap.placedCount()).toBe(2);
+        expect(MatCap.tokenCount()).toBe(2);
         DiscardBin.binToken(anvil.id);
-        expect(MatCap.placedCount()).toBe(2);
+        expect(MatCap.tokenCount()).toBe(2);
         DiscardBin.discardAll();
-        expect(MatCap.placedCount()).toBe(1);
+        expect(MatCap.tokenCount()).toBe(1);
     });
 
     it('refuses the Guild Hall, a full bin, and a Token in the hand', () => {
@@ -261,8 +261,8 @@ describe('spawned Tokens (TL-13)', () => {
         expect(DiscardBin.binToken(t1.id).success).toBe(true);
         expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 2, cap: 2 });
         expect(DiscardBin.refundFor(t1)).toEqual([]);
-        // Spawned Tokens do not count toward the mat cap, binned or not.
-        expect(MatCap.placedCount()).toBe(1);
+        // Spawned Tokens count toward the mat's Token cap too, binned or not (T-102).
+        expect(MatCap.tokenCount()).toBe(3);
 
         run(6000);
         expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(2);
@@ -397,7 +397,7 @@ describe('saving the bin', () => {
             id: anvil.id, typeId: 'fixture_db_anvil', usesRemaining: 17,
             selectedRecipeId: 'fixture_kept', origin: 'placed', builtFrom: anvil.builtFrom
         });
-        expect(MatCap.placedCount()).toBe(1);
+        expect(MatCap.tokenCount()).toBe(1);
         expect(DiscardBin.unbinToken(anvil.id, AT).success).toBe(true);
     });
 

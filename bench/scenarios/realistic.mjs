@@ -2,7 +2,7 @@
 //
 // S2's board, on the shipped 11-step mat (1760 × 1126 u):
 //   * the Guild Hall in the middle;
-//   * 39 more PLACED Tokens (the default Token cap is 40): 20 producers,
+//   * 39 more PLACED Tokens: 20 producers,
 //     3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs,
 //     3 Forests + 3 Quarries (10 spawned each, 60 in all) and 2 goblin camps
 //     (3 hostile goblins each, walking about their camp);
@@ -50,6 +50,10 @@ export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLAC
     const { placeAt, makeHeroes, plant, lattice } = fixtures;
 
     if (matSteps !== 11) setMatTuning('matSteps', matSteps);
+    // ⚠️ These boards hold more than the game's Token cap (80, spawned Tokens included), so the
+    // cap is lifted: with it, the spawners stall at 80 and every scenario measures a lighter
+    // board than its baseline timings (S3 would lose a third of its Tokens).
+    setMatTuning('tokenCap', 2000);
     const w = matSteps * STEP;
     const h = Math.round(w * ASPECT);
     const hall = { x: MARGIN + STEP * Math.floor((matSteps - 1) / 2), y: MARGIN + STEP * Math.floor((Math.floor((h - 2 * MARGIN) / STEP)) / 2) };

@@ -302,7 +302,7 @@ export function moveTokenTo(id, point) {
  * right now. Pure: asked BEFORE the cycle pays, so a full mat holds the cycle rather than spending
  * its inputs on a Token with nowhere to go.
  *
- * Three things must hold: the mat cap has room for every copy (they are `placed`); a Mythic of that
+ * Three things must hold: the mat's Token cap has room for every copy; a Mythic of that
  * type is not already on the mat; and there is a legal spot somewhere on the mat, nearest the
  * station first, by the same search {@link placeArrivalNear} makes.
  *

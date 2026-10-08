@@ -86,6 +86,9 @@ function spawnerLines(instance, def, src) {
         case 'no_room':
             out.push({ label: 'Next spawn', value: 'No room to spawn nearby', tone: TONE.WARNING });
             break;
+        case 'mat_full':
+            out.push({ label: 'Next spawn', value: 'Token cap full: waits until the mat has room', tone: TONE.WARNING });
+            break;
         default:
             out.push({ label: 'Next spawn', value: `in ${formatDuration(status.nextInMs)}` });
     }

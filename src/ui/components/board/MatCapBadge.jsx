@@ -55,10 +55,10 @@ export function hasLiveProblem(instance) {
 export function liveMatSummary() {
     return summariseMat(BoardState.tokens(), {
         nameOf: tokenName,
-        isGuildHall: MatCap.isGuildHall,
+        isExcluded: (t) => !MatCap.countsTowardCap(t),
         isBlocked: hasLiveProblem,
         isOff: Flags.isDisallowed,
-        // Binned placed Tokens still count until discarded.
+        // Binned Tokens still count until discarded.
         binned: BoardState.binTokens()
     });
 }
@@ -91,12 +91,12 @@ export function useRefreshOn(events, on = true, signatureOf = null) {
 }
 
 /** What the badge itself draws. */
-const capSignature = () => `${MatCap.placedCount()}|${MatCap.matCap()}`;
+const capSignature = () => `${MatCap.tokenCount()}|${MatCap.matCap()}`;
 
 /**
- * The hover popover: `Placed n of cap`, the placed Tokens by type with a red
- * note where some are blocked or off, then the spawned ones "not counted".
- * Styled like the Hall's trickle tooltip, and like it never catches the pointer.
+ * The hover popover: `Tokens n of cap`, the placed Tokens by type with a red
+ * note where some are blocked or off, then the spawned ones, which count too.
+ * Styled like the Hall's Passive Production tooltip, and like it never catches the pointer.
  */
 export const MatCapPopover = ({ anchor, summary, cap }) => {
     if (typeof document === 'undefined') return null;
@@ -110,8 +110,8 @@ export const MatCapPopover = ({ anchor, summary, cap }) => {
             className="fixed z-[90] p-2 rounded-lg pointer-events-none bg-black/90 border border-gi-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-[11px] leading-snug text-white"
             style={{ width: POPOVER_WIDTH, ...placeUnder(anchor, POPOVER_WIDTH, height) }}
         >
-            {/* The total the badge shows: on the mat plus in the bin. */}
-            <div className="font-bold text-gi-gold">Placed {placed.count + binned} of {cap}</div>
+            {/* The total the badge shows: placed and spawned on the mat, plus the bin. */}
+            <div className="font-bold text-gi-gold">Tokens {placed.count + spawned.count + binned} of {cap}</div>
             {placed.groups.length ? (
                 <ul className="mt-1 flex flex-col gap-0.5">
                     {placed.groups.map(g => {
@@ -134,7 +134,7 @@ export const MatCapPopover = ({ anchor, summary, cap }) => {
             )}
             {spawned.count > 0 && (
                 <div data-mat-cap-spawned className="mt-1 pt-1 border-t border-white/10">
-                    <div className="text-white/80">Spawned {spawned.count} (not counted)</div>
+                    <div className="text-white/80">Spawned {spawned.count}</div>
                     <div className="text-white/60">{spawned.groups.map(groupLabel).join(', ')}</div>
                 </div>
             )}
@@ -144,8 +144,7 @@ export const MatCapPopover = ({ anchor, summary, cap }) => {
 };
 
 /**
- * The Token cap badge: `Tokens 7/12`, placed Tokens against the mat cap (the Guild Hall never
- * counts). Hover opens the by-type summary. The number is read on the events in {@link
+ * The Token cap badge: `Tokens 62/80`, every Token counting toward the mat's cap (`MatCap`). Hover opens the by-type summary. The number is read on the events in {@link
  * CAP_EVENTS}, never per frame; the summary is only worked out while the popover is open.
  * @param {{ readSummary?: () => object }} props  `readSummary` for tests
  */
@@ -157,7 +156,7 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
     const show = useCallback(() => setOpen(true), []);
     const hide = useCallback(() => setOpen(false), []);
 
-    const placed = MatCap.placedCount();
+    const count = MatCap.tokenCount();
     const cap = MatCap.matCap();
 
     return (
@@ -170,7 +169,7 @@ export const MatCapBadge = ({ readSummary = liveMatSummary }) => {
                 className="flex items-center gap-1 px-2 py-0.5 rounded bg-black/30 border border-[#2a1d15] cursor-default whitespace-nowrap"
             >
                 <span data-mat-cap-text className="text-white tabular-nums">
-                    <span className="text-amber-200/80">Tokens</span>{' '}{placed}/{cap}
+                    <span className="text-amber-200/80">Tokens</span>{' '}{count}/{cap}
                 </span>
             </div>
             {open && <MatCapPopover anchor={ref.current} summary={readSummary()} cap={cap} />}

@@ -289,7 +289,7 @@ export function spawn(statement, roles, random = Math.random) {
 
     const touched = BoardState.applyPushes(where.pushed);
 
-    // Whatever a spawn makes is `spawned`: it does not count against the mat cap, and a later spawn
+    // Whatever a spawn makes is `spawned`: it counts toward the Token cap like any Token, and a later spawn
     // may push it.
     const instance = BoardState.createTokenInstance(
         typeId, tokenStartingUses(typeId), null, BoardState.ORIGIN.SPAWNED

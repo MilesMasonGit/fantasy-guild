@@ -230,11 +230,11 @@ describe('the Shop drawer (B4)', () => {
         InventoryManager.addItem(WOOD, 10);
         const t = BoardState.createTokenInstance('fixture_sp_forest', 1, null, BoardState.ORIGIN.PLACED);
         BoardState.addToken(t, 1200, 900);
-        setMatTuning('matCap', MatCap.placedCount());
+        setMatTuning('tokenCap', MatCap.tokenCount());
         const view = mountDrawer();
         const r = row(view, 'fixture_sp_forest');
         expect(r.getAttribute('data-shop-affordable')).toBe('false');
-        expect(r.querySelector('[data-shop-missing]').textContent).toMatch(/Mat is full/);
+        expect(r.querySelector('[data-shop-missing]').textContent).toMatch(/Token cap full/);
     });
 
     it('re-enables live when the Bank fills', () => {

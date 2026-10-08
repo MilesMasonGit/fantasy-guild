@@ -110,6 +110,13 @@ describe('lifecycleLines', () => {
             expect(byLabel(lines, 'Next spawn')).toMatchObject({ value: 'No room to spawn nearby', tone: TONE.WARNING });
         });
 
+        it('mat_full (T-102)', () => {
+            const lines = lifecycleLines(forest, src({
+                spawnerStatus: () => ({ state: 'mat_full', count: 2, cap: 5, familyLabel: 'Oak Sapling' })
+            }));
+            expect(byLabel(lines, 'Next spawn')).toMatchObject({ value: 'Token cap full: waits until the mat has room', tone: TONE.WARNING });
+        });
+
         it('free upkeep reads Free', () => {
             const lines = lifecycleLines({ id: 'f2', typeId: 'free_forest' }, src({
                 spawnerStatus: () => ({ state: 'spawning', nextInMs: 1000, count: 0, cap: 5, familyLabel: 'Oak Sapling' })

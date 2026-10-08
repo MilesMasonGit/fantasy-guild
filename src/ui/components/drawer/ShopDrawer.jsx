@@ -86,6 +86,12 @@ function useShopRefresh(active) {
         if (!active) return undefined;
         const refresh = () => bump(n => n + 1);
         const unsubs = SHOP_EVENTS.map(e => EventBus.subscribe(e, refresh));
+        // Spawns and depletions change the Token count too; only a changed count re-renders.
+        let count = Shop.capStatus().count;
+        unsubs.push(EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, () => {
+            const next = Shop.capStatus().count;
+            if (next !== count) { count = next; refresh(); }
+        }));
         // The cap is a Mat Tuner setting, which publishes no game event ().
         unsubs.push(onMatTuningChanged(refresh));
         return () => unsubs.forEach(u => u?.());
@@ -128,7 +134,7 @@ export const ShopDrawer = ({ isOpen, onClose, menuRight = false }) => {
                 <span className="text-sm md:text-base font-bold tracking-wide text-gi-text">Shop</span>
                 <div className="flex items-center gap-2.5">
                     <span data-shop-cap className="text-xs font-semibold text-gi-muted tabular-nums">
-                        Placed Tokens {cap.placed} / {cap.cap}
+                        Tokens {cap.count} / {cap.cap}
                     </span>
                     <button
                         onClick={onClose}

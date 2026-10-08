@@ -13,6 +13,7 @@ import * as EffectActions from './EffectActions.js';
 import { pickWeighted } from './weightedPick.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
+import * as MatCap from './MatCap.js';
 import { TimeBankManager } from '../core/TimeBankManager.js';
 
 /**
@@ -31,11 +32,13 @@ import { TimeBankManager } from '../core/TimeBankManager.js';
  *
  * One attempt, in order:
  * 1. Cap: the family's live count must be below its cap.
- * 2. Upkeep: the Bank and the item loot lying on the mat must hold all of it between them (checked,
+ * 2. Mat cap: the mat must have room under the Token cap (`MatCap.canPlaceMore`); spawned Tokens
+ * count toward it.
+ * 3. Upkeep: the Bank and the item loot lying on the mat must hold all of it between them (checked,
  * not yet taken).
- * 3. Pick: a weighted pick from `spawns`.
- * 4. Land: `EffectActions.spawn` with `nearest_free` around the spawner; placed Tokens are fixed.
- * 5. Pay: only once the Token has landed, so a spawn with no room costs nothing and there is never
+ * 4. Pick: a weighted pick from `spawns`.
+ * 5. Land: `EffectActions.spawn` with `nearest_free` around the spawner; placed Tokens are fixed.
+ * 6. Pay: only once the Token has landed, so a spawn with no room costs nothing and there is never
  * a refund to make. Bank first, then loot on the mat, through the same
  * `InputAllocator.consumeInputs` a Token's recipe inputs use.
  *
@@ -51,6 +54,7 @@ export const MIN_INTERVAL_MS = 1000;
 export const SPAWNER_STATE = Object.freeze({
     SPAWNING: 'spawning',
     AT_CAP: 'at_cap',
+    MAT_FULL: 'mat_full',
     NEEDS_ITEM: 'needs_item',
     NO_ROOM: 'no_room'
 });
@@ -233,6 +237,7 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
 
     const family = familyOf(instance.typeId);
     if (countOf(family) >= capOf(family)) return null;          // at cap: waits
+    if (!MatCap.canPlaceMore(1)) return null;                    // the mat's Token cap is full: waits
     if (missingUpkeep(def).length) return null;                  // needs an item: waits
 
     const typeId = pickWeighted(block.spawns, random);
@@ -278,6 +283,7 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
 /**
  * A spawner's state, worked out live:
  * - `at_cap`: its family is at or over its cap;
+ * - `mat_full`: the mat is at or over its Token cap (`MatCap`);
  * - `needs_item`: the Bank and the loot on the mat cannot pay one spawn's upkeep between them
  * (`needs`: item ids);
  * - `no_room`: its last attempt found nowhere to land, and it is waiting;
@@ -299,6 +305,7 @@ export function spawnerStatus(instanceId) {
     const clock = Number(instance.clocks?.spawnMs) || 0;
 
     if (base.count >= base.cap) return { state: SPAWNER_STATE.AT_CAP, ...base };
+    if (!MatCap.canPlaceMore(1)) return { state: SPAWNER_STATE.MAT_FULL, ...base };
     const needs = missingUpkeep(def);
     if (needs.length) return { state: SPAWNER_STATE.NEEDS_ITEM, needs, ...base };
     if (noRoom.has(instanceId) && clock >= interval) return { state: SPAWNER_STATE.NO_ROOM, ...base };
@@ -339,14 +346,15 @@ export function familyCounts() {
 }
 
 /**
- * Which waiting states raise an on-Token alert. Only the two the player can
- * fix: an empty Bank and a crowded mat. `at_cap` is a spawner's normal resting
+ * Which waiting states raise an on-Token alert. Only the ones the player can
+ * fix: an empty Bank, a crowded mat and a full Token cap. `at_cap` is a spawner's normal resting
  * state — every healthy spawner ends up there — so it raises nothing (the
  * inspection lines and the Upkeep Summary still say so).
  */
 const ALERT_FOR_STATE = Object.freeze({
     [SPAWNER_STATE.NEEDS_ITEM]: ALERT.SPAWN_NEEDS_ITEM,
-    [SPAWNER_STATE.NO_ROOM]: ALERT.SPAWN_NO_ROOM
+    [SPAWNER_STATE.NO_ROOM]: ALERT.SPAWN_NO_ROOM,
+    [SPAWNER_STATE.MAT_FULL]: ALERT.SPAWN_MAT_FULL
 });
 
 /** Spawner instance id → `{ alert, needs }`, for the spawners whose alert is up. */

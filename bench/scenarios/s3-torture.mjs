@@ -4,8 +4,8 @@
 // On the largest mat the tuner allows (20 steps, 3200 × 2048 u): 200 placed
 // Tokens including the Hall and ONE board-reach aura, 5 Forests + 5 Quarries
 // (100 spawned between them) and 4 war camps (5 goblins each).
-// The Token cap (40) is not enforced for placement ("nothing enforces this
-// yet", MatCap.js), so a board this size is reachable in the game today.
+// The board is far over the game's Token cap (80); `buildBoard` lifts the cap
+// so the stress stays what it measures.
 
 import { buildBoard } from './realistic.mjs';
 import { spread } from './spread.mjs';

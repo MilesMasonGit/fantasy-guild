@@ -95,11 +95,11 @@ describe('removePlacedToken (slice 5.2)', () => {
         expect(west.x).toBe(WEST.x);
     });
 
-    it('drops the placed count by one; the Guild Hall and spawned Tokens are not counted', () => {
+    it('drops the Token count by one; the Guild Hall never counts, the spawned Tokens it left still do', () => {
         const { forest } = forestScene();
-        expect(MatCap.placedCount()).toBe(1);
+        expect(MatCap.tokenCount()).toBe(3);
         Placement.removePlacedToken(forest.id);
-        expect(MatCap.placedCount()).toBe(0);
+        expect(MatCap.tokenCount()).toBe(2);
     });
 
     it('returns nothing: the Bank is unchanged (TL-1)', () => {

@@ -12,6 +12,7 @@ import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as DiscardBin from '../systems/board/DiscardBin.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
+import * as MatCap from '../systems/board/MatCap.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getSpawnerKindCounts } from '../systems/core/DevTools.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
@@ -467,6 +468,7 @@ describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', 
 
     it('with nowhere to land it waits, reports no_room, and pays nothing (FP-46)', () => {
         setMatTuning('matSteps', 6);
+        setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
         give(SEED, 10);
         const forest = placeAt('fixture_sp_forest', 200, 200);
         const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
@@ -606,6 +608,7 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
 
     it('no_room: up once an attempt finds nowhere to land, down the tick room appears', () => {
         setMatTuning('matSteps', 6);
+        setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
         give(SEED, 10);
         const forest = placeAt('fixture_sp_forest', 200, 200);
         const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
@@ -653,5 +656,104 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
         expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
         expect(seen).toEqual([null]);
         off();
+    });
+});
+
+// --- The mat's Token cap (T-102) ---------------------------------------------
+
+describe('⭐ a spawner waits while the mat is at its Token cap (T-102)', () => {
+    /** Fill the mat with inert spawned filler until it holds exactly `cap` counted Tokens. */
+    const FILLER = 'fixture_kitchen';
+    const fillTo = (cap) => {
+        setMatTuning('tokenCap', cap);
+        let x = 100;
+        while (MatCap.tokenCount() < cap) {
+            placeAt(BoardState.createTokenInstance(FILLER, null, null, BoardState.ORIGIN.SPAWNED), x, 1000);
+            x += 140;
+        }
+    };
+
+    it('spawned Tokens count: a free spawner fills the cap and then waits, reporting mat_full', () => {
+        const camp = placeAt('fixture_sp_camp', 800, 500);   // allowance 4, every 5 s, free
+        setMatTuning('tokenCap', 3);                         // the camp + two of its spawns
+        run(5000);
+        run(5000);
+        expect(MatCap.tokenCount()).toBe(3);
+        run(20000);
+        expect(MatCap.tokenCount()).toBe(3);                 // no further spawn
+        expect(SpawnerSystem.spawnerStatus(camp.id)).toMatchObject({ state: 'mat_full', count: 2, cap: 4 });
+        expect(SpawnerSystem.spawnerAlertOf(camp.id)).toEqual({ alert: ALERT.SPAWN_MAT_FULL, needs: [] });
+    });
+
+    it('pays nothing while it waits, and spawns again the tick the mat has room', () => {
+        give(SEED, 10);
+        const forest = placeAt('fixture_sp_forest', 800, 500);
+        fillTo(10);
+        const seen = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, (p) => {
+            if (p?.instanceId === forest.id) seen.push(p.alert);
+        });
+
+        run(45000);
+        expect(family()).toHaveLength(0);
+        expect(seeds()).toBe(10);
+        expect(forest.clocks.spawnMs).toBe(20000);           // held full, as for no room
+        expect(SpawnerSystem.spawnerStatus(forest.id).state).toBe('mat_full');
+
+        // Room for two: one for the spawn, and the mat is still under its cap after it.
+        for (const filler of BoardState.tokens().filter(t => t.typeId === FILLER).slice(0, 2)) BoardState.removeToken(filler.id);
+        run(100);
+        expect(family()).toHaveLength(1);
+        expect(seeds()).toBe(9);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+        expect(seen).toEqual([ALERT.SPAWN_MAT_FULL, null]);
+        off();
+    });
+
+    it('a binned spawned Token still counts toward the mat cap until discarded', () => {
+        const camp = placeAt('fixture_sp_camp', 800, 500);
+        setMatTuning('tokenCap', 2);
+        run(5000);
+        const [spawned] = BoardState.tokens().filter(t => t.typeId === 'fixture_passive');
+        expect(DiscardBin.binToken(spawned.id).success).toBe(true);
+        expect(MatCap.tokenCount()).toBe(2);
+        run(20000);
+        expect(BoardState.tokens().filter(t => t.typeId === 'fixture_passive')).toHaveLength(0);
+        expect(SpawnerSystem.spawnerStatus(camp.id).state).toBe('mat_full');
+
+        DiscardBin.discardAll();
+        run(5000);
+        expect(BoardState.tokens().filter(t => t.typeId === 'fixture_passive')).toHaveLength(1);
+    });
+
+    it('its family cap still applies under a roomy mat cap, and reads at_cap first', () => {
+        const grove = placeAt('fixture_sp_grove', 800, 500);   // allowance 2
+        setMatTuning('tokenCap', 3);
+        run(30000);
+        expect(MatCap.tokenCount()).toBe(3);
+        // Both caps are reached at once; the family cap is the spawner's resting state.
+        expect(SpawnerSystem.spawnerStatus(grove.id).state).toBe('at_cap');
+        expect(SpawnerSystem.spawnerAlertOf(grove.id)).toBeNull();
+    });
+
+    it('⚠️ a save already over the cap loads whole: nothing is removed, buying and spawning wait', () => {
+        give(SEED, 10);
+        const forest = placeAt('fixture_sp_forest', 800, 500);
+        fillTo(12);
+        setMatTuning('tokenCap', 5);                          // now 12 against a cap of 5
+        const before = BoardState.tokens().map(t => t.id).sort();
+
+        const revived = JSON.parse(JSON.stringify(GameState.serialize()));
+        GameState.state = migrateState(revived.state, revived.version);
+        InventoryManager.init();
+        SpawnerSystem.resetAlerts();
+
+        expect(BoardState.tokens().map(t => t.id).sort()).toEqual(before);
+        expect(MatCap.tokenCount()).toBe(12);
+        expect(MatCap.canPlaceMore()).toBe(false);
+        run(30000);
+        expect(BoardState.tokens().map(t => t.id).sort()).toEqual(before);
+        expect(seeds()).toBe(10);
+        expect(SpawnerSystem.spawnerStatus(forest.id).state).toBe('mat_full');
     });
 });

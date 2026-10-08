@@ -13,7 +13,7 @@ export const REFRESH_EVENTS = [ENGINE_EVENTS.INVENTORY_UPDATED, BOARD_EVENTS.TIL
 /** Spawner clocks and statement lapses move without an event; a slow poll catches them. */
 export const POLL_MS = 2000;
 
-const STATE_TEXT = { at_cap: 'at its cap', no_room: 'no room to spawn' };
+const STATE_TEXT = { at_cap: 'at its cap', no_room: 'no room to spawn', mat_full: 'Token cap full' };
 
 /**
  * The Upkeep Summary: every ongoing cost per item per minute, what the Bank holds, a rough

@@ -359,6 +359,13 @@ describe('stuck spawner warning', () => {
         expect(tipOf(container)).toBe('No room to spawn');
     });
 
+    it('mat full (T-102): a red bubble that says the Token cap is full', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null }) }));
+        say(ALERT.SPAWN_MAT_FULL);
+        expect(stuckEl(container).querySelector('[data-stuck-badge="mat_full"] img').getAttribute('src')).toContain('ui_alert_red');
+        expect(tipOf(container)).toBe('Token cap full');
+    });
+
     it('goes the moment the spawner is no longer stuck, and the state change updates it', () => {
         const { container } = mount(bub({ token: worked({ heroId: null }) }));
         say(ALERT.SPAWN_NO_ROOM);

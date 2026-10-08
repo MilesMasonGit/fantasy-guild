@@ -72,8 +72,7 @@ function newTokenId() {
  * - `spawned`: the engine made it (`EffectActions.spawn`): a sapling from a Forest, a goblin from a
  * camp.
  *
- * Two rules read it: the mat cap counts `placed` only (`MatCap.js`), and a spawn may push only
- * `spawned` Tokens. A `grows` or `turns` change (a transform) keeps it.
+ * A spawn may push only `spawned` Tokens; the Token cap (`MatCap.js`) counts both. A `grows` or `turns` change (a transform) keeps it.
  *
  * Saved with the instance. ⚠️ An instance without it reads as `placed` ({@link originOf}), so a
  * save from before the field existed loses nothing.

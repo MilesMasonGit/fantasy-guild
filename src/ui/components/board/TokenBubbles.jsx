@@ -42,6 +42,7 @@ export const BUBBLE_TIPS = Object.freeze({
     disallow: 'Heroes may not work this',
     /** A stuck spawner's warning: `{ alert, needs }` from `SpawnerSystem.spawnerAlertOf`. */
     stuck: (state) => {
+        if (state?.alert === ALERT.SPAWN_MAT_FULL) return 'Token cap full';
         if (state?.alert !== ALERT.SPAWN_NEEDS_ITEM) return 'No room to spawn';
         const names = (state.needs || []).map(id => getItem(id)?.name || id);
         return names.length ? `Needs ${joinNames(names)} to spawn` : 'Needs items to spawn';
@@ -349,7 +350,7 @@ export const TokenBubbles = ({
                     )}
                     {showStuck && (
                         <Bubble of={instanceId} kind="stuck" inline tip={BUBBLE_TIPS.stuck(stuck)} dragProps={dragProps}>
-                            <StuckBadge noRoom={stuck.alert !== ALERT.SPAWN_NEEDS_ITEM} title={BUBBLE_TIPS.stuck(stuck)} />
+                            <StuckBadge noRoom={stuck.alert !== ALERT.SPAWN_NEEDS_ITEM} matFull={stuck.alert === ALERT.SPAWN_MAT_FULL} title={BUBBLE_TIPS.stuck(stuck)} />
                         </Bubble>
                     )}
                     {disallowed && (

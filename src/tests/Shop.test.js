@@ -149,7 +149,7 @@ describe('buying from a group', () => {
 describe('buying', () => {
     it('takes the price and lands the Token beside the Guild Hall as placed', () => {
         InventoryManager.addItem(WOOD, 12);
-        const before = MatCap.placedCount();
+        const before = MatCap.tokenCount();
 
         const result = Shop.buy('fixture_shop_forest');
         expect(result.success).toBe(true);
@@ -158,7 +158,7 @@ describe('buying', () => {
         const [forest] = onMat('fixture_shop_forest');
         expect(forest).toBeTruthy();
         expect(forest.origin).toBe('placed');
-        expect(MatCap.placedCount()).toBe(before + 1);
+        expect(MatCap.tokenCount()).toBe(before + 1);
 
         const h = hall();
         const dist = Math.hypot(forest.x - h.x, forest.y - h.y);
@@ -187,20 +187,28 @@ describe('buying', () => {
     it('is refused at the mat cap, and takes nothing', () => {
         InventoryManager.addItem(WOOD, 50);
         placeAt('fixture_not_sold', 100, 100);
-        setMatTuning('matCap', MatCap.placedCount());
-        expect(MatCap.matCap()).toBe(MatCap.placedCount());
+        setMatTuning('tokenCap', MatCap.tokenCount());
+        expect(MatCap.matCap()).toBe(MatCap.tokenCount());
         const result = Shop.buy('fixture_shop_forest');
         expect(result.success).toBe(false);
         expect(result.reason).toMatch(/full/i);
         expect(InventoryManager.getItemCount(WOOD)).toBe(50);
     });
 
-    it('spawned Tokens do not count toward the cap (SP-67)', () => {
+    it('⭐ spawned Tokens count toward the cap too (T-102)', () => {
         InventoryManager.addItem(WOOD, 10);
-        setMatTuning('matCap', MatCap.placedCount() + 1);
+        setMatTuning('tokenCap', MatCap.tokenCount() + 1);
         const spawned = BoardState.createTokenInstance('fixture_not_sold', 1, null, BoardState.ORIGIN.SPAWNED);
         BoardState.addToken(spawned, 100, 100);
-        expect(Shop.buy('fixture_shop_forest').success).toBe(true);
+        const refused = Shop.buy('fixture_shop_forest');
+        expect(refused.success).toBe(false);
+        expect(refused.reason).toMatch(/Token cap full/);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(10);
+    });
+
+    it('⭐ the cap is 80 by default (T-102)', () => {
+        expect(MatCap.BASE_TOKEN_CAP).toBe(80);
+        expect(MatCap.matCap()).toBe(80);
     });
 
     it('refuses a Token that is not sold', () => {
@@ -212,7 +220,9 @@ describe('buying', () => {
         const h = hall();
         const hallAt = { x: h.x, y: h.y };
         // Spawned Tokens packed 50 u apart out to 400 u round the Hall — far
-        // past nudge reach — so no legal spot exists anywhere near it.
+        // past nudge reach — so no legal spot exists anywhere near it. The cap
+        // is lifted: crowding is the point here, not the count.
+        setMatTuning('tokenCap', 2000);
         let crowd = 0;
         for (let dx = -400; dx <= 400; dx += 50) {
             for (let dy = -400; dy <= 400; dy += 50) {
@@ -239,7 +249,8 @@ describe('buying', () => {
 
     it('refuses on a mat with no legal spot anywhere, and takes nothing (5.3)', () => {
         InventoryManager.addItem(WOOD, 25);
-        // The whole mat packed 50 u apart with spawned Tokens (not counted by the cap).
+        // The whole mat packed 50 u apart with spawned Tokens, the cap lifted above them.
+        setMatTuning('tokenCap', 2000);
         for (let x = 0; x <= 2000; x += 50) {
             for (let y = 0; y <= 1400; y += 50) {
                 const t = BoardState.createTokenInstance('fixture_not_sold', 1, null, BoardState.ORIGIN.SPAWNED);
@@ -255,10 +266,10 @@ describe('buying', () => {
         expect(onMat('fixture_shop_forest')).toHaveLength(0);
     });
 
-    it('reports placed Tokens against the cap', () => {
+    it('reports the Token count against the cap', () => {
         placeAt('fixture_not_sold', 100, 100);
-        const { placed, cap } = Shop.capStatus();
-        expect(placed).toBe(MatCap.placedCount());
+        const { count, cap } = Shop.capStatus();
+        expect(count).toBe(MatCap.tokenCount());
         expect(cap).toBe(MatCap.matCap());
     });
 });
@@ -283,7 +294,8 @@ describe('buying at a point (B4)', () => {
 
     it('a refused placement charges nothing and flies back (full)', () => {
         InventoryManager.addItem(WOOD, 25);
-        // Pack the area round the spot far past nudge reach with spawned Tokens.
+        // Pack the area round the spot far past nudge reach with spawned Tokens, the cap lifted.
+        setMatTuning('tokenCap', 2000);
         for (let dx = -400; dx <= 400; dx += 50) {
             for (let dy = -300; dy <= 300; dy += 50) {
                 const t = BoardState.createTokenInstance('fixture_not_sold', 1, null, BoardState.ORIGIN.SPAWNED);
@@ -300,7 +312,7 @@ describe('buying at a point (B4)', () => {
     it('is refused at the mat cap, and takes nothing', () => {
         InventoryManager.addItem(WOOD, 50);
         placeAt('fixture_not_sold', 1200, 900);
-        setMatTuning('matCap', MatCap.placedCount());
+        setMatTuning('tokenCap', MatCap.tokenCount());
         const result = Shop.buyAt('fixture_shop_forest', SPOT);
         expect(result.success).toBe(false);
         expect(result.reason).toMatch(/full/i);
