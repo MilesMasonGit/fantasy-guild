@@ -83,7 +83,7 @@ function everyBlock() {
             everyMs: 90000,
             chance: 45,
         },
-        foundation: { kind: 'stone', skill: 'construction' },
+        foundation: { kind: 'stone', skill: 'construction', tier: 2 },
         shop: {
             price: [{ itemId: i2, quantity: 10 }, { itemId: i3, quantity: 2 }],
             section: 'logging',
@@ -222,22 +222,25 @@ describe('The recipe field foundationKinds', () => {
 
     it('survives load → edit → Recalculate → Sync, and absent stays absent', () => {
         const [skill] = Object.keys(useEntityStore.getState().recipePools);
-        useEntityStore.getState().updateRecipe(skill, 0, { foundationKinds: ['stone', 'wood'] });
+        useEntityStore.getState().updateRecipe(skill, 0, { foundationKinds: ['stone', 'wood'], foundationMinTier: 2 });
         const recipeId = useEntityStore.getState().recipePools[skill][0].id;
 
         const written = syncPayload()['tokenRecipes.json'];
         const recipe = written.find((r) => r.id === recipeId);
         expect(recipe.foundationKinds).toEqual(['stone', 'wood']);
+        expect(recipe.foundationMinTier).toBe(2);
         // Every other recipe keeps exactly what it shipped with: absent stays
         // absent, and the shipped building recipes (7.4's Farming) keep theirs.
         const shipped = new Map(shippedRecipes.map((r) => [r.id, r]));
         for (const other of written.filter((r) => r.id !== recipeId)) {
             expect(other.foundationKinds).toEqual(shipped.get(other.id).foundationKinds);
+            expect(other.foundationMinTier).toEqual(shipped.get(other.id).foundationMinTier);
         }
 
-        useEntityStore.getState().updateRecipe(skill, 0, { foundationKinds: undefined });
+        useEntityStore.getState().updateRecipe(skill, 0, { foundationKinds: undefined, foundationMinTier: undefined });
         const cleared = JSON.parse(JSON.stringify(syncPayload()['tokenRecipes.json']));
         expect(cleared.find((r) => r.id === recipeId)).not.toHaveProperty('foundationKinds');
+        expect(cleared.find((r) => r.id === recipeId)).not.toHaveProperty('foundationMinTier');
     });
 });
 
@@ -304,6 +307,24 @@ describe('The Token editor’s Lifecycle section', () => {
         fireEvent.change(container.querySelector('[data-block="shop"] [data-field="shop-group"]'), { target: { value: '' } });
         expect(useEntityStore.getState().tokens[id].shop).toEqual({ price: [], section: 'general' });
         expect(JSON.parse(JSON.stringify(syncPayload()['tokens.json'][id].shop))).not.toHaveProperty('group');
+    });
+
+    it('the Foundation block edits its tier: an absent tier shows 1, and an edit reaches tokens.json', () => {
+        const id = useEntityStore.getState().addToken({ name: 'Tier Fixture' });
+        useEntityStore.getState().updateToken(id, { foundation: { kind: 'wood', skill: 'construction' } });
+        useEntityStore.getState().setActiveEntity(id, 'token');
+        const { container } = render(React.createElement(TokenEditor));
+        const tier = within(container.querySelector('[data-block="foundation"]')).getByLabelText('Tier');
+        expect(tier.value).toBe('1');
+        // Untouched, the block keeps no tier key: absent reads as tier 1 in the game.
+        expect(syncPayload()['tokens.json'][id].foundation).toEqual({ kind: 'wood', skill: 'construction' });
+
+        fireEvent.change(tier, { target: { value: '3' } });
+        expect(useEntityStore.getState().tokens[id].foundation).toEqual({ kind: 'wood', skill: 'construction', tier: 3 });
+        expect(syncPayload()['tokens.json'][id].foundation).toEqual({ kind: 'wood', skill: 'construction', tier: 3 });
+
+        fireEvent.change(within(container.querySelector('[data-block="foundation"]')).getByLabelText('Tier'), { target: { value: '0' } });
+        expect(useEntityStore.getState().tokens[id].foundation.tier).toBe(1);
     });
 
     it('renders a Token carrying every block without throwing', () => {

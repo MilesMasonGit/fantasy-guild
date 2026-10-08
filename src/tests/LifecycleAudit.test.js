@@ -291,6 +291,45 @@ describe('Lifecycle audit — errors: shape rules', () => {
             { id: 'recipe_build_furnace', field: 'foundationKinds', includes: 'marble' });
     });
 
+    it.each([0, -1, 1.5, '2'])('a foundation tier of %s is not a whole number of 1 or more', (tier) => {
+        expectOne((w) => { w.tokens.token_stone_foundation.foundation.tier = tier; },
+            { id: 'token_stone_foundation', field: 'foundation.tier', includes: 'whole number of 1 or more' });
+    });
+
+    it.each([0, 2.5, '2'])('a recipe minimum Foundation tier of %s is not a whole number of 1 or more', (tier) => {
+        expectOne((w) => { w.recipes.recipe_build_furnace.foundationMinTier = tier; },
+            { id: 'recipe_build_furnace', field: 'foundationMinTier', includes: 'whole number of 1 or more' });
+    });
+
+    it('a tier that reaches every recipe is fine, and no tier at all is tier 1', () => {
+        const w = clean();
+        w.tokens.token_stone_foundation.foundation.tier = 3;
+        w.recipes.recipe_build_furnace.foundationMinTier = 2;
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+        w.tokens.token_stone_foundation.foundation.tier = 1;
+        w.recipes.recipe_build_furnace.foundationMinTier = 1;
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+    });
+
+    it('a sold Foundation whose tier is below every recipe of its kind', () => {
+        const found = auditLifecycleBlocks((() => {
+            const w = clean();
+            w.recipes.recipe_build_furnace.foundationMinTier = 2;
+            return w;
+        })());
+        expect(found).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                severity: 'error', entityId: 'token_stone_foundation', field: 'foundation.tier',
+                message: expect.stringContaining('tier 1 stone Foundation sold at the Shop'),
+            }),
+            expect.objectContaining({
+                severity: 'warning', entityId: 'recipe_build_furnace', field: 'foundationMinTier',
+                message: expect.stringContaining('no stone Foundation is tier 2 or higher yet'),
+            }),
+        ]));
+        expect(found).toHaveLength(2);
+    });
+
     it('a Token with more than one of spawner, turns and foundation', () => {
         expectOne((w) => {
             w.tokens.token_shrimp_coast.foundation = { kind: 'wood', skill: 'construction' };

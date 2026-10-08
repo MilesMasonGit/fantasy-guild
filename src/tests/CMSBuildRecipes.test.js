@@ -79,6 +79,30 @@ describe('A recipe that builds syncs intact', () => {
         expect(JSON.parse(JSON.stringify(written))).toEqual(JSON.parse(JSON.stringify(recipe)));
     });
 
+    it('a minimum Foundation tier and a Foundation tier survive sync and a reload', () => {
+        const { recipe, foundation } = authorBuildFurnace();
+        useEntityStore.getState().updateRecipe('construction',
+            useEntityStore.getState().recipePools.construction.findIndex((r) => r.id === recipe.id),
+            { foundationMinTier: 2 });
+        useEntityStore.getState().updateToken(foundation, { foundation: { kind: 'stone', skill: 'construction', tier: 3 } });
+
+        const first = syncPayload();
+        expect(first['tokenRecipes.json'].find((r) => r.id === recipe.id).foundationMinTier).toBe(2);
+        expect(first['tokens.json'][foundation].foundation).toEqual({ kind: 'stone', skill: 'construction', tier: 3 });
+
+        const serialised = Object.fromEntries(FILES.map((f) => [f, JSON.stringify(first[f], null, 2)]));
+        const reread = Object.fromEntries(FILES.map((f) => [f, JSON.parse(serialised[f])]));
+        const recipePools = {};
+        for (const r of reread['tokenRecipes.json']) (recipePools[r.skill || 'general'] ||= []).push(r);
+        useEntityStore.getState().hydrate({
+            items: reread['items.json'], tokens: reread['tokens.json'], maps: reread['maps.json'],
+            effects: reread['effects.json'], recipePools,
+        });
+        const second = syncPayload();
+        expect(second['tokenRecipes.json'].find((r) => r.id === recipe.id).foundationMinTier).toBe(2);
+        expect(second['tokens.json'][foundation].foundation).toEqual({ kind: 'stone', skill: 'construction', tier: 3 });
+    });
+
     it('the Foundation Token carries its block through the same sync', () => {
         const { foundation } = authorBuildFurnace();
         const tokens = syncPayload()['tokens.json'];
@@ -156,6 +180,44 @@ describe('The Recipe editor’s building flow', () => {
         fireEvent.click(within(row).getByLabelText('Stone'));
         expect(useEntityStore.getState().recipePools.construction[0].foundationKinds).toBeUndefined();
         expect(container.querySelector('[data-testid="builds-column"]')).toBeNull();
+    });
+
+    it('a building recipe edits its minimum Foundation tier; unticking every kind drops it', () => {
+        clearConstructionPool();
+        useEntityStore.getState().addRecipe('construction', { name: 'Build Tiered', foundationKinds: ['wood'] });
+
+        const { container } = render(React.createElement(RecipeEditor));
+        fireEvent.click(screen.getByText('Construction'));
+        const row = () => container.querySelector('[data-testid="foundation-kinds"]');
+        const minTier = within(row()).getByLabelText('Minimum Foundation tier');
+        // Absent shows 1, and nothing is written until the author changes it.
+        expect(minTier.value).toBe('1');
+        expect(useEntityStore.getState().recipePools.construction[0]).not.toHaveProperty('foundationMinTier');
+
+        fireEvent.change(minTier, { target: { value: '2' } });
+        expect(useEntityStore.getState().recipePools.construction[0].foundationMinTier).toBe(2);
+        fireEvent.change(within(row()).getByLabelText('Minimum Foundation tier'), { target: { value: '-4' } });
+        expect(useEntityStore.getState().recipePools.construction[0].foundationMinTier).toBe(1);
+        fireEvent.change(within(row()).getByLabelText('Minimum Foundation tier'), { target: { value: '3' } });
+
+        // An ordinary recipe has no Foundation tier to ask for.
+        fireEvent.click(within(row()).getByLabelText('Wood'));
+        const recipe = useEntityStore.getState().recipePools.construction[0];
+        expect(recipe.foundationKinds).toBeUndefined();
+        expect(recipe.foundationMinTier).toBeUndefined();
+        expect(within(row()).queryByLabelText('Minimum Foundation tier')).toBeNull();
+    });
+
+    it('names the minimum when no Foundation of a ticked kind reaches it', () => {
+        const store = useEntityStore.getState();
+        const oak = store.addToken({ name: 'Fixture Tier Oak' });
+        useEntityStore.getState().updateToken(oak, { foundation: { kind: 'bench', skill: 'construction', tier: 1 } });
+        clearConstructionPool();
+        useEntityStore.getState().addRecipe('construction', { name: 'Too High', foundationKinds: ['bench'], foundationMinTier: 2 });
+
+        render(React.createElement(RecipeEditor));
+        fireEvent.click(screen.getByText('Construction'));
+        expect(screen.getByText(/No bench Foundation is tier 2 or higher yet/)).toBeTruthy();
     });
 
     it('warns when a ticked kind’s Foundations are built with another skill', () => {

@@ -1,12 +1,14 @@
 // Content audit for the Token Lifecycle blocks.
 
-import { FOUNDATION_KINDS, TURN_DEFAULTS } from '../../config/registries/tokenConstants.js';
+import {
+    FOUNDATION_KINDS, TURN_DEFAULTS, foundationTierOf, foundationMinTierOf, foundationTierMeets
+} from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.js';
 
 /**
  * The one checker for the six Token Lifecycle blocks (`spawner`, `grows`,
- * `turns`, `foundation`, `shop`, `trickle`) and the recipe field
- * `foundationKinds`, shared by the game's boot audit (`ContentAudit`) and the
+ * `turns`, `foundation`, `shop`, `trickle`) and the recipe fields
+ * `foundationKinds` and `foundationMinTier`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
  * The rules are the "Validation" list of `docs/archive/token_lifecycle_roadmap_v1.md`
@@ -130,6 +132,8 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
         push('warning', 'Token', id, tokens[id]?.name || id, field, `${tokenLabel(id)}: ${text}`);
     const recipeError = (recipe, field, text) =>
         push('error', 'Recipe', recipe.id, recipe.name || recipe.id, field, `${recipeLabel(recipe)}: ${text}`);
+    const recipeWarning = (recipe, field, text) =>
+        push('warning', 'Recipe', recipe.id, recipe.name || recipe.id, field, `${recipeLabel(recipe)}: ${text}`);
 
     /** A Token reference. Blank counts as broken: the block has nothing to point at. */
     const checkTokenRef = (report, field, what, value) => {
@@ -248,6 +252,9 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             if (!skillOk) {
                 err('foundation.skill', `foundation skill is ${show(f.skill ?? 'blank')}, which is not a real skill.`);
             }
+            if (hasValue(f.tier) && !isPositiveInteger(f.tier)) {
+                err('foundation.tier', `foundation tier is ${show(f.tier)}; it must be a whole number of 1 or more.`);
+            }
         }
 
         // ── shop ──
@@ -261,11 +268,14 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             // A sold Foundation kind needs something to build on it. Skipped
             // when the kind or skill is itself broken: that is already reported.
             if (kindOk && skillOk) {
-                const buildable = recipes.some((r) =>
+                const ofKind = recipes.filter((r) =>
                     Array.isArray(r?.foundationKinds) && r.foundationKinds.includes(f.kind) && r.skill === f.skill);
-                if (!buildable) {
+                if (ofKind.length === 0) {
                     err('foundation.kind',
                         `is a ${f.kind} Foundation sold at the Shop, but no ${show(f.skill ?? '?')} recipe builds on ${f.kind} Foundations.`);
+                } else if (!ofKind.some((r) => foundationTierMeets(def, r))) {
+                    err('foundation.tier',
+                        `is a tier ${foundationTierOf(def)} ${f.kind} Foundation sold at the Shop, but every ${show(f.skill)} recipe that builds on ${f.kind} Foundations needs a higher tier.`);
                 }
             }
 
@@ -314,10 +324,19 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
         } else if (!tokens[outputs[0].tokenId]) {
             recipeError(recipe, 'outputs[0].tokenId', `builds ${show(outputs[0].tokenId)}, which does not exist.`);
         }
+        if (hasValue(recipe.foundationMinTier) && !isPositiveInteger(recipe.foundationMinTier)) {
+            recipeError(recipe, 'foundationMinTier', `minimum Foundation tier is ${show(recipe.foundationMinTier)}; it must be a whole number of 1 or more.`);
+        }
         for (const kind of recipe.foundationKinds) {
             if (!FOUNDATION_KINDS.includes(kind)) {
                 recipeError(recipe, 'foundationKinds', `names the Foundation kind ${show(kind)}; it must be one of ${FOUNDATION_KINDS.join(', ')}.`);
                 continue;
+            }
+            // Only once a Foundation of the kind exists: a kind with none says nothing here, as before.
+            const ofKind = Object.values(tokens).filter((t) => t?.foundation?.kind === kind);
+            if (ofKind.length > 0 && !ofKind.some((t) => foundationTierMeets(t, recipe))) {
+                recipeWarning(recipe, 'foundationMinTier',
+                    `needs a tier ${foundationMinTierOf(recipe)} Foundation, but no ${kind} Foundation is tier ${foundationMinTierOf(recipe)} or higher yet, so nothing can build it there (allowed while it is being authored).`);
             }
             const skills = new Set(Object.values(tokens)
                 // A Foundation whose own skill is not real is reported on that

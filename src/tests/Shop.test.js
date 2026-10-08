@@ -46,7 +46,20 @@ registerTokenTypes({
         id: 'fixture_grp_small', name: 'Fixture Grp Small', size: 1,
         shop: { price: [{ itemId: WOOD, quantity: 4 }], section: 'logging', group: 'Fixture Group' }
     },
-    fixture_not_sold: { id: 'fixture_not_sold', name: 'Fixture Not Sold', size: 1 }
+    fixture_not_sold: { id: 'fixture_not_sold', name: 'Fixture Not Sold', size: 1 },
+    // Foundations whose price order is the reverse of their tier order.
+    fixture_tgrp_t3: {
+        id: 'fixture_tgrp_t3', name: 'Fixture Tier 3', size: 1, foundation: { kind: 'wood', skill: 'construction', tier: 3 },
+        shop: { price: [{ itemId: WOOD, quantity: 2 }], section: 'smithing', group: 'Fixture Tier Group' }
+    },
+    fixture_tgrp_t1: {
+        id: 'fixture_tgrp_t1', name: 'Fixture Tier 1', size: 1, foundation: { kind: 'wood', skill: 'construction' },
+        shop: { price: [{ itemId: WOOD, quantity: 30 }], section: 'smithing', group: 'Fixture Tier Group' }
+    },
+    fixture_tgrp_t2: {
+        id: 'fixture_tgrp_t2', name: 'Fixture Tier 2', size: 1, foundation: { kind: 'wood', skill: 'construction', tier: 2 },
+        shop: { price: [{ itemId: WOOD, quantity: 9 }], section: 'smithing', group: 'Fixture Tier Group' }
+    }
 });
 
 beforeEach(() => {
@@ -100,6 +113,12 @@ describe('the catalogue', () => {
         const forest = all.find(i => i.typeId === 'fixture_shop_forest');
         expect(forest.options).toBeUndefined();
         expect(forest.group).toBeUndefined();
+    });
+
+    it('a group of Foundations lists its options by Foundation tier, not by price', () => {
+        const entry = Shop.catalogue().flatMap(g => g.items).find(i => i.group === 'Fixture Tier Group');
+        expect(entry.options.map(o => o.typeId)).toEqual(['fixture_tgrp_t1', 'fixture_tgrp_t2', 'fixture_tgrp_t3']);
+        expect(entry.typeId).toBe('fixture_tgrp_t1');
     });
 
     it('each option is gated by its own price only', () => {

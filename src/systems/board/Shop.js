@@ -5,6 +5,7 @@ import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { foundationTierOf } from '../../config/registries/tokenConstants.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { totalPrice } from '../../config/guildUpgrades.js';
 import * as BoardState from './BoardState.js';
@@ -160,14 +161,21 @@ function purchase(typeId, place) {
 /** Total quantity of a price, used to order a group cheapest first. */
 const priceWeight = (typeId) => priceOf(typeId).reduce((n, l) => n + l.quantity, 0);
 
+/** A group member's Foundation tier, or 0 for a Token that is not a Foundation. */
+const tierWeight = (typeId) => {
+    const def = getTokenType(typeId);
+    return def?.foundation ? foundationTierOf(def) : 0;
+};
+
 /**
  * The catalogue for the panel: every sold Token, grouped by section. Sections
  * are ordered by name with General last; entries within a section by name.
  *
  * Tokens whose `shop.group` is the same label are one entry: `{ group, name: <label>, options,
- * typeId, price, affordability }`, where `options` lists the members cheapest first and the
- * top-level `typeId`, `price` and `affordability` are the first option's. The entry sits in the
- * section of its first member. Every option is selectable; each is gated only by its own price.
+ * typeId, price, affordability }`, where `options` lists the members lowest Foundation tier first,
+ * then cheapest first, and the top-level `typeId`, `price` and `affordability` are the first
+ * option's. The entry sits in the section of its first member. Every option is selectable; each is
+ * gated only by its own price.
  *
  * @returns {Array<{section, name, items: Array<{typeId, name, price, affordability, group?, options?}>}>}
  */
@@ -198,7 +206,9 @@ export function catalogue() {
         bySection.get(section).push(entryOf(typeId));
     }
     for (const entry of groups.values()) {
-        entry.options.sort((a, b) => priceWeight(a.typeId) - priceWeight(b.typeId) || a.name.localeCompare(b.name));
+        entry.options.sort((a, b) => tierWeight(a.typeId) - tierWeight(b.typeId)
+            || priceWeight(a.typeId) - priceWeight(b.typeId)
+            || a.name.localeCompare(b.name));
         const [first] = entry.options;
         entry.typeId = first.typeId;
         entry.price = first.price;

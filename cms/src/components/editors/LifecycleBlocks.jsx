@@ -178,6 +178,8 @@ function FoundationBlock({ block, onChange }) {
       <Field label="Built with skill">
         <SkillSelect value={block.skill} onChange={(skill) => patch({ skill })} />
       </Field>
+      {/* A building recipe names a minimum tier; a higher tier builds everything a lower one can. Unset is tier 1. */}
+      <IntField label="Tier" min={1} value={block.tier ?? 1} onChange={(tier) => patch({ tier })} />
     </div>
   );
 }
