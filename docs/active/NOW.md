@@ -6,10 +6,11 @@ changelog and `docs/archive/`).*
 
 ## Next
 
-1. **The crunch**: start with [briefs/README.md](briefs/README.md), brief 00
-   (quick fixes T-104, T-101). The pre-crunch cleanup is done
-   (`docs/archive/hygiene_plan.md`). The unfinished Atlas work is parked on
-   branch `atlas-wip`, not `main`.
+1. **The crunch**: brief 00 (quick fixes T-104, T-101) is done. Next is
+   [brief 10, UI rework](briefs/10_ui_rework.md); see [briefs/README.md](briefs/README.md).
+   The unfinished Atlas work is parked on branch `atlas-wip`, not `main`.
+2. **T-111**: the engine bench reads ~1.4× slow on unchanged `main`; re-run on
+   a quiet machine before trusting timing verdicts.
 
 ## Where the project is
 
