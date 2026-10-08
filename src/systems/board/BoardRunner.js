@@ -79,6 +79,16 @@ let tickCounter = 0;
 /** Publish progress every N engine ticks. */
 const PROGRESS_EVERY = 3;
 
+/**
+ * The part of a tick left over after a cycle finished inside it, by instance id. Handed to the
+ * cycle that starts on the very next tick, so a cycle ending part-way through a tick loses nothing:
+ * without it a 1500 ms cycle at 1000 ms steps runs every 2 s instead of every 1.5 s. A station that
+ * does not start again on the next tick (waiting for inputs, its hero gone) loses it, as it would
+ * have lost the time anyway.
+ */
+let carryIn = new Map();
+let carryOut = new Map();
+
 // Why the hero on a Token cannot work it (possession, then level) lives in `WorkCheck.heroReason`,
 // shared with the flags that choose which Token to work.
 
@@ -422,6 +432,9 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
  * @param {number} delta milliseconds since the last tick, already time-scaled
  */
 export function tick(delta) {
+    [carryIn, carryOut] = [carryOut, carryIn];
+    carryOut.clear();
+
     // Timed changes: Saplings grow, Coasts turn and turn back, on clocks advanced by this tick's
     // `delta`, so the time bank fast-forwards them with everything else. Before Flags, so a hero
     // whose Token just changed under them lets go and chooses again this same tick, and before any
@@ -632,7 +645,8 @@ export function tick(delta) {
         }
 
         // The fast path: everything above is a cheap guard, this is the work.
-        instance.cycleElapsedMs = (instance.cycleElapsedMs || 0) + delta;
+        const before = instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : (carryIn.get(id) || 0);
+        instance.cycleElapsedMs = before + delta;
 
         // WORK_TIME, widened to the neighbours and floored at 1s so no stack of haste can drive a
         // cycle to nothing. `io.cycleTimeMs` is the active recipe's own timing when it has one,
@@ -645,7 +659,11 @@ export function tick(delta) {
             ) / heroSpeedFactor(heroId, config.skill));
 
         if (instance.cycleElapsedMs >= cycleTime) {
+            // Only a cycle that crossed its end during this tick has a leftover; one that held at
+            // full progress (no room, a raced input) and finishes on a retry does not.
+            const overshoot = before < cycleTime ? instance.cycleElapsedMs - cycleTime : 0;
             completeCycle(instance, def, io, heroId, config);
+            if (overshoot > 0 && instance.cycleElapsedMs === 0) carryOut.set(id, overshoot);
         } else if (publishProgress) {
             // Ref-based UI updates only: this bypasses React entirely, because re-rendering every
             // tile several times a second would be a cascade.

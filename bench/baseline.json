@@ -102,6 +102,54 @@
             "heroHash"
           ]
         }
+      },
+      {
+        "ticket": "T-080",
+        "commit": "80cca749",
+        "branch": "crunch/offline",
+        "dirty": true,
+        "date": "2026-10-08T22:33:07.028Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "S1": [
+            "tokensHash"
+          ],
+          "S2": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ],
+          "S3": [
+            "bankItems",
+            "tokensHash",
+            "bankHash",
+            "heroHash"
+          ],
+          "S5": [
+            "bankItems",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "spriteHash",
+            "randomDraws"
+          ],
+          "S6": [
+            "uses",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ]
+        }
       }
     ]
   },
@@ -116,7 +164,7 @@
         "heroXp": 61558,
         "sprites": 1,
         "gameTimeMs": 700000,
-        "tokensHash": "24c86caa",
+        "tokensHash": "a052b4c6",
         "bankHash": "811c9dc5",
         "heroHash": "18b01a2f",
         "spriteHash": "72cb17d8",
@@ -132,17 +180,17 @@
       "p99": 0.5929000000000997,
       "fingerprint": {
         "tokens": 109,
-        "uses": 125738,
-        "bankItems": 498,
-        "heroXp": 491452,
+        "uses": 125737,
+        "bankItems": 500,
+        "heroXp": 491456,
         "sprites": 1,
         "gameTimeMs": 400000,
-        "tokensHash": "fc15308b",
-        "bankHash": "f2c925be",
-        "heroHash": "b32af131",
-        "spriteHash": "04ee5039",
+        "tokensHash": "fb0dbda1",
+        "bankHash": "1d1e53c0",
+        "heroHash": "e09d986d",
+        "spriteHash": "807dbbad",
         "binHash": "811c9dc5",
-        "randomDraws": 15721
+        "randomDraws": 15698
       },
       "fingerprintOptions": {
         "seed": 1
@@ -154,13 +202,13 @@
       "fingerprint": {
         "tokens": 313,
         "uses": 715126,
-        "bankItems": 121,
+        "bankItems": 122,
         "heroXp": 490582,
         "sprites": 1,
         "gameTimeMs": 80000,
-        "tokensHash": "ebb45243",
-        "bankHash": "2ccbe160",
-        "heroHash": "b5f6e749",
+        "tokensHash": "7763a800",
+        "bankHash": "7bb31453",
+        "heroHash": "95304fc2",
         "spriteHash": "ee0aad71",
         "binHash": "811c9dc5",
         "randomDraws": 5739
@@ -209,16 +257,16 @@
       "fingerprint": {
         "tokens": 109,
         "uses": 125818,
-        "bankItems": 255,
+        "bankItems": 254,
         "heroXp": 490908,
-        "sprites": 1,
+        "sprites": 2,
         "gameTimeMs": 200000,
-        "tokensHash": "c7c1393a",
-        "bankHash": "d5159bf0",
+        "tokensHash": "4dd4b7c4",
+        "bankHash": "0dd1b39d",
         "heroHash": "48678c83",
-        "spriteHash": "4d308f1a",
+        "spriteHash": "664a9a26",
         "binHash": "811c9dc5",
-        "randomDraws": 1883
+        "randomDraws": 1240
       },
       "fingerprintOptions": {
         "seed": 1
@@ -229,17 +277,17 @@
       "p99": 0.5254999999997381,
       "fingerprint": {
         "tokens": 109,
-        "uses": 124794,
-        "bankItems": 2283,
-        "heroXp": 494984,
-        "sprites": 1,
+        "uses": 124789,
+        "bankItems": 2295,
+        "heroXp": 495005,
+        "sprites": 0,
         "gameTimeMs": 1900000,
-        "tokensHash": "c4c19cac",
-        "bankHash": "7464c44c",
-        "heroHash": "200b62be",
-        "spriteHash": "62fb289f",
+        "tokensHash": "7e0b2593",
+        "bankHash": "01a55780",
+        "heroHash": "456320d5",
+        "spriteHash": "811c9dc5",
         "binHash": "811c9dc5",
-        "randomDraws": 95974
+        "randomDraws": 95955
       },
       "fingerprintOptions": {
         "seed": 1,
