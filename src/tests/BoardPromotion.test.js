@@ -234,11 +234,24 @@ describe('It refuses BEFORE the work, never after (PR-8)', () => {
 });
 
 describe('⭐ the price is the rule’s own charge cost (PR-6)', () => {
-    it('⚠️ still costs ONE charge in the migrated shape — chargeDelta 0 with no moment authored', () => {
-        // Both shipped Academies were built this way by P2. Reading that 0 as
-        // authored would make them promote heroes for free, forever.
-        expect(chargeDeltaOf({ keyword: 'promotes', chargeDelta: 0 })).toBe(-1);
-        expect(BoardPromotion.priceOf({ typeId: 'fixture_promotion' })).toBe(1);
+    it('a Promotes rule with no authored price costs nothing', () => {
+        // Both shipped Academies carry chargeDelta 0 with no moment: the
+        // unpriced shape. Promotion is free unless an author sets a price.
+        expect(chargeDeltaOf({ keyword: 'promotes', chargeDelta: 0 })).toBe(0);
+        expect(chargeDeltaOf({ keyword: 'promotes' })).toBe(0);
+        expect(BoardPromotion.priceOf({ typeId: 'fixture_promotion' })).toBe(0);
+    });
+
+    it('an unpriced Academy keeps its uses, even its last one', () => {
+        const hero = makeQualified();
+        setup(hero, { uses: 1 });
+        trainToOffer(hero.id);
+
+        const result = BoardPromotion.accept(idAt(TILE));
+
+        expect(result).toMatchObject({ success: true, spent: 0 });
+        expect(hero.jobId).toBe('fighter');
+        expect(tokenAt(TILE).usesRemaining).toBe(1);
     });
 
     it('spends an authored price', () => {
@@ -289,9 +302,9 @@ describe('Accepting is the only thing that costs anything', () => {
         expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('fighter')].sort());
     });
 
-    it('spends the Token — that is the whole price', () => {
+    it('spends the authored price from the Token — that is the whole price', () => {
         const hero = makeQualified();
-        setup(hero, { uses: 2 });
+        setup(hero, { typeId: 'fixture_promotion_costly', uses: 3 });
         trainToOffer(hero.id);
 
         BoardPromotion.accept(idAt(TILE));
@@ -313,7 +326,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
     it('removes a Token whose last charge it just spent, and says so', () => {
         const hero = makeQualified();
-        setup(hero, { uses: 1 });
+        setup(hero, { typeId: 'fixture_promotion_costly', uses: 2 });
         trainToOffer(hero.id);
         const depleted = [];
         const unsub = EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, d => depleted.push(d));
@@ -324,7 +337,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
         expect(tokenAt(TILE)).toBeNull();
         expect(depleted).toHaveLength(1);
-        expect(depleted[0]).toMatchObject({ instanceId: academyId, typeId: 'fixture_promotion', heroId: hero.id });
+        expect(depleted[0]).toMatchObject({ instanceId: academyId, typeId: 'fixture_promotion_costly', heroId: hero.id });
     });
 
     it('leaves the hero standing where they were, not sent to the Dock', () => {

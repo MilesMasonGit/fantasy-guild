@@ -108,10 +108,16 @@ describe('what else knows about it', () => {
         expect(provisionalName(promotes(''))).toBe('Promotion');
     });
 
-    it('costs one charge per hero promoted by default, and offers only that moment (P3)', () => {
+    it('is free by default, and offers only the per-promotion moment', () => {
         const slots = costSlots(makeStatement(KEYWORD.PROMOTES));
-        expect(slots.find((s) => s.id === 'charge').value).toBe(1);
+        expect(slots.find((s) => s.id === 'charge').value).toBe(0);
         expect(slots.find((s) => s.id === 'chargeWhen').options.map((o) => o.id)).toEqual(['on_promote']);
+        expect(slots.find((s) => s.id === 'charge').hint).toContain('Free');
+    });
+
+    it('shows an authored price in the cost strip', () => {
+        const slots = costSlots({ ...makeStatement(KEYWORD.PROMOTES), chargeDelta: -2, chargeWhen: 'on_promote' });
+        expect(slots.find((s) => s.id === 'charge').value).toBe(2);
         expect(slots.find((s) => s.id === 'charge').hint).toContain('each time a hero accepts a promotion');
     });
 });

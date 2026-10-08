@@ -102,15 +102,15 @@ export function chargeMomentsFor(hasTrigger, keywordId = null) {
  *   carrying an aura — content the owner authored on the understanding that an
  *   aura is free.
  *
- * So the default is per moment: firing costs one, everything else costs nothing.
+ * So the default is per moment: firing costs one, everything else costs nothing,
+ * a promotion included (an Academy promotes for free unless its author prices it).
  * An author who wants otherwise writes a number, and an explicit `0` remains
  * distinguishable from a blank exactly as it was.
  */
 export const DEFAULT_CHARGE_DELTA_BY_MOMENT = Object.freeze({
     [CHARGE_MOMENT.ON_FIRE]: -1,
     [CHARGE_MOMENT.PER_CYCLE]: 0,
-    // A promotion costs its Token one charge unless the author says otherwise.
-    [CHARGE_MOMENT.ON_PROMOTE]: -1
+    [CHARGE_MOMENT.ON_PROMOTE]: 0
 });
 
 /**
@@ -136,7 +136,7 @@ export function chargeMomentOf(statement) {
  * An authored `chargeDelta` wins, `0` included — with one exception.
  *
  * ## ⚠️ A Promotes rule's number counts only once its moment is authored
- * `makeStatement` stamps `chargeDelta: 0` on every keyword that cannot fire. Reading that 0 as authored would make every Academy promote heroes for free, forever, so an absent `chargeWhen` means "never set": the default, one charge. Typing a cost in the strip writes `chargeWhen` beside it, and from then on the number is the author's — an unlimited academy is a deliberately written 0. `Charges.statementCycleCost` applies the same opt-in rule to per-cycle costs.
+ * `makeStatement` stamps a `chargeDelta` on keywords that cannot fire, so an absent `chargeWhen` means "never set": the default, which is free. Typing a cost in the strip writes `chargeWhen` beside it, and from then on the number is the author's price. `Charges.statementCycleCost` applies the same opt-in rule to per-cycle costs.
  *
  * @param {object} statement
  * @param {number} fallback  used when a moment declares no default

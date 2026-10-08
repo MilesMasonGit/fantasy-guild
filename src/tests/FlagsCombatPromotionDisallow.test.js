@@ -446,7 +446,7 @@ describe('⭐ promotion offers are never wiped by a gap (PR-7, FP-61)', () => {
     });
 
     it('accepting with the last charge leaves the hero free for other work (FPP-12)', () => {
-        put(14, 'fixture_promotion', 1);
+        put(14, 'fixture_promotion_costly', 2);   // priced 2: an unpriced Academy never runs out
         Placement.plantFlagAt('h1', C(14));
         expect(train()).toHaveLength(1);
 
