@@ -8,7 +8,7 @@ export const DRAW_SWITCHES = [
     'rings', 'bubbles', 'alerts', 'speech', 'tooltips',
     'heroAnim', 'enemyAnim', 'walkDraw', 'itemFlight',
     'notifications', 'bin', 'dock', 'drawers',
-    'spriteFx', 'background', 'particles'
+    'spriteFx', 'background', 'particles', 'spawnMotion'
 ];
 
 /** Scene ids, in run order. The UI scenes are all on the S2 board. */

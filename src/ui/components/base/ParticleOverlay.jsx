@@ -22,6 +22,18 @@ const STAGGER_RESET_MS = 250;
  */
 const MAX_CONCURRENT = 12;
 
+/** The quickest and slowest an item flight takes, in ms. */
+export const FLIGHT_MIN_MS = 280;
+export const FLIGHT_MAX_MS = 800;
+/** Time added per screen pixel flown, between the two bounds. */
+const FLIGHT_MS_PER_PX = 0.45;
+
+/** How long a flight over `distPx` screen pixels takes: a short hop is quick, a long one lingers. */
+export function flightDurationMs(distPx) {
+    const ms = FLIGHT_MIN_MS + (Number.isFinite(distPx) ? distPx : 0) * FLIGHT_MS_PER_PX;
+    return Math.round(Math.min(FLIGHT_MAX_MS, Math.max(FLIGHT_MIN_MS, ms)));
+}
+
 /**
  * Where a board point (natural board pixels / mat units) is on screen.
  * ⚠️ The board is drawn at its natural size and then CSS-scaled to fit (`useBoardScale`), so
@@ -272,7 +284,7 @@ class ParticleSystem {
             trayY,
             instanceId,
             startTime: performance.now() + slot * STAGGER_MS,
-            duration: destination === 'cursor' ? 320 : (650 + Math.random() * 150),
+            duration: destination === 'cursor' ? 320 : flightDurationMs(dist),
             path: { startX, startY, endX, endY, cpX, cpY },
             trail: [],
             maxTrail: 15,

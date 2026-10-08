@@ -29,6 +29,7 @@ import { showsNearRing } from '../../../systems/board/reachDisplay.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
+import { watchSpawns } from './spawnMotion.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -264,6 +265,9 @@ export const MatBoard = ({
         return el ? installPressRouting(el, Flags.tokenAtPoint) : undefined;
     }, []);
 
+
+    // Remembers where each new Token came from, for its pop-out (`MatToken`).
+    useEffect(() => watchSpawns(), []);
 
     const handleRecallHero = useCallback((heroId) => {
         announce(Placement.recallHeroById(heroId));

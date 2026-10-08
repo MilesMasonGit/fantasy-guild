@@ -113,21 +113,16 @@ export function surfaceWithinRegions(x, y, regions) {
     return board;
 }
 
-const GLOW_BOLD = 'drop-shadow(0 10px 18px rgba(0,0,0,0.55))';
-const GLOW_COMPACT = 'drop-shadow(0 4px 8px rgba(0,0,0,0.45))';
 
 // Static, so passing it to <DndContext> never counts as a changed prop.
 const AUTO_SCROLL = { enabled: true, threshold: { x: 0, y: 0.18 } };
 
 /**
- * A carried Token, hero or flag casts the hard pixel shadow `PixelArt` draws for `lifted`; a
- * soft drop-shadow on top would be a second, blurred shadow. Only a carried item (its card
- * frame) keeps the soft one.
+ * Whatever is carried casts the hard pixel shadow `PixelArt` draws for `lifted`; a soft
+ * drop-shadow on top would be a second, blurred shadow, so the overlay only brightens.
  */
-const SPRITE_KINDS = new Set([DRAG_KIND.TOKEN, DRAG_KIND.HERO, DRAG_KIND.FLAG]);
-function overlayFilter(kind, bold) {
-    const lift = 'brightness(1.15) saturate(1.25)';
-    return SPRITE_KINDS.has(kind) ? lift : `${bold ? GLOW_BOLD : GLOW_COMPACT} ${lift}`;
+export function overlayFilter() {
+    return 'brightness(1.15) saturate(1.25)';
 }
 
 export const DeckDndContext = React.createContext({ activePayload: null, isDragging: false });
@@ -394,7 +389,7 @@ export const DeckDndProvider = ({ children }) => {
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.15, ease: 'easeOut' }}
                             className="w-full h-full flex items-center justify-center origin-center will-change-transform"
-                            style={{ filter: overlayFilter(activePayload.kind, bold) }}
+                            style={{ filter: overlayFilter() }}
                         >
                             <DragGhost payload={activePayload} bold={bold} />
                         </motion.div>

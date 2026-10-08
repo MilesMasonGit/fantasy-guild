@@ -17,7 +17,7 @@ import { flagColourOf } from '../../systems/board/FlagColours.js';
  * card frames. They are 128px from pick-up to release, and being held is expressed by the
  * shadow instead, the hard pixel shadow of `PixelArt`'s lifted state. `bold` is therefore
  * ignored by `TokenGhost` and `HeroGhost`.
- * `ItemGhost` always draws a single 64px icon.
+ * `ItemGhost` always draws a single 64px icon, lifted like the others.
  */
 
 function liveBoardFit() {
@@ -137,9 +137,12 @@ const ItemGhost = ({ payload }) => {
             ×{multi}
         </span>
     );
+    const src = item ? resolveSpritePath(item) : null;
     return (
-        <div className="relative flex items-center justify-center w-[64px] h-[64px]">
-            <ItemIcon item={item || payload.itemId} size={64} />
+        <div className="relative flex items-center justify-center w-[64px] h-[64px]" data-item-ghost={payload.itemId}>
+            {src
+                ? <PixelArt src={src} alt={item.name || payload.itemId} size={64} lifted />
+                : <ItemIcon item={item || payload.itemId} size={64} />}
             {badge}
         </div>
     );

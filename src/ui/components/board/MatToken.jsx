@@ -33,7 +33,9 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
-import { useDrawn } from '../../dev/perf/drawSwitches.js';
+import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
+import { QuestPosterItem } from './QuestPoster.jsx';
+import { takeSpawn, playSpawn } from './spawnMotion.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -321,6 +323,18 @@ export const MatToken = React.memo(function MatToken({
     const setArtRef = React.useCallback((el) => { artRef.current = el; setNodeRef(el); }, [setNodeRef]);
     useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
 
+    // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
+    // at mount, so a Token already on the mat never replays it.
+    React.useLayoutEffect(() => {
+        const from = takeSpawn(id);
+        if (!from || !isDrawn('spawnMotion')) return;
+        const dx = from.x - px;
+        const dy = from.y - py;
+        if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+        playSpawn(artRef.current, dx, dy);
+        playSpawn(overlayRef.current, dx, dy);
+    }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+
     const token = React.useMemo(
         () => ({ typeId, instanceId: id, heroId, alert, usesRemaining }),
         [typeId, id, heroId, alert, usesRemaining]
@@ -490,6 +504,9 @@ export const MatToken = React.memo(function MatToken({
                             />
                         )}
                     </TokenHitArt>
+                    {quest?.itemId && (
+                        <QuestPosterItem itemId={quest.itemId} boxPx={boxPx} artPx={artPx} fit={fit} />
+                    )}
                 </div>
                 {transformGlow && (
                     <div
