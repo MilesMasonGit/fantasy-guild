@@ -53,11 +53,33 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
   after brief 70 or make it read sources from the game data so it stays
   current. Nothing like it exists in the docs today.
 
+- **Combat system, built out properly**: today it's "a glorified slap fight".
+  *after-crunch* · feature-sized · GDD §6 has the current rules (four combat
+  skills, one per promoted hero); brief 20's class rework decides who holds
+  which.
+
+### Tools and process
+
+- **Agents author content through the CMS**: let an agent quickly create and
+  manage items and Tokens. *quick to medium* · must respect the hard rule that
+  `data/` is only written by the CMS: the CMS keeps its workspace in the
+  browser and Sync to Game writes `data/`, so this likely means a CMS-side
+  import or scripting path rather than an agent editing files.
+- **Full CMS review** once the new Token loops and the Atlas are in.
+  *after-crunch* · review, then tickets.
+- **Terrain art early**: terrain needs a lot of owner art, so work out what art
+  it needs well before brief 80 runs, giving the owner time to draw it.
+  ⚠️ reorders brief 80 · its research phase (what of the old terrain system
+  survives, the look questions) is read-only and could run early to produce an
+  art list.
+
 ### Post-Atlas content
 
 - **One core loop per skill**: so each skill feels different, and to prototype
   how they'll work. *after-crunch* · feature-sized; builds on brief 20's new
-  skill list (in flight now).
+  skill list (in flight now). First content to build; owner, 2026-10-08.
+- **Guild upgrade content**: build out the Guild Hall upgrades. Pairs with the
+  constellation screen above and the Atlas's new global upgrades.
 
 ## Being interviewed
 
