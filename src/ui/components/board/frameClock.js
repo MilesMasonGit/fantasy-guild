@@ -1,7 +1,7 @@
 
 /**
  * The mat's one frame clock.
- * Per-frame work (today the cycle rings sweeping between engine ticks, `TokenBadgeRow`)
+ * Per-frame work (today the cycle rings sweeping between engine ticks, `TokenBubbles`)
  * subscribes here instead of running its own `requestAnimationFrame` loop, so seven worked
  * Tokens are one callback a frame that calls seven functions rather than seven loops.
  * The loop runs only while something is subscribed: the last unsubscribe cancels the pending

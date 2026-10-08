@@ -8,7 +8,7 @@ import { RingBadge, RING_CIRCUMFERENCE, glideOffset } from '../ui/components/boa
 import { GLIDING_RINGS, spawnerRing } from '../ui/components/board/ringRow.js';
 
 /**
- * ⭐ Count rings glide. A Token's charges ring and a spawner's count ring
+ * ⭐ Count rings glide. A Token's charges, a spawner's count and a quest's progress
  * used to jump when their number changed; now the arc slides to the new
  * value over ~0.8 s with a slow ease-out.
  */
@@ -19,8 +19,8 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const arcOf = (container) => container.querySelector('[data-ring-arc]');
 
 describe('which rings glide', () => {
-    it('charges and the spawner count — nothing else', () => {
-        expect([...GLIDING_RINGS].sort()).toEqual(['charges', 'spawner']);
+    it('every count: charges, the spawner count and quest progress — nothing else', () => {
+        expect([...GLIDING_RINGS].sort()).toEqual(['charges', 'quest', 'spawner']);
     });
 
     it('a charges ring draws its arc as a full dash pushed back by the empty part', () => {
@@ -35,8 +35,8 @@ describe('which rings glide', () => {
         expect(Number(glideOffset(0))).toBeCloseTo(RING_CIRCUMFERENCE, 2);
     });
 
-    it('the cycle, HP, quest and turn rings keep their plain arc', () => {
-        for (const kind of ['hp', 'quest']) {
+    it('the cycle, HP and timer rings keep their plain arc', () => {
+        for (const kind of ['hp', 'turn', 'grow']) {
             const { container } = render(h(RingBadge, { kind, fraction: 0.5, text: '1' }));
             expect(arcOf(container).getAttribute('class')).toBeNull();
             expect(arcOf(container).style.strokeDashoffset).toBe('');

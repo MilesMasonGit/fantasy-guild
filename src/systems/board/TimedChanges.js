@@ -140,6 +140,20 @@ export function nextTurnRoll(instance) {
 }
 
 /**
+ * When a growing Token (a Sapling) next changes, for the mat's growth bubble and the inspection
+ * lines: `{ inMs, into }`. `inMs` is 0 while the change is held (in the hand, or nowhere to
+ * stand). Null for a Token that does not grow, and for a turned one (it runs only its turn
+ * back).
+ */
+export function nextGrowth(instance) {
+    if (!instance || instance.turnedFrom) return null;
+    const def = getTokenType(instance.typeId);
+    if (!def?.grows?.into || !(Number(def.grows.afterMs) >= 0)) return null;
+    const clockMs = Number(instance.clocks?.growMs) || 0;
+    return { inMs: Math.max(0, Number(def.grows.afterMs) - clockMs), into: def.grows.into };
+}
+
+/**
  * ⭐ The handler table. Each entry is one kind of clock:
  *
  * * `clock` — the key in `instance.clocks` it counts on;

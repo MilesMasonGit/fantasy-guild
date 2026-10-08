@@ -2,14 +2,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
-import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
+import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 /**
- * ⭐ Since B1.2 the progress bar is the ring row (`TokenBadgeRow`), and
- * every guarantee below carries over to it unchanged.
+ * ⭐ The Token's bubbles (`TokenBubbles`) keep the old progress bar's subscription guarantees.
  */
 
 /**
@@ -42,7 +41,7 @@ const withSubscriptionCounter = () => {
     return { counts, restore: () => { subSpy.mockRestore(); unsubSpy.mockRestore(); } };
 };
 
-const bar = (props) => React.createElement(TokenBadgeRow, props);
+const bar = (props) => React.createElement(TokenBubbles, props);
 
 const tree = (props) => React.createElement(
     EngineContext.Provider,
@@ -50,7 +49,7 @@ const tree = (props) => React.createElement(
     bar(props)
 );
 
-describe('TokenBadgeRow subscription churn (CR2-168 item 1, carried over from the bar)', () => {
+describe('TokenBubbles subscription churn ', () => {
     let meter;
 
     beforeEach(() => {
@@ -153,7 +152,7 @@ describe('TokenBadgeRow subscription churn (CR2-168 item 1, carried over from th
         expect(BAR_EVENTS.map(e => EventBus.getSubscriberCount(e))).toEqual(before);
     });
 
-    it('does not listen for ALERT_CHANGED at all (B1.1)', () => {
+    it('does not listen for ALERT_CHANGED at all', () => {
         const before = EventBus.getSubscriberCount(BOARD_EVENTS.ALERT_CHANGED);
         render(tree({ instanceId: 'tok_a', token: { typeId: 'fixture_producer', heroId: 'hero_1' } }));
         expect(EventBus.getSubscriberCount(BOARD_EVENTS.ALERT_CHANGED)).toBe(before);

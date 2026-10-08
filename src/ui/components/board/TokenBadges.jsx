@@ -5,9 +5,9 @@ import { useTokenEvent } from './tokenEvents.js';
 import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
 
 /**
- * The small things drawn **on** a Token: its name, the recipe gear (top-left), the disallow
- * mark (top-right). Its charges are a ring in the row under it (`TokenBadgeRow`); a spawner's
- * count and a turn countdown are in that row too.
+ * The small things drawn on a Token besides its ring bubbles: its name above the box, and the
+ * recipe gear and the disallow mark, which sit in the middle row of bubbles (`TokenBubbles`
+ * places them).
  * A Token is a circle at a point, so what these badges are about is its **instance id**, and
  * everything they need to draw arrives as a prop from `MatToken`, which already reads the
  * Token's details by id. Only the charge floater still listens for itself, because a `-1` is a
@@ -78,25 +78,28 @@ export const TokenChargeDeltaFloater = ({ instanceId, anchor = 'corner' }) => {
 };
 
 /**
- * TokenNameBadge — the Token's name across the top on hover. Clean outlined
- * text that wraps onto as many lines as it needs.
+ * TokenNameBadge: the Token's name on hover, centred just above the Token's box so it never
+ * covers a bubble. `lift` raises it further (mat units) when bubbles hang off the box's top
+ * (a small Token's timer).
  */
-export const TokenNameBadge = ({ name, isDragging, isHovered, small = false }) => {
+export const TokenNameBadge = ({ name, isDragging, isHovered, lift = 0 }) => {
     if (!name || isDragging) return null;
 
+    // A full-width flex row centres the label without a `transform`: a transform on every
+    // Token of a busy mat costs more in compositing than it saves.
     return (
         <div
+            data-token-name="true"
             className={cn(
-                // A small Token's box is half as wide, so its name may run past the box's
-                // sides rather than wrap per word.
-                small ? "absolute top-1 -left-8 -right-8 z-30 pointer-events-none" : "absolute top-1 left-1 right-1 z-30 pointer-events-none",
-                "flex items-start justify-center text-center select-none",
+                "absolute left-0 right-0 z-30 pointer-events-none",
+                "flex items-end justify-center text-center select-none",
                 "transition-opacity ease-out",
                 isHovered ? "opacity-100 duration-500 delay-[1200ms]" : "opacity-0 duration-150 delay-0"
             )}
+            style={{ bottom: `calc(100% + ${4 + lift}px)` }}
         >
             <span
-                className="text-[10px] font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
+                className="w-max max-w-[240px] shrink-0 text-[10px] font-bold text-white leading-tight tracking-tight px-1 drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)]"
                 style={{
                     textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000'
                 }}
@@ -108,15 +111,15 @@ export const TokenNameBadge = ({ name, isDragging, isHovered, small = false }) =
 };
 
 /**
- * StationGearBadge: the recipe picker's handle, **top-left** of a Token that has something to
- * choose: a Foundation, or a station whose pool is not empty (`centreAlert.gearStateOf`
- * decides).
- * Always shown, not only on hover. While nothing is chosen it **pulses gently** and that is
- * all, with no red alert: the Token is waiting, not broken, and heroes pass it over until the
- * player picks. Once a recipe is chosen it stays, still, so the player can change it.
+ * StationGearBadge: the recipe picker's handle, in the middle row of a Token that has something
+ * to choose: a Foundation, or a station whose pool is not empty (`centreAlert.gearStateOf`
+ * decides; `TokenBubbles` decides when it shows).
+ * While nothing is chosen it **pulses gently** and that is all, with no red alert: the Token is
+ * waiting, not broken, and heroes pass it over until the player picks. Once a recipe is chosen
+ * it is still, so the player can change it.
  * Hovering previews the selected recipe: outputs first, then what it consumes.
  */
-export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, small = false, onClick }) => {
+export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, onClick }) => {
     if (isDragging) return null;
 
     const outputs = outputSummary(recipe);
@@ -127,10 +130,7 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
     return (
         <div
             data-station-gear={pulsing ? 'unset' : 'set'}
-            data-badge-corner={small ? 'small' : undefined}
-            // On a small Token the gear hangs off the corner instead of covering the top half
-            // of 64 u of art.
-            className={cn('absolute z-30 group pointer-events-auto', small ? '-left-3 -top-3' : 'left-1 top-1')}
+            className="relative shrink-0 group pointer-events-auto"
         >
             <button
                 type="button"
@@ -170,21 +170,17 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
 };
 
 /**
- * DisallowBadge: the red disallow sprite, **top-right** of a Token heroes may not work. Always
- * shown.
+ * DisallowBadge: the red disallow sprite, in the middle row of a Token heroes may not work.
+ * Shown the whole time it is disallowed. It takes pointer events so its tooltip and a press
+ * (which grabs the Token) work; `TokenBubbles` puts it in the row.
  */
-export const DisallowBadge = ({ isDragging, small = false }) => {
+export const DisallowBadge = ({ isDragging }) => {
     if (isDragging) return null;
     return (
         <div
             data-tile-disallowed="true"
             aria-label="Heroes may not work this"
-            data-badge-corner={small ? 'small' : undefined}
-            // Off the corner on a small Token, as the gear is.
-            className={cn(
-                'absolute z-30 pointer-events-none select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]',
-                small ? '-right-3 -top-3' : 'right-1 top-1'
-            )}
+            className="shrink-0 select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
         >
             <img
                 src="/assets/ui/ui_disallow_red.png"

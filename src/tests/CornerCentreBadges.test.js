@@ -26,12 +26,13 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { TokenCentreAlert } from '../ui/components/board/TokenEventAlert.jsx';
-import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
+import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import * as TokenBadges from '../ui/components/board/TokenBadges.jsx';
 import { StationGearBadge, DisallowBadge } from '../ui/components/board/TokenBadges.jsx';
 import {
     ALERT_KIND, alertKindOf, alertFades, pickCentreAlert, spawnerCountText, gearStateOf, isGearOnlyAlert
 } from '../ui/components/board/centreAlert.js';
+import { matW, matH } from '../config/matGeometry.js';
 import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
 import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 
@@ -381,12 +382,10 @@ describe('TokenCentreAlert — one mark at the centre', () => {
 // ---------------------------------------------------------------------------
 
 describe('the badges on their own', () => {
-    it('the gear is the gear sprite, top-left, pulsing only when unset', () => {
+    it('the gear is the gear sprite, pulsing only when unset', () => {
         const unset = mount(h(StationGearBadge, { isDragging: false, recipe: null, pulsing: true, onClick: () => {} })).container;
         const gear = unset.querySelector('[data-station-gear]');
         expect(gear.getAttribute('data-station-gear')).toBe('unset');
-        expect(gear.className).toContain('left-1');
-        expect(gear.className).toContain('top-1');
         expect(gear.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_gear.png');
         expect(gear.querySelector('img').style.imageRendering).toBe('pixelated');
         expect(gear.querySelector('button').className).toContain('gi-gear-pulse');
@@ -405,6 +404,14 @@ describe('the badges on their own', () => {
         expect(TokenBadges.TurnCountdownBadge).toBeUndefined();
     });
 });
+
+const hoverAt = (container, tok) => {
+    const root = container.querySelector('[data-mat-board]');
+    root.getBoundingClientRect = () => ({
+        left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
+    });
+    fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
+};
 
 describe('on the mat', () => {
     it('FB-6: no Token carries the green assign-a-hero plus', () => {
@@ -444,7 +451,7 @@ describe('on the mat', () => {
         expect(mark.getAttribute('data-alert-severity')).toBe('red');
         // And the ring row says none of it: its cycle ring just greys (B1.2).
         cleanup();
-        const row = mount(h(TokenBadgeRow, { instanceId: bench.id, token: token(ALERT.NO_ROOM) })).container;
+        const row = mount(h(TokenBubbles, { instanceId: bench.id, token: token(ALERT.NO_ROOM) })).container;
         expect(row.textContent).not.toContain('No Room');
         expect(row.querySelector('[data-ring="cycle"]').getAttribute('data-ring-greyed')).toBe('true');
     });
@@ -459,10 +466,12 @@ describe('on the mat', () => {
         expect(container.querySelectorAll('[data-alert-kind]').length).toBe(1);
     });
 
-    it('FB-7: a chosen recipe keeps the gear, still', () => {
+    it('FB-7: a chosen recipe keeps the gear, still, shown on hover', () => {
         const bench = put('fixture_q2_bench');
         StationRecipe.setSelectedRecipe(bench, 'fixture_q2_make');
         const { container } = mount(h(MatBoard));
+        expect(overlay(container, bench.id).querySelector('[data-station-gear]')).toBeNull();
+        hoverAt(container, bench);
         expect(overlay(container, bench.id).querySelector('[data-station-gear="set"]')).not.toBeNull();
     });
 
@@ -481,7 +490,9 @@ describe('on the mat', () => {
         put('fixture_q2_sapling', { x: 1400, y: 300 });
         const { container } = mount(h(MatBoard));
         const o = overlay(container, forest.id);
-        const ring = o.querySelector('[data-ring-row] [data-ring="spawner"]');
+        expect(o.querySelector('[data-ring="spawner"]')).toBeNull();          // quiet at rest
+        hoverAt(container, forest);
+        const ring = o.querySelector('[data-bubble-row] [data-ring="spawner"]');
         expect(ring.getAttribute('data-ring-text')).toBe('2/5');
         expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(0.4, 3);
         expect(o.querySelector('[data-spawner-count]')).toBeNull();

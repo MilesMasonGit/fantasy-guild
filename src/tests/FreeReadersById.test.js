@@ -29,7 +29,7 @@ import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
-import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
+import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { TokenEventAlert } from '../ui/components/board/TokenEventAlert.jsx';
 import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
@@ -356,7 +356,7 @@ describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () =>
         const other = placeAt('fixture_producer', C(15).x, C(15).y);
         const { container } = render(React.createElement(
             EngineContext.Provider, { value: { EventBus } },
-            React.createElement(TokenBadgeRow, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
+            React.createElement(TokenBubbles, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
         ));
         const ring = container.querySelector('[data-ring="cycle"]');
 

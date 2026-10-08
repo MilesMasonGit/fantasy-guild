@@ -17,15 +17,11 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
-import { TokenBadgeRow } from './TokenBadgeRow.jsx';
-import { ringRowOffset, spawnerRing, questRing } from './ringRow.js';
-import * as HeroMotion from '../../../systems/board/HeroMotion.js';
+import { TokenBubbles } from './TokenBubbles.jsx';
+import { SMALL_OVERHANG_U, spawnerRing, questRing } from './ringRow.js';
 import { TokenCentreAlert } from './TokenEventAlert.jsx';
 import { EffectProcText } from './EffectProcText.jsx';
-import {
-    TokenNameBadge, StationGearBadge,
-    DisallowBadge
-} from './TokenBadges.jsx';
+import { TokenNameBadge } from './TokenBadges.jsx';
 import { gearStateOf } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
@@ -84,7 +80,7 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * underneath. Which Token the pointer is on is decided once by `MatBoard` (nearest centre,
  * `Flags.tokenAtPoint`); this just draws.
  * Two boxes, not one: the art and the badges are siblings with explicit z, not parent and
- * child. A hero stands beside the Token, and the badges (the ring row especially) have to stay
+ * child. A hero stands beside the Token, and the bubbles have to stay
  * readable in front of that hero. A single box would make its own stacking context and bury
  * them under the hero's feet.
  */
@@ -106,7 +102,7 @@ export const MatToken = React.memo(function MatToken({
     onFlipDisallow
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
-    const ringsDrawn = useDrawn('rings');
+    const bubblesDrawn = useDrawn('bubbles');
     const alertsDrawn = useDrawn('alerts');
     const tooltipsDrawn = useDrawn('tooltips');
     const walkDrawn = useDrawn('walkDraw');
@@ -145,23 +141,27 @@ export const MatToken = React.memo(function MatToken({
     // (routed to this Token alone).
     const detail = useTokenDetail(id, def);
 
-    // The turn ring polls this; stable per Token so its timer is not reset. `everyMs` is the
-    // roll cycle it empties over, on a turned Token the ORIGINAL's, as the roll itself uses
-    // (`turnTimingOf`).
-    const readTurn = React.useCallback(() => {
+    // The timer bubble polls this; stable per Token so its poll is not reset. A growing Token
+    // counts down its growth (`everyMs` is the whole growth time); a turning one to its next
+    // roll, over the roll cycle (on a turned Token the ORIGINAL's, as the roll itself uses,
+    // `turnTimingOf`).
+    const readTimer = React.useCallback(() => {
         const instance = BoardState.getTokenById(id);
+        const grow = TimedChanges.nextGrowth(instance);
+        if (grow) return { kind: 'grow', ...grow, everyMs: Number(getTokenType(instance.typeId)?.grows?.afterMs) || 0 };
         const roll = TimedChanges.nextTurnRoll(instance);
-        return roll ? { ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
+        return roll ? { kind: 'turn', ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
     }, [id]);
 
     const spawnerCounts = detail?.spawnerCounts ?? null;
     const quest = detail?.quest ?? null;
-    const standingRings = React.useMemo(
-        () => {
-            const ring = spawnerRing(spawnerCounts) || questRing(quest);
-            return ring ? [ring] : null;
-        },
-        [spawnerCounts?.count, spawnerCounts?.cap, quest?.currentCount, quest?.requiredCount, quest?.title]   // eslint-disable-line react-hooks/exhaustive-deps
+    const spawnerBubble = React.useMemo(
+        () => spawnerRing(spawnerCounts),
+        [spawnerCounts?.count, spawnerCounts?.cap]   // eslint-disable-line react-hooks/exhaustive-deps
+    );
+    const questBubble = React.useMemo(
+        () => questRing(quest),
+        [quest?.currentCount, quest?.requiredCount, quest?.title]   // eslint-disable-line react-hooks/exhaustive-deps
     );
     const questDone = !!quest?.done;
 
@@ -269,7 +269,7 @@ export const MatToken = React.memo(function MatToken({
     // The Token stays exactly where it is: its hero walks up and stands beside it
     // (`HeroMotion.standingSpot`). An enemy walking by its spawner steps once a tick, so it
     // glides linearly over one tick, as a walking hero does (`MatHero`). The art, the badges,
-    // the ring row and the alerts all ride in these boxes.
+    // the bubbles and the alerts all ride in these boxes.
     const walking = walkFacing != null;
     // While it walks, MatBoard does not hand a walker its point (`x` is null, so its steps do
     // not redraw the mat). It is read live here, and each step moves the boxes directly
@@ -315,15 +315,6 @@ export const MatToken = React.memo(function MatToken({
     const setArtRef = React.useCallback((el) => { artRef.current = el; setNodeRef(el); }, [setNodeRef]);
     useWalkerFollow(walker && walking && x == null, id, boxHalf, artRef, overlayRef);
 
-    // The ring row, centred under the pair once the hero has arrived (`workerOf` answers only
-    // then), at their STANDING spot rather than their walking position, so the row does not
-    // slide while they walk.
-    const heroSide = detail?.heroSide ?? null;
-    const heroX = heroId && heroSide != null
-        ? HeroMotion.standingSpot(typeId, { x: px, y: py }, heroSide).x
-        : null;
-    const row = ringRowOffset({ x: px, half: boxHalf, heroX });
-
     const token = React.useMemo(
         () => ({ typeId, instanceId: id, heroId, alert, usesRemaining }),
         [typeId, id, heroId, alert, usesRemaining]
@@ -367,7 +358,17 @@ export const MatToken = React.memo(function MatToken({
     // A sharp coloured outline: white hovered or selected, red in alert, green worked
     // (`spriteOutline.js`). It is a generated picture under the art, not a filter.
     const outline = tokenOutline({ hovered: isHovered, selected, alert: !!alert, working: staffed });
-    const gear = gearStateOf(detail || {});
+    const gearState = gearStateOf(detail || {});
+    const gear = React.useMemo(
+        () => (gearState.show ? {
+            show: true,
+            pulsing: gearState.pulsing,
+            recipe: detail?.recipe,
+            isFoundation: !!detail?.isFoundation,
+            onClick: () => (disallowMode ? onFlipDisallow?.(id) : onOpenRecipes?.(id))
+        } : null),
+        [gearState.show, gearState.pulsing, detail?.recipe, detail?.isFoundation, disallowMode, onFlipDisallow, onOpenRecipes, id]
+    );
 
     return (
         <>
@@ -491,41 +492,26 @@ export const MatToken = React.memo(function MatToken({
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, zIndex: z + 2, visibility: hidden ? 'hidden' : 'visible' }}
             >
-                <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} small={small} />
+                <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} lift={small ? SMALL_OVERHANG_U : 0} />
 
                 {/**
-                 * The recipe gear, top-left, on every Token with something to choose. Nothing
-                 * chosen: it pulses, and that is all, no alert. Heroes still pass it over.
+                 * The bubbles, each in its own spot inside the Token's box: timer, gear, spawner
+                 * count, disallow mark, cycle, quest progress, charges. A small Token keeps
+                 * FULL-size bubbles and they hang off its box. They carry the -1 floater.
                  */}
-                {gear.show && (
-                    <StationGearBadge
-                        isDragging={hidden}
-                        recipe={detail?.recipe}
-                        pulsing={gear.pulsing}
-                        isFoundation={!!detail?.isFoundation}
-                        small={small}
-                        onClick={() => (disallowMode ? onFlipDisallow?.(id) : onOpenRecipes?.(id))}
-                    />
-                )}
-
-                {detail?.disallowed && <DisallowBadge isDragging={hidden} small={small} />}
-
-                {/**
-                 * Cycle, charges and the Token's own ring, in one row under the Token and its
-                 * hero. It carries the -1 floater. A spawner's count and a turning Token's
-                 * countdown stand in it always. A small Token keeps FULL-size rings:
-                 * `RING_D_U` is fixed in mat units; only the row's anchor (`boxHalf`) follows
-                 * the smaller Token.
-                 */}
-                {ringsDrawn && <TokenBadgeRow
+                {bubblesDrawn && <TokenBubbles
                     instanceId={id}
                     token={isGuildHallToken ? { ...token, usesRemaining: null } : token}
                     isHovered={isHovered}
                     isDragging={hidden}
-                    left={boxHalf + row.dx}
-                    top={boxHalf + row.dy}
-                    extraRings={standingRings}
-                    readTurn={detail?.turns ? readTurn : null}
+                    boxPx={boxPx}
+                    small={small}
+                    spawner={spawnerBubble}
+                    quest={questBubble}
+                    readTimer={detail?.turns || detail?.grows ? readTimer : null}
+                    gear={gear}
+                    disallowed={!!detail?.disallowed}
+                    dragProps={drag.handleProps}
                 />}
 
                 {/**
