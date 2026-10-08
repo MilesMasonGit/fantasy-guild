@@ -98,6 +98,7 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | Phase | Date | FPS before → after | Frame work p50 before → after (ms) | Note |
 |---|---|---|---|---|
 | U1 Bubbles | 2026-10-07 | 58.5 → 57.0 | 19.61 → 20.01 | Back-to-back A/B, 3 repeats each: no measurable change. Bubbles are still ~half the frame (96.9 fps with `bubbles` off): S2 at rest keeps its work-cycle and HP bubbles live by design, so hover-only saves little here. |
+| U2 Health bars | 2026-10-07 | 57.8 → 55.3 | 19.31 → 20.60 | Stash A/B, 3 repeats each; ranges just touch, so possibly noise. Bars exist only in a fight or on enemy hover. |
 
 ## Drag baseline (`npm run bench:drag`, 50 drags per kind)
 
