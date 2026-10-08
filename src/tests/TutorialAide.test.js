@@ -72,7 +72,6 @@ describe('Tutorial Aide Target Resolution & Events', () => {
         // Nothing bought yet: the Shop orb.
         expect(elId('tut_shop')).toBe('shop-bubble-target');
         expect(elId('tut_foundation')).toBe('shop-bubble-target');
-        expect(elId('tut_explore')).toBe('shop-bubble-target');
     });
 
     it('prefers the Shop card, then the Token on the mat, once they exist', () => {

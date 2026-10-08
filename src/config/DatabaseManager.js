@@ -2,8 +2,6 @@
 // Coordinates all Vite JSON globs for standard game configuration.
 
 export const DatabaseManager = {
-    stationFiles: import.meta.glob('/data/stations.json', { eager: true }),
-
     tokenFilesSingle: import.meta.glob('/data/tokens.json', { eager: true }),
 
     mapFilesSingle: import.meta.glob('/data/maps.json', { eager: true }),

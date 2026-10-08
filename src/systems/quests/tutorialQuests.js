@@ -1,9 +1,8 @@
 // Fantasy Guild - Tutorial Quests Specification
 //
 // The tutorial walks the Token Lifecycle loop: recruit a hero, plant their flag,
-// gather, collect the loot, buy at the Shop, build on a Foundation, craft, farm
-// and explore. Every step is completable in a new game with no dev tools, and
-// every `targetType` is reported by `QuestManager` from an event the engine (or,
+// gather, collect the loot, buy at the Shop, build on a Foundation, craft and farm. Every step is completable in a new game with no dev
+// tools, and every `targetType` is reported by `QuestManager` from an event the engine (or,
 // for `open_bank`, the React layer) really publishes.
 // `QuestTutorialChain.test.js` drives each step through the real systems.
 //
@@ -115,15 +114,6 @@ export const TUTORIAL_QUESTS = [
         instruction: 'A Wheat Field grows Wheat Sprouts that ripen. Harvest Ripe Wheat once.',
         targetType: 'cycle_completed',
         match: { typeId: 'token_ripe_wheat' },
-        requiredCount: 1,
-        rewardItems: reward('item_torch', 1)
-    },
-    {
-        id: 'tut_explore',
-        title: 'Explore a Map',
-        instruction: 'Buy an Oak Forest Map at the Shop. Each exploration uses a cooked Shrimp and a Torch from the Bank.',
-        targetType: 'cycle_completed',
-        match: { skill: 'explore' },
         requiredCount: 1,
         rewardItems: TUTORIAL_REWARD_ITEMS
     }

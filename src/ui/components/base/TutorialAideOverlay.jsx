@@ -83,9 +83,6 @@ export function resolveTutorialTargetElement(questId) {
         case 'tut_wheat': // Harvest Ripe Wheat
             return token('token_ripe_wheat') || token('token_wheat_field') || token('token_farmland') || shopItem('token_farmland');
 
-        case 'tut_explore': // Explore the Oak Forest Map
-            return token('token_oak_forest_map') || shopItem('token_oak_forest_map');
-
         default:
             return null;
     }

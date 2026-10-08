@@ -36,8 +36,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 const SPOT = {
     tree: { x: 300, y: 300 },
     build: { x: 1400, y: 300 },
-    farm: { x: 300, y: 900 },
-    map: { x: 1400, y: 900 }
+    farm: { x: 300, y: 900 }
 };
 
 const onMat = (typeId) => BoardState.tokens().filter(t => t.typeId === typeId);
@@ -171,15 +170,6 @@ describe('⭐ the tutorial chain, step by step, through the real systems (9.5)',
         // 11. Harvest Ripe Wheat: the Field spawns sprouts, which ripen.
         expect(runUntil(() => complete('tut_wheat'), 5 * 60_000)).toBe(true);
         claim('tut_wheat');
-
-        // 12. Explore the Oak Forest Map with a Shrimp and a Torch.
-        give('item_oak_wood', 5);
-        give('item_torch', 2);
-        give('item_shrimp', 1);
-        buyAt('token_oak_forest_map', SPOT.map);
-        Flags.plant(heroId, SPOT.map);
-        expect(runUntil(() => complete('tut_explore'), 2 * 60_000)).toBe(true);
-        claim('tut_explore');
 
         // Every step was walked, in order.
         expect(GameState.state.quests.completedTutorials).toEqual(TUTORIAL_QUESTS.map(t => t.id));
