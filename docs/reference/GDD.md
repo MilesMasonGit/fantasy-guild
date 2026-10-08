@@ -218,17 +218,25 @@ has none yet), melee, magic and commerce have content today.
 - **Promotion is a Token rule**: "Promotes the hero to Fighter." A qualified
   hero trains on the Token for one cycle (30 s default), then a ceremony asks
   Accept / Not yet. *(`BoardPromotion.js`, `PromotionSystem.js`)*
-- **Gate today**: a master class needs its parent's combat and advanced skill
-  at 25. A basic class has **no skill gate yet**: the gate pairs the owner
-  chose (ruling D3: Fighter Mining + Smithing, Ranger Forestry + Crafting,
-  Wizard Alchemy + Cooking, Rogue Fishing + Crafting, at 10) arrive with R2a.
-- **Price today**: each promotion spends one of the Academy's uses (10), so
-  the 10th promotion removes it. Free promotion (ruling D4) and the Mastery
-  rule (ruling D2: an Advanced or Master skill at 99 is never banked) arrive
-  with R2a.
+- **Gate**: a basic class needs two named Starting skills at 10 (ruling D3):
+  Fighter Mining + Smithing, Ranger Forestry + Crafting, Wizard Alchemy +
+  Cooking, Rogue Fishing + Crafting. The pairs are the `gateSkills` of each
+  job in the job table. A master class needs its parent's combat and advanced
+  skill at 25. Re-training passes the same gate as a first promotion, and
+  banked skills count. The Change Job planner shows what is missing
+  ("Needs Mining 4/10, Smithing 0/10").
+- **Price**: free (ruling D4). A Promotes rule costs nothing unless its author
+  sets a price in the CMS cost strip, so an unpriced Academy keeps its uses
+  and never wears out. An authored price is spent on accepting, and a Token
+  that cannot pay does not train.
 - Changing branch banks the skills the new job doesn't use, at their level;
   they return if the hero comes back. The Change Job screen only plans; the
   act happens on the board.
+- **Mastery** (ruling D2): an Advanced or Master skill at level 99 is never
+  banked. It stays on the hero through every later job change, on top of the
+  new class's skills, so a hero can hold more than 13. Combat skills are
+  excluded and bank as usual (a hero fights with exactly one combat skill).
+  The promotion preview lists a mastered skill as kept, not set aside.
 - **Content**: Fighter's Academy (buildable on a Stone Foundation) and Wizard
   Academy (no source found) are the only promotion Tokens. The Ranger and
   Rogue Academies and the eight master-class Tokens are the owner's CMS work
