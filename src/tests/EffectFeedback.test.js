@@ -5,7 +5,11 @@ import { render, cleanup, act } from '@testing-library/react';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { announce } from '../systems/board/EffectFeedback.js';
-import { EffectProcText } from '../ui/components/board/EffectProcText.jsx';
+import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
+import { CALLOUT_MS, MAX_PER_ANCHOR } from '../ui/components/board/callouts.js';
+import './fixtures/testTokens.js';
+import { placeAt } from './fixtures/mat.js';
+import { GameState } from '../state/GameState.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 import { statementsOf, makeStatement, KEYWORD } from '../systems/effects/statements.js';
 
@@ -75,78 +79,71 @@ describe('the popup', () => {
         vi.useRealTimers();
     });
 
-    // The label belongs to one Token, named by instance id (slice 1.6c-2):
-    // the mat has no tiles to sit on.
+    // The callout belongs to one Token, named by instance id (slice 1.6c-2): the mat has no
+    // tiles to sit on.
     const fire = (instanceId, title) => act(() => {
         EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId, title });
     });
 
+    let a;
+    beforeEach(() => {
+        GameState.initNew();
+        a = placeAt('fixture_producer', 600, 500);
+    });
+
     it('renders nothing at all until something fires', () => {
-        const { container } = render(React.createElement(EffectProcText, { instanceId: 'tok_a' }));
+        const { container } = render(React.createElement(CalloutLayer));
         expect(container.innerHTML).toBe('');
     });
 
-    it('shows the title when an effect fires on its Token', () => {
-        const { container } = render(React.createElement(EffectProcText, { instanceId: 'tok_a' }));
-        fire('tok_a','Shrimp Trawler II');
-        expect(container.textContent).toContain('Shrimp Trawler II');
+    it('shows the title as a callout over its Token when an effect fires', () => {
+        const { container } = render(React.createElement(CalloutLayer));
+        fire(a.id, 'Shrimp Trawler II');
+        expect(container.querySelector('[data-callout]').textContent).toBe('Shrimp Trawler II');
     });
 
-    it('ignores an effect firing on a different Token', () => {
-        const { container } = render(React.createElement(EffectProcText, { instanceId: 'tok_a' }));
-        fire('tok_b', 'Somewhere Else');
+    it('ignores an effect firing on a Token that is not on the mat', () => {
+        const { container } = render(React.createElement(CalloutLayer));
+        fire('tok_gone', 'Somewhere Else');
         expect(container.textContent).toBe('');
     });
 
     it('fades away on its own, leaving nothing behind', () => {
-        const { container } = render(React.createElement(EffectProcText, { instanceId: 'tok_a' }));
-        fire('tok_a','Shrimp Trawler');
+        const { container } = render(React.createElement(CalloutLayer));
+        fire(a.id, 'Shrimp Trawler');
         expect(container.textContent).toContain('Shrimp Trawler');
-
-        // Past the label's lifetime (2600ms, matching the CSS animation).
-        act(() => { vi.advanceTimersByTime(3000); });
+        act(() => { vi.advanceTimersByTime(CALLOUT_MS + 100); });
         expect(container.innerHTML).toBe('');
     });
 
     it('stacks two effects firing together as two lines, not one flicker', () => {
-        const { container } = render(React.createElement(EffectProcText, { instanceId: 'tok_a' }));
-        fire('tok_a','Shrimp Trawler');
-        fire('tok_a','Pickaxe');
-        expect(container.textContent).toContain('Shrimp Trawler');
-        expect(container.textContent).toContain('Pickaxe');
+        const { container } = render(React.createElement(CalloutLayer));
+        fire(a.id, 'Shrimp Trawler');
+        fire(a.id, 'Pickaxe');
+        expect(container.querySelectorAll('[data-callout]')).toHaveLength(2);
     });
 
     it('caps how many crowd one Token', () => {
-        const { container } = render(React.createElement(EffectProcText, { instanceId: 'tok_a' }));
-        for (let i = 1; i <= 8; i++) fire('tok_a', `Effect ${i}`);
-        expect(container.querySelectorAll('span')).toHaveLength(4);
+        const { container } = render(React.createElement(CalloutLayer));
+        for (let i = 1; i <= 8; i++) fire(a.id, `Effect ${i}`);
+        expect(container.querySelectorAll('[data-callout]')).toHaveLength(MAX_PER_ANCHOR);
         // The oldest go: they are the ones already fading.
         expect(container.textContent).not.toContain('Effect 1');
         expect(container.textContent).toContain('Effect 8');
     });
 
-    it('has nothing to click — it is news, not a task', () => {
-        const { container } = render(React.createElement(EffectProcText, { instanceId: 'tok_a' }));
-        fire('tok_a','Shrimp Trawler');
-
-        // Nothing interactive, and nothing reachable by keyboard: the label is
-        // not a control, and a player who misses one loses nothing — the rule is
-        // still written on the Token.
+    it('has nothing to click: it is news, not a task', () => {
+        const { container } = render(React.createElement(CalloutLayer));
+        fire(a.id, 'Shrimp Trawler');
         expect(container.querySelectorAll('button, a, input, [role], [tabindex]')).toHaveLength(0);
-
-        // `pointer-events: none` lives on this class in `components.css` rather
-        // than in a utility, so clicks pass through to the Token underneath. The
-        // class is what the test can see; jsdom does not load the stylesheet.
-        expect(container.firstChild.className).toBe('effect-proc-layer');
+        expect(container.firstChild.className).toContain('pointer-events-none');
     });
 
-    it('unsubscribes on unmount, so a fading label cannot outlive its Token', () => {
-        const { container, unmount } = render(React.createElement(EffectProcText, { instanceId: 'tok_a' }));
-        fire('tok_a','Shrimp Trawler');
+    it('unsubscribes on unmount, so a fading callout cannot outlive the layer', () => {
+        const { container, unmount } = render(React.createElement(CalloutLayer));
+        fire(a.id, 'Shrimp Trawler');
         expect(container.textContent).toContain('Shrimp Trawler');
         unmount();
-        // A timer firing into a dead component would warn; advancing past the
-        // lifetime with none pending is the assertion.
-        expect(() => act(() => { vi.advanceTimersByTime(3000); })).not.toThrow();
+        expect(() => act(() => { vi.advanceTimersByTime(CALLOUT_MS + 100); })).not.toThrow();
     });
 });

@@ -3,7 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { GameState } from '../../state/GameState.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
-import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { artRadiusOf } from '../../config/matGeometry.js';
 import * as BoardState from './BoardState.js';
@@ -15,8 +15,6 @@ import * as BoardCombat from './BoardCombat.js';
 import * as BoardPromotion from './BoardPromotion.js';
 import * as FlagRules from './FlagRules.js';
 import { ensureFlagColour } from './FlagColours.js';
-import * as HeroManager from '../hero/HeroManager.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as PromotionSystem from '../hero/PromotionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -25,7 +23,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  *
  * The saved half (where each flag stands) and the runtime claim records live in `BoardState`; each
  * hero's rules live on the hero (`FlagRules`). This file is the behaviour: which Token a flag
- * claims, when it lets go, and what it says about Tokens it passed over.
+ * claims, when it lets go, and which Tokens it passed over.
  *
  * A flag is a point on the mat and the global flag radius (Mat Tuner). A flag has no skill of its
  * own: the hero works every skill they hold, plus combat, shaped by their rules (allowed, priority
@@ -52,8 +50,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * Keeping a claim (phase 1) is sticky: a claim is kept while its Token is workable, wherever that
  * Token now is, so a moved Token carries its hero, even outside the radius. It is let go when the
  * Token stops being eligible, or the hero can no longer work it (skill, or its rule switched off),
- * or, for a fixable problem (inputs, charges, no recipe), only once another Token in range can run,
- * with one notification.
+ * or, for a fixable problem (inputs, charges, no recipe), only once another Token in range can run.
  *
  * Better work appears: a hero never leaves mid-cycle for a higher priority. When the hero's cycle
  * completes (a kill, for a fight), the next pass looks again, and they switch only to a strictly
@@ -386,37 +383,6 @@ export function hasFixableSkip(instance) {
     return skipsOf(instance?.id).some(s => FIXABLE.has(s.reason));
 }
 
-const LEAVE_WHY = {
-    [ALERT.INPUTS]: 'it is out of materials',
-    [ALERT.CHARGES]: 'it has too few charges for a cycle',
-    [ALERT.NO_RECIPE]: 'its recipe is missing a Token beside it',
-    [ALERT.CHOOSE_BUILD]: 'nothing has been chosen to build on it',
-    [ALERT.CHOOSE_RECIPE]: 'no recipe has been chosen for it'
-};
-
-/**
- * One warning when a hero goes elsewhere because a Token has a fixable problem: once per hero,
- * Token and reason, until that hero completes a cycle there or re-plants.
- */
-function notifyLeft(r, heroId, instance, reason) {
-    if (!instance?.id || !FIXABLE.has(reason)) return;
-    const key = `${heroId}|${instance.id}|${reason}`;
-    if (r.notified.has(key)) return;
-    r.notified.add(key);
-    const hero = HeroManager.getHero(heroId);
-    NotificationSystem.warning(
-        `${hero?.name || 'A hero'} went elsewhere: ${tokenName(instance.typeId) || 'a Token'} can't run — ${LEAVE_WHY[reason]}.`,
-        { category: 'hero', aggregationKey: `flag-leave:${heroId}:${instance.id}:${reason}` }
-    );
-}
-
-function forgetNotices(r, heroId, instanceId = null) {
-    const prefix = instanceId ? `${heroId}|${instanceId}|` : `${heroId}|`;
-    for (const key of [...r.notified]) {
-        if (key.startsWith(prefix)) r.notified.delete(key);
-    }
-}
-
 /**
  * Walk a flag's candidates in order and return the first it can claim, with every skip recorded on
  * the way (see the file comment for the order).
@@ -515,9 +481,6 @@ function choose(r, heroId) {
     claimToken(heroId, pick.instance);
     r.nextTryAt.delete(heroId);
 
-    // Went past a nearer Token the player could fix: say so, once.
-    const passed = skips.find(s => FIXABLE.has(s.reason));
-    if (passed) notifyLeft(r, heroId, BoardState.getTokenById(passed.instanceId), passed.reason);
 
     announceMoved(heroId);
     return true;
@@ -525,16 +488,13 @@ function choose(r, heroId) {
 
 /**
  * The better-work switch: let go of the held Token (already at zero, a cycle just ended) and claim
- * `pick`. Skips are recorded and the fixable-Token notice fires for one passed over, exactly as
- * when choosing.
+ * `pick`. Skips are recorded, exactly as when choosing.
  */
 function switchTo(r, heroId, pick, skips) {
     release(heroId);
     recordSkips(r, heroId, skips);
     claimToken(heroId, pick.instance);
     r.nextTryAt.delete(heroId);
-    const passed = skips.find(s => FIXABLE.has(s.reason));
-    if (passed) notifyLeft(r, heroId, BoardState.getTokenById(passed.instanceId), passed.reason);
     announceMoved(heroId);
 }
 
@@ -621,7 +581,6 @@ function keepOrRelease(r, heroId, dirty) {
                 return;
             }
             release(heroId);
-            notifyLeft(r, heroId, instance, alert);
             // The Token left behind keeps its red badge.
             recordSkips(r, heroId, [{ instanceId: instance.id, reason: alert }, ...skips]);
             claimToken(heroId, pick.instance);
@@ -796,7 +755,6 @@ export function plant(heroId, point, { pin = false } = {}) {
     try {
         release(heroId);
         clearSkips(r, heroId);
-        forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
         r.cycleEnded.delete(heroId);
         BoardState.setFlag(heroId, {
@@ -945,7 +903,6 @@ export function furl(heroId, reason = 'recall') {
         release(heroId);
         BoardCombat.endFightOfHero(heroId);
         clearSkips(r, heroId);
-        forgetNotices(r, heroId);
         r.nextTryAt.delete(heroId);
         BoardState.setFlag(heroId, null);
         // The flag is gone at once; the hero walks, or limps, home.
@@ -1100,7 +1057,6 @@ function cycleCompleted(heroId) {
     const r = rt();
     const claim = heroId ? BoardState.claimOfHero(heroId) : null;
     if (!r || !claim) return;
-    forgetNotices(r, heroId, claim.instanceId);
     r.cycleEnded.add(heroId);
 }
 
@@ -1126,7 +1082,6 @@ export function reset() {
     r.skips.clear();
     r.skipsByHero.clear();
     r.nextTryAt.clear();
-    r.notified.clear();
     r.cycleEnded.clear();
     r.ambushes.clear();
     r.bodies.clear();

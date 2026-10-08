@@ -21,7 +21,6 @@ import { matW, matH } from '../config/matGeometry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
-import { spawnerAlertData } from '../ui/components/board/TokenEventAlert.jsx';
 
 /**
  * Token Lifecycle slice 3.3 — **spawners** (roadmap §3.1).
@@ -603,8 +602,6 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
         give(SEED, 1);
         run(100);
         expect(SpawnerSystem.spawnerAlertOf(orchard.id)).toEqual({ alert: ALERT.SPAWN_NEEDS_ITEM, needs: [TWINE] });
-        expect(spawnerAlertData(SpawnerSystem.spawnerAlertOf(orchard.id)))
-            .toMatchObject({ severity: 'yellow', title: 'Needs Fixture Twine to spawn' });
     });
 
     it('no_room: up once an attempt finds nowhere to land, down the tick room appears', () => {
@@ -625,8 +622,6 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
         expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();   // not due yet: no attempt, no alert
         TimedChanges.tick(15000);
         expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NO_ROOM, needs: [] });
-        expect(spawnerAlertData(SpawnerSystem.spawnerAlertOf(forest.id)))
-            .toMatchObject({ severity: 'red', title: 'No room to spawn' });
 
         for (const b of blockers) {
             if (Math.hypot(b.x - 200, b.y - 200) < 400) BoardState.removeToken(b.id);

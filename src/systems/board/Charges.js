@@ -122,7 +122,7 @@ export function canFireStatement(instance, statement) {
  * re-announced, and their flag chooses again on its next pass. Every event names the Token by
  * `instanceId` and, because it has just left the mat, by the point `x`, `y` it stood on.
  */
-export function destroyToken(instance, { heroId = null } = {}) {
+export function destroyToken(instance, { heroId = null, exhaustedBy = heroId } = {}) {
     const typeId = instance?.typeId || null;
     const name = getTokenType(typeId)?.name || tokenName(typeId) || typeId || 'Token';
     const instanceId = instance?.id ?? null;
@@ -145,7 +145,7 @@ export function destroyToken(instance, { heroId = null } = {}) {
     // ⚠️ The instance rides along, and it has to: the Token is already off the mat, so a
     // self-scoped reaction to this moment (`SELF_TOKEN_DEPLETED`) could not otherwise find the
     // Token that is reacting. `heroId` is whoever spent the last charge, when a hero did.
-    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId, ...at, typeId, instance, heroId });
+    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId, ...at, typeId, instance, heroId, exhaustedBy });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId, ...at, typeId: null });
     if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
     // `points`: rebuild around the spot the Token left.

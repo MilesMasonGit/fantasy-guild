@@ -161,7 +161,8 @@ export const UI_EVENTS = Object.freeze({
     /**
      * A message on one Token that the engine did not raise — the Guild Hall
      * dragged off the mat. Same payload as the board's `TILE_EVENT_ALERT`
-     * (`{ instanceId, severity, type, title, message, … }`).
+     * (`{ instanceId, severity, type, title, message, … }`); the mat says its `title` as a
+     * callout over that Token.
      */
     UI_TOKEN_ALERT: 'ui:token_alert',
     /** Payload: `{ tab }`. */

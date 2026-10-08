@@ -163,25 +163,25 @@ describe('mat overlays', () => {
         expect(hover()).toBeNull();
     });
 
-    it('alerts and speech layers on the mat', () => {
+    it('alerts (callouts) and speech layers on the mat', () => {
         GameState.initNew();
         InventoryManager.init();
         SpriteLayer.init();
-        const alert = {
-            instanceId: 'gone_1', x: 400, y: 400, severity: 'red', type: 'token_exhausted',
-            name: 'Oak', message: 'Token Exhausted: Oak'
+        const popup = {
+            x: 400, y: 400, severity: 'disallow', type: 'drop_rejected',
+            name: 'Oak', title: 'Drop Rejected: Oak', rulesText: 'No room', message: 'Drop Rejected: Oak'
         };
         const on = mount(h(MatBoard));
-        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert); });
-        expect(on.container.querySelector('[data-mat-point-alert]')).not.toBeNull();
+        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, popup); });
+        expect(on.container.querySelector('[data-callout]')).not.toBeNull();
         expect(on.container.querySelector('[data-hero-bubbles]')).not.toBeNull();
         cleanup();
 
         setDrawn('alerts', false);
         setDrawn('speech', false);
         const off = mount(h(MatBoard));
-        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert); });
-        expect(off.container.querySelector('[data-mat-point-alert]')).toBeNull();
+        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, popup); });
+        expect(off.container.querySelector('[data-callout]')).toBeNull();
         expect(off.container.querySelector('[data-hero-bubbles]')).toBeNull();
     });
 });

@@ -432,7 +432,6 @@ function runtimeOf(b) {
             skips: new Map(),
             skipsByHero: new Map(),
             nextTryAt: new Map(),
-            notified: new Set(),
             // Heroes who just finished a cycle, to look for better work.
             cycleEnded: new Set(),
             // Heroes a hostile enemy attacked, heroId → that enemy's instance id: they fight back

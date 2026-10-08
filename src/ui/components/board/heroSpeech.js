@@ -4,8 +4,8 @@
  * Two kinds of line share one stack:
  * * a **blocked** line is a live fact (`heroBubbles.js`): it stays for as long as the block
  * does and is never stored here;
- * * a **moment** is an event that happened (arriving at a job, going idle, a level-up) and
- * lives for `MOMENT_TTL_MS`, then goes by itself.
+ * * a **moment** is an event that happened (going idle, a level-up, a Token the hero used up)
+ * and lives for `MOMENT_TTL_MS`, then goes by itself.
  * Everything here is pure, so the rules (cap, replace, expire, order) are tested without a
  * screen.
  */
@@ -16,15 +16,29 @@ export const MAX_BUBBLES = 3;
 /** How long a moment stays up. */
 export const MOMENT_TTL_MS = 5000;
 
+/** How long "{token} Depleted" stays up: a hero chopping tree after tree says it often. */
+export const DEPLETED_TTL_MS = 3000;
+
 /**
  * Add a moment. One line per `key`: a repeat (the same skill levelling again)
- * replaces its earlier line rather than stacking a second copy. Oldest first.
+ * replaces its earlier line rather than stacking a second copy. Oldest first. `from` (a
+ * level-up's starting level) rides along.
  *
  * @returns a new list; the input is untouched
  */
-export function addMoment(list, { key, text }, now, ttlMs = MOMENT_TTL_MS) {
+export function addMoment(list, { key, text, from }, now, ttlMs = MOMENT_TTL_MS) {
     const kept = list.filter(m => m.key !== key && m.until > now);
-    return [...kept, { key, text, until: now + ttlMs }];
+    return [...kept, { key, text, from, until: now + ttlMs }];
+}
+
+/**
+ * The level a hero's level-up bubble for this skill counts its gain from: where the bubble still
+ * up started, so quick level-ups coalesce into one bubble with the total; else the level this
+ * one started at.
+ */
+export function levelUpFrom(list, key, oldLevel, now) {
+    const live = list.find(m => m.key === key && m.until > now && Number.isFinite(m.from));
+    return live ? live.from : oldLevel;
 }
 
 /** The moments that have not yet expired. */
@@ -50,7 +64,10 @@ export function stackOf(moments, blocked, now) {
 export const momentText = {
     arrived: (token) => `Working at ${token}.`,
     idle: () => 'No work in range.',
-    levelUp: (skill, level) => `${skill} is now level ${level}.`,
+    // `gained`: levels since this hero's last level-up bubble for the skill.
+    levelUp: (skill, level, gained) => `Leveled up ${skill} to ${level}! (+${gained})`,
+    // Said by the hero whose work spent the Token's last charge.
+    depleted: (token) => `${token} Depleted`,
     // No wording of its own: the blocked sentence for its reason, already built by
     // `heroBubbles.pinRefusedLineFor`, word for word.
     pinRefused: (line) => line
@@ -65,6 +82,7 @@ export const momentText = {
  * * `idle`: kept: a hero with nothing to do is worth knowing, but it also fires whenever the
  * last Token in range runs out.
  * * `levelUp`: kept (a notable event).
+ * * `depleted`: kept: the hero who used a Token up says so.
  * * `pinRefused`: kept: a flag dropped on a Token its hero can't work plants as an area flag,
  * and the hero says why, once.
  */
@@ -72,6 +90,7 @@ export const MOMENT_SPOKEN = Object.freeze({
     arrived: false,
     idle: true,
     levelUp: true,
+    depleted: true,
     pinRefused: true
 });
 

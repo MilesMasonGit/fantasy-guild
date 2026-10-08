@@ -32,16 +32,18 @@ describe('A hero’s stack of speech bubbles', () => {
         expect(stackOf([], null, 0)).toEqual([]);
     });
 
-    it('words the three moments plainly', () => {
+    it('words the moments plainly', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
         expect(momentText.idle()).toBe('No work in range.');
-        expect(momentText.levelUp('Mining', 4)).toBe('Mining is now level 4.');
+        expect(momentText.levelUp('Mining', 25, 4)).toBe('Leveled up Mining to 25! (+4)');
+        expect(momentText.depleted('Oak Tree')).toBe('Oak Tree Depleted');
     });
 
     it('says only unusual moments: arriving at a job is routine and silent (FB-21)', () => {
         expect(speaksMoment('arrived')).toBe(false);
         expect(speaksMoment('idle')).toBe(true);
         expect(speaksMoment('levelUp')).toBe(true);
+        expect(speaksMoment('depleted')).toBe(true);
         expect(speaksMoment('something_new')).toBe(false);
         expect(Object.keys(MOMENT_SPOKEN).sort()).toEqual(Object.keys(momentText).sort());
     });

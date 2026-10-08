@@ -8,7 +8,7 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
-import { ALERT_HINT, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
+import { SKIP_HINT } from '../ui/components/board/boardConstants.js';
 import { InventoryFormatter } from '../systems/inventory/InventoryFormatter.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ITEMS } from '../config/registries/itemRegistry.js';
@@ -60,10 +60,9 @@ describe('CR2-060: every alert value comes from one enum', () => {
         expect(Object.values(ALERT)).not.toContain('unstocked');
     });
 
-    it('every ALERT value has a hint and a label', () => {
+    it('every ALERT value has a skip hint', () => {
         for (const value of Object.values(ALERT)) {
-            expect(ALERT_HINT[value], `hint for ${value}`).toBeTruthy();
-            expect(ALERT_LABEL[value], `label for ${value}`).toBeTruthy();
+            expect(SKIP_HINT[value], `hint for ${value}`).toBeTruthy();
         }
     });
 

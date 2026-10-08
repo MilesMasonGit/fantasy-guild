@@ -112,7 +112,8 @@ export const BOARD_EVENTS = {
 
     /**
      * A Token ran out of charges and left the board. Payload: `{ instanceId, x, y, typeId,
-     * instance?, heroId? }`
+     * instance?, heroId?, exhaustedBy? }`; `exhaustedBy` is the hero whose work spent the last
+     * charge (the one who says "{name} Depleted"), null when no hero did.
      */
     TOKEN_DEPLETED: 'board:token_depleted',
 
@@ -138,11 +139,11 @@ export const BOARD_EVENTS = {
     SPAWNER_ALERT_CHANGED: 'board:spawner_alert_changed',
 
     /**
-     * A Token's green notice went up or was taken down early (`TokenNotices`): `{ instanceId }`.
-     * The notice itself is read from `TokenNotices.noticeOf`, because a freshly spawned Token is
-     * not drawn yet when its notice is raised.
+     * A spawner (or the Guild Hall, for a quest) put a new Token on the mat. Payload: `{
+     * spawnerId, instanceId, typeId, name }`: the callout "! Spawned {name}" is said from the
+     * spawner. Not published while the time bank replays time away.
      */
-    NOTICE_CHANGED: 'board:notice_changed',
+    TOKEN_SPAWNED: 'board:token_spawned',
 
     /** Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat', heroId, typeId }` */
     COMBAT_RESOLVED: 'board:combat_resolved',
@@ -205,11 +206,9 @@ export const BOARD_EVENTS = {
      * A named effect just did something on a Token — `{ instanceId, title }`.
      *
      * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
-     * act on (no inputs, no charges, a refused placement): it draws a persistent
-     * icon, waits to be read, and can be dismissed. An effect firing is neither
-     * a problem nor persistent — it is a thing that happened, said once and
-     * gone. Mixing them would spam the alert channel and change what its icon
-     * means.
+     * act on (no inputs, no charges, a refused placement). An effect firing is
+     * neither a problem nor persistent: it is a thing that happened, said once as
+     * a quick callout and gone. Mixing them would spam the alert channel.
      */
     EFFECT_FIRED: 'board:effect_fired',
 

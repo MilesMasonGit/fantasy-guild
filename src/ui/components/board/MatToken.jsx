@@ -1,7 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { artRadiusOf, isSmallToken } from '../../../config/matGeometry.js';
-import { ALERT_HINT } from './boardConstants.js';
 import { tokenSkipLines } from './flagText.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
@@ -20,8 +19,6 @@ import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
 import { HEALTH_BAR_LIFT_U } from './healthBar.js';
 import { SMALL_OVERHANG_U, spawnerRing, questRing } from './ringRow.js';
-import { TokenCentreAlert } from './TokenEventAlert.jsx';
-import { EffectProcText } from './EffectProcText.jsx';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { gearStateOf } from './centreAlert.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
@@ -104,7 +101,6 @@ export const MatToken = React.memo(function MatToken({
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
     const bubblesDrawn = useDrawn('bubbles');
-    const alertsDrawn = useDrawn('alerts');
     const tooltipsDrawn = useDrawn('tooltips');
     const walkDrawn = useDrawn('walkDraw');
     // The radius and the art both come from the type (footprint and `artSize` alike), so a
@@ -261,7 +257,6 @@ export const MatToken = React.memo(function MatToken({
         return () => setTutorialAideTarget(null);
     }, [aideStep]);
 
-    const alertHint = alert ? ALERT_HINT[alert] : null;
     const hoverTitle = [
         detail?.disallowed ? 'Heroes may not work this' : null,
         ...(isHovered ? skipLines : [])
@@ -515,17 +510,6 @@ export const MatToken = React.memo(function MatToken({
                     dragProps={drag.handleProps}
                 />}
 
-                {/**
-                 * The one mark at the centre: a spawner's or a worked Token's live problem,
-                 * news of a problem, or a green notice that fades.
-                 */}
-                {alertsDrawn && <TokenCentreAlert
-                    instanceId={id}
-                    isSpawner={!!detail?.isSpawner}
-                    token={token}
-                    isHovered={isHovered}
-                />}
-                <EffectProcText instanceId={id} />
             </div>
 
             {tooltipsDrawn && showTrickle && !hidden && <TrickleTooltip instanceId={id} />}

@@ -148,9 +148,9 @@ async function main() {
                     const c = await page.evaluate('window.__dragKit.startOverlays()');
                     await sleep(800);
                     meta.overlays = { ...c, after: await page.evaluate('window.__dragKit.overlayCounts()') };
-                    console.log(`\nPass: overlays (speech bubbles re-raised every 2.5 s on every hero; ${meta.overlays.after.alerts} alert icons on the mat)`);
+                    console.log(`\nPass: overlays (speech bubbles re-raised every 2.5 s on every hero; ${meta.overlays.after.alerts} callouts on the mat)`);
                 } else {
-                    console.log('\nPass: plain (S2 as it is, alerts included)');
+                    console.log('\nPass: plain (S2 as it is)');
                 }
                 for (const kind of kinds) {
                     await arrange(page, kind.needs);

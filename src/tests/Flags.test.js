@@ -279,7 +279,7 @@ describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
 });
 
 describe('fixable problems (FP-69, FPP-1, FPP-2, FPP-5)', () => {
-    it('one warning for passing a Token out of materials, even when the hero passes it again, and it keeps its red mark', () => {
+    it('passing a Token out of materials raises no notification (a hero going elsewhere is silent), and the Token keeps its red outline alert', () => {
         const hungry = put(14, 'ft_hungry');
         put(15, 'fixture_producer', 1);    // 160 u, runs dry after one cycle...
         put(16, 'fixture_producer');       // 320 u, so the flag chooses again and passes the mill a second time
@@ -289,7 +289,7 @@ describe('fixable problems (FP-69, FPP-1, FPP-2, FPP-5)', () => {
         run(15000);                        // 150 ticks, one cycle (~9.6s) and a re-choose
 
         expect(workTileOf('h1')).toBe(16);
-        expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
         expect(hungry.alert).toBe(ALERT.INPUTS);
     });
 
@@ -310,7 +310,7 @@ describe('fixable problems (FP-69, FPP-1, FPP-2, FPP-5)', () => {
         run(1500);
 
         expect(workTileOf('h1')).toBe(16);
-        expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
         expect(hungry.cycleElapsedMs).toBe(0);
         expect(hungry.alert).toBe(ALERT.INPUTS);
     });

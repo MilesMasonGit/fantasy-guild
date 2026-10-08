@@ -64,7 +64,7 @@ export function installDragKit() {
 
     // ---- Naming what is under the pointer ----
     const IDENT = ['data-token-id', 'data-board-hero', 'data-flag', 'data-flag-gear', 'data-dock-hero', 'data-shop-row',
-        'data-bin-slot', 'data-discard-bin', 'data-ring-row', 'data-ring', 'data-token-notice', 'data-alert-kind', 'data-hero-bubbles',
+        'data-bin-slot', 'data-discard-bin', 'data-ring-row', 'data-ring', 'data-callouts', 'data-callout', 'data-hero-bubbles',
         'data-perf-hud', 'data-mat-top-bar', 'data-bottom-hero-dock', 'data-shop-drawer', 'data-board-origin', 'data-dnd-region'];
     function reactNames(el) {
         const key = el && Object.keys(el).find(k => k.startsWith('__reactFiber$'));
@@ -417,12 +417,12 @@ export function installDragKit() {
         kit.overlayTimer = setInterval(say, 2500);
         return {
             bubbles: document.querySelectorAll('[data-hero-bubbles] *').length,
-            alerts: document.querySelectorAll('[data-token-notice]').length
+            alerts: document.querySelectorAll('[data-callout]').length
         };
     };
     kit.overlayCounts = () => ({
         bubbles: document.querySelector('[data-hero-bubbles]')?.childElementCount ?? 0,
-        alerts: document.querySelectorAll('[data-token-notice]').length
+        alerts: document.querySelectorAll('[data-callout]').length
     });
     kit.stopOverlays = () => { if (kit.overlayTimer) clearInterval(kit.overlayTimer); kit.overlayTimer = null; kit.lastBurstAt = null; };
 

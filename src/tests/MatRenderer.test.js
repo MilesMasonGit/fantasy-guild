@@ -277,7 +277,7 @@ describe('where a hero stands (Hero Movement M1, HM-2, FP-84)', () => {
 });
 
 describe('news reaches the Token it is about, and no other', () => {
-    it('an alert marks its own Token and leaves its neighbour alone', async () => {
+    it('an alert draws no mark on any Token', async () => {
         const a = placeAt('fixture_producer', 500, 500);
         const b = placeAt('fixture_producer', 900, 500);
         const { container } = mount(h(MatBoard));
@@ -289,11 +289,12 @@ describe('news reaches the Token it is about, and no other', () => {
             });
         });
 
-        expect(overlayOf(container, a.id).querySelector('img[alt="Token Exhausted: Forest"]')).not.toBeNull();
+        expect(container.querySelector('img[alt="Token Exhausted: Forest"]')).toBeNull();
+        expect(overlayOf(container, a.id).querySelector('img')?.getAttribute('src') || '').not.toContain('ui_alert');
         expect(overlayOf(container, b.id).querySelector('img[alt="Token Exhausted: Forest"]')).toBeNull();
     });
 
-    it('an effect firing says its name on its own Token only', async () => {
+    it('an effect firing says its name as a callout over its own Token only', async () => {
         const a = placeAt('fixture_producer', 500, 500);
         const b = placeAt('fixture_producer', 900, 500);
         const { container } = mount(h(MatBoard));
@@ -302,7 +303,9 @@ describe('news reaches the Token it is about, and no other', () => {
             EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: a.id, title: 'Shrimp Trawler II' });
         });
 
-        expect(overlayOf(container, a.id).textContent).toContain('Shrimp Trawler II');
+        const callouts = [...container.querySelectorAll('[data-callout]')];
+        expect(callouts.map(c => c.textContent)).toEqual(['Shrimp Trawler II']);
+        expect(callouts[0].parentElement.style.transform).toContain('translate(500px');
         expect(overlayOf(container, b.id).textContent).not.toContain('Shrimp Trawler II');
     });
 });

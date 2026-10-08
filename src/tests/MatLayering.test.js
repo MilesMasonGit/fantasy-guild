@@ -174,11 +174,11 @@ describe('heroZ — where each hero goes', () => {
         expect(heroZ({ heroId: 'x', state: 'walking', moving: false }, order)).toBe(MAT_Z.WAITING_HERO);
     });
 
-    it('everything above the Tokens keeps its place: point alerts, rings, loot, bubbles', () => {
-        expect(MAT_Z.WALKING_HERO).toBeLessThan(MAT_Z.POINT_ALERT);
-        expect(MAT_Z.POINT_ALERT).toBeLessThan(MAT_Z.RINGS);
+    it('everything above the Tokens keeps its place: rings, loot, callouts, bubbles', () => {
+        expect(MAT_Z.WALKING_HERO).toBeLessThan(MAT_Z.RINGS);
         expect(MAT_Z.RINGS).toBeLessThan(MAT_Z.LOOT);
-        expect(MAT_Z.LOOT).toBeLessThan(MAT_Z.HERO_BUBBLE);
+        expect(MAT_Z.LOOT).toBeLessThan(MAT_Z.CALLOUT);
+        expect(MAT_Z.CALLOUT).toBeLessThan(MAT_Z.HERO_BUBBLE);
     });
 });
 

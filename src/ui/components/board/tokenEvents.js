@@ -13,8 +13,8 @@ import { EventBus } from '../../../systems/core/EventBus.js';
  * wakes only the Token it is about. The last listener to leave closes the bus subscription,
  * which keeps 'no subscriptions left behind on unmount' true.
  * ⚠️ A payload with no `instanceId` (a spot that ran dry, a refused drop) reaches nobody here
- * by design: it belongs to no drawn Token. Those are drawn at their mat point by
- * `MatPointAlerts`, which listens to the bus itself.
+ * by design: it belongs to no drawn Token. Those are said at their mat point by
+ * `CalloutLayer`, which listens to the bus itself.
  */
 
 /** `field + event` → `{ unsub, handlers: Map<key, Set<handler>> }`. */
