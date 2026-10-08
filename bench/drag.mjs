@@ -51,13 +51,22 @@ function gitInfo() {
  * the browser hit at the press (read after the hover, since hovering can change what is on top)
  * and what was in the hand just before the release.
  */
-async function realDrag(page, from, to) {
+async function realDrag(page, from, to, via = null) {
     await page.mouse('mouseMoved', from.x, from.y);
     await sleep(HOVER_MS);
     const under = await page.evaluate(`window.__dragKit.describeAt(${from.x}, ${from.y})`);
     await page.evaluate('window.__dragKit.resetProbe()');
     await page.mouse('mousePressed', from.x, from.y, { button: 'left', buttons: 1, clickCount: 1 });
     await sleep(STEP_MS);
+    if (via) {
+        // A target inside a pop-out sidebar: go to its edge first, wait for it to open, then on in.
+        for (const p of dragPath(from, via)) {
+            await page.mouse('mouseMoved', p.x, p.y, { button: 'left', buttons: 1 });
+            await sleep(STEP_MS);
+        }
+        await sleep(250);
+        from = via;
+    }
     for (const p of dragPath(from, to)) {
         await page.mouse('mouseMoved', p.x, p.y, { button: 'left', buttons: 1 });
         await sleep(STEP_MS);
@@ -91,9 +100,18 @@ async function arrange(page, needs) {
 }
 
 async function attempt(page, kind) {
+    // The pointer rests on the empty top of the sidebar strip between drags: a drop on the bin leaves it on the open bin
+    // sidebar, which would cover Tokens at the screen edge while the next one is picked.
+    await page.mouse('mouseMoved', 1586, 12);
+    await sleep(250);
     const pick = await page.evaluate(`window.__dragKit.pick.${kind.id}()`);
     if (pick.skip) return { skipped: pick.skip };
-    const { under, inHand, underTarget } = await realDrag(page, pick.source, pick.target);
+    if (pick.hoverFirst) {
+        // A source inside a pop-out sidebar: open the sidebar with the pointer first.
+        await page.mouse('mouseMoved', pick.hoverFirst.x, pick.hoverFirst.y);
+        await sleep(300);
+    }
+    const { under, inHand, underTarget } = await realDrag(page, pick.source, pick.target, pick.via);
     let probe = await page.evaluate('window.__dragKit.readProbe()');
     let stuck = false;
     if (probe.stillDragging) {

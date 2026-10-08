@@ -214,7 +214,7 @@ export function installDragKit() {
      * Anything else on top (a ring, an alert, a bubble, a flag) is kept: that is what the bench
      * is looking for.
      */
-    const tokenPress = (id) => {
+    const tokenPress = (id, { clearOfHeroes = false } = {}) => {
         const el = document.querySelector(`[data-token-art][data-token-id="${id}"]`);
         const c = visibleCentre(el);
         if (!c) return null;
@@ -223,7 +223,15 @@ export function installDragKit() {
         const pts = [c];
         for (let k = 0; k < 8; k++) pts.push({ x: Math.round(c.x + Math.cos(k * Math.PI / 4) * rad * 0.45), y: Math.round(c.y + Math.sin(k * Math.PI / 4) * rad * 0.45) });
         for (const p of pts) {
-            const art = document.elementFromPoint(p.x, p.y)?.closest?.('[data-token-art]');
+            // The game grabs the hovered Token: the one whose centre is nearest the pointer, which
+            // it raises to the front. Where art boxes overlap that can differ from the Token
+            // drawn on top before the pointer arrives, so a point only counts if it is this one's.
+            if (G.Flags.tokenAtPoint(kit.screenToMat(p))?.id !== id) continue;
+            const top = document.elementFromPoint(p.x, p.y);
+            // `clearOfHeroes`: for kinds testing what happens AFTER the press (the bin), where
+            // a hero standing on the Token is not what is being measured.
+            if (clearOfHeroes && top?.closest?.('[data-board-hero]')) continue;
+            const art = top?.closest?.('[data-token-art]');
             if (!art || art === el) return p;
         }
         return null;
@@ -333,10 +341,12 @@ export function installDragKit() {
             const list = draggableTokens().filter(t => G.DiscardBin.canBin(t.id).success);
             if (!list.length) return { skip: 'no Token the bin takes' };
             const t = pickRandom(list);
-            const at = tokenPress(t.id);
+            const at = tokenPress(t.id, { clearOfHeroes: true });
             const bin = visibleCentre(document.querySelector('[data-discard-bin]'));
             if (!at || !bin) return { skip: 'Token or bin off screen' };
-            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}` }, target: bin, expect: { kind: 'binned', id: t.id } };
+            // The bin is a sidebar that opens as a carried Token nears its tab: go to the tab first.
+            const via = visibleCentre(document.querySelector('[data-sidebar="bin"] [data-sidebar-tab]'));
+            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}` }, target: bin, via, expect: { kind: 'binned', id: t.id } };
         },
         binToMat() {
             if (!G.BoardState.binTokens().length) {
@@ -354,7 +364,12 @@ export function installDragKit() {
             if (!at) return { skip: 'bin slot not drawn' };
             const to = kit.freeSpot();
             if (!to) return { skip: 'no free spot' };
-            return { source: { ...at, what: `bin slot ${inst.typeId} ${inst.id}`, hand: `bin ${inst.id}` }, target: to.screen, expect: { kind: 'unbinned', id: inst.id, mat: to.mat } };
+            // The bin is a sidebar that pops out on hover: the bench hovers its tab first, as a hand does.
+            return {
+                source: { ...at, what: `bin slot ${inst.typeId} ${inst.id}`, hand: `bin ${inst.id}` },
+                target: to.screen, hoverFirst: visibleCentre(document.querySelector('[data-sidebar="bin"] [data-sidebar-tab]')),
+                expect: { kind: 'unbinned', id: inst.id, mat: to.mat }
+            };
         }
     };
 

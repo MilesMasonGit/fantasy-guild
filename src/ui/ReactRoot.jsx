@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FlagRulesPanel } from './components/drawer/FlagRulesPanel.jsx';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -33,8 +31,7 @@ import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
 import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
 import { ErrorBoundary } from './components/base/ErrorBoundary.jsx';
-import ToastContainer from './components/base/ToastContainer.jsx';
-import DiscardBinPanel from './components/board/DiscardBinPanel.jsx';
+import { NotificationSidebars } from './components/board/PopOutSidebars.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
 import PlaymatTuner from './components/PlaymatTuner.jsx';
 import MatTuner from './components/MatTuner.jsx';
@@ -59,78 +56,6 @@ import HeroEditModal from './modals/HeroEditModal.jsx';
 import JobChangeModal from './modals/JobChangeModal.jsx';
 import PromotionCeremonyModal from './modals/PromotionCeremonyModal.jsx';
 import { ENGINE_EVENTS, ORPHAN_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
-
-/**
- * The notifications column. It sits beside the nav, so it mirrors with the bubble menu when
- * that is flipped to the right, rather than swapping to the far side.
- * ⚠️ It reserves its width whether or not anything is in it. A column that only appeared when
- * a toast arrived would shove the board sideways every time the game said something, which is
- * worse than the space it costs.
- */
-export const NotificationColumn = ({ menuRight = false, flagRules = null }) => {
-    const [notificationsHidden, setNotificationsHidden] = React.useState(false);
-    const toastsDrawn = useDrawn('notifications');
-    const binDrawn = useDrawn('bin');
-    const slideFrom = menuRight ? 40 : -40;
-
-    return (
-        <aside
-            // Gives way on a narrow window so the mat keeps a readable size; floored at `Toast`'s min-width.
-            style={{ width: columnWidthCss(NOTIFICATION_COLUMN) }}
-            className={cn(
-                "shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto transition-[width] duration-150 relative z-10 select-none",
-                menuRight ? "pr-8 pl-0" : "pl-8 pr-0"
-            )}
-        >
-            <div
-                className="w-full relative shrink-0 flex flex-col justify-between"
-                style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
-            >
-                {/**
-                 * A hero's flag rules: a narrow panel over this column, so the board stays in
-                 * view. A dedicated panel rather than the Bank drawer, which spans the board
-                 * too.
-                 */}
-                <AnimatePresence>
-                    {flagRules?.heroId && (
-                        <motion.div
-                            key="flag-rules"
-                            initial={{ x: slideFrom, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: slideFrom, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                            className="absolute inset-0 z-20"
-                        >
-                            <FlagRulesPanel heroId={flagRules.heroId} onClose={flagRules.close} />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                <div className="flex-1 min-h-0 flex flex-col">
-                    <button
-                        type="button"
-                        onClick={() => setNotificationsHidden(h => !h)}
-                        className="w-full text-center py-2 text-sm md:text-base font-bold text-gi-text hover:text-gi-primary border-b border-gi-border/30 transition-colors cursor-pointer select-none"
-                    >
-                        {notificationsHidden ? 'Show Notifications' : 'Notifications'}
-                    </button>
-                    {!notificationsHidden && toastsDrawn && (
-                        <div className="flex-1 min-h-0 overflow-y-auto gi-scrollbar">
-                            <ToastContainer />
-                        </div>
-                    )}
-                </div>
-
-                {/**
-                 * Bottom-most: the discard bin. Fixed size at the foot of the column;
-                 * notifications above take whatever is left.
-                 */}
-                <div className="shrink-0 pt-2 border-t border-gi-border/30">
-                    {binDrawn && <DiscardBinPanel />}
-                </div>
-            </div>
-        </aside>
-    );
-};
 
 /**
  * ReactRoot: the entry point for the React UI layer. Manages the top-level layout, provides
@@ -341,7 +266,7 @@ export const ReactRoot = ({ engine }) => {
                                         </ErrorBoundary>
                                     </aside>
                                 ) : (
-                                    <NotificationColumn menuRight flagRules={ui.flagRules} />
+                                    <NotificationSidebars menuRight flagRules={ui.flagRules} />
                                 )
                             )
                         )}
@@ -465,7 +390,7 @@ export const ReactRoot = ({ engine }) => {
                                         </ErrorBoundary>
                                     </aside>
                                 ) : (
-                                    <NotificationColumn flagRules={ui.flagRules} />
+                                    <NotificationSidebars flagRules={ui.flagRules} />
                                 )
                             )
                         )}

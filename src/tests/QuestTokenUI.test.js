@@ -20,7 +20,7 @@ import { questNeedLine } from '../ui/components/board/QuestTooltip.jsx';
 import {
     activeTutorialQuest, TUTORIAL_AIDE_EVENTS
 } from '../ui/components/base/TutorialAideOverlay.jsx';
-import { NotificationColumn } from '../ui/ReactRoot.jsx';
+import { NotificationSidebars } from '../ui/components/board/PopOutSidebars.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -248,7 +248,7 @@ describe('MatToken stays cheap (B6.2)', () => {
 
 describe('the notification column (B6.2)', () => {
     it('has Notifications and the bin, and no Quests section', () => {
-        const { container } = mount(h(NotificationColumn));
+        const { container } = mount(h(NotificationSidebars));
         expect(container.textContent).toContain('Notifications');
         expect(container.textContent).not.toMatch(/Quests/);
         expect(container.querySelector('[data-quest-id]')).toBeNull();
