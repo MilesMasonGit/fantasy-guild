@@ -4,6 +4,7 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A closed hero sheet no longer blocks drops on the mat.** The bottom hero sheet stayed in place invisibly after closing, so its equipment slots kept refusing Tokens and flags dropped over its area; it now disappears completely once its closing animation ends.
 - **Tests follow the owner's content cuts (2026-10-07).** With Copper Rubble and every Map deleted in
   the CMS, the tests that relied on them were updated: the Oak Forest Map's chain test removed, 8
   golden render cases for deleted Tokens dropped, the first-Map rule skipped while no Maps ship.
