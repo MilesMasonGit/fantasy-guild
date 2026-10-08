@@ -103,6 +103,7 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | U4 Sidebars | 2026-10-08 | 56.1 → 55.8 | 19.7 → 20.41 | No change. The wider mat crosses the 2× art step at the bench's 1600×1000 (owner keeps 2×). Drag bench after the grab-by-circle and bin fixes (plain / overlays): flag → mat 94 / 72 %, Token → mat 92 / 100 %, all else 100 %. |
 | U5 Shop layout and groups | 2026-10-08 | 52.1 → 53.5 | 21.61 → 21.30 | No change (Shop closed in S2). Shop row → mat 100 % in both drag passes. |
 | U6 Top bar, Token Summary, Upkeep | 2026-10-08 | 55.4 → 46.7 / 60.3 | 19.5 → 23.5 / 17.6 | Two after-runs disagree; read as noise (the summary does nothing per frame while shut). Bench boards lift the new 80-Token cap so they keep measuring the same load. |
+| U7 Token inspection | 2026-10-08 | 50.9 → 57.3 | 22.1 → 19.6 | No change (popup closed in S2; the before run was noisy, 47–66 fps). |
 
 ## Drag baseline (`npm run bench:drag`, 50 drags per kind)
 
