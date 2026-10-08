@@ -43,6 +43,16 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
   *after-crunch for the code* · plan early so the owner can draw the frames;
   belongs on the same owner art list as the terrain art.
 
+- **Effects speak through bubbles**: effects and rules firing show up through
+  the speech bubble system. Principle: the board is **largely static, with pops
+  of activity**, so the player is never oversaturated but always has the next
+  thing to look at. · a guiding principle as much as a feature; once
+  interviewed it may belong in UI_STYLE.md or the GDD. Builds on brief 10's
+  bubbles and callouts.
+- **Show what can move**: after the Atlas, most Tokens are static, so mark the
+  movable ones: a different outline, or only movable Tokens get the bob/lift.
+  *after-crunch* · needs the Atlas (brief 70); Foundations are permanent there.
+
 ### Minor changes
 
 - **Widen the playmat.** *quick* · ⚠️ overlaps T-097 (mat size becomes a fixed
@@ -65,7 +75,10 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
 - **Combat system, built out properly**: today it's "a glorified slap fight".
   *after-crunch* · feature-sized · GDD §6 has the current rules (four combat
   skills, one per promoted hero); brief 20's class rework decides who holds
-  which.
+  which. Owner's direction: **keep it simple**; try **Hearts instead of HP
+  points**; **low numbers**, so one or two extra damage is a noticeable boost.
+  ⚠️ today's GDD has HP from 50 at level 1 to ~3,700 at 99, so this reworks
+  the whole HP and damage scale.
 
 - **Events system**: random events that keep the player engaged, e.g. a
   **shooting star** that lands and can be mined, a visit from a **frog
@@ -98,6 +111,11 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
   ⚠️ reorders brief 80 · its research phase (what of the old terrain system
   survives, the look questions) is read-only and could run early to produce an
   art list.
+
+- **Faster drawing for static Tokens**: if a Token can't move, it may be drawn
+  more cheaply. Explore when the time is right. *after-crunch* · brief 60
+  (deep optimization) runs before the Atlas, so this fits brief 90 (the
+  Performance Envelope) or a follow-up after it.
 
 ### Post-Atlas content
 
