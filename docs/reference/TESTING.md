@@ -6,8 +6,8 @@ Nothing merges to `main` until all of these hold:
 
 1. **Tests**: `npm test` shows no new failures. Content-drift failures are
    marked expected (`it.fails`); today no plain red test remains,
-   so anything red is new. Run it in the **main folder**: 19 CMS-importing test files can't load
-   in a worktree (T-066). The suite takes ~2–3 minutes; read its result with
+   so anything red is new. It runs in a worktree too, once
+   `node_modules` **and** `cms/node_modules` are linked (Worktrees, below). The suite takes ~2–3 minutes; read its result with
    `npx vitest run --reporter=dot 2>&1 | tail -30` rather than the full output.
 2. **Bench**: `npm run bench -- --compare` exits **0**.
    - Exit 1 = `REGRESSED` (slower). Timing is noisy under machine load; re-run
@@ -101,12 +101,16 @@ dead), doesn't know the CMS imports seven game modules, and the barrel
 `registries/index.js` hides orphans. Before deleting something as dead, grep
 for it three ways (import, string id, CMS).
 
-## Worktrees (spikes and measurements)
+## Worktrees (parallel code phases, spikes and measurements)
 
-`git worktree add --detach …`; link `node_modules` and `cms/node_modules` as
-junctions, and remove the junctions with `cmd //c rmdir` **before** removing
-the worktree (otherwise deleting the worktree deletes the real packages). A
-second dev server needs its own port and Vite `cacheDir`.
+`git worktree add --detach …` (or `-b <branch>`); link `node_modules` and
+`cms/node_modules` as junctions (`cmd //c "mklink /J <wt>
+ode_modules node_modules"`
+and the same for `cms`), and remove the junctions with `cmd //c rmdir` **before**
+removing the worktree (otherwise deleting the worktree deletes the real
+packages). With both links the full suite passes in a worktree (checked
+2026-10-08). A second dev server needs its own port and Vite `cacheDir`.
+Phases that touch the same files stay sequential.
 - Keep the worktree **path short** (e.g. `.claude/worktrees/a1`): Windows
   path limits break checkouts of the deeply nested audio files.
 - In a worktree, run **simple single git commands** (`git -C <path> …`): no

@@ -24,8 +24,8 @@ done, and which tier should build it.
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then
 offline progress. Deep optimization → Atlas → terrain → Envelope (2026-10-06).
-Code changes run one at a time in the checkout; a brief's read-only research
-may overlap another's build.
+Code phases on different files may run in parallel in worktrees (`CLAUDE.md`);
+a brief's read-only research may overlap another's build.
 
 ## Rules every brief follows
 
@@ -54,9 +54,8 @@ may overlap another's build.
 - **Content is the owner's**: anything in `data/` is authored in the CMS by
   the owner. Briefs that need content end with a short "owner CMS to-do"
   list; never hand-edit `data/`.
-- **Tiers**: runner (Haiku) for runs and mechanical edits; builder (Sonnet)
-  for written-down designs; engineer (Opus) for engine work, performance and
-  new designs into code. The director verifies every claim before merging.
+- **Tiers**: as `CLAUDE.md` says (2026-10-08: runner Sonnet, builder Opus,
+  engineer Opus extra-high). The director verifies every claim before merging.
 - **Bookkeeping**: close tickets into `docs/archive/tickets_done.md`, log
   changes in `CHANGELOG.md`, update `docs/active/NOW.md` at the end of a
   session.

@@ -10,11 +10,10 @@ changelog and `docs/archive/`).*
    (UI rework) is done and merged; its owner taste notes are in
    [design_pass_notes.md](design_pass_notes.md) — read the relevant area before
    touching it, don't act on it mid-crunch.
-2. **Handoff (2026-10-08):** the owner is on the Max plan and a Fable session
-   now directs. Before brief 20, the new director should propose (owner
-   approves) updated tiers in CLAUDE.md for the bigger budget, and consider
-   **T-066 first**: 19 CMS-importing test files can't run in a git worktree,
-   which is what blocks parallel code work (today one code change at a time).
+2. **Max plan (2026-10-08):** a Fable session directs; tiers raised (runner
+   Sonnet, builder Opus, engineer Opus extra-high, in `CLAUDE.md`). T-066 is
+   closed: the full suite runs in a worktree with both `node_modules` linked,
+   so code phases on different files may now run in parallel (TESTING.md).
 3. **Owner CMS to-do**: Foundation **Tier** on each Foundation (Wood: Oak 1,
    Maple 2, Ebony 3; Stone: Stone 1, Marble 2, Basalt 3; author the missing
    Tokens first). **Shop group** labels: "Wood Foundation", "Stone
