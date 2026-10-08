@@ -114,14 +114,14 @@ describe('asking', () => {
 });
 
 describe('accepting', () => {
-    it('promotes, spends the Token, and says so', () => {
+    it('promotes, keeps the Academy’s uses (an unpriced promotion is free), and says so', () => {
         const hero = qualifiedHero();
         render(React.createElement(PromotionCeremonyModal, { offer: standingOffer(hero), onClose: () => {} }));
 
         fireEvent.click(button('Become Fighter'));
 
         expect(hero.jobId).toBe('fighter');
-        expect(tokenAt(TILE).usesRemaining).toBe(1);
+        expect(tokenAt(TILE).usesRemaining).toBe(2);
         expect(document.body.textContent).toContain('Promotion complete');
         expect(document.body.textContent).toContain('Ada is now a Fighter');
     });

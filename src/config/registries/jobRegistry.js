@@ -34,17 +34,19 @@ import {
  * sheet cannot silently drift out of agreement with its own parent. **Re-parent
  * a job and its deltas recompute themselves**.
  *
- * ## ⚠️ The promotion gate reads the LISTS
- * `getPromotionGateSkills` asks for the listed skills a job shares with its
- * parent's list. A basic class lists only its combat and advanced skill, which
- * the Recruit does not list, so a basic class has no skill gate; a master class
- * gates on its parent's combat and advanced skill.
+ * ## ⚠️ The promotion gate
+ * A job with `gateSkills` gates on exactly those: each basic class names two
+ * Starting skills, because its own list shares nothing with the Recruit's.
+ * Otherwise `getPromotionGateSkills` takes the listed skills a job shares with
+ * its parent's list, so a master class gates on its parent's combat and
+ * advanced skill.
  *
  * ## ⚠️ Everything else is derived
  * Which skill is the combat one, which is the master skill, which are Starting —
  * none of that is declared. It is read from each skill's `layer` in
- * `skillRegistry.js`. **Nothing here may hardcode a skill id outside a `skills`
- * array**, so moving a skill between layers needs no edit in this file at all.
+ * `skillRegistry.js`. **Nothing here may hardcode a skill id outside a
+ * `skills` or `gateSkills` array**, so moving a skill between layers needs no
+ * edit in this file at all.
  * `JobTree.test.js` asserts the structural rules, so the tree can be
  * rearranged freely and the tests will say if a rearrangement broke something.
  */
@@ -87,24 +89,28 @@ export const JOBS = {
         id: 'fighter', name: 'Fighter', tier: JOB_TIERS.BASIC, parent: 'recruit',
         description: 'A frontline soldier who leads from the front.',
         icon: '⚔️',
+        gateSkills: ['mining', 'smithing'],
         skills: ['melee', 'leadership']
     },
     ranger: {
         id: 'ranger', name: 'Ranger', tier: JOB_TIERS.BASIC, parent: 'recruit',
         description: 'A wilderness scout, deadly at distance, who makes their own arrows.',
         icon: '🏹',
+        gateSkills: ['forestry', 'crafting'],
         skills: ['ranged', 'fletching']
     },
     wizard: {
         id: 'wizard', name: 'Wizard', tier: JOB_TIERS.BASIC, parent: 'recruit',
         description: 'An arcane researcher who binds power into things.',
         icon: '🔮',
+        gateSkills: ['alchemy', 'cooking'],
         skills: ['magic', 'enchanting']
     },
     rogue: {
         id: 'rogue', name: 'Rogue', tier: JOB_TIERS.BASIC, parent: 'recruit',
         description: 'An infiltrator who moves through shadows and picks locks.',
         icon: '🗝️',
+        gateSkills: ['fishing', 'crafting'],
         skills: ['stealth', 'crime']
     },
 
@@ -263,9 +269,10 @@ export function getPromotionCost(jobId) {
 }
 
 /**
- * The skills a promotion gates on: those the job's list shares with its
- * parent's list. To become a Paladin you need the Melee and Leadership a
- * Paladin keeps.
+ * The skills a promotion gates on: the job's `gateSkills` when it names
+ * them (a Fighter needs Mining and Smithing), otherwise those the job's list
+ * shares with its parent's list (a Paladin needs the Melee and Leadership it
+ * keeps).
  *
  * ⚠️ Deliberately diffs the LISTED skills, not the held sheets. Every
  * sheet holds all nine Starting skills, so diffing sheets would gate every
@@ -274,6 +281,7 @@ export function getPromotionCost(jobId) {
 export function getPromotionGateSkills(jobId) {
     const job = JOBS[jobId];
     if (!job?.parent) return [];
+    if (job.gateSkills) return [...job.gateSkills];
     const parent = new Set(getJobSkills(job.parent));
     return getJobSkills(jobId).filter(id => parent.has(id));
 }

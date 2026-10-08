@@ -90,15 +90,50 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
         expect(PromotionSystem.canPromote(hero.id, 'paladin').ok).toBe(true);
     });
 
-    it('a basic class has no skill gate until its gate skills are authored', () => {
-        // ⚠️ The Recruit lists only Starting skills and a basic class only its
-        // class skills, so the two lists share nothing to gate on.
+    it('each basic class gates on its two named Starting skills', () => {
+        expect(getPromotionGateSkills('fighter')).toEqual(['mining', 'smithing']);
+        expect(getPromotionGateSkills('ranger')).toEqual(['forestry', 'crafting']);
+        expect(getPromotionGateSkills('wizard')).toEqual(['alchemy', 'cooking']);
+        expect(getPromotionGateSkills('rogue')).toEqual(['fishing', 'crafting']);
+        expect(getPromotionCost('fighter').skillLevel).toBe(10);
+    });
+
+    it('a Recruit cannot become a Fighter until Mining and Smithing reach 10', () => {
         const hero = generateHero();
         HeroManager.addHero(hero);
-        for (const jobId of ['fighter', 'ranger', 'wizard', 'rogue']) {
-            expect(getPromotionGateSkills(jobId), jobId).toEqual([]);
-            expect(PromotionSystem.canPromote(hero.id, jobId).ok, jobId).toBe(true);
+        for (const id of STARTING_SKILL_IDS) hero.skills[id].level = 50;
+        hero.skills.mining.level = 9;
+        hero.skills.smithing.level = 3;
+
+        const verdict = PromotionSystem.canPromote(hero.id, 'fighter');
+        expect(verdict.ok).toBe(false);
+        expect(verdict.reason).toBe(PromotionSystem.REFUSAL.SKILL_TOO_LOW);
+        expect(verdict.missing.map(m => m.skillId)).toEqual(['mining', 'smithing']);
+        // What the Change Job planner prints.
+        expect(verdict.detail).toBe('Needs Mining 9/10, Smithing 3/10');
+
+        hero.skills.mining.level = 10;
+        expect(PromotionSystem.canPromote(hero.id, 'fighter').missing.map(m => m.skillId))
+            .toEqual(['smithing']);
+        hero.skills.smithing.level = 10;
+        expect(PromotionSystem.canPromote(hero.id, 'fighter').ok).toBe(true);
+    });
+
+    it('a Recruit who qualifies for one basic class does not qualify for the others', () => {
+        const hero = generateHero();
+        HeroManager.addHero(hero);
+        for (const id of STARTING_SKILL_IDS) hero.skills[id].level = 1;
+        qualify(hero, 'wizard');
+
+        expect(PromotionSystem.canPromote(hero.id, 'wizard').ok).toBe(true);
+        for (const jobId of ['fighter', 'ranger', 'rogue']) {
+            expect(PromotionSystem.canPromote(hero.id, jobId).ok, jobId).toBe(false);
         }
+    });
+
+    it('a master class gates on its parent\'s combat and advanced skill at 25', () => {
+        expect(getPromotionGateSkills('paladin').sort()).toEqual(['leadership', 'melee']);
+        expect(getPromotionCost('paladin').skillLevel).toBe(25);
     });
 
     /**
@@ -267,6 +302,7 @@ describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
         hero.skills.leadership.level = leadership;
         hero.skills.faith.level = faith;
         hero.skills.enchanting.level = 9;
+        qualify(hero, 'wizard');
         const result = PromotionSystem.promote(hero.id, 'wizard');
         return { hero, result };
     }
@@ -321,6 +357,65 @@ describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
 
         expect(reloaded.jobId).toBe('wizard');
         expect(reloaded.bankedSkills.leadership.level).toBe(13);
+    });
+});
+
+describe('⭐ Mastery: a class skill at 99 is never banked again', () => {
+    /** A Paladin with chosen levels, re-trained to Wizard. */
+    function masteredPaladinToWizard(levels) {
+        const hero = freshFighter();
+        qualify(hero, 'paladin');
+        expect(PromotionSystem.promote(hero.id, 'paladin').success).toBe(true);
+        for (const [id, level] of Object.entries(levels)) hero.skills[id] = { level, xp: level * 1000 };
+        qualify(hero, 'wizard');
+        const preview = PromotionSystem.previewPromotion(hero.id, 'wizard');
+        const result = PromotionSystem.promote(hero.id, 'wizard');
+        expect(result.success).toBe(true);
+        return { hero, result, preview };
+    }
+
+    it('an advanced or master skill at 99 is never banked on re-training', () => {
+        const { hero, result } = masteredPaladinToWizard({ leadership: 99, faith: 99 });
+
+        expect(result.banked).toEqual(['melee']);
+        expect(hero.skills.leadership).toEqual({ level: 99, xp: 99000 });
+        expect(hero.skills.faith).toEqual({ level: 99, xp: 99000 });
+        expect(hero.bankedSkills.leadership).toBeUndefined();
+        expect(hero.bankedSkills.faith).toBeUndefined();
+        // On top of the Wizard's own sheet, so more than 11.
+        for (const id of getJobSheet('wizard')) expect(hero.skills[id], id).toBeDefined();
+        expect(Object.keys(hero.skills)).toHaveLength(getJobSheet('wizard').length + 2);
+    });
+
+    it('a mastered skill stays through every later job change', () => {
+        const { hero } = masteredPaladinToWizard({ faith: 99 });
+        qualify(hero, 'rogue');
+        expect(PromotionSystem.promote(hero.id, 'rogue').success).toBe(true);
+        expect(hero.skills.faith.level).toBe(99);
+        expect(hero.skills.magic, 'the Wizard combat skill banks as usual').toBeUndefined();
+    });
+
+    it('a combat skill at 99 is banked as usual', () => {
+        const { hero, result } = masteredPaladinToWizard({ melee: 99 });
+
+        expect(result.banked).toContain('melee');
+        expect(hero.skills.melee).toBeUndefined();
+        expect(hero.bankedSkills.melee.level).toBe(99);
+    });
+
+    it('a skill at 98 is banked as usual', () => {
+        const { hero, result } = masteredPaladinToWizard({ faith: 98, leadership: 98 });
+
+        expect([...result.banked].sort()).toEqual(['faith', 'leadership', 'melee']);
+        expect(hero.skills.faith).toBeUndefined();
+        expect(hero.bankedSkills.faith.level).toBe(98);
+    });
+
+    it('the preview does not list a mastered skill as lost', () => {
+        const { preview } = masteredPaladinToWizard({ faith: 99, melee: 99 });
+
+        expect(preview.losing.map(l => l.skillId).sort()).toEqual(['leadership', 'melee']);
+        expect(preview.keeping).toContain('faith');
     });
 });
 
@@ -435,6 +530,7 @@ describe('Preview shows the trade before the player commits', () => {
     it('marks an arriving skill as restored, with its real level', () => {
         const hero = freshFighter();
         hero.skills.leadership.level = 31;
+        qualify(hero, 'wizard');
         PromotionSystem.promote(hero.id, 'wizard');   // banks Leadership at 31
 
         const preview = PromotionSystem.previewPromotion(hero.id, 'fighter');

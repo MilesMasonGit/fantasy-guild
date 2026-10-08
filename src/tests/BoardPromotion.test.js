@@ -46,19 +46,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 const TILE = 24;
 const CYCLE_MS = 20000;
 
-/** A master-class training yard, so the skill gate can be refused on a Token. */
-registerTokenTypes({
-    fixture_promotion_master: {
-        id: 'fixture_promotion_master', name: 'Fixture Chapel', tokenType: 'promotion',
-        rarity: 'rare', theme: 'fixture', uses: 1, sprite: 'skill_leadership',
-        requiresHero: true,
-        statements: [
-            { id: 'stm_fixture_promotes_master', keyword: 'promotes', payload: { jobId: 'paladin' }, chargeDelta: 0 }
-        ],
-        config: { skill: '', skillRequired: 1, cycleTimeMs: 20000, xp: 0, inputs: [], outputs: [] }
-    }
-});
-
 /** A hero who qualifies for Fighter — every fixture Token's job. */
 function makeQualified(id = 'hero_1') {
     const hero = generateHero({ name: id });
@@ -72,13 +59,9 @@ function makeQualified(id = 'hero_1') {
     return hero;
 }
 
-/**
- * A Fighter who does not qualify for the Paladin `fixture_promotion_master`
- * trains: trained in nothing. A master class, because a basic class has no
- * skill gate (the Recruit's list shares nothing with it).
- */
+/** A Recruit who does not qualify for Fighter: Mining and Smithing below 10. */
 function makeUnqualified(id = 'hero_low') {
-    const hero = generateHero({ name: id, jobId: 'fighter' });
+    const hero = generateHero({ name: id });
     hero.id = id;
     hero.status = 'idle';
     Object.values(hero.skills).forEach(s => { s.level = 1; });
@@ -210,7 +193,7 @@ describe('Training happens first, and the offer comes after (PR-5)', () => {
 describe('It refuses BEFORE the work, never after (PR-8)', () => {
     it('does not train a hero who fails the skill gate, and says so on the Token', () => {
         const hero = makeUnqualified();
-        const instance = setup(hero, { typeId: 'fixture_promotion_master' });
+        const instance = setup(hero);
 
         const result = BoardPromotion.tickToken(instance, CYCLE_MS, hero.id);
 
@@ -220,7 +203,7 @@ describe('It refuses BEFORE the work, never after (PR-8)', () => {
 
     it('never offers to a hero who cannot take the job', () => {
         const hero = makeUnqualified();
-        setup(hero, { typeId: 'fixture_promotion_master' });
+        setup(hero);
 
         expect(trainToOffer(hero.id)).toHaveLength(0);
     });
@@ -251,11 +234,24 @@ describe('It refuses BEFORE the work, never after (PR-8)', () => {
 });
 
 describe('⭐ the price is the rule’s own charge cost (PR-6)', () => {
-    it('⚠️ still costs ONE charge in the migrated shape — chargeDelta 0 with no moment authored', () => {
-        // Both shipped Academies were built this way by P2. Reading that 0 as
-        // authored would make them promote heroes for free, forever.
-        expect(chargeDeltaOf({ keyword: 'promotes', chargeDelta: 0 })).toBe(-1);
-        expect(BoardPromotion.priceOf({ typeId: 'fixture_promotion' })).toBe(1);
+    it('a Promotes rule with no authored price costs nothing', () => {
+        // Both shipped Academies carry chargeDelta 0 with no moment: the
+        // unpriced shape. Promotion is free unless an author sets a price.
+        expect(chargeDeltaOf({ keyword: 'promotes', chargeDelta: 0 })).toBe(0);
+        expect(chargeDeltaOf({ keyword: 'promotes' })).toBe(0);
+        expect(BoardPromotion.priceOf({ typeId: 'fixture_promotion' })).toBe(0);
+    });
+
+    it('an unpriced Academy keeps its uses, even its last one', () => {
+        const hero = makeQualified();
+        setup(hero, { uses: 1 });
+        trainToOffer(hero.id);
+
+        const result = BoardPromotion.accept(idAt(TILE));
+
+        expect(result).toMatchObject({ success: true, spent: 0 });
+        expect(hero.jobId).toBe('fighter');
+        expect(tokenAt(TILE).usesRemaining).toBe(1);
     });
 
     it('spends an authored price', () => {
@@ -306,9 +302,9 @@ describe('Accepting is the only thing that costs anything', () => {
         expect(Object.keys(hero.skills).sort()).toEqual([...getJobSheet('fighter')].sort());
     });
 
-    it('spends the Token — that is the whole price', () => {
+    it('spends the authored price from the Token — that is the whole price', () => {
         const hero = makeQualified();
-        setup(hero, { uses: 2 });
+        setup(hero, { typeId: 'fixture_promotion_costly', uses: 3 });
         trainToOffer(hero.id);
 
         BoardPromotion.accept(idAt(TILE));
@@ -330,7 +326,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
     it('removes a Token whose last charge it just spent, and says so', () => {
         const hero = makeQualified();
-        setup(hero, { uses: 1 });
+        setup(hero, { typeId: 'fixture_promotion_costly', uses: 2 });
         trainToOffer(hero.id);
         const depleted = [];
         const unsub = EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, d => depleted.push(d));
@@ -341,7 +337,7 @@ describe('Accepting is the only thing that costs anything', () => {
 
         expect(tokenAt(TILE)).toBeNull();
         expect(depleted).toHaveLength(1);
-        expect(depleted[0]).toMatchObject({ instanceId: academyId, typeId: 'fixture_promotion', heroId: hero.id });
+        expect(depleted[0]).toMatchObject({ instanceId: academyId, typeId: 'fixture_promotion_costly', heroId: hero.id });
     });
 
     it('leaves the hero standing where they were, not sent to the Dock', () => {

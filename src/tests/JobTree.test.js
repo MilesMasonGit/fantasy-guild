@@ -232,6 +232,15 @@ describe('The tree is connected and complete', () => {
         }
     });
 
+    it('a basic class gates on the two Starting skills its table entry names', () => {
+        for (const jobId of BASIC) {
+            const gate = getPromotionGateSkills(jobId);
+            expect(gate, jobId).toEqual(getJob(jobId).gateSkills);
+            expect(gate, jobId).toHaveLength(2);
+            for (const id of gate) expect(SKILLS[id].layer, `${jobId} gates on "${id}"`).toBe(SKILL_LAYERS.STARTING);
+        }
+    });
+
     it('a master class gates on its parent\'s combat and advanced skill', () => {
         for (const jobId of MASTER) {
             const parentId = getJob(jobId).parent;
