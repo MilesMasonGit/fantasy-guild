@@ -1,4 +1,4 @@
-// spawners and the Guild Hall trickle
+// spawners
 
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
@@ -11,7 +11,6 @@ import * as EffectActions from './EffectActions.js';
 // ⚠️ TimedChanges imports this module for its handler table; importing TimedChanges back would be a
 // cycle, so this takes the leaf `weightedPick` instead.
 import { pickWeighted } from './weightedPick.js';
-import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
 import { TimeBankManager } from '../core/TimeBankManager.js';
@@ -25,10 +24,6 @@ import { TimeBankManager } from '../core/TimeBankManager.js';
  * `fire` is {@link attemptSpawn}, which returns the SAME instance after a spawn (the clock starts
  * its next lap, and a big tick can spawn several times) or null when blocked (the clock is held
  * full and the attempt is retried next tick, never looped within one).
- *
- * The trickle rides the same tick. It has one clock per line (`clocks.trickle[i]`), which the
- * handler table's single key per clock cannot hold, so `TimedChanges.tick` calls {@link
- * advanceTrickle} for every Token beside the handler table.
  *
  * One attempt, in order:
  * 1. Cap: the family's live count must be below its cap.
@@ -400,49 +395,4 @@ export function syncAlerts() {
 export function resetAlerts() {
     alerts.clear();
     noRoom.clear();
-}
-
-/**
- * Advance a Token's `trickle` lines by `delta`, paying each line's items as its clock comes round,
- * no hero needed. Worked out in closed form (whole laps of `everyMs`), so one big tick grants
- * exactly what many small ones do.
- *
- * The pay drops as loot beside the Token, as a gathered output does (`BoardRunner` →
- * `SpriteLayer.addSprite` with the Token's id): it floats on the mat, is collected on hover or by
- * auto-collect, and flies to the Hall. Nothing reaches the Bank until it is collected, so a full
- * Bank simply leaves it on the floor; `collectSprite` banks through `InventoryManager` and never
- * destroys what does not fit.
- *
- * In bulk (a time-bank replay or a long `advanceTime`), each line drops ONE sprite per call holding
- * every lap it completed (`laps × quantity`), and `addSprite` folds same-item drops near an
- * existing stack into that stack, as for every other source; the floor's stack cap still applies.
- *
- * Lines with no item, no positive quantity or no positive `everyMs` are skipped.
- *
- * @returns {number} how many items were granted (tests)
- */
-export function advanceTrickle(instance, delta) {
-    const lines = getTokenType(instance?.typeId)?.trickle;
-    if (!Array.isArray(lines) || !lines.length || !(delta > 0)) return 0;
-
-    const clocks = instance.clocks && typeof instance.clocks === 'object' ? instance.clocks : (instance.clocks = {});
-    if (!Array.isArray(clocks.trickle)) clocks.trickle = [];
-
-    let granted = 0;
-    lines.forEach((line, i) => {
-        const everyMs = Number(line?.everyMs);
-        const quantity = Math.floor(Number(line?.quantity));
-        if (!line?.itemId || !(everyMs > 0) || !(quantity > 0)) return;
-
-        const clock = (Number(clocks.trickle[i]) || 0) + delta;
-        const laps = Math.floor(clock / everyMs);
-        clocks.trickle[i] = clock - laps * everyMs;
-        if (laps > 0) {
-            SpriteLayer.addSprite('item', line.itemId, laps * quantity, instance.id);
-            granted += laps * quantity;
-        }
-    });
-    // Unused slots are written as 0, so the saved array is dense.
-    for (let i = 0; i < lines.length; i++) if (!Number.isFinite(clocks.trickle[i])) clocks.trickle[i] = 0;
-    return granted;
 }

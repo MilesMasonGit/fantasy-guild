@@ -163,6 +163,13 @@ export function foundationTierMeets(def, recipe) {
 export const TURN_DEFAULTS = Object.freeze({ everyMs: 60000, chance: 30 });
 
 /**
+ * Passive Production's one timer: every line of a Token's `trickle` block (and the Wishing Well's
+ * water on the Guild Hall) pays its quantity once per lap. A line's own `everyMs`, from before the
+ * shared timer, is ignored.
+ */
+export const PASSIVE_PRODUCTION_MS = 5 * 60 * 1000;
+
+/**
  * The roll cycle and chance of a `turns` block, defaults filled in:
  * `{ everyMs, chance }`, `chance` a percent. A non-number or non-positive
  * `everyMs` reads as the default; `chance` is clamped to 0–100.

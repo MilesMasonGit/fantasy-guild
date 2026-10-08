@@ -507,7 +507,7 @@ export function claimQuest(instanceId) {
         InventoryManager.removeItem(quest.itemId, quest.requiredCount);
     }
 
-    // The reward floats beside the quest, as the Hall's trickle does: collected
+    // The reward floats beside the quest, as the Hall's Passive Production does: collected
     // on hover, banked through InventoryManager. Dropped before the Token
     // leaves, since the drop is placed at its point.
     const rewardItems = questReward(quest);

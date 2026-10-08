@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lifecycleLines, formatDuration, TONE, trickleHoverLines } from '../ui/components/drawer/lifecycleLines.js';
+import { lifecycleLines, formatDuration, TONE, passiveHoverLines } from '../ui/components/drawer/lifecycleLines.js';
 
 /**
  * Token Lifecycle slice 8.1 — the inspection panel's lifecycle lines. The
@@ -30,10 +30,19 @@ const TYPES = {
     crab: { name: 'Crab Coast' },
     foundation: { name: 'Stone Foundation', foundation: { kind: 'stone', skill: 'construction' } },
     furnace: { name: 'Furnace' },
-    hall: { name: 'Guild Hall', trickle: [{ itemId: 'item_oak_seed', quantity: 2, everyMs: 300000 }] }
+    hall: { name: 'Guild Hall' }
 };
 
-const ITEMS = { item_oak_seed: 'Oak Seed' };
+const ITEMS = { item_oak_seed: 'Oak Seed', item_water: 'Water' };
+
+/** The Hall's Passive Production as `PassiveProduction` would report it; `well` adds the Wishing Well's Water. */
+const hallPassive = (well = 0) => (i) => (i.typeId !== 'hall' ? { lines: [], nextInMs: 300000 } : {
+    lines: [
+        { itemId: 'item_oak_seed', quantity: 2, source: 'token' },
+        ...(well ? [{ itemId: 'item_water', quantity: 10 * well, source: 'wishing_well' }] : [])
+    ],
+    nextInMs: 300000 - (i.clocks?.passiveMs || 0)
+});
 const FURNACE_RECIPE = { id: 'build_furnace', durationMs: 30000, outputs: [{ tokenId: 'furnace', quantity: 1 }] };
 
 function src(overrides = {}) {
@@ -44,6 +53,7 @@ function src(overrides = {}) {
         spawnerStatus: () => null,
         selectedRecipe: () => null,
         originOf: (i) => (i.origin === 'spawned' ? 'spawned' : 'placed'),
+        passive: hallPassive(),
         dev: false,
         ...overrides
     };
@@ -184,9 +194,11 @@ describe('lifecycleLines', () => {
         });
     });
 
-    it('a trickle: what it pays, how often, and when next', () => {
-        const lines = lifecycleLines({ id: 'h', typeId: 'hall', clocks: { trickle: [60000] } }, src());
-        expect(lines).toEqual([{ label: 'Pays', value: '2 Oak Seed every 5 min (next in 4 min)', tone: TONE.GOOD }]);
+    it('Passive Production: what one lap pays, the shared timer, and when next (T-099)', () => {
+        const lines = lifecycleLines({ id: 'h', typeId: 'hall', clocks: { passiveMs: 60000 } }, src({ passive: hallPassive(1) }));
+        expect(lines).toEqual([{
+            label: 'Passive Production', value: '2 Oak Seed, 10 Water (Wishing Well) every 5 min (next in 4 min)', tone: TONE.GOOD
+        }]);
     });
 
     it('origin shows in dev mode only', () => {
@@ -199,19 +211,19 @@ describe('lifecycleLines', () => {
     });
 });
 
-describe('trickleHoverLines (FB-30)', () => {
-    it('says what the Hall pays, how often and when next', () => {
-        expect(trickleHoverLines({ id: 'h', typeId: 'hall', clocks: { trickle: [100000] } }, src()))
-            .toEqual(['Trickle income:', '2 Oak Seed every 5 min (next in 3 min 20 s)']);
+describe('passiveHoverLines (FB-30, T-099)', () => {
+    it('says when the shared timer pays next, then what it pays', () => {
+        expect(passiveHoverLines({ id: 'h', typeId: 'hall', clocks: { passiveMs: 100000 } }, src()))
+            .toEqual(['Passive Production every 5 min (next in 3 min 20 s):', '2 Oak Seed']);
     });
 
-    it('starts a fresh clock at the full interval', () => {
-        expect(trickleHoverLines({ id: 'h', typeId: 'hall' }, src()))
-            .toEqual(['Trickle income:', '2 Oak Seed every 5 min (next in 5 min)']);
+    it('starts a fresh clock at the full lap, and names the Wishing Well', () => {
+        expect(passiveHoverLines({ id: 'h', typeId: 'hall' }, src({ passive: hallPassive(2) })))
+            .toEqual(['Passive Production every 5 min (next in 5 min):', '2 Oak Seed', '20 Water (Wishing Well)']);
     });
 
-    it('is empty for a Token with no trickle, or no Token', () => {
-        expect(trickleHoverLines({ id: 't', typeId: 'tree' }, src())).toEqual([]);
-        expect(trickleHoverLines(null, src())).toEqual([]);
+    it('is empty for a Token that pays nothing, or no Token', () => {
+        expect(passiveHoverLines({ id: 't', typeId: 'tree' }, src())).toEqual([]);
+        expect(passiveHoverLines(null, src())).toEqual([]);
     });
 });

@@ -209,7 +209,6 @@ describe('Lifecycle audit — errors: shape rules', () => {
         ['spawner interval', (w) => { w.tokens.token_oak_forest.spawner.intervalMs = 999; }, 'token_oak_forest', 'spawner.intervalMs'],
         ['grow time', (w) => { w.tokens.token_oak_sapling.grows.afterMs = 0; }, 'token_oak_sapling', 'grows.afterMs'],
         ['turns every', (w) => { delete w.tokens.token_coast.turns.everyMs; }, 'token_coast', 'turns.everyMs'],
-        ['trickle interval', (w) => { w.tokens.token_guild_hall.trickle[0].everyMs = 10; }, 'token_guild_hall', 'trickle[0].everyMs'],
     ])('%s must be at least 1000 ms', (_, mutate, id, field) => {
         expectOne(mutate, { id, field, includes: 'at least 1000 ms' });
     });
@@ -345,6 +344,12 @@ describe('Lifecycle audit — warnings (allowed)', () => {
     it('a spawner with empty upkeep', () => {
         expectOne((w) => { w.tokens.token_oak_forest.spawner.upkeep = []; },
             { severity: 'warning', id: 'token_oak_forest', field: 'spawner.upkeep', includes: 'no upkeep' });
+    });
+
+    it('Passive Production lines need no interval: one shared timer pays them (T-099)', () => {
+        const w = clean();
+        w.tokens.token_guild_hall.trickle = [{ itemId: 'item_oak_seed', quantity: 1 }, { itemId: 'item_oak_wood', quantity: 2, everyMs: 10 }];
+        expect(auditLifecycleBlocks(w)).toEqual([]);
     });
 
     it('a trickle on a Token other than the Guild Hall', () => {

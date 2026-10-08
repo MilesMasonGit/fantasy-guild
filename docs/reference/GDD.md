@@ -279,8 +279,11 @@ and armour will be authored as content.
   upkeep per minute; the panel shows stock and "runs out in". Unpaid = the
   spawner waits; nothing goes into debt. **Rule upkeep** (a rule that costs
   items on its own clock) is **Latent**.
-- **Guild Hall trickle** (free income): 1 Oak Seed and 1 Wheat Seed every
-  5 min, 1 Apple Seed every 10 min (*placeholder*).
+- **Passive Production** (the Guild Hall's free income, no hero needed): one
+  5-minute timer pays every line at once, dropped as loot beside the Hall:
+  1 Oak Seed, 1 Wheat Seed and 1 Apple Seed (*placeholder*; the CMS block is
+  still called `trickle` in the data), plus the Wishing Well's Water.
+  *(`PassiveProduction.js`)*
 - **The Shop** sells 11 Tokens, all available from the start; price is the
   only gate (*placeholder* prices): Oak Forest, Coast, Farmland (10 Oak Wood
   each), Copper/Coal Mine and Quarry (15 Oak Wood), Wood Foundation (15 Oak
@@ -370,7 +373,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 | Bank Slots | 10 | +32 Bank slots per rank |
 | Bank Tabs | 15 | +1 Bank tab per rank |
 | Scouting Flags | 5 | +40 u flag radius per rank |
-| Wishing Well | 10 | the Hall yields *rank* Water every 10 s, if a hero's flag is on it (rank 1 free). To become passive (T-099) |
+| Wishing Well | 10 | 10 × *rank* Water every 5 min as Passive Production, no hero needed (rank 1 free) |
 | Notice Board | 3 | +1 bounty quest cap per rank |
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
@@ -521,7 +524,7 @@ realistic, ≈ 1.9 ms at 300 Tokens (code review round 3).
 | **Near / reach** | 164 u centre to centre; how far a rule carries. |
 | **Spawner, family, allowance** | A Token that makes Tokens; the types it makes and what they grow into; how many it allows alive. |
 | **Upkeep** | Items a spawner (or rule) pays to keep running. Unpaid = it waits. |
-| **Trickle** | Free items the Hall drops on a timer. |
+| **Passive Production** | Free items the Hall drops on one 5-minute timer (formerly "trickle"). |
 | **Foundation** | A placed Token built into a station by choosing a build recipe. |
 | **Station** | A Token whose work is a recipe the player picks. |
 | **Context Token** | A tool or support Token used by nearby work. |

@@ -17,7 +17,7 @@ import { placeAt, clearMat } from './fixtures/mat.js';
 /**
  * Token Lifecycle slice 8.2 — the **Upkeep Summary** maths: every ongoing cost
  * per item per minute, the Bank, a rough runs-out, who waits, and the
- * trickle's income.
+ * Passive Production's income.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -64,11 +64,11 @@ registerTokenTypes({
             upkeep: { items: [{ itemId: INCENSE, quantity: 2 }], cadenceMs: 30000 }
         }]
     },
-    /** A Hall stand-in: a seed every 30 s = 2 a minute. */
+    /** A Hall stand-in: 10 seeds per 5-minute Passive Production lap = 2 a minute. */
     fixture_us_hall: {
         id: 'fixture_us_hall', name: 'Fixture Us Hall', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
-        trickle: [{ itemId: SEED, quantity: 1, everyMs: 30000 }]
+        trickle: [{ itemId: SEED, quantity: 10 }]
     }
 });
 
@@ -171,7 +171,7 @@ describe('⭐ TL-20: loot on the mat counts toward a spawner upkeep', () => {
     });
 });
 
-describe('trickle income', () => {
+describe('Passive Production income', () => {
     it('shows income per item per minute and nets it against the cost', () => {
         placeAt('fixture_us_hall', 300, 300);
         let summary = computeUpkeepSummary();

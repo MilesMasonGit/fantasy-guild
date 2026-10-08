@@ -1,10 +1,10 @@
 
-import { turnTiming } from '../../../config/registries/tokenConstants.js';
+import { turnTiming, PASSIVE_PRODUCTION_MS } from '../../../config/registries/tokenConstants.js';
 
 /**
  * What a board Token's lifecycle blocks are doing right now, as plain rows for the inspection
  * panel: a spawner's family and cap, its next spawn and upkeep; time left to grow; the next
- * chance to turn or to turn back; a Foundation's build; a trickle's pay; and, in dev mode, the
+ * chance to turn or to turn back; a Foundation's build; Passive Production; and, in dev mode, the
  * Token's origin.
  * Pure: every engine read comes in through `sources`, so the panel stays thin and the tests
  * need no engine.
@@ -127,38 +127,43 @@ function foundationLines(instance, def, src) {
     return out;
 }
 
-function trickleLines(instance, def, src) {
-    const lines = Array.isArray(def.trickle) ? def.trickle : [];
-    const out = [];
-    lines.forEach((line, i) => {
-        const everyMs = Number(line?.everyMs);
-        const pays = itemList([line], src.itemName);
-        if (!pays || !(everyMs > 0)) return;
-        const elapsed = Number(instance.clocks?.trickle?.[i]) || 0;
-        out.push({
-            label: 'Pays',
-            value: `${pays} every ${formatDuration(everyMs)} (next in ${formatDuration(Math.max(0, everyMs - elapsed))})`,
-            tone: TONE.GOOD
-        });
-    });
-    return out;
+/** One lap's pay as words: "1 Oak Seed", "10 Water (Wishing Well)". */
+function passivePays(passive, itemName) {
+    return (passive?.lines || [])
+        .filter(l => l?.itemId && Number(l.quantity) > 0)
+        .map(l => `${Math.floor(Number(l.quantity))} ${itemName(l.itemId)}${l.source === 'wishing_well' ? ' (Wishing Well)' : ''}`);
+}
+
+function passiveRows(instance, src) {
+    const passive = src.passive?.(instance);
+    const pays = passivePays(passive, src.itemName);
+    if (!pays.length) return [];
+    return [{
+        label: 'Passive Production',
+        value: `${pays.join(', ')} every ${formatDuration(PASSIVE_PRODUCTION_MS)} (next in ${formatDuration(passive.nextInMs)})`,
+        tone: TONE.GOOD
+    }];
 }
 
 /**
- *  **The trickle income as hover text**: a heading, then one line per
- * paying trickle line, e.g. "1 Oak Seed every 5 min (next in 3 min 20 s)".
- * The same wording and maths as the inspection panel's *Pays* rows — this only
- * relabels them. Empty for a Token with no trickle.
+ * **Passive Production as hover text**: a heading with the shared timer's countdown, then one line
+ * per item a lap pays, e.g. "1 Oak Seed", "10 Water (Wishing Well)". Empty for a Token that pays
+ * nothing.
  *
  * @param {object|null} instance
- * @param {{ typeOf: (typeId: string) => object|null, itemName: (itemId: string) => string }} src
+ * @param {{ passive: (instance: object) => { lines: object[], nextInMs: number }|null,
+ *           itemName: (itemId: string) => string }} src
  * @returns {string[]}
  */
-export function trickleHoverLines(instance, src) {
-    const def = instance ? src.typeOf(instance.typeId) : null;
-    if (!def?.trickle) return [];
-    const pays = trickleLines(instance, def, src).map(line => line.value);
-    return pays.length ? ['Trickle income:', ...pays] : [];
+export function passiveHoverLines(instance, src) {
+    if (!instance) return [];
+    const passive = src.passive?.(instance);
+    const pays = passivePays(passive, src.itemName);
+    if (!pays.length) return [];
+    return [
+        `Passive Production every ${formatDuration(PASSIVE_PRODUCTION_MS)} (next in ${formatDuration(passive.nextInMs)}):`,
+        ...pays
+    ];
 }
 
 /**
@@ -173,6 +178,7 @@ export function trickleHoverLines(instance, src) {
  *   selectedRecipe: (instance: object, def: object) => object|null,
  *   poolFor?: (def: object) => object[],
  *   originOf: (instance: object) => string,
+ *   passive?: (instance: object) => { lines: object[], nextInMs: number }|null,
  *   dev?: boolean
  * }} src
  * @returns {LifecycleLine[]}
@@ -220,7 +226,7 @@ export function lifecycleLines(instance, src) {
     else if (src.poolFor && src.poolFor(def).length && !src.selectedRecipe(instance, def)) {
         out.push({ label: 'Recipe', value: 'Choose a recipe', tone: TONE.WARNING });
     }
-    if (def.trickle) out.push(...trickleLines(instance, def, src));
+    out.push(...passiveRows(instance, src));
     if (src.dev) out.push({ label: 'Origin (dev)', value: src.originOf(instance), tone: TONE.MUTED });
     return out;
 }

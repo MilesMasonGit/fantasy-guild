@@ -9,9 +9,6 @@ import {
 } from '../../config/guildUpgrades.js';
 import { generateHero } from '../hero/HeroGenerator.js';
 import { rehydrateHero } from '../hero/logic/HeroRehydration.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import * as TileModifiers from '../board/TileModifiers.js';
-import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -162,35 +159,6 @@ export const GuildUpgradeManager = {
             // the same function when a save has no rosterLimit written yet.
             state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
             state.progress.flagRadiusBonus = (ranks.flag_radius || 0) * 40;
-        }
-
-        // Synchronize dynamic production for Guild Hall token
-        const wishingWellRank = ranks.wishing_well ?? ranks.guildmasters_banner ?? 0;
-        const guildHallDef = getTokenType('token_guild_hall');
-        if (guildHallDef) {
-            guildHallDef.statements = [];
-            if (wishingWellRank > 0) {
-                guildHallDef.tokenType = 'resource';
-                guildHallDef.requiresHero = true;
-                guildHallDef.config = {
-                    skill: null,
-                    skillRequired: 0,
-                    cycleTimeMs: 10000,
-                    xp: 0,
-                    inputs: [],
-                    outputs: [
-                        {
-                            itemId: 'item_water',
-                            chance: 100,
-                            minQty: wishingWellRank,
-                            maxQty: wishingWellRank
-                        }
-                    ]
-                };
-            } else {
-                guildHallDef.config = null;
-            }
-            TileModifiers.rebuildAll();
         }
 
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);

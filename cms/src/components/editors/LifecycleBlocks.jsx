@@ -16,7 +16,7 @@ const BLOCK_INFO = {
   turns: { title: 'Turns', what: 'Rolls a chance every cycle to turn into one of a list, and the same to turn back (Coast ↔ Shrimp Coast).' },
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
-  trickle: { title: 'Trickle', what: 'Pays items into the Bank on a clock, no hero needed (Guild Hall only, for now).' },
+  trickle: { title: 'Passive Production', what: 'Drops these items beside the Token every 5 minutes, all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
 };
 
 export default function LifecycleBlocks({ token, onChange }) {
@@ -223,10 +223,9 @@ function TrickleBlock({ lines, items, onChange }) {
   return (
     <div className="space-y-2">
       {list.map((line, i) => (
-        <div key={i} className="grid grid-cols-[1fr_70px_110px_auto] gap-2 items-end">
+        <div key={i} className="grid grid-cols-[1fr_70px_auto] gap-2 items-end">
           <ItemPicker label="Item" value={line.itemId} items={items} canCreate={false} onPick={(itemId) => patchLine(i, { itemId })} />
           <IntField label="Qty" min={1} value={line.quantity} onChange={(quantity) => patchLine(i, { quantity })} />
-          <IntField label="Every (ms)" min={1000} step={1000} value={line.everyMs} onChange={(everyMs) => patchLine(i, { everyMs })} />
           <RemoveButton onClick={() => onChange(list.filter((_, idx) => idx !== i))} />
         </div>
       ))}

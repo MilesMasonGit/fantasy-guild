@@ -199,10 +199,9 @@ function hasWorkSkill(def) {
 /**
  * 'enemy' | 'promotion' | 'hall' | 'work' | null (nothing a hero works).
  *
- * ⚠️ 'hall' is a provisional exemption. The Guild Hall's work cycle is not authored:
- * `GuildUpgradeManager` writes it (the Wishing Well's water) with no skill, so requiring a skill
- * would silently stop the water. It is treated like a Promotion Token instead: worked only when a
- * flag is planted on it, whatever the flag's skill.
+ * 'hall': the Guild Hall has no work of its own today (its income is Passive Production, no hero
+ * needed). Should it be given a work cycle, it is treated like a Promotion Token: worked only when
+ * a flag is planted on it, whatever the flag's skill.
  */
 function kindOf(instance, def) {
     if (BoardCombat.isEnemyToken(instance)) return 'enemy';

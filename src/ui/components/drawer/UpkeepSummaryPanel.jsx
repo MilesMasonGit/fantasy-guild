@@ -17,7 +17,7 @@ const STATE_TEXT = { at_cap: 'at its cap', no_room: 'no room to spawn', mat_full
 
 /**
  * The Upkeep Summary: every ongoing cost per item per minute, what the Bank holds, a rough
- * runs-out, and who is waiting unpaid, plus the trickle's income. Plain and functional. The
+ * runs-out, and who is waiting unpaid, plus Passive Production's income. Plain and functional. The
  * maths lives in `systems/board/UpkeepSummary.js`.
  * Shown in the hover popover of the mat's top-bar Upkeep badge. `className` sizes it for its
  * host (the popover gives it a max height, so it scrolls on its own).
@@ -61,7 +61,7 @@ export const UpkeepSummaryPanel = ({ className = 'h-full' } = {}) => {
                             <div className="flex flex-wrap gap-x-4 text-gi-muted tabular-nums">
                                 <span>Bank: <b className="text-gi-text">{row.bank}</b></span>
                                 {row.onMat > 0 && <span>On the mat: <b className="text-gi-text">{row.onMat}</b></span>}
-                                {row.incomePerMinute > 0 && <span>Trickle: +{formatRate(row.incomePerMinute)} / min</span>}
+                                {row.incomePerMinute > 0 && <span>Passive Production: +{formatRate(row.incomePerMinute)} / min</span>}
                                 <span>Runs out: <b className="text-gi-text">{formatRunsOut(row.runsOutMs)}</b></span>
                             </div>
                             <div className="text-gi-muted">
@@ -79,7 +79,7 @@ export const UpkeepSummaryPanel = ({ className = 'h-full' } = {}) => {
 
             {income.length > 0 && (
                 <section className="flex flex-col gap-1">
-                    <h4 className="text-[11px] font-bold uppercase tracking-wide text-gi-muted">Trickle income</h4>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wide text-gi-muted">Passive Production</h4>
                     {income.map(row => (
                         <div key={row.itemId} data-income-item-id={row.itemId} className="flex justify-between gap-2 px-3 py-1 rounded border border-gi-border bg-gi-base/60">
                             <span>{row.name} <span className="text-gi-muted">from {row.sources.map(s => s.name).join(', ')}</span></span>

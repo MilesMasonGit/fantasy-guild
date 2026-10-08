@@ -7,7 +7,7 @@ import { stationSkillOf, getProvidedTagsWithTiers } from '../effects/statements.
 
 /**
  * The one checker for the six Token Lifecycle blocks (`spawner`, `grows`,
- * `turns`, `foundation`, `shop`, `trickle`) and the recipe fields
+ * `turns`, `foundation`, `shop`, `trickle` (Passive Production)) and the recipe fields
  * `foundationKinds` and `foundationMinTier`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
@@ -295,16 +295,15 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             }
         }
 
-        // ── trickle ──
+        // ── trickle: Passive Production, paid on one shared timer, so a line has no interval ──
         if (def.trickle !== undefined) {
             const lines = Array.isArray(def.trickle) ? def.trickle : [];
             lines.forEach((entry, i) => {
-                checkItemRef(err, `trickle[${i}].itemId`, 'trickle names', entry?.itemId);
-                checkPositive(err, `trickle[${i}].quantity`, `trickle quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
-                checkTime(err, `trickle[${i}].everyMs`, `trickle interval for ${show(entry?.itemId ?? '?')}`, entry?.everyMs);
+                checkItemRef(err, `trickle[${i}].itemId`, 'Passive Production names', entry?.itemId);
+                checkPositive(err, `trickle[${i}].quantity`, `Passive Production quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
             });
             if (lines.length > 0 && id !== GUILD_HALL_ID) {
-                warn('trickle', 'has a trickle; only the Guild Hall is meant to have one for now (allowed).');
+                warn('trickle', 'has Passive Production; only the Guild Hall is meant to have it for now (allowed).');
             }
         }
     }

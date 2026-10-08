@@ -571,7 +571,7 @@ function auditHardcodedLists(out, openingTokens) {
 }
 
 /**
- * Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle, and
+ * Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle (Passive Production), and
  * recipes that build on a Foundation. The rules live in `lifecycleAudit.js`,
  * shared with the CMS Economy Audit so both name the same problems in the same words.
  */

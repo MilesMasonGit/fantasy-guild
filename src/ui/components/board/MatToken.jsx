@@ -25,7 +25,8 @@ import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import { tokenOutline } from './spriteOutline.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
-import { TrickleTooltip, hasTrickle } from './TrickleTooltip.jsx';
+import { PassiveProductionTooltip } from './PassiveProductionTooltip.jsx';
+import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import { QuestTooltip } from './QuestTooltip.jsx';
 import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -252,9 +253,9 @@ export const MatToken = React.memo(function MatToken({
         setSkipLines(tokenSkipLines(id));
     }, [isHovered, id]);
 
-    // A Token with a trickle (the Guild Hall) shows what it pays in a game-styled tooltip with
-    // a live next-in, not the native title.
-    const showTrickle = isHovered && hasTrickle(def);
+    // A Token with Passive Production (the Guild Hall) shows what it pays in a game-styled
+    // tooltip with a live next-in, not the native title. Read only while hovered.
+    const showPassive = isHovered && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
 
     // Hovering a quest Token reads it (`QuestTooltip`), and a tutorial step still to do lights
     // its target (`TutorialAideOverlay`).
@@ -533,7 +534,7 @@ export const MatToken = React.memo(function MatToken({
 
             </div>
 
-            {tooltipsDrawn && showTrickle && !hidden && <TrickleTooltip instanceId={id} />}
+            {tooltipsDrawn && showPassive && !hidden && <PassiveProductionTooltip instanceId={id} />}
             {tooltipsDrawn && showQuestTip && !hidden && <QuestTooltip instanceId={id} quest={quest} />}
         </>
     );
