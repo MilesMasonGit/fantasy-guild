@@ -5,7 +5,7 @@ import {
     getJob, getJobSheet, getPromotionCost,
     getPromotionGateSkills
 } from '../../config/registries/jobRegistry.js';
-import { getSkill } from '../../config/registries/skillRegistry.js';
+import { getSkill, SKILL_LAYERS } from '../../config/registries/skillRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -22,8 +22,8 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * anything the target sheet wants) and on load
  * (`HeroRehydration.restoreBankedStarting`).
  *
- * ⚠️ This module charges nothing. Promotion is paid for by a charge of the
- * Token whose Promotes rule names the job, spent by `BoardPromotion.accept`,
+ * ⚠️ This module charges nothing. Any price is the Promotes rule's own (free
+ * unless authored), spent by `BoardPromotion.accept`,
  * which is the only thing that knows which Token the hero is standing on. What
  * lives here is the skill gate.
  *
@@ -33,7 +33,22 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * Nothing is ever lost, only banked: a skill a promotion removes goes dormant
  * at its level and returns exactly as it was if the hero comes back to a job
  * that uses it. The gate therefore counts banked skills as known.
+ *
+ * Mastery: an Advanced or Master skill at `MASTERY_LEVEL` is never banked. It
+ * stays on the hero on top of every later job's sheet, so a hero may hold more
+ * than 13 skills. ⚠️ Combat skills are excluded: the combat engine fights with
+ * exactly one combat skill, so a second held one would need a style picker.
  */
+
+export const MASTERY_LEVEL = 99;
+
+const MASTERABLE_LAYERS = new Set([SKILL_LAYERS.ADVANCED, SKILL_LAYERS.MASTER]);
+
+/** Whether a held skill is mastered, and so never banked. */
+export function isMastered(skillId, skillState) {
+    return MASTERABLE_LAYERS.has(getSkill(skillId)?.layer)
+        && (skillState?.level ?? 0) >= MASTERY_LEVEL;
+}
 
 /** Why a promotion cannot happen. */
 export const REFUSAL = {
@@ -136,7 +151,7 @@ export function promote(heroId, jobId) {
 
     // 1. Bank everything the new sheet does not want, at its level.
     for (const skillId of Object.keys(hero.skills || {})) {
-        if (target.has(skillId)) continue;
+        if (target.has(skillId) || isMastered(skillId, hero.skills[skillId])) continue;
         bank[skillId] = { ...hero.skills[skillId] };
         delete hero.skills[skillId];
         banked.push(skillId);
@@ -182,11 +197,13 @@ export function previewPromotion(heroId, jobId) {
     const target = new Set(getJobSheet(jobId));
     const held = Object.keys(hero.skills || {});
 
-    const losing = held.filter(id => !target.has(id)).map(id => ({
+    const stays = id => target.has(id) || isMastered(id, hero.skills[id]);
+
+    const losing = held.filter(id => !stays(id)).map(id => ({
         skillId: id, name: getSkill(id)?.name || id, level: hero.skills[id].level
     }));
 
-    const keeping = held.filter(id => target.has(id));
+    const keeping = held.filter(stays);
 
     const arriving = [...target].filter(id => !hero.skills[id]).map(id => {
         const bankedLevel = hero.bankedSkills?.[id]?.level ?? null;

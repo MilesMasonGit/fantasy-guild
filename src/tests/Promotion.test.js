@@ -360,6 +360,65 @@ describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
     });
 });
 
+describe('⭐ Mastery: a class skill at 99 is never banked again', () => {
+    /** A Paladin with chosen levels, re-trained to Wizard. */
+    function masteredPaladinToWizard(levels) {
+        const hero = freshFighter();
+        qualify(hero, 'paladin');
+        expect(PromotionSystem.promote(hero.id, 'paladin').success).toBe(true);
+        for (const [id, level] of Object.entries(levels)) hero.skills[id] = { level, xp: level * 1000 };
+        qualify(hero, 'wizard');
+        const preview = PromotionSystem.previewPromotion(hero.id, 'wizard');
+        const result = PromotionSystem.promote(hero.id, 'wizard');
+        expect(result.success).toBe(true);
+        return { hero, result, preview };
+    }
+
+    it('an advanced or master skill at 99 is never banked on re-training', () => {
+        const { hero, result } = masteredPaladinToWizard({ leadership: 99, faith: 99 });
+
+        expect(result.banked).toEqual(['melee']);
+        expect(hero.skills.leadership).toEqual({ level: 99, xp: 99000 });
+        expect(hero.skills.faith).toEqual({ level: 99, xp: 99000 });
+        expect(hero.bankedSkills.leadership).toBeUndefined();
+        expect(hero.bankedSkills.faith).toBeUndefined();
+        // On top of the Wizard's own sheet, so more than 11.
+        for (const id of getJobSheet('wizard')) expect(hero.skills[id], id).toBeDefined();
+        expect(Object.keys(hero.skills)).toHaveLength(getJobSheet('wizard').length + 2);
+    });
+
+    it('a mastered skill stays through every later job change', () => {
+        const { hero } = masteredPaladinToWizard({ faith: 99 });
+        qualify(hero, 'rogue');
+        expect(PromotionSystem.promote(hero.id, 'rogue').success).toBe(true);
+        expect(hero.skills.faith.level).toBe(99);
+        expect(hero.skills.magic, 'the Wizard combat skill banks as usual').toBeUndefined();
+    });
+
+    it('a combat skill at 99 is banked as usual', () => {
+        const { hero, result } = masteredPaladinToWizard({ melee: 99 });
+
+        expect(result.banked).toContain('melee');
+        expect(hero.skills.melee).toBeUndefined();
+        expect(hero.bankedSkills.melee.level).toBe(99);
+    });
+
+    it('a skill at 98 is banked as usual', () => {
+        const { hero, result } = masteredPaladinToWizard({ faith: 98, leadership: 98 });
+
+        expect([...result.banked].sort()).toEqual(['faith', 'leadership', 'melee']);
+        expect(hero.skills.faith).toBeUndefined();
+        expect(hero.bankedSkills.faith.level).toBe(98);
+    });
+
+    it('the preview does not list a mastered skill as lost', () => {
+        const { preview } = masteredPaladinToWizard({ faith: 99, melee: 99 });
+
+        expect(preview.losing.map(l => l.skillId).sort()).toEqual(['leadership', 'melee']);
+        expect(preview.keeping).toContain('faith');
+    });
+});
+
 describe('Re-training is the same act as promoting (D-248)', () => {
     it('moves a hero sideways between siblings', () => {
         const hero = freshFighter();
