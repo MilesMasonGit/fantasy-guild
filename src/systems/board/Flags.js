@@ -798,7 +798,7 @@ export function plant(heroId, point, { pin = false } = {}) {
  * a now-better priority when their cycle ends.
  *
  * Works with no flag planted: the rules live on the hero. From the console:
- * `Game.Flags.setRule(heroId, 'logging', { priority: 1 })`.
+ * `Game.Flags.setRule(heroId, 'forestry', { priority: 1 })`.
  *
  * @returns {{ success: boolean, reason?: string, unchanged?: boolean }}
  */

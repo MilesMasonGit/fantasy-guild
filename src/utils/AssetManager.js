@@ -125,7 +125,7 @@ export function resolveSpritePath(entity) {
         } else {
             const SKILL_MAP = {
                 mining: 'skill_mining',
-                logging: 'skill_logging',
+                forestry: 'skill_logging',
                 fishing: 'skill_fishing',
                 smithing: 'skill_smithing',
                 crafting: 'skill_crafting',
@@ -133,9 +133,7 @@ export function resolveSpritePath(entity) {
                 melee: 'skill_melee',
                 ranged: 'skill_ranged',
                 magic: 'skill_magic',
-                crime: 'skill_crime',
-                nature: 'skill_nature',
-                occult: 'skill_occult'
+                crime: 'skill_crime'
             };
             if (SKILL_MAP[id]) {
                 spritePath = `assets/skills/${SKILL_MAP[id]}.png`;

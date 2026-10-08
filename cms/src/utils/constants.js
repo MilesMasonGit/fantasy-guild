@@ -1,7 +1,7 @@
 // Shared vocabulary, derived from the game's registries and never copied: the CMS asks the game what words exist, so definitions flow game → CMS in one direction and drift cannot recur.
 // ⚠️ The cost: removing an export from a game registry breaks the CMS silently and immediately; a game-side deletion is a CMS-side break.
 
-import { SKILLS as GAME_SKILLS } from '../../../src/config/registries/skillRegistry.js';
+import { SKILLS as GAME_SKILLS, SKILL_CATEGORIES as GAME_SKILL_CATEGORIES } from '../../../src/config/registries/skillRegistry.js';
 import { EQUIPMENT_CATEGORY_DEFS } from '../../../src/config/registries/equipmentCategories.js';
 import { ITEM_TYPES as GAME_ITEM_TYPES } from '../../../src/config/registries/itemRegistry.js';
 import {
@@ -186,13 +186,13 @@ export const AUTHORABLE_STATUSES = authorableStatuses();
 // The game defines SKILLS as an object keyed by id; every CMS consumer expects an array of `{ id, name }`, so it is transformed here. `combat` is deliberately absent: it is a game category, not a skill, so it can never be picked in a skill dropdown.
 export const SKILLS = Object.values(GAME_SKILLS).map(({ id, name, layer }) => ({ id, name, layer }));
 
-/** The skill layers, in the order the game declares them, with the words a designer sees. `SKILLS` is already in this order, so nothing is re-sorted; these are the group headings that make the order visible. */
-export const SKILL_LAYER_LABELS = Object.freeze([
-  ['foundation', 'Foundation — every Recruit has these'],
-  ['combat', 'Combat'],
-  ['shared', 'Shared'],
-  ['signature', 'Signature — job-exclusive'],
-]);
+/**
+ * The skill layers, in the order the game declares them, with the words a designer sees. `SKILLS` is already in this order, so nothing is re-sorted; these are the group headings that make the order visible.
+ * ⚠️ Derived from the game's layer list: `skillsByLayer` drops any layer without a heading, so a hand-typed list emptied every picker the moment the game renamed its layers.
+ */
+export const SKILL_LAYER_LABELS = Object.freeze(
+  Object.values(GAME_SKILL_CATEGORIES).map(({ id, name, hint }) => [id, hint ? `${name} — ${hint}` : name]),
+);
 
 /** `SKILLS` grouped into `[label, skills[]]`, empty layers dropped. */
 export function skillsByLayer() {

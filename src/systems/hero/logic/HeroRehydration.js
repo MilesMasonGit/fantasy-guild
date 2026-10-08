@@ -5,24 +5,24 @@ import { calculateHeroLevel } from '../HeroGenerator.js';
 import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
 import { createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
-import { FOUNDATION_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
+import { STARTING_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 
 /**
  * Hero Rehydration: Restores Logic (Aggregator) and Display data.
  */
 
 /**
- * Move every banked FOUNDATION skill back onto the hero's sheet, at its stored
+ * Move every banked STARTING skill back onto the hero's sheet, at its stored
  * level and XP. Only older saves can hold one, since promotion no longer banks
  * them. Villagers are left alone. A held copy wins over a banked one.
  *
  * @returns {string[]} the skill ids restored
  */
-export function restoreBankedFoundation(hero) {
+export function restoreBankedStarting(hero) {
     if (!hero || hero.isVillager || !hero.bankedSkills) return [];
     if (!hero.skills) hero.skills = {};
     const restored = [];
-    for (const skillId of FOUNDATION_SKILL_IDS) {
+    for (const skillId of STARTING_SKILL_IDS) {
         const banked = hero.bankedSkills[skillId];
         if (!banked) continue;
         if (!hero.skills[skillId]) {
@@ -44,9 +44,9 @@ export function rehydrateHero(hero) {
     if (!hero.spriteId) hero.spriteId = 'hero_recruit_0';
     if (!hero.icon) hero.icon = 'icon_recruit_0';
 
-    // Older saves may hold foundation skills in the bank; put them back on the
+    // Older saves may hold Starting skills in the bank; put them back on the
     // sheet. Runs before the derived stats.
-    restoreBankedFoundation(hero);
+    restoreBankedStarting(hero);
 
     updateHeroSkillModifiers(hero);
 

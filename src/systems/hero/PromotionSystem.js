@@ -11,16 +11,16 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 /**
  * PromotionSystem — the only way a hero's skills ever change shape.
  *
- * A hero holds every foundation skill plus their job's own non-foundation
- * skills (`getJobSheet`). Changing what a hero can do means moving them to a
+ * A hero holds every Starting skill plus their job's own class skills
+ * (`getJobSheet`). Changing what a hero can do means moving them to a
  * different job; there is no free re-slotting or partial respec.
  *
- * Foundation skills are never banked: every job's sheet contains all nine, so
- * the bank step can only take combat, shared or signature skills, and only when
- * re-training across branches. A hero who banked foundation skills under an
+ * Starting skills are never banked: every job's sheet contains all nine, so
+ * the bank step can only take combat, advanced or master skills, and only when
+ * re-training across branches. A hero who banked Starting skills under an
  * older rule gets them back on their next promotion (the fill step restores
  * anything the target sheet wants) and on load
- * (`HeroRehydration.restoreBankedFoundation`).
+ * (`HeroRehydration.restoreBankedStarting`).
  *
  * ⚠️ This module charges nothing. Promotion is paid for by a charge of the
  * Token whose Promotes rule names the job, spent by `BoardPromotion.accept`,
