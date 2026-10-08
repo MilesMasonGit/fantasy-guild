@@ -159,7 +159,6 @@ first, when content that uses it is authored.*
 | T-082 | latent | Shop's unreachable refund path skips mat events. | CR3-206 |
 | T-083 | re-check | Synchronous subscribers; several whole-mat rebuilds per tick. Probably closed by Wave 3b — re-measure before working on it. | CR3-102 |
 | T-084 | not needed | Push solver all-pairs (S4 worst push ~15 ms vs 8). Only matters past ~250 Tokens; T-035 may make it moot. | CR3-152 |
-| T-085 | contract note | Loot timing uses the wall clock. | CR3-014 |
 | T-086 | needs a Codex screen | Enemy kill counts never recorded. | CR3-035 |
 | T-087 | owner-deferred | Desktop-shell group (save export, `src-tauri`). | CR3-046 |
 | T-088 | Stage 2 | Randomness is unseeded and has no injectable source. | CR3-044 |

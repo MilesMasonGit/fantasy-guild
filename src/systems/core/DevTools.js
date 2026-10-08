@@ -67,9 +67,9 @@ export const DEV_ADVANCE_MAX_STEPS = 7200;
  * advances by the tick's `delta` moves together — including clocks added
  * later, with no change here.
  *
- * ⚠️ Systems that read the wall clock (`Date.now()`) instead of `delta` do NOT
- * move: quest-abandon cooldowns, live-effect expiry, sprite absorb timers, and
- * the item/XP rate trackers.
+ * ⚠️ Rules timed by the game clock (`GameClock.now()`) do NOT move: live-effect
+ * expiry, loot absorb and auto-collect age, and the item/XP rate windows. Outside
+ * a catch-up the game clock is the wall clock, which a dev skip does not advance.
  *
  * Runs whether or not the game is paused — it is an explicit request. If the
  * Time Bank is spending, its handler drains by the advanced time like any tick.

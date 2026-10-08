@@ -1,3 +1,5 @@
+import * as GameClock from '../core/GameClock.js';
+
 /**
  * ItemRateTracker
  * Specialized logic for calculating harvest/production throughput.
@@ -20,7 +22,7 @@ export const ItemRateTracker = {
             history.set(itemId, []);
         }
         const gains = history.get(itemId);
-        gains.push({ amount, timestamp: Date.now() });
+        gains.push({ amount, timestamp: GameClock.now() });
         
         this.prune(itemId);
     },
@@ -42,7 +44,7 @@ export const ItemRateTracker = {
         const gains = history.get(itemId);
         if (!gains) return;
         
-        const now = Date.now();
+        const now = GameClock.now();
         while (gains.length > 0 && (now - gains[0].timestamp) > WINDOW_MS) {
             gains.shift();
         }
@@ -69,7 +71,7 @@ export const ItemRateTracker = {
         // Calculate duration: Either the actual elapsed time in the window 
         // or a minimum safe window to prevent massive spikes on the first gain.
         const first = gains[0].timestamp;
-        const now = Date.now();
+        const now = GameClock.now();
         const durationMs = Math.max(now - first, MIN_WINDOW_MS);
         const durationHours = durationMs / (1000 * 60 * 60);
         

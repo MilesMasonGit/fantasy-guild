@@ -14,6 +14,7 @@ import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import * as GameClock from '../core/GameClock.js';
 
 /**
  * SpriteLayer: loose item loot floating above the mat. Sprites are not banked until collected.
@@ -230,7 +231,9 @@ export function absorbSprite(spriteId) {
 }
 
 function scheduleAbsorption(spriteId, delayMs) {
-    if (typeof window === 'undefined') return;
+    // In a catch-up this real-time timer would fire an hour of game time late; `tick` absorbs on
+    // the game clock instead.
+    if (typeof window === 'undefined' || GameClock.isCatchingUp()) return;
     if (absorptionTimers.has(spriteId)) {
         clearTimeout(absorptionTimers.get(spriteId));
     }
@@ -307,9 +310,9 @@ export function addSprite(kind, refId, quantity = 1, source = null) {
         fromX,
         fromY,
         targetStackId: targetExisting ? targetExisting.id : null,
-        absorbAt: targetExisting ? Date.now() + 1100 : null,
+        absorbAt: targetExisting ? GameClock.now() + 1100 : null,
         usesRemaining: null,
-        bornAt: Date.now()
+        bornAt: GameClock.now()
     };
     list.push(sprite);
 
@@ -506,7 +509,7 @@ export function tick(deltaMs) {
         collectAll();
         return;
     }
-    const now = Date.now();
+    const now = GameClock.now();
     for (const sprite of [...list]) {
         if (sprite.targetStackId && sprite.absorbAt && now >= sprite.absorbAt) {
             absorbSprite(sprite.id);

@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import * as GameClock from '../core/GameClock.js';
 
 /**
  * WoundedSystem - drains wounded heroes' recovery timers; a recovered hero
@@ -46,7 +47,7 @@ const WoundedSystem = {
         if (typeof hero.woundedRemainingMs !== 'number') {
             // Legacy saves stored a wall-clock deadline in woundedUntil: convert
             // whatever is left on it; fresh wounds get the full timer.
-            const legacyRemaining = hero.woundedUntil ? hero.woundedUntil - Date.now() : BASE_RECOVERY_TIME_MS;
+            const legacyRemaining = hero.woundedUntil ? hero.woundedUntil - GameClock.now() : BASE_RECOVERY_TIME_MS;
             hero.woundedRemainingMs = Math.max(0, Math.min(BASE_RECOVERY_TIME_MS, legacyRemaining));
             hero.woundedUntil = null;
             logger.debug('WoundedSystem', `Set recovery timer for ${hero.name}: ${hero.woundedRemainingMs}ms`);
