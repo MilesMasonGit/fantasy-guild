@@ -65,7 +65,7 @@ export const momentText = {
     arrived: (token) => `Working at ${token}.`,
     idle: () => 'No work in range.',
     // `gained`: levels since this hero's last level-up bubble for the skill.
-    levelUp: (skill, level, gained) => `Leveled up ${skill} to ${level}! (+${gained})`,
+    levelUp: (skill, level, gained) => `Leveled up ${skill} to ${level}!${gained >= 2 ? ` (+${gained})` : ''}`,
     // Said by the hero whose work spent the Token's last charge.
     depleted: (token) => `${token} Depleted`,
     // No wording of its own: the blocked sentence for its reason, already built by

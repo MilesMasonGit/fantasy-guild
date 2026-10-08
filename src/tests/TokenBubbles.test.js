@@ -12,6 +12,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
 import { tokenStartingUses, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
@@ -317,6 +318,69 @@ describe('where they sit', () => {
         expect(row.className).toContain('justify-center');
         const kinds = [...row.children].map(c => c.getAttribute('data-bubble') || (c.querySelector('[data-station-gear]') ? 'gear' : '?'));
         expect(kinds).toEqual(['gear', 'spawner', 'disallow']);
+    });
+});
+
+describe('stuck spawner warning', () => {
+    const say = (alert, needs = []) => act(() => {
+        EventBus.publish(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, { instanceId: 'tok_r', alert, needs });
+    });
+    const stuckEl = (c) => c.querySelector('[data-bubble-row="middle"] [data-bubble="stuck"]');
+    const tipOf = (c) => {
+        fireEvent.pointerEnter(stuckEl(c));
+        return document.querySelector('[data-bubble-tip]')?.textContent;
+    };
+
+    beforeAll(() => {
+        registerItems({
+            fixture_stuck_seed: { id: 'fixture_stuck_seed', name: 'Fixture Seed', type: 'resource' },
+            fixture_stuck_water: { id: 'fixture_stuck_water', name: 'Fixture Water', type: 'resource' }
+        });
+    });
+
+    it('needs-item: a yellow bubble in the middle row, naming the items', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null }) }));
+        expect(stuckEl(container)).toBeNull();
+        say(ALERT.SPAWN_NEEDS_ITEM, ['fixture_stuck_seed']);
+        expect(stuckEl(container).querySelector('[data-stuck-badge="needs_item"]')).not.toBeNull();
+        expect(tipOf(container)).toBe('Needs Fixture Seed to spawn');
+    });
+
+    it('needs-item with two items joins them', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null }) }));
+        say(ALERT.SPAWN_NEEDS_ITEM, ['fixture_stuck_seed', 'fixture_stuck_water']);
+        expect(tipOf(container)).toBe('Needs Fixture Seed and Fixture Water to spawn');
+    });
+
+    it('no-room: a red bubble that says so', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null }) }));
+        say(ALERT.SPAWN_NO_ROOM);
+        expect(stuckEl(container).querySelector('[data-stuck-badge="no_room"]')).not.toBeNull();
+        expect(tipOf(container)).toBe('No room to spawn');
+    });
+
+    it('goes the moment the spawner is no longer stuck, and the state change updates it', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null }) }));
+        say(ALERT.SPAWN_NO_ROOM);
+        say(ALERT.SPAWN_NEEDS_ITEM, ['fixture_stuck_seed']);
+        expect(stuckEl(container).querySelector('[data-stuck-badge="needs_item"]')).not.toBeNull();
+        say(null);
+        expect(stuckEl(container)).toBeNull();
+        expect(container.querySelector('[data-bubble-row="middle"]')).toBeNull();
+    });
+
+    it('sits in the middle row beside the spawner count, and a press grabs the Token', () => {
+        const grab = vi.fn();
+        const { container } = mount(bub({
+            token: worked({ heroId: null }), isHovered: true,
+            spawner: spawnerRing({ count: 5, cap: 5 }),
+            dragProps: { onPointerDown: grab }
+        }));
+        say(ALERT.SPAWN_NO_ROOM);
+        const row = container.querySelector('[data-bubble-row="middle"]');
+        expect([...row.children].map(c => c.getAttribute('data-bubble'))).toEqual(['spawner', 'stuck']);
+        fireEvent.pointerDown(stuckEl(container));
+        expect(grab).toHaveBeenCalledTimes(1);
     });
 });
 

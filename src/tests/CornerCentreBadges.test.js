@@ -316,13 +316,15 @@ describe('on the mat', () => {
         expect(o.querySelector('[data-spawner-count]')).toBeNull();
     });
 
-    it('a spawner that needs an item draws no alert mark on the mat', () => {
+    it('a spawner that needs an item draws no centre alert mark, only the warning bubble in its middle row', () => {
         vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
         SpawnerSystem.syncAlerts();
         const { container } = mount(h(MatBoard));
         expect(SpawnerSystem.spawnerAlertOf(forest.id)?.alert).toBe(ALERT.SPAWN_NEEDS_ITEM);
         expect(container.querySelector('[data-spawner-alert], [data-worked-alert], [data-alert-kind], [data-token-notice]')).toBeNull();
-        expect(container.querySelector('img[src*="ui_alert"]')).toBeNull();
+        const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
+        expect(o.querySelector('[data-bubble-row="middle"] [data-bubble="stuck"] [data-stuck-badge="needs_item"]')).not.toBeNull();
+        expect(container.querySelectorAll('img[src*="ui_alert"]').length).toBe(1);
     });
 });

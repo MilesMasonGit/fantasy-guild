@@ -149,10 +149,10 @@ describe('level-ups on the mat', () => {
         act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId, skillName, oldLevel, newLevel }); });
     };
 
-    it('one level reads "Leveled up Mining to 25! (+1)"', () => {
+    it('one level reads "Leveled up Mining to 25!" with no count', () => {
         const { container } = render(h(HeroBubbleLayer, { heroes }));
         level('h1', 'Mining', 24, 25);
-        expect(stackOf(container, 'h1')).toEqual(['Leveled up Mining to 25! (+1)']);
+        expect(stackOf(container, 'h1')).toEqual(['Leveled up Mining to 25!']);
     });
 
     it('quick level-ups coalesce into one bubble with the total gained', () => {
@@ -167,8 +167,8 @@ describe('level-ups on the mat', () => {
         level('h1', 'Logging', 3, 4);
         level('h2', 'Mining', 19, 20);
         level('h1', 'Mining', 10, 11);
-        expect(stackOf(container, 'h1')).toEqual(['Leveled up Logging to 4! (+1)', 'Leveled up Mining to 11! (+2)']);
-        expect(stackOf(container, 'h2')).toEqual(['Leveled up Mining to 20! (+1)']);
+        expect(stackOf(container, 'h1')).toEqual(['Leveled up Logging to 4!', 'Leveled up Mining to 11! (+2)']);
+        expect(stackOf(container, 'h2')).toEqual(['Leveled up Mining to 20!']);
     });
 
     it('starts the count again once the earlier bubble has gone', () => {
@@ -176,7 +176,7 @@ describe('level-ups on the mat', () => {
         level('h1', 'Mining', 24, 25);
         act(() => { vi.advanceTimersByTime(6000); });
         level('h1', 'Mining', 25, 26);
-        expect(stackOf(container, 'h1')).toEqual(['Leveled up Mining to 26! (+1)']);
+        expect(stackOf(container, 'h1')).toEqual(['Leveled up Mining to 26!']);
     });
 
     it('levelUpFrom reads the start of the live bubble, else the level it started at', () => {

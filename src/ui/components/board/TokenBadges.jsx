@@ -191,3 +191,22 @@ export const DisallowBadge = ({ isDragging }) => {
         </div>
     );
 };
+
+/**
+ * StuckBadge: the warning mark in the middle row of a spawner that cannot spawn: yellow while
+ * it waits on an item, red when there is no room. `TokenBubbles` shows it the whole time.
+ */
+export const StuckBadge = ({ noRoom = false, title }) => (
+    <div
+        data-stuck-badge={noRoom ? 'no_room' : 'needs_item'}
+        aria-label={title}
+        className="shrink-0 select-none w-7 h-7 flex items-center justify-center filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
+    >
+        <img
+            src={noRoom ? '/assets/ui/ui_alert_red.png' : '/assets/ui/ui_alert_yellow.png'}
+            alt={title}
+            className="w-6 h-6 object-contain"
+            style={{ imageRendering: 'pixelated' }}
+        />
+    </div>
+);

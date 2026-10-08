@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
+import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import { joinNames } from './heroBubbles.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
@@ -14,7 +17,7 @@ import { TimerBubble } from './TimerBubble.jsx';
 import {
     BUBBLE_RECENT_MS, RING_D_U, bubbleSlot, chargesFraction, cycleSecondsText, ringCount
 } from './ringRow.js';
-import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge } from './TokenBadges.jsx';
+import { TokenChargeDeltaFloater, StationGearBadge, DisallowBadge, StuckBadge } from './TokenBadges.jsx';
 import { onFrame } from './frameClock.js';
 
 const NO_MISSING = Object.freeze({ type: null, items: [] });
@@ -36,7 +39,13 @@ export const BUBBLE_TIPS = Object.freeze({
     charges: (n) => `Charges: ${Number(n).toLocaleString()} left`,
     quest: (text) => `Quest progress: ${text}`,
     spawner: (text) => `Spawned: ${text}. It stops at the limit`,
-    disallow: 'Heroes may not work this'
+    disallow: 'Heroes may not work this',
+    /** A stuck spawner's warning: `{ alert, needs }` from `SpawnerSystem.spawnerAlertOf`. */
+    stuck: (state) => {
+        if (state?.alert !== ALERT.SPAWN_NEEDS_ITEM) return 'No room to spawn';
+        const names = (state.needs || []).map(id => getItem(id)?.name || id);
+        return names.length ? `Needs ${joinNames(names)} to spawn` : 'Needs items to spawn';
+    }
 });
 
 /**
@@ -75,6 +84,8 @@ export function useChangeFlash(value, ms = BUBBLE_RECENT_MS) {
  * its last seconds.
  * - **Gear** (middle row): always while a choice is needed (nothing chosen), otherwise hovered.
  * - **Disallow mark** (middle row): the whole time it is disallowed.
+ * - **Stuck warning** (middle row): the whole time a spawner waits on an item or on room
+ * (`SPAWNER_ALERT_CHANGED`, read once on mount); yellow for an item, red for no room.
  * - **Enemy health bar** (above the Token's box, not a bubble): in a fight (`PROGRESS` with
  * `combat: true`), and while an enemy is hovered. No cycle in a fight.
  * - While the Token is dragged: nothing.
@@ -266,6 +277,15 @@ export const TokenBubbles = ({
     const hasCharges = usesRemaining != null;
     const chargesFlash = useChangeFlash(hasCharges ? { n: usesRemaining, f: chargesFraction(usesRemaining, startingUses) } : null);
     const questFlash = useChangeFlash(quest ? { text: quest.text, fraction: quest.fraction } : null);
+    // The engine decides when a spawner is stuck and says so on the change; nothing polls.
+    const [stuck, setStuck] = useState(() => (instanceId ? SpawnerSystem.spawnerAlertOf(instanceId) : null));
+    useEffect(() => {
+        if (!instanceId) return undefined;
+        setStuck(SpawnerSystem.spawnerAlertOf(instanceId));
+        return subscribeToken(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, instanceId, (p) => {
+            setStuck(p?.alert ? { alert: p.alert, needs: p.needs || [] } : null);
+        });
+    }, [instanceId]);
     const spawnerFlash = useChangeFlash(spawner ? { text: spawner.text, fraction: spawner.fraction } : null);
 
     if (isDragging) return null;
@@ -279,7 +299,8 @@ export const TokenBubbles = ({
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showBar = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
     const showGear = !!gear?.show && (gear.pulsing || isHovered);
-    const showMiddle = showGear || showSpawner || disallowed;
+    const showStuck = !!stuck?.alert;
+    const showMiddle = showGear || showSpawner || showStuck || disallowed;
     const slot = (name) => bubbleSlot(name, { boxPx, small });
 
     const cycleTip = blocked ? BUBBLE_TIPS.cycleBlocked : BUBBLE_TIPS.cycle;
@@ -324,6 +345,11 @@ export const TokenBubbles = ({
                                 text={spawnerFlash.shown.text}
                                 title={BUBBLE_TIPS.spawner(spawner.text)}
                             />
+                        </Bubble>
+                    )}
+                    {showStuck && (
+                        <Bubble of={instanceId} kind="stuck" inline tip={BUBBLE_TIPS.stuck(stuck)} dragProps={dragProps}>
+                            <StuckBadge noRoom={stuck.alert !== ALERT.SPAWN_NEEDS_ITEM} title={BUBBLE_TIPS.stuck(stuck)} />
                         </Bubble>
                     )}
                     {disallowed && (

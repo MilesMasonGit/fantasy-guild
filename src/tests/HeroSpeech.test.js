@@ -36,6 +36,8 @@ describe('A hero’s stack of speech bubbles', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
         expect(momentText.idle()).toBe('No work in range.');
         expect(momentText.levelUp('Mining', 25, 4)).toBe('Leveled up Mining to 25! (+4)');
+        expect(momentText.levelUp('Mining', 25, 2)).toBe('Leveled up Mining to 25! (+2)');
+        expect(momentText.levelUp('Mining', 25, 1)).toBe('Leveled up Mining to 25!');
         expect(momentText.depleted('Oak Tree')).toBe('Oak Tree Depleted');
     });
 
