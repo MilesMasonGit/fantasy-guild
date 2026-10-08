@@ -118,7 +118,6 @@ describe('the §6 circularity check: every chain is reachable from the opening a
         Crafting: ['token_workbench'],
         Smithing: ['token_furnace', 'token_copper_anvil'],
         Cooking: ['token_cooking_pot'],
-        Explore: ['token_oak_forest_map'],
         Combat: ['token_goblin_camp', 'token_goblin', 'token_goblin_chief']
     };
 

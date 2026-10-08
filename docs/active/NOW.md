@@ -6,9 +6,7 @@ changelog and `docs/archive/`).*
 
 ## Next
 
-1. **T-109** (small, do first): update the tests broken by the owner's CMS sync
-   that deleted Copper Rubble and every Map. See [TICKETS](../reference/TICKETS.md).
-2. **The crunch**: start with [briefs/README.md](briefs/README.md), brief 00
+1. **The crunch**: start with [briefs/README.md](briefs/README.md), brief 00
    (quick fixes T-104, T-101). The pre-crunch cleanup is done
    (`docs/archive/hygiene_plan.md`). The unfinished Atlas work is parked on
    branch `atlas-wip`, not `main`.
@@ -21,8 +19,7 @@ changelog and `docs/archive/`).*
 - **Crunch order:** UI rework → class rework v2 → hero bar and panel →
   offline progress → drag deep-dive → deep optimization → Atlas → terrain →
   Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** one known failure, `AssetManager` (Copper Rubble's missing art,
-  T-001). Anything else red is new.
+- **Tests:** all green (4020 passed, 3 skipped). Anything red is new.
 
 ## Ground rules during the crunch
 

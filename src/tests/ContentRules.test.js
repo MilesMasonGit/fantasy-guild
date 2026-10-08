@@ -530,7 +530,7 @@ describe("A Map's pool is a complete kit (D-139)", () => {
         }
     });
 
-    it('⚠️ the FIRST Map may demand only the Foundation six (D-261)', () => {
+    it.skipIf(maps.length === 0)('⚠️ the FIRST Map may demand only the Foundation six (D-261)', () => {
         // A Recruit holds the Foundation skills and nothing else, so a Token in
         // the opening kit that wants a specialist is a Token nobody can work
         // for hours. This is the rule that sent the Bramble Patch (Nature), the

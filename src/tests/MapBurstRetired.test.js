@@ -76,9 +76,8 @@ describe('A Map Token is an ordinary Token now (9.1)', () => {
         expect(SpriteLayer.getSprites()).toEqual([]);
     });
 
-    it('the unreworked Map Tokens are not sold (DP-9); the Oak Forest Map is', () => {
+    it('no Map Token is sold (DP-9)', () => {
         const sold = Shop.catalogue().flatMap((g) => g.items.map((i) => i.typeId));
-        expect(sold).toContain('token_oak_forest_map');
         const types = getAllTokenTypes();
         for (const id of sold) expect(types[id].mapId, id).toBeUndefined();
     });

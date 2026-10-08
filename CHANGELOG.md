@@ -4,6 +4,10 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Tests follow the owner's content cuts (2026-10-07).** With Copper Rubble and every Map deleted in
+  the CMS, the tests that relied on them were updated: the Oak Forest Map's chain test removed, 8
+  golden render cases for deleted Tokens dropped, the first-Map rule skipped while no Maps ship.
+  The suite is fully green for the first time in the crunch prep; the AssetManager failure is gone.
 - **Environment cleanup before the crunch (2026-10-07).** Test runs are quiet (~380 lines instead of
   ~25,000) and faster (~70 s instead of ~110 s); 25 tombstone tests removed. About 3,500 lines of dead
   code and ~3,000 lines of unused CSS deleted (CSS bundle 215 → 141 kB), plus 3 unused packages and

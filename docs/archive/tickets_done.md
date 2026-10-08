@@ -17,3 +17,4 @@ T-005 — Atlas work in progress parked on branch atlas-wip (owner) — aecd7bda
 T-006 — The two edited map images parked on branch atlas-wip (owner) — 6f104f61 — 2026-10-07
 T-001 — Foundation art set, Copper Rubble deleted, Copper Ore valued from Copper Ore Vein (the Stone item still shows token_ore_loose art) — e3f32fa8 — 2026-10-07
 T-002 — All Maps and Map Tokens deleted, Oak Forest included — e3f32fa8 — 2026-10-07
+T-109 — Tests updated for the deleted Copper Rubble and Maps; suite fully green — fix/t109-content-tests — 2026-10-07
