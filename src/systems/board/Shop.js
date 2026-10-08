@@ -17,7 +17,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Sells every Token type that carries a `shop` block: `shop: { price: [{ itemId, quantity }],
- * section: '<skill id>' | 'general' }`.
+ * section: '<skill id>' | 'general', group?: '<label>' }`.
  *
  * Everything with a `shop` block is listed from the start; the price is the only gate. Items are
  * the only price, paid all or nothing through `InputAllocator` (Bank first, then loot on the
@@ -157,25 +157,52 @@ function purchase(typeId, place) {
     return { success: true, instance, x: placed.x, y: placed.y, nudged: !!placed.nudged };
 }
 
+/** Total quantity of a price, used to order a group cheapest first. */
+const priceWeight = (typeId) => priceOf(typeId).reduce((n, l) => n + l.quantity, 0);
+
 /**
  * The catalogue for the panel: every sold Token, grouped by section. Sections
- * are ordered by name with General last; Tokens within a section by name.
+ * are ordered by name with General last; entries within a section by name.
  *
- * @returns {Array<{section, name, items: Array<{typeId, name, price, affordability}>}>}
+ * Tokens whose `shop.group` is the same label are one entry: `{ group, name: <label>, options,
+ * typeId, price, affordability }`, where `options` lists the members cheapest first and the
+ * top-level `typeId`, `price` and `affordability` are the first option's. The entry sits in the
+ * section of its first member. Every option is selectable; each is gated only by its own price.
+ *
+ * @returns {Array<{section, name, items: Array<{typeId, name, price, affordability, group?, options?}>}>}
  */
 export function catalogue() {
     const bySection = new Map();
+    const groups = new Map();
+    const entryOf = (typeId) => ({
+        typeId,
+        name: tokenName(typeId) || typeId,
+        price: priceLines(typeId),
+        affordability: canBuy(typeId)
+    });
     for (const typeId of Object.keys(getAllTokenTypes())) {
         const shop = shopBlockOf(typeId);
         if (!shop) continue;
         const section = shop.section || GENERAL_SECTION;
         if (!bySection.has(section)) bySection.set(section, []);
-        bySection.get(section).push({
-            typeId,
-            name: tokenName(typeId) || typeId,
-            price: priceLines(typeId),
-            affordability: canBuy(typeId)
-        });
+        const label = typeof shop.group === 'string' ? shop.group.trim() : '';
+        if (label) {
+            if (!groups.has(label)) {
+                const entry = { group: label, name: label, options: [] };
+                groups.set(label, entry);
+                bySection.get(section).push(entry);
+            }
+            groups.get(label).options.push(entryOf(typeId));
+            continue;
+        }
+        bySection.get(section).push(entryOf(typeId));
+    }
+    for (const entry of groups.values()) {
+        entry.options.sort((a, b) => priceWeight(a.typeId) - priceWeight(b.typeId) || a.name.localeCompare(b.name));
+        const [first] = entry.options;
+        entry.typeId = first.typeId;
+        entry.price = first.price;
+        entry.affordability = first.affordability;
     }
     return [...bySection.entries()]
         .map(([section, items]) => ({

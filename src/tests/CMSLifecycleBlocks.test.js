@@ -87,6 +87,7 @@ function everyBlock() {
         shop: {
             price: [{ itemId: i2, quantity: 10 }, { itemId: i3, quantity: 2 }],
             section: 'logging',
+            group: 'Fixture Group',
         },
         trickle: [{ itemId: i1, quantity: 1, everyMs: 300000 }],
     };
@@ -288,6 +289,21 @@ describe('The Token editor’s Lifecycle section', () => {
 
         const written = syncPayload()['tokens.json'][id];
         expect(written.turns).toEqual({ into: [{ typeId: t1, weight: 1 }], everyMs: 60000, chance: 100 });
+    });
+
+    it('the Shop block edits its group: typing sets it, clearing drops the key, and it reaches tokens.json', () => {
+        const id = useEntityStore.getState().addToken({ name: 'Group Fixture' });
+        useEntityStore.getState().updateToken(id, { shop: { price: [], section: 'general' } });
+        useEntityStore.getState().setActiveEntity(id, 'token');
+        const { container } = render(React.createElement(TokenEditor));
+        const input = container.querySelector('[data-block="shop"] [data-field="shop-group"]');
+        fireEvent.change(input, { target: { value: 'Wood Foundation' } });
+        expect(useEntityStore.getState().tokens[id].shop).toEqual({ price: [], section: 'general', group: 'Wood Foundation' });
+        expect(syncPayload()['tokens.json'][id].shop.group).toBe('Wood Foundation');
+
+        fireEvent.change(container.querySelector('[data-block="shop"] [data-field="shop-group"]'), { target: { value: '' } });
+        expect(useEntityStore.getState().tokens[id].shop).toEqual({ price: [], section: 'general' });
+        expect(JSON.parse(JSON.stringify(syncPayload()['tokens.json'][id].shop))).not.toHaveProperty('group');
     });
 
     it('renders a Token carrying every block without throwing', () => {

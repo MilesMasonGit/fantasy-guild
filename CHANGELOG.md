@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Shop rows, arrows and groups.** The Shop list scrolls with an arrow bar at the top and bottom instead of a scrollbar. Every row is the same height with the Token drawn at 128 pixels on the right, ready to drag out onto the mat, and the cost in a 2 by 2 grid. A Token can now be given a Shop group in the CMS (Spawning and Building, Shop block): Tokens sharing a group name show as one row with a dropdown, and the chosen entry's picture and price are what you buy.
 - **Fast drops on the bin.** Flicking a Token onto the bin edge and letting go straight away now bins it; before, a release in the first few milliseconds after the bin popped open dropped the Token on the mat underneath. A Token dragged back out of the bin still never drops back into it.
 - **Grabbing follows each Token's own circle.** Tokens still draw at their bigger 2× size, but only a Token's own round body now answers a press, so art spilling over a neighbour no longer steals the click or drag; where two Tokens overlap, the press goes to the one whose centre is nearest, the same one the hover outline shows. A hero's art beside their figure no longer blocks the flag or Token behind it either.
 - **Heroes stand a little further from their Token.** A hero working or fighting now stands 32 units from the Token's edge instead of 16, so in a fight the hero's health bar and the enemy's no longer touch, even with a four-digit HP number (T-112).

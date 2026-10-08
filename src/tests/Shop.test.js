@@ -38,6 +38,14 @@ registerTokenTypes({
         id: 'fixture_shop_bench', name: 'Fixture Bench', size: 1,
         shop: { price: [{ itemId: WOOD, quantity: 2 }, { itemId: 'item_stone', quantity: 1 }], section: 'general' }
     },
+    fixture_grp_big: {
+        id: 'fixture_grp_big', name: 'Fixture Grp Big', size: 1,
+        shop: { price: [{ itemId: WOOD, quantity: 20 }], section: 'logging', group: 'Fixture Group' }
+    },
+    fixture_grp_small: {
+        id: 'fixture_grp_small', name: 'Fixture Grp Small', size: 1,
+        shop: { price: [{ itemId: WOOD, quantity: 4 }], section: 'logging', group: 'Fixture Group' }
+    },
     fixture_not_sold: { id: 'fixture_not_sold', name: 'Fixture Not Sold', size: 1 }
 });
 
@@ -77,10 +85,45 @@ describe('the catalogue', () => {
         expect(groups[groups.length - 1].name).toBe('General');
     });
 
+    it('shows a group as one entry, options cheapest first, and leaves ungrouped Tokens alone', () => {
+        const logging = Shop.catalogue().find(g => g.section === 'logging');
+        const groupEntries = logging.items.filter(i => i.group);
+        expect(groupEntries).toHaveLength(1);
+        const [entry] = groupEntries;
+        expect(entry.group).toBe('Fixture Group');
+        expect(entry.name).toBe('Fixture Group');
+        expect(entry.options.map(o => o.typeId)).toEqual(['fixture_grp_small', 'fixture_grp_big']);
+        expect(entry.typeId).toBe('fixture_grp_small');
+        const all = Shop.catalogue().flatMap(g => g.items);
+        // The members are not also listed on their own.
+        expect(all.filter(i => i.typeId === 'fixture_grp_big' && !i.options)).toHaveLength(0);
+        const forest = all.find(i => i.typeId === 'fixture_shop_forest');
+        expect(forest.options).toBeUndefined();
+        expect(forest.group).toBeUndefined();
+    });
+
+    it('each option is gated by its own price only', () => {
+        InventoryManager.addItem(WOOD, 5);
+        const entry = Shop.catalogue().flatMap(g => g.items).find(i => i.group);
+        expect(entry.options.find(o => o.typeId === 'fixture_grp_small').affordability.success).toBe(true);
+        expect(entry.options.find(o => o.typeId === 'fixture_grp_big').affordability.success).toBe(false);
+    });
+
     it('shows have / need against each price line', () => {
         InventoryManager.addItem(WOOD, 4);
         const [line] = Shop.priceLines('fixture_shop_forest');
         expect(line).toMatchObject({ itemId: WOOD, need: 10, have: 4, enough: false });
+    });
+});
+
+describe('buying from a group', () => {
+    it('buys the chosen option at the drop point, and its price only', () => {
+        InventoryManager.addItem(WOOD, 25);
+        const result = Shop.buyAt('fixture_grp_big', { x: 600, y: 600 });
+        expect(result.success).toBe(true);
+        expect(onMat('fixture_grp_big')).toHaveLength(1);
+        expect(onMat('fixture_grp_small')).toHaveLength(0);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(5);
     });
 });
 

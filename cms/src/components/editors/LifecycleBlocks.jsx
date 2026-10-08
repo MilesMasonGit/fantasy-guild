@@ -31,6 +31,11 @@ export default function LifecycleBlocks({ token, onChange }) {
     [tokens]
   );
 
+  const shopGroupNames = useMemo(
+    () => [...new Set(Object.values(tokens).map((t) => t?.shop?.group).filter(Boolean))].sort(),
+    [tokens]
+  );
+
   const set = (key, value) => onChange(key, value);
 
   return (
@@ -74,7 +79,7 @@ export default function LifecycleBlocks({ token, onChange }) {
                     <FoundationBlock block={token.foundation} onChange={(v) => set('foundation', v)} />
                   )}
                   {key === 'shop' && (
-                    <ShopBlock block={token.shop} items={items} onChange={(v) => set('shop', v)} />
+                    <ShopBlock block={token.shop} items={items} groupNames={shopGroupNames} onChange={(v) => set('shop', v)} />
                   )}
                   {key === 'trickle' && (
                     <TrickleBlock lines={token.trickle} items={items} onChange={(v) => set('trickle', v)} />
@@ -177,7 +182,7 @@ function FoundationBlock({ block, onChange }) {
   );
 }
 
-function ShopBlock({ block, items, onChange }) {
+function ShopBlock({ block, items, groupNames = [], onChange }) {
   const patch = (p) => onChange({ ...block, ...p });
   return (
     <div className="space-y-3">
@@ -190,6 +195,21 @@ function ShopBlock({ block, items, onChange }) {
       />
       <Field label="Shop section">
         <SkillSelect value={block.section} onChange={(section) => patch({ section })} general />
+      </Field>
+      <Field label="Shop group (optional)">
+        <input
+          type="text" list="shop-group-names" data-field="shop-group"
+          value={block.group || ''} placeholder="Tokens sharing a label are one Shop row with a dropdown"
+          onChange={(e) => {
+            const group = e.target.value;
+            const { group: _drop, ...rest } = block;
+            onChange(group.trim() ? { ...rest, group } : rest);
+          }}
+          className="w-full" style={{ fontSize: 11 }}
+        />
+        <datalist id="shop-group-names">
+          {groupNames.map((g) => <option key={g} value={g} />)}
+        </datalist>
       </Field>
     </div>
   );
