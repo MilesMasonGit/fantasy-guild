@@ -123,17 +123,22 @@ export function familyOf(spawnerTypeId) {
 }
 
 /**
- * The census: one pass over the mat, rebuilt lazily only when membership changes
+ * The census: one pass over the mat and the discard bin, rebuilt lazily only when membership changes
  * (`BoardState.membershipVersion`) or the Token registry does. `attemptSpawn`'s cap check and
  * `syncAlerts`' once-a-tick rescan share one scan per tick (or per spawn, since a spawn earlier in
  * the same pass bumps membership and the next spawner re-counts).
  */
-let census = { tokens: null, version: -1, regVersion: -1, spawners: [], countByType: new Map(), capsByKey: new Map() };
+let census = { tokens: null, bin: null, binLength: -1, version: -1, regVersion: -1, spawners: [], countByType: new Map(), capsByKey: new Map() };
 
 function ensureCensus() {
     const { tokens, version } = BoardState.membershipVersion();
     const regVersion = registryVersion();
-    if (census.tokens === tokens && census.version === version && census.regVersion === regVersion) return census;
+    // Binning and discarding change the bin without touching mat membership, so the bin is part of
+    // the cache key.
+    const bin = BoardState.binTokens();
+    const binLength = bin.length;
+    if (census.tokens === tokens && census.version === version && census.regVersion === regVersion
+        && census.bin === bin && census.binLength === binLength) return census;
 
     const countByType = new Map();
     const spawners = [];
@@ -141,7 +146,9 @@ function ensureCensus() {
         countByType.set(t.typeId, (countByType.get(t.typeId) || 0) + 1);
         if (!t.turnedFrom && isSpawner(getTokenType(t.typeId))) spawners.push(t);
     }
-    census = { tokens, version, regVersion, spawners, countByType, capsByKey: new Map() };
+    // A binned Token still counts toward its family's cap until it is discarded for good.
+    for (const t of bin) countByType.set(t.typeId, (countByType.get(t.typeId) || 0) + 1);
+    census = { tokens, bin, binLength, version, regVersion, spawners, countByType, capsByKey: new Map() };
     return census;
 }
 
@@ -150,7 +157,7 @@ function liveSpawners() {
     return ensureCensus().spawners;
 }
 
-/** Live Tokens on the mat whose type is in `family`, whatever their origin. */
+/** Tokens on the mat or in the discard bin whose type is in `family`, whatever their origin. */
 function countOf(family) {
     const { countByType } = ensureCensus();
     let total = 0;
