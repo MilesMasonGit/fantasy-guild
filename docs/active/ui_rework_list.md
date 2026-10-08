@@ -13,6 +13,11 @@ Its locked sections are the source of truth for briefs 10 and 30 (written
   bin lets a spawner exceed its cap: a bug). → T-101
 - **"Trickle" becomes "Passive Production"**: all of it on one 5-minute timer;
   the **Wishing Well** joins it (about 10 Water every 5 min). → T-099
+  - Built 2026-10-08: the Wishing Well pays **10 × rank** Water per 5 min (owner);
+    every Passive Production line pays each 5-minute lap, so the Hall's Apple
+    Seed now comes every 5 min, not 10 (director, from "one timer"); the Guild
+    Hall and quest Tokens don't count toward the Token cap, so a full mat never
+    blocks a quest (director).
 - The **"Hero went elsewhere"** notification should not be a notification.
 
 Checked 2026-10-06: the inspection panel's "Origin (dev)" line shows only in a
