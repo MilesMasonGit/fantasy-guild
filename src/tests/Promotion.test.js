@@ -90,15 +90,50 @@ describe('The gate is the skills a job carries forward (D-262)', () => {
         expect(PromotionSystem.canPromote(hero.id, 'paladin').ok).toBe(true);
     });
 
-    it('a basic class has no skill gate until its gate skills are authored', () => {
-        // ⚠️ The Recruit lists only Starting skills and a basic class only its
-        // class skills, so the two lists share nothing to gate on.
+    it('each basic class gates on its two named Starting skills', () => {
+        expect(getPromotionGateSkills('fighter')).toEqual(['mining', 'smithing']);
+        expect(getPromotionGateSkills('ranger')).toEqual(['forestry', 'crafting']);
+        expect(getPromotionGateSkills('wizard')).toEqual(['alchemy', 'cooking']);
+        expect(getPromotionGateSkills('rogue')).toEqual(['fishing', 'crafting']);
+        expect(getPromotionCost('fighter').skillLevel).toBe(10);
+    });
+
+    it('a Recruit cannot become a Fighter until Mining and Smithing reach 10', () => {
         const hero = generateHero();
         HeroManager.addHero(hero);
-        for (const jobId of ['fighter', 'ranger', 'wizard', 'rogue']) {
-            expect(getPromotionGateSkills(jobId), jobId).toEqual([]);
-            expect(PromotionSystem.canPromote(hero.id, jobId).ok, jobId).toBe(true);
+        for (const id of STARTING_SKILL_IDS) hero.skills[id].level = 50;
+        hero.skills.mining.level = 9;
+        hero.skills.smithing.level = 3;
+
+        const verdict = PromotionSystem.canPromote(hero.id, 'fighter');
+        expect(verdict.ok).toBe(false);
+        expect(verdict.reason).toBe(PromotionSystem.REFUSAL.SKILL_TOO_LOW);
+        expect(verdict.missing.map(m => m.skillId)).toEqual(['mining', 'smithing']);
+        // What the Change Job planner prints.
+        expect(verdict.detail).toBe('Needs Mining 9/10, Smithing 3/10');
+
+        hero.skills.mining.level = 10;
+        expect(PromotionSystem.canPromote(hero.id, 'fighter').missing.map(m => m.skillId))
+            .toEqual(['smithing']);
+        hero.skills.smithing.level = 10;
+        expect(PromotionSystem.canPromote(hero.id, 'fighter').ok).toBe(true);
+    });
+
+    it('a Recruit who qualifies for one basic class does not qualify for the others', () => {
+        const hero = generateHero();
+        HeroManager.addHero(hero);
+        for (const id of STARTING_SKILL_IDS) hero.skills[id].level = 1;
+        qualify(hero, 'wizard');
+
+        expect(PromotionSystem.canPromote(hero.id, 'wizard').ok).toBe(true);
+        for (const jobId of ['fighter', 'ranger', 'rogue']) {
+            expect(PromotionSystem.canPromote(hero.id, jobId).ok, jobId).toBe(false);
         }
+    });
+
+    it('a master class gates on its parent\'s combat and advanced skill at 25', () => {
+        expect(getPromotionGateSkills('paladin').sort()).toEqual(['leadership', 'melee']);
+        expect(getPromotionCost('paladin').skillLevel).toBe(25);
     });
 
     /**
@@ -267,6 +302,7 @@ describe('⚠️ Banking — nothing is lost, only set down (D-71)', () => {
         hero.skills.leadership.level = leadership;
         hero.skills.faith.level = faith;
         hero.skills.enchanting.level = 9;
+        qualify(hero, 'wizard');
         const result = PromotionSystem.promote(hero.id, 'wizard');
         return { hero, result };
     }
@@ -435,6 +471,7 @@ describe('Preview shows the trade before the player commits', () => {
     it('marks an arriving skill as restored, with its real level', () => {
         const hero = freshFighter();
         hero.skills.leadership.level = 31;
+        qualify(hero, 'wizard');
         PromotionSystem.promote(hero.id, 'wizard');   // banks Leadership at 31
 
         const preview = PromotionSystem.previewPromotion(hero.id, 'fighter');
