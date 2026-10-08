@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-113**
+**Next free number: T-115**
 
 ---
 
@@ -130,7 +130,9 @@ here.
 | T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |
 | T-069 | P2 | open | Write the mat-era guide to keeping it fast in `docs/reference/PERFORMANCE.md` (the baseline and how-to-measure parts exist since 2026-10-07; draft in `docs/archive/review_v3/R6.md` §8 + `R7.md` §4). | CR3-021 |
 | T-070 | P3 | open | Document `window.Game` — agents rely on ~30 entries the game never reads. | CR3-040 |
-| T-111 | P2 | open | The engine bench reads ~1.4× slower than its baseline on unchanged `main` (`56a5082c`), uniformly across all scenarios with the same work, twice in a row. Probably machine state; re-run on a quiet machine and re-save the baseline if it holds. *Cause unverified.* | T-109 merge gate |
+| T-111 | P3 | open | Engine bench timings are load-sensitive: on unchanged `main` (`933d12db`, 2026-10-08) a run beside a busy agent read 1.2–2.3× slower on every line; the next run alone matched the baseline on every p50 (0.94–1.05×) with only two p99 tails over 20 %. Treat REGRESSED as noise until reproduced on a quiet machine; the work check is reliable. | T-109 merge gate |
+| T-113 | P2 | open | Brief 20 R1: the 25-skill registry and 13-job table change the bench heroes (`logging` → `forestry`, `explore` gone): accept WORK CHANGED in `heroHash` only under this ticket. Close when R1 merges. | brief 20 |
+| T-114 | P3 | open | Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason
 
