@@ -1,4 +1,5 @@
 export const SPRITE_MANIFEST = {
+    'token_mineshaft_copper': 'assets/tokens/mine/token_mineshaft_copper.png',
     'token_ore_vein_addy': 'assets/tokens/ore/token_ore_vein_addy.png',
     'token_ore_vein_coal': 'assets/tokens/ore/token_ore_vein_coal.png',
     'token_ore_vein_copper': 'assets/tokens/ore/token_ore_vein_copper.png',
