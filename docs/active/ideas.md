@@ -58,6 +58,18 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
   skills, one per promoted hero); brief 20's class rework decides who holds
   which.
 
+- **Events system**: random events that keep the player engaged, e.g. a
+  **shooting star** that lands and can be mined, a visit from a **frog
+  prince**. *after-crunch* · feature-sized · ask: what happens to events
+  while the player is offline (brief 40), and the Atlas concept's line that
+  combat isn't a "random chaotic event" (events should probably be treats,
+  not punishments, in an idle game).
+- **Pixel-style UI borders**: make UI borders look pixel-like to match the
+  game's art; investigate how first. *research first* · must sit with
+  UI_STYLE.md's "no thick borders, no frames inside frames"; the
+  investigation is read-only and could run any time; anything new drawn on
+  the mat gets a cost-log line.
+
 ### Tools and process
 
 - **Agents author content through the CMS**: let an agent quickly create and
@@ -67,6 +79,11 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
   import or scripting path rather than an agent editing files.
 - **Full CMS review** once the new Token loops and the Atlas are in.
   *after-crunch* · review, then tickets.
+- **CMS dependency map**: the CMS understands the progression chain we lay out
+  through items and enemies, e.g. Oak Wood → fight the Tree Ent → Fir Forest
+  map → Fir Wood. Part of the CMS rework. · same underlying "what comes from
+  where" graph as the encyclopedia's provenance view; build it once, use it in
+  both (CMS for authoring checks, encyclopedia for players).
 - **Terrain art early**: terrain needs a lot of owner art, so work out what art
   it needs well before brief 80 runs, giving the owner time to draw it.
   ⚠️ reorders brief 80 · its research phase (what of the old terrain system
