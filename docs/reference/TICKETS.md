@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-112**
+**Next free number: T-113**
 
 ---
 
@@ -134,6 +134,7 @@ here.
 | T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |
 | T-069 | P2 | open | Write the mat-era guide to keeping it fast in `docs/reference/PERFORMANCE.md` (the baseline and how-to-measure parts exist since 2026-10-07; draft in `docs/archive/review_v3/R6.md` §8 + `R7.md` §4). | CR3-021 |
 | T-070 | P3 | open | Document `window.Game` — agents rely on ~30 entries the game never reads. | CR3-040 |
+| T-112 | P2 | open | Heroes stand further from their Token or enemy (`HeroMotion.STAND_GAP` 16 → ~40) so hero and enemy health bars don't collide (owner eye-check, brief 10 batch A). Changes engine work: accept the bench with this ticket. | owner 2026-10-08 |
 | T-111 | P2 | open | The engine bench reads ~1.4× slower than its baseline on unchanged `main` (`56a5082c`), uniformly across all scenarios with the same work, twice in a row. Probably machine state; re-run on a quiet machine and re-save the baseline if it holds. *Cause unverified.* | T-109 merge gate |
 
 ## 3. Parked — don't work on these without a reason

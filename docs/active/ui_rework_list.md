@@ -68,6 +68,14 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
   in the same popup (owner, 2026-10-07).
 - **Level-up line**: "Leveled up Mining to 25!" for one level; "(+4)" is added
   only when two or more levels merge into one bubble (owner, 2026-10-07).
+- **Token size on the mat** (owner, 2026-10-08): art stays on whole-pixel
+  steps and rounds to the nearest step, so at 1920×1080 Tokens and heroes draw at
+  2× (bigger than their 128-unit design). Keep that; make grabbing follow each
+  Token's own circle so overlapping art doesn't steal presses.
+- **Heroes stand a little further** from what they work or fight, so the two
+  health bars don't collide (owner, 2026-10-08; T-112).
+- **Health bars** show the HP number on the bar; the hero's bar stays ~3 s after
+  a fight (owner, 2026-10-08).
 - **Name label**: on hover, **above** the Token's box, never over a bubble.
 - Bubbles are drawn **inside** the Token's box, so nothing is cut off at the
   mat's edges and hovering them never leaves the Token.
