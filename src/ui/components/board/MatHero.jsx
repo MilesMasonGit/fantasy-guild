@@ -50,11 +50,25 @@ function HeroHealthBar({ heroId, artPx }) {
             max={hp.max}
             style={{
                 left: (HERO_HIT_PX - HERO_BAR_W_U) / 2,
-                top: (FLAG_PX - artPx) / 2 - HEALTH_BAR_H_U - 6 - HEALTH_BAR_GAP_U,
+                top: (FLAG_PX - artPx) / 2 - HEALTH_BAR_H_U - HEALTH_BAR_GAP_U,
                 width: HERO_BAR_W_U
             }}
         />
     );
+}
+
+/** How long a hero's bar stays up after their fight ends, in ms. */
+export const HERO_BAR_LINGER_MS = 3000;
+
+/** True while `fighting`, and for `HERO_BAR_LINGER_MS` after it stops. */
+function useBarLinger(fighting) {
+    const [linger, setLinger] = useState(false);
+    useEffect(() => {
+        if (fighting) { setLinger(true); return undefined; }
+        const t = setTimeout(() => setLinger(false), HERO_BAR_LINGER_MS);
+        return () => clearTimeout(t);
+    }, [fighting]);
+    return fighting || linger;
 }
 
 /**
@@ -132,6 +146,7 @@ export const MatHero = memo(function MatHero({
     const isWalking = moving;
     const walkDrawn = useDrawn('walkDraw');
     const barsDrawn = useDrawn('bubbles');
+    const barShown = useBarLinger(fighting);
     const facingLeft = facing < 0;
 
     // A moving hero is handed no point (so their steps do not redraw the mat). Read it live,
@@ -234,7 +249,7 @@ export const MatHero = memo(function MatHero({
                     )}
                 </div>
             )}
-            {fighting && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
+            {barShown && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
         </button>
     );
 });

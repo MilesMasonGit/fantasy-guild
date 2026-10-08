@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Health bar numbers and lingering hero bar.** The health bar now has its number (like 34/50) written on it all the time, so there is no hover tooltip; the bars are a little thicker to fit it. A hero's bar stays up for about 3 seconds after their fight ends, then goes.
 - **Notifications and bin pop out over the playmat.** The notification column and the discard bin are now slim tabs on the screen edge that slide out over the mat while you hover them, so the playmat is about 290 pixels wider on a 1600 pixel window. Dragging a Token toward the bin edge opens it too.
 - **Stuck spawner warning.** A spawner that cannot spawn now shows a small warning bubble in the middle of its Token the whole time: yellow "Needs Oak Seed to spawn" while it waits on an item, red "No room to spawn" when the mat is full. A single level-up reads "Leveled up Mining to 25!"; the "(+n)" shows only when two or more levels merge.
 - **Callouts instead of alert marks.** The floating exclamation marks on Tokens are gone. A spawner now shows a quick "! Spawned Oak Tree" popup that fades, a named effect (like a bonus drop) pops its name over its Token the same way, and the hero who uses a Token up says "Oak Tree Depleted". A level-up on the mat reads "Leveled up Mining to 25! (+4)", with quick level-ups merged into one bubble. The "Hero went elsewhere" notification is dropped.
