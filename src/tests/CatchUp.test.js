@@ -292,6 +292,7 @@ describe('the summary and the progress', () => {
         expect(total(summary.items.gained)).toBeGreaterThan(100);
         expect(total(summary.items.spent)).toBeGreaterThan(0);
         expect(Object.keys(summary.items.net).length).toBeGreaterThan(0);
+        expect(typeof summary.items.floor).toBe('object');
         expect(summary.levelUps.length).toBeGreaterThan(0);
         expect(summary.levelUps[0]).toMatchObject({ heroId: expect.any(String), skillId: expect.any(String) });
         expect(summary.levelUps.every(l => l.to > l.from)).toBe(true);

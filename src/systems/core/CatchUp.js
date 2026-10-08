@@ -27,9 +27,11 @@ import { logger } from '../../utils/Logger.js';
  * catch-up itself takes is played too; what lies past the cap is dropped and reported.
  *
  * The summary (`result.summary`), counted from the engine's own events while it runs:
- * - `items`: `{ gained, spent, net }`, each `{ itemId: quantity }`. `gained` / `spent` are what the
- *   Bank took in and paid out; `net` is the Bank before against after (two Bank paths announce no
- *   amounts, so it is the one to trust for "how much more do I have").
+ * - `items`: `{ gained, spent, net, floor }`, each `{ itemId: quantity }`. `gained` / `spent` are
+ *   what the Bank took in and paid out; `net` is the Bank before against after (two Bank paths
+ *   announce no amounts, so it is the one to trust for "how much more do I have"); `floor` is the
+ *   loot lying on the mat before against after. ⚠️ With auto-collect off (the default) loot waits
+ *   on the mat for the player, so a long catch-up's production is mostly in `floor`, not `gained`.
  * - `levelUps`: `[{ heroId, heroName, skillId, skillName, from, to }]`, one per hero and skill.
  * - `depleted`: `{ total, byType: { typeId: count } }`: Tokens that ran out of charges.
  * - `wounded`: `[{ heroId, heroName, times }]`: heroes defeated and carried home.
@@ -113,11 +115,30 @@ function bankSnapshot() {
     return out;
 }
 
+function floorSnapshot() {
+    const out = {};
+    for (const sprite of GameState.state?.board?.sprites || []) {
+        if (sprite?.refId) out[sprite.refId] = (out[sprite.refId] || 0) + (Number(sprite.quantity) || 0);
+    }
+    return out;
+}
+
+/** `after − before` per key, leaving out what did not change. */
+function change(before, after) {
+    const out = {};
+    for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+        const diff = (after[key] || 0) - (before[key] || 0);
+        if (diff) out[key] = diff;
+    }
+    return out;
+}
+
 const heroName = (heroId) => (GameState.state?.heroes || []).find(h => h.id === heroId)?.name || heroId;
 
 /** Listen to the engine's events for the summary. `stop()` unsubscribes and returns it. */
 function startSummary() {
     const bankBefore = bankSnapshot();
+    const floorBefore = floorSnapshot();
     const gained = {};
     const spent = {};
     const levels = new Map();
@@ -154,14 +175,12 @@ function startSummary() {
     return {
         stop() {
             for (const off of offs) off();
-            const bankAfter = bankSnapshot();
-            const net = {};
-            for (const itemId of new Set([...Object.keys(bankBefore), ...Object.keys(bankAfter)])) {
-                const change = (bankAfter[itemId] || 0) - (bankBefore[itemId] || 0);
-                if (change) net[itemId] = change;
-            }
             return {
-                items: { gained, spent, net },
+                items: {
+                    gained, spent,
+                    net: change(bankBefore, bankSnapshot()),
+                    floor: change(floorBefore, floorSnapshot())
+                },
                 levelUps: [...levels.values()],
                 depleted,
                 wounded: [...wounded.entries()].map(([heroId, times]) => ({ heroId, heroName: heroName(heroId), times })),
