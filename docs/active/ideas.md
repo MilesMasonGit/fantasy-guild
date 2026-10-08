@@ -122,6 +122,15 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
 - **One core loop per skill**: so each skill feels different, and to prototype
   how they'll work. *after-crunch* · feature-sized; builds on brief 20's new
   skill list (in flight now). First content to build; owner, 2026-10-08.
+  - **Occult / magic / enchanting sketch (very loose)**: Tokens need to be
+    **charged with elements**. An enchanting table has **three slots** that
+    take context from other placed Tokens; charge comes from **leyline map
+    features** or **support Tokens** the player builds; **different
+    combinations give different outputs**. · builds on the existing `nearby`
+    rule reach (GDD: 164 u, the four side neighbours), and suits a mostly
+    static board; leylines would be an Atlas map feature or modifier.
+    Enchanting is an advanced skill today (GDD), with magic, summoning and
+    faith nearby in the class tree.
 - **Guild upgrade content**: build out the Guild Hall upgrades. Pairs with the
   constellation screen above and the Atlas's new global upgrades.
 
