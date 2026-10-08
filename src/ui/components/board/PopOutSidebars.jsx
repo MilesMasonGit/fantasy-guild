@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import * as DiscardBin from '../../../systems/board/DiscardBin.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -141,7 +141,7 @@ function useToastCount() {
     useEffect(() => {
         const sync = () => setCount(NotificationSystem.getQueue().length);
         const unsubs = [ENGINE_EVENTS.NOTIFICATION_ADDED, ENGINE_EVENTS.NOTIFICATION_UPDATED, ENGINE_EVENTS.NOTIFICATION_DISMISSED]
-            .map(e => EventBus.subscribe(e, sync));
+            .map(e => EventBus.subscribe(e, sync, UI_LISTENER));
         sync();
         return () => unsubs.forEach(u => u?.());
     }, []);

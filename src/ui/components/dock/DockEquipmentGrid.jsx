@@ -8,7 +8,7 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { SLOT_ORDER, categoryOfItem, getCategoryInfo, CATEGORY_KINDS } from '../../../config/registries/equipmentConstants.js';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
 
@@ -32,8 +32,8 @@ export const DockEquipmentGrid = ({ heroId }) => {
             }
         };
 
-        const unsub1 = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, handleEquipped);
-        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.HERO_EQUIPPED, handleEquipped);
+        const unsub1 = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, handleEquipped, UI_LISTENER);
+        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.HERO_EQUIPPED, handleEquipped, UI_LISTENER);
 
         return () => {
             unsub1();

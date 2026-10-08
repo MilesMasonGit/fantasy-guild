@@ -1,7 +1,7 @@
 import React from 'react';
 import { Hourglass, Square } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { TimeBankManager } from '../../../systems/core/TimeBankManager.js';
 import { TIME_BANK } from '../../../config/loopConstants.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -35,8 +35,8 @@ export const TimeBankWidget = React.memo(() => {
         };
         // time_bank_updated covers accrual + spend ticks; state_changed covers
         // save loads that land before the widget mounts.
-        const subBank = EventBus.subscribe(ENGINE_EVENTS.TIME_BANK_UPDATED, sync);
-        const subState = EventBus.subscribe(ENGINE_EVENTS.STATE_CHANGED, sync);
+        const subBank = EventBus.subscribe(ENGINE_EVENTS.TIME_BANK_UPDATED, sync, UI_LISTENER);
+        const subState = EventBus.subscribe(ENGINE_EVENTS.STATE_CHANGED, sync, UI_LISTENER);
         sync();
         return () => { subBank(); subState(); };
     }, []);

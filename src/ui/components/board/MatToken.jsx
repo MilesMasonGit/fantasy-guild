@@ -10,7 +10,7 @@ import { AnimatedEnemySprite } from './AnimatedEnemySprite.jsx';
 import { resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as TimedChanges from '../../../systems/board/TimedChanges.js';
@@ -59,7 +59,7 @@ function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
             if (overlayRef.current) overlayRef.current.style.transform = transform;
         };
         follow();
-        return EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, follow);
+        return EventBus.subscribe(BOARD_EVENTS.ENEMIES_WALKED, follow, UI_LISTENER);
     }, [on, id, artRef, overlayRef]);
 }
 
@@ -371,7 +371,7 @@ export const MatToken = React.memo(function MatToken({
             setReceived(true);
             clearTimeout(receivedTimer.current);
             receivedTimer.current = setTimeout(() => setReceived(false), RECEIVED_MS);
-        });
+        }, UI_LISTENER);
         return () => { unsub?.(); clearTimeout(receivedTimer.current); };
     }, [isHall]);
 

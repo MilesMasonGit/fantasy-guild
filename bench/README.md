@@ -249,10 +249,8 @@ Two scripts in `bench/catchup/` time a long run of game time, for offline progre
 - ⚠️ The headless numbers are about **twice** the page's for the same board (Vite's SSR
   loader turns every imported call into a property lookup; the shipped build is bundled).
   Judge "under 30 s" with `page.mjs`; use `time.mjs` for comparisons and fingerprints.
-- `muted` in `page.mjs` is an **estimate** of a catch-up with the UI's listeners muted: each
-  event keeps only as many listeners as the engine registers headless (`time.mjs --listeners`),
-  the first ones in subscription order. Its work is not proven identical; replace it with the
-  engine's own mute once that exists.
+- `muted` in `page.mjs` is the bus gone quiet (`EventBus.setQuiet`), as a catch-up runs it:
+  every listener tagged `UI_LISTENER` is skipped and the engine's own still run.
 - Both put a virtual wall clock in place (Date.now() moves with game time), as the bench does.
 
 ## Drawing and drag benches

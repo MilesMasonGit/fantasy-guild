@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
-import { EventBus } from '../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /** How many hero cards can be pinned open at once; pinning another closes the oldest. */
@@ -306,22 +306,22 @@ export const useUIModals = (engine) => {
                 const tab = data?.tab;
                 if (!tab || tab === 'heroes') return;
                 openDrawerTab(tab, data?.filter);
-            }),
+            }, UI_LISTENER),
             engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, (data) => {
                 if (data?.heroId) setFlagRulesHeroId(data.heroId);
-            }),
+            }, UI_LISTENER),
             // Nothing has happened to the hero yet: the tile holds the offer open and this
             // only decides to draw it.
             engine.EventBus.subscribe(BOARD_EVENTS.PROMOTION_READY, (data) => {
                 if (data?.instanceId == null) return;
                 setPromotionOffer(data);
-            }),
+            }, UI_LISTENER),
             // ⚠️ A loaded save can carry an offer nobody answered. Without this the hero would
             // stand on the Token forever with nothing asking. A declined offer is not
             // standing, so this never re-asks.
             engine.EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
                 setPromotionOffer(standingPromotionOffer(engine));
-            })
+            }, UI_LISTENER)
         ];
 
         // Same, for a board already loaded when the UI mounted. Deferred a tick so it reads

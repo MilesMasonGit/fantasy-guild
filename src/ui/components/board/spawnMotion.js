@@ -1,4 +1,4 @@
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { TimeBankManager } from '../../../systems/core/TimeBankManager.js';
@@ -37,7 +37,7 @@ export function takeSpawn(instanceId, now = Date.now()) {
 
 /** Listen for spawns (the mat calls this once). Returns the unsubscribe. */
 export function watchSpawns() {
-    return EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => recordSpawn(p));
+    return EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => recordSpawn(p), UI_LISTENER);
 }
 
 export function resetSpawnMotion() {

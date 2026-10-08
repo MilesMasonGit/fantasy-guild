@@ -7,7 +7,7 @@ import {
 import { buildSurface } from '../../../systems/board/TerrainSurface.js';
 import { propsForBoard } from '../../../systems/board/TerrainProps.js';
 import { substrateSprite, propSprite } from '../../../config/registries/terrainRegistry.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -204,7 +204,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
         const unsubscribe = EventBus.subscribe(UI_EVENTS.TERRAIN_ART_SET_CHANGED, () => {
             texelCache.clear();
             draw();
-        });
+        }, UI_LISTENER);
 
         return () => {
             unsubscribe?.();

@@ -2,7 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 
 import { EngineProvider } from './context/EngineContext.jsx';
 import { DeckDndProvider } from './dnd/DndKit.jsx';
@@ -98,7 +98,7 @@ export const ReactRoot = ({ engine }) => {
             setDebugMode(s.debugMode ?? false);
             setMenuRight(s.ui?.bubbleMenuRight ?? false);
             setBackgroundTile(s.ui?.backgroundTile ?? 'pm_table_wood_spruce');
-        });
+        }, UI_LISTENER);
         return () => unsubscribe();
     }, []);
 
@@ -108,7 +108,7 @@ export const ReactRoot = ({ engine }) => {
     const closeSlotSelection = ui.slotSelection.close;
     React.useEffect(() => {
         if (!(import.meta.env.DEV || import.meta.env.MODE === 'perf')) return undefined;
-        return EventBus.subscribe(UI_EVENTS.DEV_STRESS_STARTED, () => closeSlotSelection());
+        return EventBus.subscribe(UI_EVENTS.DEV_STRESS_STARTED, () => closeSlotSelection(), UI_LISTENER);
     }, [closeSlotSelection]);
 
     // The Hall's upgrade web selects by upgrade id; it has no tiles.
@@ -136,12 +136,12 @@ export const ReactRoot = ({ engine }) => {
     }, [ui.fullscreen, ui.inspect]);
 
     useEffect(() => {
-        const unsub1 = EventBus.subscribe(ORPHAN_EVENTS.UI_OPEN_GUILD_HALL, () => handleOpenGuildHall());
-        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.UI_CLOSE_GUILD_HALL, () => handleCloseGuildHall());
+        const unsub1 = EventBus.subscribe(ORPHAN_EVENTS.UI_OPEN_GUILD_HALL, () => handleOpenGuildHall(), UI_LISTENER);
+        const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.UI_CLOSE_GUILD_HALL, () => handleCloseGuildHall(), UI_LISTENER);
         const unsub3 = EventBus.subscribe(ORPHAN_EVENTS.UI_TOGGLE_GUILD_HALL, () => {
             if (ui.fullscreen.view === 'guild') handleCloseGuildHall();
             else handleOpenGuildHall();
-        });
+        }, UI_LISTENER);
         return () => {
             unsub1();
             unsub2();
@@ -156,17 +156,17 @@ export const ReactRoot = ({ engine }) => {
             if (data?.action === 'equip' && data?.heroId) {
                 setInspectHeroId(data.heroId);
             }
-        });
+        }, UI_LISTENER);
         const unsub2 = EventBus.subscribe(ORPHAN_EVENTS.HERO_EQUIPPED, (data) => {
             if (data?.heroId) {
                 setInspectHeroId(data.heroId);
             }
-        });
+        }, UI_LISTENER);
         const unsub3 = EventBus.subscribe(UI_EVENTS.INSPECT_HERO, (data) => {
             if (data?.heroId) {
                 setInspectHeroId(data.heroId);
             }
-        });
+        }, UI_LISTENER);
         return () => {
             unsub1();
             unsub2();

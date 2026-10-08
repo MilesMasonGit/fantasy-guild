@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Swords, RotateCcw } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import * as FlagRules from '../../../systems/board/FlagRules.js';
@@ -33,7 +33,7 @@ export const FlagRulesPanel = ({ heroId, onClose }) => {
     useEffect(() => {
         const bump = () => refresh(n => n + 1);
         const timer = setInterval(bump, 500);
-        const unsubs = [ENGINE_EVENTS.HEROES_UPDATED, BOARD_EVENTS.HERO_MOVED, ENGINE_EVENTS.STATE_CHANGED].map(e => EventBus.subscribe(e, bump));
+        const unsubs = [ENGINE_EVENTS.HEROES_UPDATED, BOARD_EVENTS.HERO_MOVED, ENGINE_EVENTS.STATE_CHANGED].map(e => EventBus.subscribe(e, bump, UI_LISTENER));
         return () => { clearInterval(timer); unsubs.forEach(u => u()); };
     }, []);
 

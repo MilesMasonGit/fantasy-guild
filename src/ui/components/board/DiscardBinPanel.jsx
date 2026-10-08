@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as DiscardBin from '../../../systems/board/DiscardBin.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -86,7 +86,7 @@ export function useBinRefresh() {
             sig.current = next;
             bump(n => n + 1);
         };
-        const unsubs = BIN_EVENTS.map(e => EventBus.subscribe(e, refresh));
+        const unsubs = BIN_EVENTS.map(e => EventBus.subscribe(e, refresh, UI_LISTENER));
         return () => unsubs.forEach(u => u?.());
     }, []);
 }

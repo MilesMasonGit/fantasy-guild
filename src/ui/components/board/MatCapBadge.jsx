@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as MatCap from '../../../systems/board/MatCap.js';
@@ -67,7 +67,7 @@ export function useRefreshOn(events, on = true, signatureOf = null) {
             }
             bump(n => n + 1);
         };
-        const unsubs = events.map(e => EventBus.subscribe(e, refresh));
+        const unsubs = events.map(e => EventBus.subscribe(e, refresh, UI_LISTENER));
         unsubs.push(onMatTuningChanged(refresh));
         return () => unsubs.forEach(u => u?.());
     }, [events, on]);
