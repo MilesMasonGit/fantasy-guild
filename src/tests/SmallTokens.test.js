@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -15,7 +15,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import {
-    artRadiusOf, isSmallToken, tokenBodyScale, matW, SMALL_TOKEN_SCALE
+    artRadiusOf, isSmallToken, tokenBodyScale, matW, matH, SMALL_TOKEN_SCALE
 } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import {
@@ -24,9 +24,7 @@ import {
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
-import { DisallowBadge, StationGearBadge } from '../ui/components/board/TokenBadges.jsx';
 import { RING_D_U } from '../ui/components/board/ringRow.js';
-import { TOKEN_BAR_GAP_U } from '../ui/components/board/boardConstants.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -249,38 +247,25 @@ describe('on the mat (MatBoard)', () => {
         expect(parseFloat(big.querySelector('img').style.width)).toBe(128);
     });
 
-    it('⭐ the ring row under a small Token keeps full-size rings, hung just below the small box', () => {
+    it('⭐ a small Token keeps full-size bubbles, hung off the corners of its small box', () => {
         const spawner = put('b8_small_spawner', { x: 600, y: 500 });
         put('b8_standard', { x: 1200, y: 500 });
         const { container } = mount(1);
 
         const o = container.querySelector(`[data-token-overlay="${spawner.id}"]`);
         expect(parseFloat(o.style.width)).toBe(64);
-        const row = o.querySelector('[data-ring-row]');
-        expect(row).not.toBeNull();
-        expect(drawnPoint(o).y + drawnPoint(row).y).toBeCloseTo(spawner.y + 32 + TOKEN_BAR_GAP_U, 5);
-        const ring = row.querySelector('[data-ring="spawner"]');
+        const root = container.querySelector('[data-mat-board]');
+        root.getBoundingClientRect = () => ({
+            left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
+        });
+        fireEvent.pointerMove(root, { clientX: spawner.x, clientY: spawner.y });
+        const ring = o.querySelector('[data-bubble-row] [data-ring="spawner"]');
+        expect(ring).not.toBeNull();
         expect(parseFloat(ring.style.width)).toBe(RING_D_U);
         expect(parseFloat(ring.style.height)).toBe(RING_D_U);
-    });
-});
-
-describe('corner badges on a small Token', () => {
-    afterEach(cleanup);
-
-    it('hang off the corners instead of covering the art; standard ones unchanged', () => {
-        const { container } = render(React.createElement('div', null,
-            React.createElement(DisallowBadge, { small: true }),
-            React.createElement(StationGearBadge, { small: true, recipe: null })
-        ));
-        const marked = container.querySelectorAll('[data-badge-corner="small"]');
-        expect(marked.length).toBe(2);
-        for (const el of marked) expect(el.className).toMatch(/-top-3/);
-
-        cleanup();
-        const plain = render(React.createElement(DisallowBadge, {}));
-        const el = plain.container.querySelector('[data-tile-disallowed]');
-        expect(el.getAttribute('data-badge-corner')).toBeNull();
-        expect(el.className).toMatch(/right-1 top-1/);
+        // The row is centred on the small box, and wider than it.
+        const row = o.querySelector('[data-bubble-row]');
+        expect(parseFloat(row.style.top)).toBe(32);
+        expect(parseFloat(row.style.left) + parseFloat(row.style.width) / 2).toBe(32);
     });
 });

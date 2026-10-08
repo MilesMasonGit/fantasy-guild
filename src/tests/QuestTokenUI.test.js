@@ -112,24 +112,28 @@ describe('the quest ring, pure (B6.2)', () => {
 });
 
 describe('a quest Token on the mat (B6.2)', () => {
-    it('⭐ stands its progress ring always: no hero, no hover', () => {
+    it('⭐ its progress bubble: none at rest, bottom-centre of the box when hovered', () => {
         const q = spawn(hunt());
-        const { container } = mount(tokenEl(q));
+        const { container, rerender } = mount(tokenEl(q));
         const o = overlay(container, q);
         expect(o.getAttribute('data-quest-token')).toBe(q.id);
         expect(o.getAttribute('data-quest-done')).toBe('false');
-        const ring = o.querySelector('[data-ring-row] [data-ring="quest"]');
+        expect(o.querySelector('[data-ring="quest"]')).toBeNull();
+
+        rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, tokenEl(q, { isHovered: true }))));
+        const ring = o.querySelector('[data-bubble="quest"] [data-ring="quest"]');
         expect(ring).not.toBeNull();
         expect(ring.getAttribute('data-ring-text')).toBe('1/3');
         expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(1 / 3, 3);
-        // Unlimited Token: no charges ring beside it.
+        // Unlimited Token: no charges bubble beside it.
         expect(o.querySelectorAll('[data-ring]').length).toBe(1);
     });
 
-    it('the ring follows progress (state_changed, no subscription of its own)', async () => {
+    it('the ring follows progress (state_changed, no subscription of its own), shown 2 s on the change', async () => {
         const q = spawn(hunt());
         const { container } = mount(tokenEl(q));
         await act(async () => { QuestTokens.reportProgress('enemy_hunted', 1, { enemyId: 'token_goblin' }); });
+        await act(async () => { await new Promise(r => setTimeout(r, 120)); });
         const ring = overlay(container, q).querySelector('[data-ring="quest"]');
         expect(ring.getAttribute('data-ring-text')).toBe('2/3');
     });

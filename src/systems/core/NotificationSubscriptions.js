@@ -2,8 +2,6 @@ import { EventBus } from './EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import * as NotificationSystem from './NotificationSystem.js';
-import * as BoardState from '../board/BoardState.js';
-import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 
 // There is no module-level queue snapshot here: getQueue() returns a
@@ -28,28 +26,6 @@ EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, heroName, skillId, ski
         aggregationKey: key,
         meta: { startLevel }
     });
-
-    // Where the hero is drawn: the Token they work (by instance id) and the mat
-    // point. A hero in the Dock has neither.
-    const point = BoardState.displayPointOf(heroId);
-    if (point) {
-        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            instanceId: BoardState.workTokenOf(heroId),
-            x: point.x,
-            y: point.y,
-            heroId,
-            skillId,
-            severity: 'upgrade',
-            type: 'hero_level_up',
-            name: heroName,
-            heroName,
-            skillName,
-            startLevel,
-            newLevel,
-            title: `${heroName} leveled up ${skillName} ${startLevel}>${newLevel}!`,
-            message: `${heroName} leveled up ${skillName} ${startLevel}>${newLevel}!`
-        });
-    }
 });
 
 // 1. Loot Gain (Inventory Updates)

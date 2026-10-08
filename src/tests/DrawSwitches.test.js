@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, act } from '@testing-library/react';
+import { render, cleanup, act, fireEvent } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -19,6 +19,9 @@ import {
 } from '../ui/dev/perf/drawSwitches.js';
 import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
+import { matW, matH } from '../config/matGeometry.js';
+import { placeAt } from './fixtures/mat.js';
+import * as Flags from '../systems/board/Flags.js';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { AnimatedEnemySprite } from '../ui/components/board/AnimatedEnemySprite.jsx';
 import { AnimatedHeroSprite } from '../ui/components/board/AnimatedHeroSprite.jsx';
@@ -47,6 +50,9 @@ const mount = (el) => render(
     h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el))
 );
 
+beforeAll(() => Flags.init());
+afterAll(() => Flags.teardown());
+
 beforeEach(() => {
     resetDrawSwitches();
     resetMatTuning();
@@ -58,8 +64,8 @@ afterEach(() => {
 });
 
 describe('the registry', () => {
-    it('lists the fifteen switches, all on by default', () => {
-        expect(DRAW_SWITCHES).toHaveLength(15);
+    it('lists the sixteen switches, all on by default', () => {
+        expect(DRAW_SWITCHES).toHaveLength(16);
         expect(Object.values(drawnSwitches()).every(Boolean)).toBe(true);
         expect(DRAW_SWITCHES.every(isDrawn)).toBe(true);
     });
@@ -122,14 +128,14 @@ describe('mat overlays', () => {
         return h(MatToken, { id: q.id, typeId: q.typeId, x: q.x, y: q.y, size: 1, z: 10, isHovered: true });
     }
 
-    it('rings and tooltips', () => {
+    it('bubbles and tooltips', () => {
         const el = questToken();
         const on = mount(el);
         expect(on.container.querySelector('[data-ring="quest"]')).not.toBeNull();
         expect(document.body.querySelector('[data-quest-tooltip]')).not.toBeNull();
         cleanup();
 
-        setDrawn('rings', false);
+        setDrawn('bubbles', false);
         setDrawn('tooltips', false);
         const off = mount(el);
         expect(off.container.querySelector('[data-ring]')).toBeNull();
@@ -137,25 +143,45 @@ describe('mat overlays', () => {
         QuestManager.cleanup();
     });
 
-    it('alerts and speech layers on the mat', () => {
+    it('rings: the hover reach ring on the mat draws, and not when off', () => {
+        const hover = () => {
+            GameState.initNew();
+            InventoryManager.init();
+            SpriteLayer.init();
+            const tool = placeAt('fixture_tool', 900, 500);
+            const { container } = mount(h(MatBoard));
+            const root = container.querySelector('[data-mat-board]');
+            root.getBoundingClientRect = () => ({
+                left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
+            });
+            fireEvent.pointerMove(root, { clientX: tool.x, clientY: tool.y });
+            return container.querySelector('[data-near-ring]');
+        };
+        expect(hover()).not.toBeNull();
+        cleanup();
+        setDrawn('rings', false);
+        expect(hover()).toBeNull();
+    });
+
+    it('alerts (callouts) and speech layers on the mat', () => {
         GameState.initNew();
         InventoryManager.init();
         SpriteLayer.init();
-        const alert = {
-            instanceId: 'gone_1', x: 400, y: 400, severity: 'red', type: 'token_exhausted',
-            name: 'Oak', message: 'Token Exhausted: Oak'
+        const popup = {
+            x: 400, y: 400, severity: 'disallow', type: 'drop_rejected',
+            name: 'Oak', title: 'Drop Rejected: Oak', rulesText: 'No room', message: 'Drop Rejected: Oak'
         };
         const on = mount(h(MatBoard));
-        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert); });
-        expect(on.container.querySelector('[data-mat-point-alert]')).not.toBeNull();
+        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, popup); });
+        expect(on.container.querySelector('[data-callout]')).not.toBeNull();
         expect(on.container.querySelector('[data-hero-bubbles]')).not.toBeNull();
         cleanup();
 
         setDrawn('alerts', false);
         setDrawn('speech', false);
         const off = mount(h(MatBoard));
-        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert); });
-        expect(off.container.querySelector('[data-mat-point-alert]')).toBeNull();
+        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, popup); });
+        expect(off.container.querySelector('[data-callout]')).toBeNull();
         expect(off.container.querySelector('[data-hero-bubbles]')).toBeNull();
     });
 });

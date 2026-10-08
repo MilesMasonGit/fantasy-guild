@@ -39,7 +39,7 @@ describe('the pointer path', () => {
 
 describe('summarising attempts', () => {
     const ok = (ms) => ({ ok: true, pickedUp: true, pressToStartMs: ms, thresholdToStartMs: 1 });
-    const blocked = { ok: false, pickedUp: false, under: { identity: '[data-alert-kind=notice]' }, source: { what: 'Token a' } };
+    const blocked = { ok: false, pickedUp: false, under: { identity: '[data-callout]' }, source: { what: 'Token a' } };
 
     it('counts successes, skips apart, and pickup delay quantiles', () => {
         const s = summarise([ok(50), ok(60), ok(70), blocked, { skipped: 'no Token to move' }]);
@@ -55,7 +55,7 @@ describe('summarising attempts', () => {
         const s = summarise([blocked, blocked, ok(50)]);
         expect(s.failures).toHaveLength(1);
         expect(s.failures[0].count).toBe(2);
-        expect(s.failures[0].cause).toBe('never picked up · under the pointer: [data-alert-kind=notice]');
+        expect(s.failures[0].cause).toBe('never picked up · under the pointer: [data-callout]');
     });
 
     it('tells a wrong pickup, a refusal, a drop nothing took and a silent miss apart', () => {

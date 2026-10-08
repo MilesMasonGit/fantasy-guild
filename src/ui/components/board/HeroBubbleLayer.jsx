@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAT_Z } from './matLayers.js';
 import { blockedLineFor, readyToSpeak, pinRefusedLineFor } from './heroBubbles.js';
-import { addMoment, liveMoments, stackOf, momentText, speaksMoment } from './heroSpeech.js';
+import { addMoment, liveMoments, stackOf, momentText, speaksMoment, levelUpFrom, DEPLETED_TTL_MS } from './heroSpeech.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -37,7 +37,7 @@ const guessSize = (stack) => ({
  * Per hero: **blocked** (`hero.alert`, the alert on the Token they hold) says what is wrong
  * for as long as it is wrong, re-read twice a second so it names what is missing NOW; a
  * shortage of items waits first. **moments** (arriving at a job, going idle, a level-up, a
- * flag that could not be pinned) are timed, and gone by themselves (`heroSpeech.js`).
+ * flag that could not be pinned, a Token the hero used up) are timed, and gone by themselves (`heroSpeech.js`).
  * Only unusual events are spoken: routine lines are filtered out by `speaksMoment` /
  * `speaksBlock`, and every line with its status is listed in
  * `docs/reference/speech_bubble_lines.md`.
@@ -58,10 +58,10 @@ export const HeroBubbleLayer = ({ heroes }) => {
 
     // `kind` is the moment's entry in `MOMENT_SPOKEN`: routine ones stay
     // silent.
-    const say = (heroId, kind, moment) => {
+    const say = (heroId, kind, moment, ttlMs) => {
         if (!speaksMoment(kind)) return;
         const at = Date.now();
-        momentsRef.current.set(heroId, addMoment(momentsRef.current.get(heroId) || [], moment, at));
+        momentsRef.current.set(heroId, addMoment(momentsRef.current.get(heroId) || [], moment, at, ttlMs));
         setNow(at);
     };
     const sayRef = useRef(say);
@@ -70,9 +70,17 @@ export const HeroBubbleLayer = ({ heroes }) => {
     // Level-ups and arrivals arrive as events.
     useEffect(() => {
         const unsubs = [
-            EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, skillName, newLevel }) => {
+            EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, skillName, newLevel, oldLevel }) => {
                 if (!heroId || !skillName) return;
-                sayRef.current(heroId, 'levelUp', { key: `level:${skillName}`, text: momentText.levelUp(skillName, newLevel) });
+                const key = `level:${skillName}`;
+                const from = levelUpFrom(momentsRef.current.get(heroId) || [], key, oldLevel ?? newLevel - 1, Date.now());
+                sayRef.current(heroId, 'levelUp', { key, from, text: momentText.levelUp(skillName, newLevel, newLevel - from) });
+            }),
+            // The hero whose work spent a Token's last charge says so.
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => {
+                if (!p?.exhaustedBy || !p.typeId) return;
+                const name = getTokenType(p.typeId)?.name || tokenName(p.typeId) || p.typeId;
+                sayRef.current(p.exhaustedBy, 'depleted', { key: `depleted:${p.typeId}`, text: momentText.depleted(name) }, DEPLETED_TTL_MS);
             }),
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
                 if (p?.reason !== 'arrived' || !p.heroId || !p.instanceId) return;

@@ -29,12 +29,9 @@ import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
-import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
-import { TokenEventAlert } from '../ui/components/board/TokenEventAlert.jsx';
-import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
+import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { placeAt, clearMat } from './fixtures/mat.js';
-import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -356,7 +353,7 @@ describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () =>
         const other = placeAt('fixture_producer', C(15).x, C(15).y);
         const { container } = render(React.createElement(
             EngineContext.Provider, { value: { EventBus } },
-            React.createElement(TokenBadgeRow, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
+            React.createElement(TokenBubbles, { instanceId: tok.id, token: { typeId: tok.typeId, heroId: 'hero_1', instanceId: tok.id } })
         ));
         const ring = container.querySelector('[data-ring="cycle"]');
 
@@ -365,37 +362,5 @@ describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () =>
 
         act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: tok.id, percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
         expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(0.5, 2);
-    });
-
-    it('a red alert shows on its own Token, and not on another', () => {
-        clearMat();
-        const tok = placeAt('fixture_producer', C(14).x, C(14).y);
-        const other = placeAt('fixture_producer', C(15).x, C(15).y);
-        const alert = (extra) => ({ severity: 'red', type: 'token_exhausted', name: 'Forest', message: 'Token Exhausted: Forest', ...extra });
-
-        const first = render(React.createElement(TokenEventAlert, { instanceId: tok.id }));
-        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert({ instanceId: other.id })); });
-        expect(first.container.querySelector('img')).toBeNull();
-        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert({ instanceId: tok.id })); });
-        expect(first.container.querySelector('img')?.getAttribute('alt')).toBe('Token Exhausted: Forest');
-    });
-
-    it('⭐ a Token that has just left the mat says so at the point it stood on', () => {
-        clearMat();
-        const tok = placeAt('fixture_producer', C(14).x, C(14).y);
-        const alert = (extra) => ({ severity: 'red', type: 'token_exhausted', name: 'Forest', message: 'Token Exhausted: Forest', ...extra });
-
-        // Gone: the event still names it, and names where it stood. There is no
-        // Token left to draw the news on, so the mat draws it at that point.
-        BoardState.removeToken(tok.id);
-        const { container } = render(React.createElement(MatPointAlerts));
-        act(() => { EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, alert({ instanceId: tok.id, ...C(14) })); });
-
-        const mark = container.querySelector('[data-mat-point-alert]');
-        expect(mark).not.toBeNull();
-        expect(mark.querySelector('img')?.getAttribute('alt')).toBe('Token Exhausted: Forest');
-        // Centred on the point the Token stood on, one Token wide.
-        expect(drawnPoint(mark).x).toBe(C(14).x - 64);
-        expect(drawnPoint(mark).y).toBe(C(14).y - 64);
     });
 });

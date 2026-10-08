@@ -8,7 +8,7 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
-import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
+import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 const h = React.createElement;
 const tree = (el) => h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el));
 const token = (id, heroId = 'hero_1') => ({ typeId: 'fixture_producer', instanceId: id, heroId, alert: null, usesRemaining: null });
-const rows = (ids, heroId) => h(React.Fragment, null, ...ids.map(id => h(TokenBadgeRow, { key: id, instanceId: id, token: token(id, heroId) })));
+const rows = (ids, heroId) => h(React.Fragment, null, ...ids.map(id => h(TokenBubbles, { key: id, instanceId: id, token: token(id, heroId) })));
 const progress = (id) => act(() => {
     EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: id, percent: 10, elapsedMs: 1600, cycleTimeMs: 16000 });
 });
@@ -63,7 +63,7 @@ describe('⭐ one shared frame clock for the cycle rings', () => {
         }
         // …and every ring still moved.
         for (const id of ['ra', 'rb', 'rc']) {
-            const f = Number(container.querySelector(`[data-ring-row="${id}"] [data-ring="cycle"]`).getAttribute('data-ring-fraction'));
+            const f = Number(container.querySelector(`[data-bubble-of="${id}"] [data-ring="cycle"]`).getAttribute('data-ring-fraction'));
             expect(f).toBeGreaterThan(0.1);
         }
     });

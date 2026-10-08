@@ -214,7 +214,7 @@ suspect, not the engine. Keep them boring.
   the 6.06 ms frame budget is mostly spent (plan §2.A). Tier B measures it.
 - **React work a tick triggers.** Events are counted, but the UI's listeners are
   not subscribed here, so "listener calls" counts engine subscribers only (a
-  `board:tile_event_alert` with no engine listener still costs the UI in game).
+  `board:tile_event_alert` with no engine listener still costs the UI in game: the callout layer hears it).
 - **The browser's JIT and GC.** Node's V8 is close to Chromium's, not identical.
 - **Wall-clock behaviour.** Ticks are fed a fixed 100 ms; the clamp and the time
   bank's overflow path in `GameLoop.tick()` are not exercised. `setTimeout`
@@ -298,7 +298,7 @@ machine, CPU, Chrome version and the GPU / ANGLE backend Chrome reports.
 | 3 | the bench failed: a scene drew nothing or was hidden, a page reloaded mid-run, a click opened nothing, there is no baseline, or the baseline used another settle or window |
 
 **The cost table** (`--switches`): S2 with everything drawn, then once with each
-of the 15 drawing switches off (`?off=<name>`, `src/ui/dev/perf/drawSwitches.js`).
+of the 16 drawing switches off (`?off=<name>`, `src/ui/dev/perf/drawSwitches.js`).
 All-on is measured at the start, the middle and the end; its spread is the
 **noise**, and a system's cost is all-on minus switch-off. A cost inside the
 noise is printed but marked "above noise: no".
@@ -384,7 +384,7 @@ away from open drawers.
 
 Every kind runs twice: a **plain** pass, and an **overlays** pass with speech
 bubbles over every hero (a level-up event for each hero every 2.5 s, which also
-fills the notification column) on top of S2's alert icons. In both, every drag
+fills the notification column) on top of any callouts S2 is showing. In both, every drag
 must also pick up the right thing. The Perf HUD is hidden first (it is the
 harness's own overlay and would cover the Shop's lower rows). Set-up is done
 through the game's functions, never as a drag: Bank stock for the Shop's prices
@@ -399,7 +399,7 @@ Fairness rules, so that a failure is the game's and not the bench's:
 
 - **A Token** is pressed at its centre, or at another point of its art when a
   *different Token* lies on top there (overlapping Tokens: the player grabs the
-  top one). Anything else on top, a ring, an alert, a bubble, is kept: that is
+  top one). Anything else on top, a ring, a callout, a bubble, is kept: that is
   what the bench is looking for.
 - **A flag** is pressed at its highest point clear of every Token's art circle:
   by design a flag over a Token lets the pointer through to the Token

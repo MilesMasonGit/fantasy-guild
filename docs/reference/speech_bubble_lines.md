@@ -50,12 +50,29 @@ once; the oldest moment gives way.
 |---|---|---|---|
 | 11 | Working at {token}. | The hero arrives at a Token to work it. | **Dropped (FB-21)** — everyday; this is the "I'm working on Oak Tree" line from your feedback. |
 | 12 | No work in range. | The hero was busy (walking to a job or working) and is now standing at their flag with nothing to do. | **Unsure — owner to decide.** Kept for now: an idle hero is worth knowing about. But it also fires each time the last Token in a flag's range runs out, which on a busy mat can be often. |
-| 13 | {skill} is now level {level}. | One of the hero's skills levels up, e.g. "Mining is now level 4." | Kept |
+| 13 | Leveled up {skill} to {level}! (+{n}) | One of the hero's skills levels up, e.g. "Leveled up Mining to 25!" for a single level, "Leveled up Mining to 25! (+4)" when several coalesce. `(+n)` shows only when `n` is 2 or more; it is the levels gained since this hero's last level-up bubble for that skill, so several quick level-ups show as one bubble with the total (the count starts again once the bubble has gone). The notification column still carries its own level-up line. | Kept |
 | 14 | *(line 7 or 8, word for word)* | **B5 (FB-45):** you dropped the hero's flag on a Token they can't work — skill not held (line 8) or level too low (line 7). The flag stands there as a normal area flag instead of being pinned, and the hero says why once. A Token you disallowed, or one whose skill is switched off in the hero's rules, is refused silently (no wording yet); a spawner is never pinned and nothing is said. | Kept |
+| 15 | {token} Depleted | The hero whose work spent a Token's last charge says it (a tree they felled, a vein they emptied, a fight that used up an enemy or a tool beside it). Shows for **3 seconds**, one line per kind of Token so a hero chopping tree after tree keeps one bubble. Nobody says it when no hero spent the charge. | Kept |
 
-## 3. Not speech bubbles
+## 3. Callouts (not speech bubbles)
 
-For completeness, these are **not** said by heroes and are not part of this list: the alert
-marks on Tokens (red / yellow problems, green notices such as "New Oak Sapling"), a
-spawner's own "needs items" / "no room" alerts (no hero involved), and alerts at a bare spot
-on the mat (a refused drop, a spot that ran dry).
+Quick popups in one style (a green speech-bubble shape that appears over the thing, holds
+~2 s and fades). Nobody says them; they are drawn by the mat (`CalloutLayer`), and can be
+switched off together with the `alerts` draw switch.
+
+| # | Line | When it appears |
+|---|---|---|
+| C1 | ! Spawned {token} | A spawner makes a Token, shown over the **spawner**. The Guild Hall says it for a new quest ("! Spawned quest" / "! Spawned tutorial quest"). Silent while the time bank replays time away. |
+| C2 | {effect name} | A named effect fires on a Token (a bonus drop, a status landing), shown over that Token. The wording is the effect's own title. |
+| C3 | {reason} | A drop the mat refused: the rule's reason (or "Drop Rejected: {token}") at the spot you aimed at. The Guild Hall dragged off the mat says "Guild Hall cannot be removed from the playmat." over the Hall. |
+
+The "-1" / "+50" charge number is not a callout: it is a small number rising from the Token's
+charges bubble.
+
+## 4. Not shown any more
+
+The floating alert marks on Tokens are gone: no exclamation marks for a spawned Token, a
+Token that ran dry, a restock, a spawner short of an item or room, or a stuck worked Token.
+"Hero went elsewhere" (a notification when a hero left a Token with a fixable problem) is gone
+too, with no speech line either: the hero just moves on. A stuck Token still shows its
+red outline and a greyed cycle ring, and a hero standing at it says lines 1-8 above.

@@ -18,7 +18,7 @@ import { getItem } from '../config/registries/itemRegistry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatHero } from '../ui/components/board/MatHero.jsx';
 import { MatRings } from '../ui/components/board/MatRings.jsx';
-import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
+import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { matStackOrder, sameStackOrder } from '../ui/components/board/matLayers.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
@@ -59,8 +59,8 @@ const mount = (el) => render(
 );
 
 describe('⭐ the mat components are memoised', () => {
-    it('MatHero, MatRings and MatPointAlerts are React.memo', () => {
-        for (const c of [MatHero, MatRings, MatPointAlerts]) {
+    it('MatHero, MatRings and CalloutLayer are React.memo', () => {
+        for (const c of [MatHero, MatRings, CalloutLayer]) {
             expect(c.$$typeof).toBe(Symbol.for('react.memo'));
         }
     });

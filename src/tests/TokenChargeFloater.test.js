@@ -68,13 +68,12 @@ describe('TokenNameBadge', () => {
         expect(screen.getByText('Ancient Forge')).toBeDefined();
     });
 
-    it('reveals with opacity-100 at the top when hovered', () => {
+    it('reveals with opacity-100 above the box when hovered', () => {
         const { container } = render(
             React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: false, isHovered: true })
         );
         expect(container.firstChild.className).toContain('opacity-100');
-        expect(container.firstChild.className).toContain('top-1');
-        expect(container.firstChild.className).toContain('left-1');
+        expect(container.firstChild.style.bottom).toBe('calc(100% + 4px)');
     });
 
     it('does not render while dragging', () => {

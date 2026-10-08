@@ -160,7 +160,7 @@ describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-
         expect(workTileOf('h1')).toBe(15);
     });
 
-    it('a priority-1 Token stuck on inputs → the priority-3 one, the skip recorded, one notice', () => {
+    it('a priority-1 Token stuck on inputs → the priority-3 one, the skip recorded, no notification', () => {
         const hungry = put(15, 'fr_hungry');          // logging, priority 1, no coal
         put(13, MINE);                                // mining, priority 3
         Flags.setRule('h1', 'logging', { priority: 1 });
@@ -169,12 +169,12 @@ describe('⭐ works anything they hold, priority first, then nearest (FP-71, FP-
 
         expect(workTileOf('h1')).toBe(13);
         expect(reasons(hungry)).toEqual([ALERT.INPUTS]);
-        expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
 
         run(30000);                                   // several cycles, each one looking again
 
         expect(workTileOf('h1')).toBe(13);
-        expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
     });
 });
 
@@ -259,9 +259,9 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         expect(FlagRules.ruleOf('h1', 'mining')).toEqual({ allowed: true, priority: 3 });
     });
 
-    it('a priority change is not a re-plant: claim, plantedAt, progress and notices stay; no hero_deployed', () => {
+    it('a priority change is not a re-plant: claim, plantedAt and progress stay; no hero_deployed', () => {
         GameState.state.heroes = [hero('h1', { logging: 50 })];
-        put(14, 'fr_hungry');                          // under the flag, stuck: passed over with a notice
+        put(14, 'fr_hungry');                          // under the flag, stuck: passed over
         const west = put(13, FOREST);
         const east = put(15, FOREST);
         plant('h1', 14);
@@ -272,7 +272,7 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         const first = BoardState.getTokenById(BoardState.workTokenOf('h1'));
         const other = first === west ? east : west;
         expect([west.id, east.id]).toContain(first.id);
-        expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
 
         run(3000);
         const progress = first.cycleElapsedMs;
@@ -293,11 +293,11 @@ describe('Flags.setRule and resetRules (FPP-17)', () => {
         expect(first.cycleElapsedMs).toBe(progress);
         expect(BoardState.flagOf('h1').plantedAt).toBe(plantedAt);
 
-        // The notice about the stuck mill is still spent: passing it again says nothing.
+        // Passing the stuck mill again says nothing, as the first time did.
         Charges.destroyToken(first, { heroId: 'h1' });
         Flags.assign(0);
         expect(BoardState.workTokenOf('h1')).toBe(other.id);
-        expect(NotificationSystem.warning).toHaveBeenCalledTimes(1);
+        expect(NotificationSystem.warning).not.toHaveBeenCalled();
     });
 
     it('rules survive a furl, a re-plant, and a save and reload', async () => {

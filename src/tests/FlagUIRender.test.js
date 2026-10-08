@@ -252,15 +252,15 @@ describe('"Heroes may work this" (FP-35, FPP-8)', () => {
         expect(toggle(mount(h(TokenInspection, { typeId: 'fixture_enemy' })).container)).toBeNull();
     });
 
-    it('a disallowed Token shows the red disallow sprite top-right on the mat (FB-33)', () => {
+    it('a disallowed Token shows the red disallow sprite in its middle row on the mat (FB-33)', () => {
         const forest = put(TOKEN,'fixture_producer');
         Flags.setDisallowed(forest.id, true);
 
         const { container } = mount(h(MatBoard));
         const mark = container.querySelector('[data-tile-disallowed]');
         expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_disallow_red.png');
-        expect(mark.className).toContain('right-1');
-        expect(mark.className).toContain('top-1');
+        expect(mark.closest('[data-bubble-row="middle"]')).not.toBeNull();
+        expect(mark.closest('[data-bubble="disallow"]')).not.toBeNull();
         expect(mark.textContent).not.toContain('⊘');
     });
 });

@@ -14,7 +14,6 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
-import * as TokenNotices from '../systems/board/TokenNotices.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -25,14 +24,13 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { TokenCentreAlert } from '../ui/components/board/TokenEventAlert.jsx';
-import { TokenBadgeRow } from '../ui/components/board/TokenBadgeRow.jsx';
+import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import * as TokenBadges from '../ui/components/board/TokenBadges.jsx';
 import { StationGearBadge, DisallowBadge } from '../ui/components/board/TokenBadges.jsx';
 import {
-    ALERT_KIND, alertKindOf, alertFades, pickCentreAlert, spawnerCountText, gearStateOf, isGearOnlyAlert
+    spawnerCountText, gearStateOf, isGearOnlyAlert
 } from '../ui/components/board/centreAlert.js';
-import { MatPointAlerts } from '../ui/components/board/MatPointAlerts.jsx';
+import { matW, matH } from '../config/matGeometry.js';
 import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -130,7 +128,6 @@ beforeEach(() => {
     BoardCombat.clearAll();
     TileModifiers.clearAll();
     SpawnerSystem.resetAlerts();
-    TokenNotices.resetNotices();
     GameState.state.inventory.maxSlots = 50;
     GameState.state.heroes = [];
 });
@@ -139,45 +136,13 @@ beforeEach(() => {
 // The rules, pure
 // ---------------------------------------------------------------------------
 
-describe('alert classification (TL-14)', () => {
-    it('every alert kind the mat can be sent is a problem, a notice or spoken by a hero', () => {
-        // News of a problem: red or yellow, at the centre.
-        expect(alertKindOf({ severity: 'red', type: 'token_exhausted' })).toBe(ALERT_KIND.PROBLEM);
-        expect(alertKindOf({ severity: 'disallow', type: 'drop_rejected' })).toBe(ALERT_KIND.PROBLEM);
-        expect(alertKindOf({ severity: 'yellow', type: 'anything_else' })).toBe(ALERT_KIND.PROBLEM);
-        // Green: a notice that fades.
-        expect(alertKindOf({ severity: 'green', type: 'token_restocked' })).toBe(ALERT_KIND.NOTICE);
-        // Said by the hero in a speech bubble, never drawn on the Token.
-        for (const type of ['out_of_item', 'out_of_token', 'out_of_charges', 'hero_level_up']) {
-            expect(alertKindOf({ severity: 'yellow', type })).toBe(ALERT_KIND.SPOKEN);
-        }
-        expect(alertKindOf({ severity: 'upgrade', type: 'x' })).toBe(ALERT_KIND.SPOKEN);
-        expect(alertKindOf(null)).toBeNull();
-    });
-
-    it('news of a problem that cannot be fixed fades; other problems and notices do not use this clock (after Q2)', () => {
-        expect(alertFades({ severity: 'red', type: 'token_exhausted' })).toBe(true);
-        expect(alertFades({ severity: 'disallow', type: 'drop_rejected' })).toBe(true);
-        expect(alertFades({ severity: 'yellow', type: 'anything_else' })).toBe(false);
-        expect(alertFades({ severity: 'green', type: 'token_restocked' })).toBe(false);   // a notice, faded by TokenNotices
-        expect(alertFades({ severity: 'yellow', type: 'out_of_item' })).toBe(false);      // spoken by the hero
-        expect(alertFades(null)).toBe(false);
-    });
-
-    it('nothing chosen is the gear\'s to say, not a problem', () => {
+describe('gear alerts', () => {
+    it('nothing chosen is for the gear to say, not a problem', () => {
         expect(isGearOnlyAlert(ALERT.CHOOSE_RECIPE)).toBe(true);
         expect(isGearOnlyAlert(ALERT.CHOOSE_BUILD)).toBe(true);
         for (const a of [ALERT.INPUTS, ALERT.NO_RECIPE, ALERT.CHARGES, ALERT.NO_ROOM, ALERT.ACCESS, ALERT.UNSKILLED]) {
             expect(isGearOnlyAlert(a)).toBe(false);
         }
-    });
-
-    it('a problem always wins the centre over a notice', () => {
-        const notice = { title: 'New' };
-        expect(pickCentreAlert({ live: { a: 1 }, event: { b: 1 }, notice })).toBe('live');
-        expect(pickCentreAlert({ event: { b: 1 }, notice })).toBe('event');
-        expect(pickCentreAlert({ notice })).toBe('notice');
-        expect(pickCentreAlert({})).toBeNull();
     });
 });
 
@@ -212,181 +177,53 @@ describe('spawner count text (FB-5)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Notices
+// The spawn callout's event
 // ---------------------------------------------------------------------------
 
-describe('TokenNotices — the ten-second notice', () => {
-    it('is up for NOTICE_MS of wall-clock time, then gone', () => {
-        TokenNotices.raiseNotice('tok_1', { title: 'New Sapling' }, 1000);
-        expect(TokenNotices.noticeOf('tok_1', 1000)).toMatchObject({ title: 'New Sapling', remainingMs: TokenNotices.NOTICE_MS });
-        expect(TokenNotices.noticeOf('tok_1', 1000 + TokenNotices.NOTICE_MS - 1).remainingMs).toBe(1);
-        expect(TokenNotices.noticeOf('tok_1', 1000 + TokenNotices.NOTICE_MS)).toBeNull();
-        expect(TokenNotices.NOTICE_MS).toBe(10000);
-    });
-
-    it('a second notice replaces the first and restarts the clock; clearing takes it down', () => {
-        TokenNotices.raiseNotice('tok_1', { title: 'A' }, 0);
-        TokenNotices.raiseNotice('tok_1', { title: 'B' }, 8000);
-        expect(TokenNotices.noticeOf('tok_1', 15000)).toMatchObject({ title: 'B' });
-        TokenNotices.clearNotice('tok_1');
-        expect(TokenNotices.noticeOf('tok_1', 15000)).toBeNull();
-    });
-
-    it('announces itself, and ignores a notice with no Token or no words', () => {
+describe('a spawner announces the Token it just spawned', () => {
+    const spawns = () => {
         const seen = [];
-        const unsub = EventBus.subscribe(BOARD_EVENTS.NOTICE_CHANGED, (p) => seen.push(p.instanceId));
-        TokenNotices.raiseNotice('tok_2', { title: 'Hi' });
-        TokenNotices.raiseNotice(null, { title: 'Hi' });
-        TokenNotices.raiseNotice('tok_3', {});
-        unsub();
-        expect(seen).toEqual(['tok_2']);
-        expect(TokenNotices.noticeOf('tok_3')).toBeNull();
-    });
+        const unsub = EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => seen.push(p));
+        return { seen, unsub };
+    };
 
-    it('a spawner puts a notice on the Token it just spawned', () => {
+    it('names the spawner, the new Token and its name', () => {
         InventoryManager.addItem('fixture_q2_seed', 5);
         const forest = put('fixture_q2_forest');
+        const { seen, unsub } = spawns();
         for (let t = 0; t < 1200; t += 100) BoardRunner.tick(100);
+        unsub();
         const [sapling] = BoardState.tokens().filter(t => t.typeId === 'fixture_q2_sapling');
         expect(sapling).toBeTruthy();
-        expect(TokenNotices.noticeOf(sapling.id)).toMatchObject({
-            type: 'token_spawned', title: 'New Fixture Q2 Sapling', rulesText: 'Spawned by Fixture Q2 Forest'
-        });
-        expect(TokenNotices.noticeOf(forest.id)).toBeNull();
+        expect(seen).toEqual([{
+            spawnerId: forest.id, instanceId: sapling.id, typeId: 'fixture_q2_sapling', name: 'Fixture Q2 Sapling'
+        }]);
     });
 
-    it('after Q2: no notice while the time bank replays time away; one again afterwards', () => {
+    it('is silent while the time bank replays time away; speaks again afterwards', () => {
         InventoryManager.addItem('fixture_q2_seed', 5);
         put('fixture_q2_forest');
+        const { seen, unsub } = spawns();
         TimeBankManager.isSpending = true;
         try {
             for (let t = 0; t < 1200; t += 100) BoardRunner.tick(100);
         } finally {
             TimeBankManager.isSpending = false;
         }
-        const quiet = BoardState.tokens().filter(t => t.typeId === 'fixture_q2_sapling');
-        expect(quiet.length).toBe(1);
-        expect(TokenNotices.noticeOf(quiet[0].id)).toBeNull();
+        expect(BoardState.tokens().filter(t => t.typeId === 'fixture_q2_sapling').length).toBe(1);
+        expect(seen).toEqual([]);
 
         for (let t = 0; t < 1200; t += 100) BoardRunner.tick(100);
-        const next = BoardState.tokens().filter(t => t.typeId === 'fixture_q2_sapling' && t.id !== quiet[0].id);
-        expect(next.length).toBe(1);
-        expect(TokenNotices.noticeOf(next[0].id)).toMatchObject({ type: 'token_spawned' });
+        unsub();
+        expect(seen.length).toBe(1);
     });
 });
-
-describe('the spot a used-up Token stood on (after Q2)', () => {
-    it('its red alert goes on its own after ten seconds', () => {
-        vi.useFakeTimers();
-        const { container } = mount(h(MatPointAlerts));
-        act(() => {
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                instanceId: 'gone_1', x: 400, y: 400, severity: 'red', type: 'token_exhausted', name: 'Oak', message: 'Token Exhausted: Oak'
-            });
-        });
-        const mark = container.querySelector('[data-mat-point-alert] [data-alert-kind="problem"]');
-        expect(mark).not.toBeNull();
-        expect(mark.getAttribute('data-alert-fades')).toBe('true');
-        expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_alert_red.png');
-
-        act(() => { vi.advanceTimersByTime(8000); });
-        expect(container.querySelector('[data-mat-point-alert]')).not.toBeNull();
-        act(() => { vi.advanceTimersByTime(2100); });
-        expect(container.querySelector('[data-mat-point-alert]')).toBeNull();
-    });
-});
-
-describe('TokenCentreAlert — one mark at the centre', () => {
-    it('draws a notice green at the centre and lets it go after ~10 s', () => {
-        vi.useFakeTimers();
-        TokenNotices.raiseNotice('tok_c', { title: 'New Sapling', type: 'token_spawned' });
-        const { container } = mount(h(TokenCentreAlert, { instanceId: 'tok_c' }));
-
-        const mark = container.querySelector('[data-alert-kind="notice"]');
-        expect(mark).not.toBeNull();
-        expect(mark.className).toContain('left-1/2');
-        expect(mark.className).toContain('top-1/2');
-        expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_alert_green.png');
-
-        act(() => { vi.advanceTimersByTime(9000); });
-        expect(container.querySelector('[data-alert-kind="notice"]')).not.toBeNull();
-        act(() => { vi.advanceTimersByTime(1100); });
-        expect(container.querySelector('[data-alert-kind]')).toBeNull();
-    });
-
-    it('turns a green event (a restock) into a notice', () => {
-        const { container } = mount(h(TokenCentreAlert, { instanceId: 'tok_r' }));
-        act(() => {
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                instanceId: 'tok_r', severity: 'green', type: 'token_restocked', title: 'Restocked from X', message: 'Restocked from X'
-            });
-        });
-        expect(container.querySelector('[data-token-notice="token_restocked"]')).not.toBeNull();
-        expect(TokenNotices.noticeOf('tok_r')).toMatchObject({ title: 'Restocked from X' });
-    });
-
-    it('a problem covers a notice; problem news that can be read stays until read', () => {
-        vi.useFakeTimers();
-        TokenNotices.raiseNotice('tok_p', { title: 'New Sapling' });
-        const { container } = mount(h(TokenCentreAlert, { instanceId: 'tok_p' }));
-        act(() => {
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                instanceId: 'tok_p', severity: 'yellow', type: 'fixture_problem', name: 'X', message: 'Something: X'
-            });
-        });
-        const mark = container.querySelector('[data-alert-kind]');
-        expect(mark.getAttribute('data-alert-kind')).toBe('problem');
-        expect(mark.className).toContain('top-1/2');
-        expect(mark.getAttribute('data-alert-fades')).toBeNull();
-
-        act(() => { vi.advanceTimersByTime(60000); });
-        expect(container.querySelector('[data-alert-kind="problem"]')).not.toBeNull();
-        expect(container.querySelector('[data-alert-kind="problem"]').style.opacity).toBe('1');
-    });
-
-    it('after Q2: a refused drop on a Token stays red, then fades after ten seconds, hovered or not', () => {
-        vi.useFakeTimers();
-        const { container } = mount(h(TokenCentreAlert, { instanceId: 'tok_d' }));
-        act(() => {
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                instanceId: 'tok_d', severity: 'disallow', type: 'drop_rejected', name: 'X', message: 'Drop Rejected: X'
-            });
-        });
-        const mark = container.querySelector('[data-alert-kind="problem"]');
-        expect(mark.getAttribute('data-alert-fades')).toBe('true');
-        expect(mark.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_disallow_red.png');
-
-        // Reading it does not stop the clock.
-        fireEvent.mouseEnter(mark);
-        fireEvent.mouseLeave(mark);
-        act(() => { vi.advanceTimersByTime(TokenNotices.NOTICE_MS - 2000); });
-        expect(container.querySelector('[data-alert-kind="problem"]').style.opacity).toBe('1');
-        act(() => { vi.advanceTimersByTime(1000); });
-        expect(container.querySelector('[data-alert-kind="problem"]').style.opacity).toBe('0');
-        act(() => { vi.advanceTimersByTime(1100); });
-        expect(container.querySelector('[data-alert-kind]')).toBeNull();
-    });
-
-    it('a hero-spoken alert draws nothing', () => {
-        const { container } = mount(h(TokenCentreAlert, { instanceId: 'tok_s' }));
-        act(() => {
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, { instanceId: 'tok_s', severity: 'yellow', type: 'out_of_item', message: 'Out of item: X' });
-        });
-        expect(container.querySelector('[data-alert-kind]')).toBeNull();
-    });
-});
-
-// ---------------------------------------------------------------------------
-// The badges, drawn
-// ---------------------------------------------------------------------------
 
 describe('the badges on their own', () => {
-    it('the gear is the gear sprite, top-left, pulsing only when unset', () => {
+    it('the gear is the gear sprite, pulsing only when unset', () => {
         const unset = mount(h(StationGearBadge, { isDragging: false, recipe: null, pulsing: true, onClick: () => {} })).container;
         const gear = unset.querySelector('[data-station-gear]');
         expect(gear.getAttribute('data-station-gear')).toBe('unset');
-        expect(gear.className).toContain('left-1');
-        expect(gear.className).toContain('top-1');
         expect(gear.querySelector('img').getAttribute('src')).toBe('/assets/ui/ui_gear.png');
         expect(gear.querySelector('img').style.imageRendering).toBe('pixelated');
         expect(gear.querySelector('button').className).toContain('gi-gear-pulse');
@@ -405,6 +242,14 @@ describe('the badges on their own', () => {
         expect(TokenBadges.TurnCountdownBadge).toBeUndefined();
     });
 });
+
+const hoverAt = (container, tok) => {
+    const root = container.querySelector('[data-mat-board]');
+    root.getBoundingClientRect = () => ({
+        left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
+    });
+    fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
+};
 
 describe('on the mat', () => {
     it('FB-6: no Token carries the green assign-a-hero plus', () => {
@@ -430,39 +275,21 @@ describe('on the mat', () => {
         expect(onOpenRecipes).toHaveBeenCalledWith(bench.id);
     });
 
-    it('FB-7: a staffed unset station draws no red Choose Recipe mark; a real problem still does (B1.1: at the centre)', () => {
+    it('a blocked Token greys its cycle ring and draws no alert mark', () => {
         const bench = put('fixture_q2_bench');
         const token = (alert) => ({ typeId: bench.typeId, instanceId: bench.id, heroId: 'h1', alert });
-        const centre = (alert) => h(TokenCentreAlert, { instanceId: bench.id, token: token(alert) });
-        const { container, rerender } = mount(centre(ALERT.CHOOSE_RECIPE));
-        const again = (el) => rerender(h(EngineContext.Provider, { value: { GameState, EventBus } }, h(DndContext, null, el)));
-        expect(container.querySelector('[data-alert-kind]')).toBeNull();
-        again(centre(ALERT.CHOOSE_BUILD));
-        expect(container.querySelector('[data-alert-kind]')).toBeNull();
-        again(centre(ALERT.NO_ROOM));
-        const mark = container.querySelector('[data-worked-alert="no_room"] [data-alert-kind="problem"]');
-        expect(mark.getAttribute('data-alert-severity')).toBe('red');
-        // And the ring row says none of it: its cycle ring just greys (B1.2).
-        cleanup();
-        const row = mount(h(TokenBadgeRow, { instanceId: bench.id, token: token(ALERT.NO_ROOM) })).container;
+        const row = mount(h(TokenBubbles, { instanceId: bench.id, token: token(ALERT.NO_ROOM) })).container;
         expect(row.textContent).not.toContain('No Room');
+        expect(row.querySelector('[data-alert-kind]')).toBeNull();
         expect(row.querySelector('[data-ring="cycle"]').getAttribute('data-ring-greyed')).toBe('true');
     });
 
-    it('B1.1: a spawner’s live problem wins over a worked one', () => {
-        const forest = put('fixture_q2_forest');
-        SpawnerSystem.syncAlerts();
-        const token = { typeId: forest.typeId, instanceId: forest.id, heroId: 'h1', alert: ALERT.ACCESS };
-        const { container } = mount(h(TokenCentreAlert, { instanceId: forest.id, isSpawner: true, token }));
-        expect(container.querySelector('[data-spawner-alert]').getAttribute('data-spawner-alert')).toBe(ALERT.SPAWN_NEEDS_ITEM);
-        expect(container.querySelector('[data-worked-alert]')).toBeNull();
-        expect(container.querySelectorAll('[data-alert-kind]').length).toBe(1);
-    });
-
-    it('FB-7: a chosen recipe keeps the gear, still', () => {
+    it('FB-7: a chosen recipe keeps the gear, still, shown on hover', () => {
         const bench = put('fixture_q2_bench');
         StationRecipe.setSelectedRecipe(bench, 'fixture_q2_make');
         const { container } = mount(h(MatBoard));
+        expect(overlay(container, bench.id).querySelector('[data-station-gear]')).toBeNull();
+        hoverAt(container, bench);
         expect(overlay(container, bench.id).querySelector('[data-station-gear="set"]')).not.toBeNull();
     });
 
@@ -481,21 +308,23 @@ describe('on the mat', () => {
         put('fixture_q2_sapling', { x: 1400, y: 300 });
         const { container } = mount(h(MatBoard));
         const o = overlay(container, forest.id);
-        const ring = o.querySelector('[data-ring-row] [data-ring="spawner"]');
+        expect(o.querySelector('[data-ring="spawner"]')).toBeNull();          // quiet at rest
+        hoverAt(container, forest);
+        const ring = o.querySelector('[data-bubble-row] [data-ring="spawner"]');
         expect(ring.getAttribute('data-ring-text')).toBe('2/5');
         expect(Number(ring.getAttribute('data-ring-fraction'))).toBeCloseTo(0.4, 3);
         expect(o.querySelector('[data-spawner-count]')).toBeNull();
     });
 
-    it('FB-8: a spawner that needs an item says so at its centre, and it stays', () => {
+    it('a spawner that needs an item draws no centre alert mark, only the warning bubble in its middle row', () => {
         vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
         SpawnerSystem.syncAlerts();
         const { container } = mount(h(MatBoard));
-        const alert = overlay(container, forest.id).querySelector('[data-spawner-alert]');
-        expect(alert.getAttribute('data-spawner-alert')).toBe(ALERT.SPAWN_NEEDS_ITEM);
-        expect(alert.querySelector('[data-alert-kind="problem"]').className).toContain('top-1/2');
-        act(() => { vi.advanceTimersByTime(30000); });
-        expect(overlay(container, forest.id).querySelector('[data-spawner-alert]')).not.toBeNull();
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)?.alert).toBe(ALERT.SPAWN_NEEDS_ITEM);
+        expect(container.querySelector('[data-spawner-alert], [data-worked-alert], [data-alert-kind], [data-token-notice]')).toBeNull();
+        const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
+        expect(o.querySelector('[data-bubble-row="middle"] [data-bubble="stuck"] [data-stuck-badge="needs_item"]')).not.toBeNull();
+        expect(container.querySelectorAll('img[src*="ui_alert"]').length).toBe(1);
     });
 });

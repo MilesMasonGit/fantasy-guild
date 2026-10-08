@@ -5,7 +5,7 @@ import { pointerToMat } from './matPoint.js';
 import { MatToken } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
-import { MatPointAlerts } from './MatPointAlerts.jsx';
+import { CalloutLayer } from './CalloutLayer.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
 import { FlagLayer } from './FlagLayer.jsx';
@@ -381,12 +381,10 @@ export const MatBoard = ({
                         moving={h.moving}
                         facing={h.facing}
                         limp={h.limp}
+                        fighting={h.combat}
                     />
                 );
             })}
-
-            {/* 750: news with no Token left to sit on. */}
-            {alertsDrawn && <MatPointAlerts />}
 
             {/* 760: the Near ring. Flag radius rings are FlagLayer's. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} matRef={rootRef} />}
@@ -403,6 +401,9 @@ export const MatBoard = ({
                 matRef={rootRef}
                 yieldToTokens={flagsYield}
             />
+
+            {/* 855 — callouts: quick popups over a Token or a refused drop's spot. */}
+            {alertsDrawn && <CalloutLayer />}
 
             {/* 860 — hero speech bubbles, above every hero. */}
             {speechDrawn && <HeroBubbleLayer heroes={heroes} />}

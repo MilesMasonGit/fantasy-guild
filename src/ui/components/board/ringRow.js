@@ -1,78 +1,83 @@
 
-import { HERO_HIT_PX, TOKEN_BAR_GAP_U } from './boardConstants.js';
-import { FLAG_PX } from './flagGeometry.js';
 import { spawnerCountText } from './centreAlert.js';
 
 /**
- * Ring badges: a Token's live numbers are rings that fill or empty with the number inside, in
- * one row centred under the hero and the Token together, or under the Token alone with no hero
- * at work. Fixed order: cycle, then charges, then the Token's own ring (enemy HP, a spawner's
- * count or a turn countdown).
+ * Bubbles: a Token's live numbers are rings that fill or empty with the number inside, each in
+ * its own fixed spot inside the Token's box ({@link bubbleSlot}).
  */
 
 /**
- * A ring's diameter in mat units: about a third of a 1×1 Token's 128 u art. Fixed in mat units
+ * A ring's diameter in mat units: a little under a third of a 1×1 Token's 128 u art, so three fit side by side along its bottom. Fixed in mat units
  * like the other badges, so it scales with the mat, not with the art's pixel steps.
  */
-export const RING_D_U = 42;
+export const RING_D_U = 40;
 
 export const RING_STROKE_U = RING_D_U * 3 / 28;
 
-export const RING_GAP_U = 6;
-
 /**
- * Each ring's colour. Cycle fills, charges and HP empty; a spawner fills to its cap and a turn
+ * Each ring's colour. Cycle fills and charges empty; a spawner fills to its cap and a turn
  * ring empties toward its roll.
  */
 export const RING_COLOUR = Object.freeze({
     cycle: '#f4f1e8',
     charges: '#fbbf24',   // the game's gi-gold
-    hp: '#F09595',
     spawner: '#86efac',
     turn: '#7dd3fc',
+    grow: '#bef264',
     // A quest's progress, parchment: warmer and paler than the charges gold, so a done quest's
     // full ring is not read as charges.
     quest: '#e8c98a'
 });
 
 /**
- * The count rings that GLIDE to a new value instead of jumping: a Token's charges, and a
- * spawner's count against its cap. `RingBadge` gives them a CSS transition (`gi-ring-glide`,
- * ~0.8 s).
+ * The count rings that GLIDE to a new value instead of jumping: a Token's charges, a
+ * spawner's count against its cap and a quest's progress. `RingBadge` gives them a CSS
+ * transition (`gi-ring-glide`, ~0.8 s).
  */
-export const GLIDING_RINGS = Object.freeze(new Set(['charges', 'spawner']));
+export const GLIDING_RINGS = Object.freeze(new Set(['charges', 'spawner', 'quest']));
 
 /** The stroke a greyed ring (a blocked cycle) is drawn in. */
 export const RING_GREY = '#8a8a8a';
 
 /**
- * Where the row goes, as offsets from the Token's centre in mat units:
- * `dx` to the row's horizontal centre, `dy` to its top edge.
- *
- * * **No hero** (`heroX` null): centred under the Token, just below it.
- * * **A hero at work**: centred on the pair's combined horizontal extent — the
- *   hero's 64 u box on one side, the Token on the other — and just below the
- *   lower of the Token's bottom and the hero's feet (the hero's 128 u box is
- *   centred on its point, which is level with the Token's centre).
- *
- * `half` is half the Token's drawn box (the art or the circle, whichever is
- * larger — the same edge the progress bar hung from).
- *
- * @param {{x: number, half: number, heroX?: number|null}} pair
- * @returns {{dx: number, dy: number}}
+ * Where each bubble sits inside a Token's box, in mat units from the box's top-left. The
+ * layout is fixed: timer top-left, cycle bottom-left, quest bottom-centre, charges bottom-right
+ * and the middle row (gear, spawner count,
+ * disallow mark) centred on the box.
+ * A small Token's box is half as wide as three bubbles, so its corner bubbles hang off the box
+ * by {@link SMALL_OVERHANG_U} instead of sitting inside it.
+ * @param {'timer'|'cycle'|'quest'|'charges'} slot
+ * @param {{boxPx: number, small?: boolean}} box
+ * @returns {{left: number, top: number}}
  */
-export function ringRowOffset({ x, half, heroX = null }) {
-    if (heroX == null || !Number.isFinite(heroX)) {
-        return { dx: 0, dy: half + TOKEN_BAR_GAP_U };
+export function bubbleSlot(slot, { boxPx, small = false }) {
+    const inset = small ? -SMALL_OVERHANG_U : BUBBLE_INSET_U;
+    const far = boxPx - RING_D_U - inset;
+    switch (slot) {
+        case 'timer': return { left: inset, top: inset };
+        case 'cycle': return { left: inset, top: far };
+        case 'quest': return { left: (boxPx - RING_D_U) / 2, top: far };
+        case 'charges': return { left: far, top: far };
+        default: return { left: 0, top: 0 };
     }
-    const heroHalf = HERO_HIT_PX / 2;
-    const left = Math.min(x - half, heroX - heroHalf);
-    const right = Math.max(x + half, heroX + heroHalf);
-    const feet = FLAG_PX / 2;
-    return {
-        dx: (left + right) / 2 - x,
-        dy: Math.max(half, feet) + TOKEN_BAR_GAP_U
-    };
+}
+
+/** How far a bubble sits in from its corner of a full-size Token's box. */
+export const BUBBLE_INSET_U = 2;
+
+/** How far a small Token's corner bubbles hang off its box: three side by side then just touch. */
+export const SMALL_OVERHANG_U = RING_D_U * 0.75;
+
+/** How long a count bubble stays up after its number changes. */
+export const BUBBLE_RECENT_MS = 2000;
+
+/** A timer bubble shows by itself once this little time is left. */
+export const TIMER_SOON_MS = 10000;
+
+/** Whether a timer bubble shows: while hovered, and in its last {@link TIMER_SOON_MS}. */
+export function timerVisible(hovered, inMs) {
+    if (inMs == null) return false;
+    return !!hovered || inMs <= TIMER_SOON_MS;
 }
 
 /**

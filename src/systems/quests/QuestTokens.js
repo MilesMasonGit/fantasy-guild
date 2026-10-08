@@ -7,7 +7,6 @@ import { BOARD_EVENTS } from '../board/boardEvents.js';
 import * as BoardState from '../board/BoardState.js';
 import * as EffectActions from '../board/EffectActions.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
-import * as TokenNotices from '../board/TokenNotices.js';
 import { isGuildHall } from '../board/MatCap.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
 import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
@@ -234,13 +233,16 @@ export function spawnQuest(quest, random = Math.random) {
     instance.quest = quest;
     if (quest.type === 'collection') syncCollection(quest);
 
-    // A green notice, as a spawner's new Token gets; not while the time bank
-    // replays time away.
-    if (!TimeBankManager.isSpending) TokenNotices.raiseNotice(instance.id, {
-        type: 'token_spawned',
-        title: quest.tutorial ? 'New tutorial quest' : 'New quest',
-        rulesText: quest.title
-    });
+    // The Guild Hall says it, as a spawner does for its Token; not while the time bank replays
+    // time away.
+    if (!TimeBankManager.isSpending) {
+        EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, {
+            spawnerId: hall.id,
+            instanceId: instance.id,
+            typeId: QUEST_TOKEN_TYPE,
+            name: quest.tutorial ? 'tutorial quest' : 'quest'
+        });
+    }
     EventBus.publish(ENGINE_EVENTS.QUEST_SPAWNED, { instanceId: instance.id, questId: quest.id, tutorial: !!quest.tutorial });
     publishChanged(instance.id);
     return instance;
@@ -478,7 +480,6 @@ export function syncCollections() {
 function removeQuestToken(instance) {
     const at = Number.isFinite(instance.x) && Number.isFinite(instance.y) ? { x: instance.x, y: instance.y } : null;
     BoardState.removeToken(instance.id);
-    TokenNotices.clearNotice(instance.id);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, ...(at || {}), typeId: null });
     if (at) EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [at] });
 }

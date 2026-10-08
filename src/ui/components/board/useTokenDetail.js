@@ -70,6 +70,8 @@ export function tokenDetailOf(id, def) {
         spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,
         // A Token that turns (or has turned) counts down to its next roll.
         turns: !!TimedChanges.nextTurnRoll(instance),
+        // A Token that grows (a Sapling) counts down to the change.
+        grows: !!TimedChanges.nextGrowth(instance),
         // A quest Token's quest: ring, glow, tooltip, click to claim.
         quest: questProjection(instance)
     };

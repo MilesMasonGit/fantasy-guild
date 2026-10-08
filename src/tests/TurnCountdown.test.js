@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, act } from '@testing-library/react';
+import { render, cleanup, act, fireEvent } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -16,9 +16,11 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { TurnRing } from '../ui/components/board/TurnRing.jsx';
+import { TimerBubble } from '../ui/components/board/TimerBubble.jsx';
 import { TURN_COUNTDOWN_REFRESH_MS, turnFraction } from '../ui/components/board/ringRow.js';
 import { turnCountdownText } from '../ui/components/board/centreAlert.js';
+import { matW, matH } from '../config/matGeometry.js';
+import * as Flags from '../systems/board/Flags.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -31,8 +33,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ Token Lifecycle feedback, slice **Q8**: a Token that turns on its own
  * shows a countdown to its next roll, on the Coast and on the Shrimp Coast it
- * became. Since B1.3 it is a sky ring in the row under the Token, emptying
- * toward the roll, always shown; the corner badge is gone.
+ * became: a sky bubble at the Token's top-left, emptying toward the roll, shown on hover
+ * and in the last ten seconds.
  */
 
 registerTokenTypes({
@@ -67,6 +69,9 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
+beforeAll(() => Flags.init());
+afterAll(() => Flags.teardown());
+
 describe('countdown text (FB-14)', () => {
     it('reads m:ss, rounded up to the second', () => {
         expect(turnCountdownText(60000)).toBe('1:00');
@@ -87,18 +92,17 @@ describe('countdown text (FB-14)', () => {
     });
 
     it('the ring draws what it reads, names the odds, and draws nothing with nothing to read', () => {
-        const read = () => ({ inMs: 34000, chance: 30, back: false, everyMs: 60000 });
-        const ring = mount(h(TurnRing, { read })).container.querySelector('[data-ring="turn"]');
+        const turn = (extra) => () => ({ kind: 'turn', everyMs: 60000, chance: 30, ...extra });
+        const ring = mount(h(TimerBubble, { read: turn({ inMs: 34000, back: false }), hovered: true })).container.querySelector('[data-ring="turn"]');
         expect(textOf(ring)).toBe('0:34');
         expect(ring.querySelector('[data-ring-label]').textContent).toBe('0:34');
         expect(fractionOf(ring)).toBeCloseTo(34 / 60, 3);
-        expect(ring.getAttribute('aria-label')).toBe('Next chance to turn in 0:34 (30%)');
+        expect(ring.getAttribute('aria-label')).toBe('Next roll to turn into something else in 0:34 (30% chance)');
         cleanup();
-        const back = () => ({ inMs: 5000, chance: 30, back: true, everyMs: 60000 });
-        expect(mount(h(TurnRing, { read: back })).container
-            .querySelector('[data-ring="turn"]').getAttribute('aria-label')).toBe('Next chance to turn back in 0:05 (30%)');
+        expect(mount(h(TimerBubble, { read: turn({ inMs: 5000, back: true }), hovered: true })).container
+            .querySelector('[data-ring="turn"]').getAttribute('aria-label')).toBe('Next roll to turn back in 0:05 (30% chance)');
         cleanup();
-        expect(mount(h(TurnRing, { read: () => null })).container.querySelector('[data-ring]')).toBeNull();
+        expect(mount(h(TimerBubble, { read: () => null, hovered: true })).container.querySelector('[data-ring]')).toBeNull();
     });
 });
 
@@ -108,7 +112,14 @@ describe('on the mat (FB-14)', () => {
         const coast = BoardState.createTokenInstance('fixture_q8_coast');
         Placement.placeTokenAt(coast, AT);
         const { container } = mount(h(MatBoard));
-        // Standing: no hero, no hover, and still a full sky ring.
+        const root = container.querySelector('[data-mat-board]');
+        root.getBoundingClientRect = () => ({
+            left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
+        });
+        const hover = () => { fireEvent.pointerMove(root, { clientX: AT.x, clientY: AT.y }); };
+        // At rest, with a minute to go: no bubble. Hovered: a full sky ring.
+        expect(countdownOf(container, coast.id)).toBeNull();
+        act(hover);
         expect(textOf(countdownOf(container, coast.id))).toBe('1:00');
         expect(fractionOf(countdownOf(container, coast.id))).toBe(1);
 
@@ -127,10 +138,23 @@ describe('on the mat (FB-14)', () => {
         act(() => { vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
         const shrimp = BoardState.tokens().find(t => t.typeId === 'fixture_q8_shrimp');
         expect(shrimp?.turnedFrom).toBe('fixture_q8_coast');
+        act(() => { fireEvent.pointerMove(root, { clientX: AT.x + 1, clientY: AT.y }); });
+        act(() => { vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
         const ring = countdownOf(container, shrimp.id);
         expect(textOf(ring)).toBe('1:00');
         expect(fractionOf(ring)).toBe(1);
         expect(ring.getAttribute('aria-label')).toContain('turn back');
+    });
+
+    it('⭐ not hovered, the countdown comes up by itself in its last ten seconds', () => {
+        vi.useFakeTimers();
+        const coast = BoardState.createTokenInstance('fixture_q8_coast');
+        Placement.placeTokenAt(coast, AT);
+        const { container } = mount(h(MatBoard));
+        act(() => { TimedChanges.tick(49000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
+        expect(countdownOf(container, coast.id)).toBeNull();            // 11 s to go
+        act(() => { TimedChanges.tick(2000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
+        expect(textOf(countdownOf(container, coast.id))).toBe('0:09');
     });
 
     it('a Token that does not turn has no countdown', () => {

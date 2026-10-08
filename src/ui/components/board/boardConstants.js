@@ -61,32 +61,12 @@ export const HERO_HIT_PX = 64;
 export const TOKEN_BAR_GAP_U = 8;
 
 /**
- * What the red mark means, in the player's words. Hovering a Token that cannot work states
- * exactly what is wrong; there is no aggregate supply dashboard, so diagnosis happens Token by
- * Token and this table is the whole of it. It is read by the hover bubble of a Token's centre
- * mark (`TokenCentreAlert`). Keyed off the engine's exported `ALERT` so the two vocabularies
- * cannot drift.
- */
-export const ALERT_HINT = {
-    [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
-    [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token',
-    [ALERT.UNSKILLED]: 'This hero doesn’t have the skill for this work — levelling won’t help',
-    [ALERT.NO_RECIPE]: 'This station is missing a Token its recipe needs beside it',
-    [ALERT.CHARGES]: 'Not enough charges left here to run a full cycle',
-    [ALERT.CHOOSE_BUILD]: 'Choose what to build on this Foundation',
-    [ALERT.CHOOSE_RECIPE]: 'Choose a recipe for this station',
-    [ALERT.NO_ROOM]: 'No room on the mat for what this makes — clear some space around it, or remove a placed Token if the mat is full',
-    [ALERT.SPAWN_NEEDS_ITEM]: 'This spawner can’t pay its upkeep — put the item in the Bank',
-    [ALERT.SPAWN_NO_ROOM]: 'Nowhere free for this spawner’s next Token — clear some space around it'
-};
-
-/**
  * Why a flag passed a Token over, as the tail of one hover line, e.g. 'Iron Forge — needs
  * materials'.
  * Keyed by every reason `Flags` can record: its own `SKIP` values plus the `ALERT` values
  * `WorkCheck` and promotion return. `FlagUI.test.js` derives that list from the engine, so a
- * new reason without a sentence fails. Short forms of `ALERT_HINT`'s wording, because up to
- * five of these stack in one tooltip.
+ * new reason without a sentence fails. Kept short, because up to five of these stack in one
+ * tooltip.
  */
 export const SKIP_HINT = {
     [ALERT.INPUTS]: 'needs materials',
@@ -115,23 +95,6 @@ export function skipHint(reason, { holder = null, hero = null } = {}) {
     const text = SKIP_HINT[reason] || 'can’t work it';
     return text.replace('{holder}', holder || 'another hero').replace('{hero}', hero || 'the hero');
 }
-
-/**
- * The two-word label for an alert: the heading of a worked Token's centre-mark bubble. The
- * sentence is in `ALERT_HINT`.
- */
-export const ALERT_LABEL = {
-    [ALERT.INPUTS]: 'Need Items',
-    [ALERT.ACCESS]: 'Level Too Low',
-    [ALERT.UNSKILLED]: 'Wrong Skill',
-    [ALERT.NO_RECIPE]: 'Need Tokens',
-    [ALERT.CHARGES]: 'Need Charges',
-    [ALERT.CHOOSE_BUILD]: 'Choose Build',
-    [ALERT.CHOOSE_RECIPE]: 'Choose Recipe',
-    [ALERT.NO_ROOM]: 'No Room',
-    [ALERT.SPAWN_NEEDS_ITEM]: 'Need Items',
-    [ALERT.SPAWN_NO_ROOM]: 'No Room'
-};
 
 /** Alerts drawn in warning yellow; every other alert is drawn in red. */
 const YELLOW_ALERTS = [ALERT.INPUTS, ALERT.SPAWN_NEEDS_ITEM];

@@ -18,7 +18,9 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { EngineContext } from '../ui/context/EngineContext';
-import { TokenCentreAlert } from '../ui/components/board/TokenEventAlert.jsx';
+import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
+import './fixtures/testTokens.js';
+import { placeAt } from './fixtures/mat.js';
 
 /**
  * The dev panels below are the only exception: they fake engine changes on
@@ -102,19 +104,18 @@ describe('StationRecipe.setSelectedRecipe announces its own change', () => {
 describe('a message the screen raises on one Token (CR3-306, CR3-013)', () => {
     afterEach(() => cleanup());
 
-    it('UI_TOKEN_ALERT draws on that Token like an engine alert', () => {
-        const { container } = render(React.createElement(
-            EngineContext.Provider, { value: { GameState, EventBus } },
-            React.createElement(DndContext, null, React.createElement(TokenCentreAlert, { instanceId: 'tok_hall' }))
-        ));
-        expect(container.querySelector('[data-alert-kind]')).toBeNull();
+    it('UI_TOKEN_ALERT is said as a callout over that Token', () => {
+        GameState.initNew();
+        const hall = placeAt('fixture_producer', 600, 500);
+        const { container } = render(React.createElement(CalloutLayer));
+        expect(container.querySelector('[data-callout]')).toBeNull();
         act(() => {
             EventBus.publish(UI_EVENTS.UI_TOKEN_ALERT, {
-                instanceId: 'tok_hall', severity: 'disallow', type: 'drop_rejected', name: 'Guild Hall',
+                instanceId: hall.id, severity: 'disallow', type: 'drop_rejected', name: 'Guild Hall',
                 title: 'Guild Hall cannot be removed from the playmat.', rulesText: null,
                 message: 'Guild Hall cannot be removed from the playmat.'
             });
         });
-        expect(container.querySelector('[data-alert-kind]')).not.toBeNull();
+        expect(container.querySelector('[data-callout]').textContent).toBe('Guild Hall cannot be removed from the playmat.');
     });
 });

@@ -444,7 +444,7 @@ function resolveVictory(instance, fight, enemy, heroId) {
             name: sName,
             message: `Token Exhausted: ${sName}`
         });
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: supportId, ...spot, typeId: sTypeId || null });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: supportId, ...spot, typeId: sTypeId || null, exhaustedBy: heroId || null });
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: supportId, ...spot, typeId: null });
         TileModifiers.rebuildAround([spot]);
     });
@@ -474,7 +474,7 @@ function resolveVictory(instance, fight, enemy, heroId) {
             name: eName,
             message: `Token Exhausted: ${eName}`
         });
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: id, ...spot, typeId: instance.typeId });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: id, ...spot, typeId: instance.typeId, exhaustedBy: heroId || null });
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...spot, typeId: null });
         // The hero's flag chooses again on its next pass.
         if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...spot });

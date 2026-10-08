@@ -11,7 +11,6 @@ import * as EffectActions from './EffectActions.js';
 // ⚠️ TimedChanges imports this module for its handler table; importing TimedChanges back would be a
 // cycle, so this takes the leaf `weightedPick` instead.
 import { pickWeighted } from './weightedPick.js';
-import * as TokenNotices from './TokenNotices.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
 import { TimeBankManager } from '../core/TimeBankManager.js';
@@ -261,16 +260,16 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     if (spawned && isEnemyDef(getTokenType(spawned.typeId))) spawned.tether = instance.id;
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
 
-    // A green notice on the new Token: news, not a problem, so it goes on its own. Raised on the id
-    // that landed; a Token that grew during the leftover time above is a new instance and simply
-    // has no notice. None while the time bank replays time away, so the player comes back to a calm
-    // mat, not a field of green marks.
-    const spawnedName = getTokenType(typeId)?.name || typeId;
-    if (!TimeBankManager.isSpending && BoardState.getTokenById(landed.instanceId)) TokenNotices.raiseNotice(landed.instanceId, {
-        type: 'token_spawned',
-        title: `New ${spawnedName}`,
-        rulesText: `Spawned by ${def?.name || instance.typeId}`
-    });
+    // "! Spawned Oak Tree", said from the spawner. Not while the time bank replays time away, so
+    // the player comes back to a calm mat, not a field of popups.
+    if (!TimeBankManager.isSpending && BoardState.getTokenById(landed.instanceId)) {
+        EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, {
+            spawnerId: instance.id,
+            instanceId: landed.instanceId,
+            typeId,
+            name: getTokenType(typeId)?.name || typeId
+        });
+    }
 
     logger.debug('SpawnerSystem', `${instance.typeId} spawned ${typeId}`);
     return instance;

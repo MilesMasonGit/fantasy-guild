@@ -45,6 +45,7 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
 | Spawner count | middle row | ~2 s when it changes, and on hover |
 | Station / Foundation gear | middle row | always while a choice is needed; on hover otherwise |
 | Disallow mark | middle row | always while disallowed |
+| Stuck-spawner warning (yellow: needs an item, red: no room) | middle row | always while the spawner is stuck (owner, 2026-10-07) |
 
 - **Middle row**: when a Token has several centre bubbles they line up side by
   side, centred.
@@ -63,6 +64,10 @@ dev build or with Debug Mode on; T-097 hides Debug Mode in shipped builds.
   Depleted", said by the hero), and effect callouts (e.g. a bonus drop) use the
   same quick speech-bubble-style popup that fades. The "-1" / "+50" charge
   number stays as a small number rising from the charges bubble.
+  **Refused drops** (and dragging the Guild Hall off the mat) show their reason
+  in the same popup (owner, 2026-10-07).
+- **Level-up line**: "Leveled up Mining to 25!" for one level; "(+4)" is added
+  only when two or more levels merge into one bubble (owner, 2026-10-07).
 - **Name label**: on hover, **above** the Token's box, never over a bubble.
 - Bubbles are drawn **inside** the Token's box, so nothing is cut off at the
   mat's edges and hovering them never leaves the Token.

@@ -16,7 +16,7 @@ import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/r
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
-import { ALERT_HINT, ALERT_LABEL, SKIP_HINT } from '../ui/components/board/boardConstants.js';
+import { SKIP_HINT } from '../ui/components/board/boardConstants.js';
 import { blockedText } from '../ui/components/board/heroBubbles.js';
 import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
 
@@ -155,9 +155,7 @@ describe('a new station waits for the player (TL-15)', () => {
 });
 
 describe('the player can see it is waiting', () => {
-    it('every surface has words for choose_recipe', () => {
-        expect(ALERT_HINT[ALERT.CHOOSE_RECIPE]).toBe('Choose a recipe for this station');
-        expect(ALERT_LABEL[ALERT.CHOOSE_RECIPE]).toBe('Choose Recipe');
+    it('every surface still using the alert has words for choose_recipe', () => {
         expect(SKIP_HINT[ALERT.CHOOSE_RECIPE]).toBeTruthy();
         expect(blockedText(ALERT.CHOOSE_RECIPE, { token: 'Workbench' })).toBe('Choose a recipe for Workbench.');
     });

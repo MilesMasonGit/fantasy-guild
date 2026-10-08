@@ -374,7 +374,7 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
     RecipeResolver.wearNearbySupport(id, (supportId, supportInstance) => {
         const support = supportInstance || BoardState.getTokenById(supportId);
         const spot = centreOf(support);
-        Charges.destroyToken(support);
+        Charges.destroyToken(support, { exhaustedBy: heroId });
         // The neighbourhood, not just this Token: an aura going dark has to stop
         // applying to everything it reached, which means their aggregators too.
         TileModifiers.rebuildAround([spot]);

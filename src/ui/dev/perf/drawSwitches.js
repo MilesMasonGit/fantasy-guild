@@ -6,8 +6,9 @@
 
 import { useSyncExternalStore } from 'react';
 
+// `alerts` is the callout layer (spawn, effect and refused-drop popups); `speech` is the hero bubbles.
 export const DRAW_SWITCHES = [
-    'rings', 'alerts', 'speech', 'tooltips',
+    'rings', 'bubbles', 'alerts', 'speech', 'tooltips',
     'heroAnim', 'enemyAnim', 'walkDraw', 'itemFlight',
     'notifications', 'bin', 'dock', 'drawers',
     'spriteFx', 'background', 'particles'

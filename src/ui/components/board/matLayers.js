@@ -21,8 +21,6 @@ export const MAT_Z = Object.freeze({
     WAITING_HERO: 690,
     /** Heroes on the move: above every Token they walk over. */
     WALKING_HERO: 695,
-    /** Alerts that belong to a point rather than to a Token. */
-    POINT_ALERT: 750,
     /** Range rings: Near, and a flag's radius. */
     RINGS: 760,
     /** Loot on the floor. */
@@ -32,6 +30,8 @@ export const MAT_Z = Object.freeze({
      * the mat, flags sort with the Tokens.
      */
     FLAGS: 850,
+    /** Callouts: quick popups over a Token or a bare point, under the hero bubbles. */
+    CALLOUT: 855,
     /** Hero speech bubbles — above every hero, never in the way of the pointer. */
     HERO_BUBBLE: 860
 });
