@@ -126,7 +126,6 @@ here.
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
 | T-065 | P2 | open | 3 of 7 test fixtures still borrow real `item_` ids — their rename changes the bench fingerprint, so land it as its own accepted commit. | CR3-551 |
-| T-066 | P2 | open | 19 CMS-importing test files can't run in a worktree: link `cms/node_modules` too; remove both links before removing the copy. | CR3-552 |
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
 | T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |
 | T-069 | P2 | open | Write the mat-era guide to keeping it fast in `docs/reference/PERFORMANCE.md` (the baseline and how-to-measure parts exist since 2026-10-07; draft in `docs/archive/review_v3/R6.md` §8 + `R7.md` §4). | CR3-021 |

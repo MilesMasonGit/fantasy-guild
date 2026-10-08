@@ -21,10 +21,14 @@ It does not write the code itself. It:
    and permission to **stop and report rather than guess**.
 2. Picks a tier for each phase (definitions in
    `.claude/agents/`):
-   - **runner** (Haiku): tests, bench, builds, mechanical edits.
-   - **builder** (Sonnet): fixes whose design is already written down.
-   - **engineer** (Opus): risky refactors, performance work, turning a new
-     design into code, diagnosing unexplained failures.
+   - **runner** (Sonnet, low thinking): tests, bench, builds, mechanical
+     edits.
+   - **builder** (Opus, medium thinking): fixes whose design is already
+     written down.
+   - **engineer** (Opus, extra-high thinking): risky refactors, performance
+     work, turning a new design into code, diagnosing unexplained failures.
+   - The director (Fable) may build a phase itself when a subagent has
+     failed it twice.
 3. **Verifies every subagent's claims itself** before merging. Subagent reports
    here have been confidently wrong often enough that checking has repeatedly
    changed the outcome.
@@ -36,8 +40,11 @@ It does not write the code itself. It:
    blocked.
 
 Cheapest tier first, but during the crunch the engineer tier may be used
-whenever a phase genuinely needs judgement. Code changes run one at a time in
-the checkout; read-only work (reviews, research) may run in parallel.
+whenever a phase genuinely needs judgement. Code phases that touch different
+files may run in parallel, each in its own short-path git worktree
+(`docs/reference/TESTING.md`, "Worktrees"); the main checkout stays on `main`
+so the owner's CMS syncs land there. Read-only work (reviews, research) may
+run in parallel freely. Checks in the running game are one at a time.
 
 ## Where things are written down
 

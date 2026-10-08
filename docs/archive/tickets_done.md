@@ -24,3 +24,4 @@ T-112 — Heroes stand further from their target (STAND_GAP 16 → 32) so fight 
 T-102 — Token cap 80 as a game value, spawned Tokens count, spawners wait at a full mat — bf3668d4 — 2026-10-08
 T-099 — Passive Production: one 5-minute timer, Wishing Well 10 × rank Water, trickle renamed for players — d15bd6c3 — 2026-10-08
 T-107 — Alert marks blocking presses: the marks were removed in brief 10 U3 — 36ae8cbd — 2026-10-08
+T-066 — CMS-importing tests run in a worktree once both node_modules are junction-linked; docs fixed, no code change — chore/max-plan-tiers — 2026-10-08
