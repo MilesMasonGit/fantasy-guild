@@ -104,9 +104,8 @@ for it three ways (import, string id, CMS).
 ## Worktrees (parallel code phases, spikes and measurements)
 
 `git worktree add --detach …` (or `-b <branch>`); link `node_modules` and
-`cms/node_modules` as junctions (`cmd //c "mklink /J <wt>
-ode_modules node_modules"`
-and the same for `cms`), and remove the junctions with `cmd //c rmdir` **before**
+`cms/node_modules` as junctions (`cmd //c "mklink /J <wt>/node_modules node_modules"`,
+written with backslashes in the real command, and the same for `cms`), and remove the junctions with `cmd //c rmdir` **before**
 removing the worktree (otherwise deleting the worktree deletes the real
 packages). With both links the full suite passes in a worktree (checked
 2026-10-08). A second dev server needs its own port and Vite `cacheDir`.
