@@ -4,6 +4,7 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **Combat health bars.** A fight now shows a thin health bar above the hero and above the enemy (and above an enemy you hover), gone when the fight ends; hover a bar to read the exact number, like 34/50. The enemy's round HP badge is gone.
 - **Token bubbles rebuilt.** Each Token's round badges now sit inside its box in fixed spots (timer top-left, gear, spawner count and disallow mark in the middle, work cycle bottom-left, quest progress bottom-centre, charges bottom-right) and show only when useful: the work cycle while a hero works, counts for a moment after they change and on hover, timers on hover and in their last 10 seconds. Saplings, sprouts and young trees now show a growth timer; every count bubble glides when its number jumps; each bubble has a tooltip and still lets you grab the Token; the name label moved above the Token's box.
 - **Binned Tokens now count toward their spawner's cap.** Putting a spawned Token (a sapling, a tree) in the discard bin no longer lets its Forest make another; the slot frees only when the Token is discarded for good.
 - **A closed hero sheet no longer blocks drops on the mat.** The bottom hero sheet stayed in place invisibly after closing, so its equipment slots kept refusing Tokens and flags dropped over its area; it now disappears completely once its closing animation ends.

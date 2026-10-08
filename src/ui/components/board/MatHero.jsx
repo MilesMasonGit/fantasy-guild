@@ -21,6 +21,41 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
+import { useGameState } from '../../hooks/useGameState.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { HealthBar } from './HealthBar.jsx';
+import { HEALTH_BAR_GAP_U, HEALTH_BAR_H_U, HERO_BAR_W_U } from './healthBar.js';
+
+/**
+ * A fighting hero's health bar, just over their figure's head. Reads the hero's HP as a flat
+ * projection of primitives (the engine mutates `hp` in place), so it redraws only when the
+ * number moves.
+ */
+function HeroHealthBar({ heroId, artPx }) {
+    const hp = useGameState(
+        (state) => {
+            const h = (state.heroes || []).find(x => x.id === heroId);
+            return h ? { cur: h.hp?.current ?? 0, max: h.hp?.max ?? 100 } : null;
+        },
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.STATE_CHANGED],
+        null,
+        { deps: [heroId] }
+    );
+    if (!hp || !(hp.max > 0)) return null;
+    return (
+        <HealthBar
+            who="hero"
+            of={heroId}
+            cur={hp.cur}
+            max={hp.max}
+            style={{
+                left: (HERO_HIT_PX - HERO_BAR_W_U) / 2,
+                top: (FLAG_PX - artPx) / 2 - HEALTH_BAR_H_U - 6 - HEALTH_BAR_GAP_U,
+                width: HERO_BAR_W_U
+            }}
+        />
+    );
+}
 
 /**
  * When this hero's last real attack began (`performance.now()`), while `listening`: a fighting
@@ -70,7 +105,8 @@ export const MatHero = memo(function MatHero({
     animationState = 'idle',
     moving = false,
     facing = 1,
-    limp = false
+    limp = false,
+    fighting = false
 }) {
     const drag = useEntityDrag({
         id: `hero-${heroId}`,
@@ -95,6 +131,7 @@ export const MatHero = memo(function MatHero({
     // those steps, so the walk looks continuous.
     const isWalking = moving;
     const walkDrawn = useDrawn('walkDraw');
+    const barsDrawn = useDrawn('bubbles');
     const facingLeft = facing < 0;
 
     // A moving hero is handed no point (so their steps do not redraw the mat). Read it live,
@@ -197,6 +234,7 @@ export const MatHero = memo(function MatHero({
                     )}
                 </div>
             )}
+            {fighting && barsDrawn && <HeroHealthBar heroId={heroId} artPx={artPx} />}
         </button>
     );
 });

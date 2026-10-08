@@ -18,6 +18,7 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
+import { HEALTH_BAR_LIFT_U } from './healthBar.js';
 import { SMALL_OVERHANG_U, spawnerRing, questRing } from './ringRow.js';
 import { TokenCentreAlert } from './TokenEventAlert.jsx';
 import { EffectProcText } from './EffectProcText.jsx';
@@ -492,7 +493,7 @@ export const MatToken = React.memo(function MatToken({
                 className="absolute pointer-events-none"
                 style={{ ...boxStyle, zIndex: z + 2, visibility: hidden ? 'hidden' : 'visible' }}
             >
-                <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} lift={small ? SMALL_OVERHANG_U : 0} />
+                <TokenNameBadge name={label} isDragging={hidden} isHovered={isHovered} lift={Math.max(small ? SMALL_OVERHANG_U : 0, def?.enemy ? HEALTH_BAR_LIFT_U : 0)} />
 
                 {/**
                  * The bubbles, each in its own spot inside the Token's box: timer, gear, spawner

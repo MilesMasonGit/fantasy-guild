@@ -381,6 +381,7 @@ export const MatBoard = ({
                         moving={h.moving}
                         facing={h.facing}
                         limp={h.limp}
+                        fighting={h.combat}
                     />
                 );
             })}

@@ -15,13 +15,12 @@ export const RING_D_U = 40;
 export const RING_STROKE_U = RING_D_U * 3 / 28;
 
 /**
- * Each ring's colour. Cycle fills, charges and HP empty; a spawner fills to its cap and a turn
+ * Each ring's colour. Cycle fills and charges empty; a spawner fills to its cap and a turn
  * ring empties toward its roll.
  */
 export const RING_COLOUR = Object.freeze({
     cycle: '#f4f1e8',
     charges: '#fbbf24',   // the game's gi-gold
-    hp: '#F09595',
     spawner: '#86efac',
     turn: '#7dd3fc',
     grow: '#bef264',
@@ -43,11 +42,11 @@ export const RING_GREY = '#8a8a8a';
 /**
  * Where each bubble sits inside a Token's box, in mat units from the box's top-left. The
  * layout is fixed: timer top-left, cycle bottom-left, quest bottom-centre, charges bottom-right
- * (HP top-right, until the health bars replace it), and the middle row (gear, spawner count,
+ * and the middle row (gear, spawner count,
  * disallow mark) centred on the box.
  * A small Token's box is half as wide as three bubbles, so its corner bubbles hang off the box
  * by {@link SMALL_OVERHANG_U} instead of sitting inside it.
- * @param {'timer'|'cycle'|'quest'|'charges'|'hp'} slot
+ * @param {'timer'|'cycle'|'quest'|'charges'} slot
  * @param {{boxPx: number, small?: boolean}} box
  * @returns {{left: number, top: number}}
  */
@@ -56,7 +55,6 @@ export function bubbleSlot(slot, { boxPx, small = false }) {
     const far = boxPx - RING_D_U - inset;
     switch (slot) {
         case 'timer': return { left: inset, top: inset };
-        case 'hp': return { left: far, top: inset };
         case 'cycle': return { left: inset, top: far };
         case 'quest': return { left: (boxPx - RING_D_U) / 2, top: far };
         case 'charges': return { left: far, top: far };

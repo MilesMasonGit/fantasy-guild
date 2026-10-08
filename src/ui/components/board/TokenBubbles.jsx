@@ -3,10 +3,13 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
+import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { subscribeToken } from './tokenEvents.js';
 import { workedAlertOf } from './centreAlert.js';
 import { RingBadge, paintRing } from './RingBadge.jsx';
 import { Bubble } from './Bubble.jsx';
+import { HealthBar } from './HealthBar.jsx';
+import { enemyBarPlace } from './healthBar.js';
 import { TimerBubble } from './TimerBubble.jsx';
 import {
     BUBBLE_RECENT_MS, RING_D_U, bubbleSlot, chargesFraction, cycleSecondsText, ringCount
@@ -33,8 +36,7 @@ export const BUBBLE_TIPS = Object.freeze({
     charges: (n) => `Charges: ${Number(n).toLocaleString()} left`,
     quest: (text) => `Quest progress: ${text}`,
     spawner: (text) => `Spawned: ${text}. It stops at the limit`,
-    disallow: 'Heroes may not work this',
-    hp: (cur, max) => `Health: ${cur}/${max}`
+    disallow: 'Heroes may not work this'
 });
 
 /**
@@ -73,8 +75,8 @@ export function useChangeFlash(value, ms = BUBBLE_RECENT_MS) {
  * its last seconds.
  * - **Gear** (middle row): always while a choice is needed (nothing chosen), otherwise hovered.
  * - **Disallow mark** (middle row): the whole time it is disallowed.
- * - **HP** (top-right, until the health bars replace it): in a fight (`PROGRESS` with
- * `combat: true`). No cycle then.
+ * - **Enemy health bar** (above the Token's box, not a bubble): in a fight (`PROGRESS` with
+ * `combat: true`), and while an enemy is hovered. No cycle in a fight.
  * - While the Token is dragged: nothing.
  * Every bubble has a tooltip, and pressing one grabs the Token (`dragProps`).
  * The subscriptions are keyed on the Token and nothing else. Hovering, the alert, the hero and
@@ -119,6 +121,7 @@ export const TokenBubbles = ({
     const [hp, setHp] = useState(null);
     const combatRef = useRef(combat);
     const hpRef = useRef(hp);
+    const enemyHp = useMemo(() => enemyProfileOf(getTokenType(typeId))?.hp ?? null, [typeId]);
 
     const liveRef = useRef({ hasHero, blocked });
     liveRef.current = { hasHero, blocked };
@@ -272,7 +275,9 @@ export const TokenBubbles = ({
     const showCharges = hasCharges && (isHovered || chargesFlash.recent) && !!chargesFlash.shown;
     const showQuest = !!quest && (isHovered || questFlash.recent) && !!questFlash.shown;
     const showSpawner = !!spawner && (isHovered || spawnerFlash.recent) && !!spawnerFlash.shown;
-    const showHp = fight && !!hp && hp.max > 0;
+    // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
+    const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
+    const showBar = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
     const showGear = !!gear?.show && (gear.pulsing || isHovered);
     const showMiddle = showGear || showSpawner || disallowed;
     const slot = (name) => bubbleSlot(name, { boxPx, small });
@@ -284,15 +289,15 @@ export const TokenBubbles = ({
             {readTimer && (
                 <TimerBubble read={readTimer} hovered={isHovered} boxPx={boxPx} small={small} dragProps={dragProps} />
             )}
-            {showHp && (
-                <Bubble of={instanceId} kind="hp" style={slot('hp')} tip={BUBBLE_TIPS.hp(hp.cur, hp.max)} dragProps={dragProps}>
-                    <RingBadge
-                        kind="hp"
-                        fraction={Math.max(0, hp.cur) / hp.max}
-                        text={ringCount(Math.max(0, hp.cur))}
-                        title={BUBBLE_TIPS.hp(hp.cur, hp.max)}
-                    />
-                </Bubble>
+            {showBar && (
+                <HealthBar
+                    who="enemy"
+                    of={instanceId}
+                    cur={barHp.cur}
+                    max={barHp.max}
+                    style={enemyBarPlace(boxPx)}
+                    dragProps={dragProps}
+                />
             )}
 
             {showMiddle && (

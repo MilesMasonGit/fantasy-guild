@@ -7,7 +7,7 @@ import { RING_D_U } from './ringRow.js';
 const TIP_WIDTH = 220;
 
 /** The tooltip itself: a portal to the page so the mat's scale does not shrink the text. */
-const BubbleTip = ({ anchor, text }) => {
+export const BubbleTip = ({ anchor, text }) => {
     const { isDragging } = useActiveDrag();
     if (isDragging || !text || typeof document === 'undefined') return null;
     return createPortal(

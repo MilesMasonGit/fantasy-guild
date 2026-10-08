@@ -261,15 +261,17 @@ describe('which bubbles show', () => {
         expect(ring(container, 'cycle')).not.toBeNull();
     });
 
-    it('⭐ in combat: an HP bubble that empties, and no cycle bubble', () => {
+    it('⭐ in combat: no cycle bubble, and no HP bubble (the health bar replaces it)', () => {
         const { container } = mount(bub({ token: worked({ usesRemaining: 4 }) }));
         progress({ percent: 25, combat: true, enemyHp: 30, enemyMaxHp: 40 });
         expect(ring(container, 'cycle')).toBeNull();
-        const hp = ring(container, 'hp');
-        expect(hp.getAttribute('data-ring-text')).toBe('30');
-        expect(Number(hp.getAttribute('data-ring-fraction'))).toBeCloseTo(0.75, 2);
+        expect(ring(container, 'hp')).toBeNull();
+        expect(bubble(container, 'hp')).toBeNull();
+        const bar = container.querySelector('[data-health-bar="enemy"]');
+        expect(bar.getAttribute('data-health-text')).toBe('30/40');
+        expect(Number(bar.getAttribute('data-health-fraction'))).toBeCloseTo(0.75, 2);
         progress({ percent: 75, combat: true, enemyHp: 10, enemyMaxHp: 40 });
-        expect(ring(container, 'hp').getAttribute('data-ring-text')).toBe('10');
+        expect(container.querySelector('[data-health-bar="enemy"]').getAttribute('data-health-text')).toBe('10/40');
     });
 
     it('nothing while the Token is dragged', () => {
