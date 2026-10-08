@@ -93,7 +93,7 @@ export function canHeroFight(hero) {
  *
  * ⚠️ The `selectedStyle` argument is **ignored** and kept only so existing call
  * sites keep compiling. A hero has one style; the equipped weapon only decides
- * which side of the rock-paper-scissors triangle they fight on.
+ * which side of the matchup cycle they fight on.
  */
 export function getHeroCombatSkill(hero, _selectedStyle = 'melee') {
     return getHeroCombatSkillEntry(hero).level;

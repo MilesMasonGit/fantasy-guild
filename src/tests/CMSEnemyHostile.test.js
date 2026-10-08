@@ -11,6 +11,7 @@ import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import { isHostileEnemy } from '../config/registries/enemyProfile.js';
+import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 
 /**
  * B7.2 — the CMS models **`enemy.hostile`** before any content uses it
@@ -113,11 +114,29 @@ describe('enemy.hostile survives load → edit → sync → reload', () => {
     });
 });
 
+/** The enemy Style dropdown: the one select offering combat skills and nothing else. */
+function styleSelect(container) {
+    const found = [...container.querySelectorAll('select')].filter((s) => s.options.length
+        && [...s.options].every((o) => COMBAT_SKILL_IDS.includes(o.value)));
+    expect(found).toHaveLength(1);
+    return found[0];
+}
+
+function editor(id) {
+    useEntityStore.getState().setActiveEntity(id, 'token');
+    return render(React.createElement(TokenEditor));
+}
+
+describe('the Token editor’s Style dropdown', () => {
+    it('offers stealth, and exactly the registry’s combat skills', () => {
+        const { container } = editor(enemyIds[0]);
+        const values = [...styleSelect(container).options].map((o) => o.value);
+        expect(values).toContain('stealth');
+        expect(values).toEqual(COMBAT_SKILL_IDS);
+    });
+});
+
 describe('the Token editor’s Hostile checkbox', () => {
-    function editor(id) {
-        useEntityStore.getState().setActiveEntity(id, 'token');
-        return render(React.createElement(TokenEditor));
-    }
 
     it('ticking writes hostile: true; unticking removes the key (absent = peaceful)', () => {
         const id = enemyIds.find((t) => t === 'token_cow') || enemyIds.find((t) => !shippedTokens[t].enemy.hostile);
@@ -142,8 +161,7 @@ describe('the Token editor’s Hostile checkbox', () => {
         const enemy = useEntityStore.getState().tokens[id].enemy;
         useEntityStore.getState().updateToken(id, { enemy: { ...enemy, hostile: true } });
         const { container } = editor(id);
-        const style = [...container.querySelectorAll('select')]
-            .find((s) => [...s.options].map((o) => o.value).join() === 'melee,ranged,magic');
+        const style = styleSelect(container);
         fireEvent.change(style, { target: { value: 'ranged' } });
         expect(useEntityStore.getState().tokens[id].enemy).toMatchObject({ style: 'ranged', hostile: true });
     });

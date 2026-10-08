@@ -114,14 +114,16 @@ export const RPS_HIT_SHIFT = 7;
 export const RPS_DAMAGE_SHIFT = 0.10;
 
 /**
- * Rock-Paper-Scissors matchup table:
- * Melee > Ranged > Magic > Melee — warriors close on archers,
- * archers pick off mages, mages melt armored warriors.
+ * Combat matchup table, a four-way cycle (owner-locked):
+ * Melee > Ranged > Magic > Stealth > Melee. Opposite pairs (Melee–Magic,
+ * Ranged–Stealth) are even, so each style has one favoured and one
+ * unfavoured matchup.
  */
 export const RPS_RULES = {
-    melee:  { strong: 'ranged', weak: 'magic' },
-    ranged: { strong: 'magic',  weak: 'melee' },
-    magic:  { strong: 'melee',  weak: 'ranged' },
+    melee:   { strong: 'ranged',  weak: 'stealth' },
+    ranged:  { strong: 'magic',   weak: 'melee' },
+    magic:   { strong: 'stealth', weak: 'ranged' },
+    stealth: { strong: 'melee',   weak: 'magic' },
 };
 
 /**
