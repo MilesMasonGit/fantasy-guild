@@ -3,7 +3,7 @@
 import { isSkillId } from '../../config/registries/skillRegistry.js';
 import { getJob } from '../../config/registries/jobRegistry.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { statementsOf, stationSkillOf, KEYWORD } from '../effects/statements.js';
+import { statementsOf, stationSkillOf } from '../effects/statements.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
 
 /**
@@ -44,7 +44,9 @@ function isScopeCategory(category) {
 function statementFindings(def, push) {
     for (const statement of statementsOf(def)) {
         const payload = statement?.payload || {};
-        if (statement?.keyword === KEYWORD.PROMOTES && hasValue(payload.jobId) && !getJob(payload.jobId)) {
+        // ⚠️ By the field, not the keyword: only `BoardPromotion` may read the Promotes rule among
+        // the engine systems (`BoardPromotion.test.js` scans for it), and a job id is a job id.
+        if (hasValue(payload.jobId) && !getJob(payload.jobId)) {
             push('statements', `one of its rules promotes to the job "${payload.jobId}", which does not exist — it promotes nobody. Pick the job again in the CMS.`);
         }
         if (hasValue(payload.category) && getPaletteEntry(payload.type)?.categories === 'skill'
