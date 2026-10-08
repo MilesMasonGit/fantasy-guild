@@ -168,6 +168,34 @@ the owner agreed all eight belong here (2026-10-08).
 - **First outside playtest as a milestone**: decide what must be true before
   someone else plays (tutorial, saves, first-hour pacing). Turns several items
   here into one goal and orders the post-crunch work. *process*
+- **Moving day**: under the Atlas, moving Region is the main progression and
+  means rebuilding from scratch with no refund. Pillar 2 ("set up, don't
+  micromanage") vs rebuilding the same layout every move: should the tenth
+  move be faster than the first (saved layouts, packing up, rebuild-speed
+  upgrades)? ⚠️ touches locked Atlas decisions; raise, don't re-decide.
+- **The return experience**: offline runs "same rules as playing" (fights,
+  wounds, empty seeds). Design the return as a whole: the "While you were
+  away" summary should feel like a present, problems framed as "what to fix
+  next". Pairs with brief 40 and events.
+- **Endgame**: level 99 ≈ 13 M XP and tiered maps, but nothing says what the
+  player does at the top, or whether there's a fresh-start-for-a-bonus loop
+  ("prestige"). The progression interview should know if the curve ends or
+  loops.
+- **Tone and world guide**: the GDD has mechanics but no world, mood, humour
+  or naming style. Agents will soon write item names, bubble lines and event
+  text; a one-page guide keeps them consistent. *quick*
+- **Accessibility**: heroes are told apart by 8 flag colours; add
+  colour-blind-safe colours and a second cue (pattern or initial). Text size
+  settings already exist.
+- **Release readiness**: how updates reach players, crash logs that can be
+  read, where it's sold (itch.io, Steam, …; Steam has requirements and lead
+  times). Pairs with saves. *pre-release*
+- **Dormant code clean-out**: Time Bank, energy (ruled to go), Villager heroes,
+  Map bursts, the unloaded `stations.json`. Leftovers breed misleading comments
+  and slow every agent. One cleanup job after the crunch.
+- **The Bank at scale**: 64 items today, maybe several hundred after skill loops
+  and gear; tabs and manual reordering may not keep up. Design search and
+  filters (perhaps shared with the encyclopedia) alongside the skill loops.
 
 ### Post-Atlas content
 
