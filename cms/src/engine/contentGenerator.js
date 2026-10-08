@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { SKILLS } from '../utils/constants.js';
 
 /**
  * AI Content Generator — Gemini-powered entity generation.
@@ -7,7 +8,15 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  * then asks it to generate balanced entities to fill a specific gap.
  */
 
-function buildSystemPrompt(globals, existingItems, existingEffects) {
+/** The skill the generator falls back to when neither the designer nor the model names one. */
+export const DEFAULT_GENERATOR_SKILL = SKILLS[0].id;
+
+/** The prompt's skill vocabulary, read from the game so it can never name a skill the game has dropped. */
+export function generatorSkillList() {
+  return SKILLS.map((s) => s.id).join(', ');
+}
+
+export function buildSystemPrompt(globals, existingItems, existingEffects) {
   const itemList = Object.values(existingItems)
     .filter((i) => i.trueCost > 0)
     .map((i) => `  - ${i.name} (${i.type}, trueCost: ${i.trueCost} GP, id: ${i.id})`)
@@ -81,7 +90,7 @@ ${itemList || '  (none yet)'}
 ${effectList || '  (none yet)'}
 
 ## SKILLS
-nature, industry, culinary, occult, crime, social, nautical, science
+${generatorSkillList()}
 
 ## OUTPUT FORMAT
 Return ONLY a valid JSON object with this exact structure (no markdown, no explanation):
@@ -180,7 +189,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
 IMPORTANT: In inputs/outputs/drops/assignedEnemies/assignedEffectName/targetIdName/mapFragmentTargetName/idName, use names NOT IDs. The system will resolve names to IDs after import.`;
 }
 
-function buildUserPrompt(request, areas) {
+export function buildUserPrompt(request, areas) {
   const parts = [];
 
   if (request.areaId && areas) {
@@ -199,7 +208,7 @@ function buildUserPrompt(request, areas) {
     parts.push(`Include all raw materials and processed items needed.`);
   } else if (request.type === 'generate_area') {
     parts.push(`Generate a complete area's content.`);
-    parts.push(`Primary skills: ${request.skills?.join(', ') || 'nature, industry'}`);
+    parts.push(`Primary skills: ${request.skills?.join(', ') || DEFAULT_GENERATOR_SKILL}`);
     parts.push(`Skill level range: ${request.levelMin || 1} to ${request.levelMax || 15}`);
     parts.push(`Generate 3-5 gathering tasks, 2-3 processing chains, and all items needed.`);
     parts.push(`Chains should be 2-3 tiers deep (gather → process → craft).`);
@@ -480,7 +489,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
         areaId: resolvedAreaId,
         baseTickTime: task.baseTickTime || 10000,
         skillRequirement: task.skillRequirement || 1,
-        skill: task.skill || 'nature',
+        skill: task.skill || DEFAULT_GENERATOR_SKILL,
         targetEV: task.targetEV || 1.05,
         energyCost: task.energyCost || 1,
         inputs: resolvedInputs,
@@ -495,7 +504,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
         areaId: resolvedAreaId,
         baseTickTime: task.baseTickTime || 10000,
         skillRequirement: task.skillRequirement || 1,
-        skill: task.skill || 'nature',
+        skill: task.skill || DEFAULT_GENERATOR_SKILL,
         targetEV: task.targetEV || 1.05,
         energyCost: task.energyCost || 1,
         inputs: resolvedInputs,

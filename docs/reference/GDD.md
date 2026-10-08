@@ -92,9 +92,9 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
 
 ### What a Token is — Built
 Everything on the mat is a Token: resource nodes, tools, stations, spawners,
-Foundations, enemies, quests, the Guild Hall. 94 Token types ship
-(`data/tokens.json`): resource 50, context 10, station 8, spawner 7, map 7,
-enemy 4, buff 4, promotion 2, manager 1, market 1. Plus the engine-owned quest
+Foundations, enemies, quests, the Guild Hall. 86 Token types ship
+(`data/tokens.json`): resource 48, context 10, station 8, spawner 7, enemy 4,
+buff 4, promotion 2, map 1, manager 1, market 1. Plus the engine-owned quest
 Token.
 - **Work cycle**: `config` = skill, level required, cycle time, XP, inputs,
   outputs (each output a chance and a quantity range). Example: Oak Tree,
@@ -151,12 +151,11 @@ price; bought consumable = price × charges left ÷ (starting × 2); spawned =
 nothing. Rounded down per item. The Hall and tutorial quests can't be binned.
 *(`DiscardBin.js`)*
 
-### Maps and Explore — Partial
-Map bursts and the Map shop are retired. The **Oak Forest Map** is an ordinary
-Explore producer sold in the Shop (5 Oak Wood + 1 Torch; each 20 s cycle eats
-1 Shrimp + 1 Torch and yields Oak Wood plus chance drops). Six other Map Tokens
-and `data/maps.json` (8 maps with pools and prices) are **Dormant** and will be
-**retired** (owner 2026-10-06, T-002); the Atlas gets fresh Map content.
+### Maps — Retired, pending the Atlas
+Map bursts, the Map shop and the Explore skill are gone. The Oak Forest Map and
+the other Map Tokens were retired from `data/` (T-002), and `data/maps.json` is
+empty. One Map Token, **Volcanic Island**, is left; it points at a map that no
+longer exists, so it does nothing. The Atlas gets fresh Map content.
 
 ---
 
@@ -303,12 +302,11 @@ and armour will be authored as content.
   1 Oak Seed, 1 Wheat Seed and 1 Apple Seed (*placeholder*; the CMS block is
   still called `trickle` in the data), plus the Wishing Well's Water.
   *(`PassiveProduction.js`)*
-- **The Shop** sells 11 Tokens, all available from the start; price is the
+- **The Shop** sells 10 Tokens, all available from the start; price is the
   only gate (*placeholder* prices): Oak Forest, Coast, Farmland (10 Oak Wood
   each), Copper/Coal Mine and Quarry (15 Oak Wood), Wood Foundation (15 Oak
-  Wood), Stone Foundation (10 Stone + 5 Oak Wood), Oak Forest Map (5 Oak Wood +
-  1 Torch), Copper Anvil (5 Copper Ingot), Goblin Camp (10 Stone + 10 Oak
-  Wood). *(`Shop.js`)*
+  Wood), Stone Foundation (10 Stone + 5 Oak Wood), Copper Anvil (5 Copper
+  Ingot), Goblin Camp (10 Stone + 10 Oak Wood). *(`Shop.js`)*
 
 ---
 
@@ -402,9 +400,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
-  - **Tutorial**: 12 steps, one at a time: recruit, plant a flag, log, collect
-    loot, open the Bank, visit the Shop, buy a Foundation, build a Workbench,
-    craft Charcoal, plant Farmland, harvest Wheat, explore a Map.
+  - **Tutorial**: 11 steps, one at a time: recruit, plant a flag, fell an Oak
+    Tree, collect loot, open the Bank, visit the Shop, buy a Foundation, build a
+    Workbench, craft Charcoal, plant Farmland, harvest Wheat.
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (+1 per Notice Board rank, max 5); a
     new one every 3 min of game time.
@@ -483,17 +481,17 @@ drawers**. The menu can be flipped to the right.
 
 ---
 
-## 12. Content snapshot (2026-10-06)
+## 12. Content snapshot (2026-10-08)
 
 | | Count | Notes |
 |---|---|---|
-| Token types | 94 | 50 resource; 7 spawners; 4 enemies; 2 promotion |
+| Token types | 86 | 48 resource; 7 spawners; 4 enemies; 2 promotion; 1 Map (inert) |
 | Items | 64 | no gear |
 | Recipes | 25 | 5 skills have recipes |
 | Effects | 22 | most of the grammar unused |
-| Shop entries | 11 | |
-| Skills with content | ~11 of 29 | Foundation 9 + melee + magic |
-| Jobs reachable | Fighter (+ Wizard, no source) of 18 | |
+| Shop entries | 10 | |
+| Skills with content | 10 of 25 | 8 Starting (not Alchemy) + melee + commerce |
+| Jobs reachable | Fighter (+ Wizard, no source) of 13 | |
 
 Content is half-authored on purpose; an unfinished Token is not a bug.
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Sparkles, X, Loader2, Check, AlertTriangle, Key } from 'lucide-react';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { generateContent, resolveAndImport } from '../../engine/contentGenerator';
+import { generateContent, resolveAndImport, DEFAULT_GENERATOR_SKILL } from '../../engine/contentGenerator';
 import { SKILLS } from '../../utils/constants';
 
 const GENERATION_MODES = [
@@ -23,11 +23,11 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
   const styleGuide = useGlobalStore((s) => s.generatorStyleGuide);
 
   const [mode, setMode] = useState(prefill?.type || 'generate_single');
-  const [skill, setSkill] = useState(prefill?.skill || 'nature');
+  const [skill, setSkill] = useState(prefill?.skill || DEFAULT_GENERATOR_SKILL);
   const [levelMin, setLevelMin] = useState(prefill?.levelMin || 1);
   const [levelMax, setLevelMax] = useState(prefill?.levelMax || 15);
   const [tier, setTier] = useState(prefill?.tier || 1);
-  const [skills, setSkills] = useState(prefill?.skills || ['nature']);
+  const [skills, setSkills] = useState(prefill?.skills || [DEFAULT_GENERATOR_SKILL]);
   const [customPrompt, setCustomPrompt] = useState('');
   const [additionalContext, setAdditionalContext] = useState('');
   const [areaId, setAreaId] = useState(prefill?.areaId || '');
@@ -199,7 +199,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                     onChange={(e) => setCustomPrompt(e.target.value)}
                     className="w-full"
                     rows={mode === 'generate_single' ? 3 : 4}
-                    placeholder={mode === 'generate_single' ? 'e.g., should yield a fish and rarely an old boot' : 'e.g., I need 3 combat encounters for tier 2, dropping raw materials used in Culinary crafting...'}
+                    placeholder={mode === 'generate_single' ? 'e.g., should yield a fish and rarely an old boot' : 'e.g., I need 3 combat encounters for tier 2, dropping raw materials used in Cooking...'}
                   />
                 </div>
               )}
