@@ -10,6 +10,7 @@ import * as Charges from '../systems/board/Charges.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import * as DiscardBin from '../systems/board/DiscardBin.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getSpawnerKindCounts } from '../systems/core/DevTools.js';
@@ -200,6 +201,41 @@ describe('⭐ a Forest spawns its family up to its allowance', () => {
         run(100);
         expect(family()).toHaveLength(5);
         expect(seeds()).toBe(94);
+    });
+
+    it('a binned family Token still counts: binning one does not free a slot, discarding it does', () => {
+        give(SEED, 100);
+        const forest = placeAt('fixture_sp_forest', 800, 500);
+        run(10 * 60000);
+        expect(family()).toHaveLength(5);
+
+        const victim = family()[0];
+        expect(DiscardBin.binToken(victim.id).success).toBe(true);
+        expect(family()).toHaveLength(4);
+        expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'at_cap', count: 5, cap: 5 });
+        const seedsBefore = seeds();
+
+        run(5 * 60000);
+        expect(family()).toHaveLength(4);
+        expect(seeds()).toBe(seedsBefore);
+
+        // Discarding the bin for good frees the slot.
+        DiscardBin.discardAll();
+        expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ count: 4, cap: 5 });
+        run(100);
+        expect(family()).toHaveLength(5);
+        expect(seeds()).toBe(seedsBefore - 1);
+    });
+
+    it('taking a binned Token back onto the mat does not double count it', () => {
+        give(SEED, 100);
+        const forest = placeAt('fixture_sp_forest', 800, 500);
+        run(10 * 60000);
+        const victim = family()[0];
+        DiscardBin.binToken(victim.id);
+        expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(5);
+        expect(DiscardBin.unbinToken(victim.id, { x: 300, y: 300 }).success).toBe(true);
+        expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(5);
     });
 
     it('a Tree placed by hand counts toward the family too, whatever its origin', () => {

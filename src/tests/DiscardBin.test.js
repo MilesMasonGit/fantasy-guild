@@ -252,18 +252,23 @@ describe('unbinning', () => {
 });
 
 describe('spawned Tokens (TL-13)', () => {
-    it('can be binned for nothing, and the spawner has room to make another', () => {
+    it('can be binned for nothing, and still counts toward the spawner cap until discarded', () => {
         const forest = put('fixture_db_forest', AT);
         const t1 = put('fixture_db_tree', { x: 560, y: 300 }, BoardState.ORIGIN.SPAWNED);
         put('fixture_db_tree', { x: 240, y: 300 }, BoardState.ORIGIN.SPAWNED);
         expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 2, cap: 2 });
 
         expect(DiscardBin.binToken(t1.id).success).toBe(true);
-        expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 1, cap: 2 });
+        expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 2, cap: 2 });
         expect(DiscardBin.refundFor(t1)).toEqual([]);
-        // Spawned Tokens never counted toward the cap, binned or not.
+        // Spawned Tokens do not count toward the mat cap, binned or not.
         expect(MatCap.placedCount()).toBe(1);
 
+        run(6000);
+        expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(2);
+
+        DiscardBin.discardAll();
+        expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 1, cap: 2 });
         run(6000);
         expect(SpawnerSystem.spawnerCounts(forest.id).count).toBe(2);
     });

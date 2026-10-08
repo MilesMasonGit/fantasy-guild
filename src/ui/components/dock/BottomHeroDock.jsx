@@ -22,6 +22,9 @@ export function showsBottomHeroDock(fullscreenView) {
     return fullscreenView !== 'guild';
 }
 
+/** The sheet's fade/slide-out (`duration-200`), plus a little slack. */
+const SHEET_CLOSE_MS = 250;
+
 /**
  * The horizontal hero dock: a dark strip with the heroes standing in it. No ledge, no tabs:
  * each hero idles at the mat's own art size, cut off at the waist by the strip's bottom edge,
@@ -44,10 +47,16 @@ export const BottomHeroDock = ({
     const asideRef = useRef(null);
     const [displayedHeroId, setDisplayedHeroId] = useState(selectedHeroId);
 
+    // ⚠️ The sheet's equipment slots are live drop targets and dnd-kit ignores opacity and
+    // pointer-events, so a closed sheet must be unmounted (after its fade-out) or it refuses
+    // mat drops inside its box.
     useEffect(() => {
         if (selectedHeroId) {
             setDisplayedHeroId(selectedHeroId);
+            return undefined;
         }
+        const timer = setTimeout(() => setDisplayedHeroId(null), SHEET_CLOSE_MS);
+        return () => clearTimeout(timer);
     }, [selectedHeroId]);
 
     const isOpen = Boolean(selectedHeroId);
