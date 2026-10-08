@@ -1,6 +1,6 @@
 # Environment cleanup before the crunch (hygiene plan)
 
-**Started 2026-10-07**, branch `chore/hygiene`. Goal: stop agents wasting
+**Done 2026-10-07** (merged to `main` at `baf45809`). Goal: stop agents wasting
 effort on stale information, poor workflows and code that no longer serves a
 purpose. Evidence came from four read-only audits (2026-10-07): 56 session
 transcripts mined for friction, a dead-code/data/naming sweep, a test-suite
@@ -9,8 +9,8 @@ audit, and a docs/memory/workflow audit.
 ## Owner rulings (2026-10-07)
 
 - Hide `docs/archive/` from content searches (done: `.ignore`).
-- A **liberal shared permission list** (done: `.claude/settings.json`, written
-  but not yet committed: the commit needs the owner's OK). Deny force-push,
+- A **liberal shared permission list** (done: `.claude/settings.json`, committed by
+  the owner). Deny force-push,
   `git add -A`/`.`, `--no-verify`; ask before `reset --hard`/`clean`.
 - **Push `main` after each verified merge**; feature branches stay local.
   `git add -A` stays forbidden (the owner keeps uncommitted work in the folder).

@@ -6,12 +6,11 @@ changelog and `docs/archive/`).*
 
 ## Next
 
-1. **Environment cleanup** (in progress, branch `chore/hygiene`): waves W1–W5
-   in [hygiene_plan.md](hygiene_plan.md).
-2. **The crunch**: start with [briefs/README.md](briefs/README.md), brief 00
+1. **The crunch**: start with [briefs/README.md](briefs/README.md), brief 00
    (quick fixes T-104, T-101). The owner hasn't upgraded to Max yet; the
-   crunch can start on the current plan.
-3. **Owner to-dos**: the CMS fixes at the top of
+   crunch can start on the current plan. (The pre-crunch cleanup is done:
+   `docs/archive/hygiene_plan.md`.)
+2. **Owner to-dos**: the CMS fixes at the top of
    [TICKETS](../reference/TICKETS.md) §1 (T-001, T-002), and T-096.
 
 ## Where the project is
