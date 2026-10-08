@@ -146,6 +146,28 @@ the owner agreed all eight belong here (2026-10-08).
   files and carrying saves across updates. *pre-release*
 - **Leftover rough edges**: the slot screen's sci-fi "SYSTEM BOOT" wording,
   nine "coming soon" Settings controls, no gameplay hotkeys. *quick*
+- **Tokens hardly interact**: pillars 1 and 3 promise a self-feeding ecosystem
+  and mechanically different skills; the rules grammar can do far more (16
+  verbs, 12 moments, neighbour modifiers) but ships a handful (Coast −5 % work
+  time, Windmill on Fields, Thorns). With a fixed post-Atlas board, **layout and
+  adjacency** could be the main thing players think about. A theme across all
+  skill loops, not one skill's gimmick; the enchanting sketch is an example.
+- **Hero identity**: every recruit is identical with a random name, max 8. A
+  quirk, a favourite task or their own bubble lines would make heroes worth
+  caring about, and feeds "pops of activity".
+- **Enemy variety**: 4 enemies, all melee; the Cow and Thorn Elemental are
+  really nodes you hit. The combat cycle (melee > ranged > magic > stealth)
+  has nothing to act on. Plan the roster in the combat interview.
+- **Collection log / achievements**: entries unlock as things are discovered,
+  so the encyclopedia doubles as a "what have I found" goal list. Pairs with
+  the encyclopedia.
+- **The CMS simulator's model**: it prices in an abstract "gold per hour",
+  built before items-only currency, Hearts and the Atlas. If its model is
+  wrong, every number it writes back is too. Make it an explicit part of the
+  CMS review.
+- **First outside playtest as a milestone**: decide what must be true before
+  someone else plays (tutorial, saves, first-hour pacing). Turns several items
+  here into one goal and orders the post-crunch work. *process*
 
 ### Post-Atlas content
 
