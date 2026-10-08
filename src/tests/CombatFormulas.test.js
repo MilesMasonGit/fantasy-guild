@@ -12,6 +12,7 @@ import {
     ENEMY_ATTACK_INTERVAL_MS,
 } from '../config/FormulaRegistry.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
+import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import {
     heroMaxHpFromSkills,
     getHeroCombatStyle,
@@ -73,12 +74,31 @@ describe('7-Stat Combat Engine (combat_formula_spec.md)', () => {
         expect(hitChance(999, 1, RPS_HIT_SHIFT)).toBe(95); // clamp high
     });
 
-    it('RPS orientation is Melee > Ranged > Magic > Melee (owner-locked)', () => {
-        expect(rpsOutcome('melee', 'ranged')).toBe(1);
-        expect(rpsOutcome('ranged', 'magic')).toBe(1);
-        expect(rpsOutcome('magic', 'melee')).toBe(1);
-        expect(rpsOutcome('ranged', 'melee')).toBe(-1);
-        expect(rpsOutcome('melee', 'melee')).toBe(0);
+    it('the matchup table is the owner’s four-way cycle: Melee > Ranged > Magic > Stealth > Melee', () => {
+        const cycle = ['melee', 'ranged', 'magic', 'stealth'];
+        for (let i = 0; i < cycle.length; i++) {
+            const a = cycle[i];
+            const beaten = cycle[(i + 1) % 4];
+            const opposite = cycle[(i + 2) % 4];
+            expect(rpsOutcome(a, beaten)).toBe(1);
+            expect(rpsOutcome(beaten, a)).toBe(-1);
+            expect(rpsOutcome(a, opposite)).toBe(0);
+            expect(rpsOutcome(a, a)).toBe(0);
+        }
+        // Magic used to beat Melee; under the cycle they are opposites.
+        expect(rpsOutcome('magic', 'melee')).toBe(0);
+        expect(rpsOutcome('ranged', 'stealth')).toBe(0);
+    });
+
+    it('every combat skill has exactly one favoured and one unfavoured matchup, and is even against the other two', () => {
+        expect(COMBAT_SKILL_IDS).toHaveLength(4);
+        for (const atk of COMBAT_SKILL_IDS) {
+            // Against all four, itself included: one win, one loss, two even.
+            const outcomes = COMBAT_SKILL_IDS.map((d) => rpsOutcome(atk, d)).sort((a, b) => a - b);
+            expect(outcomes, atk).toEqual([-1, 0, 0, 1]);
+            expect(rpsOutcome(atk, atk)).toBe(0);
+            for (const d of COMBAT_SKILL_IDS) expect(rpsOutcome(atk, d)).toBe(-rpsOutcome(d, atk) || 0);
+        }
     });
 
     it('innate Block from Defense (owner deviation 2026-07-12)', () => {

@@ -183,8 +183,8 @@ class rework v2, brief 20)*:
 The Advanced and Master skills are **placeholders** (owner ruling D7): names,
 descriptions and emoji icons that work like any skill (Tokens and recipes can
 name them; XP; levels), with no mechanics of their own until the owner's
-specialist-skill rework. Stealth fights like the other three styles; it
-sits outside the combat triangle until the four-way cycle (ruling D6) lands in R2b.
+specialist-skill rework. Stealth fights like the other three styles and
+takes its place in the four-way matchup cycle (see The fight).
 Forestry is the old Logging, renamed with its id (it keeps the Logging art);
 Explore and the other v1 skills were dropped. Only the Starting skills (Alchemy
 has none yet), melee, magic and commerce have content today.
@@ -339,8 +339,13 @@ Enemies are Tokens with `enemy: { level, style, budgetScale?, hostile? }`.
   minimum 1.
 - Hero damage today = 4 × growth(skill), with growth = 1.045^(level−1). Enemy
   HP 32 × growth, damage 9 × growth, scaled by `budgetScale`.
-- **Melee > ranged > magic > melee**: +10 % damage and +7 hit for the
-  favoured side. No ranged/magic enemy ships, so this never triggers yet.
+- **A four-way cycle: melee > ranged > magic > stealth > melee**: +10 %
+  damage and +7 hit for the favoured side, the reverse for the other.
+  Opposite pairs (melee and magic, ranged and stealth) are even, so each style
+  has one good matchup, one bad one, and two even. An enemy's Style is one of
+  the four combat skills (the CMS dropdown follows the skill registry). Every
+  shipped enemy is melee, so only melee against ranged or stealth heroes
+  triggers it yet.
 - Kills give XP to the hero's combat skill and count as a work cycle for
   neighbour rules. Loot drops on the mat. **Kill loot ignores yield/double-loot
   bonuses** (ticket T-017).

@@ -2,6 +2,7 @@
 
 import { getTokenType } from './tokenRegistry.js';
 import { enemyCombatBudget } from '../FormulaRegistry.js';
+import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 
 /**
  * The combat stat block for an enemy Token.
@@ -37,15 +38,16 @@ import { enemyCombatBudget } from '../FormulaRegistry.js';
  */
 
 /**
- * The three sides of the combat triangle. Anything else falls back to melee.
+ * The combat styles an enemy can be: the registry's Combat-layer skills.
+ * Anything else falls back to melee.
  *
  * ⚠️ The CMS imports this to fill its Style dropdown (via `constants.js`), so
  * the authoring tool can never offer a style the engine has not got — the same
  * game-declares / CMS-offers rule as every other vocabulary in the project.
- * These are deliberately the same three ids as the hero combat skills: an
- * enemy's style and a hero's skill are the two sides of the same RPS check.
+ * An enemy's style and a hero's combat skill are the two sides of the same
+ * matchup check, so they share one list.
  */
-export const ENEMY_STYLES = Object.freeze(['melee', 'ranged', 'magic']);
+export const ENEMY_STYLES = Object.freeze([...COMBAT_SKILL_IDS]);
 
 /** Whether a Token def describes something a hero can fight. */
 export function isEnemyDef(def) {
