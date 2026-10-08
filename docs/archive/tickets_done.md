@@ -26,3 +26,4 @@ T-099 — Passive Production: one 5-minute timer, Wishing Well 10 × rank Water,
 T-107 — Alert marks blocking presses: the marks were removed in brief 10 U3 — 36ae8cbd — 2026-10-08
 T-066 — CMS-importing tests run in a worktree once both node_modules are junction-linked; docs fixed, no code change — chore/max-plan-tiers — 2026-10-08
 T-113 — Brief 20 R1 bench work change (heroHash only: logging to forestry, explore gone) accepted and merged — crunch/class-rework — 2026-10-08
+T-044 — Remnants removed: the unused dock pin and body-view state in useUIModals with its test, HeroDockTab's ignored props and dead horizontal layout, the stale Promotion test comments (the two components themselves went in hygiene W3) — crunch/hero-ui — 2026-10-08

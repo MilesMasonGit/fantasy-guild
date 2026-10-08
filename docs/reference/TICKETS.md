@@ -87,7 +87,6 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-044 | P3 | open | Two dead dock components (+ `HeroDockTab`'s ignored props). Update `Promotion.test.js:351,387` comments. | CR3-024, 463 |
 | T-045 | P3 | open | Dead combat, wound and loot code. | CR3-036 |
 | T-046 | P3 | open | A second hero-creation route. | CR3-037 |
 | T-047 | P3 | open | 8 retired `collection` fields in the save schema (keep `TOKEN_TYPES`). | CR3-038 |

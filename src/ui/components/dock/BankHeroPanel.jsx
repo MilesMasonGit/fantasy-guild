@@ -57,7 +57,6 @@ export const BankHeroPanel = ({
                             onDoubleClick={onDoubleClickHero}
                             onEdit={onEditHero}
                             onReorder={handleReorderHero}
-                            vertical={true}
                             isDockLeft={isDockLeft}
                         />
                     </div>

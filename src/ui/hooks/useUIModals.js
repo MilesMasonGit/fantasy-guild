@@ -3,9 +3,6 @@ import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
-/** How many hero cards can be pinned open at once; pinning another closes the oldest. */
-export const DOCK_MAX_PINNED = 2;
-
 /**
  * The first promotion offer standing on the board, or null. Read from the Token instances (the
  * saved truth) through `BoardPromotion.getOffer`, which excludes declined offers.
@@ -77,10 +74,6 @@ export const useUIModals = (engine) => {
 
     const [isShopOpen, setIsShopOpen] = useState(false);
 
-    // Ordered, oldest first, so that pinning a third closes the oldest; hence an array rather
-    // than a Set.
-    const [pinnedHeroIds, setPinnedHeroIds] = useState([]);
-
     const [editHeroId, setEditHeroId] = useState(null);
 
     // Separate from the Edit modal because changing job is a decision with consequences, not a
@@ -93,9 +86,6 @@ export const useUIModals = (engine) => {
     const [promotionOffer, setPromotionOffer] = useState(null);
 
     const [flagRulesHeroId, setFlagRulesHeroId] = useState(null);
-
-    // One value for the whole dock, not one per card; see `toggleBodyView`.
-    const [bodyView, setBodyView] = useState('equipment');
 
     const [inspectByPane, setInspectByPane] = useState({
         bank: null,
@@ -253,27 +243,6 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setIsShopOpen(false), [])
         },
         dock: {
-            pinned: pinnedHeroIds,
-            isPinned: (heroId) => pinnedHeroIds.includes(heroId),
-            // Click a tab: pin it, or unpin it if already open. A third pin evicts the oldest.
-            togglePin: useCallback((heroId) => {
-                setPinnedHeroIds(prev => {
-                    if (prev.includes(heroId)) return prev.filter(id => id !== heroId);
-                    return [...prev, heroId].slice(-DOCK_MAX_PINNED);
-                });
-            }, []),
-            // Returns the same array when already empty so state identity is stable; safe to
-            // call from a global listener.
-            unpinAll: useCallback(() => {
-                setPinnedHeroIds(prev => (prev.length === 0 ? prev : []));
-            }, []),
-            // Shared across every open card on purpose: the dock allows two cards open to
-            // compare heroes, which only works if both show the same side. Defaults to the
-            // loadout, the drag-and-drop target.
-            bodyView,
-            toggleBodyView: useCallback(() => {
-                setBodyView(prev => (prev === 'equipment' ? 'skills' : 'equipment'));
-            }, []),
             editHeroId,
             openEdit: useCallback((heroId) => setEditHeroId(heroId), []),
             closeEdit: useCallback(() => setEditHeroId(null), []),
