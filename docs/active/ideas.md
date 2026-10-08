@@ -34,6 +34,15 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
   stars for Hall upgrades, down or to the side for the Atlas. *after-crunch* ·
   needs the Atlas (brief 70) and the constellation screen; pairs with both.
 
+- **In-engine animation brainstorm**: explore light animation effects done in
+  code (no new art), for a menu of options to pick from. *research first* ·
+  today's Token hit animations and transform glow (T-011) are the starting
+  point; crunch rule: no expensive mat effects without a cost-log line, and
+  brief 60 (deep optimization) sets the budget.
+- **True animations with owner art**: e.g. falling leaves when a tree is hit.
+  *after-crunch for the code* · plan early so the owner can draw the frames;
+  belongs on the same owner art list as the terrain art.
+
 ### Minor changes
 
 - **Widen the playmat.** *quick* · ⚠️ overlaps T-097 (mat size becomes a fixed
