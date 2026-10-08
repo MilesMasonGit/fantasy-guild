@@ -20,3 +20,4 @@ T-002 — All Maps and Map Tokens deleted, Oak Forest included — e3f32fa8 — 
 T-109 — Tests updated for the deleted Copper Rubble and Maps; suite fully green — fix/t109-content-tests — 2026-10-07
 T-104 — A closed hero sheet unmounts after its fade, so its slots stop catching mat drops — 3d34d565 — 2026-10-07
 T-101 — Binned Tokens count toward their spawner's family cap until discarded — b1cdf9b7 — 2026-10-07
+T-112 — Heroes stand further from their target (STAND_GAP 16 → 32) so fight bars clear — a7556703 — 2026-10-08

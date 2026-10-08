@@ -100,6 +100,7 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | U1 Bubbles | 2026-10-07 | 58.5 → 57.0 | 19.61 → 20.01 | Back-to-back A/B, 3 repeats each: no measurable change. Bubbles are still ~half the frame (96.9 fps with `bubbles` off): S2 at rest keeps its work-cycle and HP bubbles live by design, so hover-only saves little here. |
 | U2 Health bars | 2026-10-07 | 57.8 → 55.3 | 19.31 → 20.60 | Stash A/B, 3 repeats each; ranges just touch, so possibly noise. Bars exist only in a fight or on enemy hover. |
 | U3 Callouts | 2026-10-07 | 44.7 → 56.4 | 25.0 → 20.4 | The "before" looks like a slow outlier (U2's "after" was 55.3 / 20.60), so read this as no change, not a gain. |
+| U4 Sidebars | 2026-10-08 | 56.1 → 55.8 | 19.7 → 20.41 | No change. The wider mat crosses the 2× art step at the bench's 1600×1000 (owner keeps 2×). Drag bench after the grab-by-circle and bin fixes (plain / overlays): flag → mat 94 / 72 %, Token → mat 92 / 100 %, all else 100 %. |
 
 ## Drag baseline (`npm run bench:drag`, 50 drags per kind)
 
