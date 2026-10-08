@@ -6,19 +6,29 @@ changelog and `docs/archive/`).*
 
 ## Next
 
-1. **Brief 10, UI rework** ([brief](briefs/10_ui_rework.md)) on branch
-   `crunch/ui-rework`. Batch A (U1–U3) is merged. **All of U4–U8 is built and
-   verified; batches B (U4–U5) and C (U6–U8) wait for the owner's eye-check**,
-   then the branch merges. After that: brief 20 (class rework v2).
-   The unfinished Atlas work is parked on branch `atlas-wip`, not `main`.
-2. **Owner CMS to-do** (after batch B merges): Foundation **Tier** on each
-   Foundation (Wood: Oak 1, Maple 2, Ebony 3; Stone: Stone 1, Marble 2,
-   Basalt 3; author the missing Tokens first). **Shop group** labels: "Wood
-   Foundation", "Stone Foundation", "Anvil". **Minimum Foundation tier** on
-   building recipes (Recipes → Construction). Higher anvils each need their
-   own "Acts as: anvil, tool tier N" effect (Copper 1 … Darkmetal 5).
-3. **T-111**: the engine bench reads ~1.4× slow on unchanged `main`; re-run on
-   a quiet machine before trusting timing verdicts.
+1. **Brief 20, class rework v2** ([brief](briefs/20_class_rework_v2.md)). Brief 10
+   (UI rework) is done and merged; its owner taste notes are in
+   [design_pass_notes.md](design_pass_notes.md) — read the relevant area before
+   touching it, don't act on it mid-crunch.
+2. **Handoff (2026-10-08):** the owner is on the Max plan and a Fable session
+   now directs. Before brief 20, the new director should propose (owner
+   approves) updated tiers in CLAUDE.md for the bigger budget, and consider
+   **T-066 first**: 19 CMS-importing test files can't run in a git worktree,
+   which is what blocks parallel code work (today one code change at a time).
+3. **Owner CMS to-do**: Foundation **Tier** on each Foundation (Wood: Oak 1,
+   Maple 2, Ebony 3; Stone: Stone 1, Marble 2, Basalt 3; author the missing
+   Tokens first). **Shop group** labels: "Wood Foundation", "Stone
+   Foundation", "Anvil". **Minimum Foundation tier** on building recipes
+   (Recipes → Construction). Higher anvils each need their own "Acts as:
+   anvil, tool tier N" effect (Copper 1 … Darkmetal 5).
+4. **T-111**: the engine bench timings read slow on unchanged `main` (machine
+   state); trust its work check, re-run timing verdicts before believing them.
+
+**Lessons from brief 10's director:** subagent reports were wrong or partial
+several times (a bench filter that hid T-106, an undiagnosed drop race, a
+stale claim about hero size): read the diffs, not just the reports. Agents
+must open their own browser tab and leave dev saves as they found them. A
+bench WORK CHANGED is accepted only under a named ticket.
 
 ## Where the project is
 
@@ -28,11 +38,11 @@ changelog and `docs/archive/`).*
 - **Crunch order:** UI rework → class rework v2 → hero bar and panel →
   offline progress → drag deep-dive → deep optimization → Atlas → terrain →
   Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** all green (4020 passed, 3 skipped). Anything red is new.
+- **Tests:** all green (4133 passed, 3 skipped). Anything red is new.
 
 ## Ground rules during the crunch
 
-- **Measure, don't fix** during the UI rework: one line per phase in
+- **Measure, don't fix** anything drawn (brief 30 too): one line per phase in
   PERFORMANCE.md's "UI rework cost log"; optimization comes later (brief 60).
 - **Don't add expensive effects** to the mat (background blur, layout-shifting
   animation, heavy transparency over animation) without logging their cost.
@@ -41,9 +51,11 @@ changelog and `docs/archive/`).*
 
 ## Design docs in flight
 
-- [ui_rework_list.md](ui_rework_list.md): locked UI decisions and the owner's list.
+- [ui_rework_list.md](ui_rework_list.md): locked UI decisions and the owner's list
+  (brief 30 still uses its hero bar, panel and work-rules sections).
+- [design_pass_notes.md](design_pass_notes.md): owner taste notes for later.
 - [concept_skill_and_class_rework_v2.md](concept_skill_and_class_rework_v2.md):
   read its amendments first.
 - [concept_offline_progress.md](concept_offline_progress.md).
-- [concept_atlas.md](concept_atlas.md): read its owner decisions first. Some
-  uncommitted Atlas code sits in the folder (T-005).
+- [concept_atlas.md](concept_atlas.md): read its owner decisions first. The
+  unfinished Atlas code is parked on branch `atlas-wip`.
