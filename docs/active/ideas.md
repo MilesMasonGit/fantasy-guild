@@ -44,6 +44,15 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
 - **Hero flags**: smaller, and fade to half opacity while work is happening on
   them. *quick* · ⚠️ overlaps brief 30 H4 (the flag), which hasn't run yet.
 
+### New features
+
+- **Encyclopedia**: search every entity, Token and item in the game. A
+  **provenance** view shows, for any item, the items and sources needed to
+  produce it. Goal: the player never needs an outside wiki. *after-crunch* ·
+  feature-sized · the Atlas adds new sources (maps, modifiers), so build it
+  after brief 70 or make it read sources from the game data so it stays
+  current. Nothing like it exists in the docs today.
+
 ### Post-Atlas content
 
 - **One core loop per skill**: so each skill feels different, and to prototype
