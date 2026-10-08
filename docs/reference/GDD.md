@@ -515,9 +515,10 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   respawn in place, the Shop sells buildings and tools only, demolition is a
   Construction job with no refund, everything counts toward the cap, and a
   hand-made Starter Camp opens the game. Some unfinished Atlas code sits uncommitted (ticket T-005).
-- **Skill and class rework v2 — Planned for the crunch**:
-  [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md),
-  approved, needs a roadmap; brings the 4 Academies.
+- **Skill and class rework v2 — Engine built (brief 20, 2026-10-08)**:
+  [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md)
+  and its [roadmap](../active/class_rework_v2_roadmap.md). The 4 Academies and
+  8 master-class Tokens are owner content still to author.
 - **Real offline progress — Planned for the crunch**, replacing the Time Bank.
 - **Terrain — Dormant, returns in the crunch** after the Atlas works, as a
   major rework (owner 2026-10-06).

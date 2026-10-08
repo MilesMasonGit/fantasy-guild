@@ -5,6 +5,11 @@
 ([concept](concept_skill_and_class_rework_v2.md)), then the brief
 ([20](briefs/20_class_rework_v2.md)). Owner answers to §D gate R2.*
 
+**Status 2026-10-08:** R1, R2a, R2b and R3's code are merged to `main`
+(tests 4095 green; bench work accepted under T-113). What remains is the
+owner's CMS content (§C R3 checklist, repeated in `NOW.md`) and T-114 after
+the next sync; then the brief's live-game done-when.
+
 ## 0. What the brief and concept got wrong against the code
 
 1. **The tutorial has no "Explore a Map" step any more.** Commit `f3691b8a`

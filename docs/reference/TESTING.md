@@ -43,7 +43,7 @@ code edit Vite may serve a `?t=` copy (a second module instance whose state is
 empty). If reads look impossible, restart the dev server.
 
 **Driving time.** The loop barely ticks in the preview pane. Run it
-synchronously: `for (let i=0;i<400;i++) window.Game.LoopRunner.tick(100)`.
+synchronously: `for (let i=0;i<400;i++) window.Game.GameLoop.runHandlers(100)`.
 
 **Quirks that look like bugs but aren't:**
 - **Screenshots usually time out** (the particle overlay never goes idle). Use

@@ -6,38 +6,46 @@ changelog and `docs/archive/`).*
 
 ## Next
 
-1. **Brief 20, class rework v2** ([brief](briefs/20_class_rework_v2.md)). Brief 10
-   (UI rework) is done and merged; its owner taste notes are in
-   [design_pass_notes.md](design_pass_notes.md) — read the relevant area before
-   touching it, don't act on it mid-crunch.
-2. **Max plan (2026-10-08):** a Fable session directs; tiers raised (runner
-   Sonnet, builder Opus, engineer Opus extra-high, in `CLAUDE.md`). T-066 is
-   closed: the full suite runs in a worktree with both `node_modules` linked,
-   so code phases on different files may now run in parallel (TESTING.md).
-3. **Owner CMS to-do**: Foundation **Tier** on each Foundation (Wood: Oak 1,
-   Maple 2, Ebony 3; Stone: Stone 1, Marble 2, Basalt 3; author the missing
-   Tokens first). **Shop group** labels: "Wood Foundation", "Stone
-   Foundation", "Anvil". **Minimum Foundation tier** on building recipes
-   (Recipes → Construction). Higher anvils each need their own "Acts as:
-   anvil, tool tier N" effect (Copper 1 … Darkmetal 5).
-4. **T-111**: the engine bench timings read slow on unchanged `main` (machine
-   state); trust its work check, re-run timing verdicts before believing them.
+1. **Owner CMS to-do for brief 20** (the engine is merged; the live-game
+   done-when waits on this content):
+   1. Open the CMS once, check the trees read **Forestry**, and **Sync to
+      Game with `main` checked out** (the sync commits `data/` onto the current
+      branch). Then T-114 removes the temporary Logging→Forestry bridge.
+   2. Author the **Wizard Academy** build recipe and the **Ranger** and
+      **Rogue Academy** Tokens (art exists: `token_school_ranger` / `_rogue`;
+      register the sprites), each with a Promotes rule and a Wood or Stone
+      Foundation build recipe (minimum tier per brief 10 U5). Promotion is
+      free unless you price it.
+   3. **Eight master-class Tokens**, one per master class (Paladin, Knight,
+      Beastmaster, Hunter, Necromancer, Scholar, Merchant, Assassin), built on
+      Foundations like the Academies.
+   4. Still open from brief 10: Foundation **Tier** on each Foundation, Shop
+      group labels, minimum Foundation tier on building recipes, higher anvils'
+      "Acts as: anvil, tool tier N".
+2. **Brief 30, hero bar and panel** ([brief](briefs/30_hero_bar_panel.md)) on
+   the new 25-skill list. Read the "Hero bar and panels" notes in
+   [design_pass_notes.md](design_pass_notes.md) first; T-115 (Logging wording in
+   the tutorial and ceremony) fits its eye-check.
+3. **Brief 20 live-game check** once items 1.1–1.3 exist: a Recruit promotes
+   to each basic class through its Academy and on to a master class.
+4. **T-111**: engine bench timings are load-sensitive; trust the work check,
+   re-run timing verdicts alone before believing them.
 
-**Lessons from brief 10's director:** subagent reports were wrong or partial
-several times (a bench filter that hid T-106, an undiagnosed drop race, a
-stale claim about hero size): read the diffs, not just the reports. Agents
-must open their own browser tab and leave dev saves as they found them. A
-bench WORK CHANGED is accepted only under a named ticket.
+**Director notes (2026-10-08):** brief 20's four slices ran as one engineer
+(R1) then three parallel builders in worktrees (R2a, R2b, R3) on Opus; every
+report was checked against the code and the running game before merging, and
+all held. Another session commits the ideas inbox (`docs/active/ideas.md`)
+straight onto `main`; expect its commits between yours.
 
 ## Where the project is
 
 - **Version** 0.8.x on `main`. Crunch prep is done: GDD, tickets, measuring
   tools and baseline ([PERFORMANCE.md](../reference/PERFORMANCE.md)), design
   interviews, and the briefs.
-- **Crunch order:** UI rework → class rework v2 → hero bar and panel →
+- **Crunch order:** UI rework ✓ → class rework v2 ✓ (engine) → hero bar and panel →
   offline progress → drag deep-dive → deep optimization → Atlas → terrain →
   Performance Envelope ([briefs](briefs/README.md)).
-- **Tests:** all green (4133 passed, 3 skipped). Anything red is new.
+- **Tests:** all green (4095 passed, 3 skipped). Anything red is new.
 
 ## Ground rules during the crunch
 
