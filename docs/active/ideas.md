@@ -117,6 +117,36 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
   (deep optimization) runs before the Atlas, so this fits brief 90 (the
   Performance Envelope) or a follow-up after it.
 
+### Underdeveloped systems to review
+
+Suggested by the director from the GDD's Built / Partial / Dormant labels;
+the owner agreed all eight belong here (2026-10-08).
+
+- **Progression and pacing**: what the player chases at 10 minutes, an hour,
+  a week. Today "no unlocks"; progress is skill levels (99 ≈ 13 M XP), Hall
+  upgrades and affording things, with *placeholder* prices (mostly 10 Oak
+  Wood). Suggested first: skill loops, upgrades, combat and events all need a
+  pacing curve to fit.
+- **Gear**: the loadout grid exists but no gear ships (64 items, none
+  wearable). Interview with combat: under Hearts, weapons and armour are
+  where the +1s come from.
+- **Economy and item sinks**: items are the only currency, nothing can be sold,
+  Markets undecided (GDD §16), few things to spend surplus on. The CMS
+  simulator still reasons in "gold per hour".
+- **Quests and the tutorial**: bounties are "collect N" or "defeat N Goblins"
+  for 10 Oak Wood; the tutorial teaches today's opening, which the Atlas
+  replaces (Starter Camp, buildings-only Shop), so it needs rewriting after
+  brief 70. Quests could also carry events.
+- **Status effects**: 7 built (Poison, Burning, Bleed, Stun, …), none used.
+  Decide what survives "keep combat simple", or move them to magic.
+- **Sound**: no audio section in the GDD; the game starts at volume 0. If
+  sound is planned, it's another owner asset list, best known early.
+- **Saves before release**: saves live in the desktop app's browser storage,
+  and other versions are refused until 1.0. Before outside players: real save
+  files and carrying saves across updates. *pre-release*
+- **Leftover rough edges**: the slot screen's sci-fi "SYSTEM BOOT" wording,
+  nine "coming soon" Settings controls, no gameplay hotkeys. *quick*
+
 ### Post-Atlas content
 
 - **One core loop per skill**: so each skill feels different, and to prototype
