@@ -24,7 +24,7 @@ describe('CMS Phase 10 Sync & Cutover (CMS-53, CMS-83)', () => {
 
   it('4. confirms maps load dynamically from JSON (CMS-82)', async () => {
     const mapRegistry = await import('../../src/config/registries/mapRegistry.js');
-    expect(mapRegistry.listMaps()).toBeDefined();
-    expect(mapRegistry.listMaps().length).toBeGreaterThan(0);
+    expect(Array.isArray(mapRegistry.listMaps())).toBe(true);
+    expect(typeof mapRegistry.allMaps()).toBe('object');
   });
 });

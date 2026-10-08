@@ -5,9 +5,8 @@
 Nothing merges to `main` until all of these hold:
 
 1. **Tests**: `npm test` shows no new failures. Content-drift failures are
-   marked expected (`it.fails`); today one plain red test remains,
-   `AssetManager` (T-001), as `docs/active/NOW.md` says. Anything else red is
-   new. Run it in the **main folder**: 19 CMS-importing test files can't load
+   marked expected (`it.fails`); today no plain red test remains,
+   so anything red is new. Run it in the **main folder**: 19 CMS-importing test files can't load
    in a worktree (T-066). The suite takes ~2–3 minutes; read its result with
    `npx vitest run --reporter=dot 2>&1 | tail -30` rather than the full output.
 2. **Bench**: `npm run bench -- --compare` exits **0**.

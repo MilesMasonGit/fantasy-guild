@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-110**
+**Next free number: T-112**
 
 ---
 
@@ -114,7 +114,6 @@ here.
 | T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `TimeBankWidget` says it is mounted; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
 | T-094 | P3 | open | Dead-code leftovers after hygiene W3 (2026-10-07): functions now used only by tests (`resolveYield`, `getYieldMultiplier`, the other two `EffectAxes` helpers); Villager remnants (`isVillager` branches in `EquipmentValidator`, `HeroRehydration`, `PromotionSystem`, `SkillSystem`); `HeroDockTab`'s unused `onClick` prop; inert `effectFilesGlob`/`recipePoolFilesGlob` in `DatabaseManager.js`. `Placement.removePlacedToken` is kept (benches and tests use it). | GDD survey, W3 |
 | T-108 | P3 | open | `cardUseCounts` (counts completed cycles per Token type; `GameState.js`, `BoardRunner.js`) is a deck-era name; rename it after the parked `atlas-wip` branch is merged or dropped (its `StateSchema.js` edit declares the field). | hygiene W4 |
-| T-109 | P1 | open | **Do first: the owner's T-001/T-002 CMS sync landed (`e3f32fa8`)**, so tests that relied on the old content now fail: update tests and fixtures that use shipped Copper Rubble or Map content (`RenderGolden` fixture, `ExploreChain`, `MapBurstRetired`, `NewGameOpening`, `SaveSchemaDeclared`, `AssetManager`), delete tests of retired Maps together with dead Map code, and confirm the AssetManager failure is gone. | owner 2026-10-07 |
 | T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
 | T-103 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (held back, owner's Atlas edit uncommitted), 2 comments in `cms/src/components/editors/RulesLine.jsx`, `cms/src/engine/sim/dryRun.mjs` header, `filterTargetTiles` named in `reachRegistry.js:26,136` (now `filterTargets`), ~15 test comments clipped by the ID stripper (e.g. `AdjacencyEffects.test.js:82`), and trailing string text carrying IDs (`workSkillRule.js` WORK_SKILL_WHY, `lifecycleAudit.js`, `matTuning.js` hints). Also dead exports found: `PERSONALITY_TAGS`, the three tutorial selectors in T-095. | Slimming pass |
 
@@ -137,6 +136,7 @@ here.
 | T-068 | P3 | open | Build ships and preloads scrap art (`archive`/`maybe`/`waste`); keep it out of the build and the preload list. | CR3-508 |
 | T-069 | P2 | open | Write the mat-era guide to keeping it fast in `docs/reference/PERFORMANCE.md` (the baseline and how-to-measure parts exist since 2026-10-07; draft in `docs/archive/review_v3/R6.md` §8 + `R7.md` §4). | CR3-021 |
 | T-070 | P3 | open | Document `window.Game` — agents rely on ~30 entries the game never reads. | CR3-040 |
+| T-111 | P2 | open | The engine bench reads ~1.4× slower than its baseline on unchanged `main` (`56a5082c`), uniformly across all scenarios with the same work, twice in a row. Probably machine state; re-run on a quiet machine and re-save the baseline if it holds. *Cause unverified.* | T-109 merge gate |
 
 ## 3. Parked — don't work on these without a reason
 
@@ -146,6 +146,7 @@ first, when content that uses it is authored.*
 | ID | Why parked | Summary | Origin |
 |---|---|---|---|
 | T-071 | Envelope | Canvas mat. Certification (2026-10-07): the realistic board passes, ~320 Tokens reaches 83 % of frames in budget. Unnecessary at realistic sizes; decide with the Performance Envelope whether boards that large must be smooth. | CR3-355 |
+| T-110 | Atlas | Map code is idle now that no Maps ship (`data/maps.json` is `{}`): `mapRegistry.js` (`listMaps` used only by tests), the Map checks in `ContentAudit.js`, Map loading in `DatabaseManager.js`, the `mapId` branch in `tokenTypeDerivation.js`, CMS `MapEditor`/`mapPass`. Delete or reuse when the Atlas lands; don't touch before. | T-109 |
 | T-072 | after the crunch | `@ts-check` trial on the contract layer. | CR3-560 |
 | T-073 | latent | Input-cost discount applied when paying, not when checking. | CR3-028 |
 | T-074 | latent | Item rules can be given moments that never fire. | CR3-202 |
