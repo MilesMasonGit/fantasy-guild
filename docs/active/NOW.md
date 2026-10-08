@@ -10,8 +10,10 @@ changelog and `docs/archive/`).*
    (quick fixes T-104, T-101). The owner hasn't upgraded to Max yet; the
    crunch can start on the current plan. (The pre-crunch cleanup is done:
    `docs/archive/hygiene_plan.md`.)
-2. **Owner to-dos**: the CMS fixes at the top of
-   [TICKETS](../reference/TICKETS.md) §1 (T-001, T-002), and T-096.
+2. **Owner to-dos**: the CMS edits T-001 and T-002 at the top of
+   [TICKETS](../reference/TICKETS.md) §1 (decided 2026-10-07), then T-109
+   (an agent updates the tests after that sync). The unfinished Atlas work is
+   parked on branch `atlas-wip`, not `main`.
 
 ## Where the project is
 

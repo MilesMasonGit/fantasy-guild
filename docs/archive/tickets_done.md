@@ -12,3 +12,6 @@ T-034 — A quick flick lands short of the cursor: not reproduced by the owner (
 T-044 — Old pinned-card dock deleted — hygiene W3 — 2026-10-07
 T-054 — Unused stylesheets deleted (whole files and unused rules) — hygiene W3/W5 — 2026-10-07
 T-067 — Tombstone skipped tests deleted — hygiene W2 — 2026-10-07
+T-096 — data/stations.json deleted (owner OK) — 26a434c9 — 2026-10-07
+T-005 — Atlas work in progress parked on branch atlas-wip (owner) — aecd7bda — 2026-10-07
+T-006 — The two edited map images parked on branch atlas-wip (owner) — 6f104f61 — 2026-10-07

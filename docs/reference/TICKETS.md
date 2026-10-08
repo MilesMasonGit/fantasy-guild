@@ -24,7 +24,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-109**
+**Next free number: T-110**
 
 ---
 
@@ -32,10 +32,8 @@ here.
 
 | ID | What | Origin |
 |---|---|---|
-| T-001 | **CMS**: Wood Foundation → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, Stone item → `item_stone`; **retire Copper Rubble** (also clears the last failing test). Then Sync to Game. | CR3 summary |
-| T-002 | **CMS: retire the dormant Maps** (owner 2026-10-06): the 8 maps in `data/maps.json` and the six unsold Map Tokens. Keep the Oak Forest Map until brief 20 drops Explore (it is an Explore producer sold in the Shop). Also clears the missing `token_fallen_oak_tree`. The Atlas gets fresh Map content. | FB §5, GDD |
-| T-005 | **Uncommitted Atlas work**: `src/state/StateSchema.js` adds a required `atlas` save section (check old saves still load); `data/items/maps.json` was written outside the CMS (a CMS sync may wipe it). Keep, finish or discard? | CR3 summary |
-| T-006 | **Two edited map PNGs** (`map_frozenpeak`, `map_volcano`) uncommitted — commit or discard? | CR3 summary |
+| T-001 | **CMS** (owner does it; checklist below): Wood Foundation sprite → `token_foundation_wood`, Stone Foundation → `token_foundation_stone`, Stone item → `item_stone`; **delete Copper Rubble** and set Copper Ore's value source to Copper Ore Vein. ⚠️ Foundations came into the game by a CMS sync (`ece14ea9`); if the CMS no longer shows them, restore the workspace from game files before syncing, or the sync deletes them from the game. Then Sync to Game; then T-109. | CR3 summary |
+| T-002 | **CMS: delete all 8 Maps** in `data/maps.json` and all 7 Map Tokens, **including the Oak Forest Map** (owner 2026-10-07; the tutorial's Explore step is already gone). Also clears the missing `token_fallen_oak_tree`. The Atlas gets fresh Map content. Then T-109. | FB §5, GDD |
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
 | T-008 | **Flag Radius upgrade art**: keep borrowing the plain hero flag, or use the red banner art? | FB §5.2 |
 | T-009 | **Shop price format**: full item row (icon, name, have/need) or the compact icon-and-number pills of the Hall's Upgrade button? | FB §5.3 |
@@ -44,7 +42,6 @@ here.
 | T-012 | **Transforms now push neighbouring Tokens** (the playmat plan said only bursts and spawns push). Keep or change? | FMR |
 | T-013 | **The last ~65 alert-icon glows and ~105 label text-shadows**: switch them to the hard-pixel style too? | CR3 summary |
 | T-014 | **Starting and quest content is written in engine code**, not the CMS. Move it to content? (Design call, never asked.) | CR3-515 |
-| T-096 | **`data/stations.json`** (7 old station definitions) is loaded by nothing. Delete it? (It is under `data/`, so it needs your OK.) | GDD survey |
 
 ## 2. Open work
 
@@ -118,7 +115,8 @@ here.
 | T-064 | P3 | open | Dead clock surfaces and write-only fields (R1-Q4 ruling A). | CR3-105 |
 | T-093 | P3 | open | Stale comments found by the GDD survey (2026-10-06): skill/job headers say 27 skills and 6 held (29; 9/11/13 held); `RegenSystem` says only idle heroes regen (also working and fighting); `BoardCombat.tickToken` says enemies never aggro (hostiles do); `reachRegistry` says Near = 8 tiles on a 6×6 board (164 u, 4 sides); `MatCap.js` says nothing enforces the cap (Shop and recipes do); `Restrictions.js` mentions the Vault; `constants.js` says yield/work-time/input-cost axes are unread; `recipePoolRegistry` says 3 recipes; `tempoBands`/`dials` say nothing reads them; `BubbleMenu` says 5 bubbles; `TimeBankWidget` says it is mounted; `ConsumptionSystem` describes the deck loop; `loopConstants` mentions 100×. | GDD survey |
 | T-094 | P3 | open | Dead-code leftovers after hygiene W3 (2026-10-07): functions now used only by tests (`resolveYield`, `getYieldMultiplier`, the other two `EffectAxes` helpers); Villager remnants (`isVillager` branches in `EquipmentValidator`, `HeroRehydration`, `PromotionSystem`, `SkillSystem`); `HeroDockTab`'s unused `onClick` prop; inert `effectFilesGlob`/`recipePoolFilesGlob` in `DatabaseManager.js`. `Placement.removePlacedToken` is kept (benches and tests use it). | GDD survey, W3 |
-| T-108 | P3 | open | `cardUseCounts` (counts completed cycles per Token type; `GameState.js`, `BoardRunner.js`) is a deck-era name; rename it once the owner's uncommitted `StateSchema.js` edit is committed (it declares the field). | hygiene W4 |
+| T-108 | P3 | open | `cardUseCounts` (counts completed cycles per Token type; `GameState.js`, `BoardRunner.js`) is a deck-era name; rename it after the parked `atlas-wip` branch is merged or dropped (its `StateSchema.js` edit declares the field). | hygiene W4 |
+| T-109 | P2 | open | **After the owner's T-001/T-002 CMS sync**: update tests and fixtures that use shipped Copper Rubble or Map content (`RenderGolden` fixture, `ExploreChain`, `MapBurstRetired`, `NewGameOpening`, `SaveSchemaDeclared`, `AssetManager`), delete tests of retired Maps together with dead Map code, and confirm the AssetManager failure is gone. | owner 2026-10-07 |
 | T-095 | P3 | open | The tutorial beacon for "Plant a Flag" probably targets nothing: its selectors (`#rightmost-hero-dock`, `#hero-dock`) match no element in the bottom dock. *Unverified — check in the game.* | GDD survey |
 | T-103 | P3 | open | Comment-slimming leftovers: `src/state/StateSchema.js` (held back, owner's Atlas edit uncommitted), 2 comments in `cms/src/components/editors/RulesLine.jsx`, `cms/src/engine/sim/dryRun.mjs` header, `filterTargetTiles` named in `reachRegistry.js:26,136` (now `filterTargets`), ~15 test comments clipped by the ID stripper (e.g. `AdjacencyEffects.test.js:82`), and trailing string text carrying IDs (`workSkillRule.js` WORK_SKILL_WHY, `lifecycleAudit.js`, `matTuning.js` hints). Also dead exports found: `PERSONALITY_TAGS`, the three tutorial selectors in T-095. | Slimming pass |
 
