@@ -1,3 +1,6 @@
+import { HERO_HIT_PX } from './boardConstants.js';
+import { FLAG_PX } from './flagGeometry.js';
+
 /** A health bar's fill colour. */
 export const HP_COLOUR = '#F09595';
 
@@ -24,6 +27,19 @@ export function healthFraction(cur, max) {
 export function healthText(cur, max) {
     const c = Math.max(0, Math.round(Number(cur) || 0));
     return `${c.toLocaleString()}/${Math.round(Number(max) || 0).toLocaleString()}`;
+}
+
+/**
+ * Where a bar sits over a hero's box (`HERO_HIT_PX` × `FLAG_PX`, the art centred in it, `artPx`
+ * across): centred, its bottom a gap above the top of the art.
+ * @returns {{left: number, top: number, width: number}}
+ */
+export function heroBarPlace(artPx) {
+    return {
+        left: (HERO_HIT_PX - HERO_BAR_W_U) / 2,
+        top: (FLAG_PX - artPx) / 2 - HEALTH_BAR_H_U - HEALTH_BAR_GAP_U,
+        width: HERO_BAR_W_U
+    };
 }
 
 /**

@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Heroes stand a little further from their Token.** A hero working or fighting now stands 32 units from the Token's edge instead of 16, so in a fight the hero's health bar and the enemy's no longer touch, even with a four-digit HP number (T-112).
 - **Health bar numbers and lingering hero bar.** The health bar now has its number (like 34/50) written on it all the time, so there is no hover tooltip; the bars are a little thicker to fit it. A hero's bar stays up for about 3 seconds after their fight ends, then goes.
 - **Notifications and bin pop out over the playmat.** The notification column and the discard bin are now slim tabs on the screen edge that slide out over the mat while you hover them, so the playmat is about 290 pixels wider on a 1600 pixel window. Dragging a Token toward the bin edge opens it too.
 - **Stuck spawner warning.** A spawner that cannot spawn now shows a small warning bubble in the middle of its Token the whole time: yellow "Needs Oak Seed to spawn" while it waits on an item, red "No room to spawn" when the mat is full. A single level-up reads "Leveled up Mining to 25!"; the "(+n)" shows only when two or more levels merge.

@@ -30,10 +30,11 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  *
  * Every other test file runs with instant arrival (`src/tests/setup/`); these
  * switch it OFF, so the walk is real: 120 u a second, ten ticks a second.
- * A small Token's art radius is 64 u, so a hero stands 64 + 16 = 80 u beside it.
+ * A standard Token's art radius is 64 u, so a hero stands `STAND` u beside it.
  */
 
 const SPEED = 120;
+const STAND = 64 + HeroMotion.STAND_GAP;
 
 function hero(id, skills = { logging: 50 }) {
     const out = {};
@@ -88,12 +89,12 @@ describe('⭐ walking costs work time (FP-26)', () => {
         expect(BoardState.workerOf(tok.id)).toBeNull();
         expect(BoardState.workTokenOf('h1')).toBeNull();
 
-        // 220 u to the standing spot (800 − 80) at 120 u/s ≈ 1.8 s.
+        // 300 − STAND u to the standing spot at 120 u/s: under 2.5 s.
         run(1000);
         expect(Flags.statusOf('h1').state).toBe('walking');
         expect(tok.cycleElapsedMs || 0).toBe(0);
         expect(body('h1').x).toBeGreaterThan(500);
-        expect(body('h1').x).toBeLessThan(720);
+        expect(body('h1').x).toBeLessThan(800 - STAND);
 
         run(1500);
         expect(Flags.statusOf('h1').state).toBe('working');
@@ -124,7 +125,7 @@ describe('⭐ beside the Token, from the side they came (HM-2)', () => {
         const tok = put({ x: 800, y: 500 });
         Flags.plant('h1', { x: 500, y: 500 });
         run(3000);
-        expect(body('h1')).toMatchObject({ x: 800 - 80, y: 500 });
+        expect(body('h1')).toMatchObject({ x: 800 - STAND, y: 500 });
         expect(body('h1').facing).toBe(1);
         expect({ x: tok.x, y: tok.y }).toEqual({ x: 800, y: 500 });
     });
@@ -133,12 +134,12 @@ describe('⭐ beside the Token, from the side they came (HM-2)', () => {
         put({ x: 800, y: 500 });
         Flags.plant('h1', { x: 1100, y: 500 });
         run(3000);
-        expect(body('h1')).toMatchObject({ x: 800 + 80, y: 500 });
+        expect(body('h1')).toMatchObject({ x: 800 + STAND, y: 500 });
         expect(body('h1').facing).toBe(-1);
     });
 
     it('stands on the other side rather than off the edge of the mat', () => {
-        expect(HeroMotion.standingSpot('fixture_producer', { x: 70, y: 500 }, -1).x).toBe(70 + 80);
+        expect(HeroMotion.standingSpot('fixture_producer', { x: 70, y: 500 }, -1).x).toBe(70 + STAND);
     });
 });
 
@@ -158,7 +159,7 @@ describe('claims, moves and choices while walking', () => {
         run(500);
         BoardState.setTokenPoint(tok.id, 800, 700);
         run(4000);
-        expect(body('h1')).toMatchObject({ x: 720, y: 700 });
+        expect(body('h1')).toMatchObject({ x: 800 - STAND, y: 700 });
         expect(BoardState.workerOf(tok.id)).toBe('h1');
     });
 
@@ -263,7 +264,7 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
         run(5000);
         expect(BoardState.workerOf(tok.id)).toBe('h1');
         // They came from the Hall, on the left, so they stand on the left.
-        expect(body('h1').x).toBe(1300 - 80);
+        expect(body('h1').x).toBe(1300 - STAND);
     });
 
     it('⭐ "nearest" for the first job is measured from the Hall they walk out of (HM-4)', () => {
@@ -287,7 +288,7 @@ describe('⭐ coming and going through the Guild Hall (M3)', () => {
         expect(BoardRunner.isHeroIdle('h1')).toBe(true);
 
         run(1000);
-        expect(body('h1').x).toBeLessThan(1300 - 80);        // on the way
+        expect(body('h1').x).toBeLessThan(1300 - STAND);        // on the way
         run(5000);
         expect(body('h1')).toBeNull();                       // in through the door
         expect(Flags.statusOf('h1').state).toBe('docked');

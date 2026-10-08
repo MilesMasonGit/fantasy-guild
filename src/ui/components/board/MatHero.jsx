@@ -24,7 +24,7 @@ import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HealthBar } from './HealthBar.jsx';
-import { HEALTH_BAR_GAP_U, HEALTH_BAR_H_U, HERO_BAR_W_U } from './healthBar.js';
+import { heroBarPlace } from './healthBar.js';
 
 /**
  * A fighting hero's health bar, just over their figure's head. Reads the hero's HP as a flat
@@ -48,11 +48,7 @@ function HeroHealthBar({ heroId, artPx }) {
             of={heroId}
             cur={hp.cur}
             max={hp.max}
-            style={{
-                left: (HERO_HIT_PX - HERO_BAR_W_U) / 2,
-                top: (FLAG_PX - artPx) / 2 - HEALTH_BAR_H_U - HEALTH_BAR_GAP_U,
-                width: HERO_BAR_W_U
-            }}
+            style={heroBarPlace(artPx)}
         />
     );
 }

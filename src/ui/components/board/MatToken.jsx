@@ -60,6 +60,14 @@ function useWalkerFollow(on, id, boxHalf, artRef, overlayRef) {
     }, [on, id, artRef, overlayRef]);
 }
 
+/**
+ * How wide a Token's box is drawn, in mat units, for art `artPx` across: the Token's own circle,
+ * or the art where the art is the larger.
+ */
+export function tokenBoxPx(typeId, artPx) {
+    return Math.max(artRadiusOf(typeId) * 2, artPx);
+}
+
 const RECEIVED_MS = 350;
 
 
@@ -105,7 +113,6 @@ export const MatToken = React.memo(function MatToken({
     const walkDrawn = useDrawn('walkDraw');
     // The radius and the art both come from the type (footprint and `artSize` alike), so a
     // small Token is half size here exactly as it is to the engine (`artRadiusOf`).
-    const r = artRadiusOf(typeId);
     const small = isSmallToken(typeId);
 
     /**
@@ -122,7 +129,7 @@ export const MatToken = React.memo(function MatToken({
     const fit = useMatFit();
     const artScale = boardScaleAt(fit);
     const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, artScale);
-    const boxPx = Math.max(r * 2, artPx);
+    const boxPx = tokenBoxPx(typeId, artPx);
     const boxHalf = boxPx / 2;
 
     const def = getTokenType(typeId);

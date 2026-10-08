@@ -40,8 +40,12 @@ import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.j
  * rather than walking in fast-forward.
  */
 
-/** Gap between a Token's art edge and the centre of the hero working it, in mat units. */
-export const STAND_GAP = 16;
+/**
+ * Gap between a Token's art edge and the centre of the hero working it, in mat units. Wide enough
+ * that a fighting hero's health bar, with a four-digit HP number on it, clears the enemy's bar
+ * even where the art steps up to its largest (`FightBars.test.js`).
+ */
+export const STAND_GAP = 32;
 
 /**
  * Where an idle hero stands relative to their flag's pole base, in mat units: just right of the
