@@ -60,6 +60,11 @@ Tags: **⚠️ overlaps** = touches an area a crunch brief is about to rebuild �
 - **Tuner baselines**: Tokens overlap less; heroes get a larger base work
   radius. *quick* · ⚠️ overlaps T-097; today up to 40 % overlap and a 164 u flag
   radius (GDD). Needs numbers picked in the game.
+- **Master allow / disallow all per hero**: most players leave every skill on
+  and steer by moving the flag; per-skill controls are only for players who
+  want to micromanage (owner). Add one switch per hero to allow or disallow
+  everything. *quick* · ⚠️ brief 30 rebuilds the work rules panel and hasn't
+  run; may be what the top bar's "hero control button" becomes.
 - **Hero flags**: smaller, and fade to half opacity while work is happening on
   them. *quick* · ⚠️ overlaps brief 30 H4 (the flag), which hasn't run yet.
 
@@ -196,6 +201,18 @@ the owner agreed all eight belong here (2026-10-08).
 - **The Bank at scale**: 64 items today, maybe several hundred after skill loops
   and gear; tabs and manual reordering may not keep up. Design search and
   filters (perhaps shared with the encyclopedia) alongside the skill loops.
+- **Something else that improves with level**: levels are mainly for
+  unlocking new Tokens and recipes (owner); each level's +0.5 % speed is
+  invisible. The owner agrees something more should grow with level. Part of
+  the progression interview.
+- **Skill list scope**: 25 skills, 12 of them placeholders. Always open to
+  rework; the owner will evaluate it later. Not urgent.
+- **CMS saving**: unsynced CMS work lives only in the browser ("Restore from
+  Game" rebuilds synced content). Better saving and backups; may become part
+  of a **modding system** (owner, 2026-10-08). Pairs with agent authoring.
+- **Translation**: the game **will be translated** (owner, 2026-10-08). Today
+  text is written directly in the code; every new screen adds more to move.
+  Decide how text is stored before the post-crunch UI work, ideally sooner.
 
 ### Post-Atlas content
 
@@ -221,3 +238,13 @@ the owner agreed all eight belong here (2026-10-08).
 ## Moved on
 
 *(none)*
+
+## Dropped
+
+Suggestions the owner turned down, so they aren't raised again.
+
+- **Automated progression bot** (a headless playthrough to check pacing): the
+  owner would rather understand and control the dependencies directly (the CMS
+  dependency map). 2026-10-08.
+- **Stations at scale** (stations suggesting or cycling recipes): not a
+  concern. 2026-10-08.
