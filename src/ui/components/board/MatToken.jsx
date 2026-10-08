@@ -81,10 +81,12 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * player makes is not: the Token is simply where it was let go.
  * - **A drag source and nothing else.** The whole mat is the one drop target (`dropOnMat`);
  * dropping a copy on a Token still restocks it, because the drop point lands on its spot.
- * - **Hit-tested as a circle** (`border-radius`, not `clip-path`, so art that spills past the
- * circle is drawn rather than cropped), so the corners of the box belong to whatever is
- * underneath. Which Token the pointer is on is decided once by `MatBoard` (nearest centre,
- * `Flags.tokenAtPoint`); this just draws.
+ * - **Pressed by its own circle, not its art.** The box is drawn as big as the art, and the art
+ * may spill past the Token's circle onto its neighbours; none of the drawing takes the pointer.
+ * Only a round hit area exactly the Token's circle does (`data-token-hit`, the engine's
+ * `artRadiusOf`), so overlapping art never takes a press from the Token whose circle is under
+ * the pointer. Where two circles overlap, `MatBoard` decides (nearest centre,
+ * `Flags.tokenAtPoint`) and routes the press there; this just draws.
  * Two boxes, not one: the art and the badges are siblings with explicit z, not parent and
  * child. A hero stands beside the Token, and the bubbles have to stay
  * readable in front of that hero. A single box would make its own stacking context and bury
@@ -113,16 +115,16 @@ export const MatToken = React.memo(function MatToken({
     const walkDrawn = useDrawn('walkDraw');
     // The radius and the art both come from the type (footprint and `artSize` alike), so a
     // small Token is half size here exactly as it is to the engine (`artRadiusOf`).
+    const r = artRadiusOf(typeId);
     const small = isSmallToken(typeId);
 
     /**
      * How big this Token's art is drawn, in mat units. The mat's transform turns `artPx` mat
      * units into exactly `boardArtSteps(fit) × ART_PX` screen pixels, so the sprite is always
      * a whole multiple of its 64px art and never resampled.
-     * ⚠️ The box grows to hold the art when the art is the larger of the two, which below 1×
-     * it is: the box is the Token's round hit area, so a box left at the Token's own radius
-     * would crop the very spill the art step accepts. A 2×2's 288 u circle is already wider
-     * than its 256 u art, and `max` leaves that, and every 1:1 case, as it was.
+     * The box grows to hold the art when the art is the larger of the two, so the spill the
+     * art step accepts is drawn, not cropped. The hit area does not grow with it: it stays the
+     * Token's own circle, `2r` across, centred in the box.
      * ⚠️ This moves nothing in the engine: `x`/`y`, `hitRadiusOf` and `minGap` are untouched;
      * this is only how much art is painted at the same point.
      */
@@ -417,16 +419,28 @@ export const MatToken = React.memo(function MatToken({
                 style={{
                     ...boxStyle,
                     zIndex: z,
-                    // Rounded, not clipped: the corners of the box do not catch the pointer,
-                    // and art that spills past the circle is not cropped.
-                    borderRadius: '50%',
+                    // The drawing takes no pointer; presses reach these listeners from the hit
+                    // circle inside.
+                    pointerEvents: 'none',
                     visibility: hidden ? 'hidden' : 'visible'
                 }}
                 className={cn(
-                    'absolute select-none pointer-events-auto',
+                    'absolute select-none',
                     disallowMode || questDone ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 )}
             >
+                <div
+                    data-token-hit={id}
+                    className="absolute"
+                    style={{
+                        left: boxHalf - r,
+                        top: boxHalf - r,
+                        width: r * 2,
+                        height: r * 2,
+                        borderRadius: '50%',
+                        pointerEvents: 'auto'
+                    }}
+                />
                 {/**
                  * A done quest glows until claimed: the transform glow's gold, held as a halo
                  * behind the art that breathes (`gi-quest-ready`), spilling past it.

@@ -175,9 +175,13 @@ describe('a Token is a circle of art at a point', () => {
     it('⭐ only the art circle answers the pointer, not the corners of its box', () => {
         const tok = placeAt('fixture_producer', 600, 400);
         const { container } = mount(h(MatBoard));
-        // Rounded rather than clipped, so spilling art is drawn, not cropped.
-        expect(artOf(container, tok.id).style.borderRadius).toBe('50%');
+        // The drawing takes no pointer and is not clipped, so spilling art is drawn, not cropped;
+        // a round hit area the size of the circle does (`MatPressTarget.test.js`).
+        expect(artOf(container, tok.id).style.pointerEvents).toBe('none');
         expect(artOf(container, tok.id).style.clipPath).toBe('');
+        const hit = container.querySelector(`[data-token-hit="${tok.id}"]`);
+        expect(hit.style.borderRadius).toBe('50%');
+        expect(hit.style.width).toBe('128px');
     });
 
     it('moves to its new point when the Token moves — the same element, slid across', async () => {

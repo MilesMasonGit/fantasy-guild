@@ -5,6 +5,7 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Grabbing follows each Token's own circle.** Tokens still draw at their bigger 2× size, but only a Token's own round body now answers a press, so art spilling over a neighbour no longer steals the click or drag; where two Tokens overlap, the press goes to the one whose centre is nearest, the same one the hover outline shows. A hero's art beside their figure no longer blocks the flag or Token behind it either.
 - **Heroes stand a little further from their Token.** A hero working or fighting now stands 32 units from the Token's edge instead of 16, so in a fight the hero's health bar and the enemy's no longer touch, even with a four-digit HP number (T-112).
 - **Health bar numbers and lingering hero bar.** The health bar now has its number (like 34/50) written on it all the time, so there is no hover tooltip; the bars are a little thicker to fit it. A hero's bar stays up for about 3 seconds after their fight ends, then goes.
 - **Notifications and bin pop out over the playmat.** The notification column and the discard bin are now slim tabs on the screen edge that slide out over the mat while you hover them, so the playmat is about 290 pixels wider on a 1600 pixel window. Dragging a Token toward the bin edge opens it too.

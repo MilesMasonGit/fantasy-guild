@@ -1,7 +1,8 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z, matStackOrder, sameStackOrder, heroZ, walkerSortY } from './matLayers.js';
 import { pointerToMat } from './matPoint.js';
+import { installPressRouting } from './pressRouting.js';
 import { MatToken } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
@@ -255,6 +256,13 @@ export const MatBoard = ({
     }, []);
 
     const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); }, []);
+
+    // A press where two Tokens' circles overlap goes to the one hovering would pick, even when no
+    // pointer move has raised it to the front yet.
+    useEffect(() => {
+        const el = rootRef.current;
+        return el ? installPressRouting(el, Flags.tokenAtPoint) : undefined;
+    }, []);
 
 
     const handleRecallHero = useCallback((heroId) => {

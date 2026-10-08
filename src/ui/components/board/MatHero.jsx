@@ -8,6 +8,8 @@ import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, PixelArt } from '../base/Tok
 import { AnimatedHeroSprite } from './AnimatedHeroSprite.jsx';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 
+const NO_POINTER = Object.freeze({ pointerEvents: 'none' });
+
 /** A limping hero: drained of colour, a touch darker, and a slower walk cycle. */
 const LIMP_FILTER = 'grayscale(0.7) brightness(0.8) sepia(0.25)';
 const LIMP_FRAME_MS = 250;
@@ -218,7 +220,9 @@ export const MatHero = memo(function MatHero({
                         'w-full h-full flex items-center justify-center transition-[filter] duration-150',
                         hovered && !drag.isDragging && 'gi-token-hover-hop'
                     )}
-                    style={limp ? { filter: LIMP_FILTER } : undefined}
+                    // The art is wider than the hero's box and takes no pointer: a press beside
+                    // the figure reaches the flag or Token behind it.
+                    style={limp ? { filter: LIMP_FILTER, pointerEvents: 'none' } : NO_POINTER}
                 >
                     {animArt ? (
                         <AnimatedHeroSprite
