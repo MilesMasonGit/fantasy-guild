@@ -98,7 +98,7 @@ enemy 4, buff 4, promotion 2, manager 1, market 1. Plus the engine-owned quest
 Token.
 - **Work cycle**: `config` = skill, level required, cycle time, XP, inputs,
   outputs (each output a chance and a quantity range). Example: Oak Tree,
-  logging 1, 3 s, 1–2 Oak Wood + 20 % Oak Seed, 5 charges.
+  forestry 1, 3 s, 1–2 Oak Wood + 20 % Oak Seed, 5 charges.
 - **Charges** (`uses`): one is spent per cycle by default; at 0 the Token is
   removed. `null` = unlimited (Workbench, Furnace, Cooking Pot).
 - **Origin**: *placed* (bought or built: fixed, refundable) or *spawned*
@@ -165,21 +165,29 @@ and `data/maps.json` (8 maps with pools and prices) are **Dormant** and will be
 ### Roster — Built
 - Heroes come from the **Bunk Beds** Hall upgrade: each rank adds one hero,
   **max 8** (`ROSTER_MAX`). Rank 1 is free. *(`guildUpgrades.js`)*
-- Every recruit is identical: a **Recruit** with the 9 Foundation skills at
+- Every recruit is identical: a **Recruit** with the 9 Starting skills at
   level 1, 50 HP, a random name. Differences are earned. No retirement.
 - One flag colour per hero (8 colours).
 
 ### Skills — Built
-**29 skills** in four layers *(`skillRegistry.js`, the source of truth)*:
-- **Foundation (9)**: mining, logging, fishing, smithing, crafting, cooking,
-  construction, farming, explore. Every hero holds all nine.
-- **Combat (3)**: melee, ranged, magic.
-- **Shared (6)**: leadership, faith, nature, crime, enchanting, alchemy.
-- **Signature (11)**: armory, occult, inscription, beastmaster, survival,
-  commerce, brewing, summoning, astrology, science, engineering.
+**25 skills** in four layers *(`skillRegistry.js`, the source of truth;
+class rework v2, brief 20)*:
+- **Starting (9)**: mining, forestry, fishing, smithing, crafting, cooking,
+  farming, alchemy, construction. Every hero holds all nine, always.
+- **Combat (4)**: melee, ranged, magic, stealth. A promoted hero holds one.
+- **Advanced (4)**: leadership, fletching, enchanting, crime. One on a basic
+  class, two on a master class.
+- **Master (8)**: faith, trapping, summoning, taming, commerce, science,
+  armory, shadowcraft. One master class each.
 
-Only the Foundation skills and melee/magic have content today; most Shared and
-Signature skills have no Token or recipe yet.
+The Advanced and Master skills are **placeholders** (owner ruling D7): names,
+descriptions and emoji icons that work like any skill (Tokens and recipes can
+name them; XP; levels), with no mechanics of their own until the owner's
+specialist-skill rework. Stealth fights like the other three styles; it
+sits outside the combat triangle until the four-way cycle (ruling D6) lands in R2b.
+Forestry is the old Logging, renamed with its id (it keeps the Logging art);
+Explore and the other v1 skills were dropped. Only the Starting skills (Alchemy
+has none yet), melee, magic and commerce have content today.
 
 - A hero can only do work for a skill they **hold**, at a high enough level.
 - XP comes from work cycles (the recipe's or Token's `xp`) and kills (into the
@@ -187,34 +195,45 @@ Signature skills have no Token or recipe yet.
   (RuneScape-style curve, `XPCurve.js`).
 - Each level gives +0.5 % speed to that skill's work.
 - **Hero level** = the average of held skills (display only).
+- **Content that still says `logging`** (data/ and the CMS workspace, until the
+  owner's next Sync) is read as `forestry` as it loads
+  (`skillIdMigration.js`, to be removed under T-114). Content naming a skill or
+  job that does not exist is listed by the boot audit and the CMS Economy
+  Audit.
 
 ### Jobs and promotion — Built, mostly without content
-- Job tree *(`jobRegistry.js`)*: **Recruit** → 6 base classes (Fighter,
-  Cleric, Ranger, Rogue, Wizard, Alchemist) → 12 advanced jobs (Knight,
-  Warlord, Zealot, Paladin, Druid, Scout, Merchant, Assassin, Conjurer,
-  Astromancer, Scientist, Engineer).
-- A hero holds the 9 Foundation skills plus their job's extra skills: Recruit
-  9, base class 11 (+1 combat, +1 shared), advanced 13 (+1 shared, +1
-  signature). A Recruit **cannot fight**.
+- Job tree *(`jobRegistry.js`)*: **Recruit** → 4 basic classes → 8 master
+  classes:
+
+  | Basic class | Its skills | Master classes (adds) |
+  |---|---|---|
+  | Fighter | melee + leadership | Paladin (enchanting + faith), Knight (fletching + armory) |
+  | Ranger | ranged + fletching | Beastmaster (enchanting + taming), Hunter (crime + trapping) |
+  | Wizard | magic + enchanting | Necromancer (crime + summoning), Scholar (leadership + science) |
+  | Rogue | stealth + crime | Merchant (leadership + commerce), Assassin (fletching + shadowcraft) |
+
+- A hero holds the 9 Starting skills plus their class's skills: Recruit 9,
+  basic class 11 (+1 combat, +1 advanced), master class 13 (+1 more advanced,
+  +1 master). A Recruit **cannot fight**.
 - **Promotion is a Token rule**: "Promotes the hero to Fighter." A qualified
   hero trains on the Token for one cycle (30 s default), then a ceremony asks
-  Accept / Not yet. Gate: the job's carried-forward skills at level 10 (base) or
-  25 (advanced). *(`BoardPromotion.js`, `PromotionSystem.js`)*
+  Accept / Not yet. *(`BoardPromotion.js`, `PromotionSystem.js`)*
+- **Gate today**: a master class needs its parent's combat and advanced skill
+  at 25. A basic class has **no skill gate yet**: the gate pairs the owner
+  chose (ruling D3: Fighter Mining + Smithing, Ranger Forestry + Crafting,
+  Wizard Alchemy + Cooking, Rogue Fishing + Crafting, at 10) arrive with R2a.
+- **Price today**: each promotion spends one of the Academy's uses (10), so
+  the 10th promotion removes it. Free promotion (ruling D4) and the Mastery
+  rule (ruling D2: an Advanced or Master skill at 99 is never banked) arrive
+  with R2a.
 - Changing branch banks the skills the new job doesn't use, at their level;
   they return if the hero comes back. The Change Job screen only plans; the
   act happens on the board.
 - **Content**: Fighter's Academy (buildable on a Stone Foundation) and Wizard
-  Academy (no source found) are the only promotion Tokens. The other 16 jobs
-  have no Token. **Promotion stays free** (owner 2026-10-06); the Academies'
-  unused `uses` count can go.
-- **Being replaced** (crunch track, owner 2026-10-06): the approved
-  [skill & class rework v2](../active/concept_skill_and_class_rework_v2.md)
-  moves to **4 combat skills (melee, ranged, magic, stealth), 4 basic classes
-  (Fighter, Ranger, Wizard, Rogue) and 8 master classes**, 25 skills in all
-  after the owner's 2026-10-07 amendments (construction stays universal,
-  Explore is dropped, Logging becomes Forestry; see the concept's amendments).
-  Its four Academies are built on Wood or Stone Foundations and arrive with the
-  rework, not before. Until then this section describes the old tree.
+  Academy (no source found) are the only promotion Tokens. The Ranger and
+  Rogue Academies and the eight master-class Tokens are the owner's CMS work
+  (brief 20 R3; ruling D5).
+- Skill and job icons for the new skills and classes are emoji placeholders.
 
 ### Health, food, defeat — Built
 - Max HP from the combat skill: 50 at level 1, 144 at 25, ~3,700 at 99.
