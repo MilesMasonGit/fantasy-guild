@@ -9,7 +9,8 @@ import { momentText } from '../board/heroSpeech.js';
  * level gained. One bubble per skill: a later level-up of the same skill rewrites it, counting
  * from the level the bubble started at, so the wording matches the mat's ("LVL UP! 25 Mining!
  * (+4)").
- * UI memory only: never saved, emptied when a game is started or loaded.
+ * UI memory only: never saved, emptied when a game is started or loaded (a page reload, as
+ * "Load as I left it" does, starts it empty).
  */
 
 /** Bubbles drawn per hero at once; arrows page through the rest. */
@@ -81,16 +82,39 @@ export function useHeroBarBubbles(heroId) {
     return useSyncExternalStore(subscribe, () => bubblesOf(heroId), () => NONE);
 }
 
+function addLevelUps(rows) {
+    byHero = new Map(byHero);
+    for (const { heroId, skillName, oldLevel, newLevel } of rows) {
+        byHero.set(heroId, addLevelUp(byHero.get(heroId) || NONE, { skillName, oldLevel, newLevel }));
+    }
+    emit();
+}
+
+/**
+ * A shown catch-up's level-ups, waiting for the `GAME_RESET` that follows it: a catch-up plays
+ * with the bus quiet, so they never arrive as `HERO_LEVELED`. ⚠️ Added on that reset, not on
+ * `CATCH_UP_FINISHED`: a load's catch-up finishes before the load's own reset, which would wipe
+ * them. Taken once, so a later reset cannot add them again.
+ */
+let pendingCatchUp = null;
+
 const offs = [
     EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, skillName, newLevel, oldLevel } = {}) => {
         if (!heroId || !skillName || !Number.isFinite(newLevel)) return;
-        byHero = new Map(byHero);
-        byHero.set(heroId, addLevelUp(byHero.get(heroId) || NONE, { skillName, oldLevel, newLevel }));
-        emit();
+        addLevelUps([{ heroId, skillName, oldLevel, newLevel }]);
     }, UI_LISTENER),
-    // Another save's heroes; a dev time-skip keeps them, it is the same game moved on.
+    EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, ({ show, summary } = {}) => {
+        const rows = show ? (summary?.levelUps || []).filter(r => r.heroId && r.skillName && Number.isFinite(r.to)) : [];
+        pendingCatchUp = rows.length ? rows : null;
+    }, UI_LISTENER),
+    // Another save's heroes. A dev time-skip or a sleeping PC's catch-up keeps them: the same game
+    // moved on, with bubbles the player may not have read yet.
     EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, ({ reason } = {}) => {
-        if (reason !== 'dev_time_skip') clearAllHeroBubbles();
+        if (reason !== 'dev_time_skip' && reason !== 'catch_up') clearAllHeroBubbles();
+        if (!pendingCatchUp) return;
+        const rows = pendingCatchUp;
+        pendingCatchUp = null;
+        addLevelUps(rows.map(r => ({ heroId: r.heroId, skillName: r.skillName, oldLevel: r.from, newLevel: r.to })));
     }, UI_LISTENER)
 ];
 
