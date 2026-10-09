@@ -40,6 +40,16 @@ changelog and `docs/archive/`).*
      vein refill, returning to a Region, Cartography numbers, upcycling,
      tools-as-gear timing, the parked `atlas-wip` work). Answer them as a
      batch; the Atlas builds after brief 60 per the crunch order.
+   - **Brief 50, drag deep-dive, on `crunch/drag` (not merged: feel-check
+     needed).** D1 (the bench times frames; drag baseline re-taken) and D2
+     (100 % on every drag kind, plain and with bubbles) are done; D3 (no
+     stall at pickup or drop) is building. Two questions parked as tickets:
+     **T-130** a flag lying wholly over a Token is now grabbed by its cloth
+     (partly reverses ruling B5); **T-129** a carried Token can vanish
+     mid-drag (a fought goblin dies), pause work and fights on a carried
+     Token? Also fixed: the mat no longer scrolls 30 px under the top bar
+     after a drag. Feel-check: drag heroes, flags and Tokens in your save
+     and say whether it is smooth and always grabs what you meant.
    - Entries are added here as overnight phases land.
 3. **Overnight run (owner asleep, 2026-10-08):** the director continues the
    crunch order (50 drag → 60 optimization → 70 Atlas → 80 terrain → 90
