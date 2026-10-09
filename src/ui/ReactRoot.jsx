@@ -59,12 +59,12 @@ export const ReactRoot = ({ engine }) => {
     const ui = useUIModals(engine);
     const { onInspectToken, onClearInspect } = useInspectTokenHandlers(ui.inspect);
 
-    const handleSlotSelect = async (index) => {
+    const handleSlotSelect = async (index, { catchUp = true } = {}) => {
         const isEmpty = !engine.SaveManager.hasSlot(index);
         if (isEmpty) {
             engine.SaveManager.newGame(index);
         } else {
-            const loaded = await engine.SaveManager.loadSlot(index);
+            const loaded = await engine.SaveManager.loadSlot(index, { catchUp });
             // Refused (incompatible version) or corrupted — stay on the slot
             // screen; the notification explains why.
             if (!loaded) return;
@@ -72,6 +72,14 @@ export const ReactRoot = ({ engine }) => {
         ui.slotSelection.close();
         engine.EventBus.publish(UI_EVENTS.REACT_SLOT_SELECTED, { index, isNewGame: isEmpty });
     };
+
+    // "Load as I left it" reloads the page into the slot it put back: open it at once, as it was.
+    const resumeRef = React.useRef(handleSlotSelect);
+    resumeRef.current = handleSlotSelect;
+    React.useEffect(() => {
+        const slot = engine.SaveManager.takeResumeSlot?.();
+        if (slot != null) resumeRef.current(slot, { catchUp: false });
+    }, [engine]);
 
     // Dev only: the FPS counter stands down while the Perf HUD is up.
     const perfHudShowing = usePerfHudShowing();

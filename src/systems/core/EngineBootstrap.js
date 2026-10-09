@@ -236,9 +236,11 @@ export const EngineBootstrap = {
      */
     async catchUpOnLoad() {
         const savedAt = SaveManager.loadedSavedAt;
+        // The untouched save, for "Load as I left it"; taken either way so it is not held on to.
+        const before = SaveManager.takeLoadedJson();
         if (!savedAt) return null;
         try {
-            return await CatchUp.run({ savedAt, reset: false });
+            return await CatchUp.run({ savedAt, reset: false, before });
         } catch (err) {
             console.error('[Engine] Catching up the time away failed', err);
             return null;

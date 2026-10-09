@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -8,6 +8,14 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { CatchUpOverlay } from '../ui/components/hud/CatchUpOverlay.jsx';
 import { formatAway, summaryView, catchUpTitle } from '../ui/components/hud/catchUpSummary.js';
+import * as CatchUp from '../systems/core/CatchUp.js';
+
+// The summary's undo button asks the catch-up driver; here it is a stand-in.
+vi.mock('../systems/core/CatchUp.js', () => ({
+    canUndo: vi.fn(() => true),
+    undoLast: vi.fn(() => true),
+    forgetUndo: vi.fn()
+}));
 
 /**
  * The catch-up's loading bar and the "While you were away" summary: shown only for a catch-up
@@ -79,7 +87,14 @@ const text = (sel) => q(sel)?.textContent.replace(/\s+/g, ' ').trim();
 const escape = () => act(() => { fireEvent.keyDown(window, { key: 'Escape' }); });
 
 beforeEach(() => { render(React.createElement(CatchUpOverlay)); });
-afterEach(() => { cleanup(); EventBus.setQuiet(false); });
+afterEach(() => {
+    cleanup();
+    EventBus.setQuiet(false);
+    vi.useRealTimers();
+    vi.mocked(CatchUp.canUndo).mockReturnValue(true);
+    vi.mocked(CatchUp.undoLast).mockClear();
+    vi.mocked(CatchUp.forgetUndo).mockClear();
+});
 
 describe('the catch-up loading bar', () => {
     it('shows for a catch-up long enough to show, with the time away in its title', () => {
@@ -149,8 +164,10 @@ describe('"While you were away"', () => {
 
         expect(text('[data-summary-section="spent"] [data-item-id="fixture_cu_seed"]')).toBe('Fixture Seed −12');
 
-        expect(text('[data-summary-hero="h1"]')).toBe('Aela Mining 50 → 51 Logging 12 → 15');
-        expect(text('[data-summary-hero="h2"]')).toBe('Bram Melee 3 → 4');
+        // One row per hero and skill.
+        expect(text('[data-summary-hero="h1"][data-skill-id="mining"]')).toBe('Aela Mining 50 → 51');
+        expect(text('[data-summary-hero="h1"][data-skill-id="logging"]')).toBe('Aela Logging 12 → 15');
+        expect(text('[data-summary-hero="h2"][data-skill-id="melee"]')).toBe('Bram Melee 3 → 4');
 
         expect(text('[data-summary-section="depleted"] [data-type-id="fixture_cu_rock"]')).toBe('Fixture Rock ×3');
         expect(text('[data-summary-section="wounded"] [data-hero-id="h2"]')).toBe('Bram ×2');
@@ -180,11 +197,13 @@ describe('"While you were away"', () => {
         expect(q('[data-catch-up-summary]')).toBeNull();
     });
 
-    it('closes with Esc', () => {
+    it('closes with Esc, which means Back to the guild: nothing is undone', () => {
         start();
         finish(fullResult());
         escape();
         expect(q('[data-catch-up-summary]')).toBeNull();
+        expect(CatchUp.undoLast).not.toHaveBeenCalled();
+        expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
     });
 
     it('nothing else closes it: a click on the backdrop or the panel leaves it', () => {
@@ -202,6 +221,85 @@ describe('"While you were away"', () => {
         start(90 * 1000, false);
         finish({ ...emptyResult(), awayMs: 90 * 1000, show: false });
         expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min.');
+    });
+});
+
+describe('the summary\'s rows', () => {
+    const rows = () => [...document.querySelectorAll('[data-catch-up-summary] [data-item-row]')];
+
+    it('every item, Token, level-up, wound and fight is one shared row, one per line, never cut short', () => {
+        start();
+        finish(fullResult());
+        const sections = ['gained', 'waiting', 'spent', 'levels', 'depleted', 'wounded', 'fights'];
+        for (const id of sections) {
+            const section = q(`[data-summary-section="${id}"]`);
+            const list = section.querySelector('[data-item-rows]');
+            expect(list, id).not.toBeNull();
+            expect(list.tagName, id).toBe('UL');
+            // One column: no grid splitting the rows into two.
+            expect(list.className, id).not.toMatch(/\bgrid\b/);
+            for (const child of list.children) expect(child.hasAttribute('data-item-row'), id).toBe(true);
+        }
+        // 2 gained, 1 waiting, 1 spent, 3 level-ups, 1 depleted, 1 wounded, 1 fight.
+        expect(rows()).toHaveLength(10);
+        expect(q('[data-catch-up-summary] [data-item-row] .truncate')).toBeNull();
+        // Icon, name, count: an item row carries the item's icon.
+        const ore = q('[data-summary-section="gained"] [data-item-id="fixture_cu_ore"]');
+        expect(ore.hasAttribute('data-item-row')).toBe(true);
+        expect(ore.querySelector('[data-item-row-icon]')).not.toBeNull();
+        expect(ore.querySelector('[data-item-row-count]').textContent.trim()).toBe('+1,154');
+    });
+
+    it('slide in one after another, and the entrance classes come off once it has played', () => {
+        vi.useFakeTimers();
+        start();
+        finish(fullResult());
+        const animated = () => document.querySelectorAll('[data-catch-up-summary] .catch-up-row-in');
+        expect(animated().length).toBe(rows().length + 7);          // the rows and the 7 headings
+        const delays = rows().map(r => parseFloat(r.style.animationDelay));
+        expect(delays[1]).toBeGreaterThan(delays[0]);
+        expect(delays[2]).toBeGreaterThan(delays[1]);
+        act(() => { vi.advanceTimersByTime(5000); });
+        expect(animated().length).toBe(0);
+        expect(rows().every(r => !r.style.animationDelay)).toBe(true);
+        expect(rows()).toHaveLength(10);
+    });
+});
+
+describe('"Load as I left it"', () => {
+    it('sits beside Back to the guild, and one click turns the catch-up down', () => {
+        start();
+        finish(fullResult());
+        const undo = q('[data-summary-undo]');
+        expect(undo).not.toBeNull();
+        expect(undo.textContent).toBe('Load as I left it');
+        expect(undo.parentElement).toBe(q('[data-summary-close]').parentElement);
+        act(() => { fireEvent.click(undo); });
+        expect(CatchUp.undoLast).toHaveBeenCalledTimes(1);
+        // Nothing to confirm.
+        expect(document.querySelectorAll('[role="dialog"]').length).toBeLessThanOrEqual(1);
+    });
+
+    it('Back to the guild keeps the catch-up and lets the undo go', () => {
+        start();
+        finish(fullResult());
+        act(() => { fireEvent.click(q('[data-summary-close]')); });
+        expect(CatchUp.undoLast).not.toHaveBeenCalled();
+        expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
+    });
+
+    it('is not offered when there is nothing to go back to', () => {
+        vi.mocked(CatchUp.canUndo).mockReturnValue(false);
+        start();
+        finish(fullResult());
+        expect(q('[data-summary-undo]')).toBeNull();
+        expect(q('[data-summary-close]')).not.toBeNull();
+    });
+
+    it('the loading bar still offers no button at all', () => {
+        start();
+        expect(q('[data-summary-undo]')).toBeNull();
+        expect(q('[data-catch-up-overlay] button')).toBeNull();
     });
 });
 
