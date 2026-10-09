@@ -424,6 +424,23 @@ named when they move.
 
 Only questions whose answer changes code. Recommendation first in each.
 
+### Owner answers (interview, 2026-10-09)
+
+| Q | Answer |
+|---|---|
+| D-1 | **B**: the 25 sites **don't count toward the cap and stand full size** (not half size, not a ring by rule). Where they stand is the owner's layout (D-2). Expect a crowded Starter Camp; the owner chose readability. |
+| D-2 | **A**: a Starter Camp page in the CMS, filled by a dev button ("Save this mat as the Starter Camp"), then Sync. The opening becomes content (settles T-014 for the opening). |
+| D-3 | **A**: 3 Base Maps (Forest, Mountain, Coast) and 4 modifier kinds (more of a node, a better node instead, an enemy camp, a treasure); base-building modifiers in a later slice. |
+| D-4 | **B**: maps and modifiers are authored in a **rewritten Map editor**, and each appears as an item in the Bank automatically. |
+| D-5 | **A**: old saves are refused; the owner starts a new game. |
+| D-6 | **B**: as A (map nodes, planted trees, sites and the Hall fixed with no marker; everything bought or built movable with the faint marker and lift; enemies and quests as today), **but map nodes can't be demolished**: the settled layout is permanent, and rerolling before settling is the only way to make room. |
+| D-7 | **A**: a vein empties, rests for its respawn time, then refills completely at once. |
+| D-8 | **A**: each Region remembers its flag positions; a brand-new Region starts with every hero in the Dock; loot on the floor is banked when the guild leaves. |
+| D-9 | **Owner's numbers**: **4 Cartography slots to start, upgradeable to 8**; **base Token cap 128, upgradeable +16 per rank up to 256** (8 ranks). Pricing as today's placeholders (rank n = 10 × n Oak Wood) until the night-sky rework; reroll cooldown 0.5 s. ⚠️ The cap rises from 80: check brief 60/90's performance budgets against 128 and 256 (`MatCap.BASE_TOKEN_CAP`, T-102). |
+| D-10 | **A**: instant trade in the Cartography screen, ratio per map in the CMS; the Atlas's last slice. |
+| D-11 | **A**: tools as hero gear (T-126) **after the crunch**. |
+| D-12 | **A**: keep the owner's two edited map pictures (frozen peak, volcano), drop the rest of `atlas-wip`. |
+
 **D-1. The 25 endgame sites in the Starter Camp: the Token cap and the room on
 the mat.** (25 full-size sites fill about a third of the mat before anything
 else.)
