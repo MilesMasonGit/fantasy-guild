@@ -46,6 +46,7 @@ import * as Hostiles from '../board/Hostiles.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
 // The guild's Regions and travel (`Game.Atlas`).
 import * as Atlas from '../atlas/Atlas.js';
+import * as RegionRules from '../atlas/RegionRules.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
@@ -159,6 +160,9 @@ export const EngineBootstrap = {
         Flags.init();
         QuestManager.init();
         SpawnerSystem.init();
+        // The active Region's own rules, put back in the guild-wide aggregator on every load,
+        // travel and new game.
+        RegionRules.init();
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();

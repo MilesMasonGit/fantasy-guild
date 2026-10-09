@@ -94,7 +94,7 @@ describe('a new game has one Region, holding the live board', () => {
     });
 
     it('the Atlas section is declared, and required of a save', () => {
-        expect(INITIAL_STATE.atlas).toEqual({ activeRegionId: null, nextRegionNumber: 1, regions: {} });
+        expect(INITIAL_STATE.atlas).toEqual({ activeRegionId: null, nextRegionNumber: 1, regions: {}, seed: null });
         const state = GameState.serialize().state;
         delete state.atlas;
         expect(validateSaveData({ version: GAME_VERSION, state }).errors).toContain('Missing state.atlas');

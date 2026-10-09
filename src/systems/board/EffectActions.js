@@ -361,6 +361,9 @@ export function transformInstance(old, typeId, options = {}) {
     // An enemy's tether to its spawner is a fact about where it belongs, not about what it was, so
     // it is carried across like `origin`.
     if (typeof old.tether === 'string') instance.tether = old.tether;
+    // So is a map node's mark and its biome: an Oak a map wrote stays the map's through a regrowth.
+    if (BoardState.isFixture(old)) instance.fixture = true;
+    if (typeof old.biome === 'string') instance.biome = old.biome;
     BoardState.addToken(instance, at.x, at.y);
     // The new Token glows as it appears, kept under its NEW id, which is what the mat draws it by.
     TokenGlows.raiseGlow(instance.id, { fromTypeId: old.typeId, typeId });
