@@ -141,7 +141,7 @@ export const BOARD_EVENTS = {
     /**
      * A spawner (or the Guild Hall, for a quest) put a new Token on the mat. Payload: `{
      * spawnerId, instanceId, typeId, name }`: the callout "! Spawned {name}" is said from the
-     * spawner. Not published while the time bank replays time away.
+     * spawner.
      */
     TOKEN_SPAWNED: 'board:token_spawned',
 

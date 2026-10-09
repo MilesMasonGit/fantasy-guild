@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
@@ -85,13 +85,13 @@ function useShopRefresh(active) {
     useEffect(() => {
         if (!active) return undefined;
         const refresh = () => bump(n => n + 1);
-        const unsubs = SHOP_EVENTS.map(e => EventBus.subscribe(e, refresh));
+        const unsubs = SHOP_EVENTS.map(e => EventBus.subscribe(e, refresh, UI_LISTENER));
         // Spawns and depletions change the Token count too; only a changed count re-renders.
         let count = Shop.capStatus().count;
         unsubs.push(EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, () => {
             const next = Shop.capStatus().count;
             if (next !== count) { count = next; refresh(); }
-        }));
+        }, UI_LISTENER));
         // The cap is a Mat Tuner setting, which publishes no game event ().
         unsubs.push(onMatTuningChanged(refresh));
         return () => unsubs.forEach(u => u?.());

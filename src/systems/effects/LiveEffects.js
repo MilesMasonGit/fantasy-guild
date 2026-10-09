@@ -8,6 +8,7 @@ import { STATUS_TICK_INTERVAL_MS } from '../../config/FormulaRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import * as GameClock from '../core/GameClock.js';
 
 /**
  * Any entity may carry live effect instances: `hero.effects = [{ effectId, scale, expiresAt, sourceId }]`,
@@ -103,7 +104,7 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
 
     const list = listOf(target);
     const existing = list.find(e => e.effectId === spec.effectId);
-    const expiresAt = Date.now() + Math.max(0, Number(spec.durationMs) || 0);
+    const expiresAt = GameClock.now() + Math.max(0, Number(spec.durationMs) || 0);
 
     if (existing) {
         // Refresh the clock, and let a stronger application win.
@@ -139,7 +140,7 @@ export function removeFrom(bearer, effectId = null) {
  *
  * @returns {number} how many instances expired
  */
-export function tickBearer(bearer, fire, now = Date.now()) {
+export function tickBearer(bearer, fire, now = GameClock.now()) {
     const target = bearer?.target;
     if (!target?.effects?.length) return 0;
     // A wounded hero is off the board and already cleansed.
@@ -262,7 +263,7 @@ export function tick(delta, fire) {
     if (clock < STATUS_TICK_INTERVAL_MS) return;
     clock -= STATUS_TICK_INTERVAL_MS;
 
-    const now = Date.now();
+    const now = GameClock.now();
     for (const bearer of allBearers()) tickBearer(bearer, fire, now);
 }
 

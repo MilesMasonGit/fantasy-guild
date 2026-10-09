@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -42,18 +42,18 @@ export const CalloutLayer = memo(function CalloutLayer() {
         const unsubs = [
             EventBus.subscribe(BOARD_EVENTS.TOKEN_SPAWNED, (p) => {
                 if (p?.spawnerId && p.name) say({ anchorId: p.spawnerId, text: calloutText.spawned(p.name) });
-            }),
+            }, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => {
                 if (p?.instanceId && p.title) say({ anchorId: p.instanceId, text: calloutText.effect(p.title) });
-            }),
+            }, UI_LISTENER),
             // A drop the mat refused names a point, not a Token: say why where it was aimed.
             EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => {
                 if (p?.type === 'drop_rejected') say({ x: p.x, y: p.y, text: p.rulesText || p.title || p.message });
-            }),
+            }, UI_LISTENER),
             // The screen's own refusal (the Guild Hall dragged off).
             EventBus.subscribe(UI_EVENTS.UI_TOKEN_ALERT, (p) => {
                 if (p?.instanceId) say({ anchorId: p.instanceId, text: p.title || p.message });
-            })
+            }, UI_LISTENER)
         ];
         return () => {
             unsubs.forEach(u => u());

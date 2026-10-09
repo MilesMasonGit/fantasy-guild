@@ -13,13 +13,12 @@ import * as EffectActions from './EffectActions.js';
 import { pickWeighted } from './weightedPick.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
-import { TimeBankManager } from '../core/TimeBankManager.js';
 
 /**
  * Spawners.
  *
  * How it runs: it rides `TimedChanges.tick`, which `BoardRunner.tick(delta)` calls, advanced by the
- * tick's `delta` only, so the time bank and the dev Advance fast-forward it with everything else.
+ * tick's `delta` only, so a catch-up and the dev Advance fast-forward it with everything else.
  * The spawner is one row of `TimedChanges.HANDLERS` (clock `spawnMs`, due at `intervalMs`). Its
  * `fire` is {@link attemptSpawn}, which returns the SAME instance after a spawn (the clock starts
  * its next lap, and a big tick can spawn several times) or null when blocked (the clock is held
@@ -260,9 +259,8 @@ export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
     if (spawned && isEnemyDef(getTokenType(spawned.typeId))) spawned.tether = instance.id;
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
 
-    // "! Spawned Oak Tree", said from the spawner. Not while the time bank replays time away, so
-    // the player comes back to a calm mat, not a field of popups.
-    if (!TimeBankManager.isSpending && BoardState.getTokenById(landed.instanceId)) {
+    // "! Spawned Oak Tree", said from the spawner.
+    if (BoardState.getTokenById(landed.instanceId)) {
         EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, {
             spawnerId: instance.id,
             instanceId: landed.instanceId,

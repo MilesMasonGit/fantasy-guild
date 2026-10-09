@@ -26,7 +26,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 describe('tick handlers have explicit priorities that reproduce today\'s order (CR3-031)', () => {
     const NAMES = [
         'time_tracking', 'live_effects', 'regen_system', 'board_runner',
-        'time_bank', 'quest_manager', 'sprite_layer', 'wounded_system', 'status_effects'
+        'quest_manager', 'sprite_layer', 'wounded_system', 'status_effects'
     ];
 
     beforeAll(() => {

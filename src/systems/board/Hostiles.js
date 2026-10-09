@@ -29,7 +29,7 @@ import * as TimedChanges from './TimedChanges.js';
  * attack while a hero holds it, while it is in the player's hand, or while the player has marked it
  * as not for heroes to work: a forced fight there would be let go on the next pass.
  *
- * One look every {@link SCAN_MS} of game time, advanced by the tick's `delta` (so the time bank
+ * One look every {@link SCAN_MS} of game time, advanced by the tick's `delta` (so a catch-up
  * speeds it up).
  */
 

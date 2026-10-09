@@ -33,8 +33,8 @@ export { pickWeighted };
  * (`EffectActions.transformInstance`): the new instance keeps `origin` and starts with fresh
  * clocks.
  *
- * ⚠️ Every clock advances by the tick's `delta`. Offline time is replayed by the time bank speeding
- * up the live engine (`TimeManager.setTimeScale`), so a clock that counted anything else would not
+ * ⚠️ Every clock advances by the tick's `delta`. Time away is caught up by running the real tick
+ * handlers in big steps (`CatchUp`), so a clock that counted anything else would not
  * fast-forward. This module never reads the wall clock.
  *
  * One big tick equals many small ones: a change that falls due part-way through a tick hands the
@@ -285,7 +285,7 @@ export function advance(instance, delta, random = Math.random) {
 
 /**
  * Advance every Token on the mat. Called from `BoardRunner.tick` with the
- * tick's (time-scaled) `delta`.
+ * tick's `delta`.
  *
  * @param {number} delta game ms since the last tick
  * @param {() => number} [random] for the weighted picks; tests pass a seeded one

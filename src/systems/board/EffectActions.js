@@ -15,7 +15,6 @@ import { centreOf, distanceSq } from './nearby.js';
 import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as TokenGlows from './TokenGlows.js';
-import { TimeBankManager } from '../core/TimeBankManager.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { PLACEMENT, RANDOM_FREE_DARTS, placementOf } from '../../config/registries/placementRegistry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -297,10 +296,8 @@ export function spawn(statement, roles, random = Math.random) {
     BoardState.addToken(instance, where.x, where.y);
     // A Token that takes its bearer's place (a Stump left behind) glows like a transform, under its
     // new id: also where a bearer that has already left stood. Ordinary spawns elsewhere get the
-    // green notice instead (`SpawnerSystem`). Not while the time bank replays time away.
-    if (replacesBearer && !TimeBankManager.isSpending) {
-        TokenGlows.raiseGlow(instance.id, { fromTypeId: bearer?.typeId ?? null, typeId });
-    }
+    // green notice instead (`SpawnerSystem`).
+    if (replacesBearer) TokenGlows.raiseGlow(instance.id, { fromTypeId: bearer?.typeId ?? null, typeId });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, { x: where.x, y: where.y }, ...touched]);
     if (touched.length) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
@@ -366,8 +363,7 @@ export function transformInstance(old, typeId, options = {}) {
     if (typeof old.tether === 'string') instance.tether = old.tether;
     BoardState.addToken(instance, at.x, at.y);
     // The new Token glows as it appears, kept under its NEW id, which is what the mat draws it by.
-    // Not while the time bank replays time away.
-    if (!TimeBankManager.isSpending) TokenGlows.raiseGlow(instance.id, { fromTypeId: old.typeId, typeId });
+    TokenGlows.raiseGlow(instance.id, { fromTypeId: old.typeId, typeId });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId });
     TileModifiers.rebuildAround([from, at, ...touched]);
     if (touched.length) EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);

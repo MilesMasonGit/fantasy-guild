@@ -49,13 +49,13 @@ export function tokensHash() {
     return fnv1a(tokenLines().join('\n'));
 }
 
-function bankHash(s) {
+function bankHash(s, hash = fnv1a) {
     const items = s.inventory?.items || {};
     const lines = Object.keys(items).sort().map(id => `${id}:${Number(items[id]?.quantity) || 0}`);
-    return fnv1a(lines.join('\n'));
+    return hash(lines.join('\n'));
 }
 
-function heroHash(s) {
+function heroHash(s, hash = fnv1a) {
     const heroes = [...(s.heroes || [])].sort((a, b) => String(a.id).localeCompare(String(b.id)));
     const lines = heroes.map(h => canon({
         id: h.id,
@@ -70,25 +70,41 @@ function heroHash(s) {
         claim: BoardState.claimOfHero(h.id)?.instanceId ?? null,
         body: BoardState.heroBodyOf(h.id)
     }));
-    return fnv1a(lines.join('\n'));
+    return hash(lines.join('\n'));
 }
 
-function spriteHash(s) {
+function spriteHash(s, hash = fnv1a) {
     // Every field: kind, item, quantity, exact point, where it flew from, its stack.
     const lines = (s.board?.sprites || []).map(canon);
-    return fnv1a(lines.join('\n'));
+    return hash(lines.join('\n'));
 }
 
-function binHash(s) {
+function binHash(s, hash = fnv1a) {
     const lines = (s.board?.bin || []).map(t => `${t?.id}|${t?.typeId}|${t?.usesRemaining}`);
-    return fnv1a(lines.join('\n'));
+    return hash(lines.join('\n'));
+}
+
+/**
+ * Ids carry the wall-clock time they were made at (`tok_<ms>_…`, `sprite_<ms in base 36>_<n>`,
+ * `quest_<ms>_…`). A catch-up makes them while the wall clock stands nearly still, live play while
+ * it moves, so comparing the two (S8 against S8L) leaves that time out. The rest of each id (its
+ * random part, its counter) stays.
+ */
+function withoutIdTimes(text) {
+    return text
+        .replace(/\btok_\d+_/g, 'tok_')
+        .replace(/\bsprite_[0-9a-z]+_(\d+)/g, 'sprite_$1')
+        .replace(/\bquest_\d+_/g, 'quest_');
 }
 
 /**
  * The end-of-run fingerprint. The totals are there to be read by a person; the
  * hashes and `randomDraws` are what make it strong.
+ *
+ * @param {{stableIds?: boolean}} [options] `stableIds`: leave the wall-clock time out of ids
  */
-export function fingerprint() {
+export function fingerprint({ stableIds = false } = {}) {
+    const hash = stableIds ? (text) => fnv1a(withoutIdTimes(text)) : fnv1a;
     const s = GameState.state;
     let uses = 0;
     for (const t of BoardState.tokens()) uses += Number(t.usesRemaining) || 0;
@@ -107,11 +123,11 @@ export function fingerprint() {
         sprites: (s.board?.sprites || []).length,
         gameTimeMs: s.time?.gameTimeMs,
         // The strong part.
-        tokensHash: tokensHash(),
-        bankHash: bankHash(s),
-        heroHash: heroHash(s),
-        spriteHash: spriteHash(s),
-        binHash: binHash(s),
+        tokensHash: hash(tokenLines().join('\n')),
+        bankHash: bankHash(s, hash),
+        heroHash: heroHash(s, hash),
+        spriteHash: spriteHash(s, hash),
+        binHash: binHash(s, hash),
         randomDraws: globalThis.__bench.draws()
     };
 }

@@ -46,3 +46,33 @@ Remove `TimeBankManager`, the hidden widget, its presets and save fields
 **Done when:** a save closed for 24 h (simulated by editing `savedAt` on a
 test slot) catches up in under 30 s with the bar, ends identical to a live run
 of the same time, and shows the summary.
+
+## Owner eye-check B (2026-10-09): fixes on `crunch/offline` before merging
+
+O1–O4 as built were seen. **Functionally approved**; the changes are visual
+plus one option:
+
+- The summary doesn't fit the game's style. **Item rows must look as item
+  rows do elsewhere in the game** (the Bank / Token Summary row style), not a
+  bespoke two-column list.
+- **Smoother entrance**: the summary's rows fade in and slide in from the
+  side (cheap: opacity and transform only; log the cost).
+- **Reject the offline time**: the summary gets a second button, **Load as I
+  left it**, which discards the catch-up and reloads the untouched
+  pre-catch-up save (the backup the crash-safe save keeps). The catch-up
+  still always runs first (owner ruling: undo on the summary, not a prompt
+  before).
+
+**Second look (owner, same day):** definitely an improvement; remaining
+rulings:
+- **Item Bars.** Items are shown with the Token inspection panel's **Item
+  Bar** (the Outputs design): the item sprite with its hover zoom, the count
+  abbreviated by default (`5.9k`) and switching to the exact number on
+  hover (`5,900`). Wider here than in the inspection panel. Not a bespoke row.
+- **Simpler wording.** "Items produced" instead of "Made, waiting on the
+  mat"; the other headings simplified in the same spirit (e.g. "Items
+  banked", "Items spent"). Button: **"Return to the Guild"**.
+- **Buttons stacked**, one above the other (side by side pushed out of the
+  window): "Return to the Guild" first as the primary choice, "Load as I
+  left it" below it, **with a confirmation** before it discards the catch-up.
+

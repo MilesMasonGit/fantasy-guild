@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useEngine } from './useEngine';
 import isEqual from 'fast-deep-equal/es6';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import { UI_LISTENER } from '../../systems/core/EventBus.js';
 
 /**
  * Subscribe to GameState via the EventBus.
@@ -105,7 +106,7 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
                 setState(next);
             });
         };
-        const cleanupFns = eventsRef.current.map(event => EventBus.subscribe(event, handleStateChange));
+        const cleanupFns = eventsRef.current.map(event => EventBus.subscribe(event, handleStateChange, UI_LISTENER));
         return () => cleanupFns.forEach(cleanup => cleanup());
     }, [EventBus, GameState]);
 

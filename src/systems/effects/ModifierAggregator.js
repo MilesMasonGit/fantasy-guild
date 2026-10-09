@@ -1,5 +1,6 @@
 import { EFFECT_TYPES, TARGET_CATEGORIES } from './constants.js';
 import { COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
+import * as GameClock from '../core/GameClock.js';
 
 /**
  * Three-Bucket math:  Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
@@ -264,7 +265,7 @@ export class ModifierAggregator {
      * @private
      */
     _forEachMatching(effectType, category, fn) {
-        const now = Date.now();
+        const now = GameClock.now();
         let expiredFound = false;
 
         for (const [sourceId, mods] of this.modifiers) {
@@ -301,7 +302,7 @@ export class ModifierAggregator {
      * Remove all expired modifiers
      */
     purgeExpired() {
-        const now = Date.now();
+        const now = GameClock.now();
         let changed = false;
 
         for (const [sourceId, mods] of this.modifiers) {

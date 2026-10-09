@@ -453,11 +453,12 @@ drawers**. The menu can be flipped to the right.
 ## 10. Time and saving
 
 - **Game time** drives everything (cycles, spawns, quests). A tick is clamped
-  to 1 s; longer gaps are banked.
-- **Time Bank** — **Built but hidden** (`SHOW_TIME_BANK = false`): time away
-  (up to 24 h) is banked on load and could be spent at 2×/5×/10× speed. **To be
-  replaced by real offline progress** — the game simulates time away when you
-  return (crunch track, owner 2026-10-06).
+  to 1 s; longer gaps are caught up.
+- **Offline progress** — **Built (brief 40)**: time away from a closed game or
+  a sleeping PC (up to 24 h; the rest is dropped) is played by the real engine,
+  sped up, behind a loading bar, then a "While you were away" summary. Gaps
+  under 2 minutes (a background browser tab) are played quietly. It replaced
+  the Time Bank, which is gone.
 - **Saves**: 3 slots in browser `localStorage` with a one-step backup;
   autosave every 10 min by default. **Saves from another version are refused,
   not migrated** (`GAME_VERSION = '0.8.0'`), and that stays the policy **until
@@ -519,10 +520,10 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md)
   and its [roadmap](../active/class_rework_v2_roadmap.md). The 4 Academies and
   8 master-class Tokens are owner content still to author.
-- **Real offline progress — Planned for the crunch**, replacing the Time Bank.
+- **Real offline progress — Built (brief 40)**; see section 10.
 - **Terrain — Dormant, returns in the crunch** after the Atlas works, as a
   major rework (owner 2026-10-06).
-- **Dormant**: Time Bank widget, energy and drinking, Villager heroes,
+- **Dormant**: energy and drinking, Villager heroes,
   Map bursts and most Map Tokens, `data/stations.json` (nothing loads it).
 - **Latent** (code ready, no content): gear, statuses, ranged/magic enemies,
   rule upkeep, most statement verbs and moments.
@@ -569,7 +570,7 @@ realistic, ≈ 1.9 ms at 300 Tokens (code review round 3).
 | **Banked skill** | A skill set aside by a job change, kept at its level. |
 | **Hostile / ambush** | An enemy that attacks heroes near its spawner. |
 | **Wounded** | 5 minutes out after defeat. |
-| **Time Bank** | Banked time away, spendable as speed-up (hidden). |
+| **Catch-up** | Playing time away (a closed game or a sleeping PC, up to 24 h) on return, with a loading bar and a "While you were away" summary. |
 | **Tempo / purpose / anchor** | CMS economy terms: a cycle-time band; what a producer is for; the source that sets an item's value. |
 | **Atlas / Region** | Planned: crafting and moving between generated maps. |
 

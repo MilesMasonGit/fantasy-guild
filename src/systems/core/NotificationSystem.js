@@ -6,6 +6,14 @@ import { ENGINE_EVENTS } from './engineEvents.js';
 const queue = [];
 let notificationId = 0;
 
+/** While true (a catch-up), nothing is shown: the catch-up's summary reports instead. */
+let quiet = false;
+
+/** Stand toasts down, or bring them back. */
+export function setQuiet(on) {
+    quiet = !!on;
+}
+
 // Configuration
 const config = {
     groupingWindow: 5000     // Group matching items within 5 seconds
@@ -23,6 +31,7 @@ const config = {
  * @returns {number} Notification ID
  */
 export function notify(message, type = 'info', options = {}) {
+    if (quiet) return null;
     const maxVisible = SettingsManager.get('notifications.maxVisible') ?? 10;
 
     const {

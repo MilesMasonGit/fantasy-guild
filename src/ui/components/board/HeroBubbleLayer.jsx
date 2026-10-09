@@ -5,7 +5,7 @@ import { addMoment, liveMoments, stackOf, momentText, speaksMoment, levelUpFrom,
 import { useMatFit } from './MatFitContext.jsx';
 import { BubbleText } from './BubbleText.jsx';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
@@ -76,27 +76,27 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 const key = `level:${skillName}`;
                 const from = levelUpFrom(momentsRef.current.get(heroId) || [], key, oldLevel ?? newLevel - 1, Date.now());
                 sayRef.current(heroId, 'levelUp', { key, from, text: momentText.levelUp(skillName, newLevel, newLevel - from) });
-            }),
+            }, UI_LISTENER),
             // The hero whose work spent a Token's last charge says so.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => {
                 if (!p?.exhaustedBy || !p.typeId) return;
                 const name = getTokenType(p.typeId)?.name || tokenName(p.typeId) || p.typeId;
                 sayRef.current(p.exhaustedBy, 'depleted', { key: `depleted:${p.typeId}`, text: momentText.depleted(name) }, DEPLETED_TTL_MS);
-            }),
+            }, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
                 if (p?.reason !== 'arrived' || !p.heroId || !p.instanceId) return;
                 const token = BoardState.getTokenById(p.instanceId);
                 if (!token) return;
                 const name = getTokenType(token.typeId)?.name || tokenName(token.typeId) || token.typeId;
                 sayRef.current(p.heroId, 'arrived', { key: 'arrived', text: momentText.arrived(name) });
-            }),
+            }, UI_LISTENER),
             // The flag could not be pinned to the Token it was dropped on, so the hero says
             // why in their stuck-line words.
             EventBus.subscribe(BOARD_EVENTS.PIN_REFUSED, (p) => {
                 if (!p?.heroId) return;
                 const text = pinRefusedLineFor(p.instanceId, p.reason);
                 if (text) sayRef.current(p.heroId, 'pinRefused', { key: 'pinRefused', text: momentText.pinRefused(text) });
-            })
+            }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());
     }, []);
@@ -166,7 +166,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const following = anchored.some(a => a.live);
     useLayoutEffect(() => {
         if (!following) return undefined;
-        return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, () => setNow(Date.now()));
+        return EventBus.subscribe(BOARD_EVENTS.HEROES_WALKED, () => setNow(Date.now()), UI_LISTENER);
     }, [following]);
     const offsets = layoutStacks(
         anchored.map(a => ({ id: a.h.heroId, x: a.x, y: a.y, ...(sizesRef.current.get(a.h.heroId) || guessSize(a.stack)) })),

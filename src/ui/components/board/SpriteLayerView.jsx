@@ -11,7 +11,7 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
@@ -119,7 +119,7 @@ const LootSprite = React.memo(function LootSprite({ sprite, allSprites = [], onC
                 setIsAbsorbingPulse(true);
                 setTimeout(() => setIsAbsorbingPulse(false), 400);
             }
-        });
+        }, UI_LISTENER);
         return unsub;
     }, [sprite.id]);
 
