@@ -212,13 +212,13 @@ describe('the layout', () => {
         });
 
         it('with no room left at the comfortable spacing, nodes pack down to the game\'s gap, never closer', () => {
-            // Only a strip down the right edge is allowed: about thirty fit there comfortably.
-            const allows = (typeId, point) => point.x > MAT.w - 400;
-            const summary = budget([base('b', 48, [{ typeId: 'oak', weight: 1 }])], { cap: 128 });
+            // A narrow mat with a full budget: the comfortable spacing would need about twice the room.
+            const narrow = { w: 760, h: 1126 };
+            const summary = budget([base('b', 1000, [{ typeId: 'oak', weight: 1 }])], { cap: 128 });
             for (const seed of SEEDS.slice(0, 6)) {
-                const result = layout(summary, options(seed, { allows }));
+                const result = layout(summary, options(seed, { mat: narrow }));
                 expect(result.unplaced).toEqual([]);
-                expect(problemsOf(result)).toEqual([]);
+                expect(problemsOf(result, narrow)).toEqual([]);
                 const closest = Math.min(...result.nodes.flatMap((a, i) => result.nodes.slice(i + 1)
                     .map(b => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2))));
                 expect(closest).toBeLessThan(COMFORT_GAP);

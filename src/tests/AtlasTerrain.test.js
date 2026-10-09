@@ -83,13 +83,13 @@ describe('the terrain map', () => {
 
     it('small Tokens of two biomes packed close still each stand on their own ground', () => {
         // Packed to the game's own gap (31 u for two small bodies), a node's nearest neighbour can
-        // be nearer the centre of its cell than it is. A narrow allowed strip forces that packing.
+        // be nearer the centre of its cell than it is. A narrow mat and a big budget force that.
         const small = () => 32;
-        const allows = (typeId, point) => point.x > MAT.w - 260;
-        const summary = budget([base('forest', 1000, [{ typeId: 'sapling', weight: 1 }]), base('mountain', 1000, [{ typeId: 'pebble', weight: 1 }])], { cap: 192 });
-        for (const seed of SEEDS) {
-            const result = layout(summary, options(seed, { artRadius: small, allows }));
-            expect(result.nodes.length).toBeGreaterThan(80);
+        const narrow = { w: 760, h: 1126 };
+        const summary = budget([base('forest', 1000, [{ typeId: 'sapling', weight: 1 }]), base('mountain', 1000, [{ typeId: 'pebble', weight: 1 }])], { cap: 512 });
+        for (const seed of SEEDS.slice(0, 5)) {
+            const result = layout(summary, options(seed, { artRadius: small, mat: narrow }));
+            expect(result.nodes.length).toBeGreaterThan(200);
             for (const n of result.nodes) expect(terrainAt(result.terrain, n.x, n.y)).toBe(terrainOfBiome(summary, n.biome));
         }
     });
