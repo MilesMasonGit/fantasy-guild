@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -44,17 +44,13 @@ export function dockHeroDragPayload(heroId, hero) {
  * this figure or the dock around it.
  * Click, double-click, drag onto the mat, drop an item to equip, drop a flag to recall and
  * drop another dock hero to reorder all behave as the old tab did.
+ * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
+ * drag start, end and change of target. The hooks live in this thin shell, which works out the
+ * few things the figure draws from a drag (lifted, a drop cue, held); the figure itself
+ * (`DockHeroFigureBody`) is memoised on those, so a drag elsewhere does not redraw it.
  */
-export const DockHeroFigure = ({
-    heroId,
-    index = null,
-    heroIds = [],
-    artPx = 128,
-    isSelected = false,
-    onSelect,
-    onDoubleClick,
-    onReorder
-}) => {
+export const DockHeroFigure = memo(function DockHeroFigure(props) {
+    const { heroId, index = null, heroIds = [], onReorder } = props;
     const [isHovered, setIsHovered] = useState(false);
     const [isDragSettling, setIsDragSettling] = useState(false);
     const engine = useEngine();
@@ -73,38 +69,7 @@ export const DockHeroFigure = ({
         return undefined;
     }, [globalDragging]);
 
-    // Flat projection per the useGameState selector contract: `hp` is rebuilt fresh from
-    // primitives each evaluation, never the store's own nested object, so an in-place HP
-    // mutation is actually seen as a change.
-    const hero = useGameState(
-        state => {
-            const h = (state.heroes || []).find(x => x.id === heroId);
-            return h ? {
-                name: h.name,
-                spriteId: h.spriteId,
-                icon: h.icon,
-                heroSprite: h.heroSprite,
-                classId: h.classId,
-                status: h.status,
-                hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
-            } : null;
-        },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
-        null,
-        { deps: [heroId] }
-    );
-
-    // Out on the mat or walking home: `HERO_MOVED` announces every plant, recall and defeat,
-    // `HEROES_WALKED` a hero arriving home.
-    const statusState = useGameState(
-        () => Flags.statusOf(heroId).state,
-        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
-        null,
-        { deps: [heroId] }
-    );
-
-    const bubbles = useHeroBarBubbles(heroId);
-
+    const hero = useDockHero(heroId);
     const justDroppedRef = useRef(false);
 
     const drag = useEntityDrag({
@@ -134,8 +99,92 @@ export const DockHeroFigure = ({
             }
         }
     });
+    const nodeRef = useMemo(() => mergeRefs(drag.setNodeRef, drop.setNodeRef), [drag.setNodeRef, drop.setNodeRef]);
+
+    const carried = drop.activePayload;
+    const itemCue = drop.valid && globalDragging && carried?.kind === DRAG_KIND.ITEM;
+    const heroCue = drop.valid && globalDragging && carried?.kind === DRAG_KIND.HERO && !isRecallDrop(carried);
+    const sourceIndex = heroCue ? heroIds.indexOf(carried.heroId) : -1;
+    const targetIndex = index ?? heroIds.indexOf(heroId);
+    const insertAfter = sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex;
+    const lifted = isHovered && !globalDragging && !isDragSettling && !drag.isDragging;
 
     if (!hero) return null;
+    return (
+        <DockHeroFigureBody
+            heroId={heroId}
+            artPx={props.artPx}
+            isSelected={props.isSelected}
+            onSelect={props.onSelect}
+            onDoubleClick={props.onDoubleClick}
+            hero={hero}
+            lifted={lifted}
+            held={drag.isDragging}
+            itemCue={itemCue}
+            heroCue={heroCue}
+            insertAfter={insertAfter}
+            nodeRef={nodeRef}
+            handleProps={drag.handleProps}
+            droppableProps={drop.droppableProps}
+            onHoverChange={setIsHovered}
+            justDroppedRef={justDroppedRef}
+        />
+    );
+});
+
+/**
+ * Flat projection per the useGameState selector contract: `hp` is rebuilt fresh from primitives
+ * each evaluation, never the store's own nested object, so an in-place HP mutation is actually
+ * seen as a change.
+ */
+function useDockHero(heroId) {
+    return useGameState(
+        state => {
+            const h = (state.heroes || []).find(x => x.id === heroId);
+            return h ? {
+                name: h.name,
+                spriteId: h.spriteId,
+                icon: h.icon,
+                heroSprite: h.heroSprite,
+                classId: h.classId,
+                status: h.status,
+                hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
+            } : null;
+        },
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
+        null,
+        { deps: [heroId] }
+    );
+}
+
+const DockHeroFigureBody = memo(function DockHeroFigureBody({
+    heroId,
+    hero,
+    artPx = 128,
+    isSelected = false,
+    onSelect,
+    onDoubleClick,
+    lifted = false,
+    held = false,
+    itemCue = false,
+    heroCue = false,
+    insertAfter = false,
+    nodeRef,
+    handleProps,
+    droppableProps,
+    onHoverChange,
+    justDroppedRef
+}) {
+    // Out on the mat or walking home: `HERO_MOVED` announces every plant, recall and defeat,
+    // `HEROES_WALKED` a hero arriving home.
+    const statusState = useGameState(
+        () => Flags.statusOf(heroId).state,
+        [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, ENGINE_EVENTS.STATE_CHANGED],
+        null,
+        { deps: [heroId] }
+    );
+
+    const bubbles = useHeroBarBubbles(heroId);
 
     const deployed = isDeployedStatus(statusState);
     const isWounded = hero.status === 'wounded';
@@ -144,7 +193,6 @@ export const DockHeroFigure = ({
     const pct = hpPercent(hero.hp);
     const tone = hpTone(pct);
 
-    const lifted = isHovered && !globalDragging && !isDragSettling && !drag.isDragging;
     const offset = dockArtOffset(artPx, { deployed, hovered: lifted });
     const filter = dockArtFilter({ deployed, hovered: lifted });
 
@@ -152,22 +200,15 @@ export const DockHeroFigure = ({
     const animArt = sprite ? resolveAnimationPath(sprite) : null;
     const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hero_recruit_0');
 
-    const isDraggingItem = globalDragging && drop.activePayload?.kind === DRAG_KIND.ITEM;
-    const isDraggingHero = globalDragging && drop.activePayload?.kind === DRAG_KIND.HERO && !isRecallDrop(drop.activePayload);
-    const isHeroDropValid = drop.valid && isDraggingHero;
-    const sourceIndex = isHeroDropValid ? heroIds.indexOf(drop.activePayload.heroId) : -1;
-    const targetIndex = index ?? heroIds.indexOf(heroId);
-    const insertAfter = sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex;
-
     // The sprite frame's top edge sits half the art above the strip's bottom; the labels sit
     // just above that, whatever the art is doing.
     const labelBottom = artPx / 2 + DOCK_LABEL_GAP_PX;
 
     return (
         <div
-            ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
-            {...drag.handleProps}
-            {...drop.droppableProps}
+            ref={nodeRef}
+            {...handleProps}
+            {...droppableProps}
             data-dock-hero={heroId}
             data-dock-deployed={deployed ? 'true' : 'false'}
             data-dock-hover={lifted ? 'true' : 'false'}
@@ -183,8 +224,8 @@ export const DockHeroFigure = ({
                 e.stopPropagation();
                 onDoubleClick?.(heroId);
             }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={() => onHoverChange(true)}
+            onMouseLeave={() => onHoverChange(false)}
             style={{
                 height: DOCK_STRIP_PX,
                 width: '100%'
@@ -192,11 +233,11 @@ export const DockHeroFigure = ({
             className={cn(
                 'relative select-none cursor-pointer active:cursor-grabbing',
                 lifted ? 'z-50' : 'z-40',
-                drag.isDragging && 'opacity-30'
+                held && 'opacity-30'
             )}
         >
             {/* Reorder cue: a gold line on the side the dragged hero lands. */}
-            {isHeroDropValid && (
+            {heroCue && (
                 <div
                     className={cn(
                         'absolute top-0 bottom-0 w-0.5 z-50 pointer-events-none bg-gi-gold shadow-[0_0_10px_#f59e0b]',
@@ -206,7 +247,7 @@ export const DockHeroFigure = ({
             )}
 
             {/* Item drop cue: a soft glow in the strip under the hero. */}
-            {drop.valid && isDraggingItem && (
+            {itemCue && (
                 <div className="absolute inset-x-1 inset-y-0 rounded-t-lg bg-gi-primary/20 ring-2 ring-gi-primary/70 pointer-events-none" />
             )}
 
@@ -287,12 +328,11 @@ export const DockHeroFigure = ({
                     heroId={heroId}
                     bubbles={bubbles}
                     bottom={labelBottom + LABEL_PX}
-                    passive={globalDragging}
                 />
             )}
         </div>
     );
-};
+});
 
 /** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of the name. */
 const LABEL_PX = 24;
@@ -303,7 +343,8 @@ const LABEL_PX = 24;
  * hero's slot; a line may wrap to two. A click on a bubble fades out and clears that one bubble
  * without opening the hero; they let the pointer through while something is being dragged.
  */
-const BarBubbles = ({ heroId, bubbles, bottom, passive }) => {
+const BarBubbles = ({ heroId, bubbles, bottom }) => {
+    const { isDragging: passive } = useActiveDrag();
     const [page, setPage] = useState(0);
     const [fading, setFading] = useState(() => new Set());
     const pages = Math.max(1, Math.ceil(bubbles.length / BAR_BUBBLES_SHOWN));

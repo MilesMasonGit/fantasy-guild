@@ -2,7 +2,8 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
-import { DeckDndProvider, DropTarget } from '../ui/dnd/DndKit.jsx';
+import { DeckDndProvider, DropTarget, useEntityDrag } from '../ui/dnd/DndKit.jsx';
+import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -33,7 +34,7 @@ vi.mock('../ui/components/drawer/HeroInspectionSheet.jsx', () => ({
 
 // Render counters: each wraps a part drawn once per render of the thing it belongs to. A Token's
 // art, a flag's mark and a hero's figure are not redrawn unless their owner rendered.
-const drawn = { token: new Map(), flag: new Map(), matHero: new Map(), dockHero: new Map(), mat: new Map() };
+const drawn = { token: new Map(), flag: new Map(), matHero: new Map(), dockHero: new Map(), mat: new Map(), slot: new Map() };
 const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
 vi.mock('../ui/components/board/TokenHitArt.jsx', async (orig) => {
     const real = await orig();
@@ -44,6 +45,16 @@ vi.mock('../ui/components/board/FlagMark.jsx', async (orig) => {
     const real = await orig();
     const FlagMark = (props) => { if (props.alt) bump(drawn.flag, props.alt); return real.FlagMark(props); };
     return { ...real, FlagMark, default: FlagMark };
+});
+// The hero bar's slots: a motion box that re-measures its layout each time it renders.
+vi.mock('framer-motion', async (orig) => {
+    const real = await orig();
+    const SlotDiv = React.forwardRef((props, ref) => {
+        if (props['data-dock-slot']) bump(drawn.slot, 'slot');
+        return React.createElement(real.motion.div, { ...props, ref });
+    });
+    const motion = new Proxy(real.motion, { get: (t, k) => (k === 'div' ? SlotDiv : t[k]) });
+    return { ...real, motion };
 });
 // Drawn on every render of the mat itself (MatBoard), and of nothing else.
 vi.mock('../ui/components/board/HeroBubbleLayer.jsx', async (orig) => {
@@ -282,5 +293,74 @@ describe('⭐ re-ranking the stack redraws no Token: their z is written, not ren
         expect(dd[b.id]).toBe(0);
         expect(dd[c.id]).toBe(0);
         expect(dd[d.id]).toBe(0);
+    });
+});
+
+describe('⭐ the hero bar: a drag redraws only the heroes it is about', () => {
+    const engine = { GameState, EventBus, BoardPlacement: { recallHeroById: vi.fn() }, EquipmentManager: { equipItem: vi.fn() } };
+    const hero = (id) => ({ id, name: id, spriteId: 'hero_recruit_0', hp: { current: 100, max: 100 }, status: 'idle', equipment: {} });
+
+    function Item() {
+        const d = useEntityDrag({ id: 'item-src', kind: DRAG_KIND.ITEM, payload: { itemId: 'item_coal' } });
+        return h('div', { ref: d.setNodeRef, ...d.handleProps, 'data-testid': 'item' });
+    }
+
+    function bar() {
+        GameState.state.heroes = ['h1', 'h2', 'h3', 'h4'].map(hero);
+        const view = render(
+            h(EngineContext.Provider, { value: engine },
+                h(DeckDndProvider, null, h(Item), h(BottomHeroDock, { selectedHeroId: null })))
+        );
+        const fig = (id) => view.container.querySelector(`[data-dock-hero="${id}"]`);
+        view.getByTestId('item').getBoundingClientRect = () => box(0, 0, 50, 50);
+        view.container.querySelector('[data-bottom-hero-dock]').getBoundingClientRect = () => box(0, 900, 1600, 100);
+        ['h1', 'h2', 'h3', 'h4'].forEach((id, i) => { fig(id).getBoundingClientRect = () => box(500 + i * 100, 900, 100, 100); });
+        expect(drawn.dockHero.size).toBe(4);
+        return { ...view, fig };
+    }
+
+    it('an item picked up elsewhere and carried along the bar redraws only the hero it leaves and the one it enters', () => {
+        const { getByTestId, container } = bar();
+        let before = snap();
+        const slotsBefore = drawn.slot.get('slot') || 0;
+        act(() => {
+            fireEvent.pointerDown(getByTestId('item'), ptr(25, 25));
+            fireEvent.pointerMove(document, ptr(60, 25));
+        });
+        expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
+        expect(Object.values(delta(drawn.dockHero, before.dockHero)).every(n => n === 0)).toBe(true);
+        act(() => { fireEvent.pointerMove(document, ptr(650, 950)); });
+        expect(container.querySelector('[data-dock-hero="h2"] [class*="ring-gi-primary"]')).not.toBeNull();
+        before = snap();
+        act(() => { fireEvent.pointerMove(document, ptr(750, 950)); });
+        const d = delta(drawn.dockHero, before.dockHero);
+        expect(d.h2).toBeGreaterThan(0);
+        expect(d.h3).toBeGreaterThan(0);
+        expect(d.h1).toBe(0);
+        expect(d.h4).toBe(0);
+        expect(container.querySelector('[data-dock-hero="h3"] [class*="ring-gi-primary"]')).not.toBeNull();
+        expect(container.querySelector('[data-dock-hero="h2"] [class*="ring-gi-primary"]')).toBeNull();
+        // The bar's slots (which re-measure their layout for the reorder animation) never redrew.
+        expect((drawn.slot.get('slot') || 0) - slotsBefore).toBe(0);
+        act(() => { fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }); });
+    });
+
+    it('a dock hero carried along the bar: leaving one hero for the next redraws those two', () => {
+        const { fig, container } = bar();
+        act(() => {
+            fireEvent.pointerDown(fig('h1'), ptr(550, 950));
+            fireEvent.pointerMove(document, ptr(580, 950));
+        });
+        expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
+        act(() => { fireEvent.pointerMove(document, ptr(650, 950)); });
+        const before = snap();
+        act(() => { fireEvent.pointerMove(document, ptr(750, 950)); });
+        const d = delta(drawn.dockHero, before.dockHero);
+        expect(d.h3).toBeGreaterThan(0);
+        expect(d.h1).toBe(0);
+        expect(d.h4).toBe(0);
+        expect(container.querySelector('[data-dock-hero="h3"] .bg-gi-gold')).not.toBeNull();
+        expect(container.querySelector('[data-dock-hero="h2"] .bg-gi-gold')).toBeNull();
+        act(() => { fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }); });
     });
 });

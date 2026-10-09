@@ -570,13 +570,19 @@ export function useEntityDrop({ id, surface = DND_SURFACE.BOARD, accepts, onDrop
     });
     const payload = active?.data?.current || null;
     const canAccept = !!(payload && accepts?.(payload));
+    // The same object while the id and surface hold, so a memoised drop target is not redrawn
+    // for a fresh copy.
+    const droppableProps = React.useMemo(
+        () => ({ 'data-dnd-droppable-id': id, 'data-dnd-surface': surface }),
+        [id, surface]
+    );
     return {
         setNodeRef,
         isOver,
         valid: isOver && canAccept,
         invalid: isOver && !canAccept,
         activePayload: payload,
-        droppableProps: { 'data-dnd-droppable-id': id, 'data-dnd-surface': surface }
+        droppableProps
     };
 }
 
