@@ -3,7 +3,7 @@ import { ART_PX } from '../../../config/matGeometry.js';
 import { boardArtSteps } from '../base/TokenSprite.jsx';
 
 /**
- * The horizontal hero dock is a dark strip with the heroes standing in it. Each hero is drawn
+ * The horizontal hero dock is a strip under the mat with the heroes standing in it. Each hero is drawn
  * at the mat's own art size, idling, with the strip's bottom edge cutting them off at the
  * waist: only the top half of the sprite frame shows. Name and health bar float above the
  * head. Everything here is plain numbers and predicates so the tests can pin them without
@@ -13,9 +13,13 @@ import { boardArtSteps } from '../base/TokenSprite.jsx';
 /** The strip's height in screen px. Fixed: a height that followed the art size would change the mat's fit and could oscillate. */
 export const DOCK_STRIP_PX = 64;
 
-/** A hero's slot at full width, and the narrowest it shrinks to on a small window. */
-export const DOCK_SLOT_PX = 88;
-export const DOCK_SLOT_MIN_PX = 48;
+/**
+ * A hero's slot at full width, and the narrowest it shrinks to on a small window. Sized so
+ * eight heroes (the owner's planned roster cap) fit the bar at the usual window width, each with room
+ * for a level-up bubble that never reaches a neighbour.
+ */
+export const DOCK_SLOT_PX = 144;
+export const DOCK_SLOT_MIN_PX = 56;
 
 /** Gap between the top of the sprite frame and the bottom of the name/HP block. */
 export const DOCK_LABEL_GAP_PX = 2;

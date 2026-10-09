@@ -3,6 +3,7 @@ import { MAT_Z } from './matLayers.js';
 import { blockedLineFor, readyToSpeak, pinRefusedLineFor } from './heroBubbles.js';
 import { addMoment, liveMoments, stackOf, momentText, speaksMoment, levelUpFrom, DEPLETED_TTL_MS } from './heroSpeech.js';
 import { useMatFit } from './MatFitContext.jsx';
+import { BubbleText } from './BubbleText.jsx';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -229,7 +230,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
                                 data-hero-bubble-kind={b.kind}
                                 className="relative whitespace-nowrap px-2 py-1 rounded-md border border-yellow-500/70 bg-yellow-950/95 text-yellow-100 text-[11px] font-bold shadow-lg"
                             >
-                                {b.text}
+                                {b.id.startsWith('level:') ? <BubbleText text={b.text} /> : b.text}
                                 {/* The tail is on the bubble nearest the head, and points at the
                                     hero even when the stack has been nudged aside. */}
                                 {i === stack.length - 1 && (

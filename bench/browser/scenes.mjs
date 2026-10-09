@@ -43,7 +43,8 @@ export async function clickUntil(page, selector, opened, what, tries = 3) {
     return tries;
 }
 
-export const BANK_OPEN = `!!document.querySelector('[data-dnd-region="drawer"]:not([data-shop-drawer]):not([data-bottom-hero-dock])')`;
+// The hero panel is a drawer region too, and it stays open beside the Bank: not the Bank.
+export const BANK_OPEN = `!!document.querySelector('[data-dnd-region="drawer"]:not([data-shop-drawer]):not([data-bottom-hero-dock]):not([data-hero-panel] *)')`;
 export const SHOP_OPEN = `document.querySelector('[data-shop-drawer]')?.getAttribute('data-shop-drawer-state') === 'open'`;
 
 async function openBank(page) {

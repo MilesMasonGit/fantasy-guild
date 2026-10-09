@@ -128,6 +128,35 @@ the flag**.
   hero's name and its reach ring, as today. It is otherwise just something to
   drag.
 
+## Work rules grid — locked (owner eye-check and interview, 2026-10-09)
+
+Supersedes the side-panel rules above (H3 as first built). The owner saw the
+gear-and-side-panel version and ruled it should work like Rimworld's work tab:
+
+- **One Work Rules button** at the left end of the horizontal hero bar, the
+  only route to the rules (no gear on heroes or flags). The hero panel keeps a
+  small "Work rules" link that opens the drawer with that hero's row lit.
+- **A drawer pops up from behind the hero bar**, sized to the roster (one row
+  per hero, max 8), the mat visible above it. The button toggles it; Esc
+  closes it; mat clicks leave it open.
+- **A grid**: rows are heroes (small portrait and name as the row header;
+  hovering a row highlights that hero on the mat). Columns are **all 25
+  skills** in the order combat, Starting, specialist under group headers
+  with a hairline between groups, then **one Fight column** (the combat-skill
+  columns are level tints only, not rules). A cell for a skill the hero does
+  not hold is blank, dimmed and unclickable.
+- **Cells**: by default a tick (allowed) or empty (disallowed). A **priority
+  mode** switch at the top of the drawer turns every cell into its number.
+  **Left-click cycles up, right-click cycles down**; in priority mode the
+  cycle is 1→2→3→4→5→off→1. Priorities stay **1–5**; a skill switched on
+  starts at **1**. Each cell's background is **tinted by the hero's level**
+  (dark at 1, bright at 99); hovering shows the game's own tooltip with hero,
+  skill and level.
+- **Bulk**: clicking a row header allows or disallows the whole row; clicking
+  a column header allows or disallows the whole column. No copy-rules list.
+- Uses the game's orange gear icon (the Stations' one) on the button. Small
+  screens are not a concern yet (owner).
+
 ## Hero bar and hero panel — locked (owner interview, 2026-10-07)
 
 - **A general overhaul**: the owner dislikes the current look (thick borders,

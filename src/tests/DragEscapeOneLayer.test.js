@@ -26,6 +26,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { EngineContext } from '../ui/context/EngineContext';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
+import { BankHeroPanel } from '../ui/components/dock/BankHeroPanel.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { toggleDisallowMode, setDisallowMode } from '../ui/hooks/useDisallowMode.js';
 import { DisallowModeToggle } from '../ui/components/board/MatDisallowControls.jsx';
@@ -73,7 +74,8 @@ describe('Escape mid-drag only cancels the drag (CR3-409)', () => {
         const { container } = render(
             h(EngineContext.Provider, { value: engine },
                 h(DeckDndProvider, null,
-                    h(BottomHeroDock, { selectedHeroId: 'h1', onCloseHero })))
+                    h(BottomHeroDock, { selectedHeroId: 'h1' }),
+                    h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: false, onCloseHero })))
         );
 
         act(() => startRealDrag(container));
@@ -92,7 +94,8 @@ describe('Escape mid-drag only cancels the drag (CR3-409)', () => {
         render(
             h(EngineContext.Provider, { value: engine },
                 h(DeckDndProvider, null,
-                    h(BottomHeroDock, { selectedHeroId: 'h1', onCloseHero })))
+                    h(BottomHeroDock, { selectedHeroId: 'h1' }),
+                    h(BankHeroPanel, { selectedHeroId: 'h1', showTabs: false, onCloseHero })))
         );
 
         act(() => fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }));

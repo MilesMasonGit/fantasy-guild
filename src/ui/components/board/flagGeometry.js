@@ -2,8 +2,7 @@
 /**
  * Every number about **where a flag sprite sits** on the mat, in one place.
  * A flag stands exactly where it was let go: its pole base is the flag's own mat point.
- * Everything else (the gear and the idle chip) is measured from the box {@link flagOrigin}
- * returns. Flags may overlap freely and never push, nudge or hide each other.
+ * Flags may overlap freely and never push, nudge or hide each other.
  * The flag art is 64×64 and drawn at 2×. Measured from `hero_flag_*.png`: the pole leaves the
  * grass tuft at about (20, 58) in the art, the cloth spans x 12–62, y 11–36, and the pole's
  * top is at (10, 1).
@@ -14,13 +13,6 @@ export const FLAG_PX = 128;
 
 /** The pole's base inside the 128 px box (art (20, 58) × 2). */
 export const POLE_BASE = Object.freeze({ x: 40, y: 116 });
-
-/** The gear badge (~28 px) at the top-right of the cloth, inside the flag's box. */
-export const GEAR_PX = 28;
-export const GEAR_OFFSET = Object.freeze({ left: 96, top: 12 });
-
-/** The idle "…" chip, near the top of the pole. */
-export const IDLE_CHIP_OFFSET = Object.freeze({ left: 24, top: -6 });
 
 /**
  * Where an idle hero stands beside their flag is `HeroMotion.IDLE_SPOT`: a place they walk to,

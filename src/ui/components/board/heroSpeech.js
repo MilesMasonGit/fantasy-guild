@@ -65,7 +65,7 @@ export const momentText = {
     arrived: (token) => `Working at ${token}.`,
     idle: () => 'No work in range.',
     // `gained`: levels since this hero's last level-up bubble for the skill.
-    levelUp: (skill, level, gained) => `Leveled up ${skill} to ${level}!${gained >= 2 ? ` (+${gained})` : ''}`,
+    levelUp: (skill, level, gained) => `LVL UP! ${level} ${skill}!${gained >= 2 ? ` (+${gained})` : ''}`,
     // Said by the hero whose work spent the Token's last charge.
     depleted: (token) => `${token} Depleted`,
     // No wording of its own: the blocked sentence for its reason, already built by
@@ -97,4 +97,16 @@ export const MOMENT_SPOKEN = Object.freeze({
 /** Whether a moment of this kind (`momentText`'s key) is spoken at all. */
 export function speaksMoment(kind) {
     return MOMENT_SPOKEN[kind] === true;
+}
+
+/**
+ * A bubble's text cut into words and numbers, so the numbers can be drawn in their own colour:
+ * `LVL UP! 50 Melee! (+49)` gives `50` and `(+49)` as numbers.
+ * @returns {{text: string, num: boolean}[]}
+ */
+export function splitNumbers(text) {
+    return String(text ?? '')
+        .split(/(\(\+\d[\d,]*\)|\d[\d,]*)/)
+        .filter(part => part !== '')
+        .map(part => ({ text: part, num: /\d/.test(part) }));
 }

@@ -441,8 +441,8 @@ drawers**. The menu can be flipped to the right.
   carry an item over the mat.
 - **Guild Hall view**: the upgrade web, Hall effects panel, upgrade inspector.
 - **On the mat**: click a Token to inspect it; a station's gear badge opens the
-  recipe picker; a flag's gear badge opens its rules panel; alerts sit on
-  Tokens until fixed; loot is collected by hovering.
+  recipe picker; a flag is only dragged (hover shows its hero and reach);
+  alerts sit on Tokens until fixed; loot is collected by hovering.
 - **Settings** (5 tabs): typography and fonts, all caps, autosave, background,
   menu side, particles, volume (**master volume defaults to 0**: the game
   starts silent), Debug Mode. Nine controls are "coming soon".

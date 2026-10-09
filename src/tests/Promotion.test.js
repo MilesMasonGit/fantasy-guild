@@ -452,14 +452,14 @@ describe('Re-training is the same act as promoting (D-248)', () => {
     });
 });
 
-describe('The UI is told, so the Dock actually redraws', () => {
-    // ⚠️ Standing in for browser verification: the Dock's skill cells
-    // changing contents hangs entirely off these two events. The Dock
-    // subscribes to `heroes_updated` and projects `hero.skills`, so if the event
-    // does not fire the grid keeps showing the old job's skills and nothing
-    // looks wrong.
+describe('The UI is told, so the hero sheet actually redraws', () => {
+    // ⚠️ Standing in for browser verification: the hero sheet's skill list
+    // changing contents hangs entirely off these two events. The sheet
+    // (`HeroInspectionSheet`) subscribes to `heroes_updated` and projects
+    // `hero.skills`, so if the event does not fire it keeps showing the old
+    // job's skills and nothing looks wrong.
 
-    it('publishes heroes_updated, which is what the Dock listens to', () => {
+    it('publishes heroes_updated, which is what the hero sheet listens to', () => {
         const hero = makeQualified('fighter');
         const seen = [];
         const off = EventBus.subscribe('heroes_updated', p => seen.push(p));
@@ -486,8 +486,8 @@ describe('The UI is told, so the Dock actually redraws', () => {
         expect(seen[0].gained).toHaveLength(2);
     });
 
-    it('the projection the Dock renders changes to the new job sheet', () => {
-        // The skills projection the Dock renders: id:level pairs off hero.skills.
+    it('the projection the hero sheet renders changes to the new job sheet', () => {
+        // The skills projection the hero sheet renders: id:level pairs off hero.skills.
         const hero = makeQualified('fighter');
         const project = () => Object.entries(hero.skills)
             .map(([id, s]) => `${id}:${s.level}`).sort().join(',');

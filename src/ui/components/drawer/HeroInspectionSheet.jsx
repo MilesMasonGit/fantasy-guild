@@ -1,71 +1,67 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { getJob } from '../../../config/registries/jobRegistry.js';
-import { getAllSkills, getSkill, isCombatSkill } from '../../../config/registries/skillRegistry.js';
+import { ART_PX } from '../../../config/matGeometry.js';
 import { DockEquipmentGrid } from '../dock/DockEquipmentGrid.jsx';
-import { VitalBar } from '../base/VitalBar.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
-import { getXpProgress, xpForLevel } from '../../../utils/XPCurve.js';
+import { boardArtSteps } from '../base/TokenSprite.jsx';
+import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
+import { FlagMark } from '../board/FlagMark.jsx';
+import { WorkRulesLink } from '../dock/WorkRulesDrawer.jsx';
+import { TopBarTip } from '../board/TopBarTip.jsx';
+import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { Pencil, X, ChevronUp, ChevronDown, Clock, TrendingUp } from 'lucide-react';
+import { Feather, ChevronRight } from 'lucide-react';
+import { flagColourOf } from '../../../systems/board/FlagColours.js';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
-import { formatCompact } from '../../../utils/Formatters.js';
+import {
+    heroSkillList, skillLevelText, skillXpView, skillDetail,
+    useLockedListOpen, setLockedListOpen
+} from '../dock/heroPanelSkills.js';
 import { ENGINE_EVENTS, ORPHAN_EVENTS } from '../../../systems/core/engineEvents.js';
 
+/** Advanced and Master rows' own backgrounds. */
+const TIER_BG = {
+    advanced: 'bg-sky-900/30',
+    master: 'bg-fuchsia-900/30'
+};
+
 /**
- * HeroInspectionSheet: full detailed hero inspection sheet.
- * - Sits behind the Hero Dock tabs.
- * - Top: 128px Sprite on left; Name, Level, Job, HP, Edit & Close buttons on right.
- * - Body: 3x3 Inventory Grid, Active Skills with XP bars & expandable detail metrics, and
- * Locked Skills.
- * Locked is a state; a banked level is still the hero's. The locked block lists every registry
- * skill the hero does not currently hold. Some of those they have **earned and set down** at a
- * job change: those show their retained level, because promotion is reversible and the player
- * has no other way to see it on this surface. `HeroSkillSheet` (in the Hero Edit modal) says
- * the same thing in its 'Set aside' block; the two must not disagree.
+ * The hero panel's contents: the hero idling at twice the mat size with their flag behind, name,
+ * job and HP; the loadout grid; then one list of the skills held (combat, Starting, specialist),
+ * skills set aside at a job change, and the skills never held, shut until opened. A row opens on
+ * a click to its exact XP and rate.
+ * A banked level is still the hero's: it shows with its level, because promotion is reversible
+ * and the player has no other way to see it here.
  */
 export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
-    const scrollRef = useRef(null);
-    const [canScrollUp, setCanScrollUp] = useState(false);
-    const [canScrollDown, setCanScrollDown] = useState(false);
-    const [expandedSkillId, setExpandedSkillId] = useState(null);
-
-    const hero = useGameState(
-        state => (state.heroes || []).find(h => h.id === heroId),
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.STATE_CHANGED],
+    // Flat projection, per the useGameState selector contract: a string that changes only when
+    // something drawn here changes.
+    const signature = useGameState(
+        state => {
+            const h = (state.heroes || []).find(x => x.id === heroId);
+            if (!h) return null;
+            return JSON.stringify({
+                name: h.name, jobId: h.jobId || null, className: h.className || null,
+                spriteId: h.spriteId || null, icon: h.icon || null, classId: h.classId || null,
+                flagColour: flagColourOf(heroId),
+                hp: Math.max(0, Math.round(h.hp?.current ?? 0)), hpMax: Math.max(1, h.hp?.max ?? 100),
+                skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }])),
+                bankedSkills: Object.fromEntries(Object.entries(h.bankedSkills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
+            });
+        },
+        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.HERO_PROMOTED, ORPHAN_EVENTS.HERO_STATUS_CHANGED, ENGINE_EVENTS.STATE_CHANGED],
         null,
-        { deepClone: true, deps: [heroId] }
+        { deps: [heroId] }
     );
-
-    const checkScroll = useCallback(() => {
-        const el = scrollRef.current;
-        if (!el) return;
-        setCanScrollUp(el.scrollTop > 6);
-        setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 6);
-    }, []);
-
-    useEffect(() => {
-        checkScroll();
-        const el = scrollRef.current;
-        if (!el) return;
-        el.addEventListener('scroll', checkScroll, { passive: true });
-        window.addEventListener('resize', checkScroll);
-        return () => {
-            el.removeEventListener('scroll', checkScroll);
-            window.removeEventListener('resize', checkScroll);
-        };
-    }, [checkScroll, hero, expandedSkillId]);
-
-    const scrollUp = () => {
-        scrollRef.current?.scrollBy({ top: -140, behavior: 'smooth' });
-    };
-
-    const scrollDown = () => {
-        scrollRef.current?.scrollBy({ top: 140, behavior: 'smooth' });
-    };
+    const hero = signature ? JSON.parse(signature) : null;
+    const { rows, bankedRows, lockedRows } = heroSkillList(hero);
+    const lockedOpen = useLockedListOpen();
+    const [expandedId, setExpandedId] = useState(null);
+    const fit = useLiveMatFit();
 
     const drag = useEntityDrag({
         id: `inspect-hero-drag-${heroId}`,
@@ -75,316 +71,249 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
             kind: DRAG_KIND.HERO,
             heroId,
             name: hero?.name,
-            spriteId: hero?.spriteId || hero?.icon || hero?.heroSprite || hero?.classId,
+            spriteId: hero?.spriteId || hero?.icon,
             from: { dock: true, inspection: true }
         }
     });
 
     if (!hero) return null;
 
-    const fullSpritePath = resolveSpritePath(hero.spriteId || 'hero_recruit_0');
     const job = hero.jobId ? getJob(hero.jobId) : null;
     const jobTitle = job ? job.name : (hero.className || 'Recruit');
-    const level = Math.floor(hero.level || 1);
-
-    const activeSkillIds = Object.keys(hero.skills || {});
-    const allSkills = getAllSkills();
-
-    // Skills this hero earned and then set down at a job change. `bankedSkills` is written by
-    // PromotionSystem and is the same source `HeroSkillSheet`'s 'Set aside' block reads.
-    // ⚠️ These are NOT 'requires promotion to unlock': the level is already earned and comes
-    // back untouched on a job that uses the skill again. Listing them at 'Locked / 0%'
-    // alongside skills the hero has never touched would tell the player their progress was
-    // gone.
-    const bankedLevels = Object.fromEntries(
-        Object.entries(hero.bankedSkills || {}).map(([id, s]) => [id, s?.level ?? 1])
-    );
-
-    // Banked first — a retained level is the thing worth reading in this block.
-    const lockedSkills = Object.values(allSkills)
-        .filter(s => !activeSkillIds.includes(s.id))
-        .sort((a, b) => (bankedLevels[b.id] ? 1 : 0) - (bankedLevels[a.id] ? 1 : 0));
-
-    const bankedCount = lockedSkills.filter(s => bankedLevels[s.id] !== undefined).length;
-
-    const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
-    const hpMax = Math.max(1, hero.hp?.max ?? 100);
+    const hpPct = Math.min(100, Math.round((hero.hp / hero.hpMax) * 100));
+    const hpTone = hpPct > 50 ? 'bg-emerald-500' : hpPct > 20 ? 'bg-amber-500' : 'bg-red-500';
+    const toggle = (id) => setExpandedId(prev => (prev === id ? null : id));
 
     return (
-        <div className="flex flex-col h-full bg-[#160f0b]/98 border-2 border-r-0 border-[#8a5d45] rounded-l-2xl shadow-[0_8px_35px_rgba(0,0,0,0.95)] p-3.5 pr-20 overflow-hidden text-gi-text select-none">
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black/40 border border-[#5c3e2e]/60 shrink-0 mb-2.5">
-                <div
-                    ref={drag.setNodeRef}
-                    {...drag.handleProps}
-                    className={cn(
-                        "w-32 h-32 rounded-lg bg-black/50 border border-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner",
-                        "cursor-grab active:cursor-grabbing hover:border-gi-gold/60 transition-colors",
-                        drag.isDragging && "opacity-30"
-                    )}
-                    title="Drag hero to board tile"
-                >
-                    {fullSpritePath ? (
+        <div data-hero-panel-body={heroId} className="flex flex-col h-full min-h-0 text-gi-text select-none">
+            <div className="relative shrink-0 px-3 pt-2">
+                <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5">
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onEdit?.(heroId); }}
+                        data-hero-panel-edit
+                        aria-label="Edit hero"
+                        className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 text-gi-muted hover:text-gi-gold transition-colors cursor-pointer"
+                    >
+                        {/* ⚠️ Placeholder quill until the owner draws one. */}
+                        <Feather size={16} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+                        data-hero-panel-close
+                        aria-label="Close"
+                        className="p-0.5 rounded flex items-center justify-center cursor-pointer gi-hover-pulse"
+                    >
                         <img
-                            src={fullSpritePath.startsWith('/') ? fullSpritePath : `/${fullSpritePath}`}
-                            alt={hero.name}
-                            className="w-32 h-32 object-contain pointer-events-none select-none"
-                            style={{ imageRendering: 'pixelated' }}
+                            src="/assets/ui/ui_cancel_red.png"
+                            alt="Close"
+                            draggable={false}
+                            className="select-none pointer-events-none"
+                            style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
                         />
-                    ) : (
-                        <span className="text-6xl pointer-events-none select-none">{hero.icon || '🧑'}</span>
-                    )}
+                    </button>
                 </div>
 
-                <div className="flex-1 flex flex-col justify-between h-32 py-0.5 min-w-0">
-                    <div>
-                        <div className="flex items-center justify-between gap-1">
-                            <h3 className="text-sm font-bold text-white tracking-wide truncate" title={hero.name}>
-                                {hero.name}
-                            </h3>
-                            <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onEdit?.(heroId);
-                                    }}
-                                    className="p-1 rounded hover:bg-white/10 text-gi-muted hover:text-gi-gold transition-colors"
-                                    title="Edit Hero Name"
-                                >
-                                    <Pencil size={12} />
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onClose?.();
-                                    }}
-                                    className="p-1 rounded hover:bg-white/10 text-gi-muted hover:text-red-400 transition-colors"
-                                    title="Close Hero Inspection"
-                                >
-                                    <X size={15} />
-                                </button>
-                            </div>
-                        </div>
+                <HeroFigure
+                    hero={hero}
+                    heroId={heroId}
+                    size={2 * ART_PX * boardArtSteps(fit)}
+                    drag={drag}
+                />
 
-                        <div className="flex items-center gap-1.5 mt-1 text-xs text-gi-gold font-medium">
-                            <span>Level {level}</span>
-                            <span className="text-gi-muted">•</span>
-                            <span className="truncate text-white/80">{jobTitle}</span>
-                        </div>
+                <div className="flex flex-col gap-1 pb-2.5">
+                    <div className="flex items-baseline gap-2 min-w-0">
+                        <h3 className="min-w-0 text-sm font-bold text-white truncate">{hero.name}</h3>
+                        <span data-hero-panel-job className="ml-auto shrink-0 text-xs text-gi-muted truncate">{jobTitle}</span>
                     </div>
-
-                    <div className="w-full space-y-1">
-                        <VitalBar current={hp} max={hpMax} color="green" label="HP" />
+                    <WorkRulesLink heroId={heroId} />
+                    <div className="flex items-center gap-2">
+                        <div data-hero-panel-hp className="h-1.5 flex-1 bg-black/60 rounded-full overflow-hidden">
+                            <div className={cn('h-full transition-all duration-300', hpTone)} style={{ width: `${hpPct}%` }} />
+                        </div>
+                        <span data-hero-panel-hp-text className="shrink-0 text-[11px] tabular-nums text-white/80">
+                            {`${hero.hp.toLocaleString('en-US')} / ${hero.hpMax.toLocaleString('en-US')}`}
+                        </span>
                     </div>
                 </div>
             </div>
 
-            {canScrollUp && (
-                <button
-                    onClick={scrollUp}
-                    className="w-full py-1 bg-black/60 hover:bg-black/80 border border-white/10 hover:border-gi-gold/40 rounded-lg flex items-center justify-center text-gi-gold transition-colors shrink-0 mb-1.5 shadow active:scale-[0.99]"
-                    title="Scroll up"
-                >
-                    <ChevronUp size={14} />
-                </button>
-            )}
-
-            <div
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto space-y-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            >
-                <div className="rounded-xl bg-black/40 border border-[#5c3e2e]/60 p-2.5">
-                    <div className="flex items-center mb-1.5 px-1">
-                        <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">
-                            Inventory
-                        </span>
-                    </div>
+            <div className="flex-1 min-h-0 overflow-y-auto gi-scrollbar px-3 pb-3">
+                <div className="py-2.5 border-t border-white/5 flex justify-center">
                     <DockEquipmentGrid heroId={heroId} />
                 </div>
 
-                <div className="rounded-xl bg-black/40 border border-[#5c3e2e]/60 p-2.5 space-y-2">
-                    <div className="flex items-center px-1">
-                        <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">
-                            Active Skills
-                        </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                        {activeSkillIds.map((skillId) => {
-                            const skillData = hero.skills[skillId];
-                            const skillDef = getSkill(skillId);
-                            const isCombat = isCombatSkill(skillId);
-                            const skillLevel = skillData?.level || 1;
-                            const currentXp = skillData?.xp || 0;
-                            const prog = getXpProgress(currentXp);
-                            const nextMilestoneXp = xpForLevel(prog.level + 1);
-                            const isExpanded = expandedSkillId === skillId;
-
-                            const rate = XpRateTracker.getRate(heroId, skillId);
-                            const xpRemaining = Math.max(0, prog.nextLevelXp - prog.currentXp);
-                            const timeSecs = XpRateTracker.getTimeToNextLevelSeconds(heroId, skillId, xpRemaining);
-                            const timeFormatted = XpRateTracker.formatDuration(timeSecs);
-                            const rateFormatted = rate > 0 ? (rate < 1000 ? `${Math.round(rate)}` : formatCompact(rate, 1)) : '0';
-                            const pctFormatted = `${Math.min(100, Math.round(prog.progress * 100))}%`;
-
-                            return (
-                                <div
-                                    key={skillId}
-                                    onClick={() => setExpandedSkillId(isExpanded ? null : skillId)}
-                                    className={cn(
-                                        "p-2 rounded-lg border flex flex-col gap-1.5 cursor-pointer transition-all duration-150 select-none",
-                                        isCombat
-                                            ? "bg-red-950/20 border-red-800/40 hover:border-red-600/60"
-                                            : "bg-black/30 border-white/10 hover:border-gi-gold/50",
-                                        isExpanded && "ring-1 ring-gi-gold/60 border-gi-gold/70 bg-[#1f1510]"
-                                    )}
-                                >
-                                    <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <SkillIcon skillId={skillId} size={32} />
-                                            <span className="font-bold text-gi-text truncate">{skillDef?.name || skillId}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 font-mono shrink-0">
-                                            <span className="text-[11px] font-bold text-gi-gold">
-                                                Lv. {skillLevel}
-                                            </span>
-                                            <span className="text-[10px] text-white/50">
-                                                {pctFormatted}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-white/5 my-0.5">
-                                        <div
-                                            className="h-full bg-gi-primary transition-all duration-300"
-                                            style={{ width: `${Math.min(100, Math.round(prog.progress * 100))}%` }}
-                                        />
-                                    </div>
-
-                                    {isExpanded && (
-                                        <div className="mt-1 pt-1.5 border-t border-white/10 flex flex-col gap-1 text-[11px]">
-                                            <div className="flex items-center justify-between text-gi-muted">
-                                                <span>XP:</span>
-                                                <span className="font-mono text-white/90 font-bold">
-                                                    {formatCompact(currentXp)}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between text-gi-muted">
-                                                <span>Next Level:</span>
-                                                <span className="font-mono text-white/90 font-bold">
-                                                    {formatCompact(nextMilestoneXp)}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between text-gi-muted">
-                                                <span className="flex items-center gap-1">
-                                                    <TrendingUp size={11} className="text-gi-primary" />
-                                                    Gain Rate:
-                                                </span>
-                                                <span className="font-mono text-gi-primary font-bold">
-                                                    {rate > 0 ? `+${rateFormatted} XP/hr` : '--'}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between text-gi-muted">
-                                                <span className="flex items-center gap-1">
-                                                    <Clock size={11} className="text-gi-gold" />
-                                                    Est. to Level:
-                                                </span>
-                                                <span className="font-mono text-gi-gold font-bold">
-                                                    {timeFormatted}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                <div data-skill-group="held" className="py-2 border-t border-white/5 flex flex-col gap-0.5">
+                    {rows.map(r => (
+                        <SkillRow
+                            key={r.id}
+                            row={r}
+                            heroId={heroId}
+                            expanded={expandedId === r.id}
+                            onToggle={() => toggle(r.id)}
+                        />
+                    ))}
                 </div>
 
-                {lockedSkills.length > 0 && (
-                    <div className="rounded-xl bg-black/40 border border-[#5c3e2e]/60 p-2.5 space-y-2">
-                        <div className="flex items-center px-1">
-                            <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">
-                                Locked Skills
-                            </span>
-                        </div>
+                {bankedRows.length > 0 && (
+                    <div data-skill-group="banked" className="py-2 border-t border-white/5 flex flex-col gap-0.5">
+                        <span className="text-[11px] font-bold gi-caps tracking-wider text-gi-muted">Set aside</span>
+                        {bankedRows.map(r => <SkillRow key={r.id} row={r} heroId={heroId} kind="banked" />)}
+                    </div>
+                )}
 
-                        {bankedCount > 0 && (
-                            <span className="block px-1 text-[9px] text-gi-muted/70 italic">
-                                Set aside skills keep the level they reached. A job that uses one again gets it back exactly as it is.
-                            </span>
+                {lockedRows.length > 0 && (
+                    <div data-skill-group="locked" className="py-1 border-t border-white/5">
+                        <button
+                            type="button"
+                            data-locked-toggle
+                            aria-expanded={lockedOpen}
+                            onClick={() => setLockedListOpen(!lockedOpen)}
+                            className="w-full flex items-center gap-1 py-1 text-[11px] font-bold gi-caps tracking-wider text-gi-muted hover:text-gi-text transition-colors cursor-pointer"
+                        >
+                            <ChevronRight size={12} className={cn('transition-transform', lockedOpen && 'rotate-90')} />
+                            <span>Locked</span>
+                            <span className="ml-auto tabular-nums font-normal">{lockedRows.length}</span>
+                        </button>
+                        {lockedOpen && (
+                            <div className="flex flex-col gap-0.5 pt-1">
+                                {lockedRows.map(r => <SkillRow key={r.id} row={r} heroId={heroId} kind="locked" />)}
+                            </div>
                         )}
-
-                        <div className="space-y-1.5">
-                            {lockedSkills.map((skDef) => {
-                                const bankedLevel = bankedLevels[skDef.id];
-                                const isBanked = bankedLevel !== undefined;
-
-                                return (
-                                    <div
-                                        key={skDef.id}
-                                        className={cn(
-                                            'p-2 rounded-lg border bg-black/25 flex flex-col gap-1.5 select-none',
-                                            isBanked
-                                                ? 'border-white/10 opacity-75'
-                                                : 'border-white/5 grayscale opacity-50'
-                                        )}
-                                        title={isBanked
-                                            ? `${skDef.name} — level ${bankedLevel}, set aside. Kept exactly as it is until a job uses it again.`
-                                            : `${skDef.name} — this hero's job does not grant this skill`}
-                                    >
-                                        <div className="flex items-center justify-between text-xs">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <SkillIcon skillId={skDef.id} size={32} />
-                                                <span className={cn('font-bold truncate', isBanked ? 'text-gi-text/80' : 'text-gi-muted')}>
-                                                    {skDef?.name || skDef.id}
-                                                </span>
-                                            </div>
-                                            {isBanked ? (
-                                                <span className="flex items-baseline gap-1.5 shrink-0">
-                                                    <span className="text-[9px] gi-caps tracking-wider text-gi-muted">Set aside</span>
-                                                    <span className="font-mono text-[11px] font-bold tabular-nums text-gi-text/90">
-                                                        {bankedLevel}
-                                                    </span>
-                                                </span>
-                                            ) : (
-                                                <span className="font-mono text-[10px] font-bold text-gi-muted shrink-0">
-                                                    Locked
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/**
-                                         * No bar for a banked skill: there is no live progress
-                                         * to draw, and an empty track next to a retained level
-                                         * reads as 'reset to zero', which is exactly what a
-                                         * banked level is not.
-                                         */}
-                                        {!isBanked && (
-                                            <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-white/5 my-0.5">
-                                                <div className="h-full bg-white/10" style={{ width: '0%' }} />
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
                     </div>
                 )}
             </div>
-
-            {canScrollDown && (
-                <button
-                    onClick={scrollDown}
-                    className="w-full py-1 bg-black/60 hover:bg-black/80 border border-white/10 hover:border-gi-gold/40 rounded-lg flex items-center justify-center text-gi-gold transition-colors shrink-0 mt-1.5 shadow active:scale-[0.99]"
-                    title="Scroll down"
-                >
-                    <ChevronDown size={14} />
-                </button>
-            )}
         </div>
+    );
+};
+
+/**
+ * The hero idling at `size` (twice the mat's art), their flag standing behind them. The figure
+ * is the drag handle that sends the hero out, as the bar's figure is.
+ */
+const HeroFigure = ({ hero, heroId, size, drag }) => {
+    const sprite = hero.spriteId || hero.classId || null;
+    const animArt = sprite ? resolveAnimationPath(sprite) : null;
+    const staticArt = animArt ? null : resolveSpritePath(sprite || hero.icon || 'hero_recruit_0');
+    // The flag's pole stands just behind the hero's shoulder, its cloth flying out to the right.
+    const flagLeft = Math.round(size * 0.3);
+    return (
+        <div
+            data-hero-panel-sprite
+            data-hero-panel-sprite-px={size}
+            className="relative mx-auto overflow-hidden pointer-events-none"
+            style={{ width: '100%', maxWidth: size, height: size }}
+        >
+            <div
+                data-hero-panel-flag={hero.flagColour || 'base'}
+                className="absolute top-0"
+                style={{ left: `calc(50% - ${size / 2}px + ${flagLeft}px)`, width: size, height: size }}
+            >
+                <FlagMark colour={hero.flagColour} size={size} alt="" />
+            </div>
+            <div
+                data-hero-panel-figure
+                ref={drag.setNodeRef}
+                {...drag.handleProps}
+                aria-label="Drag onto the mat to send out"
+                className={cn(
+                    'absolute top-0 pointer-events-auto cursor-grab active:cursor-grabbing',
+                    drag.isDragging && 'opacity-30'
+                )}
+                style={{ left: `calc(50% - ${size / 2}px)`, width: size, height: size }}
+            >
+                {animArt ? (
+                    <AnimatedHeroSprite src={animArt} heroId={heroId} alt={hero.name} size={size} animationState="idle" />
+                ) : staticArt ? (
+                    <img
+                        src={staticArt.startsWith('/') ? staticArt : `/${staticArt}`}
+                        alt={hero.name}
+                        draggable={false}
+                        style={{ width: size, height: size, maxWidth: 'none', imageRendering: 'pixelated' }}
+                    />
+                ) : null}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * `[icon] Forestry 25/99` over a thin XP bar, the XP in the game's own tooltip on hover. A held
+ * skill opens on a click to its exact numbers. `kind`: `held`, `banked` (set aside, with the level
+ * it reached) or `locked` (never held).
+ */
+const SkillRow = ({ row, heroId, kind = 'held', expanded = false, onToggle }) => {
+    const ref = useRef(null);
+    const [hovered, setHovered] = useState(false);
+    const held = kind === 'held';
+    const xp = skillXpView(row.xp);
+    const tipLines = kind === 'banked'
+        ? [`Set aside at ${skillLevelText(row.level)}.`, 'A job that uses it again gets it back as it was.']
+        : kind === 'locked'
+            ? ['Not on this hero’s job.']
+            : [xp.title, ...(row.mastered ? ['Mastered: kept on every job.'] : [])];
+    return (
+        <div
+            ref={ref}
+            data-skill-row={row.id}
+            data-skill-tier={held && row.tier ? row.tier : undefined}
+            data-skill-banked={kind === 'banked' || undefined}
+            data-skill-locked={kind === 'locked' || undefined}
+            aria-expanded={held ? expanded : undefined}
+            onClick={held ? onToggle : undefined}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            className={cn(
+                'flex flex-col gap-1 px-1 py-0.5 rounded-sm',
+                held && 'cursor-pointer hover:bg-white/5',
+                held && row.tier && TIER_BG[row.tier],
+                kind === 'banked' && 'opacity-60 grayscale',
+                kind === 'locked' && 'opacity-40 grayscale'
+            )}
+        >
+            <div className="flex items-center gap-2">
+                <SkillIcon skillId={row.id} size={32} title={null} />
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="flex items-baseline gap-1.5 text-xs leading-none">
+                        <span className="truncate font-medium">{row.name}</span>
+                        {kind !== 'locked' && (
+                            <span data-skill-level className="ml-auto tabular-nums font-bold">{skillLevelText(row.level)}</span>
+                        )}
+                    </div>
+                    {held && (
+                        <div className="h-[3px] w-full bg-black/60 rounded-full overflow-hidden">
+                            <div className="h-full bg-gi-primary" style={{ width: `${Math.round(xp.fill * 100)}%` }} />
+                        </div>
+                    )}
+                </div>
+            </div>
+            {held && expanded && <SkillDetail heroId={heroId} row={row} />}
+            {hovered && <TopBarTip anchor={ref.current} title={row.name} lines={tipLines} />}
+        </div>
+    );
+};
+
+/** A held skill's exact numbers, read when the row opens (`skillDetail`). */
+const SkillDetail = ({ heroId, row }) => {
+    const d = skillDetail(row.xp, XpRateTracker.getRate(heroId, row.id));
+    const lines = [
+        d.level && ['XP', d.level],
+        d.toNext && [`To ${d.nextLevel}`, d.toNext],
+        ['Total XP', d.total],
+        d.level && ['XP/h', d.rate || '–'],
+        d.eta && ['Next level', d.eta]
+    ].filter(Boolean);
+    return (
+        <dl data-skill-detail className="ml-1 mr-1 mb-1 grid grid-cols-2 gap-x-3 gap-y-1 leading-tight">
+            {lines.map(([label, value], i) => (
+                // The first line, this level's XP, is the longest: it takes the full width.
+                <div key={label} className={cn('min-w-0 flex flex-col', i === 0 && d.level && 'col-span-2')}>
+                    <dt className="truncate text-[9px] text-gi-muted">{label}</dt>
+                    <dd className="truncate text-[11px] tabular-nums text-white/90">{value}</dd>
+                </div>
+            ))}
+        </dl>
     );
 };
 

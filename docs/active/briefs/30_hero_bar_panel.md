@@ -54,3 +54,45 @@ Cost log line per phase.
 
 **Done when:** each phase seen in the game in the owner's save and on S2;
 `bench:drag` hero and flag drags no worse than the baseline; T-044 closed.
+
+## Owner eye-check A (2026-10-09): fixes on `crunch/hero-ui` before merging
+
+H1–H4 as built were seen. Rulings:
+
+**H1 fixes (bar)**
+- A black backdrop still shows behind the heroes: remove it (the bar is the
+  mat's edge with one thin line, no fill).
+- Level-up bubbles on one or two lines, shorter text: `LVL UP! 50 Melee!
+  (+49)` (shared with the mat bubble's text source); numbers in a slightly
+  different colour from the words.
+- Spread the heroes a little more.
+- Still 3 bubbles shown per hero, but the stack can be **paged** through the
+  rest (arrows), instead of a "+N more" line.
+- Clicking a bubble **fades out and clears that one bubble**, not the hero's
+  whole stack.
+
+**H2 fixes (panel)**
+- Side panel placement is right. The **vertical hero tabs beside the Bank**
+  need the same rework; their hover state is cluttered.
+- Hero sprite **large (2× the mat size) in its idle animation**, with the
+  hero's **flag drawn behind** it.
+- Skills in **one flat list**, no drawer for held skills: order **combat,
+  then Starting, then specialist**. **Locked (never held) skills return, in a
+  collapsible list** at the bottom.
+- **Click a skill row to expand** it: exact XP numbers and rates (the
+  detail H2 dropped comes back, in UI_STYLE formats).
+- The exact-XP hover must use the game's own tooltip, not the browser title
+  tooltip.
+- No gold star for mastered skills; Advanced and Master rows get a
+  **different background colour** instead.
+- The panel **stays open when the Bank opens**.
+- The HP bar shows its numbers.
+- Close uses the game's **red X icon**; Edit will use a **quill icon the
+  owner will draw** (placeholder until then, flagged).
+
+**H3**: rebuilt as the work rules grid, see `ui_rework_list.md` "Work rules
+grid — locked (2026-10-09)". H3's gear, side panel and Copy list go.
+
+**H4 fix (flag)**: looks good. Add: while a flag is being dragged, every
+workable Token inside its radius shows a **green dot at its centre**.
+

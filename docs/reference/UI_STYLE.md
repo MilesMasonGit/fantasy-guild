@@ -15,8 +15,8 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **No zero-padding** (`3`, not `03`) and **no word labels** ("Level:",
   "Charges:", "HP:") where an icon or the position already says it.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
-- **HP is a bar**; the exact number shows on hover *(director reading of the
-  owner's answers; overrule if wanted)*.
+- **HP is a bar**; the exact number shows on hover, except in the hero panel,
+  where the bar shows its numbers beside it (owner, eye-check A, 2026-10-09).
 - Times read `0:34` / `4:05`; thousands get separators (`1,154`).
 
 ## Frames

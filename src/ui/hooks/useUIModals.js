@@ -3,9 +3,6 @@ import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
 
-/** How many hero cards can be pinned open at once; pinning another closes the oldest. */
-export const DOCK_MAX_PINNED = 2;
-
 /**
  * The first promotion offer standing on the board, or null. Read from the Token instances (the
  * saved truth) through `BoardPromotion.getOffer`, which excludes declined offers.
@@ -77,10 +74,6 @@ export const useUIModals = (engine) => {
 
     const [isShopOpen, setIsShopOpen] = useState(false);
 
-    // Ordered, oldest first, so that pinning a third closes the oldest; hence an array rather
-    // than a Set.
-    const [pinnedHeroIds, setPinnedHeroIds] = useState([]);
-
     const [editHeroId, setEditHeroId] = useState(null);
 
     // Separate from the Edit modal because changing job is a decision with consequences, not a
@@ -92,10 +85,8 @@ export const useUIModals = (engine) => {
     // (`standingPromotionOffer`) rather than lost with the tab.
     const [promotionOffer, setPromotionOffer] = useState(null);
 
-    const [flagRulesHeroId, setFlagRulesHeroId] = useState(null);
-
-    // One value for the whole dock, not one per card; see `toggleBodyView`.
-    const [bodyView, setBodyView] = useState('equipment');
+    // The work rules drawer, and the hero whose row it opened lit (the hero panel's link).
+    const [flagRules, setFlagRules] = useState({ isOpen: false, heroId: null });
 
     const [inspectByPane, setInspectByPane] = useState({
         bank: null,
@@ -253,27 +244,6 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setIsShopOpen(false), [])
         },
         dock: {
-            pinned: pinnedHeroIds,
-            isPinned: (heroId) => pinnedHeroIds.includes(heroId),
-            // Click a tab: pin it, or unpin it if already open. A third pin evicts the oldest.
-            togglePin: useCallback((heroId) => {
-                setPinnedHeroIds(prev => {
-                    if (prev.includes(heroId)) return prev.filter(id => id !== heroId);
-                    return [...prev, heroId].slice(-DOCK_MAX_PINNED);
-                });
-            }, []),
-            // Returns the same array when already empty so state identity is stable; safe to
-            // call from a global listener.
-            unpinAll: useCallback(() => {
-                setPinnedHeroIds(prev => (prev.length === 0 ? prev : []));
-            }, []),
-            // Shared across every open card on purpose: the dock allows two cards open to
-            // compare heroes, which only works if both show the same side. Defaults to the
-            // loadout, the drag-and-drop target.
-            bodyView,
-            toggleBodyView: useCallback(() => {
-                setBodyView(prev => (prev === 'equipment' ? 'skills' : 'equipment'));
-            }, []),
             editHeroId,
             openEdit: useCallback((heroId) => setEditHeroId(heroId), []),
             closeEdit: useCallback(() => setEditHeroId(null), []),
@@ -286,9 +256,11 @@ export const useUIModals = (engine) => {
             closePromotion: useCallback(() => setPromotionOffer(null), [])
         },
         flagRules: {
-            heroId: flagRulesHeroId,
-            open: useCallback((heroId) => setFlagRulesHeroId(heroId || null), []),
-            close: useCallback(() => setFlagRulesHeroId(null), [])
+            isOpen: flagRules.isOpen,
+            heroId: flagRules.heroId,
+            open: useCallback((heroId) => setFlagRules({ isOpen: true, heroId: heroId || null }), []),
+            toggle: useCallback(() => setFlagRules(s => ({ isOpen: !s.isOpen, heroId: null })), []),
+            close: useCallback(() => setFlagRules({ isOpen: false, heroId: null }), [])
         },
         inspect,
         nav: {
@@ -308,7 +280,7 @@ export const useUIModals = (engine) => {
                 openDrawerTab(tab, data?.filter);
             }),
             engine.EventBus.subscribe(UI_EVENTS.UI_OPEN_FLAG_RULES, (data) => {
-                if (data?.heroId) setFlagRulesHeroId(data.heroId);
+                setFlagRules({ isOpen: true, heroId: data?.heroId || null });
             }),
             // Nothing has happened to the hero yet: the tile holds the offer open and this
             // only decides to draw it.

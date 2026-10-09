@@ -67,7 +67,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
     const quantities = qtyPart.split('|').map(q => (q === '' ? null : Number(q)));
 
     return (
-        <div className="grid grid-cols-3 gap-2 p-1">
+        <div className="grid grid-cols-[repeat(3,minmax(0,70px))] gap-1">
             {SLOT_ORDER.map((slot, i) => (
                 <EquipSlotCell
                     key={slot}
@@ -119,7 +119,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false })
                 }
             }}
             className={cn(
-                'relative aspect-square rounded-lg border-2 flex items-center justify-center transition-all p-1 select-none',
+                'relative aspect-square rounded border flex items-center justify-center overflow-visible transition-all select-none',
                 justEquipped && 'gi-item-equipped-bob ring-2 ring-gi-gold/90 border-gi-gold bg-gi-gold/25 shadow-[0_0_16px_rgba(245,158,11,0.6)] z-20',
                 item
                     ? (!justEquipped && 'border-gi-primary/50 bg-gi-primary/10 cursor-grab active:cursor-grabbing hover:border-gi-danger hover:bg-red-950/30')

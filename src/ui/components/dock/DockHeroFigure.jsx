@@ -11,6 +11,9 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { isRecallDrop, recallFromDrop } from './dockRecall.js';
 import { equipOrAnnounce } from './dockEquip.js';
+import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
+import { BubbleText } from '../board/BubbleText.jsx';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import {
     DOCK_STRIP_PX, DOCK_LABEL_GAP_PX,
     isDeployedStatus, dockArtOffset, dockArtFilter, hpPercent, hpTone, HP_TONE_CLASS
@@ -100,6 +103,8 @@ export const DockHeroFigure = ({
         { deps: [heroId] }
     );
 
+    const bubbles = useHeroBarBubbles(heroId);
+
     const justDroppedRef = useRef(false);
 
     const drag = useEntityDrag({
@@ -171,6 +176,7 @@ export const DockHeroFigure = ({
             data-dock-art-offset={offset}
             onClick={() => {
                 if (justDroppedRef.current) return;
+                clearHeroBubbles(heroId);
                 onSelect?.(heroId);
             }}
             onDoubleClick={(e) => {
@@ -263,10 +269,10 @@ export const DockHeroFigure = ({
                 <div
                     data-dock-hp={pct}
                     data-dock-hp-tone={tone}
-                    title={`${hp} / ${hpMax} HP${isWounded ? ' (wounded)' : ''}`}
+                    title={`${hp.toLocaleString()} / ${hpMax.toLocaleString()} HP${isWounded ? ' (wounded)' : ''}`}
                     className={cn(
-                        'w-12 h-1.5 rounded-full bg-black/80 border overflow-hidden',
-                        isWounded ? 'border-red-500/80' : 'border-white/20'
+                        'w-14 h-1 rounded-full bg-black/70 overflow-hidden',
+                        isWounded && 'ring-1 ring-red-500/80'
                     )}
                 >
                     <div
@@ -275,6 +281,121 @@ export const DockHeroFigure = ({
                     />
                 </div>
             </div>
+
+            {bubbles.length > 0 && (
+                <BarBubbles
+                    heroId={heroId}
+                    bubbles={bubbles}
+                    bottom={labelBottom + LABEL_PX}
+                    passive={globalDragging}
+                />
+            )}
+        </div>
+    );
+};
+
+/** The name and HP bar's height plus a small gap, so a bubble's tail stops clear of the name. */
+const LABEL_PX = 24;
+
+/**
+ * A hero's level-up bubbles, standing over the name: newest nearest the head, at most
+ * `BAR_BUBBLES_SHOWN` at a time, with arrows paging back through older ones. Never wider than the
+ * hero's slot; a line may wrap to two. A click on a bubble fades out and clears that one bubble
+ * without opening the hero; they let the pointer through while something is being dragged.
+ */
+const BarBubbles = ({ heroId, bubbles, bottom, passive }) => {
+    const [page, setPage] = useState(0);
+    const [fading, setFading] = useState(() => new Set());
+    const pages = Math.max(1, Math.ceil(bubbles.length / BAR_BUBBLES_SHOWN));
+    const shownPage = Math.min(page, pages - 1);
+    const end = bubbles.length - shownPage * BAR_BUBBLES_SHOWN;
+    const shown = bubbles.slice(Math.max(0, end - BAR_BUBBLES_SHOWN), end);
+
+    const fadeOut = (key) => {
+        setFading(prev => new Set(prev).add(key));
+        setTimeout(() => {
+            clearHeroBubble(heroId, key);
+            setFading(prev => {
+                if (!prev.has(key)) return prev;
+                const next = new Set(prev);
+                next.delete(key);
+                return next;
+            });
+        }, BAR_BUBBLE_FADE_MS);
+    };
+    const stop = e => e.stopPropagation();
+    const turn = (delta) => (e) => {
+        e.stopPropagation();
+        setPage(Math.max(0, Math.min(pages - 1, shownPage + delta)));
+    };
+
+    return (
+        <div
+            data-bar-bubbles={heroId}
+            className={cn(
+                'absolute inset-x-0 mx-auto flex flex-col items-center gap-0.5 px-0.5',
+                passive ? 'pointer-events-none' : 'pointer-events-auto'
+            )}
+            style={{ bottom, maxWidth: '100%' }}
+            // ⚠️ Stops the press reaching the hero's drag handle: a bubble is clicked, not dragged.
+            onPointerDown={stop}
+            onClick={stop}
+            onDoubleClick={stop}
+        >
+            {pages > 1 && (
+                <div
+                    data-bar-bubble-pager
+                    className="flex items-center gap-0.5 text-[9px] font-bold leading-none text-yellow-100"
+                    style={{ textShadow: '0 1px 2px #000' }}
+                >
+                    <button
+                        type="button"
+                        data-bar-bubble-older
+                        aria-label="Older level-ups"
+                        disabled={shownPage >= pages - 1}
+                        onClick={turn(1)}
+                        className="p-0.5 rounded-sm bg-black/60 enabled:hover:text-gi-gold enabled:cursor-pointer disabled:opacity-30"
+                    >
+                        <ChevronUp size={10} />
+                    </button>
+                    <span data-bar-bubble-page className="tabular-nums">{`${shownPage + 1}/${pages}`}</span>
+                    <button
+                        type="button"
+                        data-bar-bubble-newer
+                        aria-label="Newer level-ups"
+                        disabled={shownPage === 0}
+                        onClick={turn(-1)}
+                        className="p-0.5 rounded-sm bg-black/60 enabled:hover:text-gi-gold enabled:cursor-pointer disabled:opacity-30"
+                    >
+                        <ChevronDown size={10} />
+                    </button>
+                </div>
+            )}
+            {shown.map((b, i) => {
+                const isFading = fading.has(b.key);
+                return (
+                    <div
+                        key={b.key}
+                        data-bar-bubble={b.key}
+                        data-bar-bubble-fading={isFading ? 'true' : undefined}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isFading) fadeOut(b.key);
+                        }}
+                        className={cn(
+                            'relative max-w-full px-1.5 py-0.5 rounded border border-yellow-500/70 bg-yellow-950/95 text-yellow-100',
+                            'text-[10px] font-bold leading-tight text-center shadow cursor-pointer transition-opacity ease-out',
+                            isFading ? 'opacity-0' : 'opacity-100'
+                        )}
+                        style={{ transitionDuration: `${BAR_BUBBLE_FADE_MS}ms` }}
+                    >
+                        <BubbleText text={b.text} />
+                        {i === shown.length - 1 && (
+                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-r border-b border-yellow-500/70 bg-yellow-950/95" />
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 };
