@@ -57,8 +57,8 @@ gather the resources to fund the quest.
 - **Map tiers are planes**: each tier of maps comes from a stranger plane, so
   late content can get weirder.
 - **The cartographer is unreliable and eerie**: mutters, contradicts himself;
-  the player isn't sure he's on their side. He is the **tutorial guide** and a
-  **quest giver**.
+  the player isn't sure he's on their side. He is the **tutorial guide**; after
+  the tutorial he only speaks now and then (D8).
 - **Light framing, probably no story milestones.**
 - **Dialogue**: event characters can be talked to: a few lines and a choice or
   two that changes the outcome (a trade, a small quest, a gift, a fight).

@@ -183,11 +183,9 @@ Done 2026-10-09 → [concept_living_game.md](concept_living_game.md): events
 bubbles with requests as quest Tokens, the return summary as a plain report,
 hero recolouring.
 
-### D8 — Quests and the tutorial
+### D8 — Quests and the tutorial ✅
 
-- **Quests and the tutorial**: bounties are "collect N" or "defeat N Goblins"
-  for 10 Oak Wood; the tutorial teaches today's opening, which the Atlas
-  replaces (Starter Camp, buildings-only Shop). Quests could also carry events.
+Done 2026-10-09 → [concept_quests_tutorial.md](concept_quests_tutorial.md).
 
 ### D9 — Release package
 
@@ -231,6 +229,8 @@ hero recolouring.
 
 ## Moved on
 
+- **D8 Quests and the tutorial** → [concept_quests_tutorial.md](concept_quests_tutorial.md),
+  done 2026-10-09.
 - **D7 A living game** (events, dialogue, the return, hero identity) →
   [concept_living_game.md](concept_living_game.md), done 2026-10-09.
 - **D6 The Guild Hall** (constellation screen, upgrade content, transitions)
