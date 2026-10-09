@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -23,6 +23,7 @@ import { pointerToMat, matRectForDrag } from './matPoint.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { useTokenDragLanding } from './MatRings.jsx';
 import { POLE_BASE, pinnedFlagPoint } from './flagGeometry.js';
+import { workableInReach } from './flagWorkable.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -39,7 +40,8 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * from one layer to another.
  * - **The player never moves a hero**: dragging any hero drags their FLAG.
  * - **Reach ring**: a dashed gold circle of the live flag radius, only while that flag or its
- * hero is hovered, dragged or inspected, or while a dragged Token would land inside it.
+ * hero is hovered, dragged or inspected, or while a dragged Token would land inside it. While a
+ * flag is dragged, every Token inside it the hero could work shows a green dot at its centre.
  * - **No hitbox over Tokens**: wherever the pointer is on a Token's art circle, every flag
  * lets it through (`yieldToTokens`, set by `MatBoard`), so a flag never eats a Token's hover,
  * click or grab. A flag is grabbed by the part of it that stands over bare mat.
@@ -47,6 +49,11 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * Token (`pinnedFlagPoint`), carries `data-flag-pinned`, shows no reach ring (the radius does
  * not apply) and says 'Working only X' on hover.
  */
+
+const NO_DOTS = Object.freeze([]);
+
+/** A workable Token's green dot, as a share of the art size. */
+const WORKABLE_DOT_SCALE = 0.05;
 
 /** The live flag radius, following the Mat Tuner and the Scouting Flags upgrade. */
 function useFlagRadius() {
@@ -141,6 +148,15 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
     }
     if (ring?.heroId) rings.set(ring.heroId, { x: ring.x, y: ring.y });
 
+    // While a flag is carried, a green dot on every Token its hero could work from there. Worked
+    // out when the drop point moves, not every frame.
+    const workable = useMemo(
+        () => (ring?.heroId ? workableInReach(ring.heroId, ring) : NO_DOTS),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [ring?.heroId, ring?.x, ring?.y]
+    );
+    const dotR = Math.max(4, Math.round(artPx * WORKABLE_DOT_SCALE));
+
     // While a Token is dragged, every flag it would land inside shows its reach, whatever the
     // Token is.
     const landing = useTokenDragLanding(matRef);
@@ -187,6 +203,19 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
                             strokeOpacity={0.4}
                             strokeWidth={1}
                             strokeDasharray="6 5"
+                            vectorEffect="non-scaling-stroke"
+                        />
+                    ))}
+                    {workable.map(t => (
+                        <circle
+                            key={t.id}
+                            data-workable-dot={t.id}
+                            cx={t.x}
+                            cy={t.y}
+                            r={dotR}
+                            fill="rgb(52, 211, 153)"
+                            stroke="#000"
+                            strokeWidth={1.5}
                             vectorEffect="non-scaling-stroke"
                         />
                     ))}
