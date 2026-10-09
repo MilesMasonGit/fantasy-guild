@@ -28,7 +28,8 @@ interview D2, 2026-10-09). It adds to the Atlas; where it differs from
 - **Movable Tokens show a faint marker at rest and lift on hover**; fixed
   Tokens do neither.
 - **Map supply is steady** from farmable enemies plus quests; **upcycling
-  stays**. **Tools last forever** (T-126); the Shop's tools are bought once.
+  stays**. **Gathering tools become hero gear and last forever** (T-126, D4): tool
+  Tokens leave the mat; what the Shop sells as "tools" needs rethinking.
 - **Spawners stay where they suit the skill** (D4, 2026-10-09): player-built
   growing places (Farmland, Forest Foundations) keep spawning; ore veins
   refill in place. Amends "spawners only for enemies and lures"; see

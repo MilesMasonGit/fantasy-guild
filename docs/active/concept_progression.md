@@ -105,8 +105,8 @@ rare finds, perks) is a new design problem. Settled so far:
 - **Ongoing drains**: **food and potions** used up in fights, and **building
   upkeep** (lures and other buildings that consume items to run, on the
   existing upkeep system).
-- **No wear**: **tools last forever** (a placed pickaxe never wears out; a
-  better one unlocks better work) ⚠️ today some recipes spend tool charges, so
+- **No wear**: **tools last forever** (a pickaxe never wears out; a better one
+  unlocks better work; D4 made gathering tools hero gear) ⚠️ today some recipes spend tool charges, so
   content and possibly code change (T-126); **gear never breaks** (no durability).
 - **Map upcycling stays**: surplus maps turn into better maps (the Atlas
   concept's plan). It clears map clutter; it isn't a material sink.
