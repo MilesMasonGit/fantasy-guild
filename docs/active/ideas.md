@@ -168,14 +168,12 @@ Done 2026-10-09 → [concept_knowledge.md](concept_knowledge.md): one automatic
 (spoiler hints, 2–3 steps back, uses one step ahead), map previews, the
 collection log and Bank search.
 
-### D6 — The Guild Hall
+### D6 — The Guild Hall ✅
 
-- **Guild Hall upgrade screen**: complete overhaul in a **star /
-  constellation** style. The Atlas adds global Guild upgrades (Token cap,
-  crafting slots), so the tree will grow.
-- **Guild upgrade content**: build out the Hall upgrades (follows D2's pacing).
-- **Screen transitions**: "look up" at the stars for Hall upgrades, down or to
-  the side for the Atlas.
+Done 2026-10-09 → [concept_guild_hall.md](concept_guild_hall.md): themed
+constellations (Hearth, Vault, Compass, Well), ranked stars, neighbour and
+material gates, camera-move transitions. The starter upgrade list is written
+later, with the content work.
 
 ### D7 — A living game
 
@@ -240,6 +238,8 @@ collection log and Bank search.
 
 ## Moved on
 
+- **D6 The Guild Hall** (constellation screen, upgrade content, transitions)
+  → [concept_guild_hall.md](concept_guild_hall.md), done 2026-10-09.
 - **D5 Knowledge** (dependency map, encyclopedia, collection log, Bank at
   scale) → [concept_knowledge.md](concept_knowledge.md), done 2026-10-09.
 - **D4 Skill loops and the board as a puzzle** → [concept_skill_loops.md](concept_skill_loops.md),
