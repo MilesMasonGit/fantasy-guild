@@ -13,6 +13,7 @@ import * as EffectActions from './EffectActions.js';
 import { pickWeighted } from './weightedPick.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as MatCap from './MatCap.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Spawners.
@@ -393,4 +394,13 @@ export function syncAlerts() {
 export function resetAlerts() {
     alerts.clear();
     noRoom.clear();
+}
+
+let initialized = false;
+
+/** The alerts belong to the board they were raised on: forget them when the guild travels. Idempotent. */
+export function init() {
+    if (initialized) return;
+    initialized = true;
+    EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, resetAlerts);
 }

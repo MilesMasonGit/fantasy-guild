@@ -33,8 +33,11 @@
  *           the Token Vault and Tray fields, Token Lifecycle 9.3.) Old
  *           saves are refused through the existing version check — no message
  *           of their own, no export, no conversion.
+ * '0.8.1' — the Atlas: a save holds every Region the guild has settled
+ *           (`atlas`), each with its own board. A pre-Atlas save is refused, not
+ *           carried over as a first Region.
  */
-export const GAME_VERSION = '0.8.0';
+export const GAME_VERSION = '0.8.1';
 
 /**
  * The board's default shape, in one place.
@@ -73,6 +76,10 @@ export function createEmptyBoard() {
         // An older save without it gets an empty bin from `migrateState`'s
         // two-level backfill. Owned by `DiscardBin.js`.
         bin: [],
+        // 1 once `EnemyMotion.attachUntethered` has run on this board, so an
+        // enemy placed by hand later is never tethered by a reload. 0 reads as
+        // not yet, exactly as a missing field did.
+        enemyTethers: 0,
         // `tokenBank`, `tray`, `nextTrayZ`, `tokenBankSlots`, `tokenTabsUnlocked`
         // and `tokenGroups` went with the Token Vault and the Tray (Token
         // Lifecycle 9.3): Tokens live on the mat. `migrateState` drops them
@@ -80,6 +87,39 @@ export function createEmptyBoard() {
 
         // Terrain's `terrain`, `nextPaintOrder` and `terrainSeed` left the board
         // in slice 1.6a: they were keyed by tile, and terrain is dormant (FP-10).
+    };
+}
+
+/**
+ * One Region of the Atlas, as saved in `atlas.regions[id]`. `Atlas.js` owns the rules; this is the
+ * shape.
+ */
+export function createRegionRecord(id = null) {
+    return {
+        id,
+        // 'starter' (the board a new game opens on; never abandoned) or 'settled' (written from maps).
+        kind: 'settled',
+        // Made from the ingredients when the Region is written; never changes.
+        practicalName: '',
+        // Generated, then the player's to rename.
+        flavourName: '',
+        // The item ids written into it, in slot order.
+        ingredients: [],
+        seed: 0,
+        // Biome weights for the terrain rework; null until generation writes them.
+        biome: null,
+        // Region-wide rules, in force only while the guild is here.
+        rules: [],
+        // Game time (ms) it was written at.
+        settledAt: 0,
+        // Hidden from the Region list.
+        archived: false,
+        // ⚠️ Null for the Region the guild is in: its board is the live `state.board`. Every other
+        // Region keeps its whole board here, frozen, as a save would write it.
+        board: null,
+        // Where the Hall and the quest Tokens stood when the guild left, by instance id
+        // (`{ x, y, placedAt }`), so going back puts them where they were.
+        travellers: {}
     };
 }
 
@@ -262,6 +302,16 @@ export const INITIAL_STATE = {
         nextQuestAt: null
     },
 
+    // === The Atlas (Regions) ===
+    // `board` above is always the active Region's board; every other Region is a record here
+    // (`createRegionRecord`) holding its own frozen board. Owned by `Atlas.js`.
+    atlas: {
+        activeRegionId: null,
+        // Region ids are `region_<n>`, never reused, so an abandoned Region's id stays dead.
+        nextRegionNumber: 1,
+        regions: {}
+    },
+
     // === Cartographer (Maps) ===
     // Deleted with the Map bursts and the Map purchase (Token Lifecycle 9.1).
     // An older save's `cartographer` section is dropped by `migrateState`.
@@ -282,7 +332,7 @@ export const INITIAL_STATE = {
 const REQUIRED_KEYS = [
     'meta', 'heroes', 'cards',
     'inventory', 'progress', 'time',
-    'collection', 'board', 'quests'
+    'collection', 'board', 'quests', 'atlas'
 ];
 
 /**

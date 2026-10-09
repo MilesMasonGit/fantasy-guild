@@ -559,6 +559,7 @@ export function init() {
     // `endFightOfHero` when a hero lets go, NOT by an event: `HERO_MOVED` on a recall names where
     // the hero WENT (the Dock), not the Token they left.
     EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => clearAll());
+    EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, () => clearAll());
 
     // The status clock cannot call us directly: `StatusEffectSystem` is imported by this file, so
     // importing it back would be a static cycle. It announces the death instead and this is the

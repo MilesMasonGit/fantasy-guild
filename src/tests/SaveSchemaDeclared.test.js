@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
-import { INITIAL_STATE, createEmptyBoard, validateSaveData, GAME_VERSION } from '../state/StateSchema.js';
+import { INITIAL_STATE, createEmptyBoard, createRegionRecord, validateSaveData, GAME_VERSION } from '../state/StateSchema.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
@@ -106,6 +106,53 @@ describe('The declared schema matches the save (CR2-042, CR2-069)', () => {
     it('still passes its own validator after a real play session', () => {
         const result = validateSaveData(GameState.serialize());
         expect(result.errors).toEqual([]);
+    });
+});
+
+describe('The Atlas section: Regions keyed by id, each a declared record', () => {
+    /** A game that has been to a second Region and back, so both kinds of record exist. */
+    async function travelledGame() {
+        playALittle();
+        const BoardState = await import('../systems/board/BoardState.js');
+        const Atlas = await import('../systems/atlas/Atlas.js');
+        BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 563);
+        BoardState.addToken(BoardState.createTokenInstance('token_oak_forest'), 560, 563);
+        const home = Atlas.createStarterRegion().id;
+        const away = Atlas.devCreateEmptyRegion().id;
+        Atlas.travel(away);
+        return { home, away };
+    }
+
+    it('declares the section and its fields', () => {
+        expect(Object.keys(INITIAL_STATE.atlas).sort()).toEqual(['activeRegionId', 'nextRegionNumber', 'regions']);
+    });
+
+    it('every saved Region carries only the declared record fields, and a frozen board only the board fields', async () => {
+        const { home, away } = await travelledGame();
+        const { regions } = GameState.serialize().state.atlas;
+        expect(Object.keys(regions).sort()).toEqual([home, away].sort());
+
+        const declared = Object.keys(createRegionRecord('x'));
+        const board = Object.keys(createEmptyBoard());
+        const undeclared = [];
+        for (const [id, region] of Object.entries(regions)) {
+            expect(region.id).toBe(id);
+            for (const field of Object.keys(region)) {
+                if (!declared.includes(field)) undeclared.push(`atlas.regions.${id}.${field}`);
+            }
+            for (const field of Object.keys(region.board || {})) {
+                if (!board.includes(field)) undeclared.push(`atlas.regions.${id}.board.${field}`);
+            }
+        }
+        expect(undeclared).toEqual([]);
+        // The active Region's board is the live one; only the Region the guild left holds a copy.
+        expect(regions[away].board).toBeNull();
+        expect(regions[home].board.tokens).toBeTruthy();
+    });
+
+    it('still passes its own validator after a trip', async () => {
+        await travelledGame();
+        expect(validateSaveData(GameState.serialize()).errors).toEqual([]);
     });
 });
 

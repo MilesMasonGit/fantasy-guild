@@ -129,9 +129,9 @@ describe('⭐ every Token instance records its origin (DP-3)', () => {
 });
 
 describe('⭐ the mat cap counts every Token, placed or spawned (T-102)', () => {
-    it('is a game value, 80; the Mat Tuner only overrides it on this device', () => {
-        expect(MatCap.BASE_TOKEN_CAP).toBe(80);
-        expect(MatCap.matCap()).toBe(80);
+    it('is a game value, 128; the Mat Tuner only overrides it on this device', () => {
+        expect(MatCap.BASE_TOKEN_CAP).toBe(128);
+        expect(MatCap.matCap()).toBe(128);
         // The old row is gone: a device that stored `matCap: 40` must not cap the game at 40.
         expect(MAT_TUNABLES.find(t => t.key === 'matCap')).toBeUndefined();
         const row = MAT_TUNABLES.find(t => t.key === 'tokenCap');
@@ -140,7 +140,7 @@ describe('⭐ the mat cap counts every Token, placed or spawned (T-102)', () => 
         expect(MatCap.matCap()).toBe(3);
         expect(matTuning('tokenCap')).toBe(3);
         setMatTuning('tokenCap', 0);
-        expect(MatCap.matCap()).toBe(80);
+        expect(MatCap.matCap()).toBe(128);
     });
 
     it('counts placed and spawned Tokens; never the Guild Hall or a quest', () => {

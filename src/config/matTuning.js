@@ -122,7 +122,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'tokenCap',
         group: 'The mat',
         label: 'Token cap override',
-        hint: 'Dev override for the most Tokens the mat may hold (MatCap.BASE_TOKEN_CAP is the game value, 80). Every Token counts, placed or spawned, on the mat or in the bin; the Guild Hall and quests never do. 0 uses the game value.',
+        hint: 'Dev override for the most Tokens the mat may hold (MatCap.BASE_TOKEN_CAP is the game value, 128). Every Token counts, placed or spawned, on the mat or in the bin; the Guild Hall, quests and landmarks never do. 0 uses the game value.',
         min: 0, max: 2000, step: 1, def: 0,
         format: (v) => (Math.round(v) === 0 ? 'off: game value' : `${Math.round(v)} Tokens`)
     },

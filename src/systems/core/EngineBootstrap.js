@@ -43,6 +43,9 @@ import * as QuestTokens from '../quests/QuestTokens.js';
 import * as EnemyMotion from '../board/EnemyMotion.js';
 // Hostile enemies attacking heroes near their spawner (`Game.Hostiles`).
 import * as Hostiles from '../board/Hostiles.js';
+import * as SpawnerSystem from '../board/SpawnerSystem.js';
+// The guild's Regions and travel (`Game.Atlas`).
+import * as Atlas from '../atlas/Atlas.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
@@ -116,6 +119,7 @@ export const EngineBootstrap = {
             QuestTokens,
             EnemyMotion,
             Hostiles,
+            Atlas,
             TimeManager,
             GuildUpgradeManager,
             GameLoop,
@@ -154,6 +158,7 @@ export const EngineBootstrap = {
         BoardPromotion.init();
         Flags.init();
         QuestManager.init();
+        SpawnerSystem.init();
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
@@ -275,6 +280,8 @@ export const EngineBootstrap = {
         // What a loaded save gets on `game_loaded`: the tile caches built for
         // the Tokens already standing on the mat.
         TileModifiers.rebuildAll();
+        // The opening mat is the guild's first Region.
+        Atlas.createStarterRegion();
 
         // Initialize exploration tracking
         if (!GameState.exploration) {

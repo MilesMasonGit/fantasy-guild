@@ -677,6 +677,30 @@ export function tick(delta) {
     }
 }
 
+/** A board just came in, from a save or from another Region: rebuild what is derived from it. */
+function boardInstalled() {
+    TileModifiers.rebuildAll();
+
+    // The one path a `Cannot` has no last location to fly back to: a save authored before the
+    // restriction existed, loading into a board the rule now forbids. The offenders are moved
+    // to the nearest legal spot on the mat, so nothing is destroyed and the board is legal by
+    // the time the player sees it. A Token with no legal spot anywhere near stays put.
+    // Almost always a no-op: it costs one pass over the Tokens, and only Tokens carrying a
+    // `Cannot` are examined at all.
+    const moved = Restrictions.reconcile(relocateOffender);
+    for (const { id, typeId, x, y, to } of moved) {
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, x, y, typeId: null });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...to, typeId });
+        EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [{ x, y }, to] });
+    }
+    if (moved.length) {
+        TileModifiers.rebuildAll();
+        EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
+        logger.info('BoardRunner',
+            `${moved.length} Token(s) sat somewhere their rules forbid and were moved to a legal spot`);
+    }
+}
+
 export function init() {
     // Tile aggregators are runtime-only and rebuilt from board state, so they must be refreshed
     // whenever the neighbourhood changes (placement, removal, depletion) and replayed wholesale
@@ -688,28 +712,8 @@ export function init() {
     EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ points } = {}) => {
         if (Array.isArray(points)) TileModifiers.rebuildAround(points);
     });
-    EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
-        TileModifiers.rebuildAll();
-
-        // The one path a `Cannot` has no last location to fly back to: a save authored before the
-        // restriction existed, loading into a board the rule now forbids. The offenders are moved
-        // to the nearest legal spot on the mat, so nothing is destroyed and the board is legal by
-        // the time the player sees it. A Token with no legal spot anywhere near stays put.
-        // Almost always a no-op: it costs one pass over the Tokens, and only Tokens carrying a
-        // `Cannot` are examined at all.
-        const moved = Restrictions.reconcile(relocateOffender);
-        for (const { id, typeId, x, y, to } of moved) {
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, x, y, typeId: null });
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...to, typeId });
-            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [{ x, y }, to] });
-        }
-        if (moved.length) {
-            TileModifiers.rebuildAll();
-            EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
-            logger.info('BoardRunner',
-                `${moved.length} Token(s) sat somewhere their rules forbid and were moved to a legal spot`);
-        }
-    });
+    EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, boardInstalled);
+    EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, boardInstalled);
 
     // Triggered Tokens listen on the board's own events. Subscribing here keeps every board
     // subscription in one place, and `init` is idempotent so a reload replaces the handlers rather
