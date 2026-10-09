@@ -429,14 +429,14 @@ function completeCycle(instance, def, io, heroId, config = def.config) {
 /**
  * Advance every Token on the board.
  *
- * @param {number} delta milliseconds since the last tick, already time-scaled
+ * @param {number} delta game milliseconds since the last tick
  */
 export function tick(delta) {
     [carryIn, carryOut] = [carryOut, carryIn];
     carryOut.clear();
 
     // Timed changes: Saplings grow, Coasts turn and turn back, on clocks advanced by this tick's
-    // `delta`, so the time bank fast-forwards them with everything else. Before Flags, so a hero
+    // `delta`, so a catch-up fast-forwards them with everything else. Before Flags, so a hero
     // whose Token just changed under them lets go and chooses again this same tick, and before any
     // Token ticks, so a cycle on a Token that has gone is never advanced or completed.
     TimedChanges.tick(delta);

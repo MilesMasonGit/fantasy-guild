@@ -24,7 +24,7 @@ const WoundedSystem = {
 
     /**
      * Main tick function - called by the engine each tick
-     * @param {number} deltaMs - Time-scaled game time in milliseconds
+     * @param {number} deltaMs - Game time in milliseconds
      */
     tick(deltaMs) {
         const woundedHeroes = this.getWoundedHeroes();
@@ -37,11 +37,10 @@ const WoundedSystem = {
     /**
      * Process recovery tick for a wounded hero.
      *
-     * Recovery counts game time (the time-scaled tick delta), not wall-clock
-     * time, so it speeds up under Time Bank fast-forward and offline time
-     * reaches heroes by replaying the bank through the live engine.
+     * Recovery counts game time (the tick delta), not wall-clock time, so a
+     * catch-up of time away reaches heroes like live play.
      * @param {Object} hero - Wounded hero object
-     * @param {number} deltaMs - Time-scaled game time in milliseconds
+     * @param {number} deltaMs - Game time in milliseconds
      */
     processWoundedTick(hero, deltaMs) {
         if (typeof hero.woundedRemainingMs !== 'number') {

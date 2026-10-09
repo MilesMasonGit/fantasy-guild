@@ -62,7 +62,7 @@ switched off together with the `alerts` draw switch.
 
 | # | Line | When it appears |
 |---|---|---|
-| C1 | ! Spawned {token} | A spawner makes a Token, shown over the **spawner**. The Guild Hall says it for a new quest ("! Spawned quest" / "! Spawned tutorial quest"). Silent while the time bank replays time away. |
+| C1 | ! Spawned {token} | A spawner makes a Token, shown over the **spawner**. The Guild Hall says it for a new quest ("! Spawned quest" / "! Spawned tutorial quest"). Not shown during a catch-up. |
 | C2 | {effect name} | A named effect fires on a Token (a bonus drop, a status landing), shown over that Token. The wording is the effect's own title. |
 | C3 | {reason} | A drop the mat refused: the rule's reason (or "Drop Rejected: {token}") at the spot you aimed at. The Guild Hall dragged off the mat says "Guild Hall cannot be removed from the playmat." over the Hall. |
 

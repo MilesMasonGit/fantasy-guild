@@ -193,7 +193,7 @@ scenarios). Only S8 carries a timing.
 - `lib/harness.mjs` — boots the engine as `main.jsx` → `EngineBootstrap.init()`
   → `onSlotSelected(new game)` do, minus React, the art preloader, autosave,
   `createDefaultGameData` (content Tokens) and the wall-clock `setInterval`.
-  All 9 tick handlers are registered (it checks). Ticks are driven with
+  All 8 tick handlers are registered (it checks). Ticks are driven with
   `GameLoop.runHandlers(100)`, the entry point `DevTools.advanceTime` uses. The
   logger runs as in a production build (prints nothing) and its calls are
   counted.

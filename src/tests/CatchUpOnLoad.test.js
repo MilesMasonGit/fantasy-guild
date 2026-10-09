@@ -9,7 +9,6 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
-import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { CATCH_UP } from '../config/loopConstants.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -107,13 +106,6 @@ describe('catching up on load', () => {
         expect(GameLoop.getIsRunning()).toBe(true);
         expect(CatchUp.lastResult()).toBe(before);
     });
-
-    it('the Time Bank banks nothing of the time away', async () => {
-        writeSlot(NOW - 3 * HOUR);
-        await SaveManager.loadSlot(0);
-        await EngineBootstrap.onSlotSelected(0, false);
-        expect(TimeBankManager.getBankedMs()).toBe(0);
-    });
 });
 
 describe('a gap the live loop could not deliver', () => {
@@ -156,7 +148,6 @@ describe('a gap the live loop could not deliver', () => {
         expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 61_000);
         expect(resets).toBe(1);
         expect(GameLoop.getIsRunning()).toBe(true);
-        expect(TimeBankManager.getBankedMs()).toBe(0);
     });
 
     it('less than a step waits for the next gap', () => {
@@ -181,6 +172,5 @@ describe('a gap the live loop could not deliver', () => {
         expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 10 * MIN + 1000);
         await vi.waitFor(() => expect(GameLoop.getIsRunning()).toBe(true));
         expect(TimeManager.consumeOverflow()).toBe(0);
-        expect(TimeBankManager.getBankedMs()).toBe(0);
     });
 });

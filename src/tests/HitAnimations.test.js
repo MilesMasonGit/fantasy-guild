@@ -13,7 +13,6 @@ import * as Foundations from '../systems/board/Foundations.js';
 import * as TokenGlows from '../systems/board/TokenGlows.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
@@ -99,13 +98,11 @@ beforeEach(() => {
     TokenGlows.resetGlows();
     GameState.state.heroes = [];
     clearMat();
-    TimeBankManager.isSpending = false;
 });
 
 afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
-    TimeBankManager.isSpending = false;
 });
 
 // ---------------------------------------------------------------------------
@@ -363,13 +360,6 @@ describe('transform glow (FB-11)', () => {
         expect(TokenGlows.glowOf(built.id)).toMatchObject({ fromTypeId: 'fixture_q4_foundation' });
     });
 
-    it('nothing glows while the time bank replays time away', () => {
-        const old = placeAt('fixture_q4_sapling', 500, 500);
-        TimeBankManager.isSpending = true;
-        const made = EffectActions.transformInstance(old, 'fixture_q4_tree');
-        expect(TokenGlows.glowOf(made.id)).toBeNull();
-    });
-
     it('lasts about a second, on the wall clock', () => {
         TokenGlows.raiseGlow('x', {}, 1000);
         expect(TokenGlows.glowOf('x', 1500).remainingMs).toBe(TokenGlows.GLOW_MS - 500);
@@ -516,14 +506,6 @@ describe('spawn in place glows like a transform (FB-51)', () => {
         const bearer = placeAt('fixture_q4_tree', 500, 500);
         const result = EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id });
         expect(result.replacedBearer).toBe(false);
-        expect(TokenGlows.glowOf(result.instanceId)).toBeNull();
-    });
-
-    it('nothing glows while the time bank replays time away', () => {
-        const bearer = placeAt('fixture_q4_tree', 500, 500);
-        TimeBankManager.isSpending = true;
-        const result = EffectActions.spawn(spawnOf(PLACEMENT.HERE), { self: bearer.id });
-        expect(result.replacedBearer).toBe(true);
         expect(TokenGlows.glowOf(result.instanceId)).toBeNull();
     });
 });

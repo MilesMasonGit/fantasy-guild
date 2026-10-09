@@ -18,7 +18,6 @@ class TimeManagerClass {
         this.gameTime = 0;        // Total game time in milliseconds
         this.isPaused = false;
         this.pausedAt = null;
-        this.timeScale = 1.0;     // Speed multiplier; set by the Time Bank
         /**
          * Game-time this tick could not deliver because it exceeded
          * MAX_TICK_DELTA_MS. Read and zeroed by `GameLoop` via
@@ -65,13 +64,11 @@ class TimeManagerClass {
             return 0;
         }
 
-        // Clamp in GAME time, after the time-scale, because the 1000 ms ceiling
-        // is a property of the board's cycle floor, not of the wall clock.
         // Floor at 0 first so a backward step can neither produce a negative delta
         // nor subtract from `overflowMs` below.
-        const scaled = Math.max(0, (now - this.lastTickTime) * this.timeScale);
-        this.deltaTime = Math.min(scaled, MAX_TICK_DELTA_MS);
-        this.overflowMs += scaled - this.deltaTime;
+        const elapsed = Math.max(0, now - this.lastTickTime);
+        this.deltaTime = Math.min(elapsed, MAX_TICK_DELTA_MS);
+        this.overflowMs += elapsed - this.deltaTime;
         this.lastTickTime = now;
         this.gameTime += this.deltaTime;
 
@@ -160,22 +157,6 @@ class TimeManagerClass {
      */
     getIsPaused() {
         return this.isPaused;
-    }
-
-    /**
-     * Set time scale (for speed adjustments)
-     * @param {number} scale - Time multiplier (1.0 = normal)
-     */
-    setTimeScale(scale) {
-        this.timeScale = Math.max(0, scale);
-    }
-
-    /**
-     * Get current time scale
-     * @returns {number}
-     */
-    getTimeScale() {
-        return this.timeScale;
     }
 
     /**

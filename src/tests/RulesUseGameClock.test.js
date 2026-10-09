@@ -11,7 +11,6 @@ const ALLOWED = {
     'systems/core/GameClock.js': [1, 'the game clock itself: live, it is the wall clock'],
     'systems/core/CatchUp.js': [2, 'the real time now: how long the game was away, or when a gap began'],
     'systems/core/SaveManager.js': [1, 'an imported save without a stamp is stamped now'],
-    'systems/core/TimeBankManager.js': [1, 'the retiring Time Bank'],
     'systems/core/TimeManager.js': [1, 'when the player paused'],
     'systems/core/EngineBootstrap.js': [1, 'the last tick\'s real time, written into the save'],
     'systems/core/EventBus.js': [1, 'the console event log'],

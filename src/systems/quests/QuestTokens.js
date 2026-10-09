@@ -2,7 +2,6 @@
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
-import { TimeBankManager } from '../core/TimeBankManager.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import * as BoardState from '../board/BoardState.js';
 import * as EffectActions from '../board/EffectActions.js';
@@ -59,7 +58,7 @@ export { QUEST_TOKEN_TYPE };
  *
  * ## ⚠️ The clock runs on the tick's `delta`
  * `state.quests.clockMs`, saved, advanced by {@link tick} from the game loop's
- * `quest_manager` handler, so the time bank and `DevTools.advanceTime` speed it
+ * `quest_manager` handler, so a catch-up and `DevTools.advanceTime` speed it
  * up. It **only runs below the cap**: at the cap it holds, and filling the cap
  * drops any leftover, so a freed place gets its next quest one full interval
  * later.
@@ -233,16 +232,13 @@ export function spawnQuest(quest, random = Math.random) {
     instance.quest = quest;
     if (quest.type === 'collection') syncCollection(quest);
 
-    // The Guild Hall says it, as a spawner does for its Token; not while the time bank replays
-    // time away.
-    if (!TimeBankManager.isSpending) {
-        EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, {
-            spawnerId: hall.id,
-            instanceId: instance.id,
-            typeId: QUEST_TOKEN_TYPE,
-            name: quest.tutorial ? 'tutorial quest' : 'quest'
-        });
-    }
+    // The Guild Hall says it, as a spawner does for its Token.
+    EventBus.publish(BOARD_EVENTS.TOKEN_SPAWNED, {
+        spawnerId: hall.id,
+        instanceId: instance.id,
+        typeId: QUEST_TOKEN_TYPE,
+        name: quest.tutorial ? 'tutorial quest' : 'quest'
+    });
     EventBus.publish(ENGINE_EVENTS.QUEST_SPAWNED, { instanceId: instance.id, questId: quest.id, tutorial: !!quest.tutorial });
     publishChanged(instance.id);
     return instance;
@@ -377,7 +373,7 @@ export function ensure() {
 }
 
 /**
- * **One tick** (`quest_manager`, with the loop's time-scaled `delta`).
+ * **One tick** (`quest_manager`, with the loop's `delta`).
  *
  * 1. Anything owed (see {@link ensure}) is retried, only while something is.
  * 2. The bounty clock: below the cap it advances by `delta`, and each full

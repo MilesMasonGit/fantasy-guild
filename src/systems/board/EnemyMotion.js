@@ -33,7 +33,7 @@ import { ARRIVE_EPS, stepToward, randomOffset, randomPauseMs } from './walking.j
  * family (`SpawnerSystem.familyOf`) holds its type; `board.enemyTethers` records that it has been
  * done, so an enemy the player later places by hand is never attached by a reload.
  *
- * Everything advances on the tick's `delta`, so the time bank speeds it up. A step moves at most
+ * Everything advances on the tick's `delta`, so a catch-up speeds it up. A step moves at most
  * {@link MAX_STEP_MS} worth of walking, so one very long tick cannot fling an enemy across the mat.
  *
  * ⚠️ A step publishes no Token events. The point is written with `BoardState.setTokenPoint`, which

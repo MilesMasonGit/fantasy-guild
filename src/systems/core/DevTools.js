@@ -71,8 +71,7 @@ export const DEV_ADVANCE_MAX_STEPS = 7200;
  * expiry, loot absorb and auto-collect age, and the item/XP rate windows. Outside
  * a catch-up the game clock is the wall clock, which a dev skip does not advance.
  *
- * Runs whether or not the game is paused — it is an explicit request. If the
- * Time Bank is spending, its handler drains by the advanced time like any tick.
+ * Runs whether or not the game is paused — it is an explicit request.
  *
  * @param {number} minutes - game minutes to advance (may be fractional)
  * @param {object} [opts]

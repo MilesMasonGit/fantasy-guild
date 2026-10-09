@@ -105,8 +105,6 @@ export const ENGINE_EVENTS = Object.freeze({
      * the tick itself delivers).
      */
     TIME_OVERFLOW: 'time_overflow',
-    /** Payload: `{ bankedMs, isSpending, multiplier }`. */
-    TIME_BANK_UPDATED: 'time_bank_updated',
 
     /**
      * A catch-up began playing time the game was not running. Payload: `{ awayMs, playMs, show }`;

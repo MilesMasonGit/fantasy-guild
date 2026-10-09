@@ -14,7 +14,6 @@ import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 import * as GameClock from '../systems/core/GameClock.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
-import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { CATCH_UP } from '../config/loopConstants.js';
@@ -175,11 +174,9 @@ describe('what it keeps quiet', () => {
         expect(EventBus.isQuiet()).toBe(false);
     }, 30_000);
 
-    it('no toast, sound or Time Bank change while it runs', async () => {
+    it('no toast or sound while it runs', async () => {
         emptyGame();
         SettingsManager.set('audio.masterVolume', 80);
-        GameState.state.time.timeBankMs = HOUR;
-        TimeBankManager.isSpending = true;           // even a spending bank does not drain
         const toasts = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.NOTIFICATION_ADDED, (n) => toasts.push(n));
         let n = 0;
@@ -195,7 +192,6 @@ describe('what it keeps quiet', () => {
             expect(toasts).toEqual([]);
             expect(NotificationSystem.getQueue()).toEqual([]);
             expect(soundsPlayed).toBe(0);
-            expect(GameState.state.time.timeBankMs).toBe(HOUR);
 
             // And afterwards, both are back.
             NotificationSystem.notify('Back', 'info');
@@ -205,7 +201,6 @@ describe('what it keeps quiet', () => {
         } finally {
             off();
             GameLoop.offTick('test_noise');
-            TimeBankManager.isSpending = false;
             SettingsManager.set('audio.masterVolume', 0);
         }
     });

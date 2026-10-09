@@ -2,8 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { GameLoop } from '../systems/core/GameLoop.js';
 import { TimeManager } from '../systems/core/TimeManager.js';
-import { TimeBankManager } from '../systems/core/TimeBankManager.js';
-import { MAX_TICK_DELTA_MS, TIME_BANK } from '../config/loopConstants.js';
+import { MAX_TICK_DELTA_MS } from '../config/loopConstants.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
@@ -50,11 +49,7 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
         wallSpy = vi.spyOn(Date, 'now').mockImplementation(() => wallClock);
 
         GameState.initNew();
-        TimeBankManager.isSpending = false;
-        TimeBankManager.activeMultiplier = 1;
-        TimeManager.setTimeScale(1);
         TimeManager.init();
-        GameState.state.time.timeBankMs = 0;
         GameState.state.meta.totalPlaytime = 0;
         GameState.state.time.gameTimeMs = 0;
 
@@ -123,7 +118,7 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
             expect(TimeManager.update()).toBe(0);
         });
 
-        it('does not pollute the Time Bank overflow with a negative amount', () => {
+        it('does not pollute the overflow with a negative amount', () => {
             advancePerf(1000);
             TimeManager.update();
 
@@ -164,7 +159,7 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
 
     // ------------------------------------------------------------------
     // the player-visible symptom — replayed CYCLE_START, and a forward
-    // jump feeding the Time Bank while playing
+    // jump handed to the catch-up while playing
     // ------------------------------------------------------------------
 
     describe('the board does not notice a moved wall clock while playing (CR3-101)', () => {
@@ -201,7 +196,6 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
             // clock fix is actually what's under test.
             GameLoop.onTick('test_cr3101_board_runner', (delta) => BoardRunner.tick(delta));
             GameLoop.isRunning = true;
-            TimeBankManager.init(); // idempotent; wires the time_overflow subscription
         });
 
         afterEach(() => {
@@ -234,7 +228,9 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
             expect(started).toEqual([]);
         });
 
-        it('a 1h forward step of the wall clock banks nothing while playing', () => {
+        it('a 1h forward step of the wall clock hands nothing to the catch-up while playing', () => {
+            const handed = [];
+            const off = EventBus.subscribe(ENGINE_EVENTS.TIME_OVERFLOW, (p) => handed.push(p));
             for (let i = 0; i < 10; i++) {
                 advancePerf(100);
                 GameLoop.tick();
@@ -247,7 +243,8 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
                 GameLoop.tick();
             }
 
-            expect(TimeBankManager.getBankedMs()).toBe(0);
+            off();
+            expect(handed).toEqual([]);
         });
     });
 
@@ -308,7 +305,6 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
         let off;
 
         beforeEach(() => {
-            TimeBankManager.init();     // idempotent: it no longer listens for the excess
             GameLoop.isRunning = true;
             handed = [];
             off = EventBus.subscribe(ENGINE_EVENTS.TIME_OVERFLOW, (p) => handed.push(p));
@@ -334,12 +330,6 @@ describe('Tick delta clamp (CR2-041 / CR3-101)', () => {
             advancePerf(100);
             GameLoop.tick();
             expect(handed).toHaveLength(1);
-        });
-
-        it('banks nothing: the Time Bank no longer takes the excess', () => {
-            advancePerf(TIME_BANK.MAX_MS * 3);
-            GameLoop.tick();
-            expect(TimeBankManager.getBankedMs()).toBe(0);
         });
     });
 });

@@ -2,8 +2,6 @@ import { logger } from '../../utils/Logger.js';
 import { EventBus } from './EventBus.js';
 import { GameLoop } from './GameLoop.js';
 import { TimeManager } from './TimeManager.js';
-import { TimeBankManager } from './TimeBankManager.js';
-import * as GameClock from './GameClock.js';
 import * as CatchUp from './CatchUp.js';
 import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { SaveManager } from './SaveManager.js';
@@ -119,7 +117,6 @@ export const EngineBootstrap = {
             EnemyMotion,
             Hostiles,
             TimeManager,
-            TimeBankManager,
             GuildUpgradeManager,
             GameLoop,
             CatchUp
@@ -134,7 +131,6 @@ export const EngineBootstrap = {
         
         // 1. System Subscriptions
         LootSystem.init();
-        TimeBankManager.init();     // the retiring Time Bank's fast-forward
         CatchUp.init();             // gaps the live loop could not deliver
         GuildUpgradeManager.init(); // Guild Hall upgrade tree
 
@@ -211,11 +207,6 @@ export const EngineBootstrap = {
         GameLoop.onTick('board_runner', (delta) => {
             if (GameState.getIsInitialized()) BoardRunner.tick(delta);
         }, 40);
-
-        // 45: the time bank, between the board and the quest manager.
-        GameLoop.onTick('time_bank', (delta) => {
-            if (GameState.getIsInitialized() && !GameClock.isCatchingUp()) TimeBankManager.tick(delta);
-        }, 45);
 
         // 50: bounty quests. Must run AFTER `board_runner` (40) — see there.
         GameLoop.onTick('quest_manager', (delta) => {

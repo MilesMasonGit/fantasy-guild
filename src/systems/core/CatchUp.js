@@ -15,7 +15,7 @@ import { logger } from '../../utils/Logger.js';
 /**
  * A catch-up runs the same tick handlers live play runs, in `CATCH_UP.STEP_MS` steps, with:
  * - the game clock (`GameClock`) starting where the save was written and moving with the steps;
- * - the bus quiet (every `UI_LISTENER` skipped), no toasts, no sounds, and the Time Bank's tick off;
+ * - the bus quiet (every `UI_LISTENER` skipped), no toasts, no sounds;
  * - saving suspended (the autosave timer and the save on closing the window), so the slot keeps the
  *   pre-catch-up save byte for byte until the one save at the end: a crash or a closed window
  *   loses nothing, and the next load starts the same catch-up again;

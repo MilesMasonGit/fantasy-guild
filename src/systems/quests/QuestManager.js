@@ -216,7 +216,7 @@ export const QuestManager = {
     },
 
     /**
-     * The game loop's `quest_manager` handler, with its time-scaled `delta`:
+     * The game loop's `quest_manager` handler, with its `delta`:
      * the quest Tokens' clock. Bank syncing follows `inventory_updated`, not the tick.
      */
     tick(deltaMs) {

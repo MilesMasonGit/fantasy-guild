@@ -12,7 +12,6 @@ import { QuestManager } from '../systems/quests/QuestManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { TimeBankManager } from '../systems/core/TimeBankManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { EngineContext } from '../ui/context/EngineContext';
@@ -73,7 +72,6 @@ afterEach(() => {
     delete HTMLElement.prototype.animate;
     Flags.teardown();
     resetDrawSwitches();
-    TimeBankManager.isSpending = false;
 });
 
 describe('spawn pop-out', () => {
@@ -113,12 +111,6 @@ describe('spawn pop-out', () => {
         const tok = placeAt('fixture_tool_gated', 900, 500);
         mount(h(MatBoard));
         expect(forChild(tok)).toHaveLength(0);
-    });
-
-    it('does not play while the time bank replays time away', async () => {
-        TimeBankManager.isSpending = true;
-        const { child } = await spawnOne();
-        expect(forChild(child)).toHaveLength(0);
     });
 
     it('does not play with the spawnMotion switch off', async () => {

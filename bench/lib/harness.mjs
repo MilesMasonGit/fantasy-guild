@@ -81,8 +81,8 @@ export function boot(seed) {
         // every Mat Tuner value is its shipped default.
         SettingsManager.init();
         EngineBootstrap.init();
-        if (GameLoop.tickHandlers.length !== 9) {
-            throw new Error(`expected the 9 engine tick handlers, found ${GameLoop.tickHandlers.length}: ${GameLoop.tickHandlers.map(h => h.name).join(', ')}`);
+        if (GameLoop.tickHandlers.length !== 8) {
+            throw new Error(`expected the 8 engine tick handlers, found ${GameLoop.tickHandlers.length}: ${GameLoop.tickHandlers.map(h => h.name).join(', ')}`);
         }
         engineReady = true;
     }

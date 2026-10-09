@@ -1,7 +1,7 @@
 # Concept — real offline progress
 
-**Status:** decisions locked by the owner, 2026-10-07. No roadmap or code yet;
-a crunch track. Replaces the Time Bank (ruled 2026-10-06).
+**Status:** decisions locked by the owner, 2026-10-07; built in brief 40
+(O1–O4). Replaces the Time Bank (ruled 2026-10-06; removed in O4).
 
 ## The idea
 
@@ -23,17 +23,16 @@ turns, upkeep, fights and wounds. A loading bar shows it happening, then a
 | What counts | **A closed game, and a sleeping PC** (lid shut; owner, 2026-10-07). A minimised or background window just runs (slowly); it doesn't get a catch-up or summary. |
 | Time Bank | Retired: its banking, speed-up presets and hidden widget go. |
 
-## What's known today
+## What was known at the start
 
 - The engine ticks 10 times a game-second; a realistic mat costs ~0.3 ms per
   tick (`docs/reference/PERFORMANCE.md`). Running today's ticks exactly takes
   ~11 s per hour away, **~4–5 minutes for 24 h**: about 10× too slow for the
   30-second target.
 - A live tick is clamped to 1 s (`MAX_TICK_DELTA_MS`); longer gaps are
-  published as `TIME_OVERFLOW` and banked by the Time Bank today.
+  published as `TIME_OVERFLOW` and were banked by the Time Bank.
 - Hero walking already snaps to its destination on a very long tick.
-- `TimeBankManager.accrueOffline` already measures time away on load
-  (`now − savedAt`).
+- The Time Bank already measured time away on load (`now − savedAt`).
 
 ## Open engineering questions (for the roadmap, not the owner)
 
@@ -137,7 +136,7 @@ places to look if a real board misses 30 s.
   throttling). The 1-a-second phase still plays in real time (the 1000 ms
   clamp lets each tick deliver a full second, plus ~10 ms of overflow); the
   once-a-minute phase delivers 1 s of play a minute and pushes ~59 s into
-  `TIME_OVERFLOW`, which the Time Bank keeps today. See owner question 2.
+  `TIME_OVERFLOW`, which the Time Bank kept. See owner question 2.
 
 ### Step size: one 1000 ms step for the whole engine
 
@@ -247,7 +246,7 @@ settles ticket T-085, "loot timing uses the wall clock".)
   Level-up bubbles wait for the hero bar (O3).
 - **Autosave and the save on closing the window**: suspended until the end.
 - **The Time Bank**: its accrual on load and its tick must not run (O4
-  deletes it), or the time away is both played and banked.
+  deleted it), or the time away is both played and banked.
 
 ### Web Worker: no
 

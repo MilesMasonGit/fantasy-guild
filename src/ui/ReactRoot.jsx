@@ -36,7 +36,6 @@ import TestDashboard from './components/TestDashboard.jsx';
 import PlaymatTuner from './components/PlaymatTuner.jsx';
 import MatTuner from './components/MatTuner.jsx';
 import { TERRAIN_ENABLED } from '../config/registries/terrainRegistry.js';
-import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
 import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
 import MatTopBar, { showsMatTopBar } from './components/board/MatTopBar.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
@@ -44,12 +43,6 @@ import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
 import MatDisallowControls from './components/board/MatDisallowControls.jsx';
 import { PerfProfiler, usePerfHudShowing } from './dev/perf/PerfProfiler.jsx';
 import { useDrawn } from './dev/perf/drawSwitches.js';
-
-/**
- * Time Bank widget visibility: parked, not deleted. Only its placement is switched off, so
- * restoring it is this one flag. It lives at the right end of the mat's top bar.
- */
-const SHOW_TIME_BANK = false;
 
 import SettingsModal from './modals/SettingsModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
@@ -293,7 +286,7 @@ export const ReactRoot = ({ engine }) => {
                                     <PerfProfiler id="TopBar">
                                         <MatTopBar
                                             left={<><MatCapBadge /><MatUpkeepBadge /></>}
-                                            right={<><MatDisallowControls />{SHOW_TIME_BANK ? <TimeBankWidget /> : null}</>}
+                                            right={<MatDisallowControls />}
                                         />
                                     </PerfProfiler>
                                 )}
