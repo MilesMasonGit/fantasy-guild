@@ -54,6 +54,19 @@ export const ENGINE_EVENTS = Object.freeze({
     /** A save slot was loaded. Payload: `{ slot, savedAt }`. */
     GAME_LOADED: 'game_loaded',
 
+    /**
+     * ⭐ The guild travelled: `state.board` is now another Region's board. Payload:
+     * `{ fromRegionId, toRegionId }`. ⚠️ Whatever rebuilds runtime state from the board on
+     * `GAME_LOADED` must hear this too, or a Region comes back different from how it was left
+     * (`AtlasTravel.test.js` guards it). `GAME_RESET` (`reason: 'travel'`) follows, for the screen.
+     */
+    BOARD_SWAPPED: 'board_swapped',
+    /**
+     * The Atlas's Regions changed. Payload: `{ reason, regionId }`, `reason` one of `'created'`,
+     * `'renamed'`, `'archived'`, `'restored'`, `'abandoned'`, `'travelled'`.
+     */
+    ATLAS_CHANGED: 'atlas_changed',
+
     /** Any hero field changed (HP, state, roster, equipment, xp). Payload: usually none; sometimes `{ heroId }`. */
     HEROES_UPDATED: 'heroes_updated',
     /** Payload: `{ heroId, name }`. */
@@ -258,4 +271,5 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.STATUS_DOT_TICK]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.STATUS_PURGED]: 'status moment (Effects Grammar v2 will listen)',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
+    [ENGINE_EVENTS.ATLAS_CHANGED]: 'the Region list moment, for the Atlas screen',
 });

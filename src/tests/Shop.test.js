@@ -206,9 +206,9 @@ describe('buying', () => {
         expect(InventoryManager.getItemCount(WOOD)).toBe(10);
     });
 
-    it('⭐ the cap is 80 by default (T-102)', () => {
-        expect(MatCap.BASE_TOKEN_CAP).toBe(80);
-        expect(MatCap.matCap()).toBe(80);
+    it('⭐ the cap is 128 by default', () => {
+        expect(MatCap.BASE_TOKEN_CAP).toBe(128);
+        expect(MatCap.matCap()).toBe(128);
     });
 
     it('refuses a Token that is not sold', () => {

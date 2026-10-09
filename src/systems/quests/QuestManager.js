@@ -112,6 +112,11 @@ export const QuestManager = {
                 QuestTokens.requestCheck();
                 this.ensureQuests();
             }),
+            // Travel: the quests came along beside the Hall; check the new mat holds what is owed.
+            EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, () => {
+                QuestTokens.requestCheck();
+                this.ensureQuests();
+            }),
             // ⚠️ One event per player action, and only one. A quest counter must hear
             // about an action exactly once, and `Placement` publishes both a semantic
             // event (`TOKEN_PLACED`, `hero_deployed`) and a board-lifecycle one

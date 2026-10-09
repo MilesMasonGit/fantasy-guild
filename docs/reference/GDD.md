@@ -79,11 +79,14 @@ Today the pull is skill levels, Guild Hall upgrades and promotions.
   *(`MatPlacement.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
   may push **spawned** Tokens aside; **placed Tokens are never pushed**.
-- **Token cap: 80 Tokens** (*for testing*; a Guild Hall upgrade may raise it
-  later). Counts every Token, placed or spawned, including any in the discard
-  bin; not quests or the Hall. Enforced by the Shop and by recipes that make
-  Tokens; a spawner waits while the mat is at the cap (as well as at its family
-  cap). A save already over the cap keeps everything; adding waits until it is
+- **Token cap: 128 Tokens** to start (owner, Atlas D-9: a Guild Hall upgrade
+  will add 16 a rank, up to 256; not built yet). The cap is the guild's but
+  counts only the Region the guild is in (§10): every Token there, placed or
+  spawned, including any in the discard bin; not quests, the Hall, or
+  **landmarks** (Token types marked `landmark`: the endgame sites, Atlas D-1;
+  none are authored yet). Enforced by the Shop and by recipes that make Tokens;
+  a spawner waits while the mat is at the cap (as well as at its family cap).
+  A save already over the cap keeps everything; adding waits until it is
   under. *(`MatCap.js`)*
 - One Mythic of a type may be placed at a time (the only gameplay use of
   rarity). *(`Placement.js:84-93`)*
@@ -461,8 +464,21 @@ drawers**. The menu can be flipped to the right.
   the Time Bank, which is gone.
 - **Saves**: 3 slots in browser `localStorage` with a one-step backup;
   autosave every 10 min by default. **Saves from another version are refused,
-  not migrated** (`GAME_VERSION = '0.8.0'`), and that stays the policy **until
-  1.0** (owner 2026-10-06). A new game is saved immediately.
+  not migrated** (`GAME_VERSION = '0.8.1'`, moved by the Atlas's Regions), and
+  that stays the policy **until 1.0** (owner 2026-10-06). A new game is saved
+  immediately.
+- **Regions** — **Built, dev console only** (Atlas slice A1): the save holds
+  every Region the guild has settled (`state.atlas`); the mat is the board of
+  the Region the guild is in. **Only that Region runs**, offline catch-up
+  included; every other Region is frozen exactly as it was left. A new game's
+  opening mat is the first Region, the Starter Camp. **Travel** banks the loot
+  on the floor (what the Bank cannot hold stays on that Region's floor), takes
+  the Guild Hall and the quest Tokens along (the Hall lands in the middle of a
+  Region it has never stood in, and back in its old spot in one it has), and
+  leaves each Region's flags behind: going back, every hero starts at the flag
+  they left there, with no work claimed and no fight on; a new Region starts
+  with everyone in the Dock. No Atlas screen yet: `Game.Atlas.devCreateEmptyRegion()`
+  and `Game.Atlas.travel(id)` in the dev console. *(`src/systems/atlas/`)*
 - **Desktop**: packaged with Tauri (Windows installers); the game runs in the
   webview and saves stay in its storage.
 
@@ -515,7 +531,9 @@ Content is half-authored on purpose; an unfinished Token is not a bug.
   geography. Owner decisions (2026-10-07, top of the concept): resource nodes
   respawn in place, the Shop sells buildings and tools only, demolition is a
   Construction job with no refund, everything counts toward the cap, and a
-  hand-made Starter Camp opens the game. Some unfinished Atlas code sits uncommitted (ticket T-005).
+  hand-made Starter Camp opens the game. Roadmap and owner answers:
+  [`atlas_roadmap.md`](../active/atlas_roadmap.md). Built so far: Regions and
+  travel (§10), from the dev console.
 - **Skill and class rework v2 — Engine built (brief 20, 2026-10-08)**:
   [`docs/active/concept_skill_and_class_rework_v2.md`](../active/concept_skill_and_class_rework_v2.md)
   and its [roadmap](../active/class_rework_v2_roadmap.md). The 4 Academies and
@@ -550,7 +568,8 @@ realistic, ≈ 1.9 ms at 300 Tokens (code review round 3).
 | **u, step** | Mat unit; a step is 160 u. |
 | **Token** | Anything on the mat. A *type* is authored; an *instance* is one on the mat. |
 | **Placed / spawned** | Bought or built by the player (fixed, refundable) vs made by the mat (free, pushable). |
-| **Cap** | The limit on Tokens on the mat, placed and spawned (80). |
+| **Cap** | The limit on Tokens on the mat, placed and spawned (128), counted in the active Region only. |
+| **Region** | One mat the guild has settled, kept in the Atlas; only the one the guild is in runs (§10). |
 | **Charges / uses** | A Token's wear; one per cycle; 0 removes it; `null` is unlimited. |
 | **Cycle** | One unit of work on a Token (or one kill). |
 | **Near / reach** | 164 u centre to centre; how far a rule carries. |
@@ -603,6 +622,6 @@ crunch plan):
 | Terrain | Returns for the Atlas after a major rework, later in the crunch once the Atlas works. |
 | Atlas timing | Moves into the crunch, after deep optimization. |
 | Drops over a drawer | A mat Token or flag dropped over the Shop drawer or the hero sheet lands on the mat underneath; intended (owner, certification 2026-10-07). |
-| Token cap | 80 for testing, and spawned Tokens count too; binned Tokens count toward spawner caps (T-101, T-102). |
+| Token cap | 128 to start, +16 per Guild Hall rank up to 256 (Atlas D-9); spawned Tokens count, endgame sites don't (D-1); binned Tokens count toward spawner caps (T-101, T-102). |
 | Trickle | Renamed **Passive Production**, one 5-minute timer; the Wishing Well joins it, about 10 Water per 5 min (T-099). |
 | Markets | **Cut for now**: items stay the only currency, no exchange rates; revisit if a real need appears (owner 2026-10-09, T-127). |

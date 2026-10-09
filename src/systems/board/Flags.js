@@ -1116,6 +1116,17 @@ export function restoreWork() {
     for (const heroId of restored) announceMoved(heroId);
 }
 
+/**
+ * After travel: the guild arrives with no claim and no fight. Each hero with a flag in this Region
+ * starts beside it and chooses work afresh; the notes that would put them back at their old work
+ * (a load's `restoreWork`) are dropped.
+ */
+function arrive() {
+    reset();
+    for (const [heroId] of BoardState.savedWorkClaims()) BoardState.forgetWorkClaim(heroId);
+    restoreWork();
+}
+
 let unsubscribers = [];
 
 export function teardown() {
@@ -1145,6 +1156,7 @@ export function init() {
         reset();
         restoreWork();
     }));
+    unsubscribers.push(EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, arrive));
     // `BoardCombat.resolveDefeat` publishes a defeat event instead of calling `furl` directly,
     // which would make a `BoardCombat ↔ Flags` import cycle (Flags already reaches into BoardCombat
     // for `isEnemyToken`/`endFightOfHero`). `EventBus.publish` is synchronous, so this runs before

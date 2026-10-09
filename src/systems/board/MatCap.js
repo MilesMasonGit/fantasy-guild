@@ -9,7 +9,8 @@ import * as BoardState from './BoardState.js';
  * How many Tokens the mat may hold. Every Token counts, placed or spawned, on the mat or waiting in
  * the discard bin (a binned Token counts until it is discarded, so the bin cannot dodge the cap).
  * The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
- * the quest cap.
+ * the quest cap. Landmarks (the endgame sites) never count either. The cap is the guild's, but it
+ * counts only the Region the guild is in: the others are frozen in the Atlas, off the mat.
  *
  * Who asks: the Shop and a station making a Token (`Placement.hasRoomForProduct`) ask {@link
  * canPlaceMore} before adding one; a spawner waits while it says no (`SpawnerSystem`). Nothing is
@@ -17,23 +18,31 @@ import * as BoardState from './BoardState.js';
  * until the count drops below.
  */
 
-/** The cap every guild starts with. A Guild Hall upgrade may raise it later. */
-export const BASE_TOKEN_CAP = 80;
+/** The cap every guild starts with. Guild Hall upgrades raise it. */
+export const BASE_TOKEN_CAP = 128;
 
 /** Whether an instance is the Guild Hall — the same test `Cartographer` uses. */
 export function isGuildHall(instance) {
     return instance?.typeId === 'token_guild_hall' || !!getTokenType(instance?.typeId)?.isGuildHall;
 }
 
-/** Whether a Token counts toward the cap. */
+/** Whether a Token is a landmark: a type marked `landmark`, standing outside the cap. */
+export function isLandmark(instance) {
+    return getTokenType(instance?.typeId)?.landmark === true;
+}
+
+/** Whether a Token counts toward the cap: not a quest, the Guild Hall or a landmark. One type lookup. */
 export function countsTowardCap(instance) {
-    return !!instance?.typeId && instance.typeId !== QUEST_TOKEN_TYPE && !isGuildHall(instance);
+    const typeId = instance?.typeId;
+    if (!typeId || typeId === QUEST_TOKEN_TYPE || typeId === 'token_guild_hall') return false;
+    const def = getTokenType(typeId);
+    return !def?.isGuildHall && def?.landmark !== true;
 }
 
 /**
  * The count, memoised on what can change it: mat membership, the bin (binning and discarding change
- * it without touching the mat) and the Token registry (`isGuildHall` reads a type). Spawners ask
- * every tick, so this is one pass per change, not per question.
+ * it without touching the mat) and the Token registry (`countsTowardCap` reads a type). Spawners
+ * ask every tick, so this is one pass per change, not per question.
  */
 let memo = { tokens: null, version: -1, bin: null, binLength: -1, regVersion: -1, count: 0 };
 

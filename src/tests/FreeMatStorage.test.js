@@ -71,8 +71,8 @@ describe('⭐ the save bump refuses old saves (FP-85)', () => {
         return data;
     }
 
-    it('the schema is 0.8.0', () => {
-        expect(GAME_VERSION).toBe('0.8.0');
+    it('the schema has moved past 0.7.0 (the Atlas moved it again, to 0.8.1)', () => {
+        expect(GAME_VERSION).toBe('0.8.1');
     });
 
     it('migrateState refuses a 0.7.0 save', () => {
