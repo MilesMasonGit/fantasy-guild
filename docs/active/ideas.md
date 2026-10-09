@@ -69,11 +69,11 @@ the first outside playtest, modding.
 
 ## Stage A — now, alongside the crunch
 
-### Fold into running briefs (time-sensitive)
+### Follow-ups after the running briefs
 
 - **Hero flags**: smaller, and fade to half opacity while work is happening on
-  them. *quick* · ⚠️ brief 30 is running; its H4 (the flag) not reached yet.
-  Awaiting the owner: message that session, or a follow-up after brief 30.
+  them. *quick* · follow-up after brief 30 (owner, 2026-10-08: don't
+  interrupt the running session; there will be several design passes).
 - **Master allow / disallow all per hero**: most players leave every skill on
   and steer by moving the flag; per-skill controls are only for players who
   want to micromanage (owner). One switch per hero to allow or disallow
