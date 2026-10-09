@@ -112,6 +112,7 @@ before and after, S2 at 4× (perf build). Measure, don't fix.
 | H1/H2/H4 eye-check fixes | 2026-10-09 | 48.1 → 64.8 | 22.25 → 16.70 | No change: both runs were far below the baseline (84 fps) on every 4× scene with another builder's benches loading the machine; S2 + hero sheet open 54.3 → 51.3 / 20.61 → 22.36 and S2 + Bank open both noise-sized. The flag drag's green dots are worked out once per pointer move (one pass over the mat's Tokens through `Flags.pinRefusal`): 0.011 ms a call with 11 Tokens in the game, so about 0.1 ms at the 80-Token cap. Drag bench after, two runs (plain / overlays): flag → mat 94 / (run aborted) and 90 / 84 %, hero dock → mat 100 / 100 %; every flag miss was a Token or a neighbouring hero picked up at the press (T-105, T-106), before any dot is drawn. The first run aborted because the bench took the hero panel, now left open beside the Bank, for the Bank itself; `BANK_OPEN` in `bench/browser/scenes.mjs` now leaves the hero panel out. |
 | H3 v2 Work rules grid | 2026-10-08 | 51.9 → 74.7 | 20.81 → 15.00 | No change: the drawer is shut in every draw scene and renders nothing while shut (no drop target, no subscriptions); both runs shared the machine with other agents' benches (the before run was cut short after S2 at 4×; the after run's S3 at 1× read 107 fps, 154 fps on a lone re-run). Drag bench after (plain / overlays): hero dock → mat 100 / 100 % with 8 heroes beside the new button, flag → mat 90 / 88 %, Token → mat 84 / 96 %, Token → bin 100 / 96 %, all else 100 %; no miss touched the button or the drawer (neighbouring Tokens or heroes picked up, or a press under a bar hero's head). |
 | D2 Hit-testing (brief 50) | 2026-10-09 | 76.7 → 55.0 | 14.41 → 20.95 | No change. The after run read slower on every busy scene at 4× alike (S3, Bank, Shop, notify, loot too) on a busier machine (it took 40 min against 23); an interleaved A/B minutes later (`--ab`, A,B,B,A, at 4×) read D2 58.8 fps / 18.95 ms against the build before it 59.0 / 19.16 ms on S2 (S3 17.4 / 16.3 fps, Bank 64.5 / 63.1 fps). At 1× nothing moved (S2 work 2.00 → 2.01 ms). D2 changes the press path (once per press) and the mat cell's overflow (clip, not hidden); the last press fix (`2a60ee69`) is press-only and was not in the measured build. |
+| D3 Redraws (brief 50) | 2026-10-09 | 55.0 → 62.0 | 20.95 → 18.11 | No change. The compare run flagged S2, S3, Bank, Shop, loot and hero sheet at 4× against the 2026-10-07 baseline (84 fps on S2, which no run this week has read), and S3's in-budget share at 1× (79.3 %; D2's run read 80.9 %). Interleaved A/Bs straight after against the build before D3 (`e25a0b2d`; `--ab`, A,B,B,A, at 4×), D3 / before: S2 60.3 / 60.0 fps (work 19.05 / 19.01 ms), Shop open 57.0 / 60.8 fps and on a second A/B 57.3 / 57.2, loot 32.3 / 30.5, notifications 53.1 / 52.0. At 1× S2 work 2.06 ms, 99.6 % in budget. No draw scene drags. |
 
 ## Drag baseline (`npm run bench:drag`, perf build, S2, 50 drags per kind and pass)
 
@@ -169,6 +170,94 @@ stuttered more over the bin, the Shop and the Bank (a frame over 16.7 ms in 19,
 fell to 0–10. Not explained: D2's only change on that path is the mat's cell no
 longer being a scroll container (`overflow-clip`). Re-measure before relying on it.
 
+**D3 findings (brief 50, 2026-10-09).** Re-measured first, at `e25a0b2d` (full
+run, plain pass): every kind had a frame over 16.7 ms in 47–50 of 50 pickups and
+44–50 of 50 drops; carrying stalled in 0–8 of 50 drags (the bin 8, the Bank 5),
+so D2's carry figures hold. What the long frame was, from CPU-profiled traces of
+real drags (the perf build with source maps) and React's own commit log (dev
+build): about 90 % JavaScript, forced layout and style under 2 ms. dnd-kit
+changes its internal context three or four times per pickup and per drop (the
+drag starts, the dragged node is measured, the first target is found; the same
+at the drop), and each change re-rendered every component holding a drag or drop
+hook: each of ~105 Tokens in full, about 1,000 components a change, with 8 mat
+heroes, 8 flags, 8 hero-bar figures (whose reorder slots re-measured their
+layout), the bin, and with a drawer open the Shop rows, Bank tiles and tabs, the
+hero column and sheet. Besides: clearing the hover at pickup, and the moved Token
+at a drop, re-ranked the mat's dense stack order and redrew 17–97 Tokens;
+dnd-kit's drop-target boxes re-read the scroll position of every scrolling box
+around each target, the page's included, on every collision check (~7 ms of a
+traced pickup, ~50 ms with the Bank open), and measuring the targets at pickup
+walked their ancestors once more; the notification column re-measured every
+toast at drag start and end; a Shop purchase redrew the catalogue and the toasts
+in the drop's own frame. Carrying was already smooth: R7's per-move costs had
+been fixed before D3.
+
+**What D3 changed** (ten commits, one cause each, each held by a render-count or
+layout-read test: `src/tests/DragRedraws.test.js`, `DragRedrawsDrawers.test.js`,
+`DragCollisionReads.test.js`, `DragDropAftermath.test.js`): a drag redraws only
+what changes look (the thing in the hand, the target under it, the bar's
+insertion gap). Each draggable is a thin shell holding the drag hook around a
+memoised body; every mat Token is picked up through one shared drag source
+instead of each holding its own; the stack order is written straight to the
+Tokens' z-index; drop targets are measured once at pickup from their own boxes
+and corrected only for boxes that scroll during the drag; the page itself is
+never auto-scrolled (the drawers' lists still are); the notification column and
+the Shop catalogue redraw after a drop's frame instead of in it. Look and
+behaviour unchanged.
+
+**After D3** (`7773c43c`, S2, plain pass, same format as above):
+
+| Drag | pickup | carry | drop |
+|---|---|---|---|
+| hero dock → mat | 36 / 6 (2) | 42 / 6 (2) | 18 / 6 (1) |
+| flag → mat | 12 / 6 (0) | 6 / 6 (0) | 18 / 6 (1) |
+| Token → mat | 18 / 12 (3) | 7 / 6 (0) | 18 / 12 (5) |
+| Token → bin | 18 / 12 (1) | 18 / 6 (1) | 12 / 6 (0) |
+| bin → mat | 12 / 6 (0) | 12 / 6 (0) | 12 / 6 (0) |
+| Shop row → mat | 12 / 6 (0) | 12 / 6 (0) | 24 / 12 (11) |
+| Bank item → hero | 36 / 12 (9) | 36 / 6 (2) | 55 / 12 (6) |
+
+With bubbles showing, pickups stall in 0–10 of 50 drags (Bank 10, Token → mat 7)
+and drops in 5–13 (Token → mat and Shop 13). The bench's screen refreshes at
+165 Hz, so frames come in steps of ~6 ms: 12 ms is one missed refresh, 18 ms two.
+S2 with nobody touching it: 3 frames over 16.7 ms in a minute (0.03 %).
+
+S3 (~320 Tokens), plain pass: the median drag's longest frame in ms (drags of 50
+with a frame over 16.7 ms), before D3 (`e25a0b2d`) → after (`7773c43c`):
+
+| Drag | pickup | carry | drop |
+|---|---|---|---|
+| hero dock → mat | 73 (50) → 12 (12) | 30 (50) → 12 (9) | 67 (50) → 24 (46) |
+| flag → mat | 73 (50) → 12 (24) | 12 (18) → 12 (6) | 67 (50) → 24 (42) |
+| Token → mat | 79 (50) → 24 (47) | 12 (13) → 12 (8) | 73 (50) → 24 (48) |
+| Token → bin | 79 (50) → 18 (50) | 36 (50) → 12 (20) | 61 (50) → 18 (41) |
+| bin → mat | 79 (50) → 12 (19) | 18 (26) → 12 (13) | 67 (50) → 18 (46) |
+| Shop row → mat | 79 (50) → 12 (11) | 30 (50) → 12 (12) | 73 (50) → 24 (49) |
+| Bank item → hero | 85 (50) → 18 (38) | 37 (50) → 12 (10) | 61 (50) → 18 (42) |
+
+S3 runs drift with the machine: the run above read worse than one at `ee9a5b5a`
+an hour earlier, yet an interleaved A/B of those two builds straight after
+(A,B,B,A, 25 drags a side) read `7773c43c` equal or better on every kind and
+phase (pickups stalling in 8–37 of 50 drags against 10–44, drops 26–46 against
+31–50). S3 with nobody touching it has 28 frames over 16.7 ms a minute (0.29 %);
+while carrying after D3, 0.3–0.8 % of frames (before D3, 0.6–14 %).
+
+**What remains** (T-033), traced at `7773c43c` on S3 (four Token and four Bank
+drags, CPU profiler on, so times read a little high). The pickup is one task of
+16–26 ms: React's pickup render and effects 8–14 ms, of which ~4 ms is React
+walking the whole tree for dnd-kit's context changes (at most ~90 components
+render a commit now, against ~1,000 before D3), then restyling 200–420 elements
+4–8 ms and layout ~2 ms. The drop is one task of 25–42 ms: restyling 330–1,190
+elements 7–15 ms (the stack order rewritten to the Tokens' z-index: the ranks are
+dense, so one Token moving re-ranks many), React's drop work 6–9 ms, layout 2–5
+ms. With the Bank open, dnd-kit spends ~8 ms of each pickup measuring the drop
+targets and the scrolling boxes around the dragged item, and equipping opens the
+hero sheet inside the drop's task (~5 ms). The tutorial beacon's box read every
+frame (T-131) takes 4–6 ms of each pickup's and drop's window. On S2 the same
+costs are smaller and mostly fit in a frame. Next, by size: a sparse stack order
+(ranks with gaps, so moving one Token rewrites one), then fewer dnd-kit context
+changes per drag or a provider that wraps less of the tree.
+
 ## Owner certification run (2026-10-07)
 
 The owner ran the certification checklist
@@ -195,5 +284,6 @@ the hero sheet **lands on the mat underneath**; that is the intended behaviour.
 
 The pickup/drop stalls are dev-build numbers (React's development build
 re-renders several times slower than players see), so players get a smaller
-hitch: in the perf build `bench:drag` measures ~24–36 ms frames at pickup and
-drop (Drag baseline, above).
+hitch: in the perf build `bench:drag` measured ~24–36 ms frames at pickup and
+drop before D3, and after it a typical S2 pickup or drop has no frame over 12 ms
+(Drag baseline, above).
