@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -8,7 +7,6 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { useActiveDrag, useLiveDropTarget } from '../../dnd/DndKit.jsx';
 import ToastContainer from '../base/ToastContainer.jsx';
-import { FlagRulesPanel } from '../drawer/FlagRulesPanel.jsx';
 import DiscardBinPanel, { binAccepts, dropIntoBin, useBinRefresh } from './DiscardBinPanel.jsx';
 import { SIDE_COLUMN_PX, NOTIFICATION_COLUMN, NOTIFICATION_STRIP_PX, columnWidthCss } from './boardConstants.js';
 
@@ -232,14 +230,10 @@ export const BinSidebar = ({ towardMat }) => {
     );
 };
 
-/**
- * The notification side's strip on the playmat: the Notifications and Bin tabs, plus the flag
- * rules panel, which also slides out over the mat from here.
- */
-export const NotificationSidebars = ({ menuRight = false, flagRules = null }) => {
+/** The notification side's strip on the playmat: the Notifications and Bin tabs. */
+export const NotificationSidebars = ({ menuRight = false }) => {
     // The column sits beside the nav, so with the nav on the right it is on the left edge.
     const towardMat = menuRight ? 'right' : 'left';
-    const slideFrom = menuRight ? 40 : -40;
     return (
         <aside
             style={{ width: NOTIFICATION_STRIP_PX }}
@@ -249,25 +243,6 @@ export const NotificationSidebars = ({ menuRight = false, flagRules = null }) =>
                 className="w-full relative shrink-0 flex flex-col gap-2"
                 style={{ height: SIDE_COLUMN_PX, maxHeight: '100%' }}
             >
-                {/**
-                 * A hero's flag rules: a narrow panel over the mat, so the board stays in view.
-                 * A dedicated panel rather than the Bank drawer, which spans the board too.
-                 */}
-                <AnimatePresence>
-                    {flagRules?.heroId && (
-                        <motion.div
-                            key="flag-rules"
-                            initial={{ x: slideFrom, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: slideFrom, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                            className="absolute top-0 bottom-0 z-30"
-                            style={panelPlace(towardMat)}
-                        >
-                            <FlagRulesPanel heroId={flagRules.heroId} onClose={flagRules.close} />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
                 <NotificationsSidebar towardMat={towardMat} />
                 <BinSidebar towardMat={towardMat} />
             </div>

@@ -848,6 +848,32 @@ export function resetRules(heroId) {
     return { success: true };
 }
 
+/**
+ * Copy one hero's rules onto others: every rule the source lists (`FlagRules.rowsFor`) is set on
+ * each target that holds it, through {@link setRule}. A rule a target does not hold is skipped;
+ * a target's rules for skills the source lacks stay as they were.
+ *
+ * @returns {{ success: boolean, reason?: string,
+ *             results?: { heroId: string, copied: string[], skipped: string[] }[] }}
+ */
+export function copyRules(fromHeroId, toHeroIds = []) {
+    if (!FlagRules.heroRecord(fromHeroId)) return { success: false, reason: 'No such hero' };
+    const rows = FlagRules.rowsFor(fromHeroId);
+    const results = [];
+    for (const heroId of toHeroIds) {
+        if (heroId === fromHeroId || !FlagRules.heroRecord(heroId)) continue;
+        const copied = [];
+        const skipped = [];
+        for (const row of rows) {
+            if (!FlagRules.holdsRule(heroId, row.ruleId)) { skipped.push(row.ruleId); continue; }
+            setRule(heroId, row.ruleId, { allowed: row.allowed, priority: row.priority });
+            copied.push(row.ruleId);
+        }
+        results.push({ heroId, copied, skipped });
+    }
+    return { success: true, results };
+}
+
 /** Let go of the hero's claim if it answers to `ruleId` (a rule just switched off). */
 function releaseIfWorking(heroId, ruleId) {
     const claim = BoardState.claimOfHero(heroId);

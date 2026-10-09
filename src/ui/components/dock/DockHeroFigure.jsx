@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Settings } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -41,7 +42,8 @@ export function dockHeroDragPayload(heroId, hero) {
  * The sprite runs its own frame clock, so an idle frame re-renders the sprite alone, never
  * this figure or the dock around it.
  * Click, double-click, drag onto the mat, drop an item to equip, drop a flag to recall and
- * drop another dock hero to reorder all behave as the old tab did.
+ * drop another dock hero to reorder all behave as the old tab did. On hover a gear opens the
+ * hero's work rules (`HeroRulesSidePanel`).
  */
 export const DockHeroFigure = ({
     heroId,
@@ -279,6 +281,25 @@ export const DockHeroFigure = ({
                     />
                 </div>
             </div>
+
+            {lifted && (
+                <button
+                    type="button"
+                    data-dock-gear={heroId}
+                    aria-label={`${hero.name || 'Hero'}’s work rules`}
+                    title="Work rules"
+                    // ⚠️ Stops the press reaching the hero's drag handle and the click opening the hero panel.
+                    onPointerDown={e => e.stopPropagation()}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        EventBus.publish(UI_EVENTS.UI_OPEN_FLAG_RULES, { heroId });
+                    }}
+                    onDoubleClick={e => e.stopPropagation()}
+                    className="absolute top-1 right-1 z-50 w-5 h-5 flex items-center justify-center rounded-sm bg-black/85 border border-gi-gold/50 text-gi-gold hover:bg-black hover:border-gi-gold cursor-pointer"
+                >
+                    <Settings size={12} />
+                </button>
+            )}
 
             {bubbles.length > 0 && (
                 <BarBubbles

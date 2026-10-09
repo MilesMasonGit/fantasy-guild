@@ -19,6 +19,8 @@ import ShopDrawer from './components/drawer/ShopDrawer.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import BottomHeroDock, { showsBottomHeroDock } from './components/dock/BottomHeroDock.jsx';
 import BankHeroPanel from './components/dock/BankHeroPanel.jsx';
+import HeroRulesSidePanel from './components/dock/HeroRulesSidePanel.jsx';
+import { useOneSidePanel } from './hooks/useOneSidePanel.js';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
@@ -152,6 +154,12 @@ export const ReactRoot = ({ engine }) => {
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
     const toggleInspectHero = React.useCallback((id) => setInspectHeroId(prev => (prev === id ? null : id)), []);
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
+    useOneSidePanel({
+        heroId: inspectHeroId,
+        closeHero: closeInspectHero,
+        rulesHeroId: ui.flagRules.heroId,
+        closeRules: ui.flagRules.close
+    });
 
     React.useEffect(() => {
         const unsub1 = EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
@@ -254,7 +262,7 @@ export const ReactRoot = ({ engine }) => {
                                         className="shrink-0 h-full pointer-events-none"
                                     />
                                 ) : (
-                                    <NotificationSidebars menuRight flagRules={ui.flagRules} />
+                                    <NotificationSidebars menuRight />
                                 )
                             )
                         )}
@@ -361,7 +369,7 @@ export const ReactRoot = ({ engine }) => {
                                         className="shrink-0 h-full pointer-events-none"
                                     />
                                 ) : (
-                                    <NotificationSidebars flagRules={ui.flagRules} />
+                                    <NotificationSidebars />
                                 )
                             )
                         )}
@@ -380,6 +388,19 @@ export const ReactRoot = ({ engine }) => {
                                     onDoubleClickHero={toggleInspectHero}
                                     onCloseHero={closeInspectHero}
                                     onEditHero={(id) => ui.dock.openEdit(id)}
+                                />
+                            </ErrorBoundary>
+                        )}
+                        {/**
+                         * A hero's work rules, in the hero panel's box (one of the two at a
+                         * time). Not beside the Bank or in the Hall, as before.
+                         */}
+                        {!isGuildView && !isBankOpen && (
+                            <ErrorBoundary label="HeroRulesSidePanel">
+                                <HeroRulesSidePanel
+                                    menuRight={menuRight}
+                                    heroId={ui.flagRules.heroId}
+                                    onClose={ui.flagRules.close}
                                 />
                             </ErrorBoundary>
                         )}

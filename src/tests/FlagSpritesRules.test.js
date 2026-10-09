@@ -434,7 +434,7 @@ describe('the rules panel (FP-71, FP-79, FPP-17, FPP-21)', () => {
     it('shows name, level and the default rule: allowed, priority 3', () => {
         const { container } = panel('h1');
         const forestry = row(container, 'forestry');
-        expect(forestry.textContent).toContain('Lv 50');
+        expect(forestry.textContent).toContain('50/99');
         expect(forestry.querySelector('[data-rule-allowed]').checked).toBe(true);
         expect(forestry.querySelector('[data-rule-priority="3"]').getAttribute('aria-pressed')).toBe('true');
         expect(forestry.querySelectorAll('[data-rule-priority]')).toHaveLength(5);
