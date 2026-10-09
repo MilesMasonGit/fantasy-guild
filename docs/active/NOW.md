@@ -31,6 +31,15 @@ changelog and `docs/archive/`).*
      left it"; a Confirm / Cancel question before the undo.
    - **Brief 30** merged as seen (2026-10-08); your held-back tweaks go to
      the design pass.
+   - **T-120 merged** (director ruling): the hero bar shows the level-ups a
+     catch-up produced, background-tab catch-ups included.
+   - **Brief 70 A0, the Atlas roadmap** ([atlas_roadmap.md](atlas_roadmap.md))
+     is on `main` with **12 owner questions in its §D** (Starter Camp sites
+     and the cap, who lays out the Starter Camp, first Base Maps and
+     Modifiers, where Maps are authored, old saves, what moves and demolishes,
+     vein refill, returning to a Region, Cartography numbers, upcycling,
+     tools-as-gear timing, the parked `atlas-wip` work). Answer them as a
+     batch; the Atlas builds after brief 60 per the crunch order.
    - Entries are added here as overnight phases land.
 3. **Overnight run (owner asleep, 2026-10-08):** the director continues the
    crunch order (50 drag → 60 optimization → 70 Atlas → 80 terrain → 90

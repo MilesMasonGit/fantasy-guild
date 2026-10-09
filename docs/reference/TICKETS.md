@@ -59,8 +59,6 @@ here.
 | T-021 | P3 | open | Two ways into the engine; settle on one (R5-Q2 ruling A). | CR3-512 |
 | T-022 | P3 | open | Rate trackers never cleared on load (clear only; "count at drop time" is a separate design call). | CR3-263 |
 | T-023 | P3 | open | `GLOBAL_COMBAT_XP_MULTIPLIER` wired to nothing (value is 1.0, so wiring it is invisible). | CR3-261 |
-| T-024 | P3 | open | `map_burst` and `map_opened` both report `map_burst` (double count, hidden by the cap). *Unverified since 2026-09-21.* | FMR |
-| T-025 | P3 | open | `buyMap` ignores the Shop's `sourceRect`. *Unverified since 2026-09-21.* | FMR |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
 | T-097 | P2 | open | *(Token cap done in T-102: `MatCap.BASE_TOKEN_CAP`.)* Move the mat size and quest cap/interval out of the dev Mat Tuner into fixed game values (Hall upgrades may raise them later); hide Debug Mode and the QA tools in shipped builds. Owner 2026-10-06. | GDD §16.1 |

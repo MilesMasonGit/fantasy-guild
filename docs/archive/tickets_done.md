@@ -30,3 +30,5 @@ T-044 — Remnants removed: the unused dock pin and body-view state in useUIModa
 T-085 — Loot timing (absorb, auto-collect age) and the other wall-clock rules read the game clock, which follows a catch-up's steps — 234de597 — 2026-10-08
 T-080 — Time Bank fast-forward cost: the Time Bank is removed, replaced by the offline catch-up (brief 40 O4) — crunch/offline — 2026-10-08
 T-120 — The hero bar shows the level-ups a catch-up produced (load, sleeping PC or background tab); a sleeping PC's catch-up no longer wipes unread bubbles — fix/catch-up-bubbles — 2026-10-08
+T-024 — map_burst / map_opened double count: the Map burst code no longer exists (only a comment names it); found stale by the Atlas roadmap — chore/atlas-roadmap-bookkeeping — 2026-10-09
+T-025 — buyMap ignores sourceRect: buyMap no longer exists; found stale by the Atlas roadmap — chore/atlas-roadmap-bookkeeping — 2026-10-09
